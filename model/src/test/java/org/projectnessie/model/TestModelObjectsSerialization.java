@@ -16,6 +16,7 @@
 package org.projectnessie.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.time.Instant;
@@ -47,7 +48,9 @@ public class TestModelObjectsSerialization {
   @MethodSource("goodCases")
   void testGoodSerDeCases(Case goodCase) throws IOException {
     String json = MAPPER.writeValueAsString(goodCase.obj);
-    Assertions.assertThat(json).isEqualTo(goodCase.deserializedJson);
+    JsonNode j = MAPPER.readValue(json, JsonNode.class);
+    JsonNode d = MAPPER.readValue(goodCase.deserializedJson, JsonNode.class);
+    Assertions.assertThat(j).isEqualTo(d);
     Object deserialized = MAPPER.readValue(json, goodCase.deserializeAs);
     Assertions.assertThat(deserialized).isEqualTo(goodCase.obj);
   }
@@ -83,7 +86,10 @@ public class TestModelObjectsSerialization {
                 .fromRefName(branchName)
                 .build(),
             Transplant.class,
-            Json.from("fromRefName", "testBranch").addArr("hashesToTransplant", HASH)),
+            Json.from("fromRefName", "testBranch")
+                .addArr("hashesToTransplant", HASH)
+                .addNoQuotes("isFetchAdditionalInfo", null)
+                .addNoQuotes("isDryRun", null)),
         new Case(
             ImmutableTransplant.builder()
                 .addHashesToTransplant(HASH)
@@ -93,7 +99,9 @@ public class TestModelObjectsSerialization {
             Transplant.class,
             Json.from("fromRefName", "testBranch")
                 .addNoQuotes("keepIndividualCommits", "true")
-                .addArr("hashesToTransplant", HASH)),
+                .addArr("hashesToTransplant", HASH)
+                .addNoQuotes("isFetchAdditionalInfo", null)
+                .addNoQuotes("isDryRun", null)),
         new Case(
             EntriesResponse.builder()
                 .addEntries(
@@ -150,7 +158,10 @@ public class TestModelObjectsSerialization {
         new Case(
             ImmutableMerge.builder().fromHash(HASH).fromRefName(branchName).build(),
             Merge.class,
-            Json.from("fromRefName", "testBranch").add("fromHash", HASH)),
+            Json.from("fromRefName", "testBranch")
+                .add("fromHash", HASH)
+                .addNoQuotes("isFetchAdditionalInfo", null)
+                .addNoQuotes("isDryRun", null)),
         new Case(
             ImmutableMerge.builder()
                 .fromHash(HASH)
@@ -160,12 +171,15 @@ public class TestModelObjectsSerialization {
             Merge.class,
             Json.from("fromRefName", "testBranch")
                 .addNoQuotes("keepIndividualCommits", "true")
-                .add("fromHash", HASH)),
+                .add("fromHash", HASH)
+                .addNoQuotes("isFetchAdditionalInfo", null)
+                .addNoQuotes("isDryRun", null)),
         new Case(
             ImmutableMerge.builder()
                 .fromHash(HASH)
                 .fromRefName(branchName)
                 .defaultKeyMergeMode(MergeBehavior.FORCE)
+                .isFetchAdditionalInfo(true)
                 .addKeyMergeModes(
                     MergeKeyBehavior.of(ContentKey.of("merge", "me"), MergeBehavior.NORMAL),
                     MergeKeyBehavior.of(ContentKey.of("ignore", "this"), MergeBehavior.DROP))
@@ -179,12 +193,15 @@ public class TestModelObjectsSerialization {
                     Json.noQuotes("key", Json.arr("elements", "ignore", "this"))
                         .add("mergeBehavior", "DROP"))
                 .add("defaultKeyMergeMode", "FORCE")
-                .add("fromHash", HASH)),
+                .add("fromHash", HASH)
+                .addNoQuotes("isFetchAdditionalInfo", "true")
+                .addNoQuotes("isDryRun", null)),
         new Case(
             ImmutableMerge.builder()
                 .fromHash(HASH)
                 .fromRefName(branchName)
                 .keepIndividualCommits(true)
+                .isDryRun(false)
                 .addKeyMergeModes(
                     MergeKeyBehavior.of(ContentKey.of("merge", "me"), MergeBehavior.NORMAL),
                     MergeKeyBehavior.of(ContentKey.of("ignore", "this"), MergeBehavior.DROP))
@@ -198,7 +215,9 @@ public class TestModelObjectsSerialization {
                         .add("mergeBehavior", "NORMAL"),
                     Json.noQuotes("key", Json.arr("elements", "ignore", "this"))
                         .add("mergeBehavior", "DROP"))
-                .add("fromHash", HASH)));
+                .add("fromHash", HASH)
+                .addNoQuotes("isFetchAdditionalInfo", null)
+                .addNoQuotes("isDryRun", "false")));
   }
 
   static List<Case> negativeCases() {

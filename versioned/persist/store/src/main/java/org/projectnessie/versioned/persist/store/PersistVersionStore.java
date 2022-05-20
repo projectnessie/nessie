@@ -37,9 +37,11 @@ import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableCommit;
+import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.ImmutableRefLogDetails;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.KeyEntry;
+import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.NamedRef;
@@ -166,47 +168,95 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   }
 
   @Override
-  public void transplant(
+  public MergeResult<Commit<METADATA, CONTENT>> transplant(
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
       MetadataRewriter<METADATA> updateCommitMetadata,
       boolean keepIndividualCommits,
       Map<Key, MergeType> mergeTypes,
-      MergeType defaultMergeType)
+      MergeType defaultMergeType,
+      boolean dryRun,
+      boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    databaseAdapter.transplant(
-        TransplantParams.builder()
-            .toBranch(targetBranch)
-            .expectedHead(referenceHash)
-            .sequenceToTransplant(sequenceToTransplant)
-            .updateCommitMetadata(updateCommitMetadataFunction(updateCommitMetadata))
-            .keepIndividualCommits(keepIndividualCommits)
-            .mergeTypes(mergeTypes)
-            .defaultMergeType(defaultMergeType)
-            .build());
+    MergeResult<CommitLogEntry> adapterMergeResult =
+        databaseAdapter.transplant(
+            TransplantParams.builder()
+                .toBranch(targetBranch)
+                .expectedHead(referenceHash)
+                .sequenceToTransplant(sequenceToTransplant)
+                .updateCommitMetadata(updateCommitMetadataFunction(updateCommitMetadata))
+                .keepIndividualCommits(keepIndividualCommits)
+                .mergeTypes(mergeTypes)
+                .defaultMergeType(defaultMergeType)
+                .isDryRun(dryRun)
+                .build());
+    return storeMergeResult(adapterMergeResult, fetchAdditionalInfo);
   }
 
   @Override
-  public void merge(
+  public MergeResult<Commit<METADATA, CONTENT>> merge(
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
       MetadataRewriter<METADATA> updateCommitMetadata,
       boolean keepIndividualCommits,
       Map<Key, MergeType> mergeTypes,
-      MergeType defaultMergeType)
+      MergeType defaultMergeType,
+      boolean dryRun,
+      boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    databaseAdapter.merge(
-        MergeParams.builder()
-            .toBranch(toBranch)
-            .expectedHead(expectedHash)
-            .mergeFromHash(fromHash)
-            .updateCommitMetadata(updateCommitMetadataFunction(updateCommitMetadata))
-            .keepIndividualCommits(keepIndividualCommits)
-            .mergeTypes(mergeTypes)
-            .defaultMergeType(defaultMergeType)
-            .build());
+    MergeResult<CommitLogEntry> adapterMergeResult =
+        databaseAdapter.merge(
+            MergeParams.builder()
+                .toBranch(toBranch)
+                .expectedHead(expectedHash)
+                .mergeFromHash(fromHash)
+                .updateCommitMetadata(updateCommitMetadataFunction(updateCommitMetadata))
+                .keepIndividualCommits(keepIndividualCommits)
+                .mergeTypes(mergeTypes)
+                .defaultMergeType(defaultMergeType)
+                .isDryRun(dryRun)
+                .build());
+    return storeMergeResult(adapterMergeResult, fetchAdditionalInfo);
+  }
+
+  private MergeResult<Commit<METADATA, CONTENT>> storeMergeResult(
+      MergeResult<CommitLogEntry> adapterMergeResult, boolean fetchAdditionalInfo) {
+    ImmutableMergeResult.Builder<Commit<METADATA, CONTENT>> storeResult =
+        ImmutableMergeResult.<Commit<METADATA, CONTENT>>builder()
+            .targetBranch(adapterMergeResult.getTargetBranch())
+            .effectiveTargetHash(adapterMergeResult.getEffectiveTargetHash())
+            .commonAncestor(adapterMergeResult.getCommonAncestor())
+            .resultantTargetHash(adapterMergeResult.getResultantTargetHash())
+            .expectedHash(adapterMergeResult.getExpectedHash())
+            .wasApplied(adapterMergeResult.wasApplied())
+            .wasSuccessful(adapterMergeResult.wasSuccessful())
+            .details(adapterMergeResult.getDetails());
+
+    BiConsumer<ImmutableCommit.Builder<METADATA, CONTENT>, CommitLogEntry> enhancer =
+        enhancerForCommitLog(fetchAdditionalInfo);
+
+    Function<CommitLogEntry, Commit<METADATA, CONTENT>> mapper =
+        logEntry -> {
+          ImmutableCommit.Builder<METADATA, CONTENT> commit = Commit.builder();
+          commit.hash(logEntry.getHash()).commitMeta(deserializeMetadata(logEntry.getMetadata()));
+          enhancer.accept(commit, logEntry);
+          return commit.build();
+        };
+
+    if (adapterMergeResult.getSourceCommits() != null) {
+      adapterMergeResult.getSourceCommits().stream()
+          .map(mapper)
+          .forEach(storeResult::addSourceCommits);
+    }
+    if (adapterMergeResult.getTargetCommits() != null) {
+      adapterMergeResult.getTargetCommits().stream()
+          .map(mapper)
+          .forEach(storeResult::addTargetCommits);
+    }
+
+    return storeResult.build();
   }
 
   private MetadataRewriter<ByteString> updateCommitMetadataFunction(

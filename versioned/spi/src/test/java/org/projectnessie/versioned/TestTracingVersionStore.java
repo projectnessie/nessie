@@ -89,6 +89,12 @@ class TestTracingVersionStore {
           }
         };
 
+    MergeResult<Object> dummyMergeResult =
+        MergeResult.builder()
+            .effectiveTargetHash(Hash.of("123456"))
+            .targetBranch(BranchName.of("foo"))
+            .build();
+
     // "Declare" test-invocations for all VersionStore functions with their respective outcomes
     // and exceptions.
     Stream<TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>>
@@ -119,7 +125,7 @@ class TestTracingVersionStore {
                     .tag("nessie.version-store.target-branch", "mock-branch")
                     .tag("nessie.version-store.transplants", 0)
                     .tag("nessie.version-store.hash", "Optional.empty")
-                    .method(
+                    .function(
                         vs ->
                             vs.transplant(
                                 BranchName.of("mock-branch"),
@@ -128,13 +134,16 @@ class TestTracingVersionStore {
                                 metadataRewriter,
                                 true,
                                 Collections.emptyMap(),
-                                MergeType.NORMAL)),
+                                MergeType.NORMAL,
+                                false,
+                                false),
+                        () -> dummyMergeResult),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "Merge", refNotFoundAndRefConflictThrows)
                     .tag("nessie.version-store.to-branch", "mock-branch")
                     .tag("nessie.version-store.from-hash", "Hash 42424242")
                     .tag("nessie.version-store.expected-hash", "Optional.empty")
-                    .method(
+                    .function(
                         vs ->
                             vs.merge(
                                 Hash.of("42424242"),
@@ -143,7 +152,10 @@ class TestTracingVersionStore {
                                 metadataRewriter,
                                 false,
                                 null,
-                                null)),
+                                null,
+                                false,
+                                false),
+                        () -> dummyMergeResult),
                 new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>(
                         "Assign", refNotFoundAndRefConflictThrows)
                     .tag("nessie.version-store.ref", "BranchName{name=mock-branch}")

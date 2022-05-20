@@ -107,59 +107,71 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   }
 
   @Override
-  public void transplant(
+  public MergeResult<Commit<METADATA, VALUE>> transplant(
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
       MetadataRewriter<METADATA> updateCommitMetadata,
       boolean keepIndividualCommits,
       Map<Key, MergeType> mergeTypes,
-      MergeType defaultMergeType)
+      MergeType defaultMergeType,
+      boolean dryRun,
+      boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    TracingVersionStore
-        .<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
-            "Transplant",
-            b ->
-                b.withTag(TAG_TARGET_BRANCH, safeRefName(targetBranch))
-                    .withTag(TAG_HASH, safeToString(referenceHash))
-                    .withTag(TAG_TRANSPLANTS, safeSize(sequenceToTransplant)),
-            () ->
-                delegate.transplant(
-                    targetBranch,
-                    referenceHash,
-                    sequenceToTransplant,
-                    updateCommitMetadata,
-                    keepIndividualCommits,
-                    mergeTypes,
-                    defaultMergeType));
+    return TracingVersionStore
+        .<MergeResult<Commit<METADATA, VALUE>>, ReferenceNotFoundException,
+            ReferenceConflictException>
+            callWithTwoExceptions(
+                "Transplant",
+                b ->
+                    b.withTag(TAG_TARGET_BRANCH, safeRefName(targetBranch))
+                        .withTag(TAG_HASH, safeToString(referenceHash))
+                        .withTag(TAG_TRANSPLANTS, safeSize(sequenceToTransplant)),
+                () ->
+                    delegate.transplant(
+                        targetBranch,
+                        referenceHash,
+                        sequenceToTransplant,
+                        updateCommitMetadata,
+                        keepIndividualCommits,
+                        mergeTypes,
+                        defaultMergeType,
+                        dryRun,
+                        fetchAdditionalInfo));
   }
 
   @Override
-  public void merge(
+  public MergeResult<Commit<METADATA, VALUE>> merge(
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
       MetadataRewriter<METADATA> updateCommitMetadata,
       boolean keepIndividualCommits,
       Map<Key, MergeType> mergeTypes,
-      MergeType defaultMergeType)
+      MergeType defaultMergeType,
+      boolean dryRun,
+      boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    TracingVersionStore
-        .<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
-            "Merge",
-            b ->
-                b.withTag(TAG_FROM_HASH, safeToString(fromHash))
-                    .withTag(TAG_TO_BRANCH, safeRefName(toBranch))
-                    .withTag(TAG_EXPECTED_HASH, safeToString(expectedHash)),
-            () ->
-                delegate.merge(
-                    fromHash,
-                    toBranch,
-                    expectedHash,
-                    updateCommitMetadata,
-                    keepIndividualCommits,
-                    mergeTypes,
-                    defaultMergeType));
+    return TracingVersionStore
+        .<MergeResult<Commit<METADATA, VALUE>>, ReferenceNotFoundException,
+            ReferenceConflictException>
+            callWithTwoExceptions(
+                "Merge",
+                b ->
+                    b.withTag(TAG_FROM_HASH, safeToString(fromHash))
+                        .withTag(TAG_TO_BRANCH, safeRefName(toBranch))
+                        .withTag(TAG_EXPECTED_HASH, safeToString(expectedHash)),
+                () ->
+                    delegate.merge(
+                        fromHash,
+                        toBranch,
+                        expectedHash,
+                        updateCommitMetadata,
+                        keepIndividualCommits,
+                        mergeTypes,
+                        defaultMergeType,
+                        dryRun,
+                        fetchAdditionalInfo));
   }
 
   @Override
