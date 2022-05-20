@@ -28,6 +28,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
@@ -129,14 +130,20 @@ public class InmemoryDatabaseAdapter
   }
 
   @Override
-  protected NamedReference doFetchNamedReference(
-      NonTransactionalOperationContext ctx, String refName) {
-    try {
-      ByteString serialized = store.refHeads.get(dbKey(refName));
-      return serialized != null ? NamedReference.parseFrom(serialized) : null;
-    } catch (InvalidProtocolBufferException e) {
-      throw new RuntimeException(e);
-    }
+  protected List<NamedReference> doFetchNamedReference(
+      NonTransactionalOperationContext ctx, List<String> refNames) {
+    return refNames.stream()
+        .map(refName -> store.refHeads.get(dbKey(refName)))
+        .filter(Objects::nonNull)
+        .map(
+            serialized -> {
+              try {
+                return NamedReference.parseFrom(serialized);
+              } catch (InvalidProtocolBufferException e) {
+                throw new RuntimeException(e);
+              }
+            })
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -284,15 +291,19 @@ public class InmemoryDatabaseAdapter
   }
 
   @Override
-  protected ReferenceNames doFetchReferenceNames(
-      NonTransactionalOperationContext ctx, int segment) {
-    try {
-      ByteString s = store.refNames.get(dbKey(segment));
-      return s != null ? ReferenceNames.parseFrom(s) : null;
-
-    } catch (InvalidProtocolBufferException e) {
-      throw new RuntimeException(e);
-    }
+  protected List<ReferenceNames> doFetchReferenceNames(
+      NonTransactionalOperationContext ctx, int segment, int prefetchSegments) {
+    return IntStream.rangeClosed(segment, segment + prefetchSegments)
+        .mapToObj(seg -> store.refNames.get(dbKey(seg)))
+        .map(
+            s -> {
+              try {
+                return s != null ? ReferenceNames.parseFrom(s) : null;
+              } catch (InvalidProtocolBufferException e) {
+                throw new RuntimeException(e);
+              }
+            })
+        .collect(Collectors.toList());
   }
 
   @Override

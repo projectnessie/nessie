@@ -118,6 +118,11 @@ public interface QuarkusVersionStoreAdvancedConfig
   @Override
   int getReferencesSegmentSize();
 
+  @WithName("references.segment.prefetch")
+  @WithDefault("" + DEFAULT_REFERENCES_SEGMENT_PREFETCH)
+  @Override
+  int getReferencesSegmentPrefetch();
+
   @WithName("ref-log.stripes")
   @WithDefault("" + DEFAULT_REF_LOG_STRIPES)
   @Override

@@ -34,6 +34,7 @@ import com.mongodb.client.result.InsertManyResult;
 import com.mongodb.client.result.InsertOneResult;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -429,9 +431,29 @@ public class MongoDatabaseAdapter
   }
 
   @Override
-  protected NamedReference doFetchNamedReference(
-      NonTransactionalOperationContext ctx, String refName) {
-    return loadById(client.getRefHeads(), refName, NamedReference::parseFrom);
+  protected List<NamedReference> doFetchNamedReference(
+      NonTransactionalOperationContext ctx, List<String> refNames) {
+
+    List<Document> idDocs = refNames.stream().map(this::toId).collect(Collectors.toList());
+
+    List<NamedReference> result = new ArrayList<>(refNames.size());
+
+    client
+        .getRefHeads()
+        .find(Filters.in(ID_PROPERTY_NAME, idDocs))
+        .limit(idDocs.size())
+        .map(doc -> doc.get(DATA_PROPERTY_NAME, Binary.class).getData())
+        .map(
+            data -> {
+              try {
+                return NamedReference.parseFrom(data);
+              } catch (InvalidProtocolBufferException e) {
+                throw new RuntimeException(e);
+              }
+            })
+        .forEach(result::add);
+
+    return result;
   }
 
   @Override
@@ -615,16 +637,30 @@ public class MongoDatabaseAdapter
   protected void doCleanUpRefLogWrite(NonTransactionalOperationContext ctx, Hash refLogId) {}
 
   @Override
-  protected ReferenceNames doFetchReferenceNames(
-      NonTransactionalOperationContext ctx, int segment) {
-    Document doc = client.getRefNames().find(Filters.eq(toId(segment))).first();
-    if (doc == null) {
-      return null;
-    }
+  protected List<ReferenceNames> doFetchReferenceNames(
+      NonTransactionalOperationContext ctx, int segment, int prefetchSegments) {
+    List<Document> idDocs =
+        IntStream.rangeClosed(segment, segment + prefetchSegments)
+            .mapToObj(this::toId)
+            .collect(Collectors.toList());
 
-    return ReferenceNames.newBuilder()
-        .addAllRefNames(doc.getList(DATA_PROPERTY_NAME, String.class))
-        .build();
+    ReferenceNames[] result = new ReferenceNames[1 + prefetchSegments];
+
+    client
+        .getRefNames()
+        .find(Filters.in(ID_PROPERTY_NAME, idDocs))
+        .forEach(
+            doc -> {
+              Integer stripe =
+                  doc.get(ID_PROPERTY_NAME, Document.class).get(ID_STRIPE, Integer.class);
+              ReferenceNames refNames =
+                  ReferenceNames.newBuilder()
+                      .addAllRefNames(doc.getList(DATA_PROPERTY_NAME, String.class))
+                      .build();
+              result[stripe - segment] = refNames;
+            });
+
+    return Arrays.asList(result);
   }
 
   @Override

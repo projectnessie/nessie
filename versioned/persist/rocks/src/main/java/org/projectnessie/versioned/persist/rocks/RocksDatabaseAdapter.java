@@ -429,29 +429,53 @@ public class RocksDatabaseAdapter
   }
 
   @Override
-  protected ReferenceNames doFetchReferenceNames(
-      NonTransactionalOperationContext ctx, int segment) {
-    try {
-      byte[] s = db.get(dbInstance.getCfRefNames(), dbKey(segment));
-      return s != null ? ReferenceNames.parseFrom(s) : null;
-    } catch (RocksDBException | InvalidProtocolBufferException e) {
-      throw new RuntimeException(e);
-    }
+  protected List<ReferenceNames> doFetchReferenceNames(
+      NonTransactionalOperationContext ctx, int segment, int prefetchSegments) {
+    return IntStream.rangeClosed(segment, segment + prefetchSegments)
+        .mapToObj(
+            seg -> {
+              try {
+                return db.get(dbInstance.getCfRefNames(), dbKey(seg));
+              } catch (RocksDBException e) {
+                throw new RuntimeException(e);
+              }
+            })
+        .map(
+            s -> {
+              try {
+                return s != null ? ReferenceNames.parseFrom(s) : null;
+              } catch (InvalidProtocolBufferException e) {
+                throw new RuntimeException(e);
+              }
+            })
+        .collect(Collectors.toList());
   }
 
   @Override
-  protected NamedReference doFetchNamedReference(
-      NonTransactionalOperationContext ctx, String refName) {
+  protected List<NamedReference> doFetchNamedReference(
+      NonTransactionalOperationContext ctx, List<String> refNames) {
     Lock lock = dbInstance.getLock().readLock();
     lock.lock();
     try {
-      byte[] bytes = db.get(dbInstance.getCfRefHeads(), dbKey(refName));
-      if (bytes == null) {
-        return null;
-      }
-      return NamedReference.parseFrom(bytes);
-    } catch (RocksDBException | InvalidProtocolBufferException e) {
-      throw new RuntimeException(e);
+      return refNames.stream()
+          .map(
+              refName -> {
+                try {
+                  return db.get(dbInstance.getCfRefHeads(), dbKey(refName));
+                } catch (RocksDBException e) {
+                  throw new RuntimeException(e);
+                }
+              })
+          .filter(Objects::nonNull)
+          .map(
+              serialized -> {
+                try {
+                  return NamedReference.parseFrom(serialized);
+                } catch (InvalidProtocolBufferException e) {
+                  throw new RuntimeException(e);
+                }
+              })
+          .collect(Collectors.toList());
     } finally {
       lock.unlock();
     }

@@ -726,7 +726,7 @@ public abstract class NonTransactionalDatabaseAdapter<
     /** For {@link #create(NamedRef, Hash)}. */
     CREATE_REF(),
     /** For {@link #delete(NamedRef, Optional)}. */
-    DELETE_REF();
+    DELETE_REF()
   }
 
   /**
@@ -1037,17 +1037,23 @@ public abstract class NonTransactionalDatabaseAdapter<
 
   protected final NamedReference fetchNamedReference(
       NonTransactionalOperationContext ctx, String refName) {
-    try (Traced ignore = trace("fetchNamedReference").tag(TAG_REF, refName)) {
-      NamedReference namedRef = doFetchNamedReference(ctx, refName);
-      if (namedRef == null) {
+    List<NamedReference> namedRefs = fetchNamedReference(ctx, Collections.singletonList(refName));
+    return namedRefs.isEmpty() ? null : namedRefs.get(0);
+  }
+
+  protected final List<NamedReference> fetchNamedReference(
+      NonTransactionalOperationContext ctx, List<String> refNames) {
+    try (Traced ignore = trace("fetchNamedReference").tag(TAG_REF, refNames.size())) {
+      List<NamedReference> namedRefs = doFetchNamedReference(ctx, refNames);
+      if (namedRefs.isEmpty()) {
         // Backwards compatibility, fetch named-reference's HEAD from global-pointer and create
         // the reference in the "new" format. We buy backwards-compatibility with an extra read
         // for non-existing branches.
         if (maybeMigrateLegacyNamedReferences(ctx)) {
-          namedRef = doFetchNamedReference(ctx, refName);
+          namedRefs = doFetchNamedReference(ctx, refNames);
         }
       }
-      return namedRef;
+      return namedRefs;
     }
   }
 
@@ -1076,14 +1082,8 @@ public abstract class NonTransactionalDatabaseAdapter<
         Maps.newHashMapWithExpectedSize(pointer.getNamedReferencesCount());
     pointer.getNamedReferencesList().forEach(nr -> namedRefsFromGlobal.put(nr.getName(), nr));
 
-    List<ReferenceNames> refNamesSegments = new ArrayList<>();
-    for (int segment = 0; ; segment++) {
-      ReferenceNames refNames = doFetchReferenceNames(ctx, segment);
-      if (refNames == null) {
-        break;
-      }
-      refNamesSegments.add(refNames);
-    }
+    List<ReferenceNames> refNamesSegments =
+        StreamSupport.stream(fetchReferenceNames(ctx), false).collect(Collectors.toList());
 
     // Add reference names from global pointer to named-references inventory.
 
@@ -1167,39 +1167,30 @@ public abstract class NonTransactionalDatabaseAdapter<
     return true;
   }
 
-  protected abstract NamedReference doFetchNamedReference(
-      NonTransactionalOperationContext ctx, String refName);
+  protected abstract List<NamedReference> doFetchNamedReference(
+      NonTransactionalOperationContext ctx, List<String> refNames);
 
   protected final Stream<NamedReference> fetchNamedReferences(
       NonTransactionalOperationContext ctx) {
 
     maybeMigrateLegacyNamedReferences(ctx);
 
-    AbstractSpliterator<ReferenceNames> split =
-        new AbstractSpliterator<ReferenceNames>(Long.MAX_VALUE, Spliterator.ORDERED) {
-          private int segment;
+    Spliterator<ReferenceNames> split = fetchReferenceNames(ctx);
 
-          @Override
-          public boolean tryAdvance(Consumer<? super ReferenceNames> action) {
-            ReferenceNames referenceNames = fetchReferenceNames(ctx, segment++);
+    Spliterator<String> allNames =
+        StreamSupport.stream(split, false)
+            .map(ReferenceNames::getRefNamesList)
+            .flatMap(List::stream)
+            // The named references splits may contain duplicate names, which is probably very, very
+            // rare, but still possible.
+            .distinct()
+            .spliterator();
 
-            if (referenceNames == null) {
-              return false;
-            }
+    BatchSpliterator<String, NamedReference> batchSpliterator =
+        new BatchSpliterator<>(
+            25, allNames, batch -> fetchNamedReference(ctx, batch).spliterator());
 
-            action.accept(referenceNames);
-            return true;
-          }
-        };
-
-    return StreamSupport.stream(split, false)
-        .map(ReferenceNames::getRefNamesList)
-        .flatMap(List::stream)
-        // The named references splits may contain duplicate names, which is probably very, very
-        // rare, but still possible.
-        .distinct()
-        .map(ref -> fetchNamedReference(ctx, ref))
-        .filter(Objects::nonNull);
+    return StreamSupport.stream(batchSpliterator, false);
   }
 
   protected final boolean createNamedReference(
@@ -1227,17 +1218,17 @@ public abstract class NonTransactionalDatabaseAdapter<
 
   /** Find the segment that has enough room for another {@link NamedReference}. */
   protected int findAvailableNamedReferencesSegment(NonTransactionalOperationContext ctx) {
-    for (int segment = 0; ; segment++) {
-      ReferenceNames refNames = doFetchReferenceNames(ctx, segment);
-      if (refNames == null) {
-        return segment;
-      }
-
+    int segment = 0;
+    for (Iterator<ReferenceNames> iter = Spliterators.iterator(fetchReferenceNames(ctx));
+        iter.hasNext();
+        segment++) {
+      ReferenceNames refNames = iter.next();
       int serSize = refNames.getSerializedSize();
       if (serSize < maxEntitySize(config.getReferencesSegmentSize())) {
         return segment;
       }
     }
+    return segment;
   }
 
   protected abstract void doAddToNamedReferences(
@@ -1263,14 +1254,13 @@ public abstract class NonTransactionalDatabaseAdapter<
       //  currently being dropped may end up having its name *not* present in the list of
       //  references. The reference would still be accessible and deletable though.
 
-      for (int segment = 0; ; segment++) {
-        ReferenceNames refNames = doFetchReferenceNames(ctx, segment);
-        if (refNames == null) {
-          break;
-        }
+      int segment = 0;
+      for (Iterator<ReferenceNames> iter = Spliterators.iterator(fetchReferenceNames(ctx));
+          iter.hasNext();
+          segment++) {
+        ReferenceNames refNames = iter.next();
         if (refNames.getRefNamesList().contains(ref.getName())) {
           doRemoveFromNamedReferences(ctx, ref, segment);
-          break;
         }
       }
 
@@ -1360,15 +1350,43 @@ public abstract class NonTransactionalDatabaseAdapter<
 
   protected abstract void doCleanUpRefLogWrite(NonTransactionalOperationContext ctx, Hash refLogId);
 
-  protected final ReferenceNames fetchReferenceNames(
-      NonTransactionalOperationContext ctx, int segment) {
+  protected final Spliterator<ReferenceNames> fetchReferenceNames(
+      NonTransactionalOperationContext ctx) {
+    return new AbstractSpliterator<ReferenceNames>(Long.MAX_VALUE, Spliterator.ORDERED) {
+      private int segment;
+      private int offset;
+      private List<ReferenceNames> segments = Collections.emptyList();
+
+      @Override
+      public boolean tryAdvance(Consumer<? super ReferenceNames> action) {
+        if (segment >= offset + segments.size()) {
+          offset = segment;
+          segments = fetchReferenceNames(ctx, offset, config.getReferencesSegmentPrefetch());
+        }
+
+        ReferenceNames referenceNames = segments.get(segment - offset);
+
+        if (referenceNames == null) {
+          return false;
+        }
+
+        segment++;
+
+        action.accept(referenceNames);
+        return true;
+      }
+    };
+  }
+
+  protected final List<ReferenceNames> fetchReferenceNames(
+      NonTransactionalOperationContext ctx, int segment, int prefetchSegments) {
     try (Traced ignore = trace("fetchReferenceNames")) {
-      return doFetchReferenceNames(ctx, segment);
+      return doFetchReferenceNames(ctx, segment, prefetchSegments);
     }
   }
 
-  protected abstract ReferenceNames doFetchReferenceNames(
-      NonTransactionalOperationContext ctx, int segment);
+  protected abstract List<ReferenceNames> doFetchReferenceNames(
+      NonTransactionalOperationContext ctx, int segment, int prefetchSegments);
 
   /**
    * Retrieves the current HEAD of the given named reference.

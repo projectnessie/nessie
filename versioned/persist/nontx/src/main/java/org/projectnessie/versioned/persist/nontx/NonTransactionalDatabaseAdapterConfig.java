@@ -21,10 +21,16 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 public interface NonTransactionalDatabaseAdapterConfig extends DatabaseAdapterConfig {
   int DEFAULT_REFERENCES_SEGMENT_SIZE = 250_000;
   int DEFAULT_REF_LOG_STRIPES = 16;
+  int DEFAULT_REFERENCES_SEGMENT_PREFETCH = 1;
 
   @Value.Default
   default int getReferencesSegmentSize() {
     return DEFAULT_REFERENCES_SEGMENT_SIZE;
+  }
+
+  @Value.Default
+  default int getReferencesSegmentPrefetch() {
+    return DEFAULT_REFERENCES_SEGMENT_PREFETCH;
   }
 
   @Value.Default

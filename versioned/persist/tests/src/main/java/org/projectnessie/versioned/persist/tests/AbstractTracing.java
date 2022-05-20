@@ -84,7 +84,11 @@ public abstract class AbstractTracing extends AbstractNestedVersionStore {
                                                             c ->
                                                                 c.add(
                                                                     "DatabaseAdapter.fetchGlobalPointer"))
-                                                        .add("DatabaseAdapter.createNamedReference")
+                                                        .child(
+                                                            "DatabaseAdapter.createNamedReference",
+                                                            c ->
+                                                                c.add(
+                                                                    "DatabaseAdapter.fetchReferenceNames"))
                                                         .add(
                                                             "DatabaseAdapter.fetchRefLogParentsForReference")
                                                         .add("DatabaseAdapter.writeRefLog")

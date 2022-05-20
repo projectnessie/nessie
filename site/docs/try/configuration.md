@@ -88,6 +88,8 @@ The following configurations are advanced configurations to configure how Nessie
 | `nessie.version.store.advanced.tx.batch-size`                   | `20`                | `int`    | Sets the DML batch size, used when writing multiple commits to a branch during a transplant or merge operation or when writing "overflow full key-lists".                                                               |
 | `nessie.version.store.advanced.tx.jdbc.catalog`                 |                     | `String` | Sets the catalog name to use via JDBC.                                                                                                                                                                                  |
 | `nessie.version.store.advanced.tx.jdbc.schema`                  |                     | `String` | Sets the schema name to use via JDBC.                                                                                                                                                                                   |
+| `nessie.version.store.advanced.references.segment.prefetch`     | `1`                 | `int`    | Sets the number of reference name segments to prefetch.                                                                                                                                                                 |
+| `nessie.version.store.advanced.references.segment.size`         | `250_000`           | `int`    | Sets the size of a reference name segments.                                                                                                                                                                             |
 
 ### Authentication settings
 

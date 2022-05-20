@@ -42,6 +42,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.versioned.BackendLimitExceededException;
@@ -432,30 +433,25 @@ public class DynamoDatabaseAdapter
   }
 
   @Override
-  protected ReferenceNames doFetchReferenceNames(
-      NonTransactionalOperationContext ctx, int segment) {
+  protected List<ReferenceNames> doFetchReferenceNames(
+      NonTransactionalOperationContext ctx, int segment, int prefetchSegments) {
 
-    GetItemResponse response =
-        client.client.getItem(
-            b ->
-                b.tableName(TABLE_REF_NAMES)
-                    .key(
-                        singletonMap(
-                            KEY_NAME, AttributeValue.builder().s(keyPrefix + segment).build())));
-    if (!response.hasItem()) {
-      return null;
-    }
+    Map<Integer, ReferenceNames> result =
+        fetchPage(
+            TABLE_REF_NAMES,
+            IntStream.rangeClosed(segment, segment + prefetchSegments)
+                .boxed()
+                .collect(Collectors.toList()),
+            v ->
+                v != null
+                    ? ReferenceNames.newBuilder().addAllRefNames(v.ss()).build()
+                    : ReferenceNames.getDefaultInstance(),
+            Object::toString,
+            Integer::parseInt);
 
-    Map<String, AttributeValue> attributes = response.item();
-
-    ReferenceNames.Builder refNames = ReferenceNames.newBuilder();
-
-    AttributeValue value = attributes.get(VALUE_NAME);
-    if (value != null) {
-      refNames.addAllRefNames(value.ss());
-    }
-
-    return refNames.build();
+    return IntStream.rangeClosed(segment, segment + prefetchSegments)
+        .mapToObj(result::get)
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -486,34 +482,41 @@ public class DynamoDatabaseAdapter
   protected void doRemoveFromNamedReferences(
       NonTransactionalOperationContext ctx, NamedRef ref, int removeFromSegment) {
 
-    for (int segment = 0; ; segment++) {
-      ReferenceNames refNames = doFetchReferenceNames(ctx, segment);
-      if (refNames == null) {
-        break;
-      }
-      if (refNames.getRefNamesList().contains(ref.getName())) {
-        Map<String, AttributeValue> key =
-            singletonMap(KEY_NAME, AttributeValue.builder().s(keyPrefix + segment).build());
-        client.client.updateItem(
-            update ->
-                update
-                    .tableName(TABLE_REF_NAMES)
-                    .key(key)
-                    .attributeUpdates(
-                        singletonMap(
-                            VALUE_NAME,
-                            AttributeValueUpdate.builder()
-                                .action(AttributeAction.DELETE)
-                                .value(b -> b.ss(ref.getName()))
-                                .build())));
-      }
-    }
+    Map<String, AttributeValue> key =
+        singletonMap(KEY_NAME, AttributeValue.builder().s(keyPrefix + removeFromSegment).build());
+    client.client.updateItem(
+        update ->
+            update
+                .tableName(TABLE_REF_NAMES)
+                .key(key)
+                .attributeUpdates(
+                    singletonMap(
+                        VALUE_NAME,
+                        AttributeValueUpdate.builder()
+                            .action(AttributeAction.DELETE)
+                            .value(b -> b.ss(ref.getName()))
+                            .build())));
   }
 
   @Override
-  protected NamedReference doFetchNamedReference(
-      NonTransactionalOperationContext ctx, String refName) {
-    return loadById(TABLE_REF_HEADS, refName, NamedReference::parseFrom);
+  protected List<NamedReference> doFetchNamedReference(
+      NonTransactionalOperationContext ctx, List<String> refNames) {
+
+    Map<String, NamedReference> page =
+        fetchPage(
+            TABLE_REF_HEADS,
+            refNames,
+            av -> {
+              try {
+                return NamedReference.parseFrom(av.b().asByteArray());
+              } catch (InvalidProtocolBufferException e) {
+                throw new RuntimeException(e);
+              }
+            },
+            Function.identity(),
+            Function.identity());
+
+    return new ArrayList<>(page.values());
   }
 
   @Override
@@ -629,9 +632,29 @@ public class DynamoDatabaseAdapter
   }
 
   private <T> Map<Hash, T> fetchPage(String table, List<Hash> hashes, Parser<T> parser) {
+    return fetchPage(
+        table,
+        hashes,
+        v -> {
+          try {
+            return parser.parse(v.b().asByteArray());
+          } catch (InvalidProtocolBufferException e) {
+            throw new RuntimeException(e);
+          }
+        },
+        Hash::asString,
+        Hash::of);
+  }
+
+  private <I, T> Map<I, T> fetchPage(
+      String table,
+      List<I> ids,
+      Function<AttributeValue, T> parser,
+      Function<I, String> keyToString,
+      Function<String, I> stringToKey) {
     List<Map<String, AttributeValue>> keys =
-        hashes.stream()
-            .map(h -> keyPrefix + h.asString())
+        ids.stream()
+            .map(k -> keyPrefix + keyToString.apply(k))
             .map(k -> AttributeValue.builder().s(k).build())
             .map(k -> singletonMap(KEY_NAME, k))
             .collect(Collectors.toList());
@@ -655,14 +678,8 @@ public class DynamoDatabaseAdapter
     return items.stream()
         .collect(
             Collectors.toMap(
-                m -> Hash.of(m.get(KEY_NAME).s().substring(keyPrefix.length())),
-                m -> {
-                  try {
-                    return parser.parse(m.get(VALUE_NAME).b().asByteArray());
-                  } catch (InvalidProtocolBufferException e) {
-                    throw new RuntimeException(e);
-                  }
-                }));
+                m -> stringToKey.apply(m.get(KEY_NAME).s().substring(keyPrefix.length())),
+                m -> parser.apply(m.get(VALUE_NAME))));
   }
 
   private void insert(String table, String key, byte[] data) {
