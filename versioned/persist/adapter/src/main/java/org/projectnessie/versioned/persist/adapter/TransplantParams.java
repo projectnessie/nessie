@@ -29,7 +29,16 @@ public interface TransplantParams extends MetadataRewriteParams {
   /** Commits to cherry-pick onto {@link #getToBranch()}. */
   List<Hash> getSequenceToTransplant();
 
-  static ImmutableTransplantParams.Builder builder() {
+  @SuppressWarnings("override")
+  interface Builder extends MetadataRewriteParams.Builder<Builder> {
+    Builder sequenceToTransplant(Iterable<? extends Hash> elements);
+
+    Builder addSequenceToTransplant(Hash... elements);
+
+    TransplantParams build();
+  }
+
+  static Builder builder() {
     return ImmutableTransplantParams.builder();
   }
 }

@@ -25,7 +25,14 @@ public interface MergeParams extends MetadataRewriteParams {
   /** Commit-hash to start reading commits from. */
   Hash getMergeFromHash();
 
-  static ImmutableMergeParams.Builder builder() {
+  @SuppressWarnings("override")
+  interface Builder extends MetadataRewriteParams.Builder<Builder> {
+    Builder mergeFromHash(Hash mergeFromHash);
+
+    MergeParams build();
+  }
+
+  static Builder builder() {
     return ImmutableMergeParams.builder();
   }
 }

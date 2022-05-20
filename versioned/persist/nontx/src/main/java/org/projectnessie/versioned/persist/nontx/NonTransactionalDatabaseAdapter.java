@@ -39,10 +39,12 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -53,7 +55,9 @@ import javax.annotation.Nullable;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
@@ -188,7 +192,7 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   @Override
-  public Hash merge(MergeParams mergeParams)
+  public MergeResult<CommitLogEntry> merge(MergeParams mergeParams)
       throws ReferenceNotFoundException, ReferenceConflictException {
     // The spec for 'VersionStore.merge' mentions "(...) until we arrive at a common ancestor",
     // but old implementations allowed a merge even if the "merge-from" and "merge-to" have no
@@ -200,39 +204,61 @@ public abstract class NonTransactionalDatabaseAdapter<
     // Note: "beginning-of-time" (aka creating a branch without specifying a "create-from")
     // creates a new commit-tree that is decoupled from other commit-trees.
     try {
-      return casOpLoop(
-          "merge",
-          mergeParams.getToBranch(),
-          CasOpVariant.COMMIT,
-          (ctx, pointer, branchCommits, newKeyLists) -> {
-            Hash currentHead = branchHead(pointer, mergeParams.getToBranch());
+      AtomicReference<ImmutableMergeResult.Builder<CommitLogEntry>> mergeResultHolder =
+          new AtomicReference<>();
 
-            long timeInMicros = commitTimeInMicros();
+      Hash result =
+          casOpLoop(
+              "merge",
+              mergeParams.getToBranch(),
+              CasOpVariant.COMMIT,
+              (ctx, pointer, branchCommits, newKeyLists) -> {
+                ImmutableMergeResult.Builder<CommitLogEntry> mergeResult = MergeResult.builder();
+                mergeResultHolder.set(mergeResult);
 
-            Hash newHead =
-                mergeAttempt(
-                    ctx, timeInMicros, currentHead, branchCommits, newKeyLists, mergeParams);
+                Hash currentHead = branchHead(pointer, mergeParams.getToBranch());
 
-            if (newHead.equals(currentHead)) {
-              // nothing done
-              return pointer;
-            }
+                long timeInMicros = commitTimeInMicros();
 
-            RefLogEntry newRefLog =
-                writeRefLogEntry(
-                    ctx,
-                    pointer,
-                    mergeParams.getToBranch().getName(),
-                    RefType.Branch,
-                    newHead,
-                    RefLogEntry.Operation.MERGE,
-                    timeInMicros,
-                    Collections.singletonList(mergeParams.getMergeFromHash()));
+                Hash newHead =
+                    mergeAttempt(
+                        ctx,
+                        timeInMicros,
+                        currentHead,
+                        branchCommits,
+                        newKeyLists,
+                        mergeParams,
+                        mergeResult);
 
-            // Return hash of last commit (toHead) added to 'targetBranch' (via the casOpLoop)
-            return updateGlobalStatePointer(mergeParams.getToBranch(), pointer, newHead, newRefLog);
-          },
-          () -> mergeConflictMessage("Retry-failure", mergeParams));
+                if (newHead.equals(currentHead)) {
+                  // nothing done
+                  return pointer;
+                }
+
+                RefLogEntry newRefLog =
+                    writeRefLogEntry(
+                        ctx,
+                        pointer,
+                        mergeParams.getToBranch().getName(),
+                        RefType.Branch,
+                        newHead,
+                        RefLogEntry.Operation.MERGE,
+                        timeInMicros,
+                        Collections.singletonList(mergeParams.getMergeFromHash()));
+
+                // Return hash of last commit (toHead) added to 'targetBranch' (via the casOpLoop)
+                return updateGlobalStatePointer(
+                    mergeParams.getToBranch(), pointer, newHead, newRefLog);
+              },
+              () -> mergeConflictMessage("Retry-failure", mergeParams));
+
+      ImmutableMergeResult.Builder<CommitLogEntry> mergeResult =
+          Objects.requireNonNull(
+              mergeResultHolder.get(), "Internal error, merge-result builder not set.");
+      if (!mergeParams.isDryRun()) {
+        mergeResult.wasApplied(true);
+      }
+      return mergeResult.resultantTargetHash(result).build();
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
       throw e;
     } catch (Exception e) {
@@ -242,44 +268,65 @@ public abstract class NonTransactionalDatabaseAdapter<
 
   @SuppressWarnings("RedundantThrows")
   @Override
-  public Hash transplant(TransplantParams transplantParams)
+  public MergeResult<CommitLogEntry> transplant(TransplantParams transplantParams)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
-      return casOpLoop(
-          "transplant",
-          transplantParams.getToBranch(),
-          CasOpVariant.COMMIT,
-          (ctx, pointer, branchCommits, newKeyLists) -> {
-            Hash currentHead = branchHead(pointer, transplantParams.getToBranch());
+      AtomicReference<ImmutableMergeResult.Builder<CommitLogEntry>> mergeResultHolder =
+          new AtomicReference<>();
 
-            long timeInMicros = commitTimeInMicros();
+      Hash result =
+          casOpLoop(
+              "transplant",
+              transplantParams.getToBranch(),
+              CasOpVariant.COMMIT,
+              (ctx, pointer, branchCommits, newKeyLists) -> {
+                ImmutableMergeResult.Builder<CommitLogEntry> mergeResult = MergeResult.builder();
+                mergeResultHolder.set(mergeResult);
 
-            Hash newHead =
-                transplantAttempt(
-                    ctx, timeInMicros, currentHead, branchCommits, newKeyLists, transplantParams);
+                Hash currentHead = branchHead(pointer, transplantParams.getToBranch());
 
-            if (newHead.equals(currentHead)) {
-              // nothing done
-              return pointer;
-            }
+                long timeInMicros = commitTimeInMicros();
 
-            RefLogEntry newRefLog =
-                writeRefLogEntry(
-                    ctx,
-                    pointer,
-                    transplantParams.getToBranch().getName(),
-                    RefType.Branch,
-                    newHead,
-                    RefLogEntry.Operation.TRANSPLANT,
-                    timeInMicros,
-                    transplantParams.getSequenceToTransplant());
+                Hash newHead =
+                    transplantAttempt(
+                        ctx,
+                        timeInMicros,
+                        currentHead,
+                        branchCommits,
+                        newKeyLists,
+                        transplantParams,
+                        mergeResult);
 
-            // Return hash of last commit (targetHead) added to 'targetBranch' (via the casOpLoop)
-            return updateGlobalStatePointer(
-                transplantParams.getToBranch(), pointer, newHead, newRefLog);
-          },
-          () -> transplantConflictMessage("Retry-failure", transplantParams));
+                if (newHead.equals(currentHead)) {
+                  // nothing done
+                  return pointer;
+                }
 
+                RefLogEntry newRefLog =
+                    writeRefLogEntry(
+                        ctx,
+                        pointer,
+                        transplantParams.getToBranch().getName(),
+                        RefType.Branch,
+                        newHead,
+                        RefLogEntry.Operation.TRANSPLANT,
+                        timeInMicros,
+                        transplantParams.getSequenceToTransplant());
+
+                // Return hash of last commit (targetHead) added to 'targetBranch' (via the
+                // casOpLoop)
+                return updateGlobalStatePointer(
+                    transplantParams.getToBranch(), pointer, newHead, newRefLog);
+              },
+              () -> transplantConflictMessage("Retry-failure", transplantParams));
+
+      ImmutableMergeResult.Builder<CommitLogEntry> mergeResult =
+          Objects.requireNonNull(
+              mergeResultHolder.get(), "Internal error, merge-result builder not set.");
+      if (!transplantParams.isDryRun()) {
+        mergeResult.wasApplied(true);
+      }
+      return mergeResult.resultantTargetHash(result).build();
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
       throw e;
     } catch (Exception e) {

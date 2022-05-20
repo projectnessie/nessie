@@ -33,10 +33,30 @@ public interface MetadataRewriteParams extends ToBranchParams {
   Map<Key, MergeType> getMergeTypes();
 
   @Value.Default
+  default boolean isDryRun() {
+    return false;
+  }
+
+  @Value.Default
   default MergeType getDefaultMergeType() {
     return MergeType.NORMAL;
   }
 
   /** Function to rewrite the commit-metadata. */
   MetadataRewriter<ByteString> getUpdateCommitMetadata();
+
+  @SuppressWarnings({"override", "UnusedReturnValue"})
+  interface Builder<B> extends ToBranchParams.Builder<B> {
+    B keepIndividualCommits(boolean keepIndividualCommits);
+
+    B defaultMergeType(MergeType defaultMergeType);
+
+    B putMergeTypes(Key key, MergeType value);
+
+    B mergeTypes(Map<? extends Key, ? extends MergeType> entries);
+
+    B isDryRun(boolean dryRun);
+
+    B updateCommitMetadata(MetadataRewriter<ByteString> updateCommitMetadata);
+  }
 }

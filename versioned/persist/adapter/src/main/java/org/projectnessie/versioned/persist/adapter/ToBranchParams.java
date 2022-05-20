@@ -34,4 +34,11 @@ public interface ToBranchParams {
   default Optional<Hash> getExpectedHead() {
     return Optional.empty();
   }
+
+  @SuppressWarnings({"override", "UnusedReturnValue"})
+  interface Builder<B> {
+    B toBranch(BranchName toBranch);
+
+    B expectedHead(Optional<Hash> expectedHead);
+  }
 }
