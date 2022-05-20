@@ -31,12 +31,12 @@ public interface TransplantParams extends MetadataRewriteParams {
 
   @SuppressWarnings("override")
   interface Builder extends MetadataRewriteParams.Builder<ImmutableTransplantParams.Builder> {
-    ImmutableTransplantParams.Builder sequenceToTransplant(Iterable<? extends Hash> elements);
+    Builder sequenceToTransplant(Iterable<? extends Hash> elements);
 
     TransplantParams build();
   }
 
-  static ImmutableTransplantParams.Builder builder() {
+  static Builder builder() {
     return ImmutableTransplantParams.builder();
   }
 }

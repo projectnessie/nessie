@@ -27,12 +27,12 @@ public interface MergeParams extends MetadataRewriteParams {
 
   @SuppressWarnings("override")
   interface Builder extends MetadataRewriteParams.Builder<ImmutableMergeParams.Builder> {
-    ImmutableMergeParams.Builder mergeFromHash(Hash mergeFromHash);
+    Builder mergeFromHash(Hash mergeFromHash);
 
     MergeParams build();
   }
 
-  static ImmutableMergeParams.Builder builder() {
+  static Builder builder() {
     return ImmutableMergeParams.builder();
   }
 }
