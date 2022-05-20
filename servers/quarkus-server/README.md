@@ -6,7 +6,7 @@ It is meant to be used for testing purposes only.
 
 1. Start a local Keycloak server
   ```shell
-  docker run -p 8080:8080 -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin --name keycloak quay.io/keycloak/keycloak:latest
+  docker run -p 8080:8080 -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin --name keycloak quay.io/keycloak/keycloak:latest start-dev
   ```
 2. Log into Keycloak Admin Console at http://localhost:8080/auth/
 3. Create user `nessie` with password `nessie` (under the `master` realm)

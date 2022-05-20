@@ -12,7 +12,7 @@ First, start a Keycloak container using its latest Docker image.
 
 ```shell
 docker run -p 8080:8080 -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin \
-  --name keycloak quay.io/keycloak/keycloak:latest
+  --name keycloak quay.io/keycloak/keycloak:latest start-dev
 ```
 
 Note the `admin` username and password. Those values will be required to log into the Keycloak Administration Console
