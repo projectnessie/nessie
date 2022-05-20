@@ -344,7 +344,7 @@ public abstract class AbstractMergeTransplant {
       targetHead = databaseAdapter.hashOnReference(target, Optional.empty());
 
       assertThat(mergeResult)
-          .isEqualTo(expectedMergeResult.resultantTargetHash(targetHead).isApplied(true).build());
+          .isEqualTo(expectedMergeResult.resultantTargetHash(targetHead).wasApplied(true).build());
 
       // Briefly check commit log
 
@@ -470,7 +470,7 @@ public abstract class AbstractMergeTransplant {
       List<CommitLogEntry> expectedSourceCommits) {
     ImmutableMergeResult.Builder<CommitLogEntry> expectedMergeResult =
         MergeResult.<CommitLogEntry>builder()
-            .isSuccessful(true)
+            .wasSuccessful(true)
             .targetBranch(targetBranch)
             .effectiveTargetHash(mainHead)
             .expectedHash(null)

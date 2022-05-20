@@ -25,13 +25,13 @@ public interface MergeResult<COMMIT> {
 
   /** Indicates whether the merge or transplant operation has been applied. */
   @Value.Default
-  default boolean isApplied() {
+  default boolean wasApplied() {
     return false;
   }
 
   /** Indicates whether the merge or transplant operation was successful without any conflicts. */
   @Value.Default
-  default boolean isSuccessful() {
+  default boolean wasSuccessful() {
     return false;
   }
 

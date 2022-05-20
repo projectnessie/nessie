@@ -26,7 +26,7 @@ public interface MergeParams extends MetadataRewriteParams {
   Hash getMergeFromHash();
 
   @SuppressWarnings("override")
-  interface Builder extends MetadataRewriteParams.Builder<ImmutableMergeParams.Builder> {
+  interface Builder extends MetadataRewriteParams.Builder<Builder> {
     Builder mergeFromHash(Hash mergeFromHash);
 
     MergeParams build();

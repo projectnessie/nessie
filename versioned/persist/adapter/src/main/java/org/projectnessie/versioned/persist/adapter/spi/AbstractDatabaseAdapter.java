@@ -490,7 +490,7 @@ public abstract class AbstractDatabaseAdapter<
         hasKeyCollisions(ctx, toHead, keysTouchedOnTarget, commitsToMergeChronological, keyDetails);
     keyDetailsMap.forEach((key, details) -> mergeResult.putDetails(key, details.build()));
 
-    mergeResult.isSuccessful(!hasCollisions);
+    mergeResult.wasSuccessful(!hasCollisions);
 
     if (hasCollisions && !params.isDryRun()) {
       MergeResult<CommitLogEntry> result = mergeResult.resultantTargetHash(toHead).build();

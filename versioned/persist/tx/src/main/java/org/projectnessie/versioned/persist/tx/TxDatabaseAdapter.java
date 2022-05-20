@@ -285,7 +285,7 @@ public abstract class TxDatabaseAdapter
           Objects.requireNonNull(
               mergeResultHolder.get(), "Internal error, merge-result builder not set.");
       if (!mergeParams.isDryRun()) {
-        mergeResult.isApplied(true);
+        mergeResult.wasApplied(true);
       }
       return mergeResult.resultantTargetHash(result).build();
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
@@ -345,7 +345,7 @@ public abstract class TxDatabaseAdapter
           Objects.requireNonNull(
               mergeResultHolder.get(), "Internal error, merge-result builder not set.");
       if (!transplantParams.isDryRun()) {
-        mergeResult.isApplied(true);
+        mergeResult.wasApplied(true);
       }
       return mergeResult.resultantTargetHash(result).build();
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {

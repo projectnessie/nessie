@@ -53,6 +53,8 @@ public interface MetadataRewriteParams extends ToBranchParams {
 
     B putMergeTypes(Key key, MergeType value);
 
+    B mergeTypes(Map<? extends Key, ? extends MergeType> entries);
+
     B isDryRun(boolean dryRun);
 
     B updateCommitMetadata(MetadataRewriter<ByteString> updateCommitMetadata);

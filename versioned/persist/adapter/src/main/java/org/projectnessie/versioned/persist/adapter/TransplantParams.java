@@ -18,6 +18,7 @@ package org.projectnessie.versioned.persist.adapter;
 import java.util.List;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.persist.adapter.ImmutableTransplantParams.Builder;
 
 /**
  * API helper method to encapsulate parameters for {@link
@@ -30,8 +31,10 @@ public interface TransplantParams extends MetadataRewriteParams {
   List<Hash> getSequenceToTransplant();
 
   @SuppressWarnings("override")
-  interface Builder extends MetadataRewriteParams.Builder<ImmutableTransplantParams.Builder> {
+  interface Builder extends MetadataRewriteParams.Builder<Builder> {
     Builder sequenceToTransplant(Iterable<? extends Hash> elements);
+
+    Builder addSequenceToTransplant(Hash... elements);
 
     TransplantParams build();
   }
