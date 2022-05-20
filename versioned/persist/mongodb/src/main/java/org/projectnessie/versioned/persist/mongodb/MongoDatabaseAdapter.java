@@ -164,11 +164,11 @@ public class MongoDatabaseAdapter
     return doc;
   }
 
-  private Document toDoc(int shard, RefLogParents pointer) {
+  private Document toDoc(int stripe, RefLogParents pointer) {
     Document doc = new Document();
-    doc.put(ID_PROPERTY_NAME, toId(shard));
+    doc.put(ID_PROPERTY_NAME, toId(stripe));
     doc.put(DATA_PROPERTY_NAME, pointer.toByteArray());
-    doc.put(LOCK_ID_PROPERTY_NAME, pointer.getLockId().toByteArray());
+    doc.put(LOCK_ID_PROPERTY_NAME, pointer.getVersion().toByteArray());
     return doc;
   }
 
@@ -359,14 +359,13 @@ public class MongoDatabaseAdapter
     if (expected != null) {
       byte[] expectedBytes = toProto(expected).toByteArray();
 
-      UpdateResult result =
-          client
-              .getRepoDesc()
-              .replaceOne(
+      return verifySuccessfulUpdate(
+          client.getRepoDesc(),
+          coll ->
+              coll.replaceOne(
                   Filters.and(
                       Filters.eq(globalPointerKey), Filters.eq(DATA_PROPERTY_NAME, expectedBytes)),
-                  doc);
-      return verifySuccessfulUpdate(result, client.getRepoDesc());
+                  doc));
     } else {
       try {
         return client.getRepoDesc().insertOne(doc).wasAcknowledged();
@@ -398,21 +397,19 @@ public class MongoDatabaseAdapter
   protected boolean doRefLogParentsCas(
       NonTransactionalOperationContext ctx,
       int stripe,
-      RefLogParents refLogParents,
-      RefLogParents refLogEntry) {
-    Document doc = toDoc(stripe, refLogEntry);
+      RefLogParents previousEntry,
+      RefLogParents newEntry) {
+    Document doc = toDoc(stripe, newEntry);
 
-    if (refLogParents != null) {
-      byte[] expectedLockId = refLogParents.getLockId().toByteArray();
-      UpdateResult result =
-          client
-              .getRefLogHeads()
-              .replaceOne(
+    if (previousEntry != null) {
+      byte[] expectedLockId = previousEntry.getVersion().toByteArray();
+      return verifySuccessfulUpdate(
+          client.getRefLogHeads(),
+          coll ->
+              coll.replaceOne(
                   Filters.and(
                       Filters.eq(toId(stripe)), Filters.eq(LOCK_ID_PROPERTY_NAME, expectedLockId)),
-                  doc);
-
-      return verifySuccessfulUpdate(result, client.getRefLogHeads());
+                  doc));
     } else {
       try {
         verifyAcknowledged(client.getRefLogHeads().insertOne(doc), client.getRefLogHeads());
@@ -510,14 +507,13 @@ public class MongoDatabaseAdapter
                 .setRef(refHead.toBuilder().setHash(newHead.asBytes()))
                 .build());
     return verifySuccessfulUpdate(
-        client
-            .getRefHeads()
-            .updateOne(
+        client.getRefHeads(),
+        coll ->
+            coll.updateOne(
                 Filters.and(
                     Filters.eq(toId(ref.getName())),
                     Filters.eq(ID_HASH_NAME, refHead.getHash().toByteArray())),
-                new Document("$set", newDoc)),
-        client.getRefNames());
+                new Document("$set", newDoc)));
   }
 
   @Override
@@ -598,16 +594,14 @@ public class MongoDatabaseAdapter
     Document doc = toDoc(newPointer);
     byte[] expectedGlobalId = expected.getGlobalId().toByteArray();
 
-    UpdateResult result =
-        client
-            .getGlobalPointers()
-            .replaceOne(
+    return verifySuccessfulUpdate(
+        client.getGlobalPointers(),
+        coll ->
+            coll.replaceOne(
                 Filters.and(
                     Filters.eq(globalPointerKey),
                     Filters.eq(GLOBAL_ID_PROPERTY_NAME, expectedGlobalId)),
-                doc);
-
-    return verifySuccessfulUpdate(result, client.getGlobalPointers());
+                doc));
   }
 
   @Override
@@ -682,7 +676,9 @@ public class MongoDatabaseAdapter
   }
 
   private static boolean verifySuccessfulUpdate(
-      UpdateResult result, MongoCollection<Document> mongoCollection) {
+      MongoCollection<Document> mongoCollection,
+      Function<MongoCollection<Document>, UpdateResult> updater) {
+    UpdateResult result = updater.apply(mongoCollection);
     verifyAcknowledged(result, mongoCollection);
     return result.getMatchedCount() == 1 && result.getModifiedCount() == 1;
   }

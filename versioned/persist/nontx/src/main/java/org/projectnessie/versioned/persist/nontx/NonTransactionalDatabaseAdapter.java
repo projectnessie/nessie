@@ -490,14 +490,14 @@ public abstract class NonTransactionalDatabaseAdapter<
               stripe,
               RefLogParents.newBuilder()
                   .addRefLogParentsInclHead(NO_ANCESTOR.asBytes())
-                  .setLockId(randomHash().asBytes())
+                  .setVersion(randomHash().asBytes())
                   .build());
         }
 
         RefLogParents refLogParents =
             RefLogParents.newBuilder()
                 .addRefLogParentsInclHead(NO_ANCESTOR.asBytes())
-                .setLockId(randomHash().asBytes())
+                .setVersion(randomHash().asBytes())
                 .build();
 
         newRefLog =
@@ -831,7 +831,7 @@ public abstract class NonTransactionalDatabaseAdapter<
           RefLogParents.Builder newRefLogParents =
               RefLogParents.newBuilder()
                   .addRefLogParentsInclHead(newRefLog.getRefLogId())
-                  .setLockId(randomHash().asBytes());
+                  .setVersion(randomHash().asBytes());
           newRefLog.getParentsList().stream()
               .limit(config.getParentsPerRefLogEntry() - 1)
               .forEach(newRefLogParents::addRefLogParentsInclHead);
@@ -1022,18 +1022,18 @@ public abstract class NonTransactionalDatabaseAdapter<
   protected final boolean refLogParentsCas(
       NonTransactionalOperationContext ctx,
       int stripe,
-      RefLogParents refLogParents,
-      RefLogParents newRefLogParents) {
+      RefLogParents previousEntry,
+      RefLogParents newEntry) {
     try (Traced ignore = trace("refLogParentsCas")) {
-      return doRefLogParentsCas(ctx, stripe, refLogParents, newRefLogParents);
+      return doRefLogParentsCas(ctx, stripe, previousEntry, newEntry);
     }
   }
 
   protected abstract boolean doRefLogParentsCas(
       NonTransactionalOperationContext ctx,
       int stripe,
-      RefLogParents refLogParents,
-      RefLogParents refLogEntry);
+      RefLogParents previousEntry,
+      RefLogParents newEntry);
 
   protected final RefLogParents fetchRefLogParents(
       NonTransactionalOperationContext ctx, int stripe) {
@@ -1043,7 +1043,7 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   protected final int refLogStripeForName(String refName) {
-    return Math.abs(refName.hashCode() % config.getRefLogStripes());
+    return Math.abs(refName.hashCode()) % config.getRefLogStripes();
   }
 
   protected abstract RefLogParents doFetchRefLogParents(

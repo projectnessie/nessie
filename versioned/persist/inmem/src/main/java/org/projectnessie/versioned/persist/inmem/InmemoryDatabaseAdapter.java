@@ -117,11 +117,11 @@ public class InmemoryDatabaseAdapter
   protected boolean doRefLogParentsCas(
       NonTransactionalOperationContext ctx,
       int stripe,
-      RefLogParents refLogParents,
-      RefLogParents newRefLogParents) {
-    ByteString update = newRefLogParents.toByteString();
-    if (refLogParents != null) {
-      ByteString expected = refLogParents.toByteString();
+      RefLogParents previousEntry,
+      RefLogParents newEntry) {
+    ByteString update = newEntry.toByteString();
+    if (previousEntry != null) {
+      ByteString expected = previousEntry.toByteString();
       return store.refLogHeads.replace(dbKey(stripe), expected, update);
     } else {
       return store.refLogHeads.putIfAbsent(dbKey(stripe), update) == null;

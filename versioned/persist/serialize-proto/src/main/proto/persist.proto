@@ -119,7 +119,8 @@ message GlobalStatePointer {
 
 message RefLogParents {
   repeated bytes ref_log_parents_incl_head = 1;
-  optional bytes lock_id = 2;
+  // 'version' is used for optimistic locking / CAS, it's a random value
+  optional bytes version = 2;
 }
 
 message ReferenceNames {

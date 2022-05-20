@@ -388,21 +388,21 @@ public class RocksDatabaseAdapter
   protected boolean doRefLogParentsCas(
       NonTransactionalOperationContext ctx,
       int stripe,
-      RefLogParents refLogParents,
-      RefLogParents refLogEntry) {
+      RefLogParents previousEntry,
+      RefLogParents newEntry) {
     Lock lock = dbInstance.getLock().writeLock();
     lock.lock();
     try {
       byte[] bytes = db.get(dbInstance.getCfRefLogHeads(), dbKey(stripe));
       RefLogParents parents = bytes != null ? RefLogParents.parseFrom(bytes) : null;
-      if (refLogParents != null) {
-        if (!refLogParents.equals(parents)) {
+      if (previousEntry != null) {
+        if (!previousEntry.equals(parents)) {
           return false;
         }
       } else if (parents != null) {
         return false;
       }
-      db.put(dbInstance.getCfRefLogHeads(), dbKey(stripe), refLogEntry.toByteArray());
+      db.put(dbInstance.getCfRefLogHeads(), dbKey(stripe), newEntry.toByteArray());
       return true;
     } catch (InvalidProtocolBufferException | RocksDBException e) {
       throw new RuntimeException(e);

@@ -390,21 +390,21 @@ public class DynamoDatabaseAdapter
   protected boolean doRefLogParentsCas(
       NonTransactionalOperationContext ctx,
       int stripe,
-      RefLogParents refLogParents,
-      RefLogParents refLogEntry) {
+      RefLogParents previousEntry,
+      RefLogParents newEntry) {
     Map<String, ExpectedAttributeValue> expected =
-        refLogParents != null
+        previousEntry != null
             ? singletonMap(
                 VALUE_NAME,
                 ExpectedAttributeValue.builder()
                     .value(
                         AttributeValue.builder()
-                            .b(SdkBytes.fromByteArray(refLogParents.toByteArray()))
+                            .b(SdkBytes.fromByteArray(previousEntry.toByteArray()))
                             .build())
                     .build())
             : singletonMap(KEY_NAME, ExpectedAttributeValue.builder().exists(false).build());
     AttributeValue newPointerBytes =
-        AttributeValue.builder().b(SdkBytes.fromByteArray(refLogEntry.toByteArray())).build();
+        AttributeValue.builder().b(SdkBytes.fromByteArray(newEntry.toByteArray())).build();
     try {
       client.client.updateItem(
           b ->
