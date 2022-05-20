@@ -15,7 +15,6 @@
  */
 package org.projectnessie.model;
 
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,14 +48,8 @@ public class TestModelObjectsSerialization {
   @MethodSource("goodCases")
   void testGoodSerDeCases(Case goodCase) throws IOException {
     String json = MAPPER.writeValueAsString(goodCase.obj);
-    JsonNode j;
-    try (JsonParser parser = MAPPER.createParser(json)) {
-      j = parser.readValueAs(JsonNode.class);
-    }
-    JsonNode d;
-    try (JsonParser parser = MAPPER.createParser(goodCase.deserializedJson)) {
-      d = parser.readValueAs(JsonNode.class);
-    }
+    JsonNode j = MAPPER.readValue(json, JsonNode.class);
+    JsonNode d = MAPPER.readValue(goodCase.deserializedJson, JsonNode.class);
     Assertions.assertThat(j).isEqualTo(d);
     Object deserialized = MAPPER.readValue(json, goodCase.deserializeAs);
     Assertions.assertThat(deserialized).isEqualTo(goodCase.obj);

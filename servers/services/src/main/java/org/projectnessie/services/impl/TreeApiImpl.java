@@ -390,21 +390,17 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
         transplants = s.collect(Collectors.toList());
       }
 
-      boolean keepIndividual = keepIndividualCommits(transplant);
-      Boolean dryRun = transplant.isDryRun();
-      Boolean fetchAdditionalInfo = transplant.isFetchAdditionalInfo();
-
       getStore()
           .transplant(
               BranchName.of(branchName),
               toHash(hash, true),
               transplants,
               commitMetaUpdate(),
-              keepIndividual,
+              Boolean.TRUE.equals(transplant.keepIndividualCommits()),
               keyMergeTypes(transplant),
               defaultMergeType(transplant),
-              dryRun != null && dryRun,
-              fetchAdditionalInfo != null && fetchAdditionalInfo);
+              Boolean.TRUE.equals(transplant.isDryRun()),
+              Boolean.TRUE.equals(transplant.isFetchAdditionalInfo()));
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -416,31 +412,22 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   public void mergeRefIntoBranch(String branchName, String hash, Merge merge)
       throws NessieNotFoundException, NessieConflictException {
     try {
-      boolean keepIndividual = keepIndividualCommits(merge);
-      Boolean dryRun = merge.isDryRun();
-      Boolean fetchAdditionalInfo = merge.isFetchAdditionalInfo();
-
       getStore()
           .merge(
               toHash(merge.getFromRefName(), merge.getFromHash()),
               BranchName.of(branchName),
               toHash(hash, true),
               commitMetaUpdate(),
-              keepIndividual,
+              Boolean.TRUE.equals(merge.keepIndividualCommits()),
               keyMergeTypes(merge),
               defaultMergeType(merge),
-              dryRun != null && dryRun,
-              fetchAdditionalInfo != null && fetchAdditionalInfo);
+              Boolean.TRUE.equals(merge.isDryRun()),
+              Boolean.TRUE.equals(merge.isFetchAdditionalInfo()));
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
       throw new NessieReferenceConflictException(e.getMessage(), e);
     }
-  }
-
-  private static boolean keepIndividualCommits(BaseMergeTransplant params) {
-    Boolean keep = params.keepIndividualCommits();
-    return keep != null && keep;
   }
 
   private static Map<Key, MergeType> keyMergeTypes(BaseMergeTransplant params) {
