@@ -28,18 +28,16 @@ public interface MergeResult<COMMIT> {
   default boolean isApplied() {
     return false;
   }
-  ;
 
   /** Indicates whether the merge or transplant operation was successful without any conflicts. */
   @Value.Default
   default boolean isSuccessful() {
     return false;
   }
-  ;
 
-  /** Current commit-ID of the target branch. */
+  /** Commit-ID of the target branch after the merge/transplant operation. */
   @Nullable
-  Hash getCurrentTargetHash();
+  Hash getResultantTargetHash();
 
   /** Commit-ID of the identified common ancestor, only returned for a merge operation. */
   @Nullable
@@ -49,7 +47,7 @@ public interface MergeResult<COMMIT> {
   BranchName getTargetBranch();
 
   /** Head commit-ID of the target branch identified by the merge or transplant operation. */
-  Hash getTargetHash();
+  Hash getEffectiveTargetHash();
 
   /** The expected commit-ID of the target branch, as specified by the caller. */
   @Nullable
@@ -59,8 +57,8 @@ public interface MergeResult<COMMIT> {
   List<COMMIT> getSourceCommits();
 
   /**
-   * List of commit-IDs between {@link #getExpectedHash()} and {@link #getTargetHash()}, if the
-   * expected hash was provided.
+   * List of commit-IDs between {@link #getExpectedHash()} and {@link #getEffectiveTargetHash()}, if
+   * the expected hash was provided.
    */
   @Nullable
   List<COMMIT> getTargetCommits();

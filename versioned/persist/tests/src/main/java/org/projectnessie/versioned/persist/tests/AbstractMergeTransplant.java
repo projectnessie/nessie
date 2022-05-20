@@ -168,7 +168,7 @@ public abstract class AbstractMergeTransplant {
                     .updateCommitMetadata(metadataUpdater)
                     .keepIndividualCommits(keepIndividualCommits)
                     .build())
-            .getCurrentTargetHash();
+            .getResultantTargetHash();
     int offset = unifier.get();
 
     checkTransplantedCommits(keepIndividualCommits, commits, transplanted, offset);
@@ -183,7 +183,7 @@ public abstract class AbstractMergeTransplant {
                     .updateCommitMetadata(metadataUpdater)
                     .keepIndividualCommits(keepIndividualCommits)
                     .build())
-            .getCurrentTargetHash();
+            .getResultantTargetHash();
     offset = unifier.get();
 
     checkTransplantedCommits(keepIndividualCommits, commits, transplanted, offset);
@@ -333,7 +333,7 @@ public abstract class AbstractMergeTransplant {
                   .expectedHead(Optional.empty())
                   .isDryRun(true));
 
-      assertThat(mergeResult).isEqualTo(expectedMergeResult.currentTargetHash(mainHead).build());
+      assertThat(mergeResult).isEqualTo(expectedMergeResult.resultantTargetHash(mainHead).build());
 
       // Merge/transplant
 
@@ -344,7 +344,7 @@ public abstract class AbstractMergeTransplant {
       targetHead = databaseAdapter.hashOnReference(target, Optional.empty());
 
       assertThat(mergeResult)
-          .isEqualTo(expectedMergeResult.currentTargetHash(targetHead).isApplied(true).build());
+          .isEqualTo(expectedMergeResult.resultantTargetHash(targetHead).isApplied(true).build());
 
       // Briefly check commit log
 
@@ -434,9 +434,9 @@ public abstract class AbstractMergeTransplant {
 
     ImmutableMergeResult.Builder<CommitLogEntry> expectedMergeResult =
         MergeResult.<CommitLogEntry>builder()
-            .currentTargetHash(conflictHead)
+            .resultantTargetHash(conflictHead)
             .targetBranch(conflict)
-            .targetHash(conflictHead)
+            .effectiveTargetHash(conflictHead)
             .expectedHash(conflictBase)
             .commonAncestor(merge ? conflictBase : null)
             .addAllSourceCommits(expectedSourceCommits)
@@ -472,7 +472,7 @@ public abstract class AbstractMergeTransplant {
         MergeResult.<CommitLogEntry>builder()
             .isSuccessful(true)
             .targetBranch(targetBranch)
-            .targetHash(mainHead)
+            .effectiveTargetHash(mainHead)
             .expectedHash(null)
             .commonAncestor(merge ? mainHead : null)
             .addAllSourceCommits(expectedSourceCommits);

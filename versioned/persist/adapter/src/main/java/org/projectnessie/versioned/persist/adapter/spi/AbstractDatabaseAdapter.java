@@ -78,6 +78,7 @@ import org.projectnessie.versioned.MergeConflictException;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MergeResult.ConflictType;
 import org.projectnessie.versioned.MergeResult.KeyDetails;
+import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.RefLogNotFoundException;
@@ -296,7 +297,7 @@ public abstract class AbstractDatabaseAdapter<
     hashOnRef(ctx, mergeParams.getToBranch(), mergeParams.getExpectedHead(), toHead);
 
     mergeParams.getExpectedHead().ifPresent(mergeResult::expectedHash);
-    mergeResult.targetBranch(mergeParams.getToBranch()).targetHash(toHead);
+    mergeResult.targetBranch(mergeParams.getToBranch()).effectiveTargetHash(toHead);
 
     // 2. find nearest common-ancestor between 'from' + 'fromHash'
     Hash commonAncestor =
@@ -365,7 +366,7 @@ public abstract class AbstractDatabaseAdapter<
     }
 
     transplantParams.getExpectedHead().ifPresent(mergeResult::expectedHash);
-    mergeResult.targetBranch(transplantParams.getToBranch()).targetHash(targetHead);
+    mergeResult.targetBranch(transplantParams.getToBranch()).effectiveTargetHash(targetHead);
 
     // 1. ensure 'expectedHash' is a parent of HEAD-of-'targetBranch' & collect keys
     List<CommitLogEntry> targetEntriesReverseChronological = new ArrayList<>();
@@ -441,16 +442,13 @@ public abstract class AbstractDatabaseAdapter<
 
     Map<Key, ImmutableKeyDetails.Builder> keyDetailsMap = new HashMap<>();
 
+    Function<Key, MergeType> mergeType =
+        key -> params.getMergeTypes().getOrDefault(key, params.getDefaultMergeType());
+
     Function<Key, ImmutableKeyDetails.Builder> keyDetails =
         key ->
             keyDetailsMap.computeIfAbsent(
-                key,
-                x ->
-                    KeyDetails.builder()
-                        .mergeType(
-                            params
-                                .getMergeTypes()
-                                .getOrDefault(key, params.getDefaultMergeType())));
+                key, x -> KeyDetails.builder().mergeType(mergeType.apply(key)));
 
     BiConsumer<Stream<CommitLogEntry>, BiConsumer<ImmutableKeyDetails.Builder, Iterable<Hash>>>
         keysFromCommitsToKeyDetails =
@@ -482,10 +480,8 @@ public abstract class AbstractDatabaseAdapter<
                 }),
         ImmutableKeyDetails.Builder::addAllTargetCommits);
 
-    Predicate<Key> skipCheckPredicate =
-        k -> params.getMergeTypes().getOrDefault(k, params.getDefaultMergeType()).isSkipCheck();
-    Predicate<Key> mergePredicate =
-        k -> params.getMergeTypes().getOrDefault(k, params.getDefaultMergeType()).isMerge();
+    Predicate<Key> skipCheckPredicate = k -> mergeType.apply(k).isSkipCheck();
+    Predicate<Key> mergePredicate = k -> mergeType.apply(k).isMerge();
 
     // Ignore keys in collision-check that will not be merged or collision-checked
     keysTouchedOnTarget.removeIf(skipCheckPredicate);
@@ -497,7 +493,7 @@ public abstract class AbstractDatabaseAdapter<
     mergeResult.isSuccessful(!hasCollisions);
 
     if (hasCollisions && !params.isDryRun()) {
-      MergeResult<CommitLogEntry> result = mergeResult.currentTargetHash(toHead).build();
+      MergeResult<CommitLogEntry> result = mergeResult.resultantTargetHash(toHead).build();
       throw new MergeConflictException(
           String.format(
               "The following keys have been changed in conflict: %s",

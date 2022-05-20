@@ -258,7 +258,7 @@ public abstract class NonTransactionalDatabaseAdapter<
       if (!mergeParams.isDryRun()) {
         mergeResult.isApplied(true);
       }
-      return mergeResult.currentTargetHash(result).build();
+      return mergeResult.resultantTargetHash(result).build();
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
       throw e;
     } catch (Exception e) {
@@ -326,7 +326,7 @@ public abstract class NonTransactionalDatabaseAdapter<
       if (!transplantParams.isDryRun()) {
         mergeResult.isApplied(true);
       }
-      return mergeResult.currentTargetHash(result).build();
+      return mergeResult.resultantTargetHash(result).build();
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
       throw e;
     } catch (Exception e) {
