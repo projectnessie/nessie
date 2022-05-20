@@ -35,3 +35,4 @@ services:
     environment:
       KEYCLOAK_USER: admin
       KEYCLOAK_PASSWORD: admin
+    command: start-dev
