@@ -18,7 +18,6 @@ package org.projectnessie.versioned.persist.adapter;
 import java.util.List;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.persist.adapter.ImmutableTransplantParams.Builder;
 
 /**
  * API helper method to encapsulate parameters for {@link
