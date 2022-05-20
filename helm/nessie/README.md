@@ -90,26 +90,22 @@ This is broadly following the example from https://kubernetes.io/docs/tasks/acce
 * Start Minikube cluster: `minikube start`
 * Enable NGINX Ingress controller: `minikube addons enable ingress`
 * Verify Ingress controller is running: `kubectl get pods -n ingress-nginx`
-* Configure Nessie with the following ingress settings
-  ```
-  ingress:
-    enabled: true
-    annotations: {}
-    hosts:
-      - host: chart-example.local
-        paths:
-          - "/"
-    tls: []
-  ```
 * Create K8s Namespace: `kubectl create namespace nessie-ns`
-* Install Nessie Helm chart: `helm install nessie -n nessie-ns helm/nessie`
-* Verify that the IP address is set:
+* Install Nessie Helm chart with Ingress enabled: 
+  ```bash
+  helm install nessie -n nessie-ns helm/nessie \
+    --set ingress.enabled=true \
+    --set ingress.hosts[0].host='chart-example.local' \
+    --set ingress.hosts[0].paths[0]='/'
   ```
-  $ kubectl get ingress
+
+* Verify that the IP address is set:
+  ```bash
+  kubectl get ingress -n nessie-ns
   NAME     CLASS   HOSTS   ADDRESS        PORTS   AGE
   nessie   nginx   *       192.168.49.2   80      4m35s
   ```
-* Add `192.168.49.2 chart-example.local` to `/etc/hosts`
+* Use the IP from the above output and add it to `/etc/hosts` via `echo "192.168.49.2 chart-example.local" | sudo tee /etc/hosts`
 * Verify that `curl chart-example.local` works
 
 ### Stop/Uninstall everything in Dev

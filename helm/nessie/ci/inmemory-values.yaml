@@ -1,0 +1,4 @@
+---
+versionStoreType: INMEMORY
+jaegerTracing:
+  enabled: true
