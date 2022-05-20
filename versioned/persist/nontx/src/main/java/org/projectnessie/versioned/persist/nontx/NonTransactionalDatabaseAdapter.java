@@ -334,7 +334,7 @@ public abstract class NonTransactionalDatabaseAdapter<
           "commit",
           commitParams.getToBranch(),
           CasOpVariant.COMMIT,
-          (ctx, refHead, x, newKeyLists) -> {
+          (ctx, refHead, branchCommits, newKeyLists) -> {
             Hash currentHead = Hash.of(refHead.getHash());
 
             long timeInMicros = commitTimeInMicros();
@@ -342,6 +342,8 @@ public abstract class NonTransactionalDatabaseAdapter<
             CommitLogEntry newBranchCommit =
                 commitAttempt(ctx, timeInMicros, currentHead, commitParams, newKeyLists);
             Hash newHead = newBranchCommit.getHash();
+
+            branchCommits.accept(newHead);
 
             return casOpResult(
                 refHead,
@@ -715,29 +717,16 @@ public abstract class NonTransactionalDatabaseAdapter<
 
   enum CasOpVariant {
     /** For commit/merge/transplant, which add one or more commits to that named reference. */
-    COMMIT(true),
+    COMMIT(),
     /**
      * For {@link #assign(NamedRef, Optional, Hash)}, which only update the updates the HEAD of a
      * named reference, but does not add a commit.
      */
-    REF_UPDATE(false),
+    REF_UPDATE(),
     /** For {@link #create(NamedRef, Hash)}. */
-    CREATE_REF(false),
+    CREATE_REF(),
     /** For {@link #delete(NamedRef, Optional)}. */
-    DELETE_REF(false);
-
-    /**
-     * Whether the hash returned by {@code casOp} will be a new commit and/or {@code * casOp}
-     * produced more commits (think: merge+transplant) via the {@code individualCommits} * argument
-     * to {@link CasOp#apply(NonTransactionalOperationContext, RefPointer, Consumer, Consumer)}.
-     * Those commits will be unconditionally deleted, if this {@code commitOp} flag is * {@code
-     * true}.
-     */
-    final boolean commitOp;
-
-    CasOpVariant(boolean commitOp) {
-      this.commitOp = commitOp;
-    }
+    DELETE_REF();
   }
 
   /**
@@ -809,10 +798,7 @@ public abstract class NonTransactionalDatabaseAdapter<
         }
 
         if (!casSuccess) {
-          if (opVariant.commitOp) {
-            if (result.newHead != null) {
-              individualCommits.add(result.newHead);
-            }
+          if (opVariant == CasOpVariant.COMMIT) {
             cleanUpCommitCas(ctx, individualCommits, individualKeyLists);
           }
 
