@@ -83,6 +83,35 @@ aws_secret_access_key=YOURSECRETKEYDATA
 * Create K8s Namespace: `kubectl create namespace nessie-ns`
 * Install Nessie Helm chart: `helm install nessie -n nessie-ns helm/nessie`
 
+### Ingress with Minikube
+
+This is broadly following the example from https://kubernetes.io/docs/tasks/access-application-cluster/ingress-minikube/
+
+* Start Minikube cluster: `minikube start`
+* Enable NGINX Ingress controller: `minikube addons enable ingress`
+* Verify Ingress controller is running: `kubectl get pods -n ingress-nginx`
+* Configure Nessie with the following ingress settings
+  ```
+  ingress:
+    enabled: true
+    annotations: {}
+    hosts:
+      - host: chart-example.local
+        paths:
+          - "/"
+    tls: []
+  ```
+* Create K8s Namespace: `kubectl create namespace nessie-ns`
+* Install Nessie Helm chart: `helm install nessie -n nessie-ns helm/nessie`
+* Verify that the IP address is set:
+  ```
+  $ kubectl get ingress
+  NAME     CLASS   HOSTS   ADDRESS        PORTS   AGE
+  nessie   nginx   *       192.168.49.2   80      4m35s
+  ```
+* Add `192.168.49.2 chart-example.local` to `/etc/hosts`
+* Verify that `curl chart-example.local` works
+
 ### Stop/Uninstall everything in Dev
 
 ```sh
