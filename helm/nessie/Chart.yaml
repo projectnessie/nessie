@@ -14,3 +14,7 @@ keywords:
   - data lake
   - transactional catalog
   - git-like semantics
+maintainers:
+  - name: nastra
+  - name: snazy
+  - name: dimas-b
