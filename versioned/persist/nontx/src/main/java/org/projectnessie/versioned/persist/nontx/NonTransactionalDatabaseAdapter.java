@@ -867,6 +867,20 @@ public abstract class NonTransactionalDatabaseAdapter<
       return Spliterators.emptySpliterator();
     }
 
+    // Two possible optimizations here:
+    // 1. Paging - implement an "implementation aware token"
+    //    Instead of calling refLogStripeFetcher and then scanning the ref-log for the ref-log hash
+    //    from the page-token, add another parameter to this method that the ref-log-stripe fetchers
+    //    with their own initial ref-log-ids (so 1 hash per stripe in a paging token).
+    //    This requires this method to either return a wrapper around `RefLog` that also holds the
+    //    paging token for every returned `RefLog`, or to return a "PagingAwareSpliterator" that
+    //    allows retrieving the paging token. The latter is probably more efficient, but requires
+    //    a bit more "verbose" code.
+    // 2. Faster initial stripe fetching
+    //    Instead of retrieving all initial pages sequentially, perform a bulk-fetch for all initial
+    //    pages. Since ref-log queries are not performance critical and also rare operations, it is
+    //    not urgent to implement this optimization.
+
     Stream<Spliterator<RefLog>> stripeFetchers =
         IntStream.range(-1, config.getRefLogStripes())
             .mapToObj(stripe -> refLogStripeFetcher(ctx, stripe));
