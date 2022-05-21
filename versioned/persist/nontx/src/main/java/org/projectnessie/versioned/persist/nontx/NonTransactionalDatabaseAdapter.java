@@ -38,7 +38,6 @@ import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -49,7 +48,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
-import java.util.Spliterators.AbstractSpliterator;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -58,7 +56,6 @@ import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.projectnessie.versioned.BranchName;
@@ -840,138 +837,6 @@ public abstract class NonTransactionalDatabaseAdapter<
         Hash.of(r.getRef().getHash()), toNamedRef(r.getRef().getType(), r.getName()));
   }
 
-  private final class RefLogSplit {
-    private final Spliterator<RefLog> source;
-
-    private boolean exhausted;
-
-    private RefLog current;
-
-    private RefLogSplit(NonTransactionalOperationContext ctx, int stripe) {
-      this.source = refLogStripeFetcher(ctx, stripe);
-    }
-
-    private void advance() {
-      if (exhausted) {
-        return;
-      }
-
-      current = null;
-      if (!source.tryAdvance(refLog -> current = refLog)) {
-        exhausted = true;
-      }
-    }
-
-    private void maybeAdvance() {
-      if (current == null) {
-        advance();
-      }
-    }
-
-    RefLog pull() {
-      if (exhausted) {
-        return null;
-      }
-
-      maybeAdvance();
-
-      RefLog r = current;
-      if (r != null) {
-        current = null;
-      }
-      return r;
-    }
-
-    long operationTime() {
-      maybeAdvance();
-
-      return current != null ? current.getOperationTime() : 0L;
-    }
-
-    boolean hasMore() {
-      maybeAdvance();
-
-      return current != null;
-    }
-
-    @Override
-    public String toString() {
-      return "RefLogSplit{" + "exhausted=" + exhausted + ", current=" + current + '}';
-    }
-  }
-
-  private final class RegLogSpliterator extends Spliterators.AbstractSpliterator<RefLog> {
-
-    private final List<RefLogSplit> splits;
-
-    private final Hash initialHash;
-    private boolean initialHashSeen;
-    private RefLog initialRefLog;
-
-    RegLogSpliterator(NonTransactionalOperationContext ctx, int stripes, Hash initialHash)
-        throws RefLogNotFoundException {
-      super(Long.MAX_VALUE, Spliterator.ORDERED);
-
-      this.initialHash = initialHash;
-      this.initialHashSeen = initialHash == null;
-
-      splits =
-          IntStream.range(-1, config.getRefLogStripes())
-              .mapToObj(stripe -> new RefLogSplit(ctx, stripe))
-              .collect(Collectors.toList());
-
-      // The API for DatabaseAdapter.refLog(Hash) requires to throw a RefLogNotFoundException,
-      // if no RefLog for the initial hash exists. This loop tries to find the initial RefLog entry
-      // and throw
-      AtomicReference<RefLog> initial = new AtomicReference<>();
-      while (!initialHashSeen) {
-        if (!tryAdvance(initial::set)) {
-          break;
-        }
-      }
-
-      // Throw RefLogNotFoundException, if RefLog with initial hash could not be found.
-      if (!initialHashSeen) {
-        throw RefLogNotFoundException.forRefLogId(initialHash.asString());
-      }
-      this.initialRefLog = initial.get();
-    }
-
-    @Override
-    public boolean tryAdvance(Consumer<? super RefLog> action) {
-      if (initialRefLog != null) {
-        // This returns the RefLog entry for the initial hash.
-        action.accept(initialRefLog);
-        initialRefLog = null;
-        return true;
-      }
-
-      Optional<RefLogSplit> oldest =
-          splits.stream()
-              .filter(RefLogSplit::hasMore)
-              .max(Comparator.comparing(RefLogSplit::operationTime));
-
-      if (!oldest.isPresent()) {
-        return false;
-      }
-
-      RefLog refLog = oldest.get().pull();
-      if (refLog == null) {
-        return false;
-      }
-
-      if (!initialHashSeen) {
-        initialHashSeen = refLog.getRefLogId().equals(initialHash);
-      }
-
-      if (initialHashSeen) {
-        action.accept(refLog);
-      }
-
-      return true;
-    }
-  }
-
   private Spliterator<RefLog> refLogStripeFetcher(
       NonTransactionalOperationContext ctx, int stripe) {
     List<ByteString> initial;
@@ -999,7 +864,8 @@ public abstract class NonTransactionalDatabaseAdapter<
       return Spliterators.emptySpliterator();
     }
 
-    return new RegLogSpliterator(ctx, config.getRefLogStripes(), initialHash);
+    return new RegLogSpliterator(
+        config.getRefLogStripes(), initialHash, stripe -> refLogStripeFetcher(ctx, stripe));
   }
 
   protected abstract void unsafeWriteRefLogStripe(
@@ -1188,7 +1054,10 @@ public abstract class NonTransactionalDatabaseAdapter<
 
     BatchSpliterator<String, NamedReference> batchSpliterator =
         new BatchSpliterator<>(
-            25, allNames, batch -> fetchNamedReference(ctx, batch).spliterator());
+            config.getReferenceNamesBatchSize(),
+            allNames,
+            batch -> fetchNamedReference(ctx, batch).spliterator(),
+            Spliterator.NONNULL | Spliterator.DISTINCT | Spliterator.IMMUTABLE);
 
     return StreamSupport.stream(batchSpliterator, false);
   }
@@ -1352,30 +1221,8 @@ public abstract class NonTransactionalDatabaseAdapter<
 
   protected final Spliterator<ReferenceNames> fetchReferenceNames(
       NonTransactionalOperationContext ctx) {
-    return new AbstractSpliterator<ReferenceNames>(Long.MAX_VALUE, Spliterator.ORDERED) {
-      private int segment;
-      private int offset;
-      private List<ReferenceNames> segments = Collections.emptyList();
-
-      @Override
-      public boolean tryAdvance(Consumer<? super ReferenceNames> action) {
-        if (segment >= offset + segments.size()) {
-          offset = segment;
-          segments = fetchReferenceNames(ctx, offset, config.getReferencesSegmentPrefetch());
-        }
-
-        ReferenceNames referenceNames = segments.get(segment - offset);
-
-        if (referenceNames == null) {
-          return false;
-        }
-
-        segment++;
-
-        action.accept(referenceNames);
-        return true;
-      }
-    };
+    return new ReferenceNamesSpliterator(
+        seg -> fetchReferenceNames(ctx, seg, config.getReferencesSegmentPrefetch()));
   }
 
   protected final List<ReferenceNames> fetchReferenceNames(

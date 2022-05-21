@@ -123,6 +123,11 @@ public interface QuarkusVersionStoreAdvancedConfig
   @Override
   int getReferencesSegmentPrefetch();
 
+  @WithName("reference-names.batch.size")
+  @WithDefault("" + DEFAULT_REFERENCE_NAMES_BATCH_SIZE)
+  @Override
+  int getReferenceNamesBatchSize();
+
   @WithName("ref-log.stripes")
   @WithDefault("" + DEFAULT_REF_LOG_STRIPES)
   @Override

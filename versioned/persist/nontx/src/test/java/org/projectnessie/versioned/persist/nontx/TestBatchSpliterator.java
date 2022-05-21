@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.persist.nontx;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
@@ -32,7 +33,7 @@ import org.junit.jupiter.api.Test;
 public class TestBatchSpliterator {
 
   static class IntMapper implements Function<List<Integer>, Spliterator<String>> {
-    final List<Integer> sizes = new ArrayList<>();
+    final List<List<Integer>> inputs = new ArrayList<>();
     final Set<Integer> results;
 
     IntMapper(Set<Integer> results) {
@@ -41,7 +42,7 @@ public class TestBatchSpliterator {
 
     @Override
     public Spliterator<String> apply(List<Integer> integers) {
-      sizes.add(integers.size());
+      inputs.add(new ArrayList<>(integers));
       return integers.stream()
           .filter(results::contains)
           .map(Objects::toString)
@@ -55,10 +56,14 @@ public class TestBatchSpliterator {
     IntMapper intMapper = new IntMapper(Collections.emptySet());
 
     BatchSpliterator<Integer, String> batchSpliterator =
-        new BatchSpliterator<>(3, IntStream.range(0, 0).boxed().spliterator(), intMapper);
+        new BatchSpliterator<>(
+            3,
+            IntStream.range(0, 0).boxed().spliterator(),
+            intMapper,
+            Spliterator.NONNULL | Spliterator.DISTINCT | Spliterator.IMMUTABLE);
 
     assertThat(StreamSupport.stream(batchSpliterator, false)).isEmpty();
-    assertThat(intMapper.sizes).isEmpty();
+    assertThat(intMapper.inputs).isEmpty();
   }
 
   @Test
@@ -66,10 +71,15 @@ public class TestBatchSpliterator {
     IntMapper intMapper = new IntMapper(Collections.emptySet());
 
     BatchSpliterator<Integer, String> batchSpliterator =
-        new BatchSpliterator<>(3, IntStream.range(10, 20).boxed().spliterator(), intMapper);
+        new BatchSpliterator<>(
+            3,
+            IntStream.range(10, 20).boxed().spliterator(),
+            intMapper,
+            Spliterator.NONNULL | Spliterator.DISTINCT | Spliterator.IMMUTABLE);
 
     assertThat(StreamSupport.stream(batchSpliterator, false)).isEmpty();
-    assertThat(intMapper.sizes).containsExactly(3, 3, 3, 1);
+    assertThat(intMapper.inputs)
+        .containsExactly(asList(10, 11, 12), asList(13, 14, 15), asList(16, 17, 18), asList(19));
   }
 
   @Test
@@ -77,10 +87,15 @@ public class TestBatchSpliterator {
     IntMapper intMapper = new IntMapper(Collections.singleton(10));
 
     BatchSpliterator<Integer, String> batchSpliterator =
-        new BatchSpliterator<>(3, IntStream.range(10, 20).boxed().spliterator(), intMapper);
+        new BatchSpliterator<>(
+            3,
+            IntStream.range(10, 20).boxed().spliterator(),
+            intMapper,
+            Spliterator.NONNULL | Spliterator.DISTINCT | Spliterator.IMMUTABLE);
 
     assertThat(StreamSupport.stream(batchSpliterator, false)).containsExactly("10");
-    assertThat(intMapper.sizes).containsExactly(3, 3, 3, 1);
+    assertThat(intMapper.inputs)
+        .containsExactly(asList(10, 11, 12), asList(13, 14, 15), asList(16, 17, 18), asList(19));
   }
 
   @Test
@@ -88,10 +103,15 @@ public class TestBatchSpliterator {
     IntMapper intMapper = new IntMapper(Collections.singleton(19));
 
     BatchSpliterator<Integer, String> batchSpliterator =
-        new BatchSpliterator<>(3, IntStream.range(10, 20).boxed().spliterator(), intMapper);
+        new BatchSpliterator<>(
+            3,
+            IntStream.range(10, 20).boxed().spliterator(),
+            intMapper,
+            Spliterator.NONNULL | Spliterator.DISTINCT | Spliterator.IMMUTABLE);
 
     assertThat(StreamSupport.stream(batchSpliterator, false)).containsExactly("19");
-    assertThat(intMapper.sizes).containsExactly(3, 3, 3, 1);
+    assertThat(intMapper.inputs)
+        .containsExactly(asList(10, 11, 12), asList(13, 14, 15), asList(16, 17, 18), asList(19));
   }
 
   @Test
@@ -99,10 +119,15 @@ public class TestBatchSpliterator {
     IntMapper intMapper = new IntMapper(Collections.singleton(11));
 
     BatchSpliterator<Integer, String> batchSpliterator =
-        new BatchSpliterator<>(3, IntStream.range(10, 20).boxed().spliterator(), intMapper);
+        new BatchSpliterator<>(
+            3,
+            IntStream.range(10, 20).boxed().spliterator(),
+            intMapper,
+            Spliterator.NONNULL | Spliterator.DISTINCT | Spliterator.IMMUTABLE);
 
     assertThat(StreamSupport.stream(batchSpliterator, false)).containsExactly("11");
-    assertThat(intMapper.sizes).containsExactly(3, 3, 3, 1);
+    assertThat(intMapper.inputs)
+        .containsExactly(asList(10, 11, 12), asList(13, 14, 15), asList(16, 17, 18), asList(19));
   }
 
   @Test
@@ -110,10 +135,15 @@ public class TestBatchSpliterator {
     IntMapper intMapper = new IntMapper(Collections.singleton(13));
 
     BatchSpliterator<Integer, String> batchSpliterator =
-        new BatchSpliterator<>(3, IntStream.range(10, 20).boxed().spliterator(), intMapper);
+        new BatchSpliterator<>(
+            3,
+            IntStream.range(10, 20).boxed().spliterator(),
+            intMapper,
+            Spliterator.NONNULL | Spliterator.DISTINCT | Spliterator.IMMUTABLE);
 
     assertThat(StreamSupport.stream(batchSpliterator, false)).containsExactly("13");
-    assertThat(intMapper.sizes).containsExactly(3, 3, 3, 1);
+    assertThat(intMapper.inputs)
+        .containsExactly(asList(10, 11, 12), asList(13, 14, 15), asList(16, 17, 18), asList(19));
   }
 
   @Test
@@ -121,10 +151,15 @@ public class TestBatchSpliterator {
     IntMapper intMapper = new IntMapper(Collections.singleton(15));
 
     BatchSpliterator<Integer, String> batchSpliterator =
-        new BatchSpliterator<>(3, IntStream.range(10, 20).boxed().spliterator(), intMapper);
+        new BatchSpliterator<>(
+            3,
+            IntStream.range(10, 20).boxed().spliterator(),
+            intMapper,
+            Spliterator.NONNULL | Spliterator.DISTINCT | Spliterator.IMMUTABLE);
 
     assertThat(StreamSupport.stream(batchSpliterator, false)).containsExactly("15");
-    assertThat(intMapper.sizes).containsExactly(3, 3, 3, 1);
+    assertThat(intMapper.inputs)
+        .containsExactly(asList(10, 11, 12), asList(13, 14, 15), asList(16, 17, 18), asList(19));
   }
 
   @Test
@@ -133,12 +168,17 @@ public class TestBatchSpliterator {
         new IntMapper(IntStream.range(10, 20).boxed().collect(Collectors.toSet()));
 
     BatchSpliterator<Integer, String> batchSpliterator =
-        new BatchSpliterator<>(3, IntStream.range(10, 20).boxed().spliterator(), intMapper);
+        new BatchSpliterator<>(
+            3,
+            IntStream.range(10, 20).boxed().spliterator(),
+            intMapper,
+            Spliterator.NONNULL | Spliterator.DISTINCT | Spliterator.IMMUTABLE);
 
     assertThat(StreamSupport.stream(batchSpliterator, false))
         .containsExactlyElementsOf(
             IntStream.range(10, 20).mapToObj(Integer::toString).collect(Collectors.toList()));
-    assertThat(intMapper.sizes).containsExactly(3, 3, 3, 1);
+    assertThat(intMapper.inputs)
+        .containsExactly(asList(10, 11, 12), asList(13, 14, 15), asList(16, 17, 18), asList(19));
   }
 
   @Test
@@ -147,11 +187,52 @@ public class TestBatchSpliterator {
         new IntMapper(IntStream.range(13, 18).boxed().collect(Collectors.toSet()));
 
     BatchSpliterator<Integer, String> batchSpliterator =
-        new BatchSpliterator<>(3, IntStream.range(10, 20).boxed().spliterator(), intMapper);
+        new BatchSpliterator<>(
+            3,
+            IntStream.range(10, 20).boxed().spliterator(),
+            intMapper,
+            Spliterator.NONNULL | Spliterator.DISTINCT | Spliterator.IMMUTABLE);
 
     assertThat(StreamSupport.stream(batchSpliterator, false))
         .containsExactlyElementsOf(
             IntStream.range(13, 18).mapToObj(Integer::toString).collect(Collectors.toList()));
-    assertThat(intMapper.sizes).containsExactly(3, 3, 3, 1);
+    assertThat(intMapper.inputs)
+        .containsExactly(asList(10, 11, 12), asList(13, 14, 15), asList(16, 17, 18), asList(19));
+  }
+
+  @Test
+  public void skipSome() {
+    IntMapper intMapper =
+        new IntMapper(IntStream.range(10, 20).boxed().collect(Collectors.toSet()));
+
+    BatchSpliterator<Integer, String> batchSpliterator =
+        new BatchSpliterator<>(
+            3,
+            IntStream.range(10, 20).boxed().skip(4).spliterator(),
+            intMapper,
+            Spliterator.NONNULL | Spliterator.DISTINCT | Spliterator.IMMUTABLE);
+
+    assertThat(StreamSupport.stream(batchSpliterator, false))
+        .containsExactlyElementsOf(
+            IntStream.range(14, 20).mapToObj(Integer::toString).collect(Collectors.toList()));
+    assertThat(intMapper.inputs).containsExactly(asList(14, 15, 16), asList(17, 18, 19));
+  }
+
+  @Test
+  public void skipSomeAndLimit() {
+    IntMapper intMapper =
+        new IntMapper(IntStream.range(10, 20).boxed().collect(Collectors.toSet()));
+
+    BatchSpliterator<Integer, String> batchSpliterator =
+        new BatchSpliterator<>(
+            3,
+            IntStream.range(10, 20).boxed().skip(4).limit(5).spliterator(),
+            intMapper,
+            Spliterator.NONNULL | Spliterator.DISTINCT | Spliterator.IMMUTABLE);
+
+    assertThat(StreamSupport.stream(batchSpliterator, false))
+        .containsExactlyElementsOf(
+            IntStream.range(14, 19).mapToObj(Integer::toString).collect(Collectors.toList()));
+    assertThat(intMapper.inputs).containsExactly(asList(14, 15, 16), asList(17, 18));
   }
 }

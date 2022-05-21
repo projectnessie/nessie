@@ -90,6 +90,7 @@ The following configurations are advanced configurations to configure how Nessie
 | `nessie.version.store.advanced.tx.jdbc.schema`                  |                     | `String` | Sets the schema name to use via JDBC.                                                                                                                                                                                   |
 | `nessie.version.store.advanced.references.segment.prefetch`     | `1`                 | `int`    | Sets the number of reference name segments to prefetch.                                                                                                                                                                 |
 | `nessie.version.store.advanced.references.segment.size`         | `250_000`           | `int`    | Sets the size of a reference name segments.                                                                                                                                                                             |
+| `nessie.version.store.advanced.reference.names.batch.size`      | `25`                | `int`    | Sets the number of references to resolve at once when fetching all references.                                                                                                                                          |
 
 ### Authentication settings
 

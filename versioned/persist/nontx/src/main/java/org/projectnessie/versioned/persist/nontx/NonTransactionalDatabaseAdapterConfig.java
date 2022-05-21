@@ -22,6 +22,7 @@ public interface NonTransactionalDatabaseAdapterConfig extends DatabaseAdapterCo
   int DEFAULT_REFERENCES_SEGMENT_SIZE = 250_000;
   int DEFAULT_REF_LOG_STRIPES = 16;
   int DEFAULT_REFERENCES_SEGMENT_PREFETCH = 1;
+  int DEFAULT_REFERENCE_NAMES_BATCH_SIZE = 25;
 
   @Value.Default
   default int getReferencesSegmentSize() {
@@ -31,6 +32,11 @@ public interface NonTransactionalDatabaseAdapterConfig extends DatabaseAdapterCo
   @Value.Default
   default int getReferencesSegmentPrefetch() {
     return DEFAULT_REFERENCES_SEGMENT_PREFETCH;
+  }
+
+  @Value.Default
+  default int getReferenceNamesBatchSize() {
+    return DEFAULT_REFERENCE_NAMES_BATCH_SIZE;
   }
 
   @Value.Default
