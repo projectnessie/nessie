@@ -23,6 +23,14 @@ import java.util.function.Consumer;
 import java.util.function.IntFunction;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.ReferenceNames;
 
+/**
+ * {@link Spliterator} of {@link ReferenceNames} used to return all reference names.
+ *
+ * <p>Takes a function that takes the required segment number and returns a {@link List} of {@link
+ * ReferenceNames}, where the first element is the requested segment plus the prefetched segments,
+ * according to {@link NonTransactionalDatabaseAdapterConfig#getReferencesSegmentPrefetch()}. A
+ * {@link null} segment in the returned list indicates that there are no more segments.
+ */
 final class ReferenceNamesSpliterator extends AbstractSpliterator<ReferenceNames> {
 
   private int segment;

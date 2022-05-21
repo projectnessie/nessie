@@ -28,6 +28,14 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.persist.adapter.RefLog;
 
+/**
+ * {@link Spliterator} of {@link RefLog} entries using a variable number of ref-log stripes,
+ * according to {@link NonTransactionalDatabaseAdapterConfig#getRefLogStripes()} to read {@link
+ * RefLog}s from in parallel.
+ *
+ * <p>The next {@link RefLog} returned by this implementation is the next available from all stripes
+ * with the lowest {@link RefLog#getOperationTime()}.
+ */
 final class RegLogSpliterator extends AbstractSpliterator<RefLog> {
 
   private final List<RefLogSplit> splits;
