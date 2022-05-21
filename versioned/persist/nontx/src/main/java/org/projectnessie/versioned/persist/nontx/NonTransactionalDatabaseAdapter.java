@@ -1253,8 +1253,7 @@ public abstract class NonTransactionalDatabaseAdapter<
     if (ref == null) {
       return null;
     }
-    NamedReference namedReference =
-        fetchNamedReference(NON_TRANSACTIONAL_OPERATION_CONTEXT, ref.getName());
+    NamedReference namedReference = fetchNamedReference(ctx, ref.getName());
     if (namedReference == null || namedReference.getRef().getType() != protoTypeForRef(ref)) {
       throw referenceNotFound(ref.getName());
     }
@@ -1264,7 +1263,7 @@ public abstract class NonTransactionalDatabaseAdapter<
   protected ReferenceInfo<ByteString> referenceHead(
       NonTransactionalOperationContext ctx, String ref) throws ReferenceNotFoundException {
 
-    NamedReference namedReference = fetchNamedReference(NON_TRANSACTIONAL_OPERATION_CONTEXT, ref);
+    NamedReference namedReference = fetchNamedReference(ctx, ref);
     if (namedReference == null) {
       throw referenceNotFound(ref);
     }
