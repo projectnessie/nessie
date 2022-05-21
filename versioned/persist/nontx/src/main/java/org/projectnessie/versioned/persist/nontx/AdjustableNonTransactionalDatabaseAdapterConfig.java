@@ -20,4 +20,13 @@ import org.projectnessie.versioned.persist.adapter.AdjustableDatabaseAdapterConf
 
 @Value.Immutable
 public interface AdjustableNonTransactionalDatabaseAdapterConfig
-    extends NonTransactionalDatabaseAdapterConfig, AdjustableDatabaseAdapterConfig {}
+    extends NonTransactionalDatabaseAdapterConfig, AdjustableDatabaseAdapterConfig {
+
+  AdjustableNonTransactionalDatabaseAdapterConfig withReferencesSegmentSize(int value);
+
+  AdjustableNonTransactionalDatabaseAdapterConfig withReferencesSegmentPrefetch(int value);
+
+  AdjustableNonTransactionalDatabaseAdapterConfig withReferenceNamesBatchSize(int value);
+
+  AdjustableNonTransactionalDatabaseAdapterConfig withRefLogStripes(int value);
+}
