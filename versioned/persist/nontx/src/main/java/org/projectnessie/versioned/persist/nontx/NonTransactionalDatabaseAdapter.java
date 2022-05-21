@@ -806,6 +806,8 @@ public abstract class NonTransactionalDatabaseAdapter<
 
         // CAS against branch-heads succeeded, now try to write the ref-log-entry
 
+        // reset the retry-loop's sleep boundaries
+        tryState.resetBounds();
         int stripe = refLogStripeForName(ref.getName());
         while (true) {
           RefLogParents refLogParents = fetchRefLogParents(ctx, stripe);

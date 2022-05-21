@@ -30,6 +30,7 @@ public class TryLoopState implements AutoCloseable {
 
   private static final String TAG_ATTEMPT = "try-loop.attempt";
   private static final String TAG_RETRIES = "try-loop.retries";
+  private static final String TAG_ENDLESS_RETRIES = "try-loop.endless-retries";
 
   private Traced traced;
   private final String opName;
@@ -45,6 +46,7 @@ public class TryLoopState implements AutoCloseable {
   private long lowerBound;
   private long upperBound;
   private int retries;
+  private int endlessRetries;
   private boolean unsuccessful;
 
   TryLoopState(
@@ -83,6 +85,14 @@ public class TryLoopState implements AutoCloseable {
     return retries;
   }
 
+  public int getEndlessRetries() {
+    return endlessRetries;
+  }
+
+  public int getTotalRetries() {
+    return retries + endlessRetries;
+  }
+
   public long getDuration(TimeUnit timeUnit) {
     return timeUnit.convert(monotonicClock.currentNanos() - t0, TimeUnit.NANOSECONDS);
   }
@@ -99,7 +109,9 @@ public class TryLoopState implements AutoCloseable {
   private ReferenceRetryFailureException unsuccessful() {
     completionNotifier.accept(false, this);
     return new ReferenceRetryFailureException(
-        retryErrorMessage.apply(this), this.getRetries(), this.getDuration(TimeUnit.MILLISECONDS));
+        retryErrorMessage.apply(this),
+        this.getTotalRetries(),
+        this.getDuration(TimeUnit.MILLISECONDS));
   }
 
   /**
@@ -123,11 +135,40 @@ public class TryLoopState implements AutoCloseable {
     long current = monotonicClock.currentNanos();
     long elapsed = current - t0;
 
-    if (maxTime < elapsed || maxRetries < retries) {
+    if (maxTime < elapsed || maxRetries < retries + endlessRetries) {
       unsuccessful = true;
       throw unsuccessful();
     }
 
+    sleepAndBackoff(elapsed);
+
+    start();
+  }
+
+  public void resetBounds() {
+    lowerBound = initialLowerBound;
+    upperBound = initialUpperBound;
+  }
+
+  /**
+   * Similar to {@link #retry()}, but never throws a {@link ReferenceRetryFailureException} (unless
+   * a preceding call to {@link #retry()} already raised it).
+   */
+  public void retryEndless() throws ReferenceRetryFailureException {
+    if (unsuccessful) {
+      throw unsuccessful();
+    }
+
+    stop();
+
+    endlessRetries++;
+
+    sleepAndBackoff(0L);
+
+    start();
+  }
+
+  private void sleepAndBackoff(long elapsed) {
     long sleepMillis = ThreadLocalRandom.current().nextLong(lowerBound, upperBound);
 
     // Prevent that we "sleep" too long and exceed 'maxTime'
@@ -140,29 +181,6 @@ public class TryLoopState implements AutoCloseable {
       lowerBound *= 2;
       upperBound = upper;
     }
-
-    start();
-  }
-
-  /**
-   * Similar to {@link #retry()}, but never throws a {@link ReferenceRetryFailureException} (unless
-   * a preceding call to {@link #retry()} already raised it) and always uses the initial lower and
-   * upper bounds for the sleep duration (no backoff).
-   */
-  public void retryEndless() throws ReferenceRetryFailureException {
-    if (unsuccessful) {
-      throw unsuccessful();
-    }
-
-    stop();
-
-    retries++;
-
-    long sleepMillis = ThreadLocalRandom.current().nextLong(initialLowerBound, initialUpperBound);
-
-    monotonicClock.sleepMillis(sleepMillis);
-
-    start();
   }
 
   @Override
@@ -200,10 +218,10 @@ public class TryLoopState implements AutoCloseable {
   }
 
   private void start() {
-    traced = trace(opName).tag(TAG_ATTEMPT, getRetries());
+    traced = trace(opName).tag(TAG_ATTEMPT, getTotalRetries());
   }
 
   private void stop() {
-    traced.tag(TAG_RETRIES, getRetries()).close();
+    traced.tag(TAG_RETRIES, getRetries()).tag(TAG_ENDLESS_RETRIES, getEndlessRetries()).close();
   }
 }

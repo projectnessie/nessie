@@ -93,6 +93,7 @@ class TestTryLoopState {
 
     // Similar for 'retryEndless'
 
+    tryLoopState.resetBounds();
     lower = initialLower;
     upper = initialUpper;
     for (int i = 0; i < 3; i++) {
@@ -112,6 +113,11 @@ class TestTryLoopState {
             }
           };
       inOrderClock.verify(clock, times(1)).sleepMillis(longThat(matcher));
+
+      if (upper * 2 <= maxSleep) {
+        lower *= 2;
+        upper *= 2;
+      }
     }
 
     verify(clock, times(1 + retries)).currentNanos();
@@ -244,6 +250,7 @@ class TestTryLoopState {
     lower = DatabaseAdapterConfig.DEFAULT_RETRY_INITIAL_SLEEP_MILLIS_LOWER;
     upper = DatabaseAdapterConfig.DEFAULT_RETRY_INITIAL_SLEEP_MILLIS_UPPER;
 
+    tryLoopState.resetBounds();
     for (int i = 0; i < 3; i++) {
       tryLoopState.retryEndless();
 
@@ -252,6 +259,9 @@ class TestTryLoopState {
 
       verify(clock).sleepMillis(longThat(v -> v >= l && v <= u));
       clearInvocations(clock);
+
+      lower *= 2;
+      upper *= 2;
     }
   }
 
