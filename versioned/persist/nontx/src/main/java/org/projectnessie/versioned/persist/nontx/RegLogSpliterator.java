@@ -22,9 +22,8 @@ import java.util.Spliterator;
 import java.util.Spliterators.AbstractSpliterator;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.function.IntFunction;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.persist.adapter.RefLog;
@@ -37,18 +36,14 @@ final class RegLogSpliterator extends AbstractSpliterator<RefLog> {
   private boolean initialHashSeen;
   private RefLog initialRefLog;
 
-  RegLogSpliterator(
-      int stripes, Hash initialHash, IntFunction<Spliterator<RefLog>> refLogStripeFetcher)
+  RegLogSpliterator(Hash initialHash, Stream<Spliterator<RefLog>> refLogStripeFetcher)
       throws RefLogNotFoundException {
     super(Long.MAX_VALUE, 0);
 
     this.initialHash = initialHash;
     this.initialHashSeen = initialHash == null;
 
-    splits =
-        IntStream.range(-1, stripes)
-            .mapToObj(stripe -> new RefLogSplit(refLogStripeFetcher.apply(stripe)))
-            .collect(Collectors.toList());
+    splits = refLogStripeFetcher.map(RefLogSplit::new).collect(Collectors.toList());
 
     // The API for DatabaseAdapter.refLog(Hash) requires to throw a RefLogNotFoundException,
     // if no RefLog for the initial hash exists. This loop tries to find the initial RefLog entry

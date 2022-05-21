@@ -56,6 +56,7 @@ import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.projectnessie.versioned.BranchName;
@@ -864,8 +865,11 @@ public abstract class NonTransactionalDatabaseAdapter<
       return Spliterators.emptySpliterator();
     }
 
-    return new RegLogSpliterator(
-        config.getRefLogStripes(), initialHash, stripe -> refLogStripeFetcher(ctx, stripe));
+    Stream<Spliterator<RefLog>> stripeFetchers =
+        IntStream.range(-1, config.getRefLogStripes())
+            .mapToObj(stripe -> refLogStripeFetcher(ctx, stripe));
+
+    return new RegLogSpliterator(initialHash, stripeFetchers);
   }
 
   protected abstract void unsafeWriteRefLogStripe(
