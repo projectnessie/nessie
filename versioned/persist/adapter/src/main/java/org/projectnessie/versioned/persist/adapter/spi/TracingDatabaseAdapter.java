@@ -232,6 +232,13 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
   }
 
   @Override
+  public Stream<CommitLogEntry> scanAllCommitLogEntries() {
+    try (Traced ignore = trace("scanAllCommitLogEntries")) {
+      return delegate.scanAllCommitLogEntries();
+    }
+  }
+
+  @Override
   public void assertCleanStateForTests() {
     delegate.assertCleanStateForTests();
   }

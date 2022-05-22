@@ -24,6 +24,7 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUti
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -448,5 +449,13 @@ public class InmemoryDatabaseAdapter
         .map(store.refLog::get)
         .map(ProtoSerialization::protoToRefLog)
         .collect(Collectors.toList());
+  }
+
+  @Override
+  protected Stream<CommitLogEntry> doScanAllCommitLogEntries(NonTransactionalOperationContext c) {
+    return store.commitLog.entrySet().stream()
+        .filter(e -> e.getKey().startsWith(keyPrefix))
+        .map(Entry::getValue)
+        .map(ProtoSerialization::protoToCommitLogEntry);
   }
 }

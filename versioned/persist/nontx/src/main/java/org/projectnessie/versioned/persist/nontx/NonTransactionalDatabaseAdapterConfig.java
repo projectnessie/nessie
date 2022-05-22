@@ -23,6 +23,7 @@ public interface NonTransactionalDatabaseAdapterConfig extends DatabaseAdapterCo
   int DEFAULT_REF_LOG_STRIPES = 8;
   int DEFAULT_REFERENCES_SEGMENT_PREFETCH = 1;
   int DEFAULT_REFERENCE_NAMES_BATCH_SIZE = 25;
+  int DEFAULT_COMMIT_LOG_SCAN_PREFETCH = 25;
 
   @Value.Default
   default int getReferencesSegmentSize() {
@@ -42,5 +43,10 @@ public interface NonTransactionalDatabaseAdapterConfig extends DatabaseAdapterCo
   @Value.Default
   default int getRefLogStripes() {
     return DEFAULT_REF_LOG_STRIPES;
+  }
+
+  @Value.Default
+  default int getCommitLogScanPrefetch() {
+    return DEFAULT_COMMIT_LOG_SCAN_PREFETCH;
   }
 }

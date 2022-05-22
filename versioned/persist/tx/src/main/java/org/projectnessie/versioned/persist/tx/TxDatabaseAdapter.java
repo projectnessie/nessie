@@ -1065,6 +1065,15 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
+  protected Stream<CommitLogEntry> doScanAllCommitLogEntries(ConnectionWrapper c) {
+    return JdbcSelectSpliterator.buildStream(
+        c.conn(),
+        SqlStatements.SELECT_COMMIT_LOG_FULL,
+        ps -> ps.setString(1, config.getRepositoryId()),
+        (rs) -> protoToCommitLogEntry(rs.getBytes(1)));
+  }
+
+  @Override
   protected CommitLogEntry doFetchFromCommitLog(ConnectionWrapper c, Hash hash) {
     try (PreparedStatement ps = c.conn().prepareStatement(SqlStatements.SELECT_COMMIT_LOG)) {
       ps.setString(1, config.getRepositoryId());

@@ -40,10 +40,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.Spliterator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.Binary;
@@ -702,6 +704,21 @@ public class MongoDatabaseAdapter
   protected List<RefLog> doFetchPageFromRefLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes) {
     return fetchPage(client.getRefLog(), hashes, ProtoSerialization::protoToRefLog);
+  }
+
+  @Override
+  protected Stream<CommitLogEntry> doScanAllCommitLogEntries(NonTransactionalOperationContext c) {
+    Bson idPrefixFilter = Filters.eq(ID_REPO_PATH, repositoryId);
+    FindIterable<Document> iter =
+        client
+            .getCommitLog()
+            .find(idPrefixFilter, Document.class)
+            .batchSize(config.getCommitLogScanPrefetch());
+    Spliterator<Document> split = iter.spliterator();
+    return StreamSupport.stream(split, false)
+        .map(doc -> doc.get(DATA_PROPERTY_NAME, Binary.class))
+        .map(Binary::getData)
+        .map(ProtoSerialization::protoToCommitLogEntry);
   }
 
   private static boolean isDuplicateKeyError(MongoServerException e) {

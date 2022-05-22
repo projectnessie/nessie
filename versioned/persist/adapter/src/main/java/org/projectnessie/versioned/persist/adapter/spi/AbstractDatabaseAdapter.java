@@ -859,6 +859,22 @@ public abstract class AbstractDatabaseAdapter<
 
   protected abstract CommitLogEntry doFetchFromCommitLog(OP_CONTEXT ctx, Hash hash);
 
+  @Override
+  public Stream<CommitLogEntry> scanAllCommitLogEntries() {
+    OP_CONTEXT ctx = borrowConnection();
+    return doScanAllCommitLogEntries(ctx)
+        .onClose(
+            () -> {
+              try {
+                ctx.close();
+              } catch (Exception e) {
+                throw new RuntimeException(e);
+              }
+            });
+  }
+
+  protected abstract Stream<CommitLogEntry> doScanAllCommitLogEntries(OP_CONTEXT c);
+
   /**
    * Fetch multiple {@link CommitLogEntry commit-log-entries} from the commit-log. The returned list
    * must have exactly as many elements as in the parameter {@code hashes}. Non-existing hashes are

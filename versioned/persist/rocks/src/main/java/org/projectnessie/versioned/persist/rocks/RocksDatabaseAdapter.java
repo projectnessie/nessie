@@ -29,11 +29,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators.AbstractSpliterator;
 import java.util.concurrent.locks.Lock;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -695,5 +699,28 @@ public class RocksDatabaseAdapter
     if (db.keyMayExist(cf, key, value) && value.getValue() != null) {
       throw hashCollisionDetected();
     }
+  }
+
+  @Override
+  protected Stream<CommitLogEntry> doScanAllCommitLogEntries(NonTransactionalOperationContext c) {
+    RocksIterator iter = db.newIterator(dbInstance.getCfCommitLog());
+    iter.seekToFirst();
+
+    Spliterator<CommitLogEntry> split =
+        new AbstractSpliterator<CommitLogEntry>(Long.MAX_VALUE, Spliterator.NONNULL) {
+          @Override
+          public boolean tryAdvance(Consumer<? super CommitLogEntry> action) {
+            if (!iter.isValid()) {
+              return false;
+            }
+            ByteString key = ByteString.copyFrom(iter.key());
+            if (key.startsWith(keyPrefix)) {
+              action.accept(ProtoSerialization.protoToCommitLogEntry(iter.value()));
+            }
+            iter.next();
+            return true;
+          }
+        };
+    return StreamSupport.stream(split, false).onClose(iter::close);
   }
 }
