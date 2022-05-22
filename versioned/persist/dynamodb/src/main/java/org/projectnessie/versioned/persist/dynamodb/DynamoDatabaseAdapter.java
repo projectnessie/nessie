@@ -73,6 +73,8 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeAction;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValueUpdate;
 import software.amazon.awssdk.services.dynamodb.model.BatchGetItemResponse;
+import software.amazon.awssdk.services.dynamodb.model.ComparisonOperator;
+import software.amazon.awssdk.services.dynamodb.model.Condition;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 import software.amazon.awssdk.services.dynamodb.model.ExpectedAttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
@@ -146,7 +148,17 @@ public class DynamoDatabaseAdapter
               table ->
                   client
                       .client
-                      .scanPaginator(b -> b.tableName(table))
+                      .scanPaginator(
+                          b ->
+                              b.tableName(table)
+                                  .scanFilter(
+                                      singletonMap(
+                                          KEY_NAME,
+                                          Condition.builder()
+                                              .comparisonOperator(ComparisonOperator.BEGINS_WITH)
+                                              .attributeValueList(
+                                                  AttributeValue.builder().s(keyPrefix).build())
+                                              .build())))
                       .forEach(
                           r ->
                               r.items().stream()
