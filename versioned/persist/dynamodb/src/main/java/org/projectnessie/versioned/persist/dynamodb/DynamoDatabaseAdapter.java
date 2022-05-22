@@ -149,17 +149,7 @@ public class DynamoDatabaseAdapter
               table ->
                   client
                       .client
-                      .scanPaginator(
-                          b ->
-                              b.tableName(table)
-                                  .scanFilter(
-                                      singletonMap(
-                                          KEY_NAME,
-                                          Condition.builder()
-                                              .comparisonOperator(ComparisonOperator.BEGINS_WITH)
-                                              .attributeValueList(
-                                                  AttributeValue.builder().s(keyPrefix).build())
-                                              .build())))
+                      .scanPaginator(b -> b.tableName(table).scanFilter(repositoryScanFilter()))
                       .forEach(
                           r ->
                               r.items().stream()
@@ -751,16 +741,7 @@ public class DynamoDatabaseAdapter
   protected Stream<CommitLogEntry> doScanAllCommitLogEntries(NonTransactionalOperationContext c) {
     return client
         .client
-        .scanPaginator(
-            b ->
-                b.tableName(TABLE_COMMIT_LOG)
-                    .scanFilter(
-                        singletonMap(
-                            KEY_NAME,
-                            Condition.builder()
-                                .comparisonOperator(ComparisonOperator.BEGINS_WITH)
-                                .attributeValueList(AttributeValue.builder().s(keyPrefix).build())
-                                .build())))
+        .scanPaginator(b -> b.tableName(TABLE_COMMIT_LOG).scanFilter(repositoryScanFilter()))
         .stream()
         .flatMap(
             scanResponse ->
@@ -769,5 +750,14 @@ public class DynamoDatabaseAdapter
                     .map(AttributeValue::b)
                     .map(BytesWrapper::asByteArray)
                     .map(ProtoSerialization::protoToCommitLogEntry));
+  }
+
+  private Map<String, Condition> repositoryScanFilter() {
+    return singletonMap(
+        KEY_NAME,
+        Condition.builder()
+            .comparisonOperator(ComparisonOperator.BEGINS_WITH)
+            .attributeValueList(AttributeValue.builder().s(keyPrefix).build())
+            .build());
   }
 }
