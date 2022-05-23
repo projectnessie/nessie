@@ -41,6 +41,7 @@ import org.projectnessie.model.ImmutableReferencesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Merge;
+import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
@@ -228,7 +229,7 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
   }
 
   @Override
-  public void transplantCommitsIntoBranch(
+  public MergeResponse transplantCommitsIntoBranch(
       String branchName, String hash, String message, Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
     if (transplant.getHashesToTransplant().isEmpty()) {
@@ -245,18 +246,18 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
                 .getValue())
         .canCommitChangeAgainstReference(BranchName.of(branchName))
         .checkAndThrow();
-    super.transplantCommitsIntoBranch(branchName, hash, message, transplant);
+    return super.transplantCommitsIntoBranch(branchName, hash, message, transplant);
   }
 
   @Override
-  public void mergeRefIntoBranch(String branchName, String hash, Merge merge)
+  public MergeResponse mergeRefIntoBranch(String branchName, String hash, Merge merge)
       throws NessieNotFoundException, NessieConflictException {
     startAccessCheck()
         .canViewReference(
             namedRefWithHashOrThrow(merge.getFromRefName(), merge.getFromHash()).getValue())
         .canCommitChangeAgainstReference(BranchName.of(branchName))
         .checkAndThrow();
-    super.mergeRefIntoBranch(branchName, hash, merge);
+    return super.mergeRefIntoBranch(branchName, hash, merge);
   }
 
   @Override

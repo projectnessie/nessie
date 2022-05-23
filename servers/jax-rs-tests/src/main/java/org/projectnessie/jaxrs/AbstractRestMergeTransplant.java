@@ -16,17 +16,21 @@
 package org.projectnessie.jaxrs;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
+import static org.assertj.core.api.InstanceOfAssertFactories.list;
 
 import com.google.common.collect.ImmutableList;
-import java.util.List;
 import org.assertj.core.api.InstanceOfAssertFactories;
-import org.assertj.core.api.ThrowingConsumer;
-import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.projectnessie.error.BaseNessieClientServerException;
+import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.error.NessieReferenceConflictException;
+import org.projectnessie.model.BaseMergeTransplant.MergeBehavior;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
@@ -34,6 +38,9 @@ import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
+import org.projectnessie.model.MergeResponse;
+import org.projectnessie.model.MergeResponse.ContentKeyConflict;
+import org.projectnessie.model.MergeResponse.ContentKeyDetails;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
@@ -48,20 +55,15 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalidWit
       throws BaseNessieClientServerException {
     mergeTransplant(
         keepIndividualCommits,
-        t -> {
-          List<Object> objects = t.toList();
-          Branch base = (Branch) objects.get(0);
-          Branch branch = (Branch) objects.get(1);
-          Reference committed1 = (Reference) objects.get(2);
-          Reference committed2 = (Reference) objects.get(3);
-          getApi()
-              .transplantCommitsIntoBranch()
-              .hashesToTransplant(ImmutableList.of(committed1.getHash(), committed2.getHash()))
-              .fromRefName(maybeAsDetachedName(withDetachedCommit, branch))
-              .branch(base)
-              .keepIndividualCommits(keepIndividualCommits)
-              .transplant();
-        });
+        (target, source, committed1, committed2, returnConflictAsResult) ->
+            getApi()
+                .transplantCommitsIntoBranch()
+                .hashesToTransplant(ImmutableList.of(committed1.getHash(), committed2.getHash()))
+                .fromRefName(maybeAsDetachedName(withDetachedCommit, source))
+                .branch(target)
+                .keepIndividualCommits(keepIndividualCommits)
+                .returnConflictAsResult(returnConflictAsResult)
+                .transplant());
   }
 
   @ParameterizedTest
@@ -76,23 +78,31 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalidWit
       throws BaseNessieClientServerException {
     mergeTransplant(
         keepIndividualCommits,
-        t -> {
-          List<Object> objects = t.toList();
-          Branch base = (Branch) objects.get(0);
-          Reference committed2 = (Reference) objects.get(3);
-          getApi()
-              .mergeRefIntoBranch()
-              .branch(base)
-              .fromRef(refMode.transform(committed2))
-              .keepIndividualCommits(keepIndividualCommits)
-              .merge();
-        });
+        (target, source, committed1, committed2, returnConflictAsResult) ->
+            getApi()
+                .mergeRefIntoBranch()
+                .branch(target)
+                .fromRef(refMode.transform(committed2))
+                .keepIndividualCommits(keepIndividualCommits)
+                .returnConflictAsResult(returnConflictAsResult)
+                .merge());
   }
 
-  private void mergeTransplant(boolean keepIndividualCommits, ThrowingConsumer<Tuple> actor)
+  @FunctionalInterface
+  interface MergeTransplantActor {
+    MergeResponse act(
+        Branch target,
+        Branch source,
+        Branch committed1,
+        Branch committed2,
+        boolean returnConflictAsResult)
+        throws NessieNotFoundException, NessieConflictException;
+  }
+
+  private void mergeTransplant(boolean keepIndividualCommits, MergeTransplantActor actor)
       throws BaseNessieClientServerException {
-    Branch base = createBranch("base");
-    Branch branch = createBranch("branch");
+    Branch target = createBranch("base");
+    Branch source = createBranch("branch");
 
     ContentKey key1 = ContentKey.of("key1");
     IcebergTable table1 = IcebergTable.of("table1", 42, 42, 42, 42);
@@ -102,8 +112,8 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalidWit
     Branch committed1 =
         getApi()
             .commitMultipleOperations()
-            .branchName(branch.getName())
-            .hash(branch.getHash())
+            .branchName(source.getName())
+            .hash(source.getHash())
             .commitMeta(CommitMeta.fromMessage("test-branch1"))
             .operation(Put.of(key1, table1))
             .commit();
@@ -122,7 +132,7 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalidWit
     Branch committed2 =
         getApi()
             .commitMultipleOperations()
-            .branchName(branch.getName())
+            .branchName(source.getName())
             .hash(committed1.getHash())
             .commitMeta(CommitMeta.fromMessage("test-branch2"))
             .operation(Put.of(key1, table1, table1))
@@ -134,23 +144,37 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalidWit
     LogResponse logBranch =
         getApi()
             .getCommitLog()
-            .refName(branch.getName())
-            .untilHash(branch.getHash())
+            .refName(source.getName())
+            .untilHash(source.getHash())
             .maxRecords(commitCount)
             .get();
 
-    getApi()
-        .commitMultipleOperations()
-        .branchName(base.getName())
-        .hash(base.getHash())
-        .commitMeta(CommitMeta.fromMessage("test-main"))
-        .operation(Put.of(key2, table2))
-        .commit();
+    Branch baseHead =
+        getApi()
+            .commitMultipleOperations()
+            .branchName(target.getName())
+            .hash(target.getHash())
+            .commitMeta(CommitMeta.fromMessage("test-main"))
+            .operation(Put.of(key2, table2))
+            .commit();
 
-    actor.accept(Tuple.tuple(base, branch, committed1, committed2));
+    MergeResponse response = actor.act(target, source, committed1, committed2, false);
+    Reference newHead =
+        mergeWentFine(target, source, key1, key2, committed1, committed2, baseHead, response);
+
+    // try again --> conflict
+
+    assertThatThrownBy(() -> actor.act(target, source, committed1, committed2, false))
+        .isInstanceOf(NessieReferenceConflictException.class)
+        .hasMessageContaining("keys have been changed in conflict");
+
+    // try again --> conflict, but return information
+
+    conflictExceptionReturnedAsMergeResult(
+        actor, target, source, key1, key2, committed1, committed2, newHead);
 
     LogResponse log =
-        getApi().getCommitLog().refName(base.getName()).untilHash(base.getHash()).get();
+        getApi().getCommitLog().refName(target.getName()).untilHash(target.getHash()).get();
     if (keepIndividualCommits) {
       assertThat(
               log.getLogEntries().stream().map(LogEntry::getCommitMeta).map(CommitMeta::getMessage))
@@ -167,7 +191,7 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalidWit
 
     // Verify that the commit-timestamp was updated
     LogResponse logOfMerged =
-        getApi().getCommitLog().refName(base.getName()).maxRecords(commitCount).get();
+        getApi().getCommitLog().refName(target.getName()).maxRecords(commitCount).get();
     assertThat(
             logOfMerged.getLogEntries().stream()
                 .map(LogEntry::getCommitMeta)
@@ -178,9 +202,149 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalidWit
                 .map(CommitMeta::getCommitTime));
 
     assertThat(
-            getApi().getEntries().refName(base.getName()).get().getEntries().stream()
+            getApi().getEntries().refName(target.getName()).get().getEntries().stream()
                 .map(e -> e.getName().getName()))
         .containsExactlyInAnyOrder("key1", "key2");
+  }
+
+  private Reference mergeWentFine(
+      Branch target,
+      Branch source,
+      ContentKey key1,
+      ContentKey key2,
+      Branch committed1,
+      Branch committed2,
+      Branch baseHead,
+      MergeResponse response)
+      throws NessieNotFoundException {
+    Reference newHead = getApi().getReference().refName(target.getName()).get();
+    assertThat(response)
+        .satisfies(
+            r ->
+                assertThat(r)
+                    .extracting(
+                        MergeResponse::wasApplied,
+                        MergeResponse::wasSuccessful,
+                        MergeResponse::getExpectedHash,
+                        MergeResponse::getTargetBranch,
+                        MergeResponse::getEffectiveTargetHash,
+                        MergeResponse::getResultantTargetHash)
+                    .containsExactly(
+                        true,
+                        true,
+                        source.getHash(),
+                        target.getName(),
+                        baseHead.getHash(),
+                        newHead.getHash()),
+            r ->
+                assertThat(r)
+                    .extracting(
+                        MergeResponse::getCommonAncestor,
+                        MergeResponse::getDetails,
+                        MergeResponse::getSourceCommits,
+                        MergeResponse::getTargetCommits)
+                    .satisfiesExactly(
+                        commonAncestor ->
+                            assertThat(commonAncestor)
+                                .satisfiesAnyOf(
+                                    a -> assertThat(a).isNull(),
+                                    b -> assertThat(b).isEqualTo(target.getHash())),
+                        details ->
+                            assertThat(details)
+                                .asInstanceOf(list(ContentKeyDetails.class))
+                                .extracting(
+                                    ContentKeyDetails::getKey,
+                                    ContentKeyDetails::getConflictType,
+                                    ContentKeyDetails::getMergeBehavior)
+                                .containsExactlyInAnyOrder(
+                                    tuple(key1, ContentKeyConflict.NONE, MergeBehavior.NORMAL),
+                                    tuple(key2, ContentKeyConflict.NONE, MergeBehavior.NORMAL)),
+                        sourceCommits ->
+                            assertThat(sourceCommits)
+                                .asInstanceOf(list(LogEntry.class))
+                                .extracting(LogEntry::getCommitMeta)
+                                .extracting(CommitMeta::getHash, CommitMeta::getMessage)
+                                .containsExactly(
+                                    tuple(committed2.getHash(), "test-branch2"),
+                                    tuple(committed1.getHash(), "test-branch1")),
+                        targetCommits ->
+                            assertThat(targetCommits)
+                                .asInstanceOf(list(LogEntry.class))
+                                .extracting(LogEntry::getCommitMeta)
+                                .extracting(CommitMeta::getHash, CommitMeta::getMessage)
+                                .containsExactly(tuple(baseHead.getHash(), "test-main"))));
+    return newHead;
+  }
+
+  private static void conflictExceptionReturnedAsMergeResult(
+      MergeTransplantActor actor,
+      Branch target,
+      Branch source,
+      ContentKey key1,
+      ContentKey key2,
+      Branch committed1,
+      Branch committed2,
+      Reference newHead)
+      throws NessieNotFoundException, NessieConflictException {
+    MergeResponse conflictResult = actor.act(target, source, committed1, committed2, true);
+    assertThat(conflictResult)
+        .satisfies(
+            r ->
+                assertThat(r)
+                    .extracting(
+                        MergeResponse::wasApplied,
+                        MergeResponse::wasSuccessful,
+                        MergeResponse::getExpectedHash,
+                        MergeResponse::getTargetBranch,
+                        MergeResponse::getEffectiveTargetHash,
+                        MergeResponse::getResultantTargetHash)
+                    .containsExactly(
+                        false,
+                        false,
+                        source.getHash(),
+                        target.getName(),
+                        newHead.getHash(),
+                        newHead.getHash()),
+            r ->
+                assertThat(r)
+                    .extracting(
+                        MergeResponse::getCommonAncestor,
+                        MergeResponse::getDetails,
+                        MergeResponse::getSourceCommits,
+                        MergeResponse::getTargetCommits)
+                    .satisfiesExactly(
+                        commonAncestor ->
+                            assertThat(commonAncestor)
+                                .satisfiesAnyOf(
+                                    a -> assertThat(a).isNull(),
+                                    b -> assertThat(b).isEqualTo(target.getHash())),
+                        details ->
+                            assertThat(details)
+                                .asInstanceOf(list(ContentKeyDetails.class))
+                                .extracting(
+                                    ContentKeyDetails::getKey,
+                                    ContentKeyDetails::getConflictType,
+                                    ContentKeyDetails::getMergeBehavior)
+                                .containsExactlyInAnyOrder(
+                                    tuple(
+                                        key1,
+                                        ContentKeyConflict.UNRESOLVABLE,
+                                        MergeBehavior.NORMAL),
+                                    tuple(key2, ContentKeyConflict.NONE, MergeBehavior.NORMAL)),
+                        sourceCommits ->
+                            assertThat(sourceCommits)
+                                .asInstanceOf(list(LogEntry.class))
+                                .extracting(LogEntry::getCommitMeta)
+                                .extracting(CommitMeta::getHash, CommitMeta::getMessage)
+                                .containsExactly(
+                                    tuple(committed2.getHash(), "test-branch2"),
+                                    tuple(committed1.getHash(), "test-branch1")),
+                        targetCommits ->
+                            assertThat(targetCommits)
+                                .asInstanceOf(list(LogEntry.class))
+                                .extracting(LogEntry::getCommitMeta)
+                                .extracting(CommitMeta::getMessage)
+                                .containsAnyOf("test-branch2", "test-branch1", "test-main")));
   }
 
   @ParameterizedTest

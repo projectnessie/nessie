@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import java.util.Collections;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.api.NessieApiV1;
@@ -32,12 +33,14 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
+import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.tools.compatibility.api.NessieAPI;
+import org.projectnessie.tools.compatibility.api.NessieVersion;
 import org.projectnessie.tools.compatibility.api.Version;
 import org.projectnessie.tools.compatibility.api.VersionCondition;
 
@@ -45,6 +48,7 @@ import org.projectnessie.tools.compatibility.api.VersionCondition;
 public abstract class AbstractCompatibilityTests {
 
   @NessieAPI protected NessieApiV1 api;
+  @NessieVersion Version version;
 
   @Test
   void getDefaultBranch() throws Exception {
@@ -155,5 +159,74 @@ public abstract class AbstractCompatibilityTests {
         .update();
     namespace = api.getNamespace().refName(branch.getName()).namespace(namespace).get();
     assertThat(namespace.getProperties()).isEqualTo(ImmutableMap.of("key1", "xyz", "key3", "val3"));
+  }
+
+  @Test
+  public void transplant() throws NessieNotFoundException, NessieConflictException {
+    Branch defaultBranch = api.getDefaultBranch();
+    Branch src = Branch.of("transplant-src", defaultBranch.getHash());
+    Branch dest = Branch.of("transplant-dest", defaultBranch.getHash());
+
+    api.createReference().sourceRefName(defaultBranch.getName()).reference(src).create();
+    api.createReference().sourceRefName(defaultBranch.getName()).reference(dest).create();
+
+    ContentKey key = ContentKey.of("my", "tables", "table_name");
+    IcebergTable content =
+        IcebergTable.of("metadata-location", 42L, 43, 44, 45, "content-id-transplant");
+    String commitMessage = "hello world";
+    Put operation = Put.of(key, content);
+    Branch committed =
+        api.commitMultipleOperations()
+            .commitMeta(CommitMeta.fromMessage(commitMessage))
+            .operation(operation)
+            .branch(src)
+            .commit();
+
+    MergeResponse response =
+        api.transplantCommitsIntoBranch()
+            .fromRefName(src.getName())
+            .hashesToTransplant(Collections.singletonList(committed.getHash()))
+            .branch(dest)
+            .transplant();
+
+    if (nessieWithMergeResponse()) {
+      assertThat(response).isNotNull();
+    } else {
+      assertThat(response).isNull();
+    }
+  }
+
+  @Test
+  public void merge() throws NessieNotFoundException, NessieConflictException {
+    Branch defaultBranch = api.getDefaultBranch();
+    Branch src = Branch.of("merge-src", defaultBranch.getHash());
+    Branch dest = Branch.of("merge-dest", defaultBranch.getHash());
+
+    api.createReference().sourceRefName(defaultBranch.getName()).reference(src).create();
+    api.createReference().sourceRefName(defaultBranch.getName()).reference(dest).create();
+
+    ContentKey key = ContentKey.of("my", "tables", "table_name");
+    IcebergTable content =
+        IcebergTable.of("metadata-location", 42L, 43, 44, 45, "content-id-merge");
+    String commitMessage = "hello world";
+    Put operation = Put.of(key, content);
+    Branch committed =
+        api.commitMultipleOperations()
+            .commitMeta(CommitMeta.fromMessage(commitMessage))
+            .operation(operation)
+            .branch(src)
+            .commit();
+
+    MergeResponse response = api.mergeRefIntoBranch().fromRef(committed).branch(dest).merge();
+
+    if (nessieWithMergeResponse()) {
+      assertThat(response).isNotNull();
+    } else {
+      assertThat(response).isNull();
+    }
+  }
+
+  boolean nessieWithMergeResponse() {
+    return version.compareTo(Version.parseVersion("0.30.0")) > 0;
   }
 }

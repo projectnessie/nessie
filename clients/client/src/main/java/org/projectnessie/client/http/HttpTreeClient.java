@@ -30,6 +30,7 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
+import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
@@ -132,31 +133,33 @@ class HttpTreeClient implements HttpTreeApi {
   }
 
   @Override
-  public void transplantCommitsIntoBranch(
+  public MergeResponse transplantCommitsIntoBranch(
       @NotNull String branchName,
       @NotNull String expectedHash,
       String message,
       @Valid Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
-    client
+    return client
         .newRequest()
         .path("trees/branch/{branchName}/transplant")
         .resolveTemplate("branchName", branchName)
         .queryParam("expectedHash", expectedHash)
         .queryParam("message", message)
-        .post(transplant);
+        .post(transplant)
+        .readEntity(MergeResponse.class);
   }
 
   @Override
-  public void mergeRefIntoBranch(
+  public MergeResponse mergeRefIntoBranch(
       @NotNull String branchName, @NotNull String expectedHash, @NotNull @Valid Merge merge)
       throws NessieNotFoundException, NessieConflictException {
-    client
+    return client
         .newRequest()
         .path("trees/branch/{branchName}/merge")
         .resolveTemplate("branchName", branchName)
         .queryParam("expectedHash", expectedHash)
-        .post(merge);
+        .post(merge)
+        .readEntity(MergeResponse.class);
   }
 
   @Override

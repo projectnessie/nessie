@@ -42,6 +42,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -60,6 +63,7 @@ import org.projectnessie.error.NessieReferenceAlreadyExistsException;
 import org.projectnessie.error.NessieReferenceConflictException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.BaseMergeTransplant;
+import org.projectnessie.model.BaseMergeTransplant.MergeBehavior;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
@@ -67,14 +71,18 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Detached;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.ImmutableBranch;
+import org.projectnessie.model.ImmutableContentKeyDetails;
 import org.projectnessie.model.ImmutableEntriesResponse;
 import org.projectnessie.model.ImmutableLogEntry;
+import org.projectnessie.model.ImmutableMergeResponse;
 import org.projectnessie.model.ImmutableReferenceMetadata;
 import org.projectnessie.model.ImmutableReferencesResponse;
 import org.projectnessie.model.ImmutableTag;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Merge;
+import org.projectnessie.model.MergeResponse;
+import org.projectnessie.model.MergeResponse.ContentKeyConflict;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
@@ -93,6 +101,8 @@ import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.KeyEntry;
+import org.projectnessie.versioned.MergeConflictException;
+import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Put;
@@ -279,35 +289,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     boolean fetchAll = FetchOption.isFetchAll(params.fetchOption());
     try (Stream<Commit<CommitMeta, Content>> commits =
         getStore().getCommits(endRef.getHash(), fetchAll)) {
-      Stream<LogEntry> logEntries =
-          commits.map(
-              commit -> {
-                CommitMeta commitMetaWithHash =
-                    addHashToCommitMeta(commit.getHash(), commit.getCommitMeta());
-                ImmutableLogEntry.Builder logEntry = LogEntry.builder();
-                logEntry.commitMeta(commitMetaWithHash);
-                if (fetchAll) {
-                  if (commit.getParentHash() != null) {
-                    logEntry.parentCommitHash(commit.getParentHash().asString());
-                  }
-                  if (commit.getOperations() != null) {
-                    commit
-                        .getOperations()
-                        .forEach(
-                            op -> {
-                              ContentKey key = fromKey(op.getKey());
-                              if (op instanceof Put) {
-                                Content content = ((Put<Content>) op).getValue();
-                                logEntry.addOperations(Operation.Put.of(key, content));
-                              }
-                              if (op instanceof Delete) {
-                                logEntry.addOperations(Operation.Delete.of(key));
-                              }
-                            });
-                  }
-                }
-                return logEntry.build();
-              });
+      Stream<LogEntry> logEntries = commits.map(commit -> commitToLogEntry(fetchAll, commit));
 
       logEntries =
           StreamSupport.stream(
@@ -330,6 +312,33 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
+  }
+
+  private ImmutableLogEntry commitToLogEntry(boolean fetchAll, Commit<CommitMeta, Content> commit) {
+    CommitMeta commitMetaWithHash = addHashToCommitMeta(commit.getHash(), commit.getCommitMeta());
+    ImmutableLogEntry.Builder logEntry = LogEntry.builder();
+    logEntry.commitMeta(commitMetaWithHash);
+    if (fetchAll) {
+      if (commit.getParentHash() != null) {
+        logEntry.parentCommitHash(commit.getParentHash().asString());
+      }
+      if (commit.getOperations() != null) {
+        commit
+            .getOperations()
+            .forEach(
+                op -> {
+                  ContentKey key = fromKey(op.getKey());
+                  if (op instanceof Put) {
+                    Content content = ((Put<Content>) op).getValue();
+                    logEntry.addOperations(Operation.Put.of(key, content));
+                  }
+                  if (op instanceof Delete) {
+                    logEntry.addOperations(Operation.Delete.of(key));
+                  }
+                });
+      }
+    }
+    return logEntry.build();
   }
 
   private static CommitMeta addHashToCommitMeta(Hash hash, CommitMeta commitMeta) {
@@ -381,7 +390,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   }
 
   @Override
-  public void transplantCommitsIntoBranch(
+  public MergeResponse transplantCommitsIntoBranch(
       String branchName, String hash, String message, Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
     try {
@@ -390,44 +399,120 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
         transplants = s.collect(Collectors.toList());
       }
 
-      getStore()
-          .transplant(
-              BranchName.of(branchName),
-              toHash(hash, true),
-              transplants,
-              commitMetaUpdate(),
-              Boolean.TRUE.equals(transplant.keepIndividualCommits()),
-              keyMergeTypes(transplant),
-              defaultMergeType(transplant),
-              Boolean.TRUE.equals(transplant.isDryRun()),
-              Boolean.TRUE.equals(transplant.isFetchAdditionalInfo()));
+      MergeResult<Commit<CommitMeta, Content>> result =
+          getStore()
+              .transplant(
+                  BranchName.of(branchName),
+                  toHash(hash, true),
+                  transplants,
+                  commitMetaUpdate(),
+                  Boolean.TRUE.equals(transplant.keepIndividualCommits()),
+                  keyMergeTypes(transplant),
+                  defaultMergeType(transplant),
+                  Boolean.TRUE.equals(transplant.isDryRun()),
+                  Boolean.TRUE.equals(transplant.isFetchAdditionalInfo()));
+      return createResponse(transplant, result);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
+    } catch (MergeConflictException e) {
+      if (Boolean.TRUE.equals(transplant.isReturnConflictAsResult())) {
+        @SuppressWarnings("unchecked")
+        MergeResult<Commit<CommitMeta, Content>> mr =
+            (MergeResult<Commit<CommitMeta, Content>>) e.getMergeResult();
+        return createResponse(transplant, mr);
+      }
+      throw new NessieReferenceConflictException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
       throw new NessieReferenceConflictException(e.getMessage(), e);
     }
   }
 
   @Override
-  public void mergeRefIntoBranch(String branchName, String hash, Merge merge)
+  public MergeResponse mergeRefIntoBranch(String branchName, String hash, Merge merge)
       throws NessieNotFoundException, NessieConflictException {
     try {
-      getStore()
-          .merge(
-              toHash(merge.getFromRefName(), merge.getFromHash()),
-              BranchName.of(branchName),
-              toHash(hash, true),
-              commitMetaUpdate(),
-              Boolean.TRUE.equals(merge.keepIndividualCommits()),
-              keyMergeTypes(merge),
-              defaultMergeType(merge),
-              Boolean.TRUE.equals(merge.isDryRun()),
-              Boolean.TRUE.equals(merge.isFetchAdditionalInfo()));
+      MergeResult<Commit<CommitMeta, Content>> result =
+          getStore()
+              .merge(
+                  toHash(merge.getFromRefName(), merge.getFromHash()),
+                  BranchName.of(branchName),
+                  toHash(hash, true),
+                  commitMetaUpdate(),
+                  Boolean.TRUE.equals(merge.keepIndividualCommits()),
+                  keyMergeTypes(merge),
+                  defaultMergeType(merge),
+                  Boolean.TRUE.equals(merge.isDryRun()),
+                  Boolean.TRUE.equals(merge.isFetchAdditionalInfo()));
+      return createResponse(merge, result);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
+    } catch (MergeConflictException e) {
+      if (Boolean.TRUE.equals(merge.isReturnConflictAsResult())) {
+        @SuppressWarnings("unchecked")
+        MergeResult<Commit<CommitMeta, Content>> mr =
+            (MergeResult<Commit<CommitMeta, Content>>) e.getMergeResult();
+        return createResponse(merge, mr);
+      }
+      throw new NessieReferenceConflictException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
       throw new NessieReferenceConflictException(e.getMessage(), e);
     }
+  }
+
+  private MergeResponse createResponse(
+      BaseMergeTransplant mergeTransplant, MergeResult<Commit<CommitMeta, Content>> result) {
+    Function<Hash, String> hashToString = h -> h != null ? h.asString() : null;
+    ImmutableMergeResponse.Builder response =
+        ImmutableMergeResponse.builder()
+            .targetBranch(result.getTargetBranch().getName())
+            .resultantTargetHash(hashToString.apply(result.getResultantTargetHash()))
+            .effectiveTargetHash(hashToString.apply(result.getEffectiveTargetHash()))
+            .expectedHash(hashToString.apply(result.getExpectedHash()))
+            .commonAncestor(hashToString.apply(result.getCommonAncestor()))
+            .wasApplied(result.wasApplied())
+            .wasSuccessful(result.wasSuccessful());
+
+    BiConsumer<List<Commit<CommitMeta, Content>>, Consumer<LogEntry>> convertCommits =
+        (src, dest) -> {
+          if (src == null) {
+            return;
+          }
+          src.stream()
+              .map(
+                  c ->
+                      commitToLogEntry(
+                          Boolean.TRUE.equals(mergeTransplant.isFetchAdditionalInfo()), c))
+              .forEach(dest);
+        };
+
+    convertCommits.accept(result.getSourceCommits(), response::addSourceCommits);
+    convertCommits.accept(result.getTargetCommits(), response::addTargetCommits);
+
+    BiConsumer<List<Hash>, Consumer<String>> convertCommitIds =
+        (src, dest) -> {
+          if (src == null) {
+            return;
+          }
+          src.stream().map(hashToString).forEach(dest);
+        };
+
+    result
+        .getDetails()
+        .forEach(
+            (key, details) -> {
+              ImmutableContentKeyDetails.Builder keyDetails =
+                  ImmutableContentKeyDetails.builder()
+                      .key(ContentKey.of(key.getElements()))
+                      .conflictType(ContentKeyConflict.valueOf(details.getConflictType().name()))
+                      .mergeBehavior(MergeBehavior.valueOf(details.getMergeType().name()));
+
+              convertCommitIds.accept(details.getSourceCommits(), keyDetails::addSourceCommits);
+              convertCommitIds.accept(details.getTargetCommits(), keyDetails::addTargetCommits);
+
+              response.addDetails(keyDetails.build());
+            });
+
+    return response.build();
   }
 
   private static Map<Key, MergeType> keyMergeTypes(BaseMergeTransplant params) {

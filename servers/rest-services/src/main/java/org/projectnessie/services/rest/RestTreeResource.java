@@ -33,6 +33,7 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
+import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
@@ -130,16 +131,16 @@ public class RestTreeResource implements HttpTreeApi {
   }
 
   @Override
-  public void transplantCommitsIntoBranch(
+  public MergeResponse transplantCommitsIntoBranch(
       String branchName, String hash, String message, Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
-    resource().transplantCommitsIntoBranch(branchName, hash, message, transplant);
+    return resource().transplantCommitsIntoBranch(branchName, hash, message, transplant);
   }
 
   @Override
-  public void mergeRefIntoBranch(String branchName, String hash, Merge merge)
+  public MergeResponse mergeRefIntoBranch(String branchName, String hash, Merge merge)
       throws NessieNotFoundException, NessieConflictException {
-    resource().mergeRefIntoBranch(branchName, hash, merge);
+    return resource().mergeRefIntoBranch(branchName, hash, merge);
   }
 
   @Override
