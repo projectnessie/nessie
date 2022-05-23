@@ -16,7 +16,6 @@
 package org.projectnessie.quarkus.tests.profiles;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMap.Builder;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import java.util.Map;
 
@@ -28,7 +27,7 @@ public class BaseConfigProfile implements QuarkusTestProfile {
   public static final Map<String, String> VERSION_STORE_CONFIG;
 
   static {
-    Builder<String, String> config =
+    ImmutableMap.Builder<String, String> config =
         ImmutableMap.<String, String>builder()
             .put("nessie.version.store.advanced.repository-id", "nessie-test")
             .put("nessie.version.store.advanced.commit-retries", "42")
