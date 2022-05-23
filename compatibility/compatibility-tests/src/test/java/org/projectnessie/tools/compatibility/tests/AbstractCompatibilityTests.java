@@ -103,9 +103,12 @@ public abstract class AbstractCompatibilityTests {
     Reference reference =
         api.createReference().sourceRefName(defaultBranch.getName()).reference(branch).create();
 
-    Namespace namespace = Namespace.of("a", "b", "c");
-    api.createNamespace().namespace(namespace).reference(reference).create();
+    Namespace namespaceNoContentId = Namespace.of("a", "b", "c");
+    Namespace namespace =
+        api.createNamespace().namespace(namespaceNoContentId).reference(reference).create();
     reference = api.getReference().refName(reference.getName()).get();
+    assertThat(api.getNamespace().namespace(namespaceNoContentId).reference(reference).get())
+        .isEqualTo(namespace);
     assertThat(api.getNamespace().namespace(namespace).reference(reference).get())
         .isEqualTo(namespace);
     assertThat(
@@ -130,9 +133,17 @@ public abstract class AbstractCompatibilityTests {
         api.createReference().sourceRefName(defaultBranch.getName()).reference(branch).create();
 
     Map<String, String> properties = ImmutableMap.of("key1", "prop1", "key2", "prop2");
-    Namespace namespace = Namespace.of(properties, "a", "b", "c");
+    Namespace namespaceNoContentId = Namespace.of(properties, "a", "b", "c");
 
-    api.createNamespace().namespace(namespace).reference(reference).properties(properties).create();
+    Namespace namespace =
+        api.createNamespace()
+            .namespace(namespaceNoContentId)
+            .reference(reference)
+            .properties(properties)
+            .create();
+    reference = api.getReference().refName(reference.getName()).get();
+    assertThat(api.getNamespace().namespace(namespaceNoContentId).reference(reference).get())
+        .isEqualTo(namespace);
     assertThat(api.getNamespace().namespace(namespace).reference(reference).get())
         .isEqualTo(namespace);
 
@@ -142,7 +153,7 @@ public abstract class AbstractCompatibilityTests {
         .updateProperties(ImmutableMap.of("key3", "val3", "key1", "xyz"))
         .removeProperties(ImmutableSet.of("key2", "key5"))
         .update();
-    namespace = api.getNamespace().reference(branch).namespace(namespace).get();
+    namespace = api.getNamespace().refName(branch.getName()).namespace(namespace).get();
     assertThat(namespace.getProperties()).isEqualTo(ImmutableMap.of("key1", "xyz", "key3", "val3"));
   }
 }
