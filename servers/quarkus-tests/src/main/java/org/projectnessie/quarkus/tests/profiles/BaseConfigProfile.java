@@ -16,6 +16,7 @@
 package org.projectnessie.quarkus.tests.profiles;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap.Builder;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import java.util.Map;
 
@@ -24,12 +25,27 @@ public class BaseConfigProfile implements QuarkusTestProfile {
   public static final Map<String, String> CONFIG_OVERRIDES =
       ImmutableMap.<String, String>builder().put("quarkus.jaeger.sampler-type", "const").build();
 
-  public static final Map<String, String> VERSION_STORE_CONFIG =
-      ImmutableMap.<String, String>builder()
-          .put("nessie.version.store.advanced.repository-id", "nessie-test")
-          .put("nessie.version.store.advanced.commit-retries", "42")
-          .put("nessie.version.store.advanced.tx.batch-size", "41")
-          .build();
+  public static final Map<String, String> VERSION_STORE_CONFIG;
+
+  static {
+    Builder<String, String> config =
+        ImmutableMap.<String, String>builder()
+            .put("nessie.version.store.advanced.repository-id", "nessie-test")
+            .put("nessie.version.store.advanced.commit-retries", "42")
+            .put("nessie.version.store.advanced.tx.batch-size", "41");
+
+    // Pass relevant system properties to Quarkus integration tests, which are run "externally"
+    // in a Docker container. This code is rather a "no op" for Quarkus unit tests.
+    System.getProperties().entrySet().stream()
+        .filter(
+            e -> {
+              String key = e.getKey().toString();
+              return key.startsWith("user.") || key.startsWith("file.") || key.startsWith("path.");
+            })
+        .forEach(e -> config.put(e.getKey().toString(), e.getValue().toString()));
+
+    VERSION_STORE_CONFIG = config.build();
+  }
 
   @Override
   public Map<String, String> getConfigOverrides() {
