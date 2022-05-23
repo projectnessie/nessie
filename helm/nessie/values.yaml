@@ -9,7 +9,7 @@ image:
 # The default logging level for the nessie server
 logLevel: INFO
 
-# which type of version store to use: INMEMORY, ROCKS, DYNAMO, MONGO
+# which type of version store to use: INMEMORY, ROCKS, DYNAMO, MONGO, TRANSACTIONAL
 versionStoreType: INMEMORY
 
 # this is needed when selecting ROCKS
@@ -28,6 +28,19 @@ dynamodb:
 mongodb:
   name: nessie
   connectionString: mongodb://localhost:27017
+
+# this is needed when selecting TRANSACTIONAL
+postgres:
+  jdbcUrl: jdbc:postgresql://localhost:5432/my_database
+  secret:
+    name: postgres-creds
+    username: postgres_username
+    password: postgres_password
+
+# environment variables for advanced version store configuration
+# versionStoreAdvancedConfig:
+#   - key: QUARKUS_DATASOURCE_JDBC_POOLING_ENABLED
+#     value: true
 
 # configures authentication for the nessie server
 authentication:

@@ -81,6 +81,26 @@ spec:
             {{- end }}
             {{- end }}
 
+            {{- if eq .Values.versionStoreType "TRANSACTIONAL" }}
+            - name: QUARKUS_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.secret.name }}
+                  key: {{ .Values.postgres.secret.username }}
+            - name: QUARKUS_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.secret.name }}
+                  key: {{ .Values.postgres.secret.password }}
+            - name: QUARKUS_DATASOURCE_JDBC_URL
+              value: {{ .Values.postgres.jdbcUrl }}
+            {{- end }}
+
+            {{- range .Values.versionStoreAdvancedConfig }}
+            - name: {{ .key }}
+              value: {{ .value | quote }}
+            {{- end }}
+
             {{- if .Values.authentication.enabled }}
             - name: NESSIE_SERVER_AUTHENTICATION_ENABLED
               value: {{ .Values.authentication.enabled | quote }}

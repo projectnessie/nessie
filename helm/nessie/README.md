@@ -30,7 +30,7 @@ The following table lists the configurable parameters of the Nessie chart and th
 | image.pullPolicy | Image pull policy, such as `IfNotPresent` / `Always` / `Never` | `IfNotPresent` |
 | image.tag | Overrides the image tag whose default is the chart version | `version` from `Chart.yaml` |
 | logLevel | The default logging level to be used | `INFO` |
-| versionStoreType | Version store to use: `INMEMORY` / `ROCKS` / `DYNAMO` / `MONGO` | `INMEMORY` |
+| versionStoreType | Version store to use: `INMEMORY` / `ROCKS` / `DYNAMO` / `MONGO` / `TRANSACTIONAL` | `INMEMORY` |
 | rocksdb | Configuration specific to `versionStoreType: ROCKS` | |
 | rocks.dbPath | Sets RocksDB storage path | `/tmp/rocks-nessie` |
 | dynamodb | Configuration specific to `versionStoreType: DYNAMO` | |
@@ -41,6 +41,12 @@ The following table lists the configurable parameters of the Nessie chart and th
 | mongodb | Configuration specific to `versionStoreType: MONGO` | |
 | mongodb.name | The database name | `nessie` |
 | mongodb.connectionString | The database connection string | `mongodb://localhost:27017` |
+| postgres | Configuration specific to `versionStoreType: TRANSACTIONAL` | |
+| postgres.jdbcUrl | The database connection URL | `jdbc:postgresql://localhost:5432/my_database` |
+| postgres.secret.name | The name of the secret where database credentials are stored | `postgres-creds` |
+| postgres.secret.username | The name of the username key inside the secret | `postgres_username` |
+| postgres.secret.password | The name of the password key inside the secret | `postgres_password` |
+| versionStoreAdvancedConfig | Key:value pairs of environment variables for advancend version store configuration | |
 | authentication | Authentication settings | |
 | authentication.enabled | Configures whether authentication is enabled | `false` |
 | authentication.oidcAuthServerUrl | Sets the base URL of the OpenID Connect (OIDC) server. Needs to be overridden with `authentication.enabled=true` | `http://127.255.0.0:0/auth/realms/unset/` |
@@ -74,6 +80,22 @@ aws_secret_access_key=YOURSECRETKEYDATA
   `kubectl create secret generic awscreds --from-env-file="$PWD/awscreds"`
 
 * Now you can use `DYNAMO` as the version store when installing Nessie via `helm install -n nessie-ns nessie helm/nessie --set versionStoreType=DYNAMO`.
+
+
+### Providing secrets for Transactional Version Store
+
+* Make sure you have a Secret in the following form:
+```
+> cat $PWD/postgres-creds
+postgres_username=YOUR_USERNAME
+postgres_password=YOUR_PASSWORD
+```
+
+* Create the secret from the given file
+  `kubectl create secret generic postgres-creds --from-env-file="$PWD/postgres-creds"`
+
+* Now you can use `TRANSACTIONAL` as the version store when installing Nessie via `helm install -n nessie-ns nessie helm/nessie --set versionStoreType=TRANSACTIONAL`.
+
 
 ## Dev installation
 
