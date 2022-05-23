@@ -267,9 +267,6 @@ public interface DatabaseAdapter {
   void updateRepositoryDescription(Function<RepoDescription, RepoDescription> updater)
       throws ReferenceConflictException;
 
-  // NOTE: the following is NOT a "proposed" API, just an idea of how the supporting functions
-  // for Nessie-GC need to look like.
-
   /**
    * Retrieves the global content for the given contents-id.
    *
