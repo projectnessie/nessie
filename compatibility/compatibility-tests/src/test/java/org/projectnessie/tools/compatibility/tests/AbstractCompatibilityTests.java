@@ -227,6 +227,6 @@ public abstract class AbstractCompatibilityTests {
   }
 
   boolean nessieWithMergeResponse() {
-    return version.compareTo(Version.parseVersion("0.30.0")) > 0;
+    return version.isGreaterThan(Version.parseVersion("0.30.0"));
   }
 }
