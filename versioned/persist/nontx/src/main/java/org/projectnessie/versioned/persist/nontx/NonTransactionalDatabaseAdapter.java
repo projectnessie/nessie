@@ -840,26 +840,6 @@ public abstract class NonTransactionalDatabaseAdapter<
         Hash.of(r.getRef().getHash()), toNamedRef(r.getRef().getType(), r.getName()));
   }
 
-  private Spliterator<RefLog> refLogStripeFetcher(
-      NonTransactionalOperationContext ctx, int stripe) {
-    List<ByteString> initial;
-    if (stripe == -1) {
-      // read "old" ref-log, where the ref-log HEAD was maintained in the global-pointer
-      GlobalStatePointer globalPointer = fetchGlobalPointer(ctx);
-      initial = globalPointer.getRefLogParentsInclHeadList();
-    } else {
-      // read "new" ref-log
-      RefLogParents refLogParents = fetchRefLogParents(ctx, stripe);
-      if (refLogParents == null) {
-        refLogParents =
-            RefLogParents.newBuilder().addRefLogParentsInclHead(NO_ANCESTOR.asBytes()).build();
-      }
-      initial = refLogParents.getRefLogParentsInclHeadList();
-    }
-    List<Hash> initialPage = initial.stream().map(Hash::of).collect(Collectors.toList());
-    return logFetcherWithPage(ctx, initialPage, this::fetchPageFromRefLog, RefLog::getParents);
-  }
-
   @Override
   protected Spliterator<RefLog> readRefLog(NonTransactionalOperationContext ctx, Hash initialHash)
       throws RefLogNotFoundException {
@@ -881,9 +861,32 @@ public abstract class NonTransactionalDatabaseAdapter<
     //    pages. Since ref-log queries are not performance critical and also rare operations, it is
     //    not urgent to implement this optimization.
 
+    Stream<List<ByteString>> initialHashes =
+        Stream.concat(
+            // Ref-log as in global-pointer (backwards compatibility)
+            Stream.of(fetchGlobalPointer(ctx).getRefLogParentsInclHeadList()),
+            // Ref-log stripes
+            IntStream.range(0, config.getRefLogStripes())
+                .mapToObj(
+                    stripe -> {
+                      // read "new" ref-log
+                      RefLogParents refLogParents = fetchRefLogParents(ctx, stripe);
+                      if (refLogParents == null) {
+                        refLogParents =
+                            RefLogParents.newBuilder()
+                                .addRefLogParentsInclHead(NO_ANCESTOR.asBytes())
+                                .build();
+                      }
+                      return refLogParents.getRefLogParentsInclHeadList();
+                    }));
+
     Stream<Spliterator<RefLog>> stripeFetchers =
-        IntStream.range(-1, config.getRefLogStripes())
-            .mapToObj(stripe -> refLogStripeFetcher(ctx, stripe));
+        initialHashes.map(
+            initial -> {
+              List<Hash> initialPage = initial.stream().map(Hash::of).collect(Collectors.toList());
+              return logFetcherWithPage(
+                  ctx, initialPage, this::fetchPageFromRefLog, RefLog::getParents);
+            });
 
     return new RegLogSpliterator(initialHash, stripeFetchers);
   }
