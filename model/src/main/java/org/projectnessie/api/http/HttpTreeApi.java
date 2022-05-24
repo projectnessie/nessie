@@ -302,7 +302,7 @@ public interface HttpTreeApi extends TreeApi {
               description = "Expected previous hash of reference",
               examples = {@ExampleObject(ref = "hash")})
           @QueryParam("expectedHash")
-          String oldHash,
+          String expectedHash,
       @RequestBody(
               description =
                   "Reference hash to which 'referenceName' shall be assigned to. This must be either a "
@@ -341,7 +341,7 @@ public interface HttpTreeApi extends TreeApi {
               description = "Expected hash of tag",
               examples = {@ExampleObject(ref = "hash")})
           @QueryParam("expectedHash")
-          String hash)
+          String expectedHash)
       throws NessieConflictException, NessieNotFoundException;
 
   @Override
@@ -379,7 +379,7 @@ public interface HttpTreeApi extends TreeApi {
               description = "Expected hash of tag.",
               examples = {@ExampleObject(ref = "hash")})
           @QueryParam("expectedHash")
-          String hash,
+          String expectedHash,
       @Parameter(
               description = "commit message",
               examples = {@ExampleObject(ref = "commitMessage")})
@@ -431,7 +431,7 @@ public interface HttpTreeApi extends TreeApi {
               description = "Expected current HEAD of 'branchName'",
               examples = {@ExampleObject(ref = "hash")})
           @QueryParam("expectedHash")
-          String hash,
+          String expectedHash,
       @RequestBody(
               description =
                   "Merge operation that defines the source reference name and an optional hash. "
@@ -481,7 +481,7 @@ public interface HttpTreeApi extends TreeApi {
               description = "Expected hash of branch.",
               examples = {@ExampleObject(ref = "hash")})
           @QueryParam("expectedHash")
-          String hash,
+          String expectedHash,
       @RequestBody(
               description = "Operations",
               content =

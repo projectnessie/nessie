@@ -117,35 +117,36 @@ public class RestTreeResource implements HttpTreeApi {
   public void assignReference(
       Reference.ReferenceType referenceType,
       String referenceName,
-      String oldHash,
+      String expectedHash,
       Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
-    resource().assignReference(referenceType, referenceName, oldHash, assignTo);
+    resource().assignReference(referenceType, referenceName, expectedHash, assignTo);
   }
 
   @Override
   public void deleteReference(
-      Reference.ReferenceType referenceType, String referenceName, String hash)
+      Reference.ReferenceType referenceType, String referenceName, String expectedHash)
       throws NessieConflictException, NessieNotFoundException {
-    resource().deleteReference(referenceType, referenceName, hash);
+    resource().deleteReference(referenceType, referenceName, expectedHash);
   }
 
   @Override
   public MergeResponse transplantCommitsIntoBranch(
-      String branchName, String hash, String message, Transplant transplant)
+      String branchName, String expectedHash, String message, Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
-    return resource().transplantCommitsIntoBranch(branchName, hash, message, transplant);
+    return resource().transplantCommitsIntoBranch(branchName, expectedHash, message, transplant);
   }
 
   @Override
-  public MergeResponse mergeRefIntoBranch(String branchName, String hash, Merge merge)
+  public MergeResponse mergeRefIntoBranch(String branchName, String expectedHash, Merge merge)
       throws NessieNotFoundException, NessieConflictException {
-    return resource().mergeRefIntoBranch(branchName, hash, merge);
+    return resource().mergeRefIntoBranch(branchName, expectedHash, merge);
   }
 
   @Override
-  public Branch commitMultipleOperations(String branchName, String hash, Operations operations)
+  public Branch commitMultipleOperations(
+      String branchName, String expectedHash, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
-    return resource().commitMultipleOperations(branchName, hash, operations);
+    return resource().commitMultipleOperations(branchName, expectedHash, operations);
   }
 }

@@ -118,18 +118,18 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
   }
 
   @Override
-  protected void assignReference(NamedRef ref, String oldHash, Reference assignTo)
+  protected void assignReference(NamedRef ref, String expectedHash, Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
     startAccessCheck()
         .canViewReference(
             namedRefWithHashOrThrow(assignTo.getName(), assignTo.getHash()).getValue())
         .canAssignRefToHash(ref)
         .checkAndThrow();
-    super.assignReference(ref, oldHash, assignTo);
+    super.assignReference(ref, expectedHash, assignTo);
   }
 
   @Override
-  protected void deleteReference(NamedRef ref, String hash)
+  protected void deleteReference(NamedRef ref, String expectedHash)
       throws NessieConflictException, NessieNotFoundException {
     BatchAccessChecker check = startAccessCheck();
     if (ref instanceof BranchName && getConfig().getDefaultBranch().equals(ref.getName())) {
@@ -138,7 +138,7 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
       check.canDeleteReference(ref);
     }
     check.checkAndThrow();
-    super.deleteReference(ref, hash);
+    super.deleteReference(ref, expectedHash);
   }
 
   @Override
@@ -230,7 +230,7 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
 
   @Override
   public MergeResponse transplantCommitsIntoBranch(
-      String branchName, String hash, String message, Transplant transplant)
+      String branchName, String expectedHash, String message, Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
     if (transplant.getHashesToTransplant().isEmpty()) {
       throw new IllegalArgumentException("No hashes given to transplant.");
@@ -246,22 +246,22 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
                 .getValue())
         .canCommitChangeAgainstReference(BranchName.of(branchName))
         .checkAndThrow();
-    return super.transplantCommitsIntoBranch(branchName, hash, message, transplant);
+    return super.transplantCommitsIntoBranch(branchName, expectedHash, message, transplant);
   }
 
   @Override
-  public MergeResponse mergeRefIntoBranch(String branchName, String hash, Merge merge)
+  public MergeResponse mergeRefIntoBranch(String branchName, String expectedHash, Merge merge)
       throws NessieNotFoundException, NessieConflictException {
     startAccessCheck()
         .canViewReference(
             namedRefWithHashOrThrow(merge.getFromRefName(), merge.getFromHash()).getValue())
         .canCommitChangeAgainstReference(BranchName.of(branchName))
         .checkAndThrow();
-    return super.mergeRefIntoBranch(branchName, hash, merge);
+    return super.mergeRefIntoBranch(branchName, expectedHash, merge);
   }
 
   @Override
-  public Branch commitMultipleOperations(String branch, String hash, Operations operations)
+  public Branch commitMultipleOperations(String branch, String expectedHash, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
     BranchName branchName = BranchName.of(branch);
     BatchAccessChecker check = startAccessCheck().canCommitChangeAgainstReference(branchName);
@@ -281,6 +281,6 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
               }
             });
     check.checkAndThrow();
-    return super.commitMultipleOperations(branch, hash, operations);
+    return super.commitMultipleOperations(branch, expectedHash, operations);
   }
 }

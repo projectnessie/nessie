@@ -226,7 +226,7 @@ public abstract class AbstractRestInvalidWithHttp extends AbstractRestInvalidRef
                             .commit())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(".hash: " + HASH_MESSAGE)
+                .hasMessageContaining(".expectedHash: " + HASH_MESSAGE)
                 .hasMessageContaining(opsCountMsg),
         () ->
             assertThatThrownBy(
@@ -238,7 +238,7 @@ public abstract class AbstractRestInvalidWithHttp extends AbstractRestInvalidRef
                             .delete())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(".hash: " + HASH_MESSAGE),
+                .hasMessageContaining(".expectedHash: " + HASH_MESSAGE),
         () ->
             assertThatThrownBy(
                     () ->
@@ -250,7 +250,7 @@ public abstract class AbstractRestInvalidWithHttp extends AbstractRestInvalidRef
                             .assign())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(".oldHash: " + HASH_MESSAGE),
+                .hasMessageContaining(".expectedHash: " + HASH_MESSAGE),
         () -> {
           if (null != getHttpClient()) {
             assertThatThrownBy(
@@ -264,7 +264,7 @@ public abstract class AbstractRestInvalidWithHttp extends AbstractRestInvalidRef
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining("mergeRefIntoBranch.merge: must not be null")
-                .hasMessageContaining(".hash: " + HASH_MESSAGE);
+                .hasMessageContaining(".expectedHash: " + HASH_MESSAGE);
           }
         },
         () ->
@@ -278,13 +278,13 @@ public abstract class AbstractRestInvalidWithHttp extends AbstractRestInvalidRef
                             .merge())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(".hash: " + HASH_MESSAGE),
+                .hasMessageContaining(".expectedHash: " + HASH_MESSAGE),
         () ->
             assertThatThrownBy(
                     () -> getApi().deleteTag().tagName(validBranchName).hash(invalidHash).delete())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(".hash: " + HASH_MESSAGE),
+                .hasMessageContaining(".expectedHash: " + HASH_MESSAGE),
         () ->
             assertThatThrownBy(
                     () ->
@@ -299,7 +299,7 @@ public abstract class AbstractRestInvalidWithHttp extends AbstractRestInvalidRef
                             .transplant())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(".hash: " + HASH_MESSAGE),
+                .hasMessageContaining(".expectedHash: " + HASH_MESSAGE),
         () ->
             assertThatThrownBy(() -> getApi().getContent().refName(invalidHash).get())
                 .isInstanceOf(NessieBadRequestException.class)

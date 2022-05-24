@@ -262,9 +262,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
 
   @Override
   public void deleteReference(
-      Reference.ReferenceType referenceType, String referenceName, String hash)
+      Reference.ReferenceType referenceType, String referenceName, String expectedHash)
       throws NessieConflictException, NessieNotFoundException {
-    deleteReference(toNamedRef(referenceType, referenceName), hash);
+    deleteReference(toNamedRef(referenceType, referenceName), expectedHash);
   }
 
   @Override
@@ -391,7 +391,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
 
   @Override
   public MergeResponse transplantCommitsIntoBranch(
-      String branchName, String hash, String message, Transplant transplant)
+      String branchName, String expectedHash, String message, Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
     try {
       List<Hash> transplants;
@@ -403,7 +403,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
           getStore()
               .transplant(
                   BranchName.of(branchName),
-                  toHash(hash, true),
+                  toHash(expectedHash, true),
                   transplants,
                   commitMetaUpdate(),
                   Boolean.TRUE.equals(transplant.keepIndividualCommits()),
@@ -428,7 +428,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   }
 
   @Override
-  public MergeResponse mergeRefIntoBranch(String branchName, String hash, Merge merge)
+  public MergeResponse mergeRefIntoBranch(String branchName, String expectedHash, Merge merge)
       throws NessieNotFoundException, NessieConflictException {
     try {
       MergeResult<Commit<CommitMeta, Content>> result =
@@ -436,7 +436,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
               .merge(
                   toHash(merge.getFromRefName(), merge.getFromHash()),
                   BranchName.of(branchName),
-                  toHash(hash, true),
+                  toHash(expectedHash, true),
                   commitMetaUpdate(),
                   Boolean.TRUE.equals(merge.keepIndividualCommits()),
                   keyMergeTypes(merge),
@@ -626,7 +626,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   }
 
   @Override
-  public Branch commitMultipleOperations(String branch, String hash, Operations operations)
+  public Branch commitMultipleOperations(String branch, String expectedHash, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
     List<org.projectnessie.versioned.Operation<Content>> ops =
         operations.getOperations().stream()
@@ -644,7 +644,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
           getStore()
               .commit(
                   BranchName.of(Optional.ofNullable(branch).orElse(getConfig().getDefaultBranch())),
-                  Optional.ofNullable(hash).map(Hash::of),
+                  Optional.ofNullable(expectedHash).map(Hash::of),
                   commitMetaUpdate().rewriteSingle(commitMeta),
                   ops);
 
@@ -678,10 +678,10 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     return Optional.of(Hash.of(hash));
   }
 
-  protected void deleteReference(NamedRef ref, String hash)
+  protected void deleteReference(NamedRef ref, String expectedHash)
       throws NessieConflictException, NessieNotFoundException {
     try {
-      getStore().delete(ref, toHash(hash, true));
+      getStore().delete(ref, toHash(expectedHash, true));
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -689,7 +689,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     }
   }
 
-  protected void assignReference(NamedRef ref, String oldHash, Reference assignTo)
+  protected void assignReference(NamedRef ref, String expectedHash, Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
     try {
       ReferenceInfo<CommitMeta> resolved =
@@ -698,7 +698,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       getStore()
           .assign(
               resolved.getNamedRef(),
-              toHash(oldHash, true),
+              toHash(expectedHash, true),
               toHash(assignTo.getName(), assignTo.getHash()));
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
