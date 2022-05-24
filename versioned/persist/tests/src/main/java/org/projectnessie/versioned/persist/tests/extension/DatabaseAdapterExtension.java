@@ -230,9 +230,9 @@ public class DatabaseAdapterExtension
     }
 
     Object assign;
-    if (type.isAssignableFrom(DatabaseAdapter.class)) {
+    if (DatabaseAdapter.class.isAssignableFrom(type)) {
       assign = databaseAdapter;
-    } else if (type.isAssignableFrom(VersionStore.class)) {
+    } else if (VersionStore.class.isAssignableFrom(type)) {
       VersionStore<?, ?, ?> store = createStore(databaseAdapter, storeWorker);
       if (nessieDbAdapter.withTracing()) {
         store = new TracingVersionStore<>(store);
@@ -243,6 +243,11 @@ public class DatabaseAdapterExtension
     }
 
     newAdapter.accept(databaseAdapter);
+
+    if (assign != null && !type.isAssignableFrom(assign.getClass())) {
+      throw new IllegalStateException(
+          String.format("Cannot assign %s to %s", assign.getClass(), annotatedElement));
+    }
 
     return assign;
   }
@@ -294,6 +299,7 @@ public class DatabaseAdapterExtension
     DatabaseAdapterFactory.Builder<
             DatabaseAdapterConfig, AdjustableDatabaseAdapterConfig, DatabaseConnectionProvider<?>>
         builder = factory.newBuilder();
+
     builder
         .configure(
             c ->
