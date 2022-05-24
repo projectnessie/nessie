@@ -88,6 +88,16 @@ import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.adapter.RepoMaintenanceParams;
 import org.projectnessie.versioned.persist.adapter.TransplantParams;
+import org.projectnessie.versioned.persist.adapter.events.AdapterEvent;
+import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
+import org.projectnessie.versioned.persist.adapter.events.CommitEvent;
+import org.projectnessie.versioned.persist.adapter.events.MergeEvent;
+import org.projectnessie.versioned.persist.adapter.events.ReferenceAssignedEvent;
+import org.projectnessie.versioned.persist.adapter.events.ReferenceCreatedEvent;
+import org.projectnessie.versioned.persist.adapter.events.ReferenceDeletedEvent;
+import org.projectnessie.versioned.persist.adapter.events.RepositoryErasedEvent;
+import org.projectnessie.versioned.persist.adapter.events.RepositoryInitializedEvent;
+import org.projectnessie.versioned.persist.adapter.events.TransplantEvent;
 import org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization;
 import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.spi.Traced;
@@ -125,8 +135,9 @@ public abstract class NonTransactionalDatabaseAdapter<
   public static final String TAG_KEY_LIST_COUNT = "key-list-count";
   public static final String TAG_REF = "ref";
 
-  protected NonTransactionalDatabaseAdapter(CONFIG config, StoreWorker<?, ?, ?> storeWorker) {
-    super(config, storeWorker);
+  protected NonTransactionalDatabaseAdapter(
+      CONFIG config, StoreWorker<?, ?, ?> storeWorker, AdapterEventConsumer eventConsumer) {
+    super(config, storeWorker, eventConsumer);
   }
 
   @Override
@@ -222,6 +233,7 @@ public abstract class NonTransactionalDatabaseAdapter<
 
                 long timeInMicros = commitTimeInMicros();
 
+                List<CommitLogEntry> writtenCommits = new ArrayList<>();
                 Hash newHead =
                     mergeAttempt(
                         ctx,
@@ -229,6 +241,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                         currentHead,
                         branchCommits,
                         newKeyLists,
+                        writtenCommits::add,
                         mergeParams,
                         mergeResult);
 
@@ -243,7 +256,13 @@ public abstract class NonTransactionalDatabaseAdapter<
                             .setCommitHash(newHead.asBytes())
                             .setOperationTime(timeInMicros)
                             .setOperation(RefLogEntry.Operation.MERGE)
-                            .addSourceHashes(mergeParams.getMergeFromHash().asBytes()));
+                            .addSourceHashes(mergeParams.getMergeFromHash().asBytes()),
+                    () ->
+                        MergeEvent.builder()
+                            .previousHash(currentHead)
+                            .hash(newHead)
+                            .branch(mergeParams.getToBranch())
+                            .commits(writtenCommits));
               },
               () -> mergeConflictMessage("Retry-failure", mergeParams));
 
@@ -282,6 +301,7 @@ public abstract class NonTransactionalDatabaseAdapter<
 
                 long timeInMicros = commitTimeInMicros();
 
+                List<CommitLogEntry> writtenCommits = new ArrayList<>();
                 Hash newHead =
                     transplantAttempt(
                         ctx,
@@ -289,6 +309,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                         currentHead,
                         branchCommits,
                         newKeyLists,
+                        writtenCommits::add,
                         transplantParams,
                         mergeResult);
 
@@ -306,7 +327,13 @@ public abstract class NonTransactionalDatabaseAdapter<
                       transplantParams
                           .getSequenceToTransplant()
                           .forEach(hash -> refLog.addSourceHashes(hash.asBytes()));
-                    });
+                    },
+                    () ->
+                        TransplantEvent.builder()
+                            .previousHash(currentHead)
+                            .hash(newHead)
+                            .branch(transplantParams.getToBranch())
+                            .commits(writtenCommits));
               },
               () -> transplantConflictMessage("Retry-failure", transplantParams));
 
@@ -352,7 +379,13 @@ public abstract class NonTransactionalDatabaseAdapter<
                         .setRefType(refHead.getType())
                         .setCommitHash(newHead.asBytes())
                         .setOperationTime(timeInMicros)
-                        .setOperation(Operation.COMMIT));
+                        .setOperation(Operation.COMMIT),
+                () ->
+                    CommitEvent.builder()
+                        .previousHash(currentHead)
+                        .hash(newHead)
+                        .branch(commitParams.getToBranch())
+                        .addCommits(newBranchCommit));
           },
           () ->
               commitConflictMessage(
@@ -397,7 +430,8 @@ public abstract class NonTransactionalDatabaseAdapter<
                         .setRefType(protoTypeForRef(ref))
                         .setCommitHash(newHead.asBytes())
                         .setOperationTime(commitTimeInMicros())
-                        .setOperation(RefLogEntry.Operation.CREATE_REFERENCE));
+                        .setOperation(RefLogEntry.Operation.CREATE_REFERENCE),
+                () -> ReferenceCreatedEvent.builder().hash(newHead).ref(ref));
           },
           () -> createConflictMessage("Retry-Failure", ref, target));
     } catch (ReferenceAlreadyExistsException | ReferenceNotFoundException | RuntimeException e) {
@@ -428,7 +462,8 @@ public abstract class NonTransactionalDatabaseAdapter<
                         .setRefType(protoTypeForRef(reference))
                         .setCommitHash(currentHead.asBytes())
                         .setOperationTime(commitTimeInMicros())
-                        .setOperation(RefLogEntry.Operation.DELETE_REFERENCE));
+                        .setOperation(RefLogEntry.Operation.DELETE_REFERENCE),
+                () -> ReferenceDeletedEvent.builder().hash(currentHead).ref(reference));
           },
           () -> deleteConflictMessage("Retry-Failure", reference, expectedHead));
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
@@ -462,7 +497,12 @@ public abstract class NonTransactionalDatabaseAdapter<
                         .setCommitHash(assignTo.asBytes())
                         .setOperationTime(commitTimeInMicros())
                         .setOperation(RefLogEntry.Operation.ASSIGN_REFERENCE)
-                        .addSourceHashes(beforeAssign.asBytes()));
+                        .addSourceHashes(beforeAssign.asBytes()),
+                () ->
+                    ReferenceAssignedEvent.builder()
+                        .hash(assignTo)
+                        .ref(assignee)
+                        .previousHash(beforeAssign));
           },
           () -> assignConflictMessage("Retry-Failure", assignee, expectedHead, assignTo));
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
@@ -524,11 +564,23 @@ public abstract class NonTransactionalDatabaseAdapter<
               .addGlobalParentsInclHead(NO_ANCESTOR.asBytes())
               .build());
 
+      repositoryEvent(() -> RepositoryInitializedEvent.builder().defaultBranch(defaultBranchName));
+
+      BranchName defaultBranch = BranchName.of(defaultBranchName);
       Preconditions.checkState(
-          createNamedReference(ctx, BranchName.of(defaultBranchName), NO_ANCESTOR),
-          "Could not create default branch");
+          createNamedReference(ctx, defaultBranch, NO_ANCESTOR), "Could not create default branch");
+
+      repositoryEvent(() -> ReferenceCreatedEvent.builder().ref(defaultBranch).hash(NO_ANCESTOR));
     }
   }
+
+  @Override
+  public void eraseRepo() {
+    doEraseRepo();
+    repositoryEvent(RepositoryErasedEvent::builder);
+  }
+
+  protected abstract void doEraseRepo();
 
   @Override
   public Optional<ContentIdAndBytes> globalContent(ContentId contentId) {
@@ -689,17 +741,25 @@ public abstract class NonTransactionalDatabaseAdapter<
     final RefPointer currentHead;
     final Hash newHead;
     final Consumer<RefLogEntry.Builder> refLogEntry;
+    final Supplier<? extends AdapterEvent.Builder<?, ?>> adapterEventBuilder;
 
     private CasOpResult(
-        RefPointer currentHead, Hash newHead, Consumer<RefLogEntry.Builder> refLogEntry) {
+        RefPointer currentHead,
+        Hash newHead,
+        Consumer<RefLogEntry.Builder> refLogEntry,
+        Supplier<? extends AdapterEvent.Builder<?, ?>> adapterEventBuilder) {
       this.currentHead = currentHead;
       this.newHead = newHead;
       this.refLogEntry = refLogEntry;
+      this.adapterEventBuilder = adapterEventBuilder;
     }
 
     public static CasOpResult casOpResult(
-        RefPointer currentHead, Hash newHead, Consumer<RefLogEntry.Builder> refLogEntry) {
-      return new CasOpResult(currentHead, newHead, refLogEntry);
+        RefPointer currentHead,
+        Hash newHead,
+        Consumer<RefLogEntry.Builder> refLogEntry,
+        Supplier<? extends AdapterEvent.Builder<?, ?>> adapterEventBuilder) {
+      return new CasOpResult(currentHead, newHead, refLogEntry, adapterEventBuilder);
     }
   }
 
@@ -793,6 +853,8 @@ public abstract class NonTransactionalDatabaseAdapter<
           tryState.retry();
           continue;
         }
+
+        repositoryEvent(result.adapterEventBuilder);
 
         // CAS against branch-heads succeeded, now try to write the ref-log-entry
 

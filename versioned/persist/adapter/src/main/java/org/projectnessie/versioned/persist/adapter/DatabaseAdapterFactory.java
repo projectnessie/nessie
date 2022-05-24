@@ -20,6 +20,7 @@ import java.util.ServiceLoader;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import org.projectnessie.versioned.StoreWorker;
+import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
 
 /**
  * Each {@link org.projectnessie.versioned.persist.adapter.DatabaseAdapter} is configured and
@@ -46,6 +47,7 @@ public interface DatabaseAdapterFactory<
   abstract class Builder<Config, AdjustableConfig, Connector> {
     private Config config;
     private Connector connector;
+    private AdapterEventConsumer eventConsumer;
 
     public Builder<Config, AdjustableConfig, Connector> withConfig(Config config) {
       this.config = config;
@@ -54,6 +56,13 @@ public interface DatabaseAdapterFactory<
 
     public Builder<Config, AdjustableConfig, Connector> withConnector(Connector connector) {
       this.connector = connector;
+      return this;
+    }
+
+    /** Register the {@link AdapterEventConsumer} to receive events from the database adapter. */
+    public Builder<Config, AdjustableConfig, Connector> withEventConsumer(
+        AdapterEventConsumer eventConsumer) {
+      this.eventConsumer = eventConsumer;
       return this;
     }
 
@@ -70,6 +79,10 @@ public interface DatabaseAdapterFactory<
 
     public Connector getConnector() {
       return connector;
+    }
+
+    public AdapterEventConsumer getEventConsumer() {
+      return eventConsumer;
     }
 
     public abstract DatabaseAdapter build(StoreWorker<?, ?, ?> storeWorker);

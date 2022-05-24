@@ -18,6 +18,7 @@ package org.projectnessie.versioned.persist.tx.postgres;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import org.projectnessie.versioned.StoreWorker;
+import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
 import org.projectnessie.versioned.persist.tx.TxConnectionProvider;
 import org.projectnessie.versioned.persist.tx.TxDatabaseAdapter;
 import org.projectnessie.versioned.persist.tx.TxDatabaseAdapterConfig;
@@ -27,8 +28,9 @@ public class PostgresDatabaseAdapter extends TxDatabaseAdapter {
   public PostgresDatabaseAdapter(
       TxDatabaseAdapterConfig config,
       TxConnectionProvider<?> db,
-      StoreWorker<?, ?, ?> storeWorker) {
-    super(config, db, storeWorker);
+      StoreWorker<?, ?, ?> storeWorker,
+      AdapterEventConsumer eventConsumer) {
+    super(config, db, storeWorker, eventConsumer);
   }
 
   @Override

@@ -34,6 +34,7 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUti
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.verifyExpectedHash;
 import static org.projectnessie.versioned.persist.adapter.spi.Traced.trace;
 import static org.projectnessie.versioned.persist.adapter.spi.TryLoopState.newTryLoopState;
+import static org.projectnessie.versioned.persist.tx.TxDatabaseAdapter.OpResult.opResult;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -45,6 +46,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -92,6 +94,16 @@ import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.adapter.RepoMaintenanceParams;
 import org.projectnessie.versioned.persist.adapter.TransplantParams;
+import org.projectnessie.versioned.persist.adapter.events.AdapterEvent;
+import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
+import org.projectnessie.versioned.persist.adapter.events.CommitEvent;
+import org.projectnessie.versioned.persist.adapter.events.MergeEvent;
+import org.projectnessie.versioned.persist.adapter.events.ReferenceAssignedEvent;
+import org.projectnessie.versioned.persist.adapter.events.ReferenceCreatedEvent;
+import org.projectnessie.versioned.persist.adapter.events.ReferenceDeletedEvent;
+import org.projectnessie.versioned.persist.adapter.events.RepositoryErasedEvent;
+import org.projectnessie.versioned.persist.adapter.events.RepositoryInitializedEvent;
+import org.projectnessie.versioned.persist.adapter.events.TransplantEvent;
 import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.spi.Traced;
 import org.projectnessie.versioned.persist.adapter.spi.TryLoopState;
@@ -119,8 +131,9 @@ public abstract class TxDatabaseAdapter
   public TxDatabaseAdapter(
       TxDatabaseAdapterConfig config,
       TxConnectionProvider<?> db,
-      StoreWorker<?, ?, ?> storeWorker) {
-    super(config, storeWorker);
+      StoreWorker<?, ?, ?> storeWorker,
+      AdapterEventConsumer eventConsumer) {
+    super(config, storeWorker, eventConsumer);
 
     // get the externally configured TxConnectionProvider
     Objects.requireNonNull(
@@ -252,6 +265,7 @@ public abstract class TxDatabaseAdapter
                 ImmutableMergeResult.Builder<CommitLogEntry> mergeResult = MergeResult.builder();
                 mergeResultHolder.set(mergeResult);
 
+                List<CommitLogEntry> writtenCommits = new ArrayList<>();
                 Hash toHead =
                     mergeAttempt(
                         conn,
@@ -259,12 +273,13 @@ public abstract class TxDatabaseAdapter
                         currentHead,
                         h -> {},
                         h -> {},
+                        writtenCommits::add,
                         mergeParams,
                         mergeResult);
 
                 if (toHead.equals(currentHead)) {
                   // nothing done
-                  return currentHead;
+                  return opResult(currentHead, null);
                 }
 
                 Hash resultHash =
@@ -278,7 +293,14 @@ public abstract class TxDatabaseAdapter
                     RefLogEntry.Operation.MERGE,
                     Collections.singletonList(mergeParams.getMergeFromHash()));
 
-                return resultHash;
+                return opResult(
+                    resultHash,
+                    () ->
+                        MergeEvent.builder()
+                            .previousHash(currentHead)
+                            .hash(resultHash)
+                            .branch(mergeParams.getToBranch())
+                            .commits(writtenCommits));
               },
               () -> mergeConflictMessage("Conflict", mergeParams),
               () -> mergeConflictMessage("Retry-failure", mergeParams));
@@ -316,6 +338,7 @@ public abstract class TxDatabaseAdapter
                 ImmutableMergeResult.Builder<CommitLogEntry> mergeResult = MergeResult.builder();
                 mergeResultHolder.set(mergeResult);
 
+                List<CommitLogEntry> writtenCommits = new ArrayList<>();
                 Hash targetHead =
                     transplantAttempt(
                         conn,
@@ -323,6 +346,7 @@ public abstract class TxDatabaseAdapter
                         currentHead,
                         h -> {},
                         h -> {},
+                        writtenCommits::add,
                         transplantParams,
                         mergeResult);
 
@@ -338,7 +362,14 @@ public abstract class TxDatabaseAdapter
                     RefLogEntry.Operation.TRANSPLANT,
                     transplantParams.getSequenceToTransplant());
 
-                return resultHash;
+                return opResult(
+                    resultHash,
+                    () ->
+                        TransplantEvent.builder()
+                            .previousHash(currentHead)
+                            .hash(resultHash)
+                            .branch(transplantParams.getToBranch())
+                            .commits(writtenCommits));
               },
               () -> transplantConflictMessage("Conflict", transplantParams),
               () -> transplantConflictMessage("Retry-failure", transplantParams));
@@ -383,7 +414,14 @@ public abstract class TxDatabaseAdapter
                 RefLogEntry.Operation.COMMIT,
                 emptyList());
 
-            return resultHash;
+            return opResult(
+                resultHash,
+                () ->
+                    CommitEvent.builder()
+                        .previousHash(branchHead)
+                        .hash(resultHash)
+                        .branch(commitParams.getToBranch())
+                        .addCommits(newBranchCommit));
           },
           () ->
               commitConflictMessage(
@@ -412,12 +450,12 @@ public abstract class TxDatabaseAdapter
               throw referenceAlreadyExists(ref);
             }
 
-            Hash hash = target;
-            if (hash == null) {
-              // Special case: Don't validate, if the 'target' parameter is null.
-              // This is mostly used for tests that re-create the default-branch.
-              hash = NO_ANCESTOR;
-            }
+            Hash hash =
+                target != null
+                    ? target
+                    // Special case: Don't validate, if the 'target' parameter is null.
+                    // This is mostly used for tests that re-create the default-branch.
+                    : NO_ANCESTOR;
 
             validateHashExists(conn, hash);
 
@@ -431,7 +469,7 @@ public abstract class TxDatabaseAdapter
                 RefLogEntry.Operation.CREATE_REFERENCE,
                 emptyList());
 
-            return hash;
+            return opResult(hash, () -> ReferenceCreatedEvent.builder().hash(hash).ref(ref));
           },
           () -> createConflictMessage("Conflict", ref, target),
           () -> createConflictMessage("Retry-Failure", ref, target));
@@ -473,7 +511,8 @@ public abstract class TxDatabaseAdapter
                 RefLogEntry.Operation.DELETE_REFERENCE,
                 emptyList());
 
-            return pointer;
+            return opResult(
+                pointer, () -> ReferenceDeletedEvent.builder().hash(commitHash).ref(reference));
           },
           () -> deleteConflictMessage("Conflict", reference, expectedHead),
           () -> deleteConflictMessage("Retry-Failure", reference, expectedHead));
@@ -509,7 +548,13 @@ public abstract class TxDatabaseAdapter
                 RefLogEntry.Operation.ASSIGN_REFERENCE,
                 Collections.singletonList(assigneeHead));
 
-            return resultHash;
+            return opResult(
+                resultHash,
+                () ->
+                    ReferenceAssignedEvent.builder()
+                        .hash(assignTo)
+                        .ref(assignee)
+                        .previousHash(assigneeHead));
           },
           () -> assignConflictMessage("Conflict", assignee, expectedHead, assignTo),
           () -> assignConflictMessage("Retry-Failure", assignee, expectedHead, assignTo));
@@ -539,15 +584,16 @@ public abstract class TxDatabaseAdapter
   @Override
   public void initializeRepo(String defaultBranchName) {
     try (ConnectionWrapper conn = borrowConnection()) {
-      if (!checkNamedRefExistence(conn, BranchName.of(defaultBranchName))) {
+      BranchName defaultBranch = BranchName.of(defaultBranchName);
+      if (!checkNamedRefExistence(conn, defaultBranch)) {
         // note: no need to initialize the repo-description
 
-        insertNewReference(conn, BranchName.of(defaultBranchName), NO_ANCESTOR);
+        insertNewReference(conn, defaultBranch, NO_ANCESTOR);
 
         RefLogEntry newRefLog =
             writeRefLogEntry(
                 conn,
-                BranchName.of(defaultBranchName),
+                defaultBranch,
                 RefLogHead.builder()
                     .refLogHead(NO_ANCESTOR)
                     .addRefLogParentsInclHead(NO_ANCESTOR)
@@ -559,6 +605,10 @@ public abstract class TxDatabaseAdapter
         insertRefLogHead(newRefLog, conn);
 
         conn.commit();
+
+        repositoryEvent(
+            () -> RepositoryInitializedEvent.builder().defaultBranch(defaultBranchName));
+        repositoryEvent(() -> ReferenceCreatedEvent.builder().ref(defaultBranch).hash(NO_ANCESTOR));
       }
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -603,6 +653,8 @@ public abstract class TxDatabaseAdapter
       }
 
       conn.commit();
+
+      repositoryEvent(RepositoryErasedEvent::builder);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -723,8 +775,24 @@ public abstract class TxDatabaseAdapter
      * @throws VersionStoreException any other version-store exception
      * @see #opLoop(String, NamedRef, boolean, LoopOp, Supplier, Supplier)
      */
-    Hash apply(ConnectionWrapper conn, Hash targetRefHead)
+    OpResult apply(ConnectionWrapper conn, Hash targetRefHead)
         throws VersionStoreException, SQLException;
+  }
+
+  static final class OpResult {
+    final Hash head;
+    final Supplier<? extends AdapterEvent.Builder<?, ?>> adapterEventBuilder;
+
+    private OpResult(
+        Hash head, Supplier<? extends AdapterEvent.Builder<?, ?>> adapterEventBuilder) {
+      this.head = head;
+      this.adapterEventBuilder = adapterEventBuilder;
+    }
+
+    public static OpResult opResult(
+        Hash head, Supplier<? extends AdapterEvent.Builder<?, ?>> adapterEventBuilder) {
+      return new OpResult(head, adapterEventBuilder);
+    }
   }
 
   /**
@@ -781,12 +849,14 @@ public abstract class TxDatabaseAdapter
         Hash pointer = createRef ? null : fetchNamedRefHead(conn, namedReference);
 
         try {
-          Hash newHead = loopOp.apply(conn, pointer);
+          OpResult opResult = loopOp.apply(conn, pointer);
+
+          repositoryEvent(opResult.adapterEventBuilder);
 
           // The operation succeeded, if it returns a non-null hash value.
-          if (newHead != null) {
+          if (opResult.head != null) {
             conn.commit();
-            return tryState.success(newHead);
+            return tryState.success(opResult.head);
           }
         } catch (RetryTransactionException e) {
           conn.rollback();
@@ -1292,7 +1362,7 @@ public abstract class TxDatabaseAdapter
               }
             }
 
-            return NO_ANCESTOR;
+            return opResult(NO_ANCESTOR, null);
           },
           () -> repoDescUpdateConflictMessage("Conflict"),
           () -> repoDescUpdateConflictMessage("Retry-failure"));

@@ -35,6 +35,14 @@ public abstract class AbstractDatabaseAdapterTest {
 
   @Nested
   @SuppressWarnings("ClassCanBeStatic")
+  public class Events extends AbstractEvents {
+    Events() {
+      super(databaseAdapter);
+    }
+  }
+
+  @Nested
+  @SuppressWarnings("ClassCanBeStatic")
   public class Repositories extends AbstractRepositories {
     Repositories() {
       super(databaseAdapter);

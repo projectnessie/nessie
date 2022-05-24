@@ -19,13 +19,17 @@ import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
+import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
 
 public abstract class TxDatabaseAdapterFactory<CONNECTOR extends DatabaseConnectionProvider<?>>
     implements DatabaseAdapterFactory<
         TxDatabaseAdapterConfig, AdjustableTxDatabaseAdapterConfig, CONNECTOR> {
 
   protected abstract DatabaseAdapter create(
-      TxDatabaseAdapterConfig config, CONNECTOR connector, StoreWorker<?, ?, ?> storeWorker);
+      TxDatabaseAdapterConfig config,
+      CONNECTOR connector,
+      StoreWorker<?, ?, ?> storeWorker,
+      AdapterEventConsumer eventConsumer);
 
   @Override
   public Builder<TxDatabaseAdapterConfig, AdjustableTxDatabaseAdapterConfig, CONNECTOR>
@@ -47,7 +51,7 @@ public abstract class TxDatabaseAdapterFactory<CONNECTOR extends DatabaseConnect
 
     @Override
     public DatabaseAdapter build(StoreWorker<?, ?, ?> storeWorker) {
-      return create(getConfig(), getConnector(), storeWorker);
+      return create(getConfig(), getConnector(), storeWorker, getEventConsumer());
     }
   }
 }

@@ -17,6 +17,7 @@ package org.projectnessie.versioned.persist.mongodb;
 
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterFactory;
 
@@ -34,7 +35,8 @@ public class MongoDatabaseAdapterFactory
   protected DatabaseAdapter create(
       NonTransactionalDatabaseAdapterConfig config,
       MongoDatabaseClient client,
-      StoreWorker<?, ?, ?> storeWorker) {
-    return new MongoDatabaseAdapter(config, client, storeWorker);
+      StoreWorker<?, ?, ?> storeWorker,
+      AdapterEventConsumer eventConsumer) {
+    return new MongoDatabaseAdapter(config, client, storeWorker, eventConsumer);
   }
 }
