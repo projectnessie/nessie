@@ -56,7 +56,7 @@ public class ITNessieError {
     ContentKey k = ContentKey.of("a");
     IcebergTable t = IcebergTable.of("path1", 42, 42, 42, 42);
     assertEquals(
-        "Bad Request (HTTP/400): commitMultipleOperations.hash: must not be null",
+        "Bad Request (HTTP/400): commitMultipleOperations.expectedHash: must not be null",
         assertThrows(
                 NessieBadRequestException.class,
                 () ->

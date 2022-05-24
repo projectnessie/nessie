@@ -137,7 +137,7 @@ public interface TreeApi {
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           String referenceName,
       @Valid @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          String oldHash,
+          String expectedHash,
       @Valid @NotNull Reference assignTo)
       throws NessieNotFoundException, NessieConflictException;
 
@@ -149,7 +149,7 @@ public interface TreeApi {
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           String referenceName,
       @Valid @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          String hash)
+          String expectedHash)
       throws NessieConflictException, NessieNotFoundException;
 
   /** cherry pick a set of commits into a branch. */
@@ -159,7 +159,7 @@ public interface TreeApi {
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           String branchName,
       @Valid @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          String hash,
+          String expectedHash,
       @Valid String message,
       @Valid Transplant transplant)
       throws NessieNotFoundException, NessieConflictException;
@@ -171,7 +171,7 @@ public interface TreeApi {
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           String branchName,
       @Valid @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          String hash,
+          String expectedHash,
       @Valid @NotNull Merge merge)
       throws NessieNotFoundException, NessieConflictException;
 
@@ -181,7 +181,7 @@ public interface TreeApi {
    * that contains the operations of the invocation.
    *
    * @param branchName Branch to change, defaults to default branch.
-   * @param hash Expected hash of branch.
+   * @param expectedHash Expected hash of branch.
    * @param operations {@link Operations} to apply
    * @return updated {@link Branch} objects with the hash of the new HEAD
    * @throws NessieNotFoundException if {@code branchName} could not be found
@@ -194,7 +194,7 @@ public interface TreeApi {
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           String branchName,
       @Valid @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          String hash,
+          String expectedHash,
       @Valid @NotNull Operations operations)
       throws NessieNotFoundException, NessieConflictException;
 }
