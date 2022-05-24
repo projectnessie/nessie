@@ -489,10 +489,8 @@ public abstract class TxDatabaseAdapter
       opLoop(
           "assignRef",
           assignee,
-          true,
+          false,
           (conn, assigneeHead) -> {
-            assigneeHead = fetchNamedRefHead(conn, assignee);
-
             verifyExpectedHash(assigneeHead, assignee, expectedHead);
 
             if (!NO_ANCESTOR.equals(assignTo) && fetchFromCommitLog(conn, assignTo) == null) {
