@@ -357,10 +357,19 @@ public interface HttpTreeApi extends TreeApi {
   @APIResponses({
     @APIResponse(
         responseCode = "204",
+        content =
+            @Content(
+                mediaType = MediaType.APPLICATION_JSON,
+                examples = {
+                  @ExampleObject(ref = "mergeResponseSuccess"),
+                  @ExampleObject(ref = "mergeResponseFail")
+                },
+                schema = @Schema(implementation = MergeResponse.class)),
         description =
             "Transplant operation completed. "
                 + "The actual transplant might have failed and reported as successful=false, "
-                + "if the client asked to return a conflict as a result instead of returning an error."),
+                + "if the client asked to return a conflict as a result instead of returning an error. "
+                + "Note: the 'commonAncestor' field in a response will always be null for a transplant."),
     @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
     @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
     @APIResponse(
@@ -409,6 +418,14 @@ public interface HttpTreeApi extends TreeApi {
   @APIResponses({
     @APIResponse(
         responseCode = "204",
+        content =
+            @Content(
+                mediaType = MediaType.APPLICATION_JSON,
+                examples = {
+                  @ExampleObject(ref = "mergeResponseSuccess"),
+                  @ExampleObject(ref = "mergeResponseFail")
+                },
+                schema = @Schema(implementation = MergeResponse.class)),
         description =
             "Merge operation completed. "
                 + "The actual merge might have failed and reported as successful=false, "
