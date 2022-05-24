@@ -29,7 +29,7 @@ import org.projectnessie.versioned.persist.serialize.AdapterTypes.ReferenceNames
  * <p>Takes a function that takes the required segment number and returns a {@link List} of {@link
  * ReferenceNames}, where the first element is the requested segment plus the prefetched segments,
  * according to {@link NonTransactionalDatabaseAdapterConfig#getReferencesSegmentPrefetch()}. A
- * {@link null} segment in the returned list indicates that there are no more segments.
+ * {@code null} segment in the returned list indicates that there are no more segments.
  */
 final class ReferenceNamesSpliterator extends AbstractSpliterator<ReferenceNames> {
 
@@ -37,6 +37,12 @@ final class ReferenceNamesSpliterator extends AbstractSpliterator<ReferenceNames
   private int offset;
   private List<ReferenceNames> segments = Collections.emptyList();
 
+  /**
+   * Function that takes the segment number of the {@link ReferenceNames} segment to retrieve.
+   *
+   * <p>The function <em>must</em> return the requested segment in the returned list at index 0, but
+   * can return more {@link ReferenceNames} segments (prefetching).
+   */
   private final IntFunction<List<ReferenceNames>> fetchReferenceNames;
 
   ReferenceNamesSpliterator(IntFunction<List<ReferenceNames>> fetchReferenceNames) {
