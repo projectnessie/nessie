@@ -25,4 +25,10 @@ public interface MergeTransplantBuilder<R extends MergeTransplantBuilder<R>>
           String fromRefName);
 
   R keepIndividualCommits(boolean keepIndividualCommits);
+
+  R dryRun(boolean dryRun);
+
+  R fetchAdditionalInfo(boolean fetchAdditionalInfo);
+
+  R returnConflictAsResult(boolean returnConflictAsResult);
 }

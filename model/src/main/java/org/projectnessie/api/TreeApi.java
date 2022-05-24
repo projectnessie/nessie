@@ -29,6 +29,7 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
+import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
@@ -152,7 +153,7 @@ public interface TreeApi {
       throws NessieConflictException, NessieNotFoundException;
 
   /** cherry pick a set of commits into a branch. */
-  void transplantCommitsIntoBranch(
+  MergeResponse transplantCommitsIntoBranch(
       @Valid
           @NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
@@ -164,7 +165,7 @@ public interface TreeApi {
       throws NessieNotFoundException, NessieConflictException;
 
   /** merge mergeRef onto ref. */
-  void mergeRefIntoBranch(
+  MergeResponse mergeRefIntoBranch(
       @Valid
           @NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)

@@ -18,6 +18,7 @@ package org.projectnessie.client.api;
 import javax.validation.constraints.NotBlank;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Reference;
 
 /**
@@ -36,5 +37,5 @@ public interface MergeReferenceBuilder extends MergeTransplantBuilder<MergeRefer
     return fromRefName(fromRef.getName()).fromHash(fromRef.getHash());
   }
 
-  void merge() throws NessieNotFoundException, NessieConflictException;
+  MergeResponse merge() throws NessieNotFoundException, NessieConflictException;
 }

@@ -45,6 +45,7 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
+import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
@@ -345,6 +346,7 @@ public interface HttpTreeApi extends TreeApi {
 
   @Override
   @POST
+  @Produces(MediaType.APPLICATION_JSON)
   @Path("branch/{branchName}/transplant")
   @Operation(
       summary = "Transplant commits from 'transplant' onto 'branchName'",
@@ -353,7 +355,12 @@ public interface HttpTreeApi extends TreeApi {
               + "visible to concurrent readers/writers. The sequence to transplant must be "
               + "contiguous and in order.")
   @APIResponses({
-    @APIResponse(responseCode = "204", description = "Merged successfully."),
+    @APIResponse(
+        responseCode = "204",
+        description =
+            "Transplant operation completed. "
+                + "The actual transplant might have failed and reported as successful=false, "
+                + "if the client asked to return a conflict as a result instead of returning an error."),
     @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
     @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
     @APIResponse(
@@ -362,7 +369,7 @@ public interface HttpTreeApi extends TreeApi {
     @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
     @APIResponse(responseCode = "409", description = "update conflict")
   })
-  void transplantCommitsIntoBranch(
+  MergeResponse transplantCommitsIntoBranch(
       @Parameter(
               description = "Branch to transplant into",
               examples = {@ExampleObject(ref = "ref")})
@@ -389,6 +396,7 @@ public interface HttpTreeApi extends TreeApi {
 
   @Override
   @POST
+  @Produces(MediaType.APPLICATION_JSON)
   @Path("branch/{branchName}/merge")
   @Operation(
       summary = "Merge commits from 'mergeRef' onto 'branchName'.",
@@ -399,7 +407,12 @@ public interface HttpTreeApi extends TreeApi {
               + "those until we arrive at a common ancestor. Depending on the underlying "
               + "implementation, the number of commits allowed as part of this operation may be limited.")
   @APIResponses({
-    @APIResponse(responseCode = "204", description = "Merged successfully."),
+    @APIResponse(
+        responseCode = "204",
+        description =
+            "Merge operation completed. "
+                + "The actual merge might have failed and reported as successful=false, "
+                + "if the client asked to return a conflict as a result instead of returning an error."),
     @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
     @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
     @APIResponse(
@@ -408,7 +421,7 @@ public interface HttpTreeApi extends TreeApi {
     @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
     @APIResponse(responseCode = "409", description = "update conflict")
   })
-  void mergeRefIntoBranch(
+  MergeResponse mergeRefIntoBranch(
       @Parameter(
               description = "Branch to merge into",
               examples = {@ExampleObject(ref = "ref")})

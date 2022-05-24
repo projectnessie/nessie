@@ -44,10 +44,23 @@ public interface BaseMergeTransplant {
   MergeBehavior getDefaultKeyMergeMode();
 
   @Nullable
+  @JsonInclude(Include.NON_NULL)
   Boolean isDryRun();
 
   @Nullable
+  @JsonInclude(Include.NON_NULL)
   Boolean isFetchAdditionalInfo();
+
+  /**
+   * When set to {@code true}, the {@link org.projectnessie.api.TreeApi#mergeRefIntoBranch(String,
+   * String, Merge)} and {@link org.projectnessie.api.TreeApi#transplantCommitsIntoBranch(String,
+   * String, String, Transplant)} operations will return {@link MergeResponse} object when a content
+   * based conflict cannot be resolved, instead of throwing a {@link
+   * org.projectnessie.error.NessieReferenceConflictException}.
+   */
+  @Nullable
+  @JsonInclude(Include.NON_NULL)
+  Boolean isReturnConflictAsResult();
 
   @Value.Immutable
   @JsonSerialize(as = ImmutableMergeKeyBehavior.class)

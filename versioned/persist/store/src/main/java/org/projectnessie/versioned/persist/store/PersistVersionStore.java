@@ -41,6 +41,7 @@ import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.ImmutableRefLogDetails;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.KeyEntry;
+import org.projectnessie.versioned.MergeConflictException;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
@@ -179,19 +180,27 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
       boolean dryRun,
       boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    MergeResult<CommitLogEntry> adapterMergeResult =
-        databaseAdapter.transplant(
-            TransplantParams.builder()
-                .toBranch(targetBranch)
-                .expectedHead(referenceHash)
-                .sequenceToTransplant(sequenceToTransplant)
-                .updateCommitMetadata(updateCommitMetadataFunction(updateCommitMetadata))
-                .keepIndividualCommits(keepIndividualCommits)
-                .mergeTypes(mergeTypes)
-                .defaultMergeType(defaultMergeType)
-                .isDryRun(dryRun)
-                .build());
-    return storeMergeResult(adapterMergeResult, fetchAdditionalInfo);
+    try {
+      MergeResult<CommitLogEntry> adapterMergeResult =
+          databaseAdapter.transplant(
+              TransplantParams.builder()
+                  .toBranch(targetBranch)
+                  .expectedHead(referenceHash)
+                  .sequenceToTransplant(sequenceToTransplant)
+                  .updateCommitMetadata(updateCommitMetadataFunction(updateCommitMetadata))
+                  .keepIndividualCommits(keepIndividualCommits)
+                  .mergeTypes(mergeTypes)
+                  .defaultMergeType(defaultMergeType)
+                  .isDryRun(dryRun)
+                  .build());
+      return storeMergeResult(adapterMergeResult, fetchAdditionalInfo);
+    } catch (MergeConflictException mergeConflict) {
+      @SuppressWarnings("unchecked")
+      MergeResult<CommitLogEntry> adapterMergeResult =
+          (MergeResult<CommitLogEntry>) mergeConflict.getMergeResult();
+      throw new MergeConflictException(
+          mergeConflict.getMessage(), storeMergeResult(adapterMergeResult, fetchAdditionalInfo));
+    }
   }
 
   @Override
@@ -206,19 +215,27 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
       boolean dryRun,
       boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    MergeResult<CommitLogEntry> adapterMergeResult =
-        databaseAdapter.merge(
-            MergeParams.builder()
-                .toBranch(toBranch)
-                .expectedHead(expectedHash)
-                .mergeFromHash(fromHash)
-                .updateCommitMetadata(updateCommitMetadataFunction(updateCommitMetadata))
-                .keepIndividualCommits(keepIndividualCommits)
-                .mergeTypes(mergeTypes)
-                .defaultMergeType(defaultMergeType)
-                .isDryRun(dryRun)
-                .build());
-    return storeMergeResult(adapterMergeResult, fetchAdditionalInfo);
+    try {
+      MergeResult<CommitLogEntry> adapterMergeResult =
+          databaseAdapter.merge(
+              MergeParams.builder()
+                  .toBranch(toBranch)
+                  .expectedHead(expectedHash)
+                  .mergeFromHash(fromHash)
+                  .updateCommitMetadata(updateCommitMetadataFunction(updateCommitMetadata))
+                  .keepIndividualCommits(keepIndividualCommits)
+                  .mergeTypes(mergeTypes)
+                  .defaultMergeType(defaultMergeType)
+                  .isDryRun(dryRun)
+                  .build());
+      return storeMergeResult(adapterMergeResult, fetchAdditionalInfo);
+    } catch (MergeConflictException mergeConflict) {
+      @SuppressWarnings("unchecked")
+      MergeResult<CommitLogEntry> adapterMergeResult =
+          (MergeResult<CommitLogEntry>) mergeConflict.getMergeResult();
+      throw new MergeConflictException(
+          mergeConflict.getMessage(), storeMergeResult(adapterMergeResult, fetchAdditionalInfo));
+    }
   }
 
   private MergeResult<Commit<METADATA, CONTENT>> storeMergeResult(

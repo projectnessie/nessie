@@ -21,6 +21,7 @@ import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.ImmutableTransplant;
+import org.projectnessie.model.MergeResponse;
 
 final class HttpTransplantCommits extends BaseHttpOnBranchRequest<TransplantCommitsBuilder>
     implements TransplantCommitsBuilder {
@@ -57,7 +58,27 @@ final class HttpTransplantCommits extends BaseHttpOnBranchRequest<TransplantComm
   }
 
   @Override
-  public void transplant() throws NessieNotFoundException, NessieConflictException {
-    client.getTreeApi().transplantCommitsIntoBranch(branchName, hash, message, transplant.build());
+  public TransplantCommitsBuilder dryRun(boolean dryRun) {
+    transplant.isDryRun(dryRun);
+    return this;
+  }
+
+  @Override
+  public TransplantCommitsBuilder fetchAdditionalInfo(boolean fetchAdditionalInfo) {
+    transplant.isFetchAdditionalInfo(fetchAdditionalInfo);
+    return this;
+  }
+
+  @Override
+  public TransplantCommitsBuilder returnConflictAsResult(boolean returnConflictAsResult) {
+    transplant.isReturnConflictAsResult(returnConflictAsResult);
+    return this;
+  }
+
+  @Override
+  public MergeResponse transplant() throws NessieNotFoundException, NessieConflictException {
+    return client
+        .getTreeApi()
+        .transplantCommitsIntoBranch(branchName, hash, message, transplant.build());
   }
 }

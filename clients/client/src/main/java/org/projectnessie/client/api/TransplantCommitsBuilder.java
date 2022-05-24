@@ -20,6 +20,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.MergeResponse;
 
 /**
  * Request builder for "transplant commits".
@@ -32,5 +33,5 @@ public interface TransplantCommitsBuilder extends MergeTransplantBuilder<Transpl
   TransplantCommitsBuilder hashesToTransplant(
       @NotNull @Size(min = 1) List<String> hashesToTransplant);
 
-  void transplant() throws NessieNotFoundException, NessieConflictException;
+  MergeResponse transplant() throws NessieNotFoundException, NessieConflictException;
 }
