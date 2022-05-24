@@ -9,6 +9,7 @@ runs:
         path: perftest/simulations/target/gatling/*/simulation.log
     - uses: codecov/codecov-action@v2
       if: github.repository_owner == 'projectnessie'
+      continue-on-error: true
       with:
         verbose: true
         fail_ci_if_error: true
@@ -16,6 +17,7 @@ runs:
         files: code-coverage/target/site/jacoco-aggregate-all/jacoco.xml
     - uses: codecov/codecov-action@v2
       if: github.repository_owner == 'projectnessie'
+      continue-on-error: true
       with:
         verbose: true
         fail_ci_if_error: true
