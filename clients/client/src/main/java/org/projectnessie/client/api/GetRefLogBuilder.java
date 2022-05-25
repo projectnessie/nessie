@@ -24,6 +24,8 @@ import org.projectnessie.model.Validation;
 /**
  * Request builder for "get reflog".
  *
+ * <p><em>The Nessie reflog in this form is deprecated, likely for removal.</em>
+ *
  * @since {@link NessieApiV1}
  */
 public interface GetRefLogBuilder
