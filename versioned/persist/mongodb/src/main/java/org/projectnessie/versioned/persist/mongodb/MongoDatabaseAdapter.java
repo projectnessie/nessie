@@ -634,7 +634,9 @@ public class MongoDatabaseAdapter
   }
 
   @Override
-  protected void doCleanUpRefLogWrite(NonTransactionalOperationContext ctx, Hash refLogId) {}
+  protected void doCleanUpRefLogWrite(NonTransactionalOperationContext ctx, Hash refLogId) {
+    client.getRefLog().deleteOne(Filters.eq(toId(refLogId)));
+  }
 
   @Override
   protected List<ReferenceNames> doFetchReferenceNames(

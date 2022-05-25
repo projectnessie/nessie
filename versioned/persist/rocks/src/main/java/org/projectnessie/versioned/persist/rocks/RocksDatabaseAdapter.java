@@ -241,7 +241,17 @@ public class RocksDatabaseAdapter
   }
 
   @Override
-  protected void doCleanUpRefLogWrite(NonTransactionalOperationContext ctx, Hash refLogId) {}
+  protected void doCleanUpRefLogWrite(NonTransactionalOperationContext ctx, Hash refLogId) {
+    Lock lock = dbInstance.getLock().writeLock();
+    lock.lock();
+    try {
+      db.delete(dbInstance.getCfRefLog(), dbKey(refLogId));
+    } catch (RocksDBException e) {
+      throw new RuntimeException(e);
+    } finally {
+      lock.unlock();
+    }
+  }
 
   @Override
   protected GlobalStateLogEntry doFetchFromGlobalLog(
