@@ -108,7 +108,7 @@ final class RefLogSpliterator extends AbstractSpliterator<RefLog> {
       return true;
     }
 
-    return true;
+    return false;
   }
 
   private static final class RefLogSplit {

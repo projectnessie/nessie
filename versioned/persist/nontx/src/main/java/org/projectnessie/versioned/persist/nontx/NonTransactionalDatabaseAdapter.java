@@ -484,16 +484,6 @@ public abstract class NonTransactionalDatabaseAdapter<
     if (fetchGlobalPointer(ctx) == null) {
       RefLogEntry newRefLog;
       try {
-        for (int stripe = 0; stripe < config.getRefLogStripes(); stripe++) {
-          unsafeWriteRefLogStripe(
-              ctx,
-              stripe,
-              RefLogParents.newBuilder()
-                  .addRefLogParentsInclHead(NO_ANCESTOR.asBytes())
-                  .setVersion(randomHash().asBytes())
-                  .build());
-        }
-
         RefLogParents refLogParents =
             RefLogParents.newBuilder()
                 .addRefLogParentsInclHead(NO_ANCESTOR.asBytes())
