@@ -174,11 +174,144 @@ components:
     merge:
       value:
         fromHash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+        fromRefName: "source-ref-name"
+        keepIndividualCommits: false
+        defaultKeyMergeMode: "NORMAL"
+        keyMergeModes:
+          - key:
+              elements:
+                - example
+                - key
+              mergeBehavior: "FORCE"
+        dryRun: false
+        fetchAdditionalInfo: false
+        returnConflictAsResult: true
 
     transplant:
       value:
         hashesToTransplant:
           - "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+        fromRefName: "source-ref-name"
+        keepIndividualCommits: false
+        defaultKeyMergeMode: "NORMAL"
+        keyMergeModes:
+          - key:
+              elements:
+                - example
+                - key
+              mergeBehavior: "FORCE"
+        dryRun: false
+        fetchAdditionalInfo: false
+        returnConflictAsResult: true
+
+    mergeResponseSuccess:
+      value:
+        wasApplied: true
+        wasSuccessful: true
+        resultantTargetHash: "8a2f19888eb620c25b0d2cbcddfdf56fb2d3e9dd443c6d29e37c567493fc5d3b"
+        commonAncestor: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+        targetBranch: "main"
+        effectiveTargetHash: "e9058b675c519b3542cd8155aed42ecf1ddb4e55874e3eb241b30b96f861566a"
+        expectedHash: "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
+        sourceCommits:
+          - commitMeta:
+              author: "authorName <authorName@example.com>"
+              authorTime: "2021-04-07T14:42:25.534748Z"
+              hash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+              message: "Example Commit Message"
+            operations:
+              - type: PUT
+                key:
+                  elements:
+                    - example
+                    - key
+                content:
+                  type: ICEBERG_TABLE
+                  uuid: "b874b5d5-f926-4eed-9be7-b2380d9810c0"
+                  metadataLocation: "/path/to/metadata/"
+            parentCommitHash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+        targetCommits:
+          - commitMeta:
+              author: "authorName <authorName@example.com>"
+              authorTime: "2021-04-07T14:42:25.534748Z"
+              hash: "e9058b675c519b3542cd8155aed42ecf1ddb4e55874e3eb241b30b96f861566a"
+              message: "Example Commit Message"
+            operations:
+              - type: PUT
+                key:
+                  elements:
+                    - example
+                    - key
+                content:
+                  type: ICEBERG_TABLE
+                  uuid: "b874b5d5-f926-4eed-9be7-b2380d9810c0"
+                  metadataLocation: "/path/to/metadata/"
+            parentCommitHash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+        details:
+          - key:
+              elements:
+                - example
+                - key
+            mergeBehavior: "NORMAL"
+            conflictType: "NONE"
+            sourceCommits:
+            targetCommits:
+              - "e9058b675c519b3542cd8155aed42ecf1ddb4e55874e3eb241b30b96f861566a"
+
+    mergeResponseFail:
+      value:
+        wasApplied: false
+        wasSuccessful: false
+        resultantTargetHash: "8a2f19888eb620c25b0d2cbcddfdf56fb2d3e9dd443c6d29e37c567493fc5d3b"
+        commonAncestor: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+        targetBranch: "main"
+        effectiveTargetHash: "8a2f19888eb620c25b0d2cbcddfdf56fb2d3e9dd443c6d29e37c567493fc5d3b"
+        expectedHash: "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
+        sourceCommits:
+          - commitMeta:
+              author: "authorName <authorName@example.com>"
+              authorTime: "2021-04-07T14:42:25.534748Z"
+              hash: "88012047ce424686ca55e8bb228ae9d9cbd6f7bbfc800d830a53a6edf2d55ffb"
+              message: "Example Commit Message"
+            operations:
+              - type: PUT
+                key:
+                  elements:
+                    - example
+                    - key
+                content:
+                  type: ICEBERG_TABLE
+                  uuid: "b874b5d5-f926-4eed-9be7-b2380d9810c0"
+                  metadataLocation: "/path/to/metadata/"
+            parentCommitHash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+        targetCommits:
+          - commitMeta:
+              author: "authorName <authorName@example.com>"
+              authorTime: "2021-04-07T14:42:25.534748Z"
+              hash: "54388c80e6387b8cfa4cf3e7c7909073ffc761f9c7f0d6154ec0d5c5829a4503"
+              message: "Example Commit Message"
+            operations:
+              - type: PUT
+                key:
+                  elements:
+                    - example
+                    - key
+                content:
+                  type: ICEBERG_TABLE
+                  uuid: "b874b5d5-f926-4eed-9be7-b2380d9810c0"
+                  metadataLocation: "/path/to/metadata/"
+            parentCommitHash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+        details:
+          - key:
+              elements:
+                - example
+                - key
+            mergeBehavior: "NORMAL"
+            conflictType: "UNRESOLVABLE"
+            sourceCommits:
+              - "88012047ce424686ca55e8bb228ae9d9cbd6f7bbfc800d830a53a6edf2d55ffb"
+            targetCommits:
+              - "54388c80e6387b8cfa4cf3e7c7909073ffc761f9c7f0d6154ec0d5c5829a4503"
 
     operations:
       value:
