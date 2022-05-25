@@ -174,7 +174,7 @@
     <errorprone-slf4j.version>0.1.11</errorprone-slf4j.version>
     <gatling.maven.version>4.1.6</gatling.maven.version>
     <gatling.version>3.7.6</gatling.version>
-    <google-error-prone.version>2.13.1</google-error-prone.version>
+    <google-error-prone.version>2.14.0</google-error-prone.version>
     <google-java-format.version>1.15.0</google-java-format.version>
     <guava.version>31.1-jre</guava.version>
     <hadoop.version>3.3.3</hadoop.version>
