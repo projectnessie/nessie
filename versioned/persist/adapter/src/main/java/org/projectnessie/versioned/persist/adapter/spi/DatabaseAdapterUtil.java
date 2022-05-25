@@ -47,14 +47,11 @@ public final class DatabaseAdapterUtil {
     return Hashing.sha256().newHasher();
   }
 
-  @SuppressWarnings("UnstableApiUsage")
   public static Hash randomHash() {
     ThreadLocalRandom rand = ThreadLocalRandom.current();
-    Hasher hasher = newHasher();
-    for (int i = 0; i < 20; i++) {
-      hasher.putInt(rand.nextInt());
-    }
-    return Hash.of(UnsafeByteOperations.unsafeWrap(hasher.hash().asBytes()));
+    byte[] bytes = new byte[32];
+    rand.nextBytes(bytes);
+    return Hash.of(UnsafeByteOperations.unsafeWrap(bytes));
   }
 
   @SuppressWarnings("UnstableApiUsage")
