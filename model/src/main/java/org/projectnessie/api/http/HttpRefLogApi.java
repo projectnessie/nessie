@@ -39,9 +39,11 @@ public interface HttpRefLogApi extends RefLogApi {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(
-      summary = "Get reflog entries",
+      summary = "Get reflog entries (DEPRECATED)",
       description =
-          "Retrieve the reflog entries from a specified endHash or from the current HEAD if the endHash is null, "
+          "The Nessie reflog in this form is deprecated, likely for removal."
+              + "\n"
+              + "Retrieve the reflog entries from a specified endHash or from the current HEAD if the endHash is null, "
               + "potentially truncated by the backend.\n"
               + "\n"
               + "Retrieves up to 'maxRecords' refLog-entries starting at the endHash or HEAD."
