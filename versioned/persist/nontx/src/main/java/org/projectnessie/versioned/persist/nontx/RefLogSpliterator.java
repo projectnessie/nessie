@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Spliterator;
 import java.util.Spliterators.AbstractSpliterator;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -36,47 +35,40 @@ import org.projectnessie.versioned.persist.adapter.RefLog;
  * <p>The next {@link RefLog} returned by this implementation is the next available from all stripes
  * with the lowest {@link RefLog#getOperationTime()}.
  */
-final class RegLogSpliterator extends AbstractSpliterator<RefLog> {
+final class RefLogSpliterator extends AbstractSpliterator<RefLog> {
 
   private final List<RefLogSplit> splits;
 
-  private final Hash initialHash;
-  private boolean initialHashSeen;
   private RefLog initialRefLog;
+  private boolean eof;
 
-  RegLogSpliterator(Hash initialHash, Stream<Spliterator<RefLog>> refLogStripeFetcher)
+  RefLogSpliterator(Hash initialHash, Stream<Spliterator<RefLog>> refLogStripeFetcher)
       throws RefLogNotFoundException {
     super(Long.MAX_VALUE, 0);
-
-    this.initialHash = initialHash;
-    this.initialHashSeen = initialHash == null;
 
     splits = refLogStripeFetcher.map(RefLogSplit::new).collect(Collectors.toList());
 
     // The API for DatabaseAdapter.refLog(Hash) requires to throw a RefLogNotFoundException,
     // if no RefLog for the initial hash exists. This loop tries to find the initial RefLog entry
-    // and throw
-    AtomicReference<RefLog> initial = new AtomicReference<>();
-    while (!initialHashSeen) {
-      if (!tryAdvance(initial::set)) {
-        break;
+    // and throw if it could not.
+    if (initialHash != null) {
+      while (true) {
+        RefLog refLog = tryNext();
+        if (refLog == null) {
+          // Throw RefLogNotFoundException, if RefLog with initial hash could not be found.
+          throw RefLogNotFoundException.forRefLogId(initialHash.asString());
+        }
+        if (refLog.getRefLogId().equals(initialHash)) {
+          initialRefLog = refLog;
+          break;
+        }
       }
     }
-
-    // Throw RefLogNotFoundException, if RefLog with initial hash could not be found.
-    if (!initialHashSeen) {
-      throw RefLogNotFoundException.forRefLogId(initialHash.asString());
-    }
-    this.initialRefLog = initial.get();
   }
 
-  @Override
-  public boolean tryAdvance(Consumer<? super RefLog> action) {
-    if (initialRefLog != null) {
-      // This returns the RefLog entry for the initial hash.
-      action.accept(initialRefLog);
-      initialRefLog = null;
-      return true;
+  private RefLog tryNext() {
+    if (eof) {
+      return null;
     }
 
     Optional<RefLogSplit> oldest =
@@ -85,20 +77,35 @@ final class RegLogSpliterator extends AbstractSpliterator<RefLog> {
             .max(Comparator.comparing(RefLogSplit::operationTime));
 
     if (!oldest.isPresent()) {
-      return false;
+      eof = true;
+      return null;
     }
 
     RefLog refLog = oldest.get().pull();
     if (refLog == null) {
+      eof = true;
+    }
+
+    return refLog;
+  }
+
+  @Override
+  public boolean tryAdvance(Consumer<? super RefLog> action) {
+    if (eof) {
       return false;
     }
 
-    if (!initialHashSeen) {
-      initialHashSeen = refLog.getRefLogId().equals(initialHash);
+    if (initialRefLog != null) {
+      // This returns the RefLog entry for the initial hash.
+      action.accept(initialRefLog);
+      initialRefLog = null;
+      return true;
     }
 
-    if (initialHashSeen) {
+    RefLog refLog = tryNext();
+    if (refLog != null) {
       action.accept(refLog);
+      return true;
     }
 
     return true;

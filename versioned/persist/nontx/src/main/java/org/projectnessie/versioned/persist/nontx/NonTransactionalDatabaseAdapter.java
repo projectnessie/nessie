@@ -888,7 +888,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                   ctx, initialPage, this::fetchPageFromRefLog, RefLog::getParents);
             });
 
-    return new RegLogSpliterator(initialHash, stripeFetchers);
+    return new RefLogSpliterator(initialHash, stripeFetchers);
   }
 
   protected abstract void unsafeWriteRefLogStripe(
