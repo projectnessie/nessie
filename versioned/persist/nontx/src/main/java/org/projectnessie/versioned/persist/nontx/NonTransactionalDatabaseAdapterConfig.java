@@ -15,6 +15,32 @@
  */
 package org.projectnessie.versioned.persist.nontx;
 
+import org.immutables.value.Value;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 
-public interface NonTransactionalDatabaseAdapterConfig extends DatabaseAdapterConfig {}
+public interface NonTransactionalDatabaseAdapterConfig extends DatabaseAdapterConfig {
+  int DEFAULT_REFERENCES_SEGMENT_SIZE = 250_000;
+  int DEFAULT_REF_LOG_STRIPES = 8;
+  int DEFAULT_REFERENCES_SEGMENT_PREFETCH = 1;
+  int DEFAULT_REFERENCE_NAMES_BATCH_SIZE = 25;
+
+  @Value.Default
+  default int getReferencesSegmentSize() {
+    return DEFAULT_REFERENCES_SEGMENT_SIZE;
+  }
+
+  @Value.Default
+  default int getReferencesSegmentPrefetch() {
+    return DEFAULT_REFERENCES_SEGMENT_PREFETCH;
+  }
+
+  @Value.Default
+  default int getReferenceNamesBatchSize() {
+    return DEFAULT_REFERENCE_NAMES_BATCH_SIZE;
+  }
+
+  @Value.Default
+  default int getRefLogStripes() {
+    return DEFAULT_REF_LOG_STRIPES;
+  }
+}

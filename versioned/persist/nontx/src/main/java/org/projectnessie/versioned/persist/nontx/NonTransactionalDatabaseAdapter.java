@@ -19,7 +19,6 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUti
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.commitConflictMessage;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.createConflictMessage;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.deleteConflictMessage;
-import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.hashCollisionDetected;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.mergeConflictMessage;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.randomHash;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.referenceAlreadyExists;
@@ -30,28 +29,36 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUti
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.verifyExpectedHash;
 import static org.projectnessie.versioned.persist.adapter.spi.Traced.trace;
 import static org.projectnessie.versioned.persist.adapter.spi.TryLoopState.newTryLoopState;
+import static org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter.CasOpResult.casOpResult;
 import static org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext.NON_TRANSACTIONAL_OPERATION_CONTEXT;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import javax.annotation.Nullable;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
@@ -91,8 +98,10 @@ import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePoi
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry.Operation;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogParents;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefType;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.ReferenceNames;
 
 /**
  * Non-transactional database-adapter implementation suitable for no-sql databases.
@@ -114,6 +123,7 @@ public abstract class NonTransactionalDatabaseAdapter<
 
   public static final String TAG_COMMIT_COUNT = "commit-count";
   public static final String TAG_KEY_LIST_COUNT = "key-list-count";
+  public static final String TAG_REF = "ref";
 
   protected NonTransactionalDatabaseAdapter(CONFIG config, StoreWorker<?, ?, ?> storeWorker) {
     super(config, storeWorker);
@@ -147,14 +157,14 @@ public abstract class NonTransactionalDatabaseAdapter<
       throws ReferenceNotFoundException {
     Preconditions.checkNotNull(params, "Parameter for GetNamedRefsParams must not be null");
 
-    GlobalStatePointer pointer = fetchGlobalPointer(NON_TRANSACTIONAL_OPERATION_CONTEXT);
-    ReferenceInfo<ByteString> refHead = referenceHead(pointer, ref);
-    Hash defaultBranchHead = namedRefsDefaultBranchHead(params, pointer);
+    NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
+
+    ReferenceInfo<ByteString> refHead = referenceHead(ctx, ref);
+    Hash defaultBranchHead = namedRefsDefaultBranchHead(ctx, params);
 
     Stream<ReferenceInfo<ByteString>> refs = Stream.of(refHead);
 
-    return namedRefsFilterAndEnhance(
-            NON_TRANSACTIONAL_OPERATION_CONTEXT, params, defaultBranchHead, refs)
+    return namedRefsFilterAndEnhance(ctx, params, defaultBranchHead, refs)
         .findFirst()
         .orElseThrow(() -> referenceNotFound(ref));
   }
@@ -166,23 +176,15 @@ public abstract class NonTransactionalDatabaseAdapter<
     Preconditions.checkArgument(
         namedRefsAnyRetrieves(params), "Must retrieve branches or tags or both.");
 
-    GlobalStatePointer pointer = fetchGlobalPointer(NON_TRANSACTIONAL_OPERATION_CONTEXT);
-    if (pointer == null) {
-      return Stream.empty();
-    }
-
-    Hash defaultBranchHead = namedRefsDefaultBranchHead(params, pointer);
+    NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
 
     Stream<ReferenceInfo<ByteString>> refs =
-        pointer.getNamedReferencesList().stream()
-            .map(
-                r ->
-                    ReferenceInfo.of(
-                        Hash.of(r.getRef().getHash()),
-                        toNamedRef(r.getRef().getType(), r.getName())));
+        fetchNamedReferences(ctx)
+            .map(NonTransactionalDatabaseAdapter::namedReferenceToReferenceInfo);
 
-    return namedRefsFilterAndEnhance(
-        NON_TRANSACTIONAL_OPERATION_CONTEXT, params, defaultBranchHead, refs);
+    Hash defaultBranchHead = namedRefsDefaultBranchHead(ctx, params);
+
+    return namedRefsFilterAndEnhance(ctx, params, defaultBranchHead, refs);
   }
 
   @Override
@@ -212,11 +214,11 @@ public abstract class NonTransactionalDatabaseAdapter<
               "merge",
               mergeParams.getToBranch(),
               CasOpVariant.COMMIT,
-              (ctx, pointer, branchCommits, newKeyLists) -> {
+              (ctx, refHead, branchCommits, newKeyLists) -> {
                 ImmutableMergeResult.Builder<CommitLogEntry> mergeResult = MergeResult.builder();
                 mergeResultHolder.set(mergeResult);
 
-                Hash currentHead = branchHead(pointer, mergeParams.getToBranch());
+                Hash currentHead = Hash.of(refHead.getHash());
 
                 long timeInMicros = commitTimeInMicros();
 
@@ -230,25 +232,18 @@ public abstract class NonTransactionalDatabaseAdapter<
                         mergeParams,
                         mergeResult);
 
-                if (newHead.equals(currentHead)) {
-                  // nothing done
-                  return pointer;
-                }
-
-                RefLogEntry newRefLog =
-                    writeRefLogEntry(
-                        ctx,
-                        pointer,
-                        mergeParams.getToBranch().getName(),
-                        RefType.Branch,
-                        newHead,
-                        RefLogEntry.Operation.MERGE,
-                        timeInMicros,
-                        Collections.singletonList(mergeParams.getMergeFromHash()));
-
-                // Return hash of last commit (toHead) added to 'targetBranch' (via the casOpLoop)
-                return updateGlobalStatePointer(
-                    mergeParams.getToBranch(), pointer, newHead, newRefLog);
+                return casOpResult(
+                    refHead,
+                    newHead,
+                    refLog ->
+                        refLog
+                            .setRefName(
+                                ByteString.copyFromUtf8(mergeParams.getToBranch().getName()))
+                            .setRefType(refHead.getType())
+                            .setCommitHash(newHead.asBytes())
+                            .setOperationTime(timeInMicros)
+                            .setOperation(RefLogEntry.Operation.MERGE)
+                            .addSourceHashes(mergeParams.getMergeFromHash().asBytes()));
               },
               () -> mergeConflictMessage("Retry-failure", mergeParams));
 
@@ -279,11 +274,11 @@ public abstract class NonTransactionalDatabaseAdapter<
               "transplant",
               transplantParams.getToBranch(),
               CasOpVariant.COMMIT,
-              (ctx, pointer, branchCommits, newKeyLists) -> {
+              (ctx, refHead, branchCommits, newKeyLists) -> {
                 ImmutableMergeResult.Builder<CommitLogEntry> mergeResult = MergeResult.builder();
                 mergeResultHolder.set(mergeResult);
 
-                Hash currentHead = branchHead(pointer, transplantParams.getToBranch());
+                Hash currentHead = Hash.of(refHead.getHash());
 
                 long timeInMicros = commitTimeInMicros();
 
@@ -297,26 +292,21 @@ public abstract class NonTransactionalDatabaseAdapter<
                         transplantParams,
                         mergeResult);
 
-                if (newHead.equals(currentHead)) {
-                  // nothing done
-                  return pointer;
-                }
-
-                RefLogEntry newRefLog =
-                    writeRefLogEntry(
-                        ctx,
-                        pointer,
-                        transplantParams.getToBranch().getName(),
-                        RefType.Branch,
-                        newHead,
-                        RefLogEntry.Operation.TRANSPLANT,
-                        timeInMicros,
-                        transplantParams.getSequenceToTransplant());
-
-                // Return hash of last commit (targetHead) added to 'targetBranch' (via the
-                // casOpLoop)
-                return updateGlobalStatePointer(
-                    transplantParams.getToBranch(), pointer, newHead, newRefLog);
+                return casOpResult(
+                    refHead,
+                    newHead,
+                    refLog -> {
+                      refLog
+                          .setRefName(
+                              ByteString.copyFromUtf8(transplantParams.getToBranch().getName()))
+                          .setRefType(refHead.getType())
+                          .setCommitHash(newHead.asBytes())
+                          .setOperationTime(timeInMicros)
+                          .setOperation(RefLogEntry.Operation.TRANSPLANT);
+                      transplantParams
+                          .getSequenceToTransplant()
+                          .forEach(hash -> refLog.addSourceHashes(hash.asBytes()));
+                    });
               },
               () -> transplantConflictMessage("Retry-failure", transplantParams));
 
@@ -342,27 +332,27 @@ public abstract class NonTransactionalDatabaseAdapter<
           "commit",
           commitParams.getToBranch(),
           CasOpVariant.COMMIT,
-          (ctx, pointer, x, newKeyLists) -> {
-            Hash branchHead = branchHead(pointer, commitParams.getToBranch());
+          (ctx, refHead, branchCommits, newKeyLists) -> {
+            Hash currentHead = Hash.of(refHead.getHash());
 
             long timeInMicros = commitTimeInMicros();
 
             CommitLogEntry newBranchCommit =
-                commitAttempt(ctx, timeInMicros, branchHead, commitParams, newKeyLists);
+                commitAttempt(ctx, timeInMicros, currentHead, commitParams, newKeyLists);
+            Hash newHead = newBranchCommit.getHash();
 
-            RefLogEntry newRefLog =
-                writeRefLogEntry(
-                    ctx,
-                    pointer,
-                    commitParams.getToBranch().getName(),
-                    RefType.Branch,
-                    newBranchCommit.getHash(),
-                    RefLogEntry.Operation.COMMIT,
-                    timeInMicros,
-                    Collections.emptyList());
+            branchCommits.accept(newHead);
 
-            return updateGlobalStatePointer(
-                commitParams.getToBranch(), pointer, newBranchCommit.getHash(), newRefLog);
+            return casOpResult(
+                refHead,
+                newHead,
+                refLog ->
+                    refLog
+                        .setRefName(ByteString.copyFromUtf8(commitParams.getToBranch().getName()))
+                        .setRefType(refHead.getType())
+                        .setCommitHash(newHead.asBytes())
+                        .setOperationTime(timeInMicros)
+                        .setOperation(Operation.COMMIT));
           },
           () ->
               commitConflictMessage(
@@ -381,9 +371,9 @@ public abstract class NonTransactionalDatabaseAdapter<
       return casOpLoop(
           "createRef",
           ref,
-          CasOpVariant.REF_UPDATE,
-          (ctx, pointer, branchCommits, newKeyLists) -> {
-            if (refFromGlobalState(pointer, ref.getName()) != null) {
+          CasOpVariant.CREATE_REF,
+          (ctx, refHead, branchCommits, newKeyLists) -> {
+            if (refHead != null) {
               throw referenceAlreadyExists(ref);
             }
 
@@ -396,19 +386,18 @@ public abstract class NonTransactionalDatabaseAdapter<
 
             validateHashExists(ctx, hash);
 
-            RefType refType = ref instanceof TagName ? RefType.Tag : RefType.Branch;
-            RefLogEntry newRefLog =
-                writeRefLogEntry(
-                    ctx,
-                    pointer,
-                    ref.getName(),
-                    refType,
-                    hash,
-                    RefLogEntry.Operation.CREATE_REFERENCE,
-                    commitTimeInMicros(),
-                    Collections.emptyList());
+            Hash newHead = hash;
 
-            return updateGlobalStatePointer(ref, pointer, hash, newRefLog);
+            return casOpResult(
+                refHead,
+                hash,
+                refLog ->
+                    refLog
+                        .setRefName(ByteString.copyFromUtf8(ref.getName()))
+                        .setRefType(protoTypeForRef(ref))
+                        .setCommitHash(newHead.asBytes())
+                        .setOperationTime(commitTimeInMicros())
+                        .setOperation(RefLogEntry.Operation.CREATE_REFERENCE));
           },
           () -> createConflictMessage("Retry-Failure", ref, target));
     } catch (ReferenceAlreadyExistsException | ReferenceNotFoundException | RuntimeException e) {
@@ -426,23 +415,20 @@ public abstract class NonTransactionalDatabaseAdapter<
           "deleteRef",
           reference,
           CasOpVariant.DELETE_REF,
-          (ctx, pointer, branchCommits, newKeyLists) -> {
-            Hash branchHead = branchHead(pointer, reference);
-            verifyExpectedHash(branchHead, reference, expectedHead);
+          (ctx, refHead, branchCommits, newKeyLists) -> {
+            Hash currentHead = Hash.of(refHead.getHash());
+            verifyExpectedHash(currentHead, reference, expectedHead);
 
-            RefType refType = reference instanceof TagName ? RefType.Tag : RefType.Branch;
-            RefLogEntry newRefLog =
-                writeRefLogEntry(
-                    ctx,
-                    pointer,
-                    reference.getName(),
-                    refType,
-                    branchHead,
-                    RefLogEntry.Operation.DELETE_REFERENCE,
-                    commitTimeInMicros(),
-                    Collections.emptyList());
-
-            return updateGlobalStatePointer(reference, pointer, null, newRefLog);
+            return casOpResult(
+                refHead,
+                null,
+                refLog ->
+                    refLog
+                        .setRefName(ByteString.copyFromUtf8(reference.getName()))
+                        .setRefType(protoTypeForRef(reference))
+                        .setCommitHash(currentHead.asBytes())
+                        .setOperationTime(commitTimeInMicros())
+                        .setOperation(RefLogEntry.Operation.DELETE_REFERENCE));
           },
           () -> deleteConflictMessage("Retry-Failure", reference, expectedHead));
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
@@ -460,25 +446,23 @@ public abstract class NonTransactionalDatabaseAdapter<
           "assignRef",
           assignee,
           CasOpVariant.REF_UPDATE,
-          (ctx, pointer, branchCommits, newKeyLists) -> {
-            Hash beforeAssign = branchHead(pointer, assignee);
+          (ctx, refHead, branchCommits, newKeyLists) -> {
+            Hash beforeAssign = Hash.of(refHead.getHash());
             verifyExpectedHash(beforeAssign, assignee, expectedHead);
 
             validateHashExists(ctx, assignTo);
 
-            RefType refType = assignee instanceof TagName ? RefType.Tag : RefType.Branch;
-            RefLogEntry newRefLog =
-                writeRefLogEntry(
-                    ctx,
-                    pointer,
-                    assignee.getName(),
-                    refType,
-                    assignTo,
-                    RefLogEntry.Operation.ASSIGN_REFERENCE,
-                    commitTimeInMicros(),
-                    Collections.singletonList(beforeAssign));
-
-            return updateGlobalStatePointer(assignee, pointer, assignTo, newRefLog);
+            return casOpResult(
+                refHead,
+                assignTo,
+                refLog ->
+                    refLog
+                        .setRefName(ByteString.copyFromUtf8(assignee.getName()))
+                        .setRefType(protoTypeForRef(assignee))
+                        .setCommitHash(assignTo.asBytes())
+                        .setOperationTime(commitTimeInMicros())
+                        .setOperation(RefLogEntry.Operation.ASSIGN_REFERENCE)
+                        .addSourceHashes(beforeAssign.asBytes()));
           },
           () -> assignConflictMessage("Retry-Failure", assignee, expectedHead, assignTo));
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
@@ -498,30 +482,34 @@ public abstract class NonTransactionalDatabaseAdapter<
   public void initializeRepo(String defaultBranchName) {
     NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
     if (fetchGlobalPointer(ctx) == null) {
-      GlobalStateLogEntry globalHead;
       RefLogEntry newRefLog;
       try {
-        long timeInMicros = commitTimeInMicros();
-        GlobalStatePointer dummyPointer =
-            GlobalStatePointer.newBuilder()
-                .setGlobalId(NO_ANCESTOR.asBytes())
-                .setGlobalLogHead(NO_ANCESTOR.asBytes())
-                .addGlobalParentsInclHead(NO_ANCESTOR.asBytes())
-                .setRefLogId(NO_ANCESTOR.asBytes())
+        RefLogParents refLogParents =
+            RefLogParents.newBuilder()
                 .addRefLogParentsInclHead(NO_ANCESTOR.asBytes())
+                .setVersion(randomHash().asBytes())
                 .build();
-        globalHead = writeGlobalCommit(ctx, timeInMicros, dummyPointer, Collections.emptyList());
 
         newRefLog =
             writeRefLogEntry(
                 ctx,
-                dummyPointer,
-                defaultBranchName,
-                RefType.Branch,
-                NO_ANCESTOR,
-                RefLogEntry.Operation.CREATE_REFERENCE,
-                commitTimeInMicros(),
-                Collections.emptyList());
+                refLogParents,
+                refLog ->
+                    refLog
+                        .setRefName(ByteString.copyFromUtf8(defaultBranchName))
+                        .setRefType(RefType.Branch)
+                        .setCommitHash(NO_ANCESTOR.asBytes())
+                        .setOperationTime(commitTimeInMicros())
+                        .setOperation(RefLogEntry.Operation.CREATE_REFERENCE));
+
+        refLogParents =
+            refLogParents.toBuilder()
+                .clearRefLogParentsInclHead()
+                .addRefLogParentsInclHead(newRefLog.getRefLogId())
+                .addRefLogParentsInclHead(NO_ANCESTOR.asBytes())
+                .build();
+
+        unsafeWriteRefLogStripe(ctx, refLogStripeForName(defaultBranchName), refLogParents);
       } catch (ReferenceConflictException e) {
         throw new RuntimeException(e);
       }
@@ -529,21 +517,16 @@ public abstract class NonTransactionalDatabaseAdapter<
       unsafeWriteGlobalPointer(
           ctx,
           GlobalStatePointer.newBuilder()
-              .setGlobalId(globalHead.getId())
-              .setGlobalLogHead(globalHead.getId())
-              .addNamedReferences(
-                  NamedReference.newBuilder()
-                      .setName(defaultBranchName)
-                      .setRef(
-                          RefPointer.newBuilder()
-                              .setType(RefType.Branch)
-                              .setHash(NO_ANCESTOR.asBytes())))
-              .setRefLogId(newRefLog.getRefLogId())
-              .addRefLogParentsInclHead(newRefLog.getRefLogId())
+              .setGlobalId(randomHash().asBytes())
+              .setGlobalLogHead(NO_ANCESTOR.asBytes())
+              .setRefLogId(NO_ANCESTOR.asBytes())
               .addRefLogParentsInclHead(NO_ANCESTOR.asBytes())
-              .addGlobalParentsInclHead(globalHead.getId())
               .addGlobalParentsInclHead(NO_ANCESTOR.asBytes())
               .build());
+
+      Preconditions.checkState(
+          createNamedReference(ctx, BranchName.of(defaultBranchName), NO_ANCESTOR),
+          "Could not create default branch");
     }
   }
 
@@ -632,57 +615,6 @@ public abstract class NonTransactionalDatabaseAdapter<
   protected abstract boolean doTryUpdateRepositoryDescription(
       NonTransactionalOperationContext ctx, RepoDescription expected, RepoDescription updateTo);
 
-  /**
-   * Produces an updated copy of {@code pointer}.
-   *
-   * <p>Any previous appearance of {@code target.getName()} in the list of named references is
-   * removed. If {@code toHead} is not null, {@code target} it will appear as the first element in
-   * the list of named references. In other words, a reference to be deleted will be removed from
-   * the list of named references, an updated (or created) reference will appear as the first
-   * element of the list of named references.
-   */
-  protected static GlobalStatePointer updateGlobalStatePointer(
-      NamedRef target, GlobalStatePointer pointer, @Nullable Hash toHead, RefLogEntry newRefLog) {
-
-    ByteString newGlobalId = randomHash().asBytes();
-
-    GlobalStatePointer.Builder newPointer =
-        GlobalStatePointer.newBuilder()
-            .setGlobalId(newGlobalId)
-            .setRefLogId(newRefLog.getRefLogId())
-            .setGlobalLogHead(globalLogHead(pointer))
-            .addAllGlobalParentsInclHead(pointer.getGlobalParentsInclHeadList());
-
-    String refName = target.getName();
-    if (toHead != null) {
-      // Most recently updated references first
-      newPointer.addNamedReferences(
-          NamedReference.newBuilder()
-              .setName(refName)
-              .setRef(
-                  RefPointer.newBuilder()
-                      .setType(protoTypeForRef(target))
-                      .setHash(toHead.asBytes())));
-    }
-    pointer.getNamedReferencesList().stream()
-        .filter(namedRef -> !refName.equals(namedRef.getName()))
-        .forEach(newPointer::addNamedReferences);
-    newPointer
-        .addRefLogParentsInclHead(newRefLog.getRefLogId())
-        .addAllRefLogParentsInclHead(newRefLog.getParentsList());
-    return newPointer.build();
-  }
-
-  /** Retrieves the {@link RefPointer} for a reference name, returns {@code null} if not found. */
-  protected static RefPointer refFromGlobalState(GlobalStatePointer pointer, String refName) {
-    for (NamedReference namedReference : pointer.getNamedReferencesList()) {
-      if (namedReference.getName().equals(refName)) {
-        return namedReference.getRef();
-      }
-    }
-    return null;
-  }
-
   /** Get the protobuf-enum-value for a named-reference. */
   protected static RefType protoTypeForRef(NamedRef target) {
     RefType type;
@@ -719,38 +651,25 @@ public abstract class NonTransactionalDatabaseAdapter<
   protected Hash hashOnRef(
       NonTransactionalOperationContext ctx, NamedRef reference, Optional<Hash> hashOnRef)
       throws ReferenceNotFoundException {
-    return hashOnRef(ctx, reference, hashOnRef, fetchGlobalPointer(ctx));
-  }
-
-  /**
-   * Convenience method for {@link AbstractDatabaseAdapter#hashOnRef(AutoCloseable, NamedRef,
-   * Optional, Hash) hashOnRef(ctx, reference.getReference(), branchHead(pointer, reference),
-   * reference.getHashOnReference())}.
-   */
-  protected Hash hashOnRef(
-      NonTransactionalOperationContext ctx,
-      NamedRef reference,
-      Optional<Hash> hashOnRef,
-      GlobalStatePointer pointer)
-      throws ReferenceNotFoundException {
-    return hashOnRef(ctx, reference, hashOnRef, branchHead(pointer, reference));
+    return hashOnRef(ctx, reference, hashOnRef, branchHead(ctx, reference));
   }
 
   /**
    * "Body" of a Compare-And-Swap loop that returns the value to apply. {@link #casOpLoop(String,
    * NamedRef, CasOpVariant, CasOp, Supplier)} then tries to perform the Compare-And-Swap using the
    * known "current value", as passed via the {@code pointer} parameter to {@link
-   * #apply(NonTransactionalOperationContext, GlobalStatePointer, Consumer, Consumer)}, and the "new
-   * value" from the return value.
+   * #apply(NonTransactionalOperationContext, RefPointer, Consumer, Consumer)}, and the "new value"
+   * from the return value.
    */
   @FunctionalInterface
   public interface CasOp {
     /**
-     * Applies an operation within a CAS-loop. The implementation gets the current global-state and
-     * must return an updated global-state with a different global-id.
+     * Applies an operation within a CAS-loop. The implementation gets the current ref-pointer and
+     * must return a {@link CasOpResult} with the reference's new HEAD and function to configure the
+     * ref-log entry.
      *
      * @param ctx operation context
-     * @param pointer "current value"
+     * @param refPointer information about the target named reference
      * @param branchCommits if more commits than the one returned via the return value were
      *     optimistically written, those must be passed to this consumer.
      * @param newKeyLists IDs of optimistically written {@link KeyListEntity} entities must be
@@ -758,46 +677,44 @@ public abstract class NonTransactionalDatabaseAdapter<
      * @return "new value" that {@link #casOpLoop(String, NamedRef, CasOpVariant, CasOp, Supplier)}
      *     tries to apply
      */
-    GlobalStatePointer apply(
+    CasOpResult apply(
         NonTransactionalOperationContext ctx,
-        GlobalStatePointer pointer,
+        RefPointer refPointer,
         Consumer<Hash> branchCommits,
         Consumer<Hash> newKeyLists)
         throws VersionStoreException;
   }
 
-  enum CasOpVariant {
-    /**
-     * For commit/merge/transplant, which add one or more commits to that named reference and then
-     * update the global named-reference-to-HEAD map.
-     */
-    COMMIT(false, true),
-    /**
-     * For {@link #create(NamedRef, Hash)} and {@link #assign(NamedRef, Optional, Hash)}, which only
-     * update the updates the HEAD of a named reference, but does not add a commit.
-     */
-    REF_UPDATE(false, false),
-    /** For {@link #delete(NamedRef, Optional)}, which delete the reference and does not. */
-    DELETE_REF(true, false);
+  protected static final class CasOpResult {
+    final RefPointer currentHead;
+    final Hash newHead;
+    final Consumer<RefLogEntry.Builder> refLogEntry;
 
-    /**
-     * Whether the operation is a "delete-reference" operation, which means that this function
-     * cannot return any new HEAD, because the reference no longer exists.
-     */
-    final boolean deleteRef;
-    /**
-     * Whether the hash returned by {@code casOp} will be a new commit and/or {@code * casOp}
-     * produced more commits (think: merge+transplant) via the {@code individualCommits} * argument
-     * to {@link CasOp#apply(NonTransactionalOperationContext, GlobalStatePointer, Consumer,
-     * Consumer)}. Those commits will be unconditionally deleted, if this {@code commitOp} flag is *
-     * {@code true}.
-     */
-    final boolean commitOp;
-
-    CasOpVariant(boolean deleteRef, boolean commitOp) {
-      this.deleteRef = deleteRef;
-      this.commitOp = commitOp;
+    private CasOpResult(
+        RefPointer currentHead, Hash newHead, Consumer<RefLogEntry.Builder> refLogEntry) {
+      this.currentHead = currentHead;
+      this.newHead = newHead;
+      this.refLogEntry = refLogEntry;
     }
+
+    public static CasOpResult casOpResult(
+        RefPointer currentHead, Hash newHead, Consumer<RefLogEntry.Builder> refLogEntry) {
+      return new CasOpResult(currentHead, newHead, refLogEntry);
+    }
+  }
+
+  enum CasOpVariant {
+    /** For commit/merge/transplant, which add one or more commits to that named reference. */
+    COMMIT(),
+    /**
+     * For {@link #assign(NamedRef, Optional, Hash)}, which only update the updates the HEAD of a
+     * named reference, but does not add a commit.
+     */
+    REF_UPDATE(),
+    /** For {@link #create(NamedRef, Hash)}. */
+    CREATE_REF(),
+    /** For {@link #delete(NamedRef, Optional)}. */
+    DELETE_REF()
   }
 
   /**
@@ -832,63 +749,419 @@ public abstract class NonTransactionalDatabaseAdapter<
             this::tryLoopStateCompletion,
             config)) {
       while (true) {
-        GlobalStatePointer pointer = fetchGlobalPointer(ctx);
-        if (pointer == null) {
-          throw referenceNotFound(ref);
-        }
         Set<Hash> individualCommits = new HashSet<>();
         Set<Hash> individualKeyLists = new HashSet<>();
 
-        GlobalStatePointer newPointer =
-            casOp.apply(ctx, pointer, individualCommits::add, individualKeyLists::add);
-        if (newPointer.getGlobalId().equals(pointer.getGlobalId())) {
-          return tryState.success(branchHead(pointer, ref));
+        NamedReference refHead = fetchNamedReference(ctx, ref.getName());
+        if ((refHead == null || refHead.getRef().getType() != protoTypeForRef(ref))
+            && opVariant != CasOpVariant.CREATE_REF) {
+          // For all operations, except createReference, verify that the reference exists.
+          throw referenceNotFound(ref);
         }
-        Hash branchHead = opVariant.deleteRef ? null : branchHead(newPointer, ref);
+        CasOpResult result =
+            casOp.apply(
+                ctx,
+                refHead != null ? refHead.getRef() : null,
+                individualCommits::add,
+                individualKeyLists::add);
 
-        if (pointer.getGlobalId().equals(newPointer.getGlobalId())) {
-          throw hashCollisionDetected();
+        boolean casSuccess;
+        switch (opVariant) {
+          case CREATE_REF:
+            casSuccess = createNamedReference(ctx, ref, result.newHead);
+            break;
+          case DELETE_REF:
+            casSuccess = deleteNamedReference(ctx, ref, refHead.getRef());
+            break;
+          case REF_UPDATE:
+          case COMMIT:
+            if (refHead.getRef().getHash().equals(result.newHead.asBytes())) {
+              // Target branch HEAD did not change
+              return tryState.success(result.newHead);
+            }
+            casSuccess = updateNamedReference(ctx, ref, refHead.getRef(), result.newHead);
+            break;
+          default:
+            throw new UnsupportedOperationException("Unknown opVariant " + opVariant);
         }
 
-        if (globalPointerCas(ctx, pointer, newPointer)) {
-          return tryState.success(branchHead);
-        } else if (opVariant.commitOp) {
-          if (branchHead != null) {
-            individualCommits.add(branchHead);
+        if (!casSuccess) {
+          if (opVariant == CasOpVariant.COMMIT) {
+            cleanUpCommitCas(ctx, individualCommits, individualKeyLists);
           }
-          Optional<Hash> newGlobalLogHead =
-              globalLogHead(pointer).equals(globalLogHead(newPointer))
-                  ? Optional.empty()
-                  : Optional.of(Hash.of(globalLogHead(newPointer)));
-          cleanUpCommitCas(
-              ctx,
-              newGlobalLogHead,
-              individualCommits,
-              individualKeyLists,
-              Hash.of(newPointer.getRefLogId()));
+
+          tryState.retry();
+          continue;
         }
 
-        tryState.retry();
+        // CAS against branch-heads succeeded, now try to write the ref-log-entry
+
+        // reset the retry-loop's sleep boundaries
+        tryState.resetBounds();
+        int stripe = refLogStripeForName(ref.getName());
+        while (true) {
+          RefLogParents refLogParents = fetchRefLogParents(ctx, stripe);
+
+          RefLogEntry newRefLog = writeRefLogEntry(ctx, refLogParents, result.refLogEntry);
+
+          RefLogParents.Builder newRefLogParents =
+              RefLogParents.newBuilder()
+                  .addRefLogParentsInclHead(newRefLog.getRefLogId())
+                  .setVersion(randomHash().asBytes());
+          newRefLog.getParentsList().stream()
+              .limit(config.getParentsPerRefLogEntry() - 1)
+              .forEach(newRefLogParents::addRefLogParentsInclHead);
+
+          if (refLogParentsCas(ctx, stripe, refLogParents, newRefLogParents.build())) {
+            return tryState.success(result.newHead);
+          }
+
+          cleanUpRefLogWrite(ctx, Hash.of(newRefLog.getRefLogId()));
+
+          // Need to retry "forever" until the ref-log entry could be added.
+          tryState.retryEndless();
+        }
       }
     }
   }
 
-  /**
-   * Write a new global-state-log-entry with a best-effort approach to prevent hash-collisions but
-   * without any other consistency checks/guarantees. Some implementations however can enforce
-   * strict consistency checks/guarantees.
-   */
-  protected final void writeGlobalCommit(
-      NonTransactionalOperationContext ctx, GlobalStateLogEntry entry)
-      throws ReferenceConflictException {
-    try (Traced ignore = trace("writeGlobalCommit")) {
-      doWriteGlobalCommit(ctx, entry);
+  protected static ReferenceInfo<ByteString> namedReferenceToReferenceInfo(NamedReference r) {
+    return ReferenceInfo.of(
+        Hash.of(r.getRef().getHash()), toNamedRef(r.getRef().getType(), r.getName()));
+  }
+
+  @Override
+  protected Spliterator<RefLog> readRefLog(NonTransactionalOperationContext ctx, Hash initialHash)
+      throws RefLogNotFoundException {
+    if (NO_ANCESTOR.equals(initialHash)) {
+      return Spliterators.emptySpliterator();
+    }
+
+    // Two possible optimizations here:
+    // 1. Paging - implement an "implementation aware token"
+    //    Instead of calling refLogStripeFetcher and then scanning the ref-log for the ref-log hash
+    //    from the page-token, add another parameter to this method that the ref-log-stripe fetchers
+    //    with their own initial ref-log-ids (so 1 hash per stripe in a paging token).
+    //    This requires this method to either return a wrapper around `RefLog` that also holds the
+    //    paging token for every returned `RefLog`, or to return a "PagingAwareSpliterator" that
+    //    allows retrieving the paging token. The latter is probably more efficient, but requires
+    //    a bit more "verbose" code.
+    // 2. Faster initial stripe fetching
+    //    Instead of retrieving all initial pages sequentially, perform a bulk-fetch for all initial
+    //    pages. Since ref-log queries are not performance critical and also rare operations, it is
+    //    not urgent to implement this optimization.
+
+    Stream<List<ByteString>> initialHashes =
+        Stream.concat(
+            // Ref-log as in global-pointer (backwards compatibility)
+            Stream.of(fetchGlobalPointer(ctx).getRefLogParentsInclHeadList()),
+            // Ref-log stripes
+            IntStream.range(0, config.getRefLogStripes())
+                .mapToObj(
+                    stripe -> {
+                      // read "new" ref-log
+                      RefLogParents refLogParents = fetchRefLogParents(ctx, stripe);
+                      if (refLogParents == null) {
+                        refLogParents =
+                            RefLogParents.newBuilder()
+                                .addRefLogParentsInclHead(NO_ANCESTOR.asBytes())
+                                .build();
+                      }
+                      return refLogParents.getRefLogParentsInclHeadList();
+                    }));
+
+    Stream<Spliterator<RefLog>> stripeFetchers =
+        initialHashes.map(
+            initial -> {
+              List<Hash> initialPage = initial.stream().map(Hash::of).collect(Collectors.toList());
+              return logFetcherWithPage(
+                  ctx, initialPage, this::fetchPageFromRefLog, RefLog::getParents);
+            });
+
+    return new RefLogSpliterator(initialHash, stripeFetchers);
+  }
+
+  protected abstract void unsafeWriteRefLogStripe(
+      NonTransactionalOperationContext ctx, int stripe, RefLogParents refLogParents);
+
+  protected final boolean refLogParentsCas(
+      NonTransactionalOperationContext ctx,
+      int stripe,
+      RefLogParents previousEntry,
+      RefLogParents newEntry) {
+    try (Traced ignore = trace("refLogParentsCas")) {
+      return doRefLogParentsCas(ctx, stripe, previousEntry, newEntry);
     }
   }
 
-  protected abstract void doWriteGlobalCommit(
-      NonTransactionalOperationContext ctx, GlobalStateLogEntry entry)
-      throws ReferenceConflictException;
+  protected abstract boolean doRefLogParentsCas(
+      NonTransactionalOperationContext ctx,
+      int stripe,
+      RefLogParents previousEntry,
+      RefLogParents newEntry);
+
+  protected final RefLogParents fetchRefLogParents(
+      NonTransactionalOperationContext ctx, int stripe) {
+    try (Traced ignore = trace("fetchRefLogParentsForReference")) {
+      return doFetchRefLogParents(ctx, stripe);
+    }
+  }
+
+  protected final int refLogStripeForName(String refName) {
+    return Math.abs(refName.hashCode()) % config.getRefLogStripes();
+  }
+
+  protected abstract RefLogParents doFetchRefLogParents(
+      NonTransactionalOperationContext ctx, int stripe);
+
+  protected final NamedReference fetchNamedReference(
+      NonTransactionalOperationContext ctx, String refName) {
+    List<NamedReference> namedRefs = fetchNamedReference(ctx, Collections.singletonList(refName));
+    return namedRefs.isEmpty() ? null : namedRefs.get(0);
+  }
+
+  protected final List<NamedReference> fetchNamedReference(
+      NonTransactionalOperationContext ctx, List<String> refNames) {
+    try (Traced ignore = trace("fetchNamedReference").tag(TAG_REF, refNames.size())) {
+      List<NamedReference> namedRefs = doFetchNamedReference(ctx, refNames);
+      if (namedRefs.isEmpty()) {
+        // Backwards compatibility, fetch named-reference's HEAD from global-pointer and create
+        // the reference in the "new" format. We buy backwards-compatibility with an extra read
+        // for non-existing branches.
+        if (maybeMigrateLegacyNamedReferences(ctx)) {
+          namedRefs = doFetchNamedReference(ctx, refNames);
+        }
+      }
+      return namedRefs;
+    }
+  }
+
+  /**
+   * Migrates named references away from global-pointer.
+   *
+   * <p>Implemented as a two-step process:
+   *
+   * <ol>
+   *   <li>Add all references from the global-pointer to the named-references-inventory, do not
+   *       modify the global-pointer.
+   *   <li>Create references from the global-pointer in the new, one-row-per-named-reference,
+   *       structure + purge the added references from global-pointer.
+   * </ol>
+   */
+  private boolean maybeMigrateLegacyNamedReferences(NonTransactionalOperationContext ctx) {
+
+    GlobalStatePointer pointer = fetchGlobalPointer(ctx);
+    if (pointer == null || pointer.getNamedReferencesCount() == 0) {
+      return false;
+    }
+
+    // Figure out the NamedReference instances, that need to be added to the named-references
+    // inventory.
+    Map<String, NamedReference> namedRefsFromGlobal =
+        Maps.newHashMapWithExpectedSize(pointer.getNamedReferencesCount());
+    pointer.getNamedReferencesList().forEach(nr -> namedRefsFromGlobal.put(nr.getName(), nr));
+
+    List<ReferenceNames> refNamesSegments =
+        StreamSupport.stream(fetchReferenceNames(ctx), false).collect(Collectors.toList());
+
+    // Add reference names from global pointer to named-references inventory.
+
+    Map<String, NamedReference> refsToAddToInventoryMap = new HashMap<>(namedRefsFromGlobal);
+    for (ReferenceNames refNames : refNamesSegments) {
+      refNames.getRefNamesList().forEach(refsToAddToInventoryMap::remove);
+    }
+
+    if (!refsToAddToInventoryMap.isEmpty()) {
+      Iterator<NamedReference> refsToAddToInventory = refsToAddToInventoryMap.values().iterator();
+
+      int namedReferencesSegment = 0;
+      List<NamedRef> refsToAddToSegment = new ArrayList<>();
+      IntFunction<Integer> calculateHeadRoomForSegment =
+          seg -> {
+            ReferenceNames referenceNamesSegment =
+                refNamesSegments.size() > seg ? refNamesSegments.get(seg) : null;
+            return maxEntitySize(config.getReferencesSegmentSize())
+                - (referenceNamesSegment != null ? referenceNamesSegment.getSerializedSize() : 0);
+          };
+
+      int headRoom = calculateHeadRoomForSegment.apply(namedReferencesSegment);
+
+      while (refsToAddToInventory.hasNext()) {
+        NamedReference namedRefToAdd = refsToAddToInventory.next();
+        // Simplified size estimation for a protobuf string list, but considers "wide" UTF-8
+        // characters.
+        int namedRefToAddSize = ByteString.copyFromUtf8(namedRefToAdd.getName()).size() + 3;
+
+        while (headRoom < namedRefToAddSize) {
+          if (!refsToAddToSegment.isEmpty()) {
+            doAddToNamedReferences(ctx, refsToAddToSegment.stream(), namedReferencesSegment);
+            refsToAddToSegment.clear();
+          }
+
+          namedReferencesSegment++;
+          headRoom = calculateHeadRoomForSegment.apply(namedReferencesSegment);
+        }
+
+        refsToAddToSegment.add(
+            toNamedRef(namedRefToAdd.getRef().getType(), namedRefToAdd.getName()));
+        headRoom -= namedRefToAddSize;
+      }
+
+      if (!refsToAddToSegment.isEmpty()) {
+        doAddToNamedReferences(ctx, refsToAddToSegment.stream(), namedReferencesSegment);
+        refsToAddToSegment.clear();
+      }
+    }
+
+    // Create references in the "new structure"
+
+    while (true) {
+      // Pick a random reference from global-pointer
+
+      NamedReference namedRefToMigrate =
+          pointer
+              .getNamedReferencesList()
+              .get(ThreadLocalRandom.current().nextInt(pointer.getNamedReferencesCount()));
+
+      // Migrate that named reference
+
+      doCreateNamedReference(ctx, namedRefToMigrate);
+
+      GlobalStatePointer.Builder newPointerBuilder =
+          pointer.toBuilder().clearNamedReferences().setGlobalId(randomHash().asBytes());
+      pointer.getNamedReferencesList().stream()
+          .filter(nr -> !nr.getName().equals(namedRefToMigrate.getName()))
+          .forEach(newPointerBuilder::addNamedReferences);
+      GlobalStatePointer newPointer = newPointerBuilder.build();
+      if (globalPointerCas(ctx, pointer, newPointer)) {
+        pointer = newPointer;
+      } else {
+        pointer = fetchGlobalPointer(ctx);
+      }
+      if (pointer == null || pointer.getNamedReferencesCount() == 0) {
+        break;
+      }
+    }
+
+    return true;
+  }
+
+  protected abstract List<NamedReference> doFetchNamedReference(
+      NonTransactionalOperationContext ctx, List<String> refNames);
+
+  protected final Stream<NamedReference> fetchNamedReferences(
+      NonTransactionalOperationContext ctx) {
+
+    maybeMigrateLegacyNamedReferences(ctx);
+
+    Spliterator<ReferenceNames> split = fetchReferenceNames(ctx);
+
+    Spliterator<String> allNames =
+        StreamSupport.stream(split, false)
+            .map(ReferenceNames::getRefNamesList)
+            .flatMap(List::stream)
+            // The named references splits may contain duplicate names, which is probably very, very
+            // rare, but still possible.
+            .distinct()
+            .spliterator();
+
+    BatchSpliterator<String, NamedReference> batchSpliterator =
+        new BatchSpliterator<>(
+            config.getReferenceNamesBatchSize(),
+            allNames,
+            batch -> fetchNamedReference(ctx, batch).spliterator(),
+            Spliterator.NONNULL | Spliterator.DISTINCT | Spliterator.IMMUTABLE);
+
+    return StreamSupport.stream(batchSpliterator, false);
+  }
+
+  protected final boolean createNamedReference(
+      NonTransactionalOperationContext ctx, NamedRef ref, Hash newHead) {
+    NamedReference namedReference =
+        NamedReference.newBuilder()
+            .setName(ref.getName())
+            .setRef(
+                RefPointer.newBuilder().setType(protoTypeForRef(ref)).setHash(newHead.asBytes()))
+            .build();
+
+    try (Traced ignore = trace("createNamedReference").tag(TAG_REF, ref.getName())) {
+
+      // Add the reference to the list of reference-names first. This (eventually) guarantees,
+      // that the name of the new reference will be present in the list. If another operation
+      // fails, that's fine, because doFetchNamedReferences() does not return references that do
+      // not exist in 'refNames'.
+
+      int addToSegment = findAvailableNamedReferencesSegment(ctx);
+      doAddToNamedReferences(ctx, Stream.of(ref), addToSegment);
+
+      return doCreateNamedReference(ctx, namedReference);
+    }
+  }
+
+  /** Find the segment that has enough room for another {@link NamedReference}. */
+  protected int findAvailableNamedReferencesSegment(NonTransactionalOperationContext ctx) {
+    int segment = 0;
+    for (Iterator<ReferenceNames> iter = Spliterators.iterator(fetchReferenceNames(ctx));
+        iter.hasNext();
+        segment++) {
+      ReferenceNames refNames = iter.next();
+      int serSize = refNames.getSerializedSize();
+      if (serSize < maxEntitySize(config.getReferencesSegmentSize())) {
+        return segment;
+      }
+    }
+    return segment;
+  }
+
+  protected abstract void doAddToNamedReferences(
+      NonTransactionalOperationContext ctx, Stream<NamedRef> refStream, int addToSegment);
+
+  protected abstract void doRemoveFromNamedReferences(
+      NonTransactionalOperationContext ctx, NamedRef ref, int removeFromSegment);
+
+  protected abstract boolean doCreateNamedReference(
+      NonTransactionalOperationContext ctx, NamedReference namedReference);
+
+  protected final boolean deleteNamedReference(
+      NonTransactionalOperationContext ctx, NamedRef ref, RefPointer refHead) {
+    try (Traced ignore = trace("deleteNamedReference").tag(TAG_REF, ref.getName())) {
+      if (!doDeleteNamedReference(ctx, ref, refHead)) {
+        return false;
+      }
+
+      // Remove the reference name from the list of reference names after actually removing
+      // the named reference. That's fine, because doFetchNamedReferences() does not return
+      // references that do not exist in 'refNames'.
+      // TODO Caveat! A concurrent create-named-reference using the same name as the ref
+      //  currently being dropped may end up having its name *not* present in the list of
+      //  references. The reference would still be accessible and deletable though.
+
+      int segment = 0;
+      for (Iterator<ReferenceNames> iter = Spliterators.iterator(fetchReferenceNames(ctx));
+          iter.hasNext();
+          segment++) {
+        ReferenceNames refNames = iter.next();
+        if (refNames.getRefNamesList().contains(ref.getName())) {
+          doRemoveFromNamedReferences(ctx, ref, segment);
+        }
+      }
+
+      return true;
+    }
+  }
+
+  protected abstract boolean doDeleteNamedReference(
+      NonTransactionalOperationContext ctx, NamedRef ref, RefPointer refHead);
+
+  protected final boolean updateNamedReference(
+      NonTransactionalOperationContext ctx, NamedRef ref, RefPointer refHead, Hash newHead) {
+    try (Traced ignore = trace("updateNamedReference").tag(TAG_REF, ref.getName())) {
+      return doUpdateNamedReference(ctx, ref, refHead, newHead);
+    }
+  }
+
+  protected abstract boolean doUpdateNamedReference(
+      NonTransactionalOperationContext ctx, NamedRef ref, RefPointer refHead, Hash newHead);
 
   /**
    * Write a new refLog-entry with a best-effort approach to prevent hash-collisions but without any
@@ -911,57 +1184,6 @@ public abstract class NonTransactionalDatabaseAdapter<
   protected abstract void unsafeWriteGlobalPointer(
       NonTransactionalOperationContext ctx, GlobalStatePointer pointer);
 
-  protected GlobalStateLogEntry writeGlobalCommit(
-      NonTransactionalOperationContext ctx,
-      long timeInMicros,
-      GlobalStatePointer pointer,
-      List<ContentIdAndBytes> globals)
-      throws ReferenceConflictException {
-
-    Hash parentHash = Hash.of(globalLogHead(pointer));
-
-    // Before Nessie 0.21.0: the global-state-pointer contains the "heads" for the ref-log and
-    // global-log, so it has to read the head ref-log & global-log to get the IDs of all the
-    // previous parents to fill the parents in the new global-log-entry & ref-log-entry.
-    //
-    // Since Nessie 0.21.0: the global-state-pointer contains the "heads" for the ref-log and
-    // global-log PLUS the parents of those, so Nessie no longer need to read the head entries
-    // from the ref-log + global-log.
-    //
-    // The check of the first entry is there to ensure backwards compatibility and also
-    // rolling-upgrades work.
-    Stream<ByteString> newParents;
-    if (pointer.getGlobalParentsInclHeadCount() == 0
-        || !globalLogHead(pointer).equals(pointer.getGlobalParentsInclHead(0))) {
-      // Before Nessie 0.21.0
-
-      newParents = Stream.of(parentHash.asBytes());
-      GlobalStateLogEntry currentEntry = fetchFromGlobalLog(ctx, parentHash);
-      if (currentEntry != null) {
-        newParents = Stream.concat(newParents, currentEntry.getParentsList().stream().limit(19));
-      }
-    } else {
-      // Since Nessie 0.21.0
-
-      // Note: the whole method will be removed in a follow-up PR
-      newParents = pointer.getGlobalParentsInclHeadList().stream().limit(20);
-    }
-
-    GlobalStateLogEntry.Builder entry = newGlobalLogEntryBuilder(timeInMicros);
-    newParents.forEach(entry::addParents);
-    globals.forEach(g -> entry.addPuts(ProtoSerialization.toProto(g)));
-    GlobalStateLogEntry globalLogEntry = entry.build();
-    writeGlobalCommit(ctx, globalLogEntry);
-
-    return globalLogEntry;
-  }
-
-  protected GlobalStateLogEntry.Builder newGlobalLogEntryBuilder(long timeInMicros) {
-    return GlobalStateLogEntry.newBuilder()
-        .setCreatedTime(timeInMicros)
-        .setId(randomHash().asBytes());
-  }
-
   /**
    * Atomically update the global-commit-pointer to the given new-global-head, if the value in the
    * database is the given expected-global-head.
@@ -981,8 +1203,8 @@ public abstract class NonTransactionalDatabaseAdapter<
       GlobalStatePointer newPointer);
 
   /**
-   * If a {@link #globalPointerCas(NonTransactionalOperationContext, GlobalStatePointer,
-   * GlobalStatePointer)} failed, {@link
+   * If a {@link #refLogParentsCas(NonTransactionalOperationContext, int, RefLogParents,
+   * RefLogParents)} failed, {@link
    * org.projectnessie.versioned.persist.adapter.DatabaseAdapter#commit(CommitParams)} calls this
    * function to remove the optimistically written data.
    *
@@ -990,69 +1212,69 @@ public abstract class NonTransactionalDatabaseAdapter<
    * given keys, no-op for transactional implementations.
    */
   protected final void cleanUpCommitCas(
-      NonTransactionalOperationContext ctx,
-      Optional<Hash> globalHead,
-      Set<Hash> branchCommits,
-      Set<Hash> newKeyLists,
-      Hash refLogId) {
+      NonTransactionalOperationContext ctx, Set<Hash> branchCommits, Set<Hash> newKeyLists) {
     try (Traced ignore =
         trace("cleanUpCommitCas")
             .tag(TAG_COMMIT_COUNT, branchCommits.size())
             .tag(TAG_KEY_LIST_COUNT, newKeyLists.size())) {
-      doCleanUpCommitCas(ctx, globalHead, branchCommits, newKeyLists, refLogId);
+      doCleanUpCommitCas(ctx, branchCommits, newKeyLists);
     }
   }
 
   protected abstract void doCleanUpCommitCas(
-      NonTransactionalOperationContext ctx,
-      Optional<Hash> globalHead,
-      Set<Hash> branchCommits,
-      Set<Hash> newKeyLists,
-      Hash refLogId);
+      NonTransactionalOperationContext ctx, Set<Hash> branchCommits, Set<Hash> newKeyLists);
 
-  protected final void cleanUpGlobalLog(
-      NonTransactionalOperationContext ctx, Collection<Hash> globalIds) {
-    try (Traced ignore = trace("cleanUpGlobalLog").tag(TAG_COMMIT_COUNT, globalIds.size())) {
-      doCleanUpGlobalLog(ctx, globalIds);
+  protected final void cleanUpRefLogWrite(NonTransactionalOperationContext ctx, Hash refLogId) {
+    try (Traced ignore = trace("cleanUpRefLogWrite")) {
+      doCleanUpRefLogWrite(ctx, refLogId);
     }
   }
 
-  protected abstract void doCleanUpGlobalLog(
-      NonTransactionalOperationContext ctx, Collection<Hash> globalIds);
+  protected abstract void doCleanUpRefLogWrite(NonTransactionalOperationContext ctx, Hash refLogId);
+
+  protected final Spliterator<ReferenceNames> fetchReferenceNames(
+      NonTransactionalOperationContext ctx) {
+    return new ReferenceNamesSpliterator(
+        seg -> fetchReferenceNames(ctx, seg, config.getReferencesSegmentPrefetch()));
+  }
+
+  protected final List<ReferenceNames> fetchReferenceNames(
+      NonTransactionalOperationContext ctx, int segment, int prefetchSegments) {
+    try (Traced ignore = trace("fetchReferenceNames")) {
+      return doFetchReferenceNames(ctx, segment, prefetchSegments);
+    }
+  }
+
+  protected abstract List<ReferenceNames> doFetchReferenceNames(
+      NonTransactionalOperationContext ctx, int segment, int prefetchSegments);
 
   /**
-   * Retrieves the current HEAD of {@code ref} using the given "global state pointer".
+   * Retrieves the current HEAD of the given named reference.
    *
-   * @param pointer current global state pointer
    * @param ref reference to retrieve the current HEAD for
    * @return current HEAD, not {@code null}
    * @throws ReferenceNotFoundException if {@code ref} does not exist.
    */
-  protected static Hash branchHead(GlobalStatePointer pointer, NamedRef ref)
+  protected Hash branchHead(NonTransactionalOperationContext ctx, NamedRef ref)
       throws ReferenceNotFoundException {
     if (ref == null) {
       return null;
     }
-    if (pointer == null) {
-      throw referenceNotFound(ref);
+    NamedReference namedReference = fetchNamedReference(ctx, ref.getName());
+    if (namedReference == null || namedReference.getRef().getType() != protoTypeForRef(ref)) {
+      throw referenceNotFound(ref.getName());
     }
-    RefPointer branchHead = refFromGlobalState(pointer, ref.getName());
-    if (branchHead == null || !ref.equals(toNamedRef(branchHead.getType(), ref.getName()))) {
-      throw referenceNotFound(ref);
-    }
-    return Hash.of(branchHead.getHash());
+    return Hash.of(namedReference.getRef().getHash());
   }
 
-  protected static ReferenceInfo<ByteString> referenceHead(GlobalStatePointer pointer, String ref)
-      throws ReferenceNotFoundException {
-    if (pointer == null) {
+  protected ReferenceInfo<ByteString> referenceHead(
+      NonTransactionalOperationContext ctx, String ref) throws ReferenceNotFoundException {
+
+    NamedReference namedReference = fetchNamedReference(ctx, ref);
+    if (namedReference == null) {
       throw referenceNotFound(ref);
     }
-    RefPointer head = refFromGlobalState(pointer, ref);
-    if (head == null) {
-      throw referenceNotFound(ref);
-    }
-    return ReferenceInfo.of(Hash.of(head.getHash()), toNamedRef(head.getType(), ref));
+    return namedReferenceToReferenceInfo(namedReference);
   }
 
   /**
@@ -1060,11 +1282,12 @@ public abstract class NonTransactionalDatabaseAdapter<
    * GetNamedRefsParams#getBaseReference()}, if the retrieve options in {@link GetNamedRefsParams}
    * require it.
    */
-  private Hash namedRefsDefaultBranchHead(GetNamedRefsParams params, GlobalStatePointer pointer)
+  private Hash namedRefsDefaultBranchHead(
+      NonTransactionalOperationContext ctx, GetNamedRefsParams params)
       throws ReferenceNotFoundException {
     if (namedRefsRequiresBaseReference(params)) {
       Preconditions.checkNotNull(params.getBaseReference(), "Base reference name missing.");
-      return branchHead(pointer, params.getBaseReference());
+      return branchHead(ctx, params.getBaseReference());
     }
     return null;
   }
@@ -1108,11 +1331,7 @@ public abstract class NonTransactionalDatabaseAdapter<
 
   /** Reads from the global-state-log starting at the given global-state-log-ID. */
   private Stream<GlobalStateLogEntry> globalLogFetcher(NonTransactionalOperationContext ctx) {
-    return globalLogFetcher(ctx, fetchGlobalPointer(ctx));
-  }
-
-  private Stream<GlobalStateLogEntry> globalLogFetcher(
-      NonTransactionalOperationContext ctx, GlobalStatePointer pointer) {
+    GlobalStatePointer pointer = fetchGlobalPointer(ctx);
     if (pointer == null) {
       return Stream.empty();
     }
@@ -1194,49 +1413,20 @@ public abstract class NonTransactionalDatabaseAdapter<
 
   protected RefLogEntry writeRefLogEntry(
       NonTransactionalOperationContext ctx,
-      GlobalStatePointer pointer,
-      String refName,
-      RefType refType,
-      Hash commitHash,
-      Operation operation,
-      long timeInMicros,
-      List<Hash> sourceHashes)
+      RefLogParents refLogParents,
+      Consumer<RefLogEntry.Builder> refLogEntryBuilder)
       throws ReferenceConflictException {
 
-    Hash parentHash = Hash.of(pointer.getRefLogId());
     Hash currentRefLogId = randomHash();
 
-    Stream<ByteString> newParents;
-    if (pointer.getRefLogParentsInclHeadCount() == 0
-        || !pointer.getRefLogId().equals(pointer.getRefLogParentsInclHead(0))) {
-      // Before Nessie 0.21.0
+    Stream<ByteString> newParents =
+        refLogParents != null
+            ? refLogParents.getRefLogParentsInclHeadList().stream()
+                .limit(config.getParentsPerRefLogEntry())
+            : Stream.of(NO_ANCESTOR.asBytes());
 
-      newParents = Stream.of(parentHash.asBytes());
-      RefLog currentEntry = fetchFromRefLog(ctx, parentHash);
-      if (currentEntry != null) {
-        newParents =
-            Stream.concat(
-                newParents,
-                currentEntry.getParents().stream()
-                    .limit(config.getParentsPerRefLogEntry() - 1)
-                    .map(Hash::asBytes));
-      }
-    } else {
-      // Since Nessie 0.21.0
-
-      newParents =
-          pointer.getRefLogParentsInclHeadList().stream().limit(config.getParentsPerRefLogEntry());
-    }
-
-    RefLogEntry.Builder entry =
-        RefLogEntry.newBuilder()
-            .setRefLogId(currentRefLogId.asBytes())
-            .setRefName(ByteString.copyFromUtf8(refName))
-            .setRefType(refType)
-            .setCommitHash(commitHash.asBytes())
-            .setOperationTime(timeInMicros)
-            .setOperation(operation);
-    sourceHashes.forEach(hash -> entry.addSourceHashes(hash.asBytes()));
+    RefLogEntry.Builder entry = RefLogEntry.newBuilder().setRefLogId(currentRefLogId.asBytes());
+    refLogEntryBuilder.accept(entry);
     newParents.forEach(entry::addParents);
     RefLogEntry refLogEntry = entry.build();
 

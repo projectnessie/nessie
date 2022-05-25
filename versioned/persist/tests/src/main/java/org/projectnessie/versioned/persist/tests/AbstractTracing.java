@@ -79,10 +79,21 @@ public abstract class AbstractTracing extends AbstractNestedVersionStore {
                                                 "DatabaseAdapter.try-loop.createRef",
                                                 tryLoop ->
                                                     tryLoop
-                                                        .add("DatabaseAdapter.fetchGlobalPointer")
+                                                        .child(
+                                                            "DatabaseAdapter.fetchNamedReference",
+                                                            c ->
+                                                                c.add(
+                                                                    "DatabaseAdapter.fetchGlobalPointer"))
+                                                        .child(
+                                                            "DatabaseAdapter.createNamedReference",
+                                                            c ->
+                                                                c.add(
+                                                                    "DatabaseAdapter.fetchReferenceNames"))
+                                                        .add(
+                                                            "DatabaseAdapter.fetchRefLogParentsForReference")
                                                         .add("DatabaseAdapter.writeRefLog")
                                                         .add(
-                                                            "DatabaseAdapter.globalPointerCas"))))),
+                                                            "DatabaseAdapter.refLogParentsCas"))))),
             // 2nd "satisfies()" - for transactional database adapters
             h ->
                 assertThat(h)

@@ -112,4 +112,24 @@ public interface QuarkusVersionStoreAdvancedConfig
   @WithDefault("")
   @WithConverter(RepoIdConverter.class)
   String getJdbcSchema();
+
+  @WithName("references.segment.size")
+  @WithDefault("" + DEFAULT_REFERENCES_SEGMENT_SIZE)
+  @Override
+  int getReferencesSegmentSize();
+
+  @WithName("references.segment.prefetch")
+  @WithDefault("" + DEFAULT_REFERENCES_SEGMENT_PREFETCH)
+  @Override
+  int getReferencesSegmentPrefetch();
+
+  @WithName("reference-names.batch.size")
+  @WithDefault("" + DEFAULT_REFERENCE_NAMES_BATCH_SIZE)
+  @Override
+  int getReferenceNamesBatchSize();
+
+  @WithName("ref-log.stripes")
+  @WithDefault("" + DEFAULT_REF_LOG_STRIPES)
+  @Override
+  int getRefLogStripes();
 }

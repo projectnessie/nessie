@@ -53,6 +53,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -1438,6 +1440,20 @@ public abstract class TxDatabaseAdapter
         .limit(config.getParentsPerRefLogEntry())
         .forEach(refLogParents::addRefLogParentsInclHead);
     return refLogParents.build();
+  }
+
+  @Override
+  protected Spliterator<RefLog> readRefLog(ConnectionWrapper ctx, Hash initialHash)
+      throws RefLogNotFoundException {
+    if (NO_ANCESTOR.equals(initialHash)) {
+      return Spliterators.emptySpliterator();
+    }
+
+    RefLog initial = fetchFromRefLog(ctx, initialHash);
+    if (initial == null) {
+      throw RefLogNotFoundException.forRefLogId(initialHash.asString());
+    }
+    return logFetcher(ctx, initial, this::fetchPageFromRefLog, RefLog::getParents);
   }
 
   protected RefLogHead getRefLogHead(ConnectionWrapper conn) throws SQLException {

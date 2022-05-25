@@ -53,10 +53,21 @@ public class RocksDbInstance implements DatabaseConnectionProvider<RocksDbConfig
   public static final String CF_COMMIT_LOG = "commit_log";
   public static final String CF_KEY_LIST = "key_list";
   public static final String CF_REF_LOG = "ref_log";
+  static final String CF_REF_HEADS = "ref_heads";
+  static final String CF_REF_NAMES = "ref_names";
+  static final String CF_REF_LOG_HEADS = "ref_log_heads";
 
   private static final List<String> CF_ALL =
       Arrays.asList(
-          CF_REPO_PROPS, CF_GLOBAL_POINTER, CF_GLOBAL_LOG, CF_COMMIT_LOG, CF_KEY_LIST, CF_REF_LOG);
+          CF_REPO_PROPS,
+          CF_GLOBAL_POINTER,
+          CF_GLOBAL_LOG,
+          CF_COMMIT_LOG,
+          CF_KEY_LIST,
+          CF_REF_LOG,
+          CF_REF_HEADS,
+          CF_REF_NAMES,
+          CF_REF_LOG_HEADS);
 
   private ColumnFamilyHandle cfRepoProps;
   private ColumnFamilyHandle cfGlobalPointer;
@@ -64,6 +75,9 @@ public class RocksDbInstance implements DatabaseConnectionProvider<RocksDbConfig
   private ColumnFamilyHandle cfCommitLog;
   private ColumnFamilyHandle cfKeyList;
   private ColumnFamilyHandle cfRefLog;
+  private ColumnFamilyHandle cfRefHeads;
+  private ColumnFamilyHandle cfRefNames;
+  private ColumnFamilyHandle cfRefLogHeads;
 
   private final ReadWriteLock lock = new StampedLock().asReadWriteLock();
 
@@ -130,6 +144,9 @@ public class RocksDbInstance implements DatabaseConnectionProvider<RocksDbConfig
         cfCommitLog = columnFamilyHandleMap.get(CF_COMMIT_LOG);
         cfKeyList = columnFamilyHandleMap.get(CF_KEY_LIST);
         cfRefLog = columnFamilyHandleMap.get(CF_REF_LOG);
+        cfRefHeads = columnFamilyHandleMap.get(CF_REF_HEADS);
+        cfRefNames = columnFamilyHandleMap.get(CF_REF_NAMES);
+        cfRefLogHeads = columnFamilyHandleMap.get(CF_REF_LOG_HEADS);
       } catch (RocksDBException e) {
         throw new RuntimeException("RocksDB failed to start", e);
       }
@@ -160,6 +177,18 @@ public class RocksDbInstance implements DatabaseConnectionProvider<RocksDbConfig
     return cfRefLog;
   }
 
+  public ColumnFamilyHandle getCfRefHeads() {
+    return cfRefHeads;
+  }
+
+  public ColumnFamilyHandle getCfRefNames() {
+    return cfRefNames;
+  }
+
+  public ColumnFamilyHandle getCfRefLogHeads() {
+    return cfRefLogHeads;
+  }
+
   public ReadWriteLock getLock() {
     return lock;
   }
@@ -169,6 +198,14 @@ public class RocksDbInstance implements DatabaseConnectionProvider<RocksDbConfig
   }
 
   public Stream<ColumnFamilyHandle> allExceptGlobalPointer() {
-    return Stream.of(cfGlobalLog, cfCommitLog, cfRepoProps, cfKeyList, cfRefLog);
+    return Stream.of(
+        cfGlobalLog,
+        cfCommitLog,
+        cfRepoProps,
+        cfKeyList,
+        cfRefLog,
+        cfRefHeads,
+        cfRefNames,
+        cfRefLogHeads);
   }
 }

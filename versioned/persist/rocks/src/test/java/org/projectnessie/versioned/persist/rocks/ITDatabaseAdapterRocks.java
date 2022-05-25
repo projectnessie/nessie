@@ -15,8 +15,8 @@
  */
 package org.projectnessie.versioned.persist.rocks;
 
-import org.projectnessie.versioned.persist.tests.AbstractDatabaseAdapterTest;
+import org.projectnessie.versioned.persist.nontx.AbstractNonTxDatabaseAdapterTest;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
 @NessieExternalDatabase(RocksTestConnectionProviderSource.class)
-class ITDatabaseAdapterRocks extends AbstractDatabaseAdapterTest {}
+class ITDatabaseAdapterRocks extends AbstractNonTxDatabaseAdapterTest {}

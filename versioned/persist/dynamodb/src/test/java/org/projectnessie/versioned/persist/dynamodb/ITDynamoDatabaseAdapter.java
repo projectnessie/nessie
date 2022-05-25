@@ -23,7 +23,6 @@ import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -34,14 +33,14 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
+import org.projectnessie.versioned.persist.nontx.AbstractNonTxDatabaseAdapterTest;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
-import org.projectnessie.versioned.persist.tests.AbstractDatabaseAdapterTest;
 import org.projectnessie.versioned.persist.tests.LongerCommitTimeouts;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
 @NessieExternalDatabase(LocalDynamoTestConnectionProviderSource.class)
-public class ITDynamoDatabaseAdapter extends AbstractDatabaseAdapterTest
+public class ITDynamoDatabaseAdapter extends AbstractNonTxDatabaseAdapterTest
     implements LongerCommitTimeouts {
 
   protected DynamoDatabaseAdapter implDatabaseAdapter() {
@@ -62,7 +61,7 @@ public class ITDynamoDatabaseAdapter extends AbstractDatabaseAdapterTest
 
   @ParameterizedTest
   @MethodSource("cleanUpCasBatch")
-  public void cleanUpCasBatch(int numCommits, int numKeyLists) throws Exception {
+  public void cleanUpCasBatch(int numCommits, int numKeyLists) {
     Set<Hash> branchCommits = new HashSet<>();
     Set<Hash> newKeyLists = new HashSet<>();
     Hash refLogId = randomHash();
@@ -110,8 +109,8 @@ public class ITDynamoDatabaseAdapter extends AbstractDatabaseAdapterTest
         .extracting(l -> l.get(0))
         .allMatch(Objects::nonNull);
 
-    implDatabaseAdapter()
-        .doCleanUpCommitCas(ctx, Optional.empty(), branchCommits, newKeyLists, refLogId);
+    implDatabaseAdapter().doCleanUpRefLogWrite(ctx, refLogId);
+    implDatabaseAdapter().doCleanUpCommitCas(ctx, branchCommits, newKeyLists);
 
     assertThat(implDatabaseAdapter().doFetchFromRefLog(ctx, refLogId)).isNull();
     assertThat(branchCommits)
