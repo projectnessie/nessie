@@ -30,6 +30,8 @@ public interface RefLogApi {
   /**
    * Retrieve the reflog, potentially truncated by the backend.
    *
+   * <p><em>The Nessie reflog in this form is deprecated, likely for removal.</em>
+   *
    * <p>Retrieves up to {@code maxRecords} refLog-entries starting at the HEAD of current-reflog.
    * The backend <em>may</em> respect the given {@code max} records hint, but return less or more
    * entries. Backends may also cap the returned entries at a hard-coded limit, the default REST
@@ -47,5 +49,6 @@ public interface RefLogApi {
    *
    * @return {@link RefLogResponse}
    */
+  @Deprecated
   RefLogResponse getRefLog(@Valid @NotNull RefLogParams params) throws NessieNotFoundException;
 }

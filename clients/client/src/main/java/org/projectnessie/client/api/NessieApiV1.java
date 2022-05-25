@@ -107,6 +107,8 @@ public interface NessieApiV1 extends NessieApi {
   /**
    * Retrieve the reflog from the HEAD of the RefLog resource, potentially truncated by the backend.
    *
+   * <p><em>The Nessie reflog in this form is deprecated, likely for removal.</em>
+   *
    * <p>Retrieves up to {@code maxRecords} refLog-entries starting at the HEAD of the RefLog
    * resource. The backend <em>may</em> respect the given {@code max} records hint, but return less
    * or more entries. Backends may also cap the returned entries at a hard-coded limit, the default
@@ -122,6 +124,7 @@ public interface NessieApiV1 extends NessieApi {
    *
    * <p>See {@code org.projectnessie.client.StreamingUtil} in {@code nessie-client}.
    */
+  @Deprecated
   GetRefLogBuilder getRefLog();
 
   /** Fetch a single {@link org.projectnessie.model.Namespace}. */
