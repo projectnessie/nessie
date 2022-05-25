@@ -506,7 +506,9 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
         .allSatisfy(
             c -> {
               assertThat(c.getOperations()).isNull();
-              assertThat(c.getParentCommitHash()).isNull();
+              assertThat(c.getParentCommitHash()).isNotNull();
+              assertThat(c.getAdditionalParents()).isEmpty();
+              assertThat(c.getCommitMeta().getProperties()).isEmpty();
             })
         .extracting(e -> e.getCommitMeta().getHash())
         .containsExactlyElementsOf(hashes);

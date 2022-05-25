@@ -27,6 +27,8 @@ public interface Commit<METADATA, VALUE> {
 
   Hash getHash();
 
+  List<Hash> getAdditionalParents();
+
   METADATA getCommitMeta();
 
   @Nullable

@@ -136,7 +136,8 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
         .allSatisfy(
             c -> {
               assertThat(c.getOperations()).isNull();
-              assertThat(c.getParentHash()).isNull();
+              assertThat(c.getParentHash()).isNotNull();
+              assertThat(c.getAdditionalParents()).isNotNull();
             })
         .extracting(Commit::getHash)
         .containsExactlyElementsOf(hashes);

@@ -74,14 +74,20 @@ public abstract class AbstractAssign extends AbstractNestedVersionStore {
         () -> store().assign(TagName.of("tag1"), Optional.of(commit), Hash.of("1234567890abcdef")));
 
     assertThat(commitsList(branch, false))
-        .contains(commit(anotherCommit, "Another commit"), commit(commit, "Some commit"));
+        .contains(
+            commit(anotherCommit, "Another commit", commit),
+            commit(commit, "Some commit", initialHash));
 
-    assertThat(commitsList(BranchName.of("bar"), false)).contains(commit(commit, "Some commit"));
+    assertThat(commitsList(BranchName.of("bar"), false))
+        .contains(commit(commit, "Some commit", initialHash));
 
-    assertThat(commitsList(TagName.of("tag1"), false)).contains(commit(commit, "Some commit"));
+    assertThat(commitsList(TagName.of("tag1"), false))
+        .contains(commit(commit, "Some commit", initialHash));
 
     assertThat(commitsList(TagName.of("tag2"), false))
-        .contains(commit(anotherCommit, "Another commit"), commit(commit, "Some commit"));
+        .contains(
+            commit(anotherCommit, "Another commit", commit),
+            commit(commit, "Some commit", initialHash));
   }
 
   /** Assigning a branch/tag to a fresh main without any commits didn't work in 0.9.2 */

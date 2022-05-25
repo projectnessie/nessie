@@ -46,6 +46,8 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableCommitMeta.class)
 public abstract class CommitMeta {
 
+  public static final String MERGE_PARENT_PROPERTY = "_merge_parent";
+
   /**
    * Hash of this commit.
    *
@@ -104,7 +106,11 @@ public abstract class CommitMeta {
    * Set of properties to help further identify this commit.
    *
    * <p>examples are spark id, the client type (eg iceberg, delta etc), application or job names,
-   * hostnames etc
+   * hostnames etc.
+   *
+   * <p>If the commit is the result of a merge operation, the properties map <em>may</em> contain
+   * the key {@value #MERGE_PARENT_PROPERTY}, if the merge was performed with a Nessie server
+   * version, after 0.30.0, that persists the merged reference.
    */
   @NotNull
   public abstract Map<String, String> getProperties();

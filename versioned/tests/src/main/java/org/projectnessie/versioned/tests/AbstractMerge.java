@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.tests;
 
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
@@ -305,8 +306,15 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     // not modifying commit meta, will just "fast forward"
     assertThat(store().hashOnReference(newBranch, Optional.empty())).isEqualTo(firstCommit);
 
-    assertCommitMeta(
-        commitsList(newBranch, false).subList(0, 1), commits.subList(2, 3), metadataRewriter);
+    List<Commit<CommitMessage, BaseContent>> mergedCommit =
+        commitsList(newBranch, false).subList(0, 1);
+    assertCommitMeta(mergedCommit, commits.subList(2, 3), metadataRewriter);
+
+    // fast-forward merge, additional parents not necessary (and not set)
+    assertThat(mergedCommit.get(0))
+        .extracting(Commit::getAdditionalParents)
+        .asInstanceOf(InstanceOfAssertFactories.list(Hash.class))
+        .isEmpty();
   }
 
   @ParameterizedTest
@@ -323,10 +331,11 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     // modify the commit meta, will generate new commits and therefore new commit hashes
     assertThat(store().hashOnReference(newBranch, Optional.empty())).isNotEqualTo(thirdCommit);
 
+    List<Commit<CommitMessage, BaseContent>> mergedCommits = commitsList(newBranch, false);
     if (individualCommits) {
-      assertCommitMeta(commitsList(newBranch, false).subList(0, 3), commits, metadataRewriter);
+      assertCommitMeta(mergedCommits.subList(0, 3), commits, metadataRewriter);
     } else {
-      assertThat(commitsList(newBranch, false))
+      assertThat(mergedCommits)
           .first()
           .extracting(Commit::getCommitMeta)
           .extracting(CommitMessage::getMessage)
@@ -336,6 +345,11 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                   .map(Commit::getCommitMeta)
                   .map(CommitMessage::getMessage)
                   .toArray(String[]::new));
+
+      assertThat(mergedCommits)
+          .first()
+          .extracting(Commit::getAdditionalParents)
+          .isEqualTo(singletonList(commits.get(0).getHash()));
     }
   }
 
@@ -418,10 +432,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     MetadataRewriter<CommitMessage> metadataRewriter = createMetadataRewriter("");
     store()
         .commit(
-            etl,
-            Optional.empty(),
-            commitMessage("commit 1"),
-            Collections.singletonList(Put.of(key, VALUE_1)));
+            etl, Optional.empty(), commitMessage("commit 1"), singletonList(Put.of(key, VALUE_1)));
     store()
         .merge(
             store().hashOnReference(etl, Optional.empty()),
@@ -435,10 +446,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             false);
     store()
         .commit(
-            etl,
-            Optional.empty(),
-            commitMessage("commit 2"),
-            Collections.singletonList(Put.of(key, VALUE_2)));
+            etl, Optional.empty(), commitMessage("commit 2"), singletonList(Put.of(key, VALUE_2)));
     store()
         .merge(
             store().hashOnReference(etl, Optional.empty()),
@@ -507,6 +515,11 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
               c -> assertThat(c.getHash()).isEqualTo(newCommit),
               c -> assertThat(c.getHash()).isEqualTo(firstCommit),
               c -> assertThat(c.getHash()).isEqualTo(initialHash));
+
+      assertThat(commits)
+          .first()
+          .extracting(Commit::getAdditionalParents)
+          .isEqualTo(singletonList(thirdCommit));
     }
   }
 
@@ -530,7 +543,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             mergeInto,
             Optional.empty(),
             commitMessage("commit 1"),
-            Collections.singletonList(Put.of(conflictingKey1, VALUE_1)));
+            singletonList(Put.of(conflictingKey1, VALUE_1)));
     store()
         .commit(
             mergeFrom,
@@ -550,7 +563,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 mergeFrom,
                 Optional.empty(),
                 commitMessage("commit 4"),
-                Collections.singletonList(Put.of(conflictingKey2, VALUE_4)));
+                singletonList(Put.of(conflictingKey2, VALUE_4)));
 
     // "Plain" merge attempt - all keys default to MergeType.NORMAL
     assertThatThrownBy(

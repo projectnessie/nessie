@@ -19,6 +19,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
+import static org.assertj.core.api.InstanceOfAssertFactories.map;
+import static org.assertj.core.data.MapEntry.entry;
 
 import com.google.common.collect.ImmutableList;
 import org.assertj.core.api.InstanceOfAssertFactories;
@@ -54,6 +56,7 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalidWit
   public void transplant(boolean withDetachedCommit, boolean keepIndividualCommits)
       throws BaseNessieClientServerException {
     mergeTransplant(
+        false,
         keepIndividualCommits,
         (target, source, committed1, committed2, returnConflictAsResult) ->
             getApi()
@@ -77,6 +80,7 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalidWit
   public void merge(ReferenceMode refMode, boolean keepIndividualCommits)
       throws BaseNessieClientServerException {
     mergeTransplant(
+        !keepIndividualCommits,
         keepIndividualCommits,
         (target, source, committed1, committed2, returnConflictAsResult) ->
             getApi()
@@ -99,7 +103,8 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalidWit
         throws NessieNotFoundException, NessieConflictException;
   }
 
-  private void mergeTransplant(boolean keepIndividualCommits, MergeTransplantActor actor)
+  private void mergeTransplant(
+      boolean verifyAdditionalParents, boolean keepIndividualCommits, MergeTransplantActor actor)
       throws BaseNessieClientServerException {
     Branch target = createBranch("base");
     Branch source = createBranch("branch");
@@ -205,6 +210,31 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalidWit
             getApi().getEntries().refName(target.getName()).get().getEntries().stream()
                 .map(e -> e.getName().getName()))
         .containsExactlyInAnyOrder("key1", "key2");
+
+    if (verifyAdditionalParents) {
+      assertThat(logOfMerged.getLogEntries())
+          .first()
+          .satisfies(
+              logEntry ->
+                  assertThat(logEntry)
+                      .extracting(LogEntry::getAdditionalParents)
+                      .asInstanceOf(list(String.class))
+                      // When we can assume that all relevant Nessie clients are aware of the
+                      // org.projectnessie.model.LogResponse.LogEntry.getAdditionalParents field,
+                      // the following code can be uncommented. See also
+                      // TreeApiImpl.commitToLogEntry().
+                      // .hasSize(1)
+                      // .first()
+                      // .isEqualTo(committed2.getHash()),
+                      .isEmpty(),
+              logEntry ->
+                  assertThat(logEntry)
+                      .extracting(LogEntry::getCommitMeta)
+                      .extracting(CommitMeta::getProperties)
+                      .asInstanceOf(map(String.class, String.class))
+                      .containsExactly(
+                          entry(CommitMeta.MERGE_PARENT_PROPERTY, committed2.getHash())));
+    }
   }
 
   private Reference mergeWentFine(

@@ -366,7 +366,12 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   private BiConsumer<ImmutableCommit.Builder<METADATA, CONTENT>, CommitLogEntry>
       enhancerForCommitLog(boolean fetchAdditionalInfo) {
     if (!fetchAdditionalInfo) {
-      return (a, b) -> {};
+      return (commitBuilder, logEntry) -> {
+        if (!logEntry.getParents().isEmpty()) {
+          commitBuilder.parentHash(logEntry.getParents().get(0));
+        }
+        logEntry.getAdditionalParents().forEach(commitBuilder::addAdditionalParents);
+      };
     }
 
     // Memoize already retrieved global-content

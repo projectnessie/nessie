@@ -99,8 +99,11 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
     final Hash anotherCommitHash = store().hashOnReference(branch, Optional.empty());
 
     assertThat(commitsList(branch, false))
-        .contains(commit(anotherCommitHash, "Another commit"), commit(commitHash, "Some commit"));
-    assertThat(commitsList(commitHash, false)).contains(commit(commitHash, "Some commit"));
+        .contains(
+            commit(anotherCommitHash, "Another commit", commitHash),
+            commit(commitHash, "Some commit", initialHash));
+    assertThat(commitsList(commitHash, false))
+        .contains(commit(commitHash, "Some commit", initialHash));
 
     assertThrows(
         ReferenceConflictException.class, () -> store().delete(branch, Optional.of(initialHash)));
@@ -127,7 +130,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
   public void commitSomeOperations() throws Exception {
     final BranchName branch = BranchName.of("foo");
 
-    store().create(branch, Optional.empty());
+    final Hash base = store().create(branch, Optional.empty());
 
     final Hash initialCommit =
         commit("Initial Commit")
@@ -149,9 +152,9 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
 
     assertThat(commitsList(branch, false))
         .contains(
-            commit(thirdCommit, "Third Commit"),
-            commit(secondCommit, "Second Commit"),
-            commit(initialCommit, "Initial Commit"));
+            commit(thirdCommit, "Third Commit", secondCommit),
+            commit(secondCommit, "Second Commit", initialCommit),
+            commit(initialCommit, "Initial Commit", base));
 
     try (Stream<Key> keys = store().getKeys(branch).map(KeyEntry::getKey)) {
       assertThat(keys).containsExactlyInAnyOrder(Key.of("t1"), Key.of("t2"), Key.of("t4"));
@@ -215,7 +218,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
   public void commitNonConflictingOperations() throws Exception {
     final BranchName branch = BranchName.of("foo");
 
-    store().create(branch, Optional.empty());
+    final Hash base = store().create(branch, Optional.empty());
 
     final Hash initialCommit =
         commit("Initial Commit")
@@ -241,12 +244,12 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
 
     assertThat(commitsList(branch, false))
         .contains(
-            commit(newT2Commit, "New T2 Commit"),
-            commit(extraCommit, "Extra Commit"),
-            commit(t3Commit, "T3 Commit"),
-            commit(t2Commit, "T2 Commit"),
-            commit(t1Commit, "T1 Commit"),
-            commit(initialCommit, "Initial Commit"));
+            commit(newT2Commit, "New T2 Commit", extraCommit),
+            commit(extraCommit, "Extra Commit", t3Commit),
+            commit(t3Commit, "T3 Commit", t2Commit),
+            commit(t2Commit, "T2 Commit", t1Commit),
+            commit(t1Commit, "T1 Commit", initialCommit),
+            commit(initialCommit, "Initial Commit", base));
 
     try (Stream<Key> keys = store().getKeys(branch).map(KeyEntry::getKey)) {
       assertThat(keys).containsExactlyInAnyOrder(Key.of("t1"), Key.of("t2"), Key.of("t3"));

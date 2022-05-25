@@ -216,7 +216,8 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
               ImmutableLogEntry.Builder newLogEntry =
                   LogEntry.builder()
                       .commitMeta(e.getCommitMeta())
-                      .parentCommitHash(e.getParentCommitHash());
+                      .parentCommitHash(e.getParentCommitHash())
+                      .additionalParents(e.getAdditionalParents());
               if (e.getOperations() != null) {
                 e.getOperations().stream()
                     .filter(op -> !notAllowed.contains(op.getKey()))

@@ -31,6 +31,7 @@ message CommitLogEntry {
   repeated KeyListEntry key_list = 8;
   repeated bytes key_list_ids = 9;
   int64 commitSeq = 10;
+  repeated bytes additional_parents = 11;
 }
 
 message Key {

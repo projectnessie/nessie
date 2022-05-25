@@ -15,6 +15,8 @@
  */
 package org.projectnessie.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
@@ -48,6 +50,10 @@ public interface LogResponse extends PaginatedResponse {
 
     @NotNull
     CommitMeta getCommitMeta();
+
+    /** Currently always empty or null, reserved for future use. */
+    @JsonInclude(Include.NON_EMPTY)
+    List<String> getAdditionalParents();
 
     @Nullable
     String getParentCommitHash();
