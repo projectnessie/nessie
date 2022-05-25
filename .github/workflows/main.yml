@@ -52,9 +52,11 @@ jobs:
       uses: ./.github/actions/ci-results
 
     - name: Run OWASP Check
+      continue-on-error: true
       run: |
         ./mvnw dependency-check:aggregate -DskipTests -Powasp-dependency-check
     - name: Upload OWASP Report
+      continue-on-error: true
       uses: actions/upload-artifact@v3
       with:
         name: owasp-report
