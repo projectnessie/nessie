@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.extension.ConditionEvaluationResult.enabled;
 import static org.junit.platform.commons.support.AnnotationSupport.findAnnotation;
 import static org.projectnessie.tools.compatibility.api.Version.parseVersion;
 import static org.projectnessie.tools.compatibility.internal.AnnotatedFields.populateAnnotatedFields;
+import static org.projectnessie.tools.compatibility.internal.MultiNessieVersionsTestEngine.NESSIE_VERSION_SEGMENT_TYPE;
 
 import java.lang.reflect.AnnotatedElement;
 import java.util.Arrays;
@@ -125,7 +126,7 @@ abstract class AbstractMultiVersionExtension
     }
     Version version = nessieVersion.get();
 
-    populateAnnotatedFields(context, instance, NessieVersion.class, f -> version);
+    populateAnnotatedFields(context, instance, NessieVersion.class, a -> true, f -> version);
 
     return version;
   }
@@ -136,7 +137,7 @@ abstract class AbstractMultiVersionExtension
 
   static Optional<Version> nessieVersionFromContext(UniqueId uniqueId) {
     return uniqueId.getSegments().stream()
-        .filter(s -> "nessie-version".equals(s.getType()))
+        .filter(s -> NESSIE_VERSION_SEGMENT_TYPE.equals(s.getType()))
         .map(Segment::getValue)
         .map(Version::parseVersion)
         .findFirst();

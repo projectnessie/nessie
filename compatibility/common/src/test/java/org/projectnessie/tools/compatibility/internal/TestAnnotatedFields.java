@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.projectnessie.tools.compatibility.api.NessieAPI;
 import org.projectnessie.tools.compatibility.api.NessieVersion;
+import org.projectnessie.tools.compatibility.api.TargetVersion;
 
 @SuppressWarnings({"unchecked", "rawtypes", "Convert2Lambda"})
 class TestAnnotatedFields {
@@ -51,7 +52,8 @@ class TestAnnotatedFields {
         };
     fieldToObject = spy(fieldToObject);
 
-    AnnotatedFields.populateNessieAnnotatedFields(extensionContext, null, fieldToObject);
+    AnnotatedFields.populateNessieApiFields(
+        extensionContext, null, TargetVersion.TESTED, fieldToObject);
 
     assertThat(AnnotatedFieldsTarget.nessieApiAnnotatedStatic).isEqualTo("hello");
     assertThat(AnnotatedFieldsTarget.nessieVersionAnnotatedStatic).isNull();
@@ -74,7 +76,7 @@ class TestAnnotatedFields {
     fieldToObject = spy(fieldToObject);
 
     AnnotatedFields.populateAnnotatedFields(
-        extensionContext, null, NessieVersion.class, fieldToObject);
+        extensionContext, null, NessieVersion.class, a -> true, fieldToObject);
 
     assertThat(AnnotatedFieldsTarget.nessieVersionAnnotatedStatic).isEqualTo("hello");
     assertThat(AnnotatedFieldsTarget.nessieApiAnnotatedStatic).isNull();
@@ -98,7 +100,8 @@ class TestAnnotatedFields {
 
     AnnotatedFieldsTarget instance = new AnnotatedFieldsTarget();
 
-    AnnotatedFields.populateNessieAnnotatedFields(extensionContext, instance, fieldToObject);
+    AnnotatedFields.populateNessieApiFields(
+        extensionContext, instance, TargetVersion.TESTED, fieldToObject);
 
     assertThat(instance.nessieApiAnnotatedInstance).isEqualTo("hello");
     assertThat(instance.nessieVersionAnnotatedInstance).isNull();
@@ -125,7 +128,7 @@ class TestAnnotatedFields {
     AnnotatedFieldsTarget instance = new AnnotatedFieldsTarget();
 
     AnnotatedFields.populateAnnotatedFields(
-        extensionContext, instance, NessieVersion.class, fieldToObject);
+        extensionContext, instance, NessieVersion.class, a -> true, fieldToObject);
 
     assertThat(instance.nessieApiAnnotatedInstance).isNull();
     assertThat(instance.nessieVersionAnnotatedInstance).isEqualTo("hello");

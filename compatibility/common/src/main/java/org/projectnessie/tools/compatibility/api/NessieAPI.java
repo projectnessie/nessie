@@ -35,4 +35,17 @@ import java.lang.annotation.Target;
 @Inherited
 public @interface NessieAPI {
   String builderClassName() default "org.projectnessie.client.http.HttpClientBuilder";
+
+  /**
+   * Defines the target Nessie version instance in case multiple Nessie versions are running, for
+   * rolling-upgrade tests.
+   *
+   * <ul>
+   *   <li>{@link TargetVersion#TESTED} defines that the annotated element shall be provided for the
+   *       currently tested and released Nessie version instance - aka rolling-upgrade-from version.
+   *   <li>{@link TargetVersion#CURRENT} defines that the annotated element shall be provided for
+   *       the in-tree Nessie version instance - aka rolling-upgrade-to version.
+   * </ul>
+   */
+  TargetVersion targetVersion() default TargetVersion.TESTED;
 }

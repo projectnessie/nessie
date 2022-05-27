@@ -43,6 +43,8 @@ public class MultiNessieVersionsTestEngine implements TestEngine {
   public static final String ENGINE_ID = "nessie-versions";
   private static final Logger LOGGER = LoggerFactory.getLogger(MultiNessieVersionsTestEngine.class);
 
+  static final String NESSIE_VERSION_SEGMENT_TYPE = "nessie-version";
+
   private final JupiterTestEngine delegate;
 
   public MultiNessieVersionsTestEngine() {
@@ -85,7 +87,7 @@ public class MultiNessieVersionsTestEngine implements TestEngine {
       }
 
       for (Version version : versionsToTest) {
-        UniqueId perVersionId = uniqueId.append("nessie-version", version.toString());
+        UniqueId perVersionId = uniqueId.append(NESSIE_VERSION_SEGMENT_TYPE, version.toString());
         NessieVersionTestDescriptor perVersionTestDescriptor =
             new NessieVersionTestDescriptor(perVersionId, version);
         engineDescriptor.addChild(perVersionTestDescriptor);
