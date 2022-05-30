@@ -15,8 +15,6 @@
  */
 package org.projectnessie.quarkus.tests.profiles;
 
-import static org.projectnessie.versioned.persist.mongodb.LocalMongoTestConnectionProviderSource.MONGO_DB_NAME;
-
 import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.common.DevServicesContext;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
@@ -50,7 +48,7 @@ public class MongoTestResourceLifecycleManager
         "quarkus.mongodb.connection-string",
         mongo.getConnectionString(),
         "quarkus.mongodb.database",
-        MONGO_DB_NAME);
+        mongo.getDatabaseName());
   }
 
   @Override
