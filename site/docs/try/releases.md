@@ -1,5 +1,7 @@
 # Releases
 
+See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.
+
 ## 0.30.0 Release (May 13, 2022)
 
 * Add commit-ID to KeyListEntry when writing new key-lists
@@ -30,6 +32,8 @@
 * Make NessieContentGenerator extensible
 
 ## 0.26.0 Release (April 12, 2022)
+
+**Rolling** upgrades from an older Nessie release to 0.26.0 or newer are not supported.
 
 * Remove global state for Iceberg tables + views
 * Internal optimizations in database adapters, version store and API endpoints

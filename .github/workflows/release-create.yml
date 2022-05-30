@@ -89,13 +89,15 @@ jobs:
         pip install -r python/requirements.txt
     ### END runner setup
 
-    # Two steps that verify that the HISTORY.rst and releases.md files contain information about the release
+    # Two steps that verify that the HISTORY.rst, server-upgrade.md and releases.md files contain
+    # information about the release
     - name: Check release version number in text files
       run: |
         FAILS=""
         VERSION_PATTERH="$(echo ${RELEASE_VERSION} | sed 's/\./\\./g' )"
         grep -q "^${VERSION_PATTERH} [(][0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9][)]$" < python/HISTORY.rst || FAILS="${FAILS} python/HISTORY.rst"
         grep -q "^## ${VERSION_PATTERH} Release [(][A-Z][a-z]* [0-9][0-9]*, [0-9][0-9][0-9][0-9][)]$" < site/docs/try/releases.md || FAILS="${FAILS} site/docs/try/releases.md"
+        grep -q " ${VERSION_PATTERH} " < site/docs/try/server-upgrade.md || FAILS="${FAILS} site/docs/try/server-upgrade.md"
         grep -q "^| ${VERSION_PATTERH} .*check_mark.*$" < SECURITY.md || FAILS="${FAILS} SECURITY.md"
         if [[ -n ${FAILS} ]] ; then
           echo ${FAILS} "do not contain the release version ${RELEASE_VERSION}."
