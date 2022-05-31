@@ -16,7 +16,7 @@
 package org.projectnessie.tools.compatibility.internal;
 
 import static org.projectnessie.tools.compatibility.internal.AbstractNessieApiHolder.apiInstanceForField;
-import static org.projectnessie.tools.compatibility.internal.AnnotatedFields.populateNessieAnnotatedFields;
+import static org.projectnessie.tools.compatibility.internal.AnnotatedFields.populateNessieApiFields;
 import static org.projectnessie.tools.compatibility.internal.GlobalForClass.globalForClass;
 import static org.projectnessie.tools.compatibility.internal.NessieServer.nessieServer;
 import static org.projectnessie.tools.compatibility.internal.NessieServer.nessieServerExisting;
@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.projectnessie.tools.compatibility.api.TargetVersion;
 import org.projectnessie.tools.compatibility.api.Version;
 
 /**
@@ -101,9 +102,10 @@ public class NessieUpgradesExtension extends AbstractMultiVersionExtension {
       Object instance,
       Version version,
       Function<ExtensionContext, NessieServer> nessieServerSupplier) {
-    populateNessieAnnotatedFields(
+    populateNessieApiFields(
         context,
         instance,
+        TargetVersion.TESTED,
         field -> apiInstanceForField(context, field, version, nessieServerSupplier));
   }
 }

@@ -118,6 +118,13 @@
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.projectnessie</groupId>
+      <artifactId>nessie-versioned-persist-mongodb</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>provided</scope>
+    </dependency>
   </dependencies>
 
   <build>
