@@ -6,10 +6,6 @@ During or after a rolling upgrade from Nessie version <= 0.25.0 to >= 0.26.0, ex
 `org.projectnessie.versioned.ReferenceNotFoundException: Global log entry '<hex>’ not does not exist.`
 and/or `Iceberg content from reference must have global state, but has none` may occur.
 
-## Identification of the issue and mitigation in the live system
-
-(add content - Dimitri)
-
 ## Background
 
 When Nessie runs against non-transactional databases, it uses a [“global pointer”](https://github.com/projectnessie/nessie/blob/nessie-0.26.0/versioned/persist/serialize-proto/src/main/proto/persist.proto#L105),
@@ -71,6 +67,50 @@ with the ID of the new global-log-entry and the collected parents, which is just
 global-id. So the list of global-log IDs in the global-pointer contains two entries - one that
 points to a “valid” global log entry and one that does not seem to exist. This is exactly what has
 been [seen](#identification-of-the-issue-and-mitigation-in-the-live-system).
+
+## Identification of the issue and mitigation in the live system
+
+Whether the symptom is actually caused by Nessie global pointer corruption can be validated by 
+accessing the Nessie storage data directly.
+
+Some tooling is required for this because Nessie stores its data as binary blobs. 
+The `servers/quarkus-cli` module is to be enhanced (in a follow-up PR) with additional commands so that
+these operations could be performed without additional coding work.
+
+Meanwhile, here's the outline of how to confirm and fix the problem in a live system.
+
+How to confirm the symptom:
+
+1. Fetch the Nessie Global Pointer
+2. For each [global_log_head](https://github.com/projectnessie/nessie/blob/nessie-0.26.0/versioned/persist/serialize-proto/src/main/proto/persist.proto#L116)
+
+   - Parse it as a Nessie hash
+   - Check whether there's an entry in the Global Log table keyed by this hash
+
+3. If at least one of the parent hashes does not have a corresponding global log entry, that will mean that 
+   the Global Pointer data has been corrupted
+
+How to fix the problem:
+
+1. Do a full scan of the Global Log table
+2. Find the last good Global Log entry
+
+   - Normally, if Nessie has substantial history good global log entries will have 20 parents 
+     (or whatever was configured)
+   - Use log entry timestamps and common sense to identify the last good entry
+
+3. Check all global log entries referred to from the Global Pointer directly
+
+   - Check whether they have any ["puts"](https://github.com/projectnessie/nessie/blob/nessie-0.26.0/versioned/persist/serialize-proto/src/main/proto/persist.proto#L78),
+      i.e. contain Iceberg metadata information
+
+4. If those entries have "puts" construct a new entry that collectively contains their "put" data
+   and refers to the last good parent as its parent. Now this new entry becomes the last good log entry.
+5. If the entries from step 4 do not have "puts" they can be ignored.
+6. Construct a new Global Pointer using its all of its current data, but put the hash of the last
+   good global log entry as the only element in the  [global_log_head](https://github.com/projectnessie/nessie/blob/nessie-0.26.0/versioned/persist/serialize-proto/src/main/proto/persist.proto#L116) list.
+7. Store the new Global Pointer overwriting the old (broken) Global Pointer data.
+8. Re-run the verification procedure (above) to validate the new Global Pointer and Global Log.
 
 ## Additional testing effort
 
