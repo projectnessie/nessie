@@ -2,4 +2,4 @@
 
 Highlights
 
-* [Incident in May 2022](incident-2022-05.md)
+* [Rolling upgrade issue to 0.26.0](incident-2022-05.md) (May 2022)

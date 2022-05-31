@@ -1,10 +1,10 @@
-# Nessie issue during rolling upgrade from <=0.25.0 to >=0.26.0
+# Rolling upgrade issue to 0.26.0
 
 ## Symptom
 
 During or after a rolling upgrade from Nessie version <= 0.25.0 to >= 0.26.0, exceptions/errors like
 `org.projectnessie.versioned.ReferenceNotFoundException: Global log entry '<hex>’ not does not exist.`
-and/or `Iceberg content from reference must have global state, but has none`.
+and/or `Iceberg content from reference must have global state, but has none` may occur.
 
 ## Identification of the issue and mitigation in the live system
 
