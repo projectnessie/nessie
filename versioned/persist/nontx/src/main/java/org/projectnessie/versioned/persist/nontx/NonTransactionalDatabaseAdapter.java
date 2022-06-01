@@ -431,7 +431,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                         .setCommitHash(newHead.asBytes())
                         .setOperationTime(commitTimeInMicros())
                         .setOperation(RefLogEntry.Operation.CREATE_REFERENCE),
-                () -> ReferenceCreatedEvent.builder().hash(newHead).ref(ref));
+                () -> ReferenceCreatedEvent.builder().currentHash(newHead).ref(ref));
           },
           () -> createConflictMessage("Retry-Failure", ref, target));
     } catch (ReferenceAlreadyExistsException | ReferenceNotFoundException | RuntimeException e) {
@@ -463,7 +463,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                         .setCommitHash(currentHead.asBytes())
                         .setOperationTime(commitTimeInMicros())
                         .setOperation(RefLogEntry.Operation.DELETE_REFERENCE),
-                () -> ReferenceDeletedEvent.builder().hash(currentHead).ref(reference));
+                () -> ReferenceDeletedEvent.builder().currentHash(currentHead).ref(reference));
           },
           () -> deleteConflictMessage("Retry-Failure", reference, expectedHead));
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
@@ -500,7 +500,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                         .addSourceHashes(beforeAssign.asBytes()),
                 () ->
                     ReferenceAssignedEvent.builder()
-                        .hash(assignTo)
+                        .currentHash(assignTo)
                         .ref(assignee)
                         .previousHash(beforeAssign));
           },
@@ -570,7 +570,8 @@ public abstract class NonTransactionalDatabaseAdapter<
       Preconditions.checkState(
           createNamedReference(ctx, defaultBranch, NO_ANCESTOR), "Could not create default branch");
 
-      repositoryEvent(() -> ReferenceCreatedEvent.builder().ref(defaultBranch).hash(NO_ANCESTOR));
+      repositoryEvent(
+          () -> ReferenceCreatedEvent.builder().ref(defaultBranch).currentHash(NO_ANCESTOR));
     }
   }
 

@@ -21,6 +21,7 @@ import org.projectnessie.versioned.Hash;
 @Value.Immutable
 public interface ReferenceAssignedEvent extends ReferenceEvent {
 
+  /** The reference's current commit-ID before it was assigned. */
   Hash getPreviousHash();
 
   @Override

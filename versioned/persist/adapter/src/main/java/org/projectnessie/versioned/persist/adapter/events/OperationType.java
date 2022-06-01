@@ -16,12 +16,30 @@
 package org.projectnessie.versioned.persist.adapter.events;
 
 public enum OperationType {
-  COMMIT,
-  TRANSPLANT,
-  MERGE,
-  CRETE_REF,
-  DELETE_REF,
-  ASSIGN_REF,
-  REPOSITORY_INITIALIZED,
-  REPOSITORY_ERASED,
+  COMMIT(true, false),
+  TRANSPLANT(true, false),
+  MERGE(true, false),
+  CRETE_REF(false, true),
+  DELETE_REF(false, true),
+  ASSIGN_REF(false, true),
+  REPOSITORY_INITIALIZED(false, false),
+  REPOSITORY_ERASED(false, false);
+
+  private final boolean committingEvent;
+  private final boolean reference;
+
+  OperationType(boolean committing, boolean reference) {
+    this.committingEvent = committing;
+    this.reference = reference;
+  }
+
+  /** Whether the event / operation-type is one that wrote (at least) one commit. */
+  public boolean isCommitting() {
+    return committingEvent;
+  }
+
+  /** Whether the event / operation-type is one that modified a named reference. */
+  public boolean isReference() {
+    return reference;
+  }
 }

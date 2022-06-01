@@ -21,12 +21,23 @@ import org.projectnessie.versioned.NamedRef;
 public interface ReferenceEvent extends AdapterEvent {
   NamedRef getRef();
 
-  Hash getHash();
+  /**
+   * Hash of the reference, specific meaning for each event type.
+   *
+   * <ul>
+   *   <li>For {@link ReferenceCreatedEvent}: the current/initial commit ID of the reference when it
+   *       was created
+   *   <li>For {@link ReferenceDeletedEvent}: the current commit ID of the reference when it was
+   *       deleted
+   *   <li>For {@link ReferenceAssignedEvent}): the <em>new</em> commit ID of the named reference
+   * </ul>
+   */
+  Hash getCurrentHash();
 
   interface Builder<B extends Builder<B, E>, E extends ReferenceEvent>
       extends AdapterEvent.Builder<B, E> {
     B ref(NamedRef ref);
 
-    B hash(Hash hash);
+    B currentHash(Hash currentHash);
   }
 }

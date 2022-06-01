@@ -99,7 +99,7 @@ public abstract class AbstractEvents {
                     .asInstanceOf(type(ReferenceCreatedEvent.class))
                     .extracting(
                         ReferenceCreatedEvent::getOperationType,
-                        ReferenceCreatedEvent::getHash,
+                        ReferenceCreatedEvent::getCurrentHash,
                         ReferenceCreatedEvent::getRef)
                     .containsExactly(
                         OperationType.CRETE_REF, adapter.noAncestorHash(), BranchName.of("main")));
@@ -122,7 +122,7 @@ public abstract class AbstractEvents {
         .asInstanceOf(type(ReferenceCreatedEvent.class))
         .extracting(
             ReferenceCreatedEvent::getOperationType,
-            ReferenceCreatedEvent::getHash,
+            ReferenceCreatedEvent::getCurrentHash,
             ReferenceCreatedEvent::getRef)
         .containsExactly(OperationType.CRETE_REF, adapter.noAncestorHash(), branch);
   }
@@ -149,7 +149,7 @@ public abstract class AbstractEvents {
         .asInstanceOf(type(ReferenceDeletedEvent.class))
         .extracting(
             ReferenceDeletedEvent::getOperationType,
-            ReferenceDeletedEvent::getHash,
+            ReferenceDeletedEvent::getCurrentHash,
             ReferenceDeletedEvent::getRef)
         .containsExactly(OperationType.DELETE_REF, adapter.noAncestorHash(), branch);
   }
@@ -194,7 +194,7 @@ public abstract class AbstractEvents {
         .asInstanceOf(type(ReferenceAssignedEvent.class))
         .extracting(
             ReferenceAssignedEvent::getOperationType,
-            ReferenceAssignedEvent::getHash,
+            ReferenceAssignedEvent::getCurrentHash,
             ReferenceAssignedEvent::getPreviousHash,
             ReferenceAssignedEvent::getRef)
         .containsExactly(OperationType.ASSIGN_REF, adapter.noAncestorHash(), committed, branch);

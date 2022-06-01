@@ -29,10 +29,16 @@ import static org.projectnessie.versioned.persist.adapter.spi.Traced.trace;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.common.hash.Hasher;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
+import io.opentracing.Span;
+import io.opentracing.Tracer;
+import io.opentracing.log.Fields;
+import io.opentracing.tag.Tags;
+import io.opentracing.util.GlobalTracer;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -109,6 +115,8 @@ import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.TransplantParams;
 import org.projectnessie.versioned.persist.adapter.events.AdapterEvent;
 import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Contains all the database-independent logic for a Database-adapter.
@@ -133,6 +141,8 @@ import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
 public abstract class AbstractDatabaseAdapter<
         OP_CONTEXT extends AutoCloseable, CONFIG extends DatabaseAdapterConfig>
     implements DatabaseAdapter {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(AbstractDatabaseAdapter.class);
 
   protected static final String TAG_HASH = "hash";
   protected static final String TAG_COUNT = "count";
@@ -2033,7 +2043,29 @@ public abstract class AbstractDatabaseAdapter<
 
   protected void repositoryEvent(Supplier<? extends AdapterEvent.Builder<?, ?>> eventBuilder) {
     if (eventConsumer != null && eventBuilder != null) {
-      eventConsumer.accept(eventBuilder.get().eventTimeInMicros(commitTimeInMicros()).build());
+      AdapterEvent event = eventBuilder.get().eventTimeMicros(commitTimeInMicros()).build();
+      try {
+        eventConsumer.accept(event);
+      } catch (RuntimeException e) {
+        repositoryEventDeliveryFailed(event, e);
+      }
     }
+  }
+
+  private static void repositoryEventDeliveryFailed(AdapterEvent event, RuntimeException e) {
+    LOGGER.warn(
+        "Repository event delivery failed for operation type {}", event.getOperationType(), e);
+    Tracer t = GlobalTracer.get();
+    Span span = t.activeSpan();
+    Span log =
+        span.log(
+            ImmutableMap.of(
+                Fields.EVENT,
+                Tags.ERROR.getKey(),
+                Fields.MESSAGE,
+                "Repository event delivery failed",
+                Fields.ERROR_OBJECT,
+                e));
+    Tags.ERROR.set(log, true);
   }
 }

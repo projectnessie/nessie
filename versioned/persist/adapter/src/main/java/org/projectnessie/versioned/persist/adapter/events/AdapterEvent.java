@@ -15,6 +15,9 @@
  */
 package org.projectnessie.versioned.persist.adapter.events;
 
+import com.google.common.annotations.Beta;
+import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
+
 /**
  * Base class for all events emitted by {@link
  * org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter} implementations.
@@ -22,15 +25,21 @@ package org.projectnessie.versioned.persist.adapter.events;
  * <p>Database adapter events and infrastructure are "Nessie internal" and may change, even
  * fundamentally, w/o prior notice.
  */
+@Beta
 public interface AdapterEvent {
   OperationType getOperationType();
 
-  long getEventTimeInMicros();
+  /**
+   * Time when the event was created, source is {@link DatabaseAdapterConfig#getClock()} ({@link
+   * java.time.Clock#systemUTC()} in production) using {@link java.time.Instant#getEpochSecond} plus
+   * {@link java.time.Instant#getNano()}.
+   */
+  long getEventTimeMicros();
 
   interface Builder<B extends Builder<B, E>, E extends AdapterEvent> {
     B operationType(OperationType operationType);
 
-    B eventTimeInMicros(long eventTimeInMicros);
+    B eventTimeMicros(long eventTimeMicros);
 
     E build();
   }

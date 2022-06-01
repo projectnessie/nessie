@@ -469,7 +469,7 @@ public abstract class TxDatabaseAdapter
                 RefLogEntry.Operation.CREATE_REFERENCE,
                 emptyList());
 
-            return opResult(hash, () -> ReferenceCreatedEvent.builder().hash(hash).ref(ref));
+            return opResult(hash, () -> ReferenceCreatedEvent.builder().currentHash(hash).ref(ref));
           },
           () -> createConflictMessage("Conflict", ref, target),
           () -> createConflictMessage("Retry-Failure", ref, target));
@@ -512,7 +512,8 @@ public abstract class TxDatabaseAdapter
                 emptyList());
 
             return opResult(
-                pointer, () -> ReferenceDeletedEvent.builder().hash(commitHash).ref(reference));
+                pointer,
+                () -> ReferenceDeletedEvent.builder().currentHash(commitHash).ref(reference));
           },
           () -> deleteConflictMessage("Conflict", reference, expectedHead),
           () -> deleteConflictMessage("Retry-Failure", reference, expectedHead));
@@ -552,7 +553,7 @@ public abstract class TxDatabaseAdapter
                 resultHash,
                 () ->
                     ReferenceAssignedEvent.builder()
-                        .hash(assignTo)
+                        .currentHash(assignTo)
                         .ref(assignee)
                         .previousHash(assigneeHead));
           },
@@ -608,7 +609,8 @@ public abstract class TxDatabaseAdapter
 
         repositoryEvent(
             () -> RepositoryInitializedEvent.builder().defaultBranch(defaultBranchName));
-        repositoryEvent(() -> ReferenceCreatedEvent.builder().ref(defaultBranch).hash(NO_ANCESTOR));
+        repositoryEvent(
+            () -> ReferenceCreatedEvent.builder().ref(defaultBranch).currentHash(NO_ANCESTOR));
       }
     } catch (Exception e) {
       throw new RuntimeException(e);
