@@ -17,6 +17,7 @@ package org.projectnessie.versioned.persist.inmem;
 
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterFactory;
 
@@ -34,7 +35,8 @@ public class InmemoryDatabaseAdapterFactory
   protected DatabaseAdapter create(
       NonTransactionalDatabaseAdapterConfig config,
       InmemoryStore inmemoryStore,
-      StoreWorker<?, ?, ?> storeWorker) {
-    return new InmemoryDatabaseAdapter(config, inmemoryStore, storeWorker);
+      StoreWorker<?, ?, ?> storeWorker,
+      AdapterEventConsumer eventConsumer) {
+    return new InmemoryDatabaseAdapter(config, inmemoryStore, storeWorker, eventConsumer);
   }
 }

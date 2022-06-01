@@ -55,6 +55,7 @@ import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
+import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
 import org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization;
 import org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.Parser;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter;
@@ -97,8 +98,9 @@ public class DynamoDatabaseAdapter
   public DynamoDatabaseAdapter(
       NonTransactionalDatabaseAdapterConfig config,
       DynamoDatabaseClient c,
-      StoreWorker<?, ?, ?> storeWorker) {
-    super(config, storeWorker);
+      StoreWorker<?, ?, ?> storeWorker,
+      AdapterEventConsumer eventConsumer) {
+    super(config, storeWorker, eventConsumer);
 
     Objects.requireNonNull(
         c, "Requires a non-null DynamoDatabaseClient from DynamoDatabaseAdapterConfig");
@@ -134,7 +136,7 @@ public class DynamoDatabaseAdapter
   }
 
   @Override
-  public void eraseRepo() {
+  protected void doEraseRepo() {
     client.client.deleteItem(b -> b.tableName(TABLE_GLOBAL_POINTER).key(globalPointerKeyMap));
 
     try (BatchDelete batchDelete = new BatchDelete()) {

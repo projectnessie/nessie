@@ -19,6 +19,7 @@ import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
+import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
 
 public abstract class NonTransactionalDatabaseAdapterFactory<
         CONNECTOR extends DatabaseConnectionProvider<?>>
@@ -30,7 +31,8 @@ public abstract class NonTransactionalDatabaseAdapterFactory<
   protected abstract DatabaseAdapter create(
       NonTransactionalDatabaseAdapterConfig config,
       CONNECTOR connector,
-      StoreWorker<?, ?, ?> storeWorker);
+      StoreWorker<?, ?, ?> storeWorker,
+      AdapterEventConsumer eventConsumer);
 
   @Override
   public Builder<
@@ -61,7 +63,7 @@ public abstract class NonTransactionalDatabaseAdapterFactory<
 
     @Override
     public DatabaseAdapter build(StoreWorker<?, ?, ?> storeWorker) {
-      return create(getConfig(), getConnector(), storeWorker);
+      return create(getConfig(), getConnector(), storeWorker, getEventConsumer());
     }
   }
 }

@@ -24,6 +24,7 @@ import static org.projectnessie.versioned.persist.tests.SystemPropertiesConfigur
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -55,6 +56,7 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
+import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
 import org.projectnessie.versioned.persist.adapter.spi.TracingDatabaseAdapter;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
 import org.projectnessie.versioned.persist.tests.SystemPropertiesConfigurer;
@@ -299,6 +301,23 @@ public class DatabaseAdapterExtension
     DatabaseAdapterFactory.Builder<
             DatabaseAdapterConfig, AdjustableDatabaseAdapterConfig, DatabaseConnectionProvider<?>>
         builder = factory.newBuilder();
+
+    if (adapterAnnotation.eventConsumer() != AdapterEventConsumer.class) {
+      AdapterEventConsumer eventConsumer;
+      try {
+        Constructor<? extends AdapterEventConsumer> ctor =
+            adapterAnnotation.eventConsumer().getDeclaredConstructor();
+        makeAccessible(ctor);
+        eventConsumer = ctor.newInstance();
+      } catch (Exception e) {
+        throw new RuntimeException(
+            String.format(
+                "Failed to instantiate AdapterEventConsumer of type %s",
+                adapterAnnotation.eventConsumer()),
+            e);
+      }
+      builder.withEventConsumer(eventConsumer);
+    }
 
     builder
         .configure(

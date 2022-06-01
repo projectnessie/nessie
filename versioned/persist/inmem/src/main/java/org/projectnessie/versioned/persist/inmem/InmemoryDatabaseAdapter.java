@@ -40,6 +40,7 @@ import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
+import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
 import org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
@@ -61,8 +62,9 @@ public class InmemoryDatabaseAdapter
   public InmemoryDatabaseAdapter(
       NonTransactionalDatabaseAdapterConfig config,
       InmemoryStore store,
-      StoreWorker<?, ?, ?> storeWorker) {
-    super(config, storeWorker);
+      StoreWorker<?, ?, ?> storeWorker,
+      AdapterEventConsumer eventConsumer) {
+    super(config, storeWorker, eventConsumer);
 
     this.keyPrefix = ByteString.copyFromUtf8(config.getRepositoryId() + ':');
 
@@ -89,7 +91,7 @@ public class InmemoryDatabaseAdapter
   }
 
   @Override
-  public void eraseRepo() {
+  protected void doEraseRepo() {
     store.reinitializeRepo(keyPrefix);
   }
 

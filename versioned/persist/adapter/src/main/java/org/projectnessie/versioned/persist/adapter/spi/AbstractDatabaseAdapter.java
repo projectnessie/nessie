@@ -29,10 +29,16 @@ import static org.projectnessie.versioned.persist.adapter.spi.Traced.trace;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.common.hash.Hasher;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
+import io.opentracing.Span;
+import io.opentracing.Tracer;
+import io.opentracing.log.Fields;
+import io.opentracing.tag.Tags;
+import io.opentracing.util.GlobalTracer;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -60,6 +66,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -106,6 +113,10 @@ import org.projectnessie.versioned.persist.adapter.MergeParams;
 import org.projectnessie.versioned.persist.adapter.MetadataRewriteParams;
 import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.TransplantParams;
+import org.projectnessie.versioned.persist.adapter.events.AdapterEvent;
+import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Contains all the database-independent logic for a Database-adapter.
@@ -131,10 +142,13 @@ public abstract class AbstractDatabaseAdapter<
         OP_CONTEXT extends AutoCloseable, CONFIG extends DatabaseAdapterConfig>
     implements DatabaseAdapter {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(AbstractDatabaseAdapter.class);
+
   protected static final String TAG_HASH = "hash";
   protected static final String TAG_COUNT = "count";
   protected final CONFIG config;
   protected final StoreWorker<?, ?, ?> storeWorker;
+  private final AdapterEventConsumer eventConsumer;
 
   @SuppressWarnings("UnstableApiUsage")
   public static final Hash NO_ANCESTOR =
@@ -144,15 +158,22 @@ public abstract class AbstractDatabaseAdapter<
 
   protected static long COMMIT_LOG_HASH_SEED = 946928273206945677L;
 
-  protected AbstractDatabaseAdapter(CONFIG config, StoreWorker<?, ?, ?> storeWorker) {
+  protected AbstractDatabaseAdapter(
+      CONFIG config, StoreWorker<?, ?, ?> storeWorker, AdapterEventConsumer eventConsumer) {
     Objects.requireNonNull(config, "config parameter must not be null");
     this.config = config;
     this.storeWorker = storeWorker;
+    this.eventConsumer = eventConsumer;
   }
 
   @VisibleForTesting
   public CONFIG getConfig() {
     return config;
+  }
+
+  @VisibleForTesting
+  public AdapterEventConsumer getEventConsumer() {
+    return eventConsumer;
   }
 
   @VisibleForTesting
@@ -287,6 +308,7 @@ public abstract class AbstractDatabaseAdapter<
       Hash toHead,
       Consumer<Hash> branchCommits,
       Consumer<Hash> newKeyLists,
+      Consumer<CommitLogEntry> writtenCommits,
       MergeParams mergeParams,
       ImmutableMergeResult.Builder<CommitLogEntry> mergeResult)
       throws ReferenceNotFoundException, ReferenceConflictException {
@@ -340,7 +362,8 @@ public abstract class AbstractDatabaseAdapter<
         commitsToMergeChronological,
         toEntriesReverseChronological,
         mergeParams,
-        mergeResult);
+        mergeResult,
+        writtenCommits);
   }
 
   /**
@@ -358,6 +381,7 @@ public abstract class AbstractDatabaseAdapter<
       Hash targetHead,
       Consumer<Hash> branchCommits,
       Consumer<Hash> newKeyLists,
+      Consumer<CommitLogEntry> writtenCommits,
       TransplantParams transplantParams,
       ImmutableMergeResult.Builder<CommitLogEntry> mergeResult)
       throws ReferenceNotFoundException, ReferenceConflictException {
@@ -422,7 +446,8 @@ public abstract class AbstractDatabaseAdapter<
         commitsToTransplantChronological,
         targetEntriesReverseChronological,
         transplantParams,
-        mergeResult);
+        mergeResult,
+        writtenCommits);
   }
 
   protected Hash mergeTransplantCommon(
@@ -434,7 +459,8 @@ public abstract class AbstractDatabaseAdapter<
       List<CommitLogEntry> commitsToMergeChronological,
       List<CommitLogEntry> toEntriesReverseChronological,
       MetadataRewriteParams params,
-      ImmutableMergeResult.Builder<CommitLogEntry> mergeResult)
+      ImmutableMergeResult.Builder<CommitLogEntry> mergeResult,
+      Consumer<CommitLogEntry> writtenCommits)
       throws ReferenceConflictException, ReferenceNotFoundException {
 
     // Collect modified keys.
@@ -522,10 +548,13 @@ public abstract class AbstractDatabaseAdapter<
 
       // Write commits
 
-      commitsToMergeChronological.stream().map(CommitLogEntry::getHash).forEach(branchCommits);
       writeMultipleCommits(ctx, commitsToMergeChronological);
+      commitsToMergeChronological.stream()
+          .peek(writtenCommits)
+          .map(CommitLogEntry::getHash)
+          .forEach(branchCommits);
     } else {
-      toHead =
+      CommitLogEntry squashed =
           squashCommits(
               ctx,
               timeInMicros,
@@ -534,6 +563,11 @@ public abstract class AbstractDatabaseAdapter<
               newKeyLists,
               params.getUpdateCommitMetadata(),
               mergePredicate);
+
+      if (squashed != null) {
+        writtenCommits.accept(squashed);
+        toHead = squashed.getHash();
+      }
     }
     return toHead;
   }
@@ -1769,7 +1803,7 @@ public abstract class AbstractDatabaseAdapter<
    * For merge/transplant, applies one squashed commit derived from the given commits onto the
    * target-hash.
    */
-  protected Hash squashCommits(
+  protected CommitLogEntry squashCommits(
       OP_CONTEXT ctx,
       long timeInMicros,
       Hash toHead,
@@ -1802,7 +1836,7 @@ public abstract class AbstractDatabaseAdapter<
 
     if (puts.isEmpty() && deletes.isEmpty()) {
       // Copied commit will not contain any operation, skip.
-      return toHead;
+      return null;
     }
 
     ByteString newCommitMeta = rewriteMetadata.squash(commitMeta);
@@ -1839,7 +1873,7 @@ public abstract class AbstractDatabaseAdapter<
 
     writeIndividualCommit(ctx, squashedCommit);
 
-    return squashedCommit.getHash();
+    return squashedCommit;
   }
 
   /** For merge/transplant, applies the given commits onto the target-hash. */
@@ -2005,5 +2039,33 @@ public abstract class AbstractDatabaseAdapter<
   protected void tryLoopStateCompletion(@Nonnull Boolean success, TryLoopState state) {
     tryLoopFinished(
         success ? "success" : "fail", state.getRetries(), state.getDuration(NANOSECONDS));
+  }
+
+  protected void repositoryEvent(Supplier<? extends AdapterEvent.Builder<?, ?>> eventBuilder) {
+    if (eventConsumer != null && eventBuilder != null) {
+      AdapterEvent event = eventBuilder.get().eventTimeMicros(commitTimeInMicros()).build();
+      try {
+        eventConsumer.accept(event);
+      } catch (RuntimeException e) {
+        repositoryEventDeliveryFailed(event, e);
+      }
+    }
+  }
+
+  private static void repositoryEventDeliveryFailed(AdapterEvent event, RuntimeException e) {
+    LOGGER.warn(
+        "Repository event delivery failed for operation type {}", event.getOperationType(), e);
+    Tracer t = GlobalTracer.get();
+    Span span = t.activeSpan();
+    Span log =
+        span.log(
+            ImmutableMap.of(
+                Fields.EVENT,
+                Tags.ERROR.getKey(),
+                Fields.MESSAGE,
+                "Repository event delivery failed",
+                Fields.ERROR_OBJECT,
+                e));
+    Tags.ERROR.set(log, true);
   }
 }

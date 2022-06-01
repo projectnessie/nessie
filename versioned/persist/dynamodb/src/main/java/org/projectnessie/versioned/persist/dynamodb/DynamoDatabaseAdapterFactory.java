@@ -17,6 +17,7 @@ package org.projectnessie.versioned.persist.dynamodb;
 
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterFactory;
 
@@ -34,7 +35,8 @@ public class DynamoDatabaseAdapterFactory
   protected DatabaseAdapter create(
       NonTransactionalDatabaseAdapterConfig config,
       DynamoDatabaseClient dynamoDatabaseClient,
-      StoreWorker<?, ?, ?> storeWorker) {
-    return new DynamoDatabaseAdapter(config, dynamoDatabaseClient, storeWorker);
+      StoreWorker<?, ?, ?> storeWorker,
+      AdapterEventConsumer eventConsumer) {
+    return new DynamoDatabaseAdapter(config, dynamoDatabaseClient, storeWorker, eventConsumer);
   }
 }

@@ -57,6 +57,7 @@ import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
+import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
 import org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization;
 import org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.Parser;
 import org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil;
@@ -93,8 +94,9 @@ public class MongoDatabaseAdapter
   protected MongoDatabaseAdapter(
       NonTransactionalDatabaseAdapterConfig config,
       MongoDatabaseClient client,
-      StoreWorker<?, ?, ?> storeWorker) {
-    super(config, storeWorker);
+      StoreWorker<?, ?, ?> storeWorker,
+      AdapterEventConsumer eventConsumer) {
+    super(config, storeWorker, eventConsumer);
 
     Objects.requireNonNull(client, "MongoDatabaseClient cannot be null");
     this.client = client;
@@ -106,7 +108,7 @@ public class MongoDatabaseAdapter
   }
 
   @Override
-  public void eraseRepo() {
+  protected void doEraseRepo() {
     client.getGlobalPointers().deleteMany(Filters.eq(globalPointerKey));
     Bson idPrefixFilter = Filters.eq(ID_REPO_PATH, repositoryId);
     client.allExceptGlobalPointer().forEach(coll -> coll.deleteMany(idPrefixFilter));
