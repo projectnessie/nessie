@@ -41,6 +41,9 @@ The following table lists the configurable parameters of the Nessie chart and th
 | mongodb | Configuration specific to `versionStoreType: MONGO` | |
 | mongodb.name | The database name | `nessie` |
 | mongodb.connectionString | The database connection string | `mongodb://localhost:27017` |
+| mongodb.secret.name | The name of the secret where database credentials are stored | `mongodb-creds` |
+| mongodb.secret.username | The name of the username key inside the secret | `mongodb_username` |
+| mongodb.secret.password | The name of the password key inside the secret | `mongodb_password` |
 | postgres | Configuration specific to `versionStoreType: TRANSACTIONAL` | |
 | postgres.jdbcUrl | The database connection URL | `jdbc:postgresql://localhost:5432/my_database` |
 | postgres.secret.name | The name of the secret where database credentials are stored | `postgres-creds` |
@@ -80,6 +83,22 @@ aws_secret_access_key=YOURSECRETKEYDATA
   `kubectl create secret generic awscreds --from-env-file="$PWD/awscreds"`
 
 * Now you can use `DYNAMO` as the version store when installing Nessie via `helm install -n nessie-ns nessie helm/nessie --set versionStoreType=DYNAMO`.
+
+
+### Providing secrets for MongoDB
+
+* Providing secrets for MongoDB is strongly recommended, but not enforced.
+* Make sure you have a Secret in the following form:
+```
+> cat $PWD/mongodb-creds
+mongodb_username=YOUR_USERNAME
+mongodb_password=YOUR_PASSWORD
+```
+
+* Create the secret from the given file
+  `kubectl create secret generic mongodb-creds --from-env-file="$PWD/mongodb-creds"`
+
+* The `mongodb-creds` secret will now be picked up when you use `MONGO` as the version store when installing Nessie via `helm install -n nessie-ns nessie helm/nessie --set versionStoreType=MONGO`.
 
 
 ### Providing secrets for Transactional Version Store
