@@ -312,9 +312,9 @@ class TestTracingVersionStore {
           assertThrows(expectedThrow.getClass(), () -> storeExec.accept(store)).getMessage());
     }
 
-    List<Map<String, String>> expectedLogs = new ArrayList<>(invocation.getLogs());
+    List<Map<String, ?>> expectedLogs = new ArrayList<>(invocation.getLogs());
     if (isServerError) {
-      expectedLogs.add(ImmutableMap.of("event", "error", "error.object", expectedThrow.toString()));
+      expectedLogs.add(ImmutableMap.of("event", "error", "error.object", expectedThrow));
     }
 
     ImmutableMap.Builder<Object, Object> tagsBuilder =

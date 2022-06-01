@@ -45,9 +45,7 @@ public final class TracingUtil {
    */
   public static RuntimeException traceError(Span span, RuntimeException e) {
     Tags.ERROR.set(
-        span.log(
-            ImmutableMap.of(Fields.EVENT, Tags.ERROR.getKey(), Fields.ERROR_OBJECT, e.toString())),
-        true);
+        span.log(ImmutableMap.of(Fields.EVENT, Tags.ERROR.getKey(), Fields.ERROR_OBJECT, e)), true);
     return e;
   }
 }
