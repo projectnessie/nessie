@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.persist.adapter.events;
 
 import com.google.common.annotations.Beta;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 
 /**
  * Base class for all events emitted by {@link
@@ -30,7 +29,8 @@ public interface AdapterEvent {
   OperationType getOperationType();
 
   /**
-   * Time when the event was created, source is {@link DatabaseAdapterConfig#getClock()} ({@link
+   * Time when the event was created, source is {@link
+   * org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig#getClock()} ({@link
    * java.time.Clock#systemUTC()} in production) using {@link java.time.Instant#getEpochSecond} plus
    * {@link java.time.Instant#getNano()}.
    */
