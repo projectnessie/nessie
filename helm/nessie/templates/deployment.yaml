@@ -79,6 +79,18 @@ spec:
             - name: QUARKUS_MONGODB_CONNECTION_STRING
               value: {{ .Values.mongodb.connectionString }}
             {{- end }}
+            {{- if .Values.mongodb.secret.name }}
+            - name: QUARKUS_MONGODB_CREDENTIALS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.mongodb.secret.name }}
+                  key: {{ .Values.mongodb.secret.username }}
+            - name: QUARKUS_MONGODB_CREDENTIALS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.mongodb.secret.name }}
+                  key: {{ .Values.mongodb.secret.password }}
+            {{- end }}
             {{- end }}
 
             {{- if eq .Values.versionStoreType "TRANSACTIONAL" }}

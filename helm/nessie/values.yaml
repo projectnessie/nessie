@@ -28,6 +28,10 @@ dynamodb:
 mongodb:
   name: nessie
   connectionString: mongodb://localhost:27017
+  secret:
+    name: mongodb-creds
+    username: mongodb_username
+    password: mongodb_password
 
 # this is needed when selecting TRANSACTIONAL
 postgres:
