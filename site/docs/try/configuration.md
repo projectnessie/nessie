@@ -93,6 +93,7 @@ The following configurations are advanced configurations to configure how Nessie
 | `nessie.version.store.advanced.reference.names.batch.size`      | `25`                | `int`    | Sets the number of references to resolve at once when fetching all references.                                                                                                                                          |
 | `nessie.version.store.advanced.ref-log.stripes`                 | `8`                 | `int`    | Sets the number of stripes for the ref-log.                                                                                                                                                                             |
 | `nessie.version.store.advanced.commit-log-scan-prefetch`        | `25`                | `int`    | Sets the amount of commits to ask the database to pre-fetch during a full commits scan.                                                                                                                                 |
+| `nessie.version.store.advanced.assumed-wall-clock-drift-micros` | `5_000_000`         | `long`   | Sets the assumed wall-clock drift between multiple Nessie instances, in microseconds.                                                                                                                                   |
 
 ### Authentication settings
 

@@ -20,7 +20,9 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.protobuf.ByteString;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -41,8 +43,14 @@ import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.persist.adapter.HeadsAndForkPoints;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
+import org.projectnessie.versioned.persist.adapter.ReferencedAndUnreferencedHeads;
+import org.projectnessie.versioned.persist.adapter.ReferencesUtil;
+import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
+import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
+import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterConfigItem;
 import org.projectnessie.versioned.testworker.OnRefOnly;
 import org.projectnessie.versioned.testworker.SimpleStoreWorker;
 
@@ -73,6 +81,62 @@ public abstract class AbstractCommitLogScan {
     try (Stream<CommitLogEntry> entries = databaseAdapter.scanAllCommitLogEntries()) {
       assertThat(entries).map(CommitLogEntry::getHash).containsExactlyInAnyOrderElementsOf(commits);
     }
+  }
+
+  @ParameterizedTest
+  @MethodSource("commitsAndBranches")
+  void identifyReferencedAndUnreferencedHeads(
+      int numBranches,
+      int numCommits,
+      @NessieDbAdapter
+          @NessieDbAdapterConfigItem(name = "assumed.wall.clock.drift.micros", value = "0")
+          AbstractDatabaseAdapter<?, ?> databaseAdapter)
+      throws Exception {
+    IntFunction<BranchName> branch = branchNum -> BranchName.of("collectAllHeads-" + branchNum);
+
+    Set<Hash> deletedHeads = new HashSet<>();
+    Map<Hash, Set<NamedRef>> liveHeads = new HashMap<>();
+    Map<NamedRef, Hash> refHeads = new HashMap<>();
+
+    BiConsumer<Hash, NamedRef> addLive =
+        (head, ref) -> liveHeads.computeIfAbsent(head, x -> new HashSet<>()).add(ref);
+
+    prepareReferences(
+        numCommits, numBranches, branch, addLive, deletedHeads::add, refHeads::put, h -> {});
+
+    //
+
+    ReferencesUtil referencesUtil =
+        ReferencesUtil.forDatabaseAdapter(databaseAdapter, databaseAdapter.getConfig());
+
+    HeadsAndForkPoints headsAndForkPoints = referencesUtil.identifyAllHeadsAndForkPoints(100);
+
+    ReferencedAndUnreferencedHeads refAndUnref =
+        referencesUtil.identifyReferencedAndUnreferencedHeads(headsAndForkPoints);
+
+    assertThat(refAndUnref.getUnreferencedHeads()).isEqualTo(deletedHeads);
+    assertThat(refAndUnref.getReferencedHeads()).isEqualTo(liveHeads);
+
+    // Add more commits to some of the remaining branches - simulate that commits were added in
+    // the meantime.
+    for (int branchNum = 0; branchNum < numBranches; branchNum++) {
+      if ((branchNum & 3) == 1) {
+        BranchName branchName = branch.apply(branchNum);
+        Hash head = refHeads.get(branchName);
+        liveHeads.get(head).remove(branchName);
+        if (liveHeads.get(head).isEmpty()) {
+          liveHeads.remove(head);
+        }
+        head = addCommits(numCommits, branchName, head, h -> {});
+        liveHeads.computeIfAbsent(head, x -> new HashSet<>()).add(branchName);
+        refHeads.put(branchName, head);
+      }
+    }
+
+    refAndUnref = referencesUtil.identifyReferencedAndUnreferencedHeads(headsAndForkPoints);
+
+    assertThat(refAndUnref.getUnreferencedHeads()).isEqualTo(deletedHeads);
+    assertThat(refAndUnref.getReferencedHeads()).isEqualTo(liveHeads);
   }
 
   private void prepareReferences(

@@ -137,4 +137,9 @@ public interface QuarkusVersionStoreAdvancedConfig
   @WithDefault("" + DEFAULT_COMMIT_LOG_SCAN_PREFETCH)
   @Override
   int getCommitLogScanPrefetch();
+
+  @WithName("assumed-wall-clock-drift-micros")
+  @WithDefault("" + DEFAULT_ASSUMED_WALL_CLOCK_DRIFT_MICROS)
+  @Override
+  long getAssumedWallClockDriftMicros();
 }

@@ -42,6 +42,7 @@ public interface DatabaseAdapterConfig {
   int DEFAULT_RETRY_INITIAL_SLEEP_MILLIS_LOWER = 5;
   int DEFAULT_RETRY_INITIAL_SLEEP_MILLIS_UPPER = 25;
   int DEFAULT_RETRY_MAX_SLEEP_MILLIS = 75;
+  long DEFAULT_ASSUMED_WALL_CLOCK_DRIFT_MICROS = 5_000_000L;
 
   /**
    * A free-form string that identifies a particular Nessie storage repository.
@@ -216,5 +217,11 @@ public interface DatabaseAdapterConfig {
   @Value.Default
   default int getParentsPerRefLogEntry() {
     return DEFAULT_PARENTS_PER_REFLOG_ENTRY;
+  }
+
+  /** The assumed wall-clock drift between multiple Nessie instances in microseconds. */
+  @Value.Default
+  default long getAssumedWallClockDriftMicros() {
+    return DEFAULT_ASSUMED_WALL_CLOCK_DRIFT_MICROS;
   }
 }
