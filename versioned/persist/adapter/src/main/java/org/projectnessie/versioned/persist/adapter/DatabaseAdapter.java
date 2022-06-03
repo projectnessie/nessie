@@ -285,6 +285,12 @@ public interface DatabaseAdapter {
    */
   Stream<RefLog> refLog(Hash offset) throws RefLogNotFoundException;
 
+  /**
+   * Scan all commit log entries, no guarantees about order nor about the behavior when commits
+   * happen while the returned {@link Stream} is consumed.
+   */
+  Stream<CommitLogEntry> scanAllCommitLogEntries();
+
   @VisibleForTesting
   void assertCleanStateForTests();
 }

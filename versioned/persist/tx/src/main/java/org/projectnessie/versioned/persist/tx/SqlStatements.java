@@ -104,6 +104,8 @@ public final class SqlStatements {
   public static final String INSERT_COMMIT_LOG =
       String.format(
           "INSERT INTO %s (\"repo_id\", \"hash\", \"value\") VALUES (?, ?, ?)", TABLE_COMMIT_LOG);
+  public static final String SELECT_COMMIT_LOG_FULL =
+      String.format("SELECT \"value\" FROM %s WHERE \"repo_id\" = ?", TABLE_COMMIT_LOG);
   public static final String SELECT_COMMIT_LOG_MANY =
       String.format(
           "SELECT \"value\" FROM %s WHERE \"repo_id\" = ? AND \"hash\" IN (%%s)", TABLE_COMMIT_LOG);

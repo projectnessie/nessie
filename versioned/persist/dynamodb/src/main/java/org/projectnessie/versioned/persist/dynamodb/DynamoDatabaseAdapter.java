@@ -68,6 +68,7 @@ import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogParents;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.ReferenceNames;
+import software.amazon.awssdk.core.BytesWrapper;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeAction;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -744,5 +745,29 @@ public class DynamoDatabaseAdapter
   protected List<RefLog> doFetchPageFromRefLog(
       NonTransactionalOperationContext ctx, List<Hash> hashes) {
     return fetchPageResult(TABLE_REF_LOG, hashes, ProtoSerialization::protoToRefLog);
+  }
+
+  @Override
+  protected Stream<CommitLogEntry> doScanAllCommitLogEntries(NonTransactionalOperationContext c) {
+    return client
+        .client
+        .scanPaginator(
+            b ->
+                b.tableName(TABLE_COMMIT_LOG)
+                    .scanFilter(
+                        singletonMap(
+                            KEY_NAME,
+                            Condition.builder()
+                                .comparisonOperator(ComparisonOperator.BEGINS_WITH)
+                                .attributeValueList(AttributeValue.builder().s(keyPrefix).build())
+                                .build())))
+        .stream()
+        .flatMap(
+            scanResponse ->
+                scanResponse.items().stream()
+                    .map(item -> item.get(VALUE_NAME))
+                    .map(AttributeValue::b)
+                    .map(BytesWrapper::asByteArray)
+                    .map(ProtoSerialization::protoToCommitLogEntry));
   }
 }

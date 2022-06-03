@@ -132,4 +132,9 @@ public interface QuarkusVersionStoreAdvancedConfig
   @WithDefault("" + DEFAULT_REF_LOG_STRIPES)
   @Override
   int getRefLogStripes();
+
+  @WithName("commit-log.scan-prefetch")
+  @WithDefault("" + DEFAULT_COMMIT_LOG_SCAN_PREFETCH)
+  @Override
+  int getCommitLogScanPrefetch();
 }
