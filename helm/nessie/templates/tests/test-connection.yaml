@@ -12,4 +12,8 @@ spec:
       image: busybox
       command: ['wget']
       args: ['{{ include "nessie.fullname" . }}:{{ .Values.service.port }}']
+  initContainers:
+    - name: sleep
+      image: busybox
+      command: [ 'sleep', '10' ]
   restartPolicy: Never
