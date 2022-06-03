@@ -40,7 +40,6 @@ import io.opentracing.log.Fields;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
@@ -59,7 +58,6 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.Spliterators.AbstractSpliterator;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -187,14 +185,6 @@ public abstract class AbstractDatabaseAdapter<
   // /////////////////////////////////////////////////////////////////////////////////////////////
   // DatabaseAdapter subclass API (protected)
   // /////////////////////////////////////////////////////////////////////////////////////////////
-
-  /** Returns the current time in microseconds since epoch. */
-  protected long commitTimeInMicros() {
-    Instant instant = config.getClock().instant();
-    long time = instant.getEpochSecond();
-    long nano = instant.getNano();
-    return TimeUnit.SECONDS.toMicros(time) + NANOSECONDS.toMicros(nano);
-  }
 
   /**
    * Logic implementation of a commit-attempt.
@@ -2059,7 +2049,7 @@ public abstract class AbstractDatabaseAdapter<
 
   protected void repositoryEvent(Supplier<? extends AdapterEvent.Builder<?, ?>> eventBuilder) {
     if (eventConsumer != null && eventBuilder != null) {
-      AdapterEvent event = eventBuilder.get().eventTimeMicros(commitTimeInMicros()).build();
+      AdapterEvent event = eventBuilder.get().eventTimeMicros(config.currentTimeInMicros()).build();
       try {
         eventConsumer.accept(event);
       } catch (RuntimeException e) {

@@ -260,7 +260,7 @@ public abstract class TxDatabaseAdapter
               mergeParams.getToBranch(),
               false,
               (conn, currentHead) -> {
-                long timeInMicros = commitTimeInMicros();
+                long timeInMicros = config.currentTimeInMicros();
 
                 ImmutableMergeResult.Builder<CommitLogEntry> mergeResult = MergeResult.builder();
                 mergeResultHolder.set(mergeResult);
@@ -333,7 +333,7 @@ public abstract class TxDatabaseAdapter
               transplantParams.getToBranch(),
               false,
               (conn, currentHead) -> {
-                long timeInMicros = commitTimeInMicros();
+                long timeInMicros = config.currentTimeInMicros();
 
                 ImmutableMergeResult.Builder<CommitLogEntry> mergeResult = MergeResult.builder();
                 mergeResultHolder.set(mergeResult);
@@ -397,7 +397,7 @@ public abstract class TxDatabaseAdapter
           commitParams.getToBranch(),
           false,
           (conn, branchHead) -> {
-            long timeInMicros = commitTimeInMicros();
+            long timeInMicros = config.currentTimeInMicros();
 
             CommitLogEntry newBranchCommit =
                 commitAttempt(conn, timeInMicros, branchHead, commitParams, h -> {});
@@ -463,7 +463,7 @@ public abstract class TxDatabaseAdapter
 
             commitRefLog(
                 conn,
-                commitTimeInMicros(),
+                config.currentTimeInMicros(),
                 hash,
                 ref,
                 RefLogEntry.Operation.CREATE_REFERENCE,
@@ -505,7 +505,7 @@ public abstract class TxDatabaseAdapter
 
             commitRefLog(
                 conn,
-                commitTimeInMicros(),
+                config.currentTimeInMicros(),
                 commitHash,
                 reference,
                 RefLogEntry.Operation.DELETE_REFERENCE,
@@ -543,7 +543,7 @@ public abstract class TxDatabaseAdapter
 
             commitRefLog(
                 conn,
-                commitTimeInMicros(),
+                config.currentTimeInMicros(),
                 assignTo,
                 assignee,
                 RefLogEntry.Operation.ASSIGN_REFERENCE,
@@ -601,7 +601,7 @@ public abstract class TxDatabaseAdapter
                     .build(),
                 NO_ANCESTOR,
                 RefLogEntry.Operation.CREATE_REFERENCE,
-                commitTimeInMicros(),
+                config.currentTimeInMicros(),
                 emptyList());
         insertRefLogHead(newRefLog, conn);
 

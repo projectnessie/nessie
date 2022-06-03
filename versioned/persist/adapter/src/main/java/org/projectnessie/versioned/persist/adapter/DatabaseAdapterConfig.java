@@ -15,7 +15,11 @@
  */
 package org.projectnessie.versioned.persist.adapter;
 
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+
 import java.time.Clock;
+import java.time.Instant;
+import java.util.concurrent.TimeUnit;
 import org.immutables.value.Value;
 
 /**
@@ -192,6 +196,17 @@ public interface DatabaseAdapterConfig {
   @Value.Default
   default Clock getClock() {
     return Clock.systemUTC();
+  }
+
+  /** Returns the current time in microseconds since epoch. */
+  @Value.Redacted
+  @Value.Auxiliary
+  @Value.NonAttribute
+  default long currentTimeInMicros() {
+    Instant instant = getClock().instant();
+    long time = instant.getEpochSecond();
+    long nano = instant.getNano();
+    return TimeUnit.SECONDS.toMicros(time) + NANOSECONDS.toMicros(nano);
   }
 
   /**
