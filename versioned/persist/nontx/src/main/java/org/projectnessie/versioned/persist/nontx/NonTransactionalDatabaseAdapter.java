@@ -231,7 +231,7 @@ public abstract class NonTransactionalDatabaseAdapter<
 
                 Hash currentHead = Hash.of(refHead.getHash());
 
-                long timeInMicros = commitTimeInMicros();
+                long timeInMicros = config.currentTimeInMicros();
 
                 List<CommitLogEntry> writtenCommits = new ArrayList<>();
                 Hash newHead =
@@ -299,7 +299,7 @@ public abstract class NonTransactionalDatabaseAdapter<
 
                 Hash currentHead = Hash.of(refHead.getHash());
 
-                long timeInMicros = commitTimeInMicros();
+                long timeInMicros = config.currentTimeInMicros();
 
                 List<CommitLogEntry> writtenCommits = new ArrayList<>();
                 Hash newHead =
@@ -362,7 +362,7 @@ public abstract class NonTransactionalDatabaseAdapter<
           (ctx, refHead, branchCommits, newKeyLists) -> {
             Hash currentHead = Hash.of(refHead.getHash());
 
-            long timeInMicros = commitTimeInMicros();
+            long timeInMicros = config.currentTimeInMicros();
 
             CommitLogEntry newBranchCommit =
                 commitAttempt(ctx, timeInMicros, currentHead, commitParams, newKeyLists);
@@ -429,7 +429,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                         .setRefName(ByteString.copyFromUtf8(ref.getName()))
                         .setRefType(protoTypeForRef(ref))
                         .setCommitHash(newHead.asBytes())
-                        .setOperationTime(commitTimeInMicros())
+                        .setOperationTime(config.currentTimeInMicros())
                         .setOperation(RefLogEntry.Operation.CREATE_REFERENCE),
                 () -> ReferenceCreatedEvent.builder().currentHash(newHead).ref(ref));
           },
@@ -461,7 +461,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                         .setRefName(ByteString.copyFromUtf8(reference.getName()))
                         .setRefType(protoTypeForRef(reference))
                         .setCommitHash(currentHead.asBytes())
-                        .setOperationTime(commitTimeInMicros())
+                        .setOperationTime(config.currentTimeInMicros())
                         .setOperation(RefLogEntry.Operation.DELETE_REFERENCE),
                 () -> ReferenceDeletedEvent.builder().currentHash(currentHead).ref(reference));
           },
@@ -495,7 +495,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                         .setRefName(ByteString.copyFromUtf8(assignee.getName()))
                         .setRefType(protoTypeForRef(assignee))
                         .setCommitHash(assignTo.asBytes())
-                        .setOperationTime(commitTimeInMicros())
+                        .setOperationTime(config.currentTimeInMicros())
                         .setOperation(RefLogEntry.Operation.ASSIGN_REFERENCE)
                         .addSourceHashes(beforeAssign.asBytes()),
                 () ->
@@ -539,7 +539,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                         .setRefName(ByteString.copyFromUtf8(defaultBranchName))
                         .setRefType(RefType.Branch)
                         .setCommitHash(NO_ANCESTOR.asBytes())
-                        .setOperationTime(commitTimeInMicros())
+                        .setOperationTime(config.currentTimeInMicros())
                         .setOperation(RefLogEntry.Operation.CREATE_REFERENCE));
 
         refLogParents =
