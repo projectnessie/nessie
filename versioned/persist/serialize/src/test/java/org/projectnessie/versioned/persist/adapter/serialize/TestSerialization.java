@@ -434,7 +434,7 @@ class TestSerialization {
         System.nanoTime() / 1000L,
         randomHash(),
         randomLong(),
-        IntStream.range(0, 20).mapToObj(i -> randomHash()).collect(Collectors.toList()),
+        IntStream.range(5, 20).mapToObj(i -> randomHash()).collect(Collectors.toList()),
         randomBytes(256),
         IntStream.range(1, 1 + ThreadLocalRandom.current().nextInt(7))
             .mapToObj(i -> KeyWithBytes.of(randomKey(), randomId(), (byte) 1, randomBytes(32)))

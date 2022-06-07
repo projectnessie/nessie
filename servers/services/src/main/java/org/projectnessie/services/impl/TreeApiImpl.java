@@ -354,9 +354,12 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   private static CommitMeta enhanceCommitMeta(
       Hash hash, CommitMeta commitMeta, List<Hash> additionalParents) {
     ImmutableCommitMeta.Builder updatedCommitMeta = commitMeta.toBuilder().hash(hash.asString());
-    if (additionalParents != null) {
-      additionalParents.forEach(
-          h -> updatedCommitMeta.putProperties(CommitMeta.MERGE_PARENT_PROPERTY, h.asString()));
+    if (additionalParents != null && additionalParents.size() == 1) {
+      // Only add the 1st commit ID. The MERGE_PARENT_PROPERTY was introduced for compatibility
+      // with older clients. There is currently only one use case for the property: exposing the
+      // commit ID of the merged commit.
+      updatedCommitMeta.putProperties(
+          CommitMeta.MERGE_PARENT_PROPERTY, additionalParents.get(0).asString());
     }
     return updatedCommitMeta.build();
   }
