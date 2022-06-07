@@ -31,11 +31,13 @@ import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.zip.GZIPOutputStream;
 import javax.net.ssl.HttpsURLConnection;
+
 import org.projectnessie.client.http.HttpClient.Method;
 
 /** Class to hold an ongoing HTTP request and its parameters/filters. */
@@ -140,8 +142,21 @@ public class HttpRequest {
           }
         }
         con.connect();
-        con.getResponseCode(); // call to ensure http request is complete
-
+        con.getResponseCode();
+        if (con.getResponseCode() == 308 || con.getResponseCode() == 307) {
+          String newLocation = con.getHeaderField("Location");
+          return new HttpRequest(
+            new HttpRuntimeConfig(
+              new URI(newLocation),
+              config.getMapper(),
+              config.getReadTimeoutMillis(),
+              config.getConnectionTimeoutMillis(),
+              config.isDisableCompression(),
+              config.getSslContext(),
+              config.getRequestFilters(),
+              config.getResponseFilters())
+          ).executeRequest(method, body);
+        }
         List<BiConsumer<ResponseContext, Exception>> callbacks = context.getResponseCallbacks();
         if (callbacks != null) {
           callbacks.forEach(callback -> callback.accept(responseContext, null));
@@ -152,6 +167,12 @@ public class HttpRequest {
           callbacks.forEach(callback -> callback.accept(null, e));
         }
         throw e;
+      } catch (URISyntaxException e) {
+        List<BiConsumer<ResponseContext, Exception>> callbacks = context.getResponseCallbacks();
+        if (callbacks != null) {
+          callbacks.forEach(callback -> callback.accept(null, e));
+        }
+        throw new RuntimeException(e);
       }
 
       config.getResponseFilters().forEach(responseFilter -> responseFilter.filter(responseContext));
