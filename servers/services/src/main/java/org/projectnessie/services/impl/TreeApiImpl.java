@@ -71,6 +71,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Detached;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.ImmutableBranch;
+import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableContentKeyDetails;
 import org.projectnessie.model.ImmutableEntriesResponse;
 import org.projectnessie.model.ImmutableLogEntry;
@@ -315,13 +316,22 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   }
 
   private ImmutableLogEntry commitToLogEntry(boolean fetchAll, Commit<CommitMeta, Content> commit) {
-    CommitMeta commitMetaWithHash = addHashToCommitMeta(commit.getHash(), commit.getCommitMeta());
+    CommitMeta commitMetaWithHash =
+        enhanceCommitMeta(commit.getHash(), commit.getCommitMeta(), commit.getAdditionalParents());
     ImmutableLogEntry.Builder logEntry = LogEntry.builder();
     logEntry.commitMeta(commitMetaWithHash);
+    if (commit.getParentHash() != null) {
+      logEntry.parentCommitHash(commit.getParentHash().asString());
+    }
+
+    // When we can assume that all relevant Nessie clients are aware of the
+    // org.projectnessie.model.LogResponse.LogEntry.getAdditionalParents field, the following code
+    // can be uncommented.
+    // if (commit.getAdditionalParents() != null) {
+    //   commit.getAdditionalParents().forEach(h -> logEntry.addAdditionalParents(h.asString()));
+    // }
+
     if (fetchAll) {
-      if (commit.getParentHash() != null) {
-        logEntry.parentCommitHash(commit.getParentHash().asString());
-      }
       if (commit.getOperations() != null) {
         commit
             .getOperations()
@@ -341,8 +351,17 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     return logEntry.build();
   }
 
-  private static CommitMeta addHashToCommitMeta(Hash hash, CommitMeta commitMeta) {
-    return commitMeta.toBuilder().hash(hash.asString()).build();
+  private static CommitMeta enhanceCommitMeta(
+      Hash hash, CommitMeta commitMeta, List<Hash> additionalParents) {
+    ImmutableCommitMeta.Builder updatedCommitMeta = commitMeta.toBuilder().hash(hash.asString());
+    if (additionalParents != null && additionalParents.size() == 1) {
+      // Only add the 1st commit ID. The MERGE_PARENT_PROPERTY was introduced for compatibility
+      // with older clients. There is currently only one use case for the property: exposing the
+      // commit ID of the merged commit.
+      updatedCommitMeta.putProperties(
+          CommitMeta.MERGE_PARENT_PROPERTY, additionalParents.get(0).asString());
+    }
+    return updatedCommitMeta.build();
   }
 
   /**
@@ -749,7 +768,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     if (null != refWithHash.getHeadCommitMeta()) {
       found = true;
       builder.commitMetaOfHEAD(
-          addHashToCommitMeta(refWithHash.getHash(), refWithHash.getHeadCommitMeta()));
+          enhanceCommitMeta(refWithHash.getHash(), refWithHash.getHeadCommitMeta(), null));
     }
     if (0L != refWithHash.getCommitSeq()) {
       found = true;

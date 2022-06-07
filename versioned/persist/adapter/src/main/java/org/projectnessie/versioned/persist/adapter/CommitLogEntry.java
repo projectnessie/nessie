@@ -73,6 +73,8 @@ public interface CommitLogEntry {
   /** Number of commits since the last complete key-list. */
   int getKeyListDistance();
 
+  List<Hash> getAdditionalParents();
+
   static CommitLogEntry of(
       long createdTime,
       Hash hash,
@@ -83,7 +85,8 @@ public interface CommitLogEntry {
       Iterable<Key> deletes,
       int keyListDistance,
       KeyList keyList,
-      Iterable<Hash> keyListIds) {
+      Iterable<Hash> keyListIds,
+      Iterable<Hash> additionalParents) {
     return ImmutableCommitLogEntry.builder()
         .createdTime(createdTime)
         .hash(hash)
@@ -95,6 +98,7 @@ public interface CommitLogEntry {
         .keyListDistance(keyListDistance)
         .keyList(keyList)
         .addAllKeyListsIds(keyListIds)
+        .addAllAdditionalParents(additionalParents)
         .build();
   }
 }

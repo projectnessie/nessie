@@ -47,6 +47,16 @@ import org.immutables.value.Value;
 public abstract class CommitMeta {
 
   /**
+   * Key of the {@link #getProperties() property} that indicates the merged commit ID, if the commit
+   * represents a merge commit.
+   *
+   * <p>If the commit is the result of a merge operation, the properties map <em>may</em> contain
+   * the key {@value #MERGE_PARENT_PROPERTY}, if the merge was performed with a Nessie server
+   * version, after 0.30.0, that persists the merged reference.
+   */
+  public static final String MERGE_PARENT_PROPERTY = "_merge_parent";
+
+  /**
    * Hash of this commit.
    *
    * <p>This is not known at creation time and is only valid when reading the log.
@@ -104,7 +114,7 @@ public abstract class CommitMeta {
    * Set of properties to help further identify this commit.
    *
    * <p>examples are spark id, the client type (eg iceberg, delta etc), application or job names,
-   * hostnames etc
+   * hostnames etc.
    */
   @NotNull
   public abstract Map<String, String> getProperties();

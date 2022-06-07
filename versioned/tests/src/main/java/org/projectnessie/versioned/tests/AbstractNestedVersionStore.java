@@ -25,6 +25,7 @@ import java.util.stream.Stream;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.ImmutableCommit;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.Put;
@@ -65,15 +66,27 @@ public abstract class AbstractNestedVersionStore {
   }
 
   protected static Commit<CommitMessage, BaseContent> commit(Hash hash, String commitMeta) {
-    return commit(hash, commitMessage(commitMeta));
+    return commit(hash, commitMeta, null);
+  }
+
+  protected static Commit<CommitMessage, BaseContent> commit(
+      Hash hash, String commitMeta, Hash parentHash) {
+    return commit(hash, commitMessage(commitMeta), parentHash);
   }
 
   protected static Commit<CommitMessage, BaseContent> commit(
       Hash hash, CommitMessage commitMessage) {
-    return Commit.<CommitMessage, BaseContent>builder()
-        .hash(hash)
-        .commitMeta(commitMessage)
-        .build();
+    return commit(hash, commitMessage, null);
+  }
+
+  protected static Commit<CommitMessage, BaseContent> commit(
+      Hash hash, CommitMessage commitMessage, Hash parentHash) {
+    ImmutableCommit.Builder<CommitMessage, BaseContent> builder =
+        Commit.<CommitMessage, BaseContent>builder().hash(hash).commitMeta(commitMessage);
+    if (parentHash != null) {
+      builder.parentHash(parentHash);
+    }
+    return builder.build();
   }
 
   protected CommitBuilder<BaseContent, CommitMessage, BaseContent.Type> forceCommit(

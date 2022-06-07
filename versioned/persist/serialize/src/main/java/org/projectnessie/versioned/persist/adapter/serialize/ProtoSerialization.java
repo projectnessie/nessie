@@ -97,6 +97,7 @@ public final class ProtoSerialization {
       entry.getKeyList().getKeys().forEach(k -> proto.addKeyList(toProto(k)));
     }
     entry.getKeyListsIds().forEach(k -> proto.addKeyListIds(k.asBytes()));
+    entry.getAdditionalParents().forEach(p -> proto.addAdditionalParents(p.asBytes()));
 
     return proto.build();
   }
@@ -145,6 +146,7 @@ public final class ProtoSerialization {
       entry.keyList(kl.build());
     }
     proto.getKeyListIdsList().forEach(p -> entry.addKeyListsIds(Hash.of(p)));
+    proto.getAdditionalParentsList().forEach(p -> entry.addAdditionalParents(Hash.of(p)));
 
     return entry.build();
   }

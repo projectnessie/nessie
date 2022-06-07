@@ -23,6 +23,8 @@ option java_generate_equals_and_hash = true;
 message CommitLogEntry {
   int64 createdTime = 1;
   bytes hash = 2;
+  // First element contains the immediate parent commit ID. Additional entries
+  // up to N indirect parents.
   repeated bytes parents = 3;
   bytes metadata = 4;
   repeated KeyWithBytes puts = 5;
@@ -31,6 +33,10 @@ message CommitLogEntry {
   repeated KeyListEntry key_list = 8;
   repeated bytes key_list_ids = 9;
   int64 commitSeq = 10;
+  // Contains the "merged commit ID", no practical use case for multiple
+  // additional parents, yet - but implementing this as a list for N-way
+  // merges in the future.
+  repeated bytes additional_parents = 11;
 }
 
 message Key {

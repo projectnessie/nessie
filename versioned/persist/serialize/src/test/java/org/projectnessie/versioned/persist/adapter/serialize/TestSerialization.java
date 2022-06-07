@@ -434,43 +434,23 @@ class TestSerialization {
         System.nanoTime() / 1000L,
         randomHash(),
         randomLong(),
-        Arrays.asList(
-            randomHash(),
-            randomHash(),
-            randomHash(),
-            randomHash(),
-            randomHash(),
-            randomHash(),
-            randomHash(),
-            randomHash(),
-            randomHash(),
-            randomHash(),
-            randomHash(),
-            randomHash(),
-            randomHash(),
-            randomHash(),
-            randomHash(),
-            randomHash(),
-            randomHash(),
-            randomHash(),
-            randomHash(),
-            randomHash()),
+        IntStream.range(5, 20).mapToObj(i -> randomHash()).collect(Collectors.toList()),
         randomBytes(256),
-        Arrays.asList(
-            KeyWithBytes.of(randomKey(), randomId(), (byte) 1, randomBytes(32)),
-            KeyWithBytes.of(randomKey(), randomId(), (byte) 1, randomBytes(32)),
-            KeyWithBytes.of(randomKey(), randomId(), (byte) 1, randomBytes(32)),
-            KeyWithBytes.of(randomKey(), randomId(), (byte) 1, randomBytes(32)),
-            KeyWithBytes.of(randomKey(), randomId(), (byte) 1, randomBytes(32)),
-            KeyWithBytes.of(randomKey(), randomId(), (byte) 1, randomBytes(32)),
-            KeyWithBytes.of(randomKey(), randomId(), (byte) 1, randomBytes(32))),
+        IntStream.range(1, 1 + ThreadLocalRandom.current().nextInt(7))
+            .mapToObj(i -> KeyWithBytes.of(randomKey(), randomId(), (byte) 1, randomBytes(32)))
+            .collect(Collectors.toList()),
         Arrays.asList(randomKey(), randomKey(), randomKey(), randomKey(), randomKey()),
         42,
         KeyList.of(
             IntStream.range(0, 20)
                 .mapToObj(i -> createKeyListEntry())
                 .collect(Collectors.toList())),
-        IntStream.range(0, 20).mapToObj(i -> randomHash()).collect(Collectors.toList()));
+        IntStream.range(0, ThreadLocalRandom.current().nextInt(20))
+            .mapToObj(i -> randomHash())
+            .collect(Collectors.toList()),
+        IntStream.range(0, ThreadLocalRandom.current().nextInt(3))
+            .mapToObj(i -> randomHash())
+            .collect(Collectors.toList()));
   }
 
   static KeyWithBytes createKeyWithBytes() {

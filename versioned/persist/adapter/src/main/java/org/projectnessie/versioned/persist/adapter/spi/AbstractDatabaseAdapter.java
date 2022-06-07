@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.persist.adapter.spi;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.projectnessie.versioned.persist.adapter.KeyFilterPredicate.ALLOW_ALL;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterMetrics.tryLoopFinished;
@@ -47,6 +49,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -256,7 +259,8 @@ public abstract class AbstractDatabaseAdapter<
             commitParams.getDeletes(),
             currentBranchEntry != null ? currentBranchEntry.getKeyListDistance() : 0,
             newKeyLists,
-            currentCommit);
+            currentCommit,
+            emptyList());
     writeIndividualCommit(ctx, newBranchCommit);
     return newBranchCommit;
   }
@@ -353,7 +357,8 @@ public abstract class AbstractDatabaseAdapter<
         toEntriesReverseChronological,
         mergeParams,
         mergeResult,
-        writtenCommits);
+        writtenCommits,
+        singletonList(commitsToMergeChronological.get(0).getHash()));
   }
 
   /**
@@ -437,7 +442,8 @@ public abstract class AbstractDatabaseAdapter<
         targetEntriesReverseChronological,
         transplantParams,
         mergeResult,
-        writtenCommits);
+        writtenCommits,
+        emptyList());
   }
 
   protected Hash mergeTransplantCommon(
@@ -450,7 +456,8 @@ public abstract class AbstractDatabaseAdapter<
       List<CommitLogEntry> toEntriesReverseChronological,
       MetadataRewriteParams params,
       ImmutableMergeResult.Builder<CommitLogEntry> mergeResult,
-      Consumer<CommitLogEntry> writtenCommits)
+      Consumer<CommitLogEntry> writtenCommits,
+      List<Hash> additionalParents)
       throws ReferenceConflictException, ReferenceNotFoundException {
 
     // Collect modified keys.
@@ -524,7 +531,7 @@ public abstract class AbstractDatabaseAdapter<
       return toHead;
     }
 
-    if (params.keepIndividualCommits() || commitsToMergeChronological.size() == 1) {
+    if (params.keepIndividualCommits()) {
       // re-apply commits in 'sequenceToTransplant' onto 'targetBranch'
       toHead =
           copyCommits(
@@ -552,7 +559,8 @@ public abstract class AbstractDatabaseAdapter<
               commitsToMergeChronological,
               newKeyLists,
               params.getUpdateCommitMetadata(),
-              mergePredicate);
+              mergePredicate,
+              additionalParents);
 
       if (squashed != null) {
         writtenCommits.accept(squashed);
@@ -980,7 +988,7 @@ public abstract class AbstractDatabaseAdapter<
         hash -> {
           CommitLogEntry entry = fetchFromCommitLog(ctx, hash);
           if (entry == null) {
-            return Collections.emptyList();
+            return emptyList();
           }
           return entry.getParents();
         });
@@ -1066,7 +1074,8 @@ public abstract class AbstractDatabaseAdapter<
       Iterable<Key> deletes,
       int currentKeyListDistance,
       Consumer<Hash> newKeyLists,
-      @Nonnull Function<Hash, CommitLogEntry> inMemoryCommits)
+      @Nonnull Function<Hash, CommitLogEntry> inMemoryCommits,
+      Iterable<Hash> additionalParents)
       throws ReferenceNotFoundException {
     Hash commitHash = individualCommitHash(parentHashes, commitMeta, puts, deletes);
 
@@ -1083,7 +1092,8 @@ public abstract class AbstractDatabaseAdapter<
             deletes,
             keyListDistance,
             null,
-            Collections.emptyList());
+            emptyList(),
+            additionalParents);
 
     if (keyListDistance >= config.getKeyListDistance()) {
       entry = buildKeyList(ctx, entry, newKeyLists, inMemoryCommits);
@@ -1816,12 +1826,13 @@ public abstract class AbstractDatabaseAdapter<
       List<CommitLogEntry> commitsToMergeChronological,
       Consumer<Hash> newKeyLists,
       MetadataRewriter<ByteString> rewriteMetadata,
-      Predicate<Key> includeKeyPredicate)
+      Predicate<Key> includeKeyPredicate,
+      Iterable<Hash> additionalParents)
       throws ReferenceConflictException, ReferenceNotFoundException {
 
     List<ByteString> commitMeta = new ArrayList<>();
-    Map<Key, KeyWithBytes> puts = new HashMap<>();
-    Set<Key> deletes = new HashSet<>();
+    Map<Key, KeyWithBytes> puts = new LinkedHashMap<>();
+    Set<Key> deletes = new LinkedHashSet<>();
     for (int i = commitsToMergeChronological.size() - 1; i >= 0; i--) {
       CommitLogEntry source = commitsToMergeChronological.get(i);
       for (Key delete : source.getDeletes()) {
@@ -1875,7 +1886,19 @@ public abstract class AbstractDatabaseAdapter<
             deletes,
             keyListDistance,
             newKeyLists,
-            h -> null);
+            h -> null,
+            additionalParents);
+
+    if (commitsToMergeChronological.size() == 1) {
+      CommitLogEntry single = commitsToMergeChronological.get(0);
+      if (squashedCommit.getHash().equals(single.getHash())
+          && squashedCommit.getPuts().equals(single.getPuts())
+          && squashedCommit.getDeletes().equals(single.getDeletes())
+          && squashedCommit.getMetadata().equals(single.getMetadata())) {
+        // Fast-forward merge
+        return single;
+      }
+    }
 
     writeIndividualCommit(ctx, squashedCommit);
 
@@ -1949,7 +1972,8 @@ public abstract class AbstractDatabaseAdapter<
               deletes,
               keyListDistance,
               newKeyLists,
-              unwrittenCommits::get);
+              unwrittenCommits::get,
+              emptyList());
       keyListDistance = newEntry.getKeyListDistance();
 
       unwrittenCommits.put(newEntry.getHash(), newEntry);
@@ -2020,7 +2044,7 @@ public abstract class AbstractDatabaseAdapter<
    */
   protected final List<RefLog> fetchPageFromRefLog(OP_CONTEXT ctx, List<Hash> hashes) {
     if (hashes.isEmpty()) {
-      return Collections.emptyList();
+      return emptyList();
     }
     try (Traced ignore =
         trace("fetchPageFromRefLog")
