@@ -15,9 +15,18 @@
  */
 package org.projectnessie.client;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 import com.sun.net.httpserver.HttpHandler;
 import io.opentracing.Scope;
 import io.opentracing.util.GlobalTracer;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.api.NessieApiV1;
@@ -28,16 +37,6 @@ import org.projectnessie.client.util.JaegerTestTracer;
 import org.projectnessie.client.util.TestHttpUtil;
 import org.projectnessie.client.util.TestServer;
 import org.projectnessie.error.NessieNotFoundException;
-
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.concurrent.atomic.AtomicReference;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 class TestNessieHttpClient {
   @BeforeAll
@@ -141,9 +140,9 @@ class TestNessieHttpClient {
   @Test
   void testRedirection() throws URISyntaxException, NessieNotFoundException {
     NessieApiV1 api =
-      HttpClientBuilder.builder()
-        .withUri(new URI("http://nessie.io/api/v1"))
-        .build(NessieApiV1.class);
+        HttpClientBuilder.builder()
+            .withUri(new URI("http://nessie.io/api/v1"))
+            .build(NessieApiV1.class);
     String mainBranch = api.getDefaultBranch().getName();
     assertThat(mainBranch).as("check default branch and redirection", mainBranch).isEqualTo("main");
   }

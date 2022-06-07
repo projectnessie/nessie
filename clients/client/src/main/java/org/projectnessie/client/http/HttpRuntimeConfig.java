@@ -87,4 +87,20 @@ final class HttpRuntimeConfig {
   List<ResponseFilter> getResponseFilters() {
     return responseFilters;
   }
+
+  HttpRuntimeConfig withNewBaseUri(URI newBaseUri) {
+    return new HttpRuntimeConfig(
+        newBaseUri,
+        this.getMapper(),
+        this.getReadTimeoutMillis(),
+        this.getConnectionTimeoutMillis(),
+        this.isDisableCompression(),
+        this.getSslContext(),
+        this.getRequestFilters(),
+        this.getResponseFilters());
+  }
+
+  public int getMaxRedirects() {
+    return 3;
+  }
 }

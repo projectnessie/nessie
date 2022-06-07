@@ -37,12 +37,12 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.zip.GZIPOutputStream;
 import javax.net.ssl.HttpsURLConnection;
-
 import org.projectnessie.client.http.HttpClient.Method;
 
 /** Class to hold an ongoing HTTP request and its parameters/filters. */
 public class HttpRequest {
 
+  private static final String LOCATION_HEADER = "Location";
   private final HttpRuntimeConfig config;
   private final UriBuilder uriBuilder;
   private final HttpHeaders headers = new HttpHeaders();
@@ -87,6 +87,11 @@ public class HttpRequest {
   }
 
   private HttpResponse executeRequest(Method method, Object body) throws HttpClientException {
+    return executeRequest(method, body, 0);
+  }
+
+  private HttpResponse executeRequest(Method method, Object body, int redirectCount)
+      throws HttpClientException {
     URI uri = uriBuilder.build();
     try {
       HttpURLConnection con = (HttpURLConnection) uri.toURL().openConnection();
@@ -142,20 +147,23 @@ public class HttpRequest {
           }
         }
         con.connect();
-        con.getResponseCode();
-        if (con.getResponseCode() == 308 || con.getResponseCode() == 307) {
-          String newLocation = con.getHeaderField("Location");
-          return new HttpRequest(
-            new HttpRuntimeConfig(
-              new URI(newLocation),
-              config.getMapper(),
-              config.getReadTimeoutMillis(),
-              config.getConnectionTimeoutMillis(),
-              config.isDisableCompression(),
-              config.getSslContext(),
-              config.getRequestFilters(),
-              config.getResponseFilters())
-          ).executeRequest(method, body);
+        int responseCode = con.getResponseCode(); // call to ensure http request is complete
+        if (responseCode == Status.PERMANENT_REDIRECT.getCode()) {
+          String newLocation = con.getHeaderField(LOCATION_HEADER);
+          if (newLocation == null) {
+            throw new HttpClientException(
+                "Got a "
+                    + Status.PERMANENT_REDIRECT.getCode()
+                    + " but "
+                    + LOCATION_HEADER
+                    + " header is not set");
+          } else if (redirectCount >= config.getMaxRedirects()) {
+            throw new HttpClientException(
+                "Too many redirects when connecting to " + config.getBaseUri());
+          } else {
+            return new HttpRequest(config.withNewBaseUri(new URI(newLocation)))
+                .executeRequest(method, body, redirectCount + 1);
+          }
         }
         List<BiConsumer<ResponseContext, Exception>> callbacks = context.getResponseCallbacks();
         if (callbacks != null) {
@@ -172,7 +180,7 @@ public class HttpRequest {
         if (callbacks != null) {
           callbacks.forEach(callback -> callback.accept(null, e));
         }
-        throw new RuntimeException(e);
+        throw new HttpClientException(e);
       }
 
       config.getResponseFilters().forEach(responseFilter -> responseFilter.filter(responseContext));
