@@ -17,7 +17,7 @@
 plugins {
   jacoco
   `java-platform`
-  id("org.projectnessie.nessie-project")
+  `nessie-conventions`
   id("org.projectnessie.buildsupport.jacoco-aggregator")
 }
 

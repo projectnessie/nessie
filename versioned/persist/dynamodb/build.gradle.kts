@@ -18,7 +18,7 @@ plugins {
   `java-library`
   jacoco
   `maven-publish`
-  id("org.projectnessie.nessie-project")
+  `nessie-conventions`
   id("org.projectnessie.buildsupport.attach-test-jar")
 }
 

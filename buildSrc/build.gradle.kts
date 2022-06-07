@@ -14,10 +14,50 @@
  * limitations under the License.
  */
 
+import java.util.Properties
+
 plugins { `kotlin-dsl` }
 
-repositories { mavenCentral() }
+repositories {
+  mavenCentral()
+  gradlePluginPortal()
+  if (System.getProperty("withMavenLocal").toBoolean()) {
+    mavenLocal()
+  }
+}
 
-dependencies { implementation(gradleKotlinDsl()) }
+// Use the versions declared in the top-level settings.gradle.kts. We can safely assume that
+// the properties file exists, because the top-level settings.gradle.kts is executed before
+// buildSrc's settings.gradle.kts or build.gradle.kts.
+val versions = Properties()
+
+file("../build/nessieBuild/versions.properties").inputStream().use { versions.load(it) }
+
+val versionIdeaExtPlugin = versions["versionIdeaExtPlugin"]
+val versionSpotlessPlugin = versions["versionSpotlessPlugin"]
+val versionNessieBuildPlugins = versions["versionNessieBuildPlugins"]
+val versionErrorPronePlugin = versions["versionErrorPronePlugin"]
+val versionJandexPlugin = versions["versionJandexPlugin"]
+val versionQuarkus = versions["versionQuarkus"]
+val versionShadowPlugin = versions["versionShadowPlugin"]
+
+dependencies {
+  implementation(gradleKotlinDsl())
+  implementation("com.diffplug.spotless:spotless-plugin-gradle:$versionSpotlessPlugin")
+  implementation("com.github.vlsi.gradle:jandex-plugin:$versionJandexPlugin")
+  implementation("gradle.plugin.com.github.johnrengelman:shadow:$versionShadowPlugin")
+  implementation("io.quarkus:gradle-application-plugin:$versionQuarkus")
+  implementation("org.projectnessie.buildsupport:attach-test-jar:$versionNessieBuildPlugins")
+  implementation("org.projectnessie.buildsupport:checkstyle:$versionNessieBuildPlugins")
+  implementation("org.projectnessie.buildsupport:errorprone:$versionNessieBuildPlugins")
+  implementation("org.projectnessie.buildsupport:ide-integration:$versionNessieBuildPlugins")
+  implementation("org.projectnessie.buildsupport:jacoco:$versionNessieBuildPlugins")
+  implementation("org.projectnessie.buildsupport:jandex:$versionNessieBuildPlugins")
+  implementation("org.projectnessie.buildsupport:protobuf:$versionNessieBuildPlugins")
+  implementation("org.projectnessie.buildsupport:publishing:$versionNessieBuildPlugins")
+  implementation("org.projectnessie.buildsupport:reflection-config:$versionNessieBuildPlugins")
+  implementation("org.projectnessie.buildsupport:smallrye-openapi:$versionNessieBuildPlugins")
+  implementation("org.projectnessie.buildsupport:spotless:$versionNessieBuildPlugins")
+}
 
 kotlinDslPluginOptions { jvmTarget.set(JavaVersion.VERSION_11.toString()) }

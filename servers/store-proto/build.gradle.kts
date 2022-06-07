@@ -22,7 +22,7 @@ plugins {
   `maven-publish`
   id("org.projectnessie.buildsupport.reflectionconfig")
   id("org.projectnessie.buildsupport.protobuf")
-  id("org.projectnessie.nessie-project")
+  `nessie-conventions`
 }
 
 extra["maven.artifactId"] = "nessie-server-store-proto"

@@ -22,7 +22,7 @@ plugins {
   `maven-publish`
   id("com.github.johnrengelman.shadow")
   id("org.projectnessie")
-  id("org.projectnessie.nessie-project")
+  `nessie-conventions`
 }
 
 extra["maven.artifactId"] = "nessie-content-generator"

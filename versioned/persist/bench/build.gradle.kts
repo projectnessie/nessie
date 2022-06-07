@@ -21,7 +21,7 @@ plugins {
   jacoco
   `maven-publish`
   id("com.github.johnrengelman.shadow")
-  id("org.projectnessie.nessie-project")
+  `nessie-conventions`
 }
 
 dependencies {

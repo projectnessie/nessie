@@ -18,7 +18,7 @@ plugins {
   `java-library`
   jacoco
   `maven-publish`
-  id("org.projectnessie.nessie-project")
+  `nessie-conventions`
 }
 
 extra["maven.name"] = "Nessie - Versioned - Persist - Serialization"

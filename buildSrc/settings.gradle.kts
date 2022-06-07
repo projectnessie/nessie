@@ -14,9 +14,4 @@
  * limitations under the License.
  */
 
-package org.projectnessie.buildtools.jacoco
-
-import org.gradle.api.Project
-import org.gradle.kotlin.dsl.extra
-
-fun Project.dependencyVersion(key: String) = rootProject.extra[key].toString()
+// Recommended to exist, even if empty

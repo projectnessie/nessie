@@ -19,7 +19,7 @@ plugins {
   jacoco
   `maven-publish`
   antlr
-  id("org.projectnessie.nessie-project")
+  `nessie-conventions`
 }
 
 extra["maven.artifactId"] = "nessie-spark-extensions-grammar"
