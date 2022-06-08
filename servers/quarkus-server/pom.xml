@@ -33,6 +33,7 @@
     <maven.compiler.release>11</maven.compiler.release>
     <quarkus.jacoco.data-file>jacoco.exec</quarkus.jacoco.data-file>
     <quarkus.smallrye-openapi.store-schema-directory>${project.build.directory}/openapi</quarkus.smallrye-openapi.store-schema-directory>
+    <quarkus.smallrye-openapi.additional-docs-directory>${project.build.directory}/openapi-extra</quarkus.smallrye-openapi.additional-docs-directory>
   </properties>
 
   <dependencies>
@@ -158,6 +159,31 @@
 
   <build>
     <plugins>
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>openapi-extras</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/openapi-extra</outputDirectory>
+              <overwrite>true</overwrite>
+              <resources>
+                <resource>
+                  <!-- Include handwritten OpenAPI pieces into the Quarkus server. -->
+                  <directory>../../model/src/main/resources/META-INF</directory>
+                  <includes>
+                    <include>openapi.yaml</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>

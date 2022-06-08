@@ -114,7 +114,7 @@ public interface HttpContentApi extends ContentApi {
         content =
             @org.eclipse.microprofile.openapi.annotations.media.Content(
                 mediaType = MediaType.APPLICATION_JSON,
-                example = "multiGetResponse",
+                examples = @ExampleObject(ref = "multiGetResponse"),
                 schema = @Schema(implementation = GetMultipleContentsResponse.class))),
     @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
     @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
@@ -138,7 +138,7 @@ public interface HttpContentApi extends ContentApi {
               description = "Keys to retrieve.",
               content =
                   @org.eclipse.microprofile.openapi.annotations.media.Content(
-                      example = "multiGetRequest"))
+                      examples = @ExampleObject(ref = "multiGetRequest")))
           GetMultipleContentsRequest request)
       throws NessieNotFoundException;
 }
