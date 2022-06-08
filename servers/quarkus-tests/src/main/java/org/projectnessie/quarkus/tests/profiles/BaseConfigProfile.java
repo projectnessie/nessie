@@ -21,6 +21,8 @@ import java.util.Map;
 
 public class BaseConfigProfile implements QuarkusTestProfile {
 
+  public static final String TEST_REPO_ID = "nessie-test";
+
   public static final Map<String, String> CONFIG_OVERRIDES =
       ImmutableMap.<String, String>builder().put("quarkus.jaeger.sampler-type", "const").build();
 
@@ -29,7 +31,7 @@ public class BaseConfigProfile implements QuarkusTestProfile {
   static {
     ImmutableMap.Builder<String, String> config =
         ImmutableMap.<String, String>builder()
-            .put("nessie.version.store.advanced.repository-id", "nessie-test")
+            .put("nessie.version.store.advanced.repository-id", TEST_REPO_ID)
             .put("nessie.version.store.advanced.commit-retries", "42")
             .put("nessie.version.store.advanced.tx.batch-size", "41");
 

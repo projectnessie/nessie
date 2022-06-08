@@ -22,13 +22,11 @@ import static org.projectnessie.tools.compatibility.internal.NessieServer.nessie
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.projectnessie.tools.compatibility.api.TargetVersion;
 import org.projectnessie.tools.compatibility.api.Version;
-import org.projectnessie.versioned.persist.mongodb.LocalMongo;
+import org.projectnessie.versioned.persist.mongodb.LocalMongoResource;
 
 /**
  * Simulates a rolling-upgrade situation with one Nessie instance running an old version and another
@@ -86,8 +84,9 @@ public class RollingUpgradesExtension extends AbstractMultiVersionExtension {
   }
 
   private ServerKey buildServerKey(Version version, ExtensionContext context) {
-    Mongo mongo =
-        globalForClass(context).getOrCompute("local-mongo", x -> new Mongo(), Mongo.class);
+    LocalMongoResource mongo =
+        globalForClass(context)
+            .getOrCompute("local-mongo", x -> new LocalMongoResource(), LocalMongoResource.class);
 
     // Eagerly create the Nessie server instance
     String databaseAdapterName = "MongoDB";
@@ -112,38 +111,5 @@ public class RollingUpgradesExtension extends AbstractMultiVersionExtension {
         instance,
         targetVersion,
         field -> apiInstanceForField(context, field, version, nessieServerSupplier));
-  }
-
-  private static final class Mongo implements CloseableResource {
-
-    private LocalMongo localMongo;
-
-    private synchronized LocalMongo mongo() {
-      if (localMongo == null) {
-        localMongo = new LocalMongo();
-        localMongo.startMongo(Optional.empty(), true);
-      }
-      return localMongo;
-    }
-
-    String getConnectionString() {
-      return mongo().getConnectionString();
-    }
-
-    String getDatabaseName() {
-      return mongo().getDatabaseName();
-    }
-
-    @Override
-    public synchronized void close() {
-      if (localMongo == null) {
-        return;
-      }
-      try {
-        localMongo.stop();
-      } finally {
-        localMongo = null;
-      }
-    }
   }
 }
