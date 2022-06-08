@@ -15,6 +15,8 @@
  */
 package org.projectnessie.quarkus.cli;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -107,12 +109,12 @@ public class CheckContent extends BaseCommand {
         check(spec.commandLine().getOut());
         spec.commandLine().getOut().println();
       } else {
-        try (PrintWriter out = new PrintWriter(outputSpec)) {
+        try (PrintWriter out = new PrintWriter(outputSpec, UTF_8)) {
           check(out);
         }
       }
     } else {
-      check(new PrintWriter(NullOutputStream.NULL_OUTPUT_STREAM));
+      check(new PrintWriter(NullOutputStream.NULL_OUTPUT_STREAM, false, UTF_8));
     }
 
     if (summary) {
