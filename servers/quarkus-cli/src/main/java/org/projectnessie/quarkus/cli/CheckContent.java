@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.protobuf.ByteString;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -28,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
-import org.apache.commons.io.output.NullOutputStream;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.GetNamedRefsParams;
@@ -114,7 +114,7 @@ public class CheckContent extends BaseCommand {
         }
       }
     } else {
-      check(new PrintWriter(NullOutputStream.NULL_OUTPUT_STREAM, false, UTF_8));
+      check(new PrintWriter(OutputStream.nullOutputStream(), false, UTF_8));
     }
 
     if (summary) {
