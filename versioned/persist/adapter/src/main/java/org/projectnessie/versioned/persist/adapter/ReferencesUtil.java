@@ -149,12 +149,9 @@ public final class ReferencesUtil {
         databaseAdapter.namedRefs(GetNamedRefsParams.DEFAULT)) {
       namedRefs.forEach(
           refInfo -> {
-            boolean canStop = false;
             try (Stream<CommitLogEntry> logs = databaseAdapter.commitLog(refInfo.getHash())) {
               if (!referenced.containsKey(refInfo.getHash())) {
                 // Only need to traverse the commit log from the same commit-ID once.
-
-                boolean identified = false;
                 for (Iterator<CommitLogEntry> logIter = logs.iterator(); logIter.hasNext(); ) {
                   CommitLogEntry entry = logIter.next();
 

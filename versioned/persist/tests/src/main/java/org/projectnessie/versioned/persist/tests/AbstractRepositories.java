@@ -41,11 +41,7 @@ import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterConfig
 /** Verifies handling of repo-description in the database-adapters. */
 public abstract class AbstractRepositories {
 
-  private final DatabaseAdapter databaseAdapter;
-
-  protected AbstractRepositories(DatabaseAdapter databaseAdapter) {
-    this.databaseAdapter = databaseAdapter;
-  }
+  protected AbstractRepositories() {}
 
   @Test
   void nonExistentRepository(
