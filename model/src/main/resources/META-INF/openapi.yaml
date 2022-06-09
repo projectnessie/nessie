@@ -107,8 +107,12 @@ components:
     iceberg:
       value:
         type: ICEBERG_TABLE
+        id: b874b5d5-f926-4eed-9be7-b2380d9810c0
         metadataLocation: "/path/to/metadata/"
-        uuid: b874b5d5-f926-4eed-9be7-b2380d9810c0
+        snapshotId: 1
+        schemaId: 2
+        specId: 3
+        sortOrderId: 4
 
     expr_by_namespace:
       value: "entry.namespace.startsWith('a.b.c')"
@@ -143,8 +147,12 @@ components:
         contents:
           - content:
               type: ICEBERG_TABLE
+              id: b874b5d5-f926-4eed-9be7-b2380d9810c0
               metadataLocation: "/path/to/metadata/"
-              uuid: b874b5d5-f926-4eed-9be7-b2380d9810c0
+              snapshotId: 1
+              schemaId: 2
+              specId: 3
+              sortOrderId: 4
             key:
               elements:
                 - example
@@ -227,8 +235,12 @@ components:
                     - key
                 content:
                   type: ICEBERG_TABLE
-                  uuid: "b874b5d5-f926-4eed-9be7-b2380d9810c0"
+                  id: b874b5d5-f926-4eed-9be7-b2380d9810c0
                   metadataLocation: "/path/to/metadata/"
+                  snapshotId: 1
+                  schemaId: 2
+                  specId: 3
+                  sortOrderId: 4
             parentCommitHash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
         targetCommits:
           - commitMeta:
@@ -244,8 +256,12 @@ components:
                     - key
                 content:
                   type: ICEBERG_TABLE
-                  uuid: "b874b5d5-f926-4eed-9be7-b2380d9810c0"
+                  id: b874b5d5-f926-4eed-9be7-b2380d9810c0
                   metadataLocation: "/path/to/metadata/"
+                  snapshotId: 1
+                  schemaId: 2
+                  specId: 3
+                  sortOrderId: 4
             parentCommitHash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
         details:
           - key:
@@ -281,8 +297,12 @@ components:
                     - key
                 content:
                   type: ICEBERG_TABLE
-                  uuid: "b874b5d5-f926-4eed-9be7-b2380d9810c0"
+                  id: b874b5d5-f926-4eed-9be7-b2380d9810c0
                   metadataLocation: "/path/to/metadata/"
+                  snapshotId: 1
+                  schemaId: 2
+                  specId: 3
+                  sortOrderId: 4
             parentCommitHash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
         targetCommits:
           - commitMeta:
@@ -298,8 +318,12 @@ components:
                     - key
                 content:
                   type: ICEBERG_TABLE
-                  uuid: "b874b5d5-f926-4eed-9be7-b2380d9810c0"
+                  id: b874b5d5-f926-4eed-9be7-b2380d9810c0
                   metadataLocation: "/path/to/metadata/"
+                  snapshotId: 1
+                  schemaId: 2
+                  specId: 3
+                  sortOrderId: 4
             parentCommitHash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
         details:
           - key:
@@ -333,8 +357,12 @@ components:
                 - key
             content:
               type: ICEBERG_TABLE
-              uuid: "b874b5d5-f926-4eed-9be7-b2380d9810c0"
+              id: b874b5d5-f926-4eed-9be7-b2380d9810c0
               metadataLocation: "/path/to/metadata/"
+              snapshotId: 1
+              schemaId: 2
+              specId: 3
+              sortOrderId: 4
 
     logResponseAdditionalInfo:
       value:
@@ -366,8 +394,12 @@ components:
                     - key
                 content:
                   type: ICEBERG_TABLE
-                  uuid: "b874b5d5-f926-4eed-9be7-b2380d9810c0"
+                  id: b874b5d5-f926-4eed-9be7-b2380d9810c0
                   metadataLocation: "/path/to/metadata/"
+                  snapshotId: 1
+                  schemaId: 2
+                  specId: 3
+                  sortOrderId: 4
     logResponseSimple:
       value:
         token: "xxx"
