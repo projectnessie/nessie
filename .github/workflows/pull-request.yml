@@ -41,6 +41,8 @@ jobs:
   java:
     name: Java/Maven
     runs-on: ubuntu-latest
+    env:
+      SPARK_LOCAL_IP: localhost
 
     steps:
     - uses: actions/checkout@v3
@@ -49,15 +51,55 @@ jobs:
     - name: Setup Java, Maven
       uses: ./.github/actions/dev-tool-java
 
-    - name: Build with Maven
+    - name: Gradle / buildSupport
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: -p buildSupport spotlessCheck
+
+    - name: Gradle / compile
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: spotlessCheck checkstyleMain checkstyleTest jar testClasses testJar
+
+    - name: Gradle / unit test
+      uses: gradle/gradle-build-action@v2
       env:
         SPARK_LOCAL_IP: localhost
-      run: |
-        ./mvnw --batch-mode --threads 1C install scala:doc-jar javadoc:javadoc-no-fork -Pcode-coverage -Dtest.log.level=WARN
+      with:
+        arguments: test
+
+    - name: Gradle / check incl. integ-test
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: check
+
+    - name: Gradle / Gatling simulations
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: gatlingRun
+
+    # Exercise these tasks to ensure those do not error out
+    - name: Gradle / assemble + publish local
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: |
+          assemble
+          publishToMavenLocal
+          codeCoverageReport -x test -x intTest
+
+    - name: Gradle / build tools integration tests
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: buildToolsIntegrationTest
 
     - name: Capture Test Reports
+      uses: actions/upload-artifact@v3
       if: ${{ failure() }}
-      uses: ./.github/actions/ci-reports
+      with:
+        name: test-results
+        path: |
+          **/build/reports/*
+          **/build/test-results/*
 
     - name: Capture Results
       uses: ./.github/actions/ci-results

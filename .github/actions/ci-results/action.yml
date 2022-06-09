@@ -6,7 +6,7 @@ runs:
       uses: actions/upload-artifact@v3
       with:
         name: gatling-logs
-        path: perftest/simulations/target/gatling/*/simulation.log
+        path: perftest/simulations/build/reports/gatling/*/simulation.log
     - uses: codecov/codecov-action@v2
       if: github.repository_owner == 'projectnessie'
       continue-on-error: true
@@ -14,7 +14,7 @@ runs:
         verbose: true
         fail_ci_if_error: true
         flags: java
-        files: code-coverage/target/site/jacoco-aggregate-all/jacoco.xml
+        files: code-coverage/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml
     - uses: codecov/codecov-action@v2
       if: github.repository_owner == 'projectnessie'
       continue-on-error: true

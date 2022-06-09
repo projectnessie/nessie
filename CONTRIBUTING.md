@@ -33,52 +33,91 @@ on the new feature or improvement.
 
 ### IntelliJ IDEA tips
 
-Nessie uses antlr and protoc to generate source files. Those files are needed to build the Nessie project.
+Nothing special for IntelliJ IDEA, just trust the project and let IntelliJ import it as a Gradle
+project.
 
-Tip: In the "Project" view (usually on the left) right-click on the `[nessie]` project, open the
-`Maven` sub-menu (at the bottom of the context menu), click on `Generate Sources and Update Folders`.
-This will generate the protobuf source files that are necessary to build Nessie via IntelliJ IDEA.
+### Gradle tips
 
-Note: Using the above method via the project's context menu is much quicker than running/clicking on
-`Generate Sources and Update Folders for all projects` from the Maven view (usually on the right).
+Common Gradle tasks:
 
-### Maven tips
+* Check whether everything compiles (no style checks):
+  `./gradlew jar testClasses`
+* Automatically fix code style issues:
+  `./gradlew spotlessApply` (abbreviated: `sAp`)
+* Publish to local Maven repo:
+  `./gradlew publishToLocalMaven` (abbreviated: `pTML`)
+* Run unit tests:
+  `./gradlew test`, also `./gradlew build`
+* Run integration tests:
+  `./gradlew intTest`
+* Run all checks (including tests):
+  `./gradlew check`
 
-A `./mvnw --threads 1C clean install` runs basically "everything" except release/deployment stuff. This is often
-not necessary. Use one of these parameters to speed things up:
+It is fine to just run all `test` tasks, Gradle will only execute a task, when anything that the
+task depends on has been changed.
 
-* `-Dquickly` Just compiles code, no tests, does not build code under `ui/`, `perftest/` and a few more.
-* `-DskipTests` Compiles everything, runs no tests.
-* `-DskipITs` Compiles everything, runs unit tests, but no integration tests.
+#### Abbreviations
 
-If you do not (regularly) update the `ui/` module, you may want to use the properties
-`-Dui.disable-terser=true` and `-Dui.disable-es-lint=true` to speed up the build of the ui module by
-about 20 seconds.
+You can abbreviate project and task names,
+see [docs](https://docs.gradle.org/current/userguide/command_line_interface.html#sec:name_abbreviation):
+* For `./gradlew spotlessApply` you can write `./gradlew sAp`
+* For `./gradlew :versioned:persist:serialize-proto:tasks` you can write `./gradle :v:p:s-p:tasks`
 
-Hint: you can define a default set of properties in your `~/.m2/settings.xml` like this:
-```xml
-<settings>
-  <profiles>
-    <profile>
-      <id>nessie-props</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <properties>
-        <test.log.level>WARN</test.log.level>
-        <ui.disable-terser>true</ui.disable-terser>
-        <ui.disable-es-lint>true</ui.disable-es-lint>
-      </properties>
-    </profile>
-  </profiles>
-</settings>
+#### Local Maven repository
+
+Using the local Maven repository is [discouraged](https://docs.gradle.org/current/userguide/declaring_repositories.html#sec:case-for-maven-local).
+
+If you really have to use the local Maven repository, you can use it by explicitly instructing
+the build to do so by passing `-DwithMavenLocal=true`. Be aware that Gradle does *not* cache
+anything from the local Maven repository and builds will be significantly slower.
+
+Note: `-DwithMavenLocal=true` allows using the local Maven repository for *dependencies*. This is
+different from the Gradle task `publishToMavenLocal`, which *publishes* the Nessie artifacts to
+the local Maven repository.
+
+#### Improving the build time for native images
+
+The native image builds require quite some amount of Java heap for the native image compilation.
+The value can be bumped by putting for example the following value to your local
+`~/.gradle/gradle.properties` file:
+
+```properties
+quarkus.native.native-image-xmx=8g
 ```
 
-#### Parallel Maven Builds
+#### Heap size and JVM arguments for tests
 
-Building Nessie works fine with Maven Daemon [`mvnd`](https://github.com/apache/maven-mvnd).
+Tests run with the default Java heap size, which is sufficient for all tests. If you really need to
+bump the heap size for tests, for example during development, you can do so via the _project_ property
+`testHeapSize`. For example: `./gradlew -PtestHeapSize=4g :clients:client:test --tests TestMyStuff`
 
-Alternatively, use the provided Maven Wrapper `./mvnw` with the `-T1C` (or `--threads 1C`) option.
+The project property `testJvmArgs` allows specifying JVM arguments for tests. Example:
+`./gradlew -PtestJvmArgs="-Xmx8g -XX:+UnlockExperimentalVMOptions -XX:+UseZGC" :clients:client:test --tests TestMyStuff`.
+Multiple JVM arguments can be specified via the `testJvmArgs` property, separated by spaces.
+
+Note: if you need these JVM settings regularly, you can also specify those in the
+`~/.gradle/gradle.properties` file or set those via the environment, for example via
+`export ORG_GRADLE_PROJECT_testHeapSize=4g`.
+
+#### `javadoc` task fail
+
+If the `javadoc` task fails, check that there's a `javadoc` executable. If not, install a "full" JDK.
+
+#### Migrating an existing Nessie clone using Maven
+
+In June 2022 the Nessie code tree changed to the Gradle build tool. Existing clones using Maven
+can be migrated as follows:
+
+1. Close your IDE
+2. Run `git clean -xdf`
+3. Run `git pull`
+4. Run `./gradlew testClasses` to ensure the build works fine. The very first build will be slower,
+   because it has to assemble the build plugins and download dependencies.
+6. Make sure that your IDE has no more "references to Maven" (nothing to do when using IntelliJ) 
+7. Open Nessie in your IDE
+
+Note: The Gradle build does *not* use the local Maven repository and dependencies there will not be
+used by default. See [Local Maven reposotiry](#local-maven-repository).
 
 ### Development process
 
@@ -89,22 +128,10 @@ for more information. Small changes don't require an issue. However, it is good 
 larger changes. If you are unsure of where to start ask on the slack channel or look at [existing issues](https://github.com/projectnessie/nessie/issues).
 The [good first issue](https://github.com/projectnessie/nessie/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) label marks issues that are particularly good for people new to the codebase.
 
-For the Spark tests to run with Java 16 or newer, you need to update your `~/.m2/toolchains.xml` to contain a reference to Java 11. 
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<toolchains>
-  <toolchain>
-    <type>jdk</type>
-    <provides>
-      <version>11</version>
-      <vendor>sun</vendor>
-    </provides>
-    <configuration>
-      <jdkHome>PATH_TO_YOUR_JAVA_11_HOME</jdkHome>
-    </configuration>
-  </toolchain>
-</toolchains>
-```
+For the Spark tests to run with Java 16 or newer, you need to have Java 11 installed. Gradle will
+most likely find the Java 11 runtime required to run the Spark tests. Run `./gradlew javaToolchains`
+to see the Java toolchains that Gradle discovered. If Gradle could not locate your Java 11 runtime,
+consult the [docs](https://docs.gradle.org/current/userguide/toolchains.html).
 
 #### Building with Java 17 (and 16)
 
@@ -112,16 +139,15 @@ Due to [JEP 396](https://openjdk.java.net/jeps/396), introduced in Java 16, a co
 [google-java-format](https://github.com/google/google-java-format#jdk-16) and [errorprone](https://errorprone.info/docs/installation)
 to work. These options are harmless when using Java 11.
 
-Apache Spark does **only** work with Java 11 (or 8), so all tests using Spark use the Maven toolchain mechanism
+Apache Spark does **only** work with Java 11 (or 8), so all tests using Spark use the Gradle toolchain mechanism
 to force Java 11 for the execution of those tests.
-
-Maven Wrapper, Maven and Maven Daemon automatically pick up the necessary JVM options from `.mvn/jvm.config` or `.mvn/mvnd.properties`.
 
 ### Style guide
 
 Changes must adhere to the style guide and this will be verified by the continuous integration build.
 
 * Java code style is [Google style](https://google.github.io/styleguide/javaguide.html).
+* Kotlin code style is [ktfmt w/ Google style](https://github.com/facebookincubator/ktfmt#ktfmt-vs-ktlint-vs-intellij).
 * Scala code style is [scalafmt](https://scalameta.org/scalafmt/).
 * Python adheres to the pep8 standard.
 
@@ -133,8 +159,8 @@ Python code style is checked by flake8/black.
 
 #### Automatically fixing code style issues
 
-Java and Scala code style issues can be fixed from the command line using
-`./mvnw spotless:apply`.
+Java, Scala and Kotlin code style issues can be fixed from the command line using
+`./gradlew spotlessApply`.
 
 Python code style issues can be fixed from the command line using
 ```bash

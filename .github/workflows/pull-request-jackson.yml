@@ -30,32 +30,36 @@ jobs:
     name: ITs
     runs-on: ubuntu-latest
     if: contains(github.event.pull_request.labels.*.name, 'pr-jackson')
-    strategy:
-      max-parallel: 4
-      # note the big include entry in matrix is used to ensure we get human readable names for the jobs
-      matrix:
-        include:
-          - jackson-version: 2.6.7
-            target-library: Spark 2.4.4
-            java-version: 11
-          - jackson-version: 2.10.0
-            target-library: Spark 3.0.1
-            java-version: 11
-          - jackson-version: 2.11.4
-            target-library: Spark 3.0.1
-            java-version: 11
-          - jackson-version: 2.12.5
-            target-library: Spark 3.0.1
-            java-version: 11
     steps:
       - uses: actions/checkout@v3
-      - name: Setup Java, Maven, Gradle
+      - name: Setup runner
+        uses: ./.github/actions/setup-runner
+      - name: Setup Java, Gradle
         uses: ./.github/actions/dev-tool-java
+
+      # These steps are "too quick" to justify a matrix job
+      - name: Jackson compatibility tests / 2.6.4 for Spark 2.4.4
+        uses: gradle/gradle-build-action@v2
         with:
-          java-version: ${{ matrix.java-version }}
-      - name: Build with Maven ${{ matrix.target-library }}
-        run: |
-          ./mvnw --batch-mode --threads 1C install -DskipTests -am -pl :nessie-quarkus -pl :nessie-lambda
-      - name: Jackson Integration Tests ${{ matrix.target-library }}
-        run: |
-          ./mvnw --batch-mode verify -pl :nessie-client -am -Pjackson-tests -Djackson.test.version=${{ matrix.jackson-version }} -Dtest.log.level=WARN
+          arguments: :clients:client:test -Pjackson-tests=2.6.4
+      - name: Jackson compatibility tests / 2.10.0 for Spark 3.0.1
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: :clients:client:test -Pjackson-tests=2.10.0
+      - name: Jackson compatibility tests / 2.11.4 for Spark 3.0.1
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: :clients:client:test -Pjackson-tests=2.11.4
+      - name: Jackson compatibility tests / 2.12.5 for Spark 3.0.1
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: :clients:client:test -Pjackson-tests=2.12.5
+
+      - name: Capture Test Reports
+        uses: actions/upload-artifact@v3
+        if: ${{ failure() }}
+        with:
+          name: test-results-jackson
+          path: |
+            **/build/reports/*
+            **/build/test-results/*
