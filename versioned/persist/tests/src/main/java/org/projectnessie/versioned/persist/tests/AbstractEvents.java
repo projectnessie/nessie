@@ -32,7 +32,6 @@ import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentId;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.MergeParams;
@@ -56,11 +55,7 @@ import org.projectnessie.versioned.testworker.SimpleStoreWorker;
 /** Verifies handling of repo-description in the database-adapters. */
 public abstract class AbstractEvents {
 
-  private final DatabaseAdapter databaseAdapter;
-
-  protected AbstractEvents(DatabaseAdapter databaseAdapter) {
-    this.databaseAdapter = databaseAdapter;
-  }
+  protected AbstractEvents() {}
 
   @Test
   public void eventRepoInit(
