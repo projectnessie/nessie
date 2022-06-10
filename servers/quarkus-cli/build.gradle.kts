@@ -68,6 +68,7 @@ dependencies {
   testImplementation(enforcedPlatform("io.quarkus:quarkus-bom"))
   testImplementation("io.quarkus:quarkus-jacoco")
   testImplementation("io.quarkus:quarkus-junit5")
+  testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
   testImplementation("org.assertj:assertj-core")
   testImplementation("org.mockito:mockito-core")
