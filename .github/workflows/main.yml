@@ -18,50 +18,81 @@ jobs:
   java:
     name: Java/Maven
     runs-on: ubuntu-latest
+    env:
+      SPARK_LOCAL_IP: localhost
 
     steps:
     - uses: actions/checkout@v3
     - name: Setup runner
       uses: ./.github/actions/setup-runner
-    - name: Setup Java, Maven
+    - name: Setup Java, Gradle
       uses: ./.github/actions/dev-tool-java
       with:
         gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
 
-    - name: Build with Maven
-      env:
-        MAVEN_USERNAME: ${{ secrets.OSSRH_ACCESS_ID }}
-        MAVEN_OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
-        MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
-        SPARK_LOCAL_IP: localhost
-      if: ${{ env.MAVEN_USERNAME }}
-      run: ./mvnw --batch-mode --threads 1C deploy -Pcode-coverage,release -DdeployAtEnd=true -Dtest.log.level=WARN
+    - name: Gradle / buildSupport
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: -p buildSupport spotlessCheck
 
-    - name: Build with Maven (Fork)
+    - name: Gradle / compile
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: spotlessCheck checkstyleMain checkstyleTest jar testClasses testJar
+
+    - name: Gradle / unit test
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: test
+
+    - name: Gradle / check incl. integ-test
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: check
+
+    - name: Gradle / Gatling simulations
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: gatlingRun
+
+    - name: Gradle / assemble + publish local
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: |
+          assemble
+          codeCoverageReport -x test -x intTest
+          publishToMavenLocal
+          -Puber-jar
+
+    - name: Gradle / build tools integration tests
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: buildToolsIntegrationTest
+
+    - name: Gradle / assemble + publish snapshot
+      if: ${{ env.MAVEN_USERNAME }}
       env:
-        MAVEN_USERNAME: ${{ secrets.OSSRH_ACCESS_ID }}
-        SPARK_LOCAL_IP: localhost
-      if: ${{ ! env.MAVEN_USERNAME }}
-      run: ./mvnw --batch-mode --threads 1C install -Pcode-coverage,release -DskipGpg -Dtest.log.level=WARN
+        ORG_GRADLE_PROJECT_signingKey: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+        ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+        ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.OSSRH_ACCESS_ID }}
+        ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.OSSRH_TOKEN }}
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: |
+          publishToSonatype closeAndReleaseSonatypeStagingRepository
+          -Prelease -Puber-jar
 
     - name: Capture Test Reports
+      uses: actions/upload-artifact@v3
       if: ${{ failure() }}
-      uses: ./.github/actions/ci-reports
+      with:
+        name: test-results
+        path: |
+          **/build/reports/*
+          **/build/test-results/*
 
     - name: Capture Results
       uses: ./.github/actions/ci-results
-
-    - name: Run OWASP Check
-      continue-on-error: true
-      run: |
-        ./mvnw dependency-check:aggregate -DskipTests -Powasp-dependency-check
-    - name: Upload OWASP Report
-      continue-on-error: true
-      uses: actions/upload-artifact@v3
-      with:
-        name: owasp-report
-        path: |
-          target/dependency-check-report.html
 
   native:
     name: Java/Maven/Native
@@ -73,15 +104,18 @@ jobs:
         uses: ./.github/actions/setup-runner
         with:
           more-memory: 'true'
-      - name: Setup Java, Maven, Gradle
+      - name: Setup Java, Gradle
         uses: ./.github/actions/dev-tool-java
 
-      - name: Build with Maven
-        run: ./mvnw --batch-mode --threads 1C install -DskipTests -am -pl :nessie-quarkus -pl :nessie-lambda
-
-      - name: Test native with Maven
-        run: |
-          ./mvnw --batch-mode install -Pnative,docker -Dtest.log.level=WARN -Dquarkus.native.native-image-xmx=6g -pl :nessie-quarkus -pl :nessie-lambda
+      - name: Gradle / integration test native
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: |
+            --no-daemon
+            :servers:quarkus-server:quarkusBuild
+            :servers:quarkus-server:intTest
+            -Pnative
+            -Pdocker
 
       - name: Push Docker images
         env:
@@ -95,35 +129,52 @@ jobs:
             docker push "projectnessie/nessie-unstable:${IMAGE_TAG%-snapshot}"
           done
 
+      - name: Capture Test Reports
+        uses: actions/upload-artifact@v3
+        if: ${{ failure() }}
+        with:
+          name: test-results-native
+          path: |
+            **/build/reports/*
+            **/build/test-results/*
+
   jackson-tests:
     name: Jackson Integration Tests
-    needs: java
     runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 4
-      # note the big include entry in matrix is used to ensure we get human readable names for the jobs
-      matrix:
-        include:
-          - jackson-version: 2.6.7
-            target-library: Spark 2.4.4
-            java-version: 11
-          - jackson-version: 2.10.0
-            target-library: Spark 3.0.1
-            java-version: 11
-          - jackson-version: 2.11.4
-            target-library: Spark 3.0.1
-            java-version: 11
-          - jackson-version: 2.12.5
-            target-library: Spark 3.0.1
-            java-version: 11
+
     steps:
       - uses: actions/checkout@v3
-      - name: Setup Java, Maven, Gradle
+      - name: Setup runner
+        uses: ./.github/actions/setup-runner
+      - name: Setup Java, Gradle
         uses: ./.github/actions/dev-tool-java
+
+      # These steps are "too quick" to justify a matrix job
+      - name: Jackson compatibility tests / 2.6.4 for Spark 2.4.4
+        uses: gradle/gradle-build-action@v2
         with:
-          java-version: ${{ matrix.java-version }}
-      - name: Jackson Integration Tests ${{ matrix.target-library }}
-        run: ./mvnw --batch-mode verify -pl :nessie-client -am -Pjackson-tests -Djackson.test.version=${{ matrix.jackson-version }} -Dtest.log.level=WARN
+          arguments: :clients:client:test -Pjackson-tests=2.6.4
+      - name: Jackson compatibility tests / 2.10.0 for Spark 3.0.1
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: :clients:client:test -Pjackson-tests=2.10.0
+      - name: Jackson compatibility tests / 2.11.4 for Spark 3.0.1
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: :clients:client:test -Pjackson-tests=2.11.4
+      - name: Jackson compatibility tests / 2.12.5 for Spark 3.0.1
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: :clients:client:test -Pjackson-tests=2.12.5
+
+      - name: Capture Test Reports
+        uses: actions/upload-artifact@v3
+        if: ${{ failure() }}
+        with:
+          name: test-results-jackson
+          path: |
+            **/build/reports/*
+            **/build/test-results/*
 
   python:
     name: Python

@@ -1,7 +1,12 @@
 version: 2
 updates:
-- package-ecosystem: maven
+- package-ecosystem: gradle
   directory: "/"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+- package-ecosystem: gradle
+  directory: "/buildSupport"
   schedule:
     interval: daily
   open-pull-requests-limit: 10

@@ -89,7 +89,7 @@ jobs:
       uses: ./.github/actions/setup-runner
       with:
         more-memory: 'true'
-    - name: Setup Java, Maven
+    - name: Setup Java
       uses: ./.github/actions/dev-tool-java
       with:
         gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
@@ -109,29 +109,23 @@ jobs:
       id: build_maven
       env:
         RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
-        MAVEN_USERNAME: ${{ secrets.OSSRH_ACCESS_ID }}
-        MAVEN_OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
-        MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+        ORG_GRADLE_PROJECT_signingKey: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+        ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+        ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.OSSRH_ACCESS_ID }}
+        ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.OSSRH_TOKEN }}
       run: |
-        NEXUS_ARGS="-DnexusUrl=https://oss.sonatype.org -DserverId=ossrh -DautoReleaseAfterClose=true"
-        PROFILES="-Puber-jar -Prelease"
-        GOALS="install org.sonatype.plugins:nexus-staging-maven-plugin:1.6.8:deploy"
-        BUILD_ARGS="-DskipTests -Dmaven.deploy.skip -Dgpg.skip"
+        ./gradlew --no-watch-fs --no-daemon --info publishToMavenLocal publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar
 
-        ./mvnw --batch-mode ${GOALS} ${PROFILES} ${NEXUS_ARGS} ${BUILD_ARGS}
-
-        # Build the native-image, it's not released to Maven Central anyway
-        PROFILES="-Pnative -Pdocker"
-        BUILD_ARGS="-DskipTests -Dquarkus.native.remote-container-build=true -Dquarkus.native.container-build=false -Dquarkus.native.native-image-xmx=6g"
-        ./mvnw --batch-mode install ${PROFILES} ${BUILD_ARGS} -pl servers/quarkus-server
+        # Build the native-image, it's not released to Maven Central
+        ./gradlew --no-watch-fs --no-daemon --info :servers:quarkus-server:quarkusBuild -Prelease -Pnative -Pdocker
 
         # Add version to the openapi file name
-        cp model/target/classes/META-INF/openapi/openapi.yaml model/target/nessie-openapi-${RELEASE_VERSION}.yaml
+        cp model/build/resources/main/META-INF/openapi/openapi.yaml model/build/nessie-openapi-${RELEASE_VERSION}.yaml
 
-        echo ::set-output name=QUARKUS_NATIVE_BINARY::servers/quarkus-server/target/nessie-quarkus-${RELEASE_VERSION}-runner
-        echo ::set-output name=QUARKUS_UBER_JAR::servers/quarkus-server/target/nessie-quarkus-${RELEASE_VERSION}-runner.jar
-        echo ::set-output name=CLI_UBER_JAR::servers/quarkus-cli/target/nessie-quarkus-cli-${RELEASE_VERSION}-runner.jar
-        echo ::set-output name=NESSIE_OPENAPI::model/target/nessie-openapi-${RELEASE_VERSION}.yaml
+        echo ::set-output name=QUARKUS_NATIVE_BINARY::servers/quarkus-server/build/nessie-quarkus-${RELEASE_VERSION}-runner
+        echo ::set-output name=QUARKUS_UBER_JAR::servers/quarkus-server/build/nessie-quarkus-${RELEASE_VERSION}-runner.jar
+        echo ::set-output name=CLI_UBER_JAR::servers/quarkus-cli/build/nessie-quarkus-cli-${RELEASE_VERSION}-runner.jar
+        echo ::set-output name=NESSIE_OPENAPI::model/build/nessie-openapi-${RELEASE_VERSION}.yaml
 
     - name: Install Helm
       uses: azure/setup-helm@v1

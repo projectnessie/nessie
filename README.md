@@ -105,7 +105,7 @@ Nessie required some minor changes to Delta for full support of branching and hi
 ### Distribution
 To run:
 1. configuration in `servers/quarkus-server/src/main/resources/application.properties`
-2. execute `./mvnw quarkus:dev`
+2. execute `./gradlew quarkusDev`
 3. go to `http://localhost:19120`
 
 ### UI 
@@ -122,14 +122,14 @@ To deploy the ui (from `ui` directory):
 
 ### Docker image
 
-When running `mvn clean install -Pdocker` a docker image will be created at `projectnessie/nessie` which can be started 
-with `docker run -p 19120:19120 projectnessie/nessie` and the relevant environment variables. Environment variables
-are specified as per https://github.com/eclipse/microprofile-config/blob/master/spec/src/main/asciidoc/configsources.asciidoc#default-configsources  
+When running `./gradlew :servers:quarkus-server:quarkusBuild -Pdocker -Pnative` a docker image will
+be created at `projectnessie/nessie` which can be started with `docker run -p 19120:19120 projectnessie/nessie`
+and the relevant environment variables. Environment variables  are specified as per
+https://github.com/eclipse/microprofile-config/blob/master/spec/src/main/asciidoc/configsources.asciidoc#default-configsources  
 
 
 ### AWS Lambda
 You can also deploy to AWS lambda function by following the steps in `servers/lambda/README.md`
- 
 
 ## Nessie related repositories
 

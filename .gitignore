@@ -24,9 +24,13 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
-#misc
+# Maven
 target/
 dependency-reduced-pom.xml
+.flattened-pom.xml
+.mvn/.babel-cache/
+
+# Misc
 *.patch
 *.DS_Store
 .DS_Store
@@ -43,7 +47,6 @@ dependency-reduced-pom.xml
 # node
 node_modules/
 ui/src/generated/
-.mvn/.babel-cache/
 
 # Eclipse IDE
 .classpath
@@ -57,13 +60,9 @@ out/
 .gradle/
 build/
 gradle/wrapper/gradle-wrapper.jar
-version.txt
 
 # Python venv
 venv/
-
-# Maven flatten plugin
-.flattened-pom.xml
 
 # Site
 site/site
