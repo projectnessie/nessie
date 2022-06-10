@@ -64,8 +64,8 @@ jobs:
       with:
         arguments: buildToolsIntegrationTest
 
-    - name: Gradle / assemble + publish snapshot
-      if: ${{ env.MAVEN_USERNAME }}
+    - name: Gradle / publish snapshot
+      if: ${{ secrets.OSSRH_ACCESS_ID }}
       env:
         ORG_GRADLE_PROJECT_signingKey: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
         ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
