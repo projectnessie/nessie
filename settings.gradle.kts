@@ -30,7 +30,7 @@ pluginManagement {
   versions["versionQuarkus"] = versionQuarkus
   val versionErrorPronePlugin = "2.0.2"
   versions["versionErrorPronePlugin"] = versionErrorPronePlugin
-  val versionNessieBuildPlugins = "0.1.4"
+  val versionNessieBuildPlugins = "0.1.5"
   versions["versionNessieBuildPlugins"] = versionNessieBuildPlugins
   val versionIdeaExtPlugin = "1.1.4"
   versions["versionIdeaExtPlugin"] = versionIdeaExtPlugin
