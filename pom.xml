@@ -163,7 +163,7 @@
     <agrona.version>1.15.2</agrona.version>
     <antlr.version>4.10.1</antlr.version>
     <assertj.version>3.23.1</assertj.version>
-    <awssdk.version>2.17.207</awssdk.version>
+    <awssdk.version>2.17.208</awssdk.version>
     <bouncycastle.version>1.66</bouncycastle.version>
     <cel.version>0.3.5</cel.version>
     <checkstyle.version>10.3</checkstyle.version>
