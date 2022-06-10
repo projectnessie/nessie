@@ -95,7 +95,14 @@ val npmInstall =
   tasks.register("npmInstallFacade") {
     mustRunAfter(clean)
     dependsOn(npmSetup)
-    outputs.cacheIf { true }
+    outputs.cacheIf {
+      project.buildDir
+        .resolve("npm/npm-v${node.npmVersion}/lib/node_modules/npm/node_modules")
+        .isDirectory()
+    }
+    // Need to add the fully qualified path here, so a "cached" npmInstallFacade run from another
+    // directory with Nessie doesn't let "this" code-tree "think" that it has one.
+    inputs.property("node.modules.dir", project.projectDir)
     inputs.property("node.version", node.version)
     inputs.property("npm.version", node.npmVersion)
     inputs.files("package.json", "package-lock.json").withPathSensitivity(PathSensitivity.RELATIVE)
