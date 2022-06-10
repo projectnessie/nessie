@@ -29,5 +29,5 @@ pytest-mypy==0.9.1
 pytest-recording==0.12.0
 tox==3.25.0
 twine==4.0.1
-watchdog==2.1.8
+watchdog==2.1.9
 wheel==0.37.1
