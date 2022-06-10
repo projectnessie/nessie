@@ -27,7 +27,7 @@ plugins {
   `java-library`
   `maven-publish`
   id("com.github.node-gradle.node")
-  id("org.projectnessie.nessie-project")
+  `nessie-conventions`
 }
 
 val openapi by configurations.creating { description = "Used to reference OpenAPI spec files" }

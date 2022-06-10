@@ -15,12 +15,11 @@
  */
 
 plugins {
-  idea
   `java-platform`
   signing
   `maven-publish`
   id("org.projectnessie.buildsupport.ide-integration")
-  id("org.projectnessie.nessie-project")
+  `nessie-conventions`
   id("io.github.gradle-nexus.publish-plugin")
 }
 

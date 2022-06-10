@@ -18,7 +18,7 @@ plugins {
   jacoco
   `maven-publish`
   scala
-  id("org.projectnessie.nessie-project")
+  `nessie-conventions`
 }
 
 extra["maven.name"] = "Nessie - Perf Test - Gatling"

@@ -20,8 +20,6 @@ if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_11)) {
 
 val baseVersion = file("version.txt").readText().trim()
 
-includeBuild("buildSupport")
-
 pluginManagement {
   // Cannot use a settings-script global variable/value, so pass the 'versions' Properties via
   // settings.extra around.
@@ -30,20 +28,61 @@ pluginManagement {
 
   val versionQuarkus = "2.9.2.Final"
   versions["versionQuarkus"] = versionQuarkus
+  val versionErrorPronePlugin = "2.0.2"
+  versions["versionErrorPronePlugin"] = versionErrorPronePlugin
+  val versionNessieBuildPlugins = "0.1.4"
+  versions["versionNessieBuildPlugins"] = versionNessieBuildPlugins
+  val versionIdeaExtPlugin = "1.1.4"
+  versions["versionIdeaExtPlugin"] = versionIdeaExtPlugin
+  val versionSpotlessPlugin = "6.7.0"
+  versions["versionSpotlessPlugin"] = versionSpotlessPlugin
+  val versionJandexPlugin = "1.80"
+  versions["versionJandexPlugin"] = versionJandexPlugin
+  val versionShadowPlugin = "7.1.2"
+  versions["versionShadowPlugin"] = versionShadowPlugin
+
+  // The project's settings.gradle.kts is "executed" before buildSrc's settings.gradle.kts and
+  // build.gradle.kts.
+  //
+  // Plugin and important dependency versions are defined here and shared with buildSrc via
+  // a properties file, and via an 'extra' property with all other modules of the Nessie build.
+  //
+  // This approach works fine with GitHub's dependabot as well
+  val nessieBuildVersionsFile = file("build/nessieBuild/versions.properties")
+  nessieBuildVersionsFile.parentFile.mkdirs()
+  nessieBuildVersionsFile.outputStream().use {
+    versions.store(it, "Nessie Build versions from settings.gradle.kts - DO NOT MODIFY!")
+  }
 
   plugins {
+    id("com.diffplug.spotless") version versionSpotlessPlugin
+    id("com.github.johnrengelman.plugin-shadow") version versionShadowPlugin
     id("com.github.node-gradle.node") version "3.3.0"
+    id("com.github.vlsi.jandex") version versionJandexPlugin
     id("io.gatling.gradle") version "3.7.6.3"
     id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
     id("io.quarkus") version versionQuarkus
-    id("org.projectnessie") version "0.27.3"
     id("me.champeau.jmh") version "0.6.6"
-    id("net.ltgt.errorprone") version "2.0.2"
+    id("net.ltgt.errorprone") version versionErrorPronePlugin
+    id("org.jetbrains.gradle.plugin.idea-ext") version versionIdeaExtPlugin
+    id("org.projectnessie") version "0.27.3"
+    id("org.projectnessie.buildsupport.attach-test-jar") version versionNessieBuildPlugins
+    id("org.projectnessie.buildsupport.checkstyle") version versionNessieBuildPlugins
+    id("org.projectnessie.buildsupport.errorprone") version versionNessieBuildPlugins
+    id("org.projectnessie.buildsupport.ide-integration") version versionNessieBuildPlugins
+    id("org.projectnessie.buildsupport.jacoco") version versionNessieBuildPlugins
+    id("org.projectnessie.buildsupport.jacoco-aggregator") version versionNessieBuildPlugins
+    id("org.projectnessie.buildsupport.jandex") version versionNessieBuildPlugins
+    id("org.projectnessie.buildsupport.protobuf") version versionNessieBuildPlugins
+    id("org.projectnessie.buildsupport.publishing") version versionNessieBuildPlugins
+    id("org.projectnessie.buildsupport.reflectionconfig") version versionNessieBuildPlugins
+    id("org.projectnessie.buildsupport.spotless") version versionNessieBuildPlugins
+    id("org.projectnessie.smallrye-open-api") version versionNessieBuildPlugins
   }
   repositories {
     mavenCentral() // prefer Maven Central, in case Gradle's repo has issues
     gradlePluginPortal()
-    if (java.lang.Boolean.getBoolean("withMavenLocal")) {
+    if (System.getProperty("withMavenLocal").toBoolean()) {
       mavenLocal()
     }
   }

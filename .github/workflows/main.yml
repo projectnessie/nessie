@@ -30,11 +30,6 @@ jobs:
       with:
         gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
 
-    - name: Gradle / buildSupport
-      uses: gradle/gradle-build-action@v2
-      with:
-        arguments: -p buildSupport spotlessCheck
-
     - name: Gradle / compile
       uses: gradle/gradle-build-action@v2
       with:

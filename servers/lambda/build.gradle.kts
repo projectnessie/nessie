@@ -20,7 +20,7 @@ plugins {
   `java-library`
   `maven-publish`
   id("io.quarkus")
-  id("org.projectnessie.nessie-project")
+  `nessie-conventions`
 }
 
 extra["maven.artifactId"] = "nessie-lambda"

@@ -20,7 +20,7 @@ plugins {
   jacoco
   `maven-publish`
   id("io.gatling.gradle")
-  id("org.projectnessie.nessie-project")
+  `nessie-conventions`
   id("org.projectnessie")
 }
 

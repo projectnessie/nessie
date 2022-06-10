@@ -21,7 +21,7 @@ plugins {
   jacoco
   `maven-publish`
   id("org.projectnessie.smallrye-open-api")
-  id("org.projectnessie.nessie-project")
+  `nessie-conventions`
   id("org.projectnessie.buildsupport.attach-test-jar")
 }
 

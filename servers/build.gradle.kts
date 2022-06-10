@@ -18,7 +18,7 @@ plugins {
   `java-platform`
   `maven-publish`
   signing
-  id("org.projectnessie.nessie-project")
+  `nessie-conventions`
 }
 
 extra["maven.artifactId"] = "nessie-server-parent"
