@@ -160,6 +160,7 @@ fun Project.configureJava() {
     if (System.getProperty("withMavenLocal").toBoolean()) {
       mavenLocal()
     }
+    maven { setUrl("https://repository.apache.org/content/repositories/orgapacheiceberg-1088/") }
   }
 
   tasks.withType<JavaCompile>().configureEach {
