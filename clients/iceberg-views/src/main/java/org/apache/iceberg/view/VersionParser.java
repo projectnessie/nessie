@@ -94,7 +94,6 @@ public class VersionParser {
     long timestamp = JsonUtil.getLong(TIMESTAMP_MS, node);
 
     VersionSummary summary = null;
-    String operation = null;
     if (node.has(SUMMARY)) {
       JsonNode summaryNode = node.get(SUMMARY);
       Preconditions.checkArgument(

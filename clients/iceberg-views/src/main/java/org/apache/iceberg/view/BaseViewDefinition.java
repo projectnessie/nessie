@@ -57,7 +57,7 @@ class BaseViewDefinition implements ViewDefinition {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (!(o instanceof BaseViewDefinition)) return false;
     BaseViewDefinition that = (BaseViewDefinition) o;
     return Objects.equals(sql, that.sql)
         // FIXME: include schema in hashCode+equals?

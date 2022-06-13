@@ -19,7 +19,6 @@ import com.google.common.base.Preconditions;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.hadoop.conf.Configuration;
@@ -32,7 +31,6 @@ import org.apache.iceberg.exceptions.RuntimeIOException;
 import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.iceberg.hadoop.HadoopFileIO;
 import org.apache.iceberg.io.FileIO;
-import org.apache.iceberg.io.OutputFile;
 
 /** The Views implementation Based on FileIO. */
 public class HadoopViewOperations implements ViewOperations {
@@ -48,14 +46,7 @@ public class HadoopViewOperations implements ViewOperations {
     this.location = location;
   }
 
-  private static OutputStream createFile(OutputFile outputFile, boolean replace) {
-    if (replace) {
-      return outputFile.createOrOverwrite();
-    } else {
-      return outputFile.create();
-    }
-  }
-
+  @Override
   public ViewVersionMetadata current() {
     if (shouldRefresh) {
       return refresh();
@@ -166,10 +157,6 @@ public class HadoopViewOperations implements ViewOperations {
     } catch (IOException e) {
       throw new RuntimeIOException("Failed to delete view metadata.");
     }
-  }
-
-  private String filePath(String dbName, String viewName) {
-    return "/tmp/" + dbName + ".db/" + viewName + "/metadata/" + "view.json";
   }
 
   private Path metadataPath(String filename) {

@@ -16,16 +16,8 @@
 package org.projectnessie.services.impl;
 
 import java.security.Principal;
-import org.projectnessie.api.params.MultipleNamespacesParams;
-import org.projectnessie.api.params.NamespaceParams;
-import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
-import org.projectnessie.error.NessieNamespaceNotEmptyException;
-import org.projectnessie.error.NessieNamespaceNotFoundException;
-import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
-import org.projectnessie.model.GetNamespacesResponse;
-import org.projectnessie.model.Namespace;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.VersionStore;
@@ -39,30 +31,5 @@ public class NamespaceApiImplWithAuthorization extends NamespaceApiImpl {
       Authorizer authorizer,
       Principal principal) {
     super(config, store, authorizer, principal);
-  }
-
-  @Override
-  public Namespace createNamespace(NamespaceParams params, Namespace namespace)
-      throws NessieNamespaceAlreadyExistsException, NessieReferenceNotFoundException {
-    return super.createNamespace(params, namespace);
-  }
-
-  @Override
-  public void deleteNamespace(NamespaceParams params)
-      throws NessieReferenceNotFoundException, NessieNamespaceNotEmptyException,
-          NessieNamespaceNotFoundException {
-    super.deleteNamespace(params);
-  }
-
-  @Override
-  public Namespace getNamespace(NamespaceParams params)
-      throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException {
-    return super.getNamespace(params);
-  }
-
-  @Override
-  public GetNamespacesResponse getNamespaces(MultipleNamespacesParams params)
-      throws NessieReferenceNotFoundException {
-    return super.getNamespaces(params);
   }
 }

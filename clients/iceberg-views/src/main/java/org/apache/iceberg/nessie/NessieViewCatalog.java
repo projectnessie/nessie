@@ -46,7 +46,7 @@ import org.slf4j.LoggerFactory;
 /** A catalog that supports Iceberg views. USE AT YOUR OWN RISK / EXPERIMENTAL CODE. */
 public class NessieViewCatalog extends BaseMetastoreViews implements AutoCloseable {
 
-  private static final Logger logger = LoggerFactory.getLogger(NessieCatalog.class);
+  private static final Logger logger = LoggerFactory.getLogger(NessieViewCatalog.class);
   private NessieApiV1 api;
   private String warehouseLocation;
   private Configuration config;
@@ -159,6 +159,7 @@ public class NessieViewCatalog extends BaseMetastoreViews implements AutoCloseab
     }
   }
 
+  @Override
   protected BaseMetastoreViewOperations newViewOps(TableIdentifier viewIdentifier) {
     validateTableIdentifier(viewIdentifier);
 

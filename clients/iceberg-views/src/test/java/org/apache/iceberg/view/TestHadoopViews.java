@@ -29,8 +29,9 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 @TestMethodOrder(Alphanumeric.class)
 public class TestHadoopViews extends TestHadoopViewBase {
+  @Override
   int readVersionHint() throws IOException {
-    return Integer.parseInt(Files.readFirstLine(versionHintFile, Charsets.UTF_8));
+    return Integer.parseInt(Files.asCharSource(versionHintFile, Charsets.UTF_8).readFirstLine());
   }
 
   @Test

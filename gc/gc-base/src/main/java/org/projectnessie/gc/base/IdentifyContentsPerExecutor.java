@@ -282,8 +282,8 @@ public class IdentifyContentsPerExecutor implements Serializable {
                 || !liveContentsBloomFilterMap.get(content.getId()).mightContain(content));
     Predicate<Content> validSnapshotPredicate =
         content ->
-            (content instanceof IcebergTable && ((IcebergTable) content).getSnapshotId() != -1
-                || content instanceof IcebergView && ((IcebergView) content).getVersionId() != -1);
+            (content instanceof IcebergTable && ((IcebergTable) content).getSnapshotId() != -1)
+                || (content instanceof IcebergView && ((IcebergView) content).getVersionId() != -1);
     try {
       Iterator<Content> iterator =
           StreamingUtil.getCommitLogStream(

@@ -29,13 +29,9 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** Update comments API implementation. */
 public class CommentUpdate implements UpdateComment {
-  private static final Logger LOG = LoggerFactory.getLogger(CommentUpdate.class);
-
   private final ViewOperations ops;
   private final ViewVersionMetadata base;
   private final Schema schema;
