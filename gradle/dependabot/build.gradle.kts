@@ -28,7 +28,7 @@
 //    plugin dependencies.
 
 plugins {
-  id("com.diffplug.spotless") version "6.7.0"
+  id("com.diffplug.spotless") version "6.7.2"
   id("com.github.johnrengelman.plugin-shadow") version "7.1.2"
   id("com.github.node-gradle.node") version "3.3.0"
   id("com.github.vlsi.jandex") version "1.80"
