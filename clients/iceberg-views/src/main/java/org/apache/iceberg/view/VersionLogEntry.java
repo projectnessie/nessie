@@ -27,10 +27,12 @@ public class VersionLogEntry implements HistoryEntry {
     this.versionId = versionId;
   }
 
+  @Override
   public long timestampMillis() {
     return timestampMillis;
   }
 
+  @Override
   public int versionId() {
     return versionId;
   }
@@ -40,7 +42,7 @@ public class VersionLogEntry implements HistoryEntry {
     if (this == other) {
       return true;
     }
-    if (other == null || getClass() != other.getClass()) {
+    if (!(other instanceof VersionLogEntry)) {
       return false;
     }
     VersionLogEntry that = (VersionLogEntry) other;

@@ -57,7 +57,7 @@ public final class GCUtil {
     }
   }
 
-  public static Instant getInstantFromMicros(Long microsSinceEpoch) {
+  public static Instant getInstantFromMicros(long microsSinceEpoch) {
     return Instant.ofEpochSecond(
         TimeUnit.MICROSECONDS.toSeconds(microsSinceEpoch),
         TimeUnit.MICROSECONDS.toNanos(

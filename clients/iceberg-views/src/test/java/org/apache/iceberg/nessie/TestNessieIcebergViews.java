@@ -327,11 +327,6 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
     return view;
   }
 
-  private String getTableBasePath(String tableName) {
-    String databasePath = temp.toString() + "/" + DB_NAME;
-    return Paths.get(databasePath, tableName).toAbsolutePath().toString();
-  }
-
   private String getViewBasePath(String viewName) {
     return Paths.get(temp.toString() + "/" + CATALOG_NAME + "." + DB_NAME, viewName)
         .toAbsolutePath()
@@ -353,9 +348,5 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
     return metadataFilesForViews(viewName).stream()
         .map(x -> String.format("file://%s", x))
         .collect(Collectors.toList());
-  }
-
-  private String metadataLocation(String tableName) {
-    return Paths.get(getTableBasePath(tableName), "metadata").toString();
   }
 }

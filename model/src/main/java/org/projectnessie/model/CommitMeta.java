@@ -17,7 +17,6 @@ package org.projectnessie.model;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -167,8 +166,7 @@ public abstract class CommitMeta {
     }
 
     @Override
-    public Instant deserialize(JsonParser p, DeserializationContext ctxt)
-        throws IOException, JsonProcessingException {
+    public Instant deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
       return Instant.parse(p.getText());
     }
   }
