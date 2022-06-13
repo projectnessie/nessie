@@ -31,7 +31,7 @@ plugins {
   id("com.diffplug.spotless") version "6.7.2"
   id("com.github.johnrengelman.plugin-shadow") version "7.1.2"
   id("com.github.node-gradle.node") version "3.3.0"
-  id("com.github.vlsi.jandex") version "1.80"
+  id("com.github.vlsi.jandex") version "1.82"
   id("io.gatling.gradle") version "3.7.6.3"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
   id("io.quarkus") version "2.9.2.Final"
