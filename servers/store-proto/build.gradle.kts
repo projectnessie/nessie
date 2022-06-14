@@ -25,8 +25,6 @@ plugins {
   `nessie-conventions`
 }
 
-extra["maven.artifactId"] = "nessie-server-store-proto"
-
 extra["maven.name"] = "Nessie - Server - Store (Proto)"
 
 dependencies {

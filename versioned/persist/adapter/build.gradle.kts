@@ -27,7 +27,7 @@ dependencies {
   implementation(platform(rootProject))
   annotationProcessor(platform(rootProject))
 
-  implementation(projects.versioned.spi)
+  implementation(project(":nessie-versioned-spi"))
   compileOnly("org.immutables:value-annotations")
   compileOnly("org.immutables:value-fixture")
   annotationProcessor("org.immutables:value-processor")

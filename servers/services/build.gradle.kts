@@ -21,15 +21,13 @@ plugins {
   `nessie-conventions`
 }
 
-extra["maven.artifactId"] = "nessie-services"
-
 extra["maven.name"] = "Nessie - Services"
 
 dependencies {
   implementation(platform(rootProject))
   annotationProcessor(platform(rootProject))
-  implementation(projects.model)
-  implementation(projects.versioned.spi)
+  implementation(project(":nessie-model"))
+  implementation(project(":nessie-versioned-spi"))
   implementation("org.slf4j:slf4j-api")
   implementation(platform("org.projectnessie.cel:cel-bom"))
   implementation("org.projectnessie.cel:cel-tools")

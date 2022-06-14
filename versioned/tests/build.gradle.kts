@@ -27,7 +27,7 @@ dependencies {
   annotationProcessor(platform(rootProject))
   implementation(platform(rootProject))
 
-  implementation(projects.versioned.spi)
+  implementation(project(":nessie-versioned-spi"))
   implementation("com.google.guava:guava")
   implementation("org.slf4j:slf4j-api")
   implementation("com.google.protobuf:protobuf-java")

@@ -25,8 +25,6 @@ plugins {
   `nessie-conventions`
 }
 
-extra["maven.artifactId"] = "nessie-deltalake"
-
 val scalaVersion = dependencyVersion("versionScala2_12")
 
 val sparkVersion = dependencyVersion("versionSpark32")
@@ -36,15 +34,15 @@ dependencies {
   forScala(scalaVersion)
 
   implementation(platform(rootProject))
-  implementation(projects.model)
-  implementation(projects.clients.client)
+  implementation(project(":nessie-model"))
+  implementation(project(":nessie-client"))
   implementation("org.apache.spark:spark-core_2.12") { forSpark(sparkVersion) }
   implementation("org.apache.spark:spark-sql_2.12") { forSpark(sparkVersion) }
   implementation("io.delta:delta-core_2.12")
   compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
   testImplementation(platform(rootProject))
-  testImplementation(projects.clients.spark32Extensions)
+  testImplementation(project(":nessie-spark-3.2-extensions"))
   testImplementation("com.fasterxml.jackson.module:jackson-module-scala_2.12")
   testImplementation("com.fasterxml.jackson.core:jackson-databind")
   testImplementation("org.eclipse.microprofile.openapi:microprofile-openapi-api")
@@ -57,9 +55,7 @@ dependencies {
   testImplementation("org.junit.jupiter:junit-jupiter-params")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 
-  nessieQuarkusServer(
-    project(projects.servers.quarkusServer.dependencyProject.path, "quarkusRunner")
-  )
+  nessieQuarkusServer(project(":nessie-quarkus", "quarkusRunner"))
 }
 
 nessieQuarkusApp {

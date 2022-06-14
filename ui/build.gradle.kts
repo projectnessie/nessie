@@ -21,7 +21,8 @@ import com.github.gradle.node.npm.task.NpmTask
 import com.github.gradle.node.task.NodeSetupTask
 
 plugins {
-  // The ':ui' module is technically not a Java library, but declaring it as such provides all
+  // The ':nessie-ui' module is technically not a Java library, but declaring it as such provides
+  // all
   // the "essential" side effects: pre-configured "basic" tasks (clean, test, check, jar) plus
   // Maven publications.
   `java-library`
@@ -32,7 +33,7 @@ plugins {
 
 val openapi by configurations.creating { description = "Used to reference OpenAPI spec files" }
 
-dependencies { openapi(project(projects.model.dependencyProject.path, "openapi")) }
+dependencies { openapi(project(":nessie-model", "openapi")) }
 
 node {
   download.set(true)

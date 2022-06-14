@@ -21,15 +21,13 @@ plugins {
   `nessie-conventions`
 }
 
-extra["maven.artifactId"] = "nessie-rest-services"
-
 extra["maven.name"] = "Nessie - REST Services"
 
 dependencies {
   implementation(platform(rootProject))
-  implementation(projects.model)
-  implementation(projects.servers.services)
-  implementation(projects.versioned.spi)
+  implementation(project(":nessie-model"))
+  implementation(project(":nessie-services"))
+  implementation(project(":nessie-versioned-spi"))
   implementation("org.slf4j:slf4j-api")
   implementation("jakarta.enterprise:jakarta.enterprise.cdi-api")
   implementation("jakarta.annotation:jakarta.annotation-api")

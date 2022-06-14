@@ -25,12 +25,10 @@ plugins {
   `nessie-conventions`
 }
 
-extra["maven.artifactId"] = "nessie-content-generator"
-
 dependencies {
   implementation(platform(rootProject))
   annotationProcessor(platform(rootProject))
-  implementation(projects.clients.client)
+  implementation(project(":nessie-client"))
 
   implementation("jakarta.validation:jakarta.validation-api")
   implementation("info.picocli:picocli")
@@ -52,9 +50,7 @@ dependencies {
   testImplementation("org.junit.jupiter:junit-jupiter-params")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 
-  nessieQuarkusServer(
-    project(projects.servers.quarkusServer.dependencyProject.path, "quarkusRunner")
-  )
+  nessieQuarkusServer(project(":nessie-quarkus", "quarkusRunner"))
 }
 
 nessieQuarkusApp {

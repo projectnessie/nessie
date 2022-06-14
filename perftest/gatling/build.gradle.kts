@@ -30,8 +30,8 @@ dependencies {
   forScala(scalaVersion)
 
   implementation(platform(rootProject))
-  implementation(projects.model)
-  implementation(projects.clients.client)
+  implementation(project(":nessie-model"))
+  implementation(project(":nessie-client"))
   implementation("io.gatling.highcharts:gatling-charts-highcharts") {
     exclude("io.netty", "netty-tcnative-boringssl-static")
     exclude("commons-logging", "commons-logging")

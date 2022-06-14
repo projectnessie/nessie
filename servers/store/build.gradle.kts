@@ -21,15 +21,13 @@ plugins {
   `nessie-conventions`
 }
 
-extra["maven.artifactId"] = "nessie-server-store"
-
 extra["maven.name"] = "Nessie - Server - Store"
 
 dependencies {
   implementation(platform(rootProject))
-  implementation(projects.model)
-  implementation(projects.versioned.spi)
-  api(projects.servers.storeProto)
+  implementation(project(":nessie-model"))
+  implementation(project(":nessie-versioned-spi"))
+  api(project(":nessie-server-store-proto"))
   implementation(platform("com.fasterxml.jackson:jackson-bom"))
   implementation("com.fasterxml.jackson.core:jackson-databind")
   implementation("com.google.guava:guava")

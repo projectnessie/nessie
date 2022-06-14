@@ -21,8 +21,6 @@ plugins {
   `nessie-conventions`
 }
 
-extra["maven.artifactId"] = "nessie-server-parent"
-
 extra["maven.name"] = "Nessie - Servers - Parent"
 
 javaPlatform { allowDependencies() }

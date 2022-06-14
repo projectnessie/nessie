@@ -22,17 +22,15 @@ plugins {
   id("org.projectnessie.buildsupport.attach-test-jar")
 }
 
-extra["maven.artifactId"] = "nessie-versioned-persist-transactional"
-
 extra["maven.name"] = "Nessie - Versioned - Persist - Transactional"
 
 dependencies {
   implementation(platform(rootProject))
   annotationProcessor(platform(rootProject))
 
-  implementation(projects.versioned.persist.adapter)
-  implementation(projects.versioned.persist.serialize)
-  implementation(projects.versioned.spi)
+  implementation(project(":nessie-versioned-persist-adapter"))
+  implementation(project(":nessie-versioned-persist-serialize"))
+  implementation(project(":nessie-versioned-spi"))
   implementation("com.google.guava:guava")
   implementation("com.google.code.findbugs:jsr305")
   compileOnly("org.immutables:value-annotations")
@@ -45,10 +43,10 @@ dependencies {
 
   testImplementation(platform(rootProject))
   testAnnotationProcessor(platform(rootProject))
-  testImplementation(projects.versioned.tests)
+  testImplementation(project(":nessie-versioned-tests"))
   testCompileOnly("org.immutables:value-annotations")
   testAnnotationProcessor("org.immutables:value-processor")
-  testImplementation(projects.versioned.persist.persistTests)
+  testImplementation(project(":nessie-versioned-persist-tests"))
   testImplementation("org.testcontainers:testcontainers")
   testImplementation("org.testcontainers:postgresql")
   testImplementation("org.testcontainers:cockroachdb")

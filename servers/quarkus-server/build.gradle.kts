@@ -23,8 +23,6 @@ plugins {
   `nessie-conventions`
 }
 
-extra["maven.artifactId"] = "nessie-quarkus"
-
 extra["maven.name"] = "Nessie - Quarkus Server"
 
 val quarkusRunner by
@@ -37,14 +35,14 @@ val openapiSource by
 
 dependencies {
   implementation(platform(rootProject))
-  implementation(projects.model)
-  implementation(projects.servers.services)
-  implementation(projects.servers.quarkusCommon)
-  implementation(projects.servers.restServices)
-  implementation(projects.versioned.spi)
-  implementation(projects.versioned.persist.adapter)
-  implementation(projects.versioned.persist.persistStore)
-  implementation(projects.ui)
+  implementation(project(":nessie-model"))
+  implementation(project(":nessie-services"))
+  implementation(project(":nessie-quarkus-common"))
+  implementation(project(":nessie-rest-services"))
+  implementation(project(":nessie-versioned-spi"))
+  implementation(project(":nessie-versioned-persist-adapter"))
+  implementation(project(":nessie-versioned-persist-store"))
+  implementation(project(":nessie-ui"))
   implementation(enforcedPlatform("io.quarkus:quarkus-bom"))
   implementation(enforcedPlatform("io.quarkus.platform:quarkus-amazon-services-bom"))
   implementation("org.jboss.resteasy:resteasy-core-spi")
@@ -76,13 +74,13 @@ dependencies {
     implementation("io.quarkus:quarkus-minikube")
   }
 
-  openapiSource(project(projects.model.dependencyProject.path, "openapiSource"))
+  openapiSource(project(":nessie-model", "openapiSource"))
 
   testImplementation(platform(rootProject))
-  testImplementation(projects.clients.client)
-  testImplementation(projects.servers.jaxRsTests)
-  testImplementation(projects.servers.quarkusTests)
-  testImplementation(projects.versioned.tests)
+  testImplementation(project(":nessie-client"))
+  testImplementation(project(":nessie-jaxrs-tests"))
+  testImplementation(project(":nessie-quarkus-tests"))
+  testImplementation(project(":nessie-versioned-tests"))
   testImplementation(enforcedPlatform("io.quarkus:quarkus-bom"))
   testImplementation("io.quarkus:quarkus-rest-client")
   testImplementation("io.quarkus:quarkus-test-security")
@@ -113,7 +111,8 @@ project.extra["quarkus.package.type"] =
   if (project.hasProperty("uber-jar")) "uber-jar"
   else if (project.hasProperty("native")) "native" else "fast-jar"
 
-quarkus { setFinalName("${extra["maven.artifactId"]}-${project.version}") }
+// TODO remove the whole block
+quarkus { setFinalName("${project.name}-${project.version}") }
 
 val useDocker = project.hasProperty("docker")
 

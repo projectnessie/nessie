@@ -22,22 +22,20 @@ plugins {
   id("org.projectnessie.buildsupport.attach-test-jar")
 }
 
-extra["maven.artifactId"] = "nessie-versioned-persist-non-transactional"
-
 extra["maven.name"] = "Nessie - Versioned - Persist - Non-Transactional"
 
 dependencies {
   implementation(platform(rootProject))
   annotationProcessor(platform(rootProject))
 
-  implementation(projects.versioned.persist.adapter)
-  implementation(projects.versioned.persist.serialize)
-  implementation(projects.versioned.spi)
+  implementation(project(":nessie-versioned-persist-adapter"))
+  implementation(project(":nessie-versioned-persist-serialize"))
+  implementation(project(":nessie-versioned-spi"))
   implementation("com.google.guava:guava")
   compileOnly("org.immutables:value-annotations")
   annotationProcessor("org.immutables:value-processor")
 
-  testImplementation(projects.versioned.persist.persistTests)
+  testImplementation(project(":nessie-versioned-persist-tests"))
 
   testImplementation("org.assertj:assertj-core")
   testImplementation(platform("org.junit:junit-bom"))

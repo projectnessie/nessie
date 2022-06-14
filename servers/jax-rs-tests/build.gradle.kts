@@ -21,15 +21,13 @@ plugins {
   `nessie-conventions`
 }
 
-extra["maven.artifactId"] = "nessie-jaxrs-tests"
-
 extra["maven.name"] = "Nessie - REST-API Tests"
 
 description = "Artifact for REST-API tests, includes Glassfish/Jersey/Weld implementation."
 
 dependencies {
   implementation(platform(rootProject))
-  implementation(projects.clients.client)
+  implementation(project(":nessie-client"))
   implementation("com.google.guava:guava")
   api("io.rest-assured:rest-assured")
   implementation("com.google.code.findbugs:jsr305")
@@ -46,7 +44,7 @@ dependencies {
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   testImplementation(platform(rootProject))
-  testImplementation(projects.servers.jaxRsTestextension)
+  testImplementation(project(":nessie-jaxrs-testextension"))
   testImplementation("org.slf4j:jcl-over-slf4j")
   testImplementation("io.agroal:agroal-pool")
   testImplementation("com.h2database:h2")
