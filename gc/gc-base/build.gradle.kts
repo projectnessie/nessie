@@ -27,11 +27,9 @@ val scalaVersion = dependencyVersion("versionScala2_12")
 
 val sparkVersion = dependencyVersion("versionSpark31")
 
-val clientNessieVersion = dependencyVersion("versionClientNessie")
-
 dependencies {
-  implementation(platform(rootProject))
-  annotationProcessor(platform(rootProject))
+  implementation(platform(nessieRootProject()))
+  annotationProcessor(platform(nessieRootProject()))
   implementation(platform("com.fasterxml.jackson:jackson-bom"))
 
   forScala(scalaVersion)
@@ -39,7 +37,7 @@ dependencies {
   compileOnly("org.immutables:value-annotations")
   annotationProcessor("org.immutables:value-processor")
 
-  compileOnly(project(":nessie-client"))
+  compileOnly(nessieProject("nessie-client"))
   compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
   compileOnly("jakarta.validation:jakarta.validation-api")
   implementation("com.fasterxml.jackson.core:jackson-annotations")
@@ -53,11 +51,11 @@ dependencies {
   compileOnly("org.apache.iceberg:iceberg-parquet")
   compileOnly("org.apache.parquet:parquet-column")
 
-  testImplementation(platform(rootProject))
+  testImplementation(platform(nessieRootProject()))
 
   testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-  testImplementation(project(":nessie-jaxrs-testextension"))
-  testImplementation(project(":nessie-jaxrs-tests"))
+  testImplementation(nessieProject("nessie-jaxrs-testextension"))
+  testImplementation(nessieProject("nessie-jaxrs-tests"))
   testImplementation("org.apache.spark:spark-sql_2.12") {
     forSpark(sparkVersion)
     exclude("com.sun.jersey", "jersey-servlet")

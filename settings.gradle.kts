@@ -123,18 +123,6 @@ nessieProject("nessie-clients", "clients")
 
 nessieProject("nessie-client", "clients/client")
 
-nessieProject("nessie-deltalake", "clients/deltalake")
-
-nessieProject("iceberg-views", "clients/iceberg-views")
-
-nessieProject("nessie-spark-3.2-extensions", "clients/spark-3.2-extensions")
-
-nessieProject("nessie-spark-extensions-grammar", "clients/spark-antlr-grammar")
-
-nessieProject("nessie-spark-extensions", "clients/spark-extensions")
-
-nessieProject("nessie-spark-extensions-base", "clients/spark-extensions-base")
-
 nessieProject("nessie-compatibility", "compatibility")
 
 nessieProject("nessie-compatibility-common", "compatibility/common")
@@ -144,8 +132,6 @@ nessieProject("nessie-compatibility-tests", "compatibility/compatibility-tests")
 nessieProject("nessie-compatibility-jersey", "compatibility/jersey")
 
 nessieProject("nessie-gc", "gc")
-
-nessieProject("nessie-gc-base", "gc/gc-base")
 
 nessieProject("nessie-model", "model")
 
@@ -218,6 +204,24 @@ nessieProject("nessie-versioned-persist-transactional", "versioned/persist/tx")
 nessieProject("nessie-versioned-spi", "versioned/spi")
 
 nessieProject("nessie-versioned-tests", "versioned/tests")
+
+// Cannot use isIntegrationsTestingEnabled() in buildSrc/src/main/kotlin/Utilities.kt, because
+// settings.gradle is evaluated before buildSrc.
+if (!System.getProperty("nessie.integrationsTesting.enable").toBoolean()) {
+  nessieProject("nessie-deltalake", "clients/deltalake")
+
+  nessieProject("iceberg-views", "clients/iceberg-views")
+
+  nessieProject("nessie-spark-3.2-extensions", "clients/spark-3.2-extensions")
+
+  nessieProject("nessie-spark-extensions-grammar", "clients/spark-antlr-grammar")
+
+  nessieProject("nessie-spark-extensions", "clients/spark-extensions")
+
+  nessieProject("nessie-spark-extensions-base", "clients/spark-extensions-base")
+
+  nessieProject("nessie-gc-base", "gc/gc-base")
+}
 
 if (false) {
   include("gradle:dependabot")

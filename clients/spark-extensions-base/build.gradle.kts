@@ -26,20 +26,18 @@ val scalaVersion = dependencyVersion("versionScala2_12")
 
 val sparkVersion = dependencyVersion("versionSpark31")
 
-val clientNessieVersion = dependencyVersion("versionClientNessie")
-
 dependencies {
   // picks the right dependencies for scala compilation
   forScala(scalaVersion)
 
-  implementation(platform(rootProject))
+  implementation(platform(nessieRootProject()))
   implementation(project(":nessie-spark-extensions-grammar"))
   compileOnly("org.apache.spark:spark-hive_2.12") { forSpark(sparkVersion) }
-  implementation("org.projectnessie:nessie-client:$clientNessieVersion")
   compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
+  implementation(nessieClientForIceberg())
 
-  testImplementation(platform(rootProject))
-  testAnnotationProcessor(platform(rootProject))
+  testImplementation(platform(nessieRootProject()))
+  testAnnotationProcessor(platform(nessieRootProject()))
   testImplementation("org.apache.spark:spark-sql_2.12") { forSpark(sparkVersion) }
   testImplementation("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 

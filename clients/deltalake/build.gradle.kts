@@ -33,16 +33,16 @@ dependencies {
   // picks the right dependencies for scala compilation
   forScala(scalaVersion)
 
-  implementation(platform(rootProject))
-  implementation(project(":nessie-model"))
-  implementation(project(":nessie-client"))
+  implementation(platform(nessieRootProject()))
+  implementation(nessieProject("nessie-model"))
+  implementation(nessieProject("nessie-client"))
   implementation("org.apache.spark:spark-core_2.12") { forSpark(sparkVersion) }
   implementation("org.apache.spark:spark-sql_2.12") { forSpark(sparkVersion) }
   implementation("io.delta:delta-core_2.12")
   compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
-  testImplementation(platform(rootProject))
-  testImplementation(project(":nessie-spark-3.2-extensions"))
+  testImplementation(platform(nessieRootProject()))
+  testImplementation(nessieProject("nessie-spark-3.2-extensions"))
   testImplementation("com.fasterxml.jackson.module:jackson-module-scala_2.12")
   testImplementation("com.fasterxml.jackson.core:jackson-databind")
   testImplementation("org.eclipse.microprofile.openapi:microprofile-openapi-api")
@@ -55,7 +55,7 @@ dependencies {
   testImplementation("org.junit.jupiter:junit-jupiter-params")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 
-  nessieQuarkusServer(project(":nessie-quarkus", "quarkusRunner"))
+  nessieQuarkusServer(nessieQuarkusServerRunner(this))
 }
 
 nessieQuarkusApp {

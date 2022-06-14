@@ -21,6 +21,7 @@ import org.gradle.api.artifacts.DependencyConstraint
 import org.gradle.api.artifacts.ExternalModuleDependency
 import org.gradle.api.artifacts.ModuleDependency
 import org.gradle.api.artifacts.ProjectDependency
+import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependencyConstraint
 import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.toolchain.JavaLanguageVersion
@@ -29,6 +30,8 @@ import org.gradle.kotlin.dsl.DependencyHandlerScope
 import org.gradle.kotlin.dsl.add
 import org.gradle.kotlin.dsl.exclude
 import org.gradle.kotlin.dsl.extra
+import org.gradle.kotlin.dsl.module
+import org.gradle.kotlin.dsl.project
 
 /**
  * Apply the given `sparkVersion` as a `strictly` version constraint and [withSparkExcludes] on the
@@ -89,3 +92,63 @@ fun DependencyConstraint.testJarCapability() {
     )
   }
 }
+
+/** Check whether the current build is run in the context of integrations-testing. */
+fun isIntegrationsTestingEnabled() =
+  System.getProperty("nessie.integrationsTesting.enable").toBoolean()
+
+/**
+ * Adds an `implementation` dependency to `nessie-client` using the Nessie version supported by the
+ * latest released Iceberg version (`versionClientNessie`), if the system property
+ * `nessieIntegrationsTesting` is set to `true`.
+ */
+fun Project.nessieClientForIceberg(): Any {
+  if (!isIntegrationsTestingEnabled()) {
+    val clientNessieVersion = dependencyVersion("versionClientNessie")
+    return "org.projectnessie:nessie-client:$clientNessieVersion"
+  } else {
+    return nessieProject("nessie-client")
+  }
+}
+
+/**
+ * Resolves the Nessie Quarkus server for integration tests that depend on it.
+ *
+ * This is necessary for tools-integrations-testing, because all Nessie projects that depend on
+ * Apache Iceberg are handled in a separate build. See `README.md` in the `iceberg/` directory.
+ */
+fun Project.nessieQuarkusServerRunner(dependencyHandler: DependencyHandler): Any {
+  if (!isIntegrationsTestingEnabled()) {
+    return dependencyHandler.project(
+      mapOf("path" to ":nessie-quarkus", "configuration" to "quarkusRunner")
+    )
+  } else {
+    return dependencyHandler.module(
+      "org.projectnessie",
+      "nessie-quarkus",
+      configuration = "quarkusRunner"
+    )
+  }
+}
+
+/** Resolves the root Gradle project via [nessieProject]. */
+fun Project.nessieRootProject(): Any {
+  return nessieProject("nessie")
+}
+
+/**
+ * Resolves a Nessie project in the "right" Gradle build.
+ *
+ * This is necessary for tools-integrations-testing, because all Nessie projects that depend on
+ * Apache Iceberg are handled in a separate build. See `README.md` in the `iceberg/` directory.
+ */
+fun Project.nessieProject(artifactId: String): Any {
+  if (!isIntegrationsTestingEnabled()) {
+    return if (artifactId == "nessie") rootProject else project(":$artifactId")
+  } else {
+    return "org.projectnessie:$artifactId:${dependencyVersion("versionNessie")}"
+  }
+}
+
+/** Utility method to check whether a Quarkus build shall produce the uber-jar. */
+fun Project.withUberJar(): Boolean = hasProperty("uber-jar") || isIntegrationsTestingEnabled()

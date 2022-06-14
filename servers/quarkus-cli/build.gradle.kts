@@ -100,7 +100,7 @@ tasks.withType<Test>().configureEach {
 
 // nessie-quarkus-cli module needs to be adopted before we can generate a native runner
 project.extra["quarkus.package.type"] =
-  if (project.hasProperty("uber-jar") || project.hasProperty("native")) "uber-jar" else "fast-jar"
+  if (withUberJar() || project.hasProperty("native")) "uber-jar" else "fast-jar"
 
 // TODO remove the whole block
 quarkus { setFinalName("${project.name}-${project.version}") }
@@ -116,7 +116,7 @@ tasks.withType<QuarkusBuild>().configureEach {
   }
 }
 
-if (project.hasProperty("uber-jar")) {
+if (withUberJar()) {
   afterEvaluate {
     publishing {
       publications {
