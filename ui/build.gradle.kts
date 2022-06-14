@@ -205,6 +205,7 @@ val npmLint =
 tasks.withType<NpmTask>().configureEach {
   inputs.property("node.version", node.version)
   inputs.property("npm.version", node.npmVersion)
+  inputs.files("package.json", "package-lock.json").withPathSensitivity(PathSensitivity.RELATIVE)
   outputs.cacheIf { true }
   environment.put("CI", "true")
   environment.put("BUILD_PATH", npmBuildDir.path)
