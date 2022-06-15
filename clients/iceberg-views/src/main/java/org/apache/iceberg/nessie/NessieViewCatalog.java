@@ -82,7 +82,8 @@ public class NessieViewCatalog extends BaseMetastoreViews implements AutoCloseab
         x -> x.replace(NessieUtil.NESSIE_CONFIG_PREFIX, "");
 
     this.api =
-        createNessieClientBuilder(options.get(NessieUtil.CONFIG_CLIENT_BUILDER_IMPL))
+        createNessieClientBuilder(
+                options.get(NessieUtil.NESSIE_CONFIG_PREFIX + "client-builder-impl"))
             .fromConfig(x -> options.get(removePrefix.apply(x)))
             .build(NessieApiV1.class);
 
