@@ -104,7 +104,8 @@ public class NessieExtCatalog extends BaseMetastoreCatalog implements Views {
   }
 
   public void refresh() throws NessieNotFoundException {
-    tableCatalog.refresh();
+    // TODO only used in a single test
+    // tableCatalog.refresh();
     viewCatalog.refresh();
   }
 
