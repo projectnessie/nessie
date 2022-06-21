@@ -75,6 +75,11 @@ public interface CommitLogEntry {
 
   List<Hash> getAdditionalParents();
 
+  @Value.Default
+  default KeyListVariant getKeyListVariant() {
+    return KeyListVariant.EMBEDDED_AND_EXTERNAL_MRU;
+  }
+
   static CommitLogEntry of(
       long createdTime,
       Hash hash,
@@ -100,5 +105,36 @@ public interface CommitLogEntry {
         .addAllKeyListsIds(keyListIds)
         .addAllAdditionalParents(additionalParents)
         .build();
+  }
+
+  enum KeyListVariant {
+    /**
+     * The variant in which Nessie versions 0.10.0..0.30.0 write {@link CommitLogEntry#getKeyList()
+     * embedded key-list} and {@link KeyListEntity key-list entities}.
+     *
+     * <p>Most recently updated {@link KeyListEntry}s appear first.
+     *
+     * <p>The {@link CommitLogEntry#getKeyList() embedded key-list} is filled first up to {@link
+     * DatabaseAdapterConfig#getMaxKeyListSize()}, more {@link KeyListEntry}s are written to
+     * "external"{@link KeyListEntity key-list entities} with their IDs in {@link
+     * CommitLogEntry#getKeyListsIds()}.
+     */
+    EMBEDDED_AND_EXTERNAL_MRU,
+    /**
+     * The variant in which Nessie versions since 0.31.0 either write a <em>sorted</em> {@link
+     * CommitLogEntry#getKeyList() embedded key-list} <em>or</em> multiple {@link KeyListEntity
+     * key-list entities}, each representing a hash bucket.
+     *
+     * <p>If the total serialized size of all serialized {@link KeyListEntry} objects is up to
+     * {@link DatabaseAdapterConfig#getMaxKeyListSize()}, the {@link CommitLogEntry#getKeyList()
+     * embedded key-list} contains key-list-entries sorted by {@link KeyListEntry#getKey() content
+     * key}.
+     *
+     * <p>Otherwise the embedded key-list will be empty. All keys will be persisted as "external"
+     * {@link KeyListEntity key-list entities}. Each {@link KeyListEntity key-list entity}
+     * represents a hash bucket. All {@link KeyListEntry}s in each bucket are sorted by {@link
+     * KeyListEntry#getKey() content key}.
+     */
+    SORTED_AND_HASHED
   }
 }

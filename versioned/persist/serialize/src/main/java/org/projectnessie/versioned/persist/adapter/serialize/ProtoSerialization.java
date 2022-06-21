@@ -21,6 +21,7 @@ import java.util.TreeMap;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
+import org.projectnessie.versioned.persist.adapter.CommitLogEntry.KeyListVariant;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitLogEntry;
@@ -89,6 +90,8 @@ public final class ProtoSerialization {
             .setMetadata(entry.getMetadata())
             .setKeyListDistance(entry.getKeyListDistance());
 
+    proto.setKeyListVariant(AdapterTypes.KeyListVariant.valueOf(entry.getKeyListVariant().name()));
+
     entry.getParents().forEach(p -> proto.addParents(p.asBytes()));
     entry.getPuts().forEach(p -> proto.addPuts(toProto(p)));
     entry.getDeletes().forEach(p -> proto.addDeletes(keyToProto(p)));
@@ -137,6 +140,12 @@ public final class ProtoSerialization {
             .metadata(proto.getMetadata())
             .keyListDistance(proto.getKeyListDistance());
 
+    KeyListVariant keyListVariant =
+        proto.hasKeyListVariant()
+            ? KeyListVariant.valueOf(proto.getKeyListVariant().name())
+            : KeyListVariant.EMBEDDED_AND_EXTERNAL_MRU;
+    entry.keyListVariant(keyListVariant);
+
     proto.getParentsList().forEach(p -> entry.addParents(Hash.of(p)));
     proto.getPutsList().forEach(p -> entry.addPuts(protoToKeyWithBytes(p)));
     proto.getDeletesList().forEach(p -> entry.addDeletes(protoToKey(p)));
@@ -144,6 +153,12 @@ public final class ProtoSerialization {
       ImmutableKeyList.Builder kl = ImmutableKeyList.builder();
       proto.getKeyListList().forEach(kle -> kl.addKeys(protoToKeyListEntry(kle)));
       entry.keyList(kl.build());
+    } else if (keyListVariant != KeyListVariant.EMBEDDED_AND_EXTERNAL_MRU) {
+      // keyListVariant != EMBEDDED_AND_EXTERNAL_MRU means that the commit aggregates all visible
+      // keys. Adding an empty key list here triggers that detection. Future Nessie versions can
+      // then change key-list aggregation to omit the embedded key list and only persist
+      // key-list-entities, which allows bigger hash-buckets.
+      entry.keyList(KeyList.EMPTY);
     }
     proto.getKeyListIdsList().forEach(p -> entry.addKeyListsIds(Hash.of(p)));
     proto.getAdditionalParentsList().forEach(p -> entry.addAdditionalParents(Hash.of(p)));

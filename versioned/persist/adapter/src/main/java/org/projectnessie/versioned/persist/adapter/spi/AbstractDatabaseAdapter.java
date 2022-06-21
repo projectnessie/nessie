@@ -96,6 +96,7 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
+import org.projectnessie.versioned.persist.adapter.CommitLogEntry.KeyListVariant;
 import org.projectnessie.versioned.persist.adapter.CommitParams;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
@@ -1153,7 +1154,10 @@ public abstract class AbstractDatabaseAdapter<
 
     // Return the new commit-log-entry with the complete-key-list
     ImmutableCommitLogEntry.Builder newCommitEntry =
-        ImmutableCommitLogEntry.builder().from(unwrittenEntry).keyListDistance(0);
+        ImmutableCommitLogEntry.builder()
+            .from(unwrittenEntry)
+            .keyListDistance(0)
+            .keyListVariant(KeyListVariant.SORTED_AND_HASHED);
 
     KeyListBuildState buildState =
         new KeyListBuildState(
@@ -1198,9 +1202,7 @@ public abstract class AbstractDatabaseAdapter<
       }
     }
 
-    buildState.finish();
-
-    List<KeyListEntity> newKeyListEntities = buildState.buildNewKeyListEntities();
+    List<KeyListEntity> newKeyListEntities = buildState.finish();
 
     // Inform the (CAS)-op-loop about the IDs of the KeyListEntities being optimistically written.
     newKeyListEntities.stream().map(KeyListEntity::getId).forEach(newKeyLists);
