@@ -23,7 +23,6 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterMet
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.hashKey;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.hashNotFound;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.newHasher;
-import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.randomHash;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.referenceNotFound;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.takeUntilExcludeLast;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.takeUntilIncludeLast;
@@ -104,7 +103,6 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.Difference;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitLogEntry;
-import org.projectnessie.versioned.persist.adapter.ImmutableKeyList;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
@@ -1122,49 +1120,6 @@ public abstract class AbstractDatabaseAdapter<
     return Hash.of(UnsafeByteOperations.unsafeWrap(hasher.hash().asBytes()));
   }
 
-  /** Helper object for {@link #buildKeyList(AutoCloseable, CommitLogEntry, Consumer, Function)}. */
-  private static class KeyListBuildState {
-    final ImmutableCommitLogEntry.Builder newCommitEntry;
-    /** Builder for {@link CommitLogEntry#getKeyList()}. */
-    ImmutableKeyList.Builder embeddedBuilder = ImmutableKeyList.builder();
-    /** Builder for {@link KeyListEntity}. */
-    ImmutableKeyList.Builder currentKeyList;
-    /** Already built {@link KeyListEntity}s. */
-    List<KeyListEntity> newKeyListEntities = new ArrayList<>();
-
-    /** Flag whether {@link CommitLogEntry#getKeyList()} is being filled. */
-    boolean embedded = true;
-
-    /** Current size of either the {@link CommitLogEntry} or current {@link KeyListEntity}. */
-    int currentSize;
-
-    KeyListBuildState(int initialSize, ImmutableCommitLogEntry.Builder newCommitEntry) {
-      this.currentSize = initialSize;
-      this.newCommitEntry = newCommitEntry;
-    }
-
-    void finishKeyListEntity() {
-      Hash id = randomHash();
-      newKeyListEntities.add(KeyListEntity.of(id, currentKeyList.build()));
-      newCommitEntry.addKeyListsIds(id);
-    }
-
-    void newKeyListEntity() {
-      currentSize = 0;
-      currentKeyList = ImmutableKeyList.builder();
-    }
-
-    void addToKeyListEntity(KeyListEntry keyListEntry, int keyTypeSize) {
-      currentSize += keyTypeSize;
-      currentKeyList.addKeys(keyListEntry);
-    }
-
-    void addToEmbedded(KeyListEntry keyListEntry, int keyTypeSize) {
-      currentSize += keyTypeSize;
-      embeddedBuilder.addKeys(keyListEntry);
-    }
-  }
-
   /**
    * Adds a complete key-list to the given {@link CommitLogEntry}, will read from the database.
    *
@@ -1199,37 +1154,14 @@ public abstract class AbstractDatabaseAdapter<
         ImmutableCommitLogEntry.builder().from(unwrittenEntry).keyListDistance(0);
 
     KeyListBuildState buildState =
-        new KeyListBuildState(entitySize(unwrittenEntry), newCommitEntry);
+        new KeyListBuildState(
+            entitySize(unwrittenEntry),
+            newCommitEntry,
+            maxEntitySize(config.getMaxKeyListSize()),
+            maxEntitySize(config.getMaxKeyListEntitySize()),
+            this::entitySize);
 
     Set<Key> keysToEnhanceWithCommitId = new HashSet<>();
-
-    Consumer<KeyListEntry> addKeyListEntry =
-        keyListEntry -> {
-          int keyTypeSize = entitySize(keyListEntry);
-          if (buildState.embedded) {
-            // filling the embedded key-list in CommitLogEntry
-
-            if (buildState.currentSize + keyTypeSize < maxEntitySize(config.getMaxKeyListSize())) {
-              // CommitLogEntry.keyList still has room
-              buildState.addToEmbedded(keyListEntry, keyTypeSize);
-            } else {
-              // CommitLogEntry.keyList is "full", switch to the first KeyListEntity
-              buildState.embedded = false;
-              buildState.newKeyListEntity();
-              buildState.addToKeyListEntity(keyListEntry, keyTypeSize);
-            }
-          } else {
-            // filling linked key-lists via CommitLogEntry.keyListIds
-
-            if (buildState.currentSize + keyTypeSize
-                > maxEntitySize(config.getMaxKeyListEntitySize())) {
-              // current KeyListEntity is "full", switch to a new one
-              buildState.finishKeyListEntity();
-              buildState.newKeyListEntity();
-            }
-            buildState.addToKeyListEntity(keyListEntry, keyTypeSize);
-          }
-        };
 
     keysForCommitEntry(ctx, startHash, null, inMemoryCommits)
         .forEach(
@@ -1237,7 +1169,7 @@ public abstract class AbstractDatabaseAdapter<
               if (keyListEntry.getCommitId() == null) {
                 keysToEnhanceWithCommitId.add(keyListEntry.getKey());
               } else {
-                addKeyListEntry.accept(keyListEntry);
+                buildState.add(keyListEntry);
               }
             });
 
@@ -1254,7 +1186,7 @@ public abstract class AbstractDatabaseAdapter<
                       KeyListEntry entry =
                           KeyListEntry.of(
                               put.getKey(), put.getContentId(), put.getType(), e.getHash());
-                      addKeyListEntry.accept(entry);
+                      buildState.add(entry);
                     }
                   }
                 });
@@ -1264,21 +1196,20 @@ public abstract class AbstractDatabaseAdapter<
       }
     }
 
-    // If there's an "unfinished" KeyListEntity, build it.
-    if (buildState.currentKeyList != null) {
-      buildState.finishKeyListEntity();
-    }
+    buildState.finish();
+
+    List<KeyListEntity> newKeyListEntities = buildState.buildNewKeyListEntities();
 
     // Inform the (CAS)-op-loop about the IDs of the KeyListEntities being optimistically written.
-    buildState.newKeyListEntities.stream().map(KeyListEntity::getId).forEach(newKeyLists);
+    newKeyListEntities.stream().map(KeyListEntity::getId).forEach(newKeyLists);
 
     // Write the new KeyListEntities
-    if (!buildState.newKeyListEntities.isEmpty()) {
-      writeKeyListEntities(ctx, buildState.newKeyListEntities);
+    if (!newKeyListEntities.isEmpty()) {
+      writeKeyListEntities(ctx, newKeyListEntities);
     }
 
     // Return the new commit-log-entry with the complete-key-list
-    return newCommitEntry.keyList(buildState.embeddedBuilder.build()).build();
+    return newCommitEntry.build();
   }
 
   protected int maxEntitySize(int value) {
