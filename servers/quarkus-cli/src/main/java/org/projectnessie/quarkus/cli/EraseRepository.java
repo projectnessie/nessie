@@ -15,34 +15,30 @@
  */
 package org.projectnessie.quarkus.cli;
 
-import io.quarkus.picocli.runtime.annotations.TopCommand;
-import java.io.PrintWriter;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.HelpCommand;
+import picocli.CommandLine;
 
-@TopCommand
-@Command(
-    name = "nessie-cli",
+@CommandLine.Command(
+    name = "erase-repo",
     mixinStandardHelpOptions = true,
-    versionProvider = NessieVersionProvider.class,
-    description = "Nessie repository CLI",
-    subcommands = {
-      NessieInfo.class,
-      RepoMaintenance.class,
-      HelpCommand.class,
-      CheckContent.class,
-      EraseRepository.class
-    })
-public class NessieCli extends BaseCommand {
+    description = "Erase current Nessie repository and optionally re-initialize it.")
+public class EraseRepository extends BaseCommand {
+
+  @CommandLine.Option(
+      names = {"-r", "--re-initialize"},
+      description =
+          "Re-initialize the repository after erasure. If set, provides the default branch name for the new repository.")
+  private String newDefaultBranch;
 
   @Override
   public Integer call() {
     warnOnInMemory();
 
-    PrintWriter out = spec.commandLine().getOut();
+    databaseAdapter.eraseRepo();
 
-    out.println("Nessie repository information & maintenance tool.");
-    out.println("Use the 'help' command.%n");
+    if (newDefaultBranch != null) {
+      databaseAdapter.initializeRepo(newDefaultBranch);
+    }
+
     return 0;
   }
 }
