@@ -598,7 +598,7 @@ public class RocksDatabaseAdapter
         throw new RuntimeException(e);
       }
 
-      ReferenceNames.Builder newRefNames = referenceNames.toBuilder();
+      ReferenceNames.Builder newRefNames = referenceNames.toBuilder().clearRefNames();
       referenceNames.getRefNamesList().stream()
           .filter(n -> !n.equals(ref.getName()))
           .forEach(newRefNames::addRefNames);

@@ -33,15 +33,82 @@ import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefType;
 import org.projectnessie.versioned.persist.tests.AbstractDatabaseAdapterTest;
 import org.projectnessie.versioned.persist.tests.LongerCommitTimeouts;
 
 public abstract class AbstractNonTxDatabaseAdapterTest extends AbstractDatabaseAdapterTest {
+
+  @Test
+  void namedRefsIndex() {
+    NonTransactionalDatabaseAdapter<?> nontx = (NonTransactionalDatabaseAdapter<?>) databaseAdapter;
+
+    IntFunction<NamedRef> nameGenerator =
+        i ->
+            BranchName.of(
+                "branch-"
+                    + i
+                    + "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+                    + "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+                    + "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+                    + "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+                    + "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn");
+
+    try (NonTransactionalOperationContext ctx = nontx.borrowConnection()) {
+
+      Hash head = nontx.noAncestorHash();
+      for (int i = 0; i < 100; i++) {
+        NamedRef namedRef = nameGenerator.apply(i);
+        nontx.createNamedReference(ctx, namedRef, head);
+      }
+
+      List<String> allNames =
+          StreamSupport.stream(nontx.fetchReferenceNames(ctx), false)
+              .flatMap(names -> names.getRefNamesList().stream())
+              .collect(Collectors.toList());
+      HashSet<String> namesSet = new HashSet<>(allNames);
+      assertThat(allNames).hasSize(namesSet.size()).containsExactlyInAnyOrderElementsOf(namesSet);
+
+      assertThat(namesSet)
+          .containsAll(
+              IntStream.range(0, 100)
+                  .mapToObj(nameGenerator)
+                  .map(NamedRef::getName)
+                  .collect(Collectors.toSet()));
+
+      for (int i = 0; i < 100; i++) {
+        NamedRef namedRef = nameGenerator.apply(i);
+        nontx.deleteNamedReference(
+            ctx,
+            namedRef,
+            RefPointer.newBuilder().setType(RefType.Branch).setHash(head.asBytes()).build());
+      }
+
+      allNames =
+          StreamSupport.stream(nontx.fetchReferenceNames(ctx), false)
+              .flatMap(names -> names.getRefNamesList().stream())
+              .collect(Collectors.toList());
+      namesSet = new HashSet<>(allNames);
+      assertThat(allNames).hasSize(namesSet.size()).containsExactlyInAnyOrderElementsOf(namesSet);
+
+      assertThat(namesSet)
+          .doesNotContainAnyElementsOf(
+              IntStream.range(0, 100)
+                  .mapToObj(nameGenerator)
+                  .map(NamedRef::getName)
+                  .collect(Collectors.toSet()));
+    }
+  }
 
   @ParameterizedTest
   @ValueSource(ints = {10, 100, 200, 1000})
