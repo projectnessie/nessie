@@ -37,6 +37,13 @@ message CommitLogEntry {
   // additional parents, yet - but implementing this as a list for N-way
   // merges in the future.
   repeated bytes additional_parents = 11;
+  optional KeyListVariant key_list_variant = 12;
+}
+
+// See CommitLogEntry.KeyListVariant
+enum KeyListVariant {
+  EMBEDDED_AND_EXTERNAL_MRU = 0;
+  SORTED_AND_HASHED = 1;
 }
 
 message Key {

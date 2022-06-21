@@ -32,6 +32,7 @@ import java.util.OptionalInt;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.AfterAll;
@@ -53,6 +54,7 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
@@ -192,6 +194,10 @@ public class ITUpgradePath {
             });
   }
 
+  // //////////////////////////////////////////////////////////////////////////////////////////
+  // ref log
+  // //////////////////////////////////////////////////////////////////////////////////////////
+
   private void expectedRefLogEntry(String op) {
     if (version.compareTo(Version.parseVersion("0.18.0")) >= 0) {
       expectedRefLog.computeIfAbsent(versionBranch.getName(), x -> new ArrayList<>()).add(op);
@@ -212,7 +218,14 @@ public class ITUpgradePath {
     Collections.reverse(logEntries);
     assertThat(
             logEntries.stream()
-                .filter(e -> !keysUpgradeBranch.getName().equals(e.getRefName()))
+                // When upgrade path starts >= 0.18.0, there'll be a reflog entry for this
+                .filter(e -> !e.getRefName().equals("main"))
+                // When upgrade path starts >= 0.18.0, this test will be executed before
+                // keysUpgradeBranch is set
+                .filter(
+                    e ->
+                        keysUpgradeBranch == null
+                            || !keysUpgradeBranch.getName().equals(e.getRefName()))
                 .map(e -> tuple(e.getRefName(), e.getOperation())))
         .containsExactlyElementsOf(allExpected);
   }
@@ -225,12 +238,24 @@ public class ITUpgradePath {
   private static final Map<String, Map<ContentKey, IcebergTable>> keysUpgradeAtHash =
       new LinkedHashMap<>();
   private static int keysUpgradeSequence;
+  private static final String EXPLICIT_KEYS_ELEMENT = "explicit-keys";
   // exceed both number-of-parents per commit-log-entry and per global-log-entry
   private static final int keysUpgradeCommitsPerVersion =
       Math.max(
               50, // was: NonTransactionalDatabaseAdapterConfig.DEFAULT_PARENTS_PER_GLOBAL_COMMIT,
               DatabaseAdapterConfig.DEFAULT_PARENTS_PER_COMMIT)
           + 15;
+
+  // fields used for "many keys" (so many keys, that key-list-entities must be used)
+  private static final String
+      KEY_LONG_ELEMENT = // 400 chars, Guava's Strings.repeat breaks the test here :(
+      "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+              + "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+              + "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+              + "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn";
+  private static Map<ContentKey, IcebergTable> manyContentsWithLongKeys = Collections.emptyMap();
+  private static final int KEYS_PER_COMMIT =
+      DatabaseAdapterConfig.DEFAULT_MAX_ENTITY_SIZE / KEY_LONG_ELEMENT.length() * 2;
 
   @Test
   @Order(201)
@@ -253,39 +278,70 @@ public class ITUpgradePath {
   }
 
   private void keysUpgradeVerify() throws NessieNotFoundException {
+    // Verify the explicitly added/removed contents created by keysUpgradeAddCommits().
+    // Do this for all written commits (~65 per version).
+    // The number of keys equals the number of commits per version.
+    List<ContentKey> keys =
+        IntStream.range(0, keysUpgradeCommitsPerVersion)
+            .mapToObj(i -> ContentKey.of(EXPLICIT_KEYS_ELEMENT, "upgrade", "table" + i))
+            .collect(Collectors.toList());
     for (Entry<String, Map<ContentKey, IcebergTable>> hashToKeyValues :
         keysUpgradeAtHash.entrySet()) {
-      Map<ContentKey, IcebergTable> expectedKeyValues = hashToKeyValues.getValue();
-
-      Map<ContentKey, Content> retrievedContents =
-          api.getContent()
-              .reference(Branch.of(keysUpgradeBranch.getName(), hashToKeyValues.getKey()))
-              .keys(
-                  IntStream.range(0, keysUpgradeCommitsPerVersion)
-                      .mapToObj(i -> ContentKey.of("keys.upgrade.table" + i))
-                      .collect(Collectors.toList()))
-              .get();
-
-      assertThat(expectedKeyValues)
-          .allSatisfy(
-              (key, table) ->
-                  assertThat(retrievedContents)
-                      .extractingByKey(key, InstanceOfAssertFactories.type(IcebergTable.class))
-                      .extracting(IcebergTable::getSnapshotId, IcebergTable::getId)
-                      .containsExactly(table.getSnapshotId(), table.getId()));
+      keysVerify(hashToKeyValues.getKey(), hashToKeyValues.getValue(), keys);
     }
+
+    // Verify all (currently expected at HEAD) keys + contents written by
+    // keysAddCommitWithManyKeysOnce() for the first exercised Nessie version, about 500-600 keys.
+    if (!manyContentsWithLongKeys.isEmpty()) {
+      keysUpgradeBranch = (Branch) api.getReference().refName(keysUpgradeBranch.getName()).get();
+      keysVerify(
+          keysUpgradeBranch.getHash(),
+          manyContentsWithLongKeys,
+          new ArrayList<>(manyContentsWithLongKeys.keySet()));
+    }
+
+    // Verify that "get keys" returns all per-version and all "long" content keys.
+    Stream<ContentKey> expectedKeys = manyContentsWithLongKeys.keySet().stream();
+    if (!keysUpgradeAtHash.isEmpty()) {
+      // Very first call to 'keysUpgradeVerify' during the upgrade-path has no "relevant" commits
+      // written by keysUpgradeAddCommits() yet, so only check 'keys', if keysUpgradeAtHash is not
+      // empty (meaning: keysUpgradeAddCommits() did work).
+      expectedKeys = Stream.concat(expectedKeys, keys.stream());
+    }
+    assertThat(
+            api.getEntries().reference(keysUpgradeBranch).get().getEntries().stream()
+                .map(EntriesResponse.Entry::getName))
+        .containsExactlyInAnyOrderElementsOf(expectedKeys.collect(Collectors.toSet()));
+  }
+
+  private void keysVerify(
+      String hash, Map<ContentKey, IcebergTable> expectedKeyValues, List<ContentKey> checkKeys)
+      throws NessieNotFoundException {
+    Map<ContentKey, Content> retrievedContents =
+        api.getContent()
+            .reference(Branch.of(keysUpgradeBranch.getName(), hash))
+            .keys(checkKeys)
+            .get();
+
+    assertThat(expectedKeyValues)
+        .describedAs(
+            "Content objects for %d keys, version %s, commit %s", checkKeys.size(), version, hash)
+        .allSatisfy(
+            (key, table) ->
+                assertThat(retrievedContents)
+                    .extractingByKey(key, InstanceOfAssertFactories.type(IcebergTable.class))
+                    .extracting(IcebergTable::getSnapshotId, IcebergTable::getId)
+                    .containsExactly(table.getSnapshotId(), table.getId()));
   }
 
   @Test
   @Order(203)
   void keysUpgradeAddCommits() throws Exception {
-    keysUpgradeBranch = (Branch) api.getReference().refName(keysUpgradeBranch.getName()).get();
-
     Map<ContentKey, IcebergTable> currentKeyValues =
         keysUpgradeAtHash.getOrDefault(keysUpgradeBranch.getHash(), Collections.emptyMap());
 
     for (int i = 0; i < keysUpgradeCommitsPerVersion; i++) {
-      ContentKey key = ContentKey.of("keys.upgrade.table" + i);
+      ContentKey key = ContentKey.of(EXPLICIT_KEYS_ELEMENT, "upgrade", "table" + i);
       if ((i % 10) == 9) {
         keysUpgradeBranch =
             commitMaybeRetry(
@@ -319,13 +375,51 @@ public class ITUpgradePath {
                           "Commit #" + i + "/put from Nessie version " + version))
                   .operation(put));
       Map<ContentKey, IcebergTable> newKeyValues = new HashMap<>(currentKeyValues);
-      newKeyValues.remove(key);
+      newKeyValues.put(key, newContent);
       keysUpgradeAtHash.put(keysUpgradeBranch.getHash(), newKeyValues);
+      currentKeyValues = newKeyValues;
     }
   }
 
+  /**
+   * Write a lot of keys * with long content-keys to force Nessie to write key-list-entities, added
+   * for <a href="https://github.com/projectnessie/nessie/pull/4536">#4536</a>. Verified via {@link
+   * #keysUpgradeVerify()}.
+   */
   @Test
   @Order(204)
+  void keysAddCommitWithManyKeysOnce() throws Exception {
+    assumeThat(manyContentsWithLongKeys).isEmpty();
+
+    CommitMultipleOperationsBuilder commitBuilder =
+        api.commitMultipleOperations()
+            .branch(keysUpgradeBranch)
+            .commitMeta(
+                CommitMeta.fromMessage("Commit w/ additional puts from Nessie version " + version));
+    Map<ContentKey, IcebergTable> newKeyValues = new HashMap<>();
+
+    for (int keyNum = 0; keyNum < KEYS_PER_COMMIT; keyNum++) {
+      ContentKey additionalKey =
+          ContentKey.of("v" + version.toString(), "k" + keyNum, KEY_LONG_ELEMENT);
+      String additionalCid = "additional-table-" + keyNum + "-" + "-" + version;
+      IcebergTable table =
+          IcebergTable.of(
+              "additional-pointer-" + version + "-table-" + keyNum,
+              keysUpgradeSequence++,
+              42,
+              43,
+              44,
+              additionalCid);
+      commitBuilder.operation(Put.of(additionalKey, table));
+
+      newKeyValues.put(additionalKey, table);
+    }
+    keysUpgradeBranch = commitMaybeRetry(commitBuilder);
+    manyContentsWithLongKeys = newKeyValues;
+  }
+
+  @Test
+  @Order(205)
   void keysUpgradeVerifyAfter() throws Exception {
     keysUpgradeVerify();
   }
