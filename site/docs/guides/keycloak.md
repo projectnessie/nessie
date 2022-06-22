@@ -23,6 +23,7 @@ right side of the (initially empty) users table.
 
 Enter the username "nessie" and click `Save`. Now, under the `Credentials` tab of the `nessie` user page set password
 to `nessie` and turn off the `Temporary` flag. Click `Set Password`.
+Be sure also to remove all the `Required User Actions` if any.
 
 For the sake of convenience let's increase the default token expiration time.
 Goto `Clients` > `admin-cli` > `Advanced Settings`. Set `Access Token Lifespan` to 1 day and click `Save`.
@@ -51,6 +52,8 @@ It will be required to access Nessie APIs later.
       )
     ```
 
+**Note: when using keycloak 17+ change the URL to `http://localhost:8080/realms/master/protocol/openid-connect/token`**
+
 ## Setting up Nessie Server
 
 Start the Nessie server container from the `projectnessie/nessie` Docker image in authenticated mode,
@@ -61,8 +64,10 @@ docker run -p 19120:19120 \
   -e QUARKUS_OIDC_AUTH_SERVER_URL=http://localhost:8080/auth/realms/master \
   -e QUARKUS_OIDC_CLIENT_ID=projectnessie \
   -e NESSIE_SERVER_AUTHENTICATION_ENABLED=true \
-  --network host projectnessie/nessie-unstable:0.9.3-SNAPSHOT
+  --network host projectnessie/nessie:latest
 ```
+
+**Note: when using keycloak 17+ change the URL to `http://localhost:8080/realms/master/protocol/openid-connect/token`**
 
 Note: this example uses a snapshot build. When Nessie 1.0 is released, the `latest` stable image will be usable
 with the instructions from this guide.
