@@ -15,12 +15,15 @@
  */
 package org.projectnessie.quarkus.cli;
 
+import javax.inject.Inject;
+import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import picocli.CommandLine;
 
 @CommandLine.Command(
-    name = "erase-repo",
+    name = "erase-repository",
     mixinStandardHelpOptions = true,
-    description = "Erase current Nessie repository and optionally re-initialize it.")
+    description =
+        "Erase current Nessie repository (all data will be lost) and optionally re-initialize it.")
 public class EraseRepository extends BaseCommand {
 
   @CommandLine.Option(
@@ -29,9 +32,28 @@ public class EraseRepository extends BaseCommand {
           "Re-initialize the repository after erasure. If set, provides the default branch name for the new repository.")
   private String newDefaultBranch;
 
+  @CommandLine.Option(
+      names = {"--confirmation-code"},
+      description =
+          "Confirmation code for erasing the repository (will be emitted by this command if not set).")
+  private String confirmationCode;
+
+  @Inject DatabaseAdapterConfig adapterConfig;
+
   @Override
   public Integer call() {
     warnOnInMemory();
+
+    String code = getConfirmationCode();
+    if (!code.equals(confirmationCode)) {
+      spec.commandLine()
+          .getErr()
+          .printf(
+              "Please use the '--confirmation-code=%s' option to indicate that the"
+                  + " repository erasure operation is intentional.%nAll Nessie data will be lost!%n",
+              code);
+      return 1;
+    }
 
     databaseAdapter.eraseRepo();
 
@@ -40,5 +62,16 @@ public class EraseRepository extends BaseCommand {
     }
 
     return 0;
+  }
+
+  private String getConfirmationCode() {
+    // Derive some stable number from configuration
+    int code = adapterConfig.getRepositoryId().hashCode();
+    code += 1; // avoid zero for an empty repo ID
+    code *= adapterConfig.getParentsPerCommit();
+    code *= adapterConfig.getKeyListDistance();
+    code *= adapterConfig.getMaxKeyListSize();
+    // Format the code using MAX_RADIX to reduce the resultant string length
+    return Long.toString(code, Character.MAX_RADIX);
   }
 }

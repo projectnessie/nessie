@@ -32,18 +32,32 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 @TestProfile(QuarkusCliTestProfileMongo.class)
 @ExtendWith(NessieCliTestExtension.class)
 class ITEraseRepository {
+  private static final String CONFIRMATION_CODE = "vfvm68"; // stable for a given adapter config
 
   @Test
   public void testErase(QuarkusMainLauncher launcher, DatabaseAdapter adapter)
       throws ReferenceNotFoundException {
-    assertThat(launcher.launch("erase-repo").exitCode()).isEqualTo(0);
+    assertThat(
+            launcher
+                .launch("erase-repository", "--confirmation-code", CONFIRMATION_CODE)
+                .exitCode())
+        .isEqualTo(0);
     assertThat(adapter.namedRefs(GetNamedRefsParams.DEFAULT)).isEmpty();
   }
 
   @Test
   public void testReInit(QuarkusMainLauncher launcher, DatabaseAdapter adapter)
       throws ReferenceNotFoundException {
-    assertThat(launcher.launch("erase-repo", "--re-initialize", "test123").exitCode()).isEqualTo(0);
+    assertThat(
+            launcher
+                .launch(
+                    "erase-repository",
+                    "--re-initialize",
+                    "test123",
+                    "--confirmation-code",
+                    CONFIRMATION_CODE)
+                .exitCode())
+        .isEqualTo(0);
     ReferenceInfo<ByteString> ref = adapter.namedRef("test123", GetNamedRefsParams.DEFAULT);
     assertThat(ref.getHash()).isNotNull();
   }
