@@ -520,7 +520,9 @@ public abstract class AbstractDatabaseAdapter<
               "The following keys have been changed in conflict: %s",
               result.getDetails().entrySet().stream()
                   .filter(e -> e.getValue().getConflictType() != ConflictType.NONE)
-                  .map(e -> String.format("'%s'", e.getKey()))
+                  .map(Map.Entry::getKey)
+                  .sorted()
+                  .map(key -> String.format("'%s'", key))
                   .collect(Collectors.joining(", "))),
           result);
     }
