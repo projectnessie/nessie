@@ -64,7 +64,7 @@ docker run -p 19120:19120 \
   -e QUARKUS_OIDC_AUTH_SERVER_URL=http://localhost:8080/auth/realms/master \
   -e QUARKUS_OIDC_CLIENT_ID=projectnessie \
   -e NESSIE_SERVER_AUTHENTICATION_ENABLED=true \
-  --network host projectnessie/nessie:0.30.0
+  --network host projectnessie/nessie:latest
 ```
 
 **Note: when using keycloak 17+ change the URL to `http://localhost:8080/realms/master/protocol/openid-connect/token`**
