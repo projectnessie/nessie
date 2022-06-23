@@ -73,6 +73,11 @@ public interface QuarkusVersionStoreAdvancedConfig
   @Override
   float getKeyListHashLoadFactor();
 
+  @WithName("key-list-entity-prefetch")
+  @WithDefault("" + DEFAULT_KEY_LIST_ENTITY_PREFETCH)
+  @Override
+  int getKeyListEntityPrefetch();
+
   @WithName("commit-timeout")
   @WithDefault("" + DEFAULT_COMMIT_TIMEOUT)
   @Override

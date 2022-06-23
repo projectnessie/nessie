@@ -37,6 +37,7 @@ public interface DatabaseAdapterConfig {
   int DEFAULT_MAX_ENTITY_SIZE = 250_000;
   int DEFAULT_MAX_KEY_LIST_ENTITY_SIZE = 1_000_000;
   float DEFAULT_KEY_LIST_HASH_LOAD_FACTOR = 0.65f;
+  int DEFAULT_KEY_LIST_ENTITY_PREFETCH = 0;
   int DEFAULT_COMMIT_TIMEOUT = 500;
   int DEFAULT_COMMIT_RETRIES = Integer.MAX_VALUE;
   int DEFAULT_PARENTS_PER_REFLOG_ENTRY = 20;
@@ -134,6 +135,18 @@ public interface DatabaseAdapterConfig {
   @Value.Default
   default float getKeyListHashLoadFactor() {
     return DEFAULT_KEY_LIST_HASH_LOAD_FACTOR;
+  }
+
+  /**
+   * The number of adjacent key-list-entities to fetch, defaults to {@value
+   * #DEFAULT_KEY_LIST_ENTITY_PREFETCH}.
+   *
+   * <p>Applied to key-lists written by Nessie since 0.31.0 using the {@link
+   * CommitLogEntry.KeyListVariant#OPEN_ADDRESSING} format.
+   */
+  @Value.Default
+  default int getKeyListEntityPrefetch() {
+    return DEFAULT_KEY_LIST_ENTITY_PREFETCH;
   }
 
   /**
