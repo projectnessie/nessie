@@ -20,7 +20,6 @@ import static org.assertj.core.api.InstanceOfAssertFactories.INTEGER;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import java.util.stream.Stream;
-import org.assertj.core.api.AbstractIntegerAssert;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -29,18 +28,11 @@ public class TestKey {
   @ParameterizedTest
   @MethodSource("compare")
   void compare(Key a, Key b, int expectedCompare) {
-    AbstractIntegerAssert<?> ass =
-        assertThat(a)
-            .describedAs("Compare of %s to %s expect %d", a, b, expectedCompare)
-            .extracting(k -> k.compareTo(b))
-            .asInstanceOf(INTEGER);
-    if (expectedCompare < 0) {
-      ass.isNegative();
-    } else if (expectedCompare > 0) {
-      ass.isPositive();
-    } else {
-      ass.isZero();
-    }
+    assertThat(a)
+        .describedAs("Compare of %s to %s expect %d", a, b, expectedCompare)
+        .extracting(k -> Integer.signum(k.compareTo(b)))
+        .asInstanceOf(INTEGER)
+        .isEqualTo(expectedCompare);
   }
 
   static Stream<Arguments> compare() {
