@@ -21,6 +21,7 @@ import static org.mockito.Mockito.spy;
 
 import com.google.protobuf.ByteString;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -29,6 +30,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -40,6 +42,7 @@ import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
+import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
@@ -282,6 +285,59 @@ public abstract class AbstractManyKeys {
                                     .extracting(KeyListEntry::getCommitId, KeyListEntry::getKey)
                                     .containsExactly(keyToCommit.get(e.getKey()), e.getKey())));
       }
+    }
+  }
+
+  @Test
+  void pointContentKeyLookups(
+      @NessieDbAdapterConfigItem(name = "max.key.list.size", value = "16384")
+          @NessieDbAdapterConfigItem(name = "max.key.list.entity.size", value = "16384")
+          @NessieDbAdapterConfigItem(name = "key.list.distance", value = "20")
+          @NessieDbAdapter
+          DatabaseAdapter databaseAdapter)
+      throws Exception {
+
+    // generate a commits that lead to (at least) 5 key-list entities
+
+    // 64 chars
+    String keyElement = "1234567890123456789012345678901234567890123456789012345678901234";
+    // generates "long" keys
+    IntFunction<Key> keyGen = i -> Key.of("k-" + i, keyElement, keyElement);
+    IntFunction<ByteString> valueGen = i -> ByteString.copyFromUtf8("value-" + i);
+
+    BranchName branch = BranchName.of("main");
+    Hash head = databaseAdapter.hashOnReference(branch, Optional.empty());
+
+    // It's bigger in reality...
+    int assumedKeyEntryLen = 160;
+    int estimatedTotalKeyLength = 5 * 16384 + 16384;
+    int keyNum;
+    for (keyNum = 0;
+        estimatedTotalKeyLength > 0;
+        keyNum++, estimatedTotalKeyLength -= assumedKeyEntryLen) {
+      head =
+          databaseAdapter.commit(
+              ImmutableCommitParams.builder()
+                  .toBranch(branch)
+                  .commitMetaSerialized(ByteString.EMPTY)
+                  .addPuts(
+                      KeyWithBytes.of(
+                          keyGen.apply(keyNum),
+                          ContentId.of("cid-" + keyNum),
+                          (byte) 0,
+                          valueGen.apply(keyNum)))
+                  .build());
+    }
+
+    for (int i = 0; i < keyNum; i++) {
+      Key key = keyGen.apply(i);
+      Map<Key, ContentAndState<ByteString>> values =
+          databaseAdapter.values(
+              head, Collections.singletonList(key), KeyFilterPredicate.ALLOW_ALL);
+      assertThat(values)
+          .extractingByKey(key)
+          .extracting(ContentAndState::getRefState)
+          .isEqualTo(valueGen.apply(i));
     }
   }
 }
