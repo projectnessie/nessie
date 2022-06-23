@@ -91,6 +91,11 @@ public class DynamoDatabaseAdapter
   // DynamoDB limit
   private static final int DYNAMO_BATCH_WRITE_MAX_REQUESTS = 25;
   private static final int DYNAMO_MAX_ITEM_SIZE = 375 * 1024;
+  /**
+   * Have to restrict the "target" size for key-list-entities, because hash-bucketing can
+   * "overshoot" by a lot.
+   */
+  private static final int DYNAMO_MAX_KEY_LIST_ENTITY_SIZE = 100 * 1024;
 
   private static final char PREFIX_SEPARATOR = ':';
   private final DynamoDatabaseClient client;
@@ -619,6 +624,11 @@ public class DynamoDatabaseAdapter
   @Override
   protected int maxEntitySize(int value) {
     return Math.min(value, DYNAMO_MAX_ITEM_SIZE);
+  }
+
+  @Override
+  protected int maxKeyListEntitySize() {
+    return Math.min(config.getMaxKeyListEntitySize(), DYNAMO_MAX_KEY_LIST_ENTITY_SIZE);
   }
 
   @Override

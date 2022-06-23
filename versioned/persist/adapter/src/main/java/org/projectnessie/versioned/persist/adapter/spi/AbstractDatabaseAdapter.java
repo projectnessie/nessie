@@ -1157,14 +1157,13 @@ public abstract class AbstractDatabaseAdapter<
         ImmutableCommitLogEntry.builder()
             .from(unwrittenEntry)
             .keyListDistance(0)
-            .keyListVariant(KeyListVariant.SORTED_AND_HASHED);
+            .keyListVariant(KeyListVariant.HASHED_AND_SORTED);
 
     KeyListBuildState buildState =
         new KeyListBuildState(
-            entitySize(unwrittenEntry),
             newCommitEntry,
-            maxEntitySize(config.getMaxKeyListSize()),
-            maxEntitySize(config.getMaxKeyListEntitySize()),
+            maxEntitySize(config.getMaxKeyListSize()) - entitySize(unwrittenEntry),
+            maxKeyListEntitySize(),
             this::entitySize);
 
     Set<Key> keysToEnhanceWithCommitId = new HashSet<>();
@@ -1218,6 +1217,10 @@ public abstract class AbstractDatabaseAdapter<
 
   protected int maxEntitySize(int value) {
     return value;
+  }
+
+  protected int maxKeyListEntitySize() {
+    return config.getMaxKeyListEntitySize();
   }
 
   /** Calculate the expected size of the given {@link CommitLogEntry} in the database. */
@@ -1298,7 +1301,7 @@ public abstract class AbstractDatabaseAdapter<
     Predicate<KeyListEntry> keyPredicate = predicate;
 
     Stream<CommitLogEntry> log = readCommitLogStream(ctx, hash, inMemoryCommits);
-    log = takeUntilIncludeLast(log, e -> e.getKeyList() != null);
+    log = takeUntilIncludeLast(log, CommitLogEntry::hasKeySummary);
     return log.flatMap(
         e -> {
 
@@ -1314,17 +1317,21 @@ public abstract class AbstractDatabaseAdapter<
                               put.getKey(), put.getContentId(), put.getType(), e.getHash()))
                   .filter(keyPredicate);
 
-          if (e.getKeyList() != null) {
-
+          if (e.hasKeySummary()) {
             // Return from CommitLogEntry.keyList after the keys in CommitLogEntry.puts
-            Stream<KeyListEntry> embedded = e.getKeyList().getKeys().stream().filter(keyPredicate);
-            stream = Stream.concat(stream, embedded);
+            KeyList embeddedKeyList = e.getKeyList();
+            if (embeddedKeyList != null) {
+              Stream<KeyListEntry> embedded =
+                  embeddedKeyList.getKeys().stream().filter(keyPredicate);
+              stream = Stream.concat(stream, embedded);
+            }
 
-            if (!e.getKeyListsIds().isEmpty()) {
+            List<Hash> keyListIds = e.getKeyListsIds();
+            if (keyListIds != null && !keyListIds.isEmpty()) {
               // If there are nested key-lists, retrieve those lazily and add the keys from these
 
               Stream<KeyListEntry> entities =
-                  Stream.of(e.getKeyListsIds())
+                  Stream.of(keyListIds)
                       .flatMap(ids -> fetchKeyLists(ctx, ids))
                       .map(KeyListEntity::getKeys)
                       .map(KeyList::getKeys)
@@ -1395,7 +1402,7 @@ public abstract class AbstractDatabaseAdapter<
           entry -> {
             commitLogEntryHandler.accept(entry);
 
-            if (entry.getKeyList() != null && keyListProcessed.compareAndSet(false, true)) {
+            if (entry.hasKeySummary() && keyListProcessed.compareAndSet(false, true)) {
               // CommitLogEntry has a KeyList.
               // All keys in 'remainingKeys', that are _not_ in the KeyList(s), can be removed,
               // because at this point we know that these do not exist.
@@ -1407,10 +1414,8 @@ public abstract class AbstractDatabaseAdapter<
               // because those will not have the key either.
 
               Set<KeyListEntry> remainingInKeyList = new HashSet<>();
-              try (Stream<KeyList> keyLists =
-                  Stream.concat(
-                      Stream.of(entry.getKeyList()),
-                      fetchKeyLists(ctx, entry.getKeyListsIds()).map(KeyListEntity::getKeys))) {
+
+              try (Stream<KeyList> keyLists = keyListsFromCommitLogEntry(ctx, entry)) {
                 keyLists
                     .flatMap(keyList -> keyList.getKeys().stream())
                     .filter(keyListEntry -> remainingKeys.contains(keyListEntry.getKey()))
@@ -1450,6 +1455,24 @@ public abstract class AbstractDatabaseAdapter<
                 e ->
                     ContentAndState.of(
                         e.getValue(), globals.get(keyToContentIds.get(e.getKey())))));
+  }
+
+  private Stream<KeyList> keyListsFromCommitLogEntry(OP_CONTEXT ctx, CommitLogEntry entry) {
+    KeyList embeddedKeyList = entry.getKeyList();
+
+    Stream<KeyList> keyList = embeddedKeyList != null ? Stream.of(embeddedKeyList) : Stream.empty();
+
+    List<Hash> keyListIds = entry.getKeyListsIds();
+    if (keyListIds != null && !keyListIds.isEmpty()) {
+      keyList =
+          Stream.concat(
+              Stream.of(entry.getKeyList()),
+              Stream.of(keyListIds)
+                  // lazy fetch
+                  .flatMap(ids -> fetchKeyLists(ctx, ids).map(KeyListEntity::getKeys)));
+    }
+
+    return keyList;
   }
 
   /**

@@ -17,17 +17,19 @@ package org.projectnessie.versioned.persist.adapter.spi;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.randomHash;
 
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.Test;
+import java.util.stream.Stream;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitLogEntry;
@@ -36,44 +38,16 @@ import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 
 public class TestKeyListBuildState {
-  @Test
-  void noKeysAtAll() {
+  @ParameterizedTest
+  @MethodSource("embedded")
+  void embedded(int maxEmbeddedSize, int numEntries) {
+
     ImmutableCommitLogEntry.Builder commit = newCommit();
     KeyListBuildState keyListBuilder =
-        new KeyListBuildState(0, commit, 0, 0, e -> e.getKey().toString().length());
+        new KeyListBuildState(
+            commit, maxEmbeddedSize, 0, e -> KeyListBuildState.MINIMUM_BUCKET_SIZE >> 3);
 
-    List<KeyListEntity> entities = keyListBuilder.finish();
-
-    assertThat(entities).isEmpty();
-    assertThat(commit.build().getKeyList()).extracting(KeyList::getKeys).asList().isEmpty();
-  }
-
-  @Test
-  void oneKey() {
-    ImmutableCommitLogEntry.Builder commit = newCommit();
-    KeyListBuildState keyListBuilder =
-        new KeyListBuildState(0, commit, 0, 0, e -> e.getKey().toString().length());
-
-    KeyListEntry entry = entry("meep");
-    keyListBuilder.add(entry);
-
-    List<KeyListEntity> entities = keyListBuilder.finish();
-
-    assertThat(entities).isEmpty();
-    assertThat(commit.build().getKeyList())
-        .extracting(KeyList::getKeys)
-        .asList()
-        .containsExactly(entry);
-  }
-
-  @Test
-  void embeddedNoEntities() {
-    ImmutableCommitLogEntry.Builder commit = newCommit();
-    KeyListBuildState keyListBuilder =
-        new KeyListBuildState(0, commit, 0, 0, e -> KeyListBuildState.MINIMUM_BUCKET_SIZE / 10);
-
-    List<KeyListEntry> entries =
-        IntStream.range(0, 9).mapToObj(i -> entry("meep-" + i)).collect(Collectors.toList());
+    List<KeyListEntry> entries = createEntries(numEntries);
 
     entries.forEach(keyListBuilder::add);
 
@@ -87,83 +61,64 @@ public class TestKeyListBuildState {
         .containsExactlyElementsOf(entries);
   }
 
-  @Test
-  void twoBuckets() {
-    ImmutableCommitLogEntry.Builder commit = newCommit();
-    KeyListBuildState keyListBuilder =
-        new KeyListBuildState(0, commit, 0, 0, e -> KeyListBuildState.MINIMUM_BUCKET_SIZE >> 3);
-
-    List<KeyListEntry> entries =
-        IntStream.range(0, 8).mapToObj(i -> entry("meep-" + i)).collect(Collectors.toList());
-
-    entries.forEach(keyListBuilder::add);
-
-    List<KeyListEntity> entities = keyListBuilder.finish();
-
-    assertThat(entities)
-        .hasSize(1)
-        .allSatisfy(this::assertSortedEntity)
-        .flatMap(entity -> entity.getKeys().getKeys())
-        .isEqualTo(
-            entries.stream()
-                .filter(e -> keyListBuilder.bucket(e, 2) == 1)
-                .collect(Collectors.toList()));
-
-    assertThat(commit.build().getKeyList())
-        .extracting(KeyList::getKeys)
-        .asInstanceOf(list(KeyListEntry.class))
-        .satisfies(this::assertSortedList)
-        .containsExactlyElementsOf(
-            entries.stream()
-                .filter(e -> keyListBuilder.bucket(e, 2) == 0)
-                .collect(Collectors.toList()));
+  static Stream<Arguments> embedded() {
+    return Stream.of(
+        arguments(4096, 0),
+        arguments(512, 1),
+        arguments(4096, 1),
+        arguments(4096, 7),
+        arguments(4096, 8));
   }
 
-  @RepeatedTest(20)
-  void manyBuckets() {
+  @ParameterizedTest
+  @MethodSource("nonEmbedded")
+  void nonEmbedded(int numEntries, int expectedBuckets) {
+
     ImmutableCommitLogEntry.Builder commit = newCommit();
     KeyListBuildState keyListBuilder =
-        new KeyListBuildState(0, commit, 0, 0, e -> KeyListBuildState.MINIMUM_BUCKET_SIZE >> 3);
+        new KeyListBuildState(commit, 0, 0, e -> KeyListBuildState.MINIMUM_BUCKET_SIZE >> 3);
 
-    int entryCount = 500;
-    int bucketCount = entryCount / 8 + 1;
-
-    List<KeyListEntry> entries = new ArrayList<>();
-    IntStream.range(0, entryCount).mapToObj(i -> entry("meep-" + i)).forEach(entries::add);
-
-    // randomize the order of the keys
-    Collections.shuffle(entries);
+    List<KeyListEntry> entries = createEntries(numEntries);
 
     entries.forEach(keyListBuilder::add);
 
-    List<List<KeyListEntry>> expectedEntities = new ArrayList<>();
-    for (int i = 1; i < bucketCount; i++) {
-      int b = i;
-      expectedEntities.add(
-          entries.stream()
-              .filter(e -> keyListBuilder.bucket(e, bucketCount) == b)
-              .sorted(Comparator.comparing(KeyListEntry::getKey))
-              .collect(Collectors.toList()));
-    }
-    List<KeyListEntry> expectedEmbedded =
-        entries.stream()
-            .filter(e -> keyListBuilder.bucket(e, bucketCount) == 0)
-            .sorted(Comparator.comparing(KeyListEntry::getKey))
-            .collect(Collectors.toList());
-
     List<KeyListEntity> entities = keyListBuilder.finish();
 
+    List<List<KeyListEntry>> expectedEntityContents =
+        IntStream.range(0, expectedBuckets)
+            .mapToObj(
+                bucket ->
+                    entries.stream()
+                        .filter(e -> keyListBuilder.bucket(e, expectedBuckets) == bucket)
+                        .sorted(Comparator.comparing(KeyListEntry::getKey))
+                        .collect(Collectors.toList()))
+            .collect(Collectors.toList());
+
+    assertThat(commit.build().getKeyList()).isNull();
+
     assertThat(entities)
-        .hasSize(bucketCount - 1)
+        .hasSize(expectedBuckets)
         .allSatisfy(this::assertSortedEntity)
         .map(entity -> entity.getKeys().getKeys())
-        .containsExactlyElementsOf(expectedEntities);
+        .isEqualTo(expectedEntityContents);
+  }
 
-    assertThat(commit.build().getKeyList())
-        .extracting(KeyList::getKeys)
-        .asInstanceOf(list(KeyListEntry.class))
-        .satisfies(this::assertSortedList)
-        .containsExactlyElementsOf(expectedEmbedded);
+  static Stream<Arguments> nonEmbedded() {
+    // Can assume that 8 entries fit into one bucket
+    return Stream.of(
+        arguments(1, 1),
+        arguments(8, 1),
+        arguments(9, 2),
+        arguments(10, 2),
+        arguments(11, 2),
+        arguments(100, 13),
+        arguments(500, 63));
+  }
+
+  private List<KeyListEntry> createEntries(int numEntries) {
+    return IntStream.range(0, numEntries)
+        .mapToObj(i -> entry("meep-" + i))
+        .collect(Collectors.toList());
   }
 
   private void assertSortedEntity(KeyListEntity entries) {
