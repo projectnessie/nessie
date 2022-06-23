@@ -70,6 +70,15 @@ public interface CommitLogEntry {
    */
   List<Hash> getKeyListsIds();
 
+  @Nullable
+  List<Integer> getKeyListEntityOffsets();
+
+  @Nullable
+  Float getKeyListLoadFactor();
+
+  @Nullable
+  Integer getKeyListBucketCount();
+
   /** Number of commits since the last complete key-list. */
   int getKeyListDistance();
 
@@ -95,20 +104,25 @@ public interface CommitLogEntry {
       int keyListDistance,
       KeyList keyList,
       Iterable<Hash> keyListIds,
+      Iterable<Integer> keyListEntityOffsets,
       Iterable<Hash> additionalParents) {
-    return ImmutableCommitLogEntry.builder()
-        .createdTime(createdTime)
-        .hash(hash)
-        .commitSeq(commitSeq)
-        .parents(parents)
-        .metadata(metadata)
-        .puts(puts)
-        .deletes(deletes)
-        .keyListDistance(keyListDistance)
-        .keyList(keyList)
-        .addAllKeyListsIds(keyListIds)
-        .addAllAdditionalParents(additionalParents)
-        .build();
+    ImmutableCommitLogEntry.Builder c =
+        ImmutableCommitLogEntry.builder()
+            .createdTime(createdTime)
+            .hash(hash)
+            .commitSeq(commitSeq)
+            .parents(parents)
+            .metadata(metadata)
+            .puts(puts)
+            .deletes(deletes)
+            .keyListDistance(keyListDistance)
+            .keyList(keyList)
+            .addAllKeyListsIds(keyListIds)
+            .addAllAdditionalParents(additionalParents);
+    if (keyListEntityOffsets != null) {
+      c.addAllKeyListEntityOffsets(keyListEntityOffsets);
+    }
+    return c.build();
   }
 
   enum KeyListVariant {
@@ -125,20 +139,21 @@ public interface CommitLogEntry {
      */
     EMBEDDED_AND_EXTERNAL_MRU,
     /**
-     * The variant in which Nessie versions since 0.31.0 either write a <em>sorted</em> {@link
-     * CommitLogEntry#getKeyList() embedded key-list} <em>or</em> multiple {@link KeyListEntity
-     * key-list entities}, each representing a hash bucket.
+     * The variant in which Nessie versions since 0.31.0 maintains {@link
+     * CommitLogEntry#getKeyList() embedded key-list} and {@link KeyListEntity key-list entities}.
      *
-     * <p>If the total serialized size of all serialized {@link KeyListEntry} objects is up to
-     * {@link DatabaseAdapterConfig#getMaxKeyListSize()}, the {@link CommitLogEntry#getKeyList()
-     * embedded key-list} contains key-list-entries sorted by {@link KeyListEntry#getKey() content
-     * key}.
+     * <p>{@link KeyListEntry}s are maintained as an open-addressing hash map with {@link
+     * org.projectnessie.versioned.Key} as the map key.
      *
-     * <p>Otherwise the embedded key-list will be empty. All keys will be persisted as "external"
-     * {@link KeyListEntity key-list entities}. Each {@link KeyListEntity key-list entity}
-     * represents a hash bucket. All {@link KeyListEntry}s in each bucket are sorted by {@link
-     * KeyListEntry#getKey() content key}.
+     * <p>That open-addressing hash map is split into multiple segments, if necessary.
+     *
+     * <p>The first segment is represented by the {@link CommitLogEntry#getKeyList() embedded
+     * key-list} with a serialized size goal up to {@link
+     * DatabaseAdapterConfig#getMaxKeyListSize()}. All following segments have a serialized size up
+     * to {@link DatabaseAdapterConfig#getMaxKeyListEntitySize()} as the goal.
+     *
+     * <p>Maximum size constraints are fulfilled using a best-effort approach.
      */
-    HASHED_AND_SORTED
+    OPEN_ADDRESSING
   }
 }

@@ -1094,6 +1094,7 @@ public abstract class AbstractDatabaseAdapter<
             keyListDistance,
             null,
             emptyList(),
+            emptyList(),
             additionalParents);
 
     if (keyListDistance >= config.getKeyListDistance()) {
@@ -1157,13 +1158,14 @@ public abstract class AbstractDatabaseAdapter<
         ImmutableCommitLogEntry.builder()
             .from(unwrittenEntry)
             .keyListDistance(0)
-            .keyListVariant(KeyListVariant.HASHED_AND_SORTED);
+            .keyListVariant(KeyListVariant.OPEN_ADDRESSING);
 
     KeyListBuildState buildState =
         new KeyListBuildState(
             newCommitEntry,
             maxEntitySize(config.getMaxKeyListSize()) - entitySize(unwrittenEntry),
-            maxKeyListEntitySize(),
+            maxEntitySize(config.getMaxKeyListEntitySize()),
+            config.getKeyListHashLoadFactor(),
             this::entitySize);
 
     Set<Key> keysToEnhanceWithCommitId = new HashSet<>();
@@ -1217,10 +1219,6 @@ public abstract class AbstractDatabaseAdapter<
 
   protected int maxEntitySize(int value) {
     return value;
-  }
-
-  protected int maxKeyListEntitySize() {
-    return config.getMaxKeyListEntitySize();
   }
 
   /** Calculate the expected size of the given {@link CommitLogEntry} in the database. */
@@ -1293,7 +1291,8 @@ public abstract class AbstractDatabaseAdapter<
 
     Set<Key> seen = new HashSet<>();
 
-    Predicate<KeyListEntry> predicate = keyListEntry -> seen.add(keyListEntry.getKey());
+    Predicate<KeyListEntry> predicate =
+        keyListEntry -> keyListEntry != null && seen.add(keyListEntry.getKey());
     if (keyFilter != null) {
       predicate =
           predicate.and(kt -> keyFilter.check(kt.getKey(), kt.getContentId(), kt.getType()));
@@ -1418,6 +1417,7 @@ public abstract class AbstractDatabaseAdapter<
               try (Stream<KeyList> keyLists = keyListsFromCommitLogEntry(ctx, entry)) {
                 keyLists
                     .flatMap(keyList -> keyList.getKeys().stream())
+                    .filter(Objects::nonNull)
                     .filter(keyListEntry -> remainingKeys.contains(keyListEntry.getKey()))
                     .forEach(remainingInKeyList::add);
               }

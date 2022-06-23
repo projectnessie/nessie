@@ -190,6 +190,7 @@ dependencies {
     api("org.graalvm.nativeimage:svm:$versionGraalSvm")
     api("org.immutables:builder:$versionImmutables")
     api("org.immutables:value-annotations:$versionImmutables")
+    api("org.immutables:value-fixture:$versionImmutables")
     api("org.immutables:value-processor:$versionImmutables")
     api("org.jacoco:jacoco-maven-plugin:$versionJacoco")
     api("org.jboss:jandex:$versionJandex")

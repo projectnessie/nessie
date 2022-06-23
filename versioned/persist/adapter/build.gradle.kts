@@ -29,6 +29,7 @@ dependencies {
 
   implementation(projects.versioned.spi)
   compileOnly("org.immutables:value-annotations")
+  compileOnly("org.immutables:value-fixture")
   annotationProcessor("org.immutables:value-processor")
   implementation("com.google.protobuf:protobuf-java")
   implementation("com.google.code.findbugs:jsr305")

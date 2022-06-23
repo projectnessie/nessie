@@ -100,6 +100,13 @@ public final class ProtoSerialization {
       entry.getKeyList().getKeys().forEach(k -> proto.addKeyList(toProto(k)));
     }
     entry.getKeyListsIds().forEach(k -> proto.addKeyListIds(k.asBytes()));
+    if (entry.getKeyListEntityOffsets() != null) {
+      proto.addAllKeyListEntityOffsets(entry.getKeyListEntityOffsets());
+    }
+    if (entry.getKeyListLoadFactor() != null) {
+      proto.setKeyListLoadFactor(entry.getKeyListLoadFactor());
+      proto.setKeyListBucketCount(entry.getKeyListBucketCount());
+    }
     entry.getAdditionalParents().forEach(p -> proto.addAdditionalParents(p.asBytes()));
 
     return proto.build();
@@ -161,7 +168,12 @@ public final class ProtoSerialization {
       entry.keyList(KeyList.EMPTY);
     }
     proto.getKeyListIdsList().forEach(p -> entry.addKeyListsIds(Hash.of(p)));
+    entry.addAllKeyListEntityOffsets(proto.getKeyListEntityOffsetsList());
     proto.getAdditionalParentsList().forEach(p -> entry.addAdditionalParents(Hash.of(p)));
+    if (proto.hasKeyListLoadFactor()) {
+      entry.keyListLoadFactor(proto.getKeyListLoadFactor());
+      entry.keyListBucketCount(proto.getKeyListBucketCount());
+    }
 
     return entry.build();
   }
@@ -240,6 +252,9 @@ public final class ProtoSerialization {
   }
 
   public static AdapterTypes.KeyListEntry toProto(KeyListEntry x) {
+    if (x == null) {
+      return AdapterTypes.KeyListEntry.getDefaultInstance();
+    }
     AdapterTypes.KeyListEntry.Builder builder =
         AdapterTypes.KeyListEntry.newBuilder()
             .setKey(keyToProto(x.getKey()))
@@ -252,6 +267,9 @@ public final class ProtoSerialization {
   }
 
   public static KeyListEntry protoToKeyListEntry(AdapterTypes.KeyListEntry proto) {
+    if (!proto.hasKey()) {
+      return null;
+    }
     return KeyListEntry.of(
         protoToKey(proto.getKey()),
         ContentId.of(proto.getContentId().getId()),
