@@ -43,7 +43,7 @@ message CommitLogEntry {
 // See CommitLogEntry.KeyListVariant
 enum KeyListVariant {
   EMBEDDED_AND_EXTERNAL_MRU = 0;
-  SORTED_AND_HASHED = 1;
+  HASHED_AND_SORTED = 1;
 }
 
 message Key {

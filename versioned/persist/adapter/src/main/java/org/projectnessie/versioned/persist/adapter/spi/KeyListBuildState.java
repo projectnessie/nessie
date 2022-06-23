@@ -18,6 +18,7 @@ package org.projectnessie.versioned.persist.adapter.spi;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.randomHash;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
@@ -44,16 +45,13 @@ class KeyListBuildState {
   private final int maxEmbeddedKeyListSize;
   private final int maxKeyListEntitySize;
   private final ToIntFunction<KeyListEntry> serializedEntrySize;
-  private final int currentSize;
   private final List<KeyListEntry> entries = new ArrayList<>();
 
   KeyListBuildState(
-      int initialSize,
       ImmutableCommitLogEntry.Builder newCommitEntry,
       int maxEmbeddedKeyListSize,
       int maxKeyListEntitySize,
       ToIntFunction<KeyListEntry> serializedEntrySize) {
-    this.currentSize = initialSize;
     this.newCommitEntry = newCommitEntry;
     this.maxEmbeddedKeyListSize = maxEmbeddedKeyListSize;
     this.maxKeyListEntitySize = maxKeyListEntitySize;
@@ -68,17 +66,39 @@ class KeyListBuildState {
     return Math.abs(entry.getKey().hashCode() % bucketCount);
   }
 
+  int calcBucketCount(int totalSize, int maxBucketSize) {
+    int bucketCount = totalSize / maxBucketSize;
+    if (totalSize % maxBucketSize != 0) {
+      bucketCount++;
+    }
+    // Distribution of the "final" bucket size is rather non-uniform, especially for very similar
+    // keys. For example, adding 500 keys, each with one element representing the string
+    // representation of the int range 0..500 results in a poor distribution: from buckets with 0
+    // entries up to buckets with nearly 20 buckets, where the "ideal" number of entries is 8.
+    //
+    // In theory, using the next-power-of-2 _should_ mitigate the above problem, but sadly it does
+    // not. And we might up persisting way more entities as necessary.
+    return bucketCount;
+  }
+
   List<KeyListEntity> finish() {
     int totalSize = entries.stream().mapToInt(serializedEntrySize).sum();
-    int remainingEmbedded = maxEmbeddedKeyListSize - currentSize;
-    int maxBucketSize =
-        Math.max(MINIMUM_BUCKET_SIZE, Math.min(remainingEmbedded, maxKeyListEntitySize));
 
-    int bucketCount = totalSize / maxBucketSize + 1;
+    if (totalSize <= maxEmbeddedKeyListSize) {
+      ImmutableKeyList.Builder embeddedBuilder = ImmutableKeyList.builder();
+      sortBucket(entries);
+      embeddedBuilder.addAllKeys(entries);
+      newCommitEntry.keyList(embeddedBuilder.build());
+      return Collections.emptyList();
+    }
+
+    int maxBucketSize = Math.max(MINIMUM_BUCKET_SIZE, maxKeyListEntitySize);
+    int bucketCount = calcBucketCount(totalSize, maxBucketSize);
     List<List<KeyListEntry>> buckets = new ArrayList<>(bucketCount);
     for (int i = 0; i < bucketCount; i++) {
       buckets.add(new ArrayList<>());
     }
+
     for (KeyListEntry entry : entries) {
       int bucket = bucket(entry, bucketCount);
       buckets.get(bucket).add(entry);
@@ -91,13 +111,9 @@ class KeyListBuildState {
           return bucket;
         };
 
-    ImmutableKeyList.Builder embeddedBuilder = ImmutableKeyList.builder();
-    embeddedBuilder.addAllKeys(sortedBucket.apply(0));
-    newCommitEntry.keyList(embeddedBuilder.build());
+    List<KeyListEntity> newKeyListEntities = new ArrayList<>(bucketCount);
 
-    List<KeyListEntity> newKeyListEntities = new ArrayList<>(bucketCount - 1);
-
-    for (int b = 1; b < buckets.size(); b++) {
+    for (int b = 0; b < buckets.size(); b++) {
       KeyList keyList = ImmutableKeyList.builder().addAllKeys(sortedBucket.apply(b)).build();
       Hash id = randomHash();
       newKeyListEntities.add(KeyListEntity.of(id, keyList));
@@ -105,5 +121,9 @@ class KeyListBuildState {
     }
 
     return newKeyListEntities;
+  }
+
+  private static void sortBucket(List<KeyListEntry> bucket) {
+    bucket.sort(Comparator.comparing(KeyListEntry::getKey));
   }
 }

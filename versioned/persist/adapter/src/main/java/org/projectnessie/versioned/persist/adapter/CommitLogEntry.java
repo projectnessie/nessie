@@ -80,6 +80,10 @@ public interface CommitLogEntry {
     return KeyListVariant.EMBEDDED_AND_EXTERNAL_MRU;
   }
 
+  default boolean hasKeySummary() {
+    return getKeyListVariant() != KeyListVariant.EMBEDDED_AND_EXTERNAL_MRU || getKeyList() != null;
+  }
+
   static CommitLogEntry of(
       long createdTime,
       Hash hash,
@@ -135,6 +139,6 @@ public interface CommitLogEntry {
      * represents a hash bucket. All {@link KeyListEntry}s in each bucket are sorted by {@link
      * KeyListEntry#getKey() content key}.
      */
-    SORTED_AND_HASHED
+    HASHED_AND_SORTED
   }
 }
