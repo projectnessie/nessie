@@ -15,22 +15,11 @@
  */
 package org.projectnessie.versioned;
 
-import java.text.Collator;
 import java.util.List;
-import java.util.Locale;
-import java.util.stream.Collectors;
 import org.immutables.value.Value.Immutable;
 
 @Immutable
 public abstract class Key implements Comparable<Key> {
-
-  private static final ThreadLocal<Collator> COLLATOR =
-      ThreadLocal.withInitial(
-          () -> {
-            Collator c = Collator.getInstance(Locale.US);
-            c.setStrength(Collator.PRIMARY);
-            return c;
-          });
 
   public abstract List<String> getElements();
 
@@ -39,15 +28,13 @@ public abstract class Key implements Comparable<Key> {
     return ImmutableKey.builder();
   }
 
-  /** Does a case insensitive comparison by key element. */
   @Override
   public final int compareTo(Key that) {
-    Collator collator = COLLATOR.get();
     List<String> a = this.getElements();
     List<String> b = that.getElements();
     int max = Math.min(a.size(), b.size());
     for (int i = 0; i < max; i++) {
-      int cmp = collator.compare(a.get(i), b.get(i));
+      int cmp = a.get(i).compareTo(b.get(i));
       if (cmp != 0) {
         return cmp;
       }
@@ -58,11 +45,11 @@ public abstract class Key implements Comparable<Key> {
 
   @Override
   public int hashCode() {
-    final Collator collator = COLLATOR.get();
-    return getElements().stream()
-        .map(collator::getCollationKey)
-        .collect(Collectors.toList())
-        .hashCode();
+    int h = 1;
+    for (String element : getElements()) {
+      h = 31 * h + element.hashCode();
+    }
+    return h;
   }
 
   @Override
@@ -74,8 +61,7 @@ public abstract class Key implements Comparable<Key> {
     Key that = (Key) obj;
     List<String> thisElements = this.getElements();
     List<String> thatElements = that.getElements();
-
-    return thisElements.size() == thatElements.size() && compareTo(that) == 0;
+    return thisElements.equals(thatElements);
   }
 
   public static Key of(String... elements) {
