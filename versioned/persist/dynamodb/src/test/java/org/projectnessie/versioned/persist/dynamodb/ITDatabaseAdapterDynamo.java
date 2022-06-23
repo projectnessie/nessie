@@ -84,6 +84,7 @@ public class ITDatabaseAdapterDynamo extends AbstractNonTxDatabaseAdapterTest
               0,
               KeyList.of(Collections.emptyList()),
               Collections.emptyList(),
+              Collections.emptyList(),
               Collections.emptyList());
       implDatabaseAdapter().doWriteIndividualCommit(ctx, commit);
       branchCommits.add(commitId);

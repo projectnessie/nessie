@@ -36,6 +36,7 @@ public interface DatabaseAdapterConfig {
   int DEFAULT_KEY_LIST_DISTANCE = 20;
   int DEFAULT_MAX_ENTITY_SIZE = 250_000;
   int DEFAULT_MAX_KEY_LIST_ENTITY_SIZE = 1_000_000;
+  float DEFAULT_KEY_LIST_HASH_LOAD_FACTOR = 0.65f;
   int DEFAULT_COMMIT_TIMEOUT = 500;
   int DEFAULT_COMMIT_RETRIES = Integer.MAX_VALUE;
   int DEFAULT_PARENTS_PER_REFLOG_ENTRY = 20;
@@ -116,6 +117,23 @@ public interface DatabaseAdapterConfig {
   @Value.Default
   default int getMaxKeyListEntitySize() {
     return DEFAULT_MAX_KEY_LIST_ENTITY_SIZE;
+  }
+
+  /**
+   * Configures key-list hash-table load-factor for the open-addressing hash map used for key-lists.
+   *
+   * <p>Small segments and load factors above 0.65 are bad, as those would lead to many database
+   * fetches. Good configurations, that usually lead to only one additional key-list segment fetch
+   * are these:
+   *
+   * <ul>
+   *   <li>segment size of 128kB or more with a load factor of 0.65
+   *   <li>segment sizes of 64kB or more with a load factor of 0.45
+   * </ul>
+   */
+  @Value.Default
+  default float getKeyListHashLoadFactor() {
+    return DEFAULT_KEY_LIST_HASH_LOAD_FACTOR;
   }
 
   /**

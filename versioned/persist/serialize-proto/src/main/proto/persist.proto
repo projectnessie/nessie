@@ -37,13 +37,19 @@ message CommitLogEntry {
   // additional parents, yet - but implementing this as a list for N-way
   // merges in the future.
   repeated bytes additional_parents = 11;
+  // Since Nessie 0.31.0 - the way in which key-lists are persisted, both
+  // embedded (in key_list) and externally (via key_list_ids).
   optional KeyListVariant key_list_variant = 12;
+  // Open-addressing bucket offsets. Same number of elements as key_list_ids.
+  repeated int32 key_list_entity_offsets = 13;
+  optional float key_list_load_factor = 14;
+  optional int32 key_list_bucket_count = 15;
 }
 
 // See CommitLogEntry.KeyListVariant
 enum KeyListVariant {
   EMBEDDED_AND_EXTERNAL_MRU = 0;
-  HASHED_AND_SORTED = 1;
+  OPEN_ADDRESSING = 1;
 }
 
 message Key {

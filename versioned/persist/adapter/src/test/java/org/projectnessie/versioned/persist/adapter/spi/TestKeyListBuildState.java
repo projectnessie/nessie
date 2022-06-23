@@ -16,14 +16,17 @@
 package org.projectnessie.versioned.persist.adapter.spi;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.randomHash;
+import static org.projectnessie.versioned.persist.adapter.spi.KeyListBuildState.MINIMUM_BUCKET_SIZE;
 
 import com.google.protobuf.ByteString;
-import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -31,6 +34,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyList;
@@ -38,97 +42,163 @@ import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 
 public class TestKeyListBuildState {
-  @ParameterizedTest
-  @MethodSource("embedded")
-  void embedded(int maxEmbeddedSize, int numEntries) {
 
-    ImmutableCommitLogEntry.Builder commit = newCommit();
+  /**
+   * Exercises a bunch of combinations of number of {@link KeyListEntry}s with different
+   * combinations of load-factor and segment sizes. Small segments and load factors above 0.65 are
+   * bad, as those would lead to many database fetches. Looks like good configurations are:
+   *
+   * <ul>
+   *   <li>segment size of 128kB or more with a load factor of 0.65
+   *   <li>segment sizes of 64kB or more with a load factor of 0.45
+   * </ul>
+   */
+  static Stream<Arguments> openAddressing() {
+    return Stream.of(
+        arguments(0, 0, 0, 0, 0, 0.65f, 0),
+        arguments(0, MINIMUM_BUCKET_SIZE, MINIMUM_BUCKET_SIZE, 0, 0, 0.65f, 0),
+        // single key, fits into embedded key list
+        arguments(1, MINIMUM_BUCKET_SIZE, MINIMUM_BUCKET_SIZE, 1, 0, 0.45f, 0),
+        // single key, does not fit
+        arguments(1, 0, MINIMUM_BUCKET_SIZE, 0, 1, 0.0000001f, 0), // extremely low load factor
+        arguments(1, 0, MINIMUM_BUCKET_SIZE, 0, 1, 0.45f, 0),
+        arguments(1, (MINIMUM_BUCKET_SIZE >> 3) - 1, MINIMUM_BUCKET_SIZE, 0, 1, 0.45f, 0),
+        // single key, does not fit
+        arguments(1, 0, MINIMUM_BUCKET_SIZE, 0, 1, 0.45f, 0),
+        // 16 keys fill up the embedded key-list and overflow to a single bucket
+        arguments(16, MINIMUM_BUCKET_SIZE, MINIMUM_BUCKET_SIZE, 8, 1, 0.45f, 1),
+        // Just some more test cases with many entries
+        arguments(500, MINIMUM_BUCKET_SIZE, MINIMUM_BUCKET_SIZE, 8, 62, 0.65f, 30),
+        arguments(2000, MINIMUM_BUCKET_SIZE, MINIMUM_BUCKET_SIZE, 8, 249, 0.65f, 30),
+        arguments(20000, MINIMUM_BUCKET_SIZE, MINIMUM_BUCKET_SIZE, 8, 2499, 0.65f, 30),
+        // 16kB segments
+        arguments(20000, MINIMUM_BUCKET_SIZE, MINIMUM_BUCKET_SIZE * 4, 8, 625, 0.65f, 10),
+        // 64kB segments
+        arguments(20000, MINIMUM_BUCKET_SIZE, MINIMUM_BUCKET_SIZE * 16, 8, 157, 0.65f, 2),
+        // 128kB segments
+        arguments(20000, MINIMUM_BUCKET_SIZE, MINIMUM_BUCKET_SIZE * 32, 8, 79, 0.65f, 1),
+        // different load-factor
+        arguments(500, MINIMUM_BUCKET_SIZE, MINIMUM_BUCKET_SIZE, 8, 62, 0.45f, 3),
+        arguments(2000, MINIMUM_BUCKET_SIZE, MINIMUM_BUCKET_SIZE, 8, 249, 0.45f, 3),
+        arguments(20000, MINIMUM_BUCKET_SIZE, MINIMUM_BUCKET_SIZE, 8, 2499, 0.45f, 3),
+        // 16kB segments
+        arguments(20000, MINIMUM_BUCKET_SIZE, MINIMUM_BUCKET_SIZE * 4, 8, 625, 0.45f, 1),
+        // 64kB segments
+        arguments(20000, MINIMUM_BUCKET_SIZE, MINIMUM_BUCKET_SIZE * 16, 8, 157, 0.45f, 1),
+        // 128kB segments
+        arguments(20000, MINIMUM_BUCKET_SIZE, MINIMUM_BUCKET_SIZE * 32, 8, 79, 0.45f, 1));
+  }
+
+  @ParameterizedTest
+  @MethodSource("openAddressing")
+  void openAddressing(
+      int numEntries,
+      int maxEmbeddedSize,
+      int maxEntitySize,
+      int expectedEmbeddedKeys,
+      int expectedBuckets,
+      float loadFactor,
+      // one "fetch" represents an _additional_ "query" against a key-list-entity
+      int maxAllowedFetches) {
+    ImmutableCommitLogEntry.Builder commitBuilder = newCommit();
     KeyListBuildState keyListBuilder =
         new KeyListBuildState(
-            commit, maxEmbeddedSize, 0, e -> KeyListBuildState.MINIMUM_BUCKET_SIZE >> 3);
+            commitBuilder,
+            maxEmbeddedSize,
+            maxEntitySize,
+            loadFactor,
+            e -> MINIMUM_BUCKET_SIZE >> 3);
 
     List<KeyListEntry> entries = createEntries(numEntries);
-
     entries.forEach(keyListBuilder::add);
 
     List<KeyListEntity> entities = keyListBuilder.finish();
 
-    assertThat(entities).isEmpty();
-    assertThat(commit.build().getKeyList())
+    CommitLogEntry commit = commitBuilder.build();
+
+    List<Integer> offsets =
+        // Optional to make offsets effectively final
+        Optional.ofNullable(commit.getKeyListEntityOffsets()).orElse(Collections.emptyList());
+
+    assertThat(entities.size()).isEqualTo(offsets.size());
+    assertThat(offsets).isEqualTo(offsets.stream().sorted().collect(Collectors.toList()));
+
+    assertThat(commit.getKeyList())
         .extracting(KeyList::getKeys)
         .asInstanceOf(list(KeyListEntry.class))
-        .satisfies(this::assertSortedList)
-        .containsExactlyElementsOf(entries);
-  }
+        .filteredOn(Objects::nonNull)
+        .hasSize(expectedEmbeddedKeys);
 
-  static Stream<Arguments> embedded() {
-    return Stream.of(
-        arguments(4096, 0),
-        arguments(512, 1),
-        arguments(4096, 1),
-        arguments(4096, 7),
-        arguments(4096, 8));
-  }
+    assertThat(entities).hasSize(expectedBuckets);
 
-  @ParameterizedTest
-  @MethodSource("nonEmbedded")
-  void nonEmbedded(int numEntries, int expectedBuckets) {
+    int totalBuckets = keyListBuilder.openAddressingBuckets();
+    int hashMask = totalBuckets - 1;
+    assertThat(entries)
+        .allSatisfy(
+            entry -> {
+              // The following code is effectively the logic to do a point-query for one key.
 
-    ImmutableCommitLogEntry.Builder commit = newCommit();
-    KeyListBuildState keyListBuilder =
-        new KeyListBuildState(commit, 0, 0, e -> KeyListBuildState.MINIMUM_BUCKET_SIZE >> 3);
+              // Get the open-addressing hash-bucket index
+              int bucket = entry.getKey().hashCode() & hashMask;
 
-    List<KeyListEntry> entries = createEntries(numEntries);
+              // Find the segment for the hash-bucket index.
+              // Notes:
+              // - segment 0 is the embedded key-list
+              // - segment 1 is the first key-list-entity
+              // - segment 2 is the second key-list-entity
+              // - and so on...
+              int segment = 0;
+              // The "overall" hash-bucket index is represented by the first bucket in 'segment'
+              int firstBucketInSegment = 0;
+              for (int seg = 0; seg < offsets.size(); seg++) {
+                int segOffset = offsets.get(seg);
+                if (segOffset <= bucket) {
+                  segment = seg + 1;
+                  firstBucketInSegment = segOffset;
+                } else {
+                  break;
+                }
+              }
 
-    entries.forEach(keyListBuilder::add);
+              // Relative index of the "overall" hash-bucket in the next segment
+              int keyListOffset = bucket - firstBucketInSegment;
+              int fetches = 0;
+              if (keyListOffset >= 0) {
+                for (int seg = segment; ; ) {
+                  KeyList keyList =
+                      seg == 0 ? commit.getKeyList() : entities.get(seg - 1).getKeys();
+                  List<KeyListEntry> keys = keyList.getKeys();
+                  for (int i = keyListOffset; i < keys.size(); i++) {
+                    KeyListEntry key = keys.get(i);
+                    if (key != null && key.equals(entry)) {
+                      assertThat(fetches)
+                          .describedAs("Fetches too often")
+                          .isLessThanOrEqualTo(maxAllowedFetches);
+                      return;
+                    }
+                    if (key == null) {
+                      fail("KeyListEntry not found", entry);
+                    }
+                  }
 
-    List<KeyListEntity> entities = keyListBuilder.finish();
-
-    List<List<KeyListEntry>> expectedEntityContents =
-        IntStream.range(0, expectedBuckets)
-            .mapToObj(
-                bucket ->
-                    entries.stream()
-                        .filter(e -> keyListBuilder.bucket(e, expectedBuckets) == bucket)
-                        .sorted(Comparator.comparing(KeyListEntry::getKey))
-                        .collect(Collectors.toList()))
-            .collect(Collectors.toList());
-
-    assertThat(commit.build().getKeyList()).isNull();
-
-    assertThat(entities)
-        .hasSize(expectedBuckets)
-        .allSatisfy(this::assertSortedEntity)
-        .map(entity -> entity.getKeys().getKeys())
-        .isEqualTo(expectedEntityContents);
-  }
-
-  static Stream<Arguments> nonEmbedded() {
-    // Can assume that 8 entries fit into one bucket
-    return Stream.of(
-        arguments(1, 1),
-        arguments(8, 1),
-        arguments(9, 2),
-        arguments(10, 2),
-        arguments(11, 2),
-        arguments(100, 13),
-        arguments(500, 63));
+                  // next segment
+                  keyListOffset = 0;
+                  seg++;
+                  if (seg > entities.size()) {
+                    seg = 0;
+                  }
+                  if (seg > 0) {
+                    fetches++;
+                  }
+                }
+              }
+            });
   }
 
   private List<KeyListEntry> createEntries(int numEntries) {
     return IntStream.range(0, numEntries)
         .mapToObj(i -> entry("meep-" + i))
         .collect(Collectors.toList());
-  }
-
-  private void assertSortedEntity(KeyListEntity entries) {
-    assertSortedList(entries.getKeys().getKeys());
-  }
-
-  private void assertSortedList(List<? extends KeyListEntry> entries) {
-    ArrayList<KeyListEntry> validate = new ArrayList<>(entries);
-    validate.sort(Comparator.comparing(KeyListEntry::getKey));
-    assertThat(entries).isEqualTo(validate);
   }
 
   private static KeyListEntry entry(String key) {

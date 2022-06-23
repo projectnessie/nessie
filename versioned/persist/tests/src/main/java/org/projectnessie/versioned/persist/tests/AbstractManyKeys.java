@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -222,6 +223,7 @@ public abstract class AbstractManyKeys {
                             e.getId(),
                             KeyList.of(
                                 e.getKeys().getKeys().stream()
+                                    .filter(Objects::nonNull)
                                     .map(
                                         k ->
                                             KeyListEntry.of(
@@ -273,6 +275,7 @@ public abstract class AbstractManyKeys {
             .allSatisfy(
                 kl ->
                     assertThat(kl.getKeys().getKeys())
+                        .filteredOn(Objects::nonNull)
                         .allSatisfy(
                             e ->
                                 assertThat(e)
