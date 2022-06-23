@@ -83,7 +83,7 @@ public class BaseIcebergTest {
       // remove only 'branch' that is used by the test.
       if (r instanceof Branch && r.getName().equals(branch)) {
         api.deleteBranch().branch((Branch) r).delete();
-      } else if (r instanceof Tag){
+      } else if (r instanceof Tag) {
         api.deleteTag().tag((Tag) r).delete();
       }
     }
