@@ -60,7 +60,7 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
 
     assertThatThrownBy(() -> getApi().deleteBranch().branch(defaultBranch).delete())
         .isInstanceOf(NessieBadRequestException.class)
-        .hasMessageContaining("can not be deleted");
+        .hasMessageContaining("cannot be deleted");
 
     assertThatThrownBy(
             () ->
