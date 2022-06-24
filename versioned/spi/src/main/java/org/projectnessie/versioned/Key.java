@@ -15,11 +15,18 @@
  */
 package org.projectnessie.versioned;
 
+import com.google.common.base.Preconditions;
 import java.util.List;
-import org.immutables.value.Value.Immutable;
+import org.immutables.value.Value;
 
-@Immutable
+@Value.Immutable
 public abstract class Key implements Comparable<Key> {
+
+  /** Maximum number of characters in a key. Note: characters can take up to 3 bytes via UTF-8. */
+  public static final int MAX_LENGTH = 500;
+
+  /** Maximum number of elemengts. */
+  public static final int MAX_ELEMENTS = 20;
 
   public abstract List<String> getElements();
 
@@ -70,6 +77,18 @@ public abstract class Key implements Comparable<Key> {
 
   public static Key of(List<String> elements) {
     return ImmutableKey.builder().addAllElements(elements).build();
+  }
+
+  @Value.Check
+  protected void check() {
+    Preconditions.checkState(
+        getElements().stream().mapToInt(String::length).sum() <= MAX_LENGTH,
+        "Key too long, max allowed length: %s",
+        MAX_LENGTH);
+    Preconditions.checkState(
+        getElements().size() <= MAX_ELEMENTS,
+        "Key too long, max allowed number of elements: %s",
+        MAX_ELEMENTS);
   }
 
   @Override
