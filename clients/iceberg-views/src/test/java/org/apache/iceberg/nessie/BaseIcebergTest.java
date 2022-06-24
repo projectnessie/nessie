@@ -81,7 +81,7 @@ public class BaseIcebergTest {
   private void resetData() throws NessieConflictException, NessieNotFoundException {
     for (Reference r : api.getAllReferences().get().getReferences()) {
       // remove only 'branch' that is used by the test.
-      if (r instanceof Branch && r.getName().equals(branch)) {
+      if (r instanceof Branch && !r.getName().equals("main")) {
         api.deleteBranch().branch((Branch) r).delete();
       } else if (r instanceof Tag) {
         api.deleteTag().tag((Tag) r).delete();

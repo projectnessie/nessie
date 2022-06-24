@@ -166,12 +166,7 @@ public class AbstractDeltaTest {
     return values;
   }
 
-  protected Branch getBranch() {
-    return api.getAllReferences().get().getReferences().stream()
-        .filter(b -> b.getName().equals(branch))
-        .filter(b -> b instanceof Branch)
-        .map(b -> ((Branch) b))
-        .findFirst()
-        .get();
+  protected Branch getBranch() throws NessieNotFoundException {
+    return (Branch) api.getReference().refName(branch).get();
   }
 }

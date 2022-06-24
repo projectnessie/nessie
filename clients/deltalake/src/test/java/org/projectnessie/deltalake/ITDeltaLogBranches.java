@@ -41,7 +41,7 @@ class ITDeltaLogBranches extends AbstractDeltaTest {
 
   @TempDir File tempPath;
 
-  private static final String BRANCH_NAME = "ITDeltaLog";
+  private static final String BRANCH_NAME = "ITDeltaLogBranches";
 
   public ITDeltaLogBranches() {
     super(BRANCH_NAME);
