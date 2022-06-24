@@ -40,7 +40,7 @@ import org.projectnessie.versioned.persist.tests.LongerCommitTimeouts;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
 @NessieExternalDatabase(LocalDynamoTestConnectionProviderSource.class)
-public class ITDynamoDatabaseAdapter extends AbstractNonTxDatabaseAdapterTest
+public class ITDatabaseAdapterDynamo extends AbstractNonTxDatabaseAdapterTest
     implements LongerCommitTimeouts {
 
   protected DynamoDatabaseAdapter implDatabaseAdapter() {
