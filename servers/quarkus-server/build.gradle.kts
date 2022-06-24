@@ -141,6 +141,7 @@ val quarkusBuild =
       System.setProperty("quarkus.native.builder-image", dependencyVersion("quarkus.builder-image"))
       if (useDocker) {
         System.setProperty("quarkus.native.container-build", "true")
+        System.setProperty("quarkus.container-image.build", "true")
       }
     }
   }
