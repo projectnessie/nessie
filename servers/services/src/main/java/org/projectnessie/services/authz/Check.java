@@ -51,8 +51,6 @@ public interface Check {
     ASSIGN_REFERENCE_TO_HASH(true, false),
     /** See {@link BatchAccessChecker#canDeleteReference(NamedRef)}. */
     DELETE_REFERENCE(true, false),
-    /** See {@link BatchAccessChecker#canDeleteDefaultBranch()}. */
-    DELETE_DEFAULT_BRANCH(false, false),
     /** See {@link BatchAccessChecker#canReadEntries(NamedRef)}. */
     READ_ENTRIES(true, false),
     /** See {@link BatchAccessChecker#canReadContentKey(NamedRef, ContentKey, String)}. */

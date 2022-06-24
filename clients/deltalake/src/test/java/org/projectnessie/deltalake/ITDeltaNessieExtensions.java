@@ -21,17 +21,24 @@ import org.junit.jupiter.api.Test;
 
 public class ITDeltaNessieExtensions extends AbstractDeltaTest {
 
+  private static final String BRANCH_NAME = "ITDeltaNessieExtensions";
+
+  public ITDeltaNessieExtensions() {
+    super(BRANCH_NAME);
+  }
+
   @Test
   void testCreateTag() throws Exception {
-    String mainHash = api.getDefaultBranch().getHash();
+    String branchHash = getBranch().getHash();
 
     assertThat(sql("LIST REFERENCES in spark_catalog"))
-        .containsExactlyInAnyOrder(row("Branch", "main", mainHash));
+        .contains(row("Branch", BRANCH_NAME, branchHash));
+    // it will also contain the main branch
 
-    assertThat(sql("CREATE TAG %s", "testTag")).containsExactly(row("Tag", "testTag", mainHash));
+    assertThat(sql("CREATE TAG %s", "testTag")).containsExactly(row("Tag", "testTag", branchHash));
 
     assertThat(sql("LIST REFERENCES"))
-        .containsExactlyInAnyOrder(
-            row("Branch", "main", mainHash), row("Tag", "testTag", mainHash));
+        .contains(row("Branch", BRANCH_NAME, branchHash), row("Tag", "testTag", branchHash));
+    // it will also contain the main branch
   }
 }

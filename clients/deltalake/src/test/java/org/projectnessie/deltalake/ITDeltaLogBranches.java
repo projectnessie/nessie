@@ -41,6 +41,12 @@ class ITDeltaLogBranches extends AbstractDeltaTest {
 
   @TempDir File tempPath;
 
+  private static final String BRANCH_NAME = "ITDeltaLogBranches";
+
+  public ITDeltaLogBranches() {
+    super(BRANCH_NAME);
+  }
+
   @Test
   void testBranches() throws BaseNessieClientServerException {
     Dataset<Row> targetTable =
@@ -51,15 +57,15 @@ class ITDeltaLogBranches extends AbstractDeltaTest {
     // write some data to table
     targetTable.write().format("delta").save(tempPath.getAbsolutePath());
     // create test at the point where there is only 1 commit
-    Branch sourceRef = api.getDefaultBranch();
+    Branch sourceRef = getBranch();
     api.createReference()
         .sourceRefName(sourceRef.getName())
         .reference(Branch.of("test", sourceRef.getHash()))
         .create();
-    // add some more data to main
+    // add some more data to current branch
     targetTable.write().format("delta").mode("append").save(tempPath.getAbsolutePath());
 
-    // read main and record number of rows
+    // read current branch and record number of rows
     DeltaTable target = DeltaTable.forPath(spark, tempPath.getAbsolutePath());
     int expectedSize = target.toDF().collectAsList().size();
 
@@ -69,13 +75,13 @@ class ITDeltaLogBranches extends AbstractDeltaTest {
     * hadoop/spark config don't get updated in the cached tables
     * there is currently no way to pass down a branch or hash via '@' or '#'
     Below we manually invaildate the cache and update the ref before reading the table off test
-    As the table itself is cached we can't read from main w/o invalidating, hence reading from main above
+    As the table itself is cached we can't read from currentBranch w/o invalidating, hence reading from currentBranch above
      */
     DeltaLog.invalidateCache(spark, new Path(tempPath.getAbsolutePath()));
     spark.sparkContext().conf().set("spark.sql.catalog.spark_catalog.ref", "test");
     Dataset<Row> targetBranch = spark.read().format("delta").load(tempPath.getAbsolutePath());
 
-    // we expect the table from test to be half the size of the table from main
+    // we expect the table from test to be half the size of the table from currentBranch
     Assertions.assertEquals(expectedSize * 0.5, targetBranch.collectAsList().size());
   }
 
@@ -99,7 +105,7 @@ class ITDeltaLogBranches extends AbstractDeltaTest {
 
     String tableName = tempPath.getAbsolutePath() + "/_delta_log";
     ContentKey key = DeltaContentKeyUtil.fromFilePathString(tableName);
-    Content content = api.getContent().key(key).refName("main").get().get(key);
+    Content content = api.getContent().key(key).refName(BRANCH_NAME).get().get(key);
     Optional<DeltaLakeTable> table = content.unwrap(DeltaLakeTable.class);
     Assertions.assertTrue(table.isPresent());
     Assertions.assertEquals(1, table.get().getCheckpointLocationHistory().size());

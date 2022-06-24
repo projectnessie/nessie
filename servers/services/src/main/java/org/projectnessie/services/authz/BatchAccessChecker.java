@@ -100,9 +100,6 @@ public interface BatchAccessChecker {
    */
   BatchAccessChecker canDeleteReference(NamedRef ref);
 
-  /** Checks whether the given role/principal is allowed to delete the default branch. */
-  BatchAccessChecker canDeleteDefaultBranch();
-
   /**
    * Checks whether the given role/principal is allowed to read entries content for the given {@link
    * Branch}/{@link Tag} or {@link Detached}.

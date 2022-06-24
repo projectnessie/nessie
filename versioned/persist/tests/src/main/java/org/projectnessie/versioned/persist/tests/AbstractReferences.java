@@ -246,6 +246,9 @@ public abstract class AbstractReferences {
 
   @Test
   void recreateDefaultBranch() throws Exception {
+    // note: the default branch cannot be deleted through the TreeApi,
+    // but the underlying DatabaseAdapter should still support this operation.
+
     BranchName main = BranchName.of("main");
     Hash mainHead = databaseAdapter.hashOnReference(main, Optional.empty());
     databaseAdapter.delete(main, Optional.of(mainHead));

@@ -131,13 +131,11 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
   @Override
   protected void deleteReference(NamedRef ref, String expectedHash)
       throws NessieConflictException, NessieNotFoundException {
-    BatchAccessChecker check = startAccessCheck();
     if (ref instanceof BranchName && getConfig().getDefaultBranch().equals(ref.getName())) {
-      check.canDeleteDefaultBranch();
-    } else {
-      check.canDeleteReference(ref);
+      throw new IllegalArgumentException(
+          "Default branch '" + ref.getName() + "' cannot be deleted.");
     }
-    check.checkAndThrow();
+    startAccessCheck().canDeleteReference(ref).checkAndThrow();
     super.deleteReference(ref, expectedHash);
   }
 

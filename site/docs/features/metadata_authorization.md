@@ -79,7 +79,6 @@ Available variables within the `<rule_expression>` are: **'op'** / **'role'** / 
   * `VIEW_REFERENCE`
   * `CREATE_REFERENCE`
   * `DELETE_REFERENCE`
-  * `DELETE_DEFAULT_BRANCH`
   * `READ_ENTRIES`
   * `READ_CONTENT_KEY`
   * `LIST_COMMIT_LOG`
@@ -143,12 +142,6 @@ nessie.server.authorization.rules.allow_deleting_entity=\
 ```
 nessie.server.authorization.rules.allow_listing_reflog=\
   op=='VIEW_REFLOG' && role=='admin_user'
-```
-
-* allows deletion of the default branch for the role `admin_user`:
-```
-nessie.server.authorization.rules.allow_deleting_default_branch=\
-  op=='DELETE_DEFAULT_BRANCH' && role=='admin_user'
 ```
 
 ### Example authorization rules from Stories section
