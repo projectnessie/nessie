@@ -255,7 +255,7 @@ val buildToolIntegrationMaven by
       "Checks whether the bom works fine with Maven, requires preceding publishToMavenLocal in a separate Gradle invocation"
 
     workingDir = file("build-tools-integration-tests")
-    commandLine("./mvnw", "clean", "test", "-Dnessie.version=${project.version}")
+    commandLine("./mvnw", "--batch-mode", "clean", "test", "-Dnessie.version=${project.version}")
   }
 
 val buildToolsIntegrationTest by
