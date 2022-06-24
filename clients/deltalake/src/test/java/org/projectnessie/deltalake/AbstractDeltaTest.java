@@ -55,7 +55,7 @@ public class AbstractDeltaTest {
 
   protected static SparkSession spark;
   protected static String url = String.format("http://localhost:%d/api/v1", NESSIE_PORT);
-  private String branch;
+  private final String branch;
 
   public AbstractDeltaTest(String branch) {
     this.branch = branch;
@@ -91,7 +91,7 @@ public class AbstractDeltaTest {
   @AfterEach
   void removeBranches() throws NessieConflictException, NessieNotFoundException {
     for (Reference ref : api.getAllReferences().get().getReferences()) {
-      if (ref instanceof Branch && ref.getName().equals(branch)) {
+      if (ref instanceof Branch && !ref.getName().equals("main")) {
         api.deleteBranch().branchName(ref.getName()).hash(ref.getHash()).delete();
       }
       if (ref instanceof Tag) {
@@ -165,5 +165,14 @@ public class AbstractDeltaTest {
    */
   protected static Object[] row(Object... values) {
     return values;
+  }
+
+  protected Branch getBranch() {
+    return api.getAllReferences().get().getReferences().stream()
+        .filter(b -> b.getName().equals(branch))
+        .filter(b -> b instanceof Branch)
+        .map(b -> ((Branch) b))
+        .findFirst()
+        .get();
   }
 }

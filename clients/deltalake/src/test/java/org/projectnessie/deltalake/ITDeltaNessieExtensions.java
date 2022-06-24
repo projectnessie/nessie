@@ -29,20 +29,16 @@ public class ITDeltaNessieExtensions extends AbstractDeltaTest {
 
   @Test
   void testCreateTag() throws Exception {
-    String mainHash =
-        api.getAllReferences().get().getReferences().stream()
-            .filter(b -> b.getName().equals(BRANCH_NAME))
-            .findFirst()
-            .get()
-            .getHash();
+    String branchHash = getBranch().getName();
 
     assertThat(sql("LIST REFERENCES in spark_catalog"))
-        .containsExactlyInAnyOrder(row("Branch", BRANCH_NAME, mainHash));
+        .contains(row("Branch", BRANCH_NAME, branchHash));
+    // it will also contain the main branch
 
-    assertThat(sql("CREATE TAG %s", "testTag")).containsExactly(row("Tag", "testTag", mainHash));
+    assertThat(sql("CREATE TAG %s", "testTag")).containsExactly(row("Tag", "testTag", branchHash));
 
     assertThat(sql("LIST REFERENCES"))
         .containsExactlyInAnyOrder(
-            row("Branch", BRANCH_NAME, mainHash), row("Tag", "testTag", mainHash));
+            row("Branch", BRANCH_NAME, branchHash), row("Tag", "testTag", branchHash));
   }
 }

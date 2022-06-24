@@ -57,7 +57,7 @@ class ITDeltaLogBranches extends AbstractDeltaTest {
     // write some data to table
     targetTable.write().format("delta").save(tempPath.getAbsolutePath());
     // create test at the point where there is only 1 commit
-    Branch sourceRef = api.getDefaultBranch();
+    Branch sourceRef = getBranch();
     api.createReference()
         .sourceRefName(sourceRef.getName())
         .reference(Branch.of("test", sourceRef.getHash()))
