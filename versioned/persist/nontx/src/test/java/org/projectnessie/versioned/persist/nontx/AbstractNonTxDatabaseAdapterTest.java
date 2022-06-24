@@ -39,7 +39,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer;
@@ -49,64 +48,53 @@ import org.projectnessie.versioned.persist.tests.LongerCommitTimeouts;
 
 public abstract class AbstractNonTxDatabaseAdapterTest extends AbstractDatabaseAdapterTest {
 
+  private static Set<String> fetchCurrentReferenceNames(
+      NonTransactionalDatabaseAdapter<?> nontx, NonTransactionalOperationContext ctx) {
+    List<String> allNames =
+        StreamSupport.stream(nontx.fetchReferenceNames(ctx), false)
+            .flatMap(names -> names.getRefNamesList().stream())
+            .collect(Collectors.toList());
+    Set<String> namesSet = new HashSet<>(allNames);
+    assertThat(allNames).containsExactlyInAnyOrderElementsOf(namesSet);
+    return namesSet;
+  }
+
   @Test
   void namedRefsIndex() {
     NonTransactionalDatabaseAdapter<?> nontx = (NonTransactionalDatabaseAdapter<?>) databaseAdapter;
 
-    IntFunction<NamedRef> nameGenerator =
+    IntFunction<String> nameGenerator =
         i ->
-            BranchName.of(
-                "branch-"
-                    + i
-                    + "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
-                    + "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
-                    + "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
-                    + "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
-                    + "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn");
+            "branch-"
+                + i
+                + "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+                + "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+                + "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+                + "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+                + "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn";
+
+    final Set<String> testNames =
+        IntStream.range(0, 100).mapToObj(nameGenerator).collect(Collectors.toSet());
+    final Set<BranchName> testBranches =
+        testNames.stream().map(BranchName::of).collect(Collectors.toSet());
+    assertThat(testBranches).hasSize(100);
+
+    final Hash head = nontx.noAncestorHash();
+    final RefPointer headRef =
+        RefPointer.newBuilder().setType(RefType.Branch).setHash(head.asBytes()).build();
 
     try (NonTransactionalOperationContext ctx = nontx.borrowConnection()) {
-
-      Hash head = nontx.noAncestorHash();
-      for (int i = 0; i < 100; i++) {
-        NamedRef namedRef = nameGenerator.apply(i);
-        nontx.createNamedReference(ctx, namedRef, head);
+      for (BranchName branchName : testBranches) {
+        boolean createSuccess = nontx.createNamedReference(ctx, branchName, head);
+        assertThat(createSuccess).isTrue();
       }
+      assertThat(fetchCurrentReferenceNames(nontx, ctx)).containsAll(testNames);
 
-      List<String> allNames =
-          StreamSupport.stream(nontx.fetchReferenceNames(ctx), false)
-              .flatMap(names -> names.getRefNamesList().stream())
-              .collect(Collectors.toList());
-      HashSet<String> namesSet = new HashSet<>(allNames);
-      assertThat(allNames).hasSize(namesSet.size()).containsExactlyInAnyOrderElementsOf(namesSet);
-
-      assertThat(namesSet)
-          .containsAll(
-              IntStream.range(0, 100)
-                  .mapToObj(nameGenerator)
-                  .map(NamedRef::getName)
-                  .collect(Collectors.toSet()));
-
-      for (int i = 0; i < 100; i++) {
-        NamedRef namedRef = nameGenerator.apply(i);
-        nontx.deleteNamedReference(
-            ctx,
-            namedRef,
-            RefPointer.newBuilder().setType(RefType.Branch).setHash(head.asBytes()).build());
+      for (BranchName branchName : testBranches) {
+        boolean deleteSuccess = nontx.deleteNamedReference(ctx, branchName, headRef);
+        assertThat(deleteSuccess).isTrue();
       }
-
-      allNames =
-          StreamSupport.stream(nontx.fetchReferenceNames(ctx), false)
-              .flatMap(names -> names.getRefNamesList().stream())
-              .collect(Collectors.toList());
-      namesSet = new HashSet<>(allNames);
-      assertThat(allNames).hasSize(namesSet.size()).containsExactlyInAnyOrderElementsOf(namesSet);
-
-      assertThat(namesSet)
-          .doesNotContainAnyElementsOf(
-              IntStream.range(0, 100)
-                  .mapToObj(nameGenerator)
-                  .map(NamedRef::getName)
-                  .collect(Collectors.toSet()));
+      assertThat(fetchCurrentReferenceNames(nontx, ctx)).doesNotContainAnyElementsOf(testNames);
     }
   }
 
