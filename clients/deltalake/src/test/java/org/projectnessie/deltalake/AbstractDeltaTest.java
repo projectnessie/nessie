@@ -98,7 +98,6 @@ public class AbstractDeltaTest {
         api.deleteTag().tagName(ref.getName()).hash(ref.getHash()).delete();
       }
     }
-    //    api.createReference().reference(Branch.of(branch, null)).create();
     api.close();
     api = null;
   }
