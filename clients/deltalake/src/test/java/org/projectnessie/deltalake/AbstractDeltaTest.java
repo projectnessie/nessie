@@ -55,11 +55,16 @@ public class AbstractDeltaTest {
 
   protected static SparkSession spark;
   protected static String url = String.format("http://localhost:%d/api/v1", NESSIE_PORT);
+  private String branch;
+
+  public AbstractDeltaTest(String branch) {
+    this.branch = branch;
+  }
 
   @BeforeEach
-  protected void create() {
+  protected void create() throws NessieConflictException, NessieNotFoundException {
 
-    conf.set("spark.sql.catalog.spark_catalog.ref", "main")
+    conf.set("spark.sql.catalog.spark_catalog.ref", branch)
         .set("spark.sql.catalog.spark_catalog.uri", url)
         .set("spark.sql.catalog.spark_catalog.warehouse", tempFile.toURI().toString())
         .set("spark.sql.catalog.spark_catalog", DeltaCatalog.class.getCanonicalName())
@@ -80,19 +85,20 @@ public class AbstractDeltaTest {
     spark.sparkContext().setLogLevel("WARN");
 
     api = HttpClientBuilder.builder().withUri(url).build(NessieApiV1.class);
+    api.createReference().reference(Branch.of(branch, null)).create();
   }
 
   @AfterEach
   void removeBranches() throws NessieConflictException, NessieNotFoundException {
     for (Reference ref : api.getAllReferences().get().getReferences()) {
-      if (ref instanceof Branch) {
+      if (ref instanceof Branch && ref.getName().equals(branch)) {
         api.deleteBranch().branchName(ref.getName()).hash(ref.getHash()).delete();
       }
       if (ref instanceof Tag) {
         api.deleteTag().tagName(ref.getName()).hash(ref.getHash()).delete();
       }
     }
-    api.createReference().reference(Branch.of("main", null)).create();
+    //    api.createReference().reference(Branch.of(branch, null)).create();
     api.close();
     api = null;
   }

@@ -40,6 +40,12 @@ class ITDeltaLog extends AbstractDeltaTest {
 
   @TempDir File tempPath;
 
+  private static final String BRANCH_NAME = "ITDeltaLog";
+
+  public ITDeltaLog() {
+    super(BRANCH_NAME);
+  }
+
   @Test
   void testMultipleBranches() throws Exception {
     String csvSalaries1 = ITDeltaLog.class.getResource("/salaries1.csv").getPath();
@@ -58,7 +64,7 @@ class ITDeltaLog extends AbstractDeltaTest {
     Dataset<Row> count1 = spark.sql("SELECT COUNT(*) FROM test_multiple_branches");
     Assertions.assertEquals(15L, count1.collectAsList().get(0).getLong(0));
 
-    Reference mainBranch = api.getReference().refName("main").get();
+    Reference mainBranch = api.getReference().refName(BRANCH_NAME).get();
 
     Reference devBranch =
         api.createReference()
@@ -74,7 +80,7 @@ class ITDeltaLog extends AbstractDeltaTest {
     Dataset<Row> count2 = spark.sql("SELECT COUNT(*) FROM test_multiple_branches");
     Assertions.assertEquals(30L, count2.collectAsList().get(0).getLong(0));
 
-    spark.sparkContext().conf().set("spark.sql.catalog.spark_catalog.ref", "main");
+    spark.sparkContext().conf().set("spark.sql.catalog.spark_catalog.ref", BRANCH_NAME);
 
     Dataset<Row> salariesDf3 = spark.read().option("header", true).csv(csvSalaries3);
     salariesDf3.write().format("delta").mode("append").save(pathSalaries);
@@ -101,7 +107,7 @@ class ITDeltaLog extends AbstractDeltaTest {
     Dataset<Row> count1 = spark.sql("SELECT COUNT(*) FROM test_commit_retry");
     Assertions.assertEquals(15L, count1.collectAsList().get(0).getLong(0));
 
-    Reference mainBranch = api.getReference().refName("main").get();
+    Reference mainBranch = api.getReference().refName(BRANCH_NAME).get();
 
     Reference devBranch =
         api.createReference()
@@ -117,12 +123,12 @@ class ITDeltaLog extends AbstractDeltaTest {
     Dataset<Row> count2 = spark.sql("SELECT COUNT(*) FROM test_commit_retry");
     Assertions.assertEquals(30L, count2.collectAsList().get(0).getLong(0));
 
-    Reference to = api.getReference().refName("main").get();
+    Reference to = api.getReference().refName(BRANCH_NAME).get();
     Reference from = api.getReference().refName("testCommitRetry").get();
 
     api.mergeRefIntoBranch().branch((Branch) to).fromRef(from).merge();
 
-    spark.sparkContext().conf().set("spark.sql.catalog.spark_catalog.ref", "main");
+    spark.sparkContext().conf().set("spark.sql.catalog.spark_catalog.ref", BRANCH_NAME);
 
     Dataset<Row> salariesDf3 = spark.read().option("header", true).csv(csvSalaries3);
     salariesDf3.write().format("delta").mode("append").save(pathSalaries);

@@ -41,6 +41,12 @@ class ITDeltaLogBranches extends AbstractDeltaTest {
 
   @TempDir File tempPath;
 
+  private static final String BRANCH_NAME = "ITDeltaLog";
+
+  public ITDeltaLogBranches() {
+    super(BRANCH_NAME);
+  }
+
   @Test
   void testBranches() throws BaseNessieClientServerException {
     Dataset<Row> targetTable =
@@ -99,7 +105,7 @@ class ITDeltaLogBranches extends AbstractDeltaTest {
 
     String tableName = tempPath.getAbsolutePath() + "/_delta_log";
     ContentKey key = DeltaContentKeyUtil.fromFilePathString(tableName);
-    Content content = api.getContent().key(key).refName("main").get().get(key);
+    Content content = api.getContent().key(key).refName(BRANCH_NAME).get().get(key);
     Optional<DeltaLakeTable> table = content.unwrap(DeltaLakeTable.class);
     Assertions.assertTrue(table.isPresent());
     Assertions.assertEquals(1, table.get().getCheckpointLocationHistory().size());
