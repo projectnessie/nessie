@@ -29,7 +29,7 @@ public class ITDeltaNessieExtensions extends AbstractDeltaTest {
 
   @Test
   void testCreateTag() throws Exception {
-    String branchHash = getBranch().getName();
+    String branchHash = getBranch().getHash();
 
     assertThat(sql("LIST REFERENCES in spark_catalog"))
         .contains(row("Branch", BRANCH_NAME, branchHash));
@@ -38,7 +38,7 @@ public class ITDeltaNessieExtensions extends AbstractDeltaTest {
     assertThat(sql("CREATE TAG %s", "testTag")).containsExactly(row("Tag", "testTag", branchHash));
 
     assertThat(sql("LIST REFERENCES"))
-        .containsExactlyInAnyOrder(
-            row("Branch", BRANCH_NAME, branchHash), row("Tag", "testTag", branchHash));
+        .contains(row("Branch", BRANCH_NAME, branchHash), row("Tag", "testTag", branchHash));
+    // it will also contain the main branch
   }
 }

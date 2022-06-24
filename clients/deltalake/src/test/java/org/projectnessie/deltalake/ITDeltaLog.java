@@ -64,12 +64,12 @@ class ITDeltaLog extends AbstractDeltaTest {
     Dataset<Row> count1 = spark.sql("SELECT COUNT(*) FROM test_multiple_branches");
     Assertions.assertEquals(15L, count1.collectAsList().get(0).getLong(0));
 
-    Reference mainBranch = api.getReference().refName(BRANCH_NAME).get();
+    Reference currentBranch = api.getReference().refName(BRANCH_NAME).get();
 
     Reference devBranch =
         api.createReference()
-            .sourceRefName(mainBranch.getName())
-            .reference(Branch.of("testMultipleBranches", mainBranch.getHash()))
+            .sourceRefName(currentBranch.getName())
+            .reference(Branch.of("testMultipleBranches", currentBranch.getHash()))
             .create();
 
     spark.sparkContext().conf().set("spark.sql.catalog.spark_catalog.ref", devBranch.getName());
@@ -107,12 +107,12 @@ class ITDeltaLog extends AbstractDeltaTest {
     Dataset<Row> count1 = spark.sql("SELECT COUNT(*) FROM test_commit_retry");
     Assertions.assertEquals(15L, count1.collectAsList().get(0).getLong(0));
 
-    Reference mainBranch = api.getReference().refName(BRANCH_NAME).get();
+    Reference currentBranch = api.getReference().refName(BRANCH_NAME).get();
 
     Reference devBranch =
         api.createReference()
-            .sourceRefName(mainBranch.getName())
-            .reference(Branch.of("testCommitRetry", mainBranch.getHash()))
+            .sourceRefName(currentBranch.getName())
+            .reference(Branch.of("testCommitRetry", currentBranch.getHash()))
             .create();
 
     spark.sparkContext().conf().set("spark.sql.catalog.spark_catalog.ref", devBranch.getName());
