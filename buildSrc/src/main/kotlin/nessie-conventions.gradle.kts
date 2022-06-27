@@ -111,6 +111,7 @@ fun Project.testTasks() {
       systemProperty("user.country", "US")
       systemProperty("user.variant", "")
       systemProperty("test.log.level", testLogLevel())
+      environment("TESTCONTAINERS_REUSE_ENABLE", "true")
       filter {
         isFailOnNoMatchingTests = false
         when (name) {
