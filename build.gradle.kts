@@ -97,7 +97,7 @@ val versionSlf4j = "1.7.36"
 val versionSpark31 = "3.1.2"
 val versionSpark32 = "3.2.1"
 val versionTestcontainers = "1.17.2"
-val versionWeld = "3.1.8.Final"
+val versionWeld = "5.0.1.Final"
 
 extra["versionAntlr"] = versionAntlr
 
