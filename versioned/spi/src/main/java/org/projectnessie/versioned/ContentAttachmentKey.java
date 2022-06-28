@@ -59,4 +59,15 @@ public interface ContentAttachmentKey {
         .attachmentId(attachmentId)
         .build();
   }
+
+  default String asString() {
+    return keyPartsAsString(getContentId(), getAttachmentType(), getAttachmentId());
+  }
+
+  static String keyPartsAsString(String contentId, String objectType, String objectId) {
+    Preconditions.checkState(
+        !contentId.contains("::") && !objectType.contains("::") && !objectId.contains("::"),
+        "Attributes of an attachment key must not contain '::'");
+    return contentId + "::" + objectType + "::" + objectId;
+  }
 }

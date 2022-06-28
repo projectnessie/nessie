@@ -18,7 +18,6 @@ package org.projectnessie.versioned.persist.tx;
 import static java.util.Collections.emptyList;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.attachmentContent;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.attachmentKey;
-import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.attachmentKeyAsString;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.attachmentKeyContentIdAsString;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.attachmentKeyFromString;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.protoToCommitLogEntry;
@@ -1805,7 +1804,7 @@ public abstract class TxDatabaseAdapter
       ps.setString(1, config.getRepositoryId());
       int paramIndex = 2;
       for (ContentAttachmentKey key : keysList) {
-        String keyAsString = attachmentKeyAsString(key);
+        String keyAsString = key.asString();
         ps.setString(paramIndex++, keyAsString);
       }
       Map<AttachmentKey, AttachmentValue> fetched = new HashMap<>();
@@ -1864,7 +1863,7 @@ public abstract class TxDatabaseAdapter
   private void attachmentInsert(PreparedStatement ps, ContentAttachment attachment)
       throws SQLException {
     ps.setString(1, config.getRepositoryId());
-    ps.setString(2, attachmentKeyAsString(attachment.getKey()));
+    ps.setString(2, attachment.getKey().asString());
     ps.setBytes(3, toProtoValue(attachment).toByteArray());
     ps.setString(4, attachment.getVersion());
     ps.executeUpdate();
@@ -1879,7 +1878,7 @@ public abstract class TxDatabaseAdapter
           ps.setBytes(1, toProtoValue(attachment).toByteArray());
           ps.setString(2, attachment.getVersion());
           ps.setString(3, config.getRepositoryId());
-          ps.setString(4, attachmentKeyAsString(attachment.getKey()));
+          ps.setString(4, attachment.getKey().asString());
           ps.setString(5, expectedVersion.get());
           if (ps.executeUpdate() != 1) {
             return false;
@@ -1912,7 +1911,7 @@ public abstract class TxDatabaseAdapter
         ps.setString(1, config.getRepositoryId());
         int paramIndex = 2;
         for (ContentAttachmentKey key : keysList) {
-          ps.setString(paramIndex++, attachmentKeyAsString(key));
+          ps.setString(paramIndex++, key.asString());
         }
         ps.executeUpdate();
       }

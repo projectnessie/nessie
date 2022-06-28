@@ -430,18 +430,18 @@ class TestSerialization {
 
   @Test
   public void malformedAttachmentKey() {
-    assertThatThrownBy(
-        () ->
-            ProtoSerialization.attachmentKeyAsString(
-                ContentAttachmentKey.of("cid", "type", "oid::foo")));
-    assertThatThrownBy(
-        () ->
-            ProtoSerialization.attachmentKeyAsString(
-                ContentAttachmentKey.of("cid", "type::", "oid")));
-    assertThatThrownBy(
-        () ->
-            ProtoSerialization.attachmentKeyAsString(
-                ContentAttachmentKey.of("cid::", "type", "oid")));
+    assertThatThrownBy(() -> ContentAttachmentKey.of("cid", "type", "oid::foo").asString())
+        .isInstanceOf(IllegalStateException.class);
+    assertThatThrownBy(() -> ContentAttachmentKey.of("cid", "type::", "oid").asString())
+        .isInstanceOf(IllegalStateException.class);
+    assertThatThrownBy(() -> ContentAttachmentKey.of("cid::", "type", "oid").asString())
+        .isInstanceOf(IllegalStateException.class);
+    assertThatThrownBy(() -> ContentAttachmentKey.keyPartsAsString("cid", "type", "oid::foo"))
+        .isInstanceOf(IllegalStateException.class);
+    assertThatThrownBy(() -> ContentAttachmentKey.keyPartsAsString("cid", "type::", "oid"))
+        .isInstanceOf(IllegalStateException.class);
+    assertThatThrownBy(() -> ContentAttachmentKey.keyPartsAsString("cid::", "type", "oid"))
+        .isInstanceOf(IllegalStateException.class);
   }
 
   public static ContentId randomId() {

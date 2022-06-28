@@ -432,21 +432,8 @@ public final class ProtoSerialization {
     return contentId + "::";
   }
 
-  private static String attachmentKeyAsString(
-      String contentId, String objectType, String objectId) {
-    Preconditions.checkState(
-        !contentId.contains("::") && !objectType.contains("::") && !objectId.contains("::"),
-        "Attributes of an attachment key must not contain '::'");
-    return contentId + "::" + objectType + "::" + objectId;
-  }
-
-  public static String attachmentKeyAsString(ContentAttachmentKey key) {
-    return attachmentKeyAsString(
-        key.getContentId(), key.getAttachmentType(), key.getAttachmentId());
-  }
-
   public static String attachmentKeyAsString(AttachmentKey key) {
-    return attachmentKeyAsString(
+    return ContentAttachmentKey.keyPartsAsString(
         key.getContentId().getId(), key.getAttachmentType(), key.getAttachmentId());
   }
 
