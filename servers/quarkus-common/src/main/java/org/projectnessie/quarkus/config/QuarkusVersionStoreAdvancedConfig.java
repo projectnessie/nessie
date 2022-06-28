@@ -68,6 +68,16 @@ public interface QuarkusVersionStoreAdvancedConfig
   @Override
   int getMaxKeyListEntitySize();
 
+  @WithName("key-list-hash-load-factor")
+  @WithDefault("" + DEFAULT_KEY_LIST_HASH_LOAD_FACTOR)
+  @Override
+  float getKeyListHashLoadFactor();
+
+  @WithName("key-list-entity-prefetch")
+  @WithDefault("" + DEFAULT_KEY_LIST_ENTITY_PREFETCH)
+  @Override
+  int getKeyListEntityPrefetch();
+
   @WithName("commit-timeout")
   @WithDefault("" + DEFAULT_COMMIT_TIMEOUT)
   @Override

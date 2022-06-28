@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.persist.adapter;
 
 import java.util.List;
+import org.immutables.fixture.modifiable.AllowNulls;
 import org.immutables.value.Value;
 
 /**
@@ -23,7 +24,12 @@ import org.immutables.value.Value;
  * org.projectnessie.versioned.persist.adapter.CommitLogEntry}.
  */
 @Value.Immutable
+@Value.Style(jdkOnly = true) // to allow null in collections
 public interface KeyList {
+
+  KeyList EMPTY = ImmutableKeyList.builder().build();
+
+  @AllowNulls
   List<KeyListEntry> getKeys();
 
   static KeyList of(List<KeyListEntry> keys) {

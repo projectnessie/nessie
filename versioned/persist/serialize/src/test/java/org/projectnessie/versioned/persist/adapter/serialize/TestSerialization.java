@@ -448,6 +448,9 @@ class TestSerialization {
         IntStream.range(0, ThreadLocalRandom.current().nextInt(20))
             .mapToObj(i -> randomHash())
             .collect(Collectors.toList()),
+        IntStream.range(0, ThreadLocalRandom.current().nextInt(20))
+            .mapToObj(i -> (int) randomLong())
+            .collect(Collectors.toList()),
         IntStream.range(0, ThreadLocalRandom.current().nextInt(3))
             .mapToObj(i -> randomHash())
             .collect(Collectors.toList()));

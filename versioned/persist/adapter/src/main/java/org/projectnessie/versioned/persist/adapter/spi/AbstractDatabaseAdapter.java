@@ -96,6 +96,7 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
+import org.projectnessie.versioned.persist.adapter.CommitLogEntry.KeyListVariant;
 import org.projectnessie.versioned.persist.adapter.CommitParams;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
@@ -1093,6 +1094,7 @@ public abstract class AbstractDatabaseAdapter<
             keyListDistance,
             null,
             emptyList(),
+            emptyList(),
             additionalParents);
 
     if (keyListDistance >= config.getKeyListDistance()) {
@@ -1153,14 +1155,17 @@ public abstract class AbstractDatabaseAdapter<
 
     // Return the new commit-log-entry with the complete-key-list
     ImmutableCommitLogEntry.Builder newCommitEntry =
-        ImmutableCommitLogEntry.builder().from(unwrittenEntry).keyListDistance(0);
+        ImmutableCommitLogEntry.builder()
+            .from(unwrittenEntry)
+            .keyListDistance(0)
+            .keyListVariant(KeyListVariant.OPEN_ADDRESSING);
 
     KeyListBuildState buildState =
         new KeyListBuildState(
-            entitySize(unwrittenEntry),
             newCommitEntry,
-            maxEntitySize(config.getMaxKeyListSize()),
+            maxEntitySize(config.getMaxKeyListSize()) - entitySize(unwrittenEntry),
             maxEntitySize(config.getMaxKeyListEntitySize()),
+            config.getKeyListHashLoadFactor(),
             this::entitySize);
 
     Set<Key> keysToEnhanceWithCommitId = new HashSet<>();
@@ -1198,9 +1203,7 @@ public abstract class AbstractDatabaseAdapter<
       }
     }
 
-    buildState.finish();
-
-    List<KeyListEntity> newKeyListEntities = buildState.buildNewKeyListEntities();
+    List<KeyListEntity> newKeyListEntities = buildState.finish();
 
     // Inform the (CAS)-op-loop about the IDs of the KeyListEntities being optimistically written.
     newKeyListEntities.stream().map(KeyListEntity::getId).forEach(newKeyLists);
@@ -1288,7 +1291,8 @@ public abstract class AbstractDatabaseAdapter<
 
     Set<Key> seen = new HashSet<>();
 
-    Predicate<KeyListEntry> predicate = keyListEntry -> seen.add(keyListEntry.getKey());
+    Predicate<KeyListEntry> predicate =
+        keyListEntry -> keyListEntry != null && seen.add(keyListEntry.getKey());
     if (keyFilter != null) {
       predicate =
           predicate.and(kt -> keyFilter.check(kt.getKey(), kt.getContentId(), kt.getType()));
@@ -1296,7 +1300,7 @@ public abstract class AbstractDatabaseAdapter<
     Predicate<KeyListEntry> keyPredicate = predicate;
 
     Stream<CommitLogEntry> log = readCommitLogStream(ctx, hash, inMemoryCommits);
-    log = takeUntilIncludeLast(log, e -> e.getKeyList() != null);
+    log = takeUntilIncludeLast(log, CommitLogEntry::hasKeySummary);
     return log.flatMap(
         e -> {
 
@@ -1312,17 +1316,21 @@ public abstract class AbstractDatabaseAdapter<
                               put.getKey(), put.getContentId(), put.getType(), e.getHash()))
                   .filter(keyPredicate);
 
-          if (e.getKeyList() != null) {
-
+          if (e.hasKeySummary()) {
             // Return from CommitLogEntry.keyList after the keys in CommitLogEntry.puts
-            Stream<KeyListEntry> embedded = e.getKeyList().getKeys().stream().filter(keyPredicate);
-            stream = Stream.concat(stream, embedded);
+            KeyList embeddedKeyList = e.getKeyList();
+            if (embeddedKeyList != null) {
+              Stream<KeyListEntry> embedded =
+                  embeddedKeyList.getKeys().stream().filter(keyPredicate);
+              stream = Stream.concat(stream, embedded);
+            }
 
-            if (!e.getKeyListsIds().isEmpty()) {
+            List<Hash> keyListIds = e.getKeyListsIds();
+            if (keyListIds != null && !keyListIds.isEmpty()) {
               // If there are nested key-lists, retrieve those lazily and add the keys from these
 
               Stream<KeyListEntry> entities =
-                  Stream.of(e.getKeyListsIds())
+                  Stream.of(keyListIds)
                       .flatMap(ids -> fetchKeyLists(ctx, ids))
                       .map(KeyListEntity::getKeys)
                       .map(KeyList::getKeys)
@@ -1393,7 +1401,7 @@ public abstract class AbstractDatabaseAdapter<
           entry -> {
             commitLogEntryHandler.accept(entry);
 
-            if (entry.getKeyList() != null && keyListProcessed.compareAndSet(false, true)) {
+            if (entry.hasKeySummary() && keyListProcessed.compareAndSet(false, true)) {
               // CommitLogEntry has a KeyList.
               // All keys in 'remainingKeys', that are _not_ in the KeyList(s), can be removed,
               // because at this point we know that these do not exist.
@@ -1404,34 +1412,44 @@ public abstract class AbstractDatabaseAdapter<
               // added the key - but processing older key-lists "on the way" makes no sense,
               // because those will not have the key either.
 
-              Set<KeyListEntry> remainingInKeyList = new HashSet<>();
-              try (Stream<KeyList> keyLists =
-                  Stream.concat(
-                      Stream.of(entry.getKeyList()),
-                      fetchKeyLists(ctx, entry.getKeyListsIds()).map(KeyListEntity::getKeys))) {
-                keyLists
-                    .flatMap(keyList -> keyList.getKeys().stream())
-                    .filter(keyListEntry -> remainingKeys.contains(keyListEntry.getKey()))
-                    .forEach(remainingInKeyList::add);
-              }
+              if (!remainingKeys.isEmpty()) {
+                List<KeyListEntry> keyListEntries;
+                switch (entry.getKeyListVariant()) {
+                  case OPEN_ADDRESSING:
+                    keyListEntries =
+                        fetchValuesHandleOpenAddressingKeyList(ctx, remainingKeys, entry);
+                    break;
+                  case EMBEDDED_AND_EXTERNAL_MRU:
+                    keyListEntries = fetchValuesHandleKeyList(ctx, remainingKeys, entry);
+                    break;
+                  default:
+                    throw new IllegalStateException(
+                        "Unknown key list variant " + entry.getKeyListVariant());
+                }
 
-              if (!remainingInKeyList.isEmpty()) {
-                List<CommitLogEntry> commitLogEntries =
-                    fetchMultipleFromCommitLog(
-                        ctx,
-                        remainingInKeyList.stream()
-                            .map(KeyListEntry::getCommitId)
-                            .filter(Objects::nonNull)
-                            .distinct()
-                            .collect(Collectors.toList()),
-                        h -> null);
-                commitLogEntries.forEach(commitLogEntryHandler);
-              }
+                if (!keyListEntries.isEmpty()) {
+                  List<CommitLogEntry> commitLogEntries =
+                      fetchMultipleFromCommitLog(
+                          ctx,
+                          keyListEntries.stream()
+                              .map(KeyListEntry::getCommitId)
+                              .filter(Objects::nonNull)
+                              .distinct()
+                              .collect(Collectors.toList()),
+                          h -> null);
+                  commitLogEntries.forEach(commitLogEntryHandler);
+                }
 
-              remainingKeys.retainAll(
-                  remainingInKeyList.stream()
-                      .map(KeyListEntry::getKey)
-                      .collect(Collectors.toSet()));
+                // Older Nessie versions before 0.22.0 did not record the commit-ID for a key
+                // so that we have to continue scanning the commit log for the remaining keys.
+                // Newer Nessie versions since 0.22.0 do record the commit-ID, so we can safely
+                // assume that remainingKeys do not exist.
+                remainingKeys.retainAll(
+                    keyListEntries.stream()
+                        .filter(e -> e.getCommitId() == null)
+                        .map(KeyListEntry::getKey)
+                        .collect(Collectors.toSet()));
+              }
             }
           });
     }
@@ -1448,6 +1466,75 @@ public abstract class AbstractDatabaseAdapter<
                 e ->
                     ContentAndState.of(
                         e.getValue(), globals.get(keyToContentIds.get(e.getKey())))));
+  }
+
+  /**
+   * Handles key lists written with {@link CommitLogEntry.KeyListVariant#OPEN_ADDRESSING} (since
+   * Nessie 0.31.0).
+   */
+  private List<KeyListEntry> fetchValuesHandleOpenAddressingKeyList(
+      OP_CONTEXT ctx, Collection<Key> remainingKeys, CommitLogEntry entry) {
+    FetchValuesUsingOpenAddressing helper = new FetchValuesUsingOpenAddressing(entry);
+
+    List<KeyListEntry> keyListEntries = new ArrayList<>();
+
+    // If one or more `Key`s could not be immediately found in their "natural" segment in round 0,
+    // because the end of the segment was hit, the next segment(s) will be consulted for the
+    // remaining keys. Each "wrap around" increments the 'round'.
+    for (int round = 0; !remainingKeys.isEmpty(); round++) {
+      // Figure out the key-list-entities to load
+      List<Hash> entitiesToFetch =
+          helper.entityIdsToFetch(round, config.getKeyListEntityPrefetch(), remainingKeys);
+
+      // Fetch the key-list-entities for the identified segments, store those
+      if (!entitiesToFetch.isEmpty()) {
+        try (Stream<KeyListEntity> keyLists = fetchKeyLists(ctx, entitiesToFetch)) {
+          keyLists.forEach(helper::entityLoaded);
+        }
+      }
+
+      // Try to extract the key-list-entries for the remainingKeys and add to the result list
+      remainingKeys = helper.checkForKeys(round, remainingKeys, keyListEntries::add);
+    }
+
+    return keyListEntries;
+  }
+
+  /**
+   * Handles key lists written with {@link CommitLogEntry.KeyListVariant#EMBEDDED_AND_EXTERNAL_MRU}
+   * (before Nessie 0.31.0).
+   */
+  private List<KeyListEntry> fetchValuesHandleKeyList(
+      OP_CONTEXT ctx, Set<Key> remainingKeys, CommitLogEntry entry) {
+    List<KeyListEntry> keyListEntries = new ArrayList<>();
+
+    try (Stream<KeyList> keyLists = keyListsFromCommitLogEntry(ctx, entry)) {
+      keyLists
+          .flatMap(keyList -> keyList.getKeys().stream())
+          .filter(Objects::nonNull)
+          .filter(keyListEntry -> remainingKeys.contains(keyListEntry.getKey()))
+          .forEach(keyListEntries::add);
+    }
+
+    return keyListEntries;
+  }
+
+  private Stream<KeyList> keyListsFromCommitLogEntry(OP_CONTEXT ctx, CommitLogEntry entry) {
+    KeyList embeddedKeyList = entry.getKeyList();
+
+    Stream<KeyList> keyList = embeddedKeyList != null ? Stream.of(embeddedKeyList) : Stream.empty();
+
+    List<Hash> keyListIds = entry.getKeyListsIds();
+    if (keyListIds != null && !keyListIds.isEmpty()) {
+      keyList =
+          Stream.concat(
+              Stream.of(entry.getKeyList()),
+              Stream.of(keyListIds)
+                  // lazy fetch
+                  .flatMap(ids -> fetchKeyLists(ctx, ids).map(KeyListEntity::getKeys)));
+    }
+
+    return keyList;
   }
 
   /**

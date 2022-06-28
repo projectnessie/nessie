@@ -15,114 +15,156 @@
  */
 package org.projectnessie.versioned.persist.adapter.spi;
 
+import static java.lang.Integer.numberOfLeadingZeros;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.randomHash;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
-import org.projectnessie.versioned.Hash;
+import java.util.stream.Collectors;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
+import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ImmutableKeyList;
+import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 
 /**
- * Helper object for {@link AbstractDatabaseAdapter#buildKeyList(AutoCloseable, CommitLogEntry,
- * Consumer, Function)}.
+ * Compute the {@link CommitLogEntry#getKeyList() embedded key-list} and {@link KeyListEntity}s,
+ * accessible via {@link CommitLogEntry#getKeyListsIds()}.
+ *
+ * <p>Commits with {@link CommitLogEntry.KeyListVariant#OPEN_ADDRESSING} are represented as an
+ * open-addressing hash map with {@link org.projectnessie.versioned.Key} as the map key.
+ *
+ * <p>That open-addressing hash map is split into multiple segments, if necessary.
+ *
+ * <p>The first segment is represented by the {@link CommitLogEntry#getKeyList() embedded key-list}
+ * with a serialized size goal up to {@link DatabaseAdapterConfig#getMaxKeyListSize()}. All
+ * following segments have a serialized size up to {@link
+ * DatabaseAdapterConfig#getMaxKeyListEntitySize()} as the goal.
+ *
+ * <p>Maximum size constraints are fulfilled using a best-effort approach.
+ *
+ * <p>Used by {@link AbstractDatabaseAdapter#buildKeyList(AutoCloseable, CommitLogEntry, Consumer,
+ * Function)}.
  */
 class KeyListBuildState {
 
+  static final int MINIMUM_BUCKET_SIZE = 4096;
   private final ImmutableCommitLogEntry.Builder newCommitEntry;
 
   private final int maxEmbeddedKeyListSize;
   private final int maxKeyListEntitySize;
+  private final float loadFactor;
   private final ToIntFunction<KeyListEntry> serializedEntrySize;
-
-  /** Builder for {@link CommitLogEntry#getKeyList()}. */
-  private ImmutableKeyList.Builder embeddedBuilder = ImmutableKeyList.builder();
-  /** Builder for {@link KeyListEntity}. */
-  private ImmutableKeyList.Builder currentKeyList;
-  /** Already built {@link KeyListEntity}s. */
-  private List<KeyListEntity> newKeyListEntities = new ArrayList<>();
-
-  /** Flag whether {@link CommitLogEntry#getKeyList()} is being filled. */
-  private boolean embedded = true;
-
-  /** Current size of either the {@link CommitLogEntry} or current {@link KeyListEntity}. */
-  private int currentSize;
+  private final List<KeyListEntry> entries = new ArrayList<>();
 
   KeyListBuildState(
-      int initialSize,
       ImmutableCommitLogEntry.Builder newCommitEntry,
       int maxEmbeddedKeyListSize,
       int maxKeyListEntitySize,
+      float loadFactor,
       ToIntFunction<KeyListEntry> serializedEntrySize) {
-    this.currentSize = initialSize;
     this.newCommitEntry = newCommitEntry;
     this.maxEmbeddedKeyListSize = maxEmbeddedKeyListSize;
     this.maxKeyListEntitySize = maxKeyListEntitySize;
+    this.loadFactor = loadFactor;
     this.serializedEntrySize = serializedEntrySize;
   }
 
-  void add(KeyListEntry keyListEntry) {
-    int entrySize = serializedEntrySize.applyAsInt(keyListEntry);
-    if (embedded) {
-      // filling the embedded key-list in CommitLogEntry
+  void add(KeyListEntry entry) {
+    entries.add(entry);
+  }
 
-      if (currentSize + entrySize < maxEmbeddedKeyListSize) {
-        // CommitLogEntry.keyList still has room
-        addToEmbedded(keyListEntry, entrySize);
-      } else {
-        // CommitLogEntry.keyList is "full", switch to the first KeyListEntity
-        embedded = false;
-        newKeyListEntity();
-        addToKeyListEntity(keyListEntry, entrySize);
+  static int nextPowerOfTwo(final int v) {
+    return 1 << (32 - numberOfLeadingZeros(v - 1));
+  }
+
+  List<KeyListEntity> finish() {
+    // Build open-addressing map
+    int openAddressingBuckets = openAddressingSegments();
+    int openAddressingMask = openAddressingBuckets - 1;
+    KeyListEntry[] openAddressingHashMap = new KeyListEntry[openAddressingBuckets];
+    for (KeyListEntry entry : entries) {
+      int hash = entry.getKey().hashCode();
+      int bucket = hash & openAddressingMask;
+
+      // add to map
+      for (int i = bucket; ; ) {
+        if (openAddressingHashMap[i] == null) {
+          openAddressingHashMap[i] = entry;
+          break;
+        }
+
+        i++;
+        if (i == openAddressingBuckets) {
+          i = 0;
+        }
       }
+    }
+
+    // Generate all KeyList objects. The first one for the embedded key-list and all other ones
+    // for key-list-entities. Offsets are kept for key-list-entities, because the embedded
+    // key-list's is always the first one.
+
+    List<Integer> offsets = new ArrayList<>();
+    List<KeyList> keyLists = new ArrayList<>();
+
+    int segmentSize = 0;
+    int maxSegmentSize = maxEmbeddedKeyListSize;
+    ImmutableKeyList.Builder keyListBuilder = ImmutableKeyList.builder();
+    for (int i = 0; i < openAddressingHashMap.length; i++) {
+      KeyListEntry entry = openAddressingHashMap[i];
+
+      if (entry != null) {
+        int entrySize = serializedEntrySize.applyAsInt(entry);
+
+        if (segmentSize + entrySize > maxSegmentSize) {
+          maxSegmentSize = maxKeyListEntitySize;
+          offsets.add(i);
+          keyLists.add(keyListBuilder.build());
+          keyListBuilder = ImmutableKeyList.builder();
+          segmentSize = 0;
+        }
+
+        segmentSize += entrySize;
+      }
+      keyListBuilder.addKeys(entry);
+    }
+    if (segmentSize > 0) {
+      // Only add the last key-list-entity if it actually contains entries (not all null)
+      keyLists.add(keyListBuilder.build());
+    }
+
+    // Very rare, but it's possible that there are no keys at all.
+    if (!keyLists.isEmpty()) {
+      newCommitEntry.keyList(keyLists.get(0));
     } else {
-      // filling linked key-lists via CommitLogEntry.keyListIds
-
-      if (currentSize + entrySize > maxKeyListEntitySize) {
-        // current KeyListEntity is "full", switch to a new one
-        finishKeyListEntity();
-        newKeyListEntity();
-      }
-      addToKeyListEntity(keyListEntry, entrySize);
+      newCommitEntry.keyList(KeyList.EMPTY);
     }
-  }
+    newCommitEntry.keyListLoadFactor(loadFactor);
+    newCommitEntry.keyListSegmentCount(openAddressingBuckets);
 
-  private void finishKeyListEntity() {
-    Hash id = randomHash();
-    newKeyListEntities.add(KeyListEntity.of(id, currentKeyList.build()));
-    newCommitEntry.addKeyListsIds(id);
-  }
+    List<KeyListEntity> builtEntities =
+        keyLists.stream()
+            .skip(1)
+            .map(keyList -> KeyListEntity.of(randomHash(), keyList))
+            .collect(Collectors.toList());
 
-  private void newKeyListEntity() {
-    currentSize = 0;
-    currentKeyList = ImmutableKeyList.builder();
-  }
-
-  private void addToKeyListEntity(KeyListEntry keyListEntry, int keyTypeSize) {
-    currentSize += keyTypeSize;
-    currentKeyList.addKeys(keyListEntry);
-  }
-
-  private void addToEmbedded(KeyListEntry keyListEntry, int keyTypeSize) {
-    currentSize += keyTypeSize;
-    embeddedBuilder.addKeys(keyListEntry);
-  }
-
-  void finish() {
-    // If there's an "unfinished" KeyListEntity, build it.
-    if (currentKeyList != null) {
-      finishKeyListEntity();
+    if (!builtEntities.isEmpty()) {
+      builtEntities.stream().map(KeyListEntity::getId).forEach(newCommitEntry::addKeyListsIds);
+      newCommitEntry.addAllKeyListEntityOffsets(offsets);
     }
-    newCommitEntry.keyList(embeddedBuilder.build());
+
+    return builtEntities;
   }
 
-  List<KeyListEntity> buildNewKeyListEntities() {
-    return newKeyListEntities;
+  @VisibleForTesting
+  int openAddressingSegments() {
+    return nextPowerOfTwo((int) (entries.size() / loadFactor));
   }
 }

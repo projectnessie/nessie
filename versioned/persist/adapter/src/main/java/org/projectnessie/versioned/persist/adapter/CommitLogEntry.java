@@ -70,10 +70,28 @@ public interface CommitLogEntry {
    */
   List<Hash> getKeyListsIds();
 
+  @Nullable
+  List<Integer> getKeyListEntityOffsets();
+
+  @Nullable
+  Float getKeyListLoadFactor();
+
+  @Nullable
+  Integer getKeyListSegmentCount();
+
   /** Number of commits since the last complete key-list. */
   int getKeyListDistance();
 
   List<Hash> getAdditionalParents();
+
+  @Value.Default
+  default KeyListVariant getKeyListVariant() {
+    return KeyListVariant.EMBEDDED_AND_EXTERNAL_MRU;
+  }
+
+  default boolean hasKeySummary() {
+    return getKeyListVariant() != KeyListVariant.EMBEDDED_AND_EXTERNAL_MRU || getKeyList() != null;
+  }
 
   static CommitLogEntry of(
       long createdTime,
@@ -86,19 +104,56 @@ public interface CommitLogEntry {
       int keyListDistance,
       KeyList keyList,
       Iterable<Hash> keyListIds,
+      Iterable<Integer> keyListEntityOffsets,
       Iterable<Hash> additionalParents) {
-    return ImmutableCommitLogEntry.builder()
-        .createdTime(createdTime)
-        .hash(hash)
-        .commitSeq(commitSeq)
-        .parents(parents)
-        .metadata(metadata)
-        .puts(puts)
-        .deletes(deletes)
-        .keyListDistance(keyListDistance)
-        .keyList(keyList)
-        .addAllKeyListsIds(keyListIds)
-        .addAllAdditionalParents(additionalParents)
-        .build();
+    ImmutableCommitLogEntry.Builder c =
+        ImmutableCommitLogEntry.builder()
+            .createdTime(createdTime)
+            .hash(hash)
+            .commitSeq(commitSeq)
+            .parents(parents)
+            .metadata(metadata)
+            .puts(puts)
+            .deletes(deletes)
+            .keyListDistance(keyListDistance)
+            .keyList(keyList)
+            .addAllKeyListsIds(keyListIds)
+            .addAllAdditionalParents(additionalParents);
+    if (keyListEntityOffsets != null) {
+      c.addAllKeyListEntityOffsets(keyListEntityOffsets);
+    }
+    return c.build();
+  }
+
+  enum KeyListVariant {
+    /**
+     * The variant in which Nessie versions 0.10.0..0.30.0 write {@link CommitLogEntry#getKeyList()
+     * embedded key-list} and {@link KeyListEntity key-list entities}.
+     *
+     * <p>Most recently updated {@link KeyListEntry}s appear first.
+     *
+     * <p>The {@link CommitLogEntry#getKeyList() embedded key-list} is filled first up to {@link
+     * DatabaseAdapterConfig#getMaxKeyListSize()}, more {@link KeyListEntry}s are written to
+     * "external"{@link KeyListEntity key-list entities} with their IDs in {@link
+     * CommitLogEntry#getKeyListsIds()}.
+     */
+    EMBEDDED_AND_EXTERNAL_MRU,
+    /**
+     * The variant in which Nessie versions since 0.31.0 maintains {@link
+     * CommitLogEntry#getKeyList() embedded key-list} and {@link KeyListEntity key-list entities}.
+     *
+     * <p>{@link KeyListEntry}s are maintained as an open-addressing hash map with {@link
+     * org.projectnessie.versioned.Key} as the map key.
+     *
+     * <p>That open-addressing hash map is split into multiple segments, if necessary.
+     *
+     * <p>The first segment is represented by the {@link CommitLogEntry#getKeyList() embedded
+     * key-list} with a serialized size goal up to {@link
+     * DatabaseAdapterConfig#getMaxKeyListSize()}. All following segments have a serialized size up
+     * to {@link DatabaseAdapterConfig#getMaxKeyListEntitySize()} as the goal.
+     *
+     * <p>Maximum size constraints are fulfilled using a best-effort approach.
+     */
+    OPEN_ADDRESSING
   }
 }
