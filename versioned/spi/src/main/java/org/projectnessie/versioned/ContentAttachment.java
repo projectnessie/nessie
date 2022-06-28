@@ -53,6 +53,7 @@ public interface ContentAttachment {
    */
   enum Format {
     JSON,
+    /** See <a href="https://datatracker.ietf.org/doc/html/rfc8949">RFC 8949</a>. */
     CBOR
   }
 
