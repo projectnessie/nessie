@@ -15,7 +15,7 @@
 
 # Projectnessie GitHub Release workflow
 
-# Manually triggered workflow, takes the "release-version" and "next-version" arguments.
+# Manually triggered workflow, takes the "release-version" argument.
 
 # This workflow creates the git commits + git tag for a Nessie release.
 # It requires a fully successful CI status of the commit going to be released, i.e. we rely on
@@ -84,7 +84,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install bump2version
-        # Remove the following, once https://github.com/c4urself/bump2version/issues/214 is fixed
+        # Remove the following, once https://github.com/c4urself/bump2version/issues/30 is fixed
         # and the two workarounds below are removed.
         pip install -r python/requirements.txt
     ### END runner setup
