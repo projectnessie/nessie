@@ -131,7 +131,7 @@ public class TestKeyListBuildState {
 
     assertThat(entities).hasSize(expectedBuckets);
 
-    int totalBuckets = keyListBuilder.openAddressingBuckets();
+    int totalBuckets = keyListBuilder.openAddressingSegments();
     int hashMask = totalBuckets - 1;
     assertThat(entries)
         .allSatisfy(

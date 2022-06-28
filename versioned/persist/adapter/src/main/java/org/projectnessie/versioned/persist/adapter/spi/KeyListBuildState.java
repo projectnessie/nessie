@@ -86,9 +86,9 @@ class KeyListBuildState {
 
   List<KeyListEntity> finish() {
     // Build open-addressing map
-    int openAddressingEntries = openAddressingBuckets();
-    int openAddressingMask = openAddressingEntries - 1;
-    KeyListEntry[] openAddressingHashMap = new KeyListEntry[openAddressingEntries];
+    int openAddressingBuckets = openAddressingSegments();
+    int openAddressingMask = openAddressingBuckets - 1;
+    KeyListEntry[] openAddressingHashMap = new KeyListEntry[openAddressingBuckets];
     for (KeyListEntry entry : entries) {
       int hash = entry.getKey().hashCode();
       int bucket = hash & openAddressingMask;
@@ -101,7 +101,7 @@ class KeyListBuildState {
         }
 
         i++;
-        if (i == openAddressingEntries) {
+        if (i == openAddressingBuckets) {
           i = 0;
         }
       }
@@ -114,8 +114,8 @@ class KeyListBuildState {
     List<Integer> offsets = new ArrayList<>();
     List<KeyList> keyLists = new ArrayList<>();
 
-    int bucketSize = 0;
-    int maxBucketSize = maxEmbeddedKeyListSize;
+    int segmentSize = 0;
+    int maxSegmentSize = maxEmbeddedKeyListSize;
     ImmutableKeyList.Builder keyListBuilder = ImmutableKeyList.builder();
     for (int i = 0; i < openAddressingHashMap.length; i++) {
       KeyListEntry entry = openAddressingHashMap[i];
@@ -123,19 +123,19 @@ class KeyListBuildState {
       if (entry != null) {
         int entrySize = serializedEntrySize.applyAsInt(entry);
 
-        if (bucketSize + entrySize > maxBucketSize) {
-          maxBucketSize = maxKeyListEntitySize;
+        if (segmentSize + entrySize > maxSegmentSize) {
+          maxSegmentSize = maxKeyListEntitySize;
           offsets.add(i);
           keyLists.add(keyListBuilder.build());
           keyListBuilder = ImmutableKeyList.builder();
-          bucketSize = 0;
+          segmentSize = 0;
         }
 
-        bucketSize += entrySize;
+        segmentSize += entrySize;
       }
       keyListBuilder.addKeys(entry);
     }
-    if (bucketSize > 0) {
+    if (segmentSize > 0) {
       // Only add the last key-list-entity if it actually contains entries (not all null)
       keyLists.add(keyListBuilder.build());
     }
@@ -147,7 +147,7 @@ class KeyListBuildState {
       newCommitEntry.keyList(KeyList.EMPTY);
     }
     newCommitEntry.keyListLoadFactor(loadFactor);
-    newCommitEntry.keyListBucketCount(openAddressingEntries);
+    newCommitEntry.keyListSegmentCount(openAddressingBuckets);
 
     List<KeyListEntity> builtEntities =
         keyLists.stream()
@@ -164,7 +164,7 @@ class KeyListBuildState {
   }
 
   @VisibleForTesting
-  int openAddressingBuckets() {
+  int openAddressingSegments() {
     return nextPowerOfTwo((int) (entries.size() / loadFactor));
   }
 }

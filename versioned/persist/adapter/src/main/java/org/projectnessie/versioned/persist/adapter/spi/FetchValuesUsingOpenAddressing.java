@@ -28,13 +28,21 @@ import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 
+/**
+ * Processes {@link CommitLogEntry#getKeyList() embedded} and {@link CommitLogEntry#getKeyListsIds()
+ * external} key-lists written by {@link KeyListBuildState}.
+ *
+ * <p>This implementation can process arbitrary numbers of {@link
+ * CommitLogEntry#getKeyListSegmentCount() segments}, the number of segments does not need to be a
+ * power of 2 here.
+ */
 final class FetchValuesUsingOpenAddressing {
 
   final int[] keyListSegmentOffsets;
   final int keyListCount;
   final KeyListEntry[][] keyListsArray;
   final Object2IntHashMap<Hash> entityIdToSegment;
-  final int hashMask;
+  final int segmentCount;
   final List<Hash> keyListIds;
 
   FetchValuesUsingOpenAddressing(CommitLogEntry entry) {
@@ -50,14 +58,20 @@ final class FetchValuesUsingOpenAddressing {
 
     entityIdToSegment = new Object2IntHashMap<>(keyListCount, Hashing.DEFAULT_LOAD_FACTOR, -1);
 
-    hashMask = entry.getKeyListBucketCount() - 1;
+    segmentCount = entry.getKeyListSegmentCount();
 
     keyListIds = entry.getKeyListsIds();
   }
 
   /** Calculates the open-addressing bucket for a key. */
-  int bucketForKey(Key key) {
-    return key.hashCode() & hashMask;
+  int segmentForKey(Key key) {
+    return segment(key.hashCode());
+  }
+
+  private int segment(int num) {
+    // This is compatible to 'num & (segmentCount-1)' (if segmentCount is a power of 2).
+    int mod = num % segmentCount;
+    return num >= 0 ? mod : segmentCount + mod;
   }
 
   /**
@@ -67,7 +81,7 @@ final class FetchValuesUsingOpenAddressing {
   int segmentForKey(int bucket, int round) {
     int binIdx = Arrays.binarySearch(keyListSegmentOffsets, bucket);
     int segment = binIdx >= 0 ? binIdx + 1 : -binIdx - 1;
-    return (segment + round) & hashMask;
+    return segment(segment + round);
   }
 
   /**
@@ -78,7 +92,7 @@ final class FetchValuesUsingOpenAddressing {
     // Identify the key-list segments to fetch
     List<Hash> entitiesToFetch = new ArrayList<>();
     for (Key key : remainingKeys) {
-      int keyBucket = bucketForKey(key);
+      int keyBucket = segmentForKey(key);
       int segment = segmentForKey(keyBucket, round);
 
       for (int prefetch = 0; ; prefetch++) {
@@ -118,7 +132,7 @@ final class FetchValuesUsingOpenAddressing {
       int round, Collection<Key> remainingKeys, Consumer<KeyListEntry> resultConsumer) {
     List<Key> keysForNextRound = new ArrayList<>();
     for (Key key : remainingKeys) {
-      int keyBucket = bucketForKey(key);
+      int keyBucket = segmentForKey(key);
       int segment = segmentForKey(keyBucket, round);
       int offsetInSegment = 0;
       if (round == 0) {

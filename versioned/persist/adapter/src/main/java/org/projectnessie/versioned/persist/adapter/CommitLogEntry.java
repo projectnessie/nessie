@@ -77,7 +77,7 @@ public interface CommitLogEntry {
   Float getKeyListLoadFactor();
 
   @Nullable
-  Integer getKeyListBucketCount();
+  Integer getKeyListSegmentCount();
 
   /** Number of commits since the last complete key-list. */
   int getKeyListDistance();
