@@ -1440,20 +1440,15 @@ public abstract class AbstractDatabaseAdapter<
                   commitLogEntries.forEach(commitLogEntryHandler);
                 }
 
-                if (keyListEntries.stream()
-                    .map(KeyListEntry::getCommitId)
-                    .anyMatch(Objects::isNull)) {
-                  // Older Nessie versions before 0.22.0 did not record the commit-ID for a key
-                  // so that we have to continue scanning the commit log for the remaining keys.
-                  remainingKeys.retainAll(
-                      keyListEntries.stream()
-                          .map(KeyListEntry::getKey)
-                          .collect(Collectors.toSet()));
-                } else {
-                  // Newer Nessie versions since 0.22.0 do record the commit-ID, so we can safely
-                  // assume that remainingKeys do not exist.
-                  remainingKeys.clear();
-                }
+                // Older Nessie versions before 0.22.0 did not record the commit-ID for a key
+                // so that we have to continue scanning the commit log for the remaining keys.
+                // Newer Nessie versions since 0.22.0 do record the commit-ID, so we can safely
+                // assume that remainingKeys do not exist.
+                remainingKeys.retainAll(
+                    keyListEntries.stream()
+                        .filter(e -> e.getCommitId() == null)
+                        .map(KeyListEntry::getKey)
+                        .collect(Collectors.toSet()));
               }
             }
           });
