@@ -22,12 +22,16 @@ import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSeriali
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.toProto;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.hashCollisionDetected;
 
+import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators.AbstractSpliterator;
@@ -53,6 +57,10 @@ import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentKey;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentKeyList;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentValue;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.ContentId;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
@@ -722,5 +730,176 @@ public class RocksDatabaseAdapter
           }
         };
     return StreamSupport.stream(split, false).onClose(iter::close);
+  }
+
+  @Override
+  protected void writeAttachments(Stream<Entry<AttachmentKey, AttachmentValue>> attachments) {
+    Lock lock = dbInstance.getLock().writeLock();
+    lock.lock();
+    try {
+      attachments.forEach(
+          b -> {
+            try {
+              storeAttachmentKey(b.getKey());
+              db.put(
+                  dbInstance.getCfAttachments(),
+                  dbKey(b.getKey().toByteString()),
+                  b.getValue().toByteArray());
+            } catch (RocksDBException e) {
+              throw new RuntimeException(e);
+            }
+          });
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  @Override
+  protected boolean consistentWriteAttachment(
+      AttachmentKey key, AttachmentValue value, Optional<String> expectedVersion) {
+    Lock lock = dbInstance.getLock().writeLock();
+    lock.lock();
+    try {
+      byte[] dbKey = dbKey(key.toByteString());
+      byte[] current = db.get(dbInstance.getCfAttachments(), dbKey);
+      if (expectedVersion.isPresent()) {
+        try {
+          if (current == null) {
+            return false;
+          }
+          AttachmentValue val = AttachmentValue.parseFrom(current);
+          if (!val.hasVersion() || !val.getVersion().equals(expectedVersion.get())) {
+            return false;
+          }
+        } catch (InvalidProtocolBufferException e) {
+          throw new RuntimeException(e);
+        }
+      } else {
+        if (current != null) {
+          return false;
+        }
+        storeAttachmentKey(key);
+      }
+      db.put(dbInstance.getCfAttachments(), dbKey, value.toByteArray());
+      return true;
+    } catch (RocksDBException e) {
+      throw new RuntimeException(e);
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  private void storeAttachmentKey(AttachmentKey attachmentKey) throws RocksDBException {
+    byte[] dbKey = dbKey(attachmentKey.getContentId().toByteString());
+    byte[] old = db.get(dbInstance.getCfAttachmentKeys(), dbKey);
+    AttachmentKeyList.Builder keyList;
+    if (old == null) {
+      keyList = AttachmentKeyList.newBuilder().addKeys(attachmentKey);
+    } else {
+      try {
+        keyList = AttachmentKeyList.newBuilder().mergeFrom(old);
+      } catch (InvalidProtocolBufferException e) {
+        throw new RuntimeException(e);
+      }
+      if (!keyList.getKeysList().contains(attachmentKey)) {
+        keyList.addKeys(attachmentKey);
+      }
+    }
+    db.put(dbInstance.getCfAttachmentKeys(), dbKey, keyList.build().toByteArray());
+  }
+
+  private void removeAttachmentKey(AttachmentKey attachmentKey) throws RocksDBException {
+    byte[] dbKey = dbKey(attachmentKey.getContentId().toByteString());
+    byte[] old = db.get(dbInstance.getCfAttachmentKeys(), dbKey);
+    if (old == null) {
+      return;
+    }
+    AttachmentKeyList.Builder keyList;
+    try {
+      keyList = AttachmentKeyList.newBuilder().mergeFrom(old);
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
+    for (int i = 0; i < keyList.getKeysList().size(); i++) {
+      if (keyList.getKeys(i).equals(attachmentKey)) {
+        keyList.removeKeys(i);
+        break;
+      }
+    }
+    db.put(dbInstance.getCfAttachmentKeys(), dbKey, keyList.build().toByteArray());
+  }
+
+  @Override
+  protected Stream<AttachmentKey> fetchAttachmentKeys(String contentId) {
+    try {
+      byte[] dbKey = dbKey(ContentId.newBuilder().setId(contentId).build().toByteString());
+      byte[] attachmentKeys = db.get(dbInstance.getCfAttachmentKeys(), dbKey);
+      if (attachmentKeys == null) {
+        return Stream.empty();
+      }
+      AttachmentKeyList keyList;
+      try {
+        keyList = AttachmentKeyList.parseFrom(attachmentKeys);
+      } catch (InvalidProtocolBufferException e) {
+        throw new RuntimeException(e);
+      }
+      return keyList.getKeysList().stream();
+    } catch (RocksDBException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  protected Stream<Entry<AttachmentKey, AttachmentValue>> fetchAttachments(
+      Stream<AttachmentKey> keys) {
+    try {
+      List<AttachmentKey> keyList = keys.collect(Collectors.toList());
+      if (keyList.isEmpty()) {
+        return Stream.empty();
+      }
+      List<ColumnFamilyHandle> handles =
+          Collections.nCopies(keyList.size(), dbInstance.getCfAttachments());
+
+      List<byte[]> result =
+          db.multiGetAsList(
+              handles,
+              keyList.stream().map(k -> dbKey(k.toByteString())).collect(Collectors.toList()));
+
+      return IntStream.range(0, keyList.size())
+          .mapToObj(
+              i -> {
+                byte[] r = result.get(i);
+                if (r == null) {
+                  return null;
+                }
+                try {
+                  return Maps.immutableEntry(keyList.get(i), AttachmentValue.parseFrom(r));
+                } catch (InvalidProtocolBufferException e) {
+                  throw new RuntimeException(e);
+                }
+              })
+          .filter(Objects::nonNull);
+    } catch (RocksDBException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  protected void purgeAttachments(Stream<AttachmentKey> keys) {
+    Lock lock = dbInstance.getLock().writeLock();
+    lock.lock();
+    try {
+      keys.forEach(
+          k -> {
+            try {
+              db.delete(dbInstance.getCfAttachments(), dbKey(k.toByteString()));
+              removeAttachmentKey(k);
+            } catch (RocksDBException e) {
+              throw new RuntimeException(e);
+            }
+          });
+    } finally {
+      lock.unlock();
+    }
   }
 }

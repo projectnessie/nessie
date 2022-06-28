@@ -166,3 +166,33 @@ message Entry {
   string key = 1;
   string value = 2;
 }
+
+message AttachmentKey {
+  ContentId content_id = 1;
+  string attachment_type = 2;
+  string attachment_id = 3;
+}
+
+message AttachmentValue {
+  // Optional integer ID of an attachment content object representing e.g. the
+  // snapshot ID of an Iceberg table metadata. This field is _not_ part of the
+  // attachment key.
+  optional int64 object_id = 1;
+  Format format = 2;
+  Compression compression = 3;
+  bytes data = 4;
+  optional string version = 5;
+}
+
+enum Format {
+  JSON = 0;
+  CBOR = 1;
+}
+
+enum Compression {
+  NONE = 0;
+}
+
+message AttachmentKeyList {
+  repeated AttachmentKey keys = 1;
+}

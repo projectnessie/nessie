@@ -73,6 +73,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
@@ -2118,4 +2119,6 @@ public abstract class AbstractDatabaseAdapter<
                 e));
     Tags.ERROR.set(log, true);
   }
+
+  protected abstract void persistAttachments(OP_CONTEXT ctx, Stream<ContentAttachment> attachments);
 }

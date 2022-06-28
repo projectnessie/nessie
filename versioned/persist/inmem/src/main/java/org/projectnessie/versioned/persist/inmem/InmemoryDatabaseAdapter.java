@@ -21,11 +21,13 @@ import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSeriali
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.hashCollisionDetected;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.referenceNotFound;
 
+import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -46,6 +48,10 @@ import org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentKey;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentKeyList;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentValue;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.ContentId;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
@@ -457,5 +463,150 @@ public class InmemoryDatabaseAdapter
         .filter(e -> e.getKey().startsWith(keyPrefix))
         .map(Entry::getValue)
         .map(ProtoSerialization::protoToCommitLogEntry);
+  }
+
+  @Override
+  protected void writeAttachments(Stream<Entry<AttachmentKey, AttachmentValue>> attachments) {
+    attachments.forEach(
+        e -> {
+          AttachmentKey attachmentKey = e.getKey();
+          storeAttachmentKey(attachmentKey);
+          store.attachments.put(dbKey(attachmentKey.toByteString()), e.getValue().toByteString());
+        });
+  }
+
+  private void storeAttachmentKey(AttachmentKey attachmentKey) {
+    store.attachmentKeys.compute(
+        dbKey(attachmentKey.getContentId().getIdBytes()),
+        (key, old) -> {
+          AttachmentKeyList.Builder keyList;
+          if (old == null) {
+            keyList = AttachmentKeyList.newBuilder().addKeys(attachmentKey);
+          } else {
+            try {
+              keyList = AttachmentKeyList.newBuilder().mergeFrom(old);
+            } catch (InvalidProtocolBufferException e) {
+              throw new RuntimeException(e);
+            }
+            if (!keyList.getKeysList().contains(attachmentKey)) {
+              keyList.addKeys(attachmentKey);
+            }
+          }
+          return keyList.build().toByteString();
+        });
+  }
+
+  private void removeAttachmentKey(AttachmentKey attachmentKey) {
+    store.attachmentKeys.compute(
+        dbKey(attachmentKey.getContentId().getIdBytes()),
+        (key, old) -> {
+          if (old == null) {
+            return null;
+          }
+          AttachmentKeyList.Builder keyList;
+          try {
+            keyList = AttachmentKeyList.newBuilder().mergeFrom(old);
+          } catch (InvalidProtocolBufferException e) {
+            throw new RuntimeException(e);
+          }
+          for (int i = 0; i < keyList.getKeysList().size(); i++) {
+            if (keyList.getKeys(i).equals(attachmentKey)) {
+              keyList.removeKeys(i);
+              break;
+            }
+          }
+          return keyList.build().toByteString();
+        });
+  }
+
+  @Override
+  protected Stream<AttachmentKey> fetchAttachmentKeys(String contentId) {
+    ByteString attachmentKeys =
+        store.attachmentKeys.get(dbKey(ContentId.newBuilder().setId(contentId).getIdBytes()));
+    if (attachmentKeys == null) {
+      return Stream.empty();
+    }
+    AttachmentKeyList keyList;
+    try {
+      keyList = AttachmentKeyList.parseFrom(attachmentKeys);
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
+    return keyList.getKeysList().stream();
+  }
+
+  // This "sentinel" exception never "escapes" to the call site.
+  @SuppressWarnings("StaticAssignmentOfThrowable")
+  private static final IllegalStateException CONSISTENT_WRITE_ATTACHMENT_CONFLICT =
+      new IllegalStateException("consistentWriteAttachment conflict sentinel");
+
+  @Override
+  protected boolean consistentWriteAttachment(
+      AttachmentKey key, AttachmentValue value, Optional<String> expectedVersion) {
+    try {
+      store.attachments.compute(
+          dbKey(key.toByteString()),
+          (k, current) -> {
+            if (expectedVersion.isPresent()) {
+              if (current != null) {
+                try {
+                  AttachmentValue currentValue = AttachmentValue.parseFrom(current);
+                  if (currentValue.hasVersion()
+                      && currentValue.getVersion().equals(expectedVersion.get())) {
+                    return value.toByteString();
+                  }
+                } catch (InvalidProtocolBufferException e) {
+                  throw new RuntimeException(e);
+                }
+              }
+              // consistent-update failed, key not present or hash!=expected, throw this "sentinel"
+              // that's handled below
+              throw CONSISTENT_WRITE_ATTACHMENT_CONFLICT;
+            } else {
+              if (current != null) {
+                // consistent-update failed, key already present, throw this "sentinel" that's
+                // handled below
+                throw CONSISTENT_WRITE_ATTACHMENT_CONFLICT;
+              }
+              storeAttachmentKey(key);
+              return value.toByteString();
+            }
+          });
+    } catch (IllegalStateException x) {
+      // Catch ISE to report consistent-update failure
+      if (CONSISTENT_WRITE_ATTACHMENT_CONFLICT == x) {
+        return false;
+      }
+      // ISE
+      throw x;
+    }
+    return true;
+  }
+
+  @Override
+  protected Stream<Entry<AttachmentKey, AttachmentValue>> fetchAttachments(
+      Stream<AttachmentKey> keys) {
+    return keys.map(
+            k -> {
+              ByteString v = store.attachments.get(dbKey(k.toByteString()));
+              if (v == null) {
+                return null;
+              }
+              try {
+                return Maps.immutableEntry(k, AttachmentValue.parseFrom(v));
+              } catch (InvalidProtocolBufferException e) {
+                throw new RuntimeException(e);
+              }
+            })
+        .filter(Objects::nonNull);
+  }
+
+  @Override
+  protected void purgeAttachments(Stream<AttachmentKey> keys) {
+    keys.forEach(
+        key -> {
+          store.attachments.remove(dbKey(key.toByteString()));
+          removeAttachmentKey(key);
+        });
   }
 }

@@ -17,8 +17,12 @@ package org.projectnessie.versioned.persist.dynamodb;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.attachmentKeyAsString;
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.attachmentKeyFromString;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.toProto;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.KEY_NAME;
+import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_ATTACHMENTS;
+import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_ATTACHMENT_KEYS;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_COMMIT_LOG;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_GLOBAL_LOG;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_GLOBAL_POINTER;
@@ -29,16 +33,20 @@ import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_REF_LOG_
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_REF_NAMES;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.TABLE_REPO_DESC;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.VALUE_NAME;
+import static org.projectnessie.versioned.persist.dynamodb.Tables.VERSION_NAME;
 import static org.projectnessie.versioned.persist.dynamodb.Tables.allExceptGlobalPointer;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -61,6 +69,8 @@ import org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentKey;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentValue;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
@@ -83,6 +93,7 @@ import software.amazon.awssdk.services.dynamodb.model.KeysAndAttributes;
 import software.amazon.awssdk.services.dynamodb.model.LimitExceededException;
 import software.amazon.awssdk.services.dynamodb.model.ProvisionedThroughputExceededException;
 import software.amazon.awssdk.services.dynamodb.model.RequestLimitExceededException;
+import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 
 public class DynamoDatabaseAdapter
@@ -187,6 +198,11 @@ public class DynamoDatabaseAdapter
   }
 
   @Override
+  protected int attachmentChunkSize() {
+    return Math.min(super.attachmentChunkSize(), DYNAMO_BATCH_WRITE_MAX_REQUESTS);
+  }
+
+  @Override
   protected GlobalStatePointer doFetchGlobalPointer(NonTransactionalOperationContext ctx) {
     return loadById(TABLE_GLOBAL_POINTER, "", GlobalStatePointer::parseFrom);
   }
@@ -241,8 +257,9 @@ public class DynamoDatabaseAdapter
     batchWrite(
         TABLE_COMMIT_LOG,
         entries,
-        CommitLogEntry::getHash,
-        e -> ProtoSerialization.toProto(e).toByteArray());
+        e -> e.getHash().asString(),
+        e -> ProtoSerialization.toProto(e).toByteArray(),
+        e -> emptyMap());
   }
 
   @Override
@@ -251,8 +268,9 @@ public class DynamoDatabaseAdapter
     batchWrite(
         TABLE_KEY_LISTS,
         newKeyListEntities,
-        KeyListEntity::getId,
-        e -> ProtoSerialization.toProto(e.getKeys()).toByteArray());
+        e -> e.getId().asString(),
+        e -> ProtoSerialization.toProto(e.getKeys()).toByteArray(),
+        e -> emptyMap());
   }
 
   @Override
@@ -695,7 +713,11 @@ public class DynamoDatabaseAdapter
   }
 
   private <T> void batchWrite(
-      String tableName, List<T> entries, Function<T, Hash> id, Function<T, byte[]> serializer) {
+      String tableName,
+      List<T> entries,
+      Function<T, String> id,
+      Function<T, byte[]> serializer,
+      Function<T, Map<String, AttributeValue>> itemEnhancer) {
     if (entries.isEmpty()) {
       return;
     }
@@ -703,11 +725,12 @@ public class DynamoDatabaseAdapter
     List<WriteRequest> requests = new ArrayList<>();
     for (T entry : entries) {
       Map<String, AttributeValue> item = new HashMap<>();
-      String key = keyPrefix + id.apply(entry).asString();
+      String key = keyPrefix + id.apply(entry);
       item.put(KEY_NAME, AttributeValue.builder().s(key).build());
       item.put(
           VALUE_NAME,
           AttributeValue.builder().b(SdkBytes.fromByteArray(serializer.apply(entry))).build());
+      item.putAll(itemEnhancer.apply(entry));
 
       if (requests.size() == DYNAMO_BATCH_WRITE_MAX_REQUESTS) {
         client.client.batchWriteItem(b -> b.requestItems(singletonMap(tableName, requests)));
@@ -759,5 +782,197 @@ public class DynamoDatabaseAdapter
             .comparisonOperator(ComparisonOperator.BEGINS_WITH)
             .attributeValueList(AttributeValue.builder().s(keyPrefix).build())
             .build());
+  }
+
+  @Override
+  protected void writeAttachments(Stream<Entry<AttachmentKey, AttachmentValue>> attachments) {
+    List<Entry<AttachmentKey, AttachmentValue>> attachmentsList =
+        attachments.collect(Collectors.toList());
+
+    Map<String, List<AttachmentKey>> keys = new HashMap<>();
+    for (Entry<AttachmentKey, AttachmentValue> e : attachmentsList) {
+      keys.computeIfAbsent(e.getKey().getContentId().getId(), i -> new ArrayList<>())
+          .add(e.getKey());
+    }
+
+    for (Entry<String, List<AttachmentKey>> e : keys.entrySet()) {
+      client.client.updateItem(
+          updateItem ->
+              updateItem
+                  .tableName(TABLE_ATTACHMENT_KEYS)
+                  .key(
+                      singletonMap(
+                          KEY_NAME, AttributeValue.builder().s(keyPrefix + e.getKey()).build()))
+                  .attributeUpdates(
+                      singletonMap(
+                          VALUE_NAME,
+                          AttributeValueUpdate.builder()
+                              .action(AttributeAction.ADD)
+                              .value(
+                                  b ->
+                                      b.ss(
+                                          e.getValue().stream()
+                                              .map(ProtoSerialization::attachmentKeyAsString)
+                                              .collect(Collectors.toList())))
+                              .build())));
+    }
+
+    batchWrite(
+        TABLE_ATTACHMENTS,
+        attachmentsList,
+        e -> attachmentKeyAsString(e.getKey()),
+        e -> e.getValue().toByteArray(),
+        e -> {
+          AttachmentValue v = e.getValue();
+          if (!v.hasVersion()) {
+            return emptyMap();
+          }
+          return singletonMap(VERSION_NAME, AttributeValue.builder().s(v.getVersion()).build());
+        });
+  }
+
+  @Override
+  protected boolean consistentWriteAttachment(
+      AttachmentKey key, AttachmentValue value, Optional<String> expectedVersion) {
+
+    AttributeValue newValueBytes =
+        AttributeValue.builder().b(SdkBytes.fromByteArray(value.toByteArray())).build();
+    AttributeValue newVersion = AttributeValue.builder().s(value.getVersion()).build();
+    Map<String, AttributeValue> keyMap =
+        singletonMap(
+            KEY_NAME, AttributeValue.builder().s(keyPrefix + attachmentKeyAsString(key)).build());
+
+    UpdateItemRequest.Builder b =
+        UpdateItemRequest.builder()
+            .tableName(TABLE_ATTACHMENTS)
+            .key(keyMap)
+            .attributeUpdates(
+                ImmutableMap.of(
+                    VERSION_NAME,
+                    AttributeValueUpdate.builder()
+                        .action(AttributeAction.PUT)
+                        .value(newVersion)
+                        .build(),
+                    VALUE_NAME,
+                    AttributeValueUpdate.builder()
+                        .action(AttributeAction.PUT)
+                        .value(newValueBytes)
+                        .build()));
+
+    if (expectedVersion.isPresent()) {
+      AttributeValue expectedVersionValue =
+          AttributeValue.builder().s(expectedVersion.get()).build();
+
+      b =
+          b.expected(
+              singletonMap(
+                  VERSION_NAME,
+                  ExpectedAttributeValue.builder().value(expectedVersionValue).build()));
+    } else {
+      b =
+          b.expected(
+              singletonMap(KEY_NAME, ExpectedAttributeValue.builder().exists(false).build()));
+    }
+
+    try {
+      client.client.updateItem(b.build());
+    } catch (ConditionalCheckFailedException e) {
+      return false;
+    }
+
+    client.client.updateItem(
+        updateItem ->
+            updateItem
+                .tableName(TABLE_ATTACHMENT_KEYS)
+                .key(
+                    singletonMap(
+                        KEY_NAME,
+                        AttributeValue.builder().s(keyPrefix + key.getContentId().getId()).build()))
+                .attributeUpdates(
+                    singletonMap(
+                        VALUE_NAME,
+                        AttributeValueUpdate.builder()
+                            .action(AttributeAction.ADD)
+                            .value(v -> v.ss(attachmentKeyAsString(key)))
+                            .build())));
+
+    return true;
+  }
+
+  @Override
+  protected Stream<AttachmentKey> fetchAttachmentKeys(String contentId) {
+    GetItemResponse keysList =
+        client.client.getItem(
+            g ->
+                g.tableName(TABLE_ATTACHMENT_KEYS)
+                    .key(
+                        singletonMap(
+                            KEY_NAME, AttributeValue.builder().s(keyPrefix + contentId).build())));
+    if (!keysList.hasItem()) {
+      return Stream.empty();
+    }
+    AttributeValue value = keysList.item().get(VALUE_NAME);
+    return value == null
+        ? Stream.empty()
+        : value.ss().stream().map(ProtoSerialization::attachmentKeyFromString);
+  }
+
+  @Override
+  protected Stream<Entry<AttachmentKey, AttachmentValue>> fetchAttachments(
+      Stream<AttachmentKey> keys) {
+    List<String> keysList =
+        keys.map(ProtoSerialization::attachmentKeyAsString).collect(Collectors.toList());
+    Map<String, AttachmentValue> fetched =
+        fetchPage(
+            TABLE_ATTACHMENTS,
+            keysList,
+            av -> {
+              try {
+                return AttachmentValue.parseFrom(av.b().asByteArray());
+              } catch (InvalidProtocolBufferException e) {
+                throw new RuntimeException(e);
+              }
+            },
+            Function.identity(),
+            Function.identity());
+
+    return keysList.stream()
+        .filter(fetched::containsKey)
+        .map(
+            k -> {
+              AttachmentValue value = fetched.get(k);
+              return Maps.immutableEntry(attachmentKeyFromString(k), value);
+            });
+  }
+
+  @Override
+  protected void purgeAttachments(Stream<AttachmentKey> keys) {
+    keys.forEach(
+        k -> {
+          String keyAsString = attachmentKeyAsString(k);
+
+          String dbKeyAttachment = keyPrefix + keyAsString;
+          client.client.deleteItem(
+              delete ->
+                  delete
+                      .tableName(TABLE_ATTACHMENTS)
+                      .key(
+                          singletonMap(
+                              KEY_NAME, AttributeValue.builder().s(dbKeyAttachment).build())));
+
+          String dbKeyList = keyPrefix + k.getContentId().getId();
+          client.client.updateItem(
+              update ->
+                  update
+                      .tableName(TABLE_ATTACHMENT_KEYS)
+                      .key(singletonMap(KEY_NAME, AttributeValue.builder().s(dbKeyList).build()))
+                      .attributeUpdates(
+                          singletonMap(
+                              VALUE_NAME,
+                              AttributeValueUpdate.builder()
+                                  .action(AttributeAction.DELETE)
+                                  .value(v -> v.ss(keyAsString))
+                                  .build())));
+        });
   }
 }

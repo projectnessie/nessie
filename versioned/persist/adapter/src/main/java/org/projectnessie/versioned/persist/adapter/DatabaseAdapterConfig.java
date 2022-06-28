@@ -20,6 +20,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 import org.immutables.value.Value;
 
 /**
@@ -45,6 +46,7 @@ public interface DatabaseAdapterConfig {
   int DEFAULT_RETRY_INITIAL_SLEEP_MILLIS_UPPER = 25;
   int DEFAULT_RETRY_MAX_SLEEP_MILLIS = 75;
   long DEFAULT_ASSUMED_WALL_CLOCK_DRIFT_MICROS = 5_000_000L;
+  int DEFAULT_ATTACHMENT_KEYS_BATCH_SIZE = 100;
 
   /**
    * A free-form string that identifies a particular Nessie storage repository.
@@ -254,5 +256,17 @@ public interface DatabaseAdapterConfig {
   @Value.Default
   default long getAssumedWallClockDriftMicros() {
     return DEFAULT_ASSUMED_WALL_CLOCK_DRIFT_MICROS;
+  }
+
+  /**
+   * The maximum chunk size passed down to the actual database when {@link
+   * DatabaseAdapter#mapToAttachment(Stream) fetching} or {@link
+   * DatabaseAdapter#putAttachments(Stream) putting} content attachments.
+   *
+   * <p>Concrete database adapter implementation may silently change this limit.
+   */
+  @Value.Default
+  default int getAttachmentKeysBatchSize() {
+    return DEFAULT_ATTACHMENT_KEYS_BATCH_SIZE;
   }
 }

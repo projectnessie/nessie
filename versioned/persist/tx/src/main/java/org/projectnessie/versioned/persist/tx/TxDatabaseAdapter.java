@@ -16,11 +16,16 @@
 package org.projectnessie.versioned.persist.tx;
 
 import static java.util.Collections.emptyList;
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.attachmentContent;
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.attachmentKey;
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.attachmentKeyContentIdAsString;
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.attachmentKeyFromString;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.protoToCommitLogEntry;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.protoToKeyList;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.protoToRefLog;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.protoToRepoDescription;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.toProto;
+import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.toProtoValue;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.assignConflictMessage;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.commitConflictMessage;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.createConflictMessage;
@@ -50,6 +55,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -65,6 +71,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.ContentAttachment;
+import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableMergeResult;
@@ -104,9 +112,12 @@ import org.projectnessie.versioned.persist.adapter.events.ReferenceDeletedEvent;
 import org.projectnessie.versioned.persist.adapter.events.RepositoryErasedEvent;
 import org.projectnessie.versioned.persist.adapter.events.RepositoryInitializedEvent;
 import org.projectnessie.versioned.persist.adapter.events.TransplantEvent;
+import org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization;
 import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.spi.Traced;
 import org.projectnessie.versioned.persist.adapter.spi.TryLoopState;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentKey;
+import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentValue;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry.Operation;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogParents;
@@ -650,6 +661,11 @@ public abstract class TxDatabaseAdapter
       }
       try (PreparedStatement ps =
           conn.conn().prepareStatement(SqlStatements.DELETE_REPO_DESCRIPTIONE_ALL)) {
+        ps.setString(1, config.getRepositoryId());
+        ps.executeUpdate();
+      }
+      try (PreparedStatement ps =
+          conn.conn().prepareStatement(SqlStatements.DELETE_ATTACHMENTS_ALL)) {
         ps.setString(1, config.getRepositoryId());
         ps.executeUpdate();
       }
@@ -1424,6 +1440,9 @@ public abstract class TxDatabaseAdapter
         .put(
             SqlStatements.TABLE_REF_LOG_HEAD,
             Collections.singletonList(SqlStatements.CREATE_TABLE_REF_LOG_HEAD))
+        .put(
+            SqlStatements.TABLE_ATTACHMENTS,
+            Collections.singletonList(SqlStatements.CREATE_TABLE_ATTACHMENTS))
         .build();
   }
 
@@ -1435,6 +1454,17 @@ public abstract class TxDatabaseAdapter
    * @see #allCreateTableDDL()
    */
   protected abstract Map<NessieSqlDataType, String> databaseSqlFormatParameters();
+
+  /**
+   * Some RDBMS' just return an error when an INSERT/UPDATE/DELETE violates a constraint, like a
+   * primary key, but other RDBMS' like PostgreSQL do return an error <em>and</em> mark the whole
+   * transaction as failed. This function allows is meant to be implemented for RDBMS' that do mark
+   * the transaction as failed to modify an INSERT SQL statement to neither yield an error nor mark
+   * the transaction as failed.
+   */
+  protected String insertOnConflictDoNothing(String insertSql) {
+    return insertSql;
+  }
 
   /**
    * Defines the types of Nessie data types used to map to SQL datatypes via {@link
@@ -1700,6 +1730,193 @@ public abstract class TxDatabaseAdapter
       }
       throwIfReferenceConflictException(
           e, () -> String.format("Hash collision for '%s' in ref-log", entry.getRefLogId()));
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public Stream<ContentAttachmentKey> getAttachmentKeys(String contentId) {
+    try (ConnectionWrapper conn = borrowConnection()) {
+      try (PreparedStatement ps =
+          conn.conn().prepareStatement(SqlStatements.SELECT_ATTACHMENTS_KEYS)) {
+        ps.setString(1, config.getRepositoryId());
+        ps.setString(2, attachmentKeyContentIdAsString(contentId));
+        List<ContentAttachmentKey> result = new ArrayList<>();
+        try (ResultSet rs = ps.executeQuery()) {
+          while (rs.next()) {
+            ContentAttachmentKey key = attachmentKey(attachmentKeyFromString(rs.getString(1)));
+            if (!contentId.equals(key.getContentId())) {
+              break;
+            }
+            result.add(key);
+          }
+        }
+        return result.stream();
+      }
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public Stream<ContentAttachment> mapToAttachment(Stream<ContentAttachmentKey> keys) {
+    Iterator<ContentAttachmentKey> keysIter = keys.iterator();
+    if (!keysIter.hasNext()) {
+      return Stream.empty();
+    }
+    Stream<ContentAttachment> result = Stream.empty();
+    ConnectionWrapper conn = borrowConnection();
+    boolean failed = true;
+    try {
+      int chunkSize = config.getAttachmentKeysBatchSize();
+      List<ContentAttachmentKey> batch = new ArrayList<>(chunkSize);
+
+      while (keysIter.hasNext()) {
+        batch.add(keysIter.next());
+        if (batch.size() == chunkSize) {
+          result = mapToAttachmentChunk(result, batch, conn);
+          batch.clear();
+        }
+      }
+      if (!batch.isEmpty()) {
+        result = mapToAttachmentChunk(result, batch, conn);
+      }
+      failed = false;
+      return result.onClose(conn::close);
+    } finally {
+      if (failed) {
+        conn.close();
+      }
+    }
+  }
+
+  private Stream<ContentAttachment> mapToAttachmentChunk(
+      Stream<ContentAttachment> result, List<ContentAttachmentKey> batch, ConnectionWrapper conn) {
+    ArrayList<ContentAttachmentKey> chunk = new ArrayList<>(batch);
+    // flatMap() used here to lazily load chunks
+    return Stream.concat(result, Stream.of("").flatMap(x -> mapToAttachmentChunk(conn, chunk)));
+  }
+
+  private Stream<ContentAttachment> mapToAttachmentChunk(
+      ConnectionWrapper conn, List<ContentAttachmentKey> keysList) {
+    String sql = sqlForManyPlaceholders(SqlStatements.SELECT_ATTACHMENTS, keysList.size());
+    try (PreparedStatement ps = conn.conn().prepareStatement(sql)) {
+      ps.setString(1, config.getRepositoryId());
+      int paramIndex = 2;
+      for (ContentAttachmentKey key : keysList) {
+        String keyAsString = key.asString();
+        ps.setString(paramIndex++, keyAsString);
+      }
+      Map<AttachmentKey, AttachmentValue> fetched = new HashMap<>();
+      try (ResultSet rs = ps.executeQuery()) {
+        while (rs.next()) {
+          AttachmentKey key = attachmentKeyFromString(rs.getString(1));
+          byte[] value = rs.getBytes(2);
+          fetched.put(key, AttachmentValue.parseFrom(value));
+        }
+      }
+
+      return keysList.stream()
+          .map(ProtoSerialization::attachmentKey)
+          .filter(fetched::containsKey)
+          .map(
+              k -> {
+                AttachmentValue value = fetched.get(k);
+                return attachmentContent(k, value);
+              });
+    } catch (SQLException | InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public void putAttachments(Stream<ContentAttachment> attachments) {
+    try (ConnectionWrapper conn = borrowConnection()) {
+      persistAttachments(conn, attachments);
+      conn.commit();
+    }
+  }
+
+  @Override
+  protected void persistAttachments(
+      ConnectionWrapper connection, Stream<ContentAttachment> attachments) {
+    try (PreparedStatement ps =
+        connection
+            .conn()
+            .prepareStatement(insertOnConflictDoNothing(SqlStatements.INSERT_ATTACHMENT))) {
+      attachments.forEach(
+          bc -> {
+            try {
+              attachmentInsert(ps, bc);
+            } catch (SQLException e) {
+              // Duplicates are fine (object-id derived from content)
+              if (!isIntegrityConstraintViolation(e)) {
+                throw new RuntimeException(e);
+              }
+            }
+          });
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private void attachmentInsert(PreparedStatement ps, ContentAttachment attachment)
+      throws SQLException {
+    ps.setString(1, config.getRepositoryId());
+    ps.setString(2, attachment.getKey().asString());
+    ps.setBytes(3, toProtoValue(attachment).toByteArray());
+    ps.setString(4, attachment.getVersion());
+    ps.executeUpdate();
+  }
+
+  @Override
+  public boolean consistentPutAttachment(
+      ContentAttachment attachment, Optional<String> expectedVersion) {
+    try (ConnectionWrapper conn = borrowConnection()) {
+      if (expectedVersion.isPresent()) {
+        try (PreparedStatement ps = conn.conn().prepareStatement(SqlStatements.UPDATE_ATTACHMENT)) {
+          ps.setBytes(1, toProtoValue(attachment).toByteArray());
+          ps.setString(2, attachment.getVersion());
+          ps.setString(3, config.getRepositoryId());
+          ps.setString(4, attachment.getKey().asString());
+          ps.setString(5, expectedVersion.get());
+          if (ps.executeUpdate() != 1) {
+            return false;
+          }
+        }
+      } else {
+        try (PreparedStatement ps = conn.conn().prepareStatement(SqlStatements.INSERT_ATTACHMENT)) {
+          attachmentInsert(ps, attachment);
+        }
+      }
+      conn.commit();
+    } catch (SQLException e) {
+      if (isIntegrityConstraintViolation(e)) {
+        return false;
+      }
+      throw new RuntimeException(e);
+    }
+    return true;
+  }
+
+  @Override
+  public void deleteAttachments(Stream<ContentAttachmentKey> keys) {
+    List<ContentAttachmentKey> keysList = keys.collect(Collectors.toList());
+    if (keysList.isEmpty()) {
+      return;
+    }
+    try (ConnectionWrapper conn = borrowConnection()) {
+      String sql = sqlForManyPlaceholders(SqlStatements.DELETE_ATTACHMENTS, keysList.size());
+      try (PreparedStatement ps = conn.conn().prepareStatement(sql)) {
+        ps.setString(1, config.getRepositoryId());
+        int paramIndex = 2;
+        for (ContentAttachmentKey key : keysList) {
+          ps.setString(paramIndex++, key.asString());
+        }
+        ps.executeUpdate();
+      }
+      conn.commit();
+    } catch (SQLException e) {
       throw new RuntimeException(e);
     }
   }

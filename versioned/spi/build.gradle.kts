@@ -33,6 +33,7 @@ dependencies {
   compileOnly("org.immutables:builder")
   compileOnly("org.immutables:value-annotations")
   annotationProcessor("org.immutables:value-processor")
+  compileOnly("jakarta.validation:jakarta.validation-api")
   implementation("com.google.guava:guava")
   implementation("com.google.code.findbugs:jsr305")
 

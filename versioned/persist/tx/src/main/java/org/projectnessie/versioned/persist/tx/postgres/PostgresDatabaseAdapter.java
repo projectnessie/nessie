@@ -48,6 +48,11 @@ public class PostgresDatabaseAdapter extends TxDatabaseAdapter {
   }
 
   @Override
+  protected String insertOnConflictDoNothing(String insertSql) {
+    return insertSql + " ON CONFLICT DO NOTHING";
+  }
+
+  @Override
   protected boolean metadataUpperCase() {
     return false;
   }

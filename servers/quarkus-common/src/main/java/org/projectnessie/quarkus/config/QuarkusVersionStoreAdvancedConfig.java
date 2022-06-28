@@ -113,6 +113,11 @@ public interface QuarkusVersionStoreAdvancedConfig
   @Override
   int getParentsPerRefLogEntry();
 
+  @WithName("attachment-keys-batch-size")
+  @WithDefault("" + DEFAULT_ATTACHMENT_KEYS_BATCH_SIZE)
+  @Override
+  int getAttachmentKeysBatchSize();
+
   @WithName("tx.jdbc.catalog")
   @WithDefault("")
   @WithConverter(RepoIdConverter.class)

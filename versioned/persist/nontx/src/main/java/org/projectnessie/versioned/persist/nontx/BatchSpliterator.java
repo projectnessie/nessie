@@ -27,7 +27,7 @@ final class BatchSpliterator<SRC, DST> extends AbstractSpliterator<DST> {
 
   private final Spliterator<SRC> source;
   private final int batchSize;
-  private final List<SRC> batch;
+  private List<SRC> batch;
   private final Function<List<SRC>, Spliterator<DST>> batchMapper;
 
   private SRC nextSource;
@@ -53,7 +53,7 @@ final class BatchSpliterator<SRC, DST> extends AbstractSpliterator<DST> {
       int characteristics) {
     super(Long.MAX_VALUE, characteristics);
     this.batchSize = batchSize;
-    this.batch = new ArrayList<>(batchSize);
+    this.batch = new ArrayList<>();
     this.source = source;
     this.batchMapper = batchMapper;
   }
@@ -96,7 +96,7 @@ final class BatchSpliterator<SRC, DST> extends AbstractSpliterator<DST> {
           try {
             mapped = batch.isEmpty() ? Spliterators.emptySpliterator() : batchMapper.apply(batch);
           } finally {
-            batch.clear();
+            this.batch = new ArrayList<>(batchSize);
           }
           break;
         }
