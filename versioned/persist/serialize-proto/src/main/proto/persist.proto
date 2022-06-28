@@ -161,13 +161,6 @@ message AttachmentKey {
 }
 
 message AttachmentValue {
-  enum Format {
-    JSON = 0;
-    CBOR = 1;
-  }
-  enum Compression {
-    NONE = 0;
-  }
   // Optional integer ID of an attachment content object representing e.g. the
   // snapshot ID of an Iceberg table metadata. This field is _not_ part of the
   // attachment key.
@@ -176,6 +169,15 @@ message AttachmentValue {
   Compression compression = 3;
   bytes data = 4;
   optional string version = 5;
+}
+
+enum Format {
+  JSON = 0;
+  CBOR = 1;
+}
+
+enum Compression {
+  NONE = 0;
 }
 
 message AttachmentKeyList {

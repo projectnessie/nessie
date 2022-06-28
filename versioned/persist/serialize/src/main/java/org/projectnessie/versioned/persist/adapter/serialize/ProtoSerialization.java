@@ -331,15 +331,15 @@ public final class ProtoSerialization {
     return builder.build();
   }
 
-  private static AttachmentValue.Format formatFromContentAttachment(
+  private static AdapterTypes.Format formatFromContentAttachment(
       ContentAttachment contentAttachment) {
-    AttachmentValue.Format format;
+    AdapterTypes.Format format;
     switch (contentAttachment.getFormat()) {
       case JSON:
-        format = AttachmentValue.Format.JSON;
+        format = AdapterTypes.Format.JSON;
         break;
       case CBOR:
-        format = AttachmentValue.Format.CBOR;
+        format = AdapterTypes.Format.CBOR;
         break;
       default:
         throw new IllegalArgumentException(
@@ -348,12 +348,12 @@ public final class ProtoSerialization {
     return format;
   }
 
-  private static AttachmentValue.Compression compressionFromContentAttachment(
+  private static AdapterTypes.Compression compressionFromContentAttachment(
       ContentAttachment contentAttachment) {
-    AttachmentValue.Compression compression;
+    AdapterTypes.Compression compression;
     switch (contentAttachment.getCompression()) {
       case NONE:
-        compression = AttachmentValue.Compression.NONE;
+        compression = AdapterTypes.Compression.NONE;
         break;
       default:
         throw new IllegalArgumentException(
