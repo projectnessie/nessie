@@ -314,7 +314,7 @@ public interface DatabaseAdapter {
   /**
    * Consistent put-attachment operation.
    *
-   * <p>Either a "put-if-absent", if {@code expectedHash} is empty or a compare-and-swap based on
+   * <p>Either a "put-if-absent", if {@code expectedVersion} is empty or a compare-and-swap based on
    * the value of {@code expectedVersion}.
    *
    * <p>Note: this method uses conditional put operations, unlike {@link #putAttachments(Stream)}.
