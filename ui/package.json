@@ -103,7 +103,7 @@
     "eslint-plugin-jsdoc": "^39.3.3",
     "eslint-plugin-jsx-a11y": "^6.6.0",
     "eslint-plugin-prefer-arrow": "^1.2.3",
-    "eslint-plugin-prettier": "^4.0.0",
+    "eslint-plugin-prettier": "^4.1.0",
     "eslint-plugin-react": "^7.30.1",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-testing-library": "^5.5.1",
