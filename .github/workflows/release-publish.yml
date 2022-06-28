@@ -67,7 +67,7 @@ jobs:
         fi
         # check if tag matches patterns like nessie-0.5, nessie-0.10.4.3-alpha1, etc
         if [[ ${V} =~ ^nessie-[0-9]+[.][0-9.]*[0-9](-[a-zA-Z0-9]+)?$ ]]; then
-          echo ::set-output name=VERSION::${V/nessie-}
+          echo "RELEASE_VERSION=${V/nessie-}" >> ${GITHUB_ENV}
         else
           echo "Tag must start with nessie- followed by a valid version (got tag ${V}, ref is ${GITHUB_REF} )"
           exit 1
@@ -108,7 +108,6 @@ jobs:
     - name: Publish Maven artifacts for release
       id: build_maven
       env:
-        RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
         ORG_GRADLE_PROJECT_signingKey: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
         ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
         ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.OSSRH_ACCESS_ID }}
@@ -122,10 +121,10 @@ jobs:
         # Add version to the openapi file name
         cp model/build/resources/main/META-INF/openapi/openapi.yaml model/build/nessie-openapi-${RELEASE_VERSION}.yaml
 
-        echo ::set-output name=QUARKUS_NATIVE_BINARY::servers/quarkus-server/build/nessie-quarkus-${RELEASE_VERSION}-runner
-        echo ::set-output name=QUARKUS_UBER_JAR::servers/quarkus-server/build/nessie-quarkus-${RELEASE_VERSION}-runner.jar
-        echo ::set-output name=CLI_UBER_JAR::servers/quarkus-cli/build/nessie-quarkus-cli-${RELEASE_VERSION}-runner.jar
-        echo ::set-output name=NESSIE_OPENAPI::model/build/nessie-openapi-${RELEASE_VERSION}.yaml
+        echo "QUARKUS_NATIVE_BINARY=servers/quarkus-server/build/nessie-quarkus-${RELEASE_VERSION}-runner" >> ${GITHUB_ENV}
+        echo "QUARKUS_UBER_JAR=servers/quarkus-server/build/nessie-quarkus-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
+        echo "CLI_UBER_JAR=servers/quarkus-cli/build/nessie-quarkus-cli-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
+        echo "NESSIE_OPENAPI=model/build/nessie-openapi-${RELEASE_VERSION}.yaml" >> ${GITHUB_ENV}
 
     - name: Install Helm
       uses: azure/setup-helm@v1
@@ -134,24 +133,18 @@ jobs:
 
       # Packages Nessie Helm chart
     - name: Package Nessie Helm chart for release
-      env:
-        RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
       run: |
         helm package helm/nessie --version ${RELEASE_VERSION}
 
       # Rename Nessie Helm chart
     - name: Rename Nessie Helm chart for release
       id: nessie_helm
-      env:
-        RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
       run: |
         mv nessie-${RELEASE_VERSION}.tgz nessie-helm-${RELEASE_VERSION}.tgz
-        echo ::set-output name=NESSIE_HELM_CHART::nessie-helm-${RELEASE_VERSION}.tgz
+        echo "NESSIE_HELM_CHART=nessie-helm-${RELEASE_VERSION}.tgz" >> ${GITHUB_ENV}
 
     # Publish Nessie Helm chart to Helm Repo
     - name: Publish Nessie Helm chart to Helm Repo
-      env:
-        RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
       run: |
         wget https://raw.githubusercontent.com/projectnessie/charts.projectnessie.org/main/index.yaml
         helm repo index . --merge index.yaml --url https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}
@@ -174,15 +167,11 @@ jobs:
 
     # Deploys Docker images. Build and test steps were already ran in previous workflows
     - name: Tag Docker image for release
-      env:
-        RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
       run: |
         docker tag projectnessie/nessie:${RELEASE_VERSION} projectnessie/nessie:latest
 
     # Deploys Docker images. Build and test steps were already ran in previous workflows
     - name: Publish Docker image for release
-      env:
-        RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
       run: |
         echo '${{ secrets.DOCKER_TOKEN }}' | docker login -u '${{ secrets.DOCKER_USERNAME }}' --password-stdin
         docker push projectnessie/nessie:${RELEASE_VERSION} && docker push projectnessie/nessie:latest
@@ -206,8 +195,7 @@ jobs:
     - name: Prepare Nessie release in GitHub
       id: prep_release
       env:
-        RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
-        GIT_TAG: nessie-${{ steps.get_version.outputs.VERSION }}
+        GIT_TAG: nessie-${{ env.RELEASE_VERSION }}
       run: |
         DIR=$(mktemp -d)
         NOTES_FILE=${DIR}/release-notes.md
@@ -251,24 +239,18 @@ jobs:
         $(cat ${DIR}/release-log)
         EOF
 
-        echo ::set-output name=NOTES_FILE::${NOTES_FILE}
+        echo "NOTES_FILE=${NOTES_FILE}" >> ${GITHUB_ENV}
 
     - name: Dump release notes
-      run: cat ${{ steps.prep_release.outputs.NOTES_FILE }}
+      run: cat ${{ env.NOTES_FILE }}
 
     - name: Create Nessie release in GitHub
       env:
-        RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
-        GIT_TAG: nessie-${{ steps.get_version.outputs.VERSION }}
+        GIT_TAG: nessie-${{ env.RELEASE_VERSION }}
       run: |
-        QUARKUS_NATIVE_BINARY="${{ steps.build_maven.outputs.QUARKUS_NATIVE_BINARY }}"
-        QUARKUS_UBER_JAR="${{ steps.build_maven.outputs.QUARKUS_UBER_JAR }}"
-        CLI_UBER_JAR="${{ steps.build_maven.outputs.CLI_UBER_JAR }}"
-        NESSIE_OPENAPI="${{ steps.build_maven.outputs.NESSIE_OPENAPI }}"
-        NESSIE_HELM_CHART="${{ steps.nessie_helm.outputs.NESSIE_HELM_CHART }}"
         echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
         gh release create ${GIT_TAG} \
-          --notes-file ${{ steps.prep_release.outputs.NOTES_FILE }} \
+          --notes-file ${{ env.NOTES_FILE }} \
           --title "Nessie ${RELEASE_VERSION}" \
           "${QUARKUS_NATIVE_BINARY}" \
           "${QUARKUS_UBER_JAR}" \
@@ -283,4 +265,4 @@ jobs:
         SWAGGERHUB_API_KEY: ${{ secrets.SWAGGERHUB_API_KEY }}
         SWAGGERHUB_URL: "https://api.swaggerhub.com"
       with:
-        args: api:create projectnessie/nessie -f ${{ steps.build_maven.outputs.NESSIE_OPENAPI }} --published=publish --setdefault --visibility=public
+        args: api:create projectnessie/nessie -f ${{ env.NESSIE_OPENAPI }} --published=publish --setdefault --visibility=public

@@ -159,13 +159,13 @@ jobs:
         # Call into pynessie to ensure bump2version didn't mess up anything. See https://github.com/c4urself/bump2version/issues/214
         NEXT_VERSION="$(python -c 'import pynessie; print(pynessie.__version__)')"
         echo "pynessie at next development iteration ${NEXT_VERSION}"
-        echo ::set-output name=NEXT_VERSION::${NEXT_VERSION}
+        echo "NEXT_VERSION=${NEXT_VERSION}" >> ${GITHUB_ENV}
 
     # Update ui-version to next development iteration
     - name: Bump UI to next development version
       working-directory: ./ui
       env:
-        NEXT_UI_VERSION: ${{ steps.next_version.outputs.NEXT_VERSION }}-snapshot
+        NEXT_UI_VERSION: ${{ env.NEXT_VERSION }}-snapshot
       run: |
         cp package.json /tmp/nessie-ui-package.json
         cp package-lock.json /tmp/nessie-ui-package-lock.json
@@ -174,8 +174,6 @@ jobs:
 
     # Update versions in pom's to next development iteration
     - name: Bump to next development version version
-      env:
-        NEXT_VERSION: ${{ steps.next_version.outputs.NEXT_VERSION }}
       run: echo "${NEXT_VERSION}-SNAPSHOT" > version.txt
 
     # Record the next development iteration in git
