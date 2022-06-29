@@ -48,7 +48,7 @@ jobs:
         if [[ ${NEXT_VERSION} =~ ^[0-9]+[.][0-9.]*[0-9](-[a-zA-Z0-9]+)?$ ]]; then
           echo "Parameter check OK"
         else
-          echo "NEXT_VERSION is not a valid release version ref is ${GITHUB_REF}."
+          echo "NEXT_VERSION is not a valid release version."
           exit 1
         fi
 
@@ -91,7 +91,7 @@ jobs:
         cat /tmp/nessie-ui-package.json | jq ".version = \"${NEXT_UI_VERSION}\"" > package.json
         cat /tmp/nessie-ui-package-lock.json | jq ".version = \"${NEXT_UI_VERSION}\" | .packages[\"\"].version = \"${NEXT_UI_VERSION}\"" > package-lock.json
 
-    # Update versions in pom's to next development iteration
+    # Update versions in version.txt to next development iteration
     - name: Bump to next development version version
       run: echo "${NEXT_VERSION}-SNAPSHOT" > version.txt
 
