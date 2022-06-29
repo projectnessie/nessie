@@ -41,12 +41,16 @@ on:
       releaseVersion:
         description: 'The version to release - e.g. `0.5.0`'
         required: true
+      releaseFromBranch:
+        description: 'The branch name the release from, leave empty to release from latest commit on main.'
+        required: false
 
 jobs:
   create-release:
     name: Create release
     runs-on: ubuntu-latest
     env:
+      RELEASE_FROM: ${{ github.event.inputs.releaseFromBranch }}
       GIT_TAG: nessie-${{ github.event.inputs.releaseVersion }}
       RELEASE_VERSION: ${{ github.event.inputs.releaseVersion }}
 
@@ -63,17 +67,21 @@ jobs:
           exit 1
         fi
 
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ env.RELEASE_FROM }}
+
     # Check that the commit that is becoming a release has passed CI.
     # Note: intentionally hard-coded projectnessie/nessie, so this check even works when *testing*
     # the workflow on a PR-branch.
     - name: Check commit status
       run: |
+        GIT_HEAD_SHA="$(git rev-parse HEAD)"
         echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
-        gh api repos/projectnessie/nessie/commits/${GITHUB_SHA}/check-runs --jq 'if ([.check_runs[] | select(.name | endswith(" release") or startswith("Dependabot ") or startswith("codecov/") or startswith("Report ") | not ) | select(.conclusion != "skipped") | .conclusion // "pending" ] | unique == ["success"]) then "OK" else error("Commit checks are not OK") end'
+        gh api repos/projectnessie/nessie/commits/${GIT_HEAD_SHA}/check-runs --jq 'if ([.check_runs[] | select(.name | endswith(" release") or startswith("Dependabot ") or startswith("codecov/") or startswith("Report ") | not ) | select(.conclusion != "skipped") | .conclusion // "pending" ] | unique == ["success"]) then "OK" else error("Commit checks are not OK") end'
 
     ### BEGIN runner setup
-    - name: Checkout
-      uses: actions/checkout@v3
     - name: Setup Java, Maven
       uses: ./.github/actions/dev-tool-java
     - name: Setup Python
