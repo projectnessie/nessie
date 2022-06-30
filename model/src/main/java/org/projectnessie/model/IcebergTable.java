@@ -56,9 +56,6 @@ import org.immutables.value.Value;
 @JsonTypeName("ICEBERG_TABLE")
 public abstract class IcebergTable extends Content {
 
-  /** Constant for {@link GenericMetadata#getVariant()}. */
-  public static final String TABLE_METADATA = "Iceberg";
-
   /**
    * Location where Iceberg stored its {@code TableMetadata} file. The location depends on the
    * (implementation of) Iceberg's {@code FileIO} configured for the particular Iceberg table.
@@ -120,19 +117,14 @@ public abstract class IcebergTable extends Content {
         .build();
   }
 
-  public static final String CURRENT_SNAPSHOT_ID = "current-snapshot-id";
-  public static final String CURRENT_SCHEMA_ID = "current-schema-id";
-  public static final String DEFAULT_SORT_ORDER_ID = "default-sort-order-id";
-  public static final String DEFAULT_SPEC_ID = "default-spec-id";
-
   public static IcebergTable of(JsonNode metadata, String metadataLocation, String contentId) {
     return builder()
         .metadataLocation(metadataLocation)
-        .snapshotId(metadata.get(CURRENT_SNAPSHOT_ID).asLong(-1L))
-        .schemaId(metadata.get(CURRENT_SCHEMA_ID).asInt(0))
-        .specId(metadata.get(DEFAULT_SPEC_ID).asInt(0))
-        .sortOrderId(metadata.get(DEFAULT_SORT_ORDER_ID).asInt(0))
-        .metadata(GenericMetadata.of(TABLE_METADATA, metadata))
+        .snapshotId(metadata.get(IcebergContent.CURRENT_SNAPSHOT_ID).asLong(-1L))
+        .schemaId(metadata.get(IcebergContent.CURRENT_SCHEMA_ID).asInt(0))
+        .specId(metadata.get(IcebergContent.DEFAULT_SPEC_ID).asInt(0))
+        .sortOrderId(metadata.get(IcebergContent.DEFAULT_SORT_ORDER_ID).asInt(0))
+        .metadata(GenericMetadata.of(IcebergContent.ICEBERG_METADATA, metadata))
         .id(contentId)
         .build();
   }

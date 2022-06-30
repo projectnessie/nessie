@@ -15,13 +15,13 @@
  */
 package org.projectnessie.server.store;
 
-import static org.projectnessie.model.IcebergTable.CURRENT_SCHEMA_ID;
-import static org.projectnessie.model.IcebergTable.CURRENT_SNAPSHOT_ID;
-import static org.projectnessie.model.IcebergTable.DEFAULT_SORT_ORDER_ID;
-import static org.projectnessie.model.IcebergTable.DEFAULT_SPEC_ID;
-import static org.projectnessie.model.IcebergView.CURRENT_VERSION_ID;
-import static org.projectnessie.model.IcebergView.VERSIONS;
-import static org.projectnessie.model.IcebergView.VERSION_ID;
+import static org.projectnessie.model.IcebergContent.CURRENT_SCHEMA_ID;
+import static org.projectnessie.model.IcebergContent.CURRENT_SNAPSHOT_ID;
+import static org.projectnessie.model.IcebergContent.CURRENT_VERSION_ID;
+import static org.projectnessie.model.IcebergContent.DEFAULT_SORT_ORDER_ID;
+import static org.projectnessie.model.IcebergContent.DEFAULT_SPEC_ID;
+import static org.projectnessie.model.IcebergContent.VERSIONS;
+import static org.projectnessie.model.IcebergContent.VERSION_ID;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -51,6 +51,7 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.DeltaLakeTable;
 import org.projectnessie.model.GenericMetadata;
+import org.projectnessie.model.IcebergContent;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableCommitMeta;
@@ -77,24 +78,15 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
 
   private static final Format PREFERRED_ATTACHMENT_FORMAT = Format.JSON;
 
-  private static final String FORMAT_VERSION = "format-version";
-  private static final String SNAPSHOTS = "snapshots";
-  private static final String SNAPSHOT_ID = "snapshot-id";
-  private static final String SCHEMAS = "schemas";
-  private static final String SCHEMA_ID = "schema-id";
-  private static final String SORT_ORDERS = "sort-orders";
-  private static final String ORDER_ID = "order-id";
-  private static final String PARTITION_SPECS = "partition-specs";
-  private static final String SPEC_ID = "spec-id";
-
   private static final EnumMap<ContentPartType, String> JSON_ARRAY_NAMES_FOR_PART_TYPE;
 
   static {
     JSON_ARRAY_NAMES_FOR_PART_TYPE = new EnumMap<>(ContentPartType.class);
-    JSON_ARRAY_NAMES_FOR_PART_TYPE.put(ContentPartType.PARTITION_SPEC, PARTITION_SPECS);
-    JSON_ARRAY_NAMES_FOR_PART_TYPE.put(ContentPartType.SNAPSHOT, SNAPSHOTS);
-    JSON_ARRAY_NAMES_FOR_PART_TYPE.put(ContentPartType.SCHEMA, SCHEMAS);
-    JSON_ARRAY_NAMES_FOR_PART_TYPE.put(ContentPartType.SORT_ORDER, SORT_ORDERS);
+    JSON_ARRAY_NAMES_FOR_PART_TYPE.put(
+        ContentPartType.PARTITION_SPEC, IcebergContent.PARTITION_SPECS);
+    JSON_ARRAY_NAMES_FOR_PART_TYPE.put(ContentPartType.SNAPSHOT, IcebergContent.SNAPSHOTS);
+    JSON_ARRAY_NAMES_FOR_PART_TYPE.put(ContentPartType.SCHEMA, IcebergContent.SCHEMAS);
+    JSON_ARRAY_NAMES_FOR_PART_TYPE.put(ContentPartType.SORT_ORDER, IcebergContent.SORT_ORDERS);
     JSON_ARRAY_NAMES_FOR_PART_TYPE.put(ContentPartType.VERSION, VERSIONS);
   }
 
@@ -204,7 +196,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
         metadataRaw instanceof ObjectNode, "Parsed JsonNode must be an object");
     ObjectNode metadata = ((ObjectNode) metadataRaw);
 
-    int formatVersion = metadata.get(FORMAT_VERSION).asInt(-1);
+    int formatVersion = metadata.get(IcebergContent.FORMAT_VERSION).asInt(-1);
     Preconditions.checkArgument(
         formatVersionChecker.test(formatVersion),
         "Unsupported Iceberg metadata format version %s",
@@ -326,16 +318,25 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
   private static final List<IcebergAttachmentDefinition> ICEBERG_ATTACHMENT_DEFS =
       Arrays.asList(
           new IcebergAttachmentDefinition(
-              ObjectTypes.ContentPartType.SNAPSHOT, SNAPSHOTS, CURRENT_SNAPSHOT_ID, SNAPSHOT_ID),
+              ObjectTypes.ContentPartType.SNAPSHOT,
+              IcebergContent.SNAPSHOTS,
+              CURRENT_SNAPSHOT_ID,
+              IcebergContent.SNAPSHOT_ID),
           new IcebergAttachmentDefinition(
-              ObjectTypes.ContentPartType.SCHEMA, SCHEMAS, CURRENT_SCHEMA_ID, SCHEMA_ID),
+              ObjectTypes.ContentPartType.SCHEMA,
+              IcebergContent.SCHEMAS,
+              CURRENT_SCHEMA_ID,
+              IcebergContent.SCHEMA_ID),
           new IcebergAttachmentDefinition(
-              ObjectTypes.ContentPartType.SORT_ORDER, SORT_ORDERS, DEFAULT_SORT_ORDER_ID, ORDER_ID),
+              ObjectTypes.ContentPartType.SORT_ORDER,
+              IcebergContent.SORT_ORDERS,
+              DEFAULT_SORT_ORDER_ID,
+              IcebergContent.ORDER_ID),
           new IcebergAttachmentDefinition(
               ObjectTypes.ContentPartType.PARTITION_SPEC,
-              PARTITION_SPECS,
+              IcebergContent.PARTITION_SPECS,
               DEFAULT_SPEC_ID,
-              SPEC_ID),
+              IcebergContent.SPEC_ID),
           new IcebergAttachmentDefinition(
               ObjectTypes.ContentPartType.VERSION, VERSIONS, CURRENT_VERSION_ID, VERSION_ID));
 
@@ -431,7 +432,9 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
     //  clear TableMetadata.snapshotLog and TableMetadata.previousFiles
     //  Similar for Iceberg views?
 
-    return tableBuilder.metadata(GenericMetadata.of(IcebergTable.TABLE_METADATA, metadata)).build();
+    return tableBuilder
+        .metadata(GenericMetadata.of(IcebergContent.ICEBERG_METADATA, metadata))
+        .build();
   }
 
   private static ObjectNode mergeAttachmentsIntoMetadata(
@@ -504,7 +507,9 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
 
     ObjectNode metadata = mergeAttachmentsIntoMetadata(attachmentsRetriever, content, contentParts);
 
-    return viewBuilder.metadata(GenericMetadata.of(IcebergView.VIEW_METADATA, metadata)).build();
+    return viewBuilder
+        .metadata(GenericMetadata.of(IcebergContent.ICEBERG_METADATA, metadata))
+        .build();
   }
 
   private static void addJsonArray(JsonNode jsonNode, String fieldName, List<JsonNode> retrieved) {

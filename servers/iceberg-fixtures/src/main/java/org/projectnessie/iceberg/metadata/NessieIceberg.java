@@ -30,7 +30,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Random;
 import org.apache.iceberg.NullOrder;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -77,6 +77,9 @@ public final class NessieIceberg {
     Types.TimestampType.withoutZone()
   };
 
+  // Deterministic w/ constant seed
+  static final Random RANDOM = new Random(42L);
+
   private NessieIceberg() {}
 
   public static ViewVersionMetadata randomViewMetadata(int numColumns) {
@@ -92,14 +95,10 @@ public final class NessieIceberg {
 
   private static Version randomVersion(int numColumns) {
     ViewDefinition definition = randomViewDefinition(numColumns);
-    int versionId = ThreadLocalRandom.current().nextInt(42666);
+    int versionId = RANDOM.nextInt(42666);
 
     return new BaseVersion(
-        versionId,
-        null,
-        ThreadLocalRandom.current().nextLong(),
-        new VersionSummary(randomProperties(0)),
-        definition);
+        versionId, null, RANDOM.nextLong(), new VersionSummary(randomProperties(0)), definition);
   }
 
   private static ViewDefinition randomViewDefinition(int numColumns) {
@@ -131,10 +130,9 @@ public final class NessieIceberg {
 
   public static Snapshot randomSnapshot(TableMetadata metadata) {
     return ImmutableDummySnapshot.builder()
-        .snapshotId(ThreadLocalRandom.current().nextLong())
+        .snapshotId(RANDOM.nextLong())
         .sequenceNumber(metadata.lastSequenceNumber() + 1)
-        .timestampMillis(
-            metadata.lastUpdatedMillis() + ThreadLocalRandom.current().nextLong(1_000_000))
+        .timestampMillis(metadata.lastUpdatedMillis() + RANDOM.nextInt(1_000_000))
         .operation("snapshotOperation")
         .build();
   }
@@ -159,13 +157,13 @@ public final class NessieIceberg {
   }
 
   public static Type randomType(Type[] types) {
-    int idx = ThreadLocalRandom.current().nextInt(types.length);
+    int idx = RANDOM.nextInt(types.length);
     return types[idx];
   }
 
   public static String randomColumnName() {
     StringBuilder sb = new StringBuilder(30);
-    int columnNameLength = ThreadLocalRandom.current().nextInt(5, 30);
+    int columnNameLength = 5 + RANDOM.nextInt(25);
     for (int i = 0; i < columnNameLength; i++) {
       sb.append(randomChar());
     }
@@ -173,7 +171,7 @@ public final class NessieIceberg {
   }
 
   private static char randomChar() {
-    return (char) ThreadLocalRandom.current().nextInt('a', 'z' + 1);
+    return (char) (RANDOM.nextInt(26) + 'a');
   }
 
   public static JsonNode toNessie(ViewVersionMetadata view) {

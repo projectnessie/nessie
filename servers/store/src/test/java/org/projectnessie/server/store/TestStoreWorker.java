@@ -73,7 +73,7 @@ class TestStoreWorker {
 
   @SuppressWarnings("UnnecessaryLambda")
   private static final Supplier<ByteString> ALWAYS_THROWING_BYTE_STRING_SUPPLIER =
-    () -> fail("Unexpected use of Supplier<ByteString>");
+      () -> fail("Unexpected use of Supplier<ByteString>");
 
   @SuppressWarnings("UnnecessaryLambda")
   private static final Function<Stream<ContentAttachmentKey>, Stream<ContentAttachment>>

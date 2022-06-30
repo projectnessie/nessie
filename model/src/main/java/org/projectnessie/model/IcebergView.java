@@ -33,9 +33,6 @@ import org.immutables.value.Value;
 @JsonTypeName("ICEBERG_VIEW")
 public abstract class IcebergView extends Content {
 
-  /** Constant for {@link GenericMetadata#getVariant()}. */
-  public static final String VIEW_METADATA = "Iceberg";
-
   /**
    * Location where Iceberg stored its {@code ViewMetadata} file. The location depends on the
    * (implementation of) Iceberg's {@code FileIO} configured for the particular Iceberg table.
@@ -97,26 +94,19 @@ public abstract class IcebergView extends Content {
         .build();
   }
 
-  static final String LOCATION = "location";
-  public static final String CURRENT_VERSION_ID = "current-version-id";
-  public static final String VERSIONS = "versions";
-  public static final String VERSION_ID = "version-id";
-  public static final String VIEW_DEFINITION = "view-definition";
-  private static final String SCHEMA_ID = "schema-id";
-
   public static IcebergView of(JsonNode metadata, String metadataLocation, String id) {
-    int currentVersionId = metadata.get(CURRENT_VERSION_ID).asInt(-1);
+    int currentVersionId = metadata.get(IcebergContent.CURRENT_VERSION_ID).asInt(-1);
     String sqlText = "";
     String dialect = ""; // TODO !!
     int schemaId = 0;
-    for (Iterator<JsonNode> versionIter = metadata.get(VERSIONS).iterator();
+    for (Iterator<JsonNode> versionIter = metadata.get(IcebergContent.VERSIONS).iterator();
         versionIter.hasNext(); ) {
       JsonNode version = versionIter.next();
-      if (version.get(VERSION_ID).asInt(-1) == currentVersionId) {
-        JsonNode viewDefinition = version.get(VIEW_DEFINITION);
+      if (version.get(IcebergContent.VERSION_ID).asInt(-1) == currentVersionId) {
+        JsonNode viewDefinition = version.get(IcebergContent.VIEW_DEFINITION);
         sqlText = viewDefinition.get("sql").asText();
         JsonNode schema = viewDefinition.get("schema");
-        schemaId = schema.get(SCHEMA_ID).asInt(0);
+        schemaId = schema.get(IcebergContent.SCHEMA_ID).asInt(0);
       }
     }
 
@@ -127,7 +117,7 @@ public abstract class IcebergView extends Content {
         .schemaId(schemaId)
         .dialect(dialect)
         .sqlText(sqlText)
-        .metadata(GenericMetadata.of(VIEW_METADATA, metadata))
+        .metadata(GenericMetadata.of(IcebergContent.ICEBERG_METADATA, metadata))
         .build();
   }
 }

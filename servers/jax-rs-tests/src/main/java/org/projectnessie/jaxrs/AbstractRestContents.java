@@ -495,7 +495,6 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
           .element(0)
           .extracting(LogEntry::getOperations, list(Operation.class))
           .element(0)
-          // Clear content ID for comparison
           .isEqualTo(Put.of(key, content));
 
       head = committed;
