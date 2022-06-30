@@ -23,8 +23,8 @@ public interface BaseContent {
     ON_REF_ONLY,
     /** Content type with on-reference state and mandatory global state. */
     WITH_GLOBAL_STATE,
-    /** Content type with on-reference state and mandatory per-content-id state. */
-    WITH_PER_CONTENT_STATE
+    /** Content type with on-reference state and content attachments. */
+    WITH_ATTACHMENTS
   }
 
   /** Content-id. */

@@ -334,29 +334,6 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
     }
   }
 
-  @Override
-  public boolean requiresPerContentState(Content content) {
-    if (content instanceof IcebergTable) {
-      IcebergTable table = (IcebergTable) content;
-      return table.getMetadata() != null;
-    }
-    if (content instanceof IcebergView) {
-      IcebergView view = (IcebergView) content;
-      return view.getMetadata() != null;
-    }
-    return false;
-  }
-
-  @Override
-  public boolean requiresPerContentState(ByteString content) {
-    return false;
-  }
-
-  @Override
-  public boolean requiresPerContentState(Enum<Content.Type> type) {
-    return type == Content.Type.ICEBERG_TABLE || type == Content.Type.ICEBERG_VIEW;
-  }
-
   private static ObjectTypes.Content parse(ByteString value) {
     try {
       return ObjectTypes.Content.parseFrom(value);

@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
@@ -48,6 +49,7 @@ import org.projectnessie.server.store.proto.ObjectTypes.IcebergMetadataPointer;
 import org.projectnessie.server.store.proto.ObjectTypes.IcebergRefState;
 import org.projectnessie.server.store.proto.ObjectTypes.IcebergViewState;
 import org.projectnessie.versioned.ContentAttachment;
+import org.projectnessie.versioned.ContentAttachmentKey;
 
 class TestStoreWorker {
 
@@ -59,6 +61,10 @@ class TestStoreWorker {
   @SuppressWarnings("UnnecessaryLambda")
   private static final Consumer<ContentAttachment> ALWAYS_THROWING_ATTACHMENT_CONSUMER =
       attachment -> fail("Unexpected use of Consumer<ContentAttachment>");
+
+  @SuppressWarnings("UnnecessaryLambda")
+  private static final Function<Stream<ContentAttachmentKey>, Stream<ContentAttachment>>
+      NO_ATTACHMENTS_RETRIEVER = contentAttachmentKeyStream -> Stream.empty();
 
   @Test
   void tableMetadataLocationGlobalNotAvailable() {
@@ -76,7 +82,7 @@ class TestStoreWorker {
                         .build()
                         .toByteString(),
                     () -> null,
-                    contentAttachmentKeyStream -> Stream.empty()))
+                    NO_ATTACHMENTS_RETRIEVER))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Iceberg content from reference must have global state, but has none");
   }
@@ -103,7 +109,7 @@ class TestStoreWorker {
                             .setMetadataLocation("metadata-location"))
                     .build()
                     .toByteString(),
-            contentAttachmentKeyStream -> Stream.empty());
+            NO_ATTACHMENTS_RETRIEVER);
     assertThat(value)
         .isInstanceOf(IcebergTable.class)
         .asInstanceOf(InstanceOfAssertFactories.type(IcebergTable.class))
@@ -132,7 +138,7 @@ class TestStoreWorker {
                 .build()
                 .toByteString(),
             () -> null,
-            contentAttachmentKeyStream -> Stream.empty());
+            NO_ATTACHMENTS_RETRIEVER);
     assertThat(value)
         .isInstanceOf(IcebergTable.class)
         .asInstanceOf(InstanceOfAssertFactories.type(IcebergTable.class))
@@ -157,7 +163,7 @@ class TestStoreWorker {
                         .build()
                         .toByteString(),
                     () -> null,
-                    contentAttachmentKeyStream -> Stream.empty()))
+                    NO_ATTACHMENTS_RETRIEVER))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Iceberg content from reference must have global state, but has none");
   }
@@ -179,7 +185,7 @@ class TestStoreWorker {
                             .setMetadataLocation("metadata-location"))
                     .build()
                     .toByteString(),
-            contentAttachmentKeyStream -> Stream.empty());
+            NO_ATTACHMENTS_RETRIEVER);
     assertThat(value)
         .isInstanceOf(IcebergView.class)
         .asInstanceOf(InstanceOfAssertFactories.type(IcebergView.class))
@@ -307,9 +313,7 @@ class TestStoreWorker {
         .asInstanceOf(InstanceOfAssertFactories.type(ByteString.class))
         .extracting(worker::requiresGlobalState, worker::getType)
         .containsExactly(storeGlobal, type);
-    assertThat(
-            worker.valueFromStore(
-                onRef, () -> global, contentAttachmentKeyStream -> Stream.empty()))
+    assertThat(worker.valueFromStore(onRef, () -> global, NO_ATTACHMENTS_RETRIEVER))
         .isEqualTo(content);
 
     if (storeGlobal) {
@@ -360,7 +364,7 @@ class TestStoreWorker {
                 .build()
                 .toByteString(),
             () -> null,
-            contentAttachmentKeyStream -> Stream.empty());
+            NO_ATTACHMENTS_RETRIEVER);
     assertThat(value)
         .isInstanceOf(IcebergView.class)
         .asInstanceOf(InstanceOfAssertFactories.type(IcebergView.class))

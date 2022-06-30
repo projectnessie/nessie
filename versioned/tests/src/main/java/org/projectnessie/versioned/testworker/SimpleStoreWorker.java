@@ -68,7 +68,7 @@ public final class SimpleStoreWorker
       case WITH_GLOBAL_STATE:
         value = ((WithGlobalStateContent) content).getOnRef();
         break;
-      case WITH_PER_CONTENT_STATE:
+      case WITH_ATTACHMENTS:
         value = ((WithAttachmentsContent) content).getOnRef();
         break;
       default:
@@ -115,7 +115,7 @@ public final class SimpleStoreWorker
       case WITH_GLOBAL_STATE:
         assertThat(global).isNotNull();
         return withGlobal(global.toStringUtf8(), onRef, contentId);
-      case WITH_PER_CONTENT_STATE:
+      case WITH_ATTACHMENTS:
         Stream<ContentAttachmentKey> keys = Stream.empty();
         try (Stream<ContentAttachment> attachments = attachmentsRetriever.apply(keys)) {
           assertThat(attachments).isNotEmpty();
@@ -176,7 +176,7 @@ public final class SimpleStoreWorker
       return BaseContent.Type.WITH_GLOBAL_STATE;
     }
     if (content instanceof WithAttachmentsContent) {
-      return BaseContent.Type.WITH_PER_CONTENT_STATE;
+      return BaseContent.Type.WITH_ATTACHMENTS;
     }
     throw new IllegalArgumentException("" + content);
   }
@@ -189,11 +189,6 @@ public final class SimpleStoreWorker
   @Override
   public boolean requiresGlobalState(BaseContent baseContent) {
     return baseContent instanceof WithGlobalStateContent;
-  }
-
-  @Override
-  public boolean requiresPerContentState(Enum<BaseContent.Type> type) {
-    return type == BaseContent.Type.WITH_PER_CONTENT_STATE;
   }
 
   @Override

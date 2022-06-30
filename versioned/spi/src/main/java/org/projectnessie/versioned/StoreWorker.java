@@ -50,16 +50,6 @@ public interface StoreWorker<CONTENT, COMMIT_METADATA, CONTENT_TYPE extends Enum
 
   boolean requiresGlobalState(CONTENT content);
 
-  default boolean requiresPerContentState(ByteString content) {
-    return requiresPerContentState(getType(content));
-  }
-
-  default boolean requiresPerContentState(CONTENT content) {
-    return requiresPerContentState(getType(content));
-  }
-
-  boolean requiresPerContentState(Enum<CONTENT_TYPE> contentType);
-
   CONTENT_TYPE getType(ByteString onRefContent);
 
   CONTENT_TYPE getType(Byte payload);
