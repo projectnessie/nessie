@@ -111,122 +111,115 @@ gradle.beforeProject {
 
 include("code-coverage")
 
-include("bom")
+fun nessieProject(name: String, directory: String) {
+  include(name)
+  project(":$name").projectDir = file(directory)
+}
 
-include("clients")
+nessieProject("nessie-bom", "bom")
 
-include("clients:client")
+nessieProject("nessie-clients", "clients")
 
-include("clients:deltalake")
+nessieProject("nessie-client", "clients/client")
 
-include("clients:iceberg-views")
+nessieProject("nessie-deltalake", "clients/deltalake")
 
-include("clients:spark-3.2-extensions")
+nessieProject("iceberg-views", "clients/iceberg-views")
 
-include("clients:spark-antlr-grammar")
+nessieProject("nessie-spark-3.2-extensions", "clients/spark-3.2-extensions")
 
-include("clients:spark-extensions")
+nessieProject("nessie-spark-extensions-grammar", "clients/spark-antlr-grammar")
 
-include("clients:spark-extensions-base")
+nessieProject("nessie-spark-extensions", "clients/spark-extensions")
 
-include("compatibility")
+nessieProject("nessie-spark-extensions-base", "clients/spark-extensions-base")
 
-include("compatibility:common")
+nessieProject("nessie-compatibility", "compatibility")
 
-include("compatibility:compatibility-tests")
+nessieProject("nessie-compatibility-common", "compatibility/common")
 
-include("compatibility:jersey")
+nessieProject("nessie-compatibility-tests", "compatibility/compatibility-tests")
 
-include("gc")
+nessieProject("nessie-compatibility-jersey", "compatibility/jersey")
 
-include("gc:gc-base")
+nessieProject("nessie-gc", "gc")
 
-include("model")
+nessieProject("nessie-gc-base", "gc/gc-base")
 
-include("perftest")
+nessieProject("nessie-model", "model")
 
-include("perftest:gatling")
+nessieProject("nessie-perftest", "perftest")
 
-include("perftest:simulations")
+nessieProject("nessie-perftest-gatling", "perftest/gatling")
 
-include("servers")
+nessieProject("nessie-perftest-simulations", "perftest/simulations")
 
-include("servers:jax-rs")
+nessieProject("nessie-server-parent", "servers")
 
-include("servers:jax-rs-testextension")
+nessieProject("nessie-jaxrs", "servers/jax-rs")
 
-include("servers:jax-rs-tests")
+nessieProject("nessie-jaxrs-testextension", "servers/jax-rs-testextension")
 
-include("servers:lambda")
+nessieProject("nessie-jaxrs-tests", "servers/jax-rs-tests")
 
-include("servers:quarkus-common")
+nessieProject("nessie-lambda", "servers/lambda")
 
-include("servers:quarkus-cli")
+nessieProject("nessie-quarkus-cli", "servers/quarkus-cli")
 
-include("servers:quarkus-server")
+nessieProject("nessie-quarkus-common", "servers/quarkus-common")
 
-include("servers:quarkus-tests")
+nessieProject("nessie-quarkus", "servers/quarkus-server")
 
-include("servers:rest-services")
+nessieProject("nessie-quarkus-tests", "servers/quarkus-tests")
 
-include("servers:services")
+nessieProject("nessie-rest-services", "servers/rest-services")
 
-include("servers:store")
+nessieProject("nessie-services", "servers/services")
 
-include("servers:store-proto")
+nessieProject("nessie-server-store", "servers/store")
 
-include("tools")
+nessieProject("nessie-server-store-proto", "servers/store-proto")
 
-include("tools:content-generator")
+nessieProject("nessie-tools", "tools")
 
-include("ui")
+nessieProject("nessie-content-generator", "tools/content-generator")
 
-include("versioned")
+nessieProject("nessie-ui", "ui")
 
-include("versioned:persist")
+nessieProject("nessie-versioned", "versioned")
 
-include("versioned:persist:adapter")
+nessieProject("nessie-versioned-persist", "versioned/persist")
 
-include("versioned:persist:bench")
+nessieProject("nessie-versioned-persist-adapter", "versioned/persist/adapter")
 
-include("versioned:persist:dynamodb")
+nessieProject("nessie-versioned-persist-bench", "versioned/persist/bench")
 
-include("versioned:persist:inmem")
+nessieProject("nessie-versioned-persist-dynamodb", "versioned/persist/dynamodb")
 
-include("versioned:persist:mongodb")
+nessieProject("nessie-versioned-persist-in-memory", "versioned/persist/inmem")
 
-include("versioned:persist:nontx")
+nessieProject("nessie-versioned-persist-mongodb", "versioned/persist/mongodb")
 
-include("versioned:persist:rocks")
+nessieProject("nessie-versioned-persist-non-transactional", "versioned/persist/nontx")
 
-include("versioned:persist:serialize")
+nessieProject("nessie-versioned-persist-rocks", "versioned/persist/rocks")
 
-include("versioned:persist:serialize-proto")
+nessieProject("nessie-versioned-persist-serialize", "versioned/persist/serialize")
 
-include("versioned:persist:store")
+nessieProject("nessie-versioned-persist-serialize-proto", "versioned/persist/serialize-proto")
 
-include("versioned:persist:tests")
+nessieProject("nessie-versioned-persist-store", "versioned/persist/store")
 
-include("versioned:persist:tx")
+nessieProject("nessie-versioned-persist-tests", "versioned/persist/tests")
 
-include("versioned:spi")
+nessieProject("nessie-versioned-persist-transactional", "versioned/persist/tx")
 
-include("versioned:tests")
+nessieProject("nessie-versioned-spi", "versioned/spi")
+
+nessieProject("nessie-versioned-tests", "versioned/tests")
 
 if (false) {
   include("gradle:dependabot")
 }
 
 rootProject.name = "nessie"
-
-enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
-
-// otherwise clashes with "tests" from :versioned:tests
-project(":versioned:persist:tests").name = "persist-tests"
-
-// otherwise clashes with "store" from :servers:store
-project(":versioned:persist:store").name = "persist-store"
-
-project(":clients:spark-extensions").name = "spark-31-extensions"
-
-project(":clients:spark-3.2-extensions").name = "spark-32-extensions"

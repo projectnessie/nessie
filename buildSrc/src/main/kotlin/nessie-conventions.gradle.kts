@@ -33,7 +33,6 @@ import org.gradle.api.tasks.scala.ScalaDoc
 import org.gradle.api.tasks.testing.Test
 import org.gradle.external.javadoc.CoreJavadocOptions
 import org.gradle.kotlin.dsl.configure
-import org.gradle.kotlin.dsl.extra
 import org.gradle.kotlin.dsl.findByType
 import org.gradle.kotlin.dsl.getByName
 import org.gradle.kotlin.dsl.maven
@@ -143,7 +142,6 @@ fun Project.testTasks() {
 
 fun Project.configureJava() {
   tasks.withType<Jar>().configureEach {
-    archiveBaseName.value(provider { mavenArtifactId() })
     manifest {
       attributes["Implementation-Title"] = "Nessie ${project.name}"
       attributes["Implementation-Version"] = project.version
@@ -202,23 +200,4 @@ fun Project.replaceJarWithUberJar() {
       archiveClassifier.set("raw")
     }
   }
-}
-
-fun Project.mavenArtifactId(): String {
-  if (extra.has("maven.artifactId")) {
-    return extra["maven.artifactId"] as String
-  }
-
-  var n = name
-  var prj = this
-  if (prj != rootProject) {
-    while (true) {
-      prj = prj.parent!!
-      n = "${prj.name}-$n"
-      if (prj.parent == null) {
-        break
-      }
-    }
-  }
-  return n
 }
