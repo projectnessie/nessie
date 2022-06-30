@@ -26,10 +26,10 @@ extra["maven.name"] = "Nessie - Backward Compatibility - Common"
 dependencies {
   implementation(platform(rootProject))
 
-  api(projects.clients.client)
-  api(projects.compatibility.jersey)
-  implementation(projects.servers.services)
-  implementation(projects.versioned.persist.adapter)
+  api(project(":nessie-client"))
+  api(project(":nessie-compatibility-jersey"))
+  implementation(project(":nessie-services"))
+  implementation(project(":nessie-versioned-persist-adapter"))
 
   implementation(platform("org.glassfish.jersey:jersey-bom"))
   api("org.slf4j:slf4j-api")
@@ -52,11 +52,11 @@ dependencies {
   testImplementation(platform(rootProject))
   testImplementation("org.mockito:mockito-core")
   testImplementation("com.google.guava:guava")
-  testImplementation(projects.versioned.persist.inmem)
-  testImplementation(projects.versioned.persist.inmem) { testJarCapability() }
-  testImplementation(projects.versioned.persist.rocks)
-  testImplementation(projects.versioned.persist.rocks) { testJarCapability() }
-  compileOnly(projects.versioned.persist.mongodb) { testJarCapability() }
+  testImplementation(project(":nessie-versioned-persist-in-memory"))
+  testImplementation(project(":nessie-versioned-persist-in-memory")) { testJarCapability() }
+  testImplementation(project(":nessie-versioned-persist-rocks"))
+  testImplementation(project(":nessie-versioned-persist-rocks")) { testJarCapability() }
+  compileOnly(project(":nessie-versioned-persist-mongodb")) { testJarCapability() }
 
   testImplementation(platform("org.junit:junit-bom"))
   testImplementation("org.junit.platform:junit-platform-testkit")

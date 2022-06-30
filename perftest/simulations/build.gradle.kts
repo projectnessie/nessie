@@ -30,9 +30,9 @@ val scalaVersion = dependencyVersion("versionScala2_13")
 
 dependencies {
   gatling(platform(rootProject))
-  gatling(projects.model)
-  gatling(projects.clients.client)
-  gatling(projects.perftest.gatling)
+  gatling(project(":nessie-model"))
+  gatling(project(":nessie-client"))
+  gatling(project(":nessie-perftest-gatling"))
   gatling("io.gatling.highcharts:gatling-charts-highcharts") {
     exclude("io.netty", "netty-tcnative-boringssl-static")
     exclude("commons-logging", "commons-logging")
@@ -41,9 +41,7 @@ dependencies {
   gatling(platform("com.fasterxml.jackson:jackson-bom"))
   gatling("com.fasterxml.jackson.core:jackson-annotations")
 
-  nessieQuarkusServer(
-    project(projects.servers.quarkusServer.dependencyProject.path, "quarkusRunner")
-  )
+  nessieQuarkusServer(project(":nessie-quarkus", "quarkusRunner"))
 }
 
 nessieQuarkusApp {

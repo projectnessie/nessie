@@ -23,8 +23,6 @@ plugins {
   `nessie-conventions`
 }
 
-extra["maven.artifactId"] = "nessie-lambda"
-
 extra["maven.name"] = "Nessie - Lambda Function"
 
 val quarkusRunner by
@@ -37,9 +35,7 @@ dependencies {
   implementation(enforcedPlatform("io.quarkus:quarkus-bom"))
   implementation(platform("software.amazon.awssdk:bom"))
 
-  implementation(projects.servers.quarkusServer) {
-    exclude("io.quarkus", "quarkus-smallrye-openapi")
-  }
+  implementation(project(":nessie-quarkus")) { exclude("io.quarkus", "quarkus-smallrye-openapi") }
   implementation("io.quarkus:quarkus-amazon-lambda")
   implementation("io.quarkus:quarkus-amazon-lambda-http")
   implementation("software.amazon.awssdk:apache-client") {
@@ -70,7 +66,8 @@ project.extra["quarkus.package.type"] =
   if (project.hasProperty("uber-jar")) "uber-jar"
   else if (project.hasProperty("native")) "native" else "fast-jar"
 
-quarkus { setFinalName("${extra["maven.artifactId"]}-${project.version}") }
+// TODO remove the whole block
+quarkus { setFinalName("${project.name}-${project.version}") }
 
 val useDocker = project.hasProperty("docker")
 

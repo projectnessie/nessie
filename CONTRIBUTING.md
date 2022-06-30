@@ -61,7 +61,7 @@ task depends on has been changed.
 You can abbreviate project and task names,
 see [docs](https://docs.gradle.org/current/userguide/command_line_interface.html#sec:name_abbreviation):
 * For `./gradlew spotlessApply` you can write `./gradlew sAp`
-* For `./gradlew :versioned:persist:serialize-proto:tasks` you can write `./gradle :v:p:s-p:tasks`
+* For `./gradlew :nessie-versioned-persist-serialize-proto:tasks` you can write `./gradle :n-v-p-s-p:tasks`
 
 #### Local Maven repository
 
@@ -89,10 +89,10 @@ quarkus.native.native-image-xmx=8g
 
 Tests run with the default Java heap size, which is sufficient for all tests. If you really need to
 bump the heap size for tests, for example during development, you can do so via the _project_ property
-`testHeapSize`. For example: `./gradlew -PtestHeapSize=4g :clients:client:test --tests TestMyStuff`
+`testHeapSize`. For example: `./gradlew -PtestHeapSize=4g :nessie-client:test --tests TestMyStuff`
 
 The project property `testJvmArgs` allows specifying JVM arguments for tests. Example:
-`./gradlew -PtestJvmArgs="-Xmx8g -XX:+UnlockExperimentalVMOptions -XX:+UseZGC" :clients:client:test --tests TestMyStuff`.
+`./gradlew -PtestJvmArgs="-Xmx8g -XX:+UnlockExperimentalVMOptions -XX:+UseZGC" :nessie-client:test --tests TestMyStuff`.
 Multiple JVM arguments can be specified via the `testJvmArgs` property, separated by spaces.
 
 Note: if you need these JVM settings regularly, you can also specify those in the

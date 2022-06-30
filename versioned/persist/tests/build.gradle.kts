@@ -21,17 +21,15 @@ plugins {
   `nessie-conventions`
 }
 
-extra["maven.artifactId"] = "nessie-versioned-persist-tests"
-
 extra["maven.name"] = "Nessie - Versioned - Persist - Tests"
 
 dependencies {
   implementation(platform(rootProject))
 
-  implementation(projects.versioned.persist.adapter)
-  implementation(projects.versioned.persist.persistStore)
-  implementation(projects.versioned.spi)
-  implementation(projects.versioned.tests)
+  implementation(project(":nessie-versioned-persist-adapter"))
+  implementation(project(":nessie-versioned-persist-store"))
+  implementation(project(":nessie-versioned-spi"))
+  implementation(project(":nessie-versioned-tests"))
   implementation("com.google.guava:guava")
   implementation(platform("io.quarkus:quarkus-bom"))
   implementation("io.micrometer:micrometer-core")

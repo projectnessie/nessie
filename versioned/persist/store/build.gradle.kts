@@ -21,15 +21,13 @@ plugins {
   `nessie-conventions`
 }
 
-extra["maven.artifactId"] = "nessie-versioned-persist-store"
-
 extra["maven.name"] = "Nessie - Versioned - Persist - Version Store"
 
 dependencies {
   implementation(platform(rootProject))
 
-  implementation(projects.versioned.persist.adapter)
-  implementation(projects.versioned.spi)
+  implementation(project(":nessie-versioned-persist-adapter"))
+  implementation(project(":nessie-versioned-spi"))
   implementation("com.google.protobuf:protobuf-java")
   implementation("com.google.code.findbugs:jsr305")
   implementation("com.google.guava:guava")

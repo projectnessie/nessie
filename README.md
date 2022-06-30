@@ -122,7 +122,7 @@ To deploy the ui (from `ui` directory):
 
 ### Docker image
 
-When running `./gradlew :servers:quarkus-server:quarkusBuild -Pdocker -Pnative` a docker image will
+When running `./gradlew :nessie-quarkus:quarkusBuild -Pdocker -Pnative` a docker image will
 be created at `projectnessie/nessie` which can be started with `docker run -p 19120:19120 projectnessie/nessie`
 and the relevant environment variables. Environment variables  are specified as per
 https://github.com/eclipse/microprofile-config/blob/master/spec/src/main/asciidoc/configsources.asciidoc#default-configsources  

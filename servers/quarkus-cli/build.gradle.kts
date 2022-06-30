@@ -23,26 +23,24 @@ plugins {
   `nessie-conventions`
 }
 
-extra["maven.artifactId"] = "nessie-quarkus-cli"
-
 extra["maven.name"] = "Nessie - Quarkus CLI"
 
 dependencies {
   compileOnly(platform(rootProject))
   implementation(platform(rootProject))
   annotationProcessor(platform(rootProject))
-  implementation(projects.servers.quarkusCommon)
-  implementation(projects.servers.services)
-  implementation(projects.servers.store)
-  implementation(projects.versioned.persist.adapter)
-  implementation(projects.versioned.spi)
-  implementation(projects.model)
-  implementation(projects.versioned.persist.nontx)
-  implementation(projects.versioned.persist.inmem)
-  implementation(projects.versioned.persist.dynamodb)
-  implementation(projects.versioned.persist.mongodb)
-  implementation(projects.versioned.persist.rocks)
-  implementation(projects.versioned.persist.tx)
+  implementation(project(":nessie-quarkus-common"))
+  implementation(project(":nessie-services"))
+  implementation(project(":nessie-server-store"))
+  implementation(project(":nessie-versioned-persist-adapter"))
+  implementation(project(":nessie-versioned-spi"))
+  implementation(project(":nessie-model"))
+  implementation(project(":nessie-versioned-persist-non-transactional"))
+  implementation(project(":nessie-versioned-persist-in-memory"))
+  implementation(project(":nessie-versioned-persist-dynamodb"))
+  implementation(project(":nessie-versioned-persist-mongodb"))
+  implementation(project(":nessie-versioned-persist-rocks"))
+  implementation(project(":nessie-versioned-persist-transactional"))
 
   implementation(enforcedPlatform("io.quarkus:quarkus-bom"))
   implementation(enforcedPlatform("io.quarkus.platform:quarkus-amazon-services-bom"))
@@ -62,9 +60,9 @@ dependencies {
   annotationProcessor("org.immutables:value-processor")
 
   testImplementation(platform(rootProject))
-  testImplementation(projects.servers.quarkusTests)
-  testImplementation(projects.versioned.persist.mongodb) { testJarCapability() }
-  testImplementation(projects.versioned.tests)
+  testImplementation(project(":nessie-quarkus-tests"))
+  testImplementation(project(":nessie-versioned-persist-mongodb")) { testJarCapability() }
+  testImplementation(project(":nessie-versioned-tests"))
   testImplementation(enforcedPlatform("io.quarkus:quarkus-bom"))
   testImplementation("io.quarkus:quarkus-jacoco")
   testImplementation("io.quarkus:quarkus-junit5")
@@ -104,7 +102,8 @@ tasks.withType<Test>().configureEach {
 project.extra["quarkus.package.type"] =
   if (project.hasProperty("uber-jar") || project.hasProperty("native")) "uber-jar" else "fast-jar"
 
-quarkus { setFinalName("${extra["maven.artifactId"]}-${project.version}") }
+// TODO remove the whole block
+quarkus { setFinalName("${project.name}-${project.version}") }
 
 tasks.withType<QuarkusBuild>().configureEach {
   inputs.property("quarkus.package.type", project.extra["quarkus.package.type"])

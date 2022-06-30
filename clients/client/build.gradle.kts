@@ -22,8 +22,6 @@ plugins {
   id("org.projectnessie.buildsupport.attach-test-jar")
 }
 
-extra["maven.artifactId"] = "nessie-client"
-
 extra["maven.name"] = "Nessie - Client"
 
 dependencies {
@@ -31,7 +29,7 @@ dependencies {
   annotationProcessor(platform(rootProject))
   implementation(platform(rootProject))
 
-  api(projects.model)
+  api(project(":nessie-model"))
 
   if (project.hasProperty("jackson-tests")) {
     val jacksonVersion = project.property("jackson-tests") as String

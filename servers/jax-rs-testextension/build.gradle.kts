@@ -21,15 +21,13 @@ plugins {
   `nessie-conventions`
 }
 
-extra["maven.artifactId"] = "nessie-jaxrs-testextension"
-
 extra["maven.name"] = "Nessie - JUnit Jupyter Test Extension"
 
 description = "JUnit Jupyter Extension to run tests against an \"embedded\" Nessie instance."
 
 dependencies {
   api(platform(rootProject))
-  api(projects.servers.jaxRs)
+  api(project(":nessie-jaxrs"))
   api(platform("org.junit:junit-bom"))
   api("org.junit.jupiter:junit-jupiter-api")
   api("org.slf4j:slf4j-api")

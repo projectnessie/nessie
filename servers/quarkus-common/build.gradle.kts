@@ -21,24 +21,22 @@ plugins {
   `nessie-conventions`
 }
 
-extra["maven.artifactId"] = "nessie-quarkus-common"
-
 extra["maven.name"] = "Nessie - Quarkus Common"
 
 dependencies {
   implementation(platform(rootProject))
-  implementation(projects.model)
-  implementation(projects.servers.store)
-  implementation(projects.servers.services)
-  implementation(projects.versioned.spi)
-  implementation(projects.versioned.persist.adapter)
-  implementation(projects.versioned.persist.persistStore)
-  implementation(projects.versioned.persist.inmem)
-  implementation(projects.versioned.persist.nontx)
-  implementation(projects.versioned.persist.rocks)
-  implementation(projects.versioned.persist.dynamodb)
-  implementation(projects.versioned.persist.mongodb)
-  implementation(projects.versioned.persist.tx)
+  implementation(project(":nessie-model"))
+  implementation(project(":nessie-server-store"))
+  implementation(project(":nessie-services"))
+  implementation(project(":nessie-versioned-spi"))
+  implementation(project(":nessie-versioned-persist-adapter"))
+  implementation(project(":nessie-versioned-persist-store"))
+  implementation(project(":nessie-versioned-persist-in-memory"))
+  implementation(project(":nessie-versioned-persist-non-transactional"))
+  implementation(project(":nessie-versioned-persist-rocks"))
+  implementation(project(":nessie-versioned-persist-dynamodb"))
+  implementation(project(":nessie-versioned-persist-mongodb"))
+  implementation(project(":nessie-versioned-persist-transactional"))
   implementation(enforcedPlatform("io.quarkus:quarkus-bom"))
   implementation(enforcedPlatform("io.quarkus.platform:quarkus-amazon-services-bom"))
   implementation("io.quarkus:quarkus-hibernate-validator")

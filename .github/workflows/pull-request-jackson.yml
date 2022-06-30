@@ -41,19 +41,19 @@ jobs:
       - name: Jackson compatibility tests / 2.6.4 for Spark 2.4.4
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: :clients:client:test -Pjackson-tests=2.6.4
+          arguments: :nessie-client:test -Pjackson-tests=2.6.4
       - name: Jackson compatibility tests / 2.10.0 for Spark 3.0.1
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: :clients:client:test -Pjackson-tests=2.10.0
+          arguments: :nessie-client:test -Pjackson-tests=2.10.0
       - name: Jackson compatibility tests / 2.11.4 for Spark 3.0.1
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: :clients:client:test -Pjackson-tests=2.11.4
+          arguments: :nessie-client:test -Pjackson-tests=2.11.4
       - name: Jackson compatibility tests / 2.12.5 for Spark 3.0.1
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: :clients:client:test -Pjackson-tests=2.12.5
+          arguments: :nessie-client:test -Pjackson-tests=2.12.5
 
       - name: Capture Test Reports
         uses: actions/upload-artifact@v3

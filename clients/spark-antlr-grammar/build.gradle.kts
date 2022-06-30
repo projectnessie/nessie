@@ -22,8 +22,6 @@ plugins {
   `nessie-conventions`
 }
 
-extra["maven.artifactId"] = "nessie-spark-extensions-grammar"
-
 dependencies {
   antlr(platform(rootProject))
   antlr("org.antlr:antlr4:${dependencyVersion("versionAntlr")}")

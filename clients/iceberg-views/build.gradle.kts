@@ -21,12 +21,10 @@ plugins {
   `nessie-conventions`
 }
 
-extra["maven.artifactId"] = "iceberg-views"
-
 dependencies {
   implementation(platform(rootProject))
-  implementation(projects.clients.client)
-  implementation(projects.model)
+  implementation(project(":nessie-client"))
+  implementation(project(":nessie-model"))
   implementation("org.apache.iceberg:iceberg-api")
   implementation("org.apache.iceberg:iceberg-core")
   implementation("org.apache.iceberg:iceberg-common")
@@ -42,9 +40,9 @@ dependencies {
   compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
   testImplementation(platform(rootProject))
-  testImplementation(projects.versioned.persist.persistTests)
-  testImplementation(projects.versioned.persist.inmem)
-  testImplementation(projects.servers.jaxRsTestextension)
+  testImplementation(project(":nessie-versioned-persist-tests"))
+  testImplementation(project(":nessie-versioned-persist-in-memory"))
+  testImplementation(project(":nessie-jaxrs-testextension"))
   testImplementation("org.slf4j:log4j-over-slf4j")
   testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 

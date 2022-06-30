@@ -22,8 +22,6 @@ plugins {
   id("org.projectnessie.buildsupport.attach-test-jar")
 }
 
-extra["maven.artifactId"] = "nessie-spark-extensions-base"
-
 val scalaVersion = dependencyVersion("versionScala2_12")
 
 val sparkVersion = dependencyVersion("versionSpark31")
@@ -35,7 +33,7 @@ dependencies {
   forScala(scalaVersion)
 
   implementation(platform(rootProject))
-  implementation(projects.clients.sparkAntlrGrammar)
+  implementation(project(":nessie-spark-extensions-grammar"))
   compileOnly("org.apache.spark:spark-hive_2.12") { forSpark(sparkVersion) }
   implementation("org.projectnessie:nessie-client:$clientNessieVersion")
   compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")

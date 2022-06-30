@@ -28,10 +28,10 @@ dependencies {
   implementation(platform(rootProject))
   annotationProcessor(platform(rootProject))
 
-  implementation(projects.versioned.persist.adapter)
-  implementation(projects.versioned.persist.nontx)
-  implementation(projects.versioned.persist.serialize)
-  implementation(projects.versioned.spi)
+  implementation(project(":nessie-versioned-persist-adapter"))
+  implementation(project(":nessie-versioned-persist-non-transactional"))
+  implementation(project(":nessie-versioned-persist-serialize"))
+  implementation(project(":nessie-versioned-spi"))
   implementation("com.google.guava:guava")
   compileOnly("org.immutables:value-annotations")
   annotationProcessor("org.immutables:value-processor")
@@ -40,9 +40,9 @@ dependencies {
   compileOnly("org.graalvm.nativeimage:svm")
 
   testImplementation(platform(rootProject))
-  testImplementation(projects.versioned.tests)
-  testImplementation(projects.versioned.persist.persistTests)
-  testImplementation(projects.versioned.persist.nontx) { testJarCapability() }
+  testImplementation(project(":nessie-versioned-tests"))
+  testImplementation(project(":nessie-versioned-persist-tests"))
+  testImplementation(project(":nessie-versioned-persist-non-transactional")) { testJarCapability() }
 
   testImplementation(platform("org.junit:junit-bom"))
   testImplementation("org.assertj:assertj-core")

@@ -25,9 +25,9 @@ extra["maven.name"] = "Nessie - Versioned - Persist - Serialization"
 
 dependencies {
   implementation(platform(rootProject))
-  implementation(projects.versioned.spi)
-  implementation(projects.versioned.persist.adapter)
-  api(projects.versioned.persist.serializeProto)
+  implementation(project(":nessie-versioned-spi"))
+  implementation(project(":nessie-versioned-persist-adapter"))
+  api(project(":nessie-versioned-persist-serialize-proto"))
   implementation("com.google.guava:guava")
 
   testImplementation(platform(rootProject))

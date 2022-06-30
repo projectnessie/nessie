@@ -25,8 +25,6 @@ plugins {
   `nessie-conventions`
 }
 
-extra["maven.artifactId"] = "nessie-spark-extensions"
-
 val scalaVersion = dependencyVersion("versionScala2_12")
 
 val sparkVersion = dependencyVersion("versionSpark31")
@@ -38,15 +36,15 @@ dependencies {
   forScala(scalaVersion)
 
   implementation(platform(rootProject))
-  implementation(projects.clients.sparkAntlrGrammar)
-  implementation(projects.clients.sparkExtensionsBase)
+  implementation(project(":nessie-spark-extensions-grammar"))
+  implementation(project(":nessie-spark-extensions-base"))
   compileOnly("org.apache.spark:spark-sql_2.12") { forSpark(sparkVersion) }
   compileOnly("org.apache.spark:spark-core_2.12") { forSpark(sparkVersion) }
   compileOnly("org.apache.spark:spark-hive_2.12") { forSpark(sparkVersion) }
   implementation("org.projectnessie:nessie-client:$clientNessieVersion")
 
   testImplementation(platform(rootProject))
-  testImplementation(projects.clients.sparkExtensionsBase) { testJarCapability() }
+  testImplementation(project(":nessie-spark-extensions-base")) { testJarCapability() }
   testImplementation("org.apache.iceberg:iceberg-nessie")
   testImplementation("org.apache.iceberg:iceberg-spark3")
   testImplementation("org.apache.iceberg:iceberg-hive-metastore")

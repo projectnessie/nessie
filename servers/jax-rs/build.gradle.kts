@@ -21,8 +21,6 @@ plugins {
   `nessie-conventions`
 }
 
-extra["maven.artifactId"] = "nessie-jaxrs"
-
 extra["maven.name"] = "Nessie - JAX-RS"
 
 description = "Nessie on Glassfish/Jersey/Weld"
@@ -30,27 +28,27 @@ description = "Nessie on Glassfish/Jersey/Weld"
 dependencies {
   api(platform(rootProject))
   implementation(platform(rootProject))
-  api(projects.clients.client)
-  api(projects.model)
-  api(projects.servers.restServices)
-  api(projects.servers.services)
-  api(projects.servers.store)
-  api(projects.versioned.spi)
-  api(projects.versioned.persist.persistStore)
-  api(projects.versioned.persist.persistTests)
-  api(projects.versioned.persist.adapter)
-  api(projects.versioned.persist.serialize)
-  api(projects.versioned.persist.inmem)
-  api(projects.versioned.persist.inmem) { testJarCapability() }
-  api(projects.versioned.persist.rocks)
-  api(projects.versioned.persist.rocks) { testJarCapability() }
-  api(projects.versioned.persist.dynamodb)
-  api(projects.versioned.persist.dynamodb) { testJarCapability() }
-  api(projects.versioned.persist.mongodb)
-  api(projects.versioned.persist.mongodb) { testJarCapability() }
-  api(projects.versioned.persist.nontx)
-  api(projects.versioned.persist.tx)
-  api(projects.versioned.persist.tx) { testJarCapability() }
+  api(project(":nessie-client"))
+  api(project(":nessie-model"))
+  api(project(":nessie-rest-services"))
+  api(project(":nessie-services"))
+  api(project(":nessie-server-store"))
+  api(project(":nessie-versioned-spi"))
+  api(project(":nessie-versioned-persist-store"))
+  api(project(":nessie-versioned-persist-tests"))
+  api(project(":nessie-versioned-persist-adapter"))
+  api(project(":nessie-versioned-persist-serialize"))
+  api(project(":nessie-versioned-persist-in-memory"))
+  api(project(":nessie-versioned-persist-in-memory")) { testJarCapability() }
+  api(project(":nessie-versioned-persist-rocks"))
+  api(project(":nessie-versioned-persist-rocks")) { testJarCapability() }
+  api(project(":nessie-versioned-persist-dynamodb"))
+  api(project(":nessie-versioned-persist-dynamodb")) { testJarCapability() }
+  api(project(":nessie-versioned-persist-mongodb"))
+  api(project(":nessie-versioned-persist-mongodb")) { testJarCapability() }
+  api(project(":nessie-versioned-persist-non-transactional"))
+  api(project(":nessie-versioned-persist-transactional"))
+  api(project(":nessie-versioned-persist-transactional")) { testJarCapability() }
   implementation("org.slf4j:slf4j-api")
   implementation("org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_2.1_spec")
   api(platform("org.glassfish.jersey:jersey-bom"))

@@ -39,7 +39,7 @@ plugins {
   id("net.ltgt.errorprone") version "2.0.2"
   id("org.jetbrains.gradle.plugin.idea-ext") version "1.1.5"
   id("org.projectnessie") version "0.27.3"
-  id("org.projectnessie.buildsupport.spotless") version "0.1.10"
+  id("org.projectnessie.buildsupport.spotless") version "0.2.0"
   // The above version "includes" the ones below
   //  org.projectnessie.buildsupport.attach-test-jar
   //  org.projectnessie.buildsupport.checkstyle
