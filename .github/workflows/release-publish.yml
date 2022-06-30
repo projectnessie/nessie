@@ -125,7 +125,7 @@ jobs:
   
           # Build the native-image, it's not released to Maven Central
           echo "::group::Build native image"
-          ./gradlew --no-watch-fs --no-daemon --info :servers:quarkus-server:quarkusBuild -Prelease -Pnative -Pdocker
+          ./gradlew --no-watch-fs --no-daemon --info :nessie-quarkus:quarkusBuild -Prelease -Pnative -Pdocker
           echo "::endgroup::"
   
           # Add version to the openapi file name

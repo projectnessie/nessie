@@ -44,8 +44,8 @@ jobs:
       with:
         arguments: |
           --no-watch-fs
-          :servers:quarkus-server:quarkusBuild
-          :servers:quarkus-server:intTest
+          :nessie-quarkus:quarkusBuild
+          :nessie-quarkus:intTest
           -Pnative
           -Pdocker
 
