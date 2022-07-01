@@ -28,6 +28,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -74,6 +75,7 @@ public abstract class AbstractSparkSqlTest {
 
   private final String refName = "testBranch";
   protected NessieApiV1 api;
+  private Branch defaultBranchBeforeTest;
 
   @BeforeEach
   void setupSparkAndApi() throws NessieNotFoundException {
@@ -105,19 +107,21 @@ public abstract class AbstractSparkSqlTest {
     spark.sparkContext().setLogLevel("WARN");
     api = HttpClientBuilder.builder().withUri(url).build(NessieApiV1.class);
     hash = api.getDefaultBranch().getHash();
+    defaultBranchBeforeTest = api.getDefaultBranch();
   }
 
   @AfterEach
   void removeBranches() throws NessieConflictException, NessieNotFoundException {
+    String defaultBranchName = api.getConfig().getDefaultBranch();
     for (Reference ref : api.getAllReferences().get().getReferences()) {
-      if (ref instanceof Branch) {
+      if (ref instanceof Branch && !ref.getName().equals(defaultBranchName)) {
         api.deleteBranch().branchName(ref.getName()).hash(ref.getHash()).delete();
       }
       if (ref instanceof Tag) {
         api.deleteTag().tagName(ref.getName()).hash(ref.getHash()).delete();
       }
     }
-    api.createReference().reference(Branch.of("main", null)).create();
+    api.assignBranch().assignTo(defaultBranchBeforeTest).branch(api.getDefaultBranch()).assign();
     api.close();
     api = null;
   }
@@ -476,37 +480,62 @@ public abstract class AbstractSparkSqlTest {
     assertThat(sql("SHOW REFERENCE IN nessie")).containsExactly(row("Branch", refName, hash));
   }
 
-  @Test
-  void mergeReferencesIntoMain() throws NessieConflictException, NessieNotFoundException {
-    List<Object[]> commits =
-        commitAndReturnLog(refName).stream()
-            .map(AbstractSparkSqlTest::withoutHashAndTime)
-            .collect(Collectors.toList());
+  private Object[] relevantFromMerge(Object[] a) {
+    return new Object[] {a[2], removeInternalProperties((Map<String, String>) a[5])};
+  }
 
-    sql("MERGE BRANCH %s INTO main IN nessie", refName);
-    // here we are skipping commit time as its variable
+  private static Map<String, String> removeInternalProperties(Map<String, String> properties) {
+    return properties.entrySet().stream()
+        .filter(e -> !e.getKey().startsWith("_"))
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+  }
 
-    assertThat(
-            sql("SHOW LOG main IN nessie").stream()
-                .map(AbstractSparkSqlTest::sqlResultWithoutHashAndTime)
-                .collect(Collectors.toList()))
-        .containsExactlyElementsOf(commits);
+  private Object[] mergedCommits(Object[] a, Object[] b) {
+    @SuppressWarnings("unchecked")
+    Map<String, String> mapA = (Map<String, String>) a[5];
+    @SuppressWarnings("unchecked")
+    Map<String, String> mapB = (Map<String, String>) b[5];
+    Map<String, String> map = new HashMap<>();
+    map.putAll(mapA);
+    map.putAll(mapB);
+    return new Object[] {
+      b[0],
+      b[1],
+      b[2].toString() + "\n---------------------------------------------\n" + a[2],
+      b[3],
+      b[4],
+      map
+    };
   }
 
   @Test
   void mergeReferencesIn() throws NessieConflictException, NessieNotFoundException {
-    List<Object[]> resultList =
+    mergeReferencesInto("MERGE BRANCH %s IN nessie");
+  }
+
+  @Test
+  void mergeReferencesIntoMain() throws NessieConflictException, NessieNotFoundException {
+    mergeReferencesInto("MERGE BRANCH %s INTO main IN nessie");
+  }
+
+  private void mergeReferencesInto(String query)
+      throws NessieConflictException, NessieNotFoundException {
+    Object[] result =
         commitAndReturnLog(refName).stream()
             .map(AbstractSparkSqlTest::withoutHashAndTime)
-            .collect(Collectors.toList());
+            .reduce(this::mergedCommits)
+            .map(this::relevantFromMerge)
+            .get();
 
-    sql("MERGE BRANCH %s IN nessie", refName);
+    sql(query, refName);
     // here we are skipping commit time as its variable
+
     assertThat(
             sql("SHOW LOG main IN nessie").stream()
                 .map(AbstractSparkSqlTest::sqlResultWithoutHashAndTime)
+                .map(this::relevantFromMerge)
                 .collect(Collectors.toList()))
-        .containsExactlyElementsOf(resultList);
+        .containsExactly(result);
   }
 
   @Test
