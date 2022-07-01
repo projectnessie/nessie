@@ -84,25 +84,25 @@ abstract class SparkCommitLogEntry {
   SparkCommitLogEntry relevantFromMerge() {
     return ImmutableSparkCommitLogEntry.builder()
         .hash(getHash())
-        .putAllProperties(removeInternalProperties(getProperties()))
+        .putAllProperties(withoutInternalProperties(getProperties()))
         .build();
   }
 
-  SparkCommitLogEntry mergedCommits(SparkCommitLogEntry b) {
+  SparkCommitLogEntry mergedCommits(SparkCommitLogEntry other) {
     Map<String, String> mergedCommitProperties = new HashMap<>();
     mergedCommitProperties.putAll(this.getProperties());
-    mergedCommitProperties.putAll(b.getProperties());
+    mergedCommitProperties.putAll(other.getProperties());
     return ImmutableSparkCommitLogEntry.builder()
-        .from(b)
+        .from(other)
         .message(
-            b.getMessage()
+            other.getMessage()
                 + "\n---------------------------------------------\n"
                 + this.getMessage())
         .properties(mergedCommitProperties)
         .build();
   }
 
-  private static Map<String, String> removeInternalProperties(Map<String, String> properties) {
+  private static Map<String, String> withoutInternalProperties(Map<String, String> properties) {
     return properties.entrySet().stream()
         .filter(e -> !e.getKey().startsWith("_"))
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));

@@ -21,7 +21,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.errorprone.annotations.FormatMethod;
-import com.google.errorprone.annotations.FormatString;
 import java.io.File;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -71,7 +70,7 @@ public abstract class AbstractSparkSqlTest {
   protected static SparkSession spark;
   protected static String url = String.format("http://localhost:%d/api/v1", NESSIE_PORT);
 
-  private String hash;
+  private String initialHashOfDefaultBranch;
 
   private final String refName = "testBranch";
   protected NessieApiV1 api;
@@ -105,7 +104,7 @@ public abstract class AbstractSparkSqlTest {
     spark = SparkSession.builder().master("local[2]").config(conf).getOrCreate();
     spark.sparkContext().setLogLevel("WARN");
     api = HttpClientBuilder.builder().withUri(url).build(NessieApiV1.class);
-    hash = api.getDefaultBranch().getHash();
+    initialHashOfDefaultBranch = api.getDefaultBranch().getHash();
   }
 
   @AfterEach
@@ -120,7 +119,7 @@ public abstract class AbstractSparkSqlTest {
       }
     }
     api.assignBranch()
-        .assignTo(Branch.of(defaultBranch.getName(), hash))
+        .assignTo(Branch.of(defaultBranch.getName(), initialHashOfDefaultBranch))
         .branch(defaultBranch)
         .assign();
     api.close();
@@ -135,13 +134,8 @@ public abstract class AbstractSparkSqlTest {
     }
   }
 
-  protected static void assertEquals(
-      String context, List<Object[]> expectedRows, List<Object[]> actualRows) {
-    assertThat(actualRows).as("%s", context).containsExactlyElementsOf(expectedRows);
-  }
-
   @FormatMethod
-  protected static List<Object[]> sql(@FormatString String query, Object... args) {
+  protected static List<Object[]> sql(String query, Object... args) {
     List<Row> rows = spark.sql(String.format(query, args)).collectAsList();
     if (rows.size() < 1) {
       return ImmutableList.of();
@@ -183,10 +177,10 @@ public abstract class AbstractSparkSqlTest {
   @Test
   public void testRefreshAfterMergeWithIcebergTableCaching() {
     assertThat(sql("CREATE BRANCH %s IN nessie", refName))
-        .containsExactly(row("Branch", refName, hash));
+        .containsExactly(row("Branch", refName, initialHashOfDefaultBranch));
     assertThat(sql("USE REFERENCE %s IN nessie", refName))
         .hasSize(1)
-        .containsExactly(row("Branch", refName, hash));
+        .containsExactly(row("Branch", refName, initialHashOfDefaultBranch));
 
     sql("CREATE TABLE nessie.db.tbl (id int, name string)");
     sql("INSERT INTO nessie.db.tbl select 23, \"test\"");
@@ -230,12 +224,14 @@ public abstract class AbstractSparkSqlTest {
   @Test
   void testCreateBranchInExists() throws NessieNotFoundException {
     assertThat(sql("CREATE BRANCH %s IN nessie", refName))
-        .containsExactly(row("Branch", refName, hash));
-    assertThat(api.getReference().refName(refName).get()).isEqualTo(Branch.of(refName, hash));
+        .containsExactly(row("Branch", refName, initialHashOfDefaultBranch));
+    assertThat(api.getReference().refName(refName).get())
+        .isEqualTo(Branch.of(refName, initialHashOfDefaultBranch));
 
     assertThat(sql("CREATE BRANCH IF NOT EXISTS %s IN nessie", refName))
-        .containsExactly(row("Branch", refName, hash));
-    assertThat(api.getReference().refName(refName).get()).isEqualTo(Branch.of(refName, hash));
+        .containsExactly(row("Branch", refName, initialHashOfDefaultBranch));
+    assertThat(api.getReference().refName(refName).get())
+        .isEqualTo(Branch.of(refName, initialHashOfDefaultBranch));
 
     assertThatThrownBy(() -> sql("CREATE BRANCH %s IN nessie", refName))
         .isInstanceOf(NessieConflictException.class)
@@ -245,27 +241,35 @@ public abstract class AbstractSparkSqlTest {
   @Test
   void testCreateBranch() throws NessieNotFoundException {
     assertThat(sql("CREATE BRANCH %s IN nessie", refName))
-        .containsExactly(row("Branch", refName, hash));
-    assertThat(api.getReference().refName(refName).get()).isEqualTo(Branch.of(refName, hash));
+        .containsExactly(row("Branch", refName, initialHashOfDefaultBranch));
+    assertThat(api.getReference().refName(refName).get())
+        .isEqualTo(Branch.of(refName, initialHashOfDefaultBranch));
     // Result of LIST REFERENCES does not guarantee any order
     assertThat(sql("LIST REFERENCES IN nessie"))
-        .containsExactlyInAnyOrder(row("Branch", refName, hash), row("Branch", "main", hash));
+        .containsExactlyInAnyOrder(
+            row("Branch", refName, initialHashOfDefaultBranch),
+            row("Branch", "main", initialHashOfDefaultBranch));
   }
 
   @Test
   void testCreateTag() throws NessieNotFoundException {
-    assertThat(sql("CREATE TAG %s IN nessie", refName)).containsExactly(row("Tag", refName, hash));
-    assertThat(api.getReference().refName(refName).get()).isEqualTo(Tag.of(refName, hash));
+    assertThat(sql("CREATE TAG %s IN nessie", refName))
+        .containsExactly(row("Tag", refName, initialHashOfDefaultBranch));
+    assertThat(api.getReference().refName(refName).get())
+        .isEqualTo(Tag.of(refName, initialHashOfDefaultBranch));
     // Result of LIST REFERENCES does not guarantee any order
     assertThat(sql("LIST REFERENCES IN nessie"))
-        .containsExactlyInAnyOrder(row("Tag", refName, hash), row("Branch", "main", hash));
+        .containsExactlyInAnyOrder(
+            row("Tag", refName, initialHashOfDefaultBranch),
+            row("Branch", "main", initialHashOfDefaultBranch));
   }
 
   @Test
   void testCreateReferenceFromHashOnNonDefaultBranch() throws NessieNotFoundException {
     assertThat(sql("CREATE BRANCH %s IN nessie FROM main", refName))
-        .containsExactly(row("Branch", refName, hash));
-    assertThat(api.getReference().refName(refName).get()).isEqualTo(Branch.of(refName, hash));
+        .containsExactly(row("Branch", refName, initialHashOfDefaultBranch));
+    assertThat(api.getReference().refName(refName).get())
+        .isEqualTo(Branch.of(refName, initialHashOfDefaultBranch));
     sql("USE REFERENCE %s IN nessie", refName);
     sql("CREATE TABLE nessie.db.tbl (id int, name string)");
     sql("INSERT INTO nessie.db.tbl select 23, \"test\"");
@@ -291,8 +295,9 @@ public abstract class AbstractSparkSqlTest {
   @Test
   void testDropBranchIn() throws NessieNotFoundException {
     assertThat(sql("CREATE BRANCH %s IN nessie", refName))
-        .containsExactly(row("Branch", refName, hash));
-    assertThat(api.getReference().refName(refName).get()).isEqualTo(Branch.of(refName, hash));
+        .containsExactly(row("Branch", refName, initialHashOfDefaultBranch));
+    assertThat(api.getReference().refName(refName).get())
+        .isEqualTo(Branch.of(refName, initialHashOfDefaultBranch));
     assertThat(sql("DROP BRANCH %s IN nessie", refName)).containsExactly(row("OK"));
     assertThatThrownBy(() -> api.getReference().refName(refName).get())
         .isInstanceOf(NessieNotFoundException.class)
@@ -301,8 +306,10 @@ public abstract class AbstractSparkSqlTest {
 
   @Test
   void testDropTagIn() throws NessieNotFoundException {
-    assertThat(sql("CREATE TAG %s IN nessie", refName)).containsExactly(row("Tag", refName, hash));
-    assertThat(api.getReference().refName(refName).get()).isEqualTo(Tag.of(refName, hash));
+    assertThat(sql("CREATE TAG %s IN nessie", refName))
+        .containsExactly(row("Tag", refName, initialHashOfDefaultBranch));
+    assertThat(api.getReference().refName(refName).get())
+        .isEqualTo(Tag.of(refName, initialHashOfDefaultBranch));
     assertThat(sql("DROP TAG %s IN nessie", refName)).containsExactly(row("OK"));
     assertThatThrownBy(() -> api.getReference().refName(refName).get())
         .isInstanceOf(NessieNotFoundException.class)
@@ -313,7 +320,7 @@ public abstract class AbstractSparkSqlTest {
   void testAssignBranch() throws NessieConflictException, NessieNotFoundException {
     String random = "randomBranch";
     assertThat(sql("CREATE BRANCH %s IN nessie", random))
-        .containsExactly(row("Branch", random, hash));
+        .containsExactly(row("Branch", random, initialHashOfDefaultBranch));
 
     commitAndReturnLog(refName);
     sql("USE REFERENCE %s IN nessie", refName);
@@ -327,7 +334,8 @@ public abstract class AbstractSparkSqlTest {
   @Test
   void testAssignTag() throws NessieConflictException, NessieNotFoundException {
     String random = "randomTag";
-    assertThat(sql("CREATE TAG %s IN nessie", random)).containsExactly(row("Tag", random, hash));
+    assertThat(sql("CREATE TAG %s IN nessie", random))
+        .containsExactly(row("Tag", random, initialHashOfDefaultBranch));
 
     commitAndReturnLog(refName);
     sql("USE REFERENCE %s IN nessie", refName);
@@ -342,7 +350,7 @@ public abstract class AbstractSparkSqlTest {
   void testAssignBranchTo() throws NessieConflictException, NessieNotFoundException {
     String random = "randomBranch";
     assertThat(sql("CREATE BRANCH %s IN nessie", random))
-        .containsExactly(row("Branch", random, hash));
+        .containsExactly(row("Branch", random, initialHashOfDefaultBranch));
 
     commitAndReturnLog(refName);
     sql("USE REFERENCE %s IN nessie", refName);
@@ -369,7 +377,10 @@ public abstract class AbstractSparkSqlTest {
         .hasMessage(
             String.format("Could not find commit '%s' in reference '%s'.", unknownHash, "main"));
     assertThatThrownBy(
-            () -> sql("ASSIGN BRANCH %s TO %s AT %s IN nessie", random, invalidBranch, hash))
+            () ->
+                sql(
+                    "ASSIGN BRANCH %s TO %s AT %s IN nessie",
+                    random, invalidBranch, initialHashOfDefaultBranch))
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessage(String.format("Named reference '%s' not found", invalidBranch));
   }
@@ -377,7 +388,8 @@ public abstract class AbstractSparkSqlTest {
   @Test
   void testAssignTagTo() throws NessieConflictException, NessieNotFoundException {
     String random = "randomTag";
-    assertThat(sql("CREATE TAG %s IN nessie", random)).containsExactly(row("Tag", random, hash));
+    assertThat(sql("CREATE TAG %s IN nessie", random))
+        .containsExactly(row("Tag", random, initialHashOfDefaultBranch));
 
     commitAndReturnLog(refName);
     sql("USE REFERENCE %s IN nessie", refName);
@@ -404,7 +416,11 @@ public abstract class AbstractSparkSqlTest {
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessage(
             String.format("Could not find commit '%s' in reference '%s'.", unknownHash, "main"));
-    assertThatThrownBy(() -> sql("ASSIGN TAG %s TO %s AT %s IN nessie", random, invalidTag, hash))
+    assertThatThrownBy(
+            () ->
+                sql(
+                    "ASSIGN TAG %s TO %s AT %s IN nessie",
+                    random, invalidTag, initialHashOfDefaultBranch))
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessage(String.format("Named reference '%s' not found", invalidTag));
   }
@@ -412,12 +428,14 @@ public abstract class AbstractSparkSqlTest {
   @Test
   void useShowReferencesIn() throws NessieNotFoundException {
     assertThat(sql("CREATE BRANCH %s IN nessie", refName))
-        .containsExactly(row("Branch", refName, hash));
-    assertThat(api.getReference().refName(refName).get()).isEqualTo(Branch.of(refName, hash));
+        .containsExactly(row("Branch", refName, initialHashOfDefaultBranch));
+    assertThat(api.getReference().refName(refName).get())
+        .isEqualTo(Branch.of(refName, initialHashOfDefaultBranch));
 
     assertThat(sql("USE REFERENCE %s IN nessie", refName))
-        .containsExactly(row("Branch", refName, hash));
-    assertThat(sql("SHOW REFERENCE IN nessie")).containsExactly(row("Branch", refName, hash));
+        .containsExactly(row("Branch", refName, initialHashOfDefaultBranch));
+    assertThat(sql("SHOW REFERENCE IN nessie"))
+        .containsExactly(row("Branch", refName, initialHashOfDefaultBranch));
   }
 
   @Test
@@ -448,7 +466,9 @@ public abstract class AbstractSparkSqlTest {
     String invalidTimestamp = "01-01-01";
     String invalidBranch = "invalidBranch";
     String invalidHash = "abcdef123";
-    assertThatThrownBy(() -> sql("USE REFERENCE %s AT %s IN nessie ", invalidBranch, hash))
+    assertThatThrownBy(
+            () ->
+                sql("USE REFERENCE %s AT %s IN nessie ", invalidBranch, initialHashOfDefaultBranch))
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessage(String.format("Named reference '%s' not found", invalidBranch));
 
@@ -473,12 +493,14 @@ public abstract class AbstractSparkSqlTest {
   @Test
   void useShowReferences() throws NessieNotFoundException {
     assertThat(sql("CREATE BRANCH %s IN nessie", refName))
-        .containsExactly(row("Branch", refName, hash));
-    assertThat(api.getReference().refName(refName).get()).isEqualTo(Branch.of(refName, hash));
+        .containsExactly(row("Branch", refName, initialHashOfDefaultBranch));
+    assertThat(api.getReference().refName(refName).get())
+        .isEqualTo(Branch.of(refName, initialHashOfDefaultBranch));
 
     assertThat(sql("USE REFERENCE %s IN nessie", refName))
-        .containsExactly(row("Branch", refName, hash));
-    assertThat(sql("SHOW REFERENCE IN nessie")).containsExactly(row("Branch", refName, hash));
+        .containsExactly(row("Branch", refName, initialHashOfDefaultBranch));
+    assertThat(sql("SHOW REFERENCE IN nessie"))
+        .containsExactly(row("Branch", refName, initialHashOfDefaultBranch));
   }
 
   @Test
@@ -579,7 +601,7 @@ public abstract class AbstractSparkSqlTest {
   private List<SparkCommitLogEntry> commitAndReturnLog(String branch)
       throws NessieConflictException, NessieNotFoundException {
     assertThat(sql("CREATE BRANCH %s IN nessie", branch))
-        .containsExactly(row("Branch", branch, hash));
+        .containsExactly(row("Branch", branch, initialHashOfDefaultBranch));
     ContentKey key = ContentKey.of("table", "name");
     CommitMeta cm1 =
         ImmutableCommitMeta.builder()
@@ -623,7 +645,7 @@ public abstract class AbstractSparkSqlTest {
     Branch ref1 =
         api.commitMultipleOperations()
             .branchName(branch)
-            .hash(hash)
+            .hash(initialHashOfDefaultBranch)
             .operations(ops.getOperations())
             .commitMeta(ops.getCommitMeta())
             .commit();
@@ -684,13 +706,14 @@ public abstract class AbstractSparkSqlTest {
   @Test
   void testValidCatalog() {
     assertThat(sql("LIST REFERENCES IN nessie"))
-        .containsExactlyInAnyOrder(row("Branch", "main", hash));
+        .containsExactlyInAnyOrder(row("Branch", "main", initialHashOfDefaultBranch));
 
     // Catalog picked from the session
     String catalog = spark.sessionState().catalogManager().currentCatalog().name();
     try {
       spark.sessionState().catalogManager().setCurrentCatalog("nessie");
-      assertThat(sql("LIST REFERENCES")).containsExactlyInAnyOrder(row("Branch", "main", hash));
+      assertThat(sql("LIST REFERENCES"))
+          .containsExactlyInAnyOrder(row("Branch", "main", initialHashOfDefaultBranch));
     } finally {
       spark.sessionState().catalogManager().setCurrentCatalog(catalog);
     }
