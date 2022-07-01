@@ -21,14 +21,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.errorprone.annotations.FormatMethod;
+import com.google.errorprone.annotations.FormatString;
 import java.io.File;
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -75,7 +75,6 @@ public abstract class AbstractSparkSqlTest {
 
   private final String refName = "testBranch";
   protected NessieApiV1 api;
-  private Branch defaultBranchBeforeTest;
 
   @BeforeEach
   void setupSparkAndApi() throws NessieNotFoundException {
@@ -107,21 +106,23 @@ public abstract class AbstractSparkSqlTest {
     spark.sparkContext().setLogLevel("WARN");
     api = HttpClientBuilder.builder().withUri(url).build(NessieApiV1.class);
     hash = api.getDefaultBranch().getHash();
-    defaultBranchBeforeTest = api.getDefaultBranch();
   }
 
   @AfterEach
   void removeBranches() throws NessieConflictException, NessieNotFoundException {
-    String defaultBranchName = api.getConfig().getDefaultBranch();
+    Branch defaultBranch = api.getDefaultBranch();
     for (Reference ref : api.getAllReferences().get().getReferences()) {
-      if (ref instanceof Branch && !ref.getName().equals(defaultBranchName)) {
+      if (ref instanceof Branch && !ref.getName().equals(defaultBranch.getName())) {
         api.deleteBranch().branchName(ref.getName()).hash(ref.getHash()).delete();
       }
       if (ref instanceof Tag) {
         api.deleteTag().tagName(ref.getName()).hash(ref.getHash()).delete();
       }
     }
-    api.assignBranch().assignTo(defaultBranchBeforeTest).branch(api.getDefaultBranch()).assign();
+    api.assignBranch()
+        .assignTo(Branch.of(defaultBranch.getName(), hash))
+        .branch(defaultBranch)
+        .assign();
     api.close();
     api = null;
   }
@@ -140,7 +141,7 @@ public abstract class AbstractSparkSqlTest {
   }
 
   @FormatMethod
-  protected static List<Object[]> sql(String query, Object... args) {
+  protected static List<Object[]> sql(@FormatString String query, Object... args) {
     List<Row> rows = spark.sql(String.format(query, args)).collectAsList();
     if (rows.size() < 1) {
       return ImmutableList.of();
@@ -351,8 +352,8 @@ public abstract class AbstractSparkSqlTest {
     assertThat(sql("ASSIGN BRANCH %s TO main IN nessie", random))
         .containsExactly(row("Branch", random, main.getHash()));
 
-    for (Object[] commit : fetchLog("main")) {
-      String currentHash = (String) commit[2];
+    for (SparkCommitLogEntry commit : fetchLog("main")) {
+      String currentHash = commit.getHash();
       assertThat(sql("ASSIGN BRANCH %s TO main AT %s IN nessie", random, currentHash))
           .containsExactly(row("Branch", random, currentHash));
     }
@@ -386,9 +387,9 @@ public abstract class AbstractSparkSqlTest {
     assertThat(sql("ASSIGN TAG %s TO main IN nessie", random))
         .containsExactly(row("Tag", random, main.getHash()));
 
-    List<Object[]> commits = fetchLog("main");
-    for (Object[] commit : commits) {
-      String currentHash = (String) commit[2];
+    List<SparkCommitLogEntry> commits = fetchLog("main");
+    for (SparkCommitLogEntry commit : commits) {
+      String currentHash = commit.getHash();
       assertThat(sql("ASSIGN TAG %s TO main AT %s IN nessie", random, currentHash))
           .containsExactly(row("Tag", random, currentHash));
     }
@@ -423,17 +424,17 @@ public abstract class AbstractSparkSqlTest {
   void useShowReferencesAtTimestamp() throws NessieNotFoundException, NessieConflictException {
     commitAndReturnLog(refName);
     String time = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.now(ZoneOffset.UTC));
-    hash = api.getReference().refName(refName).get().getHash();
+    String refHash = api.getReference().refName(refName).get().getHash();
     assertThat(sql("USE REFERENCE %s AT `%s` IN nessie ", refName, time))
-        .containsExactly(row("Branch", refName, hash));
-    assertThat(sql("SHOW REFERENCE IN nessie")).containsExactly(row("Branch", refName, hash));
+        .containsExactly(row("Branch", refName, refHash));
+    assertThat(sql("SHOW REFERENCE IN nessie")).containsExactly(row("Branch", refName, refHash));
   }
 
   @Test
   void useShowReferencesAtHash() throws NessieNotFoundException, NessieConflictException {
-    List<Object[]> commits = commitAndReturnLog(refName);
-    for (Object[] commit : commits) {
-      String currentHash = (String) commit[2];
+    List<SparkCommitLogEntry> commits = commitAndReturnLog(refName);
+    for (SparkCommitLogEntry commit : commits) {
+      String currentHash = commit.getHash();
       assertThat(sql("USE REFERENCE %s AT %s IN nessie ", refName, currentHash))
           .containsExactly(row("Branch", refName, currentHash));
     }
@@ -480,34 +481,6 @@ public abstract class AbstractSparkSqlTest {
     assertThat(sql("SHOW REFERENCE IN nessie")).containsExactly(row("Branch", refName, hash));
   }
 
-  private Object[] relevantFromMerge(Object[] a) {
-    return new Object[] {a[2], removeInternalProperties((Map<String, String>) a[5])};
-  }
-
-  private static Map<String, String> removeInternalProperties(Map<String, String> properties) {
-    return properties.entrySet().stream()
-        .filter(e -> !e.getKey().startsWith("_"))
-        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-  }
-
-  private Object[] mergedCommits(Object[] a, Object[] b) {
-    @SuppressWarnings("unchecked")
-    Map<String, String> mapA = (Map<String, String>) a[5];
-    @SuppressWarnings("unchecked")
-    Map<String, String> mapB = (Map<String, String>) b[5];
-    Map<String, String> map = new HashMap<>();
-    map.putAll(mapA);
-    map.putAll(mapB);
-    return new Object[] {
-      b[0],
-      b[1],
-      b[2].toString() + "\n---------------------------------------------\n" + a[2],
-      b[3],
-      b[4],
-      map
-    };
-  }
-
   @Test
   void mergeReferencesIn() throws NessieConflictException, NessieNotFoundException {
     mergeReferencesInto("MERGE BRANCH %s IN nessie");
@@ -518,13 +491,14 @@ public abstract class AbstractSparkSqlTest {
     mergeReferencesInto("MERGE BRANCH %s INTO main IN nessie");
   }
 
+  @SuppressWarnings("FormatStringAnnotation")
   private void mergeReferencesInto(String query)
       throws NessieConflictException, NessieNotFoundException {
-    Object[] result =
+    SparkCommitLogEntry result =
         commitAndReturnLog(refName).stream()
-            .map(AbstractSparkSqlTest::withoutHashAndTime)
-            .reduce(this::mergedCommits)
-            .map(this::relevantFromMerge)
+            .map(SparkCommitLogEntry::withoutHashAndTime)
+            .reduce(SparkCommitLogEntry::mergedCommits)
+            .map(SparkCommitLogEntry::relevantFromMerge)
             .get();
 
     sql(query, refName);
@@ -532,39 +506,40 @@ public abstract class AbstractSparkSqlTest {
 
     assertThat(
             sql("SHOW LOG main IN nessie").stream()
-                .map(AbstractSparkSqlTest::sqlResultWithoutHashAndTime)
-                .map(this::relevantFromMerge)
+                .map(SparkCommitLogEntry::fromShowLog)
+                .map(SparkCommitLogEntry::withoutHashAndTime)
+                .map(SparkCommitLogEntry::relevantFromMerge)
                 .collect(Collectors.toList()))
         .containsExactly(result);
   }
 
   @Test
   void mergeReferences() throws NessieConflictException, NessieNotFoundException {
-    List<Object[]> resultList = commitAndReturnLog(refName);
+    List<SparkCommitLogEntry> resultList = commitAndReturnLog(refName);
     sql("USE REFERENCE %s IN nessie", refName);
     sql("MERGE BRANCH IN nessie");
     // here we are skipping commit time as its variable
     assertThat(
             sql("SHOW LOG %s IN nessie", refName).stream()
-                .map(AbstractSparkSqlTest::convert)
+                .map(SparkCommitLogEntry::fromShowLog)
                 .collect(Collectors.toList()))
         .containsExactlyElementsOf(resultList);
 
     // omit the branch name to show log on main
     assertThat(
             sql("SHOW LOG IN nessie").stream()
-                .map(AbstractSparkSqlTest::convert)
+                .map(SparkCommitLogEntry::fromShowLog)
                 .collect(Collectors.toList()))
         .containsExactlyElementsOf(resultList);
   }
 
   @Test
   void showLogIn() throws NessieConflictException, NessieNotFoundException, AnalysisException {
-    List<Object[]> resultList = commitAndReturnLog(refName);
+    List<SparkCommitLogEntry> resultList = commitAndReturnLog(refName);
     // here we are skipping commit time as its variable
     assertThat(
             sql("SHOW LOG %s IN nessie", refName).stream()
-                .map(AbstractSparkSqlTest::convert)
+                .map(SparkCommitLogEntry::fromShowLog)
                 .collect(Collectors.toList()))
         .containsExactlyElementsOf(resultList);
 
@@ -589,25 +564,19 @@ public abstract class AbstractSparkSqlTest {
                 .collectAsList()
                 .stream()
                 .map(AbstractSparkSqlTest::toJava)
-                .map(AbstractSparkSqlTest::convert)
+                .peek(row -> row[7] = Collections.singletonMap("test", (String) row[7]))
+                .map(SparkCommitLogEntry::fromShowLog)
                 .collect(Collectors.toList()))
-        .containsExactlyElementsOf(
-            resultList.stream()
-                .map(
-                    x -> {
-                      x[6] = ((Map<String, String>) x[6]).get("test");
-                      return x;
-                    })
-                .collect(Collectors.toList()));
+        .containsExactlyElementsOf(resultList);
   }
 
-  private List<Object[]> fetchLog(String branch) {
+  private List<SparkCommitLogEntry> fetchLog(String branch) {
     return sql("SHOW LOG %s IN nessie", branch).stream()
-        .map(AbstractSparkSqlTest::convert)
+        .map(SparkCommitLogEntry::fromShowLog)
         .collect(Collectors.toList());
   }
 
-  private List<Object[]> commitAndReturnLog(String branch)
+  private List<SparkCommitLogEntry> commitAndReturnLog(String branch)
       throws NessieConflictException, NessieNotFoundException {
     assertThat(sql("CREATE BRANCH %s IN nessie", branch))
         .containsExactly(row("Branch", branch, hash));
@@ -673,21 +642,21 @@ public abstract class AbstractSparkSqlTest {
             .commitMeta(ops3.getCommitMeta())
             .commit();
 
-    List<Object[]> resultList = new ArrayList<>();
-    resultList.add(cmToRow(cm3, ref3.getHash()));
-    resultList.add(cmToRow(cm2, ref2.getHash()));
-    resultList.add(cmToRow(cm1, ref1.getHash()));
+    List<SparkCommitLogEntry> resultList = new ArrayList<>();
+    resultList.add(SparkCommitLogEntry.fromCommitMeta(cm3, ref3.getHash()));
+    resultList.add(SparkCommitLogEntry.fromCommitMeta(cm2, ref2.getHash()));
+    resultList.add(SparkCommitLogEntry.fromCommitMeta(cm1, ref1.getHash()));
     return resultList;
   }
 
   @Test
   void showLog() throws NessieConflictException, NessieNotFoundException {
-    List<Object[]> resultList = commitAndReturnLog(refName);
+    List<SparkCommitLogEntry> resultList = commitAndReturnLog(refName);
 
     // here we are skipping commit time as its variable
     assertThat(
             sql("SHOW LOG %s IN nessie", refName).stream()
-                .map(AbstractSparkSqlTest::convert)
+                .map(SparkCommitLogEntry::fromShowLog)
                 .collect(Collectors.toList()))
         .containsExactlyElementsOf(resultList);
   }
@@ -725,31 +694,5 @@ public abstract class AbstractSparkSqlTest {
     } finally {
       spark.sessionState().catalogManager().setCurrentCatalog(catalog);
     }
-  }
-
-  private static Object[] convert(Object[] object) {
-    return new Object[] {
-      object[0], object[1], object[2], object[3], object[4], object[5], object[7]
-    };
-  }
-
-  private static Object[] withoutHashAndTime(Object[] object) {
-    return new Object[] {object[0], object[1], object[3], object[4], object[5], object[6]};
-  }
-
-  private static Object[] sqlResultWithoutHashAndTime(Object[] object) {
-    return new Object[] {object[0], object[1], object[3], object[4], object[5], object[7]};
-  }
-
-  private Object[] cmToRow(CommitMeta cm, String hash) {
-    return new Object[] {
-      cm.getAuthor(),
-      "",
-      hash,
-      cm.getMessage(),
-      "",
-      cm.getAuthorTime() == null ? null : Timestamp.from(cm.getAuthorTime()),
-      cm.getProperties()
-    };
   }
 }
