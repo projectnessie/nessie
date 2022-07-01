@@ -62,7 +62,8 @@ pluginManagement {
       eachPlugin {
         if (requested.version == null) {
           var pluginId = requested.id.id
-          if (pluginId.startsWith("org.projectnessie.buildsupport.") ||
+          if (
+            pluginId.startsWith("org.projectnessie.buildsupport.") ||
               pluginId == "org.projectnessie.smallrye-open-api"
           ) {
             pluginId = "org.projectnessie.buildsupport.spotless"
