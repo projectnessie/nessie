@@ -39,10 +39,15 @@ dependencies {
   compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
   testImplementation(platform(rootProject))
+  testAnnotationProcessor(platform(rootProject))
   testImplementation("org.apache.spark:spark-sql_2.12") { forSpark(sparkVersion) }
   testImplementation("org.eclipse.microprofile.openapi:microprofile-openapi-api")
+
+  testCompileOnly("org.immutables:value-annotations")
+  testAnnotationProcessor("org.immutables:value-processor")
 
   testImplementation("org.assertj:assertj-core")
   testImplementation(platform("org.junit:junit-bom"))
   testImplementation("org.junit.jupiter:junit-jupiter-api")
+  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 }
