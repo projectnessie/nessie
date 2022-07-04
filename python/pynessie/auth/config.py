@@ -19,8 +19,7 @@
 from typing import Optional
 
 from confuse import Configuration
-from requests.auth import AuthBase
-from requests.auth import HTTPBasicAuth
+from requests.auth import AuthBase, HTTPBasicAuth
 
 from .aws import setup_aws_auth
 from .bearer import TokenAuth as BearerTokenAuth

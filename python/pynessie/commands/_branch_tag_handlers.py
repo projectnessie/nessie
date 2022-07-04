@@ -23,7 +23,7 @@ import click
 
 from ..client import NessieClient
 from ..error import NessieConflictException
-from ..model import Branch, ReferenceSchema, split_into_reference_and_hash, Tag
+from ..model import Branch, ReferenceSchema, Tag, split_into_reference_and_hash
 
 
 def handle_branch_tag(

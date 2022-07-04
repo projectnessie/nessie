@@ -16,60 +16,61 @@
 #
 """Main module."""
 
-from typing import Any
-from typing import cast
-from typing import Generator
-from typing import Optional
+from typing import Any, Generator, Optional, cast
 
 import confuse
 
-from ._endpoints import all_references
-from ._endpoints import assign_branch
-from ._endpoints import assign_tag
-from ._endpoints import cherry_pick
-from ._endpoints import commit
-from ._endpoints import create_reference
-from ._endpoints import delete_branch
-from ._endpoints import delete_tag
-from ._endpoints import get_content
-from ._endpoints import get_default_branch
-from ._endpoints import get_diff
-from ._endpoints import get_reference
-from ._endpoints import list_logs
-from ._endpoints import list_reflog
-from ._endpoints import list_tables
-from ._endpoints import merge
 from ..auth import setup_auth
-from ..model import Branch
-from ..model import CommitMeta
-from ..model import Content
-from ..model import ContentKey
-from ..model import ContentSchema
-from ..model import Detached
-from ..model import DETACHED_REFERENCE_NAME
-from ..model import DiffResponse
-from ..model import DiffResponseSchema
-from ..model import Entries
-from ..model import EntriesSchema
-from ..model import LogEntry
-from ..model import LogResponse
-from ..model import LogResponseSchema
-from ..model import Merge
-from ..model import MergeSchema
-from ..model import MultiContents
-from ..model import MultiContentSchema
-from ..model import Operation
-from ..model import Reference
-from ..model import ReferenceSchema
-from ..model import ReferencesResponse
-from ..model import ReferencesResponseSchema
-from ..model import ReflogEntry
-from ..model import ReflogResponse
-from ..model import ReflogResponseSchema
-from ..model import split_into_reference_and_hash
-from ..model import Tag
-from ..model import Transplant
-from ..model import TransplantSchema
+from ..model import (
+    DETACHED_REFERENCE_NAME,
+    Branch,
+    CommitMeta,
+    Content,
+    ContentKey,
+    ContentSchema,
+    Detached,
+    DiffResponse,
+    DiffResponseSchema,
+    Entries,
+    EntriesSchema,
+    LogEntry,
+    LogResponse,
+    LogResponseSchema,
+    Merge,
+    MergeSchema,
+    MultiContents,
+    MultiContentSchema,
+    Operation,
+    Reference,
+    ReferenceSchema,
+    ReferencesResponse,
+    ReferencesResponseSchema,
+    ReflogEntry,
+    ReflogResponse,
+    ReflogResponseSchema,
+    Tag,
+    Transplant,
+    TransplantSchema,
+    split_into_reference_and_hash,
+)
+from ._endpoints import (
+    all_references,
+    assign_branch,
+    assign_tag,
+    cherry_pick,
+    commit,
+    create_reference,
+    delete_branch,
+    delete_tag,
+    get_content,
+    get_default_branch,
+    get_diff,
+    get_reference,
+    list_logs,
+    list_reflog,
+    list_tables,
+    merge,
+)
 
 
 class NessieClient:

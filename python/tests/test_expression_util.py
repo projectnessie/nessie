@@ -16,9 +16,11 @@
 
 from assertpy import assert_that
 
-from pynessie.utils import build_filter_for_commit_log_flags
-from pynessie.utils import build_filter_for_contents_listing_flags
-from pynessie.utils import parse_to_iso8601
+from pynessie.utils import (
+    build_filter_for_commit_log_flags,
+    build_filter_for_contents_listing_flags,
+    parse_to_iso8601,
+)
 
 
 def test_building_empty_filter() -> None:

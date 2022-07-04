@@ -19,9 +19,9 @@
 
 import click
 
-from ._branch_tag_handlers import handle_branch_tag
 from ..cli_common_context import ContextObject, MutuallyExclusiveOption
 from ..decorators import error_handler, pass_client
+from ._branch_tag_handlers import handle_branch_tag
 
 
 @click.command("tag")

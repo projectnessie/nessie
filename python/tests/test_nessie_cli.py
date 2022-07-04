@@ -25,20 +25,28 @@ import simplejson
 from assertpy import assert_that
 
 from pynessie import __version__
-from pynessie.model import Branch
-from pynessie.model import CommitMeta
-from pynessie.model import CommitMetaSchema
-from pynessie.model import ContentKey
-from pynessie.model import ContentSchema
-from pynessie.model import DiffResponseSchema
-from pynessie.model import EntrySchema
-from pynessie.model import IcebergTable
-from pynessie.model import LogEntry
-from pynessie.model import LogEntrySchema
-from pynessie.model import ReferenceSchema
-from pynessie.model import ReflogEntry
-from pynessie.model import ReflogEntrySchema
-from .conftest import execute_cli_command, execute_cli_command_raw, make_commit, ref_hash
+from pynessie.model import (
+    Branch,
+    CommitMeta,
+    CommitMetaSchema,
+    ContentKey,
+    ContentSchema,
+    DiffResponseSchema,
+    EntrySchema,
+    IcebergTable,
+    LogEntry,
+    LogEntrySchema,
+    ReferenceSchema,
+    ReflogEntry,
+    ReflogEntrySchema,
+)
+
+from .conftest import (
+    execute_cli_command,
+    execute_cli_command_raw,
+    make_commit,
+    ref_hash,
+)
 
 
 @pytest.mark.vcr

@@ -24,16 +24,18 @@ import confuse
 from . import __version__
 from .cli_common_context import ContextObject
 from .client import NessieClient
-from .commands import branch_
-from .commands import cherry_pick
-from .commands import config
-from .commands import content
-from .commands import diff
-from .commands import log
-from .commands import merge
-from .commands import reflog
-from .commands import remote
-from .commands import tag
+from .commands import (
+    branch_,
+    cherry_pick,
+    config,
+    content,
+    diff,
+    log,
+    merge,
+    reflog,
+    remote,
+    tag,
+)
 from .conf import build_config
 
 

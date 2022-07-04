@@ -18,7 +18,6 @@ import pytest
 
 from .conftest import execute_cli_command
 
-
 # Note: tests in this file use custom VCR files for error server responses.
 # Running these tests in recording mode will likely NOT produce the expected
 # server responses. The related VCR files need to be reviewed and corrected

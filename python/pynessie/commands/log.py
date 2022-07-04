@@ -18,17 +18,19 @@
 """log CLI command."""
 
 import datetime
-from typing import Any
-from typing import List
-from typing import Optional
-from typing import Tuple
+from typing import Any, List, Optional, Tuple
 
 import click
 from dateutil.tz import tzlocal
 
 from ..cli_common_context import ContextObject, MutuallyExclusiveOption
 from ..decorators import error_handler, pass_client, validate_reference
-from ..model import CommitMetaSchema, LogEntry, LogEntrySchema, split_into_reference_and_hash
+from ..model import (
+    CommitMetaSchema,
+    LogEntry,
+    LogEntrySchema,
+    split_into_reference_and_hash,
+)
 from ..utils import build_filter_for_commit_log_flags
 
 

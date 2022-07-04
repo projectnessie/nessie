@@ -15,9 +15,7 @@
 # limitations under the License.
 #
 """Execute config command from cli."""
-from typing import cast
-from typing import Optional
-from typing import Union
+from typing import Optional, Union, cast
 
 import click
 import confuse

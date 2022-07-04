@@ -19,15 +19,13 @@
 import os
 import shutil
 import tempfile
-from typing import Any, List
-from typing import Optional
+from typing import Any, List, Optional
 
 import attr
 import pytest
 import simplejson
 from assertpy import assert_that
-from click.testing import CliRunner
-from click.testing import Result
+from click.testing import CliRunner, Result
 from vcr.config import VCR
 from vcr.request import Request
 from vcr.serializers import yamlserializer
