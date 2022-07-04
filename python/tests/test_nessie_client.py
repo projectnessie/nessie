@@ -20,8 +20,7 @@ import pytest
 
 from pynessie import init
 from pynessie.error import NessieConflictException
-from pynessie.model import Branch
-from pynessie.model import Entries
+from pynessie.model import Branch, Entries
 
 
 @pytest.mark.vcr

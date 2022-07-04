@@ -18,9 +18,16 @@ import pytest
 import simplejson
 from assertpy import assert_that
 
-from pynessie.model import ContentSchema, DeltaLakeTable, EntrySchema, IcebergTable, IcebergView, ReferenceSchema
-from .conftest import execute_cli_command, make_commit, ref_hash
+from pynessie.model import (
+    ContentSchema,
+    DeltaLakeTable,
+    EntrySchema,
+    IcebergTable,
+    IcebergView,
+    ReferenceSchema,
+)
 
+from .conftest import execute_cli_command, make_commit, ref_hash
 
 CONTENT_COMMAND = "content"
 

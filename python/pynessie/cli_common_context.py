@@ -16,16 +16,11 @@
 #
 
 """Cli Common context functions that can be used by CLI commands/groups."""
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Mapping
-from typing import Tuple
+from typing import Any, Dict, List, Mapping, Tuple
 
 import attr
 import click
-from click import Option
-from click import UsageError
+from click import Option, UsageError
 
 from .client import NessieClient
 

@@ -24,7 +24,6 @@ import desert
 from marshmallow import fields
 from marshmallow_oneofschema import OneOfSchema
 
-
 # regex taken from org.projectnessie.model.Validation
 __RE_REFERENCE_NAME_RAW = "[A-Za-z](((?![.][.])[A-Za-z0-9./_-])*[A-Za-z0-9._-])"
 __RE_REFERENCE_NAME: re.Pattern = re.compile(f"^{__RE_REFERENCE_NAME_RAW}$")

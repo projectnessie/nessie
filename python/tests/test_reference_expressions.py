@@ -18,7 +18,12 @@
 
 from assertpy import assert_that
 
-from pynessie.model import DETACHED_REFERENCE_NAME, is_valid_hash, is_valid_reference_name, split_into_reference_and_hash
+from pynessie.model import (
+    DETACHED_REFERENCE_NAME,
+    is_valid_hash,
+    is_valid_reference_name,
+    split_into_reference_and_hash,
+)
 
 
 def test_is_valid_reference_name() -> None:

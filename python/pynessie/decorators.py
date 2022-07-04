@@ -26,7 +26,6 @@ from marshmallow import ValidationError
 from .cli_common_context import ContextObject
 from .error import NessieCliError, NessieException
 
-
 # Decorator to pass Nessie client down into Click sub-commands.
 pass_client = click.make_pass_decorator(ContextObject)
 

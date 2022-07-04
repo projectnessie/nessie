@@ -19,11 +19,11 @@
 
 import click
 
+from ...cli_common_context import ContextObject
+from ...decorators import pass_client
 from .commit import commit
 from .list_ import list_
 from .view import view
-from ...cli_common_context import ContextObject
-from ...decorators import pass_client
 
 
 @click.group(name="content")
