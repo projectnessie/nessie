@@ -22,7 +22,7 @@ import attr
 import click
 from click import Option, UsageError
 
-from .client import NessieClient
+from pynessie.client import NessieClient
 
 
 @attr.s(auto_attribs=True)

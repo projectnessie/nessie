@@ -17,7 +17,7 @@
 
 """Top-level package for Utility module."""
 
-from .expression_util import (
+from pynessie.utils.expression_util import (
     build_filter_for_commit_log_flags,
     build_filter_for_contents_listing_flags,
     parse_to_iso8601,

@@ -19,9 +19,9 @@
 
 import click
 
-from ..cli_common_context import ContextObject
-from ..decorators import error_handler, pass_client
-from ..model import DiffResponseSchema, split_into_reference_and_hash
+from pynessie.cli_common_context import ContextObject
+from pynessie.decorators import error_handler, pass_client
+from pynessie.model import DiffResponseSchema, split_into_reference_and_hash
 
 
 @click.command("diff")

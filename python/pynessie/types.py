@@ -34,7 +34,7 @@ from typing import Any, Optional
 import click
 from click import Context, Parameter
 
-from .model import ContentKey
+from pynessie.model import ContentKey
 
 
 class ContentKeyParamType(click.ParamType):

@@ -21,12 +21,12 @@ from typing import List, Optional
 
 import click
 
-from ...cli_common_context import ContextObject
-from ...client import NessieClient
-from ...decorators import error_handler, pass_client, validate_reference
-from ...error import NessieCliError, NessieNotFoundException
-from ...model import Content, ContentKey, ContentSchema, Delete, Operation, Put
-from ...types import CONTENT_KEY
+from pynessie.cli_common_context import ContextObject
+from pynessie.client import NessieClient
+from pynessie.decorators import error_handler, pass_client, validate_reference
+from pynessie.error import NessieCliError, NessieNotFoundException
+from pynessie.model import Content, ContentKey, ContentSchema, Delete, Operation, Put
+from pynessie.types import CONTENT_KEY
 
 
 @click.command("commit")

@@ -16,7 +16,7 @@
 #
 """Authentication classes for nessie client."""
 
-from .aws import setup_aws_auth
-from .config import setup_auth
+from pynessie.auth.aws import setup_aws_auth
+from pynessie.auth.config import setup_auth
 
 __all__ = ["setup_aws_auth", "setup_auth"]

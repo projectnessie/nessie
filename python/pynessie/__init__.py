@@ -19,8 +19,8 @@ import os
 
 import confuse
 
-from .client import NessieClient
-from .conf import build_config
+from pynessie.client import NessieClient
+from pynessie.conf import build_config
 
 __author__ = """Project Nessie"""
 __email__ = "nessie-release-builder@dremio.com"
