@@ -20,9 +20,9 @@ from io import StringIO
 import confuse
 import yaml
 
-from .config_command import process
-from .config_parser import build_config
-from .io import write_to_file
+from pynessie.conf.config_command import process
+from pynessie.conf.config_parser import build_config
+from pynessie.conf.io import write_to_file
 
 __all__ = ["build_config", "to_dict", "write_to_file", "process"]
 

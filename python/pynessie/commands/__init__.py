@@ -17,15 +17,15 @@
 
 """Top-level package for Nessie CLI commands."""
 
-from .branch import branch_
-from .cherry_pick import cherry_pick
-from .config import config
-from .content import content
-from .diff import diff
-from .log import log
-from .merge import merge
-from .reflog import reflog
-from .remote import remote
-from .tag import tag
+from pynessie.commands.branch import branch_
+from pynessie.commands.cherry_pick import cherry_pick
+from pynessie.commands.config import config
+from pynessie.commands.content import content
+from pynessie.commands.diff import diff
+from pynessie.commands.log import log
+from pynessie.commands.merge import merge
+from pynessie.commands.reflog import reflog
+from pynessie.commands.remote import remote
+from pynessie.commands.tag import tag
 
 __all__ = ["remote", "tag", "branch_", "cherry_pick", "config", "log", "merge", "content", "diff", "reflog"]

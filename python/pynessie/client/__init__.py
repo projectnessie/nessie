@@ -17,6 +17,6 @@
 
 """Top-level package for Nessie Python Client."""
 
-from .nessie_client import NessieClient
+from pynessie.client.nessie_client import NessieClient
 
 __all__ = ["NessieClient"]

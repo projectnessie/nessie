@@ -21,8 +21,8 @@ from typing import Optional
 from confuse import Configuration
 from requests.auth import AuthBase, HTTPBasicAuth
 
-from .aws import setup_aws_auth
-from .bearer import TokenAuth as BearerTokenAuth
+from pynessie.auth.aws import setup_aws_auth
+from pynessie.auth.bearer import TokenAuth as BearerTokenAuth
 
 
 def setup_auth(config: Configuration) -> Optional[AuthBase]:

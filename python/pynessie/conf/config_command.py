@@ -20,8 +20,8 @@ from typing import Optional, Union, cast
 import click
 import confuse
 
-from .config_parser import build_config
-from .io import write_to_file
+from pynessie.conf.config_parser import build_config
+from pynessie.conf.io import write_to_file
 
 
 def process(

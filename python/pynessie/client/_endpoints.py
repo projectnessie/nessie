@@ -23,8 +23,8 @@ import requests
 import simplejson as jsonlib
 from requests.auth import AuthBase
 
-from ..error import _create_exception
-from ..model import ContentKey
+from pynessie.error import _create_exception
+from pynessie.model import ContentKey
 
 
 def _get_headers(has_body: bool = False) -> dict:

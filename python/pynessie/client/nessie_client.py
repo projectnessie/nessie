@@ -20,8 +20,26 @@ from typing import Any, Generator, Optional, cast
 
 import confuse
 
-from ..auth import setup_auth
-from ..model import (
+from pynessie.auth import setup_auth
+from pynessie.client._endpoints import (
+    all_references,
+    assign_branch,
+    assign_tag,
+    cherry_pick,
+    commit,
+    create_reference,
+    delete_branch,
+    delete_tag,
+    get_content,
+    get_default_branch,
+    get_diff,
+    get_reference,
+    list_logs,
+    list_reflog,
+    list_tables,
+    merge,
+)
+from pynessie.model import (
     DETACHED_REFERENCE_NAME,
     Branch,
     CommitMeta,
@@ -52,24 +70,6 @@ from ..model import (
     Transplant,
     TransplantSchema,
     split_into_reference_and_hash,
-)
-from ._endpoints import (
-    all_references,
-    assign_branch,
-    assign_tag,
-    cherry_pick,
-    commit,
-    create_reference,
-    delete_branch,
-    delete_tag,
-    get_content,
-    get_default_branch,
-    get_diff,
-    get_reference,
-    list_logs,
-    list_reflog,
-    list_tables,
-    merge,
 )
 
 

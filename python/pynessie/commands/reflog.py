@@ -23,9 +23,9 @@ from typing import Any
 import click
 from dateutil.tz import tzlocal
 
-from ..cli_common_context import ContextObject
-from ..decorators import error_handler, pass_client
-from ..model import ReflogEntry, ReflogEntrySchema
+from pynessie.cli_common_context import ContextObject
+from pynessie.decorators import error_handler, pass_client
+from pynessie.model import ReflogEntry, ReflogEntrySchema
 
 
 @click.command("reflog")

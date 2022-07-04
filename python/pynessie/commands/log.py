@@ -23,15 +23,15 @@ from typing import Any, List, Optional, Tuple
 import click
 from dateutil.tz import tzlocal
 
-from ..cli_common_context import ContextObject, MutuallyExclusiveOption
-from ..decorators import error_handler, pass_client, validate_reference
-from ..model import (
+from pynessie.cli_common_context import ContextObject, MutuallyExclusiveOption
+from pynessie.decorators import error_handler, pass_client, validate_reference
+from pynessie.model import (
     CommitMetaSchema,
     LogEntry,
     LogEntrySchema,
     split_into_reference_and_hash,
 )
-from ..utils import build_filter_for_commit_log_flags
+from pynessie.utils import build_filter_for_commit_log_flags
 
 
 @click.command("log")

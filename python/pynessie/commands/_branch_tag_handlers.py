@@ -21,9 +21,9 @@ from typing import Optional
 
 import click
 
-from ..client import NessieClient
-from ..error import NessieConflictException
-from ..model import Branch, ReferenceSchema, Tag, split_into_reference_and_hash
+from pynessie.client import NessieClient
+from pynessie.error import NessieConflictException
+from pynessie.model import Branch, ReferenceSchema, Tag, split_into_reference_and_hash
 
 
 def handle_branch_tag(

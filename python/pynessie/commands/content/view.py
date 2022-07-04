@@ -20,12 +20,11 @@ from typing import List
 
 import click
 
+from pynessie.cli_common_context import ContextObject
+from pynessie.client import NessieClient
+from pynessie.decorators import error_handler, pass_client, validate_reference
+from pynessie.model import Content, ContentKey, ContentSchema
 from pynessie.types import CONTENT_KEY
-
-from ... import NessieClient
-from ...cli_common_context import ContextObject
-from ...decorators import error_handler, pass_client, validate_reference
-from ...model import Content, ContentKey, ContentSchema
 
 
 @click.command("view")

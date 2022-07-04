@@ -19,9 +19,9 @@
 
 import click
 
-from ..cli_common_context import ContextObject
-from ..conf import process
-from ..decorators import error_handler, pass_client
+from pynessie.cli_common_context import ContextObject
+from pynessie.conf import process
+from pynessie.decorators import error_handler, pass_client
 
 
 @click.group()

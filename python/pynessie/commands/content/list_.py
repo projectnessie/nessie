@@ -22,10 +22,10 @@ from typing import List
 
 import click
 
-from ...cli_common_context import ContextObject, MutuallyExclusiveOption
-from ...decorators import error_handler, pass_client, validate_reference
-from ...model import Entries, Entry, EntrySchema
-from ...utils import build_filter_for_contents_listing_flags
+from pynessie.cli_common_context import ContextObject, MutuallyExclusiveOption
+from pynessie.decorators import error_handler, pass_client, validate_reference
+from pynessie.model import Entries, Entry, EntrySchema
+from pynessie.utils import build_filter_for_contents_listing_flags
 
 
 @click.command("list")

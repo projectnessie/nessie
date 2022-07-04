@@ -22,8 +22,8 @@ from typing import Tuple
 import click
 from click import UsageError
 
-from ..cli_common_context import ContextObject, MutuallyExclusiveOption
-from ..decorators import error_handler, pass_client, validate_reference
+from pynessie.cli_common_context import ContextObject, MutuallyExclusiveOption
+from pynessie.decorators import error_handler, pass_client, validate_reference
 
 
 @click.command("cherry-pick")

@@ -21,10 +21,10 @@ from typing import Any
 import click
 import confuse
 
-from . import __version__
-from .cli_common_context import ContextObject
-from .client import NessieClient
-from .commands import (
+from pynessie import __version__
+from pynessie.cli_common_context import ContextObject
+from pynessie.client import NessieClient
+from pynessie.commands import (
     branch_,
     cherry_pick,
     config,
@@ -36,7 +36,7 @@ from .commands import (
     remote,
     tag,
 )
-from .conf import build_config
+from pynessie.conf import build_config
 
 
 def _print_version(ctx: Any, param: Any, value: Any) -> None:

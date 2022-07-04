@@ -19,11 +19,11 @@
 
 import click
 
-from ...cli_common_context import ContextObject
-from ...decorators import pass_client
-from .commit import commit
-from .list_ import list_
-from .view import view
+from pynessie.cli_common_context import ContextObject
+from pynessie.commands.content.commit import commit
+from pynessie.commands.content.list_ import list_
+from pynessie.commands.content.view import view
+from pynessie.decorators import pass_client
 
 
 @click.group(name="content")
