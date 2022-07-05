@@ -54,6 +54,16 @@ final class ResultStreamPaginator<R extends PaginatedResponse, E> {
     this.fetcher = fetcher;
   }
 
+  Stream<E> limitedStream(OptionalInt maxRecords) throws NessieNotFoundException {
+    return limitedStream(maxRecords, OptionalInt.empty());
+  }
+
+  Stream<E> limitedStream(OptionalInt maxRecords, OptionalInt pageSizeHint)
+      throws NessieNotFoundException {
+    Stream<E> stream = generateStream(pageSizeHint);
+    return (maxRecords.isPresent()) ? stream.limit(maxRecords.getAsInt()) : stream;
+  }
+
   /**
    * Constructs the stream that uses paging under the covers.
    *

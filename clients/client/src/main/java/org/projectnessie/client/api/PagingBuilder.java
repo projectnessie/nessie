@@ -15,16 +15,36 @@
  */
 package org.projectnessie.client.api;
 
-import org.projectnessie.model.EntriesResponse;
+import java.util.OptionalInt;
+import java.util.stream.Stream;
+import org.projectnessie.error.NessieNotFoundException;
 
-public interface PagingBuilder<R extends PagingBuilder<R>> {
+public interface PagingBuilder<R extends PagingBuilder<R, RESP, ENTRY>, RESP, ENTRY> {
 
-  /** Recommended: specify the maximum number of records to return. */
+  /**
+   * When using the manual paging, it is recommended to set this parameter, this parameter is
+   * configured when necessary via {@link #stream(OptionalInt)}.
+   */
   R maxRecords(int maxRecords);
 
   /**
-   * For paged requests: pass the {@link EntriesResponse#getToken()} from the previous request,
-   * otherwise don't call this method.
+   * When using the manual paging, pass the {@code token} from the previous request, otherwise don't
+   * call this method.
    */
   R pageToken(String pageToken);
+
+  /**
+   * Fetches responses.
+   *
+   * @deprecated Use {@link #stream(OptionalInt)} instead.
+   */
+  @Deprecated
+  RESP get() throws NessieNotFoundException;
+
+  /**
+   * Retrieve entries/results as a Java {@link Stream}.
+   *
+   * @param maxTotalRecords {@link OptionalInt#empty()} for unlimited amount of results or a limit
+   */
+  Stream<ENTRY> stream(OptionalInt maxTotalRecords) throws NessieNotFoundException;
 }

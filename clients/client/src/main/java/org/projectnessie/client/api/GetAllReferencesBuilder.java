@@ -15,7 +15,12 @@
  */
 package org.projectnessie.client.api;
 
+import java.util.OptionalInt;
+import java.util.stream.Stream;
 import org.projectnessie.api.params.FetchOption;
+import org.projectnessie.client.StreamingUtil;
+import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
 
 /**
@@ -24,7 +29,8 @@ import org.projectnessie.model.ReferencesResponse;
  * @since {@link NessieApiV1}
  */
 public interface GetAllReferencesBuilder
-    extends QueryBuilder<GetAllReferencesBuilder>, PagingBuilder<GetAllReferencesBuilder> {
+    extends QueryBuilder<GetAllReferencesBuilder>,
+        PagingBuilder<GetAllReferencesBuilder, ReferencesResponse, Reference> {
 
   /**
    * Will fetch additional metadata about {@link org.projectnessie.model.Branch} / {@link
@@ -36,10 +42,15 @@ public interface GetAllReferencesBuilder
    */
   GetAllReferencesBuilder fetch(FetchOption fetchOption);
 
-  /**
-   * Fetches all references and returns them in a {@link ReferencesResponse} instance.
-   *
-   * @return Fetches all references and returns them in a {@link ReferencesResponse} instance.
-   */
+  @Override
   ReferencesResponse get();
+
+  @Override
+  default Stream<Reference> stream(OptionalInt maxTotalRecords) {
+    try {
+      return StreamingUtil.getAllReferencesStream(this, maxTotalRecords);
+    } catch (NessieNotFoundException e) {
+      throw new RuntimeException(e);
+    }
+  }
 }

@@ -15,8 +15,11 @@
  */
 package org.projectnessie.client.api;
 
+import java.util.OptionalInt;
+import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.validation.constraints.Pattern;
+import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.RefLogResponse;
 import org.projectnessie.model.Validation;
@@ -29,7 +32,8 @@ import org.projectnessie.model.Validation;
  * @since {@link NessieApiV1}
  */
 public interface GetRefLogBuilder
-    extends PagingBuilder<GetRefLogBuilder>, QueryBuilder<GetRefLogBuilder> {
+    extends PagingBuilder<GetRefLogBuilder, RefLogResponse, RefLogResponse.RefLogResponseEntry>,
+        QueryBuilder<GetRefLogBuilder> {
 
   /**
    * Hash of the reflog (inclusive) to start from (in chronological sense), the 'far' end of the
@@ -47,5 +51,9 @@ public interface GetRefLogBuilder
       @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String fromHash);
 
-  RefLogResponse get() throws NessieNotFoundException;
+  @Override
+  default Stream<RefLogResponse.RefLogResponseEntry> stream(OptionalInt maxTotalRecords)
+      throws NessieNotFoundException {
+    return StreamingUtil.getReflogStream(this, maxTotalRecords);
+  }
 }

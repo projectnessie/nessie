@@ -15,6 +15,9 @@
  */
 package org.projectnessie.client.api;
 
+import java.util.OptionalInt;
+import java.util.stream.Stream;
+import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.EntriesResponse;
 
@@ -25,10 +28,14 @@ import org.projectnessie.model.EntriesResponse;
  */
 public interface GetEntriesBuilder
     extends QueryBuilder<GetEntriesBuilder>,
-        PagingBuilder<GetEntriesBuilder>,
+        PagingBuilder<GetEntriesBuilder, EntriesResponse, EntriesResponse.Entry>,
         OnReferenceBuilder<GetEntriesBuilder> {
 
   GetEntriesBuilder namespaceDepth(Integer namespaceDepth);
 
-  EntriesResponse get() throws NessieNotFoundException;
+  @Override
+  default Stream<EntriesResponse.Entry> stream(OptionalInt maxTotalRecords)
+      throws NessieNotFoundException {
+    return StreamingUtil.getEntriesStream(this, maxTotalRecords);
+  }
 }
