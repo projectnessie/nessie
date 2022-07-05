@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import java.util.Iterator;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -99,9 +98,7 @@ public abstract class IcebergView extends Content {
     String sqlText = "";
     String dialect = ""; // TODO !!
     int schemaId = 0;
-    for (Iterator<JsonNode> versionIter = metadata.get(IcebergContent.VERSIONS).iterator();
-        versionIter.hasNext(); ) {
-      JsonNode version = versionIter.next();
+    for (JsonNode version : metadata.get(IcebergContent.VERSIONS)) {
       if (version.get(IcebergContent.VERSION_ID).asInt(-1) == currentVersionId) {
         JsonNode viewDefinition = version.get(IcebergContent.VIEW_DEFINITION);
         sqlText = viewDefinition.get("sql").asText();

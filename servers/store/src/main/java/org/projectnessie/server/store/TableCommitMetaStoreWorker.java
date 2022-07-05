@@ -76,7 +76,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
   private static final ObjectMapper MAPPER = new ObjectMapper();
   private static final CBORMapper CBOR_MAPPER = new CBORMapper();
 
-  private static final Format PREFERRED_ATTACHMENT_FORMAT = Format.JSON;
+  private static final Format PREFERRED_ATTACHMENT_FORMAT = Format.CBOR;
 
   private static final EnumMap<ContentPartType, String> JSON_ARRAY_NAMES_FOR_PART_TYPE;
 
@@ -466,7 +466,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
         (ObjectNode)
             Preconditions.checkNotNull(
                     nodesPerPartType.get(ContentPartType.SHALLOW_METADATA),
-                    "No attachment of type SHALLOW_METADATA for content ID %s",
+                    "No attachment of type SHALLOW_METADATA for content ID '%s'",
                     content.getId())
                 .get(0);
 
@@ -564,7 +564,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
       default:
         throw new IllegalArgumentException(
             String.format(
-                "Unexpected node type %s in JSON node %s", jsonNode.getNodeType(), jsonNode));
+                "Unexpected node type '%s' in JSON node '%s'", jsonNode.getNodeType(), jsonNode));
     }
   }
 
@@ -598,7 +598,8 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
             return (ObjectNode) parser.readValueAs(JsonNode.class);
           }
         default:
-          throw new IllegalStateException("Compression not supported");
+          throw new IllegalStateException(
+              String.format("Format '%s' not supported", attachment.getFormat()));
       }
     } catch (IOException e) {
       throw new RuntimeException(
