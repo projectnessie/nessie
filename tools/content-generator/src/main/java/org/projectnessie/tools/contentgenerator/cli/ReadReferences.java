@@ -15,7 +15,8 @@
  */
 package org.projectnessie.tools.contentgenerator.cli;
 
-import java.util.List;
+import java.util.OptionalInt;
+import java.util.stream.Stream;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.model.Reference;
 import picocli.CommandLine.Command;
@@ -32,7 +33,7 @@ public class ReadReferences extends AbstractCommand {
   public void execute() {
     try (NessieApiV1 api = createNessieApiInstance()) {
       spec.commandLine().getOut().printf("Reading all references\n\n");
-      List<Reference> references = api.getAllReferences().get().getReferences();
+      Stream<Reference> references = api.getAllReferences().stream(OptionalInt.empty());
       references.forEach(reference -> spec.commandLine().getOut().println(reference));
       spec.commandLine().getOut().printf("\nDone reading all references\n\n");
     }

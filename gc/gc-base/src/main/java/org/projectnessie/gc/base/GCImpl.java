@@ -101,13 +101,12 @@ public class GCImpl {
     Map<String, ContentBloomFilter> liveContentsBloomFilterMap;
     try (NessieApiV1 api = GCUtil.getApi(gcParams.getNessieClientConfigs())) {
       distributedIdentifyContents = new DistributedIdentifyContents(session, gcParams);
-      List<Reference> liveReferences = api.getAllReferences().get().getReferences();
+      Stream<Reference> liveReferences = api.getAllReferences().stream(OptionalInt.empty());
       Map<String, Instant> droppedReferenceTimeMap = collectDeadReferences(api);
       // As this list of references is passed from Spark driver to executor,
       // using available Immutables JSON serialization instead of adding java serialization to the
       // classes.
-      allRefs =
-          liveReferences.stream().map(GCUtil::serializeReference).collect(Collectors.toList());
+      allRefs = liveReferences.map(GCUtil::serializeReference).collect(Collectors.toList());
       if (droppedReferenceTimeMap.size() > 0) {
         allRefs.addAll(droppedReferenceTimeMap.keySet());
       }
