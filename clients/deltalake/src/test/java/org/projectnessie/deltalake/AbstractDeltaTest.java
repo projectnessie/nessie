@@ -23,6 +23,7 @@ import io.delta.sql.DeltaSparkSessionExtension;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.spark.SparkConf;
@@ -40,7 +41,6 @@ import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 import org.projectnessie.spark.extensions.NessieSpark32SessionExtensions;
 
@@ -90,14 +90,20 @@ public class AbstractDeltaTest {
 
   @AfterEach
   void removeBranches() throws NessieConflictException, NessieNotFoundException {
-    for (Reference ref : api.getAllReferences().get().getReferences()) {
-      if (ref instanceof Branch && !ref.getName().equals("main")) {
-        api.deleteBranch().branchName(ref.getName()).hash(ref.getHash()).delete();
-      }
-      if (ref instanceof Tag) {
-        api.deleteTag().tagName(ref.getName()).hash(ref.getHash()).delete();
-      }
-    }
+    Branch defaultBranch = api.getDefaultBranch();
+    api.getAllReferences().stream(OptionalInt.empty())
+        .forEach(
+            ref -> {
+              try {
+                if (ref instanceof Branch && !ref.getName().equals(defaultBranch.getName())) {
+                  api.deleteBranch().branch((Branch) ref).delete();
+                } else if (ref instanceof Tag) {
+                  api.deleteTag().tag((Tag) ref).delete();
+                }
+              } catch (NessieConflictException | NessieNotFoundException e) {
+                throw new RuntimeException(e);
+              }
+            });
     api.close();
     api = null;
   }

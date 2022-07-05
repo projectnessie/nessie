@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -140,7 +141,9 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
 
     assertAll(
         () -> {
-          List<Entry> entries = getApi().getEntries().refName(branch.getName()).get().getEntries();
+          List<Entry> entries =
+              getApi().getEntries().refName(branch.getName()).stream(OptionalInt.empty())
+                  .collect(Collectors.toList());
           List<Entry> expect =
               contentAndOps.stream()
                   .filter(c -> c.operation instanceof Put)
@@ -183,12 +186,8 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
         () ->
             // Verify that the operations on the HEAD commit contains the committed operations
             assertThat(
-                    getApi()
-                        .getCommitLog()
-                        .reference(committed)
-                        .fetch(FetchOption.ALL)
-                        .get()
-                        .getLogEntries())
+                    getApi().getCommitLog().reference(committed).fetch(FetchOption.ALL).stream(
+                        OptionalInt.empty()))
                 .element(0)
                 .extracting(LogEntry::getOperations)
                 .extracting(this::clearIdOnOperations, list(Operation.class))
@@ -223,7 +222,8 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
       assertAll(
           () -> {
             List<Entry> entries =
-                getApi().getEntries().refName(branch.getName()).get().getEntries();
+                getApi().getEntries().refName(branch.getName()).stream(OptionalInt.empty())
+                    .collect(Collectors.toList());
             assertThat(entries)
                 .containsExactly(
                     Entry.builder()
@@ -250,10 +250,11 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
           },
           () -> {
             // Compare operation on HEAD commit with the committed operation
-            LogResponse log =
-                getApi().getCommitLog().reference(committed).fetch(FetchOption.ALL).get();
+            List<LogResponse.LogEntry> log =
+                getApi().getCommitLog().reference(committed).fetch(FetchOption.ALL).stream(
+                        OptionalInt.empty())
+                    .collect(Collectors.toList());
             assertThat(log)
-                .extracting(LogResponse::getLogEntries, list(LogEntry.class))
                 .element(0)
                 .extracting(LogEntry::getOperations, list(Operation.class))
                 .element(0)
@@ -266,7 +267,8 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
       assertAll(
           () -> {
             List<Entry> entries =
-                getApi().getEntries().refName(branch.getName()).get().getEntries();
+                getApi().getEntries().refName(branch.getName()).stream(OptionalInt.empty())
+                    .collect(Collectors.toList());
             assertThat(entries).isEmpty();
           },
           () -> {
@@ -284,10 +286,11 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
           },
           () -> {
             // Compare operation on HEAD commit with the committed operation
-            LogResponse log =
-                getApi().getCommitLog().reference(committed).fetch(FetchOption.ALL).get();
+            List<LogResponse.LogEntry> log =
+                getApi().getCommitLog().reference(committed).fetch(FetchOption.ALL).stream(
+                        OptionalInt.empty())
+                    .collect(Collectors.toList());
             assertThat(log)
-                .extracting(LogResponse::getLogEntries, list(LogEntry.class))
                 .element(0)
                 .extracting(LogEntry::getOperations)
                 .satisfies(

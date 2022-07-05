@@ -17,6 +17,7 @@ package org.projectnessie.tools.contentgenerator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.OptionalInt;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -49,7 +50,7 @@ class ITGenerateContent extends AbstractContentGeneratorTest {
               "--type=" + contentType.name());
 
       assertThat(proc.getExitCode()).isEqualTo(0);
-      assertThat(api.getCommitLog().refName(testCaseBranch).get().getLogEntries())
+      assertThat(api.getCommitLog().refName(testCaseBranch).stream(OptionalInt.empty()))
           .hasSize(numCommits);
     }
   }

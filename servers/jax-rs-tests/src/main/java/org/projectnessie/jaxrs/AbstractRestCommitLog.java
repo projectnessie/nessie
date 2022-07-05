@@ -83,8 +83,7 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
                 .refName(branch.getName())
                 .fetch(FetchOption.ALL)
                 .filter("operations.exists(op, op.type == 'PUT')")
-                .get()
-                .getLogEntries())
+                .stream(OptionalInt.empty()))
         .hasSize(1);
     assertThat(
             getApi()
@@ -92,8 +91,7 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
                 .refName(branch.getName())
                 .fetch(FetchOption.ALL)
                 .filter("operations.exists(op, op.key.startsWith('hello.world.'))")
-                .get()
-                .getLogEntries())
+                .stream(OptionalInt.empty()))
         .hasSize(1);
     assertThat(
             getApi()
@@ -101,8 +99,7 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
                 .refName(branch.getName())
                 .fetch(FetchOption.ALL)
                 .filter("operations.exists(op, op.key.startsWith('not.there.'))")
-                .get()
-                .getLogEntries())
+                .stream(OptionalInt.empty()))
         .isEmpty();
     assertThat(
             getApi()
@@ -110,8 +107,7 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
                 .refName(branch.getName())
                 .fetch(FetchOption.ALL)
                 .filter("operations.exists(op, op.name == 'BaseTable')")
-                .get()
-                .getLogEntries())
+                .stream(OptionalInt.empty()))
         .hasSize(1);
     assertThat(
             getApi()
@@ -119,8 +115,7 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
                 .refName(branch.getName())
                 .fetch(FetchOption.ALL)
                 .filter("operations.exists(op, op.name == 'ThereIsNoSuchTable')")
-                .get()
-                .getLogEntries())
+                .stream(OptionalInt.empty()))
         .isEmpty();
   }
 
@@ -133,82 +128,78 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
 
     String currentHash = branch.getHash();
     createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
-    LogResponse log = getApi().getCommitLog().refName(branch.getName()).get();
-    assertThat(log).isNotNull();
-    assertThat(log.getLogEntries()).hasSize(numAuthors * commitsPerAuthor);
+    List<LogResponse.LogEntry> log =
+        getApi().getCommitLog().refName(branch.getName()).stream(OptionalInt.empty())
+            .collect(Collectors.toList());
+    assertThat(log).hasSize(numAuthors * commitsPerAuthor);
 
     log =
         getApi()
             .getCommitLog()
             .refName(branch.getName())
             .filter("commit.author == 'author-3'")
-            .get();
-    assertThat(log).isNotNull();
-    assertThat(log.getLogEntries()).hasSize(commitsPerAuthor);
-    log.getLogEntries()
-        .forEach(commit -> assertThat(commit.getCommitMeta().getAuthor()).isEqualTo("author-3"));
+            .stream(OptionalInt.empty())
+            .collect(Collectors.toList());
+    assertThat(log).hasSize(commitsPerAuthor);
+    log.forEach(commit -> assertThat(commit.getCommitMeta().getAuthor()).isEqualTo("author-3"));
 
     log =
         getApi()
             .getCommitLog()
             .refName(branch.getName())
             .filter("commit.author == 'author-3' && commit.committer == 'random-committer'")
-            .get();
-    assertThat(log).isNotNull();
-    assertThat(log.getLogEntries()).isEmpty();
+            .stream(OptionalInt.empty())
+            .collect(Collectors.toList());
+    assertThat(log).isEmpty();
 
     log =
         getApi()
             .getCommitLog()
             .refName(branch.getName())
             .filter("commit.author == 'author-3'")
-            .get();
-    assertThat(log).isNotNull();
-    assertThat(log.getLogEntries()).hasSize(commitsPerAuthor);
-    log.getLogEntries()
-        .forEach(commit -> assertThat(commit.getCommitMeta().getAuthor()).isEqualTo("author-3"));
+            .stream(OptionalInt.empty())
+            .collect(Collectors.toList());
+    assertThat(log).hasSize(commitsPerAuthor);
+    log.forEach(commit -> assertThat(commit.getCommitMeta().getAuthor()).isEqualTo("author-3"));
 
     log =
         getApi()
             .getCommitLog()
             .refName(branch.getName())
             .filter("commit.author in ['author-1', 'author-3', 'author-4']")
-            .get();
-    assertThat(log).isNotNull();
-    assertThat(log.getLogEntries()).hasSize(commitsPerAuthor * 3);
-    log.getLogEntries()
-        .forEach(
-            commit ->
-                assertThat(ImmutableList.of("author-1", "author-3", "author-4"))
-                    .contains(commit.getCommitMeta().getAuthor()));
+            .stream(OptionalInt.empty())
+            .collect(Collectors.toList());
+    assertThat(log).hasSize(commitsPerAuthor * 3);
+    log.forEach(
+        commit ->
+            assertThat(ImmutableList.of("author-1", "author-3", "author-4"))
+                .contains(commit.getCommitMeta().getAuthor()));
 
     log =
         getApi()
             .getCommitLog()
             .refName(branch.getName())
             .filter("!(commit.author in ['author-1', 'author-0'])")
-            .get();
-    assertThat(log).isNotNull();
-    assertThat(log.getLogEntries()).hasSize(commitsPerAuthor * 3);
-    log.getLogEntries()
-        .forEach(
-            commit ->
-                assertThat(ImmutableList.of("author-2", "author-3", "author-4"))
-                    .contains(commit.getCommitMeta().getAuthor()));
+            .stream(OptionalInt.empty())
+            .collect(Collectors.toList());
+    assertThat(log).hasSize(commitsPerAuthor * 3);
+    log.forEach(
+        commit ->
+            assertThat(ImmutableList.of("author-2", "author-3", "author-4"))
+                .contains(commit.getCommitMeta().getAuthor()));
 
     log =
         getApi()
             .getCommitLog()
             .refName(branch.getName())
             .filter("commit.author.matches('au.*-(2|4)')")
-            .get();
-    assertThat(log).isNotNull();
-    assertThat(log.getLogEntries()).hasSize(commitsPerAuthor * 2);
-    log.getLogEntries()
-        .forEach(
-            commit ->
-                assertThat(ImmutableList.of("author-2", "author-4"))
-                    .contains(commit.getCommitMeta().getAuthor()));
+            .stream(OptionalInt.empty())
+            .collect(Collectors.toList());
+    assertThat(log).hasSize(commitsPerAuthor * 2);
+    log.forEach(
+        commit ->
+            assertThat(ImmutableList.of("author-2", "author-4"))
+                .contains(commit.getCommitMeta().getAuthor()));
   }
 
   @Test
@@ -221,14 +212,14 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
 
     String currentHash = branch.getHash();
     createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
-    LogResponse log = getApi().getCommitLog().refName(branch.getName()).get();
-    assertThat(log).isNotNull();
-    assertThat(log.getLogEntries()).hasSize(expectedTotalSize);
+    List<LogResponse.LogEntry> log =
+        getApi().getCommitLog().refName(branch.getName()).stream(OptionalInt.empty())
+            .collect(Collectors.toList());
+    assertThat(log).hasSize(expectedTotalSize);
 
-    Instant initialCommitTime =
-        log.getLogEntries().get(log.getLogEntries().size() - 1).getCommitMeta().getCommitTime();
+    Instant initialCommitTime = log.get(log.size() - 1).getCommitMeta().getCommitTime();
     assertThat(initialCommitTime).isNotNull();
-    Instant lastCommitTime = log.getLogEntries().get(0).getCommitMeta().getCommitTime();
+    Instant lastCommitTime = log.get(0).getCommitMeta().getCommitTime();
     assertThat(lastCommitTime).isNotNull();
     Instant fiveMinLater = initialCommitTime.plus(5, ChronoUnit.MINUTES);
 
@@ -238,25 +229,22 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
             .refName(branch.getName())
             .filter(
                 String.format("timestamp(commit.commitTime) > timestamp('%s')", initialCommitTime))
-            .get();
-    assertThat(log).isNotNull();
-    assertThat(log.getLogEntries()).hasSize(expectedTotalSize - 1);
-    log.getLogEntries()
-        .forEach(
-            commit ->
-                assertThat(commit.getCommitMeta().getCommitTime()).isAfter(initialCommitTime));
+            .stream(OptionalInt.empty())
+            .collect(Collectors.toList());
+    assertThat(log).hasSize(expectedTotalSize - 1);
+    log.forEach(
+        commit -> assertThat(commit.getCommitMeta().getCommitTime()).isAfter(initialCommitTime));
 
     log =
         getApi()
             .getCommitLog()
             .refName(branch.getName())
             .filter(String.format("timestamp(commit.commitTime) < timestamp('%s')", fiveMinLater))
-            .get();
-    assertThat(log).isNotNull();
-    assertThat(log.getLogEntries()).hasSize(expectedTotalSize);
-    log.getLogEntries()
-        .forEach(
-            commit -> assertThat(commit.getCommitMeta().getCommitTime()).isBefore(fiveMinLater));
+            .stream(OptionalInt.empty())
+            .collect(Collectors.toList());
+    assertThat(log).hasSize(expectedTotalSize);
+    log.forEach(
+        commit -> assertThat(commit.getCommitMeta().getCommitTime()).isBefore(fiveMinLater));
 
     log =
         getApi()
@@ -266,24 +254,23 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
                 String.format(
                     "timestamp(commit.commitTime) > timestamp('%s') && timestamp(commit.commitTime) < timestamp('%s')",
                     initialCommitTime, lastCommitTime))
-            .get();
-    assertThat(log).isNotNull();
-    assertThat(log.getLogEntries()).hasSize(expectedTotalSize - 2);
-    log.getLogEntries()
-        .forEach(
-            commit ->
-                assertThat(commit.getCommitMeta().getCommitTime())
-                    .isAfter(initialCommitTime)
-                    .isBefore(lastCommitTime));
+            .stream(OptionalInt.empty())
+            .collect(Collectors.toList());
+    assertThat(log).hasSize(expectedTotalSize - 2);
+    log.forEach(
+        commit ->
+            assertThat(commit.getCommitMeta().getCommitTime())
+                .isAfter(initialCommitTime)
+                .isBefore(lastCommitTime));
 
     log =
         getApi()
             .getCommitLog()
             .refName(branch.getName())
             .filter(String.format("timestamp(commit.commitTime) > timestamp('%s')", fiveMinLater))
-            .get();
-    assertThat(log).isNotNull();
-    assertThat(log.getLogEntries()).isEmpty();
+            .stream(OptionalInt.empty())
+            .collect(Collectors.toList());
+    assertThat(log).isEmpty();
   }
 
   @Test
@@ -295,31 +282,31 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
 
     String currentHash = branch.getHash();
     createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
-    LogResponse log = getApi().getCommitLog().refName(branch.getName()).get();
-    assertThat(log).isNotNull();
-    assertThat(log.getLogEntries()).hasSize(numAuthors * commitsPerAuthor);
+    List<LogResponse.LogEntry> log =
+        getApi().getCommitLog().refName(branch.getName()).stream(OptionalInt.empty())
+            .collect(Collectors.toList());
+    assertThat(log).hasSize(numAuthors * commitsPerAuthor);
 
     log =
         getApi()
             .getCommitLog()
             .refName(branch.getName())
             .filter("commit.properties['prop1'] == 'val1'")
-            .get();
-    assertThat(log).isNotNull();
-    assertThat(log.getLogEntries()).hasSize(numAuthors * commitsPerAuthor);
-    log.getLogEntries()
-        .forEach(
-            commit ->
-                assertThat(commit.getCommitMeta().getProperties().get("prop1")).isEqualTo("val1"));
+            .stream(OptionalInt.empty())
+            .collect(Collectors.toList());
+    assertThat(log).hasSize(numAuthors * commitsPerAuthor);
+    log.forEach(
+        commit ->
+            assertThat(commit.getCommitMeta().getProperties().get("prop1")).isEqualTo("val1"));
 
     log =
         getApi()
             .getCommitLog()
             .refName(branch.getName())
             .filter("commit.properties['prop1'] == 'val3'")
-            .get();
-    assertThat(log).isNotNull();
-    assertThat(log.getLogEntries()).isEmpty();
+            .stream(OptionalInt.empty())
+            .collect(Collectors.toList());
+    assertThat(log).isEmpty();
   }
 
   @Test
@@ -330,37 +317,37 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
 
     String currentHash = branch.getHash();
     createCommits(branch, 1, numCommits, currentHash);
-    LogResponse entireLog = getApi().getCommitLog().refName(branch.getName()).get();
-    assertThat(entireLog).isNotNull();
-    assertThat(entireLog.getLogEntries()).hasSize(numCommits);
+    List<LogResponse.LogEntry> entireLog =
+        getApi().getCommitLog().refName(branch.getName()).stream(OptionalInt.empty())
+            .collect(Collectors.toList());
+    assertThat(entireLog).hasSize(numCommits);
 
     // if startHash > endHash, then we return all commits starting from startHash
-    String startHash = entireLog.getLogEntries().get(numCommits / 2).getCommitMeta().getHash();
-    String endHash = entireLog.getLogEntries().get(0).getCommitMeta().getHash();
-    LogResponse log =
+    String startHash = entireLog.get(numCommits / 2).getCommitMeta().getHash();
+    String endHash = entireLog.get(0).getCommitMeta().getHash();
+    List<LogResponse.LogEntry> log =
         getApi()
             .getCommitLog()
             .refName(branch.getName())
             .hashOnRef(endHash)
             .untilHash(startHash)
-            .get();
-    assertThat(log).isNotNull();
-    assertThat(log.getLogEntries()).hasSize(numCommits / 2 + 1);
+            .stream(OptionalInt.empty())
+            .collect(Collectors.toList());
+    assertThat(log).hasSize(numCommits / 2 + 1);
 
     for (int i = 0, j = numCommits - 1; i < j; i++, j--) {
-      startHash = entireLog.getLogEntries().get(j).getCommitMeta().getHash();
-      endHash = entireLog.getLogEntries().get(i).getCommitMeta().getHash();
+      startHash = entireLog.get(j).getCommitMeta().getHash();
+      endHash = entireLog.get(i).getCommitMeta().getHash();
       log =
           getApi()
               .getCommitLog()
               .refName(branch.getName())
               .hashOnRef(endHash)
               .untilHash(startHash)
-              .get();
-      assertThat(log).isNotNull();
-      assertThat(log.getLogEntries()).hasSize(numCommits - (i * 2));
-      assertThat(ImmutableList.copyOf(entireLog.getLogEntries()).subList(i, j + 1))
-          .containsExactlyElementsOf(log.getLogEntries());
+              .stream(OptionalInt.empty())
+              .collect(Collectors.toList());
+      assertThat(log).hasSize(numCommits - (i * 2));
+      assertThat(ImmutableList.copyOf(entireLog).subList(i, j + 1)).containsExactlyElementsOf(log);
     }
   }
 
@@ -374,13 +361,14 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
     int expectedTotalSize = numAuthors * commits;
 
     createCommits(branch, numAuthors, commits, branch.getHash());
-    LogResponse log = getApi().getCommitLog().refName(branch.getName()).get();
-    assertThat(log).isNotNull();
-    assertThat(log.getLogEntries()).hasSize(expectedTotalSize);
+    List<LogResponse.LogEntry> log =
+        getApi().getCommitLog().refName(branch.getName()).stream(OptionalInt.empty())
+            .collect(Collectors.toList());
+    assertThat(log).hasSize(expectedTotalSize);
 
     String author = "author-1";
     List<String> messagesOfAuthorOne =
-        log.getLogEntries().stream()
+        log.stream()
             .map(LogEntry::getCommitMeta)
             .filter(c -> author.equals(c.getAuthor()))
             .map(CommitMeta::getMessage)
@@ -388,7 +376,7 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
     verifyPaging(branch.getName(), commits, pageSizeHint, messagesOfAuthorOne, author);
 
     List<String> allMessages =
-        log.getLogEntries().stream()
+        log.stream()
             .map(LogEntry::getCommitMeta)
             .map(CommitMeta::getMessage)
             .collect(Collectors.toList());
@@ -501,8 +489,8 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
                     .getCommitLog()
                     .untilHash(firstParent)
                     .reference(refMode.transform(branchRef))
-                    .get()
-                    .getLogEntries()))
+                    .stream(OptionalInt.empty())
+                    .collect(Collectors.toList())))
         .allSatisfy(
             c -> {
               assertThat(c.getOperations()).isNull();
@@ -520,8 +508,8 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
                 .fetch(FetchOption.ALL)
                 .reference(refMode.transform(branchRef))
                 .untilHash(firstParent)
-                .get()
-                .getLogEntries());
+                .stream(OptionalInt.empty())
+                .collect(Collectors.toList()));
     assertThat(IntStream.rangeClosed(1, numCommits))
         .allSatisfy(
             i -> {
@@ -566,7 +554,8 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
         .commit();
 
     List<LogEntry> logEntries =
-        getApi().getCommitLog().fetch(FetchOption.ALL).refName(branch).get().getLogEntries();
+        getApi().getCommitLog().fetch(FetchOption.ALL).refName(branch).stream(OptionalInt.empty())
+            .collect(Collectors.toList());
     assertThat(logEntries.size()).isEqualTo(1);
     assertThat(logEntries.get(0).getCommitMeta().getMessage()).contains("Commit #1");
     assertThat(logEntries.get(0).getOperations()).isNull();
@@ -585,6 +574,7 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
       if (null != filterByAuthor) {
         filter = String.format("commit.author=='%s'", filterByAuthor);
       }
+      @SuppressWarnings("deprecation")
       LogResponse response =
           getApi()
               .getCommitLog()

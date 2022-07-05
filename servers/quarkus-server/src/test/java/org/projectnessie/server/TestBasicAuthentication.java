@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import java.util.Map;
+import java.util.OptionalInt;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.auth.BasicAuthenticationProvider;
 import org.projectnessie.client.rest.NessieNotAuthorizedException;
@@ -35,21 +36,21 @@ class TestBasicAuthentication extends BaseClientAuthTest {
   void testValidCredentials() {
     withClientCustomizer(
         c -> c.withAuthentication(BasicAuthenticationProvider.create("test_user", "test_user")));
-    assertThat(api().getAllReferences().get().getReferences()).isNotEmpty();
+    assertThat(api().getAllReferences().stream(OptionalInt.empty())).isNotEmpty();
   }
 
   @Test
   void testValidAdminCredentials() {
     withClientCustomizer(
         c -> c.withAuthentication(BasicAuthenticationProvider.create("admin_user", "test123")));
-    assertThat(api().getAllReferences().get().getReferences()).isNotEmpty();
+    assertThat(api().getAllReferences().stream(OptionalInt.empty())).isNotEmpty();
   }
 
   @Test
   void testInvalidCredentials() {
     withClientCustomizer(
         c -> c.withAuthentication(BasicAuthenticationProvider.create("test_user", "bad_password")));
-    assertThatThrownBy(() -> api().getAllReferences().get())
+    assertThatThrownBy(() -> api().getAllReferences().stream(OptionalInt.empty()))
         .isInstanceOfSatisfying(
             NessieNotAuthorizedException.class,
             e -> assertThat(e.getError().getStatus()).isEqualTo(401));

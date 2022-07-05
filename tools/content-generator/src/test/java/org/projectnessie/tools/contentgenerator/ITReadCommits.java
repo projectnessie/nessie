@@ -18,7 +18,9 @@ package org.projectnessie.tools.contentgenerator;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.api.params.FetchOption;
@@ -52,7 +54,8 @@ class ITReadCommits extends AbstractContentGeneratorTest {
     assertThat(output).noneSatisfy(s -> assertThat(s).contains(CONTENT_KEY.toString()));
 
     try (NessieApiV1 api = buildNessieApi()) {
-      assertThat(api.getCommitLog().refName(branch.getName()).get().getLogEntries()).hasSize(1);
+      assertThat(api.getCommitLog().refName(branch.getName()).stream(OptionalInt.empty()))
+          .hasSize(1);
     }
   }
 
@@ -74,7 +77,9 @@ class ITReadCommits extends AbstractContentGeneratorTest {
 
     try (NessieApiV1 api = buildNessieApi()) {
       List<LogEntry> logEntries =
-          api.getCommitLog().refName(branch.getName()).fetch(FetchOption.ALL).get().getLogEntries();
+          api.getCommitLog().refName(branch.getName()).fetch(FetchOption.ALL).stream(
+                  OptionalInt.empty())
+              .collect(Collectors.toList());
       assertThat(logEntries).hasSize(1);
       assertThat(logEntries.get(0).getOperations()).isNotEmpty();
       assertThat(logEntries.get(0).getParentCommitHash()).isNotNull();
