@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -46,6 +47,9 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
+import org.projectnessie.client.api.GetCommitLogBuilder;
+import org.projectnessie.client.api.GetEntriesBuilder;
+import org.projectnessie.client.api.GetRefLogBuilder;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -60,6 +64,7 @@ import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
+import org.projectnessie.model.RefLogResponse;
 import org.projectnessie.model.RefLogResponse.RefLogResponseEntry;
 import org.projectnessie.model.Reference;
 import org.projectnessie.tools.compatibility.api.NessieAPI;
@@ -96,6 +101,46 @@ public class ITUpgradePath {
     // Usual after-each-test callback
   }
 
+  @SuppressWarnings("deprecation")
+  Stream<Reference> allReferences() throws NessieNotFoundException {
+    if (version.isGreaterThan(Version.parseVersion("0.30.0"))) {
+      return api.getAllReferences().stream(OptionalInt.empty());
+    } else {
+      return StreamingUtil.getAllReferencesStream(api, Function.identity(), OptionalInt.empty());
+    }
+  }
+
+  @SuppressWarnings("deprecation")
+  Stream<EntriesResponse.Entry> entries(Function<GetEntriesBuilder, GetEntriesBuilder> configurer)
+      throws NessieNotFoundException {
+    if (version.isGreaterThan(Version.parseVersion("0.30.0"))) {
+      return configurer.apply(api.getEntries()).stream(OptionalInt.empty());
+    } else {
+      return StreamingUtil.getEntriesStream(api, configurer, OptionalInt.empty());
+    }
+  }
+
+  @SuppressWarnings("deprecation")
+  Stream<LogResponse.LogEntry> commitLog(
+      Function<GetCommitLogBuilder, GetCommitLogBuilder> configurer)
+      throws NessieNotFoundException {
+    if (version.isGreaterThan(Version.parseVersion("0.30.0"))) {
+      return configurer.apply(api.getCommitLog()).stream(OptionalInt.empty());
+    } else {
+      return StreamingUtil.getCommitLogStream(api, configurer, OptionalInt.empty());
+    }
+  }
+
+  @SuppressWarnings("deprecation")
+  Stream<RefLogResponse.RefLogResponseEntry> refLog(
+      Function<GetRefLogBuilder, GetRefLogBuilder> configurer) throws NessieNotFoundException {
+    if (version.isGreaterThan(Version.parseVersion("0.30.0"))) {
+      return configurer.apply(api.getRefLog()).stream(OptionalInt.empty());
+    } else {
+      return StreamingUtil.getReflogStream(api, configurer, OptionalInt.empty());
+    }
+  }
+
   // //////////////////////////////////////////////////////////////////////////////////////////
   // Basic tests
   // //////////////////////////////////////////////////////////////////////////////////////////
@@ -118,9 +163,9 @@ public class ITUpgradePath {
 
   @Order(102)
   @Test
-  void getReferences() {
+  void getReferences() throws NessieNotFoundException {
     assertThat(
-            api.getAllReferences().get().getReferences().stream()
+            allReferences()
                 .map(Reference::getName)
                 .filter(ref -> ref.startsWith(VERSION_BRANCH_PREFIX)))
         .containsExactlyInAnyOrderElementsOf(createdBranches);
@@ -166,17 +211,15 @@ public class ITUpgradePath {
 
   @Test
   @Order(104)
-  void commitLog() {
-    assertThat(
-            api.getAllReferences().get().getReferences().stream()
-                .filter(r -> r.getName().startsWith(VERSION_BRANCH_PREFIX)))
+  void commitLog() throws NessieNotFoundException {
+    assertThat(allReferences().filter(r -> r.getName().startsWith(VERSION_BRANCH_PREFIX)))
         .isNotEmpty()
         .allSatisfy(
             ref -> {
               String versionFromRef = ref.getName().substring(VERSION_BRANCH_PREFIX.length());
-              LogResponse commitLog = api.getCommitLog().refName(ref.getName()).get();
+              Stream<LogResponse.LogEntry> commitLog = commitLog(b -> b.refName(ref.getName()));
               String commitMessage = "hello world " + versionFromRef;
-              assertThat(commitLog.getLogEntries())
+              assertThat(commitLog)
                   .hasSize(1)
                   .map(LogEntry::getCommitMeta)
                   .map(CommitMeta::getMessage)
@@ -214,7 +257,7 @@ public class ITUpgradePath {
             .collect(Collectors.toList());
 
     ArrayList<RefLogResponseEntry> logEntries = new ArrayList<>();
-    StreamingUtil.getReflogStream(api, b -> b, OptionalInt.empty()).forEach(logEntries::add);
+    refLog(Function.identity()).forEach(logEntries::add);
     Collections.reverse(logEntries);
     assertThat(
             logEntries.stream()
@@ -308,9 +351,7 @@ public class ITUpgradePath {
       // empty (meaning: keysUpgradeAddCommits() did work).
       expectedKeys = Stream.concat(expectedKeys, keys.stream());
     }
-    assertThat(
-            api.getEntries().reference(keysUpgradeBranch).get().getEntries().stream()
-                .map(EntriesResponse.Entry::getName))
+    assertThat(entries(b -> b.reference(keysUpgradeBranch)).map(EntriesResponse.Entry::getName))
         .containsExactlyInAnyOrderElementsOf(expectedKeys.collect(Collectors.toSet()));
   }
 
