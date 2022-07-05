@@ -212,7 +212,10 @@ public abstract class AbstractCommitLogScan {
                               + numCommits))
                   .addPuts(
                       KeyWithBytes.of(
-                          key, cid, payload, SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(c)))
+                          key,
+                          cid,
+                          payload,
+                          SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(c, att -> {})))
                   .build());
       committed.accept(head);
     }

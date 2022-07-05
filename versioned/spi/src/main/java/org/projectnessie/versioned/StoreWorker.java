@@ -16,7 +16,10 @@
 package org.projectnessie.versioned;
 
 import com.google.protobuf.ByteString;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 /**
  * A set of helpers that users of a VersionStore must implement.
@@ -27,11 +30,15 @@ import java.util.function.Supplier;
 public interface StoreWorker<CONTENT, COMMIT_METADATA, CONTENT_TYPE extends Enum<CONTENT_TYPE>> {
 
   /** Returns the serialized representation of the on-reference part of the given content-object. */
-  ByteString toStoreOnReferenceState(CONTENT content);
+  ByteString toStoreOnReferenceState(
+      CONTENT content, Consumer<ContentAttachment> attachmentConsumer);
 
   ByteString toStoreGlobalState(CONTENT content);
 
-  CONTENT valueFromStore(ByteString onReferenceValue, Supplier<ByteString> globalState);
+  CONTENT valueFromStore(
+      ByteString onReferenceValue,
+      Supplier<ByteString> globalState,
+      Function<Stream<ContentAttachmentKey>, Stream<ContentAttachment>> attachmentsRetriever);
 
   CONTENT applyId(CONTENT content, String id);
 

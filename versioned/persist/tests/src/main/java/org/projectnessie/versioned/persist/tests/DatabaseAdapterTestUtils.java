@@ -13,20 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.testworker;
+package org.projectnessie.versioned.persist.tests;
 
-/** Base content interface for {@link org.projectnessie.versioned.testworker.SimpleStoreWorker}. */
-public interface BaseContent {
+import static org.assertj.core.api.Assertions.fail;
 
-  enum Type {
-    /** Content type with on-reference state. */
-    ON_REF_ONLY,
-    /** Content type with on-reference state and mandatory global state. */
-    WITH_GLOBAL_STATE,
-    /** Content type with on-reference state and content attachments. */
-    WITH_ATTACHMENTS
-  }
+import java.util.function.Consumer;
+import org.projectnessie.versioned.ContentAttachment;
 
-  /** Content-id. */
-  String getId();
+public class DatabaseAdapterTestUtils {
+  public static final Consumer<ContentAttachment> ALWAYS_THROWING_ATTACHMENT_CONSUMER =
+      attachment -> fail("Unexpected use of Consumer<ContentAttachment>");
 }

@@ -22,7 +22,10 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.io.IOException;
 import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.DeltaLakeTable;
@@ -35,6 +38,8 @@ import org.projectnessie.model.ImmutableIcebergView;
 import org.projectnessie.model.ImmutableNamespace;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.server.store.proto.ObjectTypes;
+import org.projectnessie.versioned.ContentAttachment;
+import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
 
@@ -44,51 +49,67 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
   private final Serializer<CommitMeta> metaSerializer = new MetadataSerializer();
 
   @Override
-  public ByteString toStoreOnReferenceState(Content content) {
+  public ByteString toStoreOnReferenceState(
+      Content content, Consumer<ContentAttachment> attachmentConsumer) {
     ObjectTypes.Content.Builder builder = ObjectTypes.Content.newBuilder().setId(content.getId());
     if (content instanceof IcebergTable) {
-      IcebergTable table = (IcebergTable) content;
-      ObjectTypes.IcebergRefState.Builder stateBuilder =
-          ObjectTypes.IcebergRefState.newBuilder()
-              .setSnapshotId(table.getSnapshotId())
-              .setSchemaId(table.getSchemaId())
-              .setSpecId(table.getSpecId())
-              .setSortOrderId(table.getSortOrderId())
-              .setMetadataLocation(table.getMetadataLocation());
-      builder.setIcebergRefState(stateBuilder);
+      toStoreIcebergTable((IcebergTable) content, builder);
     } else if (content instanceof IcebergView) {
-      IcebergView view = (IcebergView) content;
-      builder.setIcebergViewState(
-          ObjectTypes.IcebergViewState.newBuilder()
-              .setVersionId(view.getVersionId())
-              .setSchemaId(view.getSchemaId())
-              .setDialect(view.getDialect())
-              .setSqlText(view.getSqlText())
-              .setMetadataLocation(view.getMetadataLocation()));
+      toStoreIcebergView((IcebergView) content, builder);
     } else if (content instanceof DeltaLakeTable) {
-      ObjectTypes.DeltaLakeTable.Builder table =
-          ObjectTypes.DeltaLakeTable.newBuilder()
-              .addAllMetadataLocationHistory(
-                  ((DeltaLakeTable) content).getMetadataLocationHistory())
-              .addAllCheckpointLocationHistory(
-                  ((DeltaLakeTable) content).getCheckpointLocationHistory());
-      String lastCheckpoint = ((DeltaLakeTable) content).getLastCheckpoint();
-      if (lastCheckpoint != null) {
-        table.setLastCheckpoint(lastCheckpoint);
-      }
-      builder.setDeltaLakeTable(table);
+      toStoreDeltaLakeTable((DeltaLakeTable) content, builder);
     } else if (content instanceof Namespace) {
-      Namespace ns = (Namespace) content;
-      builder.setNamespace(
-          ObjectTypes.Namespace.newBuilder()
-              .addAllElements(ns.getElements())
-              .putAllProperties(ns.getProperties())
-              .build());
+      toStoreNamespace((Namespace) content, builder);
     } else {
       throw new IllegalArgumentException("Unknown type " + content);
     }
 
     return builder.build().toByteString();
+  }
+
+  private static void toStoreDeltaLakeTable(
+      DeltaLakeTable content, ObjectTypes.Content.Builder builder) {
+    ObjectTypes.DeltaLakeTable.Builder table =
+        ObjectTypes.DeltaLakeTable.newBuilder()
+            .addAllMetadataLocationHistory(content.getMetadataLocationHistory())
+            .addAllCheckpointLocationHistory(content.getCheckpointLocationHistory());
+    String lastCheckpoint = content.getLastCheckpoint();
+    if (lastCheckpoint != null) {
+      table.setLastCheckpoint(lastCheckpoint);
+    }
+    builder.setDeltaLakeTable(table);
+  }
+
+  private static void toStoreNamespace(Namespace content, ObjectTypes.Content.Builder builder) {
+    builder.setNamespace(
+        ObjectTypes.Namespace.newBuilder()
+            .addAllElements(content.getElements())
+            .putAllProperties(content.getProperties())
+            .build());
+  }
+
+  private static void toStoreIcebergView(IcebergView view, ObjectTypes.Content.Builder builder) {
+    ObjectTypes.IcebergViewState.Builder stateBuilder =
+        ObjectTypes.IcebergViewState.newBuilder()
+            .setVersionId(view.getVersionId())
+            .setSchemaId(view.getSchemaId())
+            .setDialect(view.getDialect())
+            .setSqlText(view.getSqlText())
+            .setMetadataLocation(view.getMetadataLocation());
+
+    builder.setIcebergViewState(stateBuilder);
+  }
+
+  private static void toStoreIcebergTable(IcebergTable table, ObjectTypes.Content.Builder builder) {
+    ObjectTypes.IcebergRefState.Builder stateBuilder =
+        ObjectTypes.IcebergRefState.newBuilder()
+            .setSnapshotId(table.getSnapshotId())
+            .setSchemaId(table.getSchemaId())
+            .setSpecId(table.getSpecId())
+            .setSortOrderId(table.getSortOrderId())
+            .setMetadataLocation(table.getMetadataLocation());
+
+    builder.setIcebergRefState(stateBuilder);
   }
 
   @Override
@@ -114,61 +135,35 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
   }
 
   @Override
-  public Content valueFromStore(ByteString onReferenceValue, Supplier<ByteString> globalState) {
+  public Content valueFromStore(
+      ByteString onReferenceValue,
+      Supplier<ByteString> globalState,
+      Function<Stream<ContentAttachmentKey>, Stream<ContentAttachment>> attachmentsRetriever) {
     ObjectTypes.Content content = parse(onReferenceValue);
+    Supplier<String> metadataPointerSupplier =
+        () -> {
+          ByteString global = globalState.get();
+          if (global == null) {
+            throw noIcebergMetadataPointer();
+          }
+          ObjectTypes.Content globalContent = parse(global);
+          if (!globalContent.hasIcebergMetadataPointer()) {
+            throw noIcebergMetadataPointer();
+          }
+          return globalContent.getIcebergMetadataPointer().getMetadataLocation();
+        };
     switch (content.getObjectTypeCase()) {
       case DELTA_LAKE_TABLE:
-        ObjectTypes.DeltaLakeTable deltaLakeTable = content.getDeltaLakeTable();
-        ImmutableDeltaLakeTable.Builder builder =
-            ImmutableDeltaLakeTable.builder()
-                .id(content.getId())
-                .addAllMetadataLocationHistory(deltaLakeTable.getMetadataLocationHistoryList())
-                .addAllCheckpointLocationHistory(deltaLakeTable.getCheckpointLocationHistoryList());
-        if (deltaLakeTable.hasLastCheckpoint()) {
-          builder.lastCheckpoint(content.getDeltaLakeTable().getLastCheckpoint());
-        }
-        return builder.build();
+        return valueFromStoreDeltaLakeTable(content);
 
       case ICEBERG_REF_STATE:
-        ObjectTypes.IcebergRefState table = content.getIcebergRefState();
-        String metadataLocation;
-        if (table.hasMetadataLocation()) {
-          metadataLocation = table.getMetadataLocation();
-        } else {
-          metadataLocation = metadataLocationFromGlobal(globalState);
-        }
-        return ImmutableIcebergTable.builder()
-            .metadataLocation(metadataLocation)
-            .snapshotId(table.getSnapshotId())
-            .schemaId(table.getSchemaId())
-            .specId(table.getSpecId())
-            .sortOrderId(table.getSortOrderId())
-            .id(content.getId())
-            .build();
+        return valueFromStoreIcebergTable(content, metadataPointerSupplier);
 
       case ICEBERG_VIEW_STATE:
-        ObjectTypes.IcebergViewState view = content.getIcebergViewState();
-        if (view.hasMetadataLocation()) {
-          metadataLocation = view.getMetadataLocation();
-        } else {
-          metadataLocation = metadataLocationFromGlobal(globalState);
-        }
-        return ImmutableIcebergView.builder()
-            .metadataLocation(metadataLocation)
-            .versionId(view.getVersionId())
-            .schemaId(view.getSchemaId())
-            .dialect(view.getDialect())
-            .sqlText(view.getSqlText())
-            .id(content.getId())
-            .build();
+        return valueFromStoreIcebergView(content, metadataPointerSupplier);
 
       case NAMESPACE:
-        ObjectTypes.Namespace namespace = content.getNamespace();
-        return ImmutableNamespace.builder()
-            .id(content.getId())
-            .elements(namespace.getElementsList())
-            .putAllProperties(namespace.getPropertiesMap())
-            .build();
+        return valueFromStoreNamespace(content);
 
       case OBJECTTYPE_NOT_SET:
       default:
@@ -176,16 +171,61 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
     }
   }
 
-  private static String metadataLocationFromGlobal(Supplier<ByteString> globalContent) {
-    ByteString globalBytes = globalContent.get();
-    if (globalBytes == null) {
-      throw noIcebergMetadataPointer();
+  private static ImmutableDeltaLakeTable valueFromStoreDeltaLakeTable(ObjectTypes.Content content) {
+    ObjectTypes.DeltaLakeTable deltaLakeTable = content.getDeltaLakeTable();
+    ImmutableDeltaLakeTable.Builder builder =
+        ImmutableDeltaLakeTable.builder()
+            .id(content.getId())
+            .addAllMetadataLocationHistory(deltaLakeTable.getMetadataLocationHistoryList())
+            .addAllCheckpointLocationHistory(deltaLakeTable.getCheckpointLocationHistoryList());
+    if (deltaLakeTable.hasLastCheckpoint()) {
+      builder.lastCheckpoint(content.getDeltaLakeTable().getLastCheckpoint());
     }
-    ObjectTypes.Content global = parse(globalBytes);
-    if (!global.hasIcebergMetadataPointer()) {
-      throw noIcebergMetadataPointer();
-    }
-    return global.getIcebergMetadataPointer().getMetadataLocation();
+    return builder.build();
+  }
+
+  private static ImmutableNamespace valueFromStoreNamespace(ObjectTypes.Content content) {
+    ObjectTypes.Namespace namespace = content.getNamespace();
+    return ImmutableNamespace.builder()
+        .id(content.getId())
+        .elements(namespace.getElementsList())
+        .putAllProperties(namespace.getPropertiesMap())
+        .build();
+  }
+
+  private static ImmutableIcebergTable valueFromStoreIcebergTable(
+      ObjectTypes.Content content, Supplier<String> metadataPointerSupplier) {
+    ObjectTypes.IcebergRefState table = content.getIcebergRefState();
+    String metadataLocation =
+        table.hasMetadataLocation() ? table.getMetadataLocation() : metadataPointerSupplier.get();
+
+    return IcebergTable.builder()
+        .metadataLocation(metadataLocation)
+        .snapshotId(table.getSnapshotId())
+        .schemaId(table.getSchemaId())
+        .specId(table.getSpecId())
+        .sortOrderId(table.getSortOrderId())
+        .id(content.getId())
+        .build();
+  }
+
+  private static ImmutableIcebergView valueFromStoreIcebergView(
+      ObjectTypes.Content content, Supplier<String> metadataPointerSupplier) {
+    String metadataLocation;
+    ObjectTypes.IcebergViewState view = content.getIcebergViewState();
+    // If the (protobuf) view has the metadataLocation attribute set, use that one, otherwise
+    // it's an old representation using global state.
+    metadataLocation =
+        view.hasMetadataLocation() ? view.getMetadataLocation() : metadataPointerSupplier.get();
+
+    return IcebergView.builder()
+        .metadataLocation(metadataLocation)
+        .versionId(view.getVersionId())
+        .schemaId(view.getSchemaId())
+        .dialect(view.getDialect())
+        .sqlText(view.getSqlText())
+        .id(content.getId())
+        .build();
   }
 
   private static IllegalArgumentException noIcebergMetadataPointer() {

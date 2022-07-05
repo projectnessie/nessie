@@ -139,7 +139,11 @@ class ITCheckContent {
 
   private void commit(IcebergTable table, DatabaseAdapter adapter) throws Exception {
     TableCommitMetaStoreWorker worker = new TableCommitMetaStoreWorker();
-    commit(table.getId(), worker.getPayload(table), worker.toStoreOnReferenceState(table), adapter);
+    commit(
+        table.getId(),
+        worker.getPayload(table),
+        worker.toStoreOnReferenceState(table, att -> {}),
+        adapter);
   }
 
   private void commit(String testId, byte payload, ByteString value, DatabaseAdapter adapter)

@@ -36,7 +36,7 @@ public interface ContentAndState<CONTENT> {
 
   @Nonnull
   static <CONTENT> ContentAndState<CONTENT> of(
-      @Nonnull CONTENT refState, @Nonnull CONTENT globalState) {
+      @Nonnull CONTENT refState, @Nullable CONTENT globalState) {
     return ImmutableContentAndState.<CONTENT>builder()
         .refState(refState)
         .globalState(globalState)

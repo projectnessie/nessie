@@ -262,6 +262,9 @@ public abstract class AbstractDatabaseAdapter<
             currentCommit,
             emptyList());
     writeIndividualCommit(ctx, newBranchCommit);
+
+    persistAttachments(ctx, commitParams.getAttachments().stream());
+
     return newBranchCommit;
   }
 

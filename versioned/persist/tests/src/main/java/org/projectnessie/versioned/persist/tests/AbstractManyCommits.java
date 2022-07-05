@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.persist.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.projectnessie.versioned.persist.tests.DatabaseAdapterTestUtils.ALWAYS_THROWING_ATTACHMENT_CONSUMER;
 
 import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
@@ -79,7 +80,11 @@ public abstract class AbstractManyCommits {
               .commitMetaSerialized(ByteString.copyFromUtf8("commit #" + i + " of " + numCommits))
               .addPuts(
                   KeyWithBytes.of(
-                      key, fixed, payload, SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(c)));
+                      key,
+                      fixed,
+                      payload,
+                      SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
+                          c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
       Hash hash = databaseAdapter.commit(commit.build());
       commits[i] = hash;
     }
@@ -125,7 +130,9 @@ public abstract class AbstractManyCommits {
       OnRefOnly expected =
           OnRefOnly.onRef("value for #" + i + " of " + numCommits, contentId.getId());
 
-      ByteString expectValue = SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(expected);
+      ByteString expectValue =
+          SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
+              expected, ALWAYS_THROWING_ATTACHMENT_CONSUMER);
       ContentAndState<ByteString> expect = ContentAndState.of(expectValue);
       assertThat(values).containsExactly(Maps.immutableEntry(key, expect));
     } catch (ReferenceNotFoundException e) {

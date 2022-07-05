@@ -324,7 +324,7 @@ public abstract class AbstractReferences {
                               ContentId.of("c" + commit),
                               (byte) 0,
                               SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
-                                  OnRefOnly.newOnRef("c" + commit))))
+                                  OnRefOnly.newOnRef("c" + commit), att -> {})))
                       .build());
           refLogOpsPerRef
               .computeIfAbsent(ref, x -> new ArrayList<>())

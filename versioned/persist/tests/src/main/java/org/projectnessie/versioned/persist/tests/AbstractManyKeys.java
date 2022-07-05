@@ -18,6 +18,7 @@ package org.projectnessie.versioned.persist.tests;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.Mockito.spy;
+import static org.projectnessie.versioned.persist.tests.DatabaseAdapterTestUtils.ALWAYS_THROWING_ATTACHMENT_CONSUMER;
 
 import com.google.protobuf.ByteString;
 import java.util.Arrays;
@@ -201,7 +202,8 @@ public abstract class AbstractManyKeys {
                           ContentId.of("c" + i),
                           (byte) 0,
                           SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
-                              OnRefOnly.onRef("r" + i, "c" + i))))
+                              OnRefOnly.onRef("r" + i, "c" + i),
+                              ALWAYS_THROWING_ATTACHMENT_CONSUMER)))
                   .build());
       keyToCommit.put(key, hash);
     }
@@ -260,7 +262,8 @@ public abstract class AbstractManyKeys {
                           ContentId.of("c" + i),
                           (byte) 0,
                           SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
-                              OnRefOnly.onRef("pf" + i, "cpf" + i))))
+                              OnRefOnly.onRef("pf" + i, "cpf" + i),
+                              ALWAYS_THROWING_ATTACHMENT_CONSUMER)))
                   .build());
       keyToCommit.put(key, hash);
     }

@@ -17,6 +17,7 @@ package org.projectnessie.server.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.fail;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,6 +28,8 @@ import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
@@ -45,6 +48,8 @@ import org.projectnessie.server.store.proto.ObjectTypes;
 import org.projectnessie.server.store.proto.ObjectTypes.IcebergMetadataPointer;
 import org.projectnessie.server.store.proto.ObjectTypes.IcebergRefState;
 import org.projectnessie.server.store.proto.ObjectTypes.IcebergViewState;
+import org.projectnessie.versioned.ContentAttachment;
+import org.projectnessie.versioned.ContentAttachmentKey;
 
 class TestStoreWorker {
 
@@ -52,6 +57,14 @@ class TestStoreWorker {
   private static final String ID = "x";
   public static final String CID = "cid";
   private final TableCommitMetaStoreWorker worker = new TableCommitMetaStoreWorker();
+
+  @SuppressWarnings("UnnecessaryLambda")
+  private static final Consumer<ContentAttachment> ALWAYS_THROWING_ATTACHMENT_CONSUMER =
+      attachment -> fail("Unexpected use of Consumer<ContentAttachment>");
+
+  @SuppressWarnings("UnnecessaryLambda")
+  private static final Function<Stream<ContentAttachmentKey>, Stream<ContentAttachment>>
+      NO_ATTACHMENTS_RETRIEVER = contentAttachmentKeyStream -> Stream.empty();
 
   @Test
   void tableMetadataLocationGlobalNotAvailable() {
@@ -68,7 +81,8 @@ class TestStoreWorker {
                                 .setSortOrderId(45))
                         .build()
                         .toByteString(),
-                    () -> null))
+                    () -> null,
+                    NO_ATTACHMENTS_RETRIEVER))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Iceberg content from reference must have global state, but has none");
   }
@@ -94,7 +108,8 @@ class TestStoreWorker {
                         IcebergMetadataPointer.newBuilder()
                             .setMetadataLocation("metadata-location"))
                     .build()
-                    .toByteString());
+                    .toByteString(),
+            NO_ATTACHMENTS_RETRIEVER);
     assertThat(value)
         .isInstanceOf(IcebergTable.class)
         .asInstanceOf(InstanceOfAssertFactories.type(IcebergTable.class))
@@ -122,7 +137,8 @@ class TestStoreWorker {
                         .setMetadataLocation("metadata-location"))
                 .build()
                 .toByteString(),
-            () -> null);
+            () -> null,
+            NO_ATTACHMENTS_RETRIEVER);
     assertThat(value)
         .isInstanceOf(IcebergTable.class)
         .asInstanceOf(InstanceOfAssertFactories.type(IcebergTable.class))
@@ -146,7 +162,8 @@ class TestStoreWorker {
                             ObjectTypes.IcebergViewState.newBuilder().setVersionId(42))
                         .build()
                         .toByteString(),
-                    () -> null))
+                    () -> null,
+                    NO_ATTACHMENTS_RETRIEVER))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Iceberg content from reference must have global state, but has none");
   }
@@ -167,7 +184,8 @@ class TestStoreWorker {
                         IcebergMetadataPointer.newBuilder()
                             .setMetadataLocation("metadata-location"))
                     .build()
-                    .toByteString());
+                    .toByteString(),
+            NO_ATTACHMENTS_RETRIEVER);
     assertThat(value)
         .isInstanceOf(IcebergView.class)
         .asInstanceOf(InstanceOfAssertFactories.type(IcebergView.class))
@@ -295,7 +313,8 @@ class TestStoreWorker {
         .asInstanceOf(InstanceOfAssertFactories.type(ByteString.class))
         .extracting(worker::requiresGlobalState, worker::getType)
         .containsExactly(storeGlobal, type);
-    assertThat(worker.valueFromStore(onRef, () -> global)).isEqualTo(content);
+    assertThat(worker.valueFromStore(onRef, () -> global, NO_ATTACHMENTS_RETRIEVER))
+        .isEqualTo(content);
 
     if (storeGlobal) {
       // Add "metadataLocation" to expected on-ref status, because toStoreOnReferenceState() always
@@ -322,7 +341,11 @@ class TestStoreWorker {
       }
     }
 
-    assertThat(content).extracting(worker::toStoreOnReferenceState).isEqualTo(onRef);
+    assertThat(content)
+        .extracting(
+            content1 ->
+                worker.toStoreOnReferenceState(content1, ALWAYS_THROWING_ATTACHMENT_CONSUMER))
+        .isEqualTo(onRef);
     if (storeGlobal) {
       assertThat(content).extracting(worker::toStoreGlobalState).isEqualTo(global);
     }
@@ -340,7 +363,8 @@ class TestStoreWorker {
                         .setMetadataLocation("metadata-location"))
                 .build()
                 .toByteString(),
-            () -> null);
+            () -> null,
+            NO_ATTACHMENTS_RETRIEVER);
     assertThat(value)
         .isInstanceOf(IcebergView.class)
         .asInstanceOf(InstanceOfAssertFactories.type(IcebergView.class))
@@ -351,28 +375,32 @@ class TestStoreWorker {
   @ParameterizedTest
   @MethodSource("provideDeserialization")
   void testDeserialization(Map.Entry<ByteString, Content> entry) {
-    Content actual = worker.valueFromStore(entry.getKey(), () -> null);
+    Content actual = worker.valueFromStore(entry.getKey(), () -> null, x -> Stream.empty());
     assertThat(actual).isEqualTo(entry.getValue());
   }
 
   @ParameterizedTest
   @MethodSource("provideDeserialization")
   void testSerialization(Map.Entry<ByteString, Content> entry) {
-    ByteString actual = worker.toStoreOnReferenceState(entry.getValue());
+    ByteString actual =
+        worker.toStoreOnReferenceState(entry.getValue(), ALWAYS_THROWING_ATTACHMENT_CONSUMER);
     assertThat(actual).isEqualTo(entry.getKey());
   }
 
   @ParameterizedTest
   @MethodSource("provideDeserialization")
   void testSerde(Map.Entry<ByteString, Content> entry) {
-    ByteString actualBytes = worker.toStoreOnReferenceState(entry.getValue());
-    assertThat(worker.valueFromStore(actualBytes, () -> null)).isEqualTo(entry.getValue());
-    Content actualContent = worker.valueFromStore(entry.getKey(), () -> null);
-    assertThat(worker.toStoreOnReferenceState(actualContent)).isEqualTo(entry.getKey());
+    ByteString actualBytes =
+        worker.toStoreOnReferenceState(entry.getValue(), ALWAYS_THROWING_ATTACHMENT_CONSUMER);
+    assertThat(worker.valueFromStore(actualBytes, () -> null, x -> Stream.empty()))
+        .isEqualTo(entry.getValue());
+    Content actualContent = worker.valueFromStore(entry.getKey(), () -> null, x -> Stream.empty());
+    assertThat(worker.toStoreOnReferenceState(actualContent, ALWAYS_THROWING_ATTACHMENT_CONSUMER))
+        .isEqualTo(entry.getKey());
   }
 
   @Test
-  void testSerdeIceberg() {
+  void testSerdeIcebergTableNoMetadata() {
     String path = "foo/bar";
     IcebergTable table = IcebergTable.of(path, 42, 43, 44, 45, ID);
 
@@ -395,17 +423,19 @@ class TestStoreWorker {
             .build();
 
     ByteString tableGlobalBytes = worker.toStoreGlobalState(table);
-    ByteString snapshotBytes = worker.toStoreOnReferenceState(table);
+    ByteString snapshotBytes =
+        worker.toStoreOnReferenceState(table, ALWAYS_THROWING_ATTACHMENT_CONSUMER);
 
     assertThat(tableGlobalBytes).isEqualTo(protoTableGlobal.toByteString());
     assertThat(snapshotBytes).isEqualTo(protoOnRef.toByteString());
 
-    Content deserialized = worker.valueFromStore(snapshotBytes, () -> tableGlobalBytes);
+    Content deserialized =
+        worker.valueFromStore(snapshotBytes, () -> tableGlobalBytes, x -> Stream.empty());
     assertThat(deserialized).isEqualTo(table);
   }
 
   @Test
-  void testSerdeIcebergView() {
+  void testSerdeIcebergViewNoMetadata() {
     String path = "foo/view";
     String dialect = "Dremio";
     String sqlText = "select * from world";
@@ -430,12 +460,14 @@ class TestStoreWorker {
             .build();
 
     ByteString tableGlobalBytes = worker.toStoreGlobalState(view);
-    ByteString snapshotBytes = worker.toStoreOnReferenceState(view);
+    ByteString snapshotBytes =
+        worker.toStoreOnReferenceState(view, ALWAYS_THROWING_ATTACHMENT_CONSUMER);
 
     assertThat(tableGlobalBytes).isEqualTo(protoTableGlobal.toByteString());
     assertThat(snapshotBytes).isEqualTo(protoOnRef.toByteString());
 
-    Content deserialized = worker.valueFromStore(snapshotBytes, () -> tableGlobalBytes);
+    Content deserialized =
+        worker.valueFromStore(snapshotBytes, () -> tableGlobalBytes, x -> Stream.empty());
     assertThat(deserialized).isEqualTo(view);
   }
 
