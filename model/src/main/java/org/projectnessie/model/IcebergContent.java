@@ -18,9 +18,9 @@ package org.projectnessie.model;
 public abstract class IcebergContent extends Content {
 
   /** Constant for {@link GenericMetadata#getVariant()}. */
-  public static final String ICEBERG_METADATA = "Iceberg";
+  public static final String ICEBERG_METADATA_VARIANT = "iceberg";
 
-  // JSON field names
+  // JSON field names - defined by Apache Iceberg spec
 
   public static final String CURRENT_VERSION_ID = "current-version-id";
   public static final String VERSIONS = "versions";

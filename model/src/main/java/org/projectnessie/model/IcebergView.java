@@ -30,7 +30,7 @@ import org.immutables.value.Value;
 @JsonSerialize(as = ImmutableIcebergView.class)
 @JsonDeserialize(as = ImmutableIcebergView.class)
 @JsonTypeName("ICEBERG_VIEW")
-public abstract class IcebergView extends Content {
+public abstract class IcebergView extends IcebergContent {
 
   /**
    * Location where Iceberg stored its {@code ViewMetadata} file. The location depends on the
@@ -96,7 +96,7 @@ public abstract class IcebergView extends Content {
   public static IcebergView of(JsonNode metadata, String metadataLocation, String id) {
     int currentVersionId = metadata.get(IcebergContent.CURRENT_VERSION_ID).asInt(-1);
     String sqlText = "";
-    String dialect = ""; // TODO !!
+    String dialect = ""; // TODO dialect is currently undefined in Iceberg
     int schemaId = 0;
     for (JsonNode version : metadata.get(IcebergContent.VERSIONS)) {
       if (version.get(IcebergContent.VERSION_ID).asInt(-1) == currentVersionId) {
@@ -114,7 +114,7 @@ public abstract class IcebergView extends Content {
         .schemaId(schemaId)
         .dialect(dialect)
         .sqlText(sqlText)
-        .metadata(GenericMetadata.of(IcebergContent.ICEBERG_METADATA, metadata))
+        .metadata(GenericMetadata.of(IcebergContent.ICEBERG_METADATA_VARIANT, metadata))
         .build();
   }
 }

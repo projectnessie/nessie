@@ -433,7 +433,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
     //  Similar for Iceberg views?
 
     return tableBuilder
-        .metadata(GenericMetadata.of(IcebergContent.ICEBERG_METADATA, metadata))
+        .metadata(GenericMetadata.of(IcebergContent.ICEBERG_METADATA_VARIANT, metadata))
         .build();
   }
 
@@ -508,7 +508,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
     ObjectNode metadata = mergeAttachmentsIntoMetadata(attachmentsRetriever, content, contentParts);
 
     return viewBuilder
-        .metadata(GenericMetadata.of(IcebergContent.ICEBERG_METADATA, metadata))
+        .metadata(GenericMetadata.of(IcebergContent.ICEBERG_METADATA_VARIANT, metadata))
         .build();
   }
 

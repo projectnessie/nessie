@@ -54,7 +54,7 @@ import org.immutables.value.Value;
 @JsonSerialize(as = ImmutableIcebergTable.class)
 @JsonDeserialize(as = ImmutableIcebergTable.class)
 @JsonTypeName("ICEBERG_TABLE")
-public abstract class IcebergTable extends Content {
+public abstract class IcebergTable extends IcebergContent {
 
   /**
    * Location where Iceberg stored its {@code TableMetadata} file. The location depends on the
@@ -124,7 +124,7 @@ public abstract class IcebergTable extends Content {
         .schemaId(metadata.get(IcebergContent.CURRENT_SCHEMA_ID).asInt(0))
         .specId(metadata.get(IcebergContent.DEFAULT_SPEC_ID).asInt(0))
         .sortOrderId(metadata.get(IcebergContent.DEFAULT_SORT_ORDER_ID).asInt(0))
-        .metadata(GenericMetadata.of(IcebergContent.ICEBERG_METADATA, metadata))
+        .metadata(GenericMetadata.of(IcebergContent.ICEBERG_METADATA_VARIANT, metadata))
         .id(contentId)
         .build();
   }
