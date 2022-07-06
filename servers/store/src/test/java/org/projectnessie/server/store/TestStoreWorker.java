@@ -413,7 +413,7 @@ class TestStoreWorker {
   }
 
   private static JsonNode loadJson(String resource) {
-    URL url = Thread.currentThread().getContextClassLoader().getResource(resource);
+    URL url = TestStoreWorker.class.getClassLoader().getResource(resource);
     try (JsonParser parser =
         new ObjectMapper()
             .createParser(
@@ -486,8 +486,6 @@ class TestStoreWorker {
     assertThat(
             parsed.getIcebergRefState().toBuilder().clearCurrentParts().clearExtraParts().build())
         .isEqualTo(expectedStoreOnRef.clearCurrentParts().clearExtraParts().build());
-
-    // TODO validate that metadata is really shallow (no child object arrays)
 
     Content deserialized =
         worker.valueFromStore(
