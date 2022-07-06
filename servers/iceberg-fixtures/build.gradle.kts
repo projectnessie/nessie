@@ -60,7 +60,7 @@ dependencies {
   testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 }
 
-val generatedIcebergMetadataDir = project.buildDir.resolve("generated/iceberg")
+val generatedIcebergMetadataDir = project.buildDir.resolve("generated/iceberg/main")
 
 val generateIcebergMetadataFiles by
   tasks.registering(DefaultTask::class) {
@@ -86,6 +86,6 @@ val generateIcebergMetadataFiles by
   }
 
 sourceSets.named("main") {
-  output.dir(generatedIcebergMetadataDir)
+  resources.srcDir(generatedIcebergMetadataDir)
   compiledBy(generateIcebergMetadataFiles)
 }
