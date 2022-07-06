@@ -15,14 +15,6 @@
  */
 package org.projectnessie.server.store;
 
-import static org.projectnessie.model.IcebergContent.CURRENT_SCHEMA_ID;
-import static org.projectnessie.model.IcebergContent.CURRENT_SNAPSHOT_ID;
-import static org.projectnessie.model.IcebergContent.CURRENT_VERSION_ID;
-import static org.projectnessie.model.IcebergContent.DEFAULT_SORT_ORDER_ID;
-import static org.projectnessie.model.IcebergContent.DEFAULT_SPEC_ID;
-import static org.projectnessie.model.IcebergContent.VERSIONS;
-import static org.projectnessie.model.IcebergContent.VERSION_ID;
-
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -87,7 +79,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
     JSON_ARRAY_NAMES_FOR_PART_TYPE.put(ContentPartType.SNAPSHOT, IcebergContent.SNAPSHOTS);
     JSON_ARRAY_NAMES_FOR_PART_TYPE.put(ContentPartType.SCHEMA, IcebergContent.SCHEMAS);
     JSON_ARRAY_NAMES_FOR_PART_TYPE.put(ContentPartType.SORT_ORDER, IcebergContent.SORT_ORDERS);
-    JSON_ARRAY_NAMES_FOR_PART_TYPE.put(ContentPartType.VERSION, VERSIONS);
+    JSON_ARRAY_NAMES_FOR_PART_TYPE.put(ContentPartType.VERSION, IcebergContent.VERSIONS);
   }
 
   private final Serializer<CommitMeta> metaSerializer = new MetadataSerializer();
@@ -320,25 +312,28 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
           new IcebergAttachmentDefinition(
               ObjectTypes.ContentPartType.SNAPSHOT,
               IcebergContent.SNAPSHOTS,
-              CURRENT_SNAPSHOT_ID,
+              IcebergContent.CURRENT_SNAPSHOT_ID,
               IcebergContent.SNAPSHOT_ID),
           new IcebergAttachmentDefinition(
               ObjectTypes.ContentPartType.SCHEMA,
               IcebergContent.SCHEMAS,
-              CURRENT_SCHEMA_ID,
+              IcebergContent.CURRENT_SCHEMA_ID,
               IcebergContent.SCHEMA_ID),
           new IcebergAttachmentDefinition(
               ObjectTypes.ContentPartType.SORT_ORDER,
               IcebergContent.SORT_ORDERS,
-              DEFAULT_SORT_ORDER_ID,
+              IcebergContent.DEFAULT_SORT_ORDER_ID,
               IcebergContent.ORDER_ID),
           new IcebergAttachmentDefinition(
               ObjectTypes.ContentPartType.PARTITION_SPEC,
               IcebergContent.PARTITION_SPECS,
-              DEFAULT_SPEC_ID,
+              IcebergContent.DEFAULT_SPEC_ID,
               IcebergContent.SPEC_ID),
           new IcebergAttachmentDefinition(
-              ObjectTypes.ContentPartType.VERSION, VERSIONS, CURRENT_VERSION_ID, VERSION_ID));
+              ObjectTypes.ContentPartType.VERSION,
+              IcebergContent.VERSIONS,
+              IcebergContent.CURRENT_VERSION_ID,
+              IcebergContent.VERSION_ID));
 
   @Override
   public Content valueFromStore(
