@@ -16,9 +16,9 @@
 package org.projectnessie.iceberg.metadata;
 
 import static org.apache.iceberg.types.Types.NestedField.required;
-import static org.apache.iceberg.view.IcebergBride.historyEntry;
-import static org.apache.iceberg.view.IcebergBride.parseJsonAsViewVersionMetadata;
-import static org.apache.iceberg.view.IcebergBride.viewVersionMetadataToJson;
+import static org.apache.iceberg.view.IcebergBridge.historyEntry;
+import static org.apache.iceberg.view.IcebergBridge.parseJsonAsViewVersionMetadata;
+import static org.apache.iceberg.view.IcebergBridge.viewVersionMetadataToJson;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;

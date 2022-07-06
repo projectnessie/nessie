@@ -25,7 +25,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableMetadataParser;
-import org.apache.iceberg.view.IcebergBride;
+import org.apache.iceberg.view.IcebergBridge;
 import org.apache.iceberg.view.ViewVersionMetadata;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
@@ -60,20 +60,20 @@ public class TestNessieIceberg {
   static Stream<String> randomViewMetadata() {
     return IntStream.range(0, 100)
         .mapToObj(i -> NessieIceberg.randomViewMetadata(5))
-        .map(IcebergBride::viewVersionMetadataToJson);
+        .map(IcebergBridge::viewVersionMetadataToJson);
   }
 
   @ParameterizedTest
   @MethodSource("randomViewMetadata")
   public void viewMetadata(String viewMetadataJson) {
     ViewVersionMetadata tm =
-        IcebergBride.parseJsonAsViewVersionMetadata(asJsonNode(viewMetadataJson));
-    assertThat(asJsonNode(IcebergBride.viewVersionMetadataToJson(tm)))
+        IcebergBridge.parseJsonAsViewVersionMetadata(asJsonNode(viewMetadataJson));
+    assertThat(asJsonNode(IcebergBridge.viewVersionMetadataToJson(tm)))
         .isEqualTo(asJsonNode(viewMetadataJson));
 
     JsonNode nessie = toNessie(tm);
     ViewVersionMetadata fromNessie = toIceberg(nessie);
-    assertThat(asJsonNode(IcebergBride.viewVersionMetadataToJson(fromNessie)))
+    assertThat(asJsonNode(IcebergBridge.viewVersionMetadataToJson(fromNessie)))
         .isEqualTo(asJsonNode(viewMetadataJson));
     JsonNode nessie2 = toNessie(fromNessie);
 

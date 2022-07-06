@@ -15,8 +15,8 @@
  */
 package org.projectnessie.iceberg.metadata;
 
-import static org.apache.iceberg.view.IcebergBride.historyEntry;
-import static org.apache.iceberg.view.IcebergBride.viewVersionMetadataToJson;
+import static org.apache.iceberg.view.IcebergBridge.historyEntry;
+import static org.apache.iceberg.view.IcebergBridge.viewVersionMetadataToJson;
 import static org.projectnessie.iceberg.metadata.NessieIceberg.icebergTableMetadata;
 import static org.projectnessie.iceberg.metadata.NessieIceberg.randomColumnName;
 import static org.projectnessie.iceberg.metadata.NessieIceberg.randomFields;

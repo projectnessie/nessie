@@ -21,9 +21,9 @@ import java.io.IOException;
 import java.io.StringWriter;
 import org.apache.iceberg.util.JsonUtil;
 
-public final class IcebergBride {
+public final class IcebergBridge {
 
-  private IcebergBride() {}
+  private IcebergBridge() {}
 
   public static ViewVersionMetadata parseJsonAsViewVersionMetadata(JsonNode nessieViewMetadata) {
     return ViewVersionMetadataParser.fromJson(null, nessieViewMetadata);

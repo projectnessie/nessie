@@ -18,12 +18,8 @@ package org.projectnessie.iceberg.metadata;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.io.ByteArrayOutputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.zip.GZIPOutputStream;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableMetadataParser;
-import org.apache.iceberg.util.JsonUtil;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -34,7 +30,7 @@ public class TestBigSchema {
 
   @ParameterizedTest
   @ValueSource(ints = {10, 100, 1000, 10000})
-  public void testManyColumns(int numColumns) throws Exception {
+  public void testManyColumns(int numColumns) {
     TableMetadata tableMetadata = NessieIceberg.randomTableMetadata(numColumns);
     String jsonIceberg = TableMetadataParser.toJson(tableMetadata);
 
@@ -43,29 +39,9 @@ public class TestBigSchema {
     jsonIceberg = TableMetadataParser.toJson(tableMetadata);
 
     JsonNode icebergTableMetadata = NessieIceberg.toNessie(tableMetadata);
-    String jsonNessie = JsonUtil.mapper().writeValueAsString(icebergTableMetadata);
 
     TableMetadata recreatedTableMetadata = NessieIceberg.toIceberg(null, icebergTableMetadata);
     String jsonIcebergRecreated = TableMetadataParser.toJson(recreatedTableMetadata);
     assertThat(jsonIcebergRecreated).isEqualTo(jsonIceberg);
-
-    byte[] compressedIceberg = compress(jsonIceberg);
-    byte[] compressedNessie = compress(jsonNessie);
-
-    System.err.printf(
-        "  num-cols: %-8d   iceberg-json-size: %10d / %-10d   nessie-json-size: %10d / %-10d%n",
-        numColumns,
-        jsonIceberg.length(),
-        compressedIceberg.length,
-        jsonNessie.length(),
-        compressedNessie.length);
-  }
-
-  private byte[] compress(String jsonIceberg) throws Exception {
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
-    try (GZIPOutputStream gzip = new GZIPOutputStream(out)) {
-      gzip.write(jsonIceberg.getBytes(StandardCharsets.UTF_8));
-    }
-    return out.toByteArray();
   }
 }
