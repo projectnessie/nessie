@@ -120,11 +120,11 @@ public abstract class IcebergTable extends IcebergContent {
   public static IcebergTable of(JsonNode metadata, String metadataLocation, String contentId) {
     return builder()
         .metadataLocation(metadataLocation)
-        .snapshotId(metadata.get(IcebergContent.CURRENT_SNAPSHOT_ID).asLong(-1L))
-        .schemaId(metadata.get(IcebergContent.CURRENT_SCHEMA_ID).asInt(0))
-        .specId(metadata.get(IcebergContent.DEFAULT_SPEC_ID).asInt(0))
-        .sortOrderId(metadata.get(IcebergContent.DEFAULT_SORT_ORDER_ID).asInt(0))
-        .metadata(GenericMetadata.of(IcebergContent.ICEBERG_METADATA_VARIANT, metadata))
+        .snapshotId(metadata.path(CURRENT_SNAPSHOT_ID).asLong(-1L))
+        .schemaId(metadata.path(CURRENT_SCHEMA_ID).asInt(0))
+        .specId(metadata.path(DEFAULT_SPEC_ID).asInt(0))
+        .sortOrderId(metadata.path(DEFAULT_SORT_ORDER_ID).asInt(0))
+        .metadata(GenericMetadata.of(ICEBERG_METADATA_VARIANT, metadata))
         .id(contentId)
         .build();
   }

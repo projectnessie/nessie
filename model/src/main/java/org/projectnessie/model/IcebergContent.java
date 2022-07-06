@@ -33,10 +33,12 @@ public abstract class IcebergContent extends Content {
   public static final String FORMAT_VERSION = "format-version";
   public static final String SNAPSHOTS = "snapshots";
   public static final String SNAPSHOT_ID = "snapshot-id";
+  public static final String SCHEMA = "schema";
   public static final String SCHEMAS = "schemas";
   public static final String SCHEMA_ID = "schema-id";
   public static final String SORT_ORDERS = "sort-orders";
   public static final String ORDER_ID = "order-id";
   public static final String PARTITION_SPECS = "partition-specs";
   public static final String SPEC_ID = "spec-id";
+  public static final String SQL = "sql";
 }

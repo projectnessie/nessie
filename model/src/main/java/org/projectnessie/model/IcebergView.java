@@ -94,16 +94,22 @@ public abstract class IcebergView extends IcebergContent {
   }
 
   public static IcebergView of(JsonNode metadata, String metadataLocation, String id) {
-    int currentVersionId = metadata.get(IcebergContent.CURRENT_VERSION_ID).asInt(-1);
+    int currentVersionId = metadata.path(CURRENT_VERSION_ID).requireNonNull().asInt(-1);
+
     String sqlText = "";
     String dialect = ""; // TODO dialect is currently undefined in Iceberg
     int schemaId = 0;
-    for (JsonNode version : metadata.get(IcebergContent.VERSIONS)) {
-      if (version.get(IcebergContent.VERSION_ID).asInt(-1) == currentVersionId) {
-        JsonNode viewDefinition = version.get(IcebergContent.VIEW_DEFINITION);
-        sqlText = viewDefinition.get("sql").asText();
-        JsonNode schema = viewDefinition.get("schema");
-        schemaId = schema.get(IcebergContent.SCHEMA_ID).asInt(0);
+    JsonNode versions = metadata.get(VERSIONS);
+    if (versions != null) {
+      for (JsonNode version : versions) {
+        int versionId = version.path(VERSION_ID).requireNonNull().asInt();
+        if (versionId == currentVersionId) {
+          JsonNode viewDefinition = version.path(VIEW_DEFINITION).requireNonNull();
+          sqlText = viewDefinition.path(SQL).requireNonNull().asText();
+          JsonNode schema = viewDefinition.path(SCHEMA).requireNonNull();
+          schemaId = schema.path(SCHEMA_ID).requireNonNull().asInt();
+          break;
+        }
       }
     }
 
@@ -114,7 +120,7 @@ public abstract class IcebergView extends IcebergContent {
         .schemaId(schemaId)
         .dialect(dialect)
         .sqlText(sqlText)
-        .metadata(GenericMetadata.of(IcebergContent.ICEBERG_METADATA_VARIANT, metadata))
+        .metadata(GenericMetadata.of(ICEBERG_METADATA_VARIANT, metadata))
         .build();
   }
 }
