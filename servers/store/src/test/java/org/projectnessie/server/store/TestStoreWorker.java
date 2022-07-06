@@ -468,23 +468,24 @@ class TestStoreWorker {
                 assertThat(parts).hasSize(1);
                 expectedStoreOnRef.setMetadata(parts.get(0));
               } else {
-                parts.subList(0, parts.size() - 1).forEach(expectedStoreOnRef::addMoreParts);
+                parts.subList(0, parts.size() - 1).forEach(expectedStoreOnRef::addExtraParts);
                 expectedStoreOnRef.addCurrentParts(parts.get(parts.size() - 1));
               }
             });
 
     ObjectTypes.Content parsed = ObjectTypes.Content.parseFrom(onReferenceState);
 
-    // Verify that all parts are present, the actual order within current-parts and more-parts does
+    // Verify that all parts are present, the actual order within current-parts and extra-parts does
     // not matter, but is sadly not deterministic, not guaranteed for all kinds of childs either.
 
     assertThat(parsed.getIcebergRefState().getCurrentPartsList())
         .containsExactlyInAnyOrderElementsOf(expectedStoreOnRef.getCurrentPartsList());
-    assertThat(parsed.getIcebergRefState().getMorePartsList())
-        .containsExactlyInAnyOrderElementsOf(expectedStoreOnRef.getMorePartsList());
+    assertThat(parsed.getIcebergRefState().getExtraPartsList())
+        .containsExactlyInAnyOrderElementsOf(expectedStoreOnRef.getExtraPartsList());
 
-    assertThat(parsed.getIcebergRefState().toBuilder().clearCurrentParts().clearMoreParts().build())
-        .isEqualTo(expectedStoreOnRef.clearCurrentParts().clearMoreParts().build());
+    assertThat(
+            parsed.getIcebergRefState().toBuilder().clearCurrentParts().clearExtraParts().build())
+        .isEqualTo(expectedStoreOnRef.clearCurrentParts().clearExtraParts().build());
 
     // TODO validate that metadata is really shallow (no child object arrays)
 
@@ -540,24 +541,24 @@ class TestStoreWorker {
                 assertThat(parts).hasSize(1);
                 expectedStoreOnRef.setMetadata(parts.get(0));
               } else {
-                parts.subList(0, parts.size() - 1).forEach(expectedStoreOnRef::addMoreParts);
+                parts.subList(0, parts.size() - 1).forEach(expectedStoreOnRef::addExtraParts);
                 expectedStoreOnRef.addCurrentParts(parts.get(parts.size() - 1));
               }
             });
 
     ObjectTypes.Content parsed = ObjectTypes.Content.parseFrom(onReferenceState);
 
-    // Verify that all parts are present, the actual order within current-parts and more-parts does
+    // Verify that all parts are present, the actual order within current-parts and extra-parts does
     // not matter, but is sadly not deterministic, not guaranteed for all kinds of childs either.
 
     assertThat(parsed.getIcebergViewState().getCurrentPartsList())
         .containsExactlyInAnyOrderElementsOf(expectedStoreOnRef.getCurrentPartsList());
-    assertThat(parsed.getIcebergViewState().getMorePartsList())
-        .containsExactlyInAnyOrderElementsOf(expectedStoreOnRef.getMorePartsList());
+    assertThat(parsed.getIcebergViewState().getExtraPartsList())
+        .containsExactlyInAnyOrderElementsOf(expectedStoreOnRef.getExtraPartsList());
 
     assertThat(
-            parsed.getIcebergViewState().toBuilder().clearCurrentParts().clearMoreParts().build())
-        .isEqualTo(expectedStoreOnRef.clearCurrentParts().clearMoreParts().build());
+            parsed.getIcebergViewState().toBuilder().clearCurrentParts().clearExtraParts().build())
+        .isEqualTo(expectedStoreOnRef.clearCurrentParts().clearExtraParts().build());
 
     // TODO validate that metadata is really shallow (no child object arrays)
 

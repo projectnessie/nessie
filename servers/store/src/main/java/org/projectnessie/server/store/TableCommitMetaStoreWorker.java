@@ -143,7 +143,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
         formatVersion -> formatVersion == 1,
         stateBuilder::setMetadata,
         stateBuilder::addCurrentParts,
-        stateBuilder::addMoreParts);
+        stateBuilder::addExtraParts);
 
     builder.setIcebergViewState(stateBuilder);
   }
@@ -167,7 +167,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
         formatVersion -> formatVersion == 2,
         stateBuilder::setMetadata,
         stateBuilder::addCurrentParts,
-        stateBuilder::addMoreParts);
+        stateBuilder::addExtraParts);
 
     builder.setIcebergRefState(stateBuilder);
   }
@@ -418,7 +418,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
 
     Stream<ContentPartReference> contentParts =
         Stream.concat(
-            Stream.concat(table.getMorePartsList().stream(), table.getCurrentPartsList().stream()),
+            Stream.concat(table.getExtraPartsList().stream(), table.getCurrentPartsList().stream()),
             Stream.of(table.getMetadata()));
 
     ObjectNode metadata = mergeAttachmentsIntoMetadata(attachmentsRetriever, content, contentParts);
@@ -498,7 +498,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
     Stream<ContentPartReference> contentParts =
         Stream.concat(
             Stream.of(view.getMetadata()),
-            Stream.concat(view.getCurrentPartsList().stream(), view.getMorePartsList().stream()));
+            Stream.concat(view.getCurrentPartsList().stream(), view.getExtraPartsList().stream()));
 
     ObjectNode metadata = mergeAttachmentsIntoMetadata(attachmentsRetriever, content, contentParts);
 

@@ -57,7 +57,7 @@ message IcebergMetadataPointer {
 //   Yes         | Yes                 | Reference to shallow metadata in
 //               |                     | 'metadata', current/default child
 //               |                     | objects in 'current_parts', other
-//               |                     | child objects in 'more_parts'.
+//               |                     | child objects in 'extra_parts'.
 //               |                     | Commits written with Nessie >= 0.29.0
 //               |                     | _and_ clients supplying the metadata
 //               |                     | use this combination. Iceberg >= 1.0.
@@ -93,7 +93,7 @@ message IcebergRefState {
   repeated ContentPartReference current_parts = 7;
   // References to the non-current/default child objects. E.g. references to
   // snapshots with snapshot-id != table-metadata.current-snapshot-id.
-  repeated ContentPartReference more_parts = 8;
+  repeated ContentPartReference extra_parts = 8;
 }
 
 message IcebergViewState {
@@ -113,7 +113,7 @@ message IcebergViewState {
   repeated ContentPartReference current_parts = 7;
   // References to the non-current/default child objects. E.g. references to
   // snapshots with view-version-id != view-metadata.current-view-version-id.
-  repeated ContentPartReference more_parts = 8;
+  repeated ContentPartReference extra_parts = 8;
 }
 
 message ContentPartReference {
