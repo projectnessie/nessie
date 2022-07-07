@@ -33,10 +33,16 @@ jobs:
       with:
         gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
 
+    - name: Gradle / spotless
+      uses: gradle/gradle-build-action@v2
+      with:
+        # 'spotlessCheck' separate: workaround until https://github.com/diffplug/spotless/issues/1215 is fixed
+        arguments: spotlessCheck
+
     - name: Gradle / compile
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: spotlessCheck checkstyleMain checkstyleTest jar testClasses testJar
+        arguments: checkstyleMain checkstyleTest jar testClasses testJar
 
     - name: Gradle / unit test
       uses: gradle/gradle-build-action@v2
@@ -46,7 +52,8 @@ jobs:
     - name: Gradle / check incl. integ-test
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: check
+        # '-x spotlessCheck': workaround until https://github.com/diffplug/spotless/issues/1215 is fixed
+        arguments: check -x spotlessCheck
 
     - name: Gradle / Gatling simulations
       uses: gradle/gradle-build-action@v2
