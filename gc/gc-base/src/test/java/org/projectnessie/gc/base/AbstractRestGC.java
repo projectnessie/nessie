@@ -97,7 +97,8 @@ public abstract class AbstractRestGC extends AbstractRest {
       Map<String, Instant> cutOffTimeStampPerRef,
       List<Row> expectedDataSet,
       boolean disableCommitProtection,
-      Instant deadReferenceCutoffTime) {
+      Instant deadReferenceCutoffTime)
+      throws NessieNotFoundException {
 
     try (SparkSession sparkSession = getSparkSession()) {
       ImmutableGCParams.Builder builder = ImmutableGCParams.builder();

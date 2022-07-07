@@ -30,7 +30,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.hadoop.fs.Path;
@@ -118,7 +117,7 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
     assertThat(metadataFilesForViews(viewIdentifier.name())).isNotNull().hasSize(1);
 
     verifyCommitMetadata();
-    assertThat(api.getCommitLog().refName(BRANCH).stream(OptionalInt.empty())).hasSize(3);
+    assertThat(api.getCommitLog().refName(BRANCH).stream()).hasSize(3);
 
     verifyViewInNessie(viewIdentifier, icebergView, BRANCH);
   }
@@ -178,7 +177,7 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
     assertThat(metadataFilesForViews(VIEW_IDENTIFIER.name())).isNotNull().hasSize(4);
 
     verifyCommitMetadata();
-    assertThat(api.getCommitLog().refName(BRANCH).stream(OptionalInt.empty())).hasSize(6);
+    assertThat(api.getCommitLog().refName(BRANCH).stream()).hasSize(6);
     verifyViewInNessie(VIEW_IDENTIFIER, icebergView, BRANCH);
   }
 
@@ -206,7 +205,7 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
     assertThat(metadataFilesForViews(VIEW_IDENTIFIER.name())).isNotNull().hasSize(2);
 
     verifyCommitMetadata();
-    assertThat(api.getCommitLog().refName(BRANCH).stream(OptionalInt.empty())).hasSize(3);
+    assertThat(api.getCommitLog().refName(BRANCH).stream()).hasSize(3);
     verifyViewInNessie(VIEW_IDENTIFIER, icebergView, BRANCH);
   }
 
@@ -289,7 +288,7 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
 
   private void verifyCommitMetadata() throws NessieNotFoundException {
     // check that the author is properly set
-    Stream<LogEntry> log = api.getCommitLog().refName(BRANCH).stream(OptionalInt.empty());
+    Stream<LogEntry> log = api.getCommitLog().refName(BRANCH).stream();
     assertThat(log)
         .isNotNull()
         .isNotEmpty()

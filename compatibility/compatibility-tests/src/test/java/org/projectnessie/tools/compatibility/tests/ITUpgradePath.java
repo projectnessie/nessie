@@ -104,7 +104,7 @@ public class ITUpgradePath {
   @SuppressWarnings("deprecation")
   Stream<Reference> allReferences() throws NessieNotFoundException {
     if (version.isGreaterThan(Version.parseVersion("0.30.0"))) {
-      return api.getAllReferences().stream(OptionalInt.empty());
+      return api.getAllReferences().stream();
     } else {
       return StreamingUtil.getAllReferencesStream(api, Function.identity(), OptionalInt.empty());
     }
@@ -114,7 +114,7 @@ public class ITUpgradePath {
   Stream<EntriesResponse.Entry> entries(Function<GetEntriesBuilder, GetEntriesBuilder> configurer)
       throws NessieNotFoundException {
     if (version.isGreaterThan(Version.parseVersion("0.30.0"))) {
-      return configurer.apply(api.getEntries()).stream(OptionalInt.empty());
+      return configurer.apply(api.getEntries()).stream();
     } else {
       return StreamingUtil.getEntriesStream(api, configurer, OptionalInt.empty());
     }
@@ -125,7 +125,7 @@ public class ITUpgradePath {
       Function<GetCommitLogBuilder, GetCommitLogBuilder> configurer)
       throws NessieNotFoundException {
     if (version.isGreaterThan(Version.parseVersion("0.30.0"))) {
-      return configurer.apply(api.getCommitLog()).stream(OptionalInt.empty());
+      return configurer.apply(api.getCommitLog()).stream();
     } else {
       return StreamingUtil.getCommitLogStream(api, configurer, OptionalInt.empty());
     }
@@ -135,7 +135,7 @@ public class ITUpgradePath {
   Stream<RefLogResponse.RefLogResponseEntry> refLog(
       Function<GetRefLogBuilder, GetRefLogBuilder> configurer) throws NessieNotFoundException {
     if (version.isGreaterThan(Version.parseVersion("0.30.0"))) {
-      return configurer.apply(api.getRefLog()).stream(OptionalInt.empty());
+      return configurer.apply(api.getRefLog()).stream();
     } else {
       return StreamingUtil.getReflogStream(api, configurer, OptionalInt.empty());
     }

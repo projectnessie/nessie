@@ -54,8 +54,7 @@ class ITReadCommits extends AbstractContentGeneratorTest {
     assertThat(output).noneSatisfy(s -> assertThat(s).contains(CONTENT_KEY.toString()));
 
     try (NessieApiV1 api = buildNessieApi()) {
-      assertThat(api.getCommitLog().refName(branch.getName()).stream(OptionalInt.empty()))
-          .hasSize(1);
+      assertThat(api.getCommitLog().refName(branch.getName()).stream()).hasSize(1);
     }
   }
 

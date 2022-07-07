@@ -17,7 +17,6 @@ package org.projectnessie.jaxrs;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.OptionalInt;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.projectnessie.error.BaseNessieClientServerException;
@@ -35,8 +34,7 @@ public abstract class AbstractRestAssign extends AbstractRest {
       throws BaseNessieClientServerException {
     Reference main = getApi().getReference().refName("main").get();
     // make sure main doesn't have any commits
-    assertThat(getApi().getCommitLog().refName(main.getName()).stream(OptionalInt.empty()))
-        .isEmpty();
+    assertThat(getApi().getCommitLog().refName(main.getName()).stream()).isEmpty();
 
     Branch testBranch = createBranch("testBranch");
     getApi().assignBranch().branch(testBranch).assignTo(main).assign();

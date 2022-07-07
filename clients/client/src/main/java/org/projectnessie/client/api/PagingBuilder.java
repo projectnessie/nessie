@@ -34,15 +34,21 @@ public interface PagingBuilder<R extends PagingBuilder<R, RESP, ENTRY>, RESP, EN
   R pageToken(String pageToken);
 
   /**
-   * Fetches responses.
-   *
-   * @deprecated Use {@link #stream(OptionalInt)} instead.
+   * Fetches responses, but callers must implement paging on their own, if necessary. If in doubt,
+   * use {@link #stream()} instead.
    */
-  @Deprecated
   RESP get() throws NessieNotFoundException;
 
   /**
-   * Retrieve entries/results as a Java {@link Stream}.
+   * Retrieve entries/results as a Java {@link Stream} without limiting the total amount of results,
+   * uses automatic paging.
+   */
+  default Stream<ENTRY> stream() throws NessieNotFoundException {
+    return stream(OptionalInt.empty());
+  }
+
+  /**
+   * Retrieve entries/results as a Java {@link Stream}, uses automatic paging.
    *
    * @param maxTotalRecords {@link OptionalInt#empty()} for unlimited amount of results or a limit
    */

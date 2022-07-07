@@ -163,7 +163,7 @@ public class IdentifyContentsPerExecutor implements Serializable {
               .getEntries()
               .refName(Detached.REF_NAME)
               .hashOnRef(logEntry.getCommitMeta().getHash())
-              .stream(OptionalInt.empty())
+              .stream()
               .forEach(entries -> liveContentKeys.add(entries.getName()));
 
           if (liveContentKeys.isEmpty()) {

@@ -22,7 +22,6 @@ import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.smallrye.jwt.build.Jwt;
 import java.util.Map;
-import java.util.OptionalInt;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.auth.BearerAuthenticationProvider;
 import org.projectnessie.client.rest.NessieNotAuthorizedException;
@@ -42,17 +41,17 @@ public abstract class AbstractOpenIdAuthentication extends BaseClientAuthTest {
   }
 
   @Test
-  void testValidJwt() {
+  void testValidJwt() throws Exception {
     withClientCustomizer(
         b -> b.withAuthentication(BearerAuthenticationProvider.create(getJwtToken())));
-    assertThat(api().getAllReferences().stream(OptionalInt.empty())).isNotEmpty();
+    assertThat(api().getAllReferences().stream()).isNotEmpty();
   }
 
   @Test
   void testExpiredToken() {
     withClientCustomizer(
         b -> b.withAuthentication(BearerAuthenticationProvider.create(getExpiredJwtToken())));
-    assertThatThrownBy(() -> api().getAllReferences().stream(OptionalInt.empty()))
+    assertThatThrownBy(() -> api().getAllReferences().stream())
         .isInstanceOfSatisfying(
             NessieNotAuthorizedException.class,
             e -> assertThat(e.getError().getStatus()).isEqualTo(401));
@@ -60,7 +59,7 @@ public abstract class AbstractOpenIdAuthentication extends BaseClientAuthTest {
 
   @Test
   void testAbsentToken() {
-    assertThatThrownBy(() -> api().getAllReferences().stream(OptionalInt.empty()))
+    assertThatThrownBy(() -> api().getAllReferences().stream())
         .isInstanceOfSatisfying(
             NessieNotAuthorizedException.class,
             e -> assertThat(e.getError().getStatus()).isEqualTo(401));

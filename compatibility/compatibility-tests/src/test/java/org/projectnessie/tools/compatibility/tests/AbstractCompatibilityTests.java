@@ -51,6 +51,7 @@ import org.projectnessie.tools.compatibility.api.VersionCondition;
 @VersionCondition(maxVersion = Version.NOT_CURRENT_STRING)
 public abstract class AbstractCompatibilityTests {
 
+  public static final String NESSIE_0_30_0 = "0.30.0";
   @NessieAPI protected NessieApiV1 api;
   @NessieVersion Version version;
 
@@ -58,8 +59,8 @@ public abstract class AbstractCompatibilityTests {
 
   @SuppressWarnings("deprecation")
   Stream<Reference> allReferences() throws NessieNotFoundException {
-    if (getClientVersion().isGreaterThan(Version.parseVersion("0.30.0"))) {
-      return api.getAllReferences().stream(OptionalInt.empty());
+    if (getClientVersion().isGreaterThan(Version.parseVersion(NESSIE_0_30_0))) {
+      return api.getAllReferences().stream();
     } else {
       return StreamingUtil.getAllReferencesStream(api, Function.identity(), OptionalInt.empty());
     }
@@ -69,8 +70,8 @@ public abstract class AbstractCompatibilityTests {
   Stream<LogResponse.LogEntry> commitLog(
       Function<GetCommitLogBuilder, GetCommitLogBuilder> configurer)
       throws NessieNotFoundException {
-    if (getClientVersion().isGreaterThan(Version.parseVersion("0.30.0"))) {
-      return configurer.apply(api.getCommitLog()).stream(OptionalInt.empty());
+    if (getClientVersion().isGreaterThan(Version.parseVersion(NESSIE_0_30_0))) {
+      return configurer.apply(api.getCommitLog()).stream();
     } else {
       return StreamingUtil.getCommitLogStream(api, configurer, OptionalInt.empty());
     }
@@ -252,6 +253,6 @@ public abstract class AbstractCompatibilityTests {
   }
 
   boolean nessieWithMergeResponse() {
-    return version.isGreaterThan(Version.parseVersion("0.30.0"));
+    return version.isGreaterThan(Version.parseVersion(NESSIE_0_30_0));
   }
 }

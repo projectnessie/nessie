@@ -22,7 +22,6 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.security.TestSecurity;
 import java.util.Arrays;
-import java.util.OptionalInt;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -198,8 +197,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
 
     targetBranch = retrieveBranch(targetBranch.getName(), role, false);
 
-    assertThat(api().getCommitLog().reference(targetBranch).stream(OptionalInt.empty()))
-        .isNotEmpty();
+    assertThat(api().getCommitLog().reference(targetBranch).stream()).isNotEmpty();
   }
 
   @Test
@@ -227,7 +225,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
         .transplantCommitsIntoBranch()
         .fromRefName(branch.getName())
         .hashesToTransplant(
-            api().getCommitLog().reference(branch).stream(OptionalInt.empty())
+            api().getCommitLog().reference(branch).stream()
                 .map(e -> e.getCommitMeta().getHash())
                 .collect(Collectors.toList()))
         .branch(targetBranch)
@@ -235,8 +233,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
 
     targetBranch = retrieveBranch(targetBranch.getName(), role, false);
 
-    assertThat(api().getCommitLog().reference(targetBranch).stream(OptionalInt.empty()))
-        .isNotEmpty();
+    assertThat(api().getCommitLog().reference(targetBranch).stream()).isNotEmpty();
   }
 
   @Test
@@ -288,13 +285,14 @@ class TestAuthorizationRules extends BaseClientAuthTest {
     deleteBranch(branch, role, false);
   }
 
-  private void listAllReferences(String branchName, boolean filteredOut) {
+  private void listAllReferences(String branchName, boolean filteredOut)
+      throws NessieNotFoundException {
     if (filteredOut) {
-      assertThat(api().getAllReferences().stream(OptionalInt.empty()))
+      assertThat(api().getAllReferences().stream())
           .extracting(Reference::getName)
           .doesNotContain(branchName);
     } else {
-      assertThat(api().getAllReferences().stream(OptionalInt.empty()))
+      assertThat(api().getAllReferences().stream())
           .extracting(Reference::getName)
           .contains(branchName);
     }
@@ -380,12 +378,12 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   private void getEntriesFor(String branchName, String role, boolean shouldFail)
       throws NessieNotFoundException {
     if (shouldFail) {
-      assertThatThrownBy(() -> api().getEntries().refName(branchName).stream(OptionalInt.empty()))
+      assertThatThrownBy(() -> api().getEntries().refName(branchName).stream())
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format("'READ_ENTRIES' is not allowed for role '%s' on reference", role));
     } else {
-      Stream<Entry> tables = api().getEntries().refName(branchName).stream(OptionalInt.empty());
+      Stream<Entry> tables = api().getEntries().refName(branchName).stream();
       assertThat(tables).isNotEmpty();
     }
   }
@@ -393,24 +391,23 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   private void getCommitLog(String branchName, String role, boolean shouldFail)
       throws NessieNotFoundException {
     if (shouldFail) {
-      assertThatThrownBy(() -> api().getCommitLog().refName(branchName).stream(OptionalInt.empty()))
+      assertThatThrownBy(() -> api().getCommitLog().refName(branchName).stream())
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format("'LIST_COMMIT_LOG' is not allowed for role '%s' on reference", role));
     } else {
-      Stream<LogEntry> commits =
-          api().getCommitLog().refName(branchName).stream(OptionalInt.empty());
+      Stream<LogEntry> commits = api().getCommitLog().refName(branchName).stream();
       assertThat(commits).isNotEmpty();
     }
   }
 
   private void getRefLog(String role, boolean shouldFail) throws NessieNotFoundException {
     if (shouldFail) {
-      assertThatThrownBy(() -> api().getRefLog().stream(OptionalInt.empty()))
+      assertThatThrownBy(() -> api().getRefLog().stream())
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(String.format("'VIEW_REFLOG' is not allowed for role '%s'", role));
     } else {
-      Stream<RefLogResponseEntry> entries = api().getRefLog().stream(OptionalInt.empty());
+      Stream<RefLogResponseEntry> entries = api().getRefLog().stream();
       assertThat(entries).isNotEmpty();
     }
   }

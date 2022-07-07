@@ -23,7 +23,6 @@ import io.delta.sql.DeltaSparkSessionExtension;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
-import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.spark.SparkConf;
@@ -91,7 +90,7 @@ public class AbstractDeltaTest {
   @AfterEach
   void removeBranches() throws NessieConflictException, NessieNotFoundException {
     Branch defaultBranch = api.getDefaultBranch();
-    api.getAllReferences().stream(OptionalInt.empty())
+    api.getAllReferences().stream()
         .forEach(
             ref -> {
               try {

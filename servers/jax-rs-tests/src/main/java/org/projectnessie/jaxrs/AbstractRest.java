@@ -22,7 +22,6 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ImmutableMap;
 import java.net.URI;
 import java.util.Locale;
-import java.util.OptionalInt;
 import javax.annotation.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -85,7 +84,7 @@ public abstract class AbstractRest {
   @AfterEach
   public void tearDown() throws Exception {
     Branch defaultBranch = api.getDefaultBranch();
-    api.getAllReferences().stream(OptionalInt.empty())
+    api.getAllReferences().stream()
         .forEach(
             ref -> {
               try {

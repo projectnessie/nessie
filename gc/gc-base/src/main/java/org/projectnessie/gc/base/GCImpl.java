@@ -95,13 +95,13 @@ public class GCImpl {
    * @param session spark session for distributed computation
    * @return current run id of the completed gc task
    */
-  public String identifyExpiredContents(SparkSession session) {
+  public String identifyExpiredContents(SparkSession session) throws NessieNotFoundException {
     DistributedIdentifyContents distributedIdentifyContents;
     List<String> allRefs;
     Map<String, ContentBloomFilter> liveContentsBloomFilterMap;
     try (NessieApiV1 api = GCUtil.getApi(gcParams.getNessieClientConfigs())) {
       distributedIdentifyContents = new DistributedIdentifyContents(session, gcParams);
-      Stream<Reference> liveReferences = api.getAllReferences().stream(OptionalInt.empty());
+      Stream<Reference> liveReferences = api.getAllReferences().stream();
       Map<String, Instant> droppedReferenceTimeMap = collectDeadReferences(api);
       // As this list of references is passed from Spark driver to executor,
       // using available Immutables JSON serialization instead of adding java serialization to the

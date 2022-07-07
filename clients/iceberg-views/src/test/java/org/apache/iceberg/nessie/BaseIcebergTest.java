@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.OptionalInt;
 import org.apache.avro.generic.GenericData.Record;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
@@ -80,7 +79,7 @@ public class BaseIcebergTest {
 
   private void resetData() throws NessieConflictException, NessieNotFoundException {
     Branch defaultBranch = api.getDefaultBranch();
-    api.getAllReferences().stream(OptionalInt.empty())
+    api.getAllReferences().stream()
         .forEach(
             ref -> {
               try {

@@ -19,7 +19,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
-import java.util.OptionalInt;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.auth.BasicAuthenticationProvider;
 import org.projectnessie.client.auth.BearerAuthenticationProvider;
@@ -35,21 +34,21 @@ import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
 public class TestDisabledAuthentication extends BaseClientAuthTest {
 
   @Test
-  void testBasic() {
+  void testBasic() throws Exception {
     withClientCustomizer(
         c -> c.withAuthentication(BasicAuthenticationProvider.create("any_user", "any_password")));
-    assertThat(api().getAllReferences().stream(OptionalInt.empty())).isNotEmpty();
+    assertThat(api().getAllReferences().stream()).isNotEmpty();
   }
 
   @Test
-  void testBearer() {
+  void testBearer() throws Exception {
     withClientCustomizer(
         c -> c.withAuthentication(BearerAuthenticationProvider.create("any_token")));
-    assertThat(api().getAllReferences().stream(OptionalInt.empty())).isNotEmpty();
+    assertThat(api().getAllReferences().stream()).isNotEmpty();
   }
 
   @Test
-  void testNone() {
-    assertThat(api().getAllReferences().stream(OptionalInt.empty())).isNotEmpty();
+  void testNone() throws Exception {
+    assertThat(api().getAllReferences().stream()).isNotEmpty();
   }
 }

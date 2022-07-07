@@ -142,8 +142,7 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
     assertAll(
         () -> {
           List<Entry> entries =
-              getApi().getEntries().refName(branch.getName()).stream(OptionalInt.empty())
-                  .collect(Collectors.toList());
+              getApi().getEntries().refName(branch.getName()).stream().collect(Collectors.toList());
           List<Entry> expect =
               contentAndOps.stream()
                   .filter(c -> c.operation instanceof Put)
@@ -222,7 +221,7 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
       assertAll(
           () -> {
             List<Entry> entries =
-                getApi().getEntries().refName(branch.getName()).stream(OptionalInt.empty())
+                getApi().getEntries().refName(branch.getName()).stream()
                     .collect(Collectors.toList());
             assertThat(entries)
                 .containsExactly(
@@ -267,7 +266,7 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
       assertAll(
           () -> {
             List<Entry> entries =
-                getApi().getEntries().refName(branch.getName()).stream(OptionalInt.empty())
+                getApi().getEntries().refName(branch.getName()).stream()
                     .collect(Collectors.toList());
             assertThat(entries).isEmpty();
           },
