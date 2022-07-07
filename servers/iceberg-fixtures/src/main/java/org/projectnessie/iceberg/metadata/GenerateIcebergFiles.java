@@ -35,6 +35,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
@@ -54,6 +55,8 @@ public class GenerateIcebergFiles {
 
     cleanTargetDir(targetBaseDir);
 
+    Random random = new Random(42L);
+
     FileWriter fileWriter =
         (scenario, name, json) -> {
           Path dir = targetBaseDir.resolve(scenario);
@@ -66,23 +69,24 @@ public class GenerateIcebergFiles {
               StandardOpenOption.TRUNCATE_EXISTING);
         };
 
-    icebergTableSimple(fileWriter);
-    icebergTableThreeSnapshots(fileWriter);
+    icebergTableSimple(random, fileWriter);
+    icebergTableThreeSnapshots(random, fileWriter);
 
-    icebergViewSimple(fileWriter);
+    icebergViewSimple(random, fileWriter);
   }
 
-  private static void icebergViewSimple(FileWriter fileWriter) throws IOException {
-    List<NestedField> fields = randomFields(3);
+  private static void icebergViewSimple(Random random, FileWriter fileWriter) throws IOException {
+    List<NestedField> fields = randomFields(random, 3);
 
     Schema schema = new Schema(StructType.of(fields).fields());
 
     ViewDefinition definition =
         ViewDefinition.of(
-            randomColumnName(),
+            randomColumnName(random),
             schema,
-            randomColumnName(),
-            Arrays.asList(randomColumnName(), randomColumnName(), randomColumnName()));
+            randomColumnName(random),
+            Arrays.asList(
+                randomColumnName(random), randomColumnName(random), randomColumnName(random)));
 
     int versionId = ThreadLocalRandom.current().nextInt(42666);
     Version version =
@@ -90,14 +94,14 @@ public class GenerateIcebergFiles {
             versionId,
             null,
             ThreadLocalRandom.current().nextLong(),
-            new VersionSummary(randomProperties(0)),
+            new VersionSummary(randomProperties(random, 0)),
             definition);
 
     ViewVersionMetadata metadata =
         new ViewVersionMetadata(
-            randomColumnName(),
+            randomColumnName(random),
             version.viewDefinition(),
-            randomProperties(1),
+            randomProperties(random, 1),
             version.versionId(),
             Collections.singletonList(version),
             Collections.singletonList(
@@ -106,31 +110,32 @@ public class GenerateIcebergFiles {
     fileWriter.writeFile("view-simple", "1", viewVersionMetadataToJson(metadata));
   }
 
-  private static void icebergTableSimple(FileWriter fileWriter) throws IOException {
-    List<NestedField> fields = randomFields(3);
+  private static void icebergTableSimple(Random random, FileWriter fileWriter) throws IOException {
+    List<NestedField> fields = randomFields(random, 3);
 
     Schema schema = new Schema(StructType.of(fields).fields());
 
-    TableMetadata metadata = icebergTableMetadata(fields, schema);
+    TableMetadata metadata = icebergTableMetadata(random, fields, schema);
 
     fileWriter.writeFile("table-simple", "1", TableMetadataParser.toJson(metadata));
   }
 
-  private static void icebergTableThreeSnapshots(FileWriter fileWriter) throws IOException {
-    List<NestedField> fields = randomFields(3);
+  private static void icebergTableThreeSnapshots(Random random, FileWriter fileWriter)
+      throws IOException {
+    List<NestedField> fields = randomFields(random, 3);
 
     Schema schema = new Schema(StructType.of(fields).fields());
 
-    TableMetadata metadata = icebergTableMetadata(fields, schema);
+    TableMetadata metadata = icebergTableMetadata(random, fields, schema);
 
     fileWriter.writeFile("table-three-snapshots", "1", TableMetadataParser.toJson(metadata));
 
-    Snapshot snapshot2 = randomSnapshot(metadata);
+    Snapshot snapshot2 = randomSnapshot(random, metadata);
     metadata = TableMetadata.buildFrom(metadata).setCurrentSnapshot(snapshot2).build();
 
     fileWriter.writeFile("table-three-snapshots", "2", TableMetadataParser.toJson(metadata));
 
-    Snapshot snapshot3 = randomSnapshot(metadata);
+    Snapshot snapshot3 = randomSnapshot(random, metadata);
     metadata = TableMetadata.buildFrom(metadata).setCurrentSnapshot(snapshot3).build();
 
     fileWriter.writeFile("table-three-snapshots", "3", TableMetadataParser.toJson(metadata));

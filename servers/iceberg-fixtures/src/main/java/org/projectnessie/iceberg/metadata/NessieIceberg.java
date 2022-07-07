@@ -77,101 +77,104 @@ public final class NessieIceberg {
     Types.TimestampType.withoutZone()
   };
 
-  // Deterministic w/ constant seed
-  static final Random RANDOM = new Random(42L);
-
   private NessieIceberg() {}
 
-  public static ViewVersionMetadata randomViewMetadata(int numColumns) {
-    Version version = randomVersion(numColumns);
+  public static ViewVersionMetadata randomViewMetadata(Random random, int numColumns) {
+    Version version = randomVersion(random, numColumns);
     return new ViewVersionMetadata(
-        randomColumnName(),
+        randomColumnName(random),
         version.viewDefinition(),
-        randomProperties(1),
+        randomProperties(random, 1),
         version.versionId(),
         Collections.singletonList(version),
         Collections.singletonList(historyEntry(version.timestampMillis(), version.versionId())));
   }
 
-  private static Version randomVersion(int numColumns) {
-    ViewDefinition definition = randomViewDefinition(numColumns);
-    int versionId = RANDOM.nextInt(42666);
+  private static Version randomVersion(Random random, int numColumns) {
+    ViewDefinition definition = randomViewDefinition(random, numColumns);
+    int versionId = random.nextInt(42666);
 
     return new BaseVersion(
-        versionId, null, RANDOM.nextLong(), new VersionSummary(randomProperties(0)), definition);
+        versionId,
+        null,
+        random.nextLong(),
+        new VersionSummary(randomProperties(random, 0)),
+        definition);
   }
 
-  private static ViewDefinition randomViewDefinition(int numColumns) {
-    List<NestedField> fields = randomFields(numColumns);
+  private static ViewDefinition randomViewDefinition(Random random, int numColumns) {
+    List<NestedField> fields = randomFields(random, numColumns);
     Schema schema = new Schema(StructType.of(fields).fields());
     return ViewDefinition.of(
-        randomColumnName(),
+        randomColumnName(random),
         schema,
-        randomColumnName(),
-        Arrays.asList(randomColumnName(), randomColumnName(), randomColumnName()));
+        randomColumnName(random),
+        Arrays.asList(
+            randomColumnName(random), randomColumnName(random), randomColumnName(random)));
   }
 
-  public static TableMetadata randomTableMetadata(int numColumns) {
-    List<NestedField> fields = randomFields(numColumns);
+  public static TableMetadata randomTableMetadata(Random random, int numColumns) {
+    List<NestedField> fields = randomFields(random, numColumns);
 
     Schema schema = new Schema(StructType.of(fields).fields());
 
-    TableMetadata metadata = icebergTableMetadata(fields, schema);
+    TableMetadata metadata = icebergTableMetadata(random, fields, schema);
 
-    Snapshot snapshot2 = randomSnapshot(metadata);
+    Snapshot snapshot2 = randomSnapshot(random, metadata);
     metadata = TableMetadata.buildFrom(metadata).setCurrentSnapshot(snapshot2).build();
 
-    Snapshot snapshot3 = randomSnapshot(metadata);
+    Snapshot snapshot3 = randomSnapshot(random, metadata);
     metadata = TableMetadata.buildFrom(metadata).setCurrentSnapshot(snapshot3).build();
 
     return TableMetadataParser.fromJson(
         null, "bar://metadata/location.json", TableMetadataParser.toJson(metadata));
   }
 
-  public static Snapshot randomSnapshot(TableMetadata metadata) {
+  public static Snapshot randomSnapshot(Random random, TableMetadata metadata) {
     return ImmutableDummySnapshot.builder()
-        .snapshotId(RANDOM.nextLong())
+        .snapshotId(random.nextLong())
         .sequenceNumber(metadata.lastSequenceNumber() + 1)
-        .timestampMillis(metadata.lastUpdatedMillis() + RANDOM.nextInt(1_000_000))
+        .timestampMillis(metadata.lastUpdatedMillis() + random.nextInt(1_000_000))
         .operation("snapshotOperation")
         .build();
   }
 
-  public static Map<String, String> randomProperties(int formatVersion) {
+  public static Map<String, String> randomProperties(Random random, int formatVersion) {
     Map<String, String> properties = new HashMap<>();
     if (formatVersion > 0) {
       properties.put("format-version", Integer.toString(formatVersion));
     }
-    properties.put(randomColumnName(), randomColumnName());
-    properties.put(randomColumnName(), randomColumnName());
+    properties.put(randomColumnName(random), randomColumnName(random));
+    properties.put(randomColumnName(random), randomColumnName(random));
     return properties;
   }
 
-  public static List<NestedField> randomFields(int numColumns) {
+  public static List<NestedField> randomFields(Random random, int numColumns) {
     List<NestedField> fields = new ArrayList<>();
-    fields.add(required(1, randomColumnName(), randomType(PARTITION_PRIMITIVE_TYPES)));
+    fields.add(
+        required(1, randomColumnName(random), randomType(random, PARTITION_PRIMITIVE_TYPES)));
     for (int i = 2; i <= numColumns; i++) {
-      fields.add(required(i, randomColumnName(), randomType(PRIMITIVE_TYPES)));
+      fields.add(required(i, randomColumnName(random), randomType(random, PRIMITIVE_TYPES)));
     }
     return fields;
   }
 
-  public static Type randomType(Type[] types) {
-    int idx = RANDOM.nextInt(types.length);
+  public static Type randomType(Random random, Type[] types) {
+    int idx = random.nextInt(types.length);
     return types[idx];
   }
 
-  public static String randomColumnName() {
+  public static String randomColumnName(Random random) {
     StringBuilder sb = new StringBuilder(30);
-    int columnNameLength = 5 + RANDOM.nextInt(25);
+    int columnNameLength = 5 + random.nextInt(25);
     for (int i = 0; i < columnNameLength; i++) {
-      sb.append(randomChar());
+      sb.append(randomChar(random));
     }
     return sb.toString();
   }
 
-  private static char randomChar() {
-    return (char) (RANDOM.nextInt(26) + 'a');
+  private static char randomChar(Random random) {
+    return (char) (random.nextInt(26) + 'a');
   }
 
   public static JsonNode toNessie(ViewVersionMetadata view) {
@@ -208,7 +211,8 @@ public final class NessieIceberg {
     }
   }
 
-  static TableMetadata icebergTableMetadata(List<NestedField> fields, Schema schema) {
+  static TableMetadata icebergTableMetadata(
+      Random random, List<NestedField> fields, Schema schema) {
     PartitionSpec spec = PartitionSpec.builderFor(schema).bucket(fields.get(0).name(), 42).build();
 
     SortOrder sortOrder =
@@ -218,9 +222,10 @@ public final class NessieIceberg {
             .build();
 
     TableMetadata metadata =
-        TableMetadata.newTableMetadata(schema, spec, sortOrder, "foo://bar", randomProperties(2));
+        TableMetadata.newTableMetadata(
+            schema, spec, sortOrder, "foo://bar", randomProperties(random, 2));
 
-    Snapshot snapshot1 = randomSnapshot(metadata);
+    Snapshot snapshot1 = randomSnapshot(random, metadata);
     metadata = TableMetadata.buildFrom(metadata).setCurrentSnapshot(snapshot1).build();
     return metadata;
   }

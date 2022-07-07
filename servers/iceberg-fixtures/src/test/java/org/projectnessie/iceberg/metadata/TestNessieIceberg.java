@@ -21,23 +21,32 @@ import static org.projectnessie.iceberg.metadata.NessieIceberg.toIceberg;
 import static org.projectnessie.iceberg.metadata.NessieIceberg.toNessie;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.Random;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableMetadataParser;
 import org.apache.iceberg.view.IcebergBridge;
 import org.apache.iceberg.view.ViewVersionMetadata;
-import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-@Execution(ExecutionMode.CONCURRENT)
+@TestMethodOrder(MethodOrderer.MethodName.class)
 public class TestNessieIceberg {
+
+  private static Random random;
+
+  @BeforeAll
+  public static void initRandom() {
+    random = new Random(42L);
+  }
 
   static Stream<String> randomTableMetadata() {
     return IntStream.range(0, 100)
-        .mapToObj(i -> NessieIceberg.randomTableMetadata(5))
+        .mapToObj(i -> NessieIceberg.randomTableMetadata(random, 5))
         .map(TableMetadataParser::toJson);
   }
 
@@ -59,7 +68,7 @@ public class TestNessieIceberg {
 
   static Stream<String> randomViewMetadata() {
     return IntStream.range(0, 100)
-        .mapToObj(i -> NessieIceberg.randomViewMetadata(5))
+        .mapToObj(i -> NessieIceberg.randomViewMetadata(random, 5))
         .map(IcebergBridge::viewVersionMetadataToJson);
   }
 

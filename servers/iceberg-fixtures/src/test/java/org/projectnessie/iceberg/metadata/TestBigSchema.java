@@ -18,8 +18,10 @@ package org.projectnessie.iceberg.metadata;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.Random;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableMetadataParser;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -28,10 +30,17 @@ import org.junit.jupiter.params.provider.ValueSource;
 @Execution(ExecutionMode.CONCURRENT)
 public class TestBigSchema {
 
+  private Random random;
+
+  @BeforeEach
+  public void initRandom() {
+    random = new Random(42L);
+  }
+
   @ParameterizedTest
   @ValueSource(ints = {10, 100, 1000, 10000})
   public void testManyColumns(int numColumns) {
-    TableMetadata tableMetadata = NessieIceberg.randomTableMetadata(numColumns);
+    TableMetadata tableMetadata = NessieIceberg.randomTableMetadata(random, numColumns);
     String jsonIceberg = TableMetadataParser.toJson(tableMetadata);
 
     // This adds the mandatory (non-null) metadata-location field
