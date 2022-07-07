@@ -34,8 +34,9 @@ public interface PagingBuilder<R extends PagingBuilder<R, RESP, ENTRY>, RESP, EN
   R pageToken(String pageToken);
 
   /**
-   * Fetches responses, but callers must implement paging on their own, if necessary. If in doubt,
-   * use {@link #stream()} instead.
+   * Fetches a response chunk (might be one page or complete response depending on use case and
+   * parameters), but callers must implement paging on their own, if necessary. If in doubt, use
+   * {@link #stream()} instead.
    */
   RESP get() throws NessieNotFoundException;
 
