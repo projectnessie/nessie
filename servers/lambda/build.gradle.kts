@@ -63,8 +63,7 @@ java {
 }
 
 project.extra["quarkus.package.type"] =
-  if (project.hasProperty("uber-jar")) "uber-jar"
-  else if (project.hasProperty("native")) "native" else "fast-jar"
+  if (withUberJar()) "uber-jar" else if (project.hasProperty("native")) "native" else "fast-jar"
 
 // TODO remove the whole block
 quarkus { setFinalName("${project.name}-${project.version}") }
@@ -114,8 +113,7 @@ tasks.withType<Test>().configureEach {
 artifacts {
   add(
     quarkusRunner.name,
-    if (project.hasProperty("uber-jar")) quarkusBuild.runnerJar
-    else quarkusBuild.fastJar.resolve("quarkus-run.jar")
+    if (withUberJar()) quarkusBuild.runnerJar else quarkusBuild.fastJar.resolve("quarkus-run.jar")
   ) { builtBy(quarkusBuild) }
 }
 

@@ -29,21 +29,19 @@ val scalaVersion = dependencyVersion("versionScala2_12")
 
 val sparkVersion = dependencyVersion("versionSpark31")
 
-val clientNessieVersion = dependencyVersion("versionClientNessie")
-
 dependencies {
   // picks the right dependencies for scala compilation
   forScala(scalaVersion)
 
-  implementation(platform(rootProject))
+  implementation(platform(nessieRootProject()))
   implementation(project(":nessie-spark-extensions-grammar"))
   implementation(project(":nessie-spark-extensions-base"))
   compileOnly("org.apache.spark:spark-sql_2.12") { forSpark(sparkVersion) }
   compileOnly("org.apache.spark:spark-core_2.12") { forSpark(sparkVersion) }
   compileOnly("org.apache.spark:spark-hive_2.12") { forSpark(sparkVersion) }
-  implementation("org.projectnessie:nessie-client:$clientNessieVersion")
+  implementation(nessieClientForIceberg())
 
-  testImplementation(platform(rootProject))
+  testImplementation(platform(nessieRootProject()))
   testImplementation(project(":nessie-spark-extensions-base")) { testJarCapability() }
   testImplementation("org.apache.iceberg:iceberg-nessie")
   testImplementation("org.apache.iceberg:iceberg-spark3")
@@ -60,7 +58,7 @@ dependencies {
   testImplementation("org.junit.jupiter:junit-jupiter-params")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 
-  nessieQuarkusServer(project(":nessie-quarkus", "quarkusRunner"))
+  nessieQuarkusServer(nessieQuarkusServerRunner(this))
 }
 
 nessieQuarkusApp {

@@ -28,18 +28,11 @@ dependencies {
     api(rootProject)
     api(project(":nessie-clients"))
     api(project(":nessie-client"))
-    api(project(":nessie-deltalake"))
-    api(project(":iceberg-views"))
-    api(project(":nessie-spark-extensions"))
-    api(project(":nessie-spark-3.2-extensions"))
-    api(project(":nessie-spark-extensions-grammar"))
-    api(project(":nessie-spark-extensions-base"))
     api(project(":nessie-compatibility"))
     api(project(":nessie-compatibility-common"))
     api(project(":nessie-compatibility-tests"))
     api(project(":nessie-compatibility-jersey"))
     api(project(":nessie-gc"))
-    api(project(":nessie-gc-base"))
     api(project(":nessie-model"))
     api(project(":nessie-perftest"))
     api(project(":nessie-server-parent"))
@@ -78,6 +71,15 @@ dependencies {
     api(project(":nessie-versioned-persist-transactional")) { testJarCapability() }
     api(project(":nessie-versioned-spi"))
     api(project(":nessie-versioned-tests"))
+    if (!isIntegrationsTestingEnabled()) {
+      api(project(":nessie-deltalake"))
+      api(project(":iceberg-views"))
+      api(project(":nessie-spark-extensions"))
+      api(project(":nessie-spark-3.2-extensions"))
+      api(project(":nessie-spark-extensions-grammar"))
+      api(project(":nessie-spark-extensions-base"))
+      api(project(":nessie-gc-base"))
+    }
   }
 }
 

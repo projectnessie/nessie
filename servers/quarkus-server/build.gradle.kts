@@ -108,8 +108,7 @@ project.extra["quarkus.smallrye-openapi.store-schema-directory"] =
 project.extra["quarkus.smallrye-openapi.additional-docs-directory"] = "$openApiSpecDir"
 
 project.extra["quarkus.package.type"] =
-  if (project.hasProperty("uber-jar")) "uber-jar"
-  else if (project.hasProperty("native")) "native" else "fast-jar"
+  if (withUberJar()) "uber-jar" else if (project.hasProperty("native")) "native" else "fast-jar"
 
 // TODO remove the whole block
 quarkus { setFinalName("${project.name}-${project.version}") }
@@ -172,14 +171,14 @@ artifacts {
   add(
     quarkusRunner.name,
     provider {
-      if (project.hasProperty("uber-jar")) quarkusBuild.get().runnerJar
+      if (withUberJar()) quarkusBuild.get().runnerJar
       else quarkusBuild.get().fastJar.resolve("quarkus-run.jar")
     }
   ) { builtBy(quarkusBuild) }
 }
 
 // Add the uber-jar, if built, to the Maven publication
-if (project.hasProperty("uber-jar")) {
+if (withUberJar()) {
   afterEvaluate {
     publishing {
       publications {

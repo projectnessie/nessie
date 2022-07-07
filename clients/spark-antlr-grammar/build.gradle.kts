@@ -23,10 +23,10 @@ plugins {
 }
 
 dependencies {
-  antlr(platform(rootProject))
+  antlr(platform(nessieRootProject()))
   antlr("org.antlr:antlr4:${dependencyVersion("versionAntlr")}")
 
-  implementation(platform(rootProject))
+  implementation(platform(nessieRootProject()))
   api("org.projectnessie:nessie-antlr-runtime")
 }
 
