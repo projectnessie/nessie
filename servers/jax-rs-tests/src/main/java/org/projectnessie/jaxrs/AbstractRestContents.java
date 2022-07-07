@@ -84,7 +84,10 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
     }
   }
 
-  private static JsonNode loadJson(String resource) {
+  private static JsonNode loadJson(String scenario, String name) {
+    String resource =
+        String.format(
+            "org/projectnessie/test-data/iceberg-metadata/%s/%s-%s.json", scenario, scenario, name);
     URL url = Thread.currentThread().getContextClassLoader().getResource(resource);
     try (JsonParser parser =
         new ObjectMapper()
@@ -104,18 +107,12 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
             Put.of(
                 ContentKey.of("a", "iceberg-metadata"),
                 IcebergTable.of(
-                    loadJson(
-                        "org/projectnessie/test-data/iceberg-metadata/table-three-snapshots/3.json"),
-                    "/iceberg/table/metadata",
-                    null))),
+                    loadJson("table-three-snapshots", "3"), "/iceberg/table/metadata", null))),
         new ContentAndOperationType(
             Content.Type.ICEBERG_VIEW,
             Put.of(
                 ContentKey.of("a", "view-metadata"),
-                IcebergView.of(
-                    loadJson("org/projectnessie/test-data/iceberg-metadata/view-simple/1.json"),
-                    "/iceberg/view/metadata",
-                    null))),
+                IcebergView.of(loadJson("view-simple", "1"), "/iceberg/view/metadata", null))),
         new ContentAndOperationType(
             Content.Type.ICEBERG_TABLE,
             Put.of(
@@ -429,11 +426,7 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
     for (int i = 1; i <= count; i++) {
       Content content =
           IcebergTable.of(
-              loadJson(
-                  String.format(
-                      "org/projectnessie/test-data/iceberg-metadata/%s/%d.json", name, i)),
-              String.format("/iceberg/%s", name),
-              null);
+              loadJson(name, Integer.toString(i)), String.format("/iceberg/%s", name), null);
       contents.add(content);
     }
 

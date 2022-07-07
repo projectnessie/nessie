@@ -412,7 +412,10 @@ class TestStoreWorker {
         .isEqualTo(entry.getKey());
   }
 
-  private static JsonNode loadJson(String resource) {
+  private static JsonNode loadJson(String scenario, String name) {
+    String resource =
+        String.format(
+            "org/projectnessie/test-data/iceberg-metadata/%s/%s-%s.json", scenario, scenario, name);
     URL url = TestStoreWorker.class.getClassLoader().getResource(resource);
     try (JsonParser parser =
         new ObjectMapper()
@@ -427,11 +430,7 @@ class TestStoreWorker {
 
   @Test
   void testSerdeIcebergTableMetadata() throws Exception {
-    IcebergTable table =
-        IcebergTable.of(
-            loadJson("org/projectnessie/test-data/iceberg-metadata/table-three-snapshots/3.json"),
-            "foo://bar",
-            ID);
+    IcebergTable table = IcebergTable.of(loadJson("table-three-snapshots", "3"), "foo://bar", ID);
 
     IcebergRefState baseStoreOnRef =
         IcebergRefState.newBuilder()
@@ -498,11 +497,7 @@ class TestStoreWorker {
 
   @Test
   void testSerdeIcebergViewMetadata() throws Exception {
-    IcebergView view =
-        IcebergView.of(
-            loadJson("org/projectnessie/test-data/iceberg-metadata/view-simple/1.json"),
-            "foo://bar",
-            ID);
+    IcebergView view = IcebergView.of(loadJson("view-simple", "1"), "foo://bar", ID);
 
     IcebergViewState baseStoreOnRef =
         IcebergViewState.newBuilder()

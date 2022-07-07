@@ -58,7 +58,7 @@ public class GenerateIcebergFiles {
         (scenario, name, json) -> {
           Path dir = targetBaseDir.resolve(scenario);
           Files.createDirectories(dir);
-          Path file = dir.resolve(name + ".json");
+          Path file = dir.resolve(scenario + '-' + name + ".json");
           Files.write(
               file,
               NessieIceberg.asJsonNode(json).toPrettyString().getBytes(StandardCharsets.UTF_8),
