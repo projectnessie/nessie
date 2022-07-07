@@ -55,10 +55,10 @@ final class ResultStreamPaginator<R extends PaginatedResponse, E> {
   }
 
   Stream<E> limitedStream(OptionalInt maxRecords) throws NessieNotFoundException {
-    return limitedStream(OptionalInt.empty(), maxRecords);
+    return limitedStream(maxRecords, OptionalInt.empty());
   }
 
-  Stream<E> limitedStream(OptionalInt pageSizeHint, OptionalInt maxRecords)
+  Stream<E> limitedStream(OptionalInt maxRecords, OptionalInt pageSizeHint)
       throws NessieNotFoundException {
     Stream<E> stream = generateStream(pageSizeHint);
     return (maxRecords.isPresent()) ? stream.limit(maxRecords.getAsInt()) : stream;

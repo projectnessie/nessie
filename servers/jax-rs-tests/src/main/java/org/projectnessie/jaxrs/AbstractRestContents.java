@@ -23,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.List;
 import java.util.Map;
-import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -184,9 +183,7 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
         },
         () ->
             // Verify that the operations on the HEAD commit contains the committed operations
-            assertThat(
-                    getApi().getCommitLog().reference(committed).fetch(FetchOption.ALL).stream(
-                        OptionalInt.empty()))
+            assertThat(getApi().getCommitLog().reference(committed).fetch(FetchOption.ALL).stream())
                 .element(0)
                 .extracting(LogEntry::getOperations)
                 .extracting(this::clearIdOnOperations, list(Operation.class))
@@ -250,8 +247,7 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
           () -> {
             // Compare operation on HEAD commit with the committed operation
             List<LogResponse.LogEntry> log =
-                getApi().getCommitLog().reference(committed).fetch(FetchOption.ALL).stream(
-                        OptionalInt.empty())
+                getApi().getCommitLog().reference(committed).fetch(FetchOption.ALL).stream()
                     .collect(Collectors.toList());
             assertThat(log)
                 .element(0)
@@ -286,8 +282,7 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
           () -> {
             // Compare operation on HEAD commit with the committed operation
             List<LogResponse.LogEntry> log =
-                getApi().getCommitLog().reference(committed).fetch(FetchOption.ALL).stream(
-                        OptionalInt.empty())
+                getApi().getCommitLog().reference(committed).fetch(FetchOption.ALL).stream()
                     .collect(Collectors.toList());
             assertThat(log)
                 .element(0)

@@ -53,7 +53,7 @@ public interface GetRefLogBuilder
 
   @Override
   default Stream<RefLogResponse.RefLogResponseEntry> stream(
-      OptionalInt pageSizeHint, OptionalInt maxTotalRecords) throws NessieNotFoundException {
+      OptionalInt maxTotalRecords, OptionalInt pageSizeHint) throws NessieNotFoundException {
     return StreamingUtil.getReflogStream(this, pageSizeHint, maxTotalRecords);
   }
 }

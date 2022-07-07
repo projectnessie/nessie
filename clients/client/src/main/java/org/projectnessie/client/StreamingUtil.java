@@ -55,8 +55,8 @@ public final class StreamingUtil {
    * @param builderCustomizer a Function that takes and returns {@link GetAllReferencesBuilder} that
    *     is passed to the caller of this method. It allows the caller to customize the
    *     GetAllReferencesBuilder with additional parameters (e.g.: filter).
-   * @param pageSizeHint - the page size hint passed to the Nessie server. Undefined, if {@code
-   *     Optional.empty()}.
+   * @param maxRecords - a maximum number of records in the stream. If it is {@code
+   *     Optional.empty()} the stream will be unbounded.
    * @return stream of {@link Reference} objects
    * @deprecated Use {@link GetAllReferencesBuilder#stream(OptionalInt)}
    */
@@ -64,7 +64,7 @@ public final class StreamingUtil {
   public static Stream<Reference> getAllReferencesStream(
       @NotNull NessieApiV1 api,
       @NotNull Function<GetAllReferencesBuilder, GetAllReferencesBuilder> builderCustomizer,
-      @NotNull OptionalInt pageSizeHint)
+      @NotNull OptionalInt maxRecords)
       throws NessieNotFoundException {
 
     return new ResultStreamPaginator<>(
@@ -73,7 +73,7 @@ public final class StreamingUtil {
               GetAllReferencesBuilder builder = builderCustomizer.apply(api.getAllReferences());
               return builderWithPaging(builder, pageSize, token).get();
             })
-        .limitedStream(pageSizeHint);
+        .limitedStream(maxRecords);
   }
 
   /**
@@ -87,8 +87,8 @@ public final class StreamingUtil {
    * @param builderCustomizer a Function that takes and returns {@link GetEntriesBuilder} that is
    *     passed to the caller of this method. It allows the caller to customize the
    *     GetEntriesBuilder with additional parameters (e.g.: hashOnRef, filter).
-   * @param pageSizeHint - the page size hint passed to the Nessie server. Undefined, if {@code
-   *     Optional.empty()}.
+   * @param maxRecords - a maximum number of records in the stream. If it is {@code
+   *     Optional.empty()} the stream will be unbounded.
    * @return stream of {@link Entry} objects
    * @deprecated Use {@link GetEntriesBuilder#stream(OptionalInt)}
    */
@@ -96,7 +96,7 @@ public final class StreamingUtil {
   public static Stream<Entry> getEntriesStream(
       @NotNull NessieApiV1 api,
       @NotNull Function<GetEntriesBuilder, GetEntriesBuilder> builderCustomizer,
-      @NotNull OptionalInt pageSizeHint)
+      @NotNull OptionalInt maxRecords)
       throws NessieNotFoundException {
 
     return new ResultStreamPaginator<>(
@@ -105,7 +105,7 @@ public final class StreamingUtil {
               GetEntriesBuilder builder = builderCustomizer.apply(api.getEntries());
               return builderWithPaging(builder, pageSize, token).get();
             })
-        .limitedStream(pageSizeHint);
+        .limitedStream(maxRecords);
   }
 
   /**
@@ -120,8 +120,8 @@ public final class StreamingUtil {
    *     passed to the caller of this method. It allows the caller to customize the
    *     GetCommitLogBuilder with additional parameters (e.g.: hashOnRef, untilHash, filter,
    *     fetchOption).
-   * @param pageSizeHint - the page size hint passed to the Nessie server. Undefined, if {@code
-   *     Optional.empty()}.
+   * @param maxRecords - a maximum number of records in the stream. If it is {@code
+   *     Optional.empty()} the stream will be unbounded.
    * @return stream of {@link CommitMeta} objects
    * @deprecated Use {@link GetCommitLogBuilder#stream(OptionalInt)}
    */
@@ -129,7 +129,7 @@ public final class StreamingUtil {
   public static Stream<LogEntry> getCommitLogStream(
       @NotNull NessieApiV1 api,
       @NotNull Function<GetCommitLogBuilder, GetCommitLogBuilder> builderCustomizer,
-      @NotNull OptionalInt pageSizeHint)
+      @NotNull OptionalInt maxRecords)
       throws NessieNotFoundException {
     return new ResultStreamPaginator<>(
             LogResponse::getLogEntries,
@@ -137,7 +137,7 @@ public final class StreamingUtil {
               GetCommitLogBuilder builder = builderCustomizer.apply(api.getCommitLog());
               return builderWithPaging(builder, pageSize, token).get();
             })
-        .generateStream(pageSizeHint);
+        .generateStream(maxRecords);
   }
 
   /**
@@ -151,8 +151,8 @@ public final class StreamingUtil {
    * @param builderCustomizer a Function that takes and returns {@link GetRefLogBuilder} that is
    *     passed to the caller of this method. It allows the caller to customize the GetRefLogBuilder
    *     with additional parameters (e.g.: fromHash, untilHash, filter).
-   * @param pageSizeHint - the page size hint passed to the Nessie server. Undefined, if {@code
-   *     Optional.empty()}.
+   * @param maxRecords - a maximum number of records in the stream. If it is {@code
+   *     Optional.empty()} the stream will be unbounded.
    * @return stream of {@link RefLogResponse.RefLogResponseEntry} objects
    * @deprecated Use {@link GetRefLogBuilder#stream(OptionalInt)}
    */
@@ -160,7 +160,7 @@ public final class StreamingUtil {
   public static Stream<RefLogResponse.RefLogResponseEntry> getReflogStream(
       @NotNull NessieApiV1 api,
       @NotNull Function<GetRefLogBuilder, GetRefLogBuilder> builderCustomizer,
-      @NotNull OptionalInt pageSizeHint)
+      @NotNull OptionalInt maxRecords)
       throws NessieNotFoundException {
     return new ResultStreamPaginator<>(
             RefLogResponse::getLogEntries,
@@ -168,10 +168,9 @@ public final class StreamingUtil {
               GetRefLogBuilder builder = builderCustomizer.apply(api.getRefLog());
               return builderWithPaging(builder, pageSize, token).get();
             })
-        .limitedStream(pageSizeHint);
+        .limitedStream(maxRecords);
   }
 
-  @SuppressWarnings("deprecation")
   public static Stream<LogEntry> getCommitLogStream(
       @NotNull GetCommitLogBuilder builder,
       @NotNull OptionalInt pageSizeHint,
@@ -180,10 +179,9 @@ public final class StreamingUtil {
     return new ResultStreamPaginator<>(
             LogResponse::getLogEntries,
             (pageSize, token) -> builderWithPaging(builder, pageSize, token).get())
-        .limitedStream(pageSizeHint, maxRecords);
+        .limitedStream(maxRecords, pageSizeHint);
   }
 
-  @SuppressWarnings("deprecation")
   public static Stream<Reference> getAllReferencesStream(
       @NotNull GetAllReferencesBuilder builder,
       @NotNull OptionalInt pageSizeHint,
@@ -192,10 +190,9 @@ public final class StreamingUtil {
     return new ResultStreamPaginator<>(
             ReferencesResponse::getReferences,
             (pageSize, token) -> builderWithPaging(builder, pageSize, token).get())
-        .limitedStream(pageSizeHint, maxRecords);
+        .limitedStream(maxRecords, pageSizeHint);
   }
 
-  @SuppressWarnings("deprecation")
   public static Stream<Entry> getEntriesStream(
       @NotNull GetEntriesBuilder builder,
       @NotNull OptionalInt pageSizeHint,
@@ -204,10 +201,9 @@ public final class StreamingUtil {
     return new ResultStreamPaginator<>(
             EntriesResponse::getEntries,
             (pageSize, token) -> builderWithPaging(builder, pageSize, token).get())
-        .limitedStream(pageSizeHint, maxRecords);
+        .limitedStream(maxRecords, pageSizeHint);
   }
 
-  @SuppressWarnings("deprecation")
   public static Stream<RefLogResponse.RefLogResponseEntry> getReflogStream(
       @NotNull GetRefLogBuilder builder,
       @NotNull OptionalInt pageSizeHint,
@@ -216,7 +212,7 @@ public final class StreamingUtil {
     return new ResultStreamPaginator<>(
             RefLogResponse::getLogEntries,
             (pageSize, token) -> builderWithPaging(builder, pageSize, token).get())
-        .limitedStream(pageSizeHint, maxRecords);
+        .limitedStream(maxRecords, pageSizeHint);
   }
 
   private static <B extends PagingBuilder<B, ?, ?>> B builderWithPaging(

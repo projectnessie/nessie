@@ -35,7 +35,7 @@ public interface GetEntriesBuilder
 
   @Override
   default Stream<EntriesResponse.Entry> stream(
-      OptionalInt pageSizeHint, OptionalInt maxTotalRecords) throws NessieNotFoundException {
+      OptionalInt maxTotalRecords, OptionalInt pageSizeHint) throws NessieNotFoundException {
     return StreamingUtil.getEntriesStream(this, pageSizeHint, maxTotalRecords);
   }
 }
