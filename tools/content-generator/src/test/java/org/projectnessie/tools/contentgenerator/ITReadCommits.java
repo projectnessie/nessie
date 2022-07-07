@@ -18,7 +18,6 @@ package org.projectnessie.tools.contentgenerator;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-import java.util.OptionalInt;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
@@ -76,8 +75,7 @@ class ITReadCommits extends AbstractContentGeneratorTest {
 
     try (NessieApiV1 api = buildNessieApi()) {
       List<LogEntry> logEntries =
-          api.getCommitLog().refName(branch.getName()).fetch(FetchOption.ALL).stream(
-                  OptionalInt.empty())
+          api.getCommitLog().refName(branch.getName()).fetch(FetchOption.ALL).stream()
               .collect(Collectors.toList());
       assertThat(logEntries).hasSize(1);
       assertThat(logEntries.get(0).getOperations()).isNotEmpty();

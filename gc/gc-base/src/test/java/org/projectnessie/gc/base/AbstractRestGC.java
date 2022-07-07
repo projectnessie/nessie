@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import org.apache.spark.SparkConf;
@@ -63,7 +62,8 @@ public abstract class AbstractRestGC extends AbstractRest {
         .refName(branch.getName())
         .hashOnRef(branch.getHash())
         .fetch(FetchOption.ALL)
-        .stream(OptionalInt.of(numCommits))
+        .stream()
+        .limit(numCommits)
         .collect(Collectors.toList());
   }
 

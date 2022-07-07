@@ -52,8 +52,7 @@ public interface GetRefLogBuilder
           String fromHash);
 
   @Override
-  default Stream<RefLogResponse.RefLogResponseEntry> stream(OptionalInt maxTotalRecords)
-      throws NessieNotFoundException {
-    return StreamingUtil.getReflogStream(this, OptionalInt.empty(), maxTotalRecords);
+  default Stream<RefLogResponse.RefLogResponseEntry> stream() throws NessieNotFoundException {
+    return StreamingUtil.getReflogStream(this, OptionalInt.empty());
   }
 }

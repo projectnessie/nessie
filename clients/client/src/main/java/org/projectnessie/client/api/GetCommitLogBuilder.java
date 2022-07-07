@@ -48,8 +48,7 @@ public interface GetCommitLogBuilder
           String untilHash);
 
   @Override
-  default Stream<LogResponse.LogEntry> stream(OptionalInt maxTotalRecords)
-      throws NessieNotFoundException {
-    return StreamingUtil.getCommitLogStream(this, OptionalInt.empty(), maxTotalRecords);
+  default Stream<LogResponse.LogEntry> stream() throws NessieNotFoundException {
+    return StreamingUtil.getCommitLogStream(this, OptionalInt.empty());
   }
 }

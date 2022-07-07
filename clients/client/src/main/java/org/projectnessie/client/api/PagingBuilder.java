@@ -15,49 +15,49 @@
  */
 package org.projectnessie.client.api;
 
-import java.util.OptionalInt;
 import java.util.stream.Stream;
+import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.error.NessieNotFoundException;
 
 public interface PagingBuilder<R extends PagingBuilder<R, RESP, ENTRY>, RESP, ENTRY> {
 
   /**
-   * When using the manual paging, it is recommended to set this parameter, this parameter is
-   * configured when necessary via {@link #stream(OptionalInt)}.
+   * Sets the maximum number of records to be returned in a <em>ingle</em>s response object from the
+   * {@link #get()} method. When using stream() methods this parameter must not be set.
    *
    * <p>Only for manual paging via {@link #get()} - do <em>not</em> call when using any of the
    * {@link #stream()} functions.
+   *
+   * <p>This setter reflects the OpenAPI parameter {@code maxRecords} in a paged request, for
+   * example {@link org.projectnessie.api.params.CommitLogParams} for {@link
+   * org.projectnessie.api.TreeApi#getCommitLog(String, CommitLogParams)}.
    */
   R maxRecords(int maxRecords);
 
   /**
-   * When using the manual paging, pass the {@code token} from the previous request, otherwise don't
-   * call this method.
+   * Sets the page token from the previous' {@link #get()} method invocation. When using {@link
+   * #stream()} methods this parameter must not be set.
    *
    * <p>Only for manual paging via {@link #get()} - do <em>not</em> call when using any of the
    * {@link #stream()} functions.
+   *
+   * <p>This setter reflects the OpenAPI parameter {@code pageToken} in a paged request, for example
+   * {@link org.projectnessie.api.params.CommitLogParams} for {@link
+   * org.projectnessie.api.TreeApi#getCommitLog(String, CommitLogParams)}.
    */
   R pageToken(String pageToken);
 
   /**
-   * Fetches a response chunk (might be one page or complete response depending on use case and
-   * parameters), but callers must implement paging on their own, if necessary. If in doubt, use
-   * {@link #stream()} instead.
+   * Advanced usage, for <em>manual</em> paging: fetches a response chunk (might be one page or
+   * complete response depending on use case and parameters), but callers must implement paging on
+   * their own, if necessary. If in doubt, use {@link #stream()} instead.
    */
   RESP get() throws NessieNotFoundException;
 
   /**
-   * This is a convenience function that is equivalent to {@link #stream(OptionalInt)} with default
-   * page-size-hint and no limit on the number of returned entries.
-   */
-  default Stream<ENTRY> stream() throws NessieNotFoundException {
-    return stream(OptionalInt.empty());
-  }
-
-  /**
    * Retrieve entries/results as a Java {@link Stream}, uses automatic paging.
    *
-   * @param maxTotalRecords {@link OptionalInt#empty()} for unlimited amount of results or a limit
+   * <p>Callers must neither use {@link #maxRecords(int)} nor {@link #pageToken(String)}.
    */
-  Stream<ENTRY> stream(OptionalInt maxTotalRecords) throws NessieNotFoundException;
+  Stream<ENTRY> stream() throws NessieNotFoundException;
 }

@@ -47,7 +47,7 @@ public interface GetAllReferencesBuilder
   ReferencesResponse get();
 
   @Override
-  default Stream<Reference> stream(OptionalInt maxTotalRecords) throws NessieNotFoundException {
-    return StreamingUtil.getAllReferencesStream(this, OptionalInt.empty(), maxTotalRecords);
+  default Stream<Reference> stream() throws NessieNotFoundException {
+    return StreamingUtil.getAllReferencesStream(this, OptionalInt.empty());
   }
 }
