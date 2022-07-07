@@ -87,5 +87,6 @@ val generateIcebergMetadataFiles by
 
 sourceSets.named("main") {
   resources.srcDir(generatedIcebergMetadataDir)
+  output.dir(generatedIcebergMetadataDir)
   compiledBy(generateIcebergMetadataFiles)
 }
