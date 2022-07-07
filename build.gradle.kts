@@ -166,6 +166,7 @@ dependencies {
     api("javax.ws.rs:javax.ws.rs-api:$versionJavaxWsRs")
     api("jp.skypencil.errorprone.slf4j:errorprone-slf4j:$versionErrorProneSlf4j")
     api("org.agrona:agrona:$versionAgrona")
+    api("org.antlr:antlr4:$versionAntlr")
     api("org.assertj:assertj-core:$versionAssertJ")
     api("org.apache.hadoop:hadoop-client:$versionHadoop")
     api("org.apache.iceberg:iceberg-api:$versionIceberg")

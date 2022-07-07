@@ -24,7 +24,7 @@ plugins {
 
 dependencies {
   antlr(platform(nessieRootProject()))
-  antlr("org.antlr:antlr4:${dependencyVersion("versionAntlr")}")
+  antlr("org.antlr:antlr4")
 
   implementation(platform(nessieRootProject()))
   api("org.projectnessie:nessie-antlr-runtime")
