@@ -131,7 +131,7 @@ extra["versionSpark31"] = versionSpark31
 
 extra["versionSpark32"] = versionSpark32
 
-extra["quarkus.builder-image"] = "quay.io/quarkus/ubi-quarkus-native-image:22.1-java11"
+extra["quarkus.builder-image"] = "quay.io/quarkus/ubi-quarkus-native-image:22.1-java17"
 
 dependencies {
   constraints {
