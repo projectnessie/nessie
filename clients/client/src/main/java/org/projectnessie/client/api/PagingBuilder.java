@@ -40,17 +40,28 @@ public interface PagingBuilder<R extends PagingBuilder<R, RESP, ENTRY>, RESP, EN
   RESP get() throws NessieNotFoundException;
 
   /**
-   * Retrieve entries/results as a Java {@link Stream} without limiting the total amount of results,
-   * uses automatic paging.
+   * This is a convenience function that is equivalent to {@link #stream(OptionalInt, OptionalInt)}
+   * with default page-size-hint and no limit on the number of returned entries.
    */
   default Stream<ENTRY> stream() throws NessieNotFoundException {
-    return stream(OptionalInt.empty());
+    return stream(OptionalInt.empty(), OptionalInt.empty());
+  }
+
+  /**
+   * This is a convenience function that is equivalent to {@link #stream(OptionalInt, OptionalInt)}
+   * with the specified page-size-hint and no limit on the number of returned entries.
+   */
+  default Stream<ENTRY> stream(OptionalInt pageSizeHint) throws NessieNotFoundException {
+    return stream(pageSizeHint, OptionalInt.empty());
   }
 
   /**
    * Retrieve entries/results as a Java {@link Stream}, uses automatic paging.
    *
+   * @param pageSizeHint {@link OptionalInt#empty()} to let the Nessie server choose the page size,
+   *     or provide a <em>proposal</em> to the Nessie server
    * @param maxTotalRecords {@link OptionalInt#empty()} for unlimited amount of results or a limit
    */
-  Stream<ENTRY> stream(OptionalInt maxTotalRecords) throws NessieNotFoundException;
+  Stream<ENTRY> stream(OptionalInt pageSizeHint, OptionalInt maxTotalRecords)
+      throws NessieNotFoundException;
 }
