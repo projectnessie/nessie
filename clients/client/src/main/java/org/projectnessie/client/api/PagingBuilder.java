@@ -24,12 +24,18 @@ public interface PagingBuilder<R extends PagingBuilder<R, RESP, ENTRY>, RESP, EN
   /**
    * When using the manual paging, it is recommended to set this parameter, this parameter is
    * configured when necessary via {@link #stream(OptionalInt)}.
+   *
+   * <p>Only for manual paging via {@link #get()} - do <em>not</em> call when using any of the
+   * {@link #stream()} functions.
    */
   R maxRecords(int maxRecords);
 
   /**
    * When using the manual paging, pass the {@code token} from the previous request, otherwise don't
    * call this method.
+   *
+   * <p>Only for manual paging via {@link #get()} - do <em>not</em> call when using any of the
+   * {@link #stream()} functions.
    */
   R pageToken(String pageToken);
 
