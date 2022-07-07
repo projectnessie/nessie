@@ -34,8 +34,8 @@ public interface GetEntriesBuilder
   GetEntriesBuilder namespaceDepth(Integer namespaceDepth);
 
   @Override
-  default Stream<EntriesResponse.Entry> stream(
-      OptionalInt maxTotalRecords, OptionalInt pageSizeHint) throws NessieNotFoundException {
-    return StreamingUtil.getEntriesStream(this, pageSizeHint, maxTotalRecords);
+  default Stream<EntriesResponse.Entry> stream(OptionalInt maxTotalRecords)
+      throws NessieNotFoundException {
+    return StreamingUtil.getEntriesStream(this, OptionalInt.empty(), maxTotalRecords);
   }
 }
