@@ -43,9 +43,6 @@ public interface GetAllReferencesBuilder
   GetAllReferencesBuilder fetch(FetchOption fetchOption);
 
   @Override
-  ReferencesResponse get();
-
-  @Override
   default Stream<Reference> stream(OptionalInt pageSizeHint, OptionalInt maxTotalRecords)
       throws NessieNotFoundException {
     return StreamingUtil.getAllReferencesStream(this, pageSizeHint, maxTotalRecords);
