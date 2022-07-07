@@ -210,6 +210,16 @@ tasks.withType<NpmTask>().configureEach {
   outputs.cacheIf { true }
   environment.put("CI", "true")
   environment.put("BUILD_PATH", npmBuildDir.path)
+  val javaDir =
+    javaToolchains
+      .launcherFor { languageVersion.set(JavaLanguageVersion.of(11)) }
+      .get()
+      .metadata
+      .installationPath
+  environment.put(
+    "PATH",
+    "${System.getenv("PATH")}${System.getProperty("path.separator")}$javaDir/bin"
+  )
 }
 
 tasks.named<Jar>("jar") { dependsOn(npmBuild) }
