@@ -221,7 +221,9 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
                 id,
                 jsonNode,
                 attachmentConsumer,
-                id == currentId ? currentPartRefConsumer : morePartRefConsumer);
+                def.retainAllAsCurrent || id == currentId
+                    ? currentPartRefConsumer
+                    : morePartRefConsumer);
           }
         });
 
@@ -289,21 +291,46 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
     return builder.build().toByteString();
   }
 
+  /**
+   * Defines the relationship between child elements of Icebergs {@code TableMetadata} (snapshots,
+   * schemas, etc), the field name in {@code TableMetadata} identifying the ID of the
+   * current/default child object, the ID field in a child object's type.
+   *
+   * <p>Additionally, {@link #retainAllAsCurrent} defines whether a child object type (like schemas,
+   * partition-specs, sort-orders) must be always returned to clients. Background: Nessie cannot
+   * determine from the table/view metadata object, whether particular objects are referenced in
+   * "external" data structures or not. For example, partition specs are referenced in Iceberg
+   * {@code Manifest}s, but manifests are not contained in Iceberg's {@code TableMetadata}. Similar
+   * for Iceberg {@code SortOrder}s, which are referenced in Iceberg manifest files. Since Nessie
+   * does not know about the manifest files or manifests, Nessie has to assume that all those child
+   * objects are required and need to be returned to Nessie clients retrieving an {@link
+   * IcebergTable} or {@link IcebergView}. So these child objects are recorded in {@code
+   * current_parts} {@link ObjectTypes.IcebergRefState}.
+   *
+   * <p>Iceberg table {@code Snapshot}s and view {@code Version}s however are only recorded in the
+   * {@code current_parts}, if the table metadata's current-snapshot-id is equal to {@code
+   * Snapshot}'s ID (similar for view versions).
+   *
+   * <p>See <a href="https://iceberg.apache.org/spec/">Iceberg Spec</a>.
+   */
   private static final class IcebergAttachmentDefinition {
     final ObjectTypes.ContentPartType contentPartType;
     final String metadataContainerField;
     final String metadataIdRefField;
     final String childIdField;
+    final boolean retainAllAsCurrent;
 
     IcebergAttachmentDefinition(
         ContentPartType contentPartType,
         String metadataContainerField,
         String metadataIdRefField,
-        String childIdField) {
+        String childIdField,
+        boolean retainAllAsCurrent) {
       this.contentPartType = contentPartType;
       this.metadataContainerField = metadataContainerField;
       this.metadataIdRefField = metadataIdRefField;
       this.childIdField = childIdField;
+      this.retainAllAsCurrent = retainAllAsCurrent;
     }
   }
 
@@ -313,27 +340,32 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
               ObjectTypes.ContentPartType.SNAPSHOT,
               IcebergContent.SNAPSHOTS,
               IcebergContent.CURRENT_SNAPSHOT_ID,
-              IcebergContent.SNAPSHOT_ID),
+              IcebergContent.SNAPSHOT_ID,
+              false),
           new IcebergAttachmentDefinition(
               ObjectTypes.ContentPartType.SCHEMA,
               IcebergContent.SCHEMAS,
               IcebergContent.CURRENT_SCHEMA_ID,
-              IcebergContent.SCHEMA_ID),
+              IcebergContent.SCHEMA_ID,
+              true),
           new IcebergAttachmentDefinition(
               ObjectTypes.ContentPartType.SORT_ORDER,
               IcebergContent.SORT_ORDERS,
               IcebergContent.DEFAULT_SORT_ORDER_ID,
-              IcebergContent.ORDER_ID),
+              IcebergContent.ORDER_ID,
+              true),
           new IcebergAttachmentDefinition(
               ObjectTypes.ContentPartType.PARTITION_SPEC,
               IcebergContent.PARTITION_SPECS,
               IcebergContent.DEFAULT_SPEC_ID,
-              IcebergContent.SPEC_ID),
+              IcebergContent.SPEC_ID,
+              true),
           new IcebergAttachmentDefinition(
               ObjectTypes.ContentPartType.VERSION,
               IcebergContent.VERSIONS,
               IcebergContent.CURRENT_VERSION_ID,
-              IcebergContent.VERSION_ID));
+              IcebergContent.VERSION_ID,
+              false));
 
   @Override
   public Content valueFromStore(

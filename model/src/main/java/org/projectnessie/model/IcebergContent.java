@@ -20,7 +20,7 @@ public abstract class IcebergContent extends Content {
   /** Constant for {@link GenericMetadata#getVariant()}. */
   public static final String ICEBERG_METADATA_VARIANT = "iceberg";
 
-  // JSON field names - defined by Apache Iceberg spec
+  // JSON field names - defined by Apache Iceberg spec (https://iceberg.apache.org/spec/)
 
   public static final String CURRENT_VERSION_ID = "current-version-id";
   public static final String VERSIONS = "versions";

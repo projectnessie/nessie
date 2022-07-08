@@ -482,6 +482,17 @@ class TestStoreWorker {
     assertThat(parsed.getIcebergRefState().getExtraPartsList())
         .containsExactlyInAnyOrderElementsOf(expectedStoreOnRef.getExtraPartsList());
 
+    // "extra" parts must only contain Iceberg table snapshots + view versions. All other child
+    // object types (schema, partition-spec, sort-order) must be referenced as "current" parts and
+    // returned to clients requesting an `IcebergTable` content.
+    assertThat(parsed.getIcebergRefState().getExtraPartsList())
+        .map(ContentPartReference::getType)
+        .allSatisfy(
+            type ->
+                assertThat(type)
+                    .isIn(
+                        ObjectTypes.ContentPartType.SNAPSHOT, ObjectTypes.ContentPartType.VERSION));
+
     assertThat(
             parsed.getIcebergRefState().toBuilder().clearCurrentParts().clearExtraParts().build())
         .isEqualTo(expectedStoreOnRef.clearCurrentParts().clearExtraParts().build());
