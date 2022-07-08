@@ -32,7 +32,7 @@ import org.projectnessie.model.{
 }
 
 import java.time.format.DateTimeParseException
-import java.time.{Instant, LocalDateTime, ZoneOffset}
+import java.time.{Instant, LocalDateTime, ZoneOffset, ZonedDateTime}
 import java.util.OptionalInt
 import scala.collection.JavaConverters._
 
@@ -61,11 +61,14 @@ object NessieUtils {
       .map(x => x.replaceAll("`", ""))
       .map(x => {
         try {
-          LocalDateTime.parse(x).atZone(ZoneOffset.UTC).toInstant
+          ZonedDateTime.parse(x).toInstant
         } catch {
           case e: DateTimeParseException =>
             throw new NessieNotFoundException(
-              "Invalid timestamp provided: " + e.getMessage
+              String.format(
+                "Invalid timestamp provided: %s. You need to provide it with a zone info. For more info, see: https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html",
+                e.getMessage
+              )
             )
         }
       })

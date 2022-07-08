@@ -25,6 +25,7 @@ import java.io.File;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -439,11 +440,50 @@ public abstract class AbstractSparkSqlTest {
   }
 
   @Test
-  void useShowReferencesAtTimestamp() throws NessieNotFoundException, NessieConflictException {
+  void throwWhenUseShowReferencesAtTimestampWithoutTimeZone()
+      throws NessieNotFoundException, NessieConflictException {
     commitAndReturnLog(refName);
     String time = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.now(ZoneOffset.UTC));
+    assertThatThrownBy(() -> sql("USE REFERENCE %s AT `%s` IN nessie ", refName, time))
+        .isInstanceOf(NessieNotFoundException.class)
+        .hasMessage(
+            String.format(
+                "Invalid timestamp provided: Text '%s' could not be parsed at index 26. You need to provide it with a zone info. For more info, see: https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html",
+                time));
+  }
+
+  @Test
+  void useShowReferencesAtTimestampWithTimeZoneISOZonedDateTime()
+      throws NessieNotFoundException, NessieConflictException {
+    commitAndReturnLog(refName);
+    String timeWithZone = DateTimeFormatter.ISO_ZONED_DATE_TIME.format(ZonedDateTime.now());
+    System.out.println(timeWithZone);
     String refHash = api.getReference().refName(refName).get().getHash();
-    assertThat(sql("USE REFERENCE %s AT `%s` IN nessie ", refName, time))
+    assertThat(sql("USE REFERENCE %s AT `%s` IN nessie ", refName, timeWithZone))
+        .containsExactly(row("Branch", refName, refHash));
+    assertThat(sql("SHOW REFERENCE IN nessie")).containsExactly(row("Branch", refName, refHash));
+  }
+
+  @Test
+  void useShowReferencesAtTimestampWithTimeZoneISOOffsetDateTime()
+      throws NessieNotFoundException, NessieConflictException {
+    commitAndReturnLog(refName);
+    String timeWithZone = DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(ZonedDateTime.now());
+    System.out.println(timeWithZone);
+    String refHash = api.getReference().refName(refName).get().getHash();
+    assertThat(sql("USE REFERENCE %s AT `%s` IN nessie ", refName, timeWithZone))
+        .containsExactly(row("Branch", refName, refHash));
+    assertThat(sql("SHOW REFERENCE IN nessie")).containsExactly(row("Branch", refName, refHash));
+  }
+
+  @Test
+  void useShowReferencesAtTimestampWithTimeZoneISOInstant()
+      throws NessieNotFoundException, NessieConflictException {
+    commitAndReturnLog(refName);
+    String timeWithZone = DateTimeFormatter.ISO_INSTANT.format(ZonedDateTime.now());
+    System.out.println(timeWithZone);
+    String refHash = api.getReference().refName(refName).get().getHash();
+    assertThat(sql("USE REFERENCE %s AT `%s` IN nessie ", refName, timeWithZone))
         .containsExactly(row("Branch", refName, refHash));
     assertThat(sql("SHOW REFERENCE IN nessie")).containsExactly(row("Branch", refName, refHash));
   }
