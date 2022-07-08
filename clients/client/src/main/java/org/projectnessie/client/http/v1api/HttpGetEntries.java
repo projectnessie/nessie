@@ -75,6 +75,7 @@ final class HttpGetEntries extends BaseHttpOnReferenceRequest<GetEntriesBuilder>
   @Override
   public Stream<Entry> stream() throws NessieNotFoundException {
     EntriesParams p = params();
-    return StreamingUtil.getEntriesStream(pageToken -> get(p.forNextPage(pageToken)));
+    return StreamingUtil.generateStream(
+        EntriesResponse::getEntries, pageToken -> get(p.forNextPage(pageToken)));
   }
 }

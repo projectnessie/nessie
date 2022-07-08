@@ -82,6 +82,7 @@ final class HttpGetCommitLog extends BaseHttpOnReferenceRequest<GetCommitLogBuil
   @Override
   public Stream<LogEntry> stream() throws NessieNotFoundException {
     CommitLogParams p = params();
-    return StreamingUtil.getCommitLogStream(pageToken -> get(p.forNextPage(pageToken)));
+    return StreamingUtil.generateStream(
+        LogResponse::getLogEntries, pageToken -> get(p.forNextPage(pageToken)));
   }
 }

@@ -79,6 +79,7 @@ final class HttpGetRefLog extends BaseHttpRequest implements GetRefLogBuilder {
   @Override
   public Stream<RefLogResponseEntry> stream() throws NessieNotFoundException {
     RefLogParams p = params();
-    return StreamingUtil.getReflogStream(pageToken -> get(p.forNextPage(pageToken)));
+    return StreamingUtil.generateStream(
+        RefLogResponse::getLogEntries, pageToken -> get(p.forNextPage(pageToken)));
   }
 }

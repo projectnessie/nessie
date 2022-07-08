@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client;
 
+import java.util.List;
 import java.util.OptionalInt;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -31,6 +32,7 @@ import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
+import org.projectnessie.model.PaginatedResponse;
 import org.projectnessie.model.RefLogResponse;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
@@ -167,35 +169,6 @@ public final class StreamingUtil {
         .generateStream();
   }
 
-  @FunctionalInterface
-  public interface NextPage<R> {
-    R getPage(String pageToken) throws NessieNotFoundException;
-  }
-
-  public static Stream<LogEntry> getCommitLogStream(NextPage<LogResponse> pageFetcher)
-      throws NessieNotFoundException {
-    return new ResultStreamPaginator<>(LogResponse::getLogEntries, pageFetcher::getPage)
-        .generateStream();
-  }
-
-  public static Stream<Reference> getAllReferencesStream(NextPage<ReferencesResponse> pageFetcher)
-      throws NessieNotFoundException {
-    return new ResultStreamPaginator<>(ReferencesResponse::getReferences, pageFetcher::getPage)
-        .generateStream();
-  }
-
-  public static Stream<Entry> getEntriesStream(NextPage<EntriesResponse> pageFetcher)
-      throws NessieNotFoundException {
-    return new ResultStreamPaginator<>(EntriesResponse::getEntries, pageFetcher::getPage)
-        .generateStream();
-  }
-
-  public static Stream<RefLogResponse.RefLogResponseEntry> getReflogStream(
-      NextPage<RefLogResponse> pageFetcher) throws NessieNotFoundException {
-    return new ResultStreamPaginator<>(RefLogResponse::getLogEntries, pageFetcher::getPage)
-        .generateStream();
-  }
-
   private static <B extends PagingBuilder<B, ?, ?>> B builderWithPaging(
       B builder, Integer pageSize, String token) {
     if (pageSize != null) {
@@ -205,5 +178,16 @@ public final class StreamingUtil {
       builder.pageToken(token);
     }
     return builder;
+  }
+
+  @FunctionalInterface
+  public interface NextPage<R> {
+    R getPage(String pageToken) throws NessieNotFoundException;
+  }
+
+  public static <ENTRY, RESP extends PaginatedResponse> Stream<ENTRY> generateStream(
+      Function<RESP, List<ENTRY>> entriesExtractor, NextPage<RESP> pageFetcher)
+      throws NessieNotFoundException {
+    return new ResultStreamPaginator<>(entriesExtractor, pageFetcher::getPage).generateStream();
   }
 }

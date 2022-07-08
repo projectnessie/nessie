@@ -79,6 +79,7 @@ final class HttpGetAllReferences extends BaseHttpRequest implements GetAllRefere
   @Override
   public Stream<Reference> stream() throws NessieNotFoundException {
     ReferencesParams p = params();
-    return StreamingUtil.getAllReferencesStream(pageToken -> get(p.forNextPage(pageToken)));
+    return StreamingUtil.generateStream(
+        ReferencesResponse::getReferences, pageToken -> get(p.forNextPage(pageToken)));
   }
 }
