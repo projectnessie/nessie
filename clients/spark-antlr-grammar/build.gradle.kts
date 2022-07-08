@@ -27,7 +27,7 @@ dependencies {
   antlr("org.antlr:antlr4:${dependencyVersion("versionAntlr")}")
 
   implementation(platform(nessieRootProject()))
-  api("org.projectnessie:nessie-antlr-runtime")
+  api(project(":nessie-spark-antlr-runtime", "shadow"))
 }
 
 sourceSets { main { antlr { setSrcDirs(listOf(project.projectDir.resolve("src/main/antlr4"))) } } }

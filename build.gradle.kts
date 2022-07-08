@@ -139,7 +139,15 @@ extra["versionSpark32"] = versionSpark32
 
 extra["quarkus.builder-image"] = "quay.io/quarkus/ubi-quarkus-native-image:22.1-java17"
 
+// Dummy configuration to allow dependabot to manage dependencies here, but not include those
+// dependencies in the constraints. Those "managedOnly" dependencies do not "leak" to other
+// projects.
+configurations.create("managedOnly")
+
 dependencies {
+  add("managedOnly", "org.antlr:antlr4:$versionAntlr")
+  add("managedOnly", "org.antlr:antlr4-runtime:$versionAntlr")
+
   constraints {
     api("ch.qos.logback:logback-access:$versionLogback")
     api("ch.qos.logback:logback-classic:$versionLogback")
@@ -208,7 +216,6 @@ dependencies {
     api("org.openjdk.jmh:jmh-generator-annprocess:$versionJmh")
     api("org.postgresql:postgresql:$versionPostgres")
     api("org.mockito:mockito-core:$versionMockito")
-    api("org.projectnessie:nessie-antlr-runtime:$versionAntlr")
     api("org.projectnessie.cel:cel-bom:$versionCel")
     api("org.rocksdb:rocksdbjni:$versionRocksDb")
     api("org.slf4j:jcl-over-slf4j:$versionSlf4j")
