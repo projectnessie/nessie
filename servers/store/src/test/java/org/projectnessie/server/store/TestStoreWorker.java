@@ -463,12 +463,25 @@ class TestStoreWorker {
         .collect(Collectors.groupingBy(ContentPartReference.Builder::getType))
         .forEach(
             (type, parts) -> {
-              if (type == ContentPartType.SHALLOW_METADATA) {
-                assertThat(parts).hasSize(1);
-                expectedStoreOnRef.setMetadata(parts.get(0));
-              } else {
-                parts.subList(0, parts.size() - 1).forEach(expectedStoreOnRef::addExtraParts);
-                expectedStoreOnRef.addCurrentParts(parts.get(parts.size() - 1));
+              switch (type) {
+                case SHALLOW_METADATA:
+                  assertThat(parts).hasSize(1);
+                  expectedStoreOnRef.setMetadata(parts.get(0));
+                  break;
+
+                  // See TableCommitMetaStoreWorker.IcebergAttachmentDefinition for the reason why
+                  // table snapshots & view versions are handled this way and all other child types
+                  // differently.
+                case SNAPSHOT:
+                case VERSION:
+                  // The last snapshot/version is a "current" part, all other ones are "extra"
+                  // parts. Only "current" parts are returned to Nessie clients in an IcebergTable.
+                  parts.subList(0, parts.size() - 1).forEach(expectedStoreOnRef::addExtraParts);
+                  expectedStoreOnRef.addCurrentParts(parts.get(parts.size() - 1));
+                  break;
+                default:
+                  parts.forEach(expectedStoreOnRef::addCurrentParts);
+                  break;
               }
             });
 

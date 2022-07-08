@@ -31,6 +31,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.apache.iceberg.NullOrder;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -134,7 +136,7 @@ public final class NessieIceberg {
     return ImmutableDummySnapshot.builder()
         .snapshotId(random.nextLong())
         .sequenceNumber(metadata.lastSequenceNumber() + 1)
-        .timestampMillis(metadata.lastUpdatedMillis() + random.nextInt(1_000_000))
+        .timestampMillis(metadata.lastUpdatedMillis() + 1)
         .operation("snapshotOperation")
         .build();
   }
@@ -157,6 +159,13 @@ public final class NessieIceberg {
       fields.add(required(i, randomColumnName(random), randomType(random, PRIMITIVE_TYPES)));
     }
     return fields;
+  }
+
+  public static Stream<NestedField> randomFields(Random random, int firstColumnId, int numColumns) {
+    return IntStream.range(firstColumnId, firstColumnId + numColumns)
+        .mapToObj(
+            columnId ->
+                required(columnId, randomColumnName(random), randomType(random, PRIMITIVE_TYPES)));
   }
 
   public static Type randomType(Random random, Type[] types) {

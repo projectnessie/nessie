@@ -37,6 +37,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.TableMetadata;
@@ -123,10 +125,21 @@ public class GenerateIcebergFiles {
   private static void icebergTableThreeSnapshots(Random random, FileWriter fileWriter)
       throws IOException {
     List<NestedField> fields = randomFields(random, 3);
+    List<NestedField> fields2 =
+        Stream.concat(fields.stream(), randomFields(random, fields.size() + 1, 3))
+            .collect(Collectors.toList());
+    List<NestedField> fields3 =
+        Stream.concat(fields2.stream(), randomFields(random, fields2.size() + 1, 3))
+            .collect(Collectors.toList());
 
     Schema schema = new Schema(StructType.of(fields).fields());
+    Schema schema2 = new Schema(2, StructType.of(fields2).fields());
+    Schema schema3 = new Schema(3, StructType.of(fields3).fields());
 
     TableMetadata metadata = icebergTableMetadata(random, fields, schema);
+
+    metadata = TableMetadata.buildFrom(metadata).addSchema(schema2, fields2.size()).build();
+    metadata = TableMetadata.buildFrom(metadata).addSchema(schema3, fields3.size()).build();
 
     fileWriter.writeFile("table-three-snapshots", "1", TableMetadataParser.toJson(metadata));
 
