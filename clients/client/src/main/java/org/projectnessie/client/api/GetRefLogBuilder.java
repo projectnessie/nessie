@@ -15,12 +15,8 @@
  */
 package org.projectnessie.client.api;
 
-import java.util.OptionalInt;
-import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.validation.constraints.Pattern;
-import org.projectnessie.client.StreamingUtil;
-import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.RefLogResponse;
 import org.projectnessie.model.Validation;
 
@@ -50,9 +46,4 @@ public interface GetRefLogBuilder
   GetRefLogBuilder fromHash(
       @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String fromHash);
-
-  @Override
-  default Stream<RefLogResponse.RefLogResponseEntry> stream() throws NessieNotFoundException {
-    return StreamingUtil.getReflogStream(this, OptionalInt.empty());
-  }
 }

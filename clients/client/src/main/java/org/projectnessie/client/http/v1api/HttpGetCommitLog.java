@@ -15,13 +15,16 @@
  */
 package org.projectnessie.client.http.v1api;
 
+import java.util.stream.Stream;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.CommitLogParamsBuilder;
 import org.projectnessie.api.params.FetchOption;
+import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.api.GetCommitLogBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.LogResponse;
+import org.projectnessie.model.LogResponse.LogEntry;
 
 final class HttpGetCommitLog extends BaseHttpOnReferenceRequest<GetCommitLogBuilder>
     implements GetCommitLogBuilder {
@@ -62,9 +65,23 @@ final class HttpGetCommitLog extends BaseHttpOnReferenceRequest<GetCommitLogBuil
     return this;
   }
 
+  private CommitLogParams params() {
+    params.endHash(hashOnRef);
+    return params.build();
+  }
+
   @Override
   public LogResponse get() throws NessieNotFoundException {
-    params.endHash(hashOnRef);
-    return client.getTreeApi().getCommitLog(refName, params.build());
+    return get(params());
+  }
+
+  private LogResponse get(CommitLogParams p) throws NessieNotFoundException {
+    return client.getTreeApi().getCommitLog(refName, p);
+  }
+
+  @Override
+  public Stream<LogEntry> stream() throws NessieNotFoundException {
+    CommitLogParams p = params();
+    return StreamingUtil.getCommitLogStream(pageToken -> get(p.forNextPage(pageToken)));
   }
 }

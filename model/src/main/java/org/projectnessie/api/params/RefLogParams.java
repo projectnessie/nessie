@@ -30,7 +30,7 @@ import org.projectnessie.model.Validation;
  * <p>For easier usage of this class, there is {@link RefLogParams#builder()}, which allows
  * configuring/setting the different parameters.
  */
-public class RefLogParams extends AbstractParams {
+public class RefLogParams extends AbstractParams<RefLogParams> {
 
   @Nullable
   @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
@@ -101,6 +101,11 @@ public class RefLogParams extends AbstractParams {
 
   public static RefLogParams empty() {
     return builder().build();
+  }
+
+  @Override
+  public RefLogParams forNextPage(String pageToken) {
+    return new RefLogParams(startHash, endHash, maxRecords(), pageToken, filter);
   }
 
   @Override

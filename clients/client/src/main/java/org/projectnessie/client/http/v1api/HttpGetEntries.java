@@ -15,12 +15,15 @@
  */
 package org.projectnessie.client.http.v1api;
 
+import java.util.stream.Stream;
 import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.api.params.EntriesParamsBuilder;
+import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.api.GetEntriesBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.EntriesResponse;
+import org.projectnessie.model.EntriesResponse.Entry;
 
 final class HttpGetEntries extends BaseHttpOnReferenceRequest<GetEntriesBuilder>
     implements GetEntriesBuilder {
@@ -55,9 +58,23 @@ final class HttpGetEntries extends BaseHttpOnReferenceRequest<GetEntriesBuilder>
     return this;
   }
 
+  private EntriesParams params() {
+    params.hashOnRef(hashOnRef);
+    return params.build();
+  }
+
   @Override
   public EntriesResponse get() throws NessieNotFoundException {
-    params.hashOnRef(hashOnRef);
-    return client.getTreeApi().getEntries(refName, params.build());
+    return get(params());
+  }
+
+  private EntriesResponse get(EntriesParams p) throws NessieNotFoundException {
+    return client.getTreeApi().getEntries(refName, p);
+  }
+
+  @Override
+  public Stream<Entry> stream() throws NessieNotFoundException {
+    EntriesParams p = params();
+    return StreamingUtil.getEntriesStream(pageToken -> get(p.forNextPage(pageToken)));
   }
 }

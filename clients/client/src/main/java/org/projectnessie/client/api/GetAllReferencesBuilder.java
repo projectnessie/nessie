@@ -15,11 +15,7 @@
  */
 package org.projectnessie.client.api;
 
-import java.util.OptionalInt;
-import java.util.stream.Stream;
 import org.projectnessie.api.params.FetchOption;
-import org.projectnessie.client.StreamingUtil;
-import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
 
@@ -45,9 +41,4 @@ public interface GetAllReferencesBuilder
   // Mandatory override (must maintain function signature w/ previous versions)
   @Override
   ReferencesResponse get();
-
-  @Override
-  default Stream<Reference> stream() throws NessieNotFoundException {
-    return StreamingUtil.getAllReferencesStream(this, OptionalInt.empty());
-  }
 }

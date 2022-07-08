@@ -30,7 +30,7 @@ import org.projectnessie.api.http.HttpTreeApi;
  * <p>For easier usage of this class, there is {@link ReferencesParams#builder()}, which allows
  * configuring/setting the different parameters.
  */
-public class ReferencesParams extends AbstractParams {
+public class ReferencesParams extends AbstractParams<ReferencesParams> {
 
   @Parameter(
       description =
@@ -94,6 +94,11 @@ public class ReferencesParams extends AbstractParams {
 
   public static ReferencesParams empty() {
     return builder().build();
+  }
+
+  @Override
+  public ReferencesParams forNextPage(String pageToken) {
+    return new ReferencesParams(maxRecords(), pageToken, fetchOption, filter);
   }
 
   @Override

@@ -22,11 +22,8 @@ import org.projectnessie.error.NessieNotFoundException;
 public interface PagingBuilder<R extends PagingBuilder<R, RESP, ENTRY>, RESP, ENTRY> {
 
   /**
-   * Sets the maximum number of records to be returned in a <em>ingle</em>s response object from the
-   * {@link #get()} method. When using stream() methods this parameter must not be set.
-   *
-   * <p>Only for manual paging via {@link #get()} - do <em>not</em> call when using any of the
-   * {@link #stream()} functions.
+   * Sets the maximum number of records to be returned in a <em>single</em> response object from the
+   * {@link #get()} method.
    *
    * <p>This setter reflects the OpenAPI parameter {@code maxRecords} in a paged request, for
    * example {@link org.projectnessie.api.params.CommitLogParams} for {@link
@@ -54,10 +51,6 @@ public interface PagingBuilder<R extends PagingBuilder<R, RESP, ENTRY>, RESP, EN
    */
   RESP get() throws NessieNotFoundException;
 
-  /**
-   * Retrieve entries/results as a Java {@link Stream}, uses automatic paging.
-   *
-   * <p>Callers must neither use {@link #maxRecords(int)} nor {@link #pageToken(String)}.
-   */
+  /** Retrieve entries/results as a Java {@link Stream}, uses automatic paging. */
   Stream<ENTRY> stream() throws NessieNotFoundException;
 }

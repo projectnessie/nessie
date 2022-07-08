@@ -15,13 +15,9 @@
  */
 package org.projectnessie.client.api;
 
-import java.util.OptionalInt;
-import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.validation.constraints.Pattern;
 import org.projectnessie.api.params.FetchOption;
-import org.projectnessie.client.StreamingUtil;
-import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Validation;
 
@@ -46,9 +42,4 @@ public interface GetCommitLogBuilder
   GetCommitLogBuilder untilHash(
       @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String untilHash);
-
-  @Override
-  default Stream<LogResponse.LogEntry> stream() throws NessieNotFoundException {
-    return StreamingUtil.getCommitLogStream(this, OptionalInt.empty());
-  }
 }

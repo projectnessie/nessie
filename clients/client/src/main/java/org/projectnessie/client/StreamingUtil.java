@@ -67,13 +67,12 @@ public final class StreamingUtil {
       @NotNull Function<GetAllReferencesBuilder, GetAllReferencesBuilder> builderCustomizer,
       @NotNull OptionalInt pageSizeHint)
       throws NessieNotFoundException {
+    GetAllReferencesBuilder builder = builderCustomizer.apply(api.getAllReferences());
+    Integer pageSize = pageSizeHint.isPresent() ? pageSizeHint.getAsInt() : null;
     return new ResultStreamPaginator<>(
             ReferencesResponse::getReferences,
-            (pageSize, token) -> {
-              GetAllReferencesBuilder builder = builderCustomizer.apply(api.getAllReferences());
-              return builderWithPaging(builder, pageSize, token).get();
-            })
-        .generateStream(pageSizeHint);
+            token -> builderWithPaging(builder, pageSize, token).get())
+        .generateStream();
   }
 
   /**
@@ -99,13 +98,11 @@ public final class StreamingUtil {
       @NotNull Function<GetEntriesBuilder, GetEntriesBuilder> builderCustomizer,
       @NotNull OptionalInt pageSizeHint)
       throws NessieNotFoundException {
+    GetEntriesBuilder builder = builderCustomizer.apply(api.getEntries());
+    Integer pageSize = pageSizeHint.isPresent() ? pageSizeHint.getAsInt() : null;
     return new ResultStreamPaginator<>(
-            EntriesResponse::getEntries,
-            (pageSize, token) -> {
-              GetEntriesBuilder builder = builderCustomizer.apply(api.getEntries());
-              return builderWithPaging(builder, pageSize, token).get();
-            })
-        .generateStream(pageSizeHint);
+            EntriesResponse::getEntries, token -> builderWithPaging(builder, pageSize, token).get())
+        .generateStream();
   }
 
   /**
@@ -132,13 +129,11 @@ public final class StreamingUtil {
       @NotNull Function<GetCommitLogBuilder, GetCommitLogBuilder> builderCustomizer,
       @NotNull OptionalInt pageSizeHint)
       throws NessieNotFoundException {
+    GetCommitLogBuilder builder = builderCustomizer.apply(api.getCommitLog());
+    Integer pageSize = pageSizeHint.isPresent() ? pageSizeHint.getAsInt() : null;
     return new ResultStreamPaginator<>(
-            LogResponse::getLogEntries,
-            (pageSize, token) -> {
-              GetCommitLogBuilder builder = builderCustomizer.apply(api.getCommitLog());
-              return builderWithPaging(builder, pageSize, token).get();
-            })
-        .generateStream(pageSizeHint);
+            LogResponse::getLogEntries, token -> builderWithPaging(builder, pageSize, token).get())
+        .generateStream();
   }
 
   /**
@@ -164,49 +159,41 @@ public final class StreamingUtil {
       @NotNull Function<GetRefLogBuilder, GetRefLogBuilder> builderCustomizer,
       @NotNull OptionalInt pageSizeHint)
       throws NessieNotFoundException {
+    GetRefLogBuilder builder = builderCustomizer.apply(api.getRefLog());
+    Integer pageSize = pageSizeHint.isPresent() ? pageSizeHint.getAsInt() : null;
     return new ResultStreamPaginator<>(
             RefLogResponse::getLogEntries,
-            (pageSize, token) -> {
-              GetRefLogBuilder builder = builderCustomizer.apply(api.getRefLog());
-              return builderWithPaging(builder, pageSize, token).get();
-            })
-        .generateStream(pageSizeHint);
+            token -> builderWithPaging(builder, pageSize, token).get())
+        .generateStream();
   }
 
-  public static Stream<LogEntry> getCommitLogStream(
-      @NotNull GetCommitLogBuilder builder, @NotNull OptionalInt pageSizeHint)
-      throws NessieNotFoundException {
-    return new ResultStreamPaginator<>(
-            LogResponse::getLogEntries,
-            (pageSize, token) -> builderWithPaging(builder, pageSize, token).get())
-        .generateStream(pageSizeHint);
+  @FunctionalInterface
+  public interface NextPage<R> {
+    R getPage(String pageToken) throws NessieNotFoundException;
   }
 
-  public static Stream<Reference> getAllReferencesStream(
-      @NotNull GetAllReferencesBuilder builder, @NotNull OptionalInt pageSizeHint)
+  public static Stream<LogEntry> getCommitLogStream(NextPage<LogResponse> pageFetcher)
       throws NessieNotFoundException {
-    return new ResultStreamPaginator<>(
-            ReferencesResponse::getReferences,
-            (pageSize, token) -> builderWithPaging(builder, pageSize, token).get())
-        .generateStream(pageSizeHint);
+    return new ResultStreamPaginator<>(LogResponse::getLogEntries, pageFetcher::getPage)
+        .generateStream();
   }
 
-  public static Stream<Entry> getEntriesStream(
-      @NotNull GetEntriesBuilder builder, @NotNull OptionalInt pageSizeHint)
+  public static Stream<Reference> getAllReferencesStream(NextPage<ReferencesResponse> pageFetcher)
       throws NessieNotFoundException {
-    return new ResultStreamPaginator<>(
-            EntriesResponse::getEntries,
-            (pageSize, token) -> builderWithPaging(builder, pageSize, token).get())
-        .generateStream(pageSizeHint);
+    return new ResultStreamPaginator<>(ReferencesResponse::getReferences, pageFetcher::getPage)
+        .generateStream();
+  }
+
+  public static Stream<Entry> getEntriesStream(NextPage<EntriesResponse> pageFetcher)
+      throws NessieNotFoundException {
+    return new ResultStreamPaginator<>(EntriesResponse::getEntries, pageFetcher::getPage)
+        .generateStream();
   }
 
   public static Stream<RefLogResponse.RefLogResponseEntry> getReflogStream(
-      @NotNull GetRefLogBuilder builder, @NotNull OptionalInt pageSizeHint)
-      throws NessieNotFoundException {
-    return new ResultStreamPaginator<>(
-            RefLogResponse::getLogEntries,
-            (pageSize, token) -> builderWithPaging(builder, pageSize, token).get())
-        .generateStream(pageSizeHint);
+      NextPage<RefLogResponse> pageFetcher) throws NessieNotFoundException {
+    return new ResultStreamPaginator<>(RefLogResponse::getLogEntries, pageFetcher::getPage)
+        .generateStream();
   }
 
   private static <B extends PagingBuilder<B, ?, ?>> B builderWithPaging(

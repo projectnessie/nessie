@@ -15,12 +15,15 @@
  */
 package org.projectnessie.client.http.v1api;
 
+import java.util.stream.Stream;
 import org.projectnessie.api.params.RefLogParams;
 import org.projectnessie.api.params.RefLogParamsBuilder;
+import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.api.GetRefLogBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.RefLogResponse;
+import org.projectnessie.model.RefLogResponse.RefLogResponseEntry;
 
 final class HttpGetRefLog extends BaseHttpRequest implements GetRefLogBuilder {
 
@@ -60,8 +63,22 @@ final class HttpGetRefLog extends BaseHttpRequest implements GetRefLogBuilder {
     return this;
   }
 
+  private RefLogParams params() {
+    return params.build();
+  }
+
   @Override
   public RefLogResponse get() throws NessieNotFoundException {
-    return client.getRefLogApi().getRefLog(params.build());
+    return get(params());
+  }
+
+  private RefLogResponse get(RefLogParams p) throws NessieNotFoundException {
+    return client.getRefLogApi().getRefLog(p);
+  }
+
+  @Override
+  public Stream<RefLogResponseEntry> stream() throws NessieNotFoundException {
+    RefLogParams p = params();
+    return StreamingUtil.getReflogStream(pageToken -> get(p.forNextPage(pageToken)));
   }
 }

@@ -15,10 +15,6 @@
  */
 package org.projectnessie.client.api;
 
-import java.util.OptionalInt;
-import java.util.stream.Stream;
-import org.projectnessie.client.StreamingUtil;
-import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.EntriesResponse;
 
 /**
@@ -32,9 +28,4 @@ public interface GetEntriesBuilder
         OnReferenceBuilder<GetEntriesBuilder> {
 
   GetEntriesBuilder namespaceDepth(Integer namespaceDepth);
-
-  @Override
-  default Stream<EntriesResponse.Entry> stream() throws NessieNotFoundException {
-    return StreamingUtil.getEntriesStream(this, OptionalInt.empty());
-  }
 }
