@@ -94,7 +94,7 @@ public abstract class IcebergView extends IcebergContent {
   }
 
   public static IcebergView of(JsonNode metadata, String metadataLocation, String id) {
-    int currentVersionId = metadata.path(CURRENT_VERSION_ID).requireNonNull().asInt(-1);
+    int currentVersionId = metadata.path(CURRENT_VERSION_ID).requireNonNull().asInt();
 
     String sqlText = "";
     String dialect = ""; // TODO dialect is currently undefined in Iceberg
