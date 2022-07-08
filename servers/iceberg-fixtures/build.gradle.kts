@@ -55,6 +55,8 @@ dependencies {
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-engine")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
+  testRuntimeOnly("org.slf4j:log4j-over-slf4j")
+  testRuntimeOnly("ch.qos.logback:logback-classic")
 
   testCompileOnly(platform("io.quarkus:quarkus-bom"))
   testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
@@ -64,9 +66,9 @@ val generatedIcebergMetadataDir = project.buildDir.resolve("generated/iceberg/ma
 
 val generateIcebergMetadataFiles by
   tasks.registering(DefaultTask::class) {
-    val javaCompile = tasks.getByName<JavaCompile>("compileJava")
+    val javaCompile = tasks.getByName<JavaCompile>(sourceSets.getByName("main").compileJavaTaskName)
     dependsOn(javaCompile)
-    inputs.dir(javaCompile.destinationDirectory)
+    inputs.files(javaCompile.source)
     inputs.files(configurations.testRuntimeClasspath)
     outputs.dir(generatedIcebergMetadataDir)
     outputs.cacheIf { true }
@@ -86,7 +88,6 @@ val generateIcebergMetadataFiles by
   }
 
 sourceSets.named("main") {
+  tasks.named(processResourcesTaskName) { dependsOn(generateIcebergMetadataFiles) }
   resources.srcDir(generatedIcebergMetadataDir)
-  output.dir(generatedIcebergMetadataDir)
-  compiledBy(generateIcebergMetadataFiles)
 }
