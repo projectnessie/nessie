@@ -1,4 +1,5 @@
-name: 'Capture test results'
+name: 'Capture coverage and gatling results'
+description: 'Captures code coverage + gatling results'
 runs:
   using: "composite"
   steps:

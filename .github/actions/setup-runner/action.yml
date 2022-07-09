@@ -1,6 +1,8 @@
 name: 'Setup runner'
+description: 'Optionally adds swap space, prepares the runner machine'
 inputs:
   more-memory:
+    description: 'Flag whether the workflow requires more memory (adds swap space)'
     required: false
     default: 'false'
 runs:

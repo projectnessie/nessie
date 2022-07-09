@@ -1,11 +1,14 @@
-name: 'Setup Java/Maven/Gradle'
+name: 'Setup Java/Gradle'
+description: 'Sets up Java + Gradle'
 inputs:
   java-version:
     required: false
     default: '11'
+    description: 'Java version, defaults to 11'
   gpg-private-key:
     required: false
     default: ''
+    description: 'gpg key, needed when publishing to sonatype'
 runs:
   using: "composite"
   steps:
