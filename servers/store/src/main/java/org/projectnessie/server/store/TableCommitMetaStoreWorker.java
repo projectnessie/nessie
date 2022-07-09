@@ -164,7 +164,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
         attachmentConsumer,
         table.getMetadata(),
         table.getId(),
-        formatVersion -> formatVersion == 2,
+        formatVersion -> formatVersion >= 1 && formatVersion <= 2,
         stateBuilder::setMetadata,
         stateBuilder::addCurrentParts,
         stateBuilder::addExtraParts);
