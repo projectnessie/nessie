@@ -455,6 +455,13 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
 
     ObjectNode metadata = mergeAttachmentsIntoMetadata(attachmentsRetriever, content, contentParts);
 
+    // Create empty child object arrays (Iceberg parser code expects those to exist, even if thsoe
+    // are empty).
+    metadata.withArray(IcebergContent.SCHEMAS);
+    metadata.withArray(IcebergContent.PARTITION_SPECS);
+    metadata.withArray(IcebergContent.SORT_ORDERS);
+    metadata.withArray(IcebergContent.SNAPSHOTS);
+
     // TODO Once we only return the relevant child objects (current snapshot, schema, etc), we can
     //  clear TableMetadata.snapshotLog and TableMetadata.previousFiles
     //  Similar for Iceberg views?
@@ -533,6 +540,10 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
             Stream.concat(view.getCurrentPartsList().stream(), view.getExtraPartsList().stream()));
 
     ObjectNode metadata = mergeAttachmentsIntoMetadata(attachmentsRetriever, content, contentParts);
+
+    // Create empty child object arrays (Iceberg parser code expects those to exist, even if thsoe
+    // are empty).
+    metadata.withArray(IcebergContent.VERSIONS);
 
     return viewBuilder
         .metadata(GenericMetadata.of(IcebergContent.ICEBERG_METADATA_VARIANT, metadata))
