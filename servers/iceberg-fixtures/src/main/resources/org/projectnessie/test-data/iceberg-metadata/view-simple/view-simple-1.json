@@ -1,0 +1,48 @@
+{
+  "format-version" : 1,
+  "location" : "xpliamkddpvnz",
+  "current-version-id" : 27722,
+  "properties" : {
+    "format-version" : "1",
+    "rftuumhfzgrnhenwgvsrdgk" : "kartbdckymocef",
+    "bdvxectmhevvoz" : "utfmakdpshtharug"
+  },
+  "versions" : [ {
+    "version-id" : 27722,
+    "timestamp-ms" : -1970139604617903615,
+    "summary" : {
+      "operation" : "N/A",
+      "genie_id" : "N/A",
+      "engine_version" : "N/A"
+    },
+    "view-definition" : {
+      "sql" : "xaimkc",
+      "schema" : {
+        "type" : "struct",
+        "schema-id" : 0,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "srzqd",
+          "required" : true,
+          "type" : "timestamp"
+        }, {
+          "id" : 2,
+          "name" : "yjbjpsxkjqeutdcsyarpml",
+          "required" : true,
+          "type" : "double"
+        }, {
+          "id" : 3,
+          "name" : "jqvlwovijfgcpttgmgcxhay",
+          "required" : true,
+          "type" : "time"
+        } ]
+      },
+      "sessionCatalog" : "vqnsdpjfzmdvoziahtcckypnkje",
+      "sessionNamespace" : [ "mejcccbaxesfluyojpar", "uosxompbkslldjgzkghdvqlaakwg", "uodcznfmrxew" ]
+    }
+  } ],
+  "version-log" : [ {
+    "timestamp-ms" : -1970139604617903615,
+    "version-id" : 27722
+  } ]
+}
