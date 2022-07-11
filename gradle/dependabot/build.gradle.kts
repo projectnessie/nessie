@@ -32,7 +32,7 @@ plugins {
   id("com.github.johnrengelman.plugin-shadow") version "7.1.2"
   id("com.github.node-gradle.node") version "3.4.0"
   id("com.github.vlsi.jandex") version "1.82"
-  id("io.gatling.gradle") version "3.8.0"
+  id("io.gatling.gradle") version "3.8.1"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
   id("io.quarkus") version "2.10.2.Final"
   id("me.champeau.jmh") version "0.6.6"
