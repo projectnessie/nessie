@@ -24,14 +24,17 @@ import com.google.errorprone.annotations.FormatMethod;
 import java.io.File;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.AnalysisException;
 import org.apache.spark.sql.Row;
@@ -43,6 +46,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.error.NessieConflictException;
@@ -322,7 +328,7 @@ public abstract class AbstractSparkSqlTest {
     assertThat(sql("CREATE BRANCH %s IN nessie", random))
         .containsExactly(row("Branch", random, initialHashOfDefaultBranch));
 
-    commitAndReturnLog(refName);
+    createBranchCommitAndReturnLog(refName);
     sql("USE REFERENCE %s IN nessie", refName);
     sql("MERGE BRANCH %s INTO main IN nessie", refName);
     Reference main = api.getReference().refName("main").get();
@@ -337,7 +343,7 @@ public abstract class AbstractSparkSqlTest {
     assertThat(sql("CREATE TAG %s IN nessie", random))
         .containsExactly(row("Tag", random, initialHashOfDefaultBranch));
 
-    commitAndReturnLog(refName);
+    createBranchCommitAndReturnLog(refName);
     sql("USE REFERENCE %s IN nessie", refName);
     sql("MERGE BRANCH %s INTO main IN nessie", refName);
     Reference main = api.getReference().refName("main").get();
@@ -352,7 +358,7 @@ public abstract class AbstractSparkSqlTest {
     assertThat(sql("CREATE BRANCH %s IN nessie", random))
         .containsExactly(row("Branch", random, initialHashOfDefaultBranch));
 
-    commitAndReturnLog(refName);
+    createBranchCommitAndReturnLog(refName);
     sql("USE REFERENCE %s IN nessie", refName);
     sql("MERGE BRANCH %s INTO main IN nessie", refName);
     Reference main = api.getReference().refName("main").get();
@@ -391,7 +397,7 @@ public abstract class AbstractSparkSqlTest {
     assertThat(sql("CREATE TAG %s IN nessie", random))
         .containsExactly(row("Tag", random, initialHashOfDefaultBranch));
 
-    commitAndReturnLog(refName);
+    createBranchCommitAndReturnLog(refName);
     sql("USE REFERENCE %s IN nessie", refName);
     sql("MERGE BRANCH %s INTO main IN nessie", refName);
     Reference main = api.getReference().refName("main").get();
@@ -439,18 +445,90 @@ public abstract class AbstractSparkSqlTest {
   }
 
   @Test
-  void useShowReferencesAtTimestamp() throws NessieNotFoundException, NessieConflictException {
-    commitAndReturnLog(refName);
+  void throwWhenUseShowReferencesAtTimestampWithoutTimeZone()
+      throws NessieNotFoundException, NessieConflictException {
+    createBranchCommitAndReturnLog(refName);
     String time = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.now(ZoneOffset.UTC));
-    String refHash = api.getReference().refName(refName).get().getHash();
-    assertThat(sql("USE REFERENCE %s AT `%s` IN nessie ", refName, time))
-        .containsExactly(row("Branch", refName, refHash));
-    assertThat(sql("SHOW REFERENCE IN nessie")).containsExactly(row("Branch", refName, refHash));
+    assertThatThrownBy(() -> sql("USE REFERENCE %s AT `%s` IN nessie ", refName, time))
+        .isInstanceOf(NessieNotFoundException.class)
+        .hasMessageContaining(
+            String.format("Invalid timestamp provided: Text '%s' could not be parsed ", time))
+        .hasMessageContaining(
+            "You need to provide it with a zone info. For more info, see: https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html");
+  }
+
+  @Test
+  void throwWhenUseShowReferencesAtTimestampBeforeCommits()
+      throws NessieNotFoundException, NessieConflictException {
+    createBranchCommitAndReturnLog(refName);
+
+    // get the last commitTime
+    Instant commitTime =
+        api.getCommitLog()
+            .refName(refName)
+            .get()
+            .getLogEntries()
+            .get(0)
+            .getCommitMeta()
+            .getCommitTime();
+    assertThat(commitTime).isNotNull();
+    // query for commits that were executed at least one hour before - there will be no commit for
+    // this predicate
+    String timeWithZone =
+        DateTimeFormatter.ISO_INSTANT
+            .withZone(ZoneId.of("UTC"))
+            .format(commitTime.minus(1, ChronoUnit.HOURS));
+
+    assertThatThrownBy(() -> sql("USE REFERENCE %s AT `%s` IN nessie ", refName, timeWithZone))
+        .isInstanceOf(NessieNotFoundException.class)
+        .hasMessageContaining(String.format("Cannot find a hash before %s.", timeWithZone));
+  }
+
+  @ParameterizedTest
+  @MethodSource("dateTimeFormatProvider")
+  void useShowReferencesAtTimestampWithTimeZone(DateTimeFormatter dateTimeFormatter)
+      throws NessieNotFoundException, NessieConflictException {
+    List<SparkCommitLogEntry> commits = createBranchCommitAndReturnLog(refName);
+
+    // get the last commitTime
+    Instant commitTime =
+        api.getCommitLog()
+            .refName(refName)
+            .get()
+            .getLogEntries()
+            .get(0)
+            .getCommitMeta()
+            .getCommitTime();
+    assertThat(commitTime).isNotNull();
+    String timeWithZone = dateTimeFormatter.format(commitTime);
+
+    // the last commit is on the index 0
+    SparkCommitLogEntry lastCommitBeforeTimePredicate = commits.get(0);
+    commitAndReturnLog(refName, lastCommitBeforeTimePredicate.getHash());
+
+    String lastRefHashGlobally = api.getReference().refName(refName).get().getHash();
+    // it should not include the current last hash
+    // api.getReference().refName(refName).get().getHash()
+    // because the last hash was committed after the commitTime
+    assertThat(sql("USE REFERENCE %s AT `%s` IN nessie ", refName, timeWithZone))
+        .containsExactly(row("Branch", refName, lastCommitBeforeTimePredicate.getHash()));
+    assertThat(sql("SHOW REFERENCE IN nessie"))
+        .containsExactly(row("Branch", refName, lastRefHashGlobally));
+  }
+
+  private static Stream<Arguments> dateTimeFormatProvider() {
+    // it can be any time zone
+    ZoneId localZone = ZoneId.of("+02");
+    return Stream.of(
+        Arguments.of(DateTimeFormatter.ISO_ZONED_DATE_TIME.withZone(localZone)),
+        Arguments.of(DateTimeFormatter.ISO_OFFSET_DATE_TIME.withZone(localZone)),
+        Arguments.of(DateTimeFormatter.ISO_INSTANT.withZone(localZone)),
+        Arguments.of(DateTimeFormatter.ISO_INSTANT.withZone(ZoneId.of("UTC"))));
   }
 
   @Test
   void useShowReferencesAtHash() throws NessieNotFoundException, NessieConflictException {
-    List<SparkCommitLogEntry> commits = commitAndReturnLog(refName);
+    List<SparkCommitLogEntry> commits = createBranchCommitAndReturnLog(refName);
     for (SparkCommitLogEntry commit : commits) {
       String currentHash = commit.getHash();
       assertThat(sql("USE REFERENCE %s AT %s IN nessie ", refName, currentHash))
@@ -461,7 +539,7 @@ public abstract class AbstractSparkSqlTest {
   @Test
   void useShowReferencesAtWithFailureConditions()
       throws NessieNotFoundException, NessieConflictException {
-    commitAndReturnLog(refName);
+    createBranchCommitAndReturnLog(refName);
     String randomHash = "dd8d46a3dd5478ce69749a5455dba29d74f6d1171188f4c21d0e15ff4a0a9a9c";
     String invalidTimestamp = "01-01-01";
     String invalidBranch = "invalidBranch";
@@ -517,7 +595,7 @@ public abstract class AbstractSparkSqlTest {
   private void mergeReferencesInto(String query)
       throws NessieConflictException, NessieNotFoundException {
     SparkCommitLogEntry result =
-        commitAndReturnLog(refName).stream()
+        createBranchCommitAndReturnLog(refName).stream()
             .map(SparkCommitLogEntry::withoutHashAndTime)
             .reduce(SparkCommitLogEntry::mergedCommits)
             .map(SparkCommitLogEntry::relevantFromMerge)
@@ -537,7 +615,7 @@ public abstract class AbstractSparkSqlTest {
 
   @Test
   void mergeReferences() throws NessieConflictException, NessieNotFoundException {
-    List<SparkCommitLogEntry> resultList = commitAndReturnLog(refName);
+    List<SparkCommitLogEntry> resultList = createBranchCommitAndReturnLog(refName);
     sql("USE REFERENCE %s IN nessie", refName);
     sql("MERGE BRANCH IN nessie");
     // here we are skipping commit time as its variable
@@ -557,7 +635,7 @@ public abstract class AbstractSparkSqlTest {
 
   @Test
   void showLogIn() throws NessieConflictException, NessieNotFoundException, AnalysisException {
-    List<SparkCommitLogEntry> resultList = commitAndReturnLog(refName);
+    List<SparkCommitLogEntry> resultList = createBranchCommitAndReturnLog(refName);
     // here we are skipping commit time as its variable
     assertThat(
             sql("SHOW LOG %s IN nessie", refName).stream()
@@ -598,10 +676,15 @@ public abstract class AbstractSparkSqlTest {
         .collect(Collectors.toList());
   }
 
-  private List<SparkCommitLogEntry> commitAndReturnLog(String branch)
+  private List<SparkCommitLogEntry> createBranchCommitAndReturnLog(String branch)
       throws NessieConflictException, NessieNotFoundException {
     assertThat(sql("CREATE BRANCH %s IN nessie", branch))
         .containsExactly(row("Branch", branch, initialHashOfDefaultBranch));
+    return commitAndReturnLog(branch, initialHashOfDefaultBranch);
+  }
+
+  private List<SparkCommitLogEntry> commitAndReturnLog(String branch, String initalHashOrBranch)
+      throws NessieNotFoundException, NessieConflictException {
     ContentKey key = ContentKey.of("table", "name");
     CommitMeta cm1 =
         ImmutableCommitMeta.builder()
@@ -645,7 +728,7 @@ public abstract class AbstractSparkSqlTest {
     Branch ref1 =
         api.commitMultipleOperations()
             .branchName(branch)
-            .hash(initialHashOfDefaultBranch)
+            .hash(initalHashOrBranch)
             .operations(ops.getOperations())
             .commitMeta(ops.getCommitMeta())
             .commit();
@@ -673,7 +756,7 @@ public abstract class AbstractSparkSqlTest {
 
   @Test
   void showLog() throws NessieConflictException, NessieNotFoundException {
-    List<SparkCommitLogEntry> resultList = commitAndReturnLog(refName);
+    List<SparkCommitLogEntry> resultList = createBranchCommitAndReturnLog(refName);
 
     // here we are skipping commit time as its variable
     assertThat(
