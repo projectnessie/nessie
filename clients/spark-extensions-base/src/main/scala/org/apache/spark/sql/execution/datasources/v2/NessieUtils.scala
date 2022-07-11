@@ -56,7 +56,6 @@ object NessieUtils {
       return findReferenceFromHash(branch, hash, api)
     }
 
-    // todo we are assuming always in UTC. ignoring tz set by spark etc
     val timestamp = tsOrHash
       .map(x => x.replaceAll("`", ""))
       .map(x => {
@@ -129,7 +128,7 @@ object NessieUtils {
           null,
           null,
           String.format(
-            "timestamp(commit.commitTime) < timestamp('%s')",
+            "timestamp(commit.commitTime) <= timestamp('%s')",
             timestamp
           ),
           OptionalInt.empty
