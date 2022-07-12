@@ -244,7 +244,12 @@ object NessieUtils {
     val catalogName = catalog.getOrElse(currentCatalog.name)
     val refName = SparkSession.active.sparkContext.conf
       .get(s"spark.sql.catalog.$catalogName.ref")
-    nessieAPI(currentCatalog, catalog).getReference.refName(refName).get
+    val api = nessieAPI(currentCatalog, catalog)
+    try {
+      api.getReference.refName(refName).get
+    } finally {
+      api.close()
+    }
   }
 
   def getRefType(ref: Reference): String = {
