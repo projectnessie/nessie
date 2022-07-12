@@ -18,7 +18,7 @@ if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_11)) {
   throw GradleException("Build requires Java 11")
 }
 
-val baseVersion = file("version.txt").readText().trim()
+val baseVersion = file("../version.txt").readText().trim()
 
 pluginManagement {
   // Cannot use a settings-script global variable/value, so pass the 'versions' Properties via
@@ -27,6 +27,8 @@ pluginManagement {
   val pluginIdPattern =
     java.util.regex.Pattern.compile("\\s*id\\(\"([^\"]+)\"\\) version \"([^\"]+)\"\\s*")
   settings.extra["nessieBuild.versions"] = versions
+
+  versions["versionNessie"] = file("../version.txt").readText().trim()
 
   repositories {
     mavenCentral() // prefer Maven Central, in case Gradle's repo has issues
@@ -41,7 +43,7 @@ pluginManagement {
     // Note: this is NOT a real project but a hack for dependabot to manage the plugin versions.
     //
     // Background: dependabot only manages dependencies (incl Gradle plugins) in build.gradle[.kts]
-    // files. It scans the root build.gradle[.kts] fila and those in submodules referenced in
+    // files. It scans the root build.gradle[.kts] file and those in submodules referenced in
     // settings.gradle[.kts].
     // But dependabot does not manage managed plugin dependencies in settings.gradle[.kts].
     // However, since dependabot is a "dumb search and replace engine", we can use a trick:
@@ -62,6 +64,9 @@ pluginManagement {
       eachPlugin {
         if (requested.version == null) {
           var pluginId = requested.id.id
+          // All Gradle plugins in https://github.com/projectnessie/gradle-build-plugins/ use
+          // the same version, which is "managed" via the "org.projectnessie.buildsupport.spotless"
+          // plugin.
           if (
             pluginId.startsWith("org.projectnessie.buildsupport.") ||
               pluginId == "org.projectnessie.smallrye-open-api"
@@ -110,134 +115,23 @@ gradle.beforeProject {
   group = "org.projectnessie"
 }
 
-include("code-coverage")
-
 fun nessieProject(name: String, directory: String) {
   include(name)
   project(":$name").projectDir = file(directory)
 }
 
-nessieProject("nessie-bom", "bom")
+// TODO nessieProject("nessie-deltalake", "../clients/deltalake")
 
-nessieProject("nessie-clients", "clients")
+// TODO nessieProject("iceberg-views", "../clients/iceberg-views")
 
-nessieProject("nessie-client", "clients/client")
+nessieProject("nessie-spark-3.2-extensions", "../clients/spark-3.2-extensions")
 
-nessieProject("nessie-compatibility", "compatibility")
+nessieProject("nessie-spark-extensions-grammar", "../clients/spark-antlr-grammar")
 
-nessieProject("nessie-compatibility-common", "compatibility/common")
+nessieProject("nessie-spark-extensions", "../clients/spark-extensions")
 
-nessieProject("nessie-compatibility-tests", "compatibility/compatibility-tests")
+nessieProject("nessie-spark-extensions-base", "../clients/spark-extensions-base")
 
-nessieProject("nessie-compatibility-jersey", "compatibility/jersey")
+nessieProject("nessie-gc-base", "../gc/gc-base")
 
-nessieProject("nessie-gc", "gc")
-
-nessieProject("nessie-model", "model")
-
-nessieProject("nessie-perftest", "perftest")
-
-nessieProject("nessie-perftest-gatling", "perftest/gatling")
-
-nessieProject("nessie-perftest-simulations", "perftest/simulations")
-
-nessieProject("nessie-server-parent", "servers")
-
-nessieProject("nessie-jaxrs", "servers/jax-rs")
-
-nessieProject("nessie-jaxrs-testextension", "servers/jax-rs-testextension")
-
-nessieProject("nessie-jaxrs-tests", "servers/jax-rs-tests")
-
-nessieProject("nessie-lambda", "servers/lambda")
-
-nessieProject("nessie-quarkus-cli", "servers/quarkus-cli")
-
-nessieProject("nessie-quarkus-common", "servers/quarkus-common")
-
-nessieProject("nessie-quarkus", "servers/quarkus-server")
-
-nessieProject("nessie-quarkus-tests", "servers/quarkus-tests")
-
-nessieProject("nessie-rest-services", "servers/rest-services")
-
-nessieProject("nessie-services", "servers/services")
-
-nessieProject("nessie-server-store", "servers/store")
-
-nessieProject("nessie-server-store-proto", "servers/store-proto")
-
-nessieProject("nessie-tools", "tools")
-
-nessieProject("nessie-content-generator", "tools/content-generator")
-
-nessieProject("nessie-ui", "ui")
-
-nessieProject("nessie-versioned", "versioned")
-
-nessieProject("nessie-versioned-persist", "versioned/persist")
-
-nessieProject("nessie-versioned-persist-adapter", "versioned/persist/adapter")
-
-nessieProject("nessie-versioned-persist-bench", "versioned/persist/bench")
-
-nessieProject("nessie-versioned-persist-dynamodb", "versioned/persist/dynamodb")
-
-nessieProject("nessie-versioned-persist-in-memory", "versioned/persist/inmem")
-
-nessieProject("nessie-versioned-persist-mongodb", "versioned/persist/mongodb")
-
-nessieProject("nessie-versioned-persist-non-transactional", "versioned/persist/nontx")
-
-nessieProject("nessie-versioned-persist-rocks", "versioned/persist/rocks")
-
-nessieProject("nessie-versioned-persist-serialize", "versioned/persist/serialize")
-
-nessieProject("nessie-versioned-persist-serialize-proto", "versioned/persist/serialize-proto")
-
-nessieProject("nessie-versioned-persist-store", "versioned/persist/store")
-
-nessieProject("nessie-versioned-persist-tests", "versioned/persist/tests")
-
-nessieProject("nessie-versioned-persist-transactional", "versioned/persist/tx")
-
-nessieProject("nessie-versioned-spi", "versioned/spi")
-
-nessieProject("nessie-versioned-tests", "versioned/tests")
-
-// Needed when loading/syncing the whole integrations-tools-testing project with Nessie as an
-// included build. IDEA gets here two times: the first run _does_ have the properties from the
-// integrations-tools-testing build's `gradle.properties` file, while the 2nd invocation only runs
-// from the included build.
-if (gradle.parent != null && System.getProperty("idea.sync.active").toBoolean()) {
-  val additionalPropertiesFile = file("./build/additional-build.properties")
-  if (additionalPropertiesFile.isFile) {
-    val additionalProperties = java.util.Properties()
-    additionalPropertiesFile.reader().use { reader -> additionalProperties.load(reader) }
-    System.getProperties().putAll(additionalProperties)
-  }
-}
-
-// Cannot use isIntegrationsTestingEnabled() in buildSrc/src/main/kotlin/Utilities.kt, because
-// settings.gradle is evaluated before buildSrc.
-if (!System.getProperty("nessie.integrationsTesting.enable").toBoolean()) {
-  nessieProject("nessie-deltalake", "clients/deltalake")
-
-  nessieProject("iceberg-views", "clients/iceberg-views")
-
-  nessieProject("nessie-spark-3.2-extensions", "clients/spark-3.2-extensions")
-
-  nessieProject("nessie-spark-extensions-grammar", "clients/spark-antlr-grammar")
-
-  nessieProject("nessie-spark-extensions", "clients/spark-extensions")
-
-  nessieProject("nessie-spark-extensions-base", "clients/spark-extensions-base")
-
-  nessieProject("nessie-gc-base", "gc/gc-base")
-}
-
-if (false) {
-  include("gradle:dependabot")
-}
-
-rootProject.name = "nessie"
+rootProject.name = "nessie-iceberg"

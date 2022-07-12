@@ -47,7 +47,7 @@ val versionCel = "0.3.7"
 val versionCheckstyle = "10.3.1"
 // to fix circular dependencies with NessieClient, certain projects need to use the same Nessie
 // version as Iceberg/Delta has
-val versionClientNessie = "0.18.0"
+var versionClientNessie = "0.18.0"
 val versionDeltalake = "1.1.0-nessie"
 val versionDockerjava = "3.2.13"
 val versionErrorProneAnnotations = "2.14.0"
@@ -59,7 +59,7 @@ val versionGoogleJavaFormat = "1.15.0"
 val versionGraalSvm = "22.1.0.1"
 val versionH2 = "2.1.214"
 val versionHadoop = "3.3.3"
-val versionIceberg = "0.13.2"
+var versionIceberg = "0.13.2"
 val versionImmutables = "2.9.0"
 val versionJackson = "2.13.3"
 val versionJacksonSpark3 = "2.13.3"
@@ -98,6 +98,12 @@ val versionSpark31 = "3.1.2"
 val versionSpark32 = "3.2.1"
 val versionTestcontainers = "1.17.3"
 val versionWeld = "3.1.8.Final"
+
+// Allow overriding the Iceberg version used by Nessie
+versionIceberg = System.getProperty("nessie.versionIceberg", versionIceberg)
+
+// Allow overriding the Nessie version used by integration tests that depend on Iceberg
+versionClientNessie = System.getProperty("nessie.versionClientNessie", versionClientNessie)
 
 extra["versionAntlr"] = versionAntlr
 
