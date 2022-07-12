@@ -28,6 +28,102 @@ jobs:
     name: Integrations Tests
     runs-on: ubuntu-20.04
     if: contains(github.event.pull_request.labels.*.name, 'pr-integrations')
+    env:
+      NESSIE_DIR: included-builds/nessie
+      NESSIE_PATCH_REPOSITORY: ''
+      NESSIE_PATCH_BRANCH: ''
+      ICEBERG_DIR: included-builds/iceberg
+      ICEBERG_MAIN_REPOSITORY: apache/iceberg
+      ICEBERG_MAIN_BRANCH: master
+      ICEBERG_PATCH_REPOSITORY: ''
+      ICEBERG_PATCH_BRANCH: ''
+      SPARK_LOCAL_IP: localhost
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Prepare Git
+        run: |
+          git config --global user.email "integrations-testing@projectnessie.org"
+          git config --global user.name "Integrations Testing [Bot]"
+
+      - name: Checkout nqeit repo
+        uses: actions/checkout@v3
+        with:
+          repository: projectnessie/query-engine-integration-tests
+          ref: main
+
+      - name: Checkout and patch Nessie PR
+        uses: ./.github/actions/patch-git
+        with:
+          name: Nessie
+          local-dir: ${{env.NESSIE_DIR}}
+          main-repository: ${{ env.GITHUB_REPOSITORY }}
+          patch-repository: ${{env.NESSIE_PATCH_REPOSITORY}}
+          patch-branch: ${{env.NESSIE_PATCH_BRANCH}}
+          work-branch: nessie-integration-patched
+
+      - name: Checkout and patch Iceberg
+        uses: ./.github/actions/patch-git
+        with:
+          name: Nessie
+          local-dir: ${{env.ICEBERG_DIR}}
+          main-repository: ${{env.ICEBERG_MAIN_REPOSITORY}}
+          main-branch: ${{env.ICEBERG_MAIN_BRANCH}}
+          patch-repository: ${{env.ICEBERG_PATCH_REPOSITORY}}
+          patch-branch: ${{env.ICEBERG_PATCH_BRANCH}}
+          work-branch: iceberg-integration-patched
+
+      # Setup Gradle properties, heap requirements are for the "Integration test w/ Nessie".
+      - name: Setup gradle.properties
+        run: |
+          mkdir -p ~/.gradle
+          echo "org.gradle.jvmargs=-Xmx1024m -XX:MaxMetaspaceSize=768m -Dfile.encoding=UTF-8" >> ~/.gradle/gradle.properties
+          echo "org.gradle.vfs.watch=false" >> ~/.gradle/gradle.properties
+
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: 11
+
+      - name: Iceberg Nessie test
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: :iceberg:iceberg-nessie:test
+
+      - name: Nessie Spark 3.1 Extensions test
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: :nessie-iceberg:nessie-spark-extensions-3.1_2.12:test :nessie-iceberg:nessie-spark-extensions-3.1_2.12:intTest
+
+      - name: Nessie Spark 3.2 / 2.12 Extensions test
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: :nessie-iceberg:nessie-spark-extensions-3.2_2.12:test :nessie-iceberg:nessie-spark-extensions-3.2_2.12:intTest
+
+      - name: Nessie Spark 3.3 / 2.12 Extensions test
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: :nessie-iceberg:nessie-spark-extensions-3.3_2.12:test :nessie-iceberg:nessie-spark-extensions-3.3_2.12:intTest
+
+      - name: Publish Nessie + Iceberg to local Maven repo
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: publishLocal
+
+      - name: Gather locally published versions
+        run: |
+          NESSIE_VERSION="$(cat included-builds/nessie/version.txt)"
+          ICEBERG_VERSION="$(cat included-builds/iceberg/build/iceberg-build.properties | grep '^git.build.version=' | cut -d= -f2)"
+          echo "NESSIE_VERSION=${NESSIE_VERSION}" >> ${GITHUB_ENV}
+          echo "ICEBERG_VERSION=${ICEBERG_VERSION}" >> ${GITHUB_ENV}
+          cat <<! >> $GITHUB_STEP_SUMMARY
+          ## Published versions
+          | Published Nessie version | Published Iceberg version |
+          | ------------------------ | ------------------------- |
+          | ${NESSIE_VERSION}        | ${ICEBERG_VERSION}        |
+          !
+
+      - name: Tools & Integrations tests
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: intTest

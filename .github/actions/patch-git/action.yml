@@ -1,0 +1,86 @@
+# Merge a "patch branch"
+name: 'Patch Git'
+description: 'Checkout the main and optional patch repositories and apply necessary patches'
+inputs:
+  name:
+    description: 'Human readable name of the project/product being checked out and patched'
+    required: true
+  local-dir:
+    description: 'Local workspace directory'
+    required: true
+  main-repository:
+    description: 'Main github repository in the form owner/repo'
+    required: true
+  main-branch:
+    description: 'Name of the main/master branch, leave empty to use the Git reference of the workflow run'
+    required: false
+  patch-repository:
+    description: 'Patch github repository in the form owner/repo'
+    required: false
+  patch-branch:
+    description: 'Name of the branch in patch-repository that has the patch commits'
+    required: false
+  work-branch:
+    description: 'Local work directory for the project/product'
+    required: true
+runs:
+  using: "composite"
+  steps:
+
+    - name: Checkout ${{ inputs.name }} repo
+      uses: actions/checkout@v3
+      with:
+        repository: ${{ inputs.main-repository }}
+        ref: ${{ inputs.main-branch }}
+        path: ${{ inputs.local-dir }}
+        # Need the full history for the merge below
+        fetch-depth: 0
+
+    - name: Apply ${{ inputs.name }} changes
+      shell: bash
+      env:
+        MAIN_REPOSITORY: ${{ inputs.main-repository }}
+        PATCH_REPOSITORY: ${{ inputs.patch-repository }}
+        PATCH_BRANCH: ${{ inputs.patch-branch }}
+        # Taken from a 'git fetch' from actions/checkout
+        GIT_FETCH: -c protocol.version=2 fetch --no-tags --prune --progress --no-recurse-submodules
+        WORK_BRANCH: ${{ inputs.work-branch }}
+      working-directory: ${{ inputs.local-dir }}
+      run: |
+        REFERENCE_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+        REFERENCE_COMMIT=$(git rev-parse HEAD)
+
+        if [[ -n ${PATCH_REPOSITORY} ]]; then
+          PATCH_REMOTE_NAME="$(echo ${PATCH_REPOSITORY} | cut -d/ -f1)"
+
+          if [[ ${MAIN_REPOSITORY} != ${PATCH_REPOSITORY} ]] ; then
+            echo "::group::Add remote ${PATCH_REPOSITORY} as ${PATCH_REMOTE_NAME}"
+            git remote add ${PATCH_REMOTE_NAME} https://github.com/${PATCH_REPOSITORY}.git
+            echo "::endgroup::"
+          fi
+  
+          echo "::group::Fetch ${PATCH_BRANCH} from ${PATCH_REPOSITORY}"
+          git ${GIT_FETCH} ${PATCH_REMOTE_NAME} +refs/heads/${PATCH_BRANCH}*:refs/remotes/${PATCH_REMOTE_NAME}/${PATCH_BRANCH}* +refs/tags/${PATCH_BRANCH}*:refs/tags/${PATCH_BRANCH}*
+          echo "::endgroup::"
+  
+          echo "::group::Checkout branch ${PATCH_BRANCH} from ${PATCH_REPOSITORY}"
+          git checkout --progress --force -B ${PATCH_BRANCH} refs/remotes/${PATCH_REMOTE_NAME}/${PATCH_BRANCH}
+          PATCH_COMMIT=$(git rev-parse ${PATCH_BRANCH})
+          echo "::endgroup::"
+  
+          echo "::group::Create new work branch ${WORK_BRANCH} from ${REFERENCE_BRANCH} at ${REFERENCE_COMMIT}"
+          git checkout -b ${WORK_BRANCH} ${REFERENCE_COMMIT}
+          echo "::endgroup::"
+  
+          echo "::group::Merge ${PATCH_BRANCH} into ${WORK_BRANCH}"
+          git merge --no-edit ${PATCH_BRANCH}
+          echo "::endgroup::"
+        fi
+
+        echo "## ${{ inputs.name }} changes" >> $GITHUB_STEP_SUMMARY
+        echo "| Remote | Branch | Commit |" >> $GITHUB_STEP_SUMMARY
+        echo "|--|--|--|" >> $GITHUB_STEP_SUMMARY
+        echo "| ${MAIN_REPOSITORY} | ${REFERENCE_BRANCH} | ${REFERENCE_COMMIT} |" >> $GITHUB_STEP_SUMMARY
+        if [[ -n ${PATCH_REPOSITORY} ]]; then
+          echo "| ${PATCH_REPOSITORY} | ${PATCH_BRANCH} | ${PATCH_COMMIT} |" >> $GITHUB_STEP_SUMMARY
+        fi
