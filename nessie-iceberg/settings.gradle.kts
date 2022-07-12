@@ -43,7 +43,7 @@ pluginManagement {
     // Note: this is NOT a real project but a hack for dependabot to manage the plugin versions.
     //
     // Background: dependabot only manages dependencies (incl Gradle plugins) in build.gradle[.kts]
-    // files. It scans the root build.gradle[.kts] fila and those in submodules referenced in
+    // files. It scans the root build.gradle[.kts] file and those in submodules referenced in
     // settings.gradle[.kts].
     // But dependabot does not manage managed plugin dependencies in settings.gradle[.kts].
     // However, since dependabot is a "dumb search and replace engine", we can use a trick:
@@ -64,6 +64,9 @@ pluginManagement {
       eachPlugin {
         if (requested.version == null) {
           var pluginId = requested.id.id
+          // All Gradle plugins in https://github.com/projectnessie/gradle-build-plugins/ use
+          // the same version, which is "managed" via the "org.projectnessie.buildsupport.spotless"
+          // plugin.
           if (
             pluginId.startsWith("org.projectnessie.buildsupport.") ||
               pluginId == "org.projectnessie.smallrye-open-api"
