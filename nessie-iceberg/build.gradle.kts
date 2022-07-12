@@ -23,7 +23,7 @@ plugins {
 
 // Pull the extra properties from the "main" Nessie build. This ensures that the same versions
 // are being used and we don't need to tweak the dependabot config.
-val extraPropertyPattern = java.util.regex.Pattern.compile("val (version[A-Z][A-Za-z0-9_]+) = \"([0-9a-zA-Z-.]+)\"")
+val extraPropertyPattern = java.util.regex.Pattern.compile("va[lr] (version[A-Z][A-Za-z0-9_]+) = \"([0-9a-zA-Z-.]+)\"")
 file("../build.gradle.kts").readLines().forEach { line ->
   val lineMatch = extraPropertyPattern.matcher(line)
   if (lineMatch.matches()) {

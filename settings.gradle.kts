@@ -213,9 +213,7 @@ if (gradle.parent != null && System.getProperty("idea.sync.active").toBoolean())
   val additionalPropertiesFile = file("./build/additional-build.properties")
   if (additionalPropertiesFile.isFile) {
     val additionalProperties = java.util.Properties()
-    additionalPropertiesFile.reader().use { reader ->
-      additionalProperties.load(reader)
-    }
+    additionalPropertiesFile.reader().use { reader -> additionalProperties.load(reader) }
     System.getProperties().putAll(additionalProperties)
   }
 }
