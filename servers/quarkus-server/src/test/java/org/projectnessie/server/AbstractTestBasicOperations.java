@@ -18,7 +18,7 @@ package org.projectnessie.server;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.quarkus.test.security.TestSecurity;
-import java.util.List;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -67,8 +67,8 @@ abstract class AbstractTestBasicOperations {
   void testAdmin() throws BaseNessieClientServerException {
     getCatalog("testx");
     Branch branch = (Branch) api.getReference().refName("testx").get();
-    List<Entry> tables = api.getEntries().refName("testx").get().getEntries();
-    Assertions.assertTrue(tables.isEmpty());
+    Stream<Entry> tables = api.getEntries().refName("testx").stream();
+    assertThat(tables).isEmpty();
     ContentKey key = ContentKey.of("x", "x");
     tryEndpointPass(
         () ->

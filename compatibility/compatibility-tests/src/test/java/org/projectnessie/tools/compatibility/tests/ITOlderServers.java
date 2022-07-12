@@ -16,7 +16,14 @@
 package org.projectnessie.tools.compatibility.tests;
 
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.projectnessie.tools.compatibility.api.Version;
 import org.projectnessie.tools.compatibility.internal.OlderNessieServersExtension;
 
 @ExtendWith(OlderNessieServersExtension.class)
-public class ITOlderServers extends AbstractCompatibilityTests {}
+public class ITOlderServers extends AbstractCompatibilityTests {
+
+  @Override
+  Version getClientVersion() {
+    return Version.CURRENT;
+  }
+}

@@ -16,6 +16,7 @@
 package org.projectnessie.client.api;
 
 import org.projectnessie.api.params.FetchOption;
+import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
 
 /**
@@ -24,7 +25,8 @@ import org.projectnessie.model.ReferencesResponse;
  * @since {@link NessieApiV1}
  */
 public interface GetAllReferencesBuilder
-    extends QueryBuilder<GetAllReferencesBuilder>, PagingBuilder<GetAllReferencesBuilder> {
+    extends QueryBuilder<GetAllReferencesBuilder>,
+        PagingBuilder<GetAllReferencesBuilder, ReferencesResponse, Reference> {
 
   /**
    * Will fetch additional metadata about {@link org.projectnessie.model.Branch} / {@link
@@ -36,10 +38,7 @@ public interface GetAllReferencesBuilder
    */
   GetAllReferencesBuilder fetch(FetchOption fetchOption);
 
-  /**
-   * Fetches all references and returns them in a {@link ReferencesResponse} instance.
-   *
-   * @return Fetches all references and returns them in a {@link ReferencesResponse} instance.
-   */
+  // Mandatory override (must maintain function signature w/ previous versions)
+  @Override
   ReferencesResponse get();
 }

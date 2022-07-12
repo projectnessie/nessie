@@ -15,16 +15,42 @@
  */
 package org.projectnessie.client.api;
 
-import org.projectnessie.model.EntriesResponse;
+import java.util.stream.Stream;
+import org.projectnessie.api.params.CommitLogParams;
+import org.projectnessie.error.NessieNotFoundException;
 
-public interface PagingBuilder<R extends PagingBuilder<R>> {
+public interface PagingBuilder<R extends PagingBuilder<R, RESP, ENTRY>, RESP, ENTRY> {
 
-  /** Recommended: specify the maximum number of records to return. */
+  /**
+   * Sets the maximum number of records to be returned in a <em>single</em> response object from the
+   * {@link #get()} method.
+   *
+   * <p>This setter reflects the OpenAPI parameter {@code maxRecords} in a paged request, for
+   * example {@link org.projectnessie.api.params.CommitLogParams} for {@link
+   * org.projectnessie.api.TreeApi#getCommitLog(String, CommitLogParams)}.
+   */
   R maxRecords(int maxRecords);
 
   /**
-   * For paged requests: pass the {@link EntriesResponse#getToken()} from the previous request,
-   * otherwise don't call this method.
+   * Sets the page token from the previous' {@link #get()} method invocation. When using {@link
+   * #stream()} methods this parameter must not be set.
+   *
+   * <p>Only for manual paging via {@link #get()} - do <em>not</em> call when using any of the
+   * {@link #stream()} functions.
+   *
+   * <p>This setter reflects the OpenAPI parameter {@code pageToken} in a paged request, for example
+   * {@link org.projectnessie.api.params.CommitLogParams} for {@link
+   * org.projectnessie.api.TreeApi#getCommitLog(String, CommitLogParams)}.
    */
   R pageToken(String pageToken);
+
+  /**
+   * Advanced usage, for <em>manual</em> paging: fetches a response chunk (might be one page or
+   * complete response depending on use case and parameters), but callers must implement paging on
+   * their own, if necessary. If in doubt, use {@link #stream()} instead.
+   */
+  RESP get() throws NessieNotFoundException;
+
+  /** Retrieve entries/results as a Java {@link Stream}, uses automatic paging. */
+  Stream<ENTRY> stream() throws NessieNotFoundException;
 }

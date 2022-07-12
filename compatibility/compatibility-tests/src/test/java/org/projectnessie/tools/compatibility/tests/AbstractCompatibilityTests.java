@@ -22,7 +22,12 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import java.util.Collections;
 import java.util.Map;
+import java.util.OptionalInt;
+import java.util.function.Function;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.client.StreamingUtil;
+import org.projectnessie.client.api.GetCommitLogBuilder;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
@@ -38,7 +43,6 @@ import org.projectnessie.model.Namespace;
 import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
-import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.tools.compatibility.api.NessieAPI;
 import org.projectnessie.tools.compatibility.api.NessieVersion;
 import org.projectnessie.tools.compatibility.api.Version;
@@ -47,16 +51,38 @@ import org.projectnessie.tools.compatibility.api.VersionCondition;
 @VersionCondition(maxVersion = Version.NOT_CURRENT_STRING)
 public abstract class AbstractCompatibilityTests {
 
+  public static final String NESSIE_0_30_0 = "0.30.0";
   @NessieAPI protected NessieApiV1 api;
   @NessieVersion Version version;
+
+  abstract Version getClientVersion();
+
+  @SuppressWarnings("deprecation")
+  Stream<Reference> allReferences() throws NessieNotFoundException {
+    if (getClientVersion().isGreaterThan(Version.parseVersion(NESSIE_0_30_0))) {
+      return api.getAllReferences().stream();
+    } else {
+      return StreamingUtil.getAllReferencesStream(api, Function.identity(), OptionalInt.empty());
+    }
+  }
+
+  @SuppressWarnings("deprecation")
+  Stream<LogResponse.LogEntry> commitLog(
+      Function<GetCommitLogBuilder, GetCommitLogBuilder> configurer)
+      throws NessieNotFoundException {
+    if (getClientVersion().isGreaterThan(Version.parseVersion(NESSIE_0_30_0))) {
+      return configurer.apply(api.getCommitLog()).stream();
+    } else {
+      return StreamingUtil.getCommitLogStream(api, configurer, OptionalInt.empty());
+    }
+  }
 
   @Test
   void getDefaultBranch() throws Exception {
     Branch defaultBranch = api.getDefaultBranch();
     assertThat(defaultBranch).extracting(Branch::getName).isEqualTo("main");
 
-    ReferencesResponse allRefs = api.getAllReferences().get();
-    assertThat(allRefs.getReferences()).contains(defaultBranch);
+    assertThat(allReferences()).contains(defaultBranch);
   }
 
   @Test
@@ -88,8 +114,8 @@ public abstract class AbstractCompatibilityTests {
         .extracting(Branch::getName)
         .isEqualTo(branch.getName());
 
-    LogResponse commitLog = api.getCommitLog().refName(branch.getName()).get();
-    assertThat(commitLog.getLogEntries())
+    Stream<LogEntry> commitLog = commitLog(b -> b.refName(branch.getName()));
+    assertThat(commitLog)
         .hasSize(1)
         .map(LogEntry::getCommitMeta)
         .map(CommitMeta::getMessage)
@@ -227,6 +253,6 @@ public abstract class AbstractCompatibilityTests {
   }
 
   boolean nessieWithMergeResponse() {
-    return version.isGreaterThan(Version.parseVersion("0.30.0"));
+    return version.isGreaterThan(Version.parseVersion(NESSIE_0_30_0));
   }
 }

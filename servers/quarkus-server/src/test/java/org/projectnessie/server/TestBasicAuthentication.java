@@ -32,24 +32,24 @@ import org.projectnessie.server.authn.AuthenticationEnabledProfile;
 class TestBasicAuthentication extends BaseClientAuthTest {
 
   @Test
-  void testValidCredentials() {
+  void testValidCredentials() throws Exception {
     withClientCustomizer(
         c -> c.withAuthentication(BasicAuthenticationProvider.create("test_user", "test_user")));
-    assertThat(api().getAllReferences().get().getReferences()).isNotEmpty();
+    assertThat(api().getAllReferences().stream()).isNotEmpty();
   }
 
   @Test
-  void testValidAdminCredentials() {
+  void testValidAdminCredentials() throws Exception {
     withClientCustomizer(
         c -> c.withAuthentication(BasicAuthenticationProvider.create("admin_user", "test123")));
-    assertThat(api().getAllReferences().get().getReferences()).isNotEmpty();
+    assertThat(api().getAllReferences().stream()).isNotEmpty();
   }
 
   @Test
   void testInvalidCredentials() {
     withClientCustomizer(
         c -> c.withAuthentication(BasicAuthenticationProvider.create("test_user", "bad_password")));
-    assertThatThrownBy(() -> api().getAllReferences().get())
+    assertThatThrownBy(() -> api().getAllReferences().stream())
         .isInstanceOfSatisfying(
             NessieNotAuthorizedException.class,
             e -> assertThat(e.getError().getStatus()).isEqualTo(401));

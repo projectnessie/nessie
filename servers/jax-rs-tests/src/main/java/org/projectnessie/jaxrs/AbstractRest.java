@@ -84,17 +84,19 @@ public abstract class AbstractRest {
   @AfterEach
   public void tearDown() throws Exception {
     Branch defaultBranch = api.getDefaultBranch();
-    for (Reference ref : api.getAllReferences().get().getReferences()) {
-      if (ref.getName().equals(defaultBranch.getName())) {
-        continue;
-      }
-      if (ref instanceof Branch) {
-        api.deleteBranch().branch((Branch) ref).delete();
-      } else if (ref instanceof Tag) {
-        api.deleteTag().tag((Tag) ref).delete();
-      }
-    }
-
+    api.getAllReferences().stream()
+        .forEach(
+            ref -> {
+              try {
+                if (ref instanceof Branch && !ref.getName().equals(defaultBranch.getName())) {
+                  api.deleteBranch().branch((Branch) ref).delete();
+                } else if (ref instanceof Tag) {
+                  api.deleteTag().tag((Tag) ref).delete();
+                }
+              } catch (NessieConflictException | NessieNotFoundException e) {
+                throw new RuntimeException(e);
+              }
+            });
     api.close();
   }
 

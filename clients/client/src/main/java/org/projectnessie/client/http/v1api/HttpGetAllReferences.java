@@ -15,19 +15,28 @@
  */
 package org.projectnessie.client.http.v1api;
 
+import java.util.stream.Stream;
 import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.api.params.ReferencesParams;
 import org.projectnessie.api.params.ReferencesParamsBuilder;
+import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.api.GetAllReferencesBuilder;
 import org.projectnessie.client.http.NessieApiClient;
+import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
 
 final class HttpGetAllReferences extends BaseHttpRequest implements GetAllReferencesBuilder {
 
-  private final ReferencesParamsBuilder params = ReferencesParams.builder();
+  private final ReferencesParamsBuilder params;
 
   HttpGetAllReferences(NessieApiClient client) {
+    this(client, ReferencesParams.builder());
+  }
+
+  HttpGetAllReferences(NessieApiClient client, ReferencesParamsBuilder params) {
     super(client);
+    this.params = params;
   }
 
   @Override
@@ -54,8 +63,23 @@ final class HttpGetAllReferences extends BaseHttpRequest implements GetAllRefere
     return this;
   }
 
+  private ReferencesParams params() {
+    return params.build();
+  }
+
   @Override
   public ReferencesResponse get() {
-    return client.getTreeApi().getAllReferences(params.build());
+    return get(params());
+  }
+
+  private ReferencesResponse get(ReferencesParams p) {
+    return client.getTreeApi().getAllReferences(p);
+  }
+
+  @Override
+  public Stream<Reference> stream() throws NessieNotFoundException {
+    ReferencesParams p = params();
+    return StreamingUtil.generateStream(
+        ReferencesResponse::getReferences, pageToken -> get(p.forNextPage(pageToken)));
   }
 }

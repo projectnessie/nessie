@@ -18,7 +18,6 @@ package org.projectnessie.client.api;
 import javax.annotation.Nullable;
 import javax.validation.constraints.Pattern;
 import org.projectnessie.api.params.FetchOption;
-import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Validation;
 
@@ -29,7 +28,7 @@ import org.projectnessie.model.Validation;
  */
 public interface GetCommitLogBuilder
     extends QueryBuilder<GetCommitLogBuilder>,
-        PagingBuilder<GetCommitLogBuilder>,
+        PagingBuilder<GetCommitLogBuilder, LogResponse, LogResponse.LogEntry>,
         OnReferenceBuilder<GetCommitLogBuilder> {
 
   /**
@@ -43,6 +42,4 @@ public interface GetCommitLogBuilder
   GetCommitLogBuilder untilHash(
       @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String untilHash);
-
-  LogResponse get() throws NessieNotFoundException;
 }

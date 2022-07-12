@@ -19,7 +19,7 @@ import javax.annotation.Nullable;
 import javax.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 
-public abstract class AbstractParams {
+public abstract class AbstractParams<IMPL extends AbstractParams<IMPL>> {
 
   @Parameter(description = "maximum number of entries to return, just a hint for the server")
   @QueryParam("maxRecords")
@@ -50,6 +50,8 @@ public abstract class AbstractParams {
   public String pageToken() {
     return pageToken;
   }
+
+  public abstract IMPL forNextPage(String pageToken);
 
   public abstract static class Builder<T extends Builder<T>> {
 

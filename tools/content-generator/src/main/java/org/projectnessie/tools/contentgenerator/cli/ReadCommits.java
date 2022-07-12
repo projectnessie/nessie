@@ -21,7 +21,6 @@ import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Operation;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Model.CommandSpec;
@@ -44,31 +43,32 @@ public class ReadCommits extends AbstractCommand {
     try (NessieApiV1 api = createNessieApiInstance()) {
       spec.commandLine().getOut().printf("Reading commits for ref '%s'\n\n", ref);
       FetchOption fetchOption = isVerbose() ? FetchOption.ALL : FetchOption.MINIMAL;
-      LogResponse logResponse = api.getCommitLog().refName(ref).fetch(fetchOption).get();
-      for (LogResponse.LogEntry logEntry : logResponse.getLogEntries()) {
-        CommitMeta commitMeta = logEntry.getCommitMeta();
-        spec.commandLine()
-            .getOut()
-            .printf(
-                "%s\t%s\t%s [%s]\n",
-                Objects.requireNonNull(commitMeta.getHash()).substring(0, 8),
-                commitMeta.getAuthorTime(),
-                commitMeta.getMessage(),
-                commitMeta.getAuthor());
+      api.getCommitLog().refName(ref).fetch(fetchOption).stream()
+          .forEach(
+              logEntry -> {
+                CommitMeta commitMeta = logEntry.getCommitMeta();
+                spec.commandLine()
+                    .getOut()
+                    .printf(
+                        "%s\t%s\t%s [%s]\n",
+                        Objects.requireNonNull(commitMeta.getHash()).substring(0, 8),
+                        commitMeta.getAuthorTime(),
+                        commitMeta.getMessage(),
+                        commitMeta.getAuthor());
 
-        List<Operation> operations = logEntry.getOperations();
-        if (operations != null) {
-          for (Operation op : operations) {
-            spec.commandLine().getOut().printf("  %s\n", op);
-            if (isVerbose()) {
-              List<String> key = op.getKey().getElements();
-              for (int i = 0; i < key.size(); i++) {
-                spec.commandLine().getOut().printf("    key[%d]: %s\n", i, key.get(i));
-              }
-            }
-          }
-        }
-      }
+                List<Operation> operations = logEntry.getOperations();
+                if (operations != null) {
+                  for (Operation op : operations) {
+                    spec.commandLine().getOut().printf("  %s\n", op);
+                    if (isVerbose()) {
+                      List<String> key = op.getKey().getElements();
+                      for (int i = 0; i < key.size(); i++) {
+                        spec.commandLine().getOut().printf("    key[%d]: %s\n", i, key.get(i));
+                      }
+                    }
+                  }
+                }
+              });
       spec.commandLine().getOut().printf("\nDone reading commits for ref '%s'\n\n", ref);
     }
   }

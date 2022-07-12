@@ -49,8 +49,7 @@ class ITGenerateContent extends AbstractContentGeneratorTest {
               "--type=" + contentType.name());
 
       assertThat(proc.getExitCode()).isEqualTo(0);
-      assertThat(api.getCommitLog().refName(testCaseBranch).get().getLogEntries())
-          .hasSize(numCommits);
+      assertThat(api.getCommitLog().refName(testCaseBranch).stream()).hasSize(numCommits);
     }
   }
 }

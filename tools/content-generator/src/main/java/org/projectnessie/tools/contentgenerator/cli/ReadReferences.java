@@ -15,8 +15,9 @@
  */
 package org.projectnessie.tools.contentgenerator.cli;
 
-import java.util.List;
+import java.util.stream.Stream;
 import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Reference;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Model.CommandSpec;
@@ -29,10 +30,10 @@ public class ReadReferences extends AbstractCommand {
   @Spec private CommandSpec spec;
 
   @Override
-  public void execute() {
+  public void execute() throws NessieNotFoundException {
     try (NessieApiV1 api = createNessieApiInstance()) {
       spec.commandLine().getOut().printf("Reading all references\n\n");
-      List<Reference> references = api.getAllReferences().get().getReferences();
+      Stream<Reference> references = api.getAllReferences().stream();
       references.forEach(reference -> spec.commandLine().getOut().println(reference));
       spec.commandLine().getOut().printf("\nDone reading all references\n\n");
     }

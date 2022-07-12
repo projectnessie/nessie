@@ -34,21 +34,21 @@ import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
 public class TestDisabledAuthentication extends BaseClientAuthTest {
 
   @Test
-  void testBasic() {
+  void testBasic() throws Exception {
     withClientCustomizer(
         c -> c.withAuthentication(BasicAuthenticationProvider.create("any_user", "any_password")));
-    assertThat(api().getAllReferences().get().getReferences()).isNotEmpty();
+    assertThat(api().getAllReferences().stream()).isNotEmpty();
   }
 
   @Test
-  void testBearer() {
+  void testBearer() throws Exception {
     withClientCustomizer(
         c -> c.withAuthentication(BearerAuthenticationProvider.create("any_token")));
-    assertThat(api().getAllReferences().get().getReferences()).isNotEmpty();
+    assertThat(api().getAllReferences().stream()).isNotEmpty();
   }
 
   @Test
-  void testNone() {
-    assertThat(api().getAllReferences().get().getReferences()).isNotEmpty();
+  void testNone() throws Exception {
+    assertThat(api().getAllReferences().stream()).isNotEmpty();
   }
 }

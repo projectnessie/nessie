@@ -21,7 +21,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 
@@ -35,8 +34,7 @@ public abstract class AbstractRestAssign extends AbstractRest {
       throws BaseNessieClientServerException {
     Reference main = getApi().getReference().refName("main").get();
     // make sure main doesn't have any commits
-    LogResponse log = getApi().getCommitLog().refName(main.getName()).get();
-    assertThat(log.getLogEntries()).isEmpty();
+    assertThat(getApi().getCommitLog().refName(main.getName()).stream()).isEmpty();
 
     Branch testBranch = createBranch("testBranch");
     getApi().assignBranch().branch(testBranch).assignTo(main).assign();

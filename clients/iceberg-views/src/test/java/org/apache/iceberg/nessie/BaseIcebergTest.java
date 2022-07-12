@@ -44,7 +44,6 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
 import org.projectnessie.jaxrs.ext.NessieUri;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 import org.projectnessie.server.store.TableCommitMetaStoreWorker;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
@@ -79,14 +78,20 @@ public class BaseIcebergTest {
   }
 
   private void resetData() throws NessieConflictException, NessieNotFoundException {
-    for (Reference r : api.getAllReferences().get().getReferences()) {
-      // remove only 'branch' that is used by the test.
-      if (r instanceof Branch && !r.getName().equals("main")) {
-        api.deleteBranch().branch((Branch) r).delete();
-      } else if (r instanceof Tag) {
-        api.deleteTag().tag((Tag) r).delete();
-      }
-    }
+    Branch defaultBranch = api.getDefaultBranch();
+    api.getAllReferences().stream()
+        .forEach(
+            ref -> {
+              try {
+                if (ref instanceof Branch && !ref.getName().equals(defaultBranch.getName())) {
+                  api.deleteBranch().branch((Branch) ref).delete();
+                } else if (ref instanceof Tag) {
+                  api.deleteTag().tag((Tag) ref).delete();
+                }
+              } catch (NessieConflictException | NessieNotFoundException e) {
+                throw new RuntimeException(e);
+              }
+            });
     api.createReference().reference(Branch.of(branch, null)).create();
   }
 

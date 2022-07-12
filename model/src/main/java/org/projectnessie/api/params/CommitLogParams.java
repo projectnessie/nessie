@@ -31,7 +31,7 @@ import org.projectnessie.model.Validation;
  * <p>For easier usage of this class, there is {@link CommitLogParams#builder()}, which allows
  * configuring/setting the different parameters.
  */
-public class CommitLogParams extends AbstractParams {
+public class CommitLogParams extends AbstractParams<CommitLogParams> {
 
   @Nullable
   @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
@@ -120,6 +120,11 @@ public class CommitLogParams extends AbstractParams {
 
   public static CommitLogParams empty() {
     return builder().build();
+  }
+
+  @Override
+  public CommitLogParams forNextPage(String pageToken) {
+    return new CommitLogParams(startHash, endHash, maxRecords(), pageToken, filter, fetchOption);
   }
 
   @Override

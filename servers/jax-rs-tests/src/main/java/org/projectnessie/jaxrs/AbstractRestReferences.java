@@ -48,7 +48,6 @@ import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferenceMetadata;
-import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Validation;
 
@@ -73,9 +72,8 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
   }
 
   @Test
-  public void getAllReferences() {
-    ReferencesResponse references = getApi().getAllReferences().get();
-    assertThat(references.getReferences())
+  public void getAllReferences() throws Exception {
+    assertThat(getApi().getAllReferences().stream())
         .anySatisfy(r -> assertThat(r.getName()).isEqualTo("main"));
   }
 
@@ -240,7 +238,7 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
     assertEquals(Branch.of(branchName2, someHash), createdBranch2);
 
     Map<String, Reference> references =
-        getApi().getAllReferences().get().getReferences().stream()
+        getApi().getAllReferences().stream()
             .filter(r -> root.equals(r.getName()) || r.getName().endsWith(refNamePart))
             .collect(Collectors.toMap(Reference::getName, Function.identity()));
 
@@ -354,12 +352,7 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
                 .sourceRefName(b2.getName())
                 .create();
 
-    assertThat(
-            getApi()
-                .getAllReferences()
-                .filter("ref.name == 'other-development'")
-                .get()
-                .getReferences())
+    assertThat(getApi().getAllReferences().filter("ref.name == 'other-development'").stream())
         .hasSize(1)
         .allSatisfy(
             ref ->
@@ -367,24 +360,22 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
                     .isInstanceOf(Branch.class)
                     .extracting(Reference::getName, Reference::getHash)
                     .containsExactly(b2.getName(), b2.getHash()));
-    assertThat(getApi().getAllReferences().filter("refType == 'TAG'").get().getReferences())
+    assertThat(getApi().getAllReferences().filter("refType == 'TAG'").stream())
         .allSatisfy(ref -> assertThat(ref).isInstanceOf(Tag.class));
-    assertThat(getApi().getAllReferences().filter("refType == 'BRANCH'").get().getReferences())
+    assertThat(getApi().getAllReferences().filter("refType == 'BRANCH'").stream())
         .allSatisfy(ref -> assertThat(ref).isInstanceOf(Branch.class));
     assertThat(
             getApi()
                 .getAllReferences()
                 .filter("has(refMeta.numTotalCommits) && refMeta.numTotalCommits < 0")
-                .get()
-                .getReferences())
+                .stream())
         .isEmpty();
     assertThat(
             getApi()
                 .getAllReferences()
                 .fetch(FetchOption.ALL)
                 .filter("commit.message == 'invent awesome things'")
-                .get()
-                .getReferences())
+                .stream())
         .hasSize(2)
         .allSatisfy(ref -> assertThat(ref.getName()).isIn(b2.getName(), t1.getName()));
     assertThat(
@@ -392,8 +383,7 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
                 .getAllReferences()
                 .fetch(FetchOption.ALL)
                 .filter("refType == 'TAG' && commit.message == 'invent awesome things'")
-                .get()
-                .getReferences())
+                .stream())
         .hasSize(1)
         .allSatisfy(ref -> assertThat(ref.getName()).isEqualTo(t1.getName()));
   }
@@ -418,7 +408,7 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
           .create();
     }
     // not fetching additional metadata
-    List<Reference> references = getApi().getAllReferences().get().getReferences();
+    List<Reference> references = getApi().getAllReferences().stream().collect(Collectors.toList());
     Optional<Reference> main =
         references.stream().filter(r -> r.getName().equals("main")).findFirst();
     assertThat(main).isPresent();
@@ -435,7 +425,8 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
         .allSatisfy(tag -> assertThat(tag.getMetadata()).isNull());
 
     // fetching additional metadata for each reference
-    references = getApi().getAllReferences().fetch(FetchOption.ALL).get().getReferences();
+    references =
+        getApi().getAllReferences().fetch(FetchOption.ALL).stream().collect(Collectors.toList());
     assertThat(
             references.stream()
                 .filter(r -> r.getName().startsWith(branchPrefix))

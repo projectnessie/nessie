@@ -31,7 +31,7 @@ import org.projectnessie.model.Validation;
  * <p>For easier usage of this class, there is {@link EntriesParams#builder()}, which allows
  * configuring/setting the different parameters.
  */
-public class EntriesParams extends AbstractParams {
+public class EntriesParams extends AbstractParams<EntriesParams> {
 
   @Nullable
   @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
@@ -98,6 +98,11 @@ public class EntriesParams extends AbstractParams {
   @Nullable
   public Integer namespaceDepth() {
     return namespaceDepth;
+  }
+
+  @Override
+  public EntriesParams forNextPage(String pageToken) {
+    return new EntriesParams(hashOnRef, maxRecords(), pageToken, namespaceDepth, filter);
   }
 
   @Override

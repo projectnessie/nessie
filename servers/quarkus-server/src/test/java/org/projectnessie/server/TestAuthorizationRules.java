@@ -22,9 +22,9 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.security.TestSecurity;
 import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -40,7 +40,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
-import org.projectnessie.model.RefLogResponse;
+import org.projectnessie.model.RefLogResponse.RefLogResponseEntry;
 import org.projectnessie.model.Reference;
 import org.projectnessie.server.authz.NessieAuthorizationTestProfile;
 
@@ -197,7 +197,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
 
     targetBranch = retrieveBranch(targetBranch.getName(), role, false);
 
-    assertThat(api().getCommitLog().reference(targetBranch).get().getLogEntries()).isNotEmpty();
+    assertThat(api().getCommitLog().reference(targetBranch).stream()).isNotEmpty();
   }
 
   @Test
@@ -225,7 +225,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
         .transplantCommitsIntoBranch()
         .fromRefName(branch.getName())
         .hashesToTransplant(
-            api().getCommitLog().reference(branch).get().getLogEntries().stream()
+            api().getCommitLog().reference(branch).stream()
                 .map(e -> e.getCommitMeta().getHash())
                 .collect(Collectors.toList()))
         .branch(targetBranch)
@@ -233,7 +233,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
 
     targetBranch = retrieveBranch(targetBranch.getName(), role, false);
 
-    assertThat(api().getCommitLog().reference(targetBranch).get().getLogEntries()).isNotEmpty();
+    assertThat(api().getCommitLog().reference(targetBranch).stream()).isNotEmpty();
   }
 
   @Test
@@ -285,13 +285,14 @@ class TestAuthorizationRules extends BaseClientAuthTest {
     deleteBranch(branch, role, false);
   }
 
-  private void listAllReferences(String branchName, boolean filteredOut) {
+  private void listAllReferences(String branchName, boolean filteredOut)
+      throws NessieNotFoundException {
     if (filteredOut) {
-      assertThat(api().getAllReferences().get().getReferences())
+      assertThat(api().getAllReferences().stream())
           .extracting(Reference::getName)
           .doesNotContain(branchName);
     } else {
-      assertThat(api().getAllReferences().get().getReferences())
+      assertThat(api().getAllReferences().stream())
           .extracting(Reference::getName)
           .contains(branchName);
     }
@@ -377,12 +378,12 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   private void getEntriesFor(String branchName, String role, boolean shouldFail)
       throws NessieNotFoundException {
     if (shouldFail) {
-      assertThatThrownBy(() -> api().getEntries().refName(branchName).get().getEntries())
+      assertThatThrownBy(() -> api().getEntries().refName(branchName).stream())
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format("'READ_ENTRIES' is not allowed for role '%s' on reference", role));
     } else {
-      List<Entry> tables = api().getEntries().refName(branchName).get().getEntries();
+      Stream<Entry> tables = api().getEntries().refName(branchName).stream();
       assertThat(tables).isNotEmpty();
     }
   }
@@ -390,23 +391,23 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   private void getCommitLog(String branchName, String role, boolean shouldFail)
       throws NessieNotFoundException {
     if (shouldFail) {
-      assertThatThrownBy(() -> api().getCommitLog().refName(branchName).get().getLogEntries())
+      assertThatThrownBy(() -> api().getCommitLog().refName(branchName).stream())
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(
               String.format("'LIST_COMMIT_LOG' is not allowed for role '%s' on reference", role));
     } else {
-      List<LogEntry> commits = api().getCommitLog().refName(branchName).get().getLogEntries();
+      Stream<LogEntry> commits = api().getCommitLog().refName(branchName).stream();
       assertThat(commits).isNotEmpty();
     }
   }
 
   private void getRefLog(String role, boolean shouldFail) throws NessieNotFoundException {
     if (shouldFail) {
-      assertThatThrownBy(() -> api().getRefLog().get().getLogEntries())
+      assertThatThrownBy(() -> api().getRefLog().stream())
           .isInstanceOf(NessieForbiddenException.class)
           .hasMessageContaining(String.format("'VIEW_REFLOG' is not allowed for role '%s'", role));
     } else {
-      List<RefLogResponse.RefLogResponseEntry> entries = api().getRefLog().get().getLogEntries();
+      Stream<RefLogResponseEntry> entries = api().getRefLog().stream();
       assertThat(entries).isNotEmpty();
     }
   }
