@@ -42,6 +42,7 @@ import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieError;
 import org.projectnessie.error.NessieForbiddenException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
+import org.projectnessie.error.NessieUnsupportedMediaTypeException;
 import software.amazon.awssdk.utils.StringInputStream;
 
 @Execution(ExecutionMode.CONCURRENT)
@@ -188,6 +189,10 @@ public class TestResponseFilter {
         Arguments.of(Status.NOT_FOUND, ErrorCode.UNKNOWN, RuntimeException.class),
         Arguments.of(Status.CONFLICT, ErrorCode.REFERENCE_CONFLICT, NessieConflictException.class),
         Arguments.of(Status.CONFLICT, ErrorCode.UNKNOWN, RuntimeException.class),
+        Arguments.of(
+            Status.UNSUPPORTED_MEDIA_TYPE,
+            ErrorCode.UNSUPPORTED_MEDIA_TYPE,
+            NessieUnsupportedMediaTypeException.class),
         Arguments.of(
             Status.INTERNAL_SERVER_ERROR, ErrorCode.UNKNOWN, NessieInternalServerException.class));
   }

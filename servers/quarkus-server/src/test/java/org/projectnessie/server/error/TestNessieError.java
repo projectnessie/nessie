@@ -38,6 +38,7 @@ import org.projectnessie.error.NessieBackendThrottledException;
 import org.projectnessie.error.NessieBadRequestException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.error.NessieUnsupportedMediaTypeException;
 import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
 
 /**
@@ -132,6 +133,18 @@ class TestNessieError {
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessage(
                     "Bad Request (HTTP/400): blankParameterQueryGet.hash: must not be blank"));
+  }
+
+  @Test
+  void unsupportedMediaTypePut() {
+    assertAll(
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        unwrap(
+                            () -> client.newRequest().path("unsupportedMediaTypePut").put("foo")))
+                .isInstanceOf(NessieUnsupportedMediaTypeException.class)
+                .hasMessage("RESTEASY003065: Cannot consume content type"));
   }
 
   @Test

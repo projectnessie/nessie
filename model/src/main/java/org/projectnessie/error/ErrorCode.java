@@ -37,6 +37,7 @@ public enum ErrorCode {
   NAMESPACE_NOT_FOUND(404, NessieNamespaceNotFoundException::new),
   NAMESPACE_ALREADY_EXISTS(409, NessieNamespaceAlreadyExistsException::new),
   NAMESPACE_NOT_EMPTY(409, NessieNamespaceNotEmptyException::new),
+  UNSUPPORTED_MEDIA_TYPE(415, NessieUnsupportedMediaTypeException::new),
   ;
 
   private final int httpStatus;
