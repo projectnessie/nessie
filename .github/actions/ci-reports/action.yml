@@ -1,4 +1,5 @@
 name: 'Capture test reports'
+description: 'Captures test results and reports as an artifact'
 runs:
   using: "composite"
   steps:

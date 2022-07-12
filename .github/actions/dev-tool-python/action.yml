@@ -1,8 +1,10 @@
 name: 'Install Python'
+description: 'Setup Python runtime environment'
 inputs:
   python-version:
     required: true
     default: '3.9'
+    description: 'The Python version, defaults to 3.9'
 runs:
   using: "composite"
   steps:
