@@ -20,13 +20,21 @@ import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
@@ -76,8 +84,35 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
     }
   }
 
+  private static JsonNode loadJson(String scenario, String name) {
+    String resource =
+        String.format(
+            "org/projectnessie/test-data/iceberg-metadata/%s/%s-%s.json", scenario, scenario, name);
+    URL url = Thread.currentThread().getContextClassLoader().getResource(resource);
+    try (JsonParser parser =
+        new ObjectMapper()
+            .createParser(
+                Objects.requireNonNull(
+                    url, () -> String.format("Resource %s not found", resource)))) {
+      return parser.readValueAs(JsonNode.class);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   public static Stream<ContentAndOperationType> contentAndOperationTypes() {
     return Stream.of(
+        new ContentAndOperationType(
+            Content.Type.ICEBERG_TABLE,
+            Put.of(
+                ContentKey.of("a", "iceberg-metadata"),
+                IcebergTable.of(
+                    loadJson("table-three-snapshots", "3"), "/iceberg/table/metadata", null))),
+        new ContentAndOperationType(
+            Content.Type.ICEBERG_VIEW,
+            Put.of(
+                ContentKey.of("a", "view-metadata"),
+                IcebergView.of(loadJson("view-simple", "1"), "/iceberg/view/metadata", null))),
         new ContentAndOperationType(
             Content.Type.ICEBERG_TABLE,
             Put.of(
@@ -321,12 +356,16 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
   }
 
   private Content clearIdOnContent(Content content) {
+    return setIdOnContent(content, null);
+  }
+
+  private Content setIdOnContent(Content content, String contentId) {
     try {
       return (Content)
           content
               .getClass()
               .getDeclaredMethod("withId", String.class)
-              .invoke(content, new Object[1]);
+              .invoke(content, new Object[] {contentId});
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -372,5 +411,84 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
                 assertThat(content)
                     .isEqualTo(IcebergTable.builder().from(tableB).id(content.getId()).build()))
         .doesNotContainKey(ContentKey.of("noexist"));
+  }
+
+  static Stream<Arguments> icebergMetadataScenarios() {
+    return Stream.of(loadIcebergMetadataScenario("table-three-snapshots", 3));
+  }
+
+  private static Arguments loadIcebergMetadataScenario(String name, int count) {
+    List<Content> contents = new ArrayList<>();
+
+    for (int i = 1; i <= count; i++) {
+      Content content =
+          IcebergTable.of(
+              loadJson(name, Integer.toString(i)), String.format("/iceberg/%s", name), null);
+      contents.add(content);
+    }
+
+    return arguments(name, contents);
+  }
+
+  @ParameterizedTest
+  @MethodSource("icebergMetadataScenarios")
+  public void icebergMetadataScenario(String name, List<Content> contents) throws Exception {
+    ContentKey key = ContentKey.of("iceberg", "metadata-scenario", name);
+
+    Branch head = createBranch("icebergMetadataScenario_" + name);
+    Content previousContent = null;
+    String contentId = null;
+    for (Content content : contents) {
+      content = setIdOnContent(content, contentId);
+      Put op =
+          previousContent == null ? Put.of(key, content) : Put.of(key, content, previousContent);
+
+      Branch committed =
+          getApi()
+              .commitMultipleOperations()
+              .branch(head)
+              .commitMeta(CommitMeta.fromMessage("commit"))
+              .operation(op)
+              .commit();
+
+      // Compare content on HEAD commit with the committed content
+      Map<ContentKey, Content> contentMap =
+          getApi().getContent().key(key).reference(committed).get();
+
+      if (contentId == null) {
+        assertThat(contentMap)
+            .extractingByKey(key)
+            .extracting(this::clearIdOnContent)
+            .isEqualTo(content);
+
+        contentId = contentMap.get(key).getId();
+        content = setIdOnContent(content, contentId);
+      } else {
+        assertThat(contentMap).extractingByKey(key).isEqualTo(content);
+      }
+
+      List<Entry> entries = getApi().getEntries().refName(head.getName()).get().getEntries();
+      assertThat(entries)
+          .containsExactly(Entry.builder().name(key).type(content.getType()).build());
+
+      // Diff against of committed HEAD and previous commit must yield the content in the
+      // Put operation
+      assertThat(getApi().getDiff().fromRef(committed).toRef(head).get())
+          .extracting(DiffResponse::getDiffs, list(DiffEntry.class))
+          .extracting(DiffEntry::getKey, DiffEntry::getFrom, DiffEntry::getTo)
+          .containsExactly(tuple(key, content, previousContent));
+
+      // Compare operation on HEAD commit with the committed operation
+      LogResponse log = getApi().getCommitLog().reference(committed).fetch(FetchOption.ALL).get();
+      assertThat(log)
+          .extracting(LogResponse::getLogEntries, list(LogEntry.class))
+          .element(0)
+          .extracting(LogEntry::getOperations, list(Operation.class))
+          .element(0)
+          .isEqualTo(Put.of(key, content));
+
+      head = committed;
+      previousContent = content;
+    }
   }
 }

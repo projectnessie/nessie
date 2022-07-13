@@ -18,6 +18,7 @@ package org.projectnessie.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import javax.annotation.Nullable;
@@ -29,7 +30,7 @@ import org.immutables.value.Value;
 @JsonSerialize(as = ImmutableIcebergView.class)
 @JsonDeserialize(as = ImmutableIcebergView.class)
 @JsonTypeName("ICEBERG_VIEW")
-public abstract class IcebergView extends Content {
+public abstract class IcebergView extends IcebergContent {
 
   /**
    * Location where Iceberg stored its {@code ViewMetadata} file. The location depends on the
@@ -89,6 +90,37 @@ public abstract class IcebergView extends Content {
         .schemaId(schemaId)
         .dialect(dialect)
         .sqlText(sqlText)
+        .build();
+  }
+
+  public static IcebergView of(JsonNode metadata, String metadataLocation, String id) {
+    int currentVersionId = metadata.path(CURRENT_VERSION_ID).requireNonNull().asInt();
+
+    String sqlText = "";
+    String dialect = ""; // TODO dialect is currently undefined in Iceberg
+    int schemaId = 0;
+    JsonNode versions = metadata.get(VERSIONS);
+    if (versions != null) {
+      for (JsonNode version : versions) {
+        int versionId = version.path(VERSION_ID).requireNonNull().asInt();
+        if (versionId == currentVersionId) {
+          JsonNode viewDefinition = version.path(VIEW_DEFINITION).requireNonNull();
+          sqlText = viewDefinition.path(SQL).requireNonNull().asText();
+          JsonNode schema = viewDefinition.path(SCHEMA).requireNonNull();
+          schemaId = schema.path(SCHEMA_ID).requireNonNull().asInt();
+          break;
+        }
+      }
+    }
+
+    return builder()
+        .id(id)
+        .metadataLocation(metadataLocation)
+        .versionId(currentVersionId)
+        .schemaId(schemaId)
+        .dialect(dialect)
+        .sqlText(sqlText)
+        .metadata(GenericMetadata.of(ICEBERG_METADATA_VARIANT, metadata))
         .build();
   }
 }
