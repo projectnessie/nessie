@@ -121,6 +121,8 @@ nessieProject("nessie-bom", "bom")
 
 nessieProject("nessie-clients", "clients")
 
+nessieProject("nessie-spark-antlr-runtime", "clients/antlr-runtime")
+
 nessieProject("nessie-client", "clients/client")
 
 nessieProject("nessie-compatibility", "compatibility")

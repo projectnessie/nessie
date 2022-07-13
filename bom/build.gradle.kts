@@ -28,6 +28,7 @@ dependencies {
     api(rootProject)
     api(project(":nessie-clients"))
     api(project(":nessie-client"))
+    api(project(":nessie-spark-antlr-runtime"))
     api(project(":nessie-compatibility"))
     api(project(":nessie-compatibility-common"))
     api(project(":nessie-compatibility-tests"))
