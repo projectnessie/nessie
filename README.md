@@ -1,6 +1,7 @@
 # Project Nessie
 
 [![Build Status](https://github.com/projectnessie/nessie/workflows/Main%20CI/badge.svg)](https://github.com/projectnessie/nessie/actions)
+[![Java 17+18](https://github.com/projectnessie/nessie/actions/workflows/newer-java.yml/badge.svg)](https://github.com/projectnessie/nessie/actions/workflows/newer-java.yml)
 [![codecov](https://codecov.io/gh/projectnessie/nessie/branch/main/graph/badge.svg?token=W9J9ZUYO1Y)](https://codecov.io/gh/projectnessie/nessie)
 [![Maven Central](https://img.shields.io/maven-central/v/org.projectnessie/nessie)](https://search.maven.org/artifact/org.projectnessie/nessie)
 [![PyPI](https://img.shields.io/pypi/v/pynessie.svg)](https://pypi.python.org/pypi/pynessie)
