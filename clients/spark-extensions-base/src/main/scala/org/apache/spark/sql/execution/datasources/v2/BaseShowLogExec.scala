@@ -20,8 +20,8 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.util.{ArrayBasedMapData, MapData}
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.unsafe.types.UTF8String
-import org.projectnessie.client.api.NessieApiV1
 import org.projectnessie.client.StreamingUtil
+import org.projectnessie.client.api.NessieApiV1
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -39,7 +39,7 @@ abstract class BaseShowLogExec(
       api: NessieApiV1
   ): Seq[InternalRow] = {
     val refName = branch.getOrElse(
-      NessieUtils.getCurrentRef(currentCatalog, catalog).getName
+      NessieUtils.getCurrentRef(api, currentCatalog, catalog).getName
     )
     val stream = StreamingUtil.getCommitLogStream(
       api,
