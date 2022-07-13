@@ -30,7 +30,7 @@ abstract class BaseShowReferenceExec(
       api: NessieApiV1
   ): Seq[InternalRow] = {
 
-    val ref = NessieUtils.getCurrentRef(currentCatalog, catalog)
+    val ref = NessieUtils.getCurrentRef(api, currentCatalog, catalog)
     // todo have to figure out if this is delta or iceberg and extract the ref accordingly
     singleRowForRef(ref)
   }

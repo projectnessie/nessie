@@ -35,7 +35,7 @@ abstract class BaseMergeBranchExec(
     val from = api.getReference
       .refName(
         branch.getOrElse(
-          NessieUtils.getCurrentRef(currentCatalog, catalog).getName
+          NessieUtils.getCurrentRef(api, currentCatalog, catalog).getName
         )
       )
     api

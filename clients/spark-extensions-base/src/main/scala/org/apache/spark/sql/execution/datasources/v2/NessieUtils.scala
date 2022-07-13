@@ -18,9 +18,9 @@ package org.apache.spark.sql.execution.datasources.v2
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
+import org.projectnessie.client.StreamingUtil
 import org.projectnessie.client.api.NessieApiV1
 import org.projectnessie.client.http.HttpClientBuilder
-import org.projectnessie.client.StreamingUtil
 import org.projectnessie.error.NessieNotFoundException
 import org.projectnessie.model.{
   Branch,
@@ -32,7 +32,7 @@ import org.projectnessie.model.{
 }
 
 import java.time.format.DateTimeParseException
-import java.time.{Instant, LocalDateTime, ZoneOffset, ZonedDateTime}
+import java.time.{Instant, ZonedDateTime}
 import java.util.OptionalInt
 import scala.collection.JavaConverters._
 
@@ -238,18 +238,30 @@ object NessieUtils {
   }
 
   def getCurrentRef(
+      api: NessieApiV1,
       currentCatalog: CatalogPlugin,
       catalog: Option[String]
   ): Reference = {
-    val catalogName = catalog.getOrElse(currentCatalog.name)
-    val refName = SparkSession.active.sparkContext.conf
-      .get(s"spark.sql.catalog.$catalogName.ref")
-    val api = nessieAPI(currentCatalog, catalog)
+    val refName = getCurrentRefName(currentCatalog, catalog)
     try {
       api.getReference.refName(refName).get
-    } finally {
-      api.close()
+    } catch {
+      case e: NessieNotFoundException =>
+        throw new NessieNotFoundException(
+          s"Could not find current reference $refName configured in spark configuration for catalog '${catalog
+            .getOrElse(currentCatalog.name)}'.",
+          e
+        )
     }
+  }
+
+  def getCurrentRefName(
+      currentCatalog: CatalogPlugin,
+      catalog: Option[String]
+  ): String = {
+    val catalogName = catalog.getOrElse(currentCatalog.name)
+    SparkSession.active.sparkContext.conf
+      .get(s"spark.sql.catalog.$catalogName.ref")
   }
 
   def getRefType(ref: Reference): String = {
