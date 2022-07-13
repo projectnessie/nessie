@@ -19,7 +19,10 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.projectnessie.client.api.NessieApiV1
-import org.projectnessie.error.NessieConflictException
+import org.projectnessie.error.{
+  NessieConflictException,
+  NessieNotFoundException
+}
 import org.projectnessie.model._
 
 abstract class BaseCreateReferenceExec(
@@ -35,10 +38,20 @@ abstract class BaseCreateReferenceExec(
   override protected def runInternal(
       api: NessieApiV1
   ): Seq[InternalRow] = {
-    val sourceRef = createdFrom
-      .map(x => api.getReference.refName(x).get)
-      .orElse(Option(api.getDefaultBranch))
-      .orNull
+    val sourceRef =
+      if (createdFrom.isDefined) {
+        api.getReference.refName(createdFrom.get).get()
+      } else {
+        try {
+          NessieUtils.getCurrentRef(api, currentCatalog, catalog)
+        } catch {
+          case e: NessieNotFoundException =>
+            throw new NessieNotFoundException(
+              s"${e.getMessage} Use 'CREATE ${if (isBranch) "BRANCH" else "TAG"} ... FROM <existing-reference-name>'.",
+              e
+            )
+        }
+      }
     val ref =
       if (isBranch) Branch.of(branch, sourceRef.getHash)
       else Tag.of(branch, sourceRef.getHash)
