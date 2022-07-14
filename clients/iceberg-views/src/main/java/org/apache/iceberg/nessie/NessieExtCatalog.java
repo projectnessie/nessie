@@ -16,6 +16,7 @@
 package org.apache.iceberg.nessie;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import org.apache.hadoop.conf.Configuration;
@@ -109,7 +110,7 @@ public class NessieExtCatalog extends BaseMetastoreCatalog implements Views {
     viewCatalog.refresh();
   }
 
-  public void close() {
+  public void close() throws IOException {
     tableCatalog.close();
     viewCatalog.close();
   }
