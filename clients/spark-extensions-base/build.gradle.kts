@@ -31,7 +31,7 @@ dependencies {
   forScala(scalaVersion)
 
   implementation(platform(nessieRootProject()))
-  implementation(project(":nessie-spark-extensions-grammar"))
+  implementation(nessieProject("nessie-spark-extensions-grammar"))
   compileOnly("org.apache.spark:spark-hive_2.12") { forSpark(sparkVersion) }
   compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
   implementation(nessieClientForIceberg())

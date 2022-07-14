@@ -26,7 +26,7 @@ dependencies {
   antlr(platform(nessieRootProject()))
   antlr("org.antlr:antlr4:${dependencyVersion("versionAntlr")}")
 
-  implementation(platform(nessieRootProject()))
+  api(platform(nessieRootProject()))
   api(project(":nessie-spark-antlr-runtime", "shadow"))
 }
 

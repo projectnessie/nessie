@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import java.util.Properties
+
 if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_11)) {
   throw GradleException("Build requires Java 11")
 }
@@ -106,7 +108,7 @@ pluginManagement {
 
 gradle.rootProject {
   val prj = this
-  val versions = settings.extra["nessieBuild.versions"] as java.util.Properties
+  val versions = settings.extra["nessieBuild.versions"] as Properties
   versions.forEach { k, v -> prj.extra[k.toString()] = v }
 }
 
@@ -120,18 +122,14 @@ fun nessieProject(name: String, directory: String) {
   project(":$name").projectDir = file(directory)
 }
 
-// TODO nessieProject("nessie-deltalake", "../clients/deltalake")
+fun loadProjects(file: String) {
+  val props = Properties()
+  file(file).reader().use { reader ->
+    props.load(reader)
+  }
+  props.forEach { name, directory -> nessieProject(name as String, "../$directory") }
+}
 
-// TODO nessieProject("iceberg-views", "../clients/iceberg-views")
-
-nessieProject("nessie-spark-3.2-extensions", "../clients/spark-3.2-extensions")
-
-nessieProject("nessie-spark-extensions-grammar", "../clients/spark-antlr-grammar")
-
-nessieProject("nessie-spark-extensions", "../clients/spark-extensions")
-
-nessieProject("nessie-spark-extensions-base", "../clients/spark-extensions-base")
-
-nessieProject("nessie-gc-base", "../gc/gc-base")
+loadProjects("../gradle/projects.iceberg.properties")
 
 rootProject.name = "nessie-iceberg"

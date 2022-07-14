@@ -136,7 +136,6 @@ You can also deploy to AWS lambda function by following the steps in `servers/la
 
 * [Nessie Demos](https://github.com/projectnessie/nessie-demos): Demos for Nessie
 * [CEL Java](https://github.com/projectnessie/cel-java): Java port of the Common Expression Language
-* [Nessie antlr runtime](https://github.com/projectnessie/nessie-antlr-runtime): Shaded/relocated antlr runtime for Nessie Spark Extensions
 * [Nessie apprunner](https://github.com/projectnessie/nessie-apprunner): Maven and Gradle plugins to use Nessie in integration tests.
 
 ## Contributing
