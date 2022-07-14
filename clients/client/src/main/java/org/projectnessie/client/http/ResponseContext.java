@@ -17,6 +17,7 @@ package org.projectnessie.client.http;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 
 /** Interface for the important parts of a response. This is created after executing the request. */
 public interface ResponseContext {
@@ -26,4 +27,10 @@ public interface ResponseContext {
   InputStream getInputStream() throws IOException;
 
   InputStream getErrorStream() throws IOException;
+
+  boolean isJsonCompatibleResponse();
+
+  String getContentType();
+
+  URI getRequestedUri();
 }

@@ -25,6 +25,12 @@ public class TestHttpUtil {
   private TestHttpUtil() {}
 
   public static void writeResponseBody(HttpExchange http, String response) throws IOException {
+    writeResponseBody(http, response, "application/json");
+  }
+
+  public static void writeResponseBody(HttpExchange http, String response, String contentType)
+      throws IOException {
+    http.getResponseHeaders().add("Content-Type", contentType);
     byte[] body = response.getBytes(StandardCharsets.UTF_8);
     http.sendResponseHeaders(200, body.length);
     try (OutputStream os = http.getResponseBody()) {

@@ -18,19 +18,23 @@ package org.projectnessie.client.http;
 import static org.projectnessie.client.http.HttpUtils.DEFLATE;
 import static org.projectnessie.client.http.HttpUtils.GZIP;
 import static org.projectnessie.client.http.HttpUtils.HEADER_CONTENT_ENCODING;
+import static org.projectnessie.client.http.HttpUtils.HEADER_CONTENT_TYPE;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 
 class ResponseContextImpl implements ResponseContext {
 
   private final HttpURLConnection connection;
+  private final URI uri;
 
-  ResponseContextImpl(HttpURLConnection connection) {
+  ResponseContextImpl(HttpURLConnection connection, URI uri) {
     this.connection = connection;
+    this.uri = uri;
   }
 
   @Override
@@ -46,6 +50,29 @@ class ResponseContextImpl implements ResponseContext {
   @Override
   public InputStream getErrorStream() throws IOException {
     return maybeDecompress(connection.getErrorStream());
+  }
+
+  @Override
+  public boolean isJsonCompatibleResponse() {
+    String contentType = getContentType();
+    if (contentType == null) {
+      return false;
+    }
+    int i = contentType.indexOf(';');
+    if (i > 0) {
+      contentType = contentType.substring(0, i);
+    }
+    return contentType.endsWith("/json") || contentType.endsWith("+json");
+  }
+
+  @Override
+  public String getContentType() {
+    return connection.getHeaderField(HEADER_CONTENT_TYPE);
+  }
+
+  @Override
+  public URI getRequestedUri() {
+    return uri;
   }
 
   private InputStream maybeDecompress(InputStream inputStream) throws IOException {

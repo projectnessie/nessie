@@ -19,20 +19,26 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpHandler;
 import io.opentracing.Scope;
 import io.opentracing.util.GlobalTracer;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.client.rest.NessieInternalServerException;
 import org.projectnessie.client.rest.NessieNotAuthorizedException;
+import org.projectnessie.client.rest.NessieServiceException;
 import org.projectnessie.client.util.JaegerTestTracer;
 import org.projectnessie.client.util.TestHttpUtil;
 import org.projectnessie.client.util.TestServer;
+import org.projectnessie.model.Branch;
 
 class TestNessieHttpClient {
   @BeforeAll
@@ -41,15 +47,61 @@ class TestNessieHttpClient {
   }
 
   @Test
-  void testTracing() throws Exception {
-    AtomicReference<String> traceId = new AtomicReference<>();
-
-    try (TestServer server = new TestServer(handlerForHeaderTest("Uber-trace-id", traceId))) {
+  void testNonJsonResponse() throws Exception {
+    HttpHandler handler =
+        h -> {
+          Assertions.assertEquals("GET", h.getRequestMethod());
+          TestHttpUtil.writeResponseBody(h, "<html>hello world>", "text/html");
+        };
+    try (TestServer server = new TestServer(handler)) {
       NessieApiV1 api =
           HttpClientBuilder.builder()
               .withUri(server.getUri())
               .withTracing(true)
               .build(NessieApiV1.class);
+      assertThatThrownBy(api::getDefaultBranch)
+          .isInstanceOf(NessieServiceException.class)
+          .hasMessageStartingWith(
+              "Expected the server to return a JSON compatible response, but the server returned with Content-Type 'text/html' from ");
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "application/json",
+        "application/json;charset=utf-8",
+        "text/json",
+        "mystuff/foo+json",
+        "mystuff/foo+json;charset=utf-8"
+      })
+  void testValidJsonResponse(String contentType) throws Exception {
+    HttpHandler handler =
+        h -> {
+          Assertions.assertEquals("GET", h.getRequestMethod());
+          String response = new ObjectMapper().writeValueAsString(Branch.of("foo", "deadbeef"));
+          TestHttpUtil.writeResponseBody(h, response, contentType);
+        };
+    try (TestServer server = new TestServer("/trees/tree", handler);
+        NessieApiV1 api =
+            HttpClientBuilder.builder()
+                .withUri(server.getUri())
+                .withTracing(true)
+                .build(NessieApiV1.class)) {
+      api.getDefaultBranch();
+    }
+  }
+
+  @Test
+  void testTracing() throws Exception {
+    AtomicReference<String> traceId = new AtomicReference<>();
+
+    try (TestServer server = new TestServer(handlerForHeaderTest("Uber-trace-id", traceId));
+        NessieApiV1 api =
+            HttpClientBuilder.builder()
+                .withUri(server.getUri())
+                .withTracing(true)
+                .build(NessieApiV1.class)) {
       try (Scope ignore =
           GlobalTracer.get()
               .activateSpan(GlobalTracer.get().buildSpan("testOpenTracing").start())) {
@@ -67,12 +119,12 @@ class TestNessieHttpClient {
   void testTracingNotEnabled() throws Exception {
     AtomicReference<String> traceId = new AtomicReference<>();
 
-    try (TestServer server = new TestServer(handlerForHeaderTest("Uber-trace-id", traceId))) {
-      NessieApiV1 api =
-          HttpClientBuilder.builder()
-              .withUri(server.getUri())
-              .withTracing(false)
-              .build(NessieApiV1.class);
+    try (TestServer server = new TestServer(handlerForHeaderTest("Uber-trace-id", traceId));
+        NessieApiV1 api =
+            HttpClientBuilder.builder()
+                .withUri(server.getUri())
+                .withTracing(false)
+                .build(NessieApiV1.class)) {
       try (Scope ignore =
           GlobalTracer.get()
               .activateSpan(GlobalTracer.get().buildSpan("testOpenTracing").start())) {
@@ -93,12 +145,11 @@ class TestNessieHttpClient {
 
   @Test
   void testNotFoundOnBaseUri() throws IOException {
-    try (TestServer server = errorServer(404)) {
-      NessieApiV1 api =
-          HttpClientBuilder.builder()
-              .withUri(server.getUri().resolve("/unknownPath"))
-              .build(NessieApiV1.class);
-
+    try (TestServer server = errorServer(404);
+        NessieApiV1 api =
+            HttpClientBuilder.builder()
+                .withUri(server.getUri().resolve("/unknownPath"))
+                .build(NessieApiV1.class)) {
       assertThatThrownBy(api::getConfig)
           .isInstanceOf(RuntimeException.class)
           .hasMessageContaining("Not Found");
@@ -107,12 +158,11 @@ class TestNessieHttpClient {
 
   @Test
   void testInternalServerError() throws IOException {
-    try (TestServer server = errorServer(500)) {
-      NessieApiV1 api =
-          HttpClientBuilder.builder()
-              .withUri(server.getUri().resolve("/broken"))
-              .build(NessieApiV1.class);
-
+    try (TestServer server = errorServer(500);
+        NessieApiV1 api =
+            HttpClientBuilder.builder()
+                .withUri(server.getUri().resolve("/broken"))
+                .build(NessieApiV1.class)) {
       assertThatThrownBy(api::getConfig)
           .isInstanceOf(NessieInternalServerException.class)
           .hasMessageContaining("Internal Server Error");
@@ -121,12 +171,11 @@ class TestNessieHttpClient {
 
   @Test
   void testUnauthorized() throws IOException {
-    try (TestServer server = errorServer(401)) {
-      NessieApiV1 api =
-          HttpClientBuilder.builder()
-              .withUri(server.getUri().resolve("/unauthorized"))
-              .build(NessieApiV1.class);
-
+    try (TestServer server = errorServer(401);
+        NessieApiV1 api =
+            HttpClientBuilder.builder()
+                .withUri(server.getUri().resolve("/unauthorized"))
+                .build(NessieApiV1.class)) {
       assertThatThrownBy(api::getConfig)
           .isInstanceOf(NessieNotAuthorizedException.class)
           .hasMessageContaining("Unauthorized");
@@ -137,6 +186,7 @@ class TestNessieHttpClient {
     return h -> {
       receiver.set(h.getRequestHeaders().getFirst(headerName));
       h.getRequestBody().close();
+      h.getResponseHeaders().add("Content-Type", "application/json");
       TestHttpUtil.writeResponseBody(h, "{\"maxSupportedApiVersion\":1}");
     };
   }
