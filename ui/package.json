@@ -114,7 +114,7 @@
     "html-webpack-plugin": "5.5.0",
     "husky": "^8.0.1",
     "jest": "28.1.3",
-    "jest-circus": "28.1.2",
+    "jest-circus": "28.1.3",
     "jest-environment-jsdom": "28.1.2",
     "jest-resolve": "28.1.3",
     "jest-watch-typeahead": "2.0.0",
