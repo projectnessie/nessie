@@ -43,7 +43,7 @@ val versionAntlr = "4.10.1"
 val versionAssertJ = "3.23.1"
 val versionAwssdk = "2.17.232"
 val versionBouncyCastle = "1.70"
-val versionCel = "0.3.7"
+val versionCel = "0.3.8"
 val versionCheckstyle = "10.3.1"
 // to fix circular dependencies with NessieClient, certain projects need to use the same Nessie
 // version as Iceberg/Delta has
