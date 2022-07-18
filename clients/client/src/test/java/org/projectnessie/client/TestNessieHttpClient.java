@@ -32,9 +32,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpClientBuilder;
+import org.projectnessie.client.rest.NessieBadResponseException;
 import org.projectnessie.client.rest.NessieInternalServerException;
 import org.projectnessie.client.rest.NessieNotAuthorizedException;
-import org.projectnessie.client.rest.NessieServiceException;
 import org.projectnessie.client.util.JaegerTestTracer;
 import org.projectnessie.client.util.TestHttpUtil;
 import org.projectnessie.client.util.TestServer;
@@ -60,7 +60,7 @@ class TestNessieHttpClient {
               .withTracing(true)
               .build(NessieApiV1.class);
       assertThatThrownBy(api::getDefaultBranch)
-          .isInstanceOf(NessieServiceException.class)
+          .isInstanceOf(NessieBadResponseException.class)
           .hasMessageStartingWith(
               "Expected the server to return a JSON compatible response, but the server returned with Content-Type 'text/html' from ");
     }

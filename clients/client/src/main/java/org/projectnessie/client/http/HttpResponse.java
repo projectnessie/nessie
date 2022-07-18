@@ -19,7 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import java.io.IOException;
 import java.io.InputStream;
-import org.projectnessie.client.rest.NessieServiceException;
+import org.projectnessie.client.rest.NessieBadResponseException;
 import org.projectnessie.error.ImmutableNessieError;
 
 /** Simple holder for http response object. */
@@ -59,7 +59,7 @@ public class HttpResponse {
 
   private void nonJsonResponse() throws IOException {
     Status status = responseContext.getResponseCode();
-    throw new NessieServiceException(
+    throw new NessieBadResponseException(
         ImmutableNessieError.builder()
             .status(status.getCode())
             .message(status.getReason())
@@ -68,8 +68,8 @@ public class HttpResponse {
                     "Expected the server to return a JSON compatible response, "
                         + "but the server returned with Content-Type '%s' from '%s'. "
                         + "Check the Nessie REST API base URI. "
-                        + "Nessie REST API base URI usually end in '/api/v1', unless you were "
-                        + "given a specific URI from your service provider.",
+                        + "Nessie REST API base URI usually end in '/api/v1', but your service "
+                        + "provider may have a different URL pattern.",
                     responseContext.getContentType(), responseContext.getRequestedUri()))
             .build());
   }
