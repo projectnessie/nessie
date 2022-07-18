@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import java.util.Properties
+
 if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_11)) {
   throw GradleException("Build requires Java 11")
 }
@@ -101,7 +103,7 @@ pluginManagement {
 
 gradle.rootProject {
   val prj = this
-  val versions = settings.extra["nessieBuild.versions"] as java.util.Properties
+  val versions = settings.extra["nessieBuild.versions"] as Properties
   versions.forEach { k, v -> prj.extra[k.toString()] = v }
 }
 
@@ -117,97 +119,13 @@ fun nessieProject(name: String, directory: String) {
   project(":$name").projectDir = file(directory)
 }
 
-nessieProject("nessie-bom", "bom")
+fun loadProjects(file: String) {
+  val props = Properties()
+  file(file).reader().use { reader -> props.load(reader) }
+  props.forEach { name, directory -> nessieProject(name as String, directory as String) }
+}
 
-nessieProject("nessie-clients", "clients")
-
-nessieProject("nessie-spark-antlr-runtime", "clients/antlr-runtime")
-
-nessieProject("nessie-client", "clients/client")
-
-nessieProject("nessie-compatibility", "compatibility")
-
-nessieProject("nessie-compatibility-common", "compatibility/common")
-
-nessieProject("nessie-compatibility-tests", "compatibility/compatibility-tests")
-
-nessieProject("nessie-compatibility-jersey", "compatibility/jersey")
-
-nessieProject("nessie-gc", "gc")
-
-nessieProject("nessie-model", "model")
-
-nessieProject("nessie-perftest", "perftest")
-
-nessieProject("nessie-perftest-gatling", "perftest/gatling")
-
-nessieProject("nessie-perftest-simulations", "perftest/simulations")
-
-nessieProject("nessie-server-parent", "servers")
-
-nessieProject("nessie-servers-iceberg-fixtures", "servers/iceberg-fixtures")
-
-nessieProject("nessie-jaxrs", "servers/jax-rs")
-
-nessieProject("nessie-jaxrs-testextension", "servers/jax-rs-testextension")
-
-nessieProject("nessie-jaxrs-tests", "servers/jax-rs-tests")
-
-nessieProject("nessie-lambda", "servers/lambda")
-
-nessieProject("nessie-quarkus-cli", "servers/quarkus-cli")
-
-nessieProject("nessie-quarkus-common", "servers/quarkus-common")
-
-nessieProject("nessie-quarkus", "servers/quarkus-server")
-
-nessieProject("nessie-quarkus-tests", "servers/quarkus-tests")
-
-nessieProject("nessie-rest-services", "servers/rest-services")
-
-nessieProject("nessie-services", "servers/services")
-
-nessieProject("nessie-server-store", "servers/store")
-
-nessieProject("nessie-server-store-proto", "servers/store-proto")
-
-nessieProject("nessie-tools", "tools")
-
-nessieProject("nessie-content-generator", "tools/content-generator")
-
-nessieProject("nessie-ui", "ui")
-
-nessieProject("nessie-versioned", "versioned")
-
-nessieProject("nessie-versioned-persist", "versioned/persist")
-
-nessieProject("nessie-versioned-persist-adapter", "versioned/persist/adapter")
-
-nessieProject("nessie-versioned-persist-bench", "versioned/persist/bench")
-
-nessieProject("nessie-versioned-persist-dynamodb", "versioned/persist/dynamodb")
-
-nessieProject("nessie-versioned-persist-in-memory", "versioned/persist/inmem")
-
-nessieProject("nessie-versioned-persist-mongodb", "versioned/persist/mongodb")
-
-nessieProject("nessie-versioned-persist-non-transactional", "versioned/persist/nontx")
-
-nessieProject("nessie-versioned-persist-rocks", "versioned/persist/rocks")
-
-nessieProject("nessie-versioned-persist-serialize", "versioned/persist/serialize")
-
-nessieProject("nessie-versioned-persist-serialize-proto", "versioned/persist/serialize-proto")
-
-nessieProject("nessie-versioned-persist-store", "versioned/persist/store")
-
-nessieProject("nessie-versioned-persist-tests", "versioned/persist/tests")
-
-nessieProject("nessie-versioned-persist-transactional", "versioned/persist/tx")
-
-nessieProject("nessie-versioned-spi", "versioned/spi")
-
-nessieProject("nessie-versioned-tests", "versioned/tests")
+loadProjects("gradle/projects.main.properties")
 
 // Needed when loading/syncing the whole integrations-tools-testing project with Nessie as an
 // included build. IDEA gets here two times: the first run _does_ have the properties from the
@@ -216,7 +134,7 @@ nessieProject("nessie-versioned-tests", "versioned/tests")
 if (gradle.parent != null && System.getProperty("idea.sync.active").toBoolean()) {
   val additionalPropertiesFile = file("./build/additional-build.properties")
   if (additionalPropertiesFile.isFile) {
-    val additionalProperties = java.util.Properties()
+    val additionalProperties = Properties()
     additionalPropertiesFile.reader().use { reader -> additionalProperties.load(reader) }
     System.getProperties().putAll(additionalProperties)
   }
@@ -225,19 +143,7 @@ if (gradle.parent != null && System.getProperty("idea.sync.active").toBoolean())
 // Cannot use isIntegrationsTestingEnabled() in buildSrc/src/main/kotlin/Utilities.kt, because
 // settings.gradle is evaluated before buildSrc.
 if (!System.getProperty("nessie.integrationsTesting.enable").toBoolean()) {
-  nessieProject("nessie-deltalake", "clients/deltalake")
-
-  nessieProject("iceberg-views", "clients/iceberg-views")
-
-  nessieProject("nessie-spark-3.2-extensions", "clients/spark-3.2-extensions")
-
-  nessieProject("nessie-spark-extensions-grammar", "clients/spark-antlr-grammar")
-
-  nessieProject("nessie-spark-extensions", "clients/spark-extensions")
-
-  nessieProject("nessie-spark-extensions-base", "clients/spark-extensions-base")
-
-  nessieProject("nessie-gc-base", "gc/gc-base")
+  loadProjects("gradle/projects.iceberg.properties")
 }
 
 if (false) {

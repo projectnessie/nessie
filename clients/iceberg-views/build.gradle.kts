@@ -22,13 +22,17 @@ plugins {
 }
 
 dependencies {
-  implementation(platform(rootProject))
-  implementation(project(":nessie-client"))
-  implementation(project(":nessie-model"))
+  implementation(platform(nessieRootProject()))
+  implementation(nessieProject("nessie-client"))
+  implementation(nessieProject("nessie-model"))
   implementation("org.apache.iceberg:iceberg-api")
   implementation("org.apache.iceberg:iceberg-core")
   implementation("org.apache.iceberg:iceberg-common")
-  implementation("org.apache.iceberg:iceberg-bundled-guava")
+  implementation(
+    "org.apache.iceberg",
+    "iceberg-bundled-guava",
+    configuration = if (isIntegrationsTestingEnabled()) "shadow" else null
+  )
   implementation("org.apache.iceberg:iceberg-nessie") { exclude("org.projectnessie", "*") }
   implementation("org.apache.hadoop:hadoop-client") {
     exclude("javax.ws.rs", "javax.ws.rs-api")
@@ -39,10 +43,10 @@ dependencies {
   }
   compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
-  testImplementation(platform(rootProject))
-  testImplementation(project(":nessie-versioned-persist-tests"))
-  testImplementation(project(":nessie-versioned-persist-in-memory"))
-  testImplementation(project(":nessie-jaxrs-testextension"))
+  testImplementation(platform(nessieRootProject()))
+  testImplementation(nessieProject("nessie-versioned-persist-tests"))
+  testImplementation(nessieProject("nessie-versioned-persist-in-memory"))
+  testImplementation(nessieProject("nessie-jaxrs-testextension"))
   testImplementation("org.slf4j:log4j-over-slf4j")
   testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
