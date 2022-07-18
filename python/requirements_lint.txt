@@ -25,4 +25,4 @@ flake8-isort==4.1.1
 isort==5.10.1
 pytest-mypy==0.9.1
 safety==2.1.0
-pylint==2.14.4
+pylint==2.14.5
