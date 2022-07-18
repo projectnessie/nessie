@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -109,6 +110,21 @@ public class TestResponseFilter {
                       public InputStream getErrorStream() {
                         return new StringInputStream("this will fail");
                       }
+
+                      @Override
+                      public boolean isJsonCompatibleResponse() {
+                        return true;
+                      }
+
+                      @Override
+                      public String getContentType() {
+                        return null;
+                      }
+
+                      @Override
+                      public URI getRequestedUri() {
+                        return null;
+                      }
                     },
                     MAPPER))
         .isInstanceOf(NessieNotAuthorizedException.class)
@@ -139,6 +155,21 @@ public class TestResponseFilter {
                         // Quarkus may sometimes produce JSON error responses like this
                         return new StringInputStream(
                             "{\"details\":\"Error id ee7f7293-67ad-42bd-8973-179801e7120e-1\",\"stack\":\"\"}");
+                      }
+
+                      @Override
+                      public boolean isJsonCompatibleResponse() {
+                        return true;
+                      }
+
+                      @Override
+                      public String getContentType() {
+                        return null;
+                      }
+
+                      @Override
+                      public URI getRequestedUri() {
+                        return null;
                       }
                     },
                     MAPPER))
@@ -220,6 +251,21 @@ public class TestResponseFilter {
       }
       String value = MAPPER.writeValueAsString(error);
       return new StringInputStream(value);
+    }
+
+    @Override
+    public boolean isJsonCompatibleResponse() {
+      return true;
+    }
+
+    @Override
+    public String getContentType() {
+      return null;
+    }
+
+    @Override
+    public URI getRequestedUri() {
+      return null;
     }
   }
 }

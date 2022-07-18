@@ -19,6 +19,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import java.io.IOException;
 import java.io.InputStream;
+import org.projectnessie.client.rest.NessieBadResponseException;
+import org.projectnessie.error.ImmutableNessieError;
 
 /** Simple holder for http response object. */
 public class HttpResponse {
@@ -44,11 +46,32 @@ public class HttpResponse {
         return null;
       }
       try (InputStream is = responseContext.getInputStream()) {
+        if (!responseContext.isJsonCompatibleResponse()) {
+          nonJsonResponse();
+        }
+
         return reader.readValue(is);
       }
     } catch (IOException e) {
       throw new HttpClientException("Cannot parse request.", e);
     }
+  }
+
+  private void nonJsonResponse() throws IOException {
+    Status status = responseContext.getResponseCode();
+    throw new NessieBadResponseException(
+        ImmutableNessieError.builder()
+            .status(status.getCode())
+            .message(status.getReason())
+            .reason(
+                String.format(
+                    "Expected the server to return a JSON compatible response, "
+                        + "but the server returned with Content-Type '%s' from '%s'. "
+                        + "Check the Nessie REST API base URI. "
+                        + "Nessie REST API base URI usually end in '/api/v1', but your service "
+                        + "provider may have a different URL pattern.",
+                    responseContext.getContentType(), responseContext.getRequestedUri()))
+            .build());
   }
 
   public <V> V readEntity(Class<V> clazz) {

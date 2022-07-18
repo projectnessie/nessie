@@ -94,7 +94,7 @@ public class HttpRequest {
         ((HttpsURLConnection) con).setSSLSocketFactory(config.getSslContext().getSocketFactory());
       }
       RequestContext context = new RequestContext(headers, uri, method, body);
-      ResponseContext responseContext = new ResponseContextImpl(con);
+      ResponseContext responseContext = new ResponseContextImpl(con, uri);
       try {
         headers.put(HEADER_ACCEPT, accept);
 

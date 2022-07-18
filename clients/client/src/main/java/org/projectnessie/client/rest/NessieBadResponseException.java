@@ -13,24 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http;
+package org.projectnessie.client.rest;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
+import org.projectnessie.error.NessieError;
 
-/** Interface for the important parts of a response. This is created after executing the request. */
-public interface ResponseContext {
+/**
+ * Represents an unexpected response from the remote side, trying to access a Nessie endpoint. For
+ * example, non-JSON responses cause this unchecked exception to be thrown. Note: this exception is
+ * <em>not</em> thrown for an HTTP/400 (Bad Request).
+ */
+public class NessieBadResponseException extends NessieServiceException {
 
-  Status getResponseCode() throws IOException;
-
-  InputStream getInputStream() throws IOException;
-
-  InputStream getErrorStream() throws IOException;
-
-  boolean isJsonCompatibleResponse();
-
-  String getContentType();
-
-  URI getRequestedUri();
+  public NessieBadResponseException(NessieError serverError) {
+    super(serverError);
+  }
 }
