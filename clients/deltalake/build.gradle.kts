@@ -25,9 +25,13 @@ plugins {
   `nessie-conventions`
 }
 
-val scalaVersion = dependencyVersion("versionScala2_12")
+val scalaMajorVersion = "2.12"
 
-val sparkVersion = dependencyVersion("versionSpark32")
+val scalaVersion = dependencyVersion("versionScala_$scalaMajorVersion")
+
+val sparkMajorVersion = "3.2"
+
+val sparkVersion = dependencyVersion("versionSpark_$sparkMajorVersion")
 
 dependencies {
   // picks the right dependencies for scala compilation
@@ -36,14 +40,14 @@ dependencies {
   implementation(platform(nessieRootProject()))
   implementation(nessieProject("nessie-model"))
   implementation(nessieProject("nessie-client"))
-  implementation("org.apache.spark:spark-core_2.12") { forSpark(sparkVersion) }
-  implementation("org.apache.spark:spark-sql_2.12") { forSpark(sparkVersion) }
-  implementation("io.delta:delta-core_2.12")
+  implementation("org.apache.spark:spark-core_$scalaMajorVersion") { forSpark(sparkVersion) }
+  implementation("org.apache.spark:spark-sql_$scalaMajorVersion") { forSpark(sparkVersion) }
+  implementation("io.delta:delta-core_$scalaMajorVersion")
   compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
   testImplementation(platform(nessieRootProject()))
-  testImplementation(nessieProject("nessie-spark-3.2-extensions"))
-  testImplementation("com.fasterxml.jackson.module:jackson-module-scala_2.12")
+  testImplementation(nessieProject("nessie-spark-${sparkMajorVersion}-extensions"))
+  testImplementation("com.fasterxml.jackson.module:jackson-module-scala_$scalaMajorVersion")
   testImplementation("com.fasterxml.jackson.core:jackson-databind")
   testImplementation("org.eclipse.microprofile.openapi:microprofile-openapi-api")
   testImplementation("ch.qos.logback:logback-classic")

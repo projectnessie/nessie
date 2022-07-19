@@ -25,11 +25,11 @@ extra["maven.name"] = "Nessie - GC - Base Implementation"
 
 val scalaMajorVersion = "2.12"
 
-val scalaVersion = dependencyVersion("versionScala2_12")
+val scalaVersion = dependencyVersion("versionScala_$scalaMajorVersion")
 
 val sparkMajorVersion = "3.1"
 
-val sparkVersion = dependencyVersion("versionSpark31")
+val sparkVersion = dependencyVersion("versionSpark_$sparkMajorVersion")
 
 dependencies {
   implementation(platform(nessieRootProject()))

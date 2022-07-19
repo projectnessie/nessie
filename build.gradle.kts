@@ -91,11 +91,11 @@ val versionProtobuf = "3.21.2"
 val versionReactor = "2020.0.21"
 val versionRestAssured = "5.1.1"
 val versionRocksDb = "7.3.1"
-val versionScala2_12 = "2.12.13"
-val versionScala2_13 = "2.13.8"
+val versionScala_2_12 = "2.12.13"
+val versionScala_2_13 = "2.13.8"
 val versionSlf4j = "1.7.36"
-val versionSpark31 = "3.1.2"
-val versionSpark32 = "3.2.1"
+val versionSpark_3_1 = "3.1.2"
+val versionSpark_3_2 = "3.2.1"
 val versionTestcontainers = "1.17.3"
 val versionWeld = "3.1.8.Final"
 
@@ -129,13 +129,13 @@ extra["versionProtobuf"] = versionProtobuf
 
 extra["versionRocksDb"] = versionRocksDb
 
-extra["versionScala2_12"] = versionScala2_12
+extra["versionScala_2.12"] = versionScala_2_12
 
-extra["versionScala2_13"] = versionScala2_13
+extra["versionScala_2.13"] = versionScala_2_13
 
-extra["versionSpark31"] = versionSpark31
+extra["versionSpark_3.1"] = versionSpark_3_1
 
-extra["versionSpark32"] = versionSpark32
+extra["versionSpark_3.2"] = versionSpark_3_2
 
 extra["quarkus.builder-image"] = "quay.io/quarkus/ubi-quarkus-native-image:22.1-java17"
 

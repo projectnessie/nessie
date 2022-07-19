@@ -26,8 +26,6 @@ plugins {
 
 extra["maven.name"] = "Nessie - Perf Test - Simulations"
 
-val scalaVersion = dependencyVersion("versionScala2_13")
-
 dependencies {
   gatling(platform(rootProject))
   gatling(project(":nessie-model"))
