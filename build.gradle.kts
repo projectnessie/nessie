@@ -47,7 +47,7 @@ val versionCel = "0.3.8"
 val versionCheckstyle = "10.3.1"
 // to fix circular dependencies with NessieClient, certain projects need to use the same Nessie
 // version as Iceberg/Delta has
-var versionClientNessie = "0.18.0"
+var versionClientNessie = "0.30.0"
 val versionDeltalake = "1.1.0-nessie"
 val versionDockerjava = "3.2.13"
 val versionErrorProneAnnotations = "2.14.0"
@@ -59,7 +59,7 @@ val versionGoogleJavaFormat = "1.15.0"
 val versionGraalSvm = "22.1.0.1"
 val versionH2 = "2.1.214"
 val versionHadoop = "3.3.3"
-var versionIceberg = "0.13.2"
+var versionIceberg = "0.14.0"
 val versionImmutables = "2.9.0"
 val versionJackson = "2.13.3"
 val versionJacksonSpark3 = "2.13.3"
@@ -190,8 +190,9 @@ dependencies {
     api("org.apache.iceberg:iceberg-nessie:$versionIceberg")
     api("org.apache.iceberg:iceberg-parquet:$versionIceberg")
     api("org.apache.iceberg:iceberg-spark-3.2_2.12:$versionIceberg")
-    api("org.apache.iceberg:iceberg-spark3:$versionIceberg")
-    api("org.apache.iceberg:iceberg-spark3-extensions:$versionIceberg")
+    api("org.apache.iceberg:iceberg-spark-3.1_2.12:$versionIceberg")
+    api("org.apache.iceberg:iceberg-spark-extensions-3.1_2.12:$versionIceberg")
+    api("org.apache.iceberg:iceberg-spark-extensions-3.2_2.12:$versionIceberg")
     api("org.apache.maven:maven-resolver-provider:$versionMaven")
     api("org.apache.maven.resolver:maven-resolver-connector-basic:$versionMavenResolver")
     api("org.apache.maven.resolver:maven-resolver-transport-file:$versionMavenResolver")

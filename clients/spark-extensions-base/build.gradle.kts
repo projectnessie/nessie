@@ -22,7 +22,11 @@ plugins {
   id("org.projectnessie.buildsupport.attach-test-jar")
 }
 
+val scalaMajorVersion = "2.12"
+
 val scalaVersion = dependencyVersion("versionScala2_12")
+
+val sparkMajorVersion = "3.1"
 
 val sparkVersion = dependencyVersion("versionSpark31")
 
@@ -32,13 +36,13 @@ dependencies {
 
   implementation(platform(nessieRootProject()))
   implementation(nessieProject("nessie-spark-extensions-grammar"))
-  compileOnly("org.apache.spark:spark-hive_2.12") { forSpark(sparkVersion) }
+  compileOnly("org.apache.spark:spark-hive_$scalaMajorVersion") { forSpark(sparkVersion) }
   compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
   implementation(nessieClientForIceberg())
 
   testImplementation(platform(nessieRootProject()))
   testAnnotationProcessor(platform(nessieRootProject()))
-  testImplementation("org.apache.spark:spark-sql_2.12") { forSpark(sparkVersion) }
+  testImplementation("org.apache.spark:spark-sql_$scalaMajorVersion") { forSpark(sparkVersion) }
   testImplementation("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
   testCompileOnly("org.immutables:value-annotations")
