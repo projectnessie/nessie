@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+import com.github.vlsi.jandex.JandexProcessResources
+import java.io.File
+import java.util.Properties
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Dependency
@@ -22,15 +25,21 @@ import org.gradle.api.artifacts.ExternalModuleDependency
 import org.gradle.api.artifacts.ModuleDependency
 import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependencyConstraint
+import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.kotlin.dsl.DependencyHandlerScope
 import org.gradle.kotlin.dsl.add
+import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.exclude
 import org.gradle.kotlin.dsl.extra
 import org.gradle.kotlin.dsl.module
 import org.gradle.kotlin.dsl.project
+import org.gradle.kotlin.dsl.provideDelegate
+import org.gradle.kotlin.dsl.withType
 
 /**
  * Apply the given `sparkVersion` as a `strictly` version constraint and [withSparkExcludes] on the
@@ -146,3 +155,104 @@ fun DependencyHandlerScope.nessieProject(
 
 /** Utility method to check whether a Quarkus build shall produce the uber-jar. */
 fun Project.withUberJar(): Boolean = hasProperty("uber-jar") || isIntegrationsTestingEnabled()
+
+/** Just load [Properties] from a [File]. */
+fun loadProperties(file: File): Properties {
+  val props = Properties()
+  file.reader().use { reader -> props.load(reader) }
+  return props
+}
+
+/** Hack for Jandex-Plugin (removed later). */
+fun Project.useBuildSubDirectory(buildSubDir: String) {
+  buildDir = file("$buildDir/$buildSubDir")
+
+  // TODO open an issue for the Jandex plugin - it configures the task's output directory too
+  //  early, so re-assigning the output directory (project.buildDir=...) to a different path
+  //  isn't reflected in the Jandex output.
+  tasks.withType<JandexProcessResources>().configureEach {
+    val sourceSets: SourceSetContainer by project
+    sourceSets.all { destinationDir = this.output.resourcesDir!! }
+  }
+}
+
+/** Adds relocation-information to a Maven-POM. */
+fun Project.addRelocateTo(toArtifact: String) {
+  val project = this
+  configure<PublishingExtension> {
+    publications.named("maven") {
+      this as MavenPublication
+      pom {
+        distributionManagement {
+          relocation {
+            artifactId.set(toArtifact)
+            groupId.set(project.group.toString())
+            version.set(project.version.toString())
+            message.set(
+              "The artifact ${project.name} will be removed in a future version of Nessie, " +
+                "please ensure tha all references to ${project.name} are updated to ${toArtifact}."
+            )
+          }
+        }
+      }
+    }
+  }
+}
+
+/** Resolves the Spark and Scala major versions for all `nessie-spark-extensions*` projects. */
+fun Project.getSparkScalaVersionsForProject(): SparkScalaVersions {
+  val sparkScala = project.name.split("-").last().split("_")
+
+  var sparkMajorVersion: String
+  var scalaMajorVersion: String
+
+  when (name) {
+    "nessie-spark-extensions-base" -> {
+      sparkMajorVersion = "3.1"
+      scalaMajorVersion = "2.12"
+      addRelocateTo("nessie-spark-extensions-base_$scalaMajorVersion")
+
+      useBuildSubDirectory("legacy")
+    }
+    "nessie-spark-extensions" -> {
+      sparkMajorVersion = "3.1"
+      scalaMajorVersion = "2.12"
+      addRelocateTo("nessie-spark-extensions-${sparkMajorVersion}_$scalaMajorVersion")
+
+      useBuildSubDirectory("legacy")
+    }
+    "nessie-spark-3.2-extensions" -> {
+      sparkMajorVersion = "3.2"
+      scalaMajorVersion = "2.12"
+      addRelocateTo("nessie-spark-extensions-${sparkMajorVersion}_$scalaMajorVersion")
+
+      useBuildSubDirectory("legacy")
+    }
+    else -> {
+      sparkMajorVersion = if (sparkScala[0][0].isDigit()) sparkScala[0] else "3.2"
+      scalaMajorVersion = sparkScala[1]
+
+      useBuildSubDirectory(scalaMajorVersion)
+    }
+  }
+  return useSparkScalaVersionsForProject(sparkMajorVersion, scalaMajorVersion)
+}
+
+fun Project.useSparkScalaVersionsForProject(
+  sparkMajorVersion: String,
+  scalaMajorVersion: String
+): SparkScalaVersions {
+  return SparkScalaVersions(
+    sparkMajorVersion,
+    scalaMajorVersion,
+    dependencyVersion("versionSpark-$sparkMajorVersion"),
+    dependencyVersion("versionScala-$scalaMajorVersion")
+  )
+}
+
+class SparkScalaVersions(
+  val sparkMajorVersion: String,
+  val scalaMajorVersion: String,
+  val sparkVersion: String,
+  val scalaVersion: String
+) {}

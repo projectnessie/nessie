@@ -25,7 +25,7 @@ extra["maven.name"] = "Nessie - Perf Test - Gatling"
 
 val scalaMajorVersion = "2.13"
 
-val scalaVersion = dependencyVersion("versionScala_$scalaMajorVersion")
+val scalaVersion = dependencyVersion("versionScala-$scalaMajorVersion")
 
 dependencies {
   // picks the right dependencies for scala compilation

@@ -25,11 +25,11 @@ extra["maven.name"] = "Nessie - GC - Base Implementation"
 
 val scalaMajorVersion = "2.12"
 
-val scalaVersion = dependencyVersion("versionScala_$scalaMajorVersion")
+val scalaVersion = dependencyVersion("versionScala-$scalaMajorVersion")
 
 val sparkMajorVersion = "3.1"
 
-val sparkVersion = dependencyVersion("versionSpark_$sparkMajorVersion")
+val sparkVersion = dependencyVersion("versionSpark-$sparkMajorVersion")
 
 dependencies {
   implementation(platform(nessieRootProject()))
@@ -70,8 +70,10 @@ dependencies {
   testCompileOnly(platform("com.fasterxml.jackson:jackson-bom"))
   testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
-  testImplementation(project(":nessie-spark-extensions-base")) { testJarCapability() }
-  testImplementation(project(":nessie-spark-extensions"))
+  testImplementation(project(":nessie-spark-extensions-base_$scalaMajorVersion")) {
+    testJarCapability()
+  }
+  testImplementation(project(":nessie-spark-extensions-${sparkMajorVersion}_$scalaMajorVersion"))
   testImplementation("org.apache.iceberg:iceberg-nessie")
   testImplementation("org.apache.iceberg:iceberg-spark-${sparkMajorVersion}_$scalaMajorVersion")
   testImplementation(

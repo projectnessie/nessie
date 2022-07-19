@@ -31,6 +31,10 @@ file("../build.gradle.kts").readLines().forEach { line ->
   }
 }
 
+for (e in loadProperties(file("../clients/spark-scala.properties"))) {
+  extra[e.key.toString()] = e.value
+}
+
 publishingHelper {
   nessieRepoName.set("nessie")
   inceptionYear.set("2020")

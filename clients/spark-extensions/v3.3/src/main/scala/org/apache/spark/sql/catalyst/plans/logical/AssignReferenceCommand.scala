@@ -13,33 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.spark.sql.execution.datasources.v2
+package org.apache.spark.sql.catalyst.plans.logical
 
-import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.connector.catalog.CatalogPlugin
-import org.projectnessie.client.api.NessieApiV1
 
-import scala.collection.JavaConverters._
-
-abstract class BaseListReferenceExec(
-    output: Seq[Attribute],
-    currentCatalog: CatalogPlugin,
+case class AssignReferenceCommand(
+    reference: String,
+    isBranch: Boolean,
+    toRefName: Option[String],
+    toHash: Option[String],
     catalog: Option[String]
-) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
-
-  override protected def runInternal(
-      api: NessieApiV1
-  ): Seq[InternalRow] = {
-    api.getAllReferences
-      .get()
-      .getReferences
-      .asScala
-      .map(ref => rowForRef(ref))
-      .toSeq // required for Scala 2.13
-  }
+) extends LeafCommand {
+  override lazy val output: Seq[Attribute] =
+    NessieCommandOutputs.referenceOutput()
 
   override def simpleString(maxFields: Int): String = {
-    s"ListReferenceExec ${catalog.getOrElse(currentCatalog.name())} "
+    s"AssignReference $reference"
   }
 }

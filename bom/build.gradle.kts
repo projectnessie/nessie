@@ -74,12 +74,28 @@ dependencies {
     if (!isIntegrationsTestingEnabled()) {
       api(project(":nessie-deltalake"))
       api(project(":iceberg-views"))
-      api(project(":nessie-spark-extensions"))
-      api(project(":nessie-spark-3.2-extensions"))
       api(project(":nessie-spark-antlr-runtime"))
       api(project(":nessie-spark-extensions-grammar"))
-      api(project(":nessie-spark-extensions-base"))
       api(project(":nessie-gc-base"))
+
+      for (sparkVersion in
+        rootProject.extra["sparkVersions"].toString().split(",").map { it.trim() }) {
+        for (scalaVersion in
+          rootProject.extra["sparkVersion-${sparkVersion}-scalaVersions"]
+            .toString()
+            .split(",")
+            .map { it.trim() }) {
+          api(project(":nessie-spark-extensions-${sparkVersion}_$scalaVersion"))
+        }
+      }
+      for (scalaVersion in
+        rootProject.extra["scalaVersions"].toString().split(",").map { it.trim() }) {
+        api(project(":nessie-spark-extensions-base_$scalaVersion"))
+      }
+      // Relocated projects, to be removed in a future Nessie version
+      api(project(":nessie-spark-extensions-base"))
+      api(project(":nessie-spark-extensions"))
+      api(project(":nessie-spark-3.2-extensions"))
     }
   }
 }

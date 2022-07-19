@@ -114,15 +114,24 @@ gradle.beforeProject {
 
 include("code-coverage")
 
-fun nessieProject(name: String, directory: String) {
+fun nessieProject(name: String, directory: File): ProjectDescriptor {
   include(name)
-  project(":$name").projectDir = file(directory)
+  val p = project(":$name")
+  p.name = name
+  p.projectDir = directory
+  return p
+}
+
+fun loadProperties(file: File): Properties {
+  val props = Properties()
+  file.reader().use { reader -> props.load(reader) }
+  return props
 }
 
 fun loadProjects(file: String) {
-  val props = Properties()
-  file(file).reader().use { reader -> props.load(reader) }
-  props.forEach { name, directory -> nessieProject(name as String, directory as String) }
+  loadProperties(file(file)).forEach { name, directory ->
+    nessieProject(name as String, file(directory as String))
+  }
 }
 
 loadProjects("gradle/projects.main.properties")
@@ -132,11 +141,9 @@ loadProjects("gradle/projects.main.properties")
 // integrations-tools-testing build's `gradle.properties` file, while the 2nd invocation only runs
 // from the included build.
 if (gradle.parent != null && System.getProperty("idea.sync.active").toBoolean()) {
-  val additionalPropertiesFile = file("./build/additional-build.properties")
-  if (additionalPropertiesFile.isFile) {
-    val additionalProperties = Properties()
-    additionalPropertiesFile.reader().use { reader -> additionalProperties.load(reader) }
-    System.getProperties().putAll(additionalProperties)
+  val f = file("./build/additional-build.properties")
+  if (f.isFile) {
+    System.getProperties().putAll(loadProperties(f))
   }
 }
 
@@ -144,6 +151,41 @@ if (gradle.parent != null && System.getProperty("idea.sync.active").toBoolean())
 // settings.gradle is evaluated before buildSrc.
 if (!System.getProperty("nessie.integrationsTesting.enable").toBoolean()) {
   loadProjects("gradle/projects.iceberg.properties")
+
+  val sparkScala = loadProperties(file("clients/spark-scala.properties"))
+
+  fun relocateArtifactFrom(toProject: ProjectDescriptor, relocateFrom: String, buildFile: String) {
+    val p = nessieProject(relocateFrom, toProject.projectDir)
+    p.buildFileName = buildFile
+  }
+
+  for (sparkVersion in sparkScala["sparkVersions"].toString().split(",").map { it.trim() }) {
+    for (scalaVersion in
+      sparkScala["sparkVersion-${sparkVersion}-scalaVersions"].toString().split(",").map {
+        it.trim()
+      }) {
+      val artifactId = "nessie-spark-extensions-${sparkVersion}_$scalaVersion"
+      val p = nessieProject(artifactId, file("clients/spark-extensions/v$sparkVersion"))
+      p.buildFileName = "../build.gradle.kts"
+
+      if (scalaVersion == "2.12") {
+        when (sparkVersion) {
+          "3.1" -> relocateArtifactFrom(p, "nessie-spark-extensions", "../build.gradle.kts")
+          "3.2" -> relocateArtifactFrom(p, "nessie-spark-3.2-extensions", "../build.gradle.kts")
+        }
+      }
+    }
+  }
+  for (scalaVersion in sparkScala["scalaVersions"].toString().split(",").map { it.trim() }) {
+    val p =
+      nessieProject(
+        "nessie-spark-extensions-base_$scalaVersion",
+        file("clients/spark-extensions-base")
+      )
+    if (scalaVersion == "2.12") {
+      relocateArtifactFrom(p, "nessie-spark-extensions-base", "build.gradle.kts")
+    }
+  }
 }
 
 if (false) {
