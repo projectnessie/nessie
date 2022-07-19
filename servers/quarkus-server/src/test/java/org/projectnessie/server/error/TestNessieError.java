@@ -144,7 +144,8 @@ class TestNessieError {
                         unwrap(
                             () -> client.newRequest().path("unsupportedMediaTypePut").put("foo")))
                 .isInstanceOf(NessieUnsupportedMediaTypeException.class)
-                .hasMessage("RESTEASY003065: Cannot consume content type"));
+                .hasMessage(
+                    "Unsupported Media Type (HTTP/415): RESTEASY003065: Cannot consume content type"));
   }
 
   @Test

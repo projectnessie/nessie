@@ -15,8 +15,8 @@
  */
 package org.projectnessie.error;
 
-/** This exception is thrown when the request's media type is not accepted at the specified path. */
-public class NessieUnsupportedMediaTypeException extends NessieConflictException {
+/** This exception is thrown when the request's media type is not accepted at its specified path. */
+public class NessieUnsupportedMediaTypeException extends NessieRuntimeException {
 
   public NessieUnsupportedMediaTypeException(NessieError error) {
     super(error);
