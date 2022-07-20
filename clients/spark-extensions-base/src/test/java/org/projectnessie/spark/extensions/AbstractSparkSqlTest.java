@@ -505,7 +505,7 @@ public abstract class AbstractSparkSqlTest {
     String randomHash = "dd8d46a3dd5478ce69749a5455dba29d74f6d1171188f4c21d0e15ff4a0a9a9c";
     String invalidTimestamp = "01-01-01";
     String invalidBranch = "invalidBranch";
-    String invalidHash = "abcdef123";
+    String invalidHash = "abcdef1234";
     assertThatThrownBy(() -> sql("USE REFERENCE %s AT %s IN nessie ", invalidBranch, defaultHash()))
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessage(String.format("Named reference '%s' not found", invalidBranch));
@@ -524,8 +524,7 @@ public abstract class AbstractSparkSqlTest {
     assertThatThrownBy(() -> sql("USE REFERENCE %s AT %s IN nessie ", refName, invalidHash))
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessageStartingWith(
-            String.format(
-                "Invalid timestamp provided: Text '%s' could not be parsed", invalidHash));
+            String.format("Could not find commit '%s' in reference '%s'", invalidHash, refName));
   }
 
   @Test

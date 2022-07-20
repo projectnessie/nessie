@@ -47,7 +47,7 @@ val versionCel = "0.3.8"
 val versionCheckstyle = "10.3.1"
 // to fix circular dependencies with NessieClient, certain projects need to use the same Nessie
 // version as Iceberg/Delta has
-var versionClientNessie = "0.18.0"
+var versionClientNessie = "0.30.0"
 val versionDeltalake = "1.1.0-nessie"
 val versionDockerjava = "3.2.13"
 val versionErrorProneAnnotations = "2.14.0"
@@ -59,7 +59,7 @@ val versionGoogleJavaFormat = "1.15.0"
 val versionGraalSvm = "22.2.0"
 val versionH2 = "2.1.214"
 val versionHadoop = "3.3.3"
-var versionIceberg = "0.13.2"
+var versionIceberg = "0.14.0"
 val versionImmutables = "2.9.0"
 val versionJackson = "2.13.3"
 val versionJacksonSpark3 = "2.13.3"
@@ -91,11 +91,11 @@ val versionProtobuf = "3.21.2"
 val versionReactor = "2020.0.21"
 val versionRestAssured = "5.1.1"
 val versionRocksDb = "7.3.1"
-val versionScala2_12 = "2.12.13"
-val versionScala2_13 = "2.13.8"
+val versionScala_2_12 = "2.12.13"
+val versionScala_2_13 = "2.13.8"
 val versionSlf4j = "1.7.36"
-val versionSpark31 = "3.1.2"
-val versionSpark32 = "3.2.1"
+val versionSpark_3_1 = "3.1.2"
+val versionSpark_3_2 = "3.2.1"
 val versionTestcontainers = "1.17.3"
 val versionWeld = "3.1.8.Final"
 
@@ -129,13 +129,13 @@ extra["versionProtobuf"] = versionProtobuf
 
 extra["versionRocksDb"] = versionRocksDb
 
-extra["versionScala2_12"] = versionScala2_12
+extra["versionScala_2.12"] = versionScala_2_12
 
-extra["versionScala2_13"] = versionScala2_13
+extra["versionScala_2.13"] = versionScala_2_13
 
-extra["versionSpark31"] = versionSpark31
+extra["versionSpark_3.1"] = versionSpark_3_1
 
-extra["versionSpark32"] = versionSpark32
+extra["versionSpark_3.2"] = versionSpark_3_2
 
 extra["quarkus.builder-image"] = "quay.io/quarkus/ubi-quarkus-native-image:22.1-java17"
 
@@ -190,8 +190,9 @@ dependencies {
     api("org.apache.iceberg:iceberg-nessie:$versionIceberg")
     api("org.apache.iceberg:iceberg-parquet:$versionIceberg")
     api("org.apache.iceberg:iceberg-spark-3.2_2.12:$versionIceberg")
-    api("org.apache.iceberg:iceberg-spark3:$versionIceberg")
-    api("org.apache.iceberg:iceberg-spark3-extensions:$versionIceberg")
+    api("org.apache.iceberg:iceberg-spark-3.1_2.12:$versionIceberg")
+    api("org.apache.iceberg:iceberg-spark-extensions-3.1_2.12:$versionIceberg")
+    api("org.apache.iceberg:iceberg-spark-extensions-3.2_2.12:$versionIceberg")
     api("org.apache.maven:maven-resolver-provider:$versionMaven")
     api("org.apache.maven.resolver:maven-resolver-connector-basic:$versionMavenResolver")
     api("org.apache.maven.resolver:maven-resolver-transport-file:$versionMavenResolver")

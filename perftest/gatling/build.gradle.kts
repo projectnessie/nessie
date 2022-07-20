@@ -23,7 +23,9 @@ plugins {
 
 extra["maven.name"] = "Nessie - Perf Test - Gatling"
 
-val scalaVersion = dependencyVersion("versionScala2_13")
+val scalaMajorVersion = "2.13"
+
+val scalaVersion = dependencyVersion("versionScala_$scalaMajorVersion")
 
 dependencies {
   // picks the right dependencies for scala compilation

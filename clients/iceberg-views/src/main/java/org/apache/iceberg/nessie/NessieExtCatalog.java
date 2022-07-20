@@ -16,6 +16,7 @@
 package org.apache.iceberg.nessie;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import org.apache.hadoop.conf.Configuration;
@@ -104,11 +105,15 @@ public class NessieExtCatalog extends BaseMetastoreCatalog implements Views {
   }
 
   public void refresh() throws NessieNotFoundException {
-    tableCatalog.refresh();
+    // TODO This NessieExtCatalog is a *hack* to get some Iceberg view support into Nessie.
+    //  The refactoring of `NessieCatalog` (https://github.com/apache/iceberg/pull/4491)
+    //  removed the explicit ability to refresh the catalog. Client code should actually NEVER
+    //  call this function explicitly.
+    // tableCatalog.refresh();
     viewCatalog.refresh();
   }
 
-  public void close() {
+  public void close() throws IOException {
     tableCatalog.close();
     viewCatalog.close();
   }

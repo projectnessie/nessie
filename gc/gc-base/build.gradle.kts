@@ -23,9 +23,13 @@ plugins {
 
 extra["maven.name"] = "Nessie - GC - Base Implementation"
 
-val scalaVersion = dependencyVersion("versionScala2_12")
+val scalaMajorVersion = "2.12"
 
-val sparkVersion = dependencyVersion("versionSpark31")
+val scalaVersion = dependencyVersion("versionScala_$scalaMajorVersion")
+
+val sparkMajorVersion = "3.1"
+
+val sparkVersion = dependencyVersion("versionSpark_$sparkMajorVersion")
 
 dependencies {
   implementation(platform(nessieRootProject()))
@@ -43,11 +47,11 @@ dependencies {
   implementation("com.fasterxml.jackson.core:jackson-annotations")
   implementation("com.google.code.findbugs:jsr305")
 
-  compileOnly("org.apache.spark:spark-sql_2.12") { forSpark(sparkVersion) }
+  compileOnly("org.apache.spark:spark-sql_$scalaMajorVersion") { forSpark(sparkVersion) }
   compileOnly("org.apache.iceberg:iceberg-api")
   compileOnly("org.apache.iceberg:iceberg-core")
   compileOnly("org.apache.iceberg:iceberg-nessie") { exclude("org.projectnessie") }
-  compileOnly("org.apache.iceberg:iceberg-spark3")
+  compileOnly("org.apache.iceberg:iceberg-spark-${sparkMajorVersion}_$scalaMajorVersion")
   compileOnly("org.apache.iceberg:iceberg-parquet")
   compileOnly("org.apache.parquet:parquet-column")
 
@@ -56,7 +60,7 @@ dependencies {
   testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
   testImplementation(nessieProject("nessie-jaxrs-testextension"))
   testImplementation(nessieProject("nessie-jaxrs-tests"))
-  testImplementation("org.apache.spark:spark-sql_2.12") {
+  testImplementation("org.apache.spark:spark-sql_$scalaMajorVersion") {
     forSpark(sparkVersion)
     exclude("com.sun.jersey", "jersey-servlet")
   }
@@ -69,8 +73,10 @@ dependencies {
   testImplementation(project(":nessie-spark-extensions-base")) { testJarCapability() }
   testImplementation(project(":nessie-spark-extensions"))
   testImplementation("org.apache.iceberg:iceberg-nessie")
-  testImplementation("org.apache.iceberg:iceberg-spark3")
-  testImplementation("org.apache.iceberg:iceberg-spark3-extensions")
+  testImplementation("org.apache.iceberg:iceberg-spark-${sparkMajorVersion}_$scalaMajorVersion")
+  testImplementation(
+    "org.apache.iceberg:iceberg-spark-extensions-${sparkMajorVersion}_$scalaMajorVersion"
+  )
   testImplementation("org.apache.iceberg:iceberg-hive-metastore")
 
   testImplementation("org.assertj:assertj-core")

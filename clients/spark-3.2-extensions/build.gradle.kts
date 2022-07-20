@@ -25,9 +25,13 @@ plugins {
   `nessie-conventions`
 }
 
-val scalaVersion = dependencyVersion("versionScala2_12")
+val scalaMajorVersion = "2.12"
 
-val sparkVersion = dependencyVersion("versionSpark32")
+val scalaVersion = dependencyVersion("versionScala_$scalaMajorVersion")
+
+val sparkMajorVersion = "3.2"
+
+val sparkVersion = dependencyVersion("versionSpark_$sparkMajorVersion")
 
 dependencies {
   // picks the right dependencies for scala compilation
@@ -36,21 +40,21 @@ dependencies {
   implementation(platform(nessieRootProject()))
   implementation(project(":nessie-spark-extensions-grammar"))
   implementation(project(":nessie-spark-extensions-base"))
-  compileOnly("org.apache.spark:spark-sql_2.12") { forSpark(sparkVersion) }
-  compileOnly("org.apache.spark:spark-core_2.12") { forSpark(sparkVersion) }
-  compileOnly("org.apache.spark:spark-hive_2.12") { forSpark(sparkVersion) }
+  compileOnly("org.apache.spark:spark-sql_$scalaMajorVersion") { forSpark(sparkVersion) }
+  compileOnly("org.apache.spark:spark-core_$scalaMajorVersion") { forSpark(sparkVersion) }
+  compileOnly("org.apache.spark:spark-hive_$scalaMajorVersion") { forSpark(sparkVersion) }
   implementation(nessieClientForIceberg())
 
   testImplementation(platform(nessieRootProject()))
   testImplementation(project(":nessie-spark-extensions-base")) { testJarCapability() }
   testImplementation("org.apache.iceberg:iceberg-nessie")
-  testImplementation("org.apache.iceberg:iceberg-spark-3.2_2.12")
+  testImplementation("org.apache.iceberg:iceberg-spark-${sparkMajorVersion}_$scalaMajorVersion")
   testImplementation("org.apache.iceberg:iceberg-hive-metastore")
   testImplementation("ch.qos.logback:logback-classic")
   testImplementation("org.slf4j:log4j-over-slf4j")
-  testImplementation("org.apache.spark:spark-sql_2.12") { forSpark(sparkVersion) }
-  testImplementation("org.apache.spark:spark-core_2.12") { forSpark(sparkVersion) }
-  testImplementation("org.apache.spark:spark-hive_2.12") { forSpark(sparkVersion) }
+  testImplementation("org.apache.spark:spark-sql_$scalaMajorVersion") { forSpark(sparkVersion) }
+  testImplementation("org.apache.spark:spark-core_$scalaMajorVersion") { forSpark(sparkVersion) }
+  testImplementation("org.apache.spark:spark-hive_$scalaMajorVersion") { forSpark(sparkVersion) }
 
   testImplementation("org.assertj:assertj-core")
   testImplementation(platform("org.junit:junit-bom"))

@@ -43,10 +43,7 @@ abstract class BaseShowLogExec(
     )
     val stream = StreamingUtil.getCommitLogStream(
       api,
-      refName,
-      null,
-      null,
-      null,
+      builder => builder.refName(refName),
       OptionalInt.empty
     )
 
