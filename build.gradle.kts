@@ -64,6 +64,7 @@ val versionImmutables = "2.9.0"
 val versionJackson = "2.13.3"
 val versionJacksonSpark3 = "2.13.3"
 val versionJacoco = "0.8.8"
+val versionJakartaAnnotationApi = "1.3.5"
 val versionJakartaEnterpriseCdiApi = "2.0.2"
 val versionJakartaValidationApi = "2.0.2"
 val versionJandex = "2.4.3.Final"
@@ -174,6 +175,7 @@ dependencies {
     api("io.quarkus:quarkus-bom:$versionQuarkus")
     api("io.quarkiverse.loggingsentry:quarkus-logging-sentry:$versionQuarkusLoggingSentry")
     api("io.rest-assured:rest-assured:$versionRestAssured")
+    api("jakarta.validation:jakarta.annotation-api:$versionJakartaAnnotationApi")
     api("jakarta.enterprise:jakarta.enterprise.cdi-api:$versionJakartaEnterpriseCdiApi")
     api("jakarta.validation:jakarta.validation-api:$versionJakartaValidationApi")
     api("javax.servlet:javax.servlet-api:$versionJavaxServlet")
