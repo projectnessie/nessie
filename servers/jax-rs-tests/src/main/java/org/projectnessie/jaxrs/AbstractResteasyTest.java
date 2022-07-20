@@ -25,6 +25,7 @@ import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.Instant;
 import java.util.UUID;
+import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,6 +42,7 @@ import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.ImmutablePut;
 import org.projectnessie.model.LogResponse;
+import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.RefLogResponse;
@@ -537,5 +539,27 @@ public abstract class AbstractResteasyTest {
             .as(RefLogResponse.class);
     assertThat(refLogResponse1.getLogEntries().get(0).getRefLogId())
         .isEqualTo(refLogResponse.getLogEntries().get(1).getRefLogId());
+  }
+
+  @Test
+  public void testGetUnknownContentType() {
+    String nsName = "foo";
+    String branchName = "unknown-content-type";
+    String path = String.format("namespaces/namespace/%s/%s", branchName, nsName);
+
+    makeBranch(branchName);
+    Namespace ns = Namespace.of("id");
+
+    // Elicit 415 when PUTting a namespace with a content type not consumed by the server
+    rest()
+        .body(ns)
+        .contentType(ContentType.TEXT)
+        .put(path)
+        .then()
+        .statusCode(415)
+        .statusLine(StringContains.containsStringIgnoringCase("Unsupported Media Type"));
+
+    // Rerun the request, but with a supported content type (text/json)
+    rest().body(ns).put(path).then().statusCode(200);
   }
 }

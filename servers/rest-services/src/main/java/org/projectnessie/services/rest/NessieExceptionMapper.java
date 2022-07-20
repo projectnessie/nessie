@@ -21,6 +21,7 @@ import com.google.common.base.Throwables;
 import java.security.AccessControlException;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
+import javax.ws.rs.NotSupportedException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 import org.projectnessie.error.BaseNessieClientServerException;
@@ -75,6 +76,9 @@ public class NessieExceptionMapper extends BaseExceptionMapper<Exception> {
       message = "Backend store refused to process the request: " + exception;
     } else if (exception instanceof AccessControlException) {
       errorCode = ErrorCode.FORBIDDEN;
+      message = exception.getMessage();
+    } else if (exception instanceof NotSupportedException) {
+      errorCode = ErrorCode.UNSUPPORTED_MEDIA_TYPE;
       message = exception.getMessage();
     } else {
       LOGGER.warn("Unhandled exception returned as HTTP/500 to client", exception);

@@ -77,6 +77,13 @@ public class ErrorTestService {
     return "oh oh";
   }
 
+  @Path("unsupportedMediaTypePut")
+  @PUT
+  @Consumes(MediaType.TEXT_PLAIN)
+  public String unsupportedMediaTypePut(@NotNull String txt) {
+    return "oh oh";
+  }
+
   @Path("nessieNotFound")
   @GET
   public String nessieNotFound() throws NessieNotFoundException {
