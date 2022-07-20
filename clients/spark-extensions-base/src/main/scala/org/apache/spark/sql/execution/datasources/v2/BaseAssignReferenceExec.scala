@@ -23,7 +23,7 @@ import org.projectnessie.model.{Branch, Tag}
 
 abstract class BaseAssignReferenceExec(
     output: Seq[Attribute],
-    branch: String,
+    refNameToAssign: String,
     isBranch: Boolean,
     currentCatalog: CatalogPlugin,
     toRefName: Option[String],
@@ -34,30 +34,37 @@ abstract class BaseAssignReferenceExec(
   override protected def runInternal(
       api: NessieApiV1
   ): Seq[InternalRow] = {
-    val toRef = toRefName
-      .map(r => api.getReference().refName(r).get())
-      .getOrElse(api.getDefaultBranch)
-    val hash = api.getReference().refName(branch).get().getHash
+    val currentHash = api.getReference().refName(refNameToAssign).get().getHash
+
+    val toRef =
+      if (toRefName.isDefined) api.getReference.refName(toRefName.get).get()
+      else NessieUtils.getCurrentRef(api, currentCatalog, catalog)
+
     val assignToHash = toHash.getOrElse(toRef.getHash)
+    val assignTo =
+      if (toRef.isInstanceOf[Branch])
+        Branch.of(toRef.getName, assignToHash)
+      else Tag.of(toRef.getName, assignToHash)
+
     if (isBranch) {
       api
         .assignBranch()
-        .branch(Branch.of(branch, hash))
-        .assignTo(Branch.of(toRef.getName, assignToHash))
+        .branch(Branch.of(refNameToAssign, currentHash))
+        .assignTo(assignTo)
         .assign()
     } else {
       api
         .assignTag()
-        .tag(Tag.of(branch, hash))
-        .assignTo(Branch.of(toRef.getName, assignToHash))
+        .tag(Tag.of(refNameToAssign, currentHash))
+        .assignTo(assignTo)
         .assign()
     }
-    val ref = api.getReference().refName(branch).get()
+    val ref = api.getReference().refName(refNameToAssign).get()
 
     singleRowForRef(ref)
   }
 
   override def simpleString(maxFields: Int): String = {
-    s"AssignReferenceExec ${catalog.getOrElse(currentCatalog.name())} ${branch} "
+    s"AssignReferenceExec ${catalog.getOrElse(currentCatalog.name())} ${refNameToAssign} "
   }
 }
