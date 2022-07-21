@@ -23,20 +23,14 @@ plugins {
 
 extra["maven.name"] = "Nessie - GC - Base Implementation"
 
-val scalaMajorVersion = "2.12"
-
-val scalaVersion = dependencyVersion("versionScala-$scalaMajorVersion")
-
-val sparkMajorVersion = "3.1"
-
-val sparkVersion = dependencyVersion("versionSpark-$sparkMajorVersion")
+val sparkScala = useSparkScalaVersionsForProject("3.1", "2.12")
 
 dependencies {
   implementation(platform(nessieRootProject()))
   annotationProcessor(platform(nessieRootProject()))
   implementation(platform("com.fasterxml.jackson:jackson-bom"))
 
-  forScala(scalaVersion)
+  forScala(sparkScala.scalaVersion)
 
   compileOnly("org.immutables:value-annotations")
   annotationProcessor("org.immutables:value-processor")
@@ -47,11 +41,15 @@ dependencies {
   implementation("com.fasterxml.jackson.core:jackson-annotations")
   implementation("com.google.code.findbugs:jsr305")
 
-  compileOnly("org.apache.spark:spark-sql_$scalaMajorVersion") { forSpark(sparkVersion) }
+  compileOnly("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") {
+    forSpark(sparkScala.sparkVersion)
+  }
   compileOnly("org.apache.iceberg:iceberg-api")
   compileOnly("org.apache.iceberg:iceberg-core")
   compileOnly("org.apache.iceberg:iceberg-nessie") { exclude("org.projectnessie") }
-  compileOnly("org.apache.iceberg:iceberg-spark-${sparkMajorVersion}_$scalaMajorVersion")
+  compileOnly(
+    "org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}"
+  )
   compileOnly("org.apache.iceberg:iceberg-parquet")
   compileOnly("org.apache.parquet:parquet-column")
 
@@ -60,8 +58,8 @@ dependencies {
   testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
   testImplementation(nessieProject("nessie-jaxrs-testextension"))
   testImplementation(nessieProject("nessie-jaxrs-tests"))
-  testImplementation("org.apache.spark:spark-sql_$scalaMajorVersion") {
-    forSpark(sparkVersion)
+  testImplementation("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") {
+    forSpark(sparkScala.sparkVersion)
     exclude("com.sun.jersey", "jersey-servlet")
   }
   testImplementation("org.slf4j:log4j-over-slf4j")
@@ -70,14 +68,20 @@ dependencies {
   testCompileOnly(platform("com.fasterxml.jackson:jackson-bom"))
   testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
-  testImplementation(project(":nessie-spark-extensions-base_$scalaMajorVersion")) {
+  testImplementation(project(":nessie-spark-extensions-base_${sparkScala.scalaMajorVersion}")) {
     testJarCapability()
   }
-  testImplementation(project(":nessie-spark-extensions-${sparkMajorVersion}_$scalaMajorVersion"))
-  testImplementation("org.apache.iceberg:iceberg-nessie")
-  testImplementation("org.apache.iceberg:iceberg-spark-${sparkMajorVersion}_$scalaMajorVersion")
   testImplementation(
-    "org.apache.iceberg:iceberg-spark-extensions-${sparkMajorVersion}_$scalaMajorVersion"
+    project(
+      ":nessie-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}"
+    )
+  )
+  testImplementation("org.apache.iceberg:iceberg-nessie")
+  testImplementation(
+    "org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}"
+  )
+  testImplementation(
+    "org.apache.iceberg:iceberg-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}"
   )
   testImplementation("org.apache.iceberg:iceberg-hive-metastore")
 

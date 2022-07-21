@@ -154,38 +154,28 @@ if (!System.getProperty("nessie.integrationsTesting.enable").toBoolean()) {
 
   val sparkScala = loadProperties(file("clients/spark-scala.properties"))
 
-  fun relocateArtifactFrom(toProject: ProjectDescriptor, relocateFrom: String, buildFile: String) {
-    val p = nessieProject(relocateFrom, toProject.projectDir)
-    p.buildFileName = buildFile
-  }
-
   for (sparkVersion in sparkScala["sparkVersions"].toString().split(",").map { it.trim() }) {
     for (scalaVersion in
       sparkScala["sparkVersion-${sparkVersion}-scalaVersions"].toString().split(",").map {
         it.trim()
       }) {
       val artifactId = "nessie-spark-extensions-${sparkVersion}_$scalaVersion"
-      val p = nessieProject(artifactId, file("clients/spark-extensions/v$sparkVersion"))
-      p.buildFileName = "../build.gradle.kts"
-
-      if (scalaVersion == "2.12") {
-        when (sparkVersion) {
-          "3.1" -> relocateArtifactFrom(p, "nessie-spark-extensions", "../build.gradle.kts")
-          "3.2" -> relocateArtifactFrom(p, "nessie-spark-3.2-extensions", "../build.gradle.kts")
-        }
-      }
+      nessieProject(artifactId, file("clients/spark-extensions/v${sparkVersion}")).buildFileName =
+        "../build.gradle.kts"
     }
   }
   for (scalaVersion in sparkScala["scalaVersions"].toString().split(",").map { it.trim() }) {
-    val p =
-      nessieProject(
-        "nessie-spark-extensions-base_$scalaVersion",
-        file("clients/spark-extensions-base")
-      )
-    if (scalaVersion == "2.12") {
-      relocateArtifactFrom(p, "nessie-spark-extensions-base", "build.gradle.kts")
-    }
+    nessieProject(
+      "nessie-spark-extensions-base_$scalaVersion",
+      file("clients/spark-extensions-base")
+    )
   }
+
+  nessieProject("nessie-spark-extensions", file("clients/spark-extensions/v3.1")).buildFileName =
+    "../build.gradle.kts"
+  nessieProject("nessie-spark-3.2-extensions", file("clients/spark-extensions/v3.2"))
+    .buildFileName = "../build.gradle.kts"
+  nessieProject("nessie-spark-extensions-base", file("clients/spark-extensions-base"))
 }
 
 if (false) {
