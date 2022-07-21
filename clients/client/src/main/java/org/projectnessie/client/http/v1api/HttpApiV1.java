@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.http.v1api;
 
+import java.util.List;
 import org.projectnessie.client.api.AssignBranchBuilder;
 import org.projectnessie.client.api.AssignTagBuilder;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
@@ -132,6 +133,11 @@ public final class HttpApiV1 implements NessieApiV1 {
   @Override
   public GetDiffBuilder getDiff() {
     return new HttpGetDiff(client);
+  }
+
+  @Override
+  public List<String> getUnreachableReferenceHeads() throws NessieNotFoundException {
+    return client.getUnreachableHeadsApi().getUnreachableReferenceHeads().getEntries();
   }
 
   @Override

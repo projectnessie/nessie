@@ -72,6 +72,9 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
+import org.agrona.collections.Hashing;
+import org.agrona.collections.Object2ObjectHashMap;
+import org.agrona.collections.ObjectHashSet;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.Diff;
@@ -104,6 +107,7 @@ import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.Difference;
+import org.projectnessie.versioned.persist.adapter.HeadsAndForkPoints;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyList;
@@ -113,6 +117,7 @@ import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.MergeParams;
 import org.projectnessie.versioned.persist.adapter.MetadataRewriteParams;
 import org.projectnessie.versioned.persist.adapter.RefLog;
+import org.projectnessie.versioned.persist.adapter.ReferencedAndUnreferencedHeads;
 import org.projectnessie.versioned.persist.adapter.TransplantParams;
 import org.projectnessie.versioned.persist.adapter.events.AdapterEvent;
 import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
@@ -2124,4 +2129,134 @@ public abstract class AbstractDatabaseAdapter<
   }
 
   protected abstract void persistAttachments(OP_CONTEXT ctx, Stream<ContentAttachment> attachments);
+
+  @Override
+  public HeadsAndForkPoints identifyAllHeadsAndForkPoints(long expectedCommitCount) {
+    // Using open-addressing implementation here, because it's much more space-efficient than
+    // java.util.HashSet.
+    int initialCapacity =
+        expectedCommitCount <= Integer.MAX_VALUE ? (int) expectedCommitCount : Integer.MAX_VALUE;
+    Set<Hash> parents = newOpenAddressingHashSet(initialCapacity);
+    Set<Hash> heads = newOpenAddressingHashSet();
+    Set<Hash> forkPoints = newOpenAddressingHashSet();
+
+    // Need to remember the time when the identification started, so that a follow-up
+    // identifyReferencedAndUnreferencedHeads() knows when it can stop scanning a named-reference's
+    // commit-log. identifyReferencedAndUnreferencedHeads() has to read up to the first commit
+    // _before_ this timestamp to not commit-IDs as "unreferenced".
+    //
+    // Note: keep in mind, that scanAllCommitLogEntries() returns all commits in a
+    // non-deterministic order. Example: if (at least) two commits are added to a branch while this
+    // function is running, the original HEAD of that branch could otherwise be returned as
+    // "unreferenced".
+    long scanStartedAtInMicros = config.currentTimeInMicros();
+
+    // scanAllCommitLogEntries() returns all commits in no specific order, parents may be scanned
+    // before or after their children.
+    try (Stream<CommitLogEntry> scan = scanAllCommitLogEntries()) {
+      scan.forEach(
+          entry -> {
+            Hash parent = entry.getParents().get(0);
+            if (!parents.add(parent)) {
+              // If "parent" has already been added to the set of parents, then it must be a
+              // fork point.
+              forkPoints.add(parent);
+            } else {
+              // Commits in "parents" that are also contained in "heads" cannot be HEADs.
+              // This can happen because the commits are scanned in "random order".
+              // Should do this here to prevent the "heads" set from becoming unnecessarily big.
+              heads.remove(parent);
+            }
+
+            Hash commitId = entry.getHash();
+            if (!parents.contains(commitId)) {
+              // If the commit-ID is not present in "parents", it must be a HEAD
+              heads.add(commitId);
+            }
+          });
+    }
+
+    // Commits in "parents" that are also contained in "heads" cannot be HEADs.
+    // This can happen because the commits are scanned in "random order".
+    // TODO this 'removeIf' should not actually remove anything, because it should already be
+    //  properly handled above.
+    heads.removeIf(parents::contains);
+
+    return HeadsAndForkPoints.of(heads, forkPoints, scanStartedAtInMicros);
+  }
+
+  @Override
+  public ReferencedAndUnreferencedHeads identifyReferencedAndUnreferencedHeads(
+      HeadsAndForkPoints headsAndForkPoints) throws ReferenceNotFoundException {
+    Map<Hash, Set<NamedRef>> referenced = newOpenAddressingHashMap();
+    Set<Hash> heads = headsAndForkPoints.getHeads();
+    Set<Hash> unreferenced = newOpenAddressingHashSet(heads);
+
+    long stopAtCommitTimeMicros =
+        headsAndForkPoints.getScanStartedAtInMicros() - config.getAssumedWallClockDriftMicros();
+
+    try (Stream<ReferenceInfo<ByteString>> namedRefs = namedRefs(GetNamedRefsParams.DEFAULT)) {
+      namedRefs.forEach(
+          refInfo -> {
+            try (Stream<CommitLogEntry> logs = commitLog(refInfo.getHash())) {
+              if (!referenced.containsKey(refInfo.getHash())) {
+                // Only need to traverse the commit log from the same commit-ID once.
+                for (Iterator<CommitLogEntry> logIter = logs.iterator(); logIter.hasNext(); ) {
+                  CommitLogEntry entry = logIter.next();
+
+                  Hash commitId = entry.getHash();
+
+                  if (referenced.containsKey(commitId)) {
+                    // Already saw this commit-ID, can break
+                    break;
+                  }
+
+                  if (heads.contains(commitId)) {
+                    unreferenced.remove(entry.getHash());
+                  }
+
+                  if (entry.getCreatedTime() < stopAtCommitTimeMicros) {
+                    // Must scan up to the commit created right before
+                    // identifyAllHeadsAndForkPoints() started to not accidentally return
+                    // commits in 'unreferencedHeads' that were the HEAD of a commit that happened
+                    // after identifyAllHeadsAndForkPoints() started.
+                    break;
+                  }
+                }
+              }
+
+              // Add the named reference to the reachable HEADs.
+              referenced
+                  .computeIfAbsent(refInfo.getHash(), x -> newOpenAddressingHashSet())
+                  .add(refInfo.getNamedRef());
+            } catch (ReferenceNotFoundException e) {
+              throw new RuntimeException(e);
+            }
+          });
+    }
+
+    return ReferencedAndUnreferencedHeads.of(referenced, unreferenced);
+  }
+
+  private static <K, V> Map<K, V> newOpenAddressingHashMap() {
+    return new Object2ObjectHashMap<>(16, Hashing.DEFAULT_LOAD_FACTOR, false);
+  }
+
+  private static <T> Set<T> newOpenAddressingHashSet(int initialCapacity) {
+    return new ObjectHashSet<>(initialCapacity, Hashing.DEFAULT_LOAD_FACTOR, false);
+  }
+
+  private static <T> Set<T> newOpenAddressingHashSet(Set<T> source) {
+    ObjectHashSet<T> copy = new ObjectHashSet<>(source.size(), Hashing.DEFAULT_LOAD_FACTOR, false);
+    if (source instanceof ObjectHashSet) {
+      copy.addAll((ObjectHashSet<T>) source);
+    } else {
+      copy.addAll(source);
+    }
+    return copy;
+  }
+
+  private static <T> Set<T> newOpenAddressingHashSet() {
+    return newOpenAddressingHashSet(ObjectHashSet.DEFAULT_INITIAL_CAPACITY);
+  }
 }

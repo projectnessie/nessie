@@ -345,4 +345,26 @@ public interface DatabaseAdapter {
 
   @VisibleForTesting
   void assertCleanStateForTests();
+
+  /**
+   * Identifies all heads and fork-points.
+   *
+   * <ul>
+   *   <li>"Heads" are commits that are not referenced by other commits.
+   *   <li>"Fork points" are commits that are the parent of more than one other commit. Knowing
+   *       these commits can help to optimize the traversal of commit logs of multiple heads.
+   * </ul>
+   *
+   * @param expectedCommitCount it is recommended to tell the implementation the total number of
+   *     commits in the Nessie repository
+   */
+  HeadsAndForkPoints identifyAllHeadsAndForkPoints(long expectedCommitCount);
+
+  /**
+   * Identifies unreferenced heads and heads that are part of a named reference.
+   *
+   * <p>Requires the output of {@link #identifyAllHeadsAndForkPoints(long)}.
+   */
+  ReferencedAndUnreferencedHeads identifyReferencedAndUnreferencedHeads(
+      HeadsAndForkPoints headsAndForkPoints) throws ReferenceNotFoundException;
 }

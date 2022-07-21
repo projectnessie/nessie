@@ -48,6 +48,7 @@ public class BatchAccessCheckerTest {
     checker
         .canViewReference(BranchName.of("foo"))
         .canViewRefLog()
+        .canViewUnreachableReferenceHeads()
         .canListCommitLog(TagName.of("bar"))
         .canReadEntries(DetachedRef.INSTANCE);
     assertThatCode(checker::checkAndThrow).doesNotThrowAnyException();
@@ -168,6 +169,9 @@ public class BatchAccessCheckerTest {
         break;
       case VIEW_REFLOG:
         checker.canViewRefLog();
+        break;
+      case VIEW_UNREACHABLE_REFERENCE_HEADS:
+        checker.canViewUnreachableReferenceHeads();
         break;
       default:
         throw new IllegalArgumentException("Unsupported: " + c);

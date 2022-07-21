@@ -60,6 +60,7 @@ import org.projectnessie.services.rest.RestDiffResource;
 import org.projectnessie.services.rest.RestNamespaceResource;
 import org.projectnessie.services.rest.RestRefLogResource;
 import org.projectnessie.services.rest.RestTreeResource;
+import org.projectnessie.services.rest.RestUnreachableHeadsResource;
 import org.projectnessie.services.rest.ValidationExceptionMapper;
 import org.projectnessie.versioned.PersistVersionStoreExtension;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
@@ -206,6 +207,7 @@ public class NessieJaxRsExtension
               config.register(RestDiffResource.class);
               config.register(RestNamespaceResource.class);
               config.register(RestRefLogResource.class);
+              config.register(RestUnreachableHeadsResource.class);
               config.register(ConfigApiImpl.class);
               config.register(ContentKeyParamConverterProvider.class);
               config.register(NamespaceParamConverterProvider.class);

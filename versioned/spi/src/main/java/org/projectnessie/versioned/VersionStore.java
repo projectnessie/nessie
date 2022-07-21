@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -315,4 +316,7 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @return A stream of reflog entries.
    */
   Stream<RefLogDetails> getRefLog(Hash refLogId) throws RefLogNotFoundException;
+
+  /** Get all unreachable heads by reading all the commit logs. */
+  Set<Hash> getUnreachableHeads(long expectedCommitCount) throws ReferenceNotFoundException;
 }

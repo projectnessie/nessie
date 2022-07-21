@@ -22,6 +22,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.security.TestSecurity;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -96,6 +97,8 @@ class TestAuthorizationRules extends BaseClientAuthTest {
     deleteBranch(branch, role, shouldFail);
 
     getRefLog(role, !role.equals("admin_user"));
+
+    getUnreachableHeads(role, !role.equals("admin_user"));
   }
 
   @Test
@@ -408,6 +411,19 @@ class TestAuthorizationRules extends BaseClientAuthTest {
           .hasMessageContaining(String.format("'VIEW_REFLOG' is not allowed for role '%s'", role));
     } else {
       Stream<RefLogResponseEntry> entries = api().getRefLog().stream();
+      assertThat(entries).isNotEmpty();
+    }
+  }
+
+  private void getUnreachableHeads(String role, boolean shouldFail) throws NessieNotFoundException {
+    if (shouldFail) {
+      assertThatThrownBy(() -> api().getUnreachableReferenceHeads())
+          .isInstanceOf(NessieForbiddenException.class)
+          .hasMessageContaining(
+              String.format(
+                  "'VIEW_UNREACHABLE_REFERENCE_HEADS' is not allowed for role '%s'", role));
+    } else {
+      List<String> entries = api().getUnreachableReferenceHeads();
       assertThat(entries).isNotEmpty();
     }
   }

@@ -49,6 +49,7 @@ import org.projectnessie.model.RefLogResponse;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Tag;
+import org.projectnessie.model.UnreachableHeadsResponse;
 
 public abstract class AbstractResteasyTest {
 
@@ -561,5 +562,41 @@ public abstract class AbstractResteasyTest {
 
     // Rerun the request, but with a supported content type (text/json)
     rest().body(ns).put(path).then().statusCode(200);
+  }
+
+  @Test
+  public void testGetUnreachableHeads() {
+    Branch branch = makeBranch("branch-dummy");
+    IcebergTable table = IcebergTable.of("content-table", 42, 42, 42, 42);
+
+    ContentKey contentKey = ContentKey.of("key1");
+    Branch commit = commit(contentKey, table, branch, "code");
+
+    UnreachableHeadsResponse unreachableHeadsResponse =
+        rest()
+            .get("unreachableHeads")
+            .then()
+            .statusCode(200)
+            .extract()
+            .as(UnreachableHeadsResponse.class);
+
+    assertThat(unreachableHeadsResponse.getEntries().contains(commit.getHash())).isFalse();
+
+    // delete the branch
+    rest()
+        .queryParam("expectedHash", commit.getHash())
+        .delete("trees/branch/branch-dummy")
+        .then()
+        .statusCode(204);
+
+    unreachableHeadsResponse =
+        rest()
+            .get("unreachableHeads")
+            .then()
+            .statusCode(200)
+            .extract()
+            .as(UnreachableHeadsResponse.class);
+
+    assertThat(unreachableHeadsResponse.getEntries().contains(commit.getHash())).isTrue();
   }
 }

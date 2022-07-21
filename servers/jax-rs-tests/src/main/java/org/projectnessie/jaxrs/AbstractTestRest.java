@@ -54,6 +54,6 @@ package org.projectnessie.jaxrs;
  * <p>The "solution" here is to keep the separate classes but let each extend another - so different
  * groups of tests are kept in a single class.
  */
-public abstract class AbstractTestRest extends AbstractRestNamespace {
+public abstract class AbstractTestRest extends AbstractRestUnreachableHeads {
   // Entry class for the test hierarchy
 }

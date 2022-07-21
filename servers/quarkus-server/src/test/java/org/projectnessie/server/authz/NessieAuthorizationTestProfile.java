@@ -32,6 +32,7 @@ public class NessieAuthorizationTestProfile extends AuthenticationEnabledProfile
           .put(
               "nessie.server.authorization.rules.allow_all",
               "op in ['VIEW_REFERENCE','CREATE_REFERENCE','DELETE_REFERENCE','VIEW_REFLOG',"
+                  + "'VIEW_UNREACHABLE_REFERENCE_HEADS',"
                   + "'LIST_COMMITLOG','READ_ENTRIES','READ_CONTENT_KEY','LIST_COMMIT_LOG','COMMIT_CHANGE_AGAINST_REFERENCE',"
                   + "'ASSIGN_REFERENCE_TO_HASH','UPDATE_ENTITY','READ_ENTITY_VALUE','DELETE_ENTITY'] && role=='admin_user'")
           .put(

@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.api;
 
+import java.util.List;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.EntriesResponse;
@@ -103,6 +104,9 @@ public interface NessieApiV1 extends NessieApi {
 
   /** Retrieve a diff between two references. */
   GetDiffBuilder getDiff();
+
+  /** Retrieve all the Unreachable (dropped or assigned) reference heads (commit hash). */
+  List<String> getUnreachableReferenceHeads() throws NessieNotFoundException;
 
   /**
    * Retrieve the reflog from the HEAD of the RefLog resource, potentially truncated by the backend.

@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
@@ -487,5 +488,13 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
                 .operation(e.getOperation())
                 .sourceHashes(e.getSourceHashes())
                 .build());
+  }
+
+  @Override
+  public Set<Hash> getUnreachableHeads(long expectedCommitCount) throws ReferenceNotFoundException {
+    return databaseAdapter
+        .identifyReferencedAndUnreferencedHeads(
+            databaseAdapter.identifyAllHeadsAndForkPoints(expectedCommitCount))
+        .getUnreferencedHeads();
   }
 }

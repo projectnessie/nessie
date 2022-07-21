@@ -196,4 +196,7 @@ public interface BatchAccessChecker {
 
   /** Checks whether the given role/principal is allowed to view the reflog entries. */
   BatchAccessChecker canViewRefLog();
+
+  /** Checks whether the given role/principal is allowed to view the unreachable reference heads. */
+  BatchAccessChecker canViewUnreachableReferenceHeads();
 }

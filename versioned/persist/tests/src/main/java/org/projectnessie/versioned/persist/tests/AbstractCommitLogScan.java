@@ -47,7 +47,6 @@ import org.projectnessie.versioned.persist.adapter.HeadsAndForkPoints;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.ReferencedAndUnreferencedHeads;
-import org.projectnessie.versioned.persist.adapter.ReferencesUtil;
 import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterConfigItem;
@@ -105,14 +104,10 @@ public abstract class AbstractCommitLogScan {
         numCommits, numBranches, branch, addLive, deletedHeads::add, refHeads::put, h -> {});
 
     //
-
-    ReferencesUtil referencesUtil =
-        ReferencesUtil.forDatabaseAdapter(databaseAdapter, databaseAdapter.getConfig());
-
-    HeadsAndForkPoints headsAndForkPoints = referencesUtil.identifyAllHeadsAndForkPoints(100);
+    HeadsAndForkPoints headsAndForkPoints = databaseAdapter.identifyAllHeadsAndForkPoints(100);
 
     ReferencedAndUnreferencedHeads refAndUnref =
-        referencesUtil.identifyReferencedAndUnreferencedHeads(headsAndForkPoints);
+        databaseAdapter.identifyReferencedAndUnreferencedHeads(headsAndForkPoints);
 
     assertThat(refAndUnref.getUnreferencedHeads()).isEqualTo(deletedHeads);
     assertThat(refAndUnref.getReferencedHeads()).isEqualTo(liveHeads);
@@ -133,7 +128,7 @@ public abstract class AbstractCommitLogScan {
       }
     }
 
-    refAndUnref = referencesUtil.identifyReferencedAndUnreferencedHeads(headsAndForkPoints);
+    refAndUnref = databaseAdapter.identifyReferencedAndUnreferencedHeads(headsAndForkPoints);
 
     assertThat(refAndUnref.getUnreferencedHeads()).isEqualTo(deletedHeads);
     assertThat(refAndUnref.getReferencedHeads()).isEqualTo(liveHeads);

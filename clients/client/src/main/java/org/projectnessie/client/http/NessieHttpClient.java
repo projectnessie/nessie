@@ -40,6 +40,7 @@ import org.projectnessie.api.http.HttpDiffApi;
 import org.projectnessie.api.http.HttpNamespaceApi;
 import org.projectnessie.api.http.HttpRefLogApi;
 import org.projectnessie.api.http.HttpTreeApi;
+import org.projectnessie.api.http.HttpUnreachableHeadsApi;
 import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.error.BaseNessieClientServerException;
 
@@ -85,7 +86,8 @@ public class NessieHttpClient extends NessieApiClient {
         wrap(HttpContentApi.class, new HttpContentClient(client)),
         wrap(HttpDiffApi.class, new HttpDiffClient(client)),
         wrap(HttpRefLogApi.class, new HttpRefLogClient(client)),
-        wrap(HttpNamespaceApi.class, new HttpNamespaceClient(client)));
+        wrap(HttpNamespaceApi.class, new HttpNamespaceClient(client)),
+        wrap(HttpUnreachableHeadsApi.class, new HttpUnreachableHeadsClient(client)));
     this.client = client;
   }
 

@@ -87,7 +87,8 @@ Available variables within the `<rule_expression>` are: **'op'** / **'role'** / 
   * `UPDATE_ENTITY`
   * `READ_ENTITY_VALUE`
   * `DELETE_ENTITY`
-  * `VIEW_REFLOG`.
+  * `VIEW_REFLOG`
+  * `VIEW_UNREACHABLE_REFERENCE_HEADS`
 * The **'role'** refers to the user's role and can be any string.
 * The **'ref'** refers to a string representing a branch/tag name or `DETATCHED` for direct access to a commit id.
 * The **'path'** refers to the [content key](https://github.com/projectnessie/nessie/blob/main/model/src/main/java/org/projectnessie/model/ContentKey.java) for the contents of an object and can be any string
@@ -142,6 +143,12 @@ nessie.server.authorization.rules.allow_deleting_entity=\
 ```
 nessie.server.authorization.rules.allow_listing_reflog=\
   op=='VIEW_REFLOG' && role=='admin_user'
+```
+
+* allows listing unreachable reference heads for the role `admin_user`:
+```
+nessie.server.authorization.rules.allow_listing_unreachable_reference_heads=\
+  op=='VIEW_UNREACHABLE_REFERENCE_HEADS' && role=='admin_user'
 ```
 
 ### Example authorization rules from Stories section

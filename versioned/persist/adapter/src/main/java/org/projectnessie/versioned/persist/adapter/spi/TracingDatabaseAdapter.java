@@ -42,10 +42,12 @@ import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.Difference;
+import org.projectnessie.versioned.persist.adapter.HeadsAndForkPoints;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.MergeParams;
 import org.projectnessie.versioned.persist.adapter.RefLog;
+import org.projectnessie.versioned.persist.adapter.ReferencedAndUnreferencedHeads;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.adapter.RepoMaintenanceParams;
 import org.projectnessie.versioned.persist.adapter.TransplantParams;
@@ -243,6 +245,17 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
   @Override
   public void assertCleanStateForTests() {
     delegate.assertCleanStateForTests();
+  }
+
+  @Override
+  public HeadsAndForkPoints identifyAllHeadsAndForkPoints(long expectedCommitCount) {
+    return delegate.identifyAllHeadsAndForkPoints(expectedCommitCount);
+  }
+
+  @Override
+  public ReferencedAndUnreferencedHeads identifyReferencedAndUnreferencedHeads(
+      HeadsAndForkPoints headsAndForkPoints) throws ReferenceNotFoundException {
+    return delegate.identifyReferencedAndUnreferencedHeads(headsAndForkPoints);
   }
 
   @Override

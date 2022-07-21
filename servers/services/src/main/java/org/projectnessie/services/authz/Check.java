@@ -68,7 +68,9 @@ public interface Check {
     /** See {@link BatchAccessChecker#canDeleteEntity(NamedRef, ContentKey, String)}. */
     DELETE_ENTITY(true, true),
     /** See {@link BatchAccessChecker#canViewRefLog()}. */
-    VIEW_REFLOG(false, false);
+    VIEW_REFLOG(false, false),
+    /** See {@link BatchAccessChecker#canViewUnreachableReferenceHeads()}. */
+    VIEW_UNREACHABLE_REFERENCE_HEADS(false, false);
 
     private final boolean ref;
     private final boolean content;

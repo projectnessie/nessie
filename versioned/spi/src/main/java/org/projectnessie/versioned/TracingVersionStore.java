@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -265,6 +266,11 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   @Override
   public Stream<RefLogDetails> getRefLog(Hash refLogId) throws RefLogNotFoundException {
     return delegate.getRefLog(refLogId);
+  }
+
+  @Override
+  public Set<Hash> getUnreachableHeads(long expectedCommitCount) throws ReferenceNotFoundException {
+    return delegate.getUnreachableHeads(expectedCommitCount);
   }
 
   private static SpanHolder createSpan(String name, Consumer<SpanBuilder> spanBuilder) {

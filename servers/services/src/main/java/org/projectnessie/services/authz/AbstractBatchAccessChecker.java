@@ -122,4 +122,9 @@ public abstract class AbstractBatchAccessChecker implements BatchAccessChecker {
   public BatchAccessChecker canViewRefLog() {
     return add(Check.builder(CheckType.VIEW_REFLOG));
   }
+
+  @Override
+  public BatchAccessChecker canViewUnreachableReferenceHeads() {
+    return add(Check.builder(CheckType.VIEW_UNREACHABLE_REFERENCE_HEADS));
+  }
 }

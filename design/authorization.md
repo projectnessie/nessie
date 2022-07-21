@@ -121,6 +121,7 @@ An implementation of the `BatchAccessChecker` interface could be written with th
   * `UPDATE_ENTITY`
   * `DELETE_ENTITY`
   * `VIEW_REFLOG`
+  * `VIEW_UNREACHABLE_REFERENCE_HEADS`
 * Note that in order to be able to do something on a branch/tag (such as `LIST_COMMIT_LOG` / `READ_ENTRIES`), one needs to have the `VIEW_REFERENCE` permission for the given branch/tag.
 
 Some example rules are shown below:
@@ -132,6 +133,7 @@ nessie.server.authorization.rules.allow_branch_deletion="op=='DELETE_REFERENCE' 
 nessie.server.authorization.rules.allow_updating_entity="op=='UPDATE_ENTITY' && role=='test_user' && path.startsWith('allowed.')"
 nessie.server.authorization.rules.allow_deleting_entity="op=='DELETE_ENTITY' && role=='test_user' && path.startsWith('allowed.')"
 nessie.server.authorization.rules.allow_listing_reflog="op=='VIEW_REFLOG' && role=='admin_user'"
+nessie.server.authorization.rules.allow_listing_unreachable_reference_heads="op=='VIEW_UNREACHABLE_REFERENCE_HEADS' && role=='admin_user'
 ```
 
 > Written with [StackEdit](https://stackedit.io/).

@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -210,6 +211,12 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
   @Override
   public Stream<RefLogDetails> getRefLog(Hash refLogId) throws RefLogNotFoundException {
     return delegateStream1Ex("getreflog", () -> delegate.getRefLog(refLogId));
+  }
+
+  @Override
+  public Set<Hash> getUnreachableHeads(long expectedCommitCount) throws ReferenceNotFoundException {
+    return delegate1Ex(
+        "getUnreachableHeads", () -> delegate.getUnreachableHeads(expectedCommitCount));
   }
 
   private void measure(String requestName, Sample sample, Exception failure) {
