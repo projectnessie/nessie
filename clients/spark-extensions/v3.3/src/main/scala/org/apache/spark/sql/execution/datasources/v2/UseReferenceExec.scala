@@ -15,31 +15,20 @@
  */
 package org.apache.spark.sql.execution.datasources.v2
 
-import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
-import org.projectnessie.client.api.NessieApiV1
 
-import scala.collection.JavaConverters._
-
-abstract class BaseListReferenceExec(
+case class UseReferenceExec(
     output: Seq[Attribute],
+    branch: String,
     currentCatalog: CatalogPlugin,
+    timestampOrHash: Option[String],
     catalog: Option[String]
-) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog) {
-
-  override protected def runInternal(
-      api: NessieApiV1
-  ): Seq[InternalRow] = {
-    api.getAllReferences
-      .get()
-      .getReferences
-      .asScala
-      .map(ref => rowForRef(ref))
-      .toSeq // required for Scala 2.13
-  }
-
-  override def simpleString(maxFields: Int): String = {
-    s"ListReferenceExec ${catalog.getOrElse(currentCatalog.name())} "
-  }
-}
+) extends BaseUseReferenceExec(
+      output,
+      branch,
+      currentCatalog,
+      timestampOrHash,
+      catalog
+    )
+    with LeafV2CommandExec {}

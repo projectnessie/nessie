@@ -114,29 +114,38 @@ gradle.beforeProject {
 
 include("code-coverage")
 
-fun nessieProject(name: String, directory: String) {
+fun nessieProject(name: String, directory: File): ProjectDescriptor {
   include(name)
-  project(":$name").projectDir = file(directory)
+  val p = project(":$name")
+  p.name = name
+  p.projectDir = directory
+  return p
+}
+
+fun loadProperties(file: File): Properties {
+  val props = Properties()
+  file.reader().use { reader -> props.load(reader) }
+  return props
 }
 
 fun loadProjects(file: String) {
-  val props = Properties()
-  file(file).reader().use { reader -> props.load(reader) }
-  props.forEach { name, directory -> nessieProject(name as String, directory as String) }
+  loadProperties(file(file)).forEach { name, directory ->
+    nessieProject(name as String, file(directory as String))
+  }
 }
 
 loadProjects("gradle/projects.main.properties")
+
+val ideaSyncActive = System.getProperty("idea.sync.active").toBoolean()
 
 // Needed when loading/syncing the whole integrations-tools-testing project with Nessie as an
 // included build. IDEA gets here two times: the first run _does_ have the properties from the
 // integrations-tools-testing build's `gradle.properties` file, while the 2nd invocation only runs
 // from the included build.
-if (gradle.parent != null && System.getProperty("idea.sync.active").toBoolean()) {
-  val additionalPropertiesFile = file("./build/additional-build.properties")
-  if (additionalPropertiesFile.isFile) {
-    val additionalProperties = Properties()
-    additionalPropertiesFile.reader().use { reader -> additionalProperties.load(reader) }
-    System.getProperties().putAll(additionalProperties)
+if (gradle.parent != null && ideaSyncActive) {
+  val f = file("./build/additional-build.properties")
+  if (f.isFile) {
+    System.getProperties().putAll(loadProperties(f))
   }
 }
 
@@ -144,6 +153,44 @@ if (gradle.parent != null && System.getProperty("idea.sync.active").toBoolean())
 // settings.gradle is evaluated before buildSrc.
 if (!System.getProperty("nessie.integrationsTesting.enable").toBoolean()) {
   loadProjects("gradle/projects.iceberg.properties")
+
+  val sparkScala = loadProperties(file("clients/spark-scala.properties"))
+
+  val sparkVersions = sparkScala["sparkVersions"].toString().split(",").map { it.trim() }
+  val allScalaVersions = LinkedHashSet<String>()
+  for (sparkVersion in sparkVersions) {
+    val scalaVersions =
+      sparkScala["sparkVersion-${sparkVersion}-scalaVersions"].toString().split(",").map {
+        it.trim()
+      }
+    for (scalaVersion in scalaVersions) {
+      allScalaVersions.add(scalaVersion)
+      val artifactId = "nessie-spark-extensions-${sparkVersion}_$scalaVersion"
+      nessieProject(artifactId, file("clients/spark-extensions/v${sparkVersion}")).buildFileName =
+        "../build.gradle.kts"
+      if (ideaSyncActive) {
+        break
+      }
+    }
+  }
+
+  for (scalaVersion in allScalaVersions) {
+    nessieProject(
+      "nessie-spark-extensions-base_$scalaVersion",
+      file("clients/spark-extensions-base")
+    )
+    if (ideaSyncActive) {
+      break
+    }
+  }
+
+  if (!ideaSyncActive) {
+    nessieProject("nessie-spark-extensions", file("clients/spark-extensions/v3.1")).buildFileName =
+      "../build.gradle.kts"
+    nessieProject("nessie-spark-3.2-extensions", file("clients/spark-extensions/v3.2"))
+      .buildFileName = "../build.gradle.kts"
+    nessieProject("nessie-spark-extensions-base", file("clients/spark-extensions-base"))
+  }
 }
 
 if (false) {

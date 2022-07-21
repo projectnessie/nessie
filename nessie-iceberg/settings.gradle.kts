@@ -117,19 +117,58 @@ gradle.beforeProject {
   group = "org.projectnessie"
 }
 
-fun nessieProject(name: String, directory: String) {
+fun nessieProject(name: String, directory: File): ProjectDescriptor {
   include(name)
-  project(":$name").projectDir = file(directory)
+  val p = project(":$name")
+  p.projectDir = directory
+  return p
+}
+
+fun loadProperties(file: File): Properties {
+  val props = Properties()
+  file.reader().use { reader -> props.load(reader) }
+  return props
 }
 
 fun loadProjects(file: String) {
-  val props = Properties()
-  file(file).reader().use { reader ->
-    props.load(reader)
+  loadProperties(file(file)).forEach { name, directory ->
+    nessieProject(name as String, file("../$directory"))
   }
-  props.forEach { name, directory -> nessieProject(name as String, "../$directory") }
 }
 
 loadProjects("../gradle/projects.iceberg.properties")
+
+// Note: Unlike the "main" settings.gradle.kts this variant includes _all_ Spark _and_ Scala
+// version variants in IntelliJ.
+
+val sparkScala = loadProperties(file("../clients/spark-scala.properties"))
+val sparkVersions = sparkScala["sparkVersions"].toString().split(",").map { it.trim() }
+val allScalaVersions = LinkedHashSet<String>()
+
+for (sparkVersion in sparkVersions) {
+  val scalaVersions =
+    sparkScala["sparkVersion-${sparkVersion}-scalaVersions"].toString().split(",").map { it.trim() }
+  for (scalaVersion in scalaVersions) {
+    allScalaVersions.add(scalaVersion)
+    val artifactId = "nessie-spark-extensions-${sparkVersion}_$scalaVersion"
+    nessieProject(artifactId, file("../clients/spark-extensions/v${sparkVersion}")).buildFileName =
+      "../build.gradle.kts"
+  }
+}
+
+for (scalaVersion in allScalaVersions) {
+  nessieProject(
+    "nessie-spark-extensions-base_$scalaVersion",
+    file("../clients/spark-extensions-base")
+  )
+}
+
+nessieProject("nessie-spark-extensions", file("../clients/spark-extensions/v3.1")).buildFileName =
+  "../build.gradle.kts"
+
+nessieProject("nessie-spark-3.2-extensions", file("../clients/spark-extensions/v3.2"))
+  .buildFileName = "../build.gradle.kts"
+
+nessieProject("nessie-spark-extensions-base", file("../clients/spark-extensions-base"))
 
 rootProject.name = "nessie-iceberg"

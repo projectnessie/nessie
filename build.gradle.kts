@@ -92,11 +92,7 @@ val versionProtobuf = "3.21.2"
 val versionReactor = "2020.0.21"
 val versionRestAssured = "5.1.1"
 val versionRocksDb = "7.3.1"
-val versionScala_2_12 = "2.12.13"
-val versionScala_2_13 = "2.13.8"
 val versionSlf4j = "1.7.36"
-val versionSpark_3_1 = "3.1.2"
-val versionSpark_3_2 = "3.2.1"
 val versionTestcontainers = "1.17.3"
 val versionWeld = "3.1.8.Final"
 
@@ -130,15 +126,11 @@ extra["versionProtobuf"] = versionProtobuf
 
 extra["versionRocksDb"] = versionRocksDb
 
-extra["versionScala_2.12"] = versionScala_2_12
-
-extra["versionScala_2.13"] = versionScala_2_13
-
-extra["versionSpark_3.1"] = versionSpark_3_1
-
-extra["versionSpark_3.2"] = versionSpark_3_2
-
 extra["quarkus.builder-image"] = "quay.io/quarkus/ubi-quarkus-native-image:22.1-java17"
+
+for (e in loadProperties(file("clients/spark-scala.properties"))) {
+  extra[e.key.toString()] = e.value
+}
 
 // Dummy configuration to allow dependabot to manage dependencies here, but not include those
 // dependencies in the constraints. Those "managedOnly" dependencies do not "leak" to other
@@ -191,10 +183,15 @@ dependencies {
     api("org.apache.iceberg:iceberg-hive-metastore:$versionIceberg")
     api("org.apache.iceberg:iceberg-nessie:$versionIceberg")
     api("org.apache.iceberg:iceberg-parquet:$versionIceberg")
-    api("org.apache.iceberg:iceberg-spark-3.2_2.12:$versionIceberg")
-    api("org.apache.iceberg:iceberg-spark-3.1_2.12:$versionIceberg")
-    api("org.apache.iceberg:iceberg-spark-extensions-3.1_2.12:$versionIceberg")
-    api("org.apache.iceberg:iceberg-spark-extensions-3.2_2.12:$versionIceberg")
+    for (sparkVersion in project.extra["sparkVersions"].toString().split(",")) {
+      for (scalaVersion in
+        project.extra["sparkVersion-$sparkVersion-scalaVersions"].toString().split(",")) {
+        api("org.apache.iceberg:iceberg-spark-${sparkVersion}_$scalaVersion:$versionIceberg")
+        api(
+          "org.apache.iceberg:iceberg-spark-extensions-${sparkVersion}_$scalaVersion:$versionIceberg"
+        )
+      }
+    }
     api("org.apache.maven:maven-resolver-provider:$versionMaven")
     api("org.apache.maven.resolver:maven-resolver-connector-basic:$versionMavenResolver")
     api("org.apache.maven.resolver:maven-resolver-transport-file:$versionMavenResolver")
@@ -288,4 +285,11 @@ val buildToolsIntegrationTest by
 publishingHelper {
   nessieRepoName.set("nessie")
   inceptionYear.set("2020")
+}
+
+spotless {
+  kotlinGradle {
+    // Must be repeated :( - there's no "addTarget" or so
+    target("nessie-iceberg/*.gradle.kts", "*.gradle.kts", "buildSrc/*.gradle.kts")
+  }
 }
