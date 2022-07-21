@@ -212,6 +212,8 @@ fun Project.getSparkScalaVersionsForProject(): SparkScalaVersions {
       scalaMajorVersion = "2.12"
       addRelocateTo("nessie-spark-extensions-base_$scalaMajorVersion")
 
+      tasks.withType<Test>().configureEach { enabled = false }
+
       useBuildSubDirectory("legacy")
     }
     "nessie-spark-extensions" -> {
@@ -219,12 +221,16 @@ fun Project.getSparkScalaVersionsForProject(): SparkScalaVersions {
       scalaMajorVersion = "2.12"
       addRelocateTo("nessie-spark-extensions-${sparkMajorVersion}_$scalaMajorVersion")
 
+      tasks.withType<Test>().configureEach { enabled = false }
+
       useBuildSubDirectory("legacy")
     }
     "nessie-spark-3.2-extensions" -> {
       sparkMajorVersion = "3.2"
       scalaMajorVersion = "2.12"
       addRelocateTo("nessie-spark-extensions-${sparkMajorVersion}_$scalaMajorVersion")
+
+      tasks.withType<Test>().configureEach { enabled = false }
 
       useBuildSubDirectory("legacy")
     }
@@ -235,6 +241,15 @@ fun Project.getSparkScalaVersionsForProject(): SparkScalaVersions {
       useBuildSubDirectory(scalaMajorVersion)
     }
   }
+  return useSparkScalaVersionsForProject(sparkMajorVersion, scalaMajorVersion)
+}
+
+fun Project.useSparkScalaVersionsForProject(sparkMajorVersion: String): SparkScalaVersions {
+  val scalaMajorVersion =
+    rootProject.extra["sparkVersion-${sparkMajorVersion}-scalaVersions"]
+      .toString()
+      .split(",")
+      .map { it.trim() }[0]
   return useSparkScalaVersionsForProject(sparkMajorVersion, scalaMajorVersion)
 }
 

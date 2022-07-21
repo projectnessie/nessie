@@ -25,7 +25,7 @@ plugins {
   `nessie-conventions`
 }
 
-val sparkScala = useSparkScalaVersionsForProject("3.2", "2.12")
+val sparkScala = useSparkScalaVersionsForProject("3.2")
 
 dependencies {
   // picks the right dependencies for scala compilation

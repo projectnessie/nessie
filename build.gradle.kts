@@ -286,3 +286,10 @@ publishingHelper {
   nessieRepoName.set("nessie")
   inceptionYear.set("2020")
 }
+
+spotless {
+  kotlinGradle {
+    // Must be repeated :( - there's no "addTarget" or so
+    target("nessie-iceberg/*.gradle.kts", "*.gradle.kts", "buildSrc/*.gradle.kts")
+  }
+}

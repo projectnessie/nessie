@@ -23,7 +23,7 @@ plugins {
 
 extra["maven.name"] = "Nessie - GC - Base Implementation"
 
-val sparkScala = useSparkScalaVersionsForProject("3.1", "2.12")
+val sparkScala = useSparkScalaVersionsForProject("3.2")
 
 dependencies {
   implementation(platform(nessieRootProject()))

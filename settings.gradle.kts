@@ -136,11 +136,13 @@ fun loadProjects(file: String) {
 
 loadProjects("gradle/projects.main.properties")
 
+val ideaSyncActive = System.getProperty("idea.sync.active").toBoolean()
+
 // Needed when loading/syncing the whole integrations-tools-testing project with Nessie as an
 // included build. IDEA gets here two times: the first run _does_ have the properties from the
 // integrations-tools-testing build's `gradle.properties` file, while the 2nd invocation only runs
 // from the included build.
-if (gradle.parent != null && System.getProperty("idea.sync.active").toBoolean()) {
+if (gradle.parent != null && ideaSyncActive) {
   val f = file("./build/additional-build.properties")
   if (f.isFile) {
     System.getProperties().putAll(loadProperties(f))
@@ -154,28 +156,41 @@ if (!System.getProperty("nessie.integrationsTesting.enable").toBoolean()) {
 
   val sparkScala = loadProperties(file("clients/spark-scala.properties"))
 
-  for (sparkVersion in sparkScala["sparkVersions"].toString().split(",").map { it.trim() }) {
-    for (scalaVersion in
+  val sparkVersions = sparkScala["sparkVersions"].toString().split(",").map { it.trim() }
+  val allScalaVersions = LinkedHashSet<String>()
+  for (sparkVersion in sparkVersions) {
+    val scalaVersions =
       sparkScala["sparkVersion-${sparkVersion}-scalaVersions"].toString().split(",").map {
         it.trim()
-      }) {
+      }
+    for (scalaVersion in scalaVersions) {
+      allScalaVersions.add(scalaVersion)
       val artifactId = "nessie-spark-extensions-${sparkVersion}_$scalaVersion"
       nessieProject(artifactId, file("clients/spark-extensions/v${sparkVersion}")).buildFileName =
         "../build.gradle.kts"
+      if (ideaSyncActive) {
+        break
+      }
     }
   }
-  for (scalaVersion in sparkScala["scalaVersions"].toString().split(",").map { it.trim() }) {
+
+  for (scalaVersion in allScalaVersions) {
     nessieProject(
       "nessie-spark-extensions-base_$scalaVersion",
       file("clients/spark-extensions-base")
     )
+    if (ideaSyncActive) {
+      break
+    }
   }
 
-  nessieProject("nessie-spark-extensions", file("clients/spark-extensions/v3.1")).buildFileName =
-    "../build.gradle.kts"
-  nessieProject("nessie-spark-3.2-extensions", file("clients/spark-extensions/v3.2"))
-    .buildFileName = "../build.gradle.kts"
-  nessieProject("nessie-spark-extensions-base", file("clients/spark-extensions-base"))
+  if (!ideaSyncActive) {
+    nessieProject("nessie-spark-extensions", file("clients/spark-extensions/v3.1")).buildFileName =
+      "../build.gradle.kts"
+    nessieProject("nessie-spark-3.2-extensions", file("clients/spark-extensions/v3.2"))
+      .buildFileName = "../build.gradle.kts"
+    nessieProject("nessie-spark-extensions-base", file("clients/spark-extensions-base"))
+  }
 }
 
 if (false) {
