@@ -28,6 +28,7 @@ import picocli.CommandLine;
       ReadReferences.class,
       ReadContent.class,
       RefreshContent.class,
+      DeleteContent.class,
       CommandLine.HelpCommand.class
     })
 public abstract class ContentGenerator<API extends NessieApiV1> {
