@@ -2,7 +2,7 @@
 
 See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.
 
-## 0.31.0 Release (July 22, 2022)
+## 0.40.0 Release (July 22, 2022)
 
 **Rolling upgrades from earlier versions are not supported!**
 

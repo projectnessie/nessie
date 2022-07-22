@@ -2,7 +2,7 @@
 History
 =======
 
-0.31.0 (2022-07-22)
+0.40.0 (2022-07-22)
 -------------------
 
 * Change Pynessie dependencies import from relative to absolute

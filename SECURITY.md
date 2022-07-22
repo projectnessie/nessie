@@ -6,7 +6,7 @@ Currently supported versions are listed below.
 
 | Version  | Supported          |
 |----------|--------------------|
-| 0.31.0   | :white_check_mark: |
+| 0.40.0   | :white_check_mark: |
 | 0.30.0   | :white_check_mark: |
 | < 0.30.0 | :x:                |
 
