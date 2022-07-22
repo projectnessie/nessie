@@ -20,6 +20,7 @@ plugins {
   `java-library`
   jacoco
   `maven-publish`
+  signing
   id("org.projectnessie.smallrye-open-api")
   `nessie-conventions`
   id("org.projectnessie.buildsupport.attach-test-jar")

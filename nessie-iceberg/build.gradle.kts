@@ -15,8 +15,8 @@
  */
 
 plugins {
-  signing
   `maven-publish`
+  signing
   id("org.projectnessie.buildsupport.ide-integration")
   `nessie-conventions`
 }

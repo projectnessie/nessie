@@ -19,6 +19,7 @@ import io.quarkus.gradle.tasks.QuarkusBuild
 plugins {
   `java-library`
   `maven-publish`
+  signing
   id("io.quarkus")
   `nessie-conventions`
 }

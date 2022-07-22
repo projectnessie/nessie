@@ -16,8 +16,8 @@
 
 plugins {
   `java-platform`
-  signing
   `maven-publish`
+  signing
   id("org.projectnessie.buildsupport.ide-integration")
   `nessie-conventions`
   id("io.github.gradle-nexus.publish-plugin")

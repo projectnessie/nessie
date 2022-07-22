@@ -17,6 +17,7 @@
 plugins {
   jacoco
   `maven-publish`
+  signing
   scala
   `nessie-conventions`
 }

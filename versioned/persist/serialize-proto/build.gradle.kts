@@ -20,6 +20,7 @@ plugins {
   `java-library`
   jacoco
   `maven-publish`
+  signing
   id("org.projectnessie.buildsupport.reflectionconfig")
   id("org.projectnessie.buildsupport.protobuf")
   `nessie-conventions`
