@@ -19,5 +19,6 @@ extra["maven.name"] = "Nessie - Iceberg Metadata test data"
 plugins {
   `java-library`
   `maven-publish`
+  signing
   `nessie-conventions`
 }

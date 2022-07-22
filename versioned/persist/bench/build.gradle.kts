@@ -20,6 +20,7 @@ plugins {
   `java-library`
   jacoco
   `maven-publish`
+  signing
   id("com.github.johnrengelman.shadow")
   `nessie-conventions`
 }
