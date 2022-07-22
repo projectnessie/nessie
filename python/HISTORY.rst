@@ -2,6 +2,12 @@
 History
 =======
 
+0.31.0 (2022-07-22)
+-------------------
+
+* Change Pynessie dependencies import from relative to absolute
+* Use isort instead of flake8-import-order
+
 0.30.0 (2022-05-13)
 -------------------
 
