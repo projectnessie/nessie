@@ -120,12 +120,12 @@ jobs:
       run: |
         if [[ -f build.gradle.kts ]] ; then
           echo "::group::Publish to Sonatype"
-          ./gradlew --no-watch-fs --no-daemon --info publishToMavenLocal publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar
+          ./gradlew --no-watch-fs --no-daemon publishToMavenLocal publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar
           echo "::endgroup::"
   
           # Build the native-image, it's not released to Maven Central
           echo "::group::Build native image"
-          ./gradlew --no-watch-fs --no-daemon --info :nessie-quarkus:quarkusBuild -Prelease -Pnative -Pdocker
+          ./gradlew --no-watch-fs --no-daemon :nessie-quarkus:quarkusBuild -Prelease -Pnative -Pdocker
           echo "::endgroup::"
   
           # Add version to the openapi file name

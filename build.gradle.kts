@@ -25,6 +25,8 @@ plugins {
 
 extra["maven.name"] = "Nessie"
 
+description = "Transactional Catalog for Data Lakes"
+
 /*
 Main dependency handling happens in this build script.
 Declare versions as variables and add dependency constraints.
