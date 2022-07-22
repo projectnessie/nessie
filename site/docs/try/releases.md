@@ -2,6 +2,28 @@
 
 See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.
 
+## 0.31.0 Release (July 22, 2022)
+
+**Rolling upgrades from earlier versions are not supported!**
+
+* Support Spark 3.1 (Scala 2.12), Spark 3.2 (Scala 2.12 + 2.13), Spark 3.3 (Scala 2.12 + 2.13)
+* Support Iceberg 0.14.0
+* Nessie Spark SQL extensions: handle timestamps w/ time-zones
+* Nessie Spark SQL extensions: fix handling of `USE`d references for `CREATE/ASSIGN BRANCH/TAG`
+* Detailed merge/transplant result to allow inspection of conflicts
+* Merge/transplant optionally allow "force-keep" & "force-merge" of conflicting content-keys
+* Iceberg table metadata stored in Nessie
+* Improvements to REST error handling
+* Performance improvements when there are many content-keys
+* Hard limit on content-key length (max 20 elements, total 500 characters)
+* Prevent (accidental) deletion of default branch
+* Improved usage of automatic paging via `NessieApi`
+* Improvements to Nessie server health checks
+* Add rolling-upgrade test suite in regular CI
+* Daily testing against Java 17 + newer
+* Switched to Java 17 in native images
+* Build switched from Maven to Gradle
+
 ## 0.30.0 Release (May 13, 2022)
 
 * Add commit-ID to KeyListEntry when writing new key-lists
