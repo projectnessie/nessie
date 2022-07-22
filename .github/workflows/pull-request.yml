@@ -80,14 +80,15 @@ jobs:
       with:
         arguments: gatlingRun
 
-    # Exercise these tasks to ensure those do not error out
-    - name: Gradle / assemble + publish local
+    - name: Gradle / code-coverage report
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: |
-          assemble
-          publishToMavenLocal
-          codeCoverageReport -x test -x intTest
+        arguments: codeCoverageReport -x test -x intTest
+
+    # Performs a `publishToMavenLocal` with `-Prelease` and a temporary GPG key - finds errors
+    # like missing .asc files and sources/javadoc jars
+    - name: Verify publication
+      run: build-tools-integration-tests/verify-publication.sh --noclean
 
     - name: Gradle / build tools integration tests
       uses: gradle/gradle-build-action@v2
