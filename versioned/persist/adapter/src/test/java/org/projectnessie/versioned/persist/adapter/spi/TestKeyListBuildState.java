@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.persist.adapter.spi;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
@@ -23,8 +25,11 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUti
 import static org.projectnessie.versioned.persist.adapter.spi.KeyListBuildState.MINIMUM_BUCKET_SIZE;
 
 import com.google.protobuf.ByteString;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -33,6 +38,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentId;
@@ -42,6 +48,65 @@ import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 
 public class TestKeyListBuildState {
+
+  static Stream<Arguments> keyNotFoundScenarios() {
+    return Stream.of(
+        Arguments.of(singletonList(Key.of("existing", "key")), Key.of("non_existing.key"), 0),
+        Arguments.of(
+            asList(
+                Key.of("db", "from_spark"),
+                Key.of("db", "from_flink"),
+                Key.of("db", "from_presto")),
+            Key.of("db.from_spark"),
+            1),
+        Arguments.of(
+            IntStream.range(0, 60)
+                .mapToObj(i -> Key.of("db", "table_" + i))
+                .collect(Collectors.toList()),
+            Key.of("db.meep"),
+            1),
+        Arguments.of(
+            IntStream.range(0, 100)
+                .mapToObj(i -> Key.of("db", "table_" + i))
+                .collect(Collectors.toList()),
+            Key.of("db.meep"),
+            1));
+  }
+
+  @ParameterizedTest
+  @MethodSource("keyNotFoundScenarios")
+  public void keyNotFoundScenario(List<Key> keyList, Key keyToLookup, int emptyOnRound) {
+    ImmutableCommitLogEntry.Builder commitLogEntry = newCommit();
+    KeyListBuildState buildState = new KeyListBuildState(commitLogEntry, 50, 50, 0.65f, e -> 1);
+    keyList.stream()
+        .map(k -> KeyListEntry.of(k, ContentId.of("id1"), (byte) 0, Hash.of("1234")))
+        .forEach(buildState::add);
+
+    Map<Hash, KeyListEntity> persisted =
+        buildState.finish().stream().collect(Collectors.toMap(KeyListEntity::getId, e -> e));
+
+    CommitLogEntry entry = commitLogEntry.build();
+
+    FetchValuesUsingOpenAddressing helper = new FetchValuesUsingOpenAddressing(entry);
+
+    List<KeyListEntry> keyListEntries = new ArrayList<>();
+
+    Collection<Key> remainingKeys = singletonList(keyToLookup);
+
+    for (int round = 0; !remainingKeys.isEmpty(); round++) {
+      List<Hash> entitiesToFetch = helper.entityIdsToFetch(round, 0, remainingKeys);
+
+      // Fetch the key-list-entities for the identified segments, store those
+      entitiesToFetch.stream().map(persisted::remove).forEach(helper::entityLoaded);
+
+      // Try to extract the key-list-entries for the remainingKeys and add to the result list
+      remainingKeys = helper.checkForKeys(round, remainingKeys, keyListEntries::add);
+
+      if (emptyOnRound == round) {
+        assertThat(remainingKeys).isEmpty();
+      }
+    }
+  }
 
   /**
    * Exercises a bunch of combinations of number of {@link KeyListEntry}s with different

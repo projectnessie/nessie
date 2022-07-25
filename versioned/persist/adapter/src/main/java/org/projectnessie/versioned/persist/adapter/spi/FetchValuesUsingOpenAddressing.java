@@ -98,9 +98,11 @@ final class FetchValuesUsingOpenAddressing {
       for (int prefetch = 0; ; prefetch++) {
         if (segment > 0) {
           int entitySegment = segment - 1;
-          Hash entityId = keyListIds.get(entitySegment);
-          if (entityIdToSegment.put(entityId, segment) == -1) {
-            entitiesToFetch.add(entityId);
+          if (keyListIds.size() > entitySegment) {
+            Hash entityId = keyListIds.get(entitySegment);
+            if (entityIdToSegment.put(entityId, segment) == -1) {
+              entitiesToFetch.add(entityId);
+            }
           }
         }
         if (prefetch >= prefetchEntities) {
@@ -142,9 +144,13 @@ final class FetchValuesUsingOpenAddressing {
         }
       }
 
+      if (segment >= keyListsArray.length) {
+        continue;
+      }
+
       KeyListEntry[] keys = keyListsArray[segment];
       for (int i = offsetInSegment; ; i++) {
-        KeyListEntry keyListEntry = keys[i];
+        KeyListEntry keyListEntry = i < keys.length ? keys[i] : null;
         if (keyListEntry == null) {
           // key _not_ found
           break;
