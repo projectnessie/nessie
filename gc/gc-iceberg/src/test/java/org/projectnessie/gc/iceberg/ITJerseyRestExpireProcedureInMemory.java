@@ -28,6 +28,7 @@ import static org.projectnessie.gc.iceberg.ProcedureTestUtil.useReference;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -98,7 +99,8 @@ public class ITJerseyRestExpireProcedureInMemory extends AbstractRestGC {
 
   static final String CATALOG_NAME = "nessie";
   static final String GC_BRANCH_NAME = "gcRef";
-  static final String GC_OUTPUT_TABLE_NAME = "gc_results";
+  static final String GC_IDENTIFY_OUTPUT_TABLE_NAME = "gc_identify_results";
+  static final String GC_EXPIRY_OUTPUT_TABLE_NAME = "gc_expiry_results";
   static final String GC_SPARK_CATALOG = "org.projectnessie.gc.iceberg.NessieIcebergGcSparkCatalog";
 
   static final String TABLE_ONE = "table_1";
@@ -460,7 +462,8 @@ public class ITJerseyRestExpireProcedureInMemory extends AbstractRestGC {
                 "CALL %s.%s.%s("
                     + "nessie_catalog_name => '%s', "
                     + "output_branch_name => '%s', "
-                    + "output_table_identifier => '%s', "
+                    + "identify_output_table_identifier => '%s', "
+                    + "expiry_output_table_identifier => '%s', "
                     + "nessie_client_configurations => map('%s','%s'), "
                     + "dry_run => %s)",
                 CATALOG_NAME,
@@ -469,11 +472,18 @@ public class ITJerseyRestExpireProcedureInMemory extends AbstractRestGC {
                 //
                 CATALOG_NAME,
                 GC_BRANCH_NAME,
-                prefix + "." + GC_OUTPUT_TABLE_NAME,
+                prefix + "." + GC_IDENTIFY_OUTPUT_TABLE_NAME,
+                prefix + "." + GC_EXPIRY_OUTPUT_TABLE_NAME,
                 CONF_NESSIE_URI,
                 getUri().toString(),
                 dryRun));
-    verifyExpiry(output, rows, dryRun);
+    verifyExpiry(
+        sparkSession,
+        output.collectAsList().get(0).getString(0),
+        output.collectAsList().get(0).getTimestamp(1),
+        prefix,
+        rows,
+        dryRun);
   }
 
   private void performGcAndVerify(
@@ -488,29 +498,40 @@ public class ITJerseyRestExpireProcedureInMemory extends AbstractRestGC {
             session,
             CATALOG_NAME,
             GC_BRANCH_NAME,
-            prefix + "." + GC_OUTPUT_TABLE_NAME,
+            prefix + "." + GC_IDENTIFY_OUTPUT_TABLE_NAME,
             getUri().toString(),
             cutoffTimeStamp,
             deadReferenceCutoffTime,
             cutOffTimeStampPerRef);
     IdentifiedResultsRepo actualIdentifiedResultsRepo =
         new IdentifiedResultsRepo(
-            session, CATALOG_NAME, GC_BRANCH_NAME, prefix + "." + GC_OUTPUT_TABLE_NAME);
+            session, CATALOG_NAME, GC_BRANCH_NAME, prefix + "." + GC_IDENTIFY_OUTPUT_TABLE_NAME);
     Dataset<Row> actualRowDataset =
         actualIdentifiedResultsRepo.collectExpiredContentsAsDataSet(runId);
     verify(actualRowDataset, expectedDataSet, session, IdentifiedResultsRepo.getSchema());
   }
 
-  private void verifyExpiry(Dataset<Row> actual, Dataset<Row> dfExpected, boolean dryRun) {
-    Dataset<Row> dfActual =
-        actual.select("content_id", "deleted_files_type", "deleted_files_count");
+  private void verifyExpiry(
+      SparkSession sparkSession,
+      String runID,
+      Timestamp timestamp,
+      String prefix,
+      Dataset<Row> dfExpected,
+      boolean dryRun) {
+    ExpiredResultsRepo expiredResultsRepo =
+        new ExpiredResultsRepo(
+            sparkSession, CATALOG_NAME, GC_BRANCH_NAME, prefix + "." + GC_EXPIRY_OUTPUT_TABLE_NAME);
+    Dataset<Row> actual = expiredResultsRepo.collectExpiredResults(runID, timestamp);
+    // "startTime", "runID", "contentId", "expiredFilesType", "expiredFilesCount",
+    // "expiredFilesList"
+    Dataset<Row> dfActual = actual.select("contentId", "expiredFilesType", "expiredFilesCount");
     // when both the dataframe is same, df.except() should return empty.
     assertThat(dfActual.count()).isEqualTo(dfExpected.count());
     assertThat(dfExpected.except(dfActual).collectAsList()).isEmpty();
 
     try {
       FileSystem localFs = FileSystem.getLocal(new Configuration());
-      List<Row> deletedFilesList = actual.select("deleted_files_list").collectAsList();
+      List<Row> deletedFilesList = actual.select("expiredFilesList").collectAsList();
       deletedFilesList.stream()
           .map(row -> row.getList(0))
           .forEach(

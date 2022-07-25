@@ -18,32 +18,23 @@ package org.projectnessie.gc.base;
 import static org.apache.iceberg.types.Types.NestedField.optional;
 import static org.apache.iceberg.types.Types.NestedField.required;
 
-import com.google.errorprone.annotations.FormatMethod;
-import com.google.errorprone.annotations.FormatString;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.catalog.TableIdentifier;
-import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.types.Types;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
 import org.apache.spark.sql.types.StructType;
 import org.projectnessie.model.Content;
-import org.projectnessie.model.ImmutableTableReference;
 import org.projectnessie.model.Reference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** DDL + DML functionality for the "IdentifiedResult" table. */
-public final class IdentifiedResultsRepo {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(IdentifiedResultsRepo.class);
+public final class IdentifiedResultsRepo extends BaseResultsRepo {
 
   private static final String COL_GC_RUN_START = "gcRunStart";
   private static final String COL_GC_RUN_ID = "gcRunId";
@@ -83,15 +74,15 @@ public final class IdentifiedResultsRepo {
 
   private static final StructType schema = SparkSchemaUtil.convert(icebergSchema);
 
-  private final SparkSession sparkSession;
-  private final String catalogAndTableWithRefName;
-
   public IdentifiedResultsRepo(
       SparkSession sparkSession, String catalog, String gcBranchName, String gcTableIdentifier) {
-    this.sparkSession = sparkSession;
-    this.catalogAndTableWithRefName = withRefName(catalog, gcTableIdentifier, gcBranchName);
+    super(sparkSession, catalog, gcBranchName, gcTableIdentifier);
     createTableIfAbsent(
-        sparkSession, catalog, TableIdentifier.parse(gcTableIdentifier), gcBranchName);
+        sparkSession,
+        catalog,
+        TableIdentifier.parse(gcTableIdentifier),
+        gcBranchName,
+        icebergSchema);
   }
 
   public static StructType getSchema() {
@@ -130,23 +121,13 @@ public final class IdentifiedResultsRepo {
                 "SELECT %s FROM %s WHERE %s = (SELECT MAX(%s) FROM %s) LIMIT 1",
                 COL_GC_RUN_ID,
                 //
-                catalogAndTableWithRefName,
+                getCatalogAndTableWithRefName(),
                 //
                 COL_GC_RUN_START,
                 COL_GC_RUN_START,
-                catalogAndTableWithRefName)
+                getCatalogAndTableWithRefName())
             .collectAsList();
     return rows.isEmpty() ? Optional.empty() : Optional.of(rows.get(0).getString(0));
-  }
-
-  void writeToOutputTable(Dataset<Row> rowDataset) {
-    try {
-      // write content rows to the output table
-      rowDataset.writeTo(catalogAndTableWithRefName).append();
-    } catch (NoSuchTableException e) {
-      throw new RuntimeException(
-          "Problem while writing output rows to the table: " + catalogAndTableWithRefName, e);
-    }
   }
 
   static Row createContentRow(
@@ -171,46 +152,15 @@ public final class IdentifiedResultsRepo {
         isExpired);
   }
 
-  static void createTableIfAbsent(
-      SparkSession sparkSession,
-      String catalogName,
-      TableIdentifier tableIdentifier,
-      String gcBranchName) {
-    try {
-      GCUtil.loadNessieCatalog(sparkSession, catalogName, gcBranchName)
-          .createTable(tableIdentifier, IdentifiedResultsRepo.icebergSchema);
-    } catch (AlreadyExistsException ex) {
-      // Table can exist from previous GC run, no need to throw exception.
-    }
-  }
-
-  private static String withRefName(String catalog, String identifier, String refName) {
-    int tableNameIndex = identifier.lastIndexOf(".");
-    String namespace = identifier.substring(0, tableNameIndex);
-    String tableName = identifier.substring(tableNameIndex + 1);
-    return catalog
-        + "."
-        + namespace
-        + "."
-        + ImmutableTableReference.builder().name(tableName).reference(refName).build();
-  }
-
   private Dataset<Row> getContentRowsForRunId(String runId, boolean isExpired) {
     return sql(
         "SELECT * FROM %s WHERE %s = '%s' AND %s = %s",
-        catalogAndTableWithRefName,
+        getCatalogAndTableWithRefName(),
         //
         COL_GC_RUN_ID,
         runId,
         //
         COL_IS_EXPIRED,
         isExpired);
-  }
-
-  @FormatMethod
-  private Dataset<Row> sql(@FormatString String sqlStatement, Object... args) {
-    String sql = String.format(sqlStatement, args);
-    LOGGER.debug("Executing the sql -> {}", sql);
-    return sparkSession.sql(sql);
   }
 }

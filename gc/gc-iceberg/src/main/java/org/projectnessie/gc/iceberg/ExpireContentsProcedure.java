@@ -15,11 +15,15 @@
  */
 package org.projectnessie.gc.iceberg;
 
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+
 import java.io.UncheckedIOException;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.CatalogUtil;
@@ -57,7 +61,8 @@ public class ExpireContentsProcedure extends BaseGCProcedure {
       new ProcedureParameter[] {
         ProcedureParameter.required("nessie_catalog_name", DataTypes.StringType),
         ProcedureParameter.required("output_branch_name", DataTypes.StringType),
-        ProcedureParameter.required("output_table_identifier", DataTypes.StringType),
+        ProcedureParameter.required("identify_output_table_identifier", DataTypes.StringType),
+        ProcedureParameter.required("expiry_output_table_identifier", DataTypes.StringType),
         ProcedureParameter.required(
             "nessie_client_configurations",
             DataTypes.createMapType(DataTypes.StringType, DataTypes.StringType)),
@@ -65,24 +70,15 @@ public class ExpireContentsProcedure extends BaseGCProcedure {
         ProcedureParameter.optional("dry_run", DataTypes.BooleanType),
       };
 
-  public static final String OUTPUT_CONTENT_ID = "content_id";
-  public static final String OUTPUT_EXPIRED_DATA_FILES_TYPE = "deleted_files_type";
-  public static final String OUTPUT_EXPIRED_DATA_FILES_COUNT = "deleted_files_count";
-  public static final String OUTPUT_EXPIRED_FILES_LIST = "deleted_files_list";
+  public static final String OUTPUT_RUN_ID = "runID";
 
-  public static final StructType OUTPUT_TYPE =
+  public static final String OUTPUT_START_TIME = "startTime";
+
+  private static final StructType OUTPUT_TYPE =
       new StructType(
           new StructField[] {
-            new StructField(OUTPUT_CONTENT_ID, DataTypes.StringType, true, Metadata.empty()),
-            new StructField(
-                OUTPUT_EXPIRED_DATA_FILES_TYPE, DataTypes.StringType, true, Metadata.empty()),
-            new StructField(
-                OUTPUT_EXPIRED_DATA_FILES_COUNT, DataTypes.IntegerType, true, Metadata.empty()),
-            new StructField(
-                OUTPUT_EXPIRED_FILES_LIST,
-                DataTypes.createArrayType(DataTypes.StringType),
-                true,
-                Metadata.empty())
+            new StructField(OUTPUT_RUN_ID, DataTypes.StringType, true, Metadata.empty()),
+            new StructField(OUTPUT_START_TIME, DataTypes.TimestampType, true, Metadata.empty())
           });
 
   public enum FileType {
@@ -104,6 +100,8 @@ public class ExpireContentsProcedure extends BaseGCProcedure {
   private static final String COL_EXPIRED_FILES_TYPE = "expiredFilesType";
   private static final String COL_EXPIRED_FILES_COUNT = "expiredFilesCount";
   private static final String COL_EXPIRED_FILES_LIST = "expiredFilesList";
+  private static final String COL_GC_RUN_ID = "gcRunID";
+  private static final String COL_GC_RUN_START = "gcRunStart";
 
   public ExpireContentsProcedure(TableCatalog currentCatalog) {
     super(currentCatalog);
@@ -130,40 +128,42 @@ public class ExpireContentsProcedure extends BaseGCProcedure {
   public InternalRow[] call(InternalRow internalRow) {
     String gcCatalogName = internalRow.getString(0);
     String gcOutputBranchName = internalRow.getString(1);
-    String gcOutputTableIdentifier = internalRow.getString(2);
+    String identifyOutputTableIdentifier = internalRow.getString(2);
+    String expiryOutputTableIdentifier = internalRow.getString(3);
     Map<String, String> nessieClientConfig = new HashMap<>();
-    MapData map = internalRow.getMap(3);
+    MapData map = internalRow.getMap(4);
     for (int i = 0; i < map.numElements(); i++) {
       nessieClientConfig.put(
           map.keyArray().getUTF8String(i).toString(), map.valueArray().getUTF8String(i).toString());
     }
-    String runId = !internalRow.isNullAt(4) ? internalRow.getString(4) : null;
-    boolean dryRun = !internalRow.isNullAt(5) && internalRow.getBoolean(5);
+    String runId = !internalRow.isNullAt(5) ? internalRow.getString(5) : null;
+    boolean dryRun = !internalRow.isNullAt(6) && internalRow.getBoolean(6);
 
     IdentifiedResultsRepo identifiedResultsRepo =
         new IdentifiedResultsRepo(
-            spark(), gcCatalogName, gcOutputBranchName, gcOutputTableIdentifier);
+            spark(), gcCatalogName, gcOutputBranchName, identifyOutputTableIdentifier);
 
     if (runId == null) {
-      runId = getLatestCompletedRunID(gcOutputTableIdentifier, identifiedResultsRepo);
+      runId = getLatestCompletedRunID(identifyOutputTableIdentifier, identifiedResultsRepo);
     }
 
+    Instant startedAt = Instant.now();
+
     try (FileIO fileIO = getFileIO(nessieClientConfig)) {
-      Dataset<Row> expiredContentsDF = getExpiredContents(runId, identifiedResultsRepo, fileIO);
+      Dataset<Row> expiredContentsDF =
+          getExpiredContents(runId, startedAt, identifiedResultsRepo, fileIO);
       if (!dryRun) {
         expiredContentsDF =
             expiredContentsDF.map(
                 new DeleteFunction(fileIO), RowEncoder.apply(expiredContentsDF.schema()));
       }
-      List<Row> rows = expiredContentsDF.collectAsList();
-      return rows.stream()
-          .map(
-              row ->
-                  GCProcedureUtil.internalRow(
-                      // "content_id", "deleted_files_type", "deleted_files_count",
-                      // "deleted_files_list"
-                      row.getString(0), row.getString(1), row.getInt(3), row.getList(2)))
-          .toArray(InternalRow[]::new);
+      ExpiredResultsRepo expiredResultsRepo =
+          new ExpiredResultsRepo(
+              spark(), gcCatalogName, gcOutputBranchName, expiryOutputTableIdentifier);
+      // "startTime", "runID", "contentId", "expiredFilesType", "expiredFilesCount",
+      // "expiredFilesList"
+      expiredResultsRepo.writeToOutputTable(expiredContentsDF);
+      return new InternalRow[] {GCProcedureUtil.internalRow(runId, instantToMicros(startedAt))};
     }
   }
 
@@ -176,7 +176,7 @@ public class ExpireContentsProcedure extends BaseGCProcedure {
   }
 
   private static Dataset<Row> getExpiredContents(
-      String runId, IdentifiedResultsRepo identifiedResultsRepo, FileIO fileIO) {
+      String runId, Instant startedAt, IdentifiedResultsRepo identifiedResultsRepo, FileIO fileIO) {
     // Read the expired content-rows from output table for this run id
     Dataset<Row> expiredContents = identifiedResultsRepo.collectExpiredContentsAsDataSet(runId);
     Dataset<Row> expiredContentsDF = computeAllFiles(fileIO, expiredContents);
@@ -187,13 +187,22 @@ public class ExpireContentsProcedure extends BaseGCProcedure {
     Dataset<Row> expiredFilesDF = expiredContentsDF.except(liveContentsDF);
     // final output
     // Example output row:
-    // content_id_1, manifestLists, {a,b,c}
-    // content_id_1, manifests, {d,e}
-    // content_id_1, datafiles, {f,g}
+    // timestamp1, runID1, content_id_1, manifestLists, 3, {a,b,c}
+    // timestamp1, runID1, content_id_1, manifests, 2, {d,e}
+    // timestamp1, runID1, content_id_1, datafiles, 2, {f,g}
     return expiredFilesDF
         .groupBy(COL_CONTENT_ID, COL_EXPIRED_FILES_TYPE)
         .agg(functions.collect_list(COL_EXPIRED_FILES).as(COL_EXPIRED_FILES_LIST))
-        .withColumn(COL_EXPIRED_FILES_COUNT, functions.size(functions.col(COL_EXPIRED_FILES_LIST)));
+        .withColumn(COL_EXPIRED_FILES_COUNT, functions.size(functions.col(COL_EXPIRED_FILES_LIST)))
+        .withColumn(COL_GC_RUN_ID, functions.lit(runId))
+        .withColumn(COL_GC_RUN_START, functions.lit(startedAt))
+        .select(
+            COL_GC_RUN_START,
+            COL_GC_RUN_ID,
+            COL_CONTENT_ID,
+            COL_EXPIRED_FILES_TYPE,
+            COL_EXPIRED_FILES_COUNT,
+            COL_EXPIRED_FILES_LIST);
   }
 
   private static Dataset<Row> computeAllFiles(FileIO fileIO, Dataset<Row> rowDataset) {
@@ -268,6 +277,13 @@ public class ExpireContentsProcedure extends BaseGCProcedure {
     return latestCompletedRunID.get();
   }
 
+  /** Returns the instant in microseconds since epoch. */
+  private static long instantToMicros(Instant instant) {
+    long time = instant.getEpochSecond();
+    long nano = instant.getNano();
+    return TimeUnit.SECONDS.toMicros(time) + NANOSECONDS.toMicros(nano);
+  }
+
   private static class DeleteFunction implements MapFunction<Row, Row> {
     private final FileIO fileIO;
 
@@ -277,7 +293,9 @@ public class ExpireContentsProcedure extends BaseGCProcedure {
 
     @Override
     public Row call(Row value) {
-      List<String> files = value.getList(2);
+      // "startTime", "runID", "contentId", "expiredFilesType", "expiredFilesCount",
+      // "expiredFilesList"
+      List<String> files = value.getList(5);
       files.forEach(
           file -> {
             try {
