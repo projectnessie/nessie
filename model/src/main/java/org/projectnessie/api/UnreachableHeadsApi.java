@@ -20,6 +20,9 @@ import org.projectnessie.model.UnreachableHeadsResponse;
 
 public interface UnreachableHeadsApi {
 
-  /** Retrieve all the Unreachable (dropped or assigned) reference heads (commit hash). */
+  /**
+   * Retrieve all the Unreachable reference heads (commit hash) created due to drop reference or
+   * assign reference operation.
+   */
   UnreachableHeadsResponse getUnreachableReferenceHeads() throws NessieNotFoundException;
 }

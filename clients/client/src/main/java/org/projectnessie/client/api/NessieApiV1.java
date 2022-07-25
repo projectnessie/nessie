@@ -105,7 +105,10 @@ public interface NessieApiV1 extends NessieApi {
   /** Retrieve a diff between two references. */
   GetDiffBuilder getDiff();
 
-  /** Retrieve all the Unreachable (dropped or assigned) reference heads (commit hash). */
+  /**
+   * Retrieve all the Unreachable reference heads (commit hash) created due to drop reference or
+   * assign reference operation.
+   */
   List<String> getUnreachableReferenceHeads() throws NessieNotFoundException;
 
   /**

@@ -37,8 +37,9 @@ public interface HttpUnreachableHeadsApi extends UnreachableHeadsApi {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(
-      summary = "Retrieve all the Unreachable (dropped or assigned) reference heads (commit hash)",
-      description = "Scans all the commit logs and identifies the unreachable reference heads")
+      summary = "Retrieve all the Unreachable reference heads",
+      description =
+          "Scans all the commit logs and identifies the unreachable reference heads created due to drop reference or assign reference operation.")
   @APIResponses({
     @APIResponse(
         responseCode = "200",
@@ -52,6 +53,7 @@ public interface HttpUnreachableHeadsApi extends UnreachableHeadsApi {
                 schema = @Schema(implementation = UnreachableHeadsResponse.class))),
     @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
     @APIResponse(responseCode = "403", description = "Not allowed to view the unreachable heads"),
+    @APIResponse(responseCode = "404", description = "Reference doesn't exists"),
   })
   @Override
   UnreachableHeadsResponse getUnreachableReferenceHeads() throws NessieNotFoundException;
