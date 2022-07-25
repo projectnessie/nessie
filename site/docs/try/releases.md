@@ -2,6 +2,12 @@
 
 See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.
 
+## 0.40.1 Release (July 25, 2022)
+
+**Rolling upgrades from versions before 0.40.0 are not supported!**
+
+* Fix key-lists issue resulting in server-errors (`ArrayIndexOutOfBoundsException`)
+
 ## 0.40.0 Release (July 22, 2022)
 
 **Rolling upgrades from earlier versions are not supported!**
