@@ -46,7 +46,7 @@ jobs:
             publishToSonatype closeAndReleaseSonatypeStagingRepository
             -Prelease -Puber-jar
 
-      - name: Gradle / integration test native
+      - name: Gradle / build Docker container
         uses: gradle/gradle-build-action@v2
         with:
           arguments: |
