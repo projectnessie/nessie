@@ -17,6 +17,7 @@ package org.projectnessie.client.api;
 
 import javax.annotation.Nullable;
 import javax.validation.constraints.Pattern;
+import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.RefLogResponse;
 import org.projectnessie.model.Validation;
 
@@ -46,4 +47,7 @@ public interface GetRefLogBuilder
   GetRefLogBuilder fromHash(
       @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String fromHash);
+
+  @Override // kept for byte-code compatibility
+  RefLogResponse get() throws NessieNotFoundException;
 }
