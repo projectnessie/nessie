@@ -74,19 +74,6 @@ jobs:
       with:
         arguments: buildToolsIntegrationTest
 
-    - name: Gradle / publish snapshot
-      if: ${{ env.MAVEN_USERNAME }}
-      env:
-        ORG_GRADLE_PROJECT_signingKey: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
-        ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
-        ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.OSSRH_ACCESS_ID }}
-        ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.OSSRH_TOKEN }}
-      uses: gradle/gradle-build-action@v2
-      with:
-        arguments: |
-          publishToSonatype closeAndReleaseSonatypeStagingRepository
-          -Prelease -Puber-jar
-
     - name: Capture Test Reports
       uses: actions/upload-artifact@v3
       if: ${{ failure() }}
@@ -121,18 +108,6 @@ jobs:
             :nessie-quarkus:intTest
             -Pnative
             -Pdocker
-
-      - name: Push Docker images
-        env:
-          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-        if: ${{ env.DOCKER_TOKEN }}
-        run: |
-          echo '${{ secrets.DOCKER_TOKEN }}' | docker login -u '${{ secrets.DOCKER_USERNAME }}' --password-stdin
-          docker images --filter 'reference=projectnessie/nessie' --format '{{.ID}}\t{{.Tag}}' |
-          while read IMAGE_ID IMAGE_TAG; do
-            docker tag "$IMAGE_ID" "projectnessie/nessie-unstable:${IMAGE_TAG%-snapshot}"
-            docker push "projectnessie/nessie-unstable:${IMAGE_TAG%-snapshot}"
-          done
 
       - name: Capture Test Reports
         uses: actions/upload-artifact@v3

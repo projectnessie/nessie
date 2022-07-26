@@ -1,0 +1,67 @@
+name: Publish in-development builds from main
+
+on:
+  schedule:
+    # Run daily on week days
+    - cron:  '0 11,23 * * 1-5'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  java:
+    name: Publish from main
+    runs-on: ubuntu-latest
+    env:
+      SPARK_LOCAL_IP: localhost
+    if: ${{ env.MAVEN_USERNAME }}
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup runner
+        uses: ./.github/actions/setup-runner
+      - name: Setup Java, Maven
+        uses: ./.github/actions/dev-tool-java
+
+      # Check that the commit that is becoming a release has passed CI.
+      # Note: intentionally hard-coded projectnessie/nessie, so this check even works when *testing*
+      # the workflow on a PR-branch.
+      - name: Check commit status
+        run: |
+          GIT_HEAD_SHA="$(git rev-parse HEAD)"
+          echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
+          gh api repos/projectnessie/nessie/commits/${GIT_HEAD_SHA}/check-runs --jq 'if ([.check_runs[] | select(.name | endswith(" release") or startswith("Dependabot ") or startswith("codecov/") or startswith("Report ") | not ) | select(.conclusion != "skipped") | .conclusion // "pending" ] | unique == ["success"]) then "OK" else error("Commit checks are not OK") end'
+
+      - name: Gradle / publish snapshot
+        env:
+          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+          ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.OSSRH_ACCESS_ID }}
+          ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.OSSRH_TOKEN }}
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: |
+            publishToSonatype closeAndReleaseSonatypeStagingRepository
+            -Prelease -Puber-jar
+
+      - name: Gradle / integration test native
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: |
+            --no-daemon
+            :nessie-quarkus:quarkusBuild
+            -Pnative
+            -Pdocker
+
+      - name: Push Docker images
+        env:
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+        run: |
+          echo '${{ secrets.DOCKER_TOKEN }}' | docker login -u '${{ secrets.DOCKER_USERNAME }}' --password-stdin
+          docker images --filter 'reference=projectnessie/nessie' --format '{{.ID}}\t{{.Tag}}' |
+          while read IMAGE_ID IMAGE_TAG; do
+            docker tag "$IMAGE_ID" "projectnessie/nessie-unstable:${IMAGE_TAG%-snapshot}"
+            docker push "projectnessie/nessie-unstable:${IMAGE_TAG%-snapshot}"
+          done
