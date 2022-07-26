@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.api;
 
+import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.EntriesResponse;
 
 /**
@@ -28,4 +29,7 @@ public interface GetEntriesBuilder
         OnReferenceBuilder<GetEntriesBuilder> {
 
   GetEntriesBuilder namespaceDepth(Integer namespaceDepth);
+
+  @Override // kept for byte-code compatibility
+  EntriesResponse get() throws NessieNotFoundException;
 }
