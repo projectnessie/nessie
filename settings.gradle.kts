@@ -112,7 +112,17 @@ gradle.beforeProject {
   group = "org.projectnessie"
 }
 
-include("code-coverage")
+listOf(
+    "code-coverage",
+    "nessie-deps-antlr",
+    "nessie-deps-build-only",
+    "nessie-deps-iceberg",
+    "nessie-deps-managed-only",
+    "nessie-deps-persist",
+    "nessie-deps-quarkus",
+    "nessie-deps-testing"
+  )
+  .forEach { include(it) }
 
 fun nessieProject(name: String, directory: File): ProjectDescriptor {
   include(name)
