@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SPARK_LOCAL_IP: localhost
-    if: ${{ env.MAVEN_USERNAME }}
+    if: github.repository_owner == 'projectnessie'
 
     steps:
       - uses: actions/checkout@v3
