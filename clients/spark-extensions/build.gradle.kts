@@ -33,6 +33,8 @@ dependencies {
   forScala(sparkScala.scalaVersion)
 
   implementation(platform(nessieRootProject()))
+  compileOnly(nessieProjectPlatform("nessie-deps-iceberg", gradle))
+
   implementation(project(":nessie-spark-extensions-grammar"))
   implementation(project(":nessie-spark-extensions-base_${sparkScala.scalaMajorVersion}"))
   compileOnly("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
@@ -40,7 +42,10 @@ dependencies {
   compileOnly("org.apache.spark:spark-hive_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
   implementation(nessieClientForIceberg())
 
-  testImplementation(platform(nessieRootProject()))
+  testImplementation(nessieProjectPlatform("nessie-deps-testing", gradle))
+  testImplementation(nessieProjectPlatform("nessie-deps-iceberg", gradle))
+  testImplementation(platform("org.junit:junit-bom"))
+
   testImplementation(project(":nessie-spark-extensions-base_${sparkScala.scalaMajorVersion}")) { testJarCapability() }
   testImplementation("org.apache.iceberg:iceberg-nessie")
   testImplementation("org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}")
@@ -52,7 +57,6 @@ dependencies {
   testImplementation("org.apache.spark:spark-hive_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
 
   testImplementation("org.assertj:assertj-core")
-  testImplementation(platform("org.junit:junit-bom"))
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")

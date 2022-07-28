@@ -37,8 +37,11 @@ dependencies {
   compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
   implementation(nessieClientForIceberg())
 
-  testImplementation(platform(nessieRootProject()))
-  testAnnotationProcessor(platform(nessieRootProject()))
+  testImplementation(nessieProjectPlatform("nessie-deps-testing", gradle))
+  testCompileOnly(nessieProjectPlatform("nessie-deps-build-only", gradle))
+  testAnnotationProcessor(nessieProjectPlatform("nessie-deps-build-only", gradle))
+  testImplementation(platform("org.junit:junit-bom"))
+
   testImplementation("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") {
     forSpark(sparkScala.sparkVersion)
   }
@@ -48,7 +51,6 @@ dependencies {
   testAnnotationProcessor("org.immutables:value-processor")
 
   testImplementation("org.assertj:assertj-core")
-  testImplementation(platform("org.junit:junit-bom"))
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")

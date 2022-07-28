@@ -27,7 +27,9 @@ extra["maven.name"] = "Nessie - Versioned - Persist - Rocks"
 
 dependencies {
   implementation(platform(rootProject))
-  annotationProcessor(platform(rootProject))
+  implementation(platform(project(":nessie-deps-persist")))
+  compileOnly(platform(project(":nessie-deps-build-only")))
+  annotationProcessor(platform(project(":nessie-deps-build-only")))
 
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-persist-non-transactional"))
@@ -40,12 +42,13 @@ dependencies {
   implementation("org.rocksdb:rocksdbjni")
   compileOnly("org.graalvm.nativeimage:svm")
 
-  testImplementation(platform(rootProject))
+  testImplementation(platform(project(":nessie-deps-testing")))
+  testImplementation(platform("org.junit:junit-bom"))
+
   testImplementation(project(":nessie-versioned-tests"))
   testImplementation(project(":nessie-versioned-persist-tests"))
   testImplementation(project(":nessie-versioned-persist-non-transactional")) { testJarCapability() }
 
-  testImplementation(platform("org.junit:junit-bom"))
   testImplementation("org.assertj:assertj-core")
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")

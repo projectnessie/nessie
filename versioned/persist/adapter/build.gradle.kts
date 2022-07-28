@@ -26,7 +26,11 @@ extra["maven.name"] = "Nessie - Versioned - Persist - Adapter"
 
 dependencies {
   implementation(platform(rootProject))
-  annotationProcessor(platform(rootProject))
+  implementation(platform(project(":nessie-deps-persist")))
+  implementation(platform(project(":nessie-deps-quarkus")))
+  compileOnly(platform(project(":nessie-deps-build-only")))
+  annotationProcessor(platform(project(":nessie-deps-build-only")))
+  implementation(platform("io.quarkus:quarkus-bom"))
 
   implementation(project(":nessie-versioned-spi"))
   compileOnly("org.immutables:value-annotations")
@@ -38,16 +42,15 @@ dependencies {
   implementation("org.slf4j:slf4j-api")
   implementation("org.agrona:agrona")
 
-  implementation(platform("io.quarkus:quarkus-bom"))
   implementation("io.opentracing:opentracing-api")
   implementation("io.opentracing:opentracing-util")
   implementation("io.micrometer:micrometer-core")
 
-  testImplementation(platform(rootProject))
+  testImplementation(platform(project(":nessie-deps-testing")))
+  testImplementation(platform("org.junit:junit-bom"))
 
   testImplementation("org.assertj:assertj-core")
   testImplementation("org.mockito:mockito-core")
-  testImplementation(platform("org.junit:junit-bom"))
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")

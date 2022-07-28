@@ -26,9 +26,11 @@ plugins {
 extra["maven.name"] = "Nessie - Versioned Store SPI"
 
 dependencies {
-  compileOnly(platform(rootProject))
-  annotationProcessor(platform(rootProject))
   implementation(platform(rootProject))
+  implementation(platform(project(":nessie-deps-quarkus")))
+  compileOnly(platform(project(":nessie-deps-build-only")))
+  annotationProcessor(platform(project(":nessie-deps-build-only")))
+  compileOnly(platform("io.quarkus:quarkus-bom"))
 
   implementation("com.google.protobuf:protobuf-java")
   compileOnly("org.immutables:builder")
@@ -38,21 +40,20 @@ dependencies {
   implementation("com.google.guava:guava")
   implementation("com.google.code.findbugs:jsr305")
 
-  testImplementation(platform(rootProject))
+  testImplementation(platform(project(":nessie-deps-testing")))
+  testImplementation(platform("org.junit:junit-bom"))
+  testImplementation(platform("io.quarkus:quarkus-bom"))
 
   testImplementation("org.assertj:assertj-core")
   testImplementation("org.mockito:mockito-core")
-  testImplementation(platform("org.junit:junit-bom"))
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 
   // Need a few things from Quarkus, but don't leak the dependencies
-  compileOnly(platform("io.quarkus:quarkus-bom"))
   compileOnly("io.opentracing:opentracing-api")
   compileOnly("io.opentracing:opentracing-util")
   compileOnly("io.micrometer:micrometer-core")
-  testImplementation(platform("io.quarkus:quarkus-bom"))
   testImplementation("io.opentracing:opentracing-api")
   testImplementation("io.opentracing:opentracing-util")
   testImplementation("io.micrometer:micrometer-core")

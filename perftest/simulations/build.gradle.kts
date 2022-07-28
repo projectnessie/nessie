@@ -29,6 +29,8 @@ extra["maven.name"] = "Nessie - Perf Test - Simulations"
 
 dependencies {
   gatling(platform(rootProject))
+  gatling(platform(project(":nessie-deps-testing")))
+
   gatling(project(":nessie-model"))
   gatling(project(":nessie-client"))
   gatling(project(":nessie-perftest-gatling"))

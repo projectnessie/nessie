@@ -27,8 +27,8 @@ plugins {
 }
 
 dependencies {
-  compileOnly(platform(rootProject))
-  annotationProcessor(platform(rootProject))
+  compileOnly(platform(project(":nessie-deps-build-only")))
+  annotationProcessor(platform(project(":nessie-deps-build-only")))
   implementation(platform(rootProject))
 
   implementation(platform("com.fasterxml.jackson:jackson-bom"))
@@ -44,11 +44,11 @@ dependencies {
   compileOnly("org.immutables:value-annotations")
   annotationProcessor("org.immutables:value-processor")
 
-  testImplementation(platform(rootProject))
-  testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-
-  testImplementation("org.assertj:assertj-core")
+  testImplementation(platform(project(":nessie-deps-testing")))
   testImplementation(platform("org.junit:junit-bom"))
+
+  testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
+  testImplementation("org.assertj:assertj-core")
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")

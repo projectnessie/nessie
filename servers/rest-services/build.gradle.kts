@@ -26,6 +26,8 @@ extra["maven.name"] = "Nessie - REST Services"
 
 dependencies {
   implementation(platform(rootProject))
+  implementation(platform("com.fasterxml.jackson:jackson-bom"))
+
   implementation(project(":nessie-model"))
   implementation(project(":nessie-services"))
   implementation(project(":nessie-versioned-spi"))
@@ -39,14 +41,14 @@ dependencies {
   compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
   compileOnly("jakarta.validation:jakarta.validation-api")
 
-  implementation(platform("com.fasterxml.jackson:jackson-bom"))
   implementation("com.fasterxml.jackson.core:jackson-databind")
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
-  testImplementation(platform(rootProject))
+  testImplementation(platform("org.junit:junit-bom"))
+  testImplementation(platform(project(":nessie-deps-testing")))
+
   testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
-  testImplementation(platform("org.junit:junit-bom"))
   testImplementation("org.assertj:assertj-core")
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")

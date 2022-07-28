@@ -27,7 +27,9 @@ plugins {
 
 dependencies {
   implementation(platform(rootProject))
-  annotationProcessor(platform(rootProject))
+  implementation(platform(project(":nessie-deps-persist")))
+  implementation(platform(project(":nessie-deps-testing")))
+  annotationProcessor(platform(project(":nessie-deps-build-only")))
   implementation(project(":nessie-versioned-tests"))
   implementation(project(":nessie-versioned-spi"))
   implementation(project(":nessie-versioned-persist-adapter"))

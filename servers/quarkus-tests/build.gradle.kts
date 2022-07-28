@@ -26,6 +26,11 @@ extra["maven.name"] = "Nessie - Quarkus Tests"
 
 dependencies {
   implementation(platform(rootProject))
+  implementation(platform(project(":nessie-deps-testing")))
+  implementation(platform(project(":nessie-deps-quarkus")))
+  implementation(enforcedPlatform("io.quarkus:quarkus-bom"))
+  implementation(platform("software.amazon.awssdk:bom"))
+  implementation(platform("io.quarkus.platform:quarkus-amazon-services-bom"))
   implementation(project(":nessie-quarkus-common"))
   implementation(project(":nessie-versioned-tests"))
   implementation(project(":nessie-versioned-persist-adapter"))
@@ -36,14 +41,11 @@ dependencies {
   implementation(project(":nessie-versioned-persist-mongodb")) { testJarCapability() }
   implementation(project(":nessie-versioned-persist-transactional"))
   implementation(project(":nessie-versioned-persist-transactional")) { testJarCapability() }
-  implementation(enforcedPlatform("io.quarkus:quarkus-bom"))
   implementation("io.quarkus:quarkus-junit5")
   implementation("org.testcontainers:testcontainers")
   implementation("org.testcontainers:postgresql")
   implementation("org.testcontainers:mongodb")
   implementation("com.github.docker-java:docker-java-api")
-  implementation(platform("software.amazon.awssdk:bom"))
-  implementation(platform("io.quarkus.platform:quarkus-amazon-services-bom"))
   implementation("software.amazon.awssdk:dynamodb") {
     exclude("software.amazon.awssdk", "apache-client")
   }

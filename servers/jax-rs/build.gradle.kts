@@ -28,7 +28,12 @@ description = "Nessie on Glassfish/Jersey/Weld"
 
 dependencies {
   api(platform(rootProject))
-  implementation(platform(rootProject))
+  api(platform(project(":nessie-deps-testing")))
+  api(platform("org.glassfish.jersey:jersey-bom"))
+  api(
+    platform("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-bundle")
+  )
+
   api(project(":nessie-client"))
   api(project(":nessie-model"))
   api(project(":nessie-rest-services"))
@@ -52,7 +57,6 @@ dependencies {
   api(project(":nessie-versioned-persist-transactional")) { testJarCapability() }
   implementation("org.slf4j:slf4j-api")
   implementation("org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_2.1_spec")
-  api(platform("org.glassfish.jersey:jersey-bom"))
   api("jakarta.enterprise:jakarta.enterprise.cdi-api")
   api("jakarta.annotation:jakarta.annotation-api")
   api("jakarta.validation:jakarta.validation-api")
@@ -71,9 +75,6 @@ dependencies {
   compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
   compileOnly("jakarta.validation:jakarta.validation-api")
 
-  api(
-    platform("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-bundle")
-  )
   api("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2")
   api("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-inmemory")
   api("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-external")

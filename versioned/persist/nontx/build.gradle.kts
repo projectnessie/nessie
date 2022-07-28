@@ -27,7 +27,8 @@ extra["maven.name"] = "Nessie - Versioned - Persist - Non-Transactional"
 
 dependencies {
   implementation(platform(rootProject))
-  annotationProcessor(platform(rootProject))
+  compileOnly(platform(project(":nessie-deps-build-only")))
+  annotationProcessor(platform(project(":nessie-deps-build-only")))
 
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-persist-serialize"))
@@ -37,9 +38,10 @@ dependencies {
   annotationProcessor("org.immutables:value-processor")
 
   testImplementation(project(":nessie-versioned-persist-tests"))
+  testImplementation(platform(project(":nessie-deps-testing")))
+  testImplementation(platform("org.junit:junit-bom"))
 
   testImplementation("org.assertj:assertj-core")
-  testImplementation(platform("org.junit:junit-bom"))
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")

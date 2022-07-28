@@ -33,6 +33,8 @@ dependencies {
   forScala(scalaVersion)
 
   implementation(platform(rootProject))
+  implementation(platform(project(":nessie-deps-testing")))
+
   implementation(project(":nessie-model"))
   implementation(project(":nessie-client"))
   implementation("io.gatling.highcharts:gatling-charts-highcharts") {

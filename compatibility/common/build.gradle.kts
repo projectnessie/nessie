@@ -26,6 +26,9 @@ extra["maven.name"] = "Nessie - Backward Compatibility - Common"
 
 dependencies {
   implementation(platform(rootProject))
+  implementation(platform(project(":nessie-deps-testing")))
+  implementation(platform("com.fasterxml.jackson:jackson-bom"))
+  implementation(platform("org.junit:junit-bom"))
 
   api(project(":nessie-client"))
   api(project(":nessie-compatibility-jersey"))
@@ -42,15 +45,12 @@ dependencies {
   implementation("com.google.guava:guava")
   implementation("jakarta.enterprise:jakarta.enterprise.cdi-api")
   implementation("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-  implementation(platform("com.fasterxml.jackson:jackson-bom"))
   implementation("com.fasterxml.jackson.core:jackson-annotations")
 
-  implementation(platform("org.junit:junit-bom"))
   api("org.junit.jupiter:junit-jupiter-api")
   implementation("org.junit.jupiter:junit-jupiter-engine")
   implementation("org.junit.platform:junit-platform-launcher")
 
-  testImplementation(platform(rootProject))
   testImplementation("org.mockito:mockito-core")
   testImplementation("com.google.guava:guava")
   testImplementation(project(":nessie-versioned-persist-in-memory"))
@@ -59,7 +59,6 @@ dependencies {
   testImplementation(project(":nessie-versioned-persist-rocks")) { testJarCapability() }
   compileOnly(project(":nessie-versioned-persist-mongodb")) { testJarCapability() }
 
-  testImplementation(platform("org.junit:junit-bom"))
   testImplementation("org.junit.platform:junit-platform-testkit")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
 }

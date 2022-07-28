@@ -28,6 +28,10 @@ description = "Artifact for REST-API tests, includes Glassfish/Jersey/Weld imple
 
 dependencies {
   implementation(platform(rootProject))
+  implementation(platform(project(":nessie-deps-testing")))
+  implementation(platform("com.fasterxml.jackson:jackson-bom"))
+  api(platform("org.junit:junit-bom"))
+
   implementation(project(":nessie-client"))
   implementation("com.google.guava:guava")
   api("io.rest-assured:rest-assured")
@@ -35,17 +39,17 @@ dependencies {
   implementation(project(":nessie-servers-iceberg-fixtures"))
 
   api("org.assertj:assertj-core")
-  api(platform("org.junit:junit-bom"))
   api("org.junit.jupiter:junit-jupiter-api")
   api("org.junit.jupiter:junit-jupiter-params")
 
   compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
   compileOnly("jakarta.validation:jakarta.validation-api")
-  implementation(platform("com.fasterxml.jackson:jackson-bom"))
   implementation("com.fasterxml.jackson.core:jackson-databind")
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
-  testImplementation(platform(rootProject))
+  testImplementation(platform(project(":nessie-deps-persist")))
+  testImplementation(platform("org.junit:junit-bom"))
+
   testImplementation(project(":nessie-jaxrs-testextension"))
   testImplementation("org.slf4j:jcl-over-slf4j")
   testImplementation("io.agroal:agroal-pool")
@@ -57,7 +61,6 @@ dependencies {
   testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
   testImplementation("org.assertj:assertj-core")
-  testImplementation(platform("org.junit:junit-bom"))
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")

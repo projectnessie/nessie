@@ -27,9 +27,15 @@ plugins {
 extra["maven.name"] = "Nessie - Quarkus CLI"
 
 dependencies {
-  compileOnly(platform(rootProject))
+  compileOnly(platform(project(":nessie-deps-build-only")))
   implementation(platform(rootProject))
-  annotationProcessor(platform(rootProject))
+  implementation(platform(project(":nessie-deps-persist")))
+  implementation(platform(project(":nessie-deps-quarkus")))
+  annotationProcessor(platform(project(":nessie-deps-build-only")))
+  implementation(enforcedPlatform("io.quarkus:quarkus-bom"))
+  implementation(enforcedPlatform("io.quarkus.platform:quarkus-amazon-services-bom"))
+  implementation(platform("com.fasterxml.jackson:jackson-bom"))
+
   implementation(project(":nessie-quarkus-common"))
   implementation(project(":nessie-services"))
   implementation(project(":nessie-server-store"))
@@ -43,8 +49,6 @@ dependencies {
   implementation(project(":nessie-versioned-persist-rocks"))
   implementation(project(":nessie-versioned-persist-transactional"))
 
-  implementation(enforcedPlatform("io.quarkus:quarkus-bom"))
-  implementation(enforcedPlatform("io.quarkus.platform:quarkus-amazon-services-bom"))
   implementation("io.quarkus:quarkus-picocli")
 
   implementation("com.google.protobuf:protobuf-java")
@@ -52,7 +56,6 @@ dependencies {
   implementation("com.google.code.findbugs:jsr305")
   compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
-  implementation(platform("com.fasterxml.jackson:jackson-bom"))
   implementation("com.fasterxml.jackson.core:jackson-databind")
   implementation("com.fasterxml.jackson.core:jackson-annotations")
 
@@ -60,18 +63,18 @@ dependencies {
   compileOnly("org.immutables:value-annotations")
   annotationProcessor("org.immutables:value-processor")
 
-  testImplementation(platform(rootProject))
+  testImplementation(platform(project(":nessie-deps-testing")))
+  testImplementation(platform("org.junit:junit-bom"))
+
   testImplementation(project(":nessie-quarkus-tests"))
   testImplementation(project(":nessie-versioned-persist-mongodb")) { testJarCapability() }
   testImplementation(project(":nessie-versioned-tests"))
-  testImplementation(enforcedPlatform("io.quarkus:quarkus-bom"))
   testImplementation("io.quarkus:quarkus-jacoco")
   testImplementation("io.quarkus:quarkus-junit5")
   testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
   testImplementation("org.assertj:assertj-core")
   testImplementation("org.mockito:mockito-core")
-  testImplementation(platform("org.junit:junit-bom"))
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")

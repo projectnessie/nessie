@@ -36,7 +36,6 @@ dependencies {
 
   compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
-  testImplementation(platform(rootProject))
   testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
   testImplementation("org.assertj:assertj-core")

@@ -26,6 +26,12 @@ extra["maven.name"] = "Nessie - Backward Compatibility - Jersey"
 
 dependencies {
   implementation(platform(rootProject))
+  implementation(platform(project(":nessie-deps-testing")))
+  implementation(platform("org.glassfish.jersey:jersey-bom"))
+  implementation(platform("com.fasterxml.jackson:jackson-bom"))
+  implementation(
+    platform("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-bundle")
+  )
 
   implementation(project(":nessie-model"))
   implementation(project(":nessie-rest-services"))
@@ -35,8 +41,6 @@ dependencies {
   implementation(project(":nessie-versioned-persist-store"))
   implementation(project(":nessie-versioned-persist-tests"))
   implementation(project(":nessie-versioned-spi"))
-  implementation(platform("org.glassfish.jersey:jersey-bom"))
-  implementation(platform("com.fasterxml.jackson:jackson-bom"))
   implementation("org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_2.1_spec")
   implementation("jakarta.enterprise:jakarta.enterprise.cdi-api")
   implementation("jakarta.annotation:jakarta.annotation-api")
@@ -55,9 +59,6 @@ dependencies {
   implementation("com.fasterxml.jackson.core:jackson-annotations")
   implementation("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
-  implementation(
-    platform("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-bundle")
-  )
   implementation(
     "org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2"
   )

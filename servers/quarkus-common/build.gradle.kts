@@ -26,6 +26,11 @@ extra["maven.name"] = "Nessie - Quarkus Common"
 
 dependencies {
   implementation(platform(rootProject))
+  implementation(platform(project(":nessie-deps-quarkus")))
+  implementation(enforcedPlatform("io.quarkus:quarkus-bom"))
+  implementation(enforcedPlatform("io.quarkus.platform:quarkus-amazon-services-bom"))
+  compileOnly(platform("com.fasterxml.jackson:jackson-bom"))
+
   implementation(project(":nessie-model"))
   implementation(project(":nessie-server-store"))
   implementation(project(":nessie-services"))
@@ -38,8 +43,6 @@ dependencies {
   implementation(project(":nessie-versioned-persist-dynamodb"))
   implementation(project(":nessie-versioned-persist-mongodb"))
   implementation(project(":nessie-versioned-persist-transactional"))
-  implementation(enforcedPlatform("io.quarkus:quarkus-bom"))
-  implementation(enforcedPlatform("io.quarkus.platform:quarkus-amazon-services-bom"))
   implementation("io.quarkus:quarkus-hibernate-validator")
   implementation("jakarta.validation:jakarta.validation-api")
   implementation("com.google.protobuf:protobuf-java")
@@ -52,7 +55,6 @@ dependencies {
   }
   implementation("io.quarkus:quarkus-mongodb-client")
 
-  compileOnly(platform("com.fasterxml.jackson:jackson-bom"))
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
   compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 }

@@ -27,7 +27,9 @@ extra["maven.name"] = "Nessie - Versioned - Persist - Transactional"
 
 dependencies {
   implementation(platform(rootProject))
-  annotationProcessor(platform(rootProject))
+  implementation(platform(project(":nessie-deps-persist")))
+  compileOnly(platform(project(":nessie-deps-build-only")))
+  annotationProcessor(platform(project(":nessie-deps-build-only")))
 
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-persist-serialize"))
@@ -42,8 +44,11 @@ dependencies {
   compileOnly("com.h2database:h2")
   compileOnly("org.postgresql:postgresql")
 
-  testImplementation(platform(rootProject))
-  testAnnotationProcessor(platform(rootProject))
+  testCompileOnly(platform(project(":nessie-deps-build-only")))
+  testAnnotationProcessor(platform(project(":nessie-deps-build-only")))
+  testImplementation(platform(project(":nessie-deps-testing")))
+  testImplementation(platform("org.junit:junit-bom"))
+
   testImplementation(project(":nessie-versioned-tests"))
   testCompileOnly("org.immutables:value-annotations")
   testAnnotationProcessor("org.immutables:value-processor")
@@ -57,7 +62,6 @@ dependencies {
   testRuntimeOnly("org.postgresql:postgresql")
 
   testImplementation("org.assertj:assertj-core")
-  testImplementation(platform("org.junit:junit-bom"))
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")

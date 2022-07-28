@@ -26,20 +26,22 @@ extra["maven.name"] = "Nessie - Versioned - Persist - Tests"
 
 dependencies {
   implementation(platform(rootProject))
+  implementation(platform(project(":nessie-deps-quarkus")))
+  implementation(platform(project(":nessie-deps-testing")))
+  implementation(platform("io.quarkus:quarkus-bom"))
+  implementation(platform("org.junit:junit-bom"))
 
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-persist-store"))
   implementation(project(":nessie-versioned-spi"))
   implementation(project(":nessie-versioned-tests"))
   implementation("com.google.guava:guava")
-  implementation(platform("io.quarkus:quarkus-bom"))
   implementation("io.micrometer:micrometer-core")
   implementation("io.opentracing:opentracing-mock")
   implementation("com.google.protobuf:protobuf-java")
 
   implementation("org.assertj:assertj-core")
   implementation("org.mockito:mockito-core")
-  implementation(platform("org.junit:junit-bom"))
   implementation("org.junit.jupiter:junit-jupiter-api")
   implementation("org.junit.jupiter:junit-jupiter-params")
 }

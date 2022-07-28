@@ -25,8 +25,10 @@ plugins {
 extra["maven.name"] = "Nessie - Versioned Store Integration Tests"
 
 dependencies {
-  annotationProcessor(platform(rootProject))
   implementation(platform(rootProject))
+  compileOnly(platform(project(":nessie-deps-build-only")))
+  annotationProcessor(platform(project(":nessie-deps-build-only")))
+  implementation(platform(project(":nessie-deps-testing")))
 
   implementation(project(":nessie-versioned-spi"))
   implementation("com.google.guava:guava")

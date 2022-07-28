@@ -33,6 +33,8 @@ val quarkusRunner by
 
 dependencies {
   implementation(platform(rootProject))
+  implementation(platform(project(":nessie-deps-persist")))
+  implementation(platform(project(":nessie-deps-quarkus")))
   implementation(enforcedPlatform("io.quarkus:quarkus-bom"))
   implementation(platform("software.amazon.awssdk:bom"))
 
@@ -45,14 +47,14 @@ dependencies {
   implementation("software.amazon.awssdk:netty-nio-client")
   implementation("software.amazon.awssdk:url-connection-client")
 
-  testImplementation(platform(rootProject))
-  testImplementation(enforcedPlatform("io.quarkus:quarkus-bom"))
+  testImplementation(platform(project(":nessie-deps-testing")))
+  testImplementation(platform("org.junit:junit-bom"))
+
   testImplementation("io.quarkus:quarkus-test-amazon-lambda")
   testImplementation("io.quarkus:quarkus-jacoco")
 
   testImplementation("org.mockito:mockito-core")
   testImplementation("org.assertj:assertj-core")
-  testImplementation(platform("org.junit:junit-bom"))
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")

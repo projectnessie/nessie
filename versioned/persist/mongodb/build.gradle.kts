@@ -27,7 +27,9 @@ extra["maven.name"] = "Nessie - Versioned - Persist - MongoDB"
 
 dependencies {
   implementation(platform(rootProject))
-  annotationProcessor(platform(rootProject))
+  implementation(platform(project(":nessie-deps-persist")))
+  compileOnly(platform(project(":nessie-deps-build-only")))
+  annotationProcessor(platform(project(":nessie-deps-build-only")))
 
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-persist-non-transactional"))
@@ -39,7 +41,9 @@ dependencies {
   implementation("com.google.code.findbugs:jsr305")
   implementation("org.mongodb:mongodb-driver-sync")
 
-  testImplementation(platform(rootProject))
+  testImplementation(platform(project(":nessie-deps-testing")))
+  testImplementation(platform("org.junit:junit-bom"))
+
   testImplementation(project(":nessie-versioned-tests"))
   testImplementation(project(":nessie-versioned-persist-adapter"))
   testImplementation(project(":nessie-versioned-persist-tests"))
@@ -47,7 +51,6 @@ dependencies {
   testImplementation("org.testcontainers:mongodb")
 
   testImplementation("org.assertj:assertj-core")
-  testImplementation(platform("org.junit:junit-bom"))
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
