@@ -546,9 +546,7 @@ public abstract class TxDatabaseAdapter
           (conn, assigneeHead) -> {
             verifyExpectedHash(assigneeHead, assignee, expectedHead);
 
-            if (!NO_ANCESTOR.equals(assignTo) && fetchFromCommitLog(conn, assignTo) == null) {
-              throw referenceNotFound(assignTo);
-            }
+            validateHashExists(conn, assignTo);
 
             Hash resultHash = tryMoveNamedReference(conn, assignee, assigneeHead, assignTo);
 
