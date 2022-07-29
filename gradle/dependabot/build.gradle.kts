@@ -37,7 +37,7 @@ plugins {
   id("io.quarkus") version "2.11.1.Final"
   id("me.champeau.jmh") version "0.6.6"
   id("net.ltgt.errorprone") version "2.0.2"
-  id("org.jetbrains.gradle.plugin.idea-ext") version "1.1.5"
+  id("org.jetbrains.gradle.plugin.idea-ext") version "1.1.6"
   id("org.projectnessie") version "0.27.3"
   id("org.projectnessie.buildsupport.spotless") version "0.2.4"
   // The above version "includes" the ones below
