@@ -160,7 +160,7 @@ fun DependencyHandlerScope.nessieProject(
  * Ideally, it should be sufficient to use [nessieProject], but that does not work properly and
  * results in this Gradle error: `Incompatible because this component declares a platform and the
  * consumer needed a library`. Although it is correct that the component declares a platform, it is
- * wrong that the consumer needs a librara...
+ * wrong that the consumer needs a library...
  */
 fun DependencyHandlerScope.nessieProjectPlatform(artifactId: String, gradle: Gradle): Dependency {
   if (!isIntegrationsTestingEnabled()) {

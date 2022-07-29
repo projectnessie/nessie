@@ -38,11 +38,13 @@ dependencies {
   )
   implementation("org.apache.iceberg:iceberg-nessie") { exclude("org.projectnessie", "*") }
   implementation("org.apache.hadoop:hadoop-client") {
+    exclude("javax.servlet.jsp", "jsp-api")
     exclude("javax.ws.rs", "javax.ws.rs-api")
     exclude("log4j", "log4j")
     exclude("org.slf4j", "slf4j-log4j12")
     exclude("org.slf4j", "slf4j-reload4j")
     exclude("com.sun.jersey", "jersey-servlet")
+    exclude("org.apache.hadoop", "hadoop-client")
   }
   compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
