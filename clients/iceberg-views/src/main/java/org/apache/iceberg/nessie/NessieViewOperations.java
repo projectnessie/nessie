@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Predicate;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.exceptions.CommitStateUnknownException;
@@ -52,8 +51,6 @@ import org.slf4j.LoggerFactory;
 
 public class NessieViewOperations extends BaseMetastoreViewOperations {
   private static final Logger LOG = LoggerFactory.getLogger(NessieViewOperations.class);
-  private static final Predicate<Exception> RETRY_IF =
-      exc -> !exc.getClass().getCanonicalName().contains("Unrecoverable");
   private final NessieApiV1 api;
   private final ContentKey key;
   private final UpdateableReference reference;
@@ -107,7 +104,11 @@ public class NessieViewOperations extends BaseMetastoreViewOperations {
         throw new NoSuchTableException(ex, "No such view %s", key);
       }
     }
-    refreshFromMetadataLocation(metadataLocation, RETRY_IF, 2, this::loadViewMetadata);
+    refreshFromMetadataLocation(
+        metadataLocation,
+        exc -> !exc.getClass().getCanonicalName().contains("Unrecoverable"),
+        2,
+        this::loadViewMetadata);
     return current();
   }
 

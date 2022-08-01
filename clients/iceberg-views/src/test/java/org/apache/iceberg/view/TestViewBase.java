@@ -42,10 +42,10 @@ public class TestViewBase {
   File metadataDir = null;
 
   @BeforeEach
-  public void setupTable(@TempDir File dir) throws Exception {
+  public void setupTable(@TempDir File dir) {
     this.tableDir = dir;
     this.metadataDir = new File(tableDir, "metadata");
-    create(SCHEMA);
+    create();
   }
 
   @AfterEach
@@ -54,7 +54,7 @@ public class TestViewBase {
     TestViews.clearTables();
   }
 
-  private BaseView create(Schema schema) {
+  private BaseView create() {
     ViewDefinition viewMetadata = ViewDefinition.of(SQL, SCHEMA, "", new ArrayList<>());
     TestViews.create(tableDir, "test", viewMetadata, new HashMap<>());
     return TestViews.load(tableDir, "test");

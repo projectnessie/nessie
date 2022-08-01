@@ -349,17 +349,8 @@ public abstract class AbstractRestGCTest extends AbstractRestGC {
     CommitOutput table2 =
         commitSingleOp(
             prefix, branch1, branch1.getHash(), -1, CID_TWO, TABLE_TWO, METADATA_ONE, null, null);
-    table2 =
-        commitSingleOp(
-            prefix,
-            branch1,
-            table2.hash,
-            42,
-            CID_TWO,
-            TABLE_TWO,
-            METADATA_TWO,
-            table2.content,
-            null);
+    commitSingleOp(
+        prefix, branch1, table2.hash, 42, CID_TWO, TABLE_TWO, METADATA_TWO, table2.content, null);
 
     final Instant cutoffTime = Instant.now();
     // expect nothing to be expired as -1 is considered as invalid snapshot for expiry.
