@@ -2,6 +2,12 @@
 
 See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.
 
+## 0.40.3 Release (August 1, 2022)
+
+**Rolling upgrades from versions before 0.40.0 are not supported!**
+
+* Remove Quarkus-BOM dependency from non-Quarkus projects
+
 ## 0.40.2 Release (August 1, 2022)
 
 **Rolling upgrades from versions before 0.40.0 are not supported!**
