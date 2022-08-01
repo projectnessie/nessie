@@ -26,11 +26,14 @@ extra["maven.name"] = "Nessie - Services"
 
 dependencies {
   implementation(platform(rootProject))
-  annotationProcessor(platform(rootProject))
+  compileOnly(platform(project(":nessie-deps-build-only")))
+  annotationProcessor(platform(project(":nessie-deps-build-only")))
+  implementation(platform("org.projectnessie.cel:cel-bom"))
+  compileOnly(platform("com.fasterxml.jackson:jackson-bom"))
+
   implementation(project(":nessie-model"))
   implementation(project(":nessie-versioned-spi"))
   implementation("org.slf4j:slf4j-api")
-  implementation(platform("org.projectnessie.cel:cel-bom"))
   implementation("org.projectnessie.cel:cel-tools")
   implementation("org.projectnessie.cel:cel-jackson")
   compileOnly("org.immutables:builder")
@@ -39,18 +42,18 @@ dependencies {
   implementation("com.google.guava:guava")
   implementation("com.google.code.findbugs:jsr305")
 
-  compileOnly(platform("com.fasterxml.jackson:jackson-bom"))
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
   compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
   compileOnly("jakarta.validation:jakarta.validation-api")
 
-  testImplementation(platform(rootProject))
+  testImplementation(platform(project(":nessie-deps-testing")))
+  testImplementation(platform("org.junit:junit-bom"))
+  testCompileOnly(platform("com.fasterxml.jackson:jackson-bom"))
+
   testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
-  testCompileOnly(platform("com.fasterxml.jackson:jackson-bom"))
   testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
-  testImplementation(platform("org.junit:junit-bom"))
   testImplementation("org.assertj:assertj-core")
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")

@@ -26,8 +26,8 @@ plugins {
 extra["maven.name"] = "Nessie - Client"
 
 dependencies {
-  compileOnly(platform(rootProject))
-  annotationProcessor(platform(rootProject))
+  compileOnly(platform(project(":nessie-deps-build-only")))
+  annotationProcessor(platform(project(":nessie-deps-build-only")))
   implementation(platform(rootProject))
 
   api(project(":nessie-model"))
@@ -65,25 +65,21 @@ dependencies {
   compileOnly("org.immutables:value-annotations")
   annotationProcessor("org.immutables:value-processor")
 
-  testImplementation(platform(rootProject))
+  testImplementation(platform(project(":nessie-deps-testing")))
+  testImplementation(platform("org.junit:junit-bom"))
+
   testImplementation("com.google.guava:guava")
   testImplementation("org.bouncycastle:bcprov-jdk15on")
   testImplementation("org.bouncycastle:bcpkix-jdk15on")
   testImplementation("org.mockito:mockito-core")
 
   testImplementation("org.assertj:assertj-core")
-  testImplementation(platform("org.junit:junit-bom"))
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 
-  // Need a few things from Quarkus, but don't leak the dependencies
-  compileOnly(platform("io.quarkus:quarkus-bom"))
-  compileOnly(platform("software.amazon.awssdk:bom"))
   compileOnly("io.quarkus:quarkus-smallrye-opentracing")
   compileOnly("software.amazon.awssdk:auth")
-  testImplementation(platform("io.quarkus:quarkus-bom"))
-  testImplementation(platform("software.amazon.awssdk:bom"))
   testImplementation("io.quarkus:quarkus-smallrye-opentracing")
   testImplementation("software.amazon.awssdk:auth")
 }

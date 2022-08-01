@@ -27,7 +27,10 @@ extra["maven.name"] = "Nessie - Versioned - Persist - DynamoDB"
 
 dependencies {
   implementation(platform(rootProject))
-  annotationProcessor(platform(rootProject))
+  implementation(platform(project(":nessie-deps-quarkus")))
+  compileOnly(platform(project(":nessie-deps-build-only")))
+  annotationProcessor(platform(project(":nessie-deps-build-only")))
+  implementation(platform("software.amazon.awssdk:bom"))
 
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-persist-non-transactional"))
@@ -37,14 +40,15 @@ dependencies {
   annotationProcessor("org.immutables:value-processor")
   implementation("com.google.code.findbugs:jsr305")
   implementation("com.google.guava:guava")
-  implementation(platform("software.amazon.awssdk:bom"))
   implementation("software.amazon.awssdk:dynamodb") {
     exclude("software.amazon.awssdk", "apache-client")
   }
   implementation("software.amazon.awssdk:netty-nio-client")
   implementation("software.amazon.awssdk:url-connection-client")
 
-  testImplementation(platform(rootProject))
+  testImplementation(platform(project(":nessie-deps-testing")))
+  testImplementation(platform("org.junit:junit-bom"))
+
   testImplementation(project(":nessie-versioned-tests"))
   testImplementation(project(":nessie-versioned-persist-tests"))
   testImplementation(project(":nessie-versioned-persist-non-transactional")) { testJarCapability() }
@@ -52,7 +56,6 @@ dependencies {
   testImplementation("com.github.docker-java:docker-java-api")
 
   testImplementation("org.assertj:assertj-core")
-  testImplementation(platform("org.junit:junit-bom"))
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")

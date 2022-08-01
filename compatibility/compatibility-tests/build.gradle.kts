@@ -26,6 +26,9 @@ extra["maven.name"] = "Nessie - Backward Compatibility - Tests"
 
 dependencies {
   implementation(platform(rootProject))
+  implementation(platform("com.fasterxml.jackson:jackson-bom"))
+  implementation(platform(project(":nessie-deps-testing")))
+  implementation(platform("org.junit:junit-bom"))
 
   implementation(platform("org.junit:junit-bom"))
   implementation(platform("com.fasterxml.jackson:jackson-bom"))
@@ -36,11 +39,9 @@ dependencies {
   implementation(project(":nessie-client"))
   implementation("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
-  implementation(platform("com.fasterxml.jackson:jackson-bom"))
   implementation("com.fasterxml.jackson.core:jackson-annotations")
 
   implementation("org.assertj:assertj-core")
-  implementation(platform("org.junit:junit-bom"))
   implementation("org.junit.jupiter:junit-jupiter-api")
 
   testImplementation("com.google.guava:guava")

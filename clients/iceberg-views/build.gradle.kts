@@ -24,6 +24,8 @@ plugins {
 
 dependencies {
   implementation(platform(nessieRootProject()))
+  implementation(nessieProjectPlatform("nessie-deps-iceberg", gradle))
+
   implementation(nessieProject("nessie-client"))
   implementation(nessieProject("nessie-model"))
   implementation("org.apache.iceberg:iceberg-api")
@@ -36,15 +38,18 @@ dependencies {
   )
   implementation("org.apache.iceberg:iceberg-nessie") { exclude("org.projectnessie", "*") }
   implementation("org.apache.hadoop:hadoop-client") {
+    exclude("javax.servlet.jsp", "jsp-api")
     exclude("javax.ws.rs", "javax.ws.rs-api")
     exclude("log4j", "log4j")
     exclude("org.slf4j", "slf4j-log4j12")
     exclude("org.slf4j", "slf4j-reload4j")
     exclude("com.sun.jersey", "jersey-servlet")
+    exclude("org.apache.hadoop", "hadoop-client")
   }
   compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
-  testImplementation(platform(nessieRootProject()))
+  testImplementation(platform("org.junit:junit-bom"))
+
   testImplementation(nessieProject("nessie-versioned-persist-tests"))
   testImplementation(nessieProject("nessie-versioned-persist-in-memory"))
   testImplementation(nessieProject("nessie-jaxrs-testextension"))
@@ -52,7 +57,6 @@ dependencies {
   testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
   testImplementation("org.assertj:assertj-core")
-  testImplementation(platform("org.junit:junit-bom"))
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")

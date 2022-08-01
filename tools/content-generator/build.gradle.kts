@@ -28,7 +28,10 @@ plugins {
 
 dependencies {
   implementation(platform(rootProject))
-  annotationProcessor(platform(rootProject))
+  compileOnly(platform(project(":nessie-deps-build-only")))
+  annotationProcessor(platform(project(":nessie-deps-build-only")))
+  implementation(platform("com.fasterxml.jackson:jackson-bom"))
+
   implementation(project(":nessie-client"))
 
   implementation("jakarta.validation:jakarta.validation-api")
@@ -39,14 +42,15 @@ dependencies {
   compileOnly("com.google.code.findbugs:jsr305")
   compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
-  implementation(platform("com.fasterxml.jackson:jackson-bom"))
   implementation("com.fasterxml.jackson.core:jackson-annotations")
   implementation("com.fasterxml.jackson.core:jackson-databind")
+
+  testImplementation(platform(project(":nessie-deps-testing")))
+  testImplementation(platform("org.junit:junit-bom"))
 
   testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
   testImplementation("org.assertj:assertj-core")
-  testImplementation(platform("org.junit:junit-bom"))
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")

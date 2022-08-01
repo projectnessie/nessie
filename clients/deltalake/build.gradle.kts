@@ -33,6 +33,8 @@ dependencies {
   forScala(sparkScala.scalaVersion)
 
   implementation(platform(nessieRootProject()))
+  implementation(nessieProjectPlatform("nessie-deps-iceberg", gradle))
+
   implementation(nessieProject("nessie-model"))
   implementation(nessieProject("nessie-client"))
   implementation("org.apache.spark:spark-core_${sparkScala.scalaMajorVersion}") {
@@ -44,7 +46,9 @@ dependencies {
   implementation("io.delta:delta-core_${sparkScala.scalaMajorVersion}")
   compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
-  testImplementation(platform(nessieRootProject()))
+  testImplementation(nessieProjectPlatform("nessie-deps-testing", gradle))
+  testImplementation(platform("org.junit:junit-bom"))
+
   testImplementation(
     nessieProject(
       "nessie-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}"
@@ -59,7 +63,6 @@ dependencies {
   testImplementation("org.slf4j:log4j-over-slf4j")
 
   testImplementation("org.assertj:assertj-core")
-  testImplementation(platform("org.junit:junit-bom"))
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")

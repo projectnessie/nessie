@@ -104,134 +104,157 @@ versionIceberg = System.getProperty("nessie.versionIceberg", versionIceberg)
 // Allow overriding the Nessie version used by integration tests that depend on Iceberg
 versionClientNessie = System.getProperty("nessie.versionClientNessie", versionClientNessie)
 
-extra["versionAntlr"] = versionAntlr
-
-extra["versionCheckstyle"] = versionCheckstyle
-
-extra["versionClientNessie"] = versionClientNessie
-
-extra["versionErrorProneAnnotations"] = versionErrorProneAnnotations
-
-extra["versionErrorProneCore"] = versionErrorProneCore
-
-extra["versionErrorProneSlf4j"] = versionErrorProneSlf4j
-
-extra["versionGatling"] = versionGatling
-
-extra["versionGoogleJavaFormat"] = versionGoogleJavaFormat
-
-extra["versionJacoco"] = versionJacoco
-
-extra["versionJandex"] = versionJandex
-
-extra["versionProtobuf"] = versionProtobuf
-
-extra["versionRocksDb"] = versionRocksDb
-
-extra["quarkus.builder-image"] = "quay.io/quarkus/ubi-quarkus-native-image:22.1-java17"
-
-for (e in loadProperties(file("clients/spark-scala.properties"))) {
-  extra[e.key.toString()] = e.value
-}
-
-// Dummy configuration to allow dependabot to manage dependencies here, but not include those
-// dependencies in the constraints. Those "managedOnly" dependencies do not "leak" to other
-// projects.
-configurations.create("managedOnly")
+mapOf(
+    "versionCheckstyle" to versionCheckstyle,
+    "versionClientNessie" to versionClientNessie,
+    "versionErrorProneAnnotations" to versionErrorProneAnnotations,
+    "versionErrorProneCore" to versionErrorProneCore,
+    "versionErrorProneSlf4j" to versionErrorProneSlf4j,
+    "versionGatling" to versionGatling,
+    "versionGoogleJavaFormat" to versionGoogleJavaFormat,
+    "versionJacoco" to versionJacoco,
+    "versionJandex" to versionJandex,
+    "versionProtobuf" to versionProtobuf,
+    "versionRocksDb" to versionRocksDb,
+    "quarkus.builder-image" to "quay.io/quarkus/ubi-quarkus-native-image:22.1-java17"
+  )
+  .plus(loadProperties(file("clients/spark-scala.properties")))
+  .forEach { (k, v) -> extra[k.toString()] = v }
 
 dependencies {
-  add("managedOnly", "org.antlr:antlr4:$versionAntlr")
-  add("managedOnly", "org.antlr:antlr4-runtime:$versionAntlr")
-
   constraints {
-    api("ch.qos.logback:logback-access:$versionLogback")
-    api("ch.qos.logback:logback-classic:$versionLogback")
-    api("ch.qos.logback:logback-core:$versionLogback")
     api("com.fasterxml.jackson:jackson-bom:$versionJackson")
     api("com.fasterxml.jackson.core:jackson-databind:$versionJacksonSpark3")
     api("com.fasterxml.jackson.module:jackson-module-scala_2.12:$versionJacksonSpark3")
-    api("com.github.docker-java:docker-java-api:$versionDockerjava")
     api("com.google.code.findbugs:jsr305:$versionJsr305")
-    api("com.google.errorprone:error_prone_annotations:$versionErrorProneAnnotations")
-    api("com.google.errorprone:error_prone_core:$versionErrorProneCore")
-    api("com.google.googlejavaformat:google-java-format:$versionGoogleJavaFormat")
     api("com.google.guava:guava:$versionGuava")
     api("com.google.protobuf:protobuf-java:$versionProtobuf")
-    api("com.h2database:h2:$versionH2")
-    api("com.puppycrawl.tools:checkstyle:$versionCheckstyle")
     api("info.picocli:picocli:$versionPicocli")
-    api("info.picocli:picocli-codegen:$versionPicocli")
-    api("io.agroal:agroal-pool:$versionAgroalPool")
-    api("io.delta:delta-core_2.12:$versionDeltalake")
-    api("io.gatling.highcharts:gatling-charts-highcharts:$versionGatling")
-    api("io.projectreactor:reactor-bom:$versionReactor")
-    api("io.quarkus.platform:quarkus-amazon-services-bom:$versionQuarkusAmazon")
-    api("io.quarkus:quarkus-bom:$versionQuarkus")
-    api("io.quarkiverse.loggingsentry:quarkus-logging-sentry:$versionQuarkusLoggingSentry")
-    api("io.rest-assured:rest-assured:$versionRestAssured")
+    api("io.quarkus:quarkus-smallrye-opentracing:$versionQuarkus")
     api("jakarta.validation:jakarta.annotation-api:$versionJakartaAnnotationApi")
     api("jakarta.enterprise:jakarta.enterprise.cdi-api:$versionJakartaEnterpriseCdiApi")
     api("jakarta.validation:jakarta.validation-api:$versionJakartaValidationApi")
     api("javax.servlet:javax.servlet-api:$versionJavaxServlet")
     api("javax.ws.rs:javax.ws.rs-api:$versionJavaxWsRs")
-    api("jp.skypencil.errorprone.slf4j:errorprone-slf4j:$versionErrorProneSlf4j")
-    api("org.agrona:agrona:$versionAgrona")
-    api("org.assertj:assertj-core:$versionAssertJ")
-    api("org.apache.hadoop:hadoop-client:$versionHadoop")
-    api("org.apache.iceberg:iceberg-api:$versionIceberg")
-    api("org.apache.iceberg:iceberg-bundled-guava:$versionIceberg")
-    api("org.apache.iceberg:iceberg-common:$versionIceberg")
-    api("org.apache.iceberg:iceberg-core:$versionIceberg")
-    api("org.apache.iceberg:iceberg-hive-metastore:$versionIceberg")
-    api("org.apache.iceberg:iceberg-nessie:$versionIceberg")
-    api("org.apache.iceberg:iceberg-parquet:$versionIceberg")
-    for (sparkVersion in project.extra["sparkVersions"].toString().split(",")) {
-      for (scalaVersion in
-        project.extra["sparkVersion-$sparkVersion-scalaVersions"].toString().split(",")) {
-        api("org.apache.iceberg:iceberg-spark-${sparkVersion}_$scalaVersion:$versionIceberg")
-        api(
-          "org.apache.iceberg:iceberg-spark-extensions-${sparkVersion}_$scalaVersion:$versionIceberg"
-        )
-      }
-    }
-    api("org.apache.maven:maven-resolver-provider:$versionMaven")
-    api("org.apache.maven.resolver:maven-resolver-connector-basic:$versionMavenResolver")
-    api("org.apache.maven.resolver:maven-resolver-transport-file:$versionMavenResolver")
-    api("org.apache.maven.resolver:maven-resolver-transport-http:$versionMavenResolver")
-    api("org.apache.parquet:parquet-column:$versionParquet")
-    api("org.bouncycastle:bcprov-jdk15on:$versionBouncyCastle")
-    api("org.bouncycastle:bcpkix-jdk15on:$versionBouncyCastle")
     api("org.eclipse.microprofile.openapi:microprofile-openapi-api:$versionOpenapi")
-    api("org.glassfish.jersey:jersey-bom:$versionJersey")
-    api("org.graalvm.nativeimage:svm:$versionGraalSvm")
-    api("org.immutables:builder:$versionImmutables")
-    api("org.immutables:value-annotations:$versionImmutables")
-    api("org.immutables:value-fixture:$versionImmutables")
-    api("org.immutables:value-processor:$versionImmutables")
-    api("org.jacoco:jacoco-maven-plugin:$versionJacoco")
-    api("org.jboss:jandex:$versionJandex")
-    api("org.jboss.weld.se:weld-se-core:$versionWeld")
     api("org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_2.1_spec:$versionJaxrsApi21Spec")
-    api("org.junit:junit-bom:$versionJunit")
-    api("org.mongodb:mongodb-driver-sync:$versionMongodbDriverSync")
-    api("org.openjdk.jmh:jmh-core:$versionJmh")
-    api("org.openjdk.jmh:jmh-generator-annprocess:$versionJmh")
-    api("org.postgresql:postgresql:$versionPostgres")
-    api("org.mockito:mockito-core:$versionMockito")
     api("org.projectnessie.cel:cel-bom:$versionCel")
-    api("org.rocksdb:rocksdbjni:$versionRocksDb")
-    api("org.slf4j:jcl-over-slf4j:$versionSlf4j")
-    api("org.slf4j:log4j-over-slf4j:$versionSlf4j")
     api("org.slf4j:slf4j-api:$versionSlf4j")
-    api("org.testcontainers:cockroachdb:$versionTestcontainers")
-    api("org.testcontainers:mongodb:$versionTestcontainers")
-    api("org.testcontainers:postgresql:$versionTestcontainers")
-    api("org.testcontainers:testcontainers:$versionTestcontainers")
-    api("software.amazon.awssdk:bom:$versionAwssdk")
+    api("software.amazon.awssdk:auth:$versionAwssdk")
   }
 }
 
-javaPlatform { allowDependencies() }
+dependenciesProject("nessie-deps-antlr", "Antlr4 dependency management") {
+  api("org.antlr:antlr4:$versionAntlr")
+  api("org.antlr:antlr4-runtime:$versionAntlr")
+}
+
+dependenciesProject("nessie-deps-managed-only", "Only managed dependencies (for dependabot)") {
+  // This one is only here to get these dependencies, which are used outside of the usual
+  // configurations, managed by dependabot.
+  api("com.google.errorprone:error_prone_core:$versionErrorProneCore")
+  api("com.google.googlejavaformat:google-java-format:$versionGoogleJavaFormat")
+  api("jp.skypencil.errorprone.slf4j:errorprone-slf4j:$versionErrorProneSlf4j")
+  api("org.jacoco:jacoco-maven-plugin:$versionJacoco")
+  api("org.jboss:jandex:$versionJandex")
+}
+
+dependenciesProject("nessie-deps-persist", "Persistence/server dependency management") {
+  api("io.agroal:agroal-pool:$versionAgroalPool")
+  api("com.h2database:h2:$versionH2")
+  api("org.agrona:agrona:$versionAgrona")
+  api("org.mongodb:mongodb-driver-sync:$versionMongodbDriverSync")
+  api("org.postgresql:postgresql:$versionPostgres")
+  api("org.rocksdb:rocksdbjni:$versionRocksDb")
+}
+
+dependenciesProject("nessie-deps-quarkus", "Quarkus related dependency management") {
+  api("io.quarkus:quarkus-bom:$versionQuarkus")
+  api("io.quarkus.platform:quarkus-amazon-services-bom:$versionQuarkusAmazon")
+  api("software.amazon.awssdk:bom:$versionAwssdk")
+  api("io.quarkiverse.loggingsentry:quarkus-logging-sentry:$versionQuarkusLoggingSentry")
+}
+
+dependenciesProject("nessie-deps-build-only", "Build-only dependency management") {
+  api("com.google.errorprone:error_prone_annotations:$versionErrorProneAnnotations")
+  api("info.picocli:picocli-codegen:$versionPicocli")
+  api("org.graalvm.nativeimage:svm:$versionGraalSvm")
+  api("org.immutables:builder:$versionImmutables")
+  api("org.immutables:value-annotations:$versionImmutables")
+  api("org.immutables:value-fixture:$versionImmutables")
+  api("org.immutables:value-processor:$versionImmutables")
+  api("org.openjdk.jmh:jmh-generator-annprocess:$versionJmh")
+}
+
+dependenciesProject("nessie-deps-iceberg", "Iceberg, Spark and related dependency management") {
+  api("io.delta:delta-core_2.12:$versionDeltalake")
+  api("org.apache.hadoop:hadoop-client:$versionHadoop")
+  api("org.apache.iceberg:iceberg-api:$versionIceberg")
+  api("org.apache.iceberg:iceberg-bundled-guava:$versionIceberg")
+  api("org.apache.iceberg:iceberg-common:$versionIceberg")
+  api("org.apache.iceberg:iceberg-core:$versionIceberg")
+  api("org.apache.iceberg:iceberg-hive-metastore:$versionIceberg")
+  api("org.apache.iceberg:iceberg-nessie:$versionIceberg")
+  api("org.apache.iceberg:iceberg-parquet:$versionIceberg")
+  for (sparkVersion in rootProject.extra["sparkVersions"].toString().split(",")) {
+    for (scalaVersion in
+      rootProject.extra["sparkVersion-$sparkVersion-scalaVersions"].toString().split(",")) {
+      api("org.apache.iceberg:iceberg-spark-${sparkVersion}_$scalaVersion:$versionIceberg")
+      api(
+        "org.apache.iceberg:iceberg-spark-extensions-${sparkVersion}_$scalaVersion:$versionIceberg"
+      )
+    }
+  }
+  api("org.apache.parquet:parquet-column:$versionParquet")
+}
+
+dependenciesProject("nessie-deps-testing", "Testing dependency management") {
+  api("ch.qos.logback:logback-classic:$versionLogback")
+  api("com.github.docker-java:docker-java-api:$versionDockerjava")
+  api("com.puppycrawl.tools:checkstyle:$versionCheckstyle")
+  api("io.gatling.highcharts:gatling-charts-highcharts:$versionGatling")
+  api("io.rest-assured:rest-assured:$versionRestAssured")
+  api("org.assertj:assertj-core:$versionAssertJ")
+  api("org.apache.maven:maven-resolver-provider:$versionMaven")
+  api("org.apache.maven.resolver:maven-resolver-connector-basic:$versionMavenResolver")
+  api("org.apache.maven.resolver:maven-resolver-transport-file:$versionMavenResolver")
+  api("org.apache.maven.resolver:maven-resolver-transport-http:$versionMavenResolver")
+  api("org.bouncycastle:bcprov-jdk15on:$versionBouncyCastle")
+  api("org.bouncycastle:bcpkix-jdk15on:$versionBouncyCastle")
+  api("org.glassfish.jersey:jersey-bom:$versionJersey")
+  api("org.mockito:mockito-core:$versionMockito")
+  api("org.openjdk.jmh:jmh-core:$versionJmh")
+  api("org.jboss.weld.se:weld-se-core:$versionWeld")
+  api("org.junit:junit-bom:$versionJunit")
+  api("org.slf4j:jcl-over-slf4j:$versionSlf4j")
+  api("org.slf4j:log4j-over-slf4j:$versionSlf4j")
+  api("org.testcontainers:cockroachdb:$versionTestcontainers")
+  api("org.testcontainers:mongodb:$versionTestcontainers")
+  api("org.testcontainers:postgresql:$versionTestcontainers")
+  api("org.testcontainers:testcontainers:$versionTestcontainers")
+}
+
+fun dependenciesProject(
+  name: String,
+  description: String,
+  config: Action<DependencyConstraintHandlerScope>
+) {
+  project(":$name") {
+    this.buildDir = file(rootProject.buildDir.resolve(name))
+    this.group = rootProject.group
+    this.version = rootProject.version
+    this.description = description
+
+    apply {
+      plugin("java-platform")
+      plugin("maven-publish")
+      plugin("signing")
+      plugin("nessie-conventions")
+    }
+
+    dependencies { constraints { config.execute(this) } }
+  }
+}
 
 tasks.named<Wrapper>("wrapper") { distributionType = Wrapper.DistributionType.ALL }
 

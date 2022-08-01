@@ -136,6 +136,8 @@ fun loadProjects(file: String) {
   }
 }
 
+val ideaSyncActive = System.getProperty("idea.sync.active").toBoolean()
+
 loadProjects("../gradle/projects.iceberg.properties")
 
 // Note: Unlike the "main" settings.gradle.kts this variant includes _all_ Spark _and_ Scala
@@ -153,6 +155,9 @@ for (sparkVersion in sparkVersions) {
     val artifactId = "nessie-spark-extensions-${sparkVersion}_$scalaVersion"
     nessieProject(artifactId, file("../clients/spark-extensions/v${sparkVersion}")).buildFileName =
       "../build.gradle.kts"
+    if (ideaSyncActive) {
+      break
+    }
   }
 }
 
@@ -161,14 +166,17 @@ for (scalaVersion in allScalaVersions) {
     "nessie-spark-extensions-base_$scalaVersion",
     file("../clients/spark-extensions-base")
   )
+  if (ideaSyncActive) {
+    break
+  }
 }
 
-nessieProject("nessie-spark-extensions", file("../clients/spark-extensions/v3.1")).buildFileName =
-  "../build.gradle.kts"
-
-nessieProject("nessie-spark-3.2-extensions", file("../clients/spark-extensions/v3.2"))
-  .buildFileName = "../build.gradle.kts"
-
-nessieProject("nessie-spark-extensions-base", file("../clients/spark-extensions-base"))
+if (!ideaSyncActive) {
+  nessieProject("nessie-spark-extensions", file("../clients/spark-extensions/v3.1")).buildFileName =
+    "../build.gradle.kts"
+  nessieProject("nessie-spark-3.2-extensions", file("../clients/spark-extensions/v3.2"))
+    .buildFileName = "../build.gradle.kts"
+  nessieProject("nessie-spark-extensions-base", file("../clients/spark-extensions-base"))
+}
 
 rootProject.name = "nessie-iceberg"

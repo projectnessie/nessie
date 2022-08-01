@@ -27,7 +27,10 @@ plugins {
 
 extra["maven.name"] = "Nessie - Antlr Runtime"
 
-dependencies { implementation("org.antlr:antlr4-runtime:${dependencyVersion("versionAntlr")}") }
+dependencies {
+  implementation(nessieProjectPlatform("nessie-deps-antlr", gradle))
+  implementation("org.antlr:antlr4-runtime")
+}
 
 tasks.named<ShadowJar>("shadowJar") {
   dependencies { include(dependency("org.antlr:antlr4-runtime")) }

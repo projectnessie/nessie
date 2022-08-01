@@ -28,7 +28,9 @@ val sparkScala = useSparkScalaVersionsForProject("3.2")
 
 dependencies {
   implementation(platform(nessieRootProject()))
-  annotationProcessor(platform(nessieRootProject()))
+  annotationProcessor(nessieProjectPlatform("nessie-deps-build-only", gradle))
+  compileOnly(nessieProjectPlatform("nessie-deps-build-only", gradle))
+  compileOnly(nessieProjectPlatform("nessie-deps-iceberg", gradle))
   implementation(platform("com.fasterxml.jackson:jackson-bom"))
 
   forScala(sparkScala.scalaVersion)
@@ -54,7 +56,9 @@ dependencies {
   compileOnly("org.apache.iceberg:iceberg-parquet")
   compileOnly("org.apache.parquet:parquet-column")
 
-  testImplementation(platform(nessieRootProject()))
+  testImplementation(nessieProjectPlatform("nessie-deps-iceberg", gradle))
+  testCompileOnly(platform("com.fasterxml.jackson:jackson-bom"))
+  testImplementation(platform("org.junit:junit-bom"))
 
   testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
   testImplementation(nessieProject("nessie-jaxrs-testextension"))
@@ -66,7 +70,6 @@ dependencies {
   testImplementation("org.slf4j:log4j-over-slf4j")
   testImplementation("ch.qos.logback:logback-classic")
 
-  testCompileOnly(platform("com.fasterxml.jackson:jackson-bom"))
   testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   testImplementation(project(":nessie-spark-extensions-base_${sparkScala.scalaMajorVersion}")) {
@@ -87,7 +90,6 @@ dependencies {
   testImplementation("org.apache.iceberg:iceberg-hive-metastore")
 
   testImplementation("org.assertj:assertj-core")
-  testImplementation(platform("org.junit:junit-bom"))
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")

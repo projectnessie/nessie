@@ -36,6 +36,12 @@ val openapiSource by
 
 dependencies {
   implementation(platform(rootProject))
+  implementation(platform(project(":nessie-deps-persist")))
+  implementation(platform(project(":nessie-deps-quarkus")))
+  implementation(enforcedPlatform("io.quarkus:quarkus-bom"))
+  implementation(enforcedPlatform("io.quarkus.platform:quarkus-amazon-services-bom"))
+  implementation(platform("org.projectnessie.cel:cel-bom"))
+
   implementation(project(":nessie-model"))
   implementation(project(":nessie-services"))
   implementation(project(":nessie-quarkus-common"))
@@ -44,8 +50,6 @@ dependencies {
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-persist-store"))
   implementation(project(":nessie-ui"))
-  implementation(enforcedPlatform("io.quarkus:quarkus-bom"))
-  implementation(enforcedPlatform("io.quarkus.platform:quarkus-amazon-services-bom"))
   implementation("org.jboss.resteasy:resteasy-core-spi")
   implementation("io.quarkus:quarkus-resteasy")
   implementation("io.quarkus:quarkus-resteasy-jackson")
@@ -61,7 +65,6 @@ dependencies {
   implementation("io.quarkiverse.loggingsentry:quarkus-logging-sentry")
   implementation("io.smallrye:smallrye-open-api-jaxrs")
   implementation("io.micrometer:micrometer-registry-prometheus")
-  implementation(platform("org.projectnessie.cel:cel-bom"))
   implementation("org.projectnessie.cel:cel-tools")
   implementation("org.projectnessie.cel:cel-jackson")
 
@@ -77,12 +80,13 @@ dependencies {
 
   openapiSource(project(":nessie-model", "openapiSource"))
 
-  testImplementation(platform(rootProject))
+  testImplementation(platform(project(":nessie-deps-testing")))
+  testImplementation(platform("org.junit:junit-bom"))
+
   testImplementation(project(":nessie-client"))
   testImplementation(project(":nessie-jaxrs-tests"))
   testImplementation(project(":nessie-quarkus-tests"))
   testImplementation(project(":nessie-versioned-tests"))
-  testImplementation(enforcedPlatform("io.quarkus:quarkus-bom"))
   testImplementation("io.quarkus:quarkus-rest-client")
   testImplementation("io.quarkus:quarkus-test-security")
   testImplementation("io.quarkus:quarkus-test-oidc-server")
@@ -90,7 +94,6 @@ dependencies {
 
   testImplementation("org.assertj:assertj-core")
   testImplementation("org.mockito:mockito-core")
-  testImplementation(platform("org.junit:junit-bom"))
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")

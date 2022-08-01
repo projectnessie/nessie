@@ -25,6 +25,7 @@ import org.gradle.api.artifacts.ExternalModuleDependency
 import org.gradle.api.artifacts.ModuleDependency
 import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependencyConstraint
+import org.gradle.api.invocation.Gradle
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.SourceSetContainer
@@ -150,6 +151,30 @@ fun DependencyHandlerScope.nessieProject(
     return project(if (artifactId == "nessie") ":" else ":$artifactId", configuration)
   } else {
     return module("org.projectnessie", artifactId, configuration = configuration)
+  }
+}
+
+/**
+ * Resolves a `platform()` dependency to a project in another Gradle build.
+ *
+ * Ideally, it should be sufficient to use [nessieProject], but that does not work properly and
+ * results in this Gradle error: `Incompatible because this component declares a platform and the
+ * consumer needed a library`. Although it is correct that the component declares a platform, it is
+ * wrong that the consumer needs a library...
+ */
+fun DependencyHandlerScope.nessieProjectPlatform(artifactId: String, gradle: Gradle): Dependency {
+  if (!isIntegrationsTestingEnabled()) {
+    return platform(project(if (artifactId == "nessie") ":" else ":$artifactId"))
+  } else {
+    if (artifactId.startsWith("nessie-deps-")) {
+      val inclBuild = gradle.parent!!.includedBuild("nessie")
+      val inclBuildInternal = inclBuild as org.gradle.internal.composite.IncludedBuildInternal
+      val inclBuildTarget = inclBuildInternal.target
+      val nessiePrj = inclBuildTarget.projects.getProject(org.gradle.util.Path.path(":$artifactId"))
+      val model = nessiePrj.mutableModel
+      return platform(model.project)
+    }
+    return platform(module("org.projectnessie", artifactId))
   }
 }
 

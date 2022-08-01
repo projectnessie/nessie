@@ -26,6 +26,7 @@ extra["maven.name"] = "Nessie - Server - Store"
 
 dependencies {
   implementation(platform(rootProject))
+
   implementation(project(":nessie-model"))
   implementation(project(":nessie-versioned-spi"))
   api(project(":nessie-server-store-proto"))
@@ -38,15 +39,16 @@ dependencies {
   compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
   compileOnly("jakarta.validation:jakarta.validation-api")
 
+  testImplementation(platform(project(":nessie-deps-testing")))
+  testImplementation(platform("org.junit:junit-bom"))
+  testCompileOnly(platform("com.fasterxml.jackson:jackson-bom"))
+
   testImplementation(project(":nessie-servers-iceberg-fixtures"))
-  testImplementation(platform(rootProject))
   testImplementation("com.google.guava:guava")
   testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
-  testCompileOnly(platform("com.fasterxml.jackson:jackson-bom"))
   testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
-  testImplementation(platform("org.junit:junit-bom"))
   testImplementation("org.assertj:assertj-core")
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
