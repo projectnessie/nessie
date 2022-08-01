@@ -80,10 +80,12 @@ val versionJunit = "5.9.0"
 val versionLogback = "1.2.11"
 val versionMavenResolver = "1.7.3"
 val versionMaven = "3.8.6"
+val versionMicrometer = "1.9.2"
 val versionMockito = "4.6.1"
 val versionMongodbDriverSync = "4.7.1"
 val versionNessieApprunner = "0.21.4"
 val versionOpenapi = "3.0"
+val versionOpentracing = "0.33.0"
 val versionQuarkus = dependencyVersion("versionQuarkus") // ensure that plugin version is the same
 val versionQuarkusAmazon = "2.11.1.Final"
 val versionQuarkusLoggingSentry = "1.2.1"
@@ -105,6 +107,7 @@ versionIceberg = System.getProperty("nessie.versionIceberg", versionIceberg)
 versionClientNessie = System.getProperty("nessie.versionClientNessie", versionClientNessie)
 
 mapOf(
+    "versionAwssdk" to versionAwssdk,
     "versionCheckstyle" to versionCheckstyle,
     "versionClientNessie" to versionClientNessie,
     "versionErrorProneAnnotations" to versionErrorProneAnnotations,
@@ -114,6 +117,8 @@ mapOf(
     "versionGoogleJavaFormat" to versionGoogleJavaFormat,
     "versionJacoco" to versionJacoco,
     "versionJandex" to versionJandex,
+    "versionMicrometer" to versionMicrometer,
+    "versionOpentracing" to versionOpentracing,
     "versionProtobuf" to versionProtobuf,
     "versionRocksDb" to versionRocksDb,
     "quarkus.builder-image" to "quay.io/quarkus/ubi-quarkus-native-image:22.1-java17"
@@ -157,6 +162,10 @@ dependenciesProject("nessie-deps-managed-only", "Only managed dependencies (for 
   api("jp.skypencil.errorprone.slf4j:errorprone-slf4j:$versionErrorProneSlf4j")
   api("org.jacoco:jacoco-maven-plugin:$versionJacoco")
   api("org.jboss:jandex:$versionJandex")
+  api("io.opentracing:opentracing-api:${dependencyVersion("versionOpentracing")}")
+  api("io.opentracing:opentracing-mock:${dependencyVersion("versionOpentracing")}")
+  api("io.opentracing:opentracing-util:${dependencyVersion("versionOpentracing")}")
+  api("io.micrometer:micrometer-core:${dependencyVersion("versionMicrometer")}")
 }
 
 dependenciesProject("nessie-deps-persist", "Persistence/server dependency management") {
