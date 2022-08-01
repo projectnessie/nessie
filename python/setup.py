@@ -71,6 +71,6 @@ setup(
     name="pynessie",
     packages=find_packages(include=["pynessie", "pynessie.*"]),
     url="https://github.com/projectnessie/nessie",
-    version="0.40.3",
+    version="0.40.4",
     zip_safe=False,
 )
