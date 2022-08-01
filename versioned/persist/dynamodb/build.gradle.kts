@@ -27,10 +27,9 @@ extra["maven.name"] = "Nessie - Versioned - Persist - DynamoDB"
 
 dependencies {
   implementation(platform(rootProject))
-  implementation(platform(project(":nessie-deps-quarkus")))
   compileOnly(platform(project(":nessie-deps-build-only")))
   annotationProcessor(platform(project(":nessie-deps-build-only")))
-  implementation(platform("software.amazon.awssdk:bom"))
+  implementation(platform("software.amazon.awssdk:bom:${dependencyVersion("versionAwssdk")}"))
 
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-persist-non-transactional"))

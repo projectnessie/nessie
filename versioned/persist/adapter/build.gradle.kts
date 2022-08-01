@@ -27,10 +27,8 @@ extra["maven.name"] = "Nessie - Versioned - Persist - Adapter"
 dependencies {
   implementation(platform(rootProject))
   implementation(platform(project(":nessie-deps-persist")))
-  implementation(platform(project(":nessie-deps-quarkus")))
   compileOnly(platform(project(":nessie-deps-build-only")))
   annotationProcessor(platform(project(":nessie-deps-build-only")))
-  implementation(platform("io.quarkus:quarkus-bom"))
 
   implementation(project(":nessie-versioned-spi"))
   compileOnly("org.immutables:value-annotations")
@@ -42,9 +40,9 @@ dependencies {
   implementation("org.slf4j:slf4j-api")
   implementation("org.agrona:agrona")
 
-  implementation("io.opentracing:opentracing-api")
-  implementation("io.opentracing:opentracing-util")
-  implementation("io.micrometer:micrometer-core")
+  implementation("io.opentracing:opentracing-api:${dependencyVersion("versionOpentracing")}")
+  implementation("io.opentracing:opentracing-util:${dependencyVersion("versionOpentracing")}")
+  implementation("io.micrometer:micrometer-core:${dependencyVersion("versionMicrometer")}")
 
   testImplementation(platform(project(":nessie-deps-testing")))
   testImplementation(platform("org.junit:junit-bom"))
