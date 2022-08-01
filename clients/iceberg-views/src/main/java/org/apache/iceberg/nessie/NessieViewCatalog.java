@@ -51,12 +51,10 @@ public class NessieViewCatalog extends BaseMetastoreViews implements AutoCloseab
   private String warehouseLocation;
   private Configuration config;
   private UpdateableReference reference;
-  private String name;
   private FileIO fileIO;
   private Map<String, String> catalogOptions;
 
   public NessieViewCatalog(Configuration conf) {
-    super(conf);
     this.config = conf;
   }
 
@@ -76,7 +74,6 @@ public class NessieViewCatalog extends BaseMetastoreViews implements AutoCloseab
         fileIOImpl == null
             ? new HadoopFileIO(config)
             : CatalogUtil.loadFileIO(fileIOImpl, options, config);
-    this.name = inputName == null ? "nessie_view_catalog" : inputName;
     // remove nessie prefix
     final Function<String, String> removePrefix =
         x -> x.replace(NessieUtil.NESSIE_CONFIG_PREFIX, "");

@@ -19,17 +19,13 @@ import static org.apache.iceberg.view.ViewUtils.toCatalogTableIdentifier;
 
 import com.google.common.base.Preconditions;
 import java.util.Map;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.exceptions.NotFoundException;
 
 public abstract class BaseMetastoreViews implements Views {
-  private final Configuration conf;
 
-  public BaseMetastoreViews(Configuration conf) {
-    this.conf = conf;
-  }
+  protected BaseMetastoreViews() {}
 
   protected abstract BaseMetastoreViewOperations newViewOps(TableIdentifier viewName);
 

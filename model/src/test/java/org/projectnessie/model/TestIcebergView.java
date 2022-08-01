@@ -89,7 +89,7 @@ public class TestIcebergView {
             42,
             array -> {
               ObjectNode version = array.addObject().put(VERSION_ID, 42);
-              ObjectNode viewDefinition = version.putObject(VIEW_DEFINITION);
+              version.putObject(VIEW_DEFINITION);
             }),
         // metadata, CURRENT_VERSION_ID + VERSION_ID, VIEW_DEFINITION, SQL, missing SCHEMA
         versions(
@@ -107,7 +107,7 @@ public class TestIcebergView {
               ObjectNode version = array.addObject().put(VERSION_ID, 42);
               ObjectNode viewDefinition = version.putObject(VIEW_DEFINITION);
               viewDefinition.put(SQL, "SELECT foo FROM bar");
-              ObjectNode schema = viewDefinition.putObject(SCHEMA);
+              viewDefinition.putObject(SCHEMA);
             }));
   }
 
