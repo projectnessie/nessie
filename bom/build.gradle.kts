@@ -70,7 +70,10 @@ dependencies {
       api(project(":nessie-spark-extensions-grammar"))
       api(project(":nessie-gc-base"))
 
-      val ideaSyncActive = System.getProperty("idea.sync.active").toBoolean()
+      val ideSyncActive =
+        System.getProperty("idea.sync.active").toBoolean() ||
+          System.getProperty("eclipse.product") != null ||
+          gradle.startParameter.taskNames.any { it.startsWith("eclipse") }
       val sparkVersions = rootProject.extra["sparkVersions"].toString().split(",").map { it.trim() }
       val allScalaVersions = LinkedHashSet<String>()
       for (sparkVersion in sparkVersions) {
@@ -82,18 +85,18 @@ dependencies {
         for (scalaVersion in scalaVersions) {
           allScalaVersions.add(scalaVersion)
           api(project(":nessie-spark-extensions-${sparkVersion}_$scalaVersion"))
-          if (ideaSyncActive) {
+          if (ideSyncActive) {
             break
           }
         }
       }
       for (scalaVersion in allScalaVersions) {
         api(project(":nessie-spark-extensions-base_$scalaVersion"))
-        if (ideaSyncActive) {
+        if (ideSyncActive) {
           break
         }
       }
-      if (!ideaSyncActive) {
+      if (!ideSyncActive) {
         // Relocated projects, to be removed in a future Nessie version
         api(project(":nessie-spark-extensions-base"))
         api(project(":nessie-spark-extensions"))
