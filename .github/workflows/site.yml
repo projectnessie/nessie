@@ -9,12 +9,12 @@ jobs:
 
   site:
     name: Build & Deploy Website
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: ${{ github.repository == 'projectnessie/nessie' }}
     steps:
       - uses: actions/checkout@v3
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: '3.8'
           cache: 'pip'

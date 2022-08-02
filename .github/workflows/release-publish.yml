@@ -46,7 +46,7 @@ on:
 jobs:
   publish-release:
     name: Publish release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     # Runs in the `release` environment, which has the necessary secrets and defines the reviewers.
     # See https://docs.github.com/en/actions/reference/environments
@@ -99,8 +99,8 @@ jobs:
         python-version: '3.8'
     - name: Install Python dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install -r python/requirements_dev.txt
+        python3 -m pip install --upgrade pip
+        python3 -m pip install -r python/requirements_dev.txt
     ### END runner setup
 
     # Deploys Maven artifacts. Build and test steps were already ran in previous steps.

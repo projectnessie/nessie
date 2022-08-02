@@ -30,7 +30,7 @@ on:
 jobs:
   merge:
     name: "Dependabot Auto Merge"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     # Note: the check `github.actor == 'dependabot[bot]'` ensures that auto-approve-and-merge
     # only happens when dependabot triggers the workflow runs - but not when another user pushes.

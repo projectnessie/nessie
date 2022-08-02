@@ -28,7 +28,7 @@ concurrency:
 jobs:
   java:
     name: Java/Maven Native
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: contains(github.event.pull_request.labels.*.name, 'pr-native')
     steps:
     - uses: actions/checkout@v3
