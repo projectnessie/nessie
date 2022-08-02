@@ -156,8 +156,9 @@ public abstract class AbstractNonTxDatabaseAdapterTest extends AbstractDatabaseA
                               readyLatch.countDown();
                               Preconditions.checkState(startLatch.await(5, MINUTES));
 
-                              try {
-                                nontx.fetchNamedReferences(ctx);
+                              try (Stream<NamedReference> ignore =
+                                  nontx.fetchNamedReferences(ctx)) {
+
                               } finally {
                                 doneLatch.countDown();
                               }

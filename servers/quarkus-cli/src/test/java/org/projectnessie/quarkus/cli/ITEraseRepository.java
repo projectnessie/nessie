@@ -21,6 +21,7 @@ import com.google.protobuf.ByteString;
 import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.junit.main.QuarkusMainLauncher;
 import io.quarkus.test.junit.main.QuarkusMainTest;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.versioned.GetNamedRefsParams;
@@ -42,7 +43,9 @@ class ITEraseRepository {
                 .launch("erase-repository", "--confirmation-code", CONFIRMATION_CODE)
                 .exitCode())
         .isEqualTo(0);
-    assertThat(adapter.namedRefs(GetNamedRefsParams.DEFAULT)).isEmpty();
+    try (Stream<ReferenceInfo<ByteString>> refs = adapter.namedRefs(GetNamedRefsParams.DEFAULT)) {
+      assertThat(refs).isEmpty();
+    }
   }
 
   @Test

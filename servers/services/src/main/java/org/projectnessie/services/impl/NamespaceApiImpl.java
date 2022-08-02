@@ -16,6 +16,7 @@
 package org.projectnessie.services.impl;
 
 import com.google.common.base.Preconditions;
+import com.google.errorprone.annotations.MustBeClosed;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.HashMap;
@@ -271,6 +272,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
     }
   }
 
+  @MustBeClosed
   private Stream<KeyEntry<Content.Type>> getNamespacesKeyStream(
       @Nullable Namespace namespace,
       Hash hash,

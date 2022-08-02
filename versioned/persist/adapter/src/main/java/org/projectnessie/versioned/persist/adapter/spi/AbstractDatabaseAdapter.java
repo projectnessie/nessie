@@ -33,6 +33,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.common.hash.Hasher;
+import com.google.errorprone.annotations.MustBeClosed;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
 import io.opentracing.Span;
@@ -325,18 +326,22 @@ public abstract class AbstractDatabaseAdapter<
     mergeResult.commonAncestor(commonAncestor);
 
     // 3. Collect commit-log-entries
-    List<CommitLogEntry> toEntriesReverseChronological =
-        takeUntilExcludeLast(
-                readCommitLogStream(ctx, toHead), e -> e.getHash().equals(commonAncestor))
-            .collect(Collectors.toList());
+    List<CommitLogEntry> toEntriesReverseChronological;
+    try (Stream<CommitLogEntry> commits = readCommitLogStream(ctx, toHead)) {
+      toEntriesReverseChronological =
+          takeUntilExcludeLast(commits, e -> e.getHash().equals(commonAncestor))
+              .collect(Collectors.toList());
+    }
 
     toEntriesReverseChronological.forEach(mergeResult::addTargetCommits);
 
-    List<CommitLogEntry> commitsToMergeChronological =
-        takeUntilExcludeLast(
-                readCommitLogStream(ctx, mergeParams.getMergeFromHash()),
-                e -> e.getHash().equals(commonAncestor))
-            .collect(Collectors.toList());
+    List<CommitLogEntry> commitsToMergeChronological;
+    try (Stream<CommitLogEntry> commits =
+        readCommitLogStream(ctx, mergeParams.getMergeFromHash())) {
+      commitsToMergeChronological =
+          takeUntilExcludeLast(commits, e -> e.getHash().equals(commonAncestor))
+              .collect(Collectors.toList());
+    }
 
     if (commitsToMergeChronological.isEmpty()) {
       // Nothing to merge, shortcut
@@ -417,20 +422,23 @@ public abstract class AbstractDatabaseAdapter<
         transplantParams
             .getSequenceToTransplant()
             .get(transplantParams.getSequenceToTransplant().size() - 1);
-    List<CommitLogEntry> commitsToTransplantChronological =
-        takeUntilExcludeLast(
-                readCommitLogStream(ctx, lastHash),
-                e -> {
-                  int i = index[0]--;
-                  if (i == -1) {
-                    return true;
-                  }
-                  if (!e.getHash().equals(transplantParams.getSequenceToTransplant().get(i))) {
-                    throw new IllegalArgumentException("Sequence of hashes is not contiguous.");
-                  }
-                  return false;
-                })
-            .collect(Collectors.toList());
+    List<CommitLogEntry> commitsToTransplantChronological;
+    try (Stream<CommitLogEntry> commits = readCommitLogStream(ctx, lastHash)) {
+      commitsToTransplantChronological =
+          takeUntilExcludeLast(
+                  commits,
+                  e -> {
+                    int i = index[0]--;
+                    if (i == -1) {
+                      return true;
+                    }
+                    if (!e.getHash().equals(transplantParams.getSequenceToTransplant().get(i))) {
+                      throw new IllegalArgumentException("Sequence of hashes is not contiguous.");
+                    }
+                    return false;
+                  })
+              .collect(Collectors.toList());
+    }
 
     commitsToTransplantChronological.forEach(mergeResult::addSourceCommits);
 
@@ -647,6 +655,8 @@ public abstract class AbstractDatabaseAdapter<
    * @param refs current {@link Stream} of {@link ReferenceInfo} to be enhanced.
    * @return filtered/enhanced stream based on {@code refs}.
    */
+  @MustBeClosed
+  @SuppressWarnings("MustBeClosedChecker")
   protected Stream<ReferenceInfo<ByteString>> namedRefsFilterAndEnhance(
       OP_CONTEXT ctx,
       GetNamedRefsParams params,
@@ -706,6 +716,7 @@ public abstract class AbstractDatabaseAdapter<
   /**
    * Returns an updated {@link ReferenceInfo} with the commit-meta of the reference's HEAD commit.
    */
+  @MustBeClosed
   protected Stream<ReferenceInfo<ByteString>> namedReferenceWithCommitMeta(
       OP_CONTEXT ctx, GetNamedRefsParams params, Stream<ReferenceInfo<ByteString>> refs) {
     return refs.map(
@@ -734,6 +745,7 @@ public abstract class AbstractDatabaseAdapter<
    * for the default branch. Both fields are also {@code null} if the named reference points to the
    * {@link #noAncestorHash()} (beginning of time).
    */
+  @MustBeClosed
   protected Stream<ReferenceInfo<ByteString>> namedRefsWithDefaultBranchRelatedInfo(
       OP_CONTEXT ctx,
       GetNamedRefsParams params,
@@ -821,24 +833,35 @@ public abstract class AbstractDatabaseAdapter<
       // If the client requests 'NO_ANCESTOR' (== beginning of time), skip the existence-check.
       if (suspect.equals(NO_ANCESTOR)) {
         if (commitLogVisitor != null) {
-          readCommitLogStream(ctx, knownHead).forEach(commitLogVisitor);
+          try (Stream<CommitLogEntry> commits = readCommitLogStream(ctx, knownHead)) {
+            commits.forEach(commitLogVisitor);
+          }
         }
         return suspect;
       }
 
-      Stream<Hash> hashes;
-      if (commitLogVisitor != null) {
-        hashes =
-            readCommitLogStream(ctx, knownHead).peek(commitLogVisitor).map(CommitLogEntry::getHash);
-      } else {
-        hashes = readCommitLogHashesStream(ctx, knownHead);
+      try (Stream<Hash> hashes = commitsForHashOnRef(ctx, knownHead, commitLogVisitor)) {
+        if (hashes.noneMatch(suspect::equals)) {
+          throw hashNotFound(ref, suspect);
+        }
+        return suspect;
       }
-      if (hashes.noneMatch(suspect::equals)) {
-        throw hashNotFound(ref, suspect);
-      }
-      return suspect;
     } else {
       return knownHead;
+    }
+  }
+
+  @MustBeClosed
+  @SuppressWarnings("MustBeClosedChecker")
+  private Stream<Hash> commitsForHashOnRef(
+      OP_CONTEXT ctx, Hash knownHead, Consumer<CommitLogEntry> commitLogVisitor)
+      throws ReferenceNotFoundException {
+    if (commitLogVisitor != null) {
+      return readCommitLogStream(ctx, knownHead)
+          .peek(commitLogVisitor)
+          .map(CommitLogEntry::getHash);
+    } else {
+      return readCommitLogHashesStream(ctx, knownHead);
     }
   }
 
@@ -863,6 +886,7 @@ public abstract class AbstractDatabaseAdapter<
   protected abstract CommitLogEntry doFetchFromCommitLog(OP_CONTEXT ctx, Hash hash);
 
   @Override
+  @SuppressWarnings("MustBeClosedChecker")
   public Stream<CommitLogEntry> scanAllCommitLogEntries() {
     OP_CONTEXT ctx = borrowConnection();
     return doScanAllCommitLogEntries(ctx)
@@ -876,6 +900,7 @@ public abstract class AbstractDatabaseAdapter<
             });
   }
 
+  @MustBeClosed
   protected abstract Stream<CommitLogEntry> doScanAllCommitLogEntries(OP_CONTEXT c);
 
   /**
@@ -938,12 +963,14 @@ public abstract class AbstractDatabaseAdapter<
       OP_CONTEXT ctx, List<Hash> hashes);
 
   /** Reads from the commit-log starting at the given commit-log-hash. */
+  @MustBeClosed
   protected Stream<CommitLogEntry> readCommitLogStream(OP_CONTEXT ctx, Hash initialHash)
       throws ReferenceNotFoundException {
     Spliterator<CommitLogEntry> split = readCommitLog(ctx, initialHash, h -> null);
     return StreamSupport.stream(split, false);
   }
 
+  @MustBeClosed
   protected Stream<CommitLogEntry> readCommitLogStream(
       OP_CONTEXT ctx, Hash initialHash, @Nonnull Function<Hash, CommitLogEntry> inMemoryCommits)
       throws ReferenceNotFoundException {
@@ -980,6 +1007,7 @@ public abstract class AbstractDatabaseAdapter<
    * commit-log-entry hashes}, which can be taken from {@link CommitLogEntry#getParents()}, thus no
    * need to perform a read-operation against every hash.
    */
+  @MustBeClosed
   protected Stream<Hash> readCommitLogHashesStream(OP_CONTEXT ctx, Hash initialHash) {
     Spliterator<Hash> split = readCommitLogHashes(ctx, initialHash);
     return StreamSupport.stream(split, false);
@@ -1174,15 +1202,16 @@ public abstract class AbstractDatabaseAdapter<
 
     Set<Key> keysToEnhanceWithCommitId = new HashSet<>();
 
-    keysForCommitEntry(ctx, startHash, null, inMemoryCommits)
-        .forEach(
-            keyListEntry -> {
-              if (keyListEntry.getCommitId() == null) {
-                keysToEnhanceWithCommitId.add(keyListEntry.getKey());
-              } else {
-                buildState.add(keyListEntry);
-              }
-            });
+    try (Stream<KeyListEntry> keys = keysForCommitEntry(ctx, startHash, null, inMemoryCommits)) {
+      keys.forEach(
+          keyListEntry -> {
+            if (keyListEntry.getCommitId() == null) {
+              keysToEnhanceWithCommitId.add(keyListEntry.getKey());
+            } else {
+              buildState.add(keyListEntry);
+            }
+          });
+    }
 
     if (!keysToEnhanceWithCommitId.isEmpty()) {
       // Found KeyListEntry w/o commitId, need to add that information.
@@ -1279,12 +1308,14 @@ public abstract class AbstractDatabaseAdapter<
   }
 
   /** Retrieve the content-keys and their types for the commit-log-entry with the given hash. */
+  @MustBeClosed
   protected Stream<KeyListEntry> keysForCommitEntry(
       OP_CONTEXT ctx, Hash hash, KeyFilterPredicate keyFilter) throws ReferenceNotFoundException {
     return keysForCommitEntry(ctx, hash, keyFilter, h -> null);
   }
 
   /** Retrieve the content-keys and their types for the commit-log-entry with the given hash. */
+  @MustBeClosed
   protected Stream<KeyListEntry> keysForCommitEntry(
       OP_CONTEXT ctx,
       Hash hash,
@@ -1303,8 +1334,10 @@ public abstract class AbstractDatabaseAdapter<
     }
     Predicate<KeyListEntry> keyPredicate = predicate;
 
-    Stream<CommitLogEntry> log = readCommitLogStream(ctx, hash, inMemoryCommits);
-    log = takeUntilIncludeLast(log, CommitLogEntry::hasKeySummary);
+    @SuppressWarnings("MustBeClosedChecker")
+    Stream<CommitLogEntry> log =
+        takeUntilIncludeLast(
+            readCommitLogStream(ctx, hash, inMemoryCommits), CommitLogEntry::hasKeySummary);
     return log.flatMap(
         e -> {
 
@@ -1335,7 +1368,12 @@ public abstract class AbstractDatabaseAdapter<
 
               Stream<KeyListEntry> entities =
                   Stream.of(keyListIds)
-                      .flatMap(ids -> fetchKeyLists(ctx, ids))
+                      .flatMap(
+                          ids -> {
+                            @SuppressWarnings("MustBeClosedChecker")
+                            Stream<KeyListEntity> r = fetchKeyLists(ctx, ids);
+                            return r;
+                          })
                       .map(KeyListEntity::getKeys)
                       .map(KeyList::getKeys)
                       .flatMap(Collection::stream)
@@ -1399,8 +1437,8 @@ public abstract class AbstractDatabaseAdapter<
     // handles the 'Put` operations.
 
     AtomicBoolean keyListProcessed = new AtomicBoolean();
-    try (Stream<CommitLogEntry> log =
-        takeUntilExcludeLast(readCommitLogStream(ctx, refHead), e -> remainingKeys.isEmpty())) {
+    try (Stream<CommitLogEntry> baseLog = readCommitLogStream(ctx, refHead);
+        Stream<CommitLogEntry> log = takeUntilExcludeLast(baseLog, e -> remainingKeys.isEmpty())) {
       log.forEach(
           entry -> {
             commitLogEntryHandler.accept(entry);
@@ -1523,6 +1561,8 @@ public abstract class AbstractDatabaseAdapter<
     return keyListEntries;
   }
 
+  @MustBeClosed
+  @SuppressWarnings("MustBeClosedChecker")
   private Stream<KeyList> keyListsFromCommitLogEntry(OP_CONTEXT ctx, CommitLogEntry entry) {
     KeyList embeddedKeyList = entry.getKeyList();
 
@@ -1559,6 +1599,7 @@ public abstract class AbstractDatabaseAdapter<
       OP_CONTEXT ctx, Set<ContentId> contentIds) throws ReferenceNotFoundException;
 
   @VisibleForTesting
+  @MustBeClosed
   public final Stream<KeyListEntity> fetchKeyLists(OP_CONTEXT ctx, List<Hash> keyListsIds) {
     if (keyListsIds.isEmpty()) {
       return Stream.empty();
@@ -1568,6 +1609,7 @@ public abstract class AbstractDatabaseAdapter<
     }
   }
 
+  @MustBeClosed
   protected abstract Stream<KeyListEntity> doFetchKeyLists(OP_CONTEXT ctx, List<Hash> keyListsIds);
 
   /**
@@ -1642,45 +1684,46 @@ public abstract class AbstractDatabaseAdapter<
       throws ReferenceNotFoundException {
     ConflictingKeyCheckResult result = new ConflictingKeyCheckResult();
 
-    Stream<CommitLogEntry> log = readCommitLogStream(ctx, upToCommitIncluding);
-    log =
-        takeUntilExcludeLast(
-            log,
-            e -> {
-              if (e.getHash().equals(upToCommitIncluding)) {
-                result.headCommit = e;
-              }
-              if (e.getHash().equals(sinceCommitExcluding)) {
-                result.sinceSeen = true;
-                return true;
-              }
-              return false;
-            });
+    try (Stream<CommitLogEntry> commits = readCommitLogStream(ctx, upToCommitIncluding)) {
+      Stream<CommitLogEntry> log =
+          takeUntilExcludeLast(
+              commits,
+              e -> {
+                if (e.getHash().equals(upToCommitIncluding)) {
+                  result.headCommit = e;
+                }
+                if (e.getHash().equals(sinceCommitExcluding)) {
+                  result.sinceSeen = true;
+                  return true;
+                }
+                return false;
+              });
 
-    Set<Key> handled = new HashSet<>();
-    log.forEach(
-        e -> {
-          e.getPuts()
-              .forEach(
-                  a -> {
-                    if (keys.contains(a.getKey()) && handled.add(a.getKey())) {
-                      mismatches.accept(
-                          String.format(
-                              "Key '%s' has conflicting put-operation from commit '%s'.",
-                              a.getKey(), e.getHash().asString()));
-                    }
-                  });
-          e.getDeletes()
-              .forEach(
-                  a -> {
-                    if (keys.contains(a) && handled.add(a)) {
-                      mismatches.accept(
-                          String.format(
-                              "Key '%s' has conflicting delete-operation from commit '%s'.",
-                              a, e.getHash().asString()));
-                    }
-                  });
-        });
+      Set<Key> handled = new HashSet<>();
+      log.forEach(
+          e -> {
+            e.getPuts()
+                .forEach(
+                    a -> {
+                      if (keys.contains(a.getKey()) && handled.add(a.getKey())) {
+                        mismatches.accept(
+                            String.format(
+                                "Key '%s' has conflicting put-operation from commit '%s'.",
+                                a.getKey(), e.getHash().asString()));
+                      }
+                    });
+            e.getDeletes()
+                .forEach(
+                    a -> {
+                      if (keys.contains(a) && handled.add(a)) {
+                        mismatches.accept(
+                            String.format(
+                                "Key '%s' has conflicting delete-operation from commit '%s'.",
+                                a, e.getHash().asString()));
+                      }
+                    });
+          });
+    }
 
     return result;
   }
@@ -2081,6 +2124,7 @@ public abstract class AbstractDatabaseAdapter<
   protected abstract List<RefLog> doFetchPageFromRefLog(OP_CONTEXT ctx, List<Hash> hashes);
 
   /** Reads from the refLog starting at the given refLog-hash. */
+  @MustBeClosed
   protected Stream<RefLog> readRefLogStream(OP_CONTEXT ctx, Hash initialHash)
       throws RefLogNotFoundException {
     Spliterator<RefLog> split = readRefLog(ctx, initialHash);

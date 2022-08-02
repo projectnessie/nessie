@@ -43,6 +43,7 @@ import static org.projectnessie.versioned.persist.tx.TxDatabaseAdapter.OpResult.
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+import com.google.errorprone.annotations.MustBeClosed;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.UnsafeByteOperations;
@@ -178,6 +179,7 @@ public abstract class TxDatabaseAdapter
     ConnectionWrapper conn = borrowConnection();
     boolean failed = true;
     try {
+      @SuppressWarnings({"StreamResourceLeak", "MustBeClosedChecker"})
       Stream<CommitLogEntry> intLog = readCommitLogStream(conn, offset);
 
       failed = false;
@@ -190,6 +192,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
+  @SuppressWarnings("MustBeClosedChecker")
   public ReferenceInfo<ByteString> namedRef(String ref, GetNamedRefsParams params)
       throws ReferenceNotFoundException {
     Preconditions.checkNotNull(params, "Parameter for GetNamedRefsParams must not be null");
@@ -207,6 +210,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
+  @SuppressWarnings("MustBeClosedChecker")
   public Stream<ReferenceInfo<ByteString>> namedRefs(GetNamedRefsParams params)
       throws ReferenceNotFoundException {
     Preconditions.checkNotNull(params, "Parameter for GetNamedRefsParams must not be null.");
@@ -219,6 +223,7 @@ public abstract class TxDatabaseAdapter
 
       Hash defaultBranchHead = namedRefsDefaultBranchHead(conn, params);
 
+      @SuppressWarnings("StreamResourceLeak")
       Stream<ReferenceInfo<ByteString>> refs = fetchNamedRefs(conn);
 
       refs = namedRefsFilterAndEnhance(conn, params, defaultBranchHead, refs);
@@ -239,6 +244,7 @@ public abstract class TxDatabaseAdapter
     ConnectionWrapper conn = borrowConnection();
     boolean failed = true;
     try {
+      @SuppressWarnings({"StreamResourceLeak", "MustBeClosedChecker"})
       Stream<KeyListEntry> r = keysForCommitEntry(conn, commit, keyFilter);
       failed = false;
       return r.onClose(conn::close);
@@ -702,6 +708,7 @@ public abstract class TxDatabaseAdapter
     ConnectionWrapper conn = borrowConnection();
     boolean failed = true;
     try {
+      @SuppressWarnings("MustBeClosedChecker")
       Stream<RefLog> intLog = readRefLogStream(conn, offset);
       failed = false;
       return intLog.onClose(conn::close);
@@ -893,6 +900,7 @@ public abstract class TxDatabaseAdapter
     }
   }
 
+  @MustBeClosed
   protected Stream<ReferenceInfo<ByteString>> fetchNamedRefs(ConnectionWrapper conn) {
     return JdbcSelectSpliterator.buildStream(
         conn.conn(),
@@ -1756,6 +1764,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
+  @SuppressWarnings("MustBeClosedChecker")
   public Stream<ContentAttachment> mapToAttachment(Stream<ContentAttachmentKey> keys) {
     Iterator<ContentAttachmentKey> keysIter = keys.iterator();
     if (!keysIter.hasNext()) {
@@ -1787,6 +1796,8 @@ public abstract class TxDatabaseAdapter
     }
   }
 
+  @MustBeClosed
+  @SuppressWarnings("MustBeClosedChecker")
   private Stream<ContentAttachment> mapToAttachmentChunk(
       Stream<ContentAttachment> result, List<ContentAttachmentKey> batch, ConnectionWrapper conn) {
     ArrayList<ContentAttachmentKey> chunk = new ArrayList<>(batch);
@@ -1794,6 +1805,7 @@ public abstract class TxDatabaseAdapter
     return Stream.concat(result, Stream.of("").flatMap(x -> mapToAttachmentChunk(conn, chunk)));
   }
 
+  @MustBeClosed
   private Stream<ContentAttachment> mapToAttachmentChunk(
       ConnectionWrapper conn, List<ContentAttachmentKey> keysList) {
     String sql = sqlForManyPlaceholders(SqlStatements.SELECT_ATTACHMENTS, keysList.size());

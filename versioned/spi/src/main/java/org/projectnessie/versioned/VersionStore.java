@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned;
 
+import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -256,6 +257,7 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    *     ReferenceInfo}, see {@link ReferenceInfo} for details.
    * @return All refs and their associated hashes.
    */
+  @MustBeClosed
   Stream<ReferenceInfo<METADATA>> getNamedRefs(GetNamedRefsParams params)
       throws ReferenceNotFoundException;
 
@@ -267,6 +269,7 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @return A stream of commits.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
+  @MustBeClosed
   Stream<Commit<METADATA, VALUE>> getCommits(Ref ref, boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException;
 
@@ -277,6 +280,7 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @return The stream of keys available for this ref.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
+  @MustBeClosed
   Stream<KeyEntry<VALUE_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException;
 
   /**
@@ -306,6 +310,7 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @param to The to part of the diff.
    * @return A stream of values that are different.
    */
+  @MustBeClosed
   Stream<Diff<VALUE>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException;
 
   /**
@@ -314,5 +319,6 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @param refLogId initial reflog id to be used
    * @return A stream of reflog entries.
    */
+  @MustBeClosed
   Stream<RefLogDetails> getRefLog(Hash refLogId) throws RefLogNotFoundException;
 }

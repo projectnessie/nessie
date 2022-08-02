@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.persist.adapter;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.errorprone.annotations.MustBeClosed;
 import com.google.protobuf.ByteString;
 import java.util.Collection;
 import java.util.Map;
@@ -110,6 +111,7 @@ public interface DatabaseAdapter {
    * @return stream of {@link CommitLogEntry}s
    * @throws ReferenceNotFoundException if {@code offset} does not exist.
    */
+  @MustBeClosed
   Stream<CommitLogEntry> commitLog(Hash offset) throws ReferenceNotFoundException;
 
   /**
@@ -121,6 +123,7 @@ public interface DatabaseAdapter {
    * @return Ordered stream with content-keys, content-ids and content-types
    * @throws ReferenceNotFoundException if {@code commit} does not exist.
    */
+  @MustBeClosed
   Stream<KeyListEntry> keys(Hash commit, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException;
 
@@ -193,6 +196,7 @@ public interface DatabaseAdapter {
    *     ReferenceInfo}, see {@link ReferenceInfo} for details.
    * @return stream with all named references.
    */
+  @MustBeClosed
   Stream<ReferenceInfo<ByteString>> namedRefs(GetNamedRefsParams params)
       throws ReferenceNotFoundException;
 
@@ -251,6 +255,7 @@ public interface DatabaseAdapter {
    *     that were excluded via {@code keyFilter}
    * @throws ReferenceNotFoundException if {@code from} or {@code to} does not exist.
    */
+  @MustBeClosed
   Stream<Difference> diff(Hash from, Hash to, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException;
 
@@ -285,12 +290,14 @@ public interface DatabaseAdapter {
    * @return stream of {@link RefLog}s
    * @param offset initial reflog id to read from
    */
+  @MustBeClosed
   Stream<RefLog> refLog(Hash offset) throws RefLogNotFoundException;
 
   /**
    * Scan all commit log entries, no guarantees about order nor about the behavior when commits
    * happen while the returned {@link Stream} is consumed.
    */
+  @MustBeClosed
   Stream<CommitLogEntry> scanAllCommitLogEntries();
 
   /**
@@ -300,6 +307,7 @@ public interface DatabaseAdapter {
    * database adapter implementations allow this as a compromise. See {@link
    * #mapToAttachment(Stream)}, which only returns existing content attachments.
    */
+  @MustBeClosed
   Stream<ContentAttachmentKey> getAttachmentKeys(String contentId);
 
   /**
@@ -309,6 +317,7 @@ public interface DatabaseAdapter {
    * <p>Whether the input stream is "terminated" or "fluently" mapped, can vary between
    * implementations.
    */
+  @MustBeClosed
   Stream<ContentAttachment> mapToAttachment(Stream<ContentAttachmentKey> keys);
 
   /**
