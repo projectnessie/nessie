@@ -36,7 +36,6 @@ dependencies {
   implementation("com.google.guava:guava")
   api("io.rest-assured:rest-assured")
   implementation("com.google.code.findbugs:jsr305")
-  implementation(project(":nessie-servers-iceberg-fixtures"))
 
   api("org.assertj:assertj-core")
   api("org.junit.jupiter:junit-jupiter-api")

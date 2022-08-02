@@ -32,7 +32,6 @@ dependencies {
   api(project(":nessie-server-store-proto"))
   implementation(platform("com.fasterxml.jackson:jackson-bom"))
   implementation("com.fasterxml.jackson.core:jackson-databind")
-  implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-cbor")
   implementation("com.google.guava:guava")
 
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
@@ -43,7 +42,6 @@ dependencies {
   testImplementation(platform("org.junit:junit-bom"))
   testCompileOnly(platform("com.fasterxml.jackson:jackson-bom"))
 
-  testImplementation(project(":nessie-servers-iceberg-fixtures"))
   testImplementation("com.google.guava:guava")
   testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 

@@ -15,30 +15,4 @@
  */
 package org.projectnessie.model;
 
-public abstract class IcebergContent extends Content {
-
-  /** Constant for {@link GenericMetadata#getVariant()}. */
-  public static final String ICEBERG_METADATA_VARIANT = "iceberg";
-
-  // JSON field names - defined by Apache Iceberg spec (https://iceberg.apache.org/spec/)
-
-  public static final String CURRENT_VERSION_ID = "current-version-id";
-  public static final String VERSIONS = "versions";
-  public static final String VERSION_ID = "version-id";
-  public static final String VIEW_DEFINITION = "view-definition";
-  public static final String CURRENT_SNAPSHOT_ID = "current-snapshot-id";
-  public static final String CURRENT_SCHEMA_ID = "current-schema-id";
-  public static final String DEFAULT_SORT_ORDER_ID = "default-sort-order-id";
-  public static final String DEFAULT_SPEC_ID = "default-spec-id";
-  public static final String FORMAT_VERSION = "format-version";
-  public static final String SNAPSHOTS = "snapshots";
-  public static final String SNAPSHOT_ID = "snapshot-id";
-  public static final String SCHEMA = "schema";
-  public static final String SCHEMAS = "schemas";
-  public static final String SCHEMA_ID = "schema-id";
-  public static final String SORT_ORDERS = "sort-orders";
-  public static final String ORDER_ID = "order-id";
-  public static final String PARTITION_SPECS = "partition-specs";
-  public static final String SPEC_ID = "spec-id";
-  public static final String SQL = "sql";
-}
+public abstract class IcebergContent extends Content {}
