@@ -853,12 +853,11 @@ public abstract class TxDatabaseAdapter
             newTryLoopState(
                 opName,
                 ts ->
-                    repoDescUpdateConflictMessage(
-                        String.format(
-                            "%s after %d retries, %d ms",
-                            retryErrorMessage.get(),
-                            ts.getRetries(),
-                            ts.getDuration(TimeUnit.MILLISECONDS))),
+                    String.format(
+                        "%s after %d retries, %d ms",
+                        retryErrorMessage.get(),
+                        ts.getRetries(),
+                        ts.getDuration(TimeUnit.MILLISECONDS)),
                 this::tryLoopStateCompletion,
                 config)) {
       while (true) {
