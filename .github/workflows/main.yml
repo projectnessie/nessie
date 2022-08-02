@@ -19,7 +19,7 @@ on:
 jobs:
   java:
     name: Java/Maven
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       SPARK_LOCAL_IP: localhost
       MAVEN_USERNAME: ${{ secrets.OSSRH_ACCESS_ID }}
@@ -88,7 +88,7 @@ jobs:
 
   native:
     name: Java/Maven/Native
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
       - uses: actions/checkout@v3
@@ -120,7 +120,7 @@ jobs:
 
   jackson-tests:
     name: Jackson Integration Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
       - uses: actions/checkout@v3
@@ -158,7 +158,7 @@ jobs:
 
   python:
     name: Python
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       working-directory: ./python
     strategy:

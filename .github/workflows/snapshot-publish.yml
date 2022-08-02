@@ -13,7 +13,7 @@ concurrency:
 jobs:
   java:
     name: Publish from main
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       SPARK_LOCAL_IP: localhost
     if: github.repository_owner == 'projectnessie'
