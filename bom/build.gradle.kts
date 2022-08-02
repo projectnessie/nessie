@@ -30,6 +30,7 @@ dependencies {
     api(project(":nessie-compatibility-common"))
     api(project(":nessie-compatibility-tests"))
     api(project(":nessie-compatibility-jersey"))
+    api(project(":nessie-gc-base"))
     api(project(":nessie-model"))
     api(project(":nessie-jaxrs"))
     api(project(":nessie-jaxrs-testextension"))
