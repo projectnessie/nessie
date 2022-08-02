@@ -179,7 +179,7 @@ public abstract class TxDatabaseAdapter
     ConnectionWrapper conn = borrowConnection();
     boolean failed = true;
     try {
-      @SuppressWarnings({"StreamResourceLeak", "MustBeClosedChecker"})
+      @SuppressWarnings("MustBeClosedChecker")
       Stream<CommitLogEntry> intLog = readCommitLogStream(conn, offset);
 
       failed = false;
@@ -223,7 +223,7 @@ public abstract class TxDatabaseAdapter
 
       Hash defaultBranchHead = namedRefsDefaultBranchHead(conn, params);
 
-      @SuppressWarnings("StreamResourceLeak")
+      @SuppressWarnings("MustBeClosedChecker")
       Stream<ReferenceInfo<ByteString>> refs = fetchNamedRefs(conn);
 
       refs = namedRefsFilterAndEnhance(conn, params, defaultBranchHead, refs);
@@ -244,7 +244,7 @@ public abstract class TxDatabaseAdapter
     ConnectionWrapper conn = borrowConnection();
     boolean failed = true;
     try {
-      @SuppressWarnings({"StreamResourceLeak", "MustBeClosedChecker"})
+      @SuppressWarnings("MustBeClosedChecker")
       Stream<KeyListEntry> r = keysForCommitEntry(conn, commit, keyFilter);
       failed = false;
       return r.onClose(conn::close);

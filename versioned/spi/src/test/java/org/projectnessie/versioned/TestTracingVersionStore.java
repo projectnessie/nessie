@@ -54,7 +54,7 @@ class TestTracingVersionStore {
   // Implemented as a parameterized-tests with each set of arguments representing one version-store
   // invocation.
 
-  @SuppressWarnings({"StreamResourceLeak", "MustBeClosedChecker"})
+  @SuppressWarnings("MustBeClosedChecker")
   private static Stream<Arguments> versionStoreInvocations() {
     // Exception-throws to be tested, one list per distinct throws clause
     List<Exception> runtimeThrows =

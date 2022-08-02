@@ -36,7 +36,7 @@ import javax.annotation.Nonnull;
  * @param <VALUE> see {@link VersionStore}
  * @param <METADATA> see {@link VersionStore}
  */
-@SuppressWarnings({"StreamResourceLeak", "MustBeClosedChecker"})
+@SuppressWarnings("MustBeClosedChecker")
 public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
     implements VersionStore<VALUE, METADATA, VALUE_TYPE> {
 

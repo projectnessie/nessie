@@ -76,7 +76,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
     }
   }
 
-  @SuppressWarnings({"StreamResourceLeak", "MustBeClosedChecker"})
+  @SuppressWarnings("MustBeClosedChecker")
   static List<ReferenceNotFoundFunction> referenceNotFoundFunctions() {
     MetadataRewriter<CommitMessage> metadataRewriter =
         new MetadataRewriter<CommitMessage>() {

@@ -50,7 +50,7 @@ import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.adapter.RepoMaintenanceParams;
 import org.projectnessie.versioned.persist.adapter.TransplantParams;
 
-@SuppressWarnings({"StreamResourceLeak", "MustBeClosedChecker"})
+@SuppressWarnings("MustBeClosedChecker")
 public final class TracingDatabaseAdapter implements DatabaseAdapter {
   private static final String TAG_COUNT = "count";
   private static final String TAG_REF = "ref";
