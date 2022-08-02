@@ -173,7 +173,6 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   @Override
-  @SuppressWarnings("MustBeClosedChecker")
   public ReferenceInfo<ByteString> namedRef(String ref, GetNamedRefsParams params)
       throws ReferenceNotFoundException {
     Preconditions.checkNotNull(params, "Parameter for GetNamedRefsParams must not be null");
@@ -185,13 +184,14 @@ public abstract class NonTransactionalDatabaseAdapter<
 
     Stream<ReferenceInfo<ByteString>> refs = Stream.of(refHead);
 
-    return namedRefsFilterAndEnhance(ctx, params, defaultBranchHead, refs)
-        .findFirst()
-        .orElseThrow(() -> referenceNotFound(ref));
+    try (Stream<ReferenceInfo<ByteString>> refStream =
+        namedRefsFilterAndEnhance(ctx, params, defaultBranchHead, refs)) {
+      return refStream.findFirst().orElseThrow(() -> referenceNotFound(ref));
+    }
   }
 
   @Override
-  @SuppressWarnings("MustBeClosedChecker")
+  @MustBeClosed
   public Stream<ReferenceInfo<ByteString>> namedRefs(GetNamedRefsParams params)
       throws ReferenceNotFoundException {
     Preconditions.checkNotNull(params, "Parameter for GetNamedRefsParams must not be null.");
@@ -200,6 +200,7 @@ public abstract class NonTransactionalDatabaseAdapter<
 
     NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
 
+    @SuppressWarnings("MustBeClosedChecker")
     Stream<ReferenceInfo<ByteString>> refs =
         fetchNamedReferences(ctx)
             .map(NonTransactionalDatabaseAdapter::namedReferenceToReferenceInfo);
@@ -525,6 +526,7 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   @Override
+  @MustBeClosed
   public Stream<Difference> diff(Hash from, Hash to, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
     return buildDiff(NON_TRANSACTIONAL_OPERATION_CONTEXT, from, to, keyFilter);

@@ -594,6 +594,7 @@ public abstract class AbstractDatabaseAdapter<
    * @param keyFilter optional filter on key + content-id + content-type
    * @return computed difference
    */
+  @MustBeClosed
   protected Stream<Difference> buildDiff(
       OP_CONTEXT ctx, Hash from, Hash to, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
@@ -852,7 +853,6 @@ public abstract class AbstractDatabaseAdapter<
   }
 
   @MustBeClosed
-  @SuppressWarnings("MustBeClosedChecker")
   private Stream<Hash> commitsForHashOnRef(
       OP_CONTEXT ctx, Hash knownHead, Consumer<CommitLogEntry> commitLogVisitor)
       throws ReferenceNotFoundException {
@@ -1562,7 +1562,6 @@ public abstract class AbstractDatabaseAdapter<
   }
 
   @MustBeClosed
-  @SuppressWarnings("MustBeClosedChecker")
   private Stream<KeyList> keyListsFromCommitLogEntry(OP_CONTEXT ctx, CommitLogEntry entry) {
     KeyList embeddedKeyList = entry.getKeyList();
 
@@ -1575,7 +1574,12 @@ public abstract class AbstractDatabaseAdapter<
               Stream.of(entry.getKeyList()),
               Stream.of(keyListIds)
                   // lazy fetch
-                  .flatMap(ids -> fetchKeyLists(ctx, ids).map(KeyListEntity::getKeys)));
+                  .flatMap(
+                      ids -> {
+                        @SuppressWarnings("MustBeClosedChecker")
+                        Stream<KeyList> r = fetchKeyLists(ctx, ids).map(KeyListEntity::getKeys);
+                        return r;
+                      }));
     }
 
     return keyList;

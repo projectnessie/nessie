@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.persist.store;
 
 import com.google.common.base.Preconditions;
+import com.google.errorprone.annotations.MustBeClosed;
 import com.google.protobuf.ByteString;
 import java.util.Collection;
 import java.util.Collections;
@@ -321,7 +322,7 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   }
 
   @Override
-  @SuppressWarnings("MustBeClosedChecker")
+  @MustBeClosed
   public Stream<ReferenceInfo<METADATA>> getNamedRefs(GetNamedRefsParams params)
       throws ReferenceNotFoundException {
     return databaseAdapter
@@ -340,24 +341,25 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   }
 
   @Override
-  @SuppressWarnings("MustBeClosedChecker")
+  @MustBeClosed
   public Stream<Commit<METADATA, CONTENT>> getCommits(Ref ref, boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException {
     Hash hash = refToHash(ref);
-    Stream<CommitLogEntry> stream = databaseAdapter.commitLog(hash);
 
     BiConsumer<ImmutableCommit.Builder<METADATA, CONTENT>, CommitLogEntry> enhancer =
         enhancerForCommitLog(fetchAdditionalInfo);
 
-    return stream.map(
-        e -> {
-          ImmutableCommit.Builder<METADATA, CONTENT> commit =
-              Commit.<METADATA, CONTENT>builder()
-                  .hash(e.getHash())
-                  .commitMeta(deserializeMetadata(e.getMetadata()));
-          enhancer.accept(commit, e);
-          return commit.build();
-        });
+    return databaseAdapter
+        .commitLog(hash)
+        .map(
+            e -> {
+              ImmutableCommit.Builder<METADATA, CONTENT> commit =
+                  Commit.<METADATA, CONTENT>builder()
+                      .hash(e.getHash())
+                      .commitMeta(deserializeMetadata(e.getMetadata()));
+              enhancer.accept(commit, e);
+              return commit.build();
+            });
   }
 
   /**
@@ -407,7 +409,7 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   }
 
   @Override
-  @SuppressWarnings("MustBeClosedChecker")
+  @MustBeClosed
   public Stream<KeyEntry<CONTENT_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException {
     Hash hash = refToHash(ref);
     return databaseAdapter
@@ -439,7 +441,7 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   }
 
   @Override
-  @SuppressWarnings("MustBeClosedChecker")
+  @MustBeClosed
   public Stream<Diff<CONTENT>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
     Hash fromHash = refToHash(from);
     Hash toHash = refToHash(to);
@@ -476,7 +478,7 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   }
 
   @Override
-  @SuppressWarnings("MustBeClosedChecker")
+  @MustBeClosed
   public Stream<RefLogDetails> getRefLog(Hash refLogId) throws RefLogNotFoundException {
     return databaseAdapter
         .refLog(refLogId)

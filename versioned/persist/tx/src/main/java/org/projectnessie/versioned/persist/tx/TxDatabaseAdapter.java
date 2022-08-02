@@ -176,23 +176,10 @@ public abstract class TxDatabaseAdapter
 
   @Override
   public Stream<CommitLogEntry> commitLog(Hash offset) throws ReferenceNotFoundException {
-    ConnectionWrapper conn = borrowConnection();
-    boolean failed = true;
-    try {
-      @SuppressWarnings("MustBeClosedChecker")
-      Stream<CommitLogEntry> intLog = readCommitLogStream(conn, offset);
-
-      failed = false;
-      return intLog.onClose(conn::close);
-    } finally {
-      if (failed) {
-        conn.close();
-      }
-    }
+    return withConnectionWrapper(conn -> readCommitLogStream(conn, offset));
   }
 
   @Override
-  @SuppressWarnings("MustBeClosedChecker")
   public ReferenceInfo<ByteString> namedRef(String ref, GetNamedRefsParams params)
       throws ReferenceNotFoundException {
     Preconditions.checkNotNull(params, "Parameter for GetNamedRefsParams must not be null");
@@ -203,56 +190,35 @@ public abstract class TxDatabaseAdapter
 
       Stream<ReferenceInfo<ByteString>> refs = Stream.of(refInfo);
 
-      return namedRefsFilterAndEnhance(conn, params, defaultBranchHead, refs)
-          .findFirst()
-          .orElseThrow(() -> referenceNotFound(ref));
+      try (Stream<ReferenceInfo<ByteString>> namedRefs =
+          namedRefsFilterAndEnhance(conn, params, defaultBranchHead, refs)) {
+        return namedRefs.findFirst().orElseThrow(() -> referenceNotFound(ref));
+      }
     }
   }
 
   @Override
-  @SuppressWarnings("MustBeClosedChecker")
   public Stream<ReferenceInfo<ByteString>> namedRefs(GetNamedRefsParams params)
       throws ReferenceNotFoundException {
     Preconditions.checkNotNull(params, "Parameter for GetNamedRefsParams must not be null.");
     Preconditions.checkArgument(
         namedRefsAnyRetrieves(params), "Must retrieve branches or tags or both.");
 
-    ConnectionWrapper conn = borrowConnection();
-    boolean failed = true;
-    try {
+    return withConnectionWrapper(
+        conn -> {
+          Hash defaultBranchHead = namedRefsDefaultBranchHead(conn, params);
 
-      Hash defaultBranchHead = namedRefsDefaultBranchHead(conn, params);
+          @SuppressWarnings("MustBeClosedChecker")
+          Stream<ReferenceInfo<ByteString>> refs = fetchNamedRefs(conn);
 
-      @SuppressWarnings("MustBeClosedChecker")
-      Stream<ReferenceInfo<ByteString>> refs = fetchNamedRefs(conn);
-
-      refs = namedRefsFilterAndEnhance(conn, params, defaultBranchHead, refs);
-
-      failed = false;
-
-      return refs.onClose(conn::close);
-    } finally {
-      if (failed) {
-        conn.close();
-      }
-    }
+          return namedRefsFilterAndEnhance(conn, params, defaultBranchHead, refs);
+        });
   }
 
   @Override
   public Stream<KeyListEntry> keys(Hash commit, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
-    ConnectionWrapper conn = borrowConnection();
-    boolean failed = true;
-    try {
-      @SuppressWarnings("MustBeClosedChecker")
-      Stream<KeyListEntry> r = keysForCommitEntry(conn, commit, keyFilter);
-      failed = false;
-      return r.onClose(conn::close);
-    } finally {
-      if (failed) {
-        conn.close();
-      }
-    }
+    return withConnectionWrapper(conn -> keysForCommitEntry(conn, commit, keyFilter));
   }
 
   @Override
@@ -584,17 +550,7 @@ public abstract class TxDatabaseAdapter
   @Override
   public Stream<Difference> diff(Hash from, Hash to, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
-    ConnectionWrapper conn = borrowConnection();
-    boolean failed = true;
-    try {
-      Stream<Difference> r = buildDiff(conn, from, to, keyFilter);
-      failed = false;
-      return r.onClose(conn::close);
-    } finally {
-      if (failed) {
-        conn.close();
-      }
-    }
+    return withConnectionWrapper(conn -> buildDiff(conn, from, to, keyFilter));
   }
 
   @Override
@@ -705,18 +661,7 @@ public abstract class TxDatabaseAdapter
 
   @Override
   public Stream<RefLog> refLog(Hash offset) throws RefLogNotFoundException {
-    ConnectionWrapper conn = borrowConnection();
-    boolean failed = true;
-    try {
-      @SuppressWarnings("MustBeClosedChecker")
-      Stream<RefLog> intLog = readRefLogStream(conn, offset);
-      failed = false;
-      return intLog.onClose(conn::close);
-    } finally {
-      if (failed) {
-        conn.close();
-      }
-    }
+    return withConnectionWrapper(conn -> readRefLogStream(conn, offset));
   }
 
   @Override
@@ -1764,48 +1709,41 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  @SuppressWarnings("MustBeClosedChecker")
   public Stream<ContentAttachment> mapToAttachment(Stream<ContentAttachmentKey> keys) {
     Iterator<ContentAttachmentKey> keysIter = keys.iterator();
     if (!keysIter.hasNext()) {
       return Stream.empty();
     }
-    Stream<ContentAttachment> result = Stream.empty();
-    ConnectionWrapper conn = borrowConnection();
-    boolean failed = true;
-    try {
-      int chunkSize = config.getAttachmentKeysBatchSize();
-      List<ContentAttachmentKey> batch = new ArrayList<>(chunkSize);
 
-      while (keysIter.hasNext()) {
-        batch.add(keysIter.next());
-        if (batch.size() == chunkSize) {
-          result = mapToAttachmentChunk(result, batch, conn);
-          batch.clear();
-        }
-      }
-      if (!batch.isEmpty()) {
-        result = mapToAttachmentChunk(result, batch, conn);
-      }
-      failed = false;
-      return result.onClose(conn::close);
-    } finally {
-      if (failed) {
-        conn.close();
-      }
-    }
+    return withConnectionWrapper(
+        conn -> {
+          Stream<ContentAttachment> result = Stream.empty();
+
+          int chunkSize = config.getAttachmentKeysBatchSize();
+          List<ContentAttachmentKey> batch = new ArrayList<>(chunkSize);
+
+          while (keysIter.hasNext()) {
+            batch.add(keysIter.next());
+            if (batch.size() == chunkSize) {
+              result = Stream.concat(result, mapToAttachmentChunk(batch, conn));
+              batch.clear();
+            }
+          }
+          if (!batch.isEmpty()) {
+            result = Stream.concat(result, mapToAttachmentChunk(batch, conn));
+          }
+
+          return result;
+        });
   }
 
-  @MustBeClosed
-  @SuppressWarnings("MustBeClosedChecker")
   private Stream<ContentAttachment> mapToAttachmentChunk(
-      Stream<ContentAttachment> result, List<ContentAttachmentKey> batch, ConnectionWrapper conn) {
+      List<ContentAttachmentKey> batch, ConnectionWrapper conn) {
     ArrayList<ContentAttachmentKey> chunk = new ArrayList<>(batch);
     // flatMap() used here to lazily load chunks
-    return Stream.concat(result, Stream.of("").flatMap(x -> mapToAttachmentChunk(conn, chunk)));
+    return Stream.of("").flatMap(x -> mapToAttachmentChunk(conn, chunk));
   }
 
-  @MustBeClosed
   private Stream<ContentAttachment> mapToAttachmentChunk(
       ConnectionWrapper conn, List<ContentAttachmentKey> keysList) {
     String sql = sqlForManyPlaceholders(SqlStatements.SELECT_ATTACHMENTS, keysList.size());
@@ -1927,6 +1865,28 @@ public abstract class TxDatabaseAdapter
       conn.commit();
     } catch (SQLException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  @FunctionalInterface
+  interface ThrowingStreamResult<R, E extends Exception> {
+    @MustBeClosed
+    Stream<R> process(ConnectionWrapper conn) throws E;
+  }
+
+  private <R, E extends Exception> Stream<R> withConnectionWrapper(ThrowingStreamResult<R, E> x)
+      throws E {
+    ConnectionWrapper conn = borrowConnection();
+    boolean failed = true;
+    try {
+      @SuppressWarnings("MustBeClosedChecker")
+      Stream<R> r = x.process(conn);
+      failed = false;
+      return r.onClose(conn::close);
+    } finally {
+      if (failed) {
+        conn.close();
+      }
     }
   }
 }
