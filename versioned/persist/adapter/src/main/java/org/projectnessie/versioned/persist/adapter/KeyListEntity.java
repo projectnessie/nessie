@@ -24,11 +24,13 @@ import org.projectnessie.versioned.Hash;
  */
 @Value.Immutable
 public interface KeyListEntity {
+  @Value.Parameter(order = 1)
   Hash getId();
 
+  @Value.Parameter(order = 2)
   KeyList getKeys();
 
   static KeyListEntity of(Hash id, KeyList keys) {
-    return ImmutableKeyListEntity.builder().id(id).keys(keys).build();
+    return ImmutableKeyListEntity.of(id, keys);
   }
 }

@@ -56,11 +56,10 @@ public class DiffApiImpl extends BaseApiImpl implements DiffApi {
         diffs
             .map(
                 diff ->
-                    ImmutableDiffEntry.builder()
-                        .key(ContentKey.of(diff.getKey().getElements()))
-                        .from(diff.getFromValue().orElse(null))
-                        .to(diff.getToValue().orElse(null))
-                        .build())
+                    ImmutableDiffEntry.of(
+                        ContentKey.of(diff.getKey().getElements()),
+                        diff.getFromValue().orElse(null),
+                        diff.getToValue().orElse(null)))
             .forEach(builder::addDiffs);
       }
 

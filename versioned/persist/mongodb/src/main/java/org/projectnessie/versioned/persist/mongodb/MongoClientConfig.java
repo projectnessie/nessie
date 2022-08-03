@@ -24,7 +24,7 @@ import org.projectnessie.versioned.persist.adapter.DatabaseConnectionConfig;
 public interface MongoClientConfig extends DatabaseConnectionConfig {
 
   static MongoClientConfig of(MongoClient client) {
-    return ImmutableMongoClientConfig.builder().client(client).build();
+    return ImmutableMongoClientConfig.of(client);
   }
 
   @Nullable
@@ -38,6 +38,7 @@ public interface MongoClientConfig extends DatabaseConnectionConfig {
   MongoClientConfig withDatabaseName(String databaseName);
 
   @Nullable
+  @Value.Parameter(order = 1)
   MongoClient getClient();
 
   MongoClientConfig withClient(MongoClient client);

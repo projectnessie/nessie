@@ -21,6 +21,8 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import javax.annotation.Nullable;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Pattern;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
@@ -32,9 +34,15 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableTag.class)
 @JsonTypeName("TAG")
 public interface Tag extends Reference {
+  @Override
+  @NotBlank
+  @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+  @Value.Parameter(order = 1)
+  String getName();
 
   @Override
   @Nullable
+  @Value.Parameter(order = 2)
   String getHash();
 
   /**
@@ -55,6 +63,6 @@ public interface Tag extends Reference {
   }
 
   static Tag of(String name, String hash) {
-    return builder().name(name).hash(hash).build();
+    return ImmutableTag.of(name, hash);
   }
 }

@@ -66,8 +66,10 @@ public interface BaseMergeTransplant {
   @JsonSerialize(as = ImmutableMergeKeyBehavior.class)
   @JsonDeserialize(as = ImmutableMergeKeyBehavior.class)
   interface MergeKeyBehavior {
+    @Value.Parameter(order = 1)
     ContentKey getKey();
 
+    @Value.Parameter(order = 2)
     MergeBehavior getMergeBehavior();
 
     static ImmutableMergeKeyBehavior.Builder builder() {
@@ -75,7 +77,7 @@ public interface BaseMergeTransplant {
     }
 
     static MergeKeyBehavior of(ContentKey key, MergeBehavior mergeBehavior) {
-      return builder().key(key).mergeBehavior(mergeBehavior).build();
+      return ImmutableMergeKeyBehavior.of(key, mergeBehavior);
     }
   }
 

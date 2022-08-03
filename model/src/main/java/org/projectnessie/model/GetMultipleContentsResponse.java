@@ -30,10 +30,11 @@ import org.immutables.value.Value;
 public interface GetMultipleContentsResponse {
 
   @NotNull
+  @Value.Parameter(order = 1)
   List<ContentWithKey> getContents();
 
   static GetMultipleContentsResponse of(List<ContentWithKey> items) {
-    return ImmutableGetMultipleContentsResponse.builder().addAllContents(items).build();
+    return ImmutableGetMultipleContentsResponse.of(items);
   }
 
   @Value.Immutable
@@ -42,13 +43,15 @@ public interface GetMultipleContentsResponse {
   interface ContentWithKey {
 
     @NotNull
+    @Value.Parameter(order = 1)
     ContentKey getKey();
 
     @NotNull
+    @Value.Parameter(order = 2)
     Content getContent();
 
     static ContentWithKey of(ContentKey key, Content content) {
-      return ImmutableContentWithKey.builder().key(key).content(content).build();
+      return ImmutableContentWithKey.of(key, content);
     }
   }
 }

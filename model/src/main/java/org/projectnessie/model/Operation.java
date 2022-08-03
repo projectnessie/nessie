@@ -46,6 +46,7 @@ import org.immutables.value.Value;
 public interface Operation {
 
   @NotNull
+  @Value.Parameter(order = 1)
   ContentKey getKey();
 
   @Schema(
@@ -60,22 +61,25 @@ public interface Operation {
   @JsonDeserialize(as = ImmutablePut.class)
   @JsonTypeName("PUT")
   interface Put extends Operation {
+    @Override
     @NotNull
+    @Value.Parameter(order = 1)
+    ContentKey getKey();
+
+    @NotNull
+    @Value.Parameter(order = 2)
     Content getContent();
 
     @Nullable
+    @Value.Parameter(order = 3)
     Content getExpectedContent();
 
     static Put of(ContentKey key, Content content) {
-      return ImmutablePut.builder().key(key).content(content).build();
+      return ImmutablePut.of(key, content, null);
     }
 
     static Put of(ContentKey key, Content content, Content expectedContent) {
-      return ImmutablePut.builder()
-          .key(key)
-          .content(content)
-          .expectedContent(expectedContent)
-          .build();
+      return ImmutablePut.of(key, content, expectedContent);
     }
   }
 
@@ -86,7 +90,7 @@ public interface Operation {
   interface Delete extends Operation {
 
     static Delete of(ContentKey key) {
-      return ImmutableDelete.builder().key(key).build();
+      return ImmutableDelete.of(key);
     }
   }
 
@@ -97,7 +101,7 @@ public interface Operation {
   interface Unchanged extends Operation {
 
     static Unchanged of(ContentKey key) {
-      return ImmutableUnchanged.builder().key(key).build();
+      return ImmutableUnchanged.of(key);
     }
   }
 }

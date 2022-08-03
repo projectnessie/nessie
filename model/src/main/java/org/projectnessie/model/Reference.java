@@ -57,10 +57,12 @@ public interface Reference extends Base {
   /** Human-readable reference name. */
   @NotBlank
   @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+  @Value.Parameter(order = 1)
   String getName();
 
   /** backend system id. Usually the 32-byte hash of the commit this reference points to. */
   @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+  @Value.Parameter(order = 2)
   String getHash();
 
   /** Validation rule using {@link org.projectnessie.model.Validation#validateHash(String)}. */

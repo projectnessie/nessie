@@ -31,6 +31,13 @@ public interface GetNamedRefsParams {
     return ImmutableGetNamedRefsParams.builder();
   }
 
+  static GetNamedRefsParams of(
+      NamedRef baseReference,
+      RetrieveOptions branchRetrieveOptions,
+      RetrieveOptions tagRetrieveOptions) {
+    return ImmutableGetNamedRefsParams.of(baseReference, branchRetrieveOptions, tagRetrieveOptions);
+  }
+
   /**
    * Named reference to use as the base for the computation of {@link
    * ReferenceInfo#getAheadBehind()}. If this parameter is not {@code null}, the given reference
@@ -39,16 +46,19 @@ public interface GetNamedRefsParams {
    * @return name of the base reference. Can be {@code null}, if not needed.
    */
   @Nullable
+  @Value.Parameter(order = 1)
   NamedRef getBaseReference();
 
   /** Whether to retrieve branches, defaults to {@code true}. */
   @Value.Default
+  @Value.Parameter(order = 2)
   default RetrieveOptions getBranchRetrieveOptions() {
     return RetrieveOptions.BARE;
   }
 
   /** Whether to retrieve tags, defaults to {@code true}. */
   @Value.Default
+  @Value.Parameter(order = 3)
   default RetrieveOptions getTagRetrieveOptions() {
     return RetrieveOptions.BARE;
   }

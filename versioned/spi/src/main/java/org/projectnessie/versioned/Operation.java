@@ -30,5 +30,6 @@ public interface Operation {
   }
 
   /** The key for this operation. */
+  @Value.Parameter(order = 1)
   Key getKey();
 }

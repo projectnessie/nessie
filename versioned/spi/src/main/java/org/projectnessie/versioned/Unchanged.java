@@ -40,6 +40,6 @@ public interface Unchanged extends Operation {
    */
   @Nonnull
   static Unchanged of(@Nonnull Key key) {
-    return ImmutableUnchanged.builder().key(key).build();
+    return ImmutableUnchanged.of(key);
   }
 }

@@ -22,9 +22,10 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 public interface ProvidedDynamoClientConfig extends DynamoClientConfig {
 
   static ProvidedDynamoClientConfig of(DynamoDbClient db) {
-    return ImmutableProvidedDynamoClientConfig.builder().dynamoDbClient(db).build();
+    return ImmutableProvidedDynamoClientConfig.of(db);
   }
 
+  @Value.Parameter(order = 1)
   DynamoDbClient getDynamoDbClient();
 
   ProvidedDynamoClientConfig withDynamoDbClient(DynamoDbClient dynamoDbClient);

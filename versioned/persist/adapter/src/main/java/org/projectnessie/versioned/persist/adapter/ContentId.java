@@ -22,9 +22,10 @@ import org.immutables.value.Value;
 public abstract class ContentId {
   public static ContentId of(String id) {
     Objects.requireNonNull(id);
-    return ImmutableContentId.builder().id(id).build();
+    return ImmutableContentId.of(id);
   }
 
+  @Value.Parameter(order = 1)
   public abstract String getId();
 
   @Override

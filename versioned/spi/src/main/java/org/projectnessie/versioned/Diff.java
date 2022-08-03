@@ -16,19 +16,22 @@
 package org.projectnessie.versioned;
 
 import java.util.Optional;
-import org.immutables.value.Value.Immutable;
+import org.immutables.value.Value;
 import org.projectnessie.model.Content;
 
-@Immutable
+@Value.Immutable
 public interface Diff {
 
+  @Value.Parameter(order = 1)
   Key getKey();
 
+  @Value.Parameter(order = 2)
   Optional<Content> getFromValue();
 
+  @Value.Parameter(order = 3)
   Optional<Content> getToValue();
 
   static Diff of(Key key, Optional<Content> from, Optional<Content> to) {
-    return ImmutableDiff.builder().key(key).fromValue(from).toValue(to).build();
+    return ImmutableDiff.of(key, from, to);
   }
 }

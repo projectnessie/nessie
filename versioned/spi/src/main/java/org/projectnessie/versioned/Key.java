@@ -16,6 +16,7 @@
 package org.projectnessie.versioned;
 
 import com.google.common.base.Preconditions;
+import java.util.Arrays;
 import java.util.List;
 import org.immutables.value.Value;
 
@@ -28,6 +29,7 @@ public abstract class Key implements Comparable<Key> {
   /** Maximum number of elemengts. */
   public static final int MAX_ELEMENTS = 20;
 
+  @Value.Parameter(order = 1)
   public abstract List<String> getElements();
 
   static ImmutableKey.Builder builder() {
@@ -72,11 +74,11 @@ public abstract class Key implements Comparable<Key> {
   }
 
   public static Key of(String... elements) {
-    return ImmutableKey.builder().addElements(elements).build();
+    return ImmutableKey.of(Arrays.asList(elements));
   }
 
   public static Key of(List<String> elements) {
-    return ImmutableKey.builder().addAllElements(elements).build();
+    return ImmutableKey.of(elements);
   }
 
   @Value.Check

@@ -24,19 +24,41 @@ import org.projectnessie.versioned.NamedRef;
 /** Describes a check operation. */
 @Value.Immutable
 public interface Check {
+  @Value.Parameter(order = 1)
   CheckType type();
 
   @Nullable
+  @Value.Parameter(order = 2)
   NamedRef ref();
 
   @Nullable
+  @Value.Parameter(order = 3)
   ContentKey key();
 
   @Nullable
+  @Value.Parameter(order = 4)
   String contentId();
 
   @Nullable
+  @Value.Parameter(order = 5)
   Content.Type contentType();
+
+  static Check of(CheckType type) {
+    return of(type, null);
+  }
+
+  static Check of(CheckType type, NamedRef ref) {
+    return of(type, ref, null, null);
+  }
+
+  static Check of(CheckType type, NamedRef ref, ContentKey key, String contentId) {
+    return of(type, ref, key, contentId, null);
+  }
+
+  static Check of(
+      CheckType type, NamedRef ref, ContentKey key, String contentId, Content.Type contentType) {
+    return ImmutableCheck.of(type, ref, key, contentId, contentType);
+  }
 
   static ImmutableCheck.Builder builder(CheckType type) {
     return ImmutableCheck.builder().type(type);

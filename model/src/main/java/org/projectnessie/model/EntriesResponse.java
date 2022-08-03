@@ -31,6 +31,7 @@ public interface EntriesResponse extends PaginatedResponse {
   }
 
   @NotNull
+  @Value.Parameter(order = 1)
   List<Entry> getEntries();
 
   @Value.Immutable
@@ -42,10 +43,16 @@ public interface EntriesResponse extends PaginatedResponse {
       return ImmutableEntry.builder();
     }
 
+    static Entry of(Content.Type type, ContentKey name) {
+      return ImmutableEntry.of(type, name);
+    }
+
     @NotNull
+    @Value.Parameter(order = 1)
     Content.Type getType();
 
     @NotNull
+    @Value.Parameter(order = 2)
     ContentKey getName();
   }
 }

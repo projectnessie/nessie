@@ -69,12 +69,15 @@ public class ContentApiImpl extends BaseApiImpl implements ContentApi {
       List<Key> internalKeys =
           externalKeys.stream().map(ContentApiImpl::toKey).collect(Collectors.toList());
       Map<Key, Content> values = getStore().getValues(ref.getHash(), internalKeys);
-      List<ContentWithKey> output =
-          values.entrySet().stream()
-              .map(e -> ContentWithKey.of(toContentKey(e.getKey()), e.getValue()))
-              .collect(Collectors.toList());
 
-      return ImmutableGetMultipleContentsResponse.builder().contents(output).build();
+      ImmutableGetMultipleContentsResponse.Builder response =
+          ImmutableGetMultipleContentsResponse.builder();
+
+      values.entrySet().stream()
+          .map(e -> ContentWithKey.of(toContentKey(e.getKey()), e.getValue()))
+          .forEach(response::addContents);
+
+      return response.build();
     } catch (ReferenceNotFoundException ex) {
       throw new NessieReferenceNotFoundException(ex.getMessage(), ex);
     }

@@ -25,14 +25,17 @@ public interface ContentAttachmentKey {
 
   /** Content ID to which the binary object identified by this key belongs to. */
   @NotBlank
+  @Value.Parameter(order = 1)
   String getContentId();
 
   /** The object type, for example {@code snapshot} or {@code schema}. */
   @NotBlank
+  @Value.Parameter(order = 2)
   String getAttachmentType();
 
   /** The object ID, for example the snapshot-ID or schema-ID. */
   @NotBlank
+  @Value.Parameter(order = 3)
   String getAttachmentId();
 
   @Value.Check
@@ -53,11 +56,7 @@ public interface ContentAttachmentKey {
   }
 
   static ContentAttachmentKey of(String contentId, String attachmentType, String attachmentId) {
-    return builder()
-        .contentId(contentId)
-        .attachmentType(attachmentType)
-        .attachmentId(attachmentId)
-        .build();
+    return ImmutableContentAttachmentKey.of(contentId, attachmentType, attachmentId);
   }
 
   default String asString() {

@@ -26,9 +26,11 @@ import org.immutables.value.Value;
 public interface WithHash<T> {
 
   /** Get the value of the hash associated with this commit. */
+  @Value.Parameter(order = 1)
   Hash getHash();
 
   /** Get the value this object wraps. */
+  @Value.Parameter(order = 2)
   T getValue();
 
   /**
@@ -40,6 +42,6 @@ public interface WithHash<T> {
    * @return A new WithHash object.
    */
   public static <T> WithHash<T> of(Hash hash, T value) {
-    return ImmutableWithHash.<T>builder().hash(hash).value(value).build();
+    return ImmutableWithHash.of(hash, value);
   }
 }

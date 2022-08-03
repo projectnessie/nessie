@@ -22,10 +22,13 @@ import org.projectnessie.model.Content;
 public interface KeyEntry {
 
   /** Get the type of this entity. */
+  @Value.Parameter(order = 1)
   Content.Type getType();
 
+  @Value.Parameter(order = 1)
   Key getKey();
 
+  @Value.Parameter(order = 1)
   String getContentId();
 
   static ImmutableKeyEntry.Builder builder() {
@@ -33,6 +36,6 @@ public interface KeyEntry {
   }
 
   static KeyEntry of(Content.Type type, Key key, String contentId) {
-    return builder().type(type).key(key).contentId(contentId).build();
+    return ImmutableKeyEntry.of(type, key, contentId);
   }
 }

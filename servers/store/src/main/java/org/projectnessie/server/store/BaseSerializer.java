@@ -22,12 +22,12 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.DeltaLakeTable;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
-import org.projectnessie.model.ImmutableIcebergTable;
-import org.projectnessie.model.ImmutableIcebergView;
 import org.projectnessie.model.ImmutableNamespace;
+import org.projectnessie.model.Namespace;
 import org.projectnessie.server.store.proto.ObjectTypes;
 import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.ContentAttachmentKey;
@@ -65,7 +65,7 @@ abstract class BaseSerializer<C extends Content> implements ContentSerializer<C>
   protected abstract C valueFromStore(
       ObjectTypes.Content content, Supplier<ByteString> globalState);
 
-  static ImmutableDeltaLakeTable valueFromStoreDeltaLakeTable(ObjectTypes.Content content) {
+  static DeltaLakeTable valueFromStoreDeltaLakeTable(ObjectTypes.Content content) {
     ObjectTypes.DeltaLakeTable deltaLakeTable = content.getDeltaLakeTable();
     ImmutableDeltaLakeTable.Builder builder =
         ImmutableDeltaLakeTable.builder()
@@ -78,34 +78,28 @@ abstract class BaseSerializer<C extends Content> implements ContentSerializer<C>
     return builder.build();
   }
 
-  static ImmutableNamespace valueFromStoreNamespace(ObjectTypes.Content content) {
+  static Namespace valueFromStoreNamespace(ObjectTypes.Content content) {
     ObjectTypes.Namespace namespace = content.getNamespace();
-    return ImmutableNamespace.builder()
-        .id(content.getId())
-        .elements(namespace.getElementsList())
-        .putAllProperties(namespace.getPropertiesMap())
-        .build();
+    return ImmutableNamespace.of(
+        namespace.getElementsList(), namespace.getPropertiesMap(), content.getId());
   }
 
-  static ImmutableIcebergTable valueFromStoreIcebergTable(
+  static IcebergTable valueFromStoreIcebergTable(
       ObjectTypes.Content content, Supplier<String> metadataPointerSupplier) {
     ObjectTypes.IcebergRefState table = content.getIcebergRefState();
     String metadataLocation =
         table.hasMetadataLocation() ? table.getMetadataLocation() : metadataPointerSupplier.get();
 
-    ImmutableIcebergTable.Builder tableBuilder =
-        IcebergTable.builder()
-            .metadataLocation(metadataLocation)
-            .snapshotId(table.getSnapshotId())
-            .schemaId(table.getSchemaId())
-            .specId(table.getSpecId())
-            .sortOrderId(table.getSortOrderId())
-            .id(content.getId());
-
-    return tableBuilder.build();
+    return IcebergTable.of(
+        metadataLocation,
+        table.getSnapshotId(),
+        table.getSchemaId(),
+        table.getSpecId(),
+        table.getSortOrderId(),
+        content.getId());
   }
 
-  static ImmutableIcebergView valueFromStoreIcebergView(
+  static IcebergView valueFromStoreIcebergView(
       ObjectTypes.Content content, Supplier<String> metadataPointerSupplier) {
     ObjectTypes.IcebergViewState view = content.getIcebergViewState();
     // If the (protobuf) view has the metadataLocation attribute set, use that one, otherwise
@@ -113,16 +107,13 @@ abstract class BaseSerializer<C extends Content> implements ContentSerializer<C>
     String metadataLocation =
         view.hasMetadataLocation() ? view.getMetadataLocation() : metadataPointerSupplier.get();
 
-    ImmutableIcebergView.Builder viewBuilder =
-        IcebergView.builder()
-            .metadataLocation(metadataLocation)
-            .versionId(view.getVersionId())
-            .schemaId(view.getSchemaId())
-            .dialect(view.getDialect())
-            .sqlText(view.getSqlText())
-            .id(content.getId());
-
-    return viewBuilder.build();
+    return IcebergView.of(
+        content.getId(),
+        metadataLocation,
+        view.getVersionId(),
+        view.getSchemaId(),
+        view.getDialect(),
+        view.getSqlText());
   }
 
   static IllegalArgumentException noIcebergMetadataPointer() {

@@ -33,6 +33,7 @@ public abstract class NessieConfiguration {
    */
   @Nullable
   @Size(min = 1)
+  @Value.Parameter(order = 1)
   public abstract String getDefaultBranch();
 
   /**
@@ -40,5 +41,6 @@ public abstract class NessieConfiguration {
    *
    * <p>API versions are numbered sequentially, as they are developed.
    */
+  @Value.Parameter(order = 2)
   public abstract int getMaxSupportedApiVersion();
 }

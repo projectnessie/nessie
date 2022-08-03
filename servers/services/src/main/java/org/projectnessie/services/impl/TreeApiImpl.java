@@ -145,11 +145,10 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
 
   private GetNamedRefsParams getGetNamedRefsParams(boolean fetchMetadata) {
     return fetchMetadata
-        ? GetNamedRefsParams.builder()
-            .baseReference(BranchName.of(this.getConfig().getDefaultBranch()))
-            .branchRetrieveOptions(RetrieveOptions.BASE_REFERENCE_RELATED_AND_COMMIT_META)
-            .tagRetrieveOptions(RetrieveOptions.COMMIT_META)
-            .build()
+        ? GetNamedRefsParams.of(
+            BranchName.of(this.getConfig().getDefaultBranch()),
+            RetrieveOptions.BASE_REFERENCE_RELATED_AND_COMMIT_META,
+            RetrieveOptions.COMMIT_META)
         : GetNamedRefsParams.DEFAULT;
   }
 
@@ -562,10 +561,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
             filterEntries(refWithHash, entryStream, params.filter())
                 .map(
                     key ->
-                        EntriesResponse.Entry.builder()
-                            .name(fromKey(key.getKey()))
-                            .type((Content.Type) key.getType())
-                            .build());
+                        EntriesResponse.Entry.of(
+                            (Content.Type) key.getType(), fromKey(key.getKey())));
         if (params.namespaceDepth() != null && params.namespaceDepth() > 0) {
           entriesStream =
               entriesStream
@@ -588,7 +585,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     Content.Type type =
         entry.getName().getElements().size() > depth ? Content.Type.NAMESPACE : entry.getType();
     ContentKey key = ContentKey.of(entry.getName().getElements().subList(0, depth));
-    return EntriesResponse.Entry.builder().type(type).name(key).build();
+    return EntriesResponse.Entry.of(type, key);
   }
 
   /**

@@ -24,11 +24,13 @@ import org.immutables.value.Value;
  */
 @Value.Immutable
 public interface ContentIdAndBytes {
+  @Value.Parameter(order = 1)
   ContentId getContentId();
 
+  @Value.Parameter(order = 2)
   ByteString getValue();
 
   static ContentIdAndBytes of(ContentId contentId, ByteString value) {
-    return ImmutableContentIdAndBytes.builder().contentId(contentId).value(value).build();
+    return ImmutableContentIdAndBytes.of(contentId, value);
   }
 }

@@ -30,6 +30,6 @@ public interface Delete extends Operation {
    */
   @Nonnull
   static Delete of(@Nonnull Key key) {
-    return ImmutableDelete.builder().key(key).build();
+    return ImmutableDelete.of(key);
   }
 }

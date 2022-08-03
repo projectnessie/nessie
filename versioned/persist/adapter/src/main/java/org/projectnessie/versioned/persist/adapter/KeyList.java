@@ -30,9 +30,10 @@ public interface KeyList {
   KeyList EMPTY = ImmutableKeyList.builder().build();
 
   @AllowNulls
+  @Value.Parameter(order = 1)
   List<KeyListEntry> getKeys();
 
   static KeyList of(List<KeyListEntry> keys) {
-    return ImmutableKeyList.builder().keys(keys).build();
+    return ImmutableKeyList.of(keys);
   }
 }

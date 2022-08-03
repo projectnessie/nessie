@@ -49,6 +49,7 @@ public interface Detached extends Reference {
 
   @Override
   @NotEmpty
+  @Value.Parameter(order = 1)
   String getHash();
 
   /** Validation rule using {@link Validation#validateReferenceName(String)}. */
@@ -68,6 +69,6 @@ public interface Detached extends Reference {
   }
 
   static Detached of(String hash) {
-    return builder().hash(hash).build();
+    return ImmutableDetached.of(hash);
   }
 }

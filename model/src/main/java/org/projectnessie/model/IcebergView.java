@@ -31,24 +31,34 @@ import org.immutables.value.Value;
 @JsonTypeName("ICEBERG_VIEW")
 public abstract class IcebergView extends IcebergContent {
 
+  @Override
+  @Nullable
+  @Value.Parameter(order = 1)
+  public abstract String getId();
+
   /**
    * Location where Iceberg stored its {@code ViewMetadata} file. The location depends on the
    * (implementation of) Iceberg's {@code FileIO} configured for the particular Iceberg table.
    */
   @NotNull
   @NotBlank
+  @Value.Parameter(order = 2)
   public abstract String getMetadataLocation();
 
   /** Corresponds to Iceberg's {@code currentVersionId}. */
+  @Value.Parameter(order = 3)
   public abstract int getVersionId();
 
+  @Value.Parameter(order = 4)
   public abstract int getSchemaId();
 
   @NotBlank
   @NotNull
+  @Value.Parameter(order = 6)
   public abstract String getSqlText();
 
   @Nullable // TODO this is currently undefined in Iceberg
+  @Value.Parameter(order = 5)
   public abstract String getDialect();
 
   @Override
@@ -67,13 +77,7 @@ public abstract class IcebergView extends IcebergContent {
 
   public static IcebergView of(
       String metadataLocation, int versionId, int schemaId, String dialect, String sqlText) {
-    return builder()
-        .metadataLocation(metadataLocation)
-        .versionId(versionId)
-        .schemaId(schemaId)
-        .dialect(dialect)
-        .sqlText(sqlText)
-        .build();
+    return ImmutableIcebergView.of(null, metadataLocation, versionId, schemaId, dialect, sqlText);
   }
 
   public static IcebergView of(
@@ -83,13 +87,6 @@ public abstract class IcebergView extends IcebergContent {
       int schemaId,
       String dialect,
       String sqlText) {
-    return builder()
-        .id(id)
-        .metadataLocation(metadataLocation)
-        .versionId(versionId)
-        .schemaId(schemaId)
-        .dialect(dialect)
-        .sqlText(sqlText)
-        .build();
+    return ImmutableIcebergView.of(id, metadataLocation, versionId, schemaId, dialect, sqlText);
   }
 }

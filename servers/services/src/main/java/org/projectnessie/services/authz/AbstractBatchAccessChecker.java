@@ -35,8 +35,8 @@ public abstract class AbstractBatchAccessChecker implements BatchAccessChecker {
 
   private final Collection<Check> checks = new LinkedHashSet<>();
 
-  private BatchAccessChecker add(ImmutableCheck.Builder builder) {
-    checks.add(builder.build());
+  private BatchAccessChecker add(Check check) {
+    checks.add(check);
     return this;
   }
 
@@ -46,80 +46,71 @@ public abstract class AbstractBatchAccessChecker implements BatchAccessChecker {
 
   @Override
   public BatchAccessChecker canViewReference(NamedRef ref) {
-    return add(Check.builder(CheckType.VIEW_REFERENCE).ref(ref));
+    return add(Check.of(CheckType.VIEW_REFERENCE, ref));
   }
 
   @Override
   public BatchAccessChecker canCreateReference(NamedRef ref) {
-    return add(Check.builder(CheckType.CREATE_REFERENCE).ref(ref));
+    return add(Check.of(CheckType.CREATE_REFERENCE, ref));
   }
 
   @Override
   public BatchAccessChecker canAssignRefToHash(NamedRef ref) {
     canViewReference(ref);
-    return add(Check.builder(CheckType.ASSIGN_REFERENCE_TO_HASH).ref(ref));
+    return add(Check.of(CheckType.ASSIGN_REFERENCE_TO_HASH, ref));
   }
 
   @Override
   public BatchAccessChecker canDeleteReference(NamedRef ref) {
     canViewReference(ref);
-    return add(Check.builder(CheckType.DELETE_REFERENCE).ref(ref));
+    return add(Check.of(CheckType.DELETE_REFERENCE, ref));
   }
 
   @Override
   public BatchAccessChecker canReadEntries(NamedRef ref) {
     canViewReference(ref);
-    return add(Check.builder(CheckType.READ_ENTRIES).ref(ref));
+    return add(Check.of(CheckType.READ_ENTRIES, ref));
   }
 
   @Override
   public BatchAccessChecker canReadContentKey(NamedRef ref, ContentKey key, String contentId) {
     canViewReference(ref);
-    ImmutableCheck.Builder builder = Check.builder(CheckType.READ_CONTENT_KEY).ref(ref).key(key);
-    if (contentId != null) {
-      builder.contentId(contentId);
-    }
-    return add(builder);
+    return add(Check.of(CheckType.READ_CONTENT_KEY, ref, key, contentId));
   }
 
   @Override
   public BatchAccessChecker canListCommitLog(NamedRef ref) {
     canViewReference(ref);
-    return add(Check.builder(CheckType.LIST_COMMIT_LOG).ref(ref));
+    return add(Check.of(CheckType.LIST_COMMIT_LOG, ref));
   }
 
   @Override
   public BatchAccessChecker canCommitChangeAgainstReference(NamedRef ref) {
     canViewReference(ref);
-    return add(Check.builder(CheckType.COMMIT_CHANGE_AGAINST_REFERENCE).ref(ref));
+    return add(Check.of(CheckType.COMMIT_CHANGE_AGAINST_REFERENCE, ref));
   }
 
   @Override
   public BatchAccessChecker canReadEntityValue(NamedRef ref, ContentKey key, String contentId) {
     canViewReference(ref);
-    return add(Check.builder(CheckType.READ_ENTITY_VALUE).ref(ref).key(key).contentId(contentId));
+    return add(Check.of(CheckType.READ_ENTITY_VALUE, ref, key, contentId));
   }
 
   @Override
   public BatchAccessChecker canUpdateEntity(
       NamedRef ref, ContentKey key, String contentId, Content.Type contentType) {
     canViewReference(ref);
-    return add(
-        Check.builder(CheckType.UPDATE_ENTITY)
-            .ref(ref)
-            .key(key)
-            .contentId(contentId)
-            .contentType(contentType));
+    return add(Check.of(CheckType.UPDATE_ENTITY, ref, key, contentId, contentType));
   }
 
   @Override
   public BatchAccessChecker canDeleteEntity(NamedRef ref, ContentKey key, String contentId) {
     canViewReference(ref);
-    return add(Check.builder(CheckType.DELETE_ENTITY).ref(ref).key(key).contentId(contentId));
+    return add(Check.of(CheckType.DELETE_ENTITY, ref, key, contentId));
   }
 
   @Override
   public BatchAccessChecker canViewRefLog() {
-    return add(Check.builder(CheckType.VIEW_REFLOG));
+    return add(Check.of(CheckType.VIEW_REFLOG));
   }
 }

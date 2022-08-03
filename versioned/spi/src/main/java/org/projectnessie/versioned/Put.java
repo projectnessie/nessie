@@ -24,14 +24,20 @@ import org.projectnessie.model.Content;
 @Value.Immutable
 public interface Put extends Operation {
 
+  @Override
+  @Value.Parameter(order = 1)
+  Key getKey();
+
   /**
    * The value to store for this operation.
    *
    * @return the value
    */
+  @Value.Parameter(order = 2)
   Content getValue();
 
   @Nullable
+  @Value.Parameter(order = 3)
   Content getExpectedValue();
 
   /**
@@ -47,7 +53,7 @@ public interface Put extends Operation {
    */
   @Nonnull
   static Put of(@Nonnull Key key, @Nonnull Content value) {
-    return ImmutablePut.builder().key(key).value(value).build();
+    return ImmutablePut.of(key, value, null);
   }
 
   /**
@@ -65,6 +71,6 @@ public interface Put extends Operation {
    */
   @Nonnull
   static Put of(@Nonnull Key key, @Nonnull Content value, @Nonnull Content expectedValue) {
-    return ImmutablePut.builder().key(key).value(value).expectedValue(expectedValue).build();
+    return ImmutablePut.of(key, value, expectedValue);
   }
 }

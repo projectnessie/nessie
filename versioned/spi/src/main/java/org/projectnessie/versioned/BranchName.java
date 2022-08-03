@@ -30,6 +30,6 @@ public interface BranchName extends NamedRef {
    */
   @Nonnull
   static BranchName of(@Nonnull String name) {
-    return ImmutableBranchName.builder().name(name).build();
+    return ImmutableBranchName.of(name);
   }
 }

@@ -29,12 +29,14 @@ import org.immutables.value.Value;
 public interface GenericMetadata {
 
   @NotEmpty
+  @Value.Parameter(order = 1)
   String getVariant();
 
   @Schema(type = SchemaType.OBJECT)
+  @Value.Parameter(order = 2)
   JsonNode getMetadata();
 
   static GenericMetadata of(String variant, JsonNode metadata) {
-    return ImmutableGenericMetadata.builder().variant(variant).metadata(metadata).build();
+    return ImmutableGenericMetadata.of(variant, metadata);
   }
 }

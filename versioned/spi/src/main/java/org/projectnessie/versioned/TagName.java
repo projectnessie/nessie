@@ -30,6 +30,6 @@ public interface TagName extends NamedRef {
    */
   @Nonnull
   static TagName of(@Nonnull String name) {
-    return ImmutableTagName.builder().name(name).build();
+    return ImmutableTagName.of(name);
   }
 }

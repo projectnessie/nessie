@@ -55,24 +55,34 @@ import org.immutables.value.Value;
 @JsonTypeName("ICEBERG_TABLE")
 public abstract class IcebergTable extends IcebergContent {
 
+  @Override
+  @Nullable
+  @Value.Parameter(order = 1)
+  public abstract String getId();
+
   /**
    * Location where Iceberg stored its {@code TableMetadata} file. The location depends on the
    * (implementation of) Iceberg's {@code FileIO} configured for the particular Iceberg table.
    */
   @NotNull
   @NotBlank
+  @Value.Parameter(order = 2)
   public abstract String getMetadataLocation();
 
   /** Corresponds to Iceberg's {@code currentSnapshotId}. */
+  @Value.Parameter(order = 3)
   public abstract long getSnapshotId();
 
   /** Corresponds to Iceberg's {@code currentSchemaId}. */
+  @Value.Parameter(order = 4)
   public abstract int getSchemaId();
 
   /** Corresponds to Iceberg's {@code defaultSpecId}. */
+  @Value.Parameter(order = 5)
   public abstract int getSpecId();
 
   /** Corresponds to Iceberg's {@code defaultSortOrderId}. */
+  @Value.Parameter(order = 6)
   public abstract int getSortOrderId();
 
   @Override
@@ -91,13 +101,8 @@ public abstract class IcebergTable extends IcebergContent {
 
   public static IcebergTable of(
       String metadataLocation, long snapshotId, int schemaId, int specId, int sortOrderId) {
-    return builder()
-        .metadataLocation(metadataLocation)
-        .snapshotId(snapshotId)
-        .schemaId(schemaId)
-        .specId(specId)
-        .sortOrderId(sortOrderId)
-        .build();
+    return ImmutableIcebergTable.of(
+        null, metadataLocation, snapshotId, schemaId, specId, sortOrderId);
   }
 
   public static IcebergTable of(
@@ -107,13 +112,7 @@ public abstract class IcebergTable extends IcebergContent {
       int specId,
       int sortOrderId,
       String contentId) {
-    return builder()
-        .metadataLocation(metadataLocation)
-        .snapshotId(snapshotId)
-        .schemaId(schemaId)
-        .specId(specId)
-        .sortOrderId(sortOrderId)
-        .id(contentId)
-        .build();
+    return ImmutableIcebergTable.of(
+        contentId, metadataLocation, snapshotId, schemaId, specId, sortOrderId);
   }
 }

@@ -23,21 +23,20 @@ import org.projectnessie.versioned.Key;
 /** Composite of key, content-id, content-type and commit-id. */
 @Value.Immutable(lazyhash = true) // this type is used as a map-key in an expensive test
 public interface KeyListEntry {
+  @Value.Parameter(order = 1)
   Key getKey();
 
+  @Value.Parameter(order = 2)
   ContentId getContentId();
 
+  @Value.Parameter(order = 3)
   byte getPayload();
 
   @Nullable
+  @Value.Parameter(order = 4)
   Hash getCommitId();
 
   static KeyListEntry of(Key key, ContentId contentId, byte payload, Hash commitId) {
-    ImmutableKeyListEntry.Builder builder =
-        ImmutableKeyListEntry.builder().key(key).payload(payload).contentId(contentId);
-    if (commitId != null) {
-      builder.commitId(commitId);
-    }
-    return builder.build();
+    return ImmutableKeyListEntry.of(key, contentId, payload, commitId);
   }
 }

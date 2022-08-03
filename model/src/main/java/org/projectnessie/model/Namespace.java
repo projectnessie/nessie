@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Derived;
@@ -50,7 +51,7 @@ public abstract class Namespace extends Content {
       "'%s' is not a valid namespace identifier (should not end with '.')";
 
   public static final Namespace EMPTY =
-      ImmutableNamespace.builder().elements(Collections.emptyList()).build();
+      ImmutableNamespace.of(Collections.emptyList(), Collections.emptyMap(), null);
 
   @Override
   public Type getType() {
@@ -71,11 +72,18 @@ public abstract class Namespace extends Content {
   }
 
   @NotNull
+  @Value.Parameter(order = 1)
   public abstract List<String> getElements();
 
   @NotNull
   @JsonInclude(Include.NON_EMPTY)
+  @Value.Parameter(order = 2)
   public abstract Map<String, String> getProperties();
+
+  @Override
+  @Nullable
+  @Value.Parameter(order = 3)
+  public abstract String getId();
 
   /**
    * Builds a {@link Namespace} instance for the given elements.
@@ -126,10 +134,7 @@ public abstract class Namespace extends Content {
           String.format(ERROR_MSG_TEMPLATE, Arrays.toString(elements)));
     }
 
-    return ImmutableNamespace.builder()
-        .elements(Arrays.asList(elements))
-        .properties(properties)
-        .build();
+    return ImmutableNamespace.of(Arrays.asList(elements), properties, null);
   }
 
   /**

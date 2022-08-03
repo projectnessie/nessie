@@ -21,13 +21,13 @@ import org.projectnessie.versioned.Hash;
 
 @Value.Immutable
 public interface HeadsAndForkPoints {
-  @Value.Parameter
+  @Value.Parameter(order = 1)
   Set<Hash> getHeads();
 
-  @Value.Parameter
+  @Value.Parameter(order = 2)
   Set<Hash> getForkPoints();
 
-  @Value.Parameter
+  @Value.Parameter(order = 3)
   long getScanStartedAtInMicros();
 
   static HeadsAndForkPoints of(Set<Hash> heads, Set<Hash> forkPoints, long scanStartedAtInMicros) {

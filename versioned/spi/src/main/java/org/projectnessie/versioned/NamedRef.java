@@ -16,6 +16,7 @@
 package org.projectnessie.versioned;
 
 import javax.annotation.Nonnull;
+import org.immutables.value.Value;
 
 /** A ref that has a name. Includes both branches and tags. */
 public interface NamedRef extends Ref {
@@ -26,5 +27,6 @@ public interface NamedRef extends Ref {
    * @return the reference name
    */
   @Nonnull
+  @Value.Parameter(order = 1)
   String getName();
 }

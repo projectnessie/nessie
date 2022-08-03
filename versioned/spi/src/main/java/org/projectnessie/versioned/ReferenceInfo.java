@@ -20,8 +20,10 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 public interface ReferenceInfo<METADATA> {
+  @Value.Parameter(order = 2)
   NamedRef getNamedRef();
 
+  @Value.Parameter(order = 1)
   Hash getHash();
 
   @Value.Default
@@ -56,18 +58,20 @@ public interface ReferenceInfo<METADATA> {
   }
 
   static <METADATA> ReferenceInfo<METADATA> of(Hash hash, NamedRef namedRef) {
-    return ReferenceInfo.<METADATA>builder().namedRef(namedRef).hash(hash).build();
+    return ImmutableReferenceInfo.of(hash, namedRef);
   }
 
   @Value.Immutable
   interface CommitsAheadBehind {
 
+    @Value.Parameter(order = 2)
     int getBehind();
 
+    @Value.Parameter(order = 1)
     int getAhead();
 
     static CommitsAheadBehind of(int ahead, int behind) {
-      return ImmutableCommitsAheadBehind.builder().ahead(ahead).behind(behind).build();
+      return ImmutableCommitsAheadBehind.of(ahead, behind);
     }
   }
 }

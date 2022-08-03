@@ -23,10 +23,10 @@ import org.projectnessie.versioned.NamedRef;
 
 @Value.Immutable
 public interface ReferencedAndUnreferencedHeads {
-  @Value.Parameter
+  @Value.Parameter(order = 1)
   Map<Hash, Set<NamedRef>> getReferencedHeads();
 
-  @Value.Parameter
+  @Value.Parameter(order = 2)
   Set<Hash> getUnreferencedHeads();
 
   static ReferencedAndUnreferencedHeads of(

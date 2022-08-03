@@ -22,20 +22,19 @@ import org.projectnessie.versioned.Key;
 /** Composite of key, content-id, content-type and content. */
 @Value.Immutable
 public interface KeyWithBytes {
+  @Value.Parameter(order = 1)
   Key getKey();
 
+  @Value.Parameter(order = 2)
   ContentId getContentId();
 
+  @Value.Parameter(order = 3)
   byte getPayload();
 
+  @Value.Parameter(order = 4)
   ByteString getValue();
 
   static KeyWithBytes of(Key key, ContentId contentId, byte payload, ByteString value) {
-    return ImmutableKeyWithBytes.builder()
-        .key(key)
-        .contentId(contentId)
-        .payload(payload)
-        .value(value)
-        .build();
+    return ImmutableKeyWithBytes.of(key, contentId, payload, value);
   }
 }

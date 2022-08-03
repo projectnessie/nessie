@@ -32,6 +32,7 @@ public interface GetMultipleContentsRequest {
 
   @NotNull
   @Size(min = 1)
+  @Value.Parameter(order = 1)
   List<ContentKey> getRequestedKeys();
 
   static ImmutableGetMultipleContentsRequest.Builder builder() {
@@ -43,6 +44,6 @@ public interface GetMultipleContentsRequest {
   }
 
   static GetMultipleContentsRequest of(List<ContentKey> keys) {
-    return builder().addAllRequestedKeys(keys).build();
+    return ImmutableGetMultipleContentsRequest.of(keys);
   }
 }
