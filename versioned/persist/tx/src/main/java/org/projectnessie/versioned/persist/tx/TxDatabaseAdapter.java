@@ -175,6 +175,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
+  @MustBeClosed
   public Stream<CommitLogEntry> commitLog(Hash offset) throws ReferenceNotFoundException {
     return withConnectionWrapper(conn -> readCommitLogStream(conn, offset));
   }
@@ -198,6 +199,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
+  @MustBeClosed
   public Stream<ReferenceInfo<ByteString>> namedRefs(GetNamedRefsParams params)
       throws ReferenceNotFoundException {
     Preconditions.checkNotNull(params, "Parameter for GetNamedRefsParams must not be null.");
@@ -216,6 +218,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
+  @MustBeClosed
   public Stream<KeyListEntry> keys(Hash commit, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
     return withConnectionWrapper(conn -> keysForCommitEntry(conn, commit, keyFilter));
@@ -548,6 +551,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
+  @MustBeClosed
   public Stream<Difference> diff(Hash from, Hash to, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
     return withConnectionWrapper(conn -> buildDiff(conn, from, to, keyFilter));
@@ -660,6 +664,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
+  @MustBeClosed
   public Stream<RefLog> refLog(Hash offset) throws RefLogNotFoundException {
     return withConnectionWrapper(conn -> readRefLogStream(conn, offset));
   }
@@ -1709,6 +1714,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
+  @MustBeClosed
   public Stream<ContentAttachment> mapToAttachment(Stream<ContentAttachmentKey> keys) {
     Iterator<ContentAttachmentKey> keysIter = keys.iterator();
     if (!keysIter.hasNext()) {
@@ -1874,6 +1880,7 @@ public abstract class TxDatabaseAdapter
     Stream<R> process(ConnectionWrapper conn) throws E;
   }
 
+  @MustBeClosed
   private <R, E extends Exception> Stream<R> withConnectionWrapper(ThrowingStreamResult<R, E> x)
       throws E {
     ConnectionWrapper conn = borrowConnection();
