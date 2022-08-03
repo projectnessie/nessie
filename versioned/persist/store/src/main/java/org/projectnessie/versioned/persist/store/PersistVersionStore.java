@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.persist.store;
 
 import com.google.common.base.Preconditions;
+import com.google.errorprone.annotations.MustBeClosed;
 import com.google.protobuf.ByteString;
 import java.util.Collection;
 import java.util.Collections;
@@ -67,7 +68,6 @@ import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.MergeParams;
-import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.TransplantParams;
 
 public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CONTENT_TYPE>>
@@ -322,6 +322,7 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   }
 
   @Override
+  @MustBeClosed
   public Stream<ReferenceInfo<METADATA>> getNamedRefs(GetNamedRefsParams params)
       throws ReferenceNotFoundException {
     return databaseAdapter
@@ -340,23 +341,25 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   }
 
   @Override
+  @MustBeClosed
   public Stream<Commit<METADATA, CONTENT>> getCommits(Ref ref, boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException {
     Hash hash = refToHash(ref);
-    Stream<CommitLogEntry> stream = databaseAdapter.commitLog(hash);
 
     BiConsumer<ImmutableCommit.Builder<METADATA, CONTENT>, CommitLogEntry> enhancer =
         enhancerForCommitLog(fetchAdditionalInfo);
 
-    return stream.map(
-        e -> {
-          ImmutableCommit.Builder<METADATA, CONTENT> commit =
-              Commit.<METADATA, CONTENT>builder()
-                  .hash(e.getHash())
-                  .commitMeta(deserializeMetadata(e.getMetadata()));
-          enhancer.accept(commit, e);
-          return commit.build();
-        });
+    return databaseAdapter
+        .commitLog(hash)
+        .map(
+            e -> {
+              ImmutableCommit.Builder<METADATA, CONTENT> commit =
+                  Commit.<METADATA, CONTENT>builder()
+                      .hash(e.getHash())
+                      .commitMeta(deserializeMetadata(e.getMetadata()));
+              enhancer.accept(commit, e);
+              return commit.build();
+            });
   }
 
   /**
@@ -406,6 +409,7 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   }
 
   @Override
+  @MustBeClosed
   public Stream<KeyEntry<CONTENT_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException {
     Hash hash = refToHash(ref);
     return databaseAdapter
@@ -437,6 +441,7 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   }
 
   @Override
+  @MustBeClosed
   public Stream<Diff<CONTENT>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
     Hash fromHash = refToHash(from);
     Hash toHash = refToHash(to);
@@ -473,19 +478,21 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   }
 
   @Override
+  @MustBeClosed
   public Stream<RefLogDetails> getRefLog(Hash refLogId) throws RefLogNotFoundException {
-    Stream<RefLog> refLogStream = databaseAdapter.refLog(refLogId);
-    return refLogStream.map(
-        e ->
-            ImmutableRefLogDetails.builder()
-                .refLogId(e.getRefLogId())
-                .refName(e.getRefName())
-                .refType(e.getRefType())
-                .commitHash(e.getCommitHash())
-                .parentRefLogId(e.getParents().get(0))
-                .operationTime(e.getOperationTime())
-                .operation(e.getOperation())
-                .sourceHashes(e.getSourceHashes())
-                .build());
+    return databaseAdapter
+        .refLog(refLogId)
+        .map(
+            e ->
+                ImmutableRefLogDetails.builder()
+                    .refLogId(e.getRefLogId())
+                    .refName(e.getRefName())
+                    .refType(e.getRefType())
+                    .commitHash(e.getCommitHash())
+                    .parentRefLogId(e.getParents().get(0))
+                    .operationTime(e.getOperationTime())
+                    .operation(e.getOperation())
+                    .sourceHashes(e.getSourceHashes())
+                    .build());
   }
 }

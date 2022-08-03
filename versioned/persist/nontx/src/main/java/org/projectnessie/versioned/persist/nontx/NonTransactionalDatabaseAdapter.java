@@ -36,6 +36,7 @@ import static org.projectnessie.versioned.persist.nontx.NonTransactionalOperatio
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
+import com.google.errorprone.annotations.MustBeClosed;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -166,6 +167,7 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   @Override
+  @MustBeClosed
   public Stream<CommitLogEntry> commitLog(Hash offset) throws ReferenceNotFoundException {
     return readCommitLogStream(NON_TRANSACTIONAL_OPERATION_CONTEXT, offset);
   }
@@ -182,12 +184,14 @@ public abstract class NonTransactionalDatabaseAdapter<
 
     Stream<ReferenceInfo<ByteString>> refs = Stream.of(refHead);
 
-    return namedRefsFilterAndEnhance(ctx, params, defaultBranchHead, refs)
-        .findFirst()
-        .orElseThrow(() -> referenceNotFound(ref));
+    try (Stream<ReferenceInfo<ByteString>> refStream =
+        namedRefsFilterAndEnhance(ctx, params, defaultBranchHead, refs)) {
+      return refStream.findFirst().orElseThrow(() -> referenceNotFound(ref));
+    }
   }
 
   @Override
+  @MustBeClosed
   public Stream<ReferenceInfo<ByteString>> namedRefs(GetNamedRefsParams params)
       throws ReferenceNotFoundException {
     Preconditions.checkNotNull(params, "Parameter for GetNamedRefsParams must not be null.");
@@ -196,6 +200,7 @@ public abstract class NonTransactionalDatabaseAdapter<
 
     NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
 
+    @SuppressWarnings("MustBeClosedChecker")
     Stream<ReferenceInfo<ByteString>> refs =
         fetchNamedReferences(ctx)
             .map(NonTransactionalDatabaseAdapter::namedReferenceToReferenceInfo);
@@ -206,6 +211,7 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   @Override
+  @MustBeClosed
   public Stream<KeyListEntry> keys(Hash commit, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
     return keysForCommitEntry(NON_TRANSACTIONAL_OPERATION_CONTEXT, commit, keyFilter);
@@ -520,6 +526,7 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   @Override
+  @MustBeClosed
   public Stream<Difference> diff(Hash from, Hash to, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
     return buildDiff(NON_TRANSACTIONAL_OPERATION_CONTEXT, from, to, keyFilter);
@@ -1157,6 +1164,7 @@ public abstract class NonTransactionalDatabaseAdapter<
   protected abstract List<NamedReference> doFetchNamedReference(
       NonTransactionalOperationContext ctx, List<String> refNames);
 
+  @MustBeClosed
   protected final Stream<NamedReference> fetchNamedReferences(
       NonTransactionalOperationContext ctx) {
 
@@ -1544,6 +1552,7 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   @Override
+  @MustBeClosed
   public Stream<RefLog> refLog(Hash offset) throws RefLogNotFoundException {
     return readRefLogStream(NON_TRANSACTIONAL_OPERATION_CONTEXT, offset);
   }

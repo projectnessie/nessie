@@ -538,7 +538,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                       // do some operations here
                       try {
                         assertThat(store().getValue(branch, key)).isNull();
-                        store().getKeys(branch).close();
+                        try (Stream<KeyEntry<BaseContent.Type>> ignore = store().getKeys(branch)) {}
                       } catch (ReferenceNotFoundException e) {
                         throw new RuntimeException(e);
                       }

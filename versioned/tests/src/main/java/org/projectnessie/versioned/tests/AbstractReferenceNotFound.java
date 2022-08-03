@@ -76,6 +76,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
     }
   }
 
+  @SuppressWarnings("MustBeClosedChecker")
   static List<ReferenceNotFoundFunction> referenceNotFoundFunctions() {
     MetadataRewriter<CommitMessage> metadataRewriter =
         new MetadataRewriter<CommitMessage>() {
