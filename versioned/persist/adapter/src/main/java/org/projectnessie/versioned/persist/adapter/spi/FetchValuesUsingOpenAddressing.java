@@ -40,9 +40,9 @@ final class FetchValuesUsingOpenAddressing {
 
   final int[] keyListSegmentOffsets;
   final int keyListCount;
+  final int segmentMask;
   final KeyListEntry[][] keyListsArray;
   final Object2IntHashMap<Hash> entityIdToSegment;
-  final int segmentCount;
   final List<Hash> keyListIds;
 
   FetchValuesUsingOpenAddressing(CommitLogEntry entry) {
@@ -58,7 +58,7 @@ final class FetchValuesUsingOpenAddressing {
 
     entityIdToSegment = new Object2IntHashMap<>(keyListCount, Hashing.DEFAULT_LOAD_FACTOR, -1);
 
-    segmentCount = entry.getKeyListSegmentCount();
+    segmentMask = entry.getKeyListSegmentCount() - 1;
 
     keyListIds = entry.getKeyListsIds();
   }
@@ -69,9 +69,7 @@ final class FetchValuesUsingOpenAddressing {
   }
 
   private int segment(int num) {
-    // This is compatible to 'num & (segmentCount-1)' (if segmentCount is a power of 2).
-    int mod = num % segmentCount;
-    return num >= 0 ? mod : segmentCount + mod;
+    return num & segmentMask;
   }
 
   /**
@@ -81,7 +79,7 @@ final class FetchValuesUsingOpenAddressing {
   int segmentForKey(int bucket, int round) {
     int binIdx = Arrays.binarySearch(keyListSegmentOffsets, bucket);
     int segment = binIdx >= 0 ? binIdx + 1 : -binIdx - 1;
-    return segment(segment + round);
+    return segment(segment) + round;
   }
 
   /**
