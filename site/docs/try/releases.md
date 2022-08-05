@@ -2,6 +2,13 @@
 
 See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.
 
+## 0.41.0 Release (August 5, 2022)
+
+**Rolling upgrades from versions before 0.40.0 are not supported!**
+
+* Do not persist and expose attached content metadata
+* Fix issue when looking up key in an open-addressing-key-list
+
 ## 0.40.3 Release (August 1, 2022)
 
 **Rolling upgrades from versions before 0.40.0 are not supported!**
