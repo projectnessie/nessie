@@ -51,7 +51,7 @@ public class TestKeyListBuildState {
 
   static Stream<Arguments> keyNotFoundScenarios() {
     return Stream.of(
-        Arguments.of(singletonList(Key.of("existing", "key")), Key.of("non_existing.key"), 0),
+        Arguments.of(singletonList(Key.of("existing", "key")), Key.of("non_existing.key"), 2),
         Arguments.of(
             asList(
                 Key.of("db", "from_spark"),

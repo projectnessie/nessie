@@ -21,6 +21,7 @@ import static org.projectnessie.versioned.persist.tests.DatabaseAdapterTestUtils
 
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -41,12 +42,15 @@ import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
+import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
+import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
+import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterConfigItem;
 import org.projectnessie.versioned.testworker.BaseContent;
 import org.projectnessie.versioned.testworker.OnRefOnly;
 import org.projectnessie.versioned.testworker.SimpleStoreWorker;
@@ -409,5 +413,75 @@ public abstract class AbstractCommitScenarios {
     assertThatThrownBy(() -> databaseAdapter.commit(commit4.build()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(key.toString());
+  }
+
+  @Test
+  public void smallEmbeddedKeyLists(
+      @NessieDbAdapterConfigItem(name = "key.list.distance", value = "1") @NessieDbAdapter
+          DatabaseAdapter mine)
+      throws Exception {
+    BranchName branchName = BranchName.of("foo");
+    Hash head = mine.noAncestorHash();
+    mine.create(branchName, head);
+
+    Key keyNation = Key.of("tpch", "nation");
+    Key keyRegion = Key.of("tpch", "region");
+
+    ContentId idNation = ContentId.of("id-nation");
+    ContentId idRegion = ContentId.of("id-region");
+
+    OnRefOnly onRefNation = OnRefOnly.onRef("nation", idNation.getId());
+    OnRefOnly onRefRegion = OnRefOnly.onRef("region", idRegion.getId());
+
+    ByteString stateNation =
+        SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(onRefNation, att -> {});
+    ByteString stateRegion =
+        SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(onRefRegion, att -> {});
+
+    Hash commitNation =
+        mine.commit(
+            ImmutableCommitParams.builder()
+                .toBranch(branchName)
+                .expectedHead(Optional.of(head))
+                .commitMetaSerialized(ByteString.copyFromUtf8("commit nation"))
+                .addPuts(KeyWithBytes.of(keyNation, idNation, (byte) 0, stateNation))
+                .build());
+
+    Hash commitRegion =
+        mine.commit(
+            ImmutableCommitParams.builder()
+                .toBranch(branchName)
+                .expectedHead(Optional.of(commitNation))
+                .commitMetaSerialized(ByteString.copyFromUtf8("commit region"))
+                .addPuts(KeyWithBytes.of(keyRegion, idRegion, (byte) 0, stateRegion))
+                .build());
+
+    List<Key> nonExistentKey = Collections.singletonList(Key.of("non_existent"));
+
+    assertThat(mine.values(commitNation, nonExistentKey, KeyFilterPredicate.ALLOW_ALL)).isEmpty();
+
+    assertThat(
+            mine.values(
+                commitNation, Collections.singletonList(keyNation), KeyFilterPredicate.ALLOW_ALL))
+        .containsEntry(keyNation, ContentAndState.of(stateNation));
+
+    assertThat(
+            mine.values(
+                commitNation, Collections.singletonList(keyRegion), KeyFilterPredicate.ALLOW_ALL))
+        .isEmpty();
+
+    assertThat(
+            mine.values(
+                commitRegion, Collections.singletonList(keyNation), KeyFilterPredicate.ALLOW_ALL))
+        .containsEntry(keyNation, ContentAndState.of(stateNation));
+
+    assertThat(mine.values(commitNation, nonExistentKey, KeyFilterPredicate.ALLOW_ALL)).isEmpty();
+    assertThat(mine.values(commitRegion, nonExistentKey, KeyFilterPredicate.ALLOW_ALL)).isEmpty();
+
+    assertThat(
+            mine.values(
+                commitRegion, Arrays.asList(keyNation, keyRegion), KeyFilterPredicate.ALLOW_ALL))
+        .containsEntry(keyNation, ContentAndState.of(stateNation))
+        .containsEntry(keyRegion, ContentAndState.of(stateRegion));
   }
 }
