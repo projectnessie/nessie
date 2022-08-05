@@ -18,7 +18,6 @@ package org.projectnessie.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import javax.annotation.Nullable;
@@ -81,6 +80,7 @@ public abstract class IcebergTable extends IcebergContent {
     return Type.ICEBERG_TABLE;
   }
 
+  @Deprecated
   @Nullable
   @JsonInclude(Include.NON_NULL)
   public abstract GenericMetadata getMetadata();
@@ -113,18 +113,6 @@ public abstract class IcebergTable extends IcebergContent {
         .schemaId(schemaId)
         .specId(specId)
         .sortOrderId(sortOrderId)
-        .id(contentId)
-        .build();
-  }
-
-  public static IcebergTable of(JsonNode metadata, String metadataLocation, String contentId) {
-    return builder()
-        .metadataLocation(metadataLocation)
-        .snapshotId(metadata.path(CURRENT_SNAPSHOT_ID).asLong(-1L))
-        .schemaId(metadata.path(CURRENT_SCHEMA_ID).asInt(0))
-        .specId(metadata.path(DEFAULT_SPEC_ID).asInt(0))
-        .sortOrderId(metadata.path(DEFAULT_SORT_ORDER_ID).asInt(0))
-        .metadata(GenericMetadata.of(ICEBERG_METADATA_VARIANT, metadata))
         .id(contentId)
         .build();
   }
