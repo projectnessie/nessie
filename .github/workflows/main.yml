@@ -102,6 +102,7 @@ jobs:
       - name: Gradle / integration test native
         uses: gradle/gradle-build-action@v2
         with:
+          cache-read-only: true
           arguments: |
             --no-daemon
             :nessie-quarkus:quarkusBuild
@@ -133,6 +134,7 @@ jobs:
       - name: Jackson compatibility tests / 2.6.4 for Spark 2.4.4
         uses: gradle/gradle-build-action@v2
         with:
+          cache-read-only: true
           arguments: :nessie-client:test -Pjackson-tests=2.6.4
       - name: Jackson compatibility tests / 2.10.0 for Spark 3.0.1
         uses: gradle/gradle-build-action@v2
