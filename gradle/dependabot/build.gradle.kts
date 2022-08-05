@@ -34,7 +34,7 @@ plugins {
   id("com.github.vlsi.jandex") version "1.82"
   id("io.gatling.gradle") version "3.8.3.1"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
-  id("io.quarkus") version "2.11.1.Final"
+  id("io.quarkus") version "2.11.2.Final"
   id("me.champeau.jmh") version "0.6.6"
   id("net.ltgt.errorprone") version "2.0.2"
   id("org.jetbrains.gradle.plugin.idea-ext") version "1.1.6"
