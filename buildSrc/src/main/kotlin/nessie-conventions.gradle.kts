@@ -49,6 +49,7 @@ plugins {
   id("org.projectnessie.buildsupport.spotless")
   id("org.projectnessie.buildsupport.errorprone")
   id("org.projectnessie.buildsupport.publishing")
+  `eclipse`
 }
 
 configureJava()

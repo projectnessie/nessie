@@ -136,7 +136,10 @@ fun loadProjects(file: String) {
   }
 }
 
-val ideaSyncActive = System.getProperty("idea.sync.active").toBoolean()
+val ideSyncActive =
+  System.getProperty("idea.sync.active").toBoolean() ||
+    System.getProperty("eclipse.product") != null ||
+    gradle.startParameter.taskNames.any { it.startsWith("eclipse") }
 
 loadProjects("../gradle/projects.iceberg.properties")
 
@@ -155,7 +158,7 @@ for (sparkVersion in sparkVersions) {
     val artifactId = "nessie-spark-extensions-${sparkVersion}_$scalaVersion"
     nessieProject(artifactId, file("../clients/spark-extensions/v${sparkVersion}")).buildFileName =
       "../build.gradle.kts"
-    if (ideaSyncActive) {
+    if (ideSyncActive) {
       break
     }
   }
@@ -166,12 +169,12 @@ for (scalaVersion in allScalaVersions) {
     "nessie-spark-extensions-base_$scalaVersion",
     file("../clients/spark-extensions-base")
   )
-  if (ideaSyncActive) {
+  if (ideSyncActive) {
     break
   }
 }
 
-if (!ideaSyncActive) {
+if (!ideSyncActive) {
   nessieProject("nessie-spark-extensions", file("../clients/spark-extensions/v3.1")).buildFileName =
     "../build.gradle.kts"
   nessieProject("nessie-spark-3.2-extensions", file("../clients/spark-extensions/v3.2"))
