@@ -35,6 +35,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -154,6 +155,25 @@ public class TestKeyListBuildState {
         arguments(20000, MINIMUM_BUCKET_SIZE, MINIMUM_BUCKET_SIZE * 32, 8, 79, 0.45f, 1));
   }
 
+  @Test
+  public void nextPowerOfTwoBucketCountb() {
+    // This case involves a computed shift distance of 32 on type int.  As described in JLS 11
+    // section 15.19 Shift Operators, only the five lowest-order bits of the distance are actually
+    // used for an int's shift distance, so the effective shift distance is 0.
+    assertThat(KeyListBuildState.nextPowerOfTwo(0)).isEqualTo(1);
+
+    assertThat(KeyListBuildState.nextPowerOfTwo(1)).isEqualTo(1);
+    assertThat(KeyListBuildState.nextPowerOfTwo((1 << 29) + 1)).isEqualTo(1 << 30);
+    assertThat(KeyListBuildState.nextPowerOfTwo((1 << 30) - 1)).isEqualTo(1 << 30);
+    assertThat(KeyListBuildState.nextPowerOfTwo(1 << 30)).isEqualTo(1 << 30);
+    assertThat(KeyListBuildState.nextPowerOfTwo((1 << 30) + 1)).isEqualTo(1 << 31);
+    assertThat(KeyListBuildState.nextPowerOfTwo(1 << 31)).isEqualTo(1 << 31);
+    // TODO might just want to throw an exception early in the following cases, in nextPowerOfTwo
+    assertThat(KeyListBuildState.nextPowerOfTwo(Integer.MAX_VALUE - 1))
+        .isEqualTo(Integer.MIN_VALUE);
+    assertThat(KeyListBuildState.nextPowerOfTwo(Integer.MAX_VALUE)).isEqualTo(Integer.MIN_VALUE);
+  }
+
   @ParameterizedTest
   @MethodSource("openAddressing")
   void openAddressing(
@@ -196,7 +216,7 @@ public class TestKeyListBuildState {
 
     assertThat(entities).hasSize(expectedBuckets);
 
-    int totalBuckets = keyListBuilder.openAddressingSegments();
+    int totalBuckets = keyListBuilder.openAddressingBucketCount();
     int hashMask = totalBuckets - 1;
     assertThat(entries)
         .allSatisfy(

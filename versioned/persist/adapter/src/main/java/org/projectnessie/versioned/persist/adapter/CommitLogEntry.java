@@ -70,14 +70,28 @@ public interface CommitLogEntry {
    */
   List<Hash> getKeyListsIds();
 
+  /** The indices of the first occupied bucket in each non-embedded segment of the key list. */
   @Nullable
   List<Integer> getKeyListEntityOffsets();
 
+  /**
+   * Load factor for key lists hashed using open-addressing.
+   *
+   * <p>This is a user-configured value, typically on {@code (0, 1)}. In practice, key lists may be
+   * hashed at a lower effective load factor than configured here (e.g. for alignment), but
+   * generally not a higher one.
+   */
   @Nullable
   Float getKeyListLoadFactor();
 
+  /**
+   * The cumulative total of buckets across all segments.
+   *
+   * <p>This is generally much greater than the segment count. Addressable buckets have indices on
+   * the interval {@code [0, this value)}.
+   */
   @Nullable
-  Integer getKeyListSegmentCount();
+  Integer getKeyListBucketCount();
 
   /** Number of commits since the last complete key-list. */
   int getKeyListDistance();

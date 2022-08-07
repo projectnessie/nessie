@@ -1,0 +1,294 @@
+/*
+ * Copyright (C) 2022 Dremio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.projectnessie.versioned.persist.adapter.spi;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+
+import com.google.common.collect.ImmutableList;
+import com.google.protobuf.ByteString;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import org.junit.jupiter.api.Test;
+import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
+import org.projectnessie.versioned.persist.adapter.ImmutableCommitLogEntry;
+import org.projectnessie.versioned.persist.adapter.ImmutableContentId;
+import org.projectnessie.versioned.persist.adapter.ImmutableKeyList;
+import org.projectnessie.versioned.persist.adapter.ImmutableKeyListEntity;
+import org.projectnessie.versioned.persist.adapter.ImmutableKeyListEntry;
+import org.projectnessie.versioned.persist.adapter.KeyListEntity;
+import org.projectnessie.versioned.persist.adapter.KeyListEntry;
+
+public class TestFetchValuesUsingOpenAddressing {
+
+  /**
+   * Test finding non-existent keys pushed out of the final (highest-indexed) segment by collisions.
+   *
+   * <p>This implies sufficient collisions to cause an insertion's bucket index to overrun the total
+   * bucket count, effectively "wrapping" around the segment and bucket indices to the beginning
+   * (i.e. the embedded segment). We'll also simulate exceptionally unlikely cases involving probing
+   * through multiple segments before finding an open slot, though this generally implies a
+   * misconfigured load factor and target size.
+   */
+  @Test
+  public void segmentWrapAroundWithAbsentKey() {
+    // Create four segments with two buckets each
+    // The hashes of the non-embedded/external segments will be 01, 02, and 03 (as hex strings)
+    FetchValuesUsingOpenAddressing fetch =
+        new FetchValuesUsingOpenAddressing(getCommitFixture(2, 4));
+
+    // Make a key that will hash to the largest value representable within the bucket mask
+    Key nonExistentKey =
+        new KeyWithConfigurableHash(ImmutableList.of("foo"), el -> Integer.MAX_VALUE);
+
+    // Look for a non-existent key.
+    // The fake segments here are all full, so this will probe through the entire hashtable.
+    // Expect the final segment in round 0, then no segments (implying embedded) in round 1,
+    // the first non-embedded segment in round 2, etc.
+    // This has the side-effect of adding entityIdToSegment mappings, which we'll need to call
+    // entityLoaded in the next part of this test.
+    Hash hashOfFinalSegment = Hash.of("03");
+    List<Key> singleton = ImmutableList.of(nonExistentKey);
+    assertEquals(ImmutableList.of(hashOfFinalSegment), fetch.entityIdsToFetch(0, 0, singleton));
+    assertEquals(Collections.EMPTY_LIST, fetch.entityIdsToFetch(1, 0, singleton));
+    assertEquals(ImmutableList.of(Hash.of("01")), fetch.entityIdsToFetch(2, 0, singleton));
+    assertEquals(ImmutableList.of(Hash.of("02")), fetch.entityIdsToFetch(3, 0, singleton));
+
+    Consumer<KeyListEntry> keyHits = mock(Consumer.class);
+    fetch.entityLoaded(getKeyListEntity(3, 2));
+    fetch.checkForKeys(0, singleton, keyHits);
+    // Round 1 uses the embedded segment, no need to load it
+    fetch.checkForKeys(1, singleton, keyHits);
+    fetch.entityLoaded(getKeyListEntity(1, 2));
+    fetch.checkForKeys(2, singleton, keyHits);
+    fetch.entityLoaded(getKeyListEntity(2, 2));
+    fetch.checkForKeys(3, singleton, keyHits);
+    verifyNoInteractions(keyHits);
+  }
+
+  /** Test finding extant keys pushed out of the final (highest-indexed) segment by collisions. */
+  @Test
+  public void segmentWrapAroundWithPresentKey() {
+    // Create four segments with two buckets each
+    // The hashes of the non-embedded/external segments will be 01, 02, and 03 (as hex strings)
+    FetchValuesUsingOpenAddressing fetch =
+        new FetchValuesUsingOpenAddressing(getCommitFixture(2, 4));
+
+    // This element is in the zeroth bucket and the zeroth/embedded segment, but its hash would have
+    // naturally placed it in the final segment.  This simulates a hash collision in the final
+    // segment resolved by a linear probe that wrapped into the embedded segment.
+    ImmutableKeyListEntry zerothEntry = getEmbeddedEntry(0);
+
+    // Start searching at round zero, expecting to touch the final segment
+    Hash hashOfFinalSegment = Hash.of("03");
+    List<Key> zerothKeySingleton = ImmutableList.of(zerothEntry.getKey());
+    assertEquals(
+        ImmutableList.of(hashOfFinalSegment), fetch.entityIdsToFetch(0, 0, zerothKeySingleton));
+    fetch.entityLoaded(getKeyListEntity(3, 2));
+
+    // Checking for keys at round zero should miss, but it should return our key
+    Consumer<KeyListEntry> keyHits = mock(Consumer.class);
+    assertEquals(
+        zerothKeySingleton, fetch.checkForKeys(0, ImmutableList.of(zerothEntry.getKey()), keyHits));
+    verifyNoInteractions(keyHits);
+
+    // Continue searching at round one, expecting to wrap into the embedded segment
+    keyHits = mock(Consumer.class);
+    // entityIdsToFetch should think we want the embedded segment, and so return an empty list
+    assertEquals(Collections.EMPTY_LIST, fetch.entityIdsToFetch(1, 0, zerothKeySingleton));
+    // checkForKeys should find a hit for our one and only search key, and so return no leftovers
+    assertEquals(
+        Collections.EMPTY_LIST,
+        fetch.checkForKeys(1, ImmutableList.of(zerothEntry.getKey()), keyHits));
+    // confirm the key hit
+    verify(keyHits).accept(eq(zerothEntry));
+    verifyNoMoreInteractions(keyHits);
+  }
+
+  /**
+   * Test {@link FetchValuesUsingOpenAddressing#segmentForKey(int, int)} on an 8-bucket table.
+   *
+   * <p>The code in there interpreting return values of {@link java.util.Arrays#binarySearch(int[],
+   * int)} has been correct since inception, but it can be a little tricky to think about the
+   * various +1 and -1 offsets in play for nonexact matches. This just helped me prove that it was
+   * correct to begin with, and should localize our search if we accidentally break it in the
+   * future.
+   */
+  @Test
+  public void segmentForKey() {
+    FetchValuesUsingOpenAddressing fetch =
+        new FetchValuesUsingOpenAddressing(getCommitFixture(2, 4));
+
+    assertEquals(0, fetch.segmentForKey(0, 0));
+    assertEquals(0, fetch.segmentForKey(1, 0));
+    assertEquals(1, fetch.segmentForKey(2, 0));
+    assertEquals(1, fetch.segmentForKey(3, 0));
+    assertEquals(2, fetch.segmentForKey(4, 0));
+    assertEquals(2, fetch.segmentForKey(5, 0));
+    assertEquals(3, fetch.segmentForKey(6, 0));
+    assertEquals(3, fetch.segmentForKey(7, 0));
+  }
+
+  /**
+   * Tests keying segments that contain only a single bucket each.
+   *
+   * <p>This should only happen if a user misunderstands what the open-addressing-related config
+   * options actually do, or if they manage to serialize abnormally huge {@code CommitLogEntry}
+   * instances individually exceeding the segment size limit.
+   */
+  @Test
+  public void singletonSegment() {
+    FetchValuesUsingOpenAddressing fetch =
+        new FetchValuesUsingOpenAddressing(getCommitFixture(1, 4));
+
+    assertEquals(0, fetch.segmentForKey(0, 0));
+    assertEquals(1, fetch.segmentForKey(1, 0));
+    assertEquals(2, fetch.segmentForKey(2, 0));
+    assertEquals(3, fetch.segmentForKey(3, 0));
+  }
+
+  /**
+   * Build a commit with fake segments of uniform size.
+   *
+   * <p>The keys in this commit's embedded key-list have a custom hashCode() that returns
+   * {@linkplain Integer#MAX_VALUE}, causing lookups against them to start in the final segment at
+   * round zero.
+   *
+   * @param segmentSize size in units of individual entries (not bytes)
+   * @param segmentCount the number of segments, including the embedded segment
+   */
+  private CommitLogEntry getCommitFixture(final int segmentSize, final int segmentCount) {
+    // Create segments of uniform size.  This list has one fewer elements than segmentCount,
+    // because the initial segment corresponding to the embedded-key-list doesn't have its
+    // offset recorded (somewhere on the interval [0, second-segment-offset)).
+    List<Integer> segmentOffsets = new ArrayList<>(segmentCount / segmentSize);
+    List<Hash> keyListIds = new ArrayList<>(segmentCount / segmentSize);
+    for (int i = 1; i < segmentCount; i++) {
+      segmentOffsets.add(i * segmentSize);
+      String hexString = intToPaddedHexString(i);
+      keyListIds.add(Hash.of(hexString));
+    }
+
+    // Build some keys for the embedded-key-list stored with the commit
+    ImmutableKeyList.Builder embeddedKeyListBuilder = ImmutableKeyList.builder();
+    for (int i = 0; i < segmentSize; i++) {
+      ImmutableKeyListEntry entry = getEmbeddedEntry(i);
+      embeddedKeyListBuilder.addKeys(entry);
+    }
+    ImmutableKeyList embeddedKeyList = embeddedKeyListBuilder.build();
+
+    // All of the constants below are completely arbitrary, no special significance
+    return ImmutableCommitLogEntry.builder()
+        .addAllKeyListEntityOffsets(segmentOffsets)
+        .createdTime(42L)
+        .commitSeq(0L)
+        .metadata(ByteString.EMPTY)
+        .keyListDistance(20)
+        .keyList(embeddedKeyList)
+        .keyListBucketCount(segmentCount * segmentSize)
+        .keyListsIds(keyListIds)
+        .hash(Hash.of("c0ffee"))
+        .build();
+  }
+
+  /** Convert an int to a hex string, left-padding with 0 until it has even length */
+  private static String intToPaddedHexString(int i) {
+    String hexString = Integer.toHexString(i);
+    if (1 == hexString.length() % 2) {
+      hexString = "0" + hexString;
+    }
+    return hexString;
+  }
+
+  /**
+   * Builds a fake {@linkplain KeyListEntity}
+   *
+   * <p>All keys appearing in this entity have acustom hashCode() that returns {@linkplain
+   * Integer#MAX_VALUE}.
+   */
+  private static KeyListEntity getKeyListEntity(int segmentIndex, int entryCount) {
+    String prefix = "seg" + intToPaddedHexString(segmentIndex) + "_";
+
+    ImmutableKeyList.Builder listBuilder = ImmutableKeyList.builder();
+
+    for (int i = 0; i < entryCount; i++) {
+      String keyString = prefix + i;
+      listBuilder.addKeys(getKeyListEntry(keyString));
+    }
+
+    return ImmutableKeyListEntity.builder()
+        .id(Hash.of(intToPaddedHexString(segmentIndex)))
+        .keys(listBuilder.build())
+        .build();
+  }
+
+  private static ImmutableKeyListEntry getEmbeddedEntry(int bucketIndex) {
+    return getKeyListEntry("embedded_" + bucketIndex);
+  }
+
+  private static ImmutableKeyListEntry getKeyListEntry(String keyString) {
+    Key k = new KeyWithConfigurableHash(ImmutableList.of(keyString), el -> Integer.MAX_VALUE);
+    return ImmutableKeyListEntry.builder()
+        .key(k)
+        .type((byte) 0)
+        .contentId(ImmutableContentId.of(keyString + "_id"))
+        .build();
+  }
+
+  /** A key implementation that allows arbitrary {@linkplain Object#hashCode()} behavior. */
+  private static class KeyWithConfigurableHash extends Key {
+
+    final List<String> elements;
+    final Function<List<String>, Integer> hasher;
+
+    public KeyWithConfigurableHash(List<String> elements, Function<List<String>, Integer> hasher) {
+      this.elements = ImmutableList.copyOf(elements);
+      this.hasher = hasher;
+    }
+
+    @Override
+    public List<String> getElements() {
+      return elements;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (!(o instanceof KeyWithConfigurableHash)) {
+        return false;
+      }
+      KeyWithConfigurableHash that = (KeyWithConfigurableHash) o;
+      return Objects.equals(elements, that.elements);
+    }
+
+    @Override
+    public int hashCode() {
+      return hasher.apply(getElements());
+    }
+  }
+}

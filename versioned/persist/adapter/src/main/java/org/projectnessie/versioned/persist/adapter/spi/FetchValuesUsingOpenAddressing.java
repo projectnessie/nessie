@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.persist.adapter.spi;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -32,15 +33,16 @@ import org.projectnessie.versioned.persist.adapter.KeyListEntry;
  * Processes {@link CommitLogEntry#getKeyList() embedded} and {@link CommitLogEntry#getKeyListsIds()
  * external} key-lists written by {@link KeyListBuildState}.
  *
- * <p>This implementation can process arbitrary numbers of {@link
- * CommitLogEntry#getKeyListSegmentCount() segments}, the number of segments does not need to be a
- * power of 2 here.
+ * <p>This implementation can process arbitrary numbers of segments, the number of segments does not
+ * need to be a power of 2 here.
  */
 final class FetchValuesUsingOpenAddressing {
 
   final int[] keyListSegmentOffsets;
   final int keyListCount;
-  final int segmentMask;
+  final int openAddressingMask;
+  // The major dimension is sized to match the number of segments (including embedded)
+  // The zeroth element corresponds with the embedded segment
   final KeyListEntry[][] keyListsArray;
   final Object2IntHashMap<Hash> entityIdToSegment;
   final List<Hash> keyListIds;
@@ -58,28 +60,25 @@ final class FetchValuesUsingOpenAddressing {
 
     entityIdToSegment = new Object2IntHashMap<>(keyListCount, Hashing.DEFAULT_LOAD_FACTOR, -1);
 
-    segmentMask = entry.getKeyListSegmentCount() - 1;
+    openAddressingMask = entry.getKeyListBucketCount() - 1;
 
     keyListIds = entry.getKeyListsIds();
   }
 
   /** Calculates the open-addressing bucket for a key. */
-  int segmentForKey(Key key) {
-    return segment(key.hashCode());
-  }
-
-  private int segment(int num) {
-    return num & segmentMask;
+  int bucketForKey(Key key) {
+    return key.hashCode() & openAddressingMask;
   }
 
   /**
    * Identifies the segment for a bucket. Segment 0 is the embedded key list, segment 1 is the first
    * key-list-entity.
    */
+  @VisibleForTesting
   int segmentForKey(int bucket, int round) {
     int binIdx = Arrays.binarySearch(keyListSegmentOffsets, bucket);
     int segment = binIdx >= 0 ? binIdx + 1 : -binIdx - 1;
-    return segment(segment) + round;
+    return (segment + round) % keyListsArray.length;
   }
 
   /**
@@ -90,17 +89,19 @@ final class FetchValuesUsingOpenAddressing {
     // Identify the key-list segments to fetch
     List<Hash> entitiesToFetch = new ArrayList<>();
     for (Key key : remainingKeys) {
-      int keyBucket = segmentForKey(key);
+      int keyBucket = bucketForKey(key);
       int segment = segmentForKey(keyBucket, round);
 
       for (int prefetch = 0; ; prefetch++) {
         if (segment > 0) {
+          checkSegmentIndexValidity(segment, key);
+
+          // Decrement accounts for the embedded key-list segment
           int entitySegment = segment - 1;
-          if (keyListIds.size() > entitySegment) {
-            Hash entityId = keyListIds.get(entitySegment);
-            if (entityIdToSegment.put(entityId, segment) == -1) {
-              entitiesToFetch.add(entityId);
-            }
+
+          Hash entityId = keyListIds.get(entitySegment);
+          if (entityIdToSegment.put(entityId, segment) == -1) {
+            entitiesToFetch.add(entityId);
           }
         }
         if (prefetch >= prefetchEntities) {
@@ -131,8 +132,13 @@ final class FetchValuesUsingOpenAddressing {
   Collection<Key> checkForKeys(
       int round, Collection<Key> remainingKeys, Consumer<KeyListEntry> resultConsumer) {
     List<Key> keysForNextRound = new ArrayList<>();
+    // If we've already examined every segment (implying a miss on a completely full hashmap),
+    // then return an empty collection early
+    if (keyListsArray.length <= round) {
+      return keysForNextRound;
+    }
     for (Key key : remainingKeys) {
-      int keyBucket = segmentForKey(key);
+      int keyBucket = bucketForKey(key);
       int segment = segmentForKey(keyBucket, round);
       int offsetInSegment = 0;
       if (round == 0) {
@@ -142,9 +148,7 @@ final class FetchValuesUsingOpenAddressing {
         }
       }
 
-      if (segment >= keyListsArray.length) {
-        continue;
-      }
+      checkSegmentIndexValidity(segment, key);
 
       KeyListEntry[] keys = keyListsArray[segment];
       for (int i = offsetInSegment; ; i++) {
@@ -162,5 +166,17 @@ final class FetchValuesUsingOpenAddressing {
       }
     }
     return keysForNextRound;
+  }
+
+  private void checkSegmentIndexValidity(final int segment, final Key key) {
+    // We expect segmentForKey to wrap in case the current round number is large enough to overrun
+    // the segment list, so this shouldn't happen
+    if (keyListsArray.length <= segment) {
+      throw new IllegalStateException(
+          String.format(
+              "Expected open-addressing key-list segment index between "
+                  + "0 (inclusive) and %s (exclusive), but computed invalid index %s for key %s",
+              keyListsArray.length, segment, key));
+    }
   }
 }

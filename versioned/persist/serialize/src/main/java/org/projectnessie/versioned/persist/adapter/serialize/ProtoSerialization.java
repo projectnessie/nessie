@@ -113,7 +113,7 @@ public final class ProtoSerialization {
     }
     if (entry.getKeyListLoadFactor() != null) {
       proto.setKeyListLoadFactor(entry.getKeyListLoadFactor());
-      proto.setKeyListSegmentCount(entry.getKeyListSegmentCount());
+      proto.setKeyListBucketCount(entry.getKeyListBucketCount());
     }
     entry.getAdditionalParents().forEach(p -> proto.addAdditionalParents(p.asBytes()));
 
@@ -180,7 +180,7 @@ public final class ProtoSerialization {
     proto.getAdditionalParentsList().forEach(p -> entry.addAdditionalParents(Hash.of(p)));
     if (proto.hasKeyListLoadFactor()) {
       entry.keyListLoadFactor(proto.getKeyListLoadFactor());
-      entry.keyListSegmentCount(proto.getKeyListSegmentCount());
+      entry.keyListBucketCount(proto.getKeyListBucketCount());
     }
 
     return entry.build();
