@@ -68,3 +68,10 @@ tasks.named<ShadowJar>("shadowJar") {
     attributes["Main-Class"] = "org.projectnessie.tools.contentgenerator.cli.NessieContentGenerator"
   }
 }
+
+tasks.named<Test>("intTest") { systemProperty("expectedNessieVersion", project.version) }
+
+tasks.named<ProcessResources>("processResources") {
+  inputs.property("nessieVersion", project.version)
+  expand("nessieVersion" to project.version)
+}
