@@ -214,7 +214,7 @@ public class TestFetchValuesUsingOpenAddressing {
         .build();
   }
 
-  /** Convert an int to a hex string, left-padding with 0 until it has even length */
+  /** Convert an int to a hex string, left-padding with 0 until it has even length. */
   private static String intToPaddedHexString(int i) {
     String hexString = Integer.toHexString(i);
     if (1 == hexString.length() % 2) {
@@ -224,7 +224,7 @@ public class TestFetchValuesUsingOpenAddressing {
   }
 
   /**
-   * Builds a fake {@linkplain KeyListEntity}
+   * Builds a fake {@linkplain KeyListEntity}.
    *
    * <p>All keys appearing in this entity have acustom hashCode() that returns {@linkplain
    * Integer#MAX_VALUE}.
