@@ -27,6 +27,12 @@ public interface AdjustableDatabaseAdapterConfig extends DatabaseAdapterConfig {
 
   AdjustableDatabaseAdapterConfig withMaxKeyListSize(int maxKeyListSize);
 
+  AdjustableDatabaseAdapterConfig withMaxKeyListEntitySize(int maxKeyListEntitySize);
+
+  AdjustableDatabaseAdapterConfig withKeyListHashLoadFactor(float keyListHashLoadFactor);
+
+  AdjustableDatabaseAdapterConfig withKeyListEntityPrefetch(int keyListEntityPrefetch);
+
   AdjustableDatabaseAdapterConfig withCommitTimeout(long commitTimeout);
 
   AdjustableDatabaseAdapterConfig withCommitRetries(int commitRetries);
@@ -41,5 +47,9 @@ public interface AdjustableDatabaseAdapterConfig extends DatabaseAdapterConfig {
 
   AdjustableDatabaseAdapterConfig withClock(Clock clock);
 
-  AdjustableDatabaseAdapterConfig withParentsPerRefLogEntry(int parentsPerEntry);
+  AdjustableDatabaseAdapterConfig withParentsPerRefLogEntry(int parentsPerRefLogEntry);
+
+  AdjustableDatabaseAdapterConfig withAssumedWallClockDriftMicros(long assumedWallClockDriftMicros);
+
+  AdjustableDatabaseAdapterConfig withAttachmentKeysBatchSize(int attachmentKeysBatchSize);
 }

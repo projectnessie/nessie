@@ -22,11 +22,17 @@ import org.projectnessie.versioned.persist.adapter.AdjustableDatabaseAdapterConf
 public interface AdjustableNonTransactionalDatabaseAdapterConfig
     extends NonTransactionalDatabaseAdapterConfig, AdjustableDatabaseAdapterConfig {
 
-  AdjustableNonTransactionalDatabaseAdapterConfig withReferencesSegmentSize(int value);
+  AdjustableNonTransactionalDatabaseAdapterConfig withReferencesSegmentSize(
+      int referencesSegmentSize);
 
-  AdjustableNonTransactionalDatabaseAdapterConfig withReferencesSegmentPrefetch(int value);
+  AdjustableNonTransactionalDatabaseAdapterConfig withReferencesSegmentPrefetch(
+      int referencesSegmentPrefetch);
 
-  AdjustableNonTransactionalDatabaseAdapterConfig withReferenceNamesBatchSize(int value);
+  AdjustableNonTransactionalDatabaseAdapterConfig withReferenceNamesBatchSize(
+      int referenceNamesBatchSize);
 
-  AdjustableNonTransactionalDatabaseAdapterConfig withRefLogStripes(int value);
+  AdjustableNonTransactionalDatabaseAdapterConfig withRefLogStripes(int refLogStripes);
+
+  AdjustableNonTransactionalDatabaseAdapterConfig withCommitLogScanPrefetch(
+      int commitLogScanPrefetch);
 }
