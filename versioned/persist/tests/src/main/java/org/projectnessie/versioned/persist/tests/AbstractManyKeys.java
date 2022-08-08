@@ -454,7 +454,7 @@ public abstract class AbstractManyKeys {
     checkKeysAndValuesIndividually(databaseAdapter, head, keyGen, valueGen, keyCount);
   }
 
-  /** Commit once, with puts from applying supplied functions to the ints {@code [0, keyCount)} */
+  /** Commit once, with puts from applying supplied functions to the ints {@code [0, keyCount)}. */
   private static void commitPutsOnGeneratedKeys(
       DatabaseAdapter databaseAdapter,
       BranchName branch,
@@ -477,7 +477,7 @@ public abstract class AbstractManyKeys {
             .build());
   }
 
-  /** Make an empty commit to the supplied branch, {@code commitCount} times */
+  /** Make an empty commit to the supplied branch, {@code commitCount} times. */
   private static Hash makeEmptyCommits(
       DatabaseAdapter databaseAdapter, BranchName toBranch, int commitCount)
       throws ReferenceNotFoundException, ReferenceConflictException {
@@ -495,7 +495,7 @@ public abstract class AbstractManyKeys {
     return head;
   }
 
-  /** Assert that every key and its expected value can be read from the supplied head */
+  /** Assert that every key and its expected value can be read from the supplied head. */
   private static void checkKeysAndValuesIndividually(
       DatabaseAdapter databaseAdapter,
       Hash head,
