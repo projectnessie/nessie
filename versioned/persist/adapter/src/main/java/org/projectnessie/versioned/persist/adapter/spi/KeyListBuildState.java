@@ -96,8 +96,8 @@ class KeyListBuildState {
    * @throws IllegalArgumentException when {@code v} is outside the accepted range
    */
   static int nextPowerOfTwo(final int v) {
-    Preconditions.checkArgument(0 <= v && v <= (2<<29),
-        "Parameter %s must be between 0 and 2^30 (both inclusive)", v);
+    Preconditions.checkArgument(
+        0 <= v && v <= (2 << 29), "Parameter %s must be between 0 and 2^30 (both inclusive)", v);
     return 1 << (32 - numberOfLeadingZeros(v - 1));
   }
 

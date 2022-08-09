@@ -171,12 +171,12 @@ public class TestKeyListBuildState {
   }
 
   @ParameterizedTest
-  @ValueSource(ints = { Integer.MIN_VALUE, -2, -1, (1<<30) + 1, (1<<30) + 2, Integer.MAX_VALUE })
+  @ValueSource(ints = {Integer.MIN_VALUE, -2, -1, (1 << 30) + 1, (1 << 30) + 2, Integer.MAX_VALUE})
   public void nextPowerOfTwoBucketCountException(int invalidParameter) {
     final String expectedMessageFragment = "must be between 0 and 2^30";
     assertThatThrownBy(() -> KeyListBuildState.nextPowerOfTwo(invalidParameter))
-          .isInstanceOf(IllegalArgumentException.class)
-          .hasMessageContaining(expectedMessageFragment);
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(expectedMessageFragment);
   }
 
   @ParameterizedTest

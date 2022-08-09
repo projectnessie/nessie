@@ -372,8 +372,9 @@ public abstract class AbstractManyKeys {
    * It just required values small enough to generate a size-zero embedded key list and a series of
    * size-one external key lists after that.
    *
-   * <p>This case is covered with greater specificity in {@linkplain
-   * org.projectnessie.versioned.persist.adapter.spi.TestFetchValuesUsingOpenAddressing#segmentWrapAround}.
+   * <p>This case is covered with greater specificity in the {@code segmentWrapAround*} methods in
+   * {@linkplain
+   * org.projectnessie.versioned.persist.adapter.spi.TestFetchValuesUsingOpenAddressing}.
    */
   @Test
   void pathologicallySmallSegments(

@@ -209,14 +209,12 @@ public class TestFetchValuesUsingOpenAddressing {
    */
   @Test
   public void negativeSegmentPrefetchThrowsException() {
-    final int segmentSize = 2;
-    final int segmentCount = 4;
     final int invalidPrefetch = -1;
     final String expectedMessage =
         String.format("Key-list segment prefetch parameter %s cannot be negative", invalidPrefetch);
 
     FetchValuesUsingOpenAddressing fetch =
-        new FetchValuesUsingOpenAddressing(getCommitFixture(segmentSize, segmentCount));
+        new FetchValuesUsingOpenAddressing(getCommitFixture(2, 4));
     assertThatThrownBy(
             () ->
                 fetch.entityIdsToFetch(
