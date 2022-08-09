@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.persist.adapter.spi;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -86,6 +87,14 @@ final class FetchValuesUsingOpenAddressing {
    * for {@code remainingKeys}.
    */
   List<Hash> entityIdsToFetch(int round, int prefetchEntities, Collection<Key> remainingKeys) {
+    // prefetchEntities is user-configurable.  Throw an exception if it is negative, otherwise clamp
+    // the nonnegative value to the range [0, keyListCount-1] = [0, keyListArray.length-1].
+    Preconditions.checkArgument(
+        0 <= prefetchEntities,
+        "Key-list segment prefetch parameter %s cannot be negative",
+        prefetchEntities);
+    prefetchEntities = Math.min(prefetchEntities, keyListCount - 1);
+
     // Identify the key-list segments to fetch
     List<Hash> entitiesToFetch = new ArrayList<>();
     for (Key key : remainingKeys) {

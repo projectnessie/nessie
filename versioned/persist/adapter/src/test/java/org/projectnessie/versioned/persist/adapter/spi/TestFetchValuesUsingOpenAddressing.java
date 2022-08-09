@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.persist.adapter.spi;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -26,17 +28,20 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
+import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ImmutableContentId;
 import org.projectnessie.versioned.persist.adapter.ImmutableKeyList;
@@ -63,9 +68,8 @@ public class TestFetchValuesUsingOpenAddressing {
     FetchValuesUsingOpenAddressing fetch =
         new FetchValuesUsingOpenAddressing(getCommitFixture(2, 4));
 
-    // Make a key that will hash to the largest value representable within the bucket mask
-    Key nonExistentKey =
-        new KeyWithConfigurableHash(ImmutableList.of("foo"), el -> Integer.MAX_VALUE);
+    // Make a key that won't match anything in the commit
+    Key nonExistentKey = new KeyWithMaxIntHash(ImmutableList.of("foo"));
 
     // Look for a non-existent key.
     // The fake segments here are all full, so this will probe through the entire hashtable.
@@ -106,8 +110,7 @@ public class TestFetchValuesUsingOpenAddressing {
 
     // Start searching at round zero, expecting to touch the final segment
     List<Key> zerothKeySingleton = ImmutableList.of(zerothEntry.getKey());
-    assertEquals(
-        ImmutableList.of(Hash.of("03")), fetch.entityIdsToFetch(0, 0, zerothKeySingleton));
+    assertEquals(ImmutableList.of(Hash.of("03")), fetch.entityIdsToFetch(0, 0, zerothKeySingleton));
     fetch.entityLoaded(getKeyListEntity(3, 2));
 
     // Checking for keys at round zero should miss, but it should return our key
@@ -129,7 +132,6 @@ public class TestFetchValuesUsingOpenAddressing {
     verifyNoMoreInteractions(keyHits);
   }
 
-
   /**
    * Test {@link FetchValuesUsingOpenAddressing#segmentForKey(int, int)} on small hashtables.
    *
@@ -145,7 +147,7 @@ public class TestFetchValuesUsingOpenAddressing {
    * segment size limit.
    */
   @ParameterizedTest
-  @ValueSource(ints = { 1, 4 })
+  @ValueSource(ints = {1, 4})
   public void segmentForKey(int segmentSize) {
     final int segmentCount = 4;
 
@@ -155,6 +157,74 @@ public class TestFetchValuesUsingOpenAddressing {
     for (int bucketIndex = 0; bucketIndex < segmentSize * segmentCount; bucketIndex++) {
       assertEquals(bucketIndex / segmentSize, fetch.segmentForKey(bucketIndex, 0));
     }
+  }
+
+  /**
+   * Exercise {@link FetchValuesUsingOpenAddressing#entityIdsToFetch(int, int, Collection)}
+   * prefetching.
+   *
+   * <p>Users can configure the number of segments to prefetch ({@link
+   * DatabaseAdapterConfig#getKeyListEntityPrefetch()}). An actual key-list could have fewer or more
+   * segments than this configured int value. This test checks prefetch values starting from zero,
+   * increasing towards the segment count, equalling it, and exceeding it.
+   *
+   * @see #negativeSegmentPrefetchThrowsException()
+   */
+  @Test
+  public void segmentPrefetching() {
+    final int segmentSize = 2;
+    final int segmentCount = 4;
+
+    final CommitLogEntry commitFixture = getCommitFixture(segmentSize, segmentCount);
+    final Key nonExistentKey = new KeyWithMaxIntHash(ImmutableList.of("foo"));
+
+    for (int prefetch = 0; prefetch < segmentCount * 2; prefetch++) {
+      List<Hash> expectedHashes =
+          Stream.of("03", null /* embedded segment */, "01", "02")
+              .limit(prefetch + 1) // Exceeding the stream length on some iterations is fine
+              .filter(Objects::nonNull)
+              .map(Hash::of)
+              .collect(Collectors.toList());
+
+      // If this fails, it's likely a problem with this test's stream processing or assumptions,
+      // rather than a problem with the system-under-test in the main tree.  Since our key hashes
+      // to the highest-indexed segment, which is not the embedded segment, we can assume that this
+      // collection always contains at least that segment's hash.
+      Preconditions.checkState(0 < expectedHashes.size());
+
+      FetchValuesUsingOpenAddressing fetch = new FetchValuesUsingOpenAddressing(commitFixture);
+      assertThat(fetch.entityIdsToFetch(0, prefetch, ImmutableList.of(nonExistentKey)))
+          .as("prefetch=" + prefetch)
+          .containsExactlyInAnyOrderElementsOf(expectedHashes);
+    }
+  }
+
+  /**
+   * Check {@link FetchValuesUsingOpenAddressing#entityIdsToFetch(int, int, Collection)} for an
+   * informative exception when prefetch is negative.
+   *
+   * <p>Users can configure the number of segments to prefetch ({@link
+   * DatabaseAdapterConfig#getKeyListEntityPrefetch()}), and negative values probably indicate a
+   * misunderstanding.
+   */
+  @Test
+  public void negativeSegmentPrefetchThrowsException() {
+    final int segmentSize = 2;
+    final int segmentCount = 4;
+    final int invalidPrefetch = -1;
+    final String expectedMessage =
+        String.format("Key-list segment prefetch parameter %s cannot be negative", invalidPrefetch);
+
+    FetchValuesUsingOpenAddressing fetch =
+        new FetchValuesUsingOpenAddressing(getCommitFixture(segmentSize, segmentCount));
+    assertThatThrownBy(
+            () ->
+                fetch.entityIdsToFetch(
+                    0,
+                    invalidPrefetch,
+                    ImmutableList.of(new KeyWithMaxIntHash(ImmutableList.of("foo")))))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(expectedMessage);
   }
 
   /**
@@ -238,7 +308,7 @@ public class TestFetchValuesUsingOpenAddressing {
   }
 
   private static ImmutableKeyListEntry getKeyListEntry(String keyString) {
-    Key k = new KeyWithConfigurableHash(ImmutableList.of(keyString), el -> Integer.MAX_VALUE);
+    Key k = new KeyWithMaxIntHash(ImmutableList.of(keyString));
     return ImmutableKeyListEntry.builder()
         .key(k)
         .type((byte) 0)
@@ -246,15 +316,13 @@ public class TestFetchValuesUsingOpenAddressing {
         .build();
   }
 
-  /** A key implementation that allows arbitrary {@linkplain Object#hashCode()} behavior. */
-  private static class KeyWithConfigurableHash extends Key {
+  /** All instances return {@linkplain Integer#MAX_VALUE} from {@linkplain #hashCode()}. */
+  private static class KeyWithMaxIntHash extends Key {
 
     final List<String> elements;
-    final Function<List<String>, Integer> hasher;
 
-    public KeyWithConfigurableHash(List<String> elements, Function<List<String>, Integer> hasher) {
+    public KeyWithMaxIntHash(List<String> elements) {
       this.elements = ImmutableList.copyOf(elements);
-      this.hasher = hasher;
     }
 
     @Override
@@ -267,16 +335,16 @@ public class TestFetchValuesUsingOpenAddressing {
       if (this == o) {
         return true;
       }
-      if (!(o instanceof KeyWithConfigurableHash)) {
+      if (!(o instanceof Key)) {
         return false;
       }
-      KeyWithConfigurableHash that = (KeyWithConfigurableHash) o;
-      return Objects.equals(elements, that.elements);
+      Key that = (Key) o;
+      return Objects.equals(elements, that.getElements());
     }
 
     @Override
     public int hashCode() {
-      return hasher.apply(getElements());
+      return Integer.MAX_VALUE;
     }
   }
 }
