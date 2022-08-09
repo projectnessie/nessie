@@ -18,6 +18,7 @@ package org.projectnessie.versioned.persist.adapter.spi;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
@@ -39,6 +40,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
@@ -156,7 +158,7 @@ public class TestKeyListBuildState {
   }
 
   @Test
-  public void nextPowerOfTwoBucketCountb() {
+  public void nextPowerOfTwoBucketCount() {
     // This case involves a computed shift distance of 32 on type int.  As described in JLS 11
     // section 15.19 Shift Operators, only the five lowest-order bits of the distance are actually
     // used for an int's shift distance, so the effective shift distance is 0.
@@ -166,12 +168,15 @@ public class TestKeyListBuildState {
     assertThat(KeyListBuildState.nextPowerOfTwo((1 << 29) + 1)).isEqualTo(1 << 30);
     assertThat(KeyListBuildState.nextPowerOfTwo((1 << 30) - 1)).isEqualTo(1 << 30);
     assertThat(KeyListBuildState.nextPowerOfTwo(1 << 30)).isEqualTo(1 << 30);
-    assertThat(KeyListBuildState.nextPowerOfTwo((1 << 30) + 1)).isEqualTo(1 << 31);
-    assertThat(KeyListBuildState.nextPowerOfTwo(1 << 31)).isEqualTo(1 << 31);
-    // TODO might just want to throw an exception early in the following cases, in nextPowerOfTwo
-    assertThat(KeyListBuildState.nextPowerOfTwo(Integer.MAX_VALUE - 1))
-        .isEqualTo(Integer.MIN_VALUE);
-    assertThat(KeyListBuildState.nextPowerOfTwo(Integer.MAX_VALUE)).isEqualTo(Integer.MIN_VALUE);
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = { Integer.MIN_VALUE, -2, -1, (1<<30) + 1, (1<<30) + 2, Integer.MAX_VALUE })
+  public void nextPowerOfTwoBucketCountException(int invalidParameter) {
+    final String expectedMessageFragment = "must be between 0 and 2^30";
+    assertThatThrownBy(() -> KeyListBuildState.nextPowerOfTwo(invalidParameter))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining(expectedMessageFragment);
   }
 
   @ParameterizedTest

@@ -22,6 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
@@ -31,6 +32,8 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
@@ -70,9 +73,8 @@ public class TestFetchValuesUsingOpenAddressing {
     // the first non-embedded segment in round 2, etc.
     // This has the side-effect of adding entityIdToSegment mappings, which we'll need to call
     // entityLoaded in the next part of this test.
-    Hash hashOfFinalSegment = Hash.of("03");
     List<Key> singleton = ImmutableList.of(nonExistentKey);
-    assertEquals(ImmutableList.of(hashOfFinalSegment), fetch.entityIdsToFetch(0, 0, singleton));
+    assertEquals(ImmutableList.of(Hash.of("03")), fetch.entityIdsToFetch(0, 0, singleton));
     assertEquals(Collections.EMPTY_LIST, fetch.entityIdsToFetch(1, 0, singleton));
     assertEquals(ImmutableList.of(Hash.of("01")), fetch.entityIdsToFetch(2, 0, singleton));
     assertEquals(ImmutableList.of(Hash.of("02")), fetch.entityIdsToFetch(3, 0, singleton));
@@ -103,10 +105,9 @@ public class TestFetchValuesUsingOpenAddressing {
     ImmutableKeyListEntry zerothEntry = getEmbeddedEntry(0);
 
     // Start searching at round zero, expecting to touch the final segment
-    Hash hashOfFinalSegment = Hash.of("03");
     List<Key> zerothKeySingleton = ImmutableList.of(zerothEntry.getKey());
     assertEquals(
-        ImmutableList.of(hashOfFinalSegment), fetch.entityIdsToFetch(0, 0, zerothKeySingleton));
+        ImmutableList.of(Hash.of("03")), fetch.entityIdsToFetch(0, 0, zerothKeySingleton));
     fetch.entityLoaded(getKeyListEntity(3, 2));
 
     // Checking for keys at round zero should miss, but it should return our key
@@ -128,46 +129,32 @@ public class TestFetchValuesUsingOpenAddressing {
     verifyNoMoreInteractions(keyHits);
   }
 
+
   /**
-   * Test {@link FetchValuesUsingOpenAddressing#segmentForKey(int, int)} on an 8-bucket table.
+   * Test {@link FetchValuesUsingOpenAddressing#segmentForKey(int, int)} on small hashtables.
    *
    * <p>The code in there interpreting return values of {@link java.util.Arrays#binarySearch(int[],
    * int)} has been correct since inception, but it can be a little tricky to think about the
    * various +1 and -1 offsets in play for nonexact matches. This just helped me prove that it was
    * correct to begin with, and should localize our search if we accidentally break it in the
    * future.
-   */
-  @Test
-  public void segmentForKey() {
-    FetchValuesUsingOpenAddressing fetch =
-        new FetchValuesUsingOpenAddressing(getCommitFixture(2, 4));
-
-    assertEquals(0, fetch.segmentForKey(0, 0));
-    assertEquals(0, fetch.segmentForKey(1, 0));
-    assertEquals(1, fetch.segmentForKey(2, 0));
-    assertEquals(1, fetch.segmentForKey(3, 0));
-    assertEquals(2, fetch.segmentForKey(4, 0));
-    assertEquals(2, fetch.segmentForKey(5, 0));
-    assertEquals(3, fetch.segmentForKey(6, 0));
-    assertEquals(3, fetch.segmentForKey(7, 0));
-  }
-
-  /**
-   * Tests keying segments that contain only a single bucket each.
    *
-   * <p>This should only happen if a user misunderstands what the open-addressing-related config
-   * options actually do, or if they manage to serialize abnormally huge {@code CommitLogEntry}
-   * instances individually exceeding the segment size limit.
+   * <p>The edge case where {@code segmentSize} is {@code 1} should only happen if a user
+   * misunderstands what the open-addressing-related config options actually do, or if they manage
+   * to serialize abnormally huge {@code CommitLogEntry} instances individually exceeding the
+   * segment size limit.
    */
-  @Test
-  public void singletonSegment() {
-    FetchValuesUsingOpenAddressing fetch =
-        new FetchValuesUsingOpenAddressing(getCommitFixture(1, 4));
+  @ParameterizedTest
+  @ValueSource(ints = { 1, 4 })
+  public void segmentForKey(int segmentSize) {
+    final int segmentCount = 4;
 
-    assertEquals(0, fetch.segmentForKey(0, 0));
-    assertEquals(1, fetch.segmentForKey(1, 0));
-    assertEquals(2, fetch.segmentForKey(2, 0));
-    assertEquals(3, fetch.segmentForKey(3, 0));
+    FetchValuesUsingOpenAddressing fetch =
+        new FetchValuesUsingOpenAddressing(getCommitFixture(segmentSize, segmentCount));
+
+    for (int bucketIndex = 0; bucketIndex < segmentSize * segmentCount; bucketIndex++) {
+      assertEquals(bucketIndex / segmentSize, fetch.segmentForKey(bucketIndex, 0));
+    }
   }
 
   /**
@@ -214,19 +201,20 @@ public class TestFetchValuesUsingOpenAddressing {
         .build();
   }
 
-  /** Convert an int to a hex string, left-padding with 0 until it has even length. */
+  /**
+   * Convert an int to a hex string of length 2, left padding with "0", if necessary.
+   *
+   * <p>This method only supports {@code 0 <= i <= 255}.
+   */
   private static String intToPaddedHexString(int i) {
-    String hexString = Integer.toHexString(i);
-    if (1 == hexString.length() % 2) {
-      hexString = "0" + hexString;
-    }
-    return hexString;
+    Preconditions.checkArgument(0 <= i && i <= 255, i + " exceeds unsigned byte range");
+    return String.format("%02x", i);
   }
 
   /**
    * Builds a fake {@linkplain KeyListEntity}.
    *
-   * <p>All keys appearing in this entity have acustom hashCode() that returns {@linkplain
+   * <p>All keys appearing in this entity have a custom hashCode() that returns {@linkplain
    * Integer#MAX_VALUE}.
    */
   private static KeyListEntity getKeyListEntity(int segmentIndex, int entryCount) {

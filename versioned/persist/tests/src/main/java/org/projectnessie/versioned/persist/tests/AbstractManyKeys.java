@@ -373,7 +373,7 @@ public abstract class AbstractManyKeys {
    * size-one external key lists after that.
    *
    * <p>This case is covered with greater specificity in {@linkplain
-   * TestFetchValuesUsingOpenAddressing#segmentWrapAround}.
+   * org.projectnessie.versioned.persist.adapter.spi.TestFetchValuesUsingOpenAddressing#segmentWrapAround}.
    */
   @Test
   void pathologicallySmallSegments(

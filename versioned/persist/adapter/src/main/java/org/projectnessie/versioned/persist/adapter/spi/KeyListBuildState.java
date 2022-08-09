@@ -19,6 +19,7 @@ import static java.lang.Integer.numberOfLeadingZeros;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.randomHash;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -87,7 +88,16 @@ class KeyListBuildState {
     entries.add(entry);
   }
 
+  /**
+   * Return the least power of two greater than or equal to the parameter.
+   *
+   * <p>This method only supports {@code 0 <= v <= 2^30}.
+   *
+   * @throws IllegalArgumentException when {@code v} is outside the accepted range
+   */
   static int nextPowerOfTwo(final int v) {
+    Preconditions.checkArgument(0 <= v && v <= (2<<29),
+        "Parameter %s must be between 0 and 2^30 (both inclusive)", v);
     return 1 << (32 - numberOfLeadingZeros(v - 1));
   }
 

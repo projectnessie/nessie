@@ -94,8 +94,6 @@ final class FetchValuesUsingOpenAddressing {
 
       for (int prefetch = 0; ; prefetch++) {
         if (segment > 0) {
-          checkSegmentIndexValidity(segment, key);
-
           // Decrement accounts for the embedded key-list segment
           int entitySegment = segment - 1;
 
@@ -148,8 +146,6 @@ final class FetchValuesUsingOpenAddressing {
         }
       }
 
-      checkSegmentIndexValidity(segment, key);
-
       KeyListEntry[] keys = keyListsArray[segment];
       for (int i = offsetInSegment; ; i++) {
         KeyListEntry keyListEntry = i < keys.length ? keys[i] : null;
@@ -166,17 +162,5 @@ final class FetchValuesUsingOpenAddressing {
       }
     }
     return keysForNextRound;
-  }
-
-  private void checkSegmentIndexValidity(final int segment, final Key key) {
-    // We expect segmentForKey to wrap in case the current round number is large enough to overrun
-    // the segment list, so this shouldn't happen
-    if (keyListsArray.length <= segment) {
-      throw new IllegalStateException(
-          String.format(
-              "Expected open-addressing key-list segment index between "
-                  + "0 (inclusive) and %s (exclusive), but computed invalid index %s for key %s",
-              keyListsArray.length, segment, key));
-    }
   }
 }
