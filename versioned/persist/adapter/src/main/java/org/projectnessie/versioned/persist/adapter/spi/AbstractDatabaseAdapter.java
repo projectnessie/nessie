@@ -1254,10 +1254,10 @@ public abstract class AbstractDatabaseAdapter<
     return value;
   }
 
-  /** Calculate the expected size of the given {@link CommitLogEntry} in the database. */
+  /** Calculate the expected size of the given {@link CommitLogEntry} in the database (in bytes). */
   protected abstract int entitySize(CommitLogEntry entry);
 
-  /** Calculate the expected size of the given {@link CommitLogEntry} in the database. */
+  /** Calculate the expected size of the given {@link CommitLogEntry} in the database (in bytes). */
   protected abstract int entitySize(KeyListEntry entry);
 
   /**

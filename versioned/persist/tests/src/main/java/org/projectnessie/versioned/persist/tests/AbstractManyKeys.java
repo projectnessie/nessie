@@ -20,8 +20,11 @@ import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.Mockito.spy;
 import static org.projectnessie.versioned.persist.tests.DatabaseAdapterTestUtils.ALWAYS_THROWING_ATTACHMENT_CONSUMER;
 
+import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,6 +34,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -42,6 +47,8 @@ import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
@@ -333,6 +340,171 @@ public abstract class AbstractManyKeys {
     }
 
     for (int i = 0; i < keyNum; i++) {
+      Key key = keyGen.apply(i);
+      Map<Key, ContentAndState<ByteString>> values =
+          databaseAdapter.values(
+              head, Collections.singletonList(key), KeyFilterPredicate.ALLOW_ALL);
+      assertThat(values)
+          .extractingByKey(key)
+          .extracting(ContentAndState::getRefState)
+          .isEqualTo(valueGen.apply(i));
+    }
+  }
+
+  /**
+   * Exercise a key list with segments containing one entry each.
+   *
+   * <p>For background, I found that key list goal sizes too small to fit a single entry caused
+   * lookup failures on buckets within the highest-indexed segment.
+   *
+   * <p>When the config parameter max.key.list.size is small or zero, the effective max embedded key
+   * list size computed in {@link AbstractDatabaseAdapter#buildKeyList(AutoCloseable,
+   * CommitLogEntry, Consumer, Function)} can go negative. This makes {@link
+   * org.projectnessie.versioned.persist.adapter.spi.KeyListBuildState} produce a size-zero embedded
+   * key list. If the external key lists also have size 1, then the number of segments exceeds the
+   * number of buckets, which contributes to {@link
+   * org.projectnessie.versioned.persist.adapter.spi.FetchValuesUsingOpenAddressing#segmentForKey(int,
+   * int)} computing the wrong segment index for the final key, since it clamps a segment index to
+   * the bucket index interval. Applying the open-addressing bucket mask to the segment index is
+   * normally a no-op, except in the extreme edge case described above.
+   *
+   * <p>It was possible to induce this bug without setting the goal sizes all the way down to zero.
+   * It just required values small enough to generate a size-zero embedded key list and a series of
+   * size-one external key lists after that.
+   *
+   * <p>This case is covered with greater specificity in the {@code segmentWrapAround*} methods in
+   * {@linkplain
+   * org.projectnessie.versioned.persist.adapter.spi.TestFetchValuesUsingOpenAddressing}.
+   */
+  @Test
+  void pathologicallySmallSegments(
+      @NessieDbAdapterConfigItem(name = "max.key.list.size", value = "0")
+          @NessieDbAdapterConfigItem(name = "max.key.list.entity.size", value = "0")
+          @NessieDbAdapterConfigItem(name = "key.list.distance", value = "20")
+          @NessieDbAdapterConfigItem(name = "key.list.hash.load.factor", value = "1.0")
+          @NessieDbAdapter
+          DatabaseAdapter databaseAdapter)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+
+    IntFunction<Key> keyGen = i -> Key.of("k-" + i);
+    IntFunction<ByteString> valueGen = i -> ByteString.copyFromUtf8("value-" + i);
+    BranchName branch = BranchName.of("main");
+
+    // This should be a power of two, so that the entries hashed by KeyListBuildState completely
+    // fill its buckets, but this specific power is an arbitrary choice and not significant.
+    final int keyCount = 4;
+
+    commitPutsOnGeneratedKeys(databaseAdapter, branch, keyGen, valueGen, keyCount);
+
+    Hash head = makeEmptyCommits(databaseAdapter, branch, 20);
+
+    checkKeysAndValuesIndividually(databaseAdapter, head, keyGen, valueGen, keyCount);
+  }
+
+  /**
+   * Test a completely full hashmap where each segment contains two elements.
+   *
+   * <p>This is the integration-test counterpart of the unit-test {@code
+   * TestFetchValuesUsingOpenAddressing#segmentWrapAroundWithPresentKey}.
+   *
+   * <p>When this failed, examining with a debugger showed an attempt to read a key from the final
+   * segment. The read missed in the final segment, though it was present in another segment
+   * (presumably due to all the collisions caused by the undersized table). Code surrounding {@link
+   * org.projectnessie.versioned.persist.adapter.spi.FetchValuesUsingOpenAddressing} would increment
+   * the round-count from zero to one, then retry. This generated a segment index that ran off the
+   * end of the segment space, which {@link
+   * org.projectnessie.versioned.persist.adapter.spi.FetchValuesUsingOpenAddressing#checkForKeys(int,
+   * Collection, Consumer)} would ignore, treating it as a miss, and not including it in the set of
+   * keys to be tried on the next round.
+   *
+   * <p>The figures {@code max.key.list(.entity).size} are hand-picked to leave 130 bytes in both
+   * the embedded segment (after embedded-segment-specific overhead) and the external segments of
+   * the key list. This is brittle, and could be more robustly derived from {@link
+   * AbstractDatabaseAdapter#entitySize(KeyListEntry)}, but I didn't want to widen the visibility
+   * modifier on that just for testing, besides having to configure the store in a way inconsistent
+   * with the rest of this test. It's also brittle in the sense that the adapter implementations
+   * currently serialize and size {@code KeyListEntry} instances in the same way, but that could
+   * theoretically change in the future, in which case there would be no one-size-fits-all set of
+   * annotation values. I was willing to tolerate these drawbacks because, at worst, changes in the
+   * underlying {@code KeyListEntry} serialization that invalidate this test's assumptions could
+   * cause false passage, but could not cause false failure.
+   */
+  @Test
+  void pathologicallyFrequentCollisions(
+      @NessieDbAdapterConfigItem(name = "max.key.list.size", value = "892")
+          @NessieDbAdapterConfigItem(name = "max.key.list.entity.size", value = "130")
+          @NessieDbAdapterConfigItem(name = "key.list.distance", value = "20")
+          @NessieDbAdapterConfigItem(name = "key.list.hash.load.factor", value = "1.0")
+          @NessieDbAdapter
+          DatabaseAdapter databaseAdapter)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+
+    IntFunction<Key> keyGen = i -> Key.of("k-" + i);
+    IntFunction<ByteString> valueGen = i -> ByteString.copyFromUtf8("value-" + i);
+    BranchName branch = BranchName.of("main");
+    // This should be a power of two, so that the entries hashed by KeyListBuildState completely
+    // fill its buckets, but this specific power is an arbitrary choice and not significant.
+    final int keyCount = 128;
+
+    // Prepare keyCount unique keys, then put them in a single commit
+    commitPutsOnGeneratedKeys(databaseAdapter, branch, keyGen, valueGen, keyCount);
+
+    // Repeatedly commit until we exceed the key.list.distance, triggering a key summary
+    Hash head = makeEmptyCommits(databaseAdapter, branch, 20);
+
+    checkKeysAndValuesIndividually(databaseAdapter, head, keyGen, valueGen, keyCount);
+  }
+
+  /** Commit once, with puts from applying supplied functions to the ints {@code [0, keyCount)}. */
+  private static void commitPutsOnGeneratedKeys(
+      DatabaseAdapter databaseAdapter,
+      BranchName branch,
+      IntFunction<Key> keyGen,
+      IntFunction<ByteString> valueGen,
+      int keyCount)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+    List<KeyWithBytes> keys =
+        IntStream.range(0, keyCount)
+            .mapToObj(
+                i ->
+                    KeyWithBytes.of(
+                        keyGen.apply(i), ContentId.of("cid-" + i), (byte) 0, valueGen.apply(i)))
+            .collect(Collectors.toCollection(() -> new ArrayList<>(keyCount)));
+    databaseAdapter.commit(
+        ImmutableCommitParams.builder()
+            .toBranch(branch)
+            .commitMetaSerialized(ByteString.EMPTY)
+            .addAllPuts(keys)
+            .build());
+  }
+
+  /** Make an empty commit to the supplied branch, {@code commitCount} times. */
+  private static Hash makeEmptyCommits(
+      DatabaseAdapter databaseAdapter, BranchName toBranch, int commitCount)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+    Preconditions.checkArgument(0 < commitCount);
+    Hash head = null;
+    for (int i = 0; i < commitCount; i++) {
+      head =
+          databaseAdapter.commit(
+              ImmutableCommitParams.builder()
+                  .toBranch(toBranch)
+                  .commitMetaSerialized(ByteString.EMPTY)
+                  .build());
+    }
+    Preconditions.checkNotNull(head);
+    return head;
+  }
+
+  /** Assert that every key and its expected value can be read from the supplied head. */
+  private static void checkKeysAndValuesIndividually(
+      DatabaseAdapter databaseAdapter,
+      Hash head,
+      IntFunction<Key> keyGen,
+      IntFunction<ByteString> valueGen,
+      int keyCount)
+      throws ReferenceNotFoundException {
+    for (int i = 0; i < keyCount; i++) {
       Key key = keyGen.apply(i);
       Map<Key, ContentAndState<ByteString>> values =
           databaseAdapter.values(

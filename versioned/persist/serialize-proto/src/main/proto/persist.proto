@@ -43,7 +43,7 @@ message CommitLogEntry {
   // Open-addressing bucket offsets. Same number of elements as key_list_ids.
   repeated int32 key_list_entity_offsets = 13;
   optional float key_list_load_factor = 14;
-  optional int32 key_list_segment_count = 15;
+  optional int32 key_list_bucket_count = 15;
 }
 
 // See CommitLogEntry.KeyListVariant

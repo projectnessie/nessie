@@ -19,6 +19,7 @@ import static java.lang.Integer.numberOfLeadingZeros;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.randomHash;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -38,7 +39,8 @@ import org.projectnessie.versioned.persist.adapter.KeyListEntry;
  * accessible via {@link CommitLogEntry#getKeyListsIds()}.
  *
  * <p>Commits with {@link CommitLogEntry.KeyListVariant#OPEN_ADDRESSING} are represented as an
- * open-addressing hash map with {@link org.projectnessie.versioned.Key} as the map key.
+ * open-addressing hash map with {@link org.projectnessie.versioned.Key} as the map key. "Bucket"
+ * refers to a cell in this hash map. Collisions are resolved with linear probing.
  *
  * <p>That open-addressing hash map is split into multiple segments, if necessary.
  *
@@ -48,6 +50,12 @@ import org.projectnessie.versioned.persist.adapter.KeyListEntry;
  * DatabaseAdapterConfig#getMaxKeyListEntitySize()} as the goal.
  *
  * <p>Maximum size constraints are fulfilled using a best-effort approach.
+ *
+ * <p>The first segment represented by the embedded key list is always present, even if it contains
+ * no elements. Zero or more non-embedded segments follow this first segment. The total number of
+ * segments is therefore the number of non-embedded segments plus one.
+ *
+ * <p>In general, the number of buckets should be significantly greater than the number of segments.
  *
  * <p>Used by {@link AbstractDatabaseAdapter#buildKeyList(AutoCloseable, CommitLogEntry, Consumer,
  * Function)}.
@@ -80,13 +88,22 @@ class KeyListBuildState {
     entries.add(entry);
   }
 
+  /**
+   * Return the least power of two greater than or equal to the parameter.
+   *
+   * <p>This method only supports {@code 0 <= v <= 2^30}.
+   *
+   * @throws IllegalArgumentException when {@code v} is outside the accepted range
+   */
   static int nextPowerOfTwo(final int v) {
+    Preconditions.checkArgument(
+        0 <= v && v <= (2 << 29), "Parameter %s must be between 0 and 2^30 (both inclusive)", v);
     return 1 << (32 - numberOfLeadingZeros(v - 1));
   }
 
   List<KeyListEntity> finish() {
     // Build open-addressing map
-    int openAddressingBuckets = openAddressingSegments();
+    int openAddressingBuckets = openAddressingBucketCount();
     int openAddressingMask = openAddressingBuckets - 1;
     KeyListEntry[] openAddressingHashMap = new KeyListEntry[openAddressingBuckets];
     for (KeyListEntry entry : entries) {
@@ -114,6 +131,7 @@ class KeyListBuildState {
     List<Integer> offsets = new ArrayList<>();
     List<KeyList> keyLists = new ArrayList<>();
 
+    // The units for both of these segment sizes are bytes
     int segmentSize = 0;
     int maxSegmentSize = maxEmbeddedKeyListSize;
     ImmutableKeyList.Builder keyListBuilder = ImmutableKeyList.builder();
@@ -135,6 +153,7 @@ class KeyListBuildState {
       }
       keyListBuilder.addKeys(entry);
     }
+
     if (segmentSize > 0) {
       // Only add the last key-list-entity if it actually contains entries (not all null)
       keyLists.add(keyListBuilder.build());
@@ -147,7 +166,7 @@ class KeyListBuildState {
       newCommitEntry.keyList(KeyList.EMPTY);
     }
     newCommitEntry.keyListLoadFactor(loadFactor);
-    newCommitEntry.keyListSegmentCount(openAddressingBuckets);
+    newCommitEntry.keyListBucketCount(openAddressingBuckets);
 
     List<KeyListEntity> builtEntities =
         keyLists.stream()
@@ -164,7 +183,7 @@ class KeyListBuildState {
   }
 
   @VisibleForTesting
-  int openAddressingSegments() {
+  int openAddressingBucketCount() {
     return nextPowerOfTwo((int) (entries.size() / loadFactor));
   }
 }
