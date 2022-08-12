@@ -19,13 +19,12 @@ import static org.projectnessie.services.cel.CELUtil.COMMIT_LOG_DECLARATIONS;
 import static org.projectnessie.services.cel.CELUtil.COMMIT_LOG_TYPES;
 import static org.projectnessie.services.cel.CELUtil.CONTAINER;
 import static org.projectnessie.services.cel.CELUtil.ENTRIES_DECLARATIONS;
+import static org.projectnessie.services.cel.CELUtil.ENTRIES_TYPES;
 import static org.projectnessie.services.cel.CELUtil.REFERENCES_DECLARATIONS;
 import static org.projectnessie.services.cel.CELUtil.REFERENCES_TYPES;
 import static org.projectnessie.services.cel.CELUtil.SCRIPT_HOST;
 import static org.projectnessie.services.cel.CELUtil.VAR_COMMIT;
-import static org.projectnessie.services.cel.CELUtil.VAR_CONTENT_TYPE;
 import static org.projectnessie.services.cel.CELUtil.VAR_ENTRY;
-import static org.projectnessie.services.cel.CELUtil.VAR_NAMESPACE;
 import static org.projectnessie.services.cel.CELUtil.VAR_OPERATIONS;
 import static org.projectnessie.services.cel.CELUtil.VAR_REF;
 import static org.projectnessie.services.cel.CELUtil.VAR_REF_META;
@@ -618,23 +617,14 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
               .buildScript(filter)
               .withContainer(CONTAINER)
               .withDeclarations(ENTRIES_DECLARATIONS)
+              .withTypes(ENTRIES_TYPES)
               .build();
     } catch (ScriptException e) {
       throw new IllegalArgumentException(e);
     }
     return entries.filter(
         entry -> {
-          // currently this is just a workaround where we put EntriesResponse.Entry into a hash
-          // structure.
-          // Eventually we should just be able to do "script.execute(Boolean.class, entry)"
-          Map<String, Object> arguments =
-              ImmutableMap.of(
-                  VAR_ENTRY,
-                  ImmutableMap.of(
-                      VAR_NAMESPACE,
-                      fromKey(entry.getKey()).getNamespace().name(),
-                      VAR_CONTENT_TYPE,
-                      entry.getType().name()));
+          Map<String, Object> arguments = ImmutableMap.of(VAR_ENTRY, CELUtil.forCel(entry));
 
           try {
             return script.execute(Boolean.class, arguments);
