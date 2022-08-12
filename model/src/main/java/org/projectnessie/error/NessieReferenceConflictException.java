@@ -17,7 +17,8 @@ package org.projectnessie.error;
 
 /**
  * This exception is thrown when the expected state of a reference (e.g. the hash of the HEAD of a
- * branch) does not match the hash provided by the caller.
+ * branch) does not match the hash provided by the caller or when the requested operation could not
+ * be completed within the configured time and number of retries due to concurrent operations.
  */
 public class NessieReferenceConflictException extends NessieConflictException {
   public NessieReferenceConflictException(String message, Throwable cause) {
