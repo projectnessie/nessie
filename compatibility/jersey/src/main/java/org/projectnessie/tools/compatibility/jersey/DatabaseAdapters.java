@@ -45,7 +45,10 @@ public final class DatabaseAdapters {
       createDatabaseConnectionProvider(
           String databaseAdapterName, Map<String, String> configuration) {
     DatabaseAdapterFactory<
-            DatabaseAdapterConfig, DatabaseAdapterConfig, DatabaseConnectionProvider<?>>
+            DatabaseAdapter,
+            DatabaseAdapterConfig,
+            DatabaseAdapterConfig,
+            DatabaseConnectionProvider<?>>
         factory = DatabaseAdapterFactory.loadFactoryByName(databaseAdapterName);
 
     String providerSpec =
@@ -56,7 +59,10 @@ public final class DatabaseAdapters {
                 .toLowerCase(Locale.ROOT);
 
     DatabaseAdapterFactory.Builder<
-            DatabaseAdapterConfig, DatabaseAdapterConfig, DatabaseConnectionProvider<?>>
+            DatabaseAdapter,
+            DatabaseAdapterConfig,
+            DatabaseAdapterConfig,
+            DatabaseConnectionProvider<?>>
         builder = factory.newBuilder();
 
     TestConnectionProviderSource<DatabaseConnectionConfig> providerSource =
@@ -91,11 +97,17 @@ public final class DatabaseAdapters {
       String databaseAdapterName,
       DatabaseConnectionProvider<DatabaseConnectionConfig> connectionProvider) {
     DatabaseAdapterFactory<
-            DatabaseAdapterConfig, DatabaseAdapterConfig, DatabaseConnectionProvider<?>>
+            DatabaseAdapter,
+            DatabaseAdapterConfig,
+            DatabaseAdapterConfig,
+            DatabaseConnectionProvider<?>>
         factory = DatabaseAdapterFactory.loadFactoryByName(databaseAdapterName);
 
     DatabaseAdapterFactory.Builder<
-            DatabaseAdapterConfig, DatabaseAdapterConfig, DatabaseConnectionProvider<?>>
+            DatabaseAdapter,
+            DatabaseAdapterConfig,
+            DatabaseAdapterConfig,
+            DatabaseConnectionProvider<?>>
         builder = factory.newBuilder();
 
     builder.withConnector(connectionProvider);
@@ -125,7 +137,10 @@ public final class DatabaseAdapters {
 
   private static DatabaseAdapter buildPre019(
       DatabaseAdapterFactory.Builder<
-              DatabaseAdapterConfig, DatabaseAdapterConfig, DatabaseConnectionProvider<?>>
+              DatabaseAdapter,
+              DatabaseAdapterConfig,
+              DatabaseAdapterConfig,
+              DatabaseConnectionProvider<?>>
           builder,
       Method build) {
     return doBuild(builder, build);
@@ -133,7 +148,10 @@ public final class DatabaseAdapters {
 
   private static DatabaseAdapter buildWithStoreWorker(
       DatabaseAdapterFactory.Builder<
-              DatabaseAdapterConfig, DatabaseAdapterConfig, DatabaseConnectionProvider<?>>
+              DatabaseAdapter,
+              DatabaseAdapterConfig,
+              DatabaseAdapterConfig,
+              DatabaseConnectionProvider<?>>
           builder)
       throws NoSuchMethodException, ClassNotFoundException {
     Method build = DatabaseAdapterFactory.Builder.class.getMethod("build", StoreWorker.class);
@@ -142,7 +160,10 @@ public final class DatabaseAdapters {
 
   private static DatabaseAdapter buildWithContentVariantSupplier(
       DatabaseAdapterFactory.Builder<
-              DatabaseAdapterConfig, DatabaseAdapterConfig, DatabaseConnectionProvider<?>>
+              DatabaseAdapter,
+              DatabaseAdapterConfig,
+              DatabaseAdapterConfig,
+              DatabaseConnectionProvider<?>>
           builder)
       throws NoSuchMethodException, ClassNotFoundException, InvocationTargetException,
           InstantiationException, IllegalAccessException {
@@ -159,7 +180,10 @@ public final class DatabaseAdapters {
 
   private static DatabaseAdapter doBuild(
       DatabaseAdapterFactory.Builder<
-              DatabaseAdapterConfig, DatabaseAdapterConfig, DatabaseConnectionProvider<?>>
+              DatabaseAdapter,
+              DatabaseAdapterConfig,
+              DatabaseAdapterConfig,
+              DatabaseConnectionProvider<?>>
           builder,
       Method build,
       Object... args) {

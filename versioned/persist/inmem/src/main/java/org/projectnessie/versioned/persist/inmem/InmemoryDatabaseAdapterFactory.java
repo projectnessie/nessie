@@ -16,13 +16,12 @@
 package org.projectnessie.versioned.persist.inmem;
 
 import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterFactory;
 
 public class InmemoryDatabaseAdapterFactory
-    extends NonTransactionalDatabaseAdapterFactory<InmemoryStore> {
+    extends NonTransactionalDatabaseAdapterFactory<InmemoryDatabaseAdapter, InmemoryStore> {
 
   public static final String NAME = "In-Memory";
 
@@ -32,7 +31,7 @@ public class InmemoryDatabaseAdapterFactory
   }
 
   @Override
-  protected DatabaseAdapter create(
+  protected InmemoryDatabaseAdapter create(
       NonTransactionalDatabaseAdapterConfig config,
       InmemoryStore inmemoryStore,
       StoreWorker<?, ?, ?> storeWorker,

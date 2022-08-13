@@ -16,29 +16,30 @@
 package org.projectnessie.versioned.persist.tx;
 
 import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
 import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
 
-public abstract class TxDatabaseAdapterFactory<CONNECTOR extends DatabaseConnectionProvider<?>>
+public abstract class TxDatabaseAdapterFactory<
+        ADAPTER extends TxDatabaseAdapter, CONNECTOR extends DatabaseConnectionProvider<?>>
     implements DatabaseAdapterFactory<
-        TxDatabaseAdapterConfig, AdjustableTxDatabaseAdapterConfig, CONNECTOR> {
+        ADAPTER, TxDatabaseAdapterConfig, AdjustableTxDatabaseAdapterConfig, CONNECTOR> {
 
-  protected abstract DatabaseAdapter create(
+  protected abstract ADAPTER create(
       TxDatabaseAdapterConfig config,
       CONNECTOR connector,
       StoreWorker<?, ?, ?> storeWorker,
       AdapterEventConsumer eventConsumer);
 
   @Override
-  public Builder<TxDatabaseAdapterConfig, AdjustableTxDatabaseAdapterConfig, CONNECTOR>
+  public Builder<ADAPTER, TxDatabaseAdapterConfig, AdjustableTxDatabaseAdapterConfig, CONNECTOR>
       newBuilder() {
     return new TxBuilder();
   }
 
   private class TxBuilder
-      extends Builder<TxDatabaseAdapterConfig, AdjustableTxDatabaseAdapterConfig, CONNECTOR> {
+      extends Builder<
+          ADAPTER, TxDatabaseAdapterConfig, AdjustableTxDatabaseAdapterConfig, CONNECTOR> {
     @Override
     protected TxDatabaseAdapterConfig getDefaultConfig() {
       return ImmutableAdjustableTxDatabaseAdapterConfig.builder().build();
@@ -50,7 +51,7 @@ public abstract class TxDatabaseAdapterFactory<CONNECTOR extends DatabaseConnect
     }
 
     @Override
-    public DatabaseAdapter build(StoreWorker<?, ?, ?> storeWorker) {
+    public ADAPTER build(StoreWorker<?, ?, ?> storeWorker) {
       return create(getConfig(), getConnector(), storeWorker, getEventConsumer());
     }
   }

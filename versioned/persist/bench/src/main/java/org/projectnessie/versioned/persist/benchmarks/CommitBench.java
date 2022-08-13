@@ -120,6 +120,7 @@ public class CommitBench {
       String adapterName =
           (adapter.indexOf(':') <= 0) ? adapter : adapter.substring(0, adapter.indexOf(':'));
       DatabaseAdapterFactory<
+              ? extends DatabaseAdapter,
               ? extends DatabaseAdapterConfig,
               ? extends AdjustableDatabaseAdapterConfig,
               DatabaseConnectionProvider<DatabaseConnectionConfig>>
@@ -127,6 +128,7 @@ public class CommitBench {
               DatabaseAdapterFactory.loadFactory(f -> f.getName().equalsIgnoreCase(adapterName));
 
       DatabaseAdapterFactory.Builder<
+              ? extends DatabaseAdapter,
               ? extends DatabaseAdapterConfig,
               ? extends AdjustableDatabaseAdapterConfig,
               DatabaseConnectionProvider<DatabaseConnectionConfig>>

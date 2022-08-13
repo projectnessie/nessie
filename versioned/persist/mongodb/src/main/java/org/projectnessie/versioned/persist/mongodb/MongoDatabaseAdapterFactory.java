@@ -16,13 +16,12 @@
 package org.projectnessie.versioned.persist.mongodb;
 
 import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterFactory;
 
 public class MongoDatabaseAdapterFactory
-    extends NonTransactionalDatabaseAdapterFactory<MongoDatabaseClient> {
+    extends NonTransactionalDatabaseAdapterFactory<MongoDatabaseAdapter, MongoDatabaseClient> {
 
   public static final String NAME = "MongoDB";
 
@@ -32,7 +31,7 @@ public class MongoDatabaseAdapterFactory
   }
 
   @Override
-  protected DatabaseAdapter create(
+  protected MongoDatabaseAdapter create(
       NonTransactionalDatabaseAdapterConfig config,
       MongoDatabaseClient client,
       StoreWorker<?, ?, ?> storeWorker,

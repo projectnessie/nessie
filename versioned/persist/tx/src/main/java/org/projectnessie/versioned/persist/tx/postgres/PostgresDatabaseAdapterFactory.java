@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.persist.tx.postgres;
 
 import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
 import org.projectnessie.versioned.persist.tx.TxConnectionConfig;
 import org.projectnessie.versioned.persist.tx.TxConnectionProvider;
@@ -24,7 +23,8 @@ import org.projectnessie.versioned.persist.tx.TxDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.tx.TxDatabaseAdapterFactory;
 
 public class PostgresDatabaseAdapterFactory
-    extends TxDatabaseAdapterFactory<TxConnectionProvider<TxConnectionConfig>> {
+    extends TxDatabaseAdapterFactory<
+        PostgresDatabaseAdapter, TxConnectionProvider<TxConnectionConfig>> {
 
   public static final String NAME = "PostgreSQL";
 
@@ -34,7 +34,7 @@ public class PostgresDatabaseAdapterFactory
   }
 
   @Override
-  protected DatabaseAdapter create(
+  protected PostgresDatabaseAdapter create(
       TxDatabaseAdapterConfig config,
       TxConnectionProvider<TxConnectionConfig> connectionProvider,
       StoreWorker<?, ?, ?> storeWorker,

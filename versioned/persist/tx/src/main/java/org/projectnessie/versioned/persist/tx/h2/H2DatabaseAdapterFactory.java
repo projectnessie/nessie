@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.persist.tx.h2;
 
 import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
 import org.projectnessie.versioned.persist.tx.TxConnectionConfig;
 import org.projectnessie.versioned.persist.tx.TxConnectionProvider;
@@ -24,7 +23,7 @@ import org.projectnessie.versioned.persist.tx.TxDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.tx.TxDatabaseAdapterFactory;
 
 public class H2DatabaseAdapterFactory
-    extends TxDatabaseAdapterFactory<TxConnectionProvider<TxConnectionConfig>> {
+    extends TxDatabaseAdapterFactory<H2DatabaseAdapter, TxConnectionProvider<TxConnectionConfig>> {
 
   public static final String NAME = "H2";
 
@@ -34,7 +33,7 @@ public class H2DatabaseAdapterFactory
   }
 
   @Override
-  protected DatabaseAdapter create(
+  protected H2DatabaseAdapter create(
       TxDatabaseAdapterConfig config,
       TxConnectionProvider<TxConnectionConfig> connectionProvider,
       StoreWorker<?, ?, ?> storeWorker,
