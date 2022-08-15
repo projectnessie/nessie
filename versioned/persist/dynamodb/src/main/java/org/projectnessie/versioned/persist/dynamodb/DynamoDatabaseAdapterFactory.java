@@ -16,13 +16,12 @@
 package org.projectnessie.versioned.persist.dynamodb;
 
 import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterFactory;
 
 public class DynamoDatabaseAdapterFactory
-    extends NonTransactionalDatabaseAdapterFactory<DynamoDatabaseClient> {
+    extends NonTransactionalDatabaseAdapterFactory<DynamoDatabaseAdapter, DynamoDatabaseClient> {
 
   public static final String NAME = "DynamoDB";
 
@@ -32,7 +31,7 @@ public class DynamoDatabaseAdapterFactory
   }
 
   @Override
-  protected DatabaseAdapter create(
+  protected DynamoDatabaseAdapter create(
       NonTransactionalDatabaseAdapterConfig config,
       DynamoDatabaseClient dynamoDatabaseClient,
       StoreWorker<?, ?, ?> storeWorker,

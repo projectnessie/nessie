@@ -285,13 +285,16 @@ public class DatabaseAdapterExtension
       ParameterContext parameterContext,
       StoreWorker<?, ?, ?> storeWorker) {
     DatabaseAdapterFactory<
-            DatabaseAdapterConfig, AdjustableDatabaseAdapterConfig, DatabaseConnectionProvider<?>>
+            DatabaseAdapter,
+            DatabaseAdapterConfig,
+            AdjustableDatabaseAdapterConfig,
+            DatabaseConnectionProvider<?>>
         factory =
             findAnnotation(context, parameterContext, NessieDbAdapterName.class)
                 .map(NessieDbAdapterName::value)
                 .map(
                     DatabaseAdapterFactory
-                        ::<DatabaseAdapterConfig, AdjustableDatabaseAdapterConfig,
+                        ::<DatabaseAdapter, DatabaseAdapterConfig, AdjustableDatabaseAdapterConfig,
                             DatabaseConnectionProvider<?>>loadFactoryByName)
                 .orElseGet(() -> DatabaseAdapterFactory.loadFactory(x -> true));
 
@@ -299,7 +302,10 @@ public class DatabaseAdapterExtension
         extractCustomConfiguration(adapterAnnotation, context);
 
     DatabaseAdapterFactory.Builder<
-            DatabaseAdapterConfig, AdjustableDatabaseAdapterConfig, DatabaseConnectionProvider<?>>
+            DatabaseAdapter,
+            DatabaseAdapterConfig,
+            AdjustableDatabaseAdapterConfig,
+            DatabaseConnectionProvider<?>>
         builder = factory.newBuilder();
 
     if (adapterAnnotation.eventConsumer() != AdapterEventConsumer.class) {

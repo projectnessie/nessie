@@ -16,13 +16,12 @@
 package org.projectnessie.versioned.persist.rocks;
 
 import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterFactory;
 
 public class RocksDatabaseAdapterFactory
-    extends NonTransactionalDatabaseAdapterFactory<RocksDbInstance> {
+    extends NonTransactionalDatabaseAdapterFactory<RocksDatabaseAdapter, RocksDbInstance> {
 
   public static final String NAME = "RocksDB";
 
@@ -32,7 +31,7 @@ public class RocksDatabaseAdapterFactory
   }
 
   @Override
-  protected DatabaseAdapter create(
+  protected RocksDatabaseAdapter create(
       NonTransactionalDatabaseAdapterConfig config,
       RocksDbInstance rocksDbInstance,
       StoreWorker<?, ?, ?> storeWorker,

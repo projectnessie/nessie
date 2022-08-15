@@ -36,31 +36,33 @@ import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
  *     this factory.
  */
 public interface DatabaseAdapterFactory<
+    Adapter extends DatabaseAdapter,
     Config extends DatabaseAdapterConfig,
     AdjustableConfig extends Config,
     Connector extends DatabaseConnectionProvider<?>> {
 
-  Builder<Config, AdjustableConfig, Connector> newBuilder();
+  Builder<Adapter, Config, AdjustableConfig, Connector> newBuilder();
 
   String getName();
 
-  abstract class Builder<Config, AdjustableConfig, Connector> {
+  abstract class Builder<Adapter, Config, AdjustableConfig, Connector> {
     private Config config;
     private Connector connector;
     private AdapterEventConsumer eventConsumer;
 
-    public Builder<Config, AdjustableConfig, Connector> withConfig(Config config) {
+    public Builder<Adapter, Config, AdjustableConfig, Connector> withConfig(Config config) {
       this.config = config;
       return this;
     }
 
-    public Builder<Config, AdjustableConfig, Connector> withConnector(Connector connector) {
+    public Builder<Adapter, Config, AdjustableConfig, Connector> withConnector(
+        Connector connector) {
       this.connector = connector;
       return this;
     }
 
     /** Register the {@link AdapterEventConsumer} to receive events from the database adapter. */
-    public Builder<Config, AdjustableConfig, Connector> withEventConsumer(
+    public Builder<Adapter, Config, AdjustableConfig, Connector> withEventConsumer(
         AdapterEventConsumer eventConsumer) {
       this.eventConsumer = eventConsumer;
       return this;
@@ -85,9 +87,9 @@ public interface DatabaseAdapterFactory<
       return eventConsumer;
     }
 
-    public abstract DatabaseAdapter build(StoreWorker<?, ?, ?> storeWorker);
+    public abstract Adapter build(StoreWorker<?, ?, ?> storeWorker);
 
-    public Builder<Config, AdjustableConfig, Connector> configure(
+    public Builder<Adapter, Config, AdjustableConfig, Connector> configure(
         Function<AdjustableConfig, Config> configurator) {
       this.config = configurator.apply(adjustableConfig(getConfig()));
       return this;
@@ -95,10 +97,12 @@ public interface DatabaseAdapterFactory<
   }
 
   static <
+          Adapter extends DatabaseAdapter,
           Config extends DatabaseAdapterConfig,
           AdjustableConfig extends Config,
           Connector extends DatabaseConnectionProvider<?>>
-      DatabaseAdapterFactory<Config, AdjustableConfig, Connector> loadFactoryByName(String name) {
+      DatabaseAdapterFactory<Adapter, Config, AdjustableConfig, Connector> loadFactoryByName(
+          String name) {
     try {
       return loadFactory(f -> f.getName().equalsIgnoreCase(name));
     } catch (Exception e) {
@@ -108,11 +112,12 @@ public interface DatabaseAdapterFactory<
   }
 
   static <
+          Adapter extends DatabaseAdapter,
           Config extends DatabaseAdapterConfig,
           AdjustableConfig extends Config,
           Connector extends DatabaseConnectionProvider<?>>
-      DatabaseAdapterFactory<Config, AdjustableConfig, Connector> loadFactory(
-          Predicate<DatabaseAdapterFactory<?, ?, ?>> check) {
+      DatabaseAdapterFactory<Adapter, Config, AdjustableConfig, Connector> loadFactory(
+          Predicate<DatabaseAdapterFactory<?, ?, ?, ?>> check) {
     @SuppressWarnings("rawtypes")
     Iterator<DatabaseAdapterFactory> iter =
         ServiceLoader.load(DatabaseAdapterFactory.class).iterator();
@@ -122,7 +127,7 @@ public interface DatabaseAdapterFactory<
 
     while (iter.hasNext()) {
       @SuppressWarnings("unchecked")
-      DatabaseAdapterFactory<Config, AdjustableConfig, Connector> candidate = iter.next();
+      DatabaseAdapterFactory<Adapter, Config, AdjustableConfig, Connector> candidate = iter.next();
       if (check.test(candidate)) {
         return candidate;
       }
