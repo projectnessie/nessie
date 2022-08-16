@@ -37,6 +37,8 @@ import org.projectnessie.versioned.KeyEntry;
 /** A utility class for CEL declarations and other things. */
 public final class CELUtil {
 
+  // TODO: for testing - remove
+
   public static final String CONTAINER = "org.projectnessie.model";
   public static final ScriptHost SCRIPT_HOST =
       ScriptHost.newBuilder().registry(JacksonRegistry.newRegistry()).build();
