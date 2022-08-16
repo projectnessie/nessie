@@ -26,5 +26,11 @@ import org.projectnessie.services.cel.CELUtil;
  * <p>In particular, this list is about Nessie model classes.
  */
 @RegisterForReflection(
-    targets = {NessieError.class, CELUtil.OperationForCel.class, CELUtil.ContentForCel.class})
+    targets = {
+      NessieError.class,
+      CELUtil.KeyedEntityForCel.class,
+      CELUtil.OperationForCel.class,
+      CELUtil.ContentForCel.class,
+      CELUtil.KeyEntryForCel.class
+    })
 public abstract class ModelReflections {}
