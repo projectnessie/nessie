@@ -26,10 +26,15 @@ extra["maven.name"] = "Nessie - Versioned - Persist - Version Store"
 
 dependencies {
   implementation(platform(rootProject))
+  compileOnly(platform("com.fasterxml.jackson:jackson-bom"))
 
+  implementation(project(":nessie-model"))
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-spi"))
   implementation("com.google.protobuf:protobuf-java")
   implementation("com.google.code.findbugs:jsr305")
   implementation("com.google.guava:guava")
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
+  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
+  compileOnly("jakarta.validation:jakarta.validation-api")
 }

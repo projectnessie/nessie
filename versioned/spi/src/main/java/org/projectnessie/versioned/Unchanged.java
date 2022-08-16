@@ -25,7 +25,7 @@ import org.immutables.value.Value;
  * operation stated.
  */
 @Value.Immutable
-public interface Unchanged<V> extends Operation<V> {
+public interface Unchanged extends Operation {
 
   @Override
   default boolean shouldMatchHash() {
@@ -35,12 +35,11 @@ public interface Unchanged<V> extends Operation<V> {
   /**
    * Creates a unchanged operation for the given key.
    *
-   * @param <V> the store value type
    * @param key the key impacted by the operation
    * @return a unchanged operation for the key
    */
   @Nonnull
-  static <V> Unchanged<V> of(@Nonnull Key key) {
-    return ImmutableUnchanged.<V>builder().key(key).build();
+  static Unchanged of(@Nonnull Key key) {
+    return ImmutableUnchanged.builder().key(key).build();
   }
 }

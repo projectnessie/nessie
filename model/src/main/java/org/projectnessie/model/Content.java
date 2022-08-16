@@ -16,8 +16,10 @@
 package org.projectnessie.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -25,6 +27,7 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
+import org.projectnessie.model.types.ContentTypes;
 
 /** Base class for an object stored within Nessie. */
 @Schema(
@@ -38,21 +41,26 @@ import org.immutables.value.Value;
       @DiscriminatorMapping(value = "NAMESPACE", schema = Namespace.class)
     },
     discriminatorProperty = "type")
-@JsonSubTypes({
-  @JsonSubTypes.Type(IcebergTable.class),
-  @JsonSubTypes.Type(DeltaLakeTable.class),
-  @JsonSubTypes.Type(IcebergView.class),
-  @JsonSubTypes.Type(Namespace.class)
-})
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonTypeIdResolver(ContentTypes.TypeIdResolver.class)
+@JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "type")
 public abstract class Content {
 
-  public enum Type {
-    UNKNOWN,
-    ICEBERG_TABLE,
-    DELTA_LAKE_TABLE,
-    ICEBERG_VIEW,
-    NAMESPACE
+  @JsonDeserialize(using = Util.ContentTypeDeserializer.class)
+  @JsonSerialize(using = Util.ContentTypeSerializer.class)
+  public interface Type {
+    Content.Type UNKNOWN = ContentTypes.forName("UNKNOWN");
+    Content.Type ICEBERG_TABLE = ContentTypes.forName("ICEBERG_TABLE");
+    Content.Type DELTA_LAKE_TABLE = ContentTypes.forName("DELTA_LAKE_TABLE");
+    Content.Type ICEBERG_VIEW = ContentTypes.forName("ICEBERG_VIEW");
+    Content.Type NAMESPACE = ContentTypes.forName("NAMESPACE");
+
+    /** The name of the content-type. */
+    String name();
+
+    /** Payload used for internal serialization (THIS FUNCTION WILL GO AWAY IN A FOLLOW-UP PR!). */
+    byte payload();
+
+    Class<? extends Content> type();
   }
 
   /**
@@ -65,9 +73,9 @@ public abstract class Content {
   public abstract String getId();
 
   /**
-   * Returns the {@link Type} enum constant for this content object.
+   * Returns the {@link Type} value for this content object.
    *
-   * <p>The name of the returned enum value should match the JSON type name used for serializing the
+   * <p>The name of the returned value should match the JSON type name used for serializing the
    * content object.
    */
   @Value.Redacted

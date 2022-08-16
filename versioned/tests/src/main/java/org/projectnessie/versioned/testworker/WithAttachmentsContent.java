@@ -18,13 +18,17 @@ package org.projectnessie.versioned.testworker;
 import java.util.List;
 import java.util.UUID;
 import org.immutables.value.Value;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.types.ContentTypes;
 import org.projectnessie.versioned.ContentAttachment;
 
 /** Content with on-reference state and mandatory global state. */
 @Value.Immutable
-public interface WithAttachmentsContent extends BaseContent {
+public abstract class WithAttachmentsContent extends Content {
 
-  static WithAttachmentsContent withAttachments(
+  public static final Content.Type WITH_ATTACHMENTS = ContentTypes.forName("WITH_ATTACHMENTS");
+
+  public static WithAttachmentsContent withAttachments(
       List<ContentAttachment> perContent, String onRef, String contentId) {
     return ImmutableWithAttachmentsContent.builder()
         .onRef(onRef)
@@ -33,7 +37,7 @@ public interface WithAttachmentsContent extends BaseContent {
         .build();
   }
 
-  static WithAttachmentsContent newWithAttachments(
+  public static WithAttachmentsContent newWithAttachments(
       List<ContentAttachment> perContent, String onRef) {
     return ImmutableWithAttachmentsContent.builder()
         .onRef(onRef)
@@ -42,7 +46,12 @@ public interface WithAttachmentsContent extends BaseContent {
         .build();
   }
 
-  String getOnRef();
+  @Override
+  public Content.Type getType() {
+    return WITH_ATTACHMENTS;
+  }
 
-  List<ContentAttachment> getPerContent();
+  public abstract String getOnRef();
+
+  public abstract List<ContentAttachment> getPerContent();
 }

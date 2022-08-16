@@ -17,7 +17,7 @@ package org.projectnessie.versioned;
 
 import org.immutables.value.Value;
 
-public interface Operation<V> {
+public interface Operation {
   /**
    * Whether the commit expected hash should be reviewed to confirm the key for this operation
    * hasn't changed since the expected hash.

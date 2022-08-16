@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -42,7 +43,9 @@ import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.model.ImmutableIcebergView;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Tag;
+import org.projectnessie.model.types.ContentTypes;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
@@ -96,7 +99,8 @@ public class GenerateContent extends AbstractCommand {
       defaultValue = "ICEBERG_TABLE",
       description =
           "Content-types to generate. Defaults to ICEBERG_TABLE. Possible values: "
-              + "ICEBERG_TABLE, ICEBERG_VIEW, DELTA_LAKE_TABLE")
+              + "ICEBERG_TABLE, ICEBERG_VIEW, DELTA_LAKE_TABLE",
+      converter = ContentTypeConverter.class)
   private Content.Type contentType;
 
   @Spec private CommandSpec spec;
@@ -232,48 +236,56 @@ public class GenerateContent extends AbstractCommand {
   }
 
   private Content createContents(Content currentContents, ThreadLocalRandom random) {
-    switch (contentType) {
-      case ICEBERG_TABLE:
-        ImmutableIcebergTable.Builder icebergBuilder =
-            ImmutableIcebergTable.builder()
-                .snapshotId(random.nextLong())
-                .schemaId(random.nextInt())
-                .specId(random.nextInt())
-                .sortOrderId(random.nextInt())
-                .metadataLocation("metadata " + random.nextLong());
-        if (currentContents != null) {
-          icebergBuilder.id(currentContents.getId());
-        }
-        return icebergBuilder.build();
-      case DELTA_LAKE_TABLE:
-        ImmutableDeltaLakeTable.Builder deltaBuilder =
-            ImmutableDeltaLakeTable.builder()
-                .lastCheckpoint("Last checkpoint foo bar " + random.nextLong())
-                .addMetadataLocationHistory("metadata location history " + random.nextLong());
-        for (int i = 0; i < random.nextInt(4); i++) {
-          deltaBuilder
-              .lastCheckpoint("Another checkpoint " + random.nextLong())
-              .addMetadataLocationHistory("Another metadata location " + random.nextLong());
-        }
-        if (currentContents != null) {
-          deltaBuilder.id(currentContents.getId());
-        }
-        return deltaBuilder.build();
-      case ICEBERG_VIEW:
-        ImmutableIcebergView.Builder viewBuilder =
-            ImmutableIcebergView.builder()
-                .metadataLocation("metadata " + random.nextLong())
-                .versionId(random.nextInt())
-                .schemaId(random.nextInt())
-                .dialect("Spark-" + random.nextInt())
-                .sqlText("SELECT blah FROM meh;");
-        if (currentContents != null) {
-          viewBuilder.id(currentContents.getId());
-        }
-        return viewBuilder.build();
-      default:
-        throw new UnsupportedOperationException(
-            String.format("Content type %s not supported", contentType.name()));
+    if (contentType.equals(Content.Type.ICEBERG_TABLE)) {
+      ImmutableIcebergTable.Builder icebergBuilder =
+          ImmutableIcebergTable.builder()
+              .snapshotId(random.nextLong())
+              .schemaId(random.nextInt())
+              .specId(random.nextInt())
+              .sortOrderId(random.nextInt())
+              .metadataLocation("metadata " + random.nextLong());
+      if (currentContents != null) {
+        icebergBuilder.id(currentContents.getId());
+      }
+      return icebergBuilder.build();
+    }
+    if (contentType.equals(Content.Type.DELTA_LAKE_TABLE)) {
+      ImmutableDeltaLakeTable.Builder deltaBuilder =
+          ImmutableDeltaLakeTable.builder()
+              .lastCheckpoint("Last checkpoint foo bar " + random.nextLong())
+              .addMetadataLocationHistory("metadata location history " + random.nextLong());
+      for (int i = 0; i < random.nextInt(4); i++) {
+        deltaBuilder
+            .lastCheckpoint("Another checkpoint " + random.nextLong())
+            .addMetadataLocationHistory("Another metadata location " + random.nextLong());
+      }
+      if (currentContents != null) {
+        deltaBuilder.id(currentContents.getId());
+      }
+      return deltaBuilder.build();
+    }
+    if (contentType.equals(Content.Type.ICEBERG_VIEW)) {
+      ImmutableIcebergView.Builder viewBuilder =
+          ImmutableIcebergView.builder()
+              .metadataLocation("metadata " + random.nextLong())
+              .versionId(random.nextInt())
+              .schemaId(random.nextInt())
+              .dialect("Spark-" + random.nextInt())
+              .sqlText("SELECT blah FROM meh;");
+      if (currentContents != null) {
+        viewBuilder.id(currentContents.getId());
+      }
+      return viewBuilder.build();
+    }
+    throw new UnsupportedOperationException(
+        String.format("Content type %s not supported", contentType.name()));
+  }
+
+  public static final class ContentTypeConverter implements ITypeConverter<Content.Type> {
+
+    @Override
+    public Content.Type convert(String value) {
+      return ContentTypes.forName(value.toUpperCase(Locale.ROOT).trim());
     }
   }
 }

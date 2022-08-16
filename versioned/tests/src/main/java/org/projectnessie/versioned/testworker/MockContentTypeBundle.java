@@ -15,18 +15,15 @@
  */
 package org.projectnessie.versioned.testworker;
 
-/** Base content interface for {@link org.projectnessie.versioned.testworker.SimpleStoreWorker}. */
-public interface BaseContent {
+import org.projectnessie.model.types.ContentTypeBundle;
+import org.projectnessie.model.types.ContentTypes.Register;
 
-  enum Type {
-    /** Content type with on-reference state. */
-    ON_REF_ONLY,
-    /** Content type with on-reference state and mandatory global state. */
-    WITH_GLOBAL_STATE,
-    /** Content type with on-reference state and content attachments. */
-    WITH_ATTACHMENTS
+public final class MockContentTypeBundle implements ContentTypeBundle {
+
+  @Override
+  public void register(Register register) {
+    register.register("ON_REF_ONLY", (byte) 127, OnRefOnly.class);
+    register.register("WITH_GLOBAL_STATE", (byte) 126, WithGlobalStateContent.class);
+    register.register("WITH_ATTACHMENTS", (byte) 125, WithAttachmentsContent.class);
   }
-
-  /** Content-id. */
-  String getId();
 }

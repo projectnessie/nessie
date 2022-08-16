@@ -30,6 +30,9 @@ dependencies {
   implementation(platform(project(":nessie-deps-persist")))
   implementation(platform(project(":nessie-deps-testing")))
   annotationProcessor(platform(project(":nessie-deps-build-only")))
+  compileOnly(platform("com.fasterxml.jackson:jackson-bom"))
+
+  implementation(project(":nessie-model"))
   implementation(project(":nessie-versioned-tests"))
   implementation(project(":nessie-versioned-spi"))
   implementation(project(":nessie-versioned-persist-adapter"))
@@ -37,6 +40,8 @@ dependencies {
   implementation(project(":nessie-versioned-persist-tests"))
   implementation("org.openjdk.jmh:jmh-core")
   annotationProcessor("org.openjdk.jmh:jmh-generator-annprocess")
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
+  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
   implementation(project(":nessie-versioned-persist-in-memory"))
   implementation(project(":nessie-versioned-persist-in-memory")) { testJarCapability() }

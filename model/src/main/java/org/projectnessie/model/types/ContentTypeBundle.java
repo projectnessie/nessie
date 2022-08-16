@@ -13,17 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.testworker;
+package org.projectnessie.model.types;
 
-import org.immutables.value.Value;
-
-/** Simple commit-metadata. */
-@Value.Immutable
-public interface CommitMessage {
-
-  String getMessage();
-
-  static CommitMessage commitMessage(String message) {
-    return ImmutableCommitMessage.builder().message(message).build();
-  }
+/**
+ * Used to provide custom {@link org.projectnessie.model.Content} implementations via the Java
+ * {@link java.util.ServiceLoader service loader} mechanism.
+ *
+ * <p><em>The functionality to actually use custom types is incomplete as long as ther is no
+ * store-worker support for custom content. </em>
+ */
+public interface ContentTypeBundle {
+  void register(ContentTypes.Register register);
 }
