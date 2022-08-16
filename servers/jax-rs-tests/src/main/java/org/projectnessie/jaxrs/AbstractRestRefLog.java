@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.OptionalInt;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.Test;
@@ -44,7 +45,7 @@ import org.projectnessie.model.Tag;
 public abstract class AbstractRestRefLog extends AbstractRestReferences {
   @Test
   public void testReflog() throws BaseNessieClientServerException {
-    String tagName = "tag1_test_reflog";
+    String tagName = "tag1_test_reflog_" + ThreadLocalRandom.current().nextInt();
     String branch1 = "branch1_test_reflog";
     String branch2 = "branch2_test_reflog";
     String branch3 = "branch3_test_reflog";
@@ -214,7 +215,9 @@ public abstract class AbstractRestRefLog extends AbstractRestReferences {
                 builder ->
                     builder.filter(
                         "reflog.operation == 'ASSIGN_REFERENCE' "
-                            + "&& reflog.refName == 'tag1_test_reflog'"),
+                            + "&& reflog.refName == '"
+                            + tagName
+                            + "'"),
                 OptionalInt.empty())
             .collect(Collectors.toList());
     assertThat(filteredResult.size()).isEqualTo(1);
