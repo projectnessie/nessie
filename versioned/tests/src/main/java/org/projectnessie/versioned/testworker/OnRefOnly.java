@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.testworker;
 
+import com.google.protobuf.ByteString;
 import java.util.UUID;
 import org.immutables.value.Value;
 import org.projectnessie.model.Content;
@@ -39,5 +40,9 @@ public abstract class OnRefOnly extends Content {
   @Override
   public Content.Type getType() {
     return ON_REF_ONLY;
+  }
+
+  public ByteString serialized() {
+    return ByteString.copyFromUtf8(getType().name() + ":" + getId() + ":" + getOnRef());
   }
 }

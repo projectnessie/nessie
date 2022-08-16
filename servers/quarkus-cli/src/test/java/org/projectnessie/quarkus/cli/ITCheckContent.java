@@ -16,6 +16,7 @@
 package org.projectnessie.quarkus.cli;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,9 +35,9 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
-import org.projectnessie.server.store.TableCommitMetaStoreWorker;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.CommitMetaSerializer;
 import org.projectnessie.versioned.GetNamedRefsParams;
@@ -46,7 +47,8 @@ import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
-import org.projectnessie.versioned.testworker.SimpleStoreWorker;
+import org.projectnessie.versioned.store.DefaultStoreWorker;
+import org.projectnessie.versioned.testworker.OnRefOnly;
 
 @QuarkusMainTest
 @TestProfile(QuarkusCliTestProfileMongo.class)
@@ -121,7 +123,7 @@ class ITCheckContent {
                 KeyWithBytes.of(
                     k1,
                     ContentId.of("id123"),
-                    (byte) 99,
+                    Content.Type.ICEBERG_TABLE.payload(),
                     ByteString.copyFrom(new byte[] {1, 2, 3})))
             .build());
 
@@ -142,12 +144,12 @@ class ITCheckContent {
   }
 
   private void commit(IcebergTable table, DatabaseAdapter adapter) throws Exception {
-    TableCommitMetaStoreWorker worker = new TableCommitMetaStoreWorker();
-    commit(
-        table.getId(),
-        table.getType().payload(),
-        worker.toStoreOnReferenceState(table, att -> {}),
-        adapter);
+    commit(table, adapter, DefaultStoreWorker.instance().toStoreOnReferenceState(table, att -> {}));
+  }
+
+  private void commit(IcebergTable table, DatabaseAdapter adapter, ByteString serializes)
+      throws Exception {
+    commit(table.getId(), table.getType().payload(), serializes, adapter);
   }
 
   private void commit(String testId, byte payload, ByteString value, DatabaseAdapter adapter)
@@ -169,18 +171,14 @@ class ITCheckContent {
   public void testWorkerError(int batchSize, QuarkusMainLauncher launcher, DatabaseAdapter adapter)
       throws Exception {
 
-    commit(table1, adapter);
-    commit(table2, adapter);
-    commit(table3, adapter);
-    commit(table4, adapter);
+    ByteString broken = ByteString.copyFrom(new byte[] {1, 2, 3});
+    commit(table1, adapter, broken);
+    commit(table2, adapter, broken);
+    commit(table3, adapter, broken);
+    commit(table4, adapter, broken);
 
     // Note: SimpleStoreWorker will not be able to parse IcebergTable objects
-    launch(
-        launcher,
-        "check-content",
-        "--summary",
-        "--batch=" + batchSize,
-        "--worker-class=" + SimpleStoreWorker.class.getName());
+    launch(launcher, "check-content", "--summary", "--batch=" + batchSize);
     assertThat(entries).allSatisfy(e -> assertThat(e.getStatus()).isEqualTo("ERROR"));
     assertThat(entries).allSatisfy(e -> assertThat(e.getErrorMessage()).isNotEmpty());
     assertThat(entries).allSatisfy(e -> assertThat(e.getExceptionStackTrace()).isNotEmpty());
@@ -261,7 +259,8 @@ class ITCheckContent {
     commit(table1, adapter);
     ReferenceInfo good = adapter.namedRef("main", GetNamedRefsParams.DEFAULT);
 
-    commit("222", (byte) 99, ByteString.copyFrom(new byte[] {1, 2, 3}), adapter);
+    OnRefOnly val = onRef("123", "222");
+    commit(val.getId(), val.getType().payload(), val.serialized(), adapter);
 
     launch(launcher, "check-content", "--hash", good.getHash().asString());
     assertThat(entries).hasSize(1);

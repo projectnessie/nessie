@@ -15,14 +15,15 @@
  */
 package org.projectnessie.versioned.testworker;
 
-import org.projectnessie.model.types.ContentTypeBundle;
-import org.projectnessie.model.types.ContentTypes.Registrar;
+import java.util.function.Consumer;
+import org.projectnessie.versioned.store.ContentSerializer;
+import org.projectnessie.versioned.store.ContentSerializerBundle;
 
-public final class TestContentTypeBundle implements ContentTypeBundle {
+public class TestContentSerializerBundle implements ContentSerializerBundle {
 
   @Override
-  public void register(Registrar registrar) {
-    registrar.register("ON_REF_ONLY", (byte) 127, OnRefOnly.class);
-    registrar.register("WITH_ATTACHMENTS", (byte) 126, WithAttachmentsContent.class);
+  public void register(Consumer<ContentSerializer<?>> registry) {
+    registry.accept(new OnRefOnlySerializer());
+    registry.accept(new WithAttachmentsSerializer());
   }
 }

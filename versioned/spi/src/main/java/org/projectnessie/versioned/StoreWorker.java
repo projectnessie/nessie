@@ -30,8 +30,6 @@ public interface StoreWorker {
   ByteString toStoreOnReferenceState(
       Content content, Consumer<ContentAttachment> attachmentConsumer);
 
-  ByteString toStoreGlobalState(Content content);
-
   Content valueFromStore(
       byte payload,
       ByteString onReferenceValue,

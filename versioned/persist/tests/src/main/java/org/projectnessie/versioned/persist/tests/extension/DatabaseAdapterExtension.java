@@ -48,7 +48,6 @@ import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.platform.commons.util.AnnotationUtils;
 import org.junit.platform.commons.util.ExceptionUtils;
 import org.junit.platform.commons.util.ReflectionUtils;
-import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.TracingVersionStore;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.adapter.AdjustableDatabaseAdapterConfig;
@@ -218,10 +217,8 @@ public class DatabaseAdapterExtension
       boolean canReinit,
       Consumer<DatabaseAdapter> newAdapter) {
 
-    StoreWorker storeWorker = createStoreWorker(nessieDbAdapter);
-
     DatabaseAdapter databaseAdapter =
-        createAdapterResource(nessieDbAdapter, context, parameterContext, storeWorker);
+        createAdapterResource(nessieDbAdapter, context, parameterContext);
 
     if (nessieDbAdapter.withTracing()) {
       databaseAdapter = new TracingDatabaseAdapter(databaseAdapter);
@@ -235,7 +232,7 @@ public class DatabaseAdapterExtension
     if (DatabaseAdapter.class.isAssignableFrom(type)) {
       assign = databaseAdapter;
     } else if (VersionStore.class.isAssignableFrom(type)) {
-      VersionStore store = createStore(databaseAdapter, storeWorker);
+      VersionStore store = new PersistVersionStore(databaseAdapter);
       if (nessieDbAdapter.withTracing()) {
         store = new TracingVersionStore(store);
       }
@@ -252,14 +249,6 @@ public class DatabaseAdapterExtension
     }
 
     return assign;
-  }
-
-  private StoreWorker createStoreWorker(NessieDbAdapter dbAdapter) {
-    try {
-      return dbAdapter.storeWorker().getDeclaredConstructor().newInstance();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
   }
 
   static <A extends Annotation> Optional<A> findAnnotation(
@@ -282,8 +271,7 @@ public class DatabaseAdapterExtension
   static DatabaseAdapter createAdapterResource(
       NessieDbAdapter adapterAnnotation,
       ExtensionContext context,
-      ParameterContext parameterContext,
-      StoreWorker storeWorker) {
+      ParameterContext parameterContext) {
     DatabaseAdapterFactory<
             DatabaseAdapter,
             DatabaseAdapterConfig,
@@ -360,7 +348,7 @@ public class DatabaseAdapterExtension
         .configure(applyCustomConfig)
         .withConnector(getConnectionProvider(context));
 
-    return builder.build(storeWorker);
+    return builder.build();
   }
 
   private static Function<AdjustableDatabaseAdapterConfig, DatabaseAdapterConfig>
@@ -417,11 +405,6 @@ public class DatabaseAdapterExtension
       throw new NullPointerException("connectionProvider not configured");
     }
     return (CONNECTOR) connectionProvider.getConnectionProvider();
-  }
-
-  private static VersionStore createStore(
-      DatabaseAdapter databaseAdapter, StoreWorker storeWorker) {
-    return new PersistVersionStore(databaseAdapter, storeWorker);
   }
 
   private void assertValidFieldCandidate(Field field) {

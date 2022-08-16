@@ -13,16 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.testworker;
+package org.projectnessie.versioned.store;
 
-import org.projectnessie.model.types.ContentTypeBundle;
-import org.projectnessie.model.types.ContentTypes.Registrar;
+import java.util.function.Consumer;
 
-public final class TestContentTypeBundle implements ContentTypeBundle {
-
-  @Override
-  public void register(Registrar registrar) {
-    registrar.register("ON_REF_ONLY", (byte) 127, OnRefOnly.class);
-    registrar.register("WITH_ATTACHMENTS", (byte) 126, WithAttachmentsContent.class);
-  }
+/** Implementations of this {@link java.util.ServiceLoader service} register content serializers. */
+public interface ContentSerializerBundle {
+  void register(Consumer<ContentSerializer<?>> registry);
 }

@@ -73,15 +73,20 @@ import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.MergeParams;
 import org.projectnessie.versioned.persist.adapter.TransplantParams;
+import org.projectnessie.versioned.store.DefaultStoreWorker;
 
 public class PersistVersionStore implements VersionStore {
 
   private final DatabaseAdapter databaseAdapter;
-  protected final StoreWorker storeWorker;
+  protected static final StoreWorker STORE_WORKER = DefaultStoreWorker.instance();
 
+  @SuppressWarnings("unused") // Keep StoreWorker parameter for compatibiltiy reasons
   public PersistVersionStore(DatabaseAdapter databaseAdapter, StoreWorker storeWorker) {
+    this(databaseAdapter);
+  }
+
+  public PersistVersionStore(DatabaseAdapter databaseAdapter) {
     this.databaseAdapter = databaseAdapter;
-    this.storeWorker = storeWorker;
   }
 
   @Override
@@ -129,7 +134,7 @@ public class PersistVersionStore implements VersionStore {
               op.getKey());
 
           // assign content-ID
-          content = storeWorker.applyId(content, UUID.randomUUID().toString());
+          content = STORE_WORKER.applyId(content, UUID.randomUUID().toString());
         }
 
         ContentId contentId = ContentId.of(content.getId());
@@ -138,7 +143,7 @@ public class PersistVersionStore implements VersionStore {
                 op.getKey(),
                 contentId,
                 content.getType().payload(),
-                storeWorker.toStoreOnReferenceState(content, commitAttempt::addAttachments)));
+                STORE_WORKER.toStoreOnReferenceState(content, commitAttempt::addAttachments)));
 
         if (expected != null) {
           String expectedId = expected.getId();
@@ -156,7 +161,7 @@ public class PersistVersionStore implements VersionStore {
         }
 
         Preconditions.checkState(
-            !storeWorker.requiresGlobalState(content),
+            !STORE_WORKER.requiresGlobalState(content),
             "Nessie no longer supports content with global state");
       } else if (operation instanceof Delete) {
         commitAttempt.addDeletes(operation.getKey());
@@ -405,7 +410,7 @@ public class PersistVersionStore implements VersionStore {
                   commitBuilder.addOperations(
                       Put.of(
                           put.getKey(),
-                          storeWorker.valueFromStore(
+                          STORE_WORKER.valueFromStore(
                               put.getPayload(),
                               put.getValue(),
                               () -> getGlobalContents.apply(put),
@@ -441,7 +446,7 @@ public class PersistVersionStore implements VersionStore {
   }
 
   private Content mapContentAndState(ContentAndState cs) {
-    return storeWorker.valueFromStore(
+    return STORE_WORKER.valueFromStore(
         cs.getPayload(), cs.getRefState(), cs::getGlobalState, databaseAdapter::mapToAttachment);
   }
 
@@ -459,7 +464,7 @@ public class PersistVersionStore implements VersionStore {
                     d.getFromValue()
                         .map(
                             v ->
-                                storeWorker.valueFromStore(
+                                STORE_WORKER.valueFromStore(
                                     d.getPayload(),
                                     v,
                                     () -> d.getGlobal().orElse(null),
@@ -467,7 +472,7 @@ public class PersistVersionStore implements VersionStore {
                     d.getToValue()
                         .map(
                             v ->
-                                storeWorker.valueFromStore(
+                                STORE_WORKER.valueFromStore(
                                     d.getPayload(),
                                     v,
                                     () -> d.getGlobal().orElse(null),

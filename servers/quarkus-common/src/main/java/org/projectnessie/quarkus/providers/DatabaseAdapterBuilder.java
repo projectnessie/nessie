@@ -15,7 +15,6 @@
  */
 package org.projectnessie.quarkus.providers;
 
-import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 
 /** Factory interface for creating database adapter instances. */
@@ -26,5 +25,5 @@ public interface DatabaseAdapterBuilder {
    *
    * @return new database adapter instance
    */
-  DatabaseAdapter newDatabaseAdapter(StoreWorker storeWorker);
+  DatabaseAdapter newDatabaseAdapter();
 }
