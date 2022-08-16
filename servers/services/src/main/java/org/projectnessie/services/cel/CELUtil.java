@@ -32,6 +32,7 @@ import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.RefLogResponse;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferenceMetadata;
+import org.projectnessie.versioned.KeyEntry;
 
 /** A utility class for CEL declarations and other things. */
 public final class CELUtil {
@@ -45,8 +46,6 @@ public final class CELUtil {
   public static final String VAR_REF_META = "refMeta";
   public static final String VAR_COMMIT = "commit";
   public static final String VAR_ENTRY = "entry";
-  public static final String VAR_NAMESPACE = "namespace";
-  public static final String VAR_CONTENT_TYPE = "contentType";
   public static final String VAR_PATH = "path";
   public static final String VAR_ROLE = "role";
   public static final String VAR_OP = "op";
@@ -69,9 +68,7 @@ public final class CELUtil {
 
   public static final List<Decl> ENTRIES_DECLARATIONS =
       ImmutableList.of(
-          Decls.newVar(VAR_ENTRY, Decls.newMapType(Decls.String, Decls.String)),
-          Decls.newVar(VAR_NAMESPACE, Decls.String),
-          Decls.newVar(VAR_CONTENT_TYPE, Decls.String));
+          Decls.newVar(VAR_ENTRY, Decls.newObjectType(KeyEntryForCel.class.getName())));
 
   public static final List<Decl> AUTHORIZATION_RULE_DECLARATIONS =
       ImmutableList.of(
@@ -89,6 +86,8 @@ public final class CELUtil {
   public static final List<Object> REFERENCES_TYPES =
       ImmutableList.of(CommitMeta.class, ReferenceMetadata.class, Reference.class);
 
+  public static final List<Object> ENTRIES_TYPES = ImmutableList.of(KeyEntryForCel.class);
+
   public static final CommitMeta EMPTY_COMMIT_META = CommitMeta.fromMessage("");
   public static final ReferenceMetadata EMPTY_REFERENCE_METADATA =
       ImmutableReferenceMetadata.builder().commitMetaOfHEAD(EMPTY_COMMIT_META).build();
@@ -101,13 +100,11 @@ public final class CELUtil {
   private CELUtil() {}
 
   /**
-   * 'Mirrored' interface wrapping a {@link Operation} for CEL to have convenience fields for CEL
-   * and to avoid missing fields due to {@code @JsonIgnore}.
+   * Base interface for 'mirrored' wrappers exposing data to CEL expression about entities that are
+   * associated with keys.
    */
   @SuppressWarnings("unused")
-  public interface OperationForCel {
-    String getType();
-
+  public interface KeyedEntityForCel {
     List<String> getKeyElements();
 
     String getKey();
@@ -117,8 +114,26 @@ public final class CELUtil {
     String getName();
 
     String getNamespace();
+  }
+
+  /**
+   * 'Mirrored' interface wrapping a {@link Operation} for CEL to have convenience fields for CEL
+   * and to avoid missing fields due to {@code @JsonIgnore}.
+   */
+  @SuppressWarnings("unused")
+  public interface OperationForCel extends KeyedEntityForCel {
+    String getType();
 
     ContentForCel getContent();
+  }
+
+  /**
+   * 'Mirrored' interface wrapping a {@link KeyEntry} for CEL to have convenience fields and
+   * maintain backward compatibility to older ways of exposing this data to scripts..
+   */
+  @SuppressWarnings("unused")
+  public interface KeyEntryForCel extends KeyedEntityForCel {
+    String getContentType();
   }
 
   /**
@@ -155,7 +170,12 @@ public final class CELUtil {
     }
     if (model instanceof Operation) {
       Operation op = (Operation) model;
-      return new OperationForCel() {
+      class OperationForCelImpl extends AbstractKeyedEntity implements OperationForCel {
+        @Override
+        protected ContentKey key() {
+          return op.getKey();
+        }
+
         @Override
         public String getType() {
           if (op instanceof Put) {
@@ -165,31 +185,6 @@ public final class CELUtil {
             return "DELETE";
           }
           return "OPERATION";
-        }
-
-        @Override
-        public List<String> getKeyElements() {
-          return op.getKey().getElements();
-        }
-
-        @Override
-        public String getKey() {
-          return op.getKey().toString();
-        }
-
-        @Override
-        public String getNamespace() {
-          return op.getKey().getNamespace().name();
-        }
-
-        @Override
-        public List<String> getNamespaceElements() {
-          return op.getKey().getNamespace().getElements();
-        }
-
-        @Override
-        public String getName() {
-          return op.getKey().getName();
         }
 
         @Override
@@ -204,8 +199,61 @@ public final class CELUtil {
         public String toString() {
           return op.toString();
         }
-      };
+      }
+
+      return new OperationForCelImpl();
+    }
+    if (model instanceof KeyEntry) {
+      KeyEntry<?> entry = (KeyEntry<?>) model;
+      ContentKey key = ContentKey.of(entry.getKey().getElements());
+      class KeyEntryForCelImpl extends AbstractKeyedEntity implements KeyEntryForCel {
+        @Override
+        protected ContentKey key() {
+          return key;
+        }
+
+        @Override
+        public String getContentType() {
+          return entry.getType().name();
+        }
+
+        @Override
+        public String toString() {
+          return entry.toString();
+        }
+      }
+
+      return new KeyEntryForCelImpl();
     }
     return model;
+  }
+
+  private abstract static class AbstractKeyedEntity implements KeyedEntityForCel {
+    protected abstract ContentKey key();
+
+    @Override
+    public List<String> getKeyElements() {
+      return key().getElements();
+    }
+
+    @Override
+    public String getKey() {
+      return key().toString();
+    }
+
+    @Override
+    public String getNamespace() {
+      return key().getNamespace().name();
+    }
+
+    @Override
+    public List<String> getNamespaceElements() {
+      return key().getNamespace().getElements();
+    }
+
+    @Override
+    public String getName() {
+      return key().getName();
+    }
   }
 }

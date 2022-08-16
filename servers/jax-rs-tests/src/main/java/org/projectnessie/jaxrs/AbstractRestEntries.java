@@ -105,6 +105,87 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
 
   @ParameterizedTest
   @EnumSource(ReferenceMode.class)
+  public void filterEntriesByName(ReferenceMode refMode) throws BaseNessieClientServerException {
+    Branch branch = createBranch("filterEntriesByName");
+    ContentKey first = ContentKey.of("a", "b", "c", "firstTable");
+    ContentKey second = ContentKey.of("a", "b", "c", "secondTable");
+    branch =
+        getApi()
+            .commitMultipleOperations()
+            .branch(branch)
+            .operation(Put.of(first, IcebergTable.of("path1", 42, 42, 42, 42)))
+            .operation(Put.of(second, IcebergTable.of("path2", 42, 42, 42, 42)))
+            .commitMeta(CommitMeta.fromMessage("commit 1"))
+            .commit();
+
+    List<Entry> entries =
+        getApi()
+            .getEntries()
+            .reference(refMode.transform(branch))
+            .filter("entry.name.startsWith('first')")
+            .get()
+            .getEntries();
+    assertThat(entries.stream().map(Entry::getName)).containsExactly(first);
+
+    entries =
+        getApi()
+            .getEntries()
+            .reference(refMode.transform(branch))
+            .filter("entry.name.endsWith('Table')")
+            .get()
+            .getEntries();
+    assertThat(entries.stream().map(Entry::getName)).containsExactlyInAnyOrder(first, second);
+
+    getApi()
+        .deleteBranch()
+        .branchName(branch.getName())
+        .hash(getApi().getReference().refName(branch.getName()).get().getHash())
+        .delete();
+  }
+
+  @ParameterizedTest
+  @EnumSource(ReferenceMode.class)
+  public void filterEntriesByFullKeyName(ReferenceMode refMode)
+      throws BaseNessieClientServerException {
+    Branch branch = createBranch("filterEntriesByFullKeyName");
+    ContentKey first = ContentKey.of("a", "b", "c", "table");
+    ContentKey second = ContentKey.of("d", "b", "c", "table");
+    branch =
+        getApi()
+            .commitMultipleOperations()
+            .branch(branch)
+            .operation(Put.of(first, IcebergTable.of("path1", 42, 42, 42, 42)))
+            .operation(Put.of(second, IcebergTable.of("path2", 42, 42, 42, 42)))
+            .commitMeta(CommitMeta.fromMessage("commit 1"))
+            .commit();
+
+    List<Entry> entries =
+        getApi()
+            .getEntries()
+            .reference(refMode.transform(branch))
+            .filter("entry.key == 'a.b.c.table'")
+            .get()
+            .getEntries();
+    assertThat(entries.stream().map(Entry::getName)).containsExactly(first);
+
+    entries =
+        getApi()
+            .getEntries()
+            .reference(refMode.transform(branch))
+            .filter("entry.key.endsWith('.b.c.table')")
+            .get()
+            .getEntries();
+    assertThat(entries.stream().map(Entry::getName)).containsExactlyInAnyOrder(first, second);
+
+    getApi()
+        .deleteBranch()
+        .branchName(branch.getName())
+        .hash(getApi().getReference().refName(branch.getName()).get().getHash())
+        .delete();
+  }
+
+  @ParameterizedTest
+  @EnumSource(ReferenceMode.class)
   public void filterEntriesByNamespace(ReferenceMode refMode)
       throws BaseNessieClientServerException {
     Branch branch = createBranch("filterEntriesByNamespace");
