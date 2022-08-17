@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.testworker;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
 import com.google.protobuf.ByteString;
 import java.util.function.Function;
@@ -38,14 +39,14 @@ abstract class TestContentSerializer<C extends Content> implements ContentSerial
     }
     String typeString = serialized.substring(0, i);
     Content.Type contentType = ContentTypes.forName(typeString);
-    if (contentType.payload() != payload) {
+    if (payloadForContent(contentType) != payload) {
       throw new AssertionError(
           "Expected payload "
               + payload
               + " != "
               + contentType.name()
               + "'s payload "
-              + contentType.payload());
+              + payloadForContent(contentType));
     }
     return contentType;
   }

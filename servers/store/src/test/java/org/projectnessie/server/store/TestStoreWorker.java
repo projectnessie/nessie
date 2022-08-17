@@ -18,6 +18,7 @@ package org.projectnessie.server.store;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
+import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
@@ -64,7 +65,7 @@ class TestStoreWorker {
     assertThatThrownBy(
             () ->
                 worker.valueFromStore(
-                    Content.Type.ICEBERG_TABLE.payload(),
+                    payloadForContent(Content.Type.ICEBERG_TABLE),
                     ObjectTypes.Content.newBuilder()
                         .setId(CID)
                         .setIcebergRefState(
@@ -85,7 +86,7 @@ class TestStoreWorker {
   void tableMetadataLocationGlobal() {
     Content value =
         worker.valueFromStore(
-            Content.Type.ICEBERG_TABLE.payload(),
+            payloadForContent(Content.Type.ICEBERG_TABLE),
             ObjectTypes.Content.newBuilder()
                 .setId(CID)
                 .setIcebergRefState(
@@ -121,7 +122,7 @@ class TestStoreWorker {
   void tableMetadataLocationOnRef() {
     Content value =
         worker.valueFromStore(
-            Content.Type.ICEBERG_TABLE.payload(),
+            payloadForContent(Content.Type.ICEBERG_TABLE),
             ObjectTypes.Content.newBuilder()
                 .setId(CID)
                 .setIcebergRefState(
@@ -152,7 +153,7 @@ class TestStoreWorker {
     assertThatThrownBy(
             () ->
                 worker.valueFromStore(
-                    Content.Type.ICEBERG_VIEW.payload(),
+                    payloadForContent(Content.Type.ICEBERG_VIEW),
                     ObjectTypes.Content.newBuilder()
                         .setId(CID)
                         .setIcebergViewState(
@@ -169,7 +170,7 @@ class TestStoreWorker {
   void viewMetadataLocationGlobal() {
     Content value =
         worker.valueFromStore(
-            Content.Type.ICEBERG_VIEW.payload(),
+            payloadForContent(Content.Type.ICEBERG_VIEW),
             ObjectTypes.Content.newBuilder()
                 .setId(CID)
                 .setIcebergViewState(ObjectTypes.IcebergViewState.newBuilder().setVersionId(42))
@@ -264,11 +265,11 @@ class TestStoreWorker {
 
     assertThat(onRef)
         .asInstanceOf(InstanceOfAssertFactories.type(ByteString.class))
-        .extracting(onRefContent -> worker.getType(content.getType().payload(), onRefContent))
+        .extracting(onRefContent -> worker.getType(payloadForContent(content), onRefContent))
         .isEqualTo(type);
     assertThat(
             worker.valueFromStore(
-                content.getType().payload(), onRef, () -> global, NO_ATTACHMENTS_RETRIEVER))
+                payloadForContent(content), onRef, () -> global, NO_ATTACHMENTS_RETRIEVER))
         .isEqualTo(content);
 
     assertThat(content)
@@ -282,7 +283,7 @@ class TestStoreWorker {
   void viewMetadataLocationOnRef() {
     Content value =
         worker.valueFromStore(
-            Content.Type.ICEBERG_VIEW.payload(),
+            payloadForContent(Content.Type.ICEBERG_VIEW),
             ObjectTypes.Content.newBuilder()
                 .setId(CID)
                 .setIcebergViewState(
@@ -305,7 +306,7 @@ class TestStoreWorker {
   void testDeserialization(Map.Entry<ByteString, Content> entry) {
     Content actual =
         worker.valueFromStore(
-            entry.getValue().getType().payload(), entry.getKey(), () -> null, x -> Stream.empty());
+            payloadForContent(entry.getValue()), entry.getKey(), () -> null, x -> Stream.empty());
     assertThat(actual).isEqualTo(entry.getValue());
   }
 
@@ -324,11 +325,11 @@ class TestStoreWorker {
         worker.toStoreOnReferenceState(entry.getValue(), ALWAYS_THROWING_ATTACHMENT_CONSUMER);
     assertThat(
             worker.valueFromStore(
-                entry.getValue().getType().payload(), actualBytes, () -> null, x -> Stream.empty()))
+                payloadForContent(entry.getValue()), actualBytes, () -> null, x -> Stream.empty()))
         .isEqualTo(entry.getValue());
     Content actualContent =
         worker.valueFromStore(
-            entry.getValue().getType().payload(), entry.getKey(), () -> null, x -> Stream.empty());
+            payloadForContent(entry.getValue()), entry.getKey(), () -> null, x -> Stream.empty());
     assertThat(worker.toStoreOnReferenceState(actualContent, ALWAYS_THROWING_ATTACHMENT_CONSUMER))
         .isEqualTo(entry.getKey());
   }

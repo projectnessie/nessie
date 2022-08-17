@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig.DEFAULT_KEY_LIST_DISTANCE;
 import static org.projectnessie.versioned.persist.tests.DatabaseAdapterTestUtils.ALWAYS_THROWING_ATTACHMENT_CONSUMER;
+import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
 import com.google.protobuf.ByteString;
 import java.util.Arrays;
@@ -266,9 +267,9 @@ public abstract class AbstractMergeTransplant {
         ByteString onRef =
             DefaultStoreWorker.instance()
                 .toStoreOnReferenceState(value, ALWAYS_THROWING_ATTACHMENT_CONSUMER);
-        keysAndValue.put(key, ContentAndState.of(value.getType().payload(), onRef));
+        keysAndValue.put(key, ContentAndState.of(payloadForContent(value), onRef));
         commit.addPuts(
-            KeyWithBytes.of(key, ContentId.of("C" + k), value.getType().payload(), onRef));
+            KeyWithBytes.of(key, ContentId.of("C" + k), payloadForContent(value), onRef));
       }
       commits[i] = databaseAdapter.commit(commit.build());
     }
@@ -380,7 +381,7 @@ public abstract class AbstractMergeTransplant {
           KeyWithBytes.of(
               Key.of("key", Integer.toString(k)),
               ContentId.of("C" + k),
-              conflictValue.getType().payload(),
+              payloadForContent(conflictValue),
               DefaultStoreWorker.instance()
                   .toStoreOnReferenceState(conflictValue, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
     }

@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.persist.store;
 
+import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
+
 import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.MustBeClosed;
 import com.google.protobuf.ByteString;
@@ -33,7 +35,6 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
-import org.projectnessie.model.types.ContentTypes;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.CommitMetaSerializer;
@@ -142,7 +143,7 @@ public class PersistVersionStore implements VersionStore {
             KeyWithBytes.of(
                 op.getKey(),
                 contentId,
-                content.getType().payload(),
+                payloadForContent(content),
                 STORE_WORKER.toStoreOnReferenceState(content, commitAttempt::addAttachments)));
 
         if (expected != null) {
@@ -427,7 +428,7 @@ public class PersistVersionStore implements VersionStore {
         .map(
             entry ->
                 KeyEntry.of(
-                    ContentTypes.forPayload(entry.getPayload()),
+                    DefaultStoreWorker.contentTypeForPayload(entry.getPayload()),
                     entry.getKey(),
                     entry.getContentId().getId()));
   }

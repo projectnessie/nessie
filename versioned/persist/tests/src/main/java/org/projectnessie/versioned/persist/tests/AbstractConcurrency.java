@@ -18,6 +18,7 @@ package org.projectnessie.versioned.persist.tests;
 import static io.micrometer.core.instrument.Metrics.globalRegistry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.versioned.persist.tests.DatabaseAdapterTestUtils.ALWAYS_THROWING_ATTACHMENT_CONSUMER;
+import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
 import com.google.protobuf.ByteString;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -154,7 +155,7 @@ public abstract class AbstractConcurrency {
                         KeyWithBytes.of(
                             keys.get(ki),
                             contentId,
-                            c.getType().payload(),
+                            payloadForContent(c),
                             DefaultStoreWorker.instance()
                                 .toStoreOnReferenceState(c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
                   }
@@ -199,7 +200,7 @@ public abstract class AbstractConcurrency {
               KeyWithBytes.of(
                   k,
                   contentId,
-                  c.getType().payload(),
+                  payloadForContent(c),
                   DefaultStoreWorker.instance()
                       .toStoreOnReferenceState(c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
         }

@@ -18,6 +18,7 @@ package org.projectnessie.versioned.persist.tests;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
 import com.google.protobuf.ByteString;
@@ -90,7 +91,7 @@ public abstract class AbstractRepositories {
                 KeyWithBytes.of(
                     Key.of("foo"),
                     ContentId.of(fooValue.getId()),
-                    fooValue.getType().payload(),
+                    payloadForContent(fooValue),
                     fooValue.serialized()))
             .build());
     bar.commit(
@@ -101,7 +102,7 @@ public abstract class AbstractRepositories {
                 KeyWithBytes.of(
                     Key.of("bar"),
                     ContentId.of(barValue.getId()),
-                    barValue.getType().payload(),
+                    payloadForContent(barValue),
                     barValue.serialized()))
             .build());
 

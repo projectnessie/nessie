@@ -17,6 +17,7 @@ package org.projectnessie.versioned.persist.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.versioned.persist.tests.DatabaseAdapterTestUtils.ALWAYS_THROWING_ATTACHMENT_CONSUMER;
+import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
 import com.google.protobuf.ByteString;
 import java.util.Optional;
@@ -65,7 +66,7 @@ public abstract class AbstractDiff {
             KeyWithBytes.of(
                 Key.of("key", Integer.toString(k)),
                 ContentId.of("C" + k),
-                c.getType().payload(),
+                payloadForContent(c),
                 DefaultStoreWorker.instance()
                     .toStoreOnReferenceState(c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
       }
@@ -95,7 +96,7 @@ public abstract class AbstractDiff {
                           OnRefOnly content =
                               OnRefOnly.onRef("on-ref " + c + " for " + k, "cid-" + c + "-" + k);
                           return Difference.of(
-                              content.getType().payload(),
+                              payloadForContent(content),
                               Key.of("key", Integer.toString(k)),
                               Optional.empty(),
                               Optional.empty(),
@@ -123,7 +124,7 @@ public abstract class AbstractDiff {
                           OnRefOnly content =
                               OnRefOnly.onRef("on-ref " + c + " for " + k, "cid-" + c + "-" + k);
                           return Difference.of(
-                              content.getType().payload(),
+                              payloadForContent(content),
                               Key.of("key", Integer.toString(k)),
                               Optional.empty(),
                               Optional.of(
@@ -154,7 +155,7 @@ public abstract class AbstractDiff {
                           OnRefOnly to =
                               OnRefOnly.onRef("on-ref " + c + " for " + k, "cid-" + c + "-" + k);
                           return Difference.of(
-                              from.getType().payload(),
+                              payloadForContent(from),
                               Key.of("key", Integer.toString(k)),
                               Optional.empty(),
                               Optional.of(

@@ -18,6 +18,7 @@ package org.projectnessie.versioned.persist.tests;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.projectnessie.versioned.persist.tests.DatabaseAdapterTestUtils.ALWAYS_THROWING_ATTACHMENT_CONSUMER;
+import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
@@ -147,7 +148,7 @@ public abstract class AbstractCommitScenarios {
 
     Content initialContent = newOnRef("initial commit content");
     Content renamContent = OnRefOnly.onRef("rename commit content", initialContent.getId());
-    byte payload = initialContent.getType().payload();
+    byte payload = payloadForContent(initialContent);
 
     commit =
         ImmutableCommitParams.builder()
@@ -280,7 +281,7 @@ public abstract class AbstractCommitScenarios {
           KeyWithBytes.of(
               key,
               ContentId.of(cid),
-              c.getType().payload(),
+              payloadForContent(c),
               DefaultStoreWorker.instance()
                   .toStoreOnReferenceState(c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
     }
@@ -300,7 +301,7 @@ public abstract class AbstractCommitScenarios {
             KeyWithBytes.of(
                 keys.get(i),
                 ContentId.of(cid),
-                newContent.getType().payload(),
+                payloadForContent(newContent),
                 DefaultStoreWorker.instance()
                     .toStoreOnReferenceState(newContent, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
       }
@@ -358,7 +359,7 @@ public abstract class AbstractCommitScenarios {
                 KeyWithBytes.of(
                     key,
                     ContentId.of(cid),
-                    c.getType().payload(),
+                    payloadForContent(c),
                     DefaultStoreWorker.instance()
                         .toStoreOnReferenceState(c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)))
             .putExpectedStates(ContentId.of(cid), Optional.empty())
@@ -377,9 +378,9 @@ public abstract class AbstractCommitScenarios {
 
     OnRefOnly noNo = onRef("no no", contentsId.getId());
     KeyWithBytes createPut1 =
-        KeyWithBytes.of(key, contentsId, noNo.getType().payload(), noNo.serialized());
+        KeyWithBytes.of(key, contentsId, payloadForContent(noNo), noNo.serialized());
     KeyWithBytes createPut2 =
-        KeyWithBytes.of(key, contentsId, tableRef.getType().payload(), tableRefState);
+        KeyWithBytes.of(key, contentsId, payloadForContent(tableRef), tableRefState);
 
     ImmutableCommitParams.Builder commit1 =
         ImmutableCommitParams.builder()
@@ -453,7 +454,7 @@ public abstract class AbstractCommitScenarios {
                 .commitMetaSerialized(ByteString.copyFromUtf8("commit nation"))
                 .addPuts(
                     KeyWithBytes.of(
-                        keyNation, idNation, onRefNation.getType().payload(), stateNation))
+                        keyNation, idNation, payloadForContent(onRefNation), stateNation))
                 .build());
 
     Hash commitRegion =
@@ -464,7 +465,7 @@ public abstract class AbstractCommitScenarios {
                 .commitMetaSerialized(ByteString.copyFromUtf8("commit region"))
                 .addPuts(
                     KeyWithBytes.of(
-                        keyRegion, idRegion, onRefRegion.getType().payload(), stateRegion))
+                        keyRegion, idRegion, payloadForContent(onRefRegion), stateRegion))
                 .build());
 
     List<Key> nonExistentKey = Collections.singletonList(Key.of("non_existent"));
@@ -474,7 +475,7 @@ public abstract class AbstractCommitScenarios {
     assertThat(
             mine.values(
                 commitNation, Collections.singletonList(keyNation), KeyFilterPredicate.ALLOW_ALL))
-        .containsEntry(keyNation, ContentAndState.of(onRefNation.getType().payload(), stateNation));
+        .containsEntry(keyNation, ContentAndState.of(payloadForContent(onRefNation), stateNation));
 
     assertThat(
             mine.values(
@@ -484,7 +485,7 @@ public abstract class AbstractCommitScenarios {
     assertThat(
             mine.values(
                 commitRegion, Collections.singletonList(keyNation), KeyFilterPredicate.ALLOW_ALL))
-        .containsEntry(keyNation, ContentAndState.of(onRefNation.getType().payload(), stateNation));
+        .containsEntry(keyNation, ContentAndState.of(payloadForContent(onRefNation), stateNation));
 
     assertThat(mine.values(commitNation, nonExistentKey, KeyFilterPredicate.ALLOW_ALL)).isEmpty();
     assertThat(mine.values(commitRegion, nonExistentKey, KeyFilterPredicate.ALLOW_ALL)).isEmpty();
@@ -492,7 +493,7 @@ public abstract class AbstractCommitScenarios {
     assertThat(
             mine.values(
                 commitRegion, Arrays.asList(keyNation, keyRegion), KeyFilterPredicate.ALLOW_ALL))
-        .containsEntry(keyNation, ContentAndState.of(onRefNation.getType().payload(), stateNation))
-        .containsEntry(keyRegion, ContentAndState.of(onRefRegion.getType().payload(), stateRegion));
+        .containsEntry(keyNation, ContentAndState.of(payloadForContent(onRefNation), stateNation))
+        .containsEntry(keyRegion, ContentAndState.of(payloadForContent(onRefRegion), stateRegion));
   }
 }
