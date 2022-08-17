@@ -145,7 +145,7 @@ public abstract class AbstractCommitScenarios {
 
     Content initialContent = OnRefOnly.newOnRef("initial commit content");
     Content renamContent = OnRefOnly.onRef("rename commit content", initialContent.getId());
-    byte payload = SimpleStoreWorker.INSTANCE.getPayload(initialContent);
+    byte payload = initialContent.getType().payload();
 
     commit =
         ImmutableCommitParams.builder()
@@ -276,7 +276,7 @@ public abstract class AbstractCommitScenarios {
           KeyWithBytes.of(
               key,
               ContentId.of(cid),
-              SimpleStoreWorker.INSTANCE.getPayload(c),
+              c.getType().payload(),
               SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
                   c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
     }
@@ -296,7 +296,7 @@ public abstract class AbstractCommitScenarios {
             KeyWithBytes.of(
                 keys.get(i),
                 ContentId.of(cid),
-                SimpleStoreWorker.INSTANCE.getPayload(newContent),
+                newContent.getType().payload(),
                 SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
                     newContent, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
       }
@@ -354,7 +354,7 @@ public abstract class AbstractCommitScenarios {
                 KeyWithBytes.of(
                     key,
                     ContentId.of(cid),
-                    SimpleStoreWorker.INSTANCE.getPayload(c),
+                    c.getType().payload(),
                     SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
                         c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)))
             .putExpectedStates(ContentId.of(cid), Optional.empty())

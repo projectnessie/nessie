@@ -38,6 +38,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.server.store.TableCommitMetaStoreWorker;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.CommitMetaSerializer;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceInfo;
@@ -141,14 +142,13 @@ class ITCheckContent {
     TableCommitMetaStoreWorker worker = new TableCommitMetaStoreWorker();
     commit(
         table.getId(),
-        worker.getPayload(table),
+        table.getType().payload(),
         worker.toStoreOnReferenceState(table, att -> {}),
         adapter);
   }
 
   private void commit(String testId, byte payload, ByteString value, DatabaseAdapter adapter)
       throws Exception {
-    TableCommitMetaStoreWorker worker = new TableCommitMetaStoreWorker();
     Key key = Key.of("test_namespace", "table_" + testId);
     ContentId id = ContentId.of(testId);
 
@@ -156,7 +156,7 @@ class ITCheckContent {
         ImmutableCommitParams.builder()
             .toBranch(BranchName.of("main"))
             .commitMetaSerialized(
-                worker.getMetadataSerializer().toBytes(CommitMeta.fromMessage(testId)))
+                CommitMetaSerializer.METADATA_SERIALIZER.toBytes(CommitMeta.fromMessage(testId)))
             .addPuts(KeyWithBytes.of(key, id, payload, value))
             .build());
   }

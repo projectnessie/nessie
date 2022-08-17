@@ -268,8 +268,7 @@ public abstract class AbstractMergeTransplant {
                 value, ALWAYS_THROWING_ATTACHMENT_CONSUMER);
         keysAndValue.put(key, ContentAndState.of(onRef));
         commit.addPuts(
-            KeyWithBytes.of(
-                key, ContentId.of("C" + k), SimpleStoreWorker.INSTANCE.getPayload(value), onRef));
+            KeyWithBytes.of(key, ContentId.of("C" + k), value.getType().payload(), onRef));
       }
       commits[i] = databaseAdapter.commit(commit.build());
     }
@@ -381,7 +380,7 @@ public abstract class AbstractMergeTransplant {
           KeyWithBytes.of(
               Key.of("key", Integer.toString(k)),
               ContentId.of("C" + k),
-              SimpleStoreWorker.INSTANCE.getPayload(conflictValue),
+              conflictValue.getType().payload(),
               SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
                   conflictValue, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
     }

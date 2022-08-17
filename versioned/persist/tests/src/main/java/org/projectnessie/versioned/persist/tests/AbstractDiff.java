@@ -65,7 +65,7 @@ public abstract class AbstractDiff {
             KeyWithBytes.of(
                 Key.of("key", Integer.toString(k)),
                 ContentId.of("C" + k),
-                SimpleStoreWorker.INSTANCE.getPayload(c),
+                c.getType().payload(),
                 SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
                     c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
       }
