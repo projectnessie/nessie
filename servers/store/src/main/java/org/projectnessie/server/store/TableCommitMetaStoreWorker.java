@@ -127,6 +127,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker {
 
   @Override
   public Content valueFromStore(
+      byte payload,
       ByteString onReferenceValue,
       Supplier<ByteString> globalState,
       Function<Stream<ContentAttachmentKey>, Stream<ContentAttachment>> attachmentsRetriever) {
@@ -246,7 +247,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker {
   }
 
   @Override
-  public Content.Type getType(ByteString onRefContent) {
+  public Content.Type getType(byte payload, ByteString onRefContent) {
     ObjectTypes.Content parsed = parse(onRefContent);
 
     if (parsed.hasIcebergRefState()) {
@@ -273,7 +274,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker {
   }
 
   @Override
-  public boolean requiresGlobalState(ByteString content) {
+  public boolean requiresGlobalState(byte payload, ByteString content) {
     ObjectTypes.Content parsed = parse(content);
     switch (parsed.getObjectTypeCase()) {
       case ICEBERG_REF_STATE:

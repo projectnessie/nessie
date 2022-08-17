@@ -52,6 +52,7 @@ import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
+import org.projectnessie.versioned.persist.adapter.ContentIdAndPayload;
 import org.projectnessie.versioned.persist.adapter.ImmutableRepoDescription;
 import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
@@ -267,21 +268,21 @@ class TestSerialization {
             }));
     params.add(
         new TypeSerialization<>(
-            ContentId.class,
-            AdapterTypes.ContentIdWithType.class,
-            TestSerialization::createContentId,
+            ContentIdAndPayload.class,
+            AdapterTypes.ContentIdWithPayload.class,
+            TestSerialization::createContentIdAndPayload,
             ProtoSerialization::toProto,
             v -> {
               try {
-                return AdapterTypes.ContentIdWithType.parseFrom(v);
+                return AdapterTypes.ContentIdWithPayload.parseFrom(v);
               } catch (InvalidProtocolBufferException e) {
                 throw new RuntimeException(e);
               }
             },
             v -> {
               try {
-                return ProtoSerialization.protoToContentId(
-                    AdapterTypes.ContentIdWithType.parseFrom(v));
+                return ProtoSerialization.protoToContentIdAndPayload(
+                    AdapterTypes.ContentIdWithPayload.parseFrom(v));
               } catch (InvalidProtocolBufferException e) {
                 throw new RuntimeException(e);
               }
@@ -510,7 +511,7 @@ class TestSerialization {
       entry.addPuts(
           AdapterTypes.ContentIdWithBytes.newBuilder()
               .setContentId(AdapterTypes.ContentId.newBuilder().setId(randomString(64)).build())
-              .setTypeUnused(2)
+              .setPayload(2)
               .setValue(randomBytes(120))
               .build());
     }
@@ -579,8 +580,9 @@ class TestSerialization {
         ThreadLocalRandom.current().nextBoolean() ? randomHash() : null);
   }
 
-  static ContentId createContentId() {
-    return ContentId.of(randomString(64));
+  static ContentIdAndPayload createContentIdAndPayload() {
+    return ContentIdAndPayload.of(
+        ContentId.of(randomString(64)), (byte) ThreadLocalRandom.current().nextInt(0, 127));
   }
 
   static ContentIdAndBytes createContentIdWithBytes() {

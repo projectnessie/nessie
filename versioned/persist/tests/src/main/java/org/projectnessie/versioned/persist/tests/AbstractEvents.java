@@ -165,7 +165,7 @@ public abstract class AbstractEvents {
         KeyWithBytes.of(
             Key.of("one", "two"),
             ContentId.of("cid-events-assign"),
-            (byte) 0,
+            OnRefOnly.ON_REF_ONLY.payload(),
             SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
                 OnRefOnly.onRef("foo", "cid-events-assign"), att -> {}));
 
@@ -212,7 +212,7 @@ public abstract class AbstractEvents {
         KeyWithBytes.of(
             Key.of("one", "two"),
             ContentId.of("cid-events-commit"),
-            (byte) 0,
+            OnRefOnly.ON_REF_ONLY.payload(),
             SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
                 OnRefOnly.onRef("foo", "cid-events-commit"), att -> {}));
 
@@ -265,7 +265,7 @@ public abstract class AbstractEvents {
         KeyWithBytes.of(
             Key.of("one", "two"),
             ContentId.of("cid-events-merge"),
-            (byte) 0,
+            OnRefOnly.ON_REF_ONLY.payload(),
             SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
                 OnRefOnly.onRef("foo", "cid-events-merge"), att -> {}));
 
@@ -337,7 +337,7 @@ public abstract class AbstractEvents {
         KeyWithBytes.of(
             Key.of("one", "two"),
             ContentId.of("cid-events-transplant"),
-            (byte) 0,
+            OnRefOnly.ON_REF_ONLY.payload(),
             SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
                 OnRefOnly.onRef("foo", "cid-events-transplant"), att -> {}));
 

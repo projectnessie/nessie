@@ -119,7 +119,10 @@ class ITCheckContent {
             .commitMetaSerialized(ByteString.copyFrom(new byte[] {1, 2, 3}))
             .addPuts(
                 KeyWithBytes.of(
-                    k1, ContentId.of("id123"), (byte) 0, ByteString.copyFrom(new byte[] {1, 2, 3})))
+                    k1,
+                    ContentId.of("id123"),
+                    (byte) 99,
+                    ByteString.copyFrom(new byte[] {1, 2, 3})))
             .build());
 
     launch(launcher, "check-content");
@@ -258,7 +261,7 @@ class ITCheckContent {
     commit(table1, adapter);
     ReferenceInfo good = adapter.namedRef("main", GetNamedRefsParams.DEFAULT);
 
-    commit("222", (byte) 0, ByteString.copyFrom(new byte[] {1, 2, 3}), adapter);
+    commit("222", (byte) 99, ByteString.copyFrom(new byte[] {1, 2, 3}), adapter);
 
     launch(launcher, "check-content", "--hash", good.getHash().asString());
     assertThat(entries).hasSize(1);

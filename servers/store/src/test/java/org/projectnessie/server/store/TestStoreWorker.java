@@ -65,6 +65,7 @@ class TestStoreWorker {
     assertThatThrownBy(
             () ->
                 worker.valueFromStore(
+                    (byte) 99,
                     ObjectTypes.Content.newBuilder()
                         .setId(CID)
                         .setIcebergRefState(
@@ -85,6 +86,7 @@ class TestStoreWorker {
   void tableMetadataLocationGlobal() {
     Content value =
         worker.valueFromStore(
+            (byte) 99,
             ObjectTypes.Content.newBuilder()
                 .setId(CID)
                 .setIcebergRefState(
@@ -120,6 +122,7 @@ class TestStoreWorker {
   void tableMetadataLocationOnRef() {
     Content value =
         worker.valueFromStore(
+            (byte) 99,
             ObjectTypes.Content.newBuilder()
                 .setId(CID)
                 .setIcebergRefState(
@@ -150,6 +153,7 @@ class TestStoreWorker {
     assertThatThrownBy(
             () ->
                 worker.valueFromStore(
+                    (byte) 99,
                     ObjectTypes.Content.newBuilder()
                         .setId(CID)
                         .setIcebergViewState(
@@ -166,6 +170,7 @@ class TestStoreWorker {
   void viewMetadataLocationGlobal() {
     Content value =
         worker.valueFromStore(
+            (byte) 99,
             ObjectTypes.Content.newBuilder()
                 .setId(CID)
                 .setIcebergViewState(ObjectTypes.IcebergViewState.newBuilder().setVersionId(42))
@@ -303,9 +308,11 @@ class TestStoreWorker {
 
     assertThat(onRef)
         .asInstanceOf(InstanceOfAssertFactories.type(ByteString.class))
-        .extracting(worker::requiresGlobalState, worker::getType)
+        .extracting(
+            content2 -> worker.requiresGlobalState((byte) 99, content2),
+            onRefContent -> worker.getType((byte) 99, onRefContent))
         .containsExactly(storeGlobal, type);
-    assertThat(worker.valueFromStore(onRef, () -> global, NO_ATTACHMENTS_RETRIEVER))
+    assertThat(worker.valueFromStore((byte) 99, onRef, () -> global, NO_ATTACHMENTS_RETRIEVER))
         .isEqualTo(content);
 
     if (storeGlobal) {
@@ -347,6 +354,7 @@ class TestStoreWorker {
   void viewMetadataLocationOnRef() {
     Content value =
         worker.valueFromStore(
+            (byte) 99,
             ObjectTypes.Content.newBuilder()
                 .setId(CID)
                 .setIcebergViewState(
@@ -367,7 +375,8 @@ class TestStoreWorker {
   @ParameterizedTest
   @MethodSource("provideDeserialization")
   void testDeserialization(Map.Entry<ByteString, Content> entry) {
-    Content actual = worker.valueFromStore(entry.getKey(), () -> null, x -> Stream.empty());
+    Content actual =
+        worker.valueFromStore((byte) 99, entry.getKey(), () -> null, x -> Stream.empty());
     assertThat(actual).isEqualTo(entry.getValue());
   }
 
@@ -384,9 +393,10 @@ class TestStoreWorker {
   void testSerde(Map.Entry<ByteString, Content> entry) {
     ByteString actualBytes =
         worker.toStoreOnReferenceState(entry.getValue(), ALWAYS_THROWING_ATTACHMENT_CONSUMER);
-    assertThat(worker.valueFromStore(actualBytes, () -> null, x -> Stream.empty()))
+    assertThat(worker.valueFromStore((byte) 99, actualBytes, () -> null, x -> Stream.empty()))
         .isEqualTo(entry.getValue());
-    Content actualContent = worker.valueFromStore(entry.getKey(), () -> null, x -> Stream.empty());
+    Content actualContent =
+        worker.valueFromStore((byte) 99, entry.getKey(), () -> null, x -> Stream.empty());
     assertThat(worker.toStoreOnReferenceState(actualContent, ALWAYS_THROWING_ATTACHMENT_CONSUMER))
         .isEqualTo(entry.getKey());
   }
@@ -422,7 +432,8 @@ class TestStoreWorker {
     assertThat(snapshotBytes).isEqualTo(protoOnRef.toByteString());
 
     Content deserialized =
-        worker.valueFromStore(snapshotBytes, () -> tableGlobalBytes, x -> Stream.empty());
+        worker.valueFromStore(
+            (byte) 99, snapshotBytes, () -> tableGlobalBytes, x -> Stream.empty());
     assertThat(deserialized).isEqualTo(table);
   }
 
@@ -459,7 +470,8 @@ class TestStoreWorker {
     assertThat(snapshotBytes).isEqualTo(protoOnRef.toByteString());
 
     Content deserialized =
-        worker.valueFromStore(snapshotBytes, () -> tableGlobalBytes, x -> Stream.empty());
+        worker.valueFromStore(
+            (byte) 99, snapshotBytes, () -> tableGlobalBytes, x -> Stream.empty());
     assertThat(deserialized).isEqualTo(view);
   }
 

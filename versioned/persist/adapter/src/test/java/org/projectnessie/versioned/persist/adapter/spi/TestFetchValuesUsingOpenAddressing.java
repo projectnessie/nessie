@@ -309,7 +309,7 @@ public class TestFetchValuesUsingOpenAddressing {
     Key k = new KeyWithMaxIntHash(ImmutableList.of(keyString));
     return ImmutableKeyListEntry.builder()
         .key(k)
-        .type((byte) 0)
+        .payload((byte) 99)
         .contentId(ImmutableContentId.of(keyString + "_id"))
         .build();
   }

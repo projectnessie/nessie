@@ -132,7 +132,7 @@ public abstract class AbstractManyKeys {
                       "foobarbazfoobarbazfoobarbazfoobarbazfoobarbazfoobarbaz");
               allKeys.add(key);
               return KeyWithBytes.of(
-                  key, ContentId.of("cid-" + i), (byte) 0, ByteString.copyFromUtf8("value " + i));
+                  key, ContentId.of("cid-" + i), (byte) 99, ByteString.copyFromUtf8("value " + i));
             })
         .forEach(kb -> commits.get(commitDist.incrementAndGet() % params.commits).addPuts(kb));
 
@@ -207,7 +207,7 @@ public abstract class AbstractManyKeys {
                       KeyWithBytes.of(
                           key,
                           ContentId.of("c" + i),
-                          (byte) 0,
+                          OnRefOnly.ON_REF_ONLY.payload(),
                           SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
                               OnRefOnly.onRef("r" + i, "c" + i),
                               ALWAYS_THROWING_ATTACHMENT_CONSUMER)))
@@ -239,7 +239,7 @@ public abstract class AbstractManyKeys {
                                     .map(
                                         k ->
                                             KeyListEntry.of(
-                                                k.getKey(), k.getContentId(), k.getType(), null))
+                                                k.getKey(), k.getContentId(), k.getPayload(), null))
                                     .collect(Collectors.toList()))))
                 .collect(Collectors.toList());
         ada.writeKeyListEntities(ctx, noCommitIds);
@@ -267,7 +267,7 @@ public abstract class AbstractManyKeys {
                       KeyWithBytes.of(
                           key,
                           ContentId.of("c" + i),
-                          (byte) 0,
+                          OnRefOnly.ON_REF_ONLY.payload(),
                           SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
                               OnRefOnly.onRef("pf" + i, "cpf" + i),
                               ALWAYS_THROWING_ATTACHMENT_CONSUMER)))
@@ -334,7 +334,7 @@ public abstract class AbstractManyKeys {
                       KeyWithBytes.of(
                           keyGen.apply(keyNum),
                           ContentId.of("cid-" + keyNum),
-                          (byte) 0,
+                          (byte) 99,
                           valueGen.apply(keyNum)))
                   .build());
     }
@@ -468,7 +468,7 @@ public abstract class AbstractManyKeys {
             .mapToObj(
                 i ->
                     KeyWithBytes.of(
-                        keyGen.apply(i), ContentId.of("cid-" + i), (byte) 0, valueGen.apply(i)))
+                        keyGen.apply(i), ContentId.of("cid-" + i), (byte) 99, valueGen.apply(i)))
             .collect(Collectors.toCollection(() -> new ArrayList<>(keyCount)));
     databaseAdapter.commit(
         ImmutableCommitParams.builder()

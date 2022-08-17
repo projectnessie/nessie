@@ -84,7 +84,7 @@ public abstract class AbstractRepositories {
             .commitMetaSerialized(fooCommitMeta)
             .addPuts(
                 KeyWithBytes.of(
-                    Key.of("foo"), ContentId.of("foo"), (byte) 0, ByteString.copyFromUtf8("foo")))
+                    Key.of("foo"), ContentId.of("foo"), (byte) 99, ByteString.copyFromUtf8("foo")))
             .build());
     bar.commit(
         ImmutableCommitParams.builder()
@@ -92,7 +92,7 @@ public abstract class AbstractRepositories {
             .commitMetaSerialized(barCommitMeta)
             .addPuts(
                 KeyWithBytes.of(
-                    Key.of("bar"), ContentId.of("bar"), (byte) 0, ByteString.copyFromUtf8("bar")))
+                    Key.of("bar"), ContentId.of("bar"), (byte) 99, ByteString.copyFromUtf8("bar")))
             .build());
 
     Hash fooMain = foo.hashOnReference(main, Optional.empty());

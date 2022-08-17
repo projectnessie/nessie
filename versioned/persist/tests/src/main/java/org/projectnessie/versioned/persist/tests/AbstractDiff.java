@@ -95,6 +95,7 @@ public abstract class AbstractDiff {
                           OnRefOnly content =
                               OnRefOnly.onRef("on-ref " + c + " for " + k, "cid-" + c + "-" + k);
                           return Difference.of(
+                              content.getType().payload(),
                               Key.of("key", Integer.toString(k)),
                               Optional.empty(),
                               Optional.empty(),
@@ -121,6 +122,7 @@ public abstract class AbstractDiff {
                           OnRefOnly content =
                               OnRefOnly.onRef("on-ref " + c + " for " + k, "cid-" + c + "-" + k);
                           return Difference.of(
+                              content.getType().payload(),
                               Key.of("key", Integer.toString(k)),
                               Optional.empty(),
                               Optional.of(
@@ -150,6 +152,7 @@ public abstract class AbstractDiff {
                           OnRefOnly to =
                               OnRefOnly.onRef("on-ref " + c + " for " + k, "cid-" + c + "-" + k);
                           return Difference.of(
+                              from.getType().payload(),
                               Key.of("key", Integer.toString(k)),
                               Optional.empty(),
                               Optional.of(
