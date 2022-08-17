@@ -77,7 +77,6 @@ import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
@@ -143,9 +142,8 @@ public abstract class NonTransactionalDatabaseAdapter<
   public static final String TAG_KEY_LIST_COUNT = "key-list-count";
   public static final String TAG_REF = "ref";
 
-  protected NonTransactionalDatabaseAdapter(
-      CONFIG config, StoreWorker storeWorker, AdapterEventConsumer eventConsumer) {
-    super(config, storeWorker, eventConsumer);
+  protected NonTransactionalDatabaseAdapter(CONFIG config, AdapterEventConsumer eventConsumer) {
+    super(config, eventConsumer);
   }
 
   @Override

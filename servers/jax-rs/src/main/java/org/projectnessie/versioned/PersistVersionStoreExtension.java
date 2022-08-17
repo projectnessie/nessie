@@ -23,7 +23,6 @@ import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.util.TypeLiteral;
-import org.projectnessie.server.store.TableCommitMetaStoreWorker;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
 
@@ -40,12 +39,10 @@ public class PersistVersionStoreExtension implements Extension {
 
   @SuppressWarnings("unused")
   public void afterBeanDiscovery(@Observes AfterBeanDiscovery abd, BeanManager bm) {
-    TableCommitMetaStoreWorker storeWorker = new TableCommitMetaStoreWorker();
-
     abd.addBean()
         .addType(new TypeLiteral<VersionStore>() {})
         .addQualifier(Default.Literal.INSTANCE)
         .scope(ApplicationScoped.class)
-        .produceWith(i -> new PersistVersionStore(databaseAdapter.get(), storeWorker));
+        .produceWith(i -> new PersistVersionStore(databaseAdapter.get()));
   }
 }

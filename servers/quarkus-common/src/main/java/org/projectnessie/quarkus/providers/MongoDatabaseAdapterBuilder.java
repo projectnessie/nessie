@@ -24,7 +24,6 @@ import io.quarkus.mongodb.runtime.MongoClients;
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.mongodb.MongoClientConfig;
 import org.projectnessie.versioned.persist.mongodb.MongoDatabaseAdapterFactory;
@@ -42,7 +41,7 @@ public class MongoDatabaseAdapterBuilder implements DatabaseAdapterBuilder {
   @Inject NonTransactionalDatabaseAdapterConfig config;
 
   @Override
-  public DatabaseAdapter newDatabaseAdapter(StoreWorker storeWorker) {
+  public DatabaseAdapter newDatabaseAdapter() {
     MongoClients mongoClients = Arc.container().instance(MongoClients.class).get();
     MongoClient mongoClient =
         mongoClients.createMongoClient(MongoClientBeanUtil.DEFAULT_MONGOCLIENT_NAME);
@@ -55,6 +54,6 @@ public class MongoDatabaseAdapterBuilder implements DatabaseAdapterBuilder {
         .newBuilder()
         .withConfig(config)
         .withConnector(client)
-        .build(storeWorker);
+        .build();
   }
 }

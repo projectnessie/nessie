@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned.persist.rocks;
 
-import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterFactory;
@@ -34,8 +33,7 @@ public class RocksDatabaseAdapterFactory
   protected RocksDatabaseAdapter create(
       NonTransactionalDatabaseAdapterConfig config,
       RocksDbInstance rocksDbInstance,
-      StoreWorker storeWorker,
       AdapterEventConsumer eventConsumer) {
-    return new RocksDatabaseAdapter(config, rocksDbInstance, storeWorker, eventConsumer);
+    return new RocksDatabaseAdapter(config, rocksDbInstance, eventConsumer);
   }
 }

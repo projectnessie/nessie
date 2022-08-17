@@ -19,7 +19,6 @@ import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreTy
 
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
-import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.tx.TxConnectionConfig;
 import org.projectnessie.versioned.persist.tx.TxConnectionProvider;
@@ -34,11 +33,11 @@ public class TransactionalDatabaseAdapterBuilder implements DatabaseAdapterBuild
   @Inject TxConnectionProvider<TxConnectionConfig> connector;
 
   @Override
-  public DatabaseAdapter newDatabaseAdapter(StoreWorker storeWorker) {
+  public DatabaseAdapter newDatabaseAdapter() {
     return new PostgresDatabaseAdapterFactory()
         .newBuilder()
         .withConfig(config)
         .withConnector(connector)
-        .build(storeWorker);
+        .build();
   }
 }

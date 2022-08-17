@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
@@ -48,8 +49,8 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.RefLog;
+import org.projectnessie.versioned.store.DefaultStoreWorker;
 import org.projectnessie.versioned.testworker.OnRefOnly;
-import org.projectnessie.versioned.testworker.SimpleStoreWorker;
 
 /** Verifies handling of repo-description in the database-adapters. */
 public abstract class AbstractReferences {
@@ -139,6 +140,7 @@ public abstract class AbstractReferences {
     Hash helperHead =
         databaseAdapter.create(helper, databaseAdapter.hashOnReference(main, Optional.empty()));
 
+    OnRefOnly hello = onRef("hello", "contentId");
     Hash unreachableHead =
         databaseAdapter.commit(
             ImmutableCommitParams.builder()
@@ -147,9 +149,9 @@ public abstract class AbstractReferences {
                 .addPuts(
                     KeyWithBytes.of(
                         Key.of("foo"),
-                        ContentId.of("contentId"),
-                        (byte) 99,
-                        ByteString.copyFromUtf8("hello")))
+                        ContentId.of(hello.getId()),
+                        hello.getType().payload(),
+                        hello.serialized()))
                 .build());
 
     assertAll(
@@ -163,19 +165,21 @@ public abstract class AbstractReferences {
                         unreachableHead.asString(), main.getName())),
         () ->
             assertThatThrownBy(
-                    () ->
-                        databaseAdapter.commit(
-                            ImmutableCommitParams.builder()
-                                .toBranch(helper)
-                                .expectedHead(Optional.of(unreachableHead))
-                                .commitMetaSerialized(ByteString.copyFromUtf8("commit meta"))
-                                .addPuts(
-                                    KeyWithBytes.of(
-                                        Key.of("bar"),
-                                        ContentId.of("contentId-no-no"),
-                                        (byte) 99,
-                                        ByteString.copyFromUtf8("hello")))
-                                .build()))
+                    () -> {
+                      OnRefOnly noNo = onRef("hello", "contentId-no-no");
+                      databaseAdapter.commit(
+                          ImmutableCommitParams.builder()
+                              .toBranch(helper)
+                              .expectedHead(Optional.of(unreachableHead))
+                              .commitMetaSerialized(ByteString.copyFromUtf8("commit meta"))
+                              .addPuts(
+                                  KeyWithBytes.of(
+                                      Key.of("bar"),
+                                      ContentId.of(noNo.getId()),
+                                      noNo.getType().payload(),
+                                      noNo.serialized()))
+                              .build());
+                    })
                 .isInstanceOf(ReferenceNotFoundException.class)
                 .hasMessage(
                     String.format(
@@ -208,6 +212,7 @@ public abstract class AbstractReferences {
 
     Hash[] commits = new Hash[3];
     for (int i = 0; i < commits.length; i++) {
+      OnRefOnly hello = onRef("hello " + i, "contentId-" + i);
       commits[i] =
           databaseAdapter.commit(
               ImmutableCommitParams.builder()
@@ -216,9 +221,9 @@ public abstract class AbstractReferences {
                   .addPuts(
                       KeyWithBytes.of(
                           Key.of("bar", Integer.toString(i)),
-                          ContentId.of("contentId-" + i),
-                          (byte) 99,
-                          ByteString.copyFromUtf8("hello " + i)))
+                          ContentId.of(hello.getId()),
+                          hello.getType().payload(),
+                          hello.serialized()))
                   .build());
     }
 
@@ -323,8 +328,9 @@ public abstract class AbstractReferences {
                               Key.of("table", "c" + commit),
                               ContentId.of("c" + commit),
                               OnRefOnly.ON_REF_ONLY.payload(),
-                              SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
-                                  OnRefOnly.newOnRef("c" + commit), att -> {})))
+                              DefaultStoreWorker.instance()
+                                  .toStoreOnReferenceState(
+                                      OnRefOnly.newOnRef("c" + commit), att -> {})))
                       .build());
           refLogOpsPerRef
               .computeIfAbsent(ref, x -> new ArrayList<>())

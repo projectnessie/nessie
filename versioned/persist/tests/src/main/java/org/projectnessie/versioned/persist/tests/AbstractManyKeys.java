@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.Mockito.spy;
 import static org.projectnessie.versioned.persist.tests.DatabaseAdapterTestUtils.ALWAYS_THROWING_ATTACHMENT_CONSUMER;
+import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
@@ -62,8 +63,8 @@ import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterConfigItem;
+import org.projectnessie.versioned.store.DefaultStoreWorker;
 import org.projectnessie.versioned.testworker.OnRefOnly;
-import org.projectnessie.versioned.testworker.SimpleStoreWorker;
 
 /**
  * Verifies that a big-ish number of keys, split across multiple commits works and the correct
@@ -131,8 +132,9 @@ public abstract class AbstractManyKeys {
                       "value",
                       "foobarbazfoobarbazfoobarbazfoobarbazfoobarbazfoobarbaz");
               allKeys.add(key);
+              OnRefOnly val = onRef("value " + i, "cid-" + i);
               return KeyWithBytes.of(
-                  key, ContentId.of("cid-" + i), (byte) 99, ByteString.copyFromUtf8("value " + i));
+                  key, ContentId.of(val.getId()), val.getType().payload(), val.serialized());
             })
         .forEach(kb -> commits.get(commitDist.incrementAndGet() % params.commits).addPuts(kb));
 
@@ -208,9 +210,9 @@ public abstract class AbstractManyKeys {
                           key,
                           ContentId.of("c" + i),
                           OnRefOnly.ON_REF_ONLY.payload(),
-                          SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
-                              OnRefOnly.onRef("r" + i, "c" + i),
-                              ALWAYS_THROWING_ATTACHMENT_CONSUMER)))
+                          DefaultStoreWorker.instance()
+                              .toStoreOnReferenceState(
+                                  onRef("r" + i, "c" + i), ALWAYS_THROWING_ATTACHMENT_CONSUMER)))
                   .build());
       keyToCommit.put(key, hash);
     }
@@ -268,9 +270,9 @@ public abstract class AbstractManyKeys {
                           key,
                           ContentId.of("c" + i),
                           OnRefOnly.ON_REF_ONLY.payload(),
-                          SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
-                              OnRefOnly.onRef("pf" + i, "cpf" + i),
-                              ALWAYS_THROWING_ATTACHMENT_CONSUMER)))
+                          DefaultStoreWorker.instance()
+                              .toStoreOnReferenceState(
+                                  onRef("pf" + i, "cpf" + i), ALWAYS_THROWING_ATTACHMENT_CONSUMER)))
                   .build());
       keyToCommit.put(key, hash);
     }
@@ -313,7 +315,7 @@ public abstract class AbstractManyKeys {
     String keyElement = "1234567890123456789012345678901234567890123456789012345678901234";
     // generates "long" keys
     IntFunction<Key> keyGen = i -> Key.of("k-" + i, keyElement, keyElement);
-    IntFunction<ByteString> valueGen = i -> ByteString.copyFromUtf8("value-" + i);
+    IntFunction<OnRefOnly> valueGen = i -> onRef("value-" + i, "cid-" + i);
 
     BranchName branch = BranchName.of("main");
     Hash head = databaseAdapter.hashOnReference(branch, Optional.empty());
@@ -325,6 +327,7 @@ public abstract class AbstractManyKeys {
     for (keyNum = 0;
         estimatedTotalKeyLength > 0;
         keyNum++, estimatedTotalKeyLength -= assumedKeyEntryLen) {
+      OnRefOnly val = valueGen.apply(keyNum);
       head =
           databaseAdapter.commit(
               ImmutableCommitParams.builder()
@@ -333,9 +336,9 @@ public abstract class AbstractManyKeys {
                   .addPuts(
                       KeyWithBytes.of(
                           keyGen.apply(keyNum),
-                          ContentId.of("cid-" + keyNum),
-                          (byte) 99,
-                          valueGen.apply(keyNum)))
+                          ContentId.of(val.getId()),
+                          val.getType().payload(),
+                          val.serialized()))
                   .build());
     }
 
@@ -347,7 +350,7 @@ public abstract class AbstractManyKeys {
       assertThat(values)
           .extractingByKey(key)
           .extracting(ContentAndState::getRefState)
-          .isEqualTo(valueGen.apply(i));
+          .isEqualTo(valueGen.apply(i).serialized());
     }
   }
 
@@ -387,7 +390,7 @@ public abstract class AbstractManyKeys {
       throws ReferenceNotFoundException, ReferenceConflictException {
 
     IntFunction<Key> keyGen = i -> Key.of("k-" + i);
-    IntFunction<ByteString> valueGen = i -> ByteString.copyFromUtf8("value-" + i);
+    IntFunction<OnRefOnly> valueGen = i -> onRef("value-" + i, "cid-" + i);
     BranchName branch = BranchName.of("main");
 
     // This should be a power of two, so that the entries hashed by KeyListBuildState completely
@@ -440,7 +443,7 @@ public abstract class AbstractManyKeys {
       throws ReferenceNotFoundException, ReferenceConflictException {
 
     IntFunction<Key> keyGen = i -> Key.of("k-" + i);
-    IntFunction<ByteString> valueGen = i -> ByteString.copyFromUtf8("value-" + i);
+    IntFunction<OnRefOnly> valueGen = i -> onRef("value-" + i, "cid-" + i);
     BranchName branch = BranchName.of("main");
     // This should be a power of two, so that the entries hashed by KeyListBuildState completely
     // fill its buckets, but this specific power is an arbitrary choice and not significant.
@@ -460,15 +463,20 @@ public abstract class AbstractManyKeys {
       DatabaseAdapter databaseAdapter,
       BranchName branch,
       IntFunction<Key> keyGen,
-      IntFunction<ByteString> valueGen,
+      IntFunction<OnRefOnly> valueGen,
       int keyCount)
       throws ReferenceNotFoundException, ReferenceConflictException {
     List<KeyWithBytes> keys =
         IntStream.range(0, keyCount)
             .mapToObj(
-                i ->
-                    KeyWithBytes.of(
-                        keyGen.apply(i), ContentId.of("cid-" + i), (byte) 99, valueGen.apply(i)))
+                i -> {
+                  OnRefOnly val = valueGen.apply(i);
+                  return KeyWithBytes.of(
+                      keyGen.apply(i),
+                      ContentId.of(val.getId()),
+                      val.getType().payload(),
+                      val.serialized());
+                })
             .collect(Collectors.toCollection(() -> new ArrayList<>(keyCount)));
     databaseAdapter.commit(
         ImmutableCommitParams.builder()
@@ -501,7 +509,7 @@ public abstract class AbstractManyKeys {
       DatabaseAdapter databaseAdapter,
       Hash head,
       IntFunction<Key> keyGen,
-      IntFunction<ByteString> valueGen,
+      IntFunction<OnRefOnly> valueGen,
       int keyCount)
       throws ReferenceNotFoundException {
     for (int i = 0; i < keyCount; i++) {
@@ -512,7 +520,7 @@ public abstract class AbstractManyKeys {
       assertThat(values)
           .extractingByKey(key)
           .extracting(ContentAndState::getRefState)
-          .isEqualTo(valueGen.apply(i));
+          .isEqualTo(valueGen.apply(i).serialized());
     }
   }
 }

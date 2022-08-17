@@ -49,8 +49,8 @@ import org.projectnessie.versioned.persist.adapter.events.RepositoryInitializedE
 import org.projectnessie.versioned.persist.adapter.events.TransplantEvent;
 import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
+import org.projectnessie.versioned.store.DefaultStoreWorker;
 import org.projectnessie.versioned.testworker.OnRefOnly;
-import org.projectnessie.versioned.testworker.SimpleStoreWorker;
 
 /** Verifies handling of repo-description in the database-adapters. */
 public abstract class AbstractEvents {
@@ -166,8 +166,8 @@ public abstract class AbstractEvents {
             Key.of("one", "two"),
             ContentId.of("cid-events-assign"),
             OnRefOnly.ON_REF_ONLY.payload(),
-            SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
-                OnRefOnly.onRef("foo", "cid-events-assign"), att -> {}));
+            DefaultStoreWorker.instance()
+                .toStoreOnReferenceState(OnRefOnly.onRef("foo", "cid-events-assign"), att -> {}));
 
     ByteString meta = ByteString.copyFromUtf8("foo bar baz");
 
@@ -213,8 +213,8 @@ public abstract class AbstractEvents {
             Key.of("one", "two"),
             ContentId.of("cid-events-commit"),
             OnRefOnly.ON_REF_ONLY.payload(),
-            SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
-                OnRefOnly.onRef("foo", "cid-events-commit"), att -> {}));
+            DefaultStoreWorker.instance()
+                .toStoreOnReferenceState(OnRefOnly.onRef("foo", "cid-events-commit"), att -> {}));
 
     ByteString meta = ByteString.copyFromUtf8("foo bar baz");
 
@@ -266,8 +266,8 @@ public abstract class AbstractEvents {
             Key.of("one", "two"),
             ContentId.of("cid-events-merge"),
             OnRefOnly.ON_REF_ONLY.payload(),
-            SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
-                OnRefOnly.onRef("foo", "cid-events-merge"), att -> {}));
+            DefaultStoreWorker.instance()
+                .toStoreOnReferenceState(OnRefOnly.onRef("foo", "cid-events-merge"), att -> {}));
 
     ByteString meta = ByteString.copyFromUtf8("merge me");
 
@@ -338,8 +338,9 @@ public abstract class AbstractEvents {
             Key.of("one", "two"),
             ContentId.of("cid-events-transplant"),
             OnRefOnly.ON_REF_ONLY.payload(),
-            SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
-                OnRefOnly.onRef("foo", "cid-events-transplant"), att -> {}));
+            DefaultStoreWorker.instance()
+                .toStoreOnReferenceState(
+                    OnRefOnly.onRef("foo", "cid-events-transplant"), att -> {}));
 
     ByteString meta = ByteString.copyFromUtf8("transplant me");
 

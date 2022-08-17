@@ -23,7 +23,6 @@ import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.projectnessie.quarkus.tests.profiles.BaseConfigProfile;
-import org.projectnessie.server.store.TableCommitMetaStoreWorker;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.mongodb.ImmutableMongoClientConfig;
 import org.projectnessie.versioned.persist.mongodb.LocalMongoResource;
@@ -101,7 +100,7 @@ public class NessieCliTestExtension
                 .repositoryId(BaseConfigProfile.TEST_REPO_ID)
                 .build())
         .withConnector(client)
-        .build(new TableCommitMetaStoreWorker());
+        .build();
   }
 
   @Override

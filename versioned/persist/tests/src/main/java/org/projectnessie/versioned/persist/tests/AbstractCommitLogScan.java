@@ -51,8 +51,8 @@ import org.projectnessie.versioned.persist.adapter.ReferencesUtil;
 import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterConfigItem;
+import org.projectnessie.versioned.store.DefaultStoreWorker;
 import org.projectnessie.versioned.testworker.OnRefOnly;
-import org.projectnessie.versioned.testworker.SimpleStoreWorker;
 
 /** Verifies handling of repo-description in the database-adapters. */
 public abstract class AbstractCommitLogScan {
@@ -215,7 +215,7 @@ public abstract class AbstractCommitLogScan {
                           key,
                           cid,
                           payload,
-                          SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(c, att -> {})))
+                          DefaultStoreWorker.instance().toStoreOnReferenceState(c, att -> {})))
                   .build());
       committed.accept(head);
     }

@@ -37,7 +37,6 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
@@ -69,9 +68,8 @@ public class InmemoryDatabaseAdapter
   public InmemoryDatabaseAdapter(
       NonTransactionalDatabaseAdapterConfig config,
       InmemoryStore store,
-      StoreWorker storeWorker,
       AdapterEventConsumer eventConsumer) {
-    super(config, storeWorker, eventConsumer);
+    super(config, eventConsumer);
 
     this.keyPrefix = ByteString.copyFromUtf8(config.getRepositoryId() + ':');
 

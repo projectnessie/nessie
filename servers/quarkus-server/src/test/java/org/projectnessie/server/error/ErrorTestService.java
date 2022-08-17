@@ -43,7 +43,6 @@ import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
-import org.projectnessie.versioned.testworker.SimpleStoreWorker;
 
 /** REST service used to generate a bunch of violations for {@link TestNessieError}. */
 @RequestScoped
@@ -148,7 +147,7 @@ public class ErrorTestService {
     DatabaseAdapter databaseAdapter = Mockito.mock(DatabaseAdapter.class);
     Mockito.when(databaseAdapter.namedRefs(Mockito.any())).thenThrow(ex);
 
-    PersistVersionStore tvs = new PersistVersionStore(databaseAdapter, SimpleStoreWorker.INSTANCE);
+    PersistVersionStore tvs = new PersistVersionStore(databaseAdapter);
     try (Stream<ReferenceInfo<CommitMeta>> refs = tvs.getNamedRefs(GetNamedRefsParams.DEFAULT)) {
       refs.forEach(ref -> {});
     }

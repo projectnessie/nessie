@@ -56,8 +56,8 @@ import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.MergeParams;
 import org.projectnessie.versioned.persist.adapter.MetadataRewriteParams;
 import org.projectnessie.versioned.persist.adapter.TransplantParams;
+import org.projectnessie.versioned.store.DefaultStoreWorker;
 import org.projectnessie.versioned.testworker.OnRefOnly;
-import org.projectnessie.versioned.testworker.SimpleStoreWorker;
 
 /** Check that merge and transplant operations work correctly. */
 public abstract class AbstractMergeTransplant {
@@ -264,8 +264,8 @@ public abstract class AbstractMergeTransplant {
         Key key = Key.of("key", Integer.toString(k));
         OnRefOnly value = OnRefOnly.newOnRef("value " + i + " for " + k);
         ByteString onRef =
-            SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
-                value, ALWAYS_THROWING_ATTACHMENT_CONSUMER);
+            DefaultStoreWorker.instance()
+                .toStoreOnReferenceState(value, ALWAYS_THROWING_ATTACHMENT_CONSUMER);
         keysAndValue.put(key, ContentAndState.of(value.getType().payload(), onRef));
         commit.addPuts(
             KeyWithBytes.of(key, ContentId.of("C" + k), value.getType().payload(), onRef));
@@ -381,8 +381,8 @@ public abstract class AbstractMergeTransplant {
               Key.of("key", Integer.toString(k)),
               ContentId.of("C" + k),
               conflictValue.getType().payload(),
-              SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
-                  conflictValue, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
+              DefaultStoreWorker.instance()
+                  .toStoreOnReferenceState(conflictValue, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
     }
     Hash conflictHead = databaseAdapter.commit(commit.build());
 

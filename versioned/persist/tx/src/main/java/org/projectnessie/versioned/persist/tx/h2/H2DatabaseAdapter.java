@@ -17,7 +17,6 @@ package org.projectnessie.versioned.persist.tx.h2;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
-import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
 import org.projectnessie.versioned.persist.tx.TxConnectionProvider;
 import org.projectnessie.versioned.persist.tx.TxDatabaseAdapter;
@@ -28,9 +27,8 @@ public class H2DatabaseAdapter extends TxDatabaseAdapter {
   public H2DatabaseAdapter(
       TxDatabaseAdapterConfig config,
       TxConnectionProvider<?> db,
-      StoreWorker storeWorker,
       AdapterEventConsumer eventConsumer) {
-    super(config, db, storeWorker, eventConsumer);
+    super(config, db, eventConsumer);
   }
 
   @Override
