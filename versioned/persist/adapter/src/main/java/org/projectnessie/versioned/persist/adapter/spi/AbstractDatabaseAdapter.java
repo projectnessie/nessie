@@ -250,6 +250,15 @@ public abstract class AbstractDatabaseAdapter<
     Function<Hash, CommitLogEntry> currentCommit =
         h -> h.equals(branchHead) ? currentBranchEntry : null;
 
+    for (KeyWithBytes put : commitParams.getPuts()) {
+      if (put.getPayload() <= (byte) 0) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Invalid payload value %d for put-operation for key %s / content-id %s",
+                put.getPayload(), put.getKey(), put.getContentId()));
+      }
+    }
+
     CommitLogEntry newBranchCommit =
         buildIndividualCommit(
             ctx,
@@ -632,12 +641,16 @@ public abstract class AbstractDatabaseAdapter<
               if (f.equals(t)) {
                 return null;
               }
+              byte payload =
+                  fromVal != null
+                      ? fromVal.getPayload()
+                      : (toVal != null ? toVal.getPayload() : (byte) 0);
               Optional<ByteString> g =
                   Optional.ofNullable(
                       fromVal != null
                           ? fromVal.getGlobalState()
                           : (toVal != null ? toVal.getGlobalState() : null));
-              return Difference.of(k, g, f, t);
+              return Difference.of(payload, k, g, f, t);
             })
         .filter(Objects::nonNull);
   }
@@ -1225,7 +1238,7 @@ public abstract class AbstractDatabaseAdapter<
                     if (keysToEnhanceWithCommitId.remove(put.getKey())) {
                       KeyListEntry entry =
                           KeyListEntry.of(
-                              put.getKey(), put.getContentId(), put.getType(), e.getHash());
+                              put.getKey(), put.getContentId(), put.getPayload(), e.getHash());
                       buildState.add(entry);
                     }
                   }
@@ -1330,7 +1343,7 @@ public abstract class AbstractDatabaseAdapter<
         keyListEntry -> keyListEntry != null && seen.add(keyListEntry.getKey());
     if (keyFilter != null) {
       predicate =
-          predicate.and(kt -> keyFilter.check(kt.getKey(), kt.getContentId(), kt.getType()));
+          predicate.and(kt -> keyFilter.check(kt.getKey(), kt.getContentId(), kt.getPayload()));
     }
     Predicate<KeyListEntry> keyPredicate = predicate;
 
@@ -1350,7 +1363,7 @@ public abstract class AbstractDatabaseAdapter<
                   .map(
                       put ->
                           KeyListEntry.of(
-                              put.getKey(), put.getContentId(), put.getType(), e.getHash()))
+                              put.getKey(), put.getContentId(), put.getPayload(), e.getHash()))
                   .filter(keyPredicate);
 
           if (e.hasKeySummary()) {
@@ -1395,7 +1408,7 @@ public abstract class AbstractDatabaseAdapter<
       throws ReferenceNotFoundException {
     Set<Key> remainingKeys = new HashSet<>(keys);
 
-    Map<Key, ByteString> nonGlobal = new HashMap<>();
+    Map<Key, ContentAndState> nonGlobal = new HashMap<>();
     Map<Key, ContentId> keyToContentIds = new HashMap<>();
     Set<ContentId> contentIdsForGlobal = new HashSet<>();
 
@@ -1410,12 +1423,12 @@ public abstract class AbstractDatabaseAdapter<
               continue;
             }
 
-            if (!keyFilter.check(put.getKey(), put.getContentId(), put.getType())) {
+            if (!keyFilter.check(put.getKey(), put.getContentId(), put.getPayload())) {
               continue;
             }
-            nonGlobal.put(put.getKey(), put.getValue());
+            nonGlobal.put(put.getKey(), ContentAndState.of(put.getPayload(), put.getValue()));
             keyToContentIds.put(put.getKey(), put.getContentId());
-            if (storeWorker.requiresGlobalState(put.getValue())) {
+            if (storeWorker.requiresGlobalState(put.getPayload(), put.getValue())) {
               contentIdsForGlobal.add(put.getContentId());
             }
           }
@@ -1505,9 +1518,13 @@ public abstract class AbstractDatabaseAdapter<
         .collect(
             Collectors.toMap(
                 Entry::getKey,
-                e ->
-                    ContentAndState.of(
-                        e.getValue(), globals.get(keyToContentIds.get(e.getKey())))));
+                e -> {
+                  ContentAndState cs = e.getValue();
+                  ByteString global = globals.get(keyToContentIds.get(e.getKey()));
+                  return global != null
+                      ? ContentAndState.of(cs.getPayload(), cs.getRefState(), global)
+                      : cs;
+                }));
   }
 
   /**
@@ -1868,7 +1885,10 @@ public abstract class AbstractDatabaseAdapter<
       OP_CONTEXT ctx, Hash hashFromTarget, Hash hashFromSource, Set<Key> keyCollisions)
       throws ReferenceNotFoundException {
     Predicate<Entry<Key, ContentAndState>> isNamespace =
-        e -> storeWorker.getType(e.getValue().getRefState()).equals(Content.Type.NAMESPACE);
+        e ->
+            storeWorker
+                .getType(e.getValue().getPayload(), e.getValue().getRefState())
+                .equals(Content.Type.NAMESPACE);
     Set<Key> namespacesOnTarget =
         fetchValues(ctx, hashFromTarget, keyCollisions, ALLOW_ALL).entrySet().stream()
             .filter(isNamespace)

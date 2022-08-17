@@ -26,15 +26,15 @@ public interface KeyWithBytes {
 
   ContentId getContentId();
 
-  byte getType();
+  byte getPayload();
 
   ByteString getValue();
 
-  static KeyWithBytes of(Key key, ContentId contentId, byte type, ByteString value) {
+  static KeyWithBytes of(Key key, ContentId contentId, byte payload, ByteString value) {
     return ImmutableKeyWithBytes.builder()
         .key(key)
         .contentId(contentId)
-        .type(type)
+        .payload(payload)
         .value(value)
         .build();
   }

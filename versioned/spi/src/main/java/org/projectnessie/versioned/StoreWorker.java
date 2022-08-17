@@ -21,6 +21,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.types.ContentTypes;
 
 /** A set of helpers that users of a VersionStore must implement. */
 public interface StoreWorker {
@@ -32,15 +33,36 @@ public interface StoreWorker {
   ByteString toStoreGlobalState(Content content);
 
   Content valueFromStore(
+      byte payload,
       ByteString onReferenceValue,
       Supplier<ByteString> globalState,
       Function<Stream<ContentAttachmentKey>, Stream<ContentAttachment>> attachmentsRetriever);
 
   Content applyId(Content content, String id);
 
-  boolean requiresGlobalState(ByteString content);
-
+  /**
+   * Production implementations already always return {@code false}, but tests still require this
+   * one.
+   */
   boolean requiresGlobalState(Content content);
 
-  Content.Type getType(ByteString onRefContent);
+  /**
+   * Checks whether the given persisted content has been persisted using global state.
+   *
+   * <p>This function can be entirely removed once all content objects are guaranteed to have no
+   * global state.
+   */
+  boolean requiresGlobalState(byte payload, ByteString content);
+
+  /**
+   * Retrieve the {@link Content.Type} for the given persisted representation.
+   *
+   * <p>Needs both {@code payload} and {@code onRefContent} for backwards compatibility, because old
+   * persisted content objects can have fixed {@code payload == 0}, therefore the implementation for
+   * the default types (Iceberg, DL, Namespace) needs this.
+   *
+   * <p>If it is ensured that all persisted values have a valid {@code payload} value, this function
+   * can be replaced with a call to {@link ContentTypes#forPayload(byte)}.
+   */
+  Content.Type getType(byte payload, ByteString onRefContent);
 }
