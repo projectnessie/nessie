@@ -29,10 +29,11 @@ dependencies {
   implementation(platform(rootProject))
   compileOnly(platform(project(":nessie-deps-build-only")))
   annotationProcessor(platform(project(":nessie-deps-build-only")))
-  compileOnly(platform("com.fasterxml.jackson:jackson-bom"))
+  implementation(platform("com.fasterxml.jackson:jackson-bom"))
 
   implementation(project(":nessie-model"))
   implementation("com.google.protobuf:protobuf-java")
+  implementation("com.fasterxml.jackson.core:jackson-databind")
   compileOnly("org.immutables:builder")
   compileOnly("org.immutables:value-annotations")
   annotationProcessor("org.immutables:value-processor")

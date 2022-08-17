@@ -15,40 +15,29 @@
  */
 package org.projectnessie.server.store;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
-import java.io.IOException;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.DeltaLakeTable;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
-import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.model.ImmutableIcebergView;
 import org.projectnessie.model.ImmutableNamespace;
 import org.projectnessie.model.Namespace;
-import org.projectnessie.model.types.ContentTypes;
 import org.projectnessie.server.store.proto.ObjectTypes;
 import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.ContentAttachmentKey;
-import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
 
 public class TableCommitMetaStoreWorker implements StoreWorker {
-
-  private static final ObjectMapper MAPPER = new ObjectMapper();
-
-  private static final Serializer<CommitMeta> METADATA_SERIALIZER = new MetadataSerializer();
 
   @Override
   public ByteString toStoreOnReferenceState(
@@ -257,41 +246,6 @@ public class TableCommitMetaStoreWorker implements StoreWorker {
   }
 
   @Override
-  public String getId(Content content) {
-    return content.getId();
-  }
-
-  @Override
-  public Byte getPayload(Content content) {
-    if (content instanceof IcebergTable) {
-      return Content.Type.ICEBERG_TABLE.payload();
-    } else if (content instanceof DeltaLakeTable) {
-      return Content.Type.DELTA_LAKE_TABLE.payload();
-    } else if (content instanceof IcebergView) {
-      return Content.Type.ICEBERG_VIEW.payload();
-    } else if (content instanceof Namespace) {
-      return Content.Type.NAMESPACE.payload();
-    } else {
-      throw new IllegalArgumentException("Unknown type " + content);
-    }
-  }
-
-  @Override
-  public Content.Type getType(Content content) {
-    return content.getType();
-  }
-
-  @Override
-  public Content.Type getType(Byte payload) {
-    Content.Type type = ContentTypes.forPayload(payload);
-    if (type == null) {
-      throw new IllegalArgumentException(
-          String.format("Cannot create type from payload. Payload %d does not exist", payload));
-    }
-    return type;
-  }
-
-  @Override
   public Content.Type getType(ByteString onRefContent) {
     ObjectTypes.Content parsed = parse(onRefContent);
 
@@ -336,44 +290,6 @@ public class TableCommitMetaStoreWorker implements StoreWorker {
       return ObjectTypes.Content.parseFrom(value);
     } catch (InvalidProtocolBufferException e) {
       throw new RuntimeException("Failure parsing data", e);
-    }
-  }
-
-  @Override
-  public Serializer<CommitMeta> getMetadataSerializer() {
-    return METADATA_SERIALIZER;
-  }
-
-  private static class MetadataSerializer implements Serializer<CommitMeta> {
-    @Override
-    public ByteString toBytes(CommitMeta value) {
-      try {
-        return ByteString.copyFrom(MAPPER.writeValueAsBytes(value));
-      } catch (JsonProcessingException e) {
-        throw new RuntimeException(String.format("Couldn't serialize commit meta %s", value), e);
-      }
-    }
-
-    @Override
-    public CommitMeta fromBytes(ByteString bytes) {
-      try {
-        return MAPPER.readValue(bytes.toByteArray(), CommitMeta.class);
-      } catch (IOException e) {
-        return ImmutableCommitMeta.builder()
-            .message("unknown")
-            .committer("unknown")
-            .hash("unknown")
-            .build();
-      }
-    }
-  }
-
-  @Override
-  public boolean isNamespace(ByteString type) {
-    try {
-      return Content.Type.NAMESPACE.equals(getType(type));
-    } catch (Exception e) {
-      return false;
     }
   }
 }

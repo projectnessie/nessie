@@ -20,7 +20,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 
 /** A set of helpers that users of a VersionStore must implement. */
@@ -39,25 +38,9 @@ public interface StoreWorker {
 
   Content applyId(Content content, String id);
 
-  String getId(Content content);
-
-  Byte getPayload(Content content);
-
   boolean requiresGlobalState(ByteString content);
 
   boolean requiresGlobalState(Content content);
 
   Content.Type getType(ByteString onRefContent);
-
-  Content.Type getType(Byte payload);
-
-  default Content.Type getType(Content content) {
-    return getType(getPayload(content));
-  }
-
-  Serializer<CommitMeta> getMetadataSerializer();
-
-  default boolean isNamespace(ByteString type) {
-    return false;
-  }
 }
