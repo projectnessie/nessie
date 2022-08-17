@@ -23,7 +23,6 @@ import org.projectnessie.api.ContentApi;
 import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
-import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.GetMultipleContentsRequest;
@@ -41,10 +40,7 @@ import org.projectnessie.versioned.WithHash;
 public class ContentApiImpl extends BaseApiImpl implements ContentApi {
 
   public ContentApiImpl(
-      ServerConfig config,
-      VersionStore<Content, CommitMeta, Content.Type> store,
-      Authorizer authorizer,
-      Principal principal) {
+      ServerConfig config, VersionStore store, Authorizer authorizer, Principal principal) {
     super(config, store, authorizer, principal);
   }
 

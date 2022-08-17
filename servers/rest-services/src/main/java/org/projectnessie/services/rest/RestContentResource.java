@@ -22,7 +22,6 @@ import javax.ws.rs.core.SecurityContext;
 import org.projectnessie.api.ContentApi;
 import org.projectnessie.api.http.HttpContentApi;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.GetMultipleContentsRequest;
@@ -41,7 +40,7 @@ public class RestContentResource implements HttpContentApi {
   // empty resources (no REST methods defined) and potentially other.
 
   private final ServerConfig config;
-  private final VersionStore<Content, CommitMeta, Content.Type> store;
+  private final VersionStore store;
   private final Authorizer authorizer;
 
   @Context SecurityContext securityContext;
@@ -52,10 +51,7 @@ public class RestContentResource implements HttpContentApi {
   }
 
   @Inject
-  public RestContentResource(
-      ServerConfig config,
-      VersionStore<Content, CommitMeta, Content.Type> store,
-      Authorizer authorizer) {
+  public RestContentResource(ServerConfig config, VersionStore store, Authorizer authorizer) {
     this.config = config;
     this.store = store;
     this.authorizer = authorizer;

@@ -32,7 +32,7 @@ public abstract class NonTransactionalDatabaseAdapterFactory<
   protected abstract ADAPTER create(
       NonTransactionalDatabaseAdapterConfig config,
       CONNECTOR connector,
-      StoreWorker<?, ?, ?> storeWorker,
+      StoreWorker storeWorker,
       AdapterEventConsumer eventConsumer);
 
   @Override
@@ -65,7 +65,7 @@ public abstract class NonTransactionalDatabaseAdapterFactory<
     }
 
     @Override
-    public ADAPTER build(StoreWorker<?, ?, ?> storeWorker) {
+    public ADAPTER build(StoreWorker storeWorker) {
       return create(getConfig(), getConnector(), storeWorker, getEventConsumer());
     }
   }

@@ -112,7 +112,7 @@ public class DynamoDatabaseAdapter
   public DynamoDatabaseAdapter(
       NonTransactionalDatabaseAdapterConfig config,
       DynamoDatabaseClient c,
-      StoreWorker<?, ?, ?> storeWorker,
+      StoreWorker storeWorker,
       AdapterEventConsumer eventConsumer) {
     super(config, storeWorker, eventConsumer);
 

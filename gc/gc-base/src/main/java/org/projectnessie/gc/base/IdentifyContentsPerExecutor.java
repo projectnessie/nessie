@@ -300,8 +300,8 @@ public class IdentifyContentsPerExecutor implements Serializable {
               .map(Operation.Put::getContent)
               .filter(
                   content ->
-                      (content.getType() == Content.Type.ICEBERG_TABLE
-                          || content.getType() == Content.Type.ICEBERG_VIEW))
+                      (content.getType().equals(Content.Type.ICEBERG_TABLE)
+                          || content.getType().equals(Content.Type.ICEBERG_VIEW)))
               .filter(validSnapshotPredicate)
               .filter(expiredContentPredicate)
               .iterator();
@@ -329,15 +329,12 @@ public class IdentifyContentsPerExecutor implements Serializable {
   }
 
   private static long getSnapshotId(Content content) {
-    long snapshotId;
-    switch (content.getType()) {
-      case ICEBERG_VIEW:
-        snapshotId = ((IcebergView) content).getVersionId();
-        break;
-      case ICEBERG_TABLE:
-      default:
-        snapshotId = ((IcebergTable) content).getSnapshotId();
+    if (content.getType().equals(Content.Type.ICEBERG_TABLE)) {
+      return ((IcebergTable) content).getSnapshotId();
     }
-    return snapshotId;
+    if (content.getType().equals(Content.Type.ICEBERG_VIEW)) {
+      return ((IcebergView) content).getVersionId();
+    }
+    throw new RuntimeException("Unsupported type " + content.getType().name());
   }
 }

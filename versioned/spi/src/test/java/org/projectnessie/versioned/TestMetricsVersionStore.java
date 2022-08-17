@@ -53,12 +53,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToLongFunction;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.function.ThrowingConsumer;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.stubbing.Stubber;
+import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.IcebergTable;
 
 class TestMetricsVersionStore {
 
@@ -92,16 +95,17 @@ class TestMetricsVersionStore {
             new ReferenceNotFoundException("not-found"),
             new ReferenceAlreadyExistsException("already exists"));
 
-    MetadataRewriter<String> metadataRewriter =
-        new MetadataRewriter<String>() {
+    MetadataRewriter<CommitMeta> metadataRewriter =
+        new MetadataRewriter<CommitMeta>() {
           @Override
-          public String rewriteSingle(String metadata) {
+          public CommitMeta rewriteSingle(CommitMeta metadata) {
             return metadata;
           }
 
           @Override
-          public String squash(List<String> metadata) {
-            return String.join(", ", metadata);
+          public CommitMeta squash(List<CommitMeta> metadata) {
+            return CommitMeta.fromMessage(
+                metadata.stream().map(CommitMeta::getMessage).collect(Collectors.joining(", ")));
           }
         };
 
@@ -126,7 +130,7 @@ class TestMetricsVersionStore {
                     vs.commit(
                         BranchName.of("mock-branch"),
                         Optional.empty(),
-                        "metadata",
+                        CommitMeta.fromMessage("metadata"),
                         Collections.emptyList(),
                         () -> null),
                 () -> Hash.of("cafebabedeadbeef"),
@@ -180,8 +184,14 @@ class TestMetricsVersionStore {
                 vs -> vs.getCommits(BranchName.of("mock-branch"), false),
                 () ->
                     Stream.of(
-                        Commit.builder().hash(Hash.of("cafebabe")).commitMeta("log#1").build(),
-                        Commit.builder().hash(Hash.of("deadbeef")).commitMeta("log#2").build()),
+                        Commit.builder()
+                            .hash(Hash.of("cafebabe"))
+                            .commitMeta(CommitMeta.fromMessage("log#1"))
+                            .build(),
+                        Commit.builder()
+                            .hash(Hash.of("deadbeef"))
+                            .commitMeta(CommitMeta.fromMessage("log#2"))
+                            .build()),
                 refNotFoundThrows),
             new VersionStoreInvocation<>(
                 "getkeys",
@@ -200,7 +210,7 @@ class TestMetricsVersionStore {
             new VersionStoreInvocation<>(
                 "getvalue",
                 vs -> vs.getValue(BranchName.of("mock-branch"), Key.of("some", "key")),
-                () -> "foo",
+                () -> IcebergTable.of("meta", 42, 43, 44, 45),
                 refNotFoundThrows),
             new VersionStoreInvocation<>(
                 "getvalues",
@@ -236,7 +246,7 @@ class TestMetricsVersionStore {
       String opName,
       Exception expectedThrow,
       Supplier<?> resultSupplier,
-      ThrowingFunction<?, VersionStore<String, String, DummyEnum>> versionStoreFunction)
+      ThrowingFunction<?, VersionStore> versionStoreFunction)
       throws Throwable {
     TestMeterRegistry registry = new TestMeterRegistry();
 
@@ -254,15 +264,14 @@ class TestMetricsVersionStore {
       stubber = doNothing();
     }
 
-    @SuppressWarnings("unchecked")
-    VersionStore<String, String, DummyEnum> mockedVersionStore = mock(VersionStore.class);
+    VersionStore mockedVersionStore = mock(VersionStore.class);
     versionStoreFunction.accept(stubber.when(mockedVersionStore));
-    VersionStore<String, String, DummyEnum> versionStore =
-        new MetricsVersionStore<>(mockedVersionStore, registry, registry.testClock);
+    VersionStore versionStore =
+        new MetricsVersionStore(mockedVersionStore, registry, registry.testClock);
 
     Meter.Id timerId = timerId(opName, expectedThrow);
 
-    ThrowingConsumer<VersionStore<String, String, DummyEnum>> versionStoreExec =
+    ThrowingConsumer<VersionStore> versionStoreExec =
         vs -> {
           Object r = versionStoreFunction.accept(vs);
           if (result != null) {
@@ -310,13 +319,13 @@ class TestMetricsVersionStore {
 
   static class VersionStoreInvocation<R> {
     final String opName;
-    final ThrowingFunction<?, VersionStore<String, String, DummyEnum>> function;
+    final ThrowingFunction<?, VersionStore> function;
     final Supplier<R> result;
     final List<Exception> failures;
 
     VersionStoreInvocation(
         String opName,
-        ThrowingFunction<?, VersionStore<String, String, DummyEnum>> function,
+        ThrowingFunction<?, VersionStore> function,
         Supplier<R> result,
         List<Exception> failures) {
       this.opName = opName;
@@ -326,9 +335,7 @@ class TestMetricsVersionStore {
     }
 
     VersionStoreInvocation(
-        String opName,
-        ThrowingConsumer<VersionStore<String, String, DummyEnum>> function,
-        List<Exception> failures) {
+        String opName, ThrowingConsumer<VersionStore> function, List<Exception> failures) {
       this.opName = opName;
       this.function =
           vs -> {
@@ -343,10 +350,6 @@ class TestMetricsVersionStore {
   @FunctionalInterface
   interface ThrowingFunction<R, A> {
     R accept(A arg) throws Throwable;
-  }
-
-  enum DummyEnum {
-    DUMMY
   }
 
   private static Meter.Id timerId(String opName, Exception expectedThrow) {

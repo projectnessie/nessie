@@ -15,9 +15,9 @@
  */
 package org.projectnessie.model;
 
-import static org.projectnessie.model.UriUtil.DOT_STRING;
-import static org.projectnessie.model.UriUtil.GROUP_SEPARATOR_STRING;
-import static org.projectnessie.model.UriUtil.ZERO_BYTE_STRING;
+import static org.projectnessie.model.Util.DOT_STRING;
+import static org.projectnessie.model.Util.GROUP_SEPARATOR_STRING;
+import static org.projectnessie.model.Util.ZERO_BYTE_STRING;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -111,7 +111,7 @@ public abstract class ContentKey {
    * @return Actual key.
    */
   public static ContentKey fromPathString(String encoded) {
-    return ContentKey.of(UriUtil.fromPathString(encoded));
+    return ContentKey.of(Util.fromPathString(encoded));
   }
 
   /**
@@ -120,7 +120,7 @@ public abstract class ContentKey {
    * @return String encoded for path use.
    */
   public String toPathString() {
-    return UriUtil.toPathString(getElements());
+    return Util.toPathString(getElements());
   }
 
   @Override

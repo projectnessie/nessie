@@ -21,8 +21,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Content;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
 import org.projectnessie.server.store.TableCommitMetaStoreWorker;
@@ -63,20 +61,19 @@ public class ConfigurableVersionStoreFactory {
   @Produces
   @Singleton
   @Startup
-  public VersionStore<Content, CommitMeta, Content.Type> getVersionStore() {
+  public VersionStore getVersionStore() {
     VersionStoreType versionStoreType = storeConfig.getVersionStoreType();
 
     try {
       TableCommitMetaStoreWorker storeWorker = new TableCommitMetaStoreWorker();
 
-      VersionStore<Content, CommitMeta, Content.Type> versionStore =
-          new PersistVersionStore<>(databaseAdapter, storeWorker);
+      VersionStore versionStore = new PersistVersionStore(databaseAdapter, storeWorker);
 
       if (storeConfig.isTracingEnabled()) {
-        versionStore = new TracingVersionStore<>(versionStore);
+        versionStore = new TracingVersionStore(versionStore);
       }
       if (storeConfig.isMetricsEnabled()) {
-        versionStore = new MetricsVersionStore<>(versionStore);
+        versionStore = new MetricsVersionStore(versionStore);
       }
 
       return versionStore;

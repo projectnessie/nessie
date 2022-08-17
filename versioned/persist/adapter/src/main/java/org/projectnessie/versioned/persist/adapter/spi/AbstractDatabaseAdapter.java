@@ -149,7 +149,7 @@ public abstract class AbstractDatabaseAdapter<
   protected static final String TAG_HASH = "hash";
   protected static final String TAG_COUNT = "count";
   protected final CONFIG config;
-  protected final StoreWorker<?, ?, ?> storeWorker;
+  protected final StoreWorker storeWorker;
   private final AdapterEventConsumer eventConsumer;
 
   @SuppressWarnings("UnstableApiUsage")
@@ -161,7 +161,7 @@ public abstract class AbstractDatabaseAdapter<
   protected static long COMMIT_LOG_HASH_SEED = 946928273206945677L;
 
   protected AbstractDatabaseAdapter(
-      CONFIG config, StoreWorker<?, ?, ?> storeWorker, AdapterEventConsumer eventConsumer) {
+      CONFIG config, StoreWorker storeWorker, AdapterEventConsumer eventConsumer) {
     Objects.requireNonNull(config, "config parameter must not be null");
     this.config = config;
     this.storeWorker = storeWorker;
@@ -614,19 +614,18 @@ public abstract class AbstractDatabaseAdapter<
     }
 
     List<Key> allKeysList = new ArrayList<>(allKeys);
-    Map<Key, ContentAndState<ByteString>> fromValues =
-        fetchValues(ctx, from, allKeysList, keyFilter);
-    Map<Key, ContentAndState<ByteString>> toValues = fetchValues(ctx, to, allKeysList, keyFilter);
+    Map<Key, ContentAndState> fromValues = fetchValues(ctx, from, allKeysList, keyFilter);
+    Map<Key, ContentAndState> toValues = fetchValues(ctx, to, allKeysList, keyFilter);
 
-    Function<ContentAndState<ByteString>, Optional<ByteString>> valToContent =
+    Function<ContentAndState, Optional<ByteString>> valToContent =
         cs -> cs != null ? Optional.of(cs.getRefState()) : Optional.empty();
 
     return IntStream.range(0, allKeys.size())
         .mapToObj(allKeysList::get)
         .map(
             k -> {
-              ContentAndState<ByteString> fromVal = fromValues.get(k);
-              ContentAndState<ByteString> toVal = toValues.get(k);
+              ContentAndState fromVal = fromValues.get(k);
+              ContentAndState toVal = toValues.get(k);
               Optional<ByteString> f = valToContent.apply(fromVal);
               Optional<ByteString> t = valToContent.apply(toVal);
               if (f.equals(t)) {
@@ -1390,7 +1389,7 @@ public abstract class AbstractDatabaseAdapter<
    * Fetch the global-state and per-ref content for the given {@link Key}s and {@link Hash
    * commitSha}. Non-existing keys must not be present in the returned map.
    */
-  protected Map<Key, ContentAndState<ByteString>> fetchValues(
+  protected Map<Key, ContentAndState> fetchValues(
       OP_CONTEXT ctx, Hash refHead, Collection<Key> keys, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
     Set<Key> remainingKeys = new HashSet<>(keys);
@@ -1867,7 +1866,7 @@ public abstract class AbstractDatabaseAdapter<
   private void removeKeyCollisionsForNamespaces(
       OP_CONTEXT ctx, Hash hashFromTarget, Hash hashFromSource, Set<Key> keyCollisions)
       throws ReferenceNotFoundException {
-    Predicate<Entry<Key, ContentAndState<ByteString>>> isNamespace =
+    Predicate<Entry<Key, ContentAndState>> isNamespace =
         e -> storeWorker.isNamespace(e.getValue().getRefState());
     Set<Key> namespacesOnTarget =
         fetchValues(ctx, hashFromTarget, keyCollisions, ALLOW_ALL).entrySet().stream()

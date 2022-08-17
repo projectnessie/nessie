@@ -26,7 +26,6 @@ import java.util.UUID;
 import javax.annotation.Nullable;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Content;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.BatchAccessChecker;
@@ -44,15 +43,12 @@ import org.projectnessie.versioned.WithHash;
 
 abstract class BaseApiImpl {
   private final ServerConfig config;
-  private final VersionStore<Content, CommitMeta, Content.Type> store;
+  private final VersionStore store;
   private final Authorizer authorizer;
   private final Principal principal;
 
   protected BaseApiImpl(
-      ServerConfig config,
-      VersionStore<Content, CommitMeta, Content.Type> store,
-      Authorizer authorizer,
-      Principal principal) {
+      ServerConfig config, VersionStore store, Authorizer authorizer, Principal principal) {
     this.config = config;
     this.store = store;
     this.authorizer = authorizer;
@@ -108,7 +104,7 @@ abstract class BaseApiImpl {
     return config;
   }
 
-  protected VersionStore<Content, CommitMeta, Content.Type> getStore() {
+  protected VersionStore getStore() {
     return store;
   }
 

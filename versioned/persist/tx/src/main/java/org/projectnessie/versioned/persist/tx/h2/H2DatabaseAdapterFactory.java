@@ -36,7 +36,7 @@ public class H2DatabaseAdapterFactory
   protected H2DatabaseAdapter create(
       TxDatabaseAdapterConfig config,
       TxConnectionProvider<TxConnectionConfig> connectionProvider,
-      StoreWorker<?, ?, ?> storeWorker,
+      StoreWorker storeWorker,
       AdapterEventConsumer eventConsumer) {
     return new H2DatabaseAdapter(config, connectionProvider, storeWorker, eventConsumer);
   }

@@ -28,7 +28,7 @@ public class PostgresDatabaseAdapter extends TxDatabaseAdapter {
   public PostgresDatabaseAdapter(
       TxDatabaseAdapterConfig config,
       TxConnectionProvider<?> db,
-      StoreWorker<?, ?, ?> storeWorker,
+      StoreWorker storeWorker,
       AdapterEventConsumer eventConsumer) {
     super(config, db, storeWorker, eventConsumer);
   }

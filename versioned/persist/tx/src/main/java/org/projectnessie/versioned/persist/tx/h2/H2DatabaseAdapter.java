@@ -28,7 +28,7 @@ public class H2DatabaseAdapter extends TxDatabaseAdapter {
   public H2DatabaseAdapter(
       TxDatabaseAdapterConfig config,
       TxConnectionProvider<?> db,
-      StoreWorker<?, ?, ?> storeWorker,
+      StoreWorker storeWorker,
       AdapterEventConsumer eventConsumer) {
     super(config, db, storeWorker, eventConsumer);
   }

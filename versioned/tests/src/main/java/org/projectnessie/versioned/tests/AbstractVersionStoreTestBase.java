@@ -17,13 +17,11 @@ package org.projectnessie.versioned.tests;
 
 import org.junit.jupiter.api.Nested;
 import org.projectnessie.versioned.VersionStore;
-import org.projectnessie.versioned.testworker.BaseContent;
-import org.projectnessie.versioned.testworker.CommitMessage;
 
 /** Base class used for integration tests against version store implementations. */
 public abstract class AbstractVersionStoreTestBase {
 
-  protected abstract VersionStore<BaseContent, CommitMessage, BaseContent.Type> store();
+  protected abstract VersionStore store();
 
   @Nested
   public class Commits extends AbstractCommits {

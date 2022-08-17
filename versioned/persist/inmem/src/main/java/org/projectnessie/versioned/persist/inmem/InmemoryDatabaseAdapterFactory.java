@@ -34,7 +34,7 @@ public class InmemoryDatabaseAdapterFactory
   protected InmemoryDatabaseAdapter create(
       NonTransactionalDatabaseAdapterConfig config,
       InmemoryStore inmemoryStore,
-      StoreWorker<?, ?, ?> storeWorker,
+      StoreWorker storeWorker,
       AdapterEventConsumer eventConsumer) {
     return new InmemoryDatabaseAdapter(config, inmemoryStore, storeWorker, eventConsumer);
   }

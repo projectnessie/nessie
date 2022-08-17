@@ -17,7 +17,6 @@ package org.projectnessie.versioned.persist.tests;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.projectnessie.versioned.testworker.CommitMessage.commitMessage;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
@@ -27,6 +26,8 @@ import java.util.Optional;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Content;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
@@ -34,12 +35,9 @@ import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.tests.AbstractNestedVersionStore;
-import org.projectnessie.versioned.testworker.BaseContent;
-import org.projectnessie.versioned.testworker.CommitMessage;
 
 public abstract class AbstractDuplicateTable extends AbstractNestedVersionStore {
-  protected AbstractDuplicateTable(
-      VersionStore<BaseContent, CommitMessage, BaseContent.Type> store) {
+  protected AbstractDuplicateTable(VersionStore store) {
     super(store);
   }
 
@@ -88,7 +86,7 @@ public abstract class AbstractDuplicateTable extends AbstractNestedVersionStore 
             .commit(
                 branch0,
                 Optional.empty(),
-                commitMessage("initial commit"),
+                CommitMeta.fromMessage("initial commit"),
                 ImmutableList.of(Put.of(Key.of("unrelated", "table"), newOnRef("value"))));
 
     // Create a table with the same name on two branches.
@@ -99,10 +97,10 @@ public abstract class AbstractDuplicateTable extends AbstractNestedVersionStore 
     assertThat(store().create(branch1, Optional.of(ancestor))).isEqualTo(ancestor);
     assertThat(store().create(branch2, Optional.of(ancestor))).isEqualTo(ancestor);
 
-    List<Operation<BaseContent>> putForBranch1;
-    List<Operation<BaseContent>> putForBranch2;
-    BaseContent valuebranch1;
-    BaseContent valuebranch2;
+    List<Operation> putForBranch1;
+    List<Operation> putForBranch2;
+    Content valuebranch1;
+    Content valuebranch2;
     switch (mode) {
       case NO_GLOBAL:
         valuebranch1 = newOnRef("create table");
@@ -126,7 +124,8 @@ public abstract class AbstractDuplicateTable extends AbstractNestedVersionStore 
         throw new IllegalStateException();
     }
 
-    store().commit(branch1, Optional.empty(), commitMessage("create table"), putForBranch1);
+    store()
+        .commit(branch1, Optional.empty(), CommitMeta.fromMessage("create table"), putForBranch1);
     assertThat(store().getValue(branch1, key)).isEqualTo(valuebranch1);
 
     ThrowingCallable createTableOnOtherBranch =
@@ -135,7 +134,7 @@ public abstract class AbstractDuplicateTable extends AbstractNestedVersionStore 
                 .commit(
                     branch2,
                     Optional.empty(),
-                    commitMessage("create table on other branch"),
+                    CommitMeta.fromMessage("create table on other branch"),
                     putForBranch2);
 
     createTableOnOtherBranch.call();

@@ -42,7 +42,7 @@ public class MongoDatabaseAdapterBuilder implements DatabaseAdapterBuilder {
   @Inject NonTransactionalDatabaseAdapterConfig config;
 
   @Override
-  public DatabaseAdapter newDatabaseAdapter(StoreWorker<?, ?, ?> storeWorker) {
+  public DatabaseAdapter newDatabaseAdapter(StoreWorker storeWorker) {
     MongoClients mongoClients = Arc.container().instance(MongoClients.class).get();
     MongoClient mongoClient =
         mongoClients.createMongoClient(MongoClientBeanUtil.DEFAULT_MONGOCLIENT_NAME);

@@ -31,8 +31,6 @@ import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
-import org.projectnessie.versioned.testworker.BaseContent;
-import org.projectnessie.versioned.testworker.CommitMessage;
 import org.projectnessie.versioned.testworker.OnRefOnly;
 
 public abstract class AbstractDiff extends AbstractNestedVersionStore {
@@ -42,7 +40,7 @@ public abstract class AbstractDiff extends AbstractNestedVersionStore {
   public static final OnRefOnly V_2_A = newOnRef("v2a");
   public static final OnRefOnly V_3 = newOnRef("v3");
 
-  protected AbstractDiff(VersionStore<BaseContent, CommitMessage, BaseContent.Type> store) {
+  protected AbstractDiff(VersionStore store) {
     super(store);
   }
 
@@ -56,33 +54,32 @@ public abstract class AbstractDiff extends AbstractNestedVersionStore {
     final Hash secondCommit =
         commit("Second Commit").put("k2", V_2_A).put("k3", V_3).toBranch(branch);
 
-    List<Diff<BaseContent>> startToSecond = diffAsList(initial, secondCommit);
+    List<Diff> startToSecond = diffAsList(initial, secondCommit);
     assertThat(startToSecond)
         .containsExactlyInAnyOrder(
             Diff.of(Key.of("k1"), Optional.empty(), Optional.of(V_1)),
             Diff.of(Key.of("k2"), Optional.empty(), Optional.of(V_2_A)),
             Diff.of(Key.of("k3"), Optional.empty(), Optional.of(V_3)));
 
-    List<Diff<BaseContent>> secondToStart = diffAsList(secondCommit, initial);
+    List<Diff> secondToStart = diffAsList(secondCommit, initial);
     assertThat(secondToStart)
         .containsExactlyInAnyOrder(
             Diff.of(Key.of("k1"), Optional.of(V_1), Optional.empty()),
             Diff.of(Key.of("k2"), Optional.of(V_2_A), Optional.empty()),
             Diff.of(Key.of("k3"), Optional.of(V_3), Optional.empty()));
 
-    List<Diff<BaseContent>> firstToSecond = diffAsList(firstCommit, secondCommit);
+    List<Diff> firstToSecond = diffAsList(firstCommit, secondCommit);
     assertThat(firstToSecond)
         .containsExactlyInAnyOrder(
             Diff.of(Key.of("k2"), Optional.of(V_2), Optional.of(V_2_A)),
             Diff.of(Key.of("k3"), Optional.empty(), Optional.of(V_3)));
 
-    List<Diff<BaseContent>> firstToFirst = diffAsList(firstCommit, firstCommit);
+    List<Diff> firstToFirst = diffAsList(firstCommit, firstCommit);
     assertTrue(firstToFirst.isEmpty());
   }
 
-  private List<Diff<BaseContent>> diffAsList(Hash initial, Hash secondCommit)
-      throws ReferenceNotFoundException {
-    try (Stream<Diff<BaseContent>> diffStream = store().getDiffs(initial, secondCommit)) {
+  private List<Diff> diffAsList(Hash initial, Hash secondCommit) throws ReferenceNotFoundException {
+    try (Stream<Diff> diffStream = store().getDiffs(initial, secondCommit)) {
       return diffStream.collect(Collectors.toList());
     }
   }

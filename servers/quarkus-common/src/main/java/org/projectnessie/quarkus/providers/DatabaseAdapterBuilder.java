@@ -26,5 +26,5 @@ public interface DatabaseAdapterBuilder {
    *
    * @return new database adapter instance
    */
-  DatabaseAdapter newDatabaseAdapter(StoreWorker<?, ?, ?> storeWorker);
+  DatabaseAdapter newDatabaseAdapter(StoreWorker storeWorker);
 }

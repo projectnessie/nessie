@@ -21,8 +21,6 @@ import org.projectnessie.api.DiffApi;
 import org.projectnessie.api.params.DiffParams;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
-import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.DiffResponse;
 import org.projectnessie.model.ImmutableDiffEntry;
@@ -39,10 +37,7 @@ import org.projectnessie.versioned.WithHash;
 public class DiffApiImpl extends BaseApiImpl implements DiffApi {
 
   public DiffApiImpl(
-      ServerConfig config,
-      VersionStore<Content, CommitMeta, Content.Type> store,
-      Authorizer authorizer,
-      Principal principal) {
+      ServerConfig config, VersionStore store, Authorizer authorizer, Principal principal) {
     super(config, store, authorizer, principal);
   }
 
@@ -57,7 +52,7 @@ public class DiffApiImpl extends BaseApiImpl implements DiffApi {
   protected DiffResponse getDiff(Hash from, Hash to) throws NessieNotFoundException {
     ImmutableDiffResponse.Builder builder = ImmutableDiffResponse.builder();
     try {
-      try (Stream<Diff<Content>> diffs = getStore().getDiffs(from, to)) {
+      try (Stream<Diff> diffs = getStore().getDiffs(from, to)) {
         diffs
             .map(
                 diff ->

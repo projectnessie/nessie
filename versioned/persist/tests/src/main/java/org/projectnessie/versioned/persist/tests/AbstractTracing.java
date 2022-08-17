@@ -37,13 +37,11 @@ import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbTracer;
 import org.projectnessie.versioned.tests.AbstractNestedVersionStore;
-import org.projectnessie.versioned.testworker.BaseContent;
-import org.projectnessie.versioned.testworker.CommitMessage;
 
 public abstract class AbstractTracing extends AbstractNestedVersionStore {
   @NessieDbTracer MockTracer tracer;
 
-  protected AbstractTracing(VersionStore<BaseContent, CommitMessage, BaseContent.Type> store) {
+  protected AbstractTracing(VersionStore store) {
     super(store);
   }
 

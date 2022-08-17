@@ -35,7 +35,7 @@ public class DynamoDatabaseAdapterBuilder implements DatabaseAdapterBuilder {
   @Inject NonTransactionalDatabaseAdapterConfig config;
 
   @Override
-  public DatabaseAdapter newDatabaseAdapter(StoreWorker<?, ?, ?> storeWorker) {
+  public DatabaseAdapter newDatabaseAdapter(StoreWorker storeWorker) {
     DynamoDatabaseClient client = new DynamoDatabaseClient();
     client.configure(ProvidedDynamoClientConfig.of(dynamoConfig));
     client.initialize();

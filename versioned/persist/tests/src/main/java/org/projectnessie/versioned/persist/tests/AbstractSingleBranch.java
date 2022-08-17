@@ -17,7 +17,6 @@ package org.projectnessie.versioned.persist.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.projectnessie.versioned.testworker.CommitMessage.commitMessage;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
 import com.google.common.collect.ImmutableList;
@@ -29,6 +28,8 @@ import java.util.Optional;
 import java.util.function.IntFunction;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Content;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
@@ -38,11 +39,9 @@ import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.tests.AbstractNestedVersionStore;
-import org.projectnessie.versioned.testworker.BaseContent;
-import org.projectnessie.versioned.testworker.CommitMessage;
 
 public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
-  protected AbstractSingleBranch(VersionStore<BaseContent, CommitMessage, BaseContent.Type> store) {
+  protected AbstractSingleBranch(VersionStore store) {
     super(store);
   }
 
@@ -98,20 +97,21 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
     Hash createHash = store().create(branch, Optional.empty());
     Arrays.fill(hashesKnownByUser, createHash);
 
-    List<CommitMessage> expectedValues = new ArrayList<>();
+    List<CommitMeta> expectedValues = new ArrayList<>();
     for (int commitNum = 0; commitNum < numCommits; commitNum++) {
       for (int user = 0; user < numUsers; user++) {
         Hash hashKnownByUser = hashesKnownByUser[user];
 
-        CommitMessage msg = commitMessage(String.format("user %03d/commit %03d", user, commitNum));
+        CommitMeta msg =
+            CommitMeta.fromMessage(String.format("user %03d/commit %03d", user, commitNum));
         expectedValues.add(msg);
 
         Key key = Key.of(param.tableNameGen.apply(user));
-        BaseContent value = newOnRef(String.format("data_file_%03d_%03d", user, commitNum));
-        Operation<BaseContent> put = Put.of(key, value);
+        Content value = newOnRef(String.format("data_file_%03d_%03d", user, commitNum));
+        Operation put = Put.of(key, value);
 
         Hash commitHash;
-        List<Operation<BaseContent>> ops = ImmutableList.of(put);
+        List<Operation> ops = ImmutableList.of(put);
         try {
           commitHash = store().commit(branch, Optional.of(hashKnownByUser), msg, ops);
         } catch (ReferenceConflictException inconsistentValueException) {
@@ -130,7 +130,7 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
     }
 
     // Verify that all commits are there and that the order of the commits is correct
-    List<CommitMessage> committedValues =
+    List<CommitMeta> committedValues =
         commitsList(branch, s -> s.map(Commit::getCommitMeta), false);
     Collections.reverse(expectedValues);
     assertEquals(expectedValues, committedValues);

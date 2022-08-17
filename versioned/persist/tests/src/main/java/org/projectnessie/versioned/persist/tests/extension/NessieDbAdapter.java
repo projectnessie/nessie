@@ -62,7 +62,7 @@ public @interface NessieDbAdapter {
 
   boolean withTracing() default false;
 
-  Class<? extends StoreWorker<?, ?, ?>> storeWorker() default SimpleStoreWorker.class;
+  Class<? extends StoreWorker> storeWorker() default SimpleStoreWorker.class;
 
   Class<? extends AdapterEventConsumer> eventConsumer() default AdapterEventConsumer.class;
 }

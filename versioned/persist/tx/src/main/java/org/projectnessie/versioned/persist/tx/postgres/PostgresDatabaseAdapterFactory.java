@@ -37,7 +37,7 @@ public class PostgresDatabaseAdapterFactory
   protected PostgresDatabaseAdapter create(
       TxDatabaseAdapterConfig config,
       TxConnectionProvider<TxConnectionConfig> connectionProvider,
-      StoreWorker<?, ?, ?> storeWorker,
+      StoreWorker storeWorker,
       AdapterEventConsumer eventConsumer) {
     return new PostgresDatabaseAdapter(config, connectionProvider, storeWorker, eventConsumer);
   }

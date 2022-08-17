@@ -34,7 +34,7 @@ public class MongoDatabaseAdapterFactory
   protected MongoDatabaseAdapter create(
       NonTransactionalDatabaseAdapterConfig config,
       MongoDatabaseClient client,
-      StoreWorker<?, ?, ?> storeWorker,
+      StoreWorker storeWorker,
       AdapterEventConsumer eventConsumer) {
     return new MongoDatabaseAdapter(config, client, storeWorker, eventConsumer);
   }

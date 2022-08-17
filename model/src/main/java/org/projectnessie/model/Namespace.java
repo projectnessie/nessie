@@ -15,9 +15,9 @@
  */
 package org.projectnessie.model;
 
-import static org.projectnessie.model.UriUtil.DOT_STRING;
-import static org.projectnessie.model.UriUtil.GROUP_SEPARATOR_STRING;
-import static org.projectnessie.model.UriUtil.ZERO_BYTE_STRING;
+import static org.projectnessie.model.Util.DOT_STRING;
+import static org.projectnessie.model.Util.GROUP_SEPARATOR_STRING;
+import static org.projectnessie.model.Util.ZERO_BYTE_STRING;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -174,7 +174,7 @@ public abstract class Namespace extends Content {
     if (identifier.endsWith(DOT_STRING)) {
       throw new IllegalArgumentException(String.format(ERROR_MSG_TEMPLATE, identifier));
     }
-    return Namespace.of(UriUtil.fromPathString(identifier));
+    return Namespace.of(Util.fromPathString(identifier));
   }
 
   /**
@@ -216,7 +216,7 @@ public abstract class Namespace extends Content {
    * @return String encoded for path use.
    */
   public String toPathString() {
-    return UriUtil.toPathString(getElements());
+    return Util.toPathString(getElements());
   }
 
   @Override

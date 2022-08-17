@@ -36,14 +36,13 @@ import javax.ws.rs.core.MediaType;
 import org.mockito.Mockito;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.versioned.BackendLimitExceededException;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
-import org.projectnessie.versioned.testworker.BaseContent;
-import org.projectnessie.versioned.testworker.CommitMessage;
 import org.projectnessie.versioned.testworker.SimpleStoreWorker;
 
 /** REST service used to generate a bunch of violations for {@link TestNessieError}. */
@@ -149,9 +148,8 @@ public class ErrorTestService {
     DatabaseAdapter databaseAdapter = Mockito.mock(DatabaseAdapter.class);
     Mockito.when(databaseAdapter.namedRefs(Mockito.any())).thenThrow(ex);
 
-    PersistVersionStore<BaseContent, CommitMessage, BaseContent.Type> tvs =
-        new PersistVersionStore<>(databaseAdapter, SimpleStoreWorker.INSTANCE);
-    try (Stream<ReferenceInfo<CommitMessage>> refs = tvs.getNamedRefs(GetNamedRefsParams.DEFAULT)) {
+    PersistVersionStore tvs = new PersistVersionStore(databaseAdapter, SimpleStoreWorker.INSTANCE);
+    try (Stream<ReferenceInfo<CommitMeta>> refs = tvs.getNamedRefs(GetNamedRefsParams.DEFAULT)) {
       refs.forEach(ref -> {});
     }
     return "we should not get here";

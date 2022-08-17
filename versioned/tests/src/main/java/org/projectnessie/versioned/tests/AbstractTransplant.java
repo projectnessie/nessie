@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
@@ -38,8 +39,6 @@ import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
-import org.projectnessie.versioned.testworker.BaseContent;
-import org.projectnessie.versioned.testworker.CommitMessage;
 import org.projectnessie.versioned.testworker.OnRefOnly;
 
 public abstract class AbstractTransplant extends AbstractNestedVersionStore {
@@ -53,7 +52,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
   private static final OnRefOnly V_4_1 = newOnRef("v4_1");
   private static final OnRefOnly V_5_1 = newOnRef("v5_1");
 
-  protected AbstractTransplant(VersionStore<BaseContent, CommitMessage, BaseContent.Type> store) {
+  protected AbstractTransplant(VersionStore store) {
     super(store);
   }
 
@@ -61,18 +60,18 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
   private Hash firstCommit;
   private Hash secondCommit;
   private Hash thirdCommit;
-  private List<Commit<CommitMessage, BaseContent>> commits;
+  private List<Commit> commits;
 
-  private MetadataRewriter<CommitMessage> createMetadataRewriter(String suffix) {
-    return new MetadataRewriter<CommitMessage>() {
+  private MetadataRewriter<CommitMeta> createMetadataRewriter(String suffix) {
+    return new MetadataRewriter<CommitMeta>() {
       @Override
-      public CommitMessage rewriteSingle(CommitMessage metadata) {
+      public CommitMeta rewriteSingle(CommitMeta metadata) {
         return metadata;
       }
 
       @Override
-      public CommitMessage squash(List<CommitMessage> metadata) {
-        return CommitMessage.commitMessage(
+      public CommitMeta squash(List<CommitMeta> metadata) {
+        return CommitMeta.fromMessage(
             metadata.stream()
                 .map(cm -> cm.getMessage() + suffix)
                 .collect(Collectors.joining("\n-----------------------------------\n")));
@@ -125,18 +124,18 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
       assertThat(commitsList(newBranch, false))
           .first()
           .extracting(Commit::getCommitMeta)
-          .extracting(CommitMessage::getMessage)
+          .extracting(CommitMeta::getMessage)
           .asString()
           .contains(
               commits.stream()
                   .map(Commit::getCommitMeta)
-                  .map(CommitMessage::getMessage)
+                  .map(CommitMeta::getMessage)
                   .toArray(String[]::new));
     }
   }
 
   private BranchName checkTransplantOnEmptyBranch(
-      MetadataRewriter<CommitMessage> commitMetaModify, boolean individualCommits)
+      MetadataRewriter<CommitMeta> commitMetaModify, boolean individualCommits)
       throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_1");
     store().create(newBranch, Optional.empty());

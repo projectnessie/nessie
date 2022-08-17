@@ -218,7 +218,7 @@ public class DatabaseAdapterExtension
       boolean canReinit,
       Consumer<DatabaseAdapter> newAdapter) {
 
-    StoreWorker<?, ?, ?> storeWorker = createStoreWorker(nessieDbAdapter);
+    StoreWorker storeWorker = createStoreWorker(nessieDbAdapter);
 
     DatabaseAdapter databaseAdapter =
         createAdapterResource(nessieDbAdapter, context, parameterContext, storeWorker);
@@ -235,9 +235,9 @@ public class DatabaseAdapterExtension
     if (DatabaseAdapter.class.isAssignableFrom(type)) {
       assign = databaseAdapter;
     } else if (VersionStore.class.isAssignableFrom(type)) {
-      VersionStore<?, ?, ?> store = createStore(databaseAdapter, storeWorker);
+      VersionStore store = createStore(databaseAdapter, storeWorker);
       if (nessieDbAdapter.withTracing()) {
-        store = new TracingVersionStore<>(store);
+        store = new TracingVersionStore(store);
       }
       assign = store;
     } else {
@@ -254,7 +254,7 @@ public class DatabaseAdapterExtension
     return assign;
   }
 
-  private StoreWorker<?, ?, ?> createStoreWorker(NessieDbAdapter dbAdapter) {
+  private StoreWorker createStoreWorker(NessieDbAdapter dbAdapter) {
     try {
       return dbAdapter.storeWorker().getDeclaredConstructor().newInstance();
     } catch (Exception e) {
@@ -283,7 +283,7 @@ public class DatabaseAdapterExtension
       NessieDbAdapter adapterAnnotation,
       ExtensionContext context,
       ParameterContext parameterContext,
-      StoreWorker<?, ?, ?> storeWorker) {
+      StoreWorker storeWorker) {
     DatabaseAdapterFactory<
             DatabaseAdapter,
             DatabaseAdapterConfig,
@@ -419,9 +419,9 @@ public class DatabaseAdapterExtension
     return (CONNECTOR) connectionProvider.getConnectionProvider();
   }
 
-  private static VersionStore<?, ?, ?> createStore(
-      DatabaseAdapter databaseAdapter, StoreWorker<?, ?, ?> storeWorker) {
-    return new PersistVersionStore<>(databaseAdapter, storeWorker);
+  private static VersionStore createStore(
+      DatabaseAdapter databaseAdapter, StoreWorker storeWorker) {
+    return new PersistVersionStore(databaseAdapter, storeWorker);
   }
 
   private void assertValidFieldCandidate(Field field) {

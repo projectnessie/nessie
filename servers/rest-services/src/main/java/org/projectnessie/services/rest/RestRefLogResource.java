@@ -23,8 +23,6 @@ import org.projectnessie.api.RefLogApi;
 import org.projectnessie.api.http.HttpRefLogApi;
 import org.projectnessie.api.params.RefLogParams;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Content;
 import org.projectnessie.model.RefLogResponse;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
@@ -36,7 +34,7 @@ import org.projectnessie.versioned.VersionStore;
 public class RestRefLogResource implements HttpRefLogApi {
 
   private final ServerConfig config;
-  private final VersionStore<Content, CommitMeta, Content.Type> store;
+  private final VersionStore store;
   private final Authorizer authorizer;
 
   @Context SecurityContext securityContext;
@@ -47,10 +45,7 @@ public class RestRefLogResource implements HttpRefLogApi {
   }
 
   @Inject
-  public RestRefLogResource(
-      ServerConfig config,
-      VersionStore<Content, CommitMeta, Content.Type> store,
-      Authorizer authorizer) {
+  public RestRefLogResource(ServerConfig config, VersionStore store, Authorizer authorizer) {
     this.config = config;
     this.store = store;
     this.authorizer = authorizer;

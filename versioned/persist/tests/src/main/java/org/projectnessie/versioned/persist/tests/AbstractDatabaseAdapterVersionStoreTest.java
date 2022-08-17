@@ -25,8 +25,6 @@ import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterConfig
 import org.projectnessie.versioned.persist.tests.extension.NessieDbTracer;
 import org.projectnessie.versioned.persist.tests.extension.NessieMockedTracingExtension;
 import org.projectnessie.versioned.tests.AbstractVersionStoreTestBase;
-import org.projectnessie.versioned.testworker.BaseContent;
-import org.projectnessie.versioned.testworker.CommitMessage;
 
 @ExtendWith(DatabaseAdapterExtension.class)
 @ExtendWith(NessieMockedTracingExtension.class)
@@ -34,12 +32,12 @@ import org.projectnessie.versioned.testworker.CommitMessage;
 public abstract class AbstractDatabaseAdapterVersionStoreTest extends AbstractVersionStoreTestBase {
 
   @NessieDbAdapter(withTracing = true)
-  static VersionStore<BaseContent, CommitMessage, BaseContent.Type> store;
+  static VersionStore store;
 
   @NessieDbTracer static MockTracer tracer;
 
   @Override
-  protected VersionStore<BaseContent, CommitMessage, BaseContent.Type> store() {
+  protected VersionStore store() {
     return store;
   }
 

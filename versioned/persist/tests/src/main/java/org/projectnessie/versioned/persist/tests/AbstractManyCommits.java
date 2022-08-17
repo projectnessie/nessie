@@ -123,7 +123,7 @@ public abstract class AbstractManyCommits {
     }
 
     try {
-      Map<Key, ContentAndState<ByteString>> values =
+      Map<Key, ContentAndState> values =
           databaseAdapter.values(
               commit, Collections.singletonList(key), KeyFilterPredicate.ALLOW_ALL);
 
@@ -133,7 +133,7 @@ public abstract class AbstractManyCommits {
       ByteString expectValue =
           SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
               expected, ALWAYS_THROWING_ATTACHMENT_CONSUMER);
-      ContentAndState<ByteString> expect = ContentAndState.of(expectValue);
+      ContentAndState expect = ContentAndState.of(expectValue);
       assertThat(values).containsExactly(Maps.immutableEntry(key, expect));
     } catch (ReferenceNotFoundException e) {
       throw new RuntimeException(e);

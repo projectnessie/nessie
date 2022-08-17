@@ -16,8 +16,6 @@
 package org.projectnessie.services.impl;
 
 import java.security.Principal;
-import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Content;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.VersionStore;
@@ -26,10 +24,7 @@ import org.projectnessie.versioned.VersionStore;
 public class NamespaceApiImplWithAuthorization extends NamespaceApiImpl {
 
   public NamespaceApiImplWithAuthorization(
-      ServerConfig config,
-      VersionStore<Content, CommitMeta, Content.Type> store,
-      Authorizer authorizer,
-      Principal principal) {
+      ServerConfig config, VersionStore store, Authorizer authorizer, Principal principal) {
     super(config, store, authorizer, principal);
   }
 }

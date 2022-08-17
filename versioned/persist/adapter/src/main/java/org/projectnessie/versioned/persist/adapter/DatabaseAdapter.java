@@ -100,8 +100,7 @@ public interface DatabaseAdapter {
    * @return Ordered stream
    * @throws ReferenceNotFoundException if {@code commit} does not exist.
    */
-  Map<Key, ContentAndState<ByteString>> values(
-      Hash commit, Collection<Key> keys, KeyFilterPredicate keyFilter)
+  Map<Key, ContentAndState> values(Hash commit, Collection<Key> keys, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException;
 
   /**
