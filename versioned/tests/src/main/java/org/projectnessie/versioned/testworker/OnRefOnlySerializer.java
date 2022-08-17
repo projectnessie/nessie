@@ -34,6 +34,11 @@ public class OnRefOnlySerializer extends TestContentSerializer<OnRefOnly> {
   }
 
   @Override
+  public byte payload() {
+    return 127;
+  }
+
+  @Override
   public ByteString toStoreOnReferenceState(
       OnRefOnly content, Consumer<ContentAttachment> attachmentConsumer) {
     return content.serialized();

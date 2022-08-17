@@ -31,6 +31,8 @@ import org.projectnessie.versioned.ContentAttachmentKey;
 public interface ContentSerializer<C extends Content> {
   Content.Type contentType();
 
+  byte payload();
+
   ByteString toStoreOnReferenceState(C content, Consumer<ContentAttachment> attachmentConsumer);
 
   C applyId(C content, String id);

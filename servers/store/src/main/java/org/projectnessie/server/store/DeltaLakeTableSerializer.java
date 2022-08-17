@@ -30,6 +30,11 @@ public final class DeltaLakeTableSerializer extends BaseSerializer<DeltaLakeTabl
   }
 
   @Override
+  public byte payload() {
+    return 2;
+  }
+
+  @Override
   protected void toStoreOnRefState(DeltaLakeTable content, ObjectTypes.Content.Builder builder) {
     ObjectTypes.DeltaLakeTable.Builder table =
         ObjectTypes.DeltaLakeTable.newBuilder()

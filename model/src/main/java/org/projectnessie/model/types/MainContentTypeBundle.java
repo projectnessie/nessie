@@ -29,9 +29,9 @@ public final class MainContentTypeBundle implements ContentTypeBundle {
 
   @Override
   public void register(Registrar registrar) {
-    registrar.register("ICEBERG_TABLE", (byte) 1, IcebergTable.class);
-    registrar.register("DELTA_LAKE_TABLE", (byte) 2, DeltaLakeTable.class);
-    registrar.register("ICEBERG_VIEW", (byte) 3, IcebergView.class);
-    registrar.register("NAMESPACE", (byte) 4, Namespace.class);
+    registrar.register("ICEBERG_TABLE", IcebergTable.class);
+    registrar.register("DELTA_LAKE_TABLE", DeltaLakeTable.class);
+    registrar.register("ICEBERG_VIEW", IcebergView.class);
+    registrar.register("NAMESPACE", Namespace.class);
   }
 }

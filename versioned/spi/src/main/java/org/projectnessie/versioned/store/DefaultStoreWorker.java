@@ -18,11 +18,9 @@ package org.projectnessie.versioned.store;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -43,6 +41,18 @@ public class DefaultStoreWorker implements StoreWorker {
     return Lazy.INSTANCE;
   }
 
+  public static byte payloadForContent(Content c) {
+    return Registry.BY_TYPE.get(c.getType()).payload();
+  }
+
+  public static byte payloadForContent(Content.Type contentType) {
+    return Registry.BY_TYPE.get(contentType).payload();
+  }
+
+  public static Content.Type contentTypeForPayload(byte payload) {
+    return payload >= 0 && payload < Registry.TYPES.length ? Registry.TYPES[payload] : null;
+  }
+
   private static final class Lazy {
     private static final DefaultStoreWorker INSTANCE = new DefaultStoreWorker();
   }
@@ -50,40 +60,44 @@ public class DefaultStoreWorker implements StoreWorker {
   private static final class Registry {
     private static final ContentSerializer<?>[] BY_PAYLOAD;
     private static final Map<Content.Type, ContentSerializer<?>> BY_TYPE;
+    private static final Content.Type[] TYPES;
 
     static {
-      Set<String> byName = new HashSet<>();
+      Map<String, ContentSerializer<?>> byName = new HashMap<>();
       Map<Content.Type, ContentSerializer<?>> byType = new HashMap<>();
       List<ContentSerializer<?>> byPayload = new ArrayList<>();
+      List<Content.Type> types = new ArrayList<>();
 
       for (ContentSerializerBundle bundle : ServiceLoader.load(ContentSerializerBundle.class)) {
         bundle.register(
             contentTypeSerializer -> {
               Content.Type contentType = contentTypeSerializer.contentType();
-              if (!byName.add(contentType.name())) {
+              if (byName.put(contentType.name(), contentTypeSerializer) != null) {
                 throw new IllegalStateException(
-                    "Found more than one ContentTypeSerializer for content type "
-                        + contentType.name());
+                    "Found more than one ContentTypeSerializer for name " + contentType.name());
               }
-              if (contentType.payload() != 0
+              if (contentTypeSerializer.payload() != 0
                   && byType.put(contentType, contentTypeSerializer) != null) {
                 throw new IllegalStateException(
                     "Found more than one ContentTypeSerializer for content type "
                         + contentType.type());
               }
-              while (byPayload.size() <= contentType.payload()) {
+              while (byPayload.size() <= contentTypeSerializer.payload()) {
                 byPayload.add(null);
+                types.add(null);
               }
-              if (byPayload.set(contentType.payload(), contentTypeSerializer) != null) {
+              if (byPayload.set(contentTypeSerializer.payload(), contentTypeSerializer) != null) {
                 throw new IllegalStateException(
                     "Found more than one ContentTypeSerializer for content payload "
-                        + contentType.payload());
+                        + contentTypeSerializer.payload());
               }
+              types.set(contentTypeSerializer.payload(), contentType);
             });
       }
 
       BY_PAYLOAD = byPayload.toArray(new ContentSerializer[0]);
       BY_TYPE = byType;
+      TYPES = types.toArray(new Content.Type[0]);
     }
   }
 

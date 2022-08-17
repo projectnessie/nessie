@@ -35,6 +35,11 @@ public class WithAttachmentsSerializer extends TestContentSerializer<WithAttachm
   }
 
   @Override
+  public byte payload() {
+    return 126;
+  }
+
+  @Override
   public ByteString toStoreOnReferenceState(
       WithAttachmentsContent content, Consumer<ContentAttachment> attachmentConsumer) {
     String value = content.getOnRef();

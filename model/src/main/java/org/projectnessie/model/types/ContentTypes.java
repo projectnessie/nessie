@@ -37,7 +37,7 @@ public final class ContentTypes {
    * org.projectnessie.model.types.ContentTypeBundle}s.
    */
   public interface Registrar {
-    void register(String name, byte payload, Class<? extends Content> type);
+    void register(String name, Class<? extends Content> type);
   }
 
   /** Retrieve an array of all registered content types. */
@@ -45,12 +45,6 @@ public final class ContentTypes {
     return Registry.all();
   }
 
-  /** Retrieve the content type for a payload value. */
-  public static Content.Type forPayload(byte payload) {
-    return Registry.forPayload(payload);
-  }
-
-  /** Retrieve the content-type for a name. */
   public static Content.Type forName(String name) {
     return Registry.forName(name);
   }
@@ -62,7 +56,6 @@ public final class ContentTypes {
   private static final class Registry {
 
     private static final Content.Type[] all;
-    private static final Content.Type[] payloads;
     private static final Map<String, Content.Type> byName;
 
     static {
@@ -76,52 +69,34 @@ public final class ContentTypes {
 
       for (ContentTypeBundle bundle : ServiceLoader.load(ContentTypeBundle.class)) {
         bundle.register(
-            (name, payload, type) -> {
-              if (payload <= (byte) 0
-                  || name == null
+            (name, type) -> {
+              if (name == null
                   || name.trim().isEmpty()
                   || !name.trim().equals(name)
                   || type == null) {
                 throw new IllegalArgumentException(
                     String.format(
-                        "Illegal content-type registration: payload=%d, name=%s, type=%s",
-                        payload, name, type));
+                        "Illegal content-type registration: name=%s, type=%s", name, type));
               }
-              Content.Type contentType = new ContentTypeImpl(name, payload, type);
-              while (list.size() <= payload) {
-                list.add(null);
-              }
-              Content.Type ex = list.get(payload);
-              if (ex == null) {
-                ex = names.get(name);
-              }
+              Content.Type contentType = new ContentTypeImpl(name, type);
+              Content.Type ex = names.get(name);
               if (ex != null) {
                 throw new IllegalStateException(
                     String.format(
-                        "Duplicate content type registration for %d/%s/%s, existing: %d/%s/%s",
-                        payload, name, type, ex.payload(), ex.name(), ex.type()));
+                        "Duplicate content type registration for %s/%s, existing: %s/%s",
+                        name, type, ex.name(), ex.type()));
               }
-              list.set(payload, contentType);
+              list.add(contentType);
               names.put(name, contentType);
             });
       }
 
-      payloads = list.toArray(new Content.Type[0]);
       byName = Collections.unmodifiableMap(names);
-      all = list.stream().filter(Objects::nonNull).toArray(Content.Type[]::new);
+      all = list.toArray(new Content.Type[0]);
     }
 
     private static Content.Type[] all() {
       return all.clone();
-    }
-
-    private static Content.Type forPayload(int payload) {
-      if (payload < 0) {
-        throw new IllegalArgumentException("Illegal payload " + payload + ", must be positive.");
-      }
-      return Objects.requireNonNull(
-          payload > payloads.length ? null : payloads[payload],
-          "No content type registered for payload " + payload);
     }
 
     private static Content.Type forName(String name) {
@@ -134,23 +109,17 @@ public final class ContentTypes {
   private static final class ContentTypeImpl implements Content.Type {
 
     private final String name;
-    private final byte payload;
+
     private final Class<? extends Content> type;
 
-    private ContentTypeImpl(String name, byte payload, Class<? extends Content> type) {
+    private ContentTypeImpl(String name, Class<? extends Content> type) {
       this.name = name;
-      this.payload = payload;
       this.type = type;
     }
 
     @Override
     public String name() {
       return name;
-    }
-
-    @Override
-    public byte payload() {
-      return payload;
     }
 
     @Override
@@ -172,12 +141,12 @@ public final class ContentTypes {
         return false;
       }
       ContentTypeImpl that = (ContentTypeImpl) o;
-      return payload == that.payload;
+      return name.equals(that.name);
     }
 
     @Override
     public int hashCode() {
-      return payload;
+      return name.hashCode();
     }
   }
 
@@ -201,11 +170,6 @@ public final class ContentTypes {
     @Override
     public String name() {
       return "UNKNOWN";
-    }
-
-    @Override
-    public byte payload() {
-      return 0;
     }
 
     @Override
