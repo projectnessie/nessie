@@ -15,11 +15,6 @@
  */
 package org.projectnessie.model.types;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.DatabindContext;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase;
-import com.fasterxml.jackson.databind.type.TypeFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -58,49 +53,6 @@ public final class ContentTypes {
   /** Retrieve the content-type for a name. */
   public static Content.Type forName(String name) {
     return Registry.forName(name);
-  }
-
-  /** Dynamic {@link Content} JSON (de)serialization. */
-  public static final class TypeIdResolver extends TypeIdResolverBase {
-
-    private JavaType baseType;
-
-    @Override
-    public void init(JavaType bt) {
-      baseType = bt;
-    }
-
-    @Override
-    public String idFromValue(Object value) {
-      return getId(value);
-    }
-
-    @Override
-    public String idFromValueAndType(Object value, Class<?> suggestedType) {
-      return getId(value);
-    }
-
-    @Override
-    public JsonTypeInfo.Id getMechanism() {
-      return JsonTypeInfo.Id.CUSTOM;
-    }
-
-    private String getId(Object value) {
-      if (value instanceof Content) {
-        return ((Content) value).getType().name();
-      }
-
-      return null;
-    }
-
-    @Override
-    public JavaType typeFromId(DatabindContext context, String id) {
-      Content.Type subType = forName(id);
-      if (subType != null) {
-        return context.constructSpecializedType(baseType, subType.type());
-      }
-      return TypeFactory.unknownType();
-    }
   }
 
   /**

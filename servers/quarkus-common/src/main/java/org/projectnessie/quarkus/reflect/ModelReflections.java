@@ -17,6 +17,7 @@ package org.projectnessie.quarkus.reflect;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import org.projectnessie.error.NessieError;
+import org.projectnessie.model.types.ContentTypeIdResolver;
 import org.projectnessie.services.cel.CELUtil;
 
 /**
@@ -25,12 +26,14 @@ import org.projectnessie.services.cel.CELUtil;
  *
  * <p>In particular, this list is about Nessie model classes.
  */
+@SuppressWarnings("unused")
 @RegisterForReflection(
     targets = {
       NessieError.class,
       CELUtil.KeyedEntityForCel.class,
       CELUtil.OperationForCel.class,
       CELUtil.ContentForCel.class,
-      CELUtil.KeyEntryForCel.class
+      CELUtil.KeyEntryForCel.class,
+      ContentTypeIdResolver.class
     })
 public abstract class ModelReflections {}

@@ -27,6 +27,7 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
+import org.projectnessie.model.types.ContentTypeIdResolver;
 import org.projectnessie.model.types.ContentTypes;
 
 /** Base class for an object stored within Nessie. */
@@ -41,7 +42,7 @@ import org.projectnessie.model.types.ContentTypes;
       @DiscriminatorMapping(value = "NAMESPACE", schema = Namespace.class)
     },
     discriminatorProperty = "type")
-@JsonTypeIdResolver(ContentTypes.TypeIdResolver.class)
+@JsonTypeIdResolver(ContentTypeIdResolver.class)
 @JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "type")
 public abstract class Content {
 
