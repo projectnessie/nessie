@@ -250,15 +250,6 @@ public abstract class AbstractDatabaseAdapter<
     Function<Hash, CommitLogEntry> currentCommit =
         h -> h.equals(branchHead) ? currentBranchEntry : null;
 
-    for (KeyWithBytes put : commitParams.getPuts()) {
-      if (put.getPayload() <= (byte) 0) {
-        throw new IllegalArgumentException(
-            String.format(
-                "Invalid payload value %d for put-operation for key %s / content-id %s",
-                put.getPayload(), put.getKey(), put.getContentId()));
-      }
-    }
-
     CommitLogEntry newBranchCommit =
         buildIndividualCommit(
             ctx,
