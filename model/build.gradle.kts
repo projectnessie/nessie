@@ -63,7 +63,9 @@ smallryeOpenApi {
   infoLicenseUrl.set("http://www.apache.org/licenses/LICENSE-2.0.html")
   schemaFilename.set("META-INF/openapi/openapi")
   operationIdStrategy.set("METHOD")
-  scanPackages.set(listOf("org.projectnessie.api", "org.projectnessie.model"))
+  scanPackages.set(
+    listOf("org.projectnessie.api", "org.projectnessie.api.http", "org.projectnessie.model")
+  )
 }
 
 val openapi by
@@ -82,9 +84,7 @@ val openapiSource by
 
 val generateOpenApiSpec =
   tasks.named<SmallryeOpenApiTask>("generateOpenApiSpec") {
-    inputs
-      .files("src/main/resources/META-INF/openapi.yaml")
-      .withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.files("src/main").withPathSensitivity(PathSensitivity.RELATIVE)
   }
 
 artifacts {
