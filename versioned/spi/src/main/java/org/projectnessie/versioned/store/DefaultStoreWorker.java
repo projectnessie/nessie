@@ -50,7 +50,9 @@ public class DefaultStoreWorker implements StoreWorker {
   }
 
   public static Content.Type contentTypeForPayload(byte payload) {
-    return payload >= 0 && payload < Registry.TYPES.length ? Registry.TYPES[payload] : null;
+    return payload >= 0 && payload < Registry.BY_PAYLOAD.length
+        ? Registry.BY_PAYLOAD[payload].contentType()
+        : null;
   }
 
   private static final class Lazy {
@@ -60,13 +62,11 @@ public class DefaultStoreWorker implements StoreWorker {
   private static final class Registry {
     private static final ContentSerializer<?>[] BY_PAYLOAD;
     private static final Map<Content.Type, ContentSerializer<?>> BY_TYPE;
-    private static final Content.Type[] TYPES;
 
     static {
       Map<String, ContentSerializer<?>> byName = new HashMap<>();
       Map<Content.Type, ContentSerializer<?>> byType = new HashMap<>();
       List<ContentSerializer<?>> byPayload = new ArrayList<>();
-      List<Content.Type> types = new ArrayList<>();
 
       for (ContentSerializerBundle bundle : ServiceLoader.load(ContentSerializerBundle.class)) {
         bundle.register(
@@ -84,24 +84,21 @@ public class DefaultStoreWorker implements StoreWorker {
               }
               while (byPayload.size() <= contentTypeSerializer.payload()) {
                 byPayload.add(null);
-                types.add(null);
               }
               if (byPayload.set(contentTypeSerializer.payload(), contentTypeSerializer) != null) {
                 throw new IllegalStateException(
                     "Found more than one ContentTypeSerializer for content payload "
                         + contentTypeSerializer.payload());
               }
-              types.set(contentTypeSerializer.payload(), contentType);
             });
       }
 
       BY_PAYLOAD = byPayload.toArray(new ContentSerializer[0]);
       BY_TYPE = byType;
-      TYPES = types.toArray(new Content.Type[0]);
     }
   }
 
-  private @Nonnull <C extends Content> ContentSerializer<C> serializer(C content) {
+  private static @Nonnull <C extends Content> ContentSerializer<C> serializer(C content) {
     @SuppressWarnings("unchecked")
     ContentSerializer<C> serializer =
         (ContentSerializer<C>) Registry.BY_TYPE.get(content.getType());
@@ -111,7 +108,7 @@ public class DefaultStoreWorker implements StoreWorker {
     return serializer;
   }
 
-  private @Nonnull <C extends Content> ContentSerializer<C> serializer(byte payload) {
+  private static @Nonnull <C extends Content> ContentSerializer<C> serializer(byte payload) {
     @SuppressWarnings("unchecked")
     ContentSerializer<C> serializer =
         payload >= 0 && payload < Registry.BY_PAYLOAD.length
