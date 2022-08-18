@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-org.projectnessie.model.types.DefaultContentTypeBundle
+org.projectnessie.model.types.MainContentTypeBundle

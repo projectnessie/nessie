@@ -16,14 +16,14 @@
 package org.projectnessie.versioned.testworker;
 
 import org.projectnessie.model.types.ContentTypeBundle;
-import org.projectnessie.model.types.ContentTypes.Register;
+import org.projectnessie.model.types.ContentTypes.Registrar;
 
-public final class MockContentTypeBundle implements ContentTypeBundle {
+public final class TestContentTypeBundle implements ContentTypeBundle {
 
   @Override
-  public void register(Register register) {
-    register.register("ON_REF_ONLY", (byte) 127, OnRefOnly.class);
-    register.register("WITH_GLOBAL_STATE", (byte) 126, WithGlobalStateContent.class);
-    register.register("WITH_ATTACHMENTS", (byte) 125, WithAttachmentsContent.class);
+  public void register(Registrar registrar) {
+    registrar.register("ON_REF_ONLY", (byte) 127, OnRefOnly.class);
+    registrar.register("WITH_GLOBAL_STATE", (byte) 126, WithGlobalStateContent.class);
+    registrar.register("WITH_ATTACHMENTS", (byte) 125, WithAttachmentsContent.class);
   }
 }

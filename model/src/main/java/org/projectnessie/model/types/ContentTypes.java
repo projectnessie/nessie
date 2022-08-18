@@ -36,7 +36,7 @@ public final class ContentTypes {
    * An implementation of this interface is passed to {@link
    * org.projectnessie.model.types.ContentTypeBundle}s.
    */
-  public interface Register {
+  public interface Registrar {
     void register(String name, byte payload, Class<? extends Content> type);
   }
 

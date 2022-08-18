@@ -23,5 +23,5 @@ package org.projectnessie.model.types;
  * store-worker support for custom content. </em>
  */
 public interface ContentTypeBundle {
-  void register(ContentTypes.Register register);
+  void register(ContentTypes.Registrar registrar);
 }
