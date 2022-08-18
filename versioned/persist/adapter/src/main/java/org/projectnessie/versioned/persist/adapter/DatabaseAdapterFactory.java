@@ -19,7 +19,6 @@ import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
 
 /**
@@ -87,7 +86,7 @@ public interface DatabaseAdapterFactory<
       return eventConsumer;
     }
 
-    public abstract Adapter build(StoreWorker storeWorker);
+    public abstract Adapter build();
 
     public Builder<Adapter, Config, AdjustableConfig, Connector> configure(
         Function<AdjustableConfig, Config> configurator) {

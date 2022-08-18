@@ -25,7 +25,6 @@ import javax.inject.Singleton;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
 import org.projectnessie.quarkus.providers.StoreType.Literal;
-import org.projectnessie.server.store.TableCommitMetaStoreWorker;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.spi.TracingDatabaseAdapter;
@@ -59,13 +58,8 @@ public class DatabaseAdapterProvider {
 
     LOGGER.info("Using {} Version store", versionStoreType);
 
-    TableCommitMetaStoreWorker storeWorker = new TableCommitMetaStoreWorker();
-
     DatabaseAdapter databaseAdapter =
-        databaseAdapterBuilder
-            .select(new Literal(versionStoreType))
-            .get()
-            .newDatabaseAdapter(storeWorker);
+        databaseAdapterBuilder.select(new Literal(versionStoreType)).get().newDatabaseAdapter();
     databaseAdapter.initializeRepo(serverConfig.getDefaultBranch());
 
     if (storeConfig.isTracingEnabled()) {

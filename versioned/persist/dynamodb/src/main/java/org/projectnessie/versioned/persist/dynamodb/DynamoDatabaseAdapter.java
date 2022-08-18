@@ -56,7 +56,6 @@ import javax.annotation.Nonnull;
 import org.projectnessie.versioned.BackendLimitExceededException;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
-import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
@@ -112,9 +111,8 @@ public class DynamoDatabaseAdapter
   public DynamoDatabaseAdapter(
       NonTransactionalDatabaseAdapterConfig config,
       DynamoDatabaseClient c,
-      StoreWorker storeWorker,
       AdapterEventConsumer eventConsumer) {
-    super(config, storeWorker, eventConsumer);
+    super(config, eventConsumer);
 
     Objects.requireNonNull(
         c, "Requires a non-null DynamoDatabaseClient from DynamoDatabaseAdapterConfig");

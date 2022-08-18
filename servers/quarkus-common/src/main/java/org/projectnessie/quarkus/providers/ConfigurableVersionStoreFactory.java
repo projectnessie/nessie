@@ -23,7 +23,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
-import org.projectnessie.server.store.TableCommitMetaStoreWorker;
 import org.projectnessie.versioned.MetricsVersionStore;
 import org.projectnessie.versioned.TracingVersionStore;
 import org.projectnessie.versioned.VersionStore;
@@ -65,9 +64,7 @@ public class ConfigurableVersionStoreFactory {
     VersionStoreType versionStoreType = storeConfig.getVersionStoreType();
 
     try {
-      TableCommitMetaStoreWorker storeWorker = new TableCommitMetaStoreWorker();
-
-      VersionStore versionStore = new PersistVersionStore(databaseAdapter, storeWorker);
+      VersionStore versionStore = new PersistVersionStore(databaseAdapter);
 
       if (storeConfig.isTracingEnabled()) {
         versionStore = new TracingVersionStore(versionStore);

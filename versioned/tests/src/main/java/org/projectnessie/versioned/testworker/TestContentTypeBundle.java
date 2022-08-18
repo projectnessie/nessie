@@ -23,7 +23,6 @@ public final class TestContentTypeBundle implements ContentTypeBundle {
   @Override
   public void register(Registrar registrar) {
     registrar.register("ON_REF_ONLY", (byte) 127, OnRefOnly.class);
-    registrar.register("WITH_GLOBAL_STATE", (byte) 126, WithGlobalStateContent.class);
-    registrar.register("WITH_ATTACHMENTS", (byte) 125, WithAttachmentsContent.class);
+    registrar.register("WITH_ATTACHMENTS", (byte) 126, WithAttachmentsContent.class);
   }
 }

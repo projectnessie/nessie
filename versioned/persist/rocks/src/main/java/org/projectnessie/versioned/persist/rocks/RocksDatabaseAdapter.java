@@ -45,7 +45,6 @@ import java.util.stream.StreamSupport;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceConflictException;
-import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
@@ -87,9 +86,8 @@ public class RocksDatabaseAdapter
   public RocksDatabaseAdapter(
       NonTransactionalDatabaseAdapterConfig config,
       RocksDbInstance dbInstance,
-      StoreWorker storeWorker,
       AdapterEventConsumer eventConsumer) {
-    super(config, storeWorker, eventConsumer);
+    super(config, eventConsumer);
 
     this.keyPrefix = ByteString.copyFromUtf8(config.getRepositoryId() + ':');
     this.globalPointerKey = ByteString.copyFromUtf8(config.getRepositoryId()).toByteArray();

@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.persist.benchmarks;
 
-import static org.projectnessie.versioned.testworker.WithGlobalStateContent.withGlobal;
+import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -59,8 +59,6 @@ import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
 import org.projectnessie.versioned.persist.tests.SystemPropertiesConfigurer;
 import org.projectnessie.versioned.persist.tests.extension.TestConnectionProviderSource;
-import org.projectnessie.versioned.testworker.SimpleStoreWorker;
-import org.projectnessie.versioned.testworker.WithGlobalStateContent;
 
 @Warmup(iterations = 2, time = 2000, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 3, time = 5000, timeUnit = TimeUnit.MILLISECONDS)
@@ -96,7 +94,7 @@ public class CommitBench {
       databaseAdapter.eraseRepo();
       databaseAdapter.initializeRepo(branch.getName());
 
-      versionStore = new PersistVersionStore(databaseAdapter, SimpleStoreWorker.INSTANCE);
+      versionStore = new PersistVersionStore(databaseAdapter);
 
       keys = new ArrayList<>(tablesPerCommit);
 
@@ -151,9 +149,7 @@ public class CommitBench {
         throw new RuntimeException(e);
       }
 
-      return builder
-          .withConnector(providerSource.getConnectionProvider())
-          .build(SimpleStoreWorker.INSTANCE);
+      return builder.withConnector(providerSource.getConnectionProvider()).build();
     }
 
     @TearDown
@@ -242,19 +238,14 @@ public class CommitBench {
         if (value == null) {
           throw new RuntimeException("no value for key " + key + " in " + branch);
         }
-        String currentState = ((WithGlobalStateContent) value).getGlobal();
-        String newGlobalState = Integer.toString(Integer.parseInt(currentState) + 1);
         String contentId = contentIds.get(key);
         operations.add(
             Put.of(
                 key,
                 // Must add randomness here, otherwise concurrent threads will compute the same
                 // hashes, because parent, "content", key are all the same.
-                withGlobal(
-                    newGlobalState,
-                    "commit value " + ThreadLocalRandom.current().nextLong(),
-                    contentId),
-                withGlobal(currentState, "foo", contentId)));
+                onRef("commit value " + ThreadLocalRandom.current().nextLong(), contentId),
+                onRef("foo", contentId)));
       }
 
       bp.versionStore.commit(
@@ -273,7 +264,7 @@ public class CommitBench {
     List<Operation> operations = new ArrayList<>(bp.tablesPerCommit);
     for (Key key : keys) {
       String contentId = contentIds.get(key);
-      operations.add(Put.of(key, withGlobal("0", "initial commit content", contentId)));
+      operations.add(Put.of(key, onRef("initial commit content", contentId)));
     }
     return operations;
   }

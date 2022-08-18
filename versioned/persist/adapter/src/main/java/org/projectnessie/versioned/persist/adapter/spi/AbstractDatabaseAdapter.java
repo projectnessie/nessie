@@ -118,6 +118,7 @@ import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.TransplantParams;
 import org.projectnessie.versioned.persist.adapter.events.AdapterEvent;
 import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
+import org.projectnessie.versioned.store.DefaultStoreWorker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -150,7 +151,7 @@ public abstract class AbstractDatabaseAdapter<
   protected static final String TAG_HASH = "hash";
   protected static final String TAG_COUNT = "count";
   protected final CONFIG config;
-  protected final StoreWorker storeWorker;
+  protected static final StoreWorker STORE_WORKER = DefaultStoreWorker.instance();
   private final AdapterEventConsumer eventConsumer;
 
   @SuppressWarnings("UnstableApiUsage")
@@ -161,11 +162,9 @@ public abstract class AbstractDatabaseAdapter<
 
   protected static long COMMIT_LOG_HASH_SEED = 946928273206945677L;
 
-  protected AbstractDatabaseAdapter(
-      CONFIG config, StoreWorker storeWorker, AdapterEventConsumer eventConsumer) {
+  protected AbstractDatabaseAdapter(CONFIG config, AdapterEventConsumer eventConsumer) {
     Objects.requireNonNull(config, "config parameter must not be null");
     this.config = config;
-    this.storeWorker = storeWorker;
     this.eventConsumer = eventConsumer;
   }
 
@@ -1419,7 +1418,7 @@ public abstract class AbstractDatabaseAdapter<
             }
             nonGlobal.put(put.getKey(), ContentAndState.of(put.getPayload(), put.getValue()));
             keyToContentIds.put(put.getKey(), put.getContentId());
-            if (storeWorker.requiresGlobalState(put.getPayload(), put.getValue())) {
+            if (STORE_WORKER.requiresGlobalState(put.getPayload(), put.getValue())) {
               contentIdsForGlobal.add(put.getContentId());
             }
           }
@@ -1877,7 +1876,7 @@ public abstract class AbstractDatabaseAdapter<
       throws ReferenceNotFoundException {
     Predicate<Entry<Key, ContentAndState>> isNamespace =
         e ->
-            storeWorker
+            STORE_WORKER
                 .getType(e.getValue().getPayload(), e.getValue().getRefState())
                 .equals(Content.Type.NAMESPACE);
     Set<Key> namespacesOnTarget =

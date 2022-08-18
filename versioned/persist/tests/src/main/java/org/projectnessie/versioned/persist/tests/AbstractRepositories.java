@@ -18,6 +18,7 @@ package org.projectnessie.versioned.persist.tests;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
 import com.google.protobuf.ByteString;
 import java.util.Optional;
@@ -37,6 +38,7 @@ import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterConfigItem;
+import org.projectnessie.versioned.testworker.OnRefOnly;
 
 /** Verifies handling of repo-description in the database-adapters. */
 public abstract class AbstractRepositories {
@@ -78,13 +80,18 @@ public abstract class AbstractRepositories {
     ByteString fooCommitMeta = ByteString.copyFromUtf8("meta-foo");
     ByteString barCommitMeta = ByteString.copyFromUtf8("meta-bar");
 
+    OnRefOnly fooValue = onRef("foo", "foo");
+    OnRefOnly barValue = onRef("bar", "bar");
     foo.commit(
         ImmutableCommitParams.builder()
             .toBranch(main)
             .commitMetaSerialized(fooCommitMeta)
             .addPuts(
                 KeyWithBytes.of(
-                    Key.of("foo"), ContentId.of("foo"), (byte) 99, ByteString.copyFromUtf8("foo")))
+                    Key.of("foo"),
+                    ContentId.of(fooValue.getId()),
+                    fooValue.getType().payload(),
+                    fooValue.serialized()))
             .build());
     bar.commit(
         ImmutableCommitParams.builder()
@@ -92,7 +99,10 @@ public abstract class AbstractRepositories {
             .commitMetaSerialized(barCommitMeta)
             .addPuts(
                 KeyWithBytes.of(
-                    Key.of("bar"), ContentId.of("bar"), (byte) 99, ByteString.copyFromUtf8("bar")))
+                    Key.of("bar"),
+                    ContentId.of(barValue.getId()),
+                    barValue.getType().payload(),
+                    barValue.serialized()))
             .build());
 
     Hash fooMain = foo.hashOnReference(main, Optional.empty());

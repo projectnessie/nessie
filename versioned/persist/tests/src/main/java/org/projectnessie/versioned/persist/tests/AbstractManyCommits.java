@@ -43,8 +43,8 @@ import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
+import org.projectnessie.versioned.store.DefaultStoreWorker;
 import org.projectnessie.versioned.testworker.OnRefOnly;
-import org.projectnessie.versioned.testworker.SimpleStoreWorker;
 
 /**
  * Rather rudimentary test that verifies that multiple commits in a row work and the correct results
@@ -83,8 +83,8 @@ public abstract class AbstractManyCommits {
                       key,
                       fixed,
                       payload,
-                      SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
-                          c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
+                      DefaultStoreWorker.instance()
+                          .toStoreOnReferenceState(c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
       Hash hash = databaseAdapter.commit(commit.build());
       commits[i] = hash;
     }
@@ -131,8 +131,8 @@ public abstract class AbstractManyCommits {
           OnRefOnly.onRef("value for #" + i + " of " + numCommits, contentId.getId());
 
       ByteString expectValue =
-          SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
-              expected, ALWAYS_THROWING_ATTACHMENT_CONSUMER);
+          DefaultStoreWorker.instance()
+              .toStoreOnReferenceState(expected, ALWAYS_THROWING_ATTACHMENT_CONSUMER);
       ContentAndState expect = ContentAndState.of(expected.getType().payload(), expectValue);
       assertThat(values).containsExactly(Maps.immutableEntry(key, expect));
     } catch (ReferenceNotFoundException e) {

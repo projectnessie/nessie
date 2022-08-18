@@ -62,6 +62,8 @@ public @interface NessieDbAdapter {
 
   boolean withTracing() default false;
 
+  /** The value of this parameter is no longer used, scheduled for removal. */
+  @Deprecated
   Class<? extends StoreWorker> storeWorker() default SimpleStoreWorker.class;
 
   Class<? extends AdapterEventConsumer> eventConsumer() default AdapterEventConsumer.class;

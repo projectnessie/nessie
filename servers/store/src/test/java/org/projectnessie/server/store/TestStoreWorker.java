@@ -42,7 +42,6 @@ import org.projectnessie.model.Namespace;
 import org.projectnessie.server.store.proto.ObjectTypes;
 import org.projectnessie.server.store.proto.ObjectTypes.IcebergMetadataPointer;
 import org.projectnessie.server.store.proto.ObjectTypes.IcebergRefState;
-import org.projectnessie.server.store.proto.ObjectTypes.IcebergViewState;
 import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.ContentAttachmentKey;
 
@@ -65,7 +64,7 @@ class TestStoreWorker {
     assertThatThrownBy(
             () ->
                 worker.valueFromStore(
-                    (byte) 99,
+                    Content.Type.ICEBERG_TABLE.payload(),
                     ObjectTypes.Content.newBuilder()
                         .setId(CID)
                         .setIcebergRefState(
@@ -86,7 +85,7 @@ class TestStoreWorker {
   void tableMetadataLocationGlobal() {
     Content value =
         worker.valueFromStore(
-            (byte) 99,
+            Content.Type.ICEBERG_TABLE.payload(),
             ObjectTypes.Content.newBuilder()
                 .setId(CID)
                 .setIcebergRefState(
@@ -122,7 +121,7 @@ class TestStoreWorker {
   void tableMetadataLocationOnRef() {
     Content value =
         worker.valueFromStore(
-            (byte) 99,
+            Content.Type.ICEBERG_TABLE.payload(),
             ObjectTypes.Content.newBuilder()
                 .setId(CID)
                 .setIcebergRefState(
@@ -153,7 +152,7 @@ class TestStoreWorker {
     assertThatThrownBy(
             () ->
                 worker.valueFromStore(
-                    (byte) 99,
+                    Content.Type.ICEBERG_VIEW.payload(),
                     ObjectTypes.Content.newBuilder()
                         .setId(CID)
                         .setIcebergViewState(
@@ -170,7 +169,7 @@ class TestStoreWorker {
   void viewMetadataLocationGlobal() {
     Content value =
         worker.valueFromStore(
-            (byte) 99,
+            Content.Type.ICEBERG_VIEW.payload(),
             ObjectTypes.Content.newBuilder()
                 .setId(CID)
                 .setIcebergViewState(ObjectTypes.IcebergViewState.newBuilder().setVersionId(42))
@@ -201,27 +200,7 @@ class TestStoreWorker {
                 .setId(CID)
                 .setNamespace(ObjectTypes.Namespace.newBuilder().addElements("foo")),
             null,
-            false,
             Content.Type.NAMESPACE),
-        //
-        Arguments.of(
-            IcebergTable.of("metadata", 42, 43, 44, 45, CID),
-            false,
-            ObjectTypes.Content.newBuilder()
-                .setId(CID)
-                .setIcebergRefState(
-                    ObjectTypes.IcebergRefState.newBuilder()
-                        .setSnapshotId(42)
-                        .setSchemaId(43)
-                        .setSpecId(44)
-                        .setSortOrderId(45)),
-            ObjectTypes.Content.newBuilder()
-                .setId(CID)
-                .setIcebergMetadataPointer(
-                    ObjectTypes.IcebergMetadataPointer.newBuilder()
-                        .setMetadataLocation("metadata")),
-            true,
-            Content.Type.ICEBERG_TABLE),
         //
         Arguments.of(
             IcebergTable.of("metadata", 42, 43, 44, 45, CID),
@@ -236,27 +215,7 @@ class TestStoreWorker {
                         .setSortOrderId(45)
                         .setMetadataLocation("metadata")),
             null,
-            false,
             Content.Type.ICEBERG_TABLE),
-        //
-        Arguments.of(
-            IcebergView.of(CID, "metadata", 42, 43, "dialect", "sqlText"),
-            false,
-            ObjectTypes.Content.newBuilder()
-                .setId(CID)
-                .setIcebergViewState(
-                    ObjectTypes.IcebergViewState.newBuilder()
-                        .setVersionId(42)
-                        .setSchemaId(43)
-                        .setDialect("dialect")
-                        .setSqlText("sqlText")),
-            ObjectTypes.Content.newBuilder()
-                .setId(CID)
-                .setIcebergMetadataPointer(
-                    ObjectTypes.IcebergMetadataPointer.newBuilder()
-                        .setMetadataLocation("metadata")),
-            true,
-            Content.Type.ICEBERG_VIEW),
         //
         Arguments.of(
             IcebergView.of(CID, "metadata", 42, 43, "dialect", "sqlText"),
@@ -271,7 +230,6 @@ class TestStoreWorker {
                         .setSqlText("sqlText")
                         .setMetadataLocation("metadata")),
             null,
-            false,
             Content.Type.ICEBERG_VIEW),
         //
         Arguments.of(
@@ -288,7 +246,6 @@ class TestStoreWorker {
                         .addCheckpointLocationHistory("check")
                         .addMetadataLocationHistory("meta")),
             null,
-            false,
             Content.Type.DELTA_LAKE_TABLE));
   }
 
@@ -299,7 +256,6 @@ class TestStoreWorker {
       boolean modelGlobal,
       ObjectTypes.Content.Builder onRefBuilder,
       ObjectTypes.Content.Builder globalBuilder,
-      boolean storeGlobal,
       Content.Type type) {
     assertThat(content).extracting(worker::requiresGlobalState).isEqualTo(modelGlobal);
 
@@ -308,53 +264,25 @@ class TestStoreWorker {
 
     assertThat(onRef)
         .asInstanceOf(InstanceOfAssertFactories.type(ByteString.class))
-        .extracting(
-            content2 -> worker.requiresGlobalState((byte) 99, content2),
-            onRefContent -> worker.getType((byte) 99, onRefContent))
-        .containsExactly(storeGlobal, type);
-    assertThat(worker.valueFromStore((byte) 99, onRef, () -> global, NO_ATTACHMENTS_RETRIEVER))
+        .extracting(onRefContent -> worker.getType(content.getType().payload(), onRefContent))
+        .isEqualTo(type);
+    assertThat(
+            worker.valueFromStore(
+                content.getType().payload(), onRef, () -> global, NO_ATTACHMENTS_RETRIEVER))
         .isEqualTo(content);
-
-    if (storeGlobal) {
-      // Add "metadataLocation" to expected on-ref status, because toStoreOnReferenceState() always
-      // returns the "metadataLocation", as #3866 changed the type of IcebergTable/View from
-      // global state to on-ref state.
-      if (onRefBuilder.hasIcebergRefState()) {
-        onRef =
-            onRefBuilder
-                .setIcebergRefState(
-                    onRefBuilder
-                        .getIcebergRefStateBuilder()
-                        .setMetadataLocation(((IcebergTable) content).getMetadataLocation()))
-                .build()
-                .toByteString();
-      } else if (onRefBuilder.hasIcebergViewState()) {
-        onRef =
-            onRefBuilder
-                .setIcebergViewState(
-                    onRefBuilder
-                        .getIcebergViewStateBuilder()
-                        .setMetadataLocation(((IcebergView) content).getMetadataLocation()))
-                .build()
-                .toByteString();
-      }
-    }
 
     assertThat(content)
         .extracting(
             content1 ->
                 worker.toStoreOnReferenceState(content1, ALWAYS_THROWING_ATTACHMENT_CONSUMER))
         .isEqualTo(onRef);
-    if (storeGlobal) {
-      assertThat(content).extracting(worker::toStoreGlobalState).isEqualTo(global);
-    }
   }
 
   @Test
   void viewMetadataLocationOnRef() {
     Content value =
         worker.valueFromStore(
-            (byte) 99,
+            Content.Type.ICEBERG_VIEW.payload(),
             ObjectTypes.Content.newBuilder()
                 .setId(CID)
                 .setIcebergViewState(
@@ -376,7 +304,8 @@ class TestStoreWorker {
   @MethodSource("provideDeserialization")
   void testDeserialization(Map.Entry<ByteString, Content> entry) {
     Content actual =
-        worker.valueFromStore((byte) 99, entry.getKey(), () -> null, x -> Stream.empty());
+        worker.valueFromStore(
+            entry.getValue().getType().payload(), entry.getKey(), () -> null, x -> Stream.empty());
     assertThat(actual).isEqualTo(entry.getValue());
   }
 
@@ -393,86 +322,15 @@ class TestStoreWorker {
   void testSerde(Map.Entry<ByteString, Content> entry) {
     ByteString actualBytes =
         worker.toStoreOnReferenceState(entry.getValue(), ALWAYS_THROWING_ATTACHMENT_CONSUMER);
-    assertThat(worker.valueFromStore((byte) 99, actualBytes, () -> null, x -> Stream.empty()))
+    assertThat(
+            worker.valueFromStore(
+                entry.getValue().getType().payload(), actualBytes, () -> null, x -> Stream.empty()))
         .isEqualTo(entry.getValue());
     Content actualContent =
-        worker.valueFromStore((byte) 99, entry.getKey(), () -> null, x -> Stream.empty());
+        worker.valueFromStore(
+            entry.getValue().getType().payload(), entry.getKey(), () -> null, x -> Stream.empty());
     assertThat(worker.toStoreOnReferenceState(actualContent, ALWAYS_THROWING_ATTACHMENT_CONSUMER))
         .isEqualTo(entry.getKey());
-  }
-
-  @Test
-  void testSerdeIcebergTableNoMetadata() {
-    String path = "foo/bar";
-    IcebergTable table = IcebergTable.of(path, 42, 43, 44, 45, ID);
-
-    ObjectTypes.Content protoTableGlobal =
-        ObjectTypes.Content.newBuilder()
-            .setId(ID)
-            .setIcebergMetadataPointer(
-                IcebergMetadataPointer.newBuilder().setMetadataLocation(path))
-            .build();
-    ObjectTypes.Content protoOnRef =
-        ObjectTypes.Content.newBuilder()
-            .setId(ID)
-            .setIcebergRefState(
-                IcebergRefState.newBuilder()
-                    .setSnapshotId(42)
-                    .setSchemaId(43)
-                    .setSpecId(44)
-                    .setSortOrderId(45)
-                    .setMetadataLocation(path))
-            .build();
-
-    ByteString tableGlobalBytes = worker.toStoreGlobalState(table);
-    ByteString snapshotBytes =
-        worker.toStoreOnReferenceState(table, ALWAYS_THROWING_ATTACHMENT_CONSUMER);
-
-    assertThat(tableGlobalBytes).isEqualTo(protoTableGlobal.toByteString());
-    assertThat(snapshotBytes).isEqualTo(protoOnRef.toByteString());
-
-    Content deserialized =
-        worker.valueFromStore(
-            (byte) 99, snapshotBytes, () -> tableGlobalBytes, x -> Stream.empty());
-    assertThat(deserialized).isEqualTo(table);
-  }
-
-  @Test
-  void testSerdeIcebergViewNoMetadata() {
-    String path = "foo/view";
-    String dialect = "Dremio";
-    String sqlText = "select * from world";
-    IcebergView view = IcebergView.of(ID, path, 1, 123, dialect, sqlText);
-
-    ObjectTypes.Content protoTableGlobal =
-        ObjectTypes.Content.newBuilder()
-            .setId(ID)
-            .setIcebergMetadataPointer(
-                IcebergMetadataPointer.newBuilder().setMetadataLocation(path))
-            .build();
-    ObjectTypes.Content protoOnRef =
-        ObjectTypes.Content.newBuilder()
-            .setId(ID)
-            .setIcebergViewState(
-                IcebergViewState.newBuilder()
-                    .setVersionId(1)
-                    .setDialect(dialect)
-                    .setSchemaId(123)
-                    .setSqlText(sqlText)
-                    .setMetadataLocation(path))
-            .build();
-
-    ByteString tableGlobalBytes = worker.toStoreGlobalState(view);
-    ByteString snapshotBytes =
-        worker.toStoreOnReferenceState(view, ALWAYS_THROWING_ATTACHMENT_CONSUMER);
-
-    assertThat(tableGlobalBytes).isEqualTo(protoTableGlobal.toByteString());
-    assertThat(snapshotBytes).isEqualTo(protoOnRef.toByteString());
-
-    Content deserialized =
-        worker.valueFromStore(
-            (byte) 99, snapshotBytes, () -> tableGlobalBytes, x -> Stream.empty());
-    assertThat(deserialized).isEqualTo(view);
   }
 
   private static Stream<Map.Entry<ByteString, Content>> provideDeserialization() {

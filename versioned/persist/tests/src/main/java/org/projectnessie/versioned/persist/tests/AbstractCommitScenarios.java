@@ -18,6 +18,8 @@ package org.projectnessie.versioned.persist.tests;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.projectnessie.versioned.persist.tests.DatabaseAdapterTestUtils.ALWAYS_THROWING_ATTACHMENT_CONSUMER;
+import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
+import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
@@ -52,8 +54,8 @@ import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterConfigItem;
+import org.projectnessie.versioned.store.DefaultStoreWorker;
 import org.projectnessie.versioned.testworker.OnRefOnly;
-import org.projectnessie.versioned.testworker.SimpleStoreWorker;
 
 /** Tests performing commits. */
 public abstract class AbstractCommitScenarios {
@@ -143,7 +145,7 @@ public abstract class AbstractCommitScenarios {
 
     ImmutableCommitParams.Builder commit;
 
-    Content initialContent = OnRefOnly.newOnRef("initial commit content");
+    Content initialContent = newOnRef("initial commit content");
     Content renamContent = OnRefOnly.onRef("rename commit content", initialContent.getId());
     byte payload = initialContent.getType().payload();
 
@@ -156,8 +158,9 @@ public abstract class AbstractCommitScenarios {
                     oldKey,
                     contentId,
                     payload,
-                    SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
-                        initialContent, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
+                    DefaultStoreWorker.instance()
+                        .toStoreOnReferenceState(
+                            initialContent, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
     Hash hashInitial = databaseAdapter.commit(commit.build());
 
     List<Hash> beforeRename =
@@ -175,8 +178,9 @@ public abstract class AbstractCommitScenarios {
                     newKey,
                     contentId,
                     payload,
-                    SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
-                        renamContent, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
+                    DefaultStoreWorker.instance()
+                        .toStoreOnReferenceState(
+                            renamContent, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
     Hash hashRename = databaseAdapter.commit(commit.build());
 
     List<Hash> beforeDelete =
@@ -277,8 +281,8 @@ public abstract class AbstractCommitScenarios {
               key,
               ContentId.of(cid),
               c.getType().payload(),
-              SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
-                  c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
+              DefaultStoreWorker.instance()
+                  .toStoreOnReferenceState(c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
     }
     Hash head = databaseAdapter.commit(commit.build());
 
@@ -297,8 +301,8 @@ public abstract class AbstractCommitScenarios {
                 keys.get(i),
                 ContentId.of(cid),
                 newContent.getType().payload(),
-                SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
-                    newContent, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
+                DefaultStoreWorker.instance()
+                    .toStoreOnReferenceState(newContent, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
       }
 
       Hash newHead = databaseAdapter.commit(commit.build());
@@ -355,8 +359,8 @@ public abstract class AbstractCommitScenarios {
                     key,
                     ContentId.of(cid),
                     c.getType().payload(),
-                    SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
-                        c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)))
+                    DefaultStoreWorker.instance()
+                        .toStoreOnReferenceState(c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)))
             .putExpectedStates(ContentId.of(cid), Optional.empty())
             .validator(validator);
     databaseAdapter.commit(commit.build());
@@ -368,11 +372,14 @@ public abstract class AbstractCommitScenarios {
 
     Key key = Key.of("my.awesome.table");
     ContentId contentsId = ContentId.of("cid");
-    ByteString tableRefState = ByteString.copyFromUtf8("table ref state");
+    OnRefOnly tableRef = newOnRef("table ref state");
+    ByteString tableRefState = tableRef.serialized();
 
+    OnRefOnly noNo = onRef("no no", contentsId.getId());
     KeyWithBytes createPut1 =
-        KeyWithBytes.of(key, contentsId, (byte) 99, ByteString.copyFromUtf8("no no"));
-    KeyWithBytes createPut2 = KeyWithBytes.of(key, contentsId, (byte) 99, tableRefState);
+        KeyWithBytes.of(key, contentsId, noNo.getType().payload(), noNo.serialized());
+    KeyWithBytes createPut2 =
+        KeyWithBytes.of(key, contentsId, tableRef.getType().payload(), tableRefState);
 
     ImmutableCommitParams.Builder commit1 =
         ImmutableCommitParams.builder()
@@ -434,9 +441,9 @@ public abstract class AbstractCommitScenarios {
     OnRefOnly onRefRegion = OnRefOnly.onRef("region", idRegion.getId());
 
     ByteString stateNation =
-        SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(onRefNation, att -> {});
+        DefaultStoreWorker.instance().toStoreOnReferenceState(onRefNation, att -> {});
     ByteString stateRegion =
-        SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(onRefRegion, att -> {});
+        DefaultStoreWorker.instance().toStoreOnReferenceState(onRefRegion, att -> {});
 
     Hash commitNation =
         mine.commit(

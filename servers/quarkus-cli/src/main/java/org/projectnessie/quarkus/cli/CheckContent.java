@@ -36,10 +36,10 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
+import org.projectnessie.versioned.store.DefaultStoreWorker;
 import picocli.CommandLine;
 
 @CommandLine.Command(
@@ -70,12 +70,6 @@ public class CheckContent extends BaseCommand {
       defaultValue = "25",
       description = "The max number of keys to load at the same time.")
   private int batchSize;
-
-  @CommandLine.Option(
-      names = {"-W", "--worker-class"},
-      defaultValue = "org.projectnessie.server.store.TableCommitMetaStoreWorker",
-      description = "The class name of the Nessie Store Worker (internal).")
-  private String workerClass;
 
   @CommandLine.Option(
       names = {"-r", "--ref"},
@@ -144,17 +138,9 @@ public class CheckContent extends BaseCommand {
   }
 
   private void check(JsonGenerator generator) throws Exception {
-    StoreWorker worker =
-        (StoreWorker)
-            getClass()
-                .getClassLoader()
-                .loadClass(workerClass)
-                .getDeclaredConstructor()
-                .newInstance();
-
     Hash hash = hash();
     if (keyElements != null && !keyElements.isEmpty()) {
-      check(hash, List.of(Key.of(keyElements)), worker, generator);
+      check(hash, List.of(Key.of(keyElements)), generator);
     } else {
       List<Key> batch = new ArrayList<>(batchSize);
       try (Stream<KeyListEntry> keys = databaseAdapter.keys(hash, KeyFilterPredicate.ALLOW_ALL)) {
@@ -163,12 +149,12 @@ public class CheckContent extends BaseCommand {
               batch.add(keyListEntry.getKey());
 
               if (batch.size() >= batchSize) {
-                check(hash, batch, worker, generator);
+                check(hash, batch, generator);
                 batch.clear();
               }
             });
 
-        check(hash, batch, worker, generator); // check remaining keys
+        check(hash, batch, generator); // check remaining keys
       }
     }
   }
@@ -188,7 +174,7 @@ public class CheckContent extends BaseCommand {
     return main.getHash();
   }
 
-  private void check(Hash hash, List<Key> keys, StoreWorker worker, JsonGenerator generator) {
+  private void check(Hash hash, List<Key> keys, JsonGenerator generator) {
     Map<Key, ContentAndState> values;
     try {
       values = databaseAdapter.values(hash, keys, KeyFilterPredicate.ALLOW_ALL);
@@ -208,11 +194,12 @@ public class CheckContent extends BaseCommand {
         (k, contentAndState) -> {
           try {
             Object value =
-                worker.valueFromStore(
-                    contentAndState.getPayload(),
-                    contentAndState.getRefState(),
-                    contentAndState::getGlobalState,
-                    databaseAdapter::mapToAttachment);
+                DefaultStoreWorker.instance()
+                    .valueFromStore(
+                        contentAndState.getPayload(),
+                        contentAndState.getRefState(),
+                        contentAndState::getGlobalState,
+                        databaseAdapter::mapToAttachment);
             report(generator, k, null, value);
           } catch (Exception e) {
             report(generator, k, e, null);

@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned.persist.tx.postgres;
 
-import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.events.AdapterEventConsumer;
 import org.projectnessie.versioned.persist.tx.TxConnectionConfig;
 import org.projectnessie.versioned.persist.tx.TxConnectionProvider;
@@ -37,8 +36,7 @@ public class PostgresDatabaseAdapterFactory
   protected PostgresDatabaseAdapter create(
       TxDatabaseAdapterConfig config,
       TxConnectionProvider<TxConnectionConfig> connectionProvider,
-      StoreWorker storeWorker,
       AdapterEventConsumer eventConsumer) {
-    return new PostgresDatabaseAdapter(config, connectionProvider, storeWorker, eventConsumer);
+    return new PostgresDatabaseAdapter(config, connectionProvider, eventConsumer);
   }
 }

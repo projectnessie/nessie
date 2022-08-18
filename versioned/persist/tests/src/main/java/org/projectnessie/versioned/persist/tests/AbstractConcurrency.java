@@ -55,8 +55,8 @@ import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterMetrics;
+import org.projectnessie.versioned.store.DefaultStoreWorker;
 import org.projectnessie.versioned.testworker.OnRefOnly;
-import org.projectnessie.versioned.testworker.SimpleStoreWorker;
 
 /**
  * Performs concurrent commits with four different strategies, just verifying that either no
@@ -155,8 +155,8 @@ public abstract class AbstractConcurrency {
                             keys.get(ki),
                             contentId,
                             c.getType().payload(),
-                            SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
-                                c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
+                            DefaultStoreWorker.instance()
+                                .toStoreOnReferenceState(c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
                   }
 
                   try {
@@ -200,8 +200,8 @@ public abstract class AbstractConcurrency {
                   k,
                   contentId,
                   c.getType().payload(),
-                  SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
-                      c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
+                  DefaultStoreWorker.instance()
+                      .toStoreOnReferenceState(c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
         }
         commitAndRecord(onRefStates, branch, commitAttempt);
       }
