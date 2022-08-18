@@ -23,14 +23,15 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.projectnessie.model.Content;
 import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.ContentAttachmentKey;
 
 public class WithAttachmentsSerializer extends TestContentSerializer<WithAttachmentsContent> {
 
   @Override
-  public String contentType() {
-    return WithAttachmentsContent.WITH_ATTACHMENTS.name();
+  public Content.Type contentType() {
+    return WithAttachmentsContent.WITH_ATTACHMENTS;
   }
 
   @Override

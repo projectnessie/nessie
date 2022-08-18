@@ -29,7 +29,7 @@ import org.projectnessie.versioned.ContentAttachmentKey;
  * content type.
  */
 public interface ContentSerializer<C extends Content> {
-  String contentType();
+  Content.Type contentType();
 
   ByteString toStoreOnReferenceState(C content, Consumer<ContentAttachment> attachmentConsumer);
 
@@ -39,9 +39,11 @@ public interface ContentSerializer<C extends Content> {
     return false;
   }
 
-  Content.Type getType(byte payload, ByteString onReferenceValue);
-
   boolean requiresGlobalState(byte payload, ByteString onReferenceValue);
+
+  default Content.Type getType(byte payload, ByteString onReferenceValue) {
+    return contentType();
+  }
 
   C valueFromStore(
       byte payload,

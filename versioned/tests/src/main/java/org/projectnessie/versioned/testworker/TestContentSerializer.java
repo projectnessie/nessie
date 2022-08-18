@@ -66,7 +66,7 @@ abstract class TestContentSerializer<C extends Content> implements ContentSerial
     int i = serialized.indexOf(':');
     String typeString = serialized.substring(0, i);
     serialized = serialized.substring(i + 1);
-    assertThat(typeString).isEqualTo(contentType());
+    assertThat(typeString).isEqualTo(contentType().name());
 
     i = serialized.indexOf(':');
     String contentId = serialized.substring(0, i);

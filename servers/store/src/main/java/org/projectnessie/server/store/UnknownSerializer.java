@@ -28,8 +28,8 @@ import org.projectnessie.server.store.proto.ObjectTypes;
 public final class UnknownSerializer extends BaseSerializer<Content> {
 
   @Override
-  public String contentType() {
-    return Content.Type.UNKNOWN.name();
+  public Content.Type contentType() {
+    return Content.Type.UNKNOWN;
   }
 
   @Override

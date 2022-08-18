@@ -24,12 +24,7 @@ import org.projectnessie.server.store.proto.ObjectTypes;
 public final class IcebergViewSerializer extends BaseSerializer<IcebergView> {
 
   @Override
-  public String contentType() {
-    return Content.Type.ICEBERG_VIEW.name();
-  }
-
-  @Override
-  public Content.Type getType(byte payload, ByteString onReferenceValue) {
+  public Content.Type contentType() {
     return Content.Type.ICEBERG_VIEW;
   }
 

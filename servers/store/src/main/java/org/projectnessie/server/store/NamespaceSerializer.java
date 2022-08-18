@@ -25,12 +25,7 @@ import org.projectnessie.server.store.proto.ObjectTypes;
 public final class NamespaceSerializer extends BaseSerializer<Namespace> {
 
   @Override
-  public String contentType() {
-    return Content.Type.NAMESPACE.name();
-  }
-
-  @Override
-  public Content.Type getType(byte payload, ByteString onReferenceValue) {
+  public Content.Type contentType() {
     return Content.Type.NAMESPACE;
   }
 

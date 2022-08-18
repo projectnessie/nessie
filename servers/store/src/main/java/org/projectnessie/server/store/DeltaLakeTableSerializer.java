@@ -25,12 +25,7 @@ import org.projectnessie.server.store.proto.ObjectTypes;
 public final class DeltaLakeTableSerializer extends BaseSerializer<DeltaLakeTable> {
 
   @Override
-  public String contentType() {
-    return Content.Type.DELTA_LAKE_TABLE.name();
-  }
-
-  @Override
-  public Content.Type getType(byte payload, ByteString onReferenceValue) {
+  public Content.Type contentType() {
     return Content.Type.DELTA_LAKE_TABLE;
   }
 

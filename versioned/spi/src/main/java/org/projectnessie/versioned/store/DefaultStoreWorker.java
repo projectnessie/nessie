@@ -29,7 +29,6 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.Content;
-import org.projectnessie.model.types.ContentTypes;
 import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.StoreWorker;
@@ -50,24 +49,24 @@ public class DefaultStoreWorker implements StoreWorker {
 
   private static final class Registry {
     private static final ContentSerializer<?>[] BY_PAYLOAD;
-    private static final Map<Class<? extends Content>, ContentSerializer<?>> BY_TYPE;
+    private static final Map<Content.Type, ContentSerializer<?>> BY_TYPE;
 
     static {
       Set<String> byName = new HashSet<>();
-      Map<Class<? extends Content>, ContentSerializer<?>> byType = new HashMap<>();
+      Map<Content.Type, ContentSerializer<?>> byType = new HashMap<>();
       List<ContentSerializer<?>> byPayload = new ArrayList<>();
 
       for (ContentSerializerBundle bundle : ServiceLoader.load(ContentSerializerBundle.class)) {
         bundle.register(
             contentTypeSerializer -> {
-              Content.Type contentType = ContentTypes.forName(contentTypeSerializer.contentType());
+              Content.Type contentType = contentTypeSerializer.contentType();
               if (!byName.add(contentType.name())) {
                 throw new IllegalStateException(
                     "Found more than one ContentTypeSerializer for content type "
                         + contentType.name());
               }
               if (contentType.payload() != 0
-                  && byType.put(contentType.type(), contentTypeSerializer) != null) {
+                  && byType.put(contentType, contentTypeSerializer) != null) {
                 throw new IllegalStateException(
                     "Found more than one ContentTypeSerializer for content type "
                         + contentType.type());
@@ -91,7 +90,7 @@ public class DefaultStoreWorker implements StoreWorker {
   private @Nonnull <C extends Content> ContentSerializer<C> serializer(C content) {
     @SuppressWarnings("unchecked")
     ContentSerializer<C> serializer =
-        (ContentSerializer<C>) Registry.BY_TYPE.get(content.getType().type());
+        (ContentSerializer<C>) Registry.BY_TYPE.get(content.getType());
     if (serializer == null) {
       throw new IllegalArgumentException("Unknown type " + content);
     }

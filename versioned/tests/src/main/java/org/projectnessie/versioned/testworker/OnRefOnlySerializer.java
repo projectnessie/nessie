@@ -22,14 +22,15 @@ import com.google.protobuf.ByteString;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import org.projectnessie.model.Content;
 import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.ContentAttachmentKey;
 
 public class OnRefOnlySerializer extends TestContentSerializer<OnRefOnly> {
 
   @Override
-  public String contentType() {
-    return OnRefOnly.ON_REF_ONLY.name();
+  public Content.Type contentType() {
+    return OnRefOnly.ON_REF_ONLY;
   }
 
   @Override
