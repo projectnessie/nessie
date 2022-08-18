@@ -15,7 +15,7 @@
     "@types/react-bootstrap": "^0.32.30",
     "@types/react-dom": "^18.0.6",
     "@types/react-router-dom": "^5.3.2",
-    "@types/yup": "^0.29.14",
+    "@types/yup": "^0.32.0",
     "bfj": "^7.0.2",
     "bootstrap": "^5.2.0",
     "camelcase": "^6.3.0",
