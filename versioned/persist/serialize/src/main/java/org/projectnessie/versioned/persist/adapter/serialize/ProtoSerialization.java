@@ -197,17 +197,6 @@ public final class ProtoSerialization {
     return ContentIdAndBytes.of(ContentId.of(proto.getContentId().getId()), proto.getValue());
   }
 
-  public static AdapterTypes.ContentIdWithType toProto(ContentId x) {
-    return AdapterTypes.ContentIdWithType.newBuilder()
-        .setContentId(AdapterTypes.ContentId.newBuilder().setId(x.getId()))
-        .setTypeUnused(0)
-        .build();
-  }
-
-  public static ContentId protoToContentId(AdapterTypes.ContentIdWithType proto) {
-    return ContentId.of(proto.getContentId().getId());
-  }
-
   public static AdapterTypes.KeyList toProto(KeyList x) {
     AdapterTypes.KeyList.Builder keyList = AdapterTypes.KeyList.newBuilder();
     for (KeyListEntry key : x.getKeys()) {
@@ -246,7 +235,7 @@ public final class ProtoSerialization {
     return AdapterTypes.KeyWithBytes.newBuilder()
         .setKey(keyToProto(x.getKey()))
         .setContentId(AdapterTypes.ContentId.newBuilder().setId(x.getContentId().getId()))
-        .setType(x.getType())
+        .setPayload(x.getPayload())
         .setValue(x.getValue())
         .build();
   }
@@ -255,7 +244,7 @@ public final class ProtoSerialization {
     return KeyWithBytes.of(
         Key.of(proto.getKey().getElementList().toArray(new String[0])),
         ContentId.of(proto.getContentId().getId()),
-        (byte) proto.getType(),
+        (byte) proto.getPayload(),
         proto.getValue());
   }
 
@@ -267,7 +256,7 @@ public final class ProtoSerialization {
         AdapterTypes.KeyListEntry.newBuilder()
             .setKey(keyToProto(x.getKey()))
             .setContentId(AdapterTypes.ContentId.newBuilder().setId(x.getContentId().getId()))
-            .setType(x.getType());
+            .setPayload(x.getPayload());
     if (x.getCommitId() != null) {
       builder.setCommitId(x.getCommitId().asBytes());
     }
@@ -281,7 +270,7 @@ public final class ProtoSerialization {
     return KeyListEntry.of(
         protoToKey(proto.getKey()),
         ContentId.of(proto.getContentId().getId()),
-        (byte) proto.getType(),
+        (byte) proto.getPayload(),
         proto.hasCommitId() ? Hash.of(proto.getCommitId()) : null);
   }
 

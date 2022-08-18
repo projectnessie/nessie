@@ -267,27 +267,6 @@ class TestSerialization {
             }));
     params.add(
         new TypeSerialization<>(
-            ContentId.class,
-            AdapterTypes.ContentIdWithType.class,
-            TestSerialization::createContentId,
-            ProtoSerialization::toProto,
-            v -> {
-              try {
-                return AdapterTypes.ContentIdWithType.parseFrom(v);
-              } catch (InvalidProtocolBufferException e) {
-                throw new RuntimeException(e);
-              }
-            },
-            v -> {
-              try {
-                return ProtoSerialization.protoToContentId(
-                    AdapterTypes.ContentIdWithType.parseFrom(v));
-              } catch (InvalidProtocolBufferException e) {
-                throw new RuntimeException(e);
-              }
-            }));
-    params.add(
-        new TypeSerialization<>(
             KeyWithBytes.class,
             AdapterTypes.KeyWithBytes.class,
             TestSerialization::createKeyWithBytes,
@@ -510,7 +489,7 @@ class TestSerialization {
       entry.addPuts(
           AdapterTypes.ContentIdWithBytes.newBuilder()
               .setContentId(AdapterTypes.ContentId.newBuilder().setId(randomString(64)).build())
-              .setTypeUnused(2)
+              .setPayload(2)
               .setValue(randomBytes(120))
               .build());
     }
@@ -577,10 +556,6 @@ class TestSerialization {
         ContentId.of(randomString(64)),
         (byte) ThreadLocalRandom.current().nextInt(0, 127),
         ThreadLocalRandom.current().nextBoolean() ? randomHash() : null);
-  }
-
-  static ContentId createContentId() {
-    return ContentId.of(randomString(64));
   }
 
   static ContentIdAndBytes createContentIdWithBytes() {

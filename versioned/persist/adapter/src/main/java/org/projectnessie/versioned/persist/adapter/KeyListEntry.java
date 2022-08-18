@@ -27,14 +27,14 @@ public interface KeyListEntry {
 
   ContentId getContentId();
 
-  byte getType();
+  byte getPayload();
 
   @Nullable
   Hash getCommitId();
 
-  static KeyListEntry of(Key key, ContentId contentId, byte type, Hash commitId) {
+  static KeyListEntry of(Key key, ContentId contentId, byte payload, Hash commitId) {
     ImmutableKeyListEntry.Builder builder =
-        ImmutableKeyListEntry.builder().key(key).type(type).contentId(contentId);
+        ImmutableKeyListEntry.builder().key(key).payload(payload).contentId(contentId);
     if (commitId != null) {
       builder.commitId(commitId);
     }

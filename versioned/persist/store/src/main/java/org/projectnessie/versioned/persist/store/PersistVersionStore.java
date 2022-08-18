@@ -406,6 +406,7 @@ public class PersistVersionStore implements VersionStore {
                       Put.of(
                           put.getKey(),
                           storeWorker.valueFromStore(
+                              put.getPayload(),
                               put.getValue(),
                               () -> getGlobalContents.apply(put),
                               databaseAdapter::mapToAttachment))));
@@ -421,7 +422,7 @@ public class PersistVersionStore implements VersionStore {
         .map(
             entry ->
                 KeyEntry.of(
-                    ContentTypes.forPayload(entry.getType()),
+                    ContentTypes.forPayload(entry.getPayload()),
                     entry.getKey(),
                     entry.getContentId().getId()));
   }
@@ -441,7 +442,7 @@ public class PersistVersionStore implements VersionStore {
 
   private Content mapContentAndState(ContentAndState cs) {
     return storeWorker.valueFromStore(
-        cs.getRefState(), cs::getGlobalState, databaseAdapter::mapToAttachment);
+        cs.getPayload(), cs.getRefState(), cs::getGlobalState, databaseAdapter::mapToAttachment);
   }
 
   @Override
@@ -459,6 +460,7 @@ public class PersistVersionStore implements VersionStore {
                         .map(
                             v ->
                                 storeWorker.valueFromStore(
+                                    d.getPayload(),
                                     v,
                                     () -> d.getGlobal().orElse(null),
                                     databaseAdapter::mapToAttachment)),
@@ -466,6 +468,7 @@ public class PersistVersionStore implements VersionStore {
                         .map(
                             v ->
                                 storeWorker.valueFromStore(
+                                    d.getPayload(),
                                     v,
                                     () -> d.getGlobal().orElse(null),
                                     databaseAdapter::mapToAttachment))));

@@ -266,7 +266,7 @@ public abstract class AbstractMergeTransplant {
         ByteString onRef =
             SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
                 value, ALWAYS_THROWING_ATTACHMENT_CONSUMER);
-        keysAndValue.put(key, ContentAndState.of(onRef));
+        keysAndValue.put(key, ContentAndState.of(value.getType().payload(), onRef));
         commit.addPuts(
             KeyWithBytes.of(key, ContentId.of("C" + k), value.getType().payload(), onRef));
       }

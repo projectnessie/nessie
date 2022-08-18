@@ -73,6 +73,7 @@ public final class SimpleStoreWorker implements StoreWorker {
 
   @Override
   public Content valueFromStore(
+      byte payload,
       ByteString onReferenceValue,
       Supplier<ByteString> globalState,
       Function<Stream<ContentAttachmentKey>, Stream<ContentAttachment>> attachmentsRetriever) {
@@ -123,7 +124,7 @@ public final class SimpleStoreWorker implements StoreWorker {
   }
 
   @Override
-  public Content.Type getType(ByteString onRefContent) {
+  public Content.Type getType(byte payload, ByteString onRefContent) {
     String serialized = onRefContent.toStringUtf8();
     int i = serialized.indexOf(':');
     if (i == -1) {
@@ -134,8 +135,8 @@ public final class SimpleStoreWorker implements StoreWorker {
   }
 
   @Override
-  public boolean requiresGlobalState(ByteString content) {
-    return getType(content) == WithGlobalStateContent.WITH_GLOBAL_STATE;
+  public boolean requiresGlobalState(byte payload, ByteString content) {
+    return getType(payload, content) == WithGlobalStateContent.WITH_GLOBAL_STATE;
   }
 
   @Override

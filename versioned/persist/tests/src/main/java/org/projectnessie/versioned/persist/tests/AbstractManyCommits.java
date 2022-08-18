@@ -133,7 +133,7 @@ public abstract class AbstractManyCommits {
       ByteString expectValue =
           SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
               expected, ALWAYS_THROWING_ATTACHMENT_CONSUMER);
-      ContentAndState expect = ContentAndState.of(expectValue);
+      ContentAndState expect = ContentAndState.of(expected.getType().payload(), expectValue);
       assertThat(values).containsExactly(Maps.immutableEntry(key, expect));
     } catch (ReferenceNotFoundException e) {
       throw new RuntimeException(e);

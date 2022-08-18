@@ -148,7 +148,7 @@ public abstract class AbstractReferences {
                     KeyWithBytes.of(
                         Key.of("foo"),
                         ContentId.of("contentId"),
-                        (byte) 0,
+                        (byte) 99,
                         ByteString.copyFromUtf8("hello")))
                 .build());
 
@@ -173,7 +173,7 @@ public abstract class AbstractReferences {
                                     KeyWithBytes.of(
                                         Key.of("bar"),
                                         ContentId.of("contentId-no-no"),
-                                        (byte) 0,
+                                        (byte) 99,
                                         ByteString.copyFromUtf8("hello")))
                                 .build()))
                 .isInstanceOf(ReferenceNotFoundException.class)
@@ -217,7 +217,7 @@ public abstract class AbstractReferences {
                       KeyWithBytes.of(
                           Key.of("bar", Integer.toString(i)),
                           ContentId.of("contentId-" + i),
-                          (byte) 0,
+                          (byte) 99,
                           ByteString.copyFromUtf8("hello " + i)))
                   .build());
     }
@@ -322,7 +322,7 @@ public abstract class AbstractReferences {
                           KeyWithBytes.of(
                               Key.of("table", "c" + commit),
                               ContentId.of("c" + commit),
-                              (byte) 0,
+                              OnRefOnly.ON_REF_ONLY.payload(),
                               SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
                                   OnRefOnly.newOnRef("c" + commit), att -> {})))
                       .build());

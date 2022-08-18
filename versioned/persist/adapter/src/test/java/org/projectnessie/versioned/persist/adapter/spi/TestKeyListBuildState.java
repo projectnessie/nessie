@@ -82,7 +82,7 @@ public class TestKeyListBuildState {
     ImmutableCommitLogEntry.Builder commitLogEntry = newCommit();
     KeyListBuildState buildState = new KeyListBuildState(commitLogEntry, 50, 50, 0.65f, e -> 1);
     keyList.stream()
-        .map(k -> KeyListEntry.of(k, ContentId.of("id1"), (byte) 0, Hash.of("1234")))
+        .map(k -> KeyListEntry.of(k, ContentId.of("id1"), (byte) 99, Hash.of("1234")))
         .forEach(buildState::add);
 
     Map<Hash, KeyListEntity> persisted =
@@ -292,7 +292,7 @@ public class TestKeyListBuildState {
   }
 
   private static KeyListEntry entry(String key) {
-    return KeyListEntry.of(Key.of(key), ContentId.of(key), (byte) 0, randomHash());
+    return KeyListEntry.of(Key.of(key), ContentId.of(key), (byte) 99, randomHash());
   }
 
   private ImmutableCommitLogEntry.Builder newCommit() {

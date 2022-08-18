@@ -23,21 +23,27 @@ import org.projectnessie.versioned.Key;
 @Value.Immutable
 public interface Difference {
 
+  @Value.Parameter(order = 1)
+  byte getPayload();
+
+  @Value.Parameter(order = 2)
   Key getKey();
 
-  Optional<ByteString> getGlobal();
-
+  @Value.Parameter(order = 3)
   Optional<ByteString> getFromValue();
 
+  @Value.Parameter(order = 4)
   Optional<ByteString> getToValue();
 
+  @Value.Parameter(order = 5)
+  Optional<ByteString> getGlobal();
+
   static Difference of(
-      Key key, Optional<ByteString> global, Optional<ByteString> from, Optional<ByteString> to) {
-    return ImmutableDifference.builder()
-        .key(key)
-        .global(global)
-        .fromValue(from)
-        .toValue(to)
-        .build();
+      byte payload,
+      Key key,
+      Optional<ByteString> global,
+      Optional<ByteString> from,
+      Optional<ByteString> to) {
+    return ImmutableDifference.of(payload, key, from, to, global);
   }
 }

@@ -59,7 +59,7 @@ message Key {
 message KeyWithBytes {
   Key key = 1;
   ContentId content_id = 2;
-  int32 type = 3;
+  int32 payload = 3;
   bytes value = 4;
 }
 
@@ -70,7 +70,7 @@ message KeyList {
 message KeyListEntry {
   Key key = 1;
   ContentId content_id = 2;
-  int32 type = 3;
+  int32 payload = 3;
   optional bytes commit_id = 4;
 }
 
@@ -78,14 +78,9 @@ message ContentId {
   string id = 1;
 }
 
-message ContentIdWithType {
-  ContentId content_id = 1;
-  int32 type_unused = 2; // ignore the value of this field
-}
-
 message ContentIdWithBytes {
   ContentId content_id = 1;
-  int32 type_unused = 2; // ignore the value of this field
+  int32 payload = 2;
   bytes value = 3;
 }
 
