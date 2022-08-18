@@ -48,11 +48,6 @@ abstract class BaseSerializer<C extends Content> implements ContentSerializer<C>
   }
 
   @Override
-  public boolean requiresGlobalState(byte payload, ByteString onReferenceValue) {
-    return false;
-  }
-
-  @Override
   public C valueFromStore(
       byte payload,
       ByteString onReferenceValue,

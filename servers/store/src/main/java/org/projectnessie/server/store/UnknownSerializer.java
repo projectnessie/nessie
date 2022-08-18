@@ -15,13 +15,10 @@
  */
 package org.projectnessie.server.store;
 
-import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
-
 import com.google.protobuf.ByteString;
 import java.util.function.Supplier;
 import org.projectnessie.model.Content;
 import org.projectnessie.server.store.proto.ObjectTypes;
-import org.projectnessie.versioned.store.DefaultStoreWorker;
 
 /**
  * Provides content serialization functionality for the case when old Nessie versions persisted
@@ -50,11 +47,7 @@ public final class UnknownSerializer extends BaseSerializer<Content> {
   }
 
   @Override
-  public Content.Type getType(byte payload, ByteString onReferenceValue) {
-    if (payload != 0) {
-      return DefaultStoreWorker.contentTypeForPayload(payload);
-    }
-
+  public Content.Type getType(ByteString onReferenceValue) {
     ObjectTypes.Content parsed = parse(onReferenceValue);
 
     if (parsed.hasIcebergRefState()) {
@@ -74,13 +67,7 @@ public final class UnknownSerializer extends BaseSerializer<Content> {
   }
 
   @Override
-  public boolean requiresGlobalState(byte payload, ByteString content) {
-    if (payload != 0
-        && payload != payloadForContent(Content.Type.ICEBERG_TABLE)
-        && payload != payloadForContent(Content.Type.ICEBERG_VIEW)) {
-      return false;
-    }
-
+  public boolean requiresGlobalState(ByteString content) {
     ObjectTypes.Content parsed = parse(content);
     switch (parsed.getObjectTypeCase()) {
       case ICEBERG_REF_STATE:

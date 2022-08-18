@@ -52,7 +52,7 @@ public final class IcebergViewSerializer extends BaseSerializer<IcebergView> {
   }
 
   @Override
-  public boolean requiresGlobalState(byte payload, ByteString content) {
+  public boolean requiresGlobalState(ByteString content) {
     ObjectTypes.Content parsed = parse(content);
     return !parsed.getIcebergViewState().hasMetadataLocation();
   }

@@ -41,9 +41,11 @@ public interface ContentSerializer<C extends Content> {
     return false;
   }
 
-  boolean requiresGlobalState(byte payload, ByteString onReferenceValue);
+  default boolean requiresGlobalState(ByteString onReferenceValue) {
+    return false;
+  }
 
-  default Content.Type getType(byte payload, ByteString onReferenceValue) {
+  default Content.Type getType(ByteString onReferenceValue) {
     return contentType();
   }
 

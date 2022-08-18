@@ -42,17 +42,22 @@ public class DefaultStoreWorker implements StoreWorker {
   }
 
   public static byte payloadForContent(Content c) {
-    return Registry.BY_TYPE.get(c.getType()).payload();
+    return serializer(c).payload();
   }
 
   public static byte payloadForContent(Content.Type contentType) {
-    return Registry.BY_TYPE.get(contentType).payload();
+    return serializer(contentType).payload();
   }
 
   public static Content.Type contentTypeForPayload(byte payload) {
-    return payload >= 0 && payload < Registry.BY_PAYLOAD.length
-        ? Registry.BY_PAYLOAD[payload].contentType()
-        : null;
+    Content.Type contentType =
+        payload >= 0 && payload < Registry.BY_PAYLOAD.length
+            ? Registry.BY_PAYLOAD[payload].contentType()
+            : null;
+    if (contentType == null) {
+      throw new IllegalArgumentException("Unknown payload " + payload);
+    }
+    return contentType;
   }
 
   private static final class Lazy {
@@ -99,11 +104,15 @@ public class DefaultStoreWorker implements StoreWorker {
   }
 
   private static @Nonnull <C extends Content> ContentSerializer<C> serializer(C content) {
+    return serializer(content.getType());
+  }
+
+  private static @Nonnull <C extends Content> ContentSerializer<C> serializer(
+      Content.Type contentType) {
     @SuppressWarnings("unchecked")
-    ContentSerializer<C> serializer =
-        (ContentSerializer<C>) Registry.BY_TYPE.get(content.getType());
+    ContentSerializer<C> serializer = (ContentSerializer<C>) Registry.BY_TYPE.get(contentType);
     if (serializer == null) {
-      throw new IllegalArgumentException("Unknown type " + content);
+      throw new IllegalArgumentException("No type registered for " + contentType);
     }
     return serializer;
   }
@@ -148,11 +157,11 @@ public class DefaultStoreWorker implements StoreWorker {
 
   @Override
   public boolean requiresGlobalState(byte payload, ByteString onReferenceValue) {
-    return serializer(payload).requiresGlobalState(payload, onReferenceValue);
+    return serializer(payload).requiresGlobalState(onReferenceValue);
   }
 
   @Override
   public Content.Type getType(byte payload, ByteString onReferenceValue) {
-    return serializer(payload).getType(payload, onReferenceValue);
+    return serializer(payload).getType(onReferenceValue);
   }
 }
