@@ -30,6 +30,11 @@ public final class NamespaceSerializer extends BaseSerializer<Namespace> {
   }
 
   @Override
+  public byte payload() {
+    return 4;
+  }
+
+  @Override
   protected void toStoreOnRefState(Namespace content, ObjectTypes.Content.Builder builder) {
     builder.setNamespace(
         ObjectTypes.Namespace.newBuilder()

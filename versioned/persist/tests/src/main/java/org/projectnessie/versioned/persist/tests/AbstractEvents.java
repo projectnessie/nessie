@@ -19,6 +19,7 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
+import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
@@ -165,7 +166,7 @@ public abstract class AbstractEvents {
         KeyWithBytes.of(
             Key.of("one", "two"),
             ContentId.of("cid-events-assign"),
-            OnRefOnly.ON_REF_ONLY.payload(),
+            payloadForContent(OnRefOnly.ON_REF_ONLY),
             DefaultStoreWorker.instance()
                 .toStoreOnReferenceState(OnRefOnly.onRef("foo", "cid-events-assign"), att -> {}));
 
@@ -212,7 +213,7 @@ public abstract class AbstractEvents {
         KeyWithBytes.of(
             Key.of("one", "two"),
             ContentId.of("cid-events-commit"),
-            OnRefOnly.ON_REF_ONLY.payload(),
+            payloadForContent(OnRefOnly.ON_REF_ONLY),
             DefaultStoreWorker.instance()
                 .toStoreOnReferenceState(OnRefOnly.onRef("foo", "cid-events-commit"), att -> {}));
 
@@ -265,7 +266,7 @@ public abstract class AbstractEvents {
         KeyWithBytes.of(
             Key.of("one", "two"),
             ContentId.of("cid-events-merge"),
-            OnRefOnly.ON_REF_ONLY.payload(),
+            payloadForContent(OnRefOnly.ON_REF_ONLY),
             DefaultStoreWorker.instance()
                 .toStoreOnReferenceState(OnRefOnly.onRef("foo", "cid-events-merge"), att -> {}));
 
@@ -337,7 +338,7 @@ public abstract class AbstractEvents {
         KeyWithBytes.of(
             Key.of("one", "two"),
             ContentId.of("cid-events-transplant"),
-            OnRefOnly.ON_REF_ONLY.payload(),
+            payloadForContent(OnRefOnly.ON_REF_ONLY),
             DefaultStoreWorker.instance()
                 .toStoreOnReferenceState(
                     OnRefOnly.onRef("foo", "cid-events-transplant"), att -> {}));

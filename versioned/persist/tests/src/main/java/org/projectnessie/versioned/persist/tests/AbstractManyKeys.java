@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.Mockito.spy;
 import static org.projectnessie.versioned.persist.tests.DatabaseAdapterTestUtils.ALWAYS_THROWING_ATTACHMENT_CONSUMER;
+import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
 import com.google.common.base.Preconditions;
@@ -134,7 +135,7 @@ public abstract class AbstractManyKeys {
               allKeys.add(key);
               OnRefOnly val = onRef("value " + i, "cid-" + i);
               return KeyWithBytes.of(
-                  key, ContentId.of(val.getId()), val.getType().payload(), val.serialized());
+                  key, ContentId.of(val.getId()), payloadForContent(val), val.serialized());
             })
         .forEach(kb -> commits.get(commitDist.incrementAndGet() % params.commits).addPuts(kb));
 
@@ -209,7 +210,7 @@ public abstract class AbstractManyKeys {
                       KeyWithBytes.of(
                           key,
                           ContentId.of("c" + i),
-                          OnRefOnly.ON_REF_ONLY.payload(),
+                          payloadForContent(OnRefOnly.ON_REF_ONLY),
                           DefaultStoreWorker.instance()
                               .toStoreOnReferenceState(
                                   onRef("r" + i, "c" + i), ALWAYS_THROWING_ATTACHMENT_CONSUMER)))
@@ -269,7 +270,7 @@ public abstract class AbstractManyKeys {
                       KeyWithBytes.of(
                           key,
                           ContentId.of("c" + i),
-                          OnRefOnly.ON_REF_ONLY.payload(),
+                          payloadForContent(OnRefOnly.ON_REF_ONLY),
                           DefaultStoreWorker.instance()
                               .toStoreOnReferenceState(
                                   onRef("pf" + i, "cpf" + i), ALWAYS_THROWING_ATTACHMENT_CONSUMER)))
@@ -337,7 +338,7 @@ public abstract class AbstractManyKeys {
                       KeyWithBytes.of(
                           keyGen.apply(keyNum),
                           ContentId.of(val.getId()),
-                          val.getType().payload(),
+                          payloadForContent(val),
                           val.serialized()))
                   .build());
     }
@@ -474,7 +475,7 @@ public abstract class AbstractManyKeys {
                   return KeyWithBytes.of(
                       keyGen.apply(i),
                       ContentId.of(val.getId()),
-                      val.getType().payload(),
+                      payloadForContent(val),
                       val.serialized());
                 })
             .collect(Collectors.toCollection(() -> new ArrayList<>(keyCount)));

@@ -18,11 +18,9 @@ package org.projectnessie.versioned.store;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -43,6 +41,25 @@ public class DefaultStoreWorker implements StoreWorker {
     return Lazy.INSTANCE;
   }
 
+  public static byte payloadForContent(Content c) {
+    return serializer(c).payload();
+  }
+
+  public static byte payloadForContent(Content.Type contentType) {
+    return serializer(contentType).payload();
+  }
+
+  public static Content.Type contentTypeForPayload(byte payload) {
+    Content.Type contentType =
+        payload >= 0 && payload < Registry.BY_PAYLOAD.length
+            ? Registry.BY_PAYLOAD[payload].contentType()
+            : null;
+    if (contentType == null) {
+      throw new IllegalArgumentException("Unknown payload " + payload);
+    }
+    return contentType;
+  }
+
   private static final class Lazy {
     private static final DefaultStoreWorker INSTANCE = new DefaultStoreWorker();
   }
@@ -52,7 +69,7 @@ public class DefaultStoreWorker implements StoreWorker {
     private static final Map<Content.Type, ContentSerializer<?>> BY_TYPE;
 
     static {
-      Set<String> byName = new HashSet<>();
+      Map<String, ContentSerializer<?>> byName = new HashMap<>();
       Map<Content.Type, ContentSerializer<?>> byType = new HashMap<>();
       List<ContentSerializer<?>> byPayload = new ArrayList<>();
 
@@ -60,24 +77,23 @@ public class DefaultStoreWorker implements StoreWorker {
         bundle.register(
             contentTypeSerializer -> {
               Content.Type contentType = contentTypeSerializer.contentType();
-              if (!byName.add(contentType.name())) {
+              if (byName.put(contentType.name(), contentTypeSerializer) != null) {
                 throw new IllegalStateException(
-                    "Found more than one ContentTypeSerializer for content type "
-                        + contentType.name());
+                    "Found more than one ContentTypeSerializer for name " + contentType.name());
               }
-              if (contentType.payload() != 0
+              if (contentTypeSerializer.payload() != 0
                   && byType.put(contentType, contentTypeSerializer) != null) {
                 throw new IllegalStateException(
                     "Found more than one ContentTypeSerializer for content type "
                         + contentType.type());
               }
-              while (byPayload.size() <= contentType.payload()) {
+              while (byPayload.size() <= contentTypeSerializer.payload()) {
                 byPayload.add(null);
               }
-              if (byPayload.set(contentType.payload(), contentTypeSerializer) != null) {
+              if (byPayload.set(contentTypeSerializer.payload(), contentTypeSerializer) != null) {
                 throw new IllegalStateException(
                     "Found more than one ContentTypeSerializer for content payload "
-                        + contentType.payload());
+                        + contentTypeSerializer.payload());
               }
             });
       }
@@ -87,17 +103,21 @@ public class DefaultStoreWorker implements StoreWorker {
     }
   }
 
-  private @Nonnull <C extends Content> ContentSerializer<C> serializer(C content) {
+  private static @Nonnull <C extends Content> ContentSerializer<C> serializer(C content) {
+    return serializer(content.getType());
+  }
+
+  private static @Nonnull <C extends Content> ContentSerializer<C> serializer(
+      Content.Type contentType) {
     @SuppressWarnings("unchecked")
-    ContentSerializer<C> serializer =
-        (ContentSerializer<C>) Registry.BY_TYPE.get(content.getType());
+    ContentSerializer<C> serializer = (ContentSerializer<C>) Registry.BY_TYPE.get(contentType);
     if (serializer == null) {
-      throw new IllegalArgumentException("Unknown type " + content);
+      throw new IllegalArgumentException("No type registered for " + contentType);
     }
     return serializer;
   }
 
-  private @Nonnull <C extends Content> ContentSerializer<C> serializer(byte payload) {
+  private static @Nonnull <C extends Content> ContentSerializer<C> serializer(byte payload) {
     @SuppressWarnings("unchecked")
     ContentSerializer<C> serializer =
         payload >= 0 && payload < Registry.BY_PAYLOAD.length
@@ -137,11 +157,11 @@ public class DefaultStoreWorker implements StoreWorker {
 
   @Override
   public boolean requiresGlobalState(byte payload, ByteString onReferenceValue) {
-    return serializer(payload).requiresGlobalState(payload, onReferenceValue);
+    return serializer(payload).requiresGlobalState(onReferenceValue);
   }
 
   @Override
   public Content.Type getType(byte payload, ByteString onReferenceValue) {
-    return serializer(payload).getType(payload, onReferenceValue);
+    return serializer(payload).getType(onReferenceValue);
   }
 }

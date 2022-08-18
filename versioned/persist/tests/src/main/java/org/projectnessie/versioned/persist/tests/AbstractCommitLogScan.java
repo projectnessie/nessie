@@ -18,6 +18,7 @@ package org.projectnessie.versioned.persist.tests;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
 import com.google.protobuf.ByteString;
 import java.util.HashMap;
@@ -195,7 +196,7 @@ public abstract class AbstractCommitLogScan {
       ContentId cid = ContentId.of("cid-" + branchName.getName() + "-" + commitNum);
       OnRefOnly c =
           OnRefOnly.onRef("value for #" + commitNum + " in " + branchName.getName(), cid.getId());
-      byte payload = c.getType().payload();
+      byte payload = payloadForContent(c);
 
       head =
           databaseAdapter.commit(

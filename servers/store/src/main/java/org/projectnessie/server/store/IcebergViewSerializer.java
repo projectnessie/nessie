@@ -29,6 +29,11 @@ public final class IcebergViewSerializer extends BaseSerializer<IcebergView> {
   }
 
   @Override
+  public byte payload() {
+    return 3;
+  }
+
+  @Override
   protected void toStoreOnRefState(IcebergView view, ObjectTypes.Content.Builder builder) {
     ObjectTypes.IcebergViewState.Builder stateBuilder =
         ObjectTypes.IcebergViewState.newBuilder()
@@ -47,7 +52,7 @@ public final class IcebergViewSerializer extends BaseSerializer<IcebergView> {
   }
 
   @Override
-  public boolean requiresGlobalState(byte payload, ByteString content) {
+  public boolean requiresGlobalState(ByteString content) {
     ObjectTypes.Content parsed = parse(content);
     return !parsed.getIcebergViewState().hasMetadataLocation();
   }

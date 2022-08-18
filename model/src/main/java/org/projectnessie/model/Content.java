@@ -58,9 +58,6 @@ public abstract class Content {
     /** The name of the content-type. */
     String name();
 
-    /** Payload used for internal serialization (THIS FUNCTION WILL GO AWAY IN A FOLLOW-UP PR!). */
-    byte payload();
-
     Class<? extends Content> type();
   }
 

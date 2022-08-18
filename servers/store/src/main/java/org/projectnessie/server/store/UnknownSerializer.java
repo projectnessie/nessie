@@ -18,7 +18,6 @@ package org.projectnessie.server.store;
 import com.google.protobuf.ByteString;
 import java.util.function.Supplier;
 import org.projectnessie.model.Content;
-import org.projectnessie.model.types.ContentTypes;
 import org.projectnessie.server.store.proto.ObjectTypes;
 
 /**
@@ -33,6 +32,11 @@ public final class UnknownSerializer extends BaseSerializer<Content> {
   }
 
   @Override
+  public byte payload() {
+    return 0;
+  }
+
+  @Override
   protected void toStoreOnRefState(Content table, ObjectTypes.Content.Builder builder) {
     throw new UnsupportedOperationException();
   }
@@ -43,11 +47,7 @@ public final class UnknownSerializer extends BaseSerializer<Content> {
   }
 
   @Override
-  public Content.Type getType(byte payload, ByteString onReferenceValue) {
-    if (payload != 0) {
-      return ContentTypes.forPayload(payload);
-    }
-
+  public Content.Type getType(ByteString onReferenceValue) {
     ObjectTypes.Content parsed = parse(onReferenceValue);
 
     if (parsed.hasIcebergRefState()) {
@@ -67,13 +67,7 @@ public final class UnknownSerializer extends BaseSerializer<Content> {
   }
 
   @Override
-  public boolean requiresGlobalState(byte payload, ByteString content) {
-    if (payload != 0
-        && payload != Content.Type.ICEBERG_TABLE.payload()
-        && payload != Content.Type.ICEBERG_VIEW.payload()) {
-      return false;
-    }
-
+  public boolean requiresGlobalState(ByteString content) {
     ObjectTypes.Content parsed = parse(content);
     switch (parsed.getObjectTypeCase()) {
       case ICEBERG_REF_STATE:

@@ -29,6 +29,11 @@ public final class IcebergTableSerializer extends BaseSerializer<IcebergTable> {
   }
 
   @Override
+  public byte payload() {
+    return 1;
+  }
+
+  @Override
   protected void toStoreOnRefState(IcebergTable table, ObjectTypes.Content.Builder builder) {
     ObjectTypes.IcebergRefState.Builder stateBuilder =
         ObjectTypes.IcebergRefState.newBuilder()
@@ -47,7 +52,7 @@ public final class IcebergTableSerializer extends BaseSerializer<IcebergTable> {
   }
 
   @Override
-  public boolean requiresGlobalState(byte payload, ByteString content) {
+  public boolean requiresGlobalState(ByteString content) {
     ObjectTypes.Content parsed = parse(content);
     return !parsed.getIcebergRefState().hasMetadataLocation();
   }

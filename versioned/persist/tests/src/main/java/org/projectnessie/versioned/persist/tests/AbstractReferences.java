@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
 import com.google.protobuf.ByteString;
@@ -150,7 +151,7 @@ public abstract class AbstractReferences {
                     KeyWithBytes.of(
                         Key.of("foo"),
                         ContentId.of(hello.getId()),
-                        hello.getType().payload(),
+                        payloadForContent(hello),
                         hello.serialized()))
                 .build());
 
@@ -176,7 +177,7 @@ public abstract class AbstractReferences {
                                   KeyWithBytes.of(
                                       Key.of("bar"),
                                       ContentId.of(noNo.getId()),
-                                      noNo.getType().payload(),
+                                      payloadForContent(noNo),
                                       noNo.serialized()))
                               .build());
                     })
@@ -222,7 +223,7 @@ public abstract class AbstractReferences {
                       KeyWithBytes.of(
                           Key.of("bar", Integer.toString(i)),
                           ContentId.of(hello.getId()),
-                          hello.getType().payload(),
+                          payloadForContent(hello),
                           hello.serialized()))
                   .build());
     }
@@ -327,7 +328,7 @@ public abstract class AbstractReferences {
                           KeyWithBytes.of(
                               Key.of("table", "c" + commit),
                               ContentId.of("c" + commit),
-                              OnRefOnly.ON_REF_ONLY.payload(),
+                              payloadForContent(OnRefOnly.ON_REF_ONLY),
                               DefaultStoreWorker.instance()
                                   .toStoreOnReferenceState(
                                       OnRefOnly.newOnRef("c" + commit), att -> {})))

@@ -16,6 +16,7 @@
 package org.projectnessie.quarkus.cli;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
 import com.fasterxml.jackson.databind.JavaType;
@@ -123,7 +124,7 @@ class ITCheckContent {
                 KeyWithBytes.of(
                     k1,
                     ContentId.of("id123"),
-                    Content.Type.ICEBERG_TABLE.payload(),
+                    payloadForContent(Content.Type.ICEBERG_TABLE),
                     ByteString.copyFrom(new byte[] {1, 2, 3})))
             .build());
 
@@ -149,7 +150,7 @@ class ITCheckContent {
 
   private void commit(IcebergTable table, DatabaseAdapter adapter, ByteString serializes)
       throws Exception {
-    commit(table.getId(), table.getType().payload(), serializes, adapter);
+    commit(table.getId(), payloadForContent(table), serializes, adapter);
   }
 
   private void commit(String testId, byte payload, ByteString value, DatabaseAdapter adapter)
@@ -260,7 +261,7 @@ class ITCheckContent {
     ReferenceInfo good = adapter.namedRef("main", GetNamedRefsParams.DEFAULT);
 
     OnRefOnly val = onRef("123", "222");
-    commit(val.getId(), val.getType().payload(), val.serialized(), adapter);
+    commit(val.getId(), payloadForContent(val), val.serialized(), adapter);
 
     launch(launcher, "check-content", "--hash", good.getHash().asString());
     assertThat(entries).hasSize(1);
