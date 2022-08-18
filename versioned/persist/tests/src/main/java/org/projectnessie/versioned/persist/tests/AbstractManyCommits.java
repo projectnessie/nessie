@@ -73,7 +73,7 @@ public abstract class AbstractManyCommits {
     for (int i = 0; i < numCommits; i++) {
       Key key = Key.of("many", "commits", Integer.toString(numCommits));
       OnRefOnly c = OnRefOnly.onRef("value for #" + i + " of " + numCommits, fixed.getId());
-      byte payload = SimpleStoreWorker.INSTANCE.getPayload(c);
+      byte payload = c.getType().payload();
       ImmutableCommitParams.Builder commit =
           ImmutableCommitParams.builder()
               .toBranch(branch)

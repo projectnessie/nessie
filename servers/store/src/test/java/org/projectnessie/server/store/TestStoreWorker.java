@@ -19,11 +19,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
-import java.time.Instant;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.List;
@@ -36,11 +33,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
-import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableNamespace;
 import org.projectnessie.model.Namespace;
@@ -53,7 +48,6 @@ import org.projectnessie.versioned.ContentAttachmentKey;
 
 class TestStoreWorker {
 
-  private static final ObjectMapper MAPPER = new ObjectMapper();
   private static final String ID = "x";
   public static final String CID = "cid";
   private final TableCommitMetaStoreWorker worker = new TableCommitMetaStoreWorker();
@@ -302,9 +296,7 @@ class TestStoreWorker {
       ObjectTypes.Content.Builder globalBuilder,
       boolean storeGlobal,
       Content.Type type) {
-    assertThat(content)
-        .extracting(worker::requiresGlobalState, worker::getType)
-        .containsExactly(modelGlobal, type);
+    assertThat(content).extracting(worker::requiresGlobalState).isEqualTo(modelGlobal);
 
     ByteString onRef = onRefBuilder.build().toByteString();
     ByteString global = globalBuilder != null ? globalBuilder.build().toByteString() : null;
@@ -469,29 +461,6 @@ class TestStoreWorker {
     Content deserialized =
         worker.valueFromStore(snapshotBytes, () -> tableGlobalBytes, x -> Stream.empty());
     assertThat(deserialized).isEqualTo(view);
-  }
-
-  @Test
-  void testCommitSerde() throws JsonProcessingException {
-    CommitMeta expectedCommit =
-        ImmutableCommitMeta.builder()
-            .commitTime(Instant.now())
-            .authorTime(Instant.now())
-            .author("bill")
-            .committer("ted")
-            .hash("xyz")
-            .message("commit msg")
-            .build();
-
-    ByteString expectedBytes = ByteString.copyFrom(MAPPER.writeValueAsBytes(expectedCommit));
-    CommitMeta actualCommit = worker.getMetadataSerializer().fromBytes(expectedBytes);
-    assertThat(actualCommit).isEqualTo(expectedCommit);
-    ByteString actualBytes = worker.getMetadataSerializer().toBytes(expectedCommit);
-    assertThat(actualBytes).isEqualTo(expectedBytes);
-    actualBytes = worker.getMetadataSerializer().toBytes(expectedCommit);
-    assertThat(worker.getMetadataSerializer().fromBytes(actualBytes)).isEqualTo(expectedCommit);
-    actualCommit = worker.getMetadataSerializer().fromBytes(expectedBytes);
-    assertThat(worker.getMetadataSerializer().toBytes(actualCommit)).isEqualTo(expectedBytes);
   }
 
   private static Stream<Map.Entry<ByteString, Content>> provideDeserialization() {

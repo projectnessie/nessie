@@ -33,8 +33,10 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.types.ContentTypes;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
+import org.projectnessie.versioned.CommitMetaSerializer;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.GetNamedRefsParams;
@@ -116,7 +118,7 @@ public class PersistVersionStore implements VersionStore {
         Content content = op.getValue();
         Content expected = op.getExpectedValue();
 
-        if (storeWorker.getId(content) == null) {
+        if (content.getId() == null) {
           // No content-ID --> New content
 
           Preconditions.checkArgument(
@@ -130,16 +132,16 @@ public class PersistVersionStore implements VersionStore {
           content = storeWorker.applyId(content, UUID.randomUUID().toString());
         }
 
-        ContentId contentId = ContentId.of(storeWorker.getId(content));
+        ContentId contentId = ContentId.of(content.getId());
         commitAttempt.addPuts(
             KeyWithBytes.of(
                 op.getKey(),
                 contentId,
-                storeWorker.getPayload(content),
+                content.getType().payload(),
                 storeWorker.toStoreOnReferenceState(content, commitAttempt::addAttachments)));
 
         if (expected != null) {
-          String expectedId = storeWorker.getId(expected);
+          String expectedId = expected.getId();
           Preconditions.checkArgument(
               expectedId != null,
               "Content id for expected content must not be null, key '%s'",
@@ -333,11 +335,13 @@ public class PersistVersionStore implements VersionStore {
   }
 
   private ByteString serializeMetadata(CommitMeta metadata) {
-    return metadata != null ? storeWorker.getMetadataSerializer().toBytes(metadata) : null;
+    return metadata != null ? CommitMetaSerializer.METADATA_SERIALIZER.toBytes(metadata) : null;
   }
 
   private CommitMeta deserializeMetadata(ByteString commitMeta) {
-    return commitMeta != null ? storeWorker.getMetadataSerializer().fromBytes(commitMeta) : null;
+    return commitMeta != null
+        ? CommitMetaSerializer.METADATA_SERIALIZER.fromBytes(commitMeta)
+        : null;
   }
 
   @Override
@@ -417,7 +421,7 @@ public class PersistVersionStore implements VersionStore {
         .map(
             entry ->
                 KeyEntry.of(
-                    storeWorker.getType(entry.getType()),
+                    ContentTypes.forPayload(entry.getType()),
                     entry.getKey(),
                     entry.getContentId().getId()));
   }

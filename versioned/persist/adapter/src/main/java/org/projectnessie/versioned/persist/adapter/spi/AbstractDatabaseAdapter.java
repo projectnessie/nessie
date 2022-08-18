@@ -73,6 +73,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
+import org.projectnessie.model.Content;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.Diff;
@@ -1867,7 +1868,7 @@ public abstract class AbstractDatabaseAdapter<
       OP_CONTEXT ctx, Hash hashFromTarget, Hash hashFromSource, Set<Key> keyCollisions)
       throws ReferenceNotFoundException {
     Predicate<Entry<Key, ContentAndState>> isNamespace =
-        e -> storeWorker.isNamespace(e.getValue().getRefState());
+        e -> storeWorker.getType(e.getValue().getRefState()).equals(Content.Type.NAMESPACE);
     Set<Key> namespacesOnTarget =
         fetchValues(ctx, hashFromTarget, keyCollisions, ALLOW_ALL).entrySet().stream()
             .filter(isNamespace)

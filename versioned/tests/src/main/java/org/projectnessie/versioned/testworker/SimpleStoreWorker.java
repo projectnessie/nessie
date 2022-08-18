@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned.testworker;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 import static org.projectnessie.versioned.testworker.WithAttachmentsContent.withAttachments;
@@ -28,12 +27,10 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.types.ContentTypes;
 import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.ContentAttachmentKey;
-import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
 
 /**
@@ -44,23 +41,10 @@ public final class SimpleStoreWorker implements StoreWorker {
 
   public static final SimpleStoreWorker INSTANCE = new SimpleStoreWorker();
 
-  private static final Serializer<CommitMeta> METADATA =
-      new Serializer<CommitMeta>() {
-        @Override
-        public CommitMeta fromBytes(ByteString bytes) {
-          return CommitMeta.fromMessage(bytes.toString(UTF_8));
-        }
-
-        @Override
-        public ByteString toBytes(CommitMeta value) {
-          return ByteString.copyFromUtf8(value.getMessage());
-        }
-      };
-
   @Override
   public ByteString toStoreOnReferenceState(
       Content content, Consumer<ContentAttachment> attachmentConsumer) {
-    Content.Type type = getType(content);
+    Content.Type type = content.getType();
     String value;
     if (type.equals(OnRefOnly.ON_REF_ONLY)) {
       value = ((OnRefOnly) content).getOnRef();
@@ -76,7 +60,7 @@ public final class SimpleStoreWorker implements StoreWorker {
       ((WithAttachmentsContent) content).getPerContent().forEach(attachmentConsumer);
     }
 
-    return ByteString.copyFromUtf8(getType(content).name() + ":" + content.getId() + ":" + value);
+    return ByteString.copyFromUtf8(content.getType().name() + ":" + content.getId() + ":" + value);
   }
 
   @Override
@@ -139,16 +123,6 @@ public final class SimpleStoreWorker implements StoreWorker {
   }
 
   @Override
-  public String getId(Content content) {
-    return content.getId();
-  }
-
-  @Override
-  public Byte getPayload(Content content) {
-    return (byte) getType(content).payload();
-  }
-
-  @Override
   public Content.Type getType(ByteString onRefContent) {
     String serialized = onRefContent.toStringUtf8();
     int i = serialized.indexOf(':');
@@ -160,25 +134,6 @@ public final class SimpleStoreWorker implements StoreWorker {
   }
 
   @Override
-  public Content.Type getType(Byte payload) {
-    return ContentTypes.forPayload(payload);
-  }
-
-  @Override
-  public Content.Type getType(Content content) {
-    if (content instanceof OnRefOnly) {
-      return OnRefOnly.ON_REF_ONLY;
-    }
-    if (content instanceof WithGlobalStateContent) {
-      return WithGlobalStateContent.WITH_GLOBAL_STATE;
-    }
-    if (content instanceof WithAttachmentsContent) {
-      return WithAttachmentsContent.WITH_ATTACHMENTS;
-    }
-    throw new IllegalArgumentException("" + content);
-  }
-
-  @Override
   public boolean requiresGlobalState(ByteString content) {
     return getType(content) == WithGlobalStateContent.WITH_GLOBAL_STATE;
   }
@@ -186,10 +141,5 @@ public final class SimpleStoreWorker implements StoreWorker {
   @Override
   public boolean requiresGlobalState(Content content) {
     return content instanceof WithGlobalStateContent;
-  }
-
-  @Override
-  public Serializer<CommitMeta> getMetadataSerializer() {
-    return METADATA;
   }
 }

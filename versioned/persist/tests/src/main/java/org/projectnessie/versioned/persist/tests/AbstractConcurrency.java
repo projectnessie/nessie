@@ -154,7 +154,7 @@ public abstract class AbstractConcurrency {
                         KeyWithBytes.of(
                             keys.get(ki),
                             contentId,
-                            SimpleStoreWorker.INSTANCE.getPayload(c),
+                            c.getType().payload(),
                             SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
                                 c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
                   }
@@ -199,7 +199,7 @@ public abstract class AbstractConcurrency {
               KeyWithBytes.of(
                   k,
                   contentId,
-                  SimpleStoreWorker.INSTANCE.getPayload(c),
+                  c.getType().payload(),
                   SimpleStoreWorker.INSTANCE.toStoreOnReferenceState(
                       c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
         }
