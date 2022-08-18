@@ -30,7 +30,6 @@ import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry.KeyListVariant;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
-import org.projectnessie.versioned.persist.adapter.ContentIdAndPayload;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ImmutableKeyList;
 import org.projectnessie.versioned.persist.adapter.ImmutableRefLog;
@@ -196,19 +195,6 @@ public final class ProtoSerialization {
 
   public static ContentIdAndBytes protoToContentIdAndBytes(AdapterTypes.ContentIdWithBytes proto) {
     return ContentIdAndBytes.of(ContentId.of(proto.getContentId().getId()), proto.getValue());
-  }
-
-  public static AdapterTypes.ContentIdWithPayload toProto(ContentIdAndPayload x) {
-    return AdapterTypes.ContentIdWithPayload.newBuilder()
-        .setContentId(AdapterTypes.ContentId.newBuilder().setId(x.getContentId().getId()))
-        .setPayload(x.getPayload())
-        .build();
-  }
-
-  public static ContentIdAndPayload protoToContentIdAndPayload(
-      AdapterTypes.ContentIdWithPayload proto) {
-    return ContentIdAndPayload.of(
-        ContentId.of(proto.getContentId().getId()), (byte) proto.getPayload());
   }
 
   public static AdapterTypes.KeyList toProto(KeyList x) {

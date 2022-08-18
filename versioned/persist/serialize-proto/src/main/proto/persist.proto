@@ -78,11 +78,6 @@ message ContentId {
   string id = 1;
 }
 
-message ContentIdWithPayload {
-  ContentId content_id = 1;
-  int32 payload = 2;
-}
-
 message ContentIdWithBytes {
   ContentId content_id = 1;
   int32 payload = 2;

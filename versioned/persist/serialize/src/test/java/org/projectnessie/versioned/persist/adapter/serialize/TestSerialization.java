@@ -52,7 +52,6 @@ import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
-import org.projectnessie.versioned.persist.adapter.ContentIdAndPayload;
 import org.projectnessie.versioned.persist.adapter.ImmutableRepoDescription;
 import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
@@ -262,27 +261,6 @@ class TestSerialization {
               try {
                 return ProtoSerialization.protoToContentIdAndBytes(
                     AdapterTypes.ContentIdWithBytes.parseFrom(v));
-              } catch (InvalidProtocolBufferException e) {
-                throw new RuntimeException(e);
-              }
-            }));
-    params.add(
-        new TypeSerialization<>(
-            ContentIdAndPayload.class,
-            AdapterTypes.ContentIdWithPayload.class,
-            TestSerialization::createContentIdAndPayload,
-            ProtoSerialization::toProto,
-            v -> {
-              try {
-                return AdapterTypes.ContentIdWithPayload.parseFrom(v);
-              } catch (InvalidProtocolBufferException e) {
-                throw new RuntimeException(e);
-              }
-            },
-            v -> {
-              try {
-                return ProtoSerialization.protoToContentIdAndPayload(
-                    AdapterTypes.ContentIdWithPayload.parseFrom(v));
               } catch (InvalidProtocolBufferException e) {
                 throw new RuntimeException(e);
               }
@@ -578,11 +556,6 @@ class TestSerialization {
         ContentId.of(randomString(64)),
         (byte) ThreadLocalRandom.current().nextInt(0, 127),
         ThreadLocalRandom.current().nextBoolean() ? randomHash() : null);
-  }
-
-  static ContentIdAndPayload createContentIdAndPayload() {
-    return ContentIdAndPayload.of(
-        ContentId.of(randomString(64)), (byte) ThreadLocalRandom.current().nextInt(0, 127));
   }
 
   static ContentIdAndBytes createContentIdWithBytes() {
