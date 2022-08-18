@@ -159,8 +159,7 @@ tasks.withType<Test>().configureEach {
   systemProperty("quarkus.container-image.build", useDocker)
   systemProperty("quarkus.smallrye.jwt.enabled", "true")
   // TODO requires adjusting the tests - systemProperty("quarkus.http.test-port", "0") -  set this
-  // property in application.properties
-  systemProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager")
+  //  property in application.properties
 
   val testHeapSize: String? by project
   minHeapSize = if (testHeapSize != null) testHeapSize as String else "256m"
