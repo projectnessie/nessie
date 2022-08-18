@@ -95,7 +95,6 @@ tasks.withType<ProcessResources>().configureEach {
 tasks.withType<Test>().configureEach {
   systemProperty("quarkus.log.level", testLogLevel())
   systemProperty("quarkus.log.console.level", testLogLevel())
-  systemProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager")
 
   val testHeapSize: String? by project
   minHeapSize = if (testHeapSize != null) testHeapSize as String else "256m"
