@@ -28,7 +28,9 @@ dependencies {
   implementation(platform(rootProject))
   implementation(platform(project(":nessie-deps-testing")))
   implementation(platform("org.junit:junit-bom"))
+  compileOnly(platform("com.fasterxml.jackson:jackson-bom"))
 
+  implementation(project(":nessie-model"))
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-persist-store"))
   implementation(project(":nessie-versioned-spi"))
@@ -37,6 +39,9 @@ dependencies {
   implementation("io.micrometer:micrometer-core:${dependencyVersion("versionMicrometer")}")
   implementation("io.opentracing:opentracing-mock:${dependencyVersion("versionOpentracing")}")
   implementation("com.google.protobuf:protobuf-java")
+
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
+  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
   implementation("org.assertj:assertj-core")
   implementation("org.mockito:mockito-core")

@@ -239,9 +239,7 @@ public abstract class AbstractMergeTransplant {
     MergeResult<CommitLogEntry> apply(PARAMS_BUILDER paramsBuilder) throws Exception;
   }
 
-  private <
-          PARAMS_BUILDER extends MetadataRewriteParams.Builder<PARAMS_BUILDER>,
-          PARAMS extends MetadataRewriteParams>
+  private <PARAMS_BUILDER extends MetadataRewriteParams.Builder<PARAMS_BUILDER>>
       Hash[] mergeTransplant(
           int numCommits,
           BiFunction<Hash[], Integer, PARAMS_BUILDER> configurer,
@@ -254,7 +252,7 @@ public abstract class AbstractMergeTransplant {
 
     databaseAdapter.create(branch, databaseAdapter.hashOnReference(main, Optional.empty()));
 
-    Map<Key, ContentAndState<ByteString>> keysAndValue = new HashMap<>();
+    Map<Key, ContentAndState> keysAndValue = new HashMap<>();
 
     Hash[] commits = new Hash[numCommits];
     for (int i = 0; i < commits.length; i++) {

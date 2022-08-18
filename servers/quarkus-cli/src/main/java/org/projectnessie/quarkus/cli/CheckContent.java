@@ -144,8 +144,8 @@ public class CheckContent extends BaseCommand {
   }
 
   private void check(JsonGenerator generator) throws Exception {
-    StoreWorker<?, ?, ?> worker =
-        (StoreWorker<?, ?, ?>)
+    StoreWorker worker =
+        (StoreWorker)
             getClass()
                 .getClassLoader()
                 .loadClass(workerClass)
@@ -188,9 +188,8 @@ public class CheckContent extends BaseCommand {
     return main.getHash();
   }
 
-  private void check(
-      Hash hash, List<Key> keys, StoreWorker<?, ?, ?> worker, JsonGenerator generator) {
-    Map<Key, ContentAndState<ByteString>> values;
+  private void check(Hash hash, List<Key> keys, StoreWorker worker, JsonGenerator generator) {
+    Map<Key, ContentAndState> values;
     try {
       values = databaseAdapter.values(hash, keys, KeyFilterPredicate.ALLOW_ALL);
     } catch (Exception e) {

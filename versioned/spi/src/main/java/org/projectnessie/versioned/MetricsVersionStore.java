@@ -29,18 +29,14 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Content;
 
-/**
- * A {@link VersionStore} wrapper that publishes metrics via Micrometer.
- *
- * @param <VALUE> see {@link VersionStore}
- * @param <METADATA> see {@link VersionStore}
- */
+/** A {@link VersionStore} wrapper that publishes metrics via Micrometer. */
 @SuppressWarnings("MustBeClosedChecker")
-public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
-    implements VersionStore<VALUE, METADATA, VALUE_TYPE> {
+public final class MetricsVersionStore implements VersionStore {
 
-  private final VersionStore<VALUE, METADATA, VALUE_TYPE> delegate;
+  private final VersionStore delegate;
   private final MeterRegistry registry;
   private final Clock clock;
   private final Iterable<Tag> commonTags;
@@ -51,15 +47,14 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
    * @param delegate delegate version-store
    * @param registry metrics-registry
    */
-  MetricsVersionStore(
-      VersionStore<VALUE, METADATA, VALUE_TYPE> delegate, MeterRegistry registry, Clock clock) {
+  MetricsVersionStore(VersionStore delegate, MeterRegistry registry, Clock clock) {
     this.delegate = delegate;
     this.registry = registry;
     this.clock = clock;
     this.commonTags = Tags.of("application", "Nessie");
   }
 
-  public MetricsVersionStore(VersionStore<VALUE, METADATA, VALUE_TYPE> delegate) {
+  public MetricsVersionStore(VersionStore delegate) {
     this(delegate, Metrics.globalRegistry, Clock.SYSTEM);
   }
 
@@ -80,8 +75,8 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
   public Hash commit(
       @Nonnull BranchName branch,
       @Nonnull Optional<Hash> referenceHash,
-      @Nonnull METADATA metadata,
-      @Nonnull List<Operation<VALUE>> operations,
+      @Nonnull CommitMeta metadata,
+      @Nonnull List<Operation> operations,
       @Nonnull Callable<Void> validator)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return this.<Hash, ReferenceNotFoundException, ReferenceConflictException>delegate2ExR(
@@ -89,11 +84,11 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
   }
 
   @Override
-  public MergeResult<Commit<METADATA, VALUE>> transplant(
+  public MergeResult<Commit> transplant(
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
-      MetadataRewriter<METADATA> updateCommitMetadata,
+      MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean keepIndividualCommits,
       Map<Key, MergeType> mergeTypes,
       MergeType defaultMergeType,
@@ -101,29 +96,27 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
       boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return this
-        .<MergeResult<Commit<METADATA, VALUE>>, ReferenceNotFoundException,
-            ReferenceConflictException>
-            delegate2ExR(
-                "transplant",
-                () ->
-                    delegate.transplant(
-                        targetBranch,
-                        referenceHash,
-                        sequenceToTransplant,
-                        updateCommitMetadata,
-                        keepIndividualCommits,
-                        mergeTypes,
-                        defaultMergeType,
-                        dryRun,
-                        fetchAdditionalInfo));
+        .<MergeResult<Commit>, ReferenceNotFoundException, ReferenceConflictException>delegate2ExR(
+            "transplant",
+            () ->
+                delegate.transplant(
+                    targetBranch,
+                    referenceHash,
+                    sequenceToTransplant,
+                    updateCommitMetadata,
+                    keepIndividualCommits,
+                    mergeTypes,
+                    defaultMergeType,
+                    dryRun,
+                    fetchAdditionalInfo));
   }
 
   @Override
-  public MergeResult<Commit<METADATA, VALUE>> merge(
+  public MergeResult<Commit> merge(
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
-      MetadataRewriter<METADATA> updateCommitMetadata,
+      MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean keepIndividualCommits,
       Map<Key, MergeType> mergeTypes,
       MergeType defaultMergeType,
@@ -131,21 +124,19 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
       boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return this
-        .<MergeResult<Commit<METADATA, VALUE>>, ReferenceNotFoundException,
-            ReferenceConflictException>
-            delegate2ExR(
-                "merge",
-                () ->
-                    delegate.merge(
-                        fromHash,
-                        toBranch,
-                        expectedHash,
-                        updateCommitMetadata,
-                        keepIndividualCommits,
-                        mergeTypes,
-                        defaultMergeType,
-                        dryRun,
-                        fetchAdditionalInfo));
+        .<MergeResult<Commit>, ReferenceNotFoundException, ReferenceConflictException>delegate2ExR(
+            "merge",
+            () ->
+                delegate.merge(
+                    fromHash,
+                    toBranch,
+                    expectedHash,
+                    updateCommitMetadata,
+                    keepIndividualCommits,
+                    mergeTypes,
+                    defaultMergeType,
+                    dryRun,
+                    fetchAdditionalInfo));
   }
 
   @Override
@@ -170,41 +161,41 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
   }
 
   @Override
-  public ReferenceInfo<METADATA> getNamedRef(String ref, GetNamedRefsParams params)
+  public ReferenceInfo<CommitMeta> getNamedRef(String ref, GetNamedRefsParams params)
       throws ReferenceNotFoundException {
     return delegate1Ex("getnamedref", () -> delegate.getNamedRef(ref, params));
   }
 
   @Override
-  public Stream<ReferenceInfo<METADATA>> getNamedRefs(GetNamedRefsParams params)
+  public Stream<ReferenceInfo<CommitMeta>> getNamedRefs(GetNamedRefsParams params)
       throws ReferenceNotFoundException {
     return delegateStream1Ex("getnamedrefs", () -> delegate.getNamedRefs(params));
   }
 
   @Override
-  public Stream<Commit<METADATA, VALUE>> getCommits(Ref ref, boolean fetchAdditionalInfo)
+  public Stream<Commit> getCommits(Ref ref, boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException {
     return delegateStream1Ex("getcommits", () -> delegate.getCommits(ref, fetchAdditionalInfo));
   }
 
   @Override
-  public Stream<KeyEntry<VALUE_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException {
+  public Stream<KeyEntry> getKeys(Ref ref) throws ReferenceNotFoundException {
     return delegateStream1Ex("getkeys", () -> delegate.getKeys(ref));
   }
 
   @Override
-  public VALUE getValue(Ref ref, Key key) throws ReferenceNotFoundException {
+  public Content getValue(Ref ref, Key key) throws ReferenceNotFoundException {
     return delegate1Ex("getvalue", () -> delegate.getValue(ref, key));
   }
 
   @Override
-  public Map<Key, VALUE> getValues(Ref ref, Collection<Key> keys)
+  public Map<Key, Content> getValues(Ref ref, Collection<Key> keys)
       throws ReferenceNotFoundException {
     return delegate1Ex("getvalues", () -> delegate.getValues(ref, keys));
   }
 
   @Override
-  public Stream<Diff<VALUE>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
+  public Stream<Diff> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
     return delegateStream1Ex("getdiffs", () -> delegate.getDiffs(from, to));
   }
 

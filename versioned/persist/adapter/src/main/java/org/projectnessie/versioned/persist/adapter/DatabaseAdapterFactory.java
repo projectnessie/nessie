@@ -87,7 +87,7 @@ public interface DatabaseAdapterFactory<
       return eventConsumer;
     }
 
-    public abstract Adapter build(StoreWorker<?, ?, ?> storeWorker);
+    public abstract Adapter build(StoreWorker storeWorker);
 
     public Builder<Adapter, Config, AdjustableConfig, Connector> configure(
         Function<AdjustableConfig, Config> configurator) {

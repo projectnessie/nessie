@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned.persist.benchmarks;
 
-import static org.projectnessie.versioned.testworker.CommitMessage.commitMessage;
 import static org.projectnessie.versioned.testworker.WithGlobalStateContent.withGlobal;
 
 import java.util.ArrayList;
@@ -42,6 +41,8 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
+import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Content;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
@@ -58,8 +59,6 @@ import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
 import org.projectnessie.versioned.persist.tests.SystemPropertiesConfigurer;
 import org.projectnessie.versioned.persist.tests.extension.TestConnectionProviderSource;
-import org.projectnessie.versioned.testworker.BaseContent;
-import org.projectnessie.versioned.testworker.CommitMessage;
 import org.projectnessie.versioned.testworker.SimpleStoreWorker;
 import org.projectnessie.versioned.testworker.WithGlobalStateContent;
 
@@ -85,7 +84,7 @@ public class CommitBench {
     final AtomicInteger success = new AtomicInteger();
     TestConnectionProviderSource<DatabaseConnectionConfig> providerSource;
     DatabaseAdapter databaseAdapter;
-    PersistVersionStore<BaseContent, CommitMessage, BaseContent.Type> versionStore;
+    PersistVersionStore versionStore;
     List<Key> keys;
     Map<Key, String> contentIds;
     BranchName branch = BranchName.of("main");
@@ -97,7 +96,7 @@ public class CommitBench {
       databaseAdapter.eraseRepo();
       databaseAdapter.initializeRepo(branch.getName());
 
-      versionStore = new PersistVersionStore<>(databaseAdapter, SimpleStoreWorker.INSTANCE);
+      versionStore = new PersistVersionStore(databaseAdapter, SimpleStoreWorker.INSTANCE);
 
       keys = new ArrayList<>(tablesPerCommit);
 
@@ -112,7 +111,7 @@ public class CommitBench {
       versionStore.commit(
           branch,
           Optional.empty(),
-          commitMessage("initial commit meta"),
+          CommitMeta.fromMessage("initial commit meta"),
           initialOperations(this, keys, contentIds));
     }
 
@@ -201,7 +200,7 @@ public class CommitBench {
       bp.versionStore.commit(
           bp.branch,
           Optional.empty(),
-          commitMessage("initial commit meta " + Thread.currentThread().getId()),
+          CommitMeta.fromMessage("initial commit meta " + Thread.currentThread().getId()),
           initialOperations(bp, keys, contentIds));
 
       Hash hash = bp.versionStore.hashOnReference(bp.branch, Optional.empty());
@@ -233,13 +232,13 @@ public class CommitBench {
   private void doCommit(
       BenchmarkParam bp, BranchName branch, List<Key> keys, Map<Key, String> contentIds)
       throws Exception {
-    Map<Key, BaseContent> contentByKey = bp.versionStore.getValues(branch, keys);
+    Map<Key, Content> contentByKey = bp.versionStore.getValues(branch, keys);
 
     try {
-      List<Operation<BaseContent>> operations = new ArrayList<>(bp.tablesPerCommit);
+      List<Operation> operations = new ArrayList<>(bp.tablesPerCommit);
       for (int i = 0; i < bp.tablesPerCommit; i++) {
         Key key = keys.get(i);
-        BaseContent value = contentByKey.get(key);
+        Content value = contentByKey.get(key);
         if (value == null) {
           throw new RuntimeException("no value for key " + key + " in " + branch);
         }
@@ -259,7 +258,7 @@ public class CommitBench {
       }
 
       bp.versionStore.commit(
-          branch, Optional.empty(), commitMessage("commit meta data"), operations);
+          branch, Optional.empty(), CommitMeta.fromMessage("commit meta data"), operations);
 
       bp.success.incrementAndGet();
     } catch (ReferenceRetryFailureException e) {
@@ -269,9 +268,9 @@ public class CommitBench {
     }
   }
 
-  static List<Operation<BaseContent>> initialOperations(
+  static List<Operation> initialOperations(
       BenchmarkParam bp, List<Key> keys, Map<Key, String> contentIds) {
-    List<Operation<BaseContent>> operations = new ArrayList<>(bp.tablesPerCommit);
+    List<Operation> operations = new ArrayList<>(bp.tablesPerCommit);
     for (Key key : keys) {
       String contentId = contentIds.get(key);
       operations.add(Put.of(key, withGlobal("0", "initial commit content", contentId)));

@@ -29,23 +29,30 @@ dependencies {
   implementation(platform(rootProject))
   compileOnly(platform(project(":nessie-deps-build-only")))
   annotationProcessor(platform(project(":nessie-deps-build-only")))
+  compileOnly(platform("com.fasterxml.jackson:jackson-bom"))
 
+  implementation(project(":nessie-model"))
   implementation("com.google.protobuf:protobuf-java")
   compileOnly("org.immutables:builder")
   compileOnly("org.immutables:value-annotations")
   annotationProcessor("org.immutables:value-processor")
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
+  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
   compileOnly("jakarta.validation:jakarta.validation-api")
   implementation("com.google.guava:guava")
   implementation("com.google.code.findbugs:jsr305")
 
   testImplementation(platform(project(":nessie-deps-testing")))
   testImplementation(platform("org.junit:junit-bom"))
+  testCompileOnly(platform("com.fasterxml.jackson:jackson-bom"))
 
   testImplementation("org.assertj:assertj-core")
   testImplementation("org.mockito:mockito-core")
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+  testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
+  testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
   // Need a few things from Quarkus, but don't leak the dependencies
   compileOnly("io.opentracing:opentracing-api:${dependencyVersion("versionOpentracing")}")

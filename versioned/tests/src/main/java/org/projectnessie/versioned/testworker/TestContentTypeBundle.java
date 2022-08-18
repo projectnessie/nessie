@@ -15,15 +15,15 @@
  */
 package org.projectnessie.versioned.testworker;
 
-import org.immutables.value.Value;
+import org.projectnessie.model.types.ContentTypeBundle;
+import org.projectnessie.model.types.ContentTypes.Registrar;
 
-/** Simple commit-metadata. */
-@Value.Immutable
-public interface CommitMessage {
+public final class TestContentTypeBundle implements ContentTypeBundle {
 
-  String getMessage();
-
-  static CommitMessage commitMessage(String message) {
-    return ImmutableCommitMessage.builder().message(message).build();
+  @Override
+  public void register(Registrar registrar) {
+    registrar.register("ON_REF_ONLY", (byte) 127, OnRefOnly.class);
+    registrar.register("WITH_GLOBAL_STATE", (byte) 126, WithGlobalStateContent.class);
+    registrar.register("WITH_ATTACHMENTS", (byte) 125, WithAttachmentsContent.class);
   }
 }

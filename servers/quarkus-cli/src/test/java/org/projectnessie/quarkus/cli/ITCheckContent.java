@@ -256,7 +256,7 @@ class ITCheckContent {
   public void testHashWithBrokenCommit(QuarkusMainLauncher launcher, DatabaseAdapter adapter)
       throws Exception {
     commit(table1, adapter);
-    ReferenceInfo<ByteString> good = adapter.namedRef("main", GetNamedRefsParams.DEFAULT);
+    ReferenceInfo good = adapter.namedRef("main", GetNamedRefsParams.DEFAULT);
 
     commit("222", (byte) 0, ByteString.copyFrom(new byte[] {1, 2, 3}), adapter);
 

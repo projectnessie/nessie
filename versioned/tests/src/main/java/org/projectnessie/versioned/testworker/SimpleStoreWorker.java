@@ -17,7 +17,6 @@ package org.projectnessie.versioned.testworker;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.projectnessie.versioned.testworker.CommitMessage.commitMessage;
 import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 import static org.projectnessie.versioned.testworker.WithAttachmentsContent.withAttachments;
 import static org.projectnessie.versioned.testworker.WithGlobalStateContent.withGlobal;
@@ -29,6 +28,9 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.types.ContentTypes;
 import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.Serializer;
@@ -38,41 +40,36 @@ import org.projectnessie.versioned.StoreWorker;
  * {@link StoreWorker} implementation for tests using types that are independent of those in the
  * {@code nessie-model} Maven module.
  */
-public final class SimpleStoreWorker
-    implements StoreWorker<BaseContent, CommitMessage, BaseContent.Type> {
+public final class SimpleStoreWorker implements StoreWorker {
 
   public static final SimpleStoreWorker INSTANCE = new SimpleStoreWorker();
 
-  private static final Serializer<CommitMessage> METADATA =
-      new Serializer<CommitMessage>() {
+  private static final Serializer<CommitMeta> METADATA =
+      new Serializer<CommitMeta>() {
         @Override
-        public CommitMessage fromBytes(ByteString bytes) {
-          return commitMessage(bytes.toString(UTF_8));
+        public CommitMeta fromBytes(ByteString bytes) {
+          return CommitMeta.fromMessage(bytes.toString(UTF_8));
         }
 
         @Override
-        public ByteString toBytes(CommitMessage value) {
+        public ByteString toBytes(CommitMeta value) {
           return ByteString.copyFromUtf8(value.getMessage());
         }
       };
 
   @Override
   public ByteString toStoreOnReferenceState(
-      BaseContent content, Consumer<ContentAttachment> attachmentConsumer) {
-    BaseContent.Type type = getType(content);
+      Content content, Consumer<ContentAttachment> attachmentConsumer) {
+    Content.Type type = getType(content);
     String value;
-    switch (type) {
-      case ON_REF_ONLY:
-        value = ((OnRefOnly) content).getOnRef();
-        break;
-      case WITH_GLOBAL_STATE:
-        value = ((WithGlobalStateContent) content).getOnRef();
-        break;
-      case WITH_ATTACHMENTS:
-        value = ((WithAttachmentsContent) content).getOnRef();
-        break;
-      default:
-        throw new IllegalArgumentException("" + content);
+    if (type.equals(OnRefOnly.ON_REF_ONLY)) {
+      value = ((OnRefOnly) content).getOnRef();
+    } else if (type.equals(WithGlobalStateContent.WITH_GLOBAL_STATE)) {
+      value = ((WithGlobalStateContent) content).getOnRef();
+    } else if (type.equals(WithAttachmentsContent.WITH_ATTACHMENTS)) {
+      value = ((WithAttachmentsContent) content).getOnRef();
+    } else {
+      throw new IllegalArgumentException("" + content);
     }
 
     if (content instanceof WithAttachmentsContent) {
@@ -83,7 +80,7 @@ public final class SimpleStoreWorker
   }
 
   @Override
-  public ByteString toStoreGlobalState(BaseContent content) {
+  public ByteString toStoreGlobalState(Content content) {
     if (content instanceof WithGlobalStateContent) {
       return ByteString.copyFromUtf8(((WithGlobalStateContent) content).getGlobal());
     }
@@ -91,7 +88,7 @@ public final class SimpleStoreWorker
   }
 
   @Override
-  public BaseContent valueFromStore(
+  public Content valueFromStore(
       ByteString onReferenceValue,
       Supplier<ByteString> globalState,
       Function<Stream<ContentAttachmentKey>, Stream<ContentAttachment>> attachmentsRetriever) {
@@ -100,7 +97,7 @@ public final class SimpleStoreWorker
     int i = serialized.indexOf(':');
     String typeString = serialized.substring(0, i);
     serialized = serialized.substring(i + 1);
-    BaseContent.Type type = BaseContent.Type.valueOf(typeString);
+    Content.Type type = ContentTypes.forName(typeString);
 
     i = serialized.indexOf(':');
     String contentId = serialized.substring(0, i);
@@ -108,91 +105,91 @@ public final class SimpleStoreWorker
     String onRef = serialized.substring(i + 1);
 
     ByteString global = globalState.get();
-    switch (type) {
-      case ON_REF_ONLY:
-        assertThat(global).isNull();
-        return onRef(onRef, contentId);
-      case WITH_GLOBAL_STATE:
-        assertThat(global).isNotNull();
-        return withGlobal(global.toStringUtf8(), onRef, contentId);
-      case WITH_ATTACHMENTS:
-        Stream<ContentAttachmentKey> keys = Stream.empty();
-        try (Stream<ContentAttachment> attachments = attachmentsRetriever.apply(keys)) {
-          assertThat(attachments).isNotEmpty();
-          return withAttachments(attachments.collect(Collectors.toList()), onRef, contentId);
-        }
-      default:
-        throw new IllegalArgumentException("" + onReferenceValue);
+    if (type.equals(OnRefOnly.ON_REF_ONLY)) {
+      assertThat(global).isNull();
+      return onRef(onRef, contentId);
     }
+    if (type.equals(WithGlobalStateContent.WITH_GLOBAL_STATE)) {
+      assertThat(global).isNotNull();
+      return withGlobal(global.toStringUtf8(), onRef, contentId);
+    }
+    if (type.equals(WithAttachmentsContent.WITH_ATTACHMENTS)) {
+      Stream<ContentAttachmentKey> keys = Stream.empty();
+      try (Stream<ContentAttachment> attachments = attachmentsRetriever.apply(keys)) {
+        assertThat(attachments).isNotEmpty();
+        return withAttachments(attachments.collect(Collectors.toList()), onRef, contentId);
+      }
+    }
+    throw new IllegalArgumentException("" + onReferenceValue);
   }
 
   @Override
-  public BaseContent applyId(BaseContent baseContent, String id) {
-    Objects.requireNonNull(baseContent, "baseContent must not be null");
+  public Content applyId(Content content, String id) {
+    Objects.requireNonNull(content, "Content must not be null");
     Objects.requireNonNull(id, "id must not be null");
-    if (baseContent instanceof OnRefOnly) {
-      OnRefOnly onRef = (OnRefOnly) baseContent;
+    if (content instanceof OnRefOnly) {
+      OnRefOnly onRef = (OnRefOnly) content;
       return OnRefOnly.onRef(onRef.getOnRef(), id);
     }
-    if (baseContent instanceof WithGlobalStateContent) {
-      WithGlobalStateContent withGlobal = (WithGlobalStateContent) baseContent;
+    if (content instanceof WithGlobalStateContent) {
+      WithGlobalStateContent withGlobal = (WithGlobalStateContent) content;
       return WithGlobalStateContent.withGlobal(withGlobal.getGlobal(), withGlobal.getOnRef(), id);
     }
-    throw new IllegalArgumentException("Unknown type " + baseContent);
+    throw new IllegalArgumentException("Unknown type " + content);
   }
 
   @Override
-  public String getId(BaseContent content) {
+  public String getId(Content content) {
     return content.getId();
   }
 
   @Override
-  public Byte getPayload(BaseContent content) {
-    return (byte) getType(content).ordinal();
+  public Byte getPayload(Content content) {
+    return (byte) getType(content).payload();
   }
 
   @Override
-  public BaseContent.Type getType(ByteString onRefContent) {
+  public Content.Type getType(ByteString onRefContent) {
     String serialized = onRefContent.toStringUtf8();
     int i = serialized.indexOf(':');
     if (i == -1) {
-      return BaseContent.Type.ON_REF_ONLY;
+      return OnRefOnly.ON_REF_ONLY;
     }
     String typeString = serialized.substring(0, i);
-    return BaseContent.Type.valueOf(typeString);
+    return ContentTypes.forName(typeString);
   }
 
   @Override
-  public BaseContent.Type getType(Byte payload) {
-    return BaseContent.Type.values()[payload];
+  public Content.Type getType(Byte payload) {
+    return ContentTypes.forPayload(payload);
   }
 
   @Override
-  public BaseContent.Type getType(BaseContent content) {
+  public Content.Type getType(Content content) {
     if (content instanceof OnRefOnly) {
-      return BaseContent.Type.ON_REF_ONLY;
+      return OnRefOnly.ON_REF_ONLY;
     }
     if (content instanceof WithGlobalStateContent) {
-      return BaseContent.Type.WITH_GLOBAL_STATE;
+      return WithGlobalStateContent.WITH_GLOBAL_STATE;
     }
     if (content instanceof WithAttachmentsContent) {
-      return BaseContent.Type.WITH_ATTACHMENTS;
+      return WithAttachmentsContent.WITH_ATTACHMENTS;
     }
     throw new IllegalArgumentException("" + content);
   }
 
   @Override
   public boolean requiresGlobalState(ByteString content) {
-    return getType(content) == BaseContent.Type.WITH_GLOBAL_STATE;
+    return getType(content) == WithGlobalStateContent.WITH_GLOBAL_STATE;
   }
 
   @Override
-  public boolean requiresGlobalState(BaseContent baseContent) {
-    return baseContent instanceof WithGlobalStateContent;
+  public boolean requiresGlobalState(Content content) {
+    return content instanceof WithGlobalStateContent;
   }
 
   @Override
-  public Serializer<CommitMessage> getMetadataSerializer() {
+  public Serializer<CommitMeta> getMetadataSerializer() {
     return METADATA;
   }
 }

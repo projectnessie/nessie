@@ -72,13 +72,12 @@ public class ContentBloomFilter implements Serializable {
   }
 
   private String getValue(Content content) {
-    switch (content.getType()) {
-      case ICEBERG_TABLE:
-        return ICEBERG_TABLE.name() + ((IcebergTable) content).getSnapshotId();
-      case ICEBERG_VIEW:
-        return ICEBERG_VIEW.name() + ((IcebergView) content).getVersionId();
-      default:
-        throw new RuntimeException("Unsupported type " + content.getType());
+    if (content.getType().equals(ICEBERG_TABLE)) {
+      return ICEBERG_TABLE.name() + ((IcebergTable) content).getSnapshotId();
     }
+    if (content.getType().equals(ICEBERG_VIEW)) {
+      return ICEBERG_VIEW.name() + ((IcebergView) content).getVersionId();
+    }
+    throw new RuntimeException("Unsupported type " + content.getType().name());
   }
 }

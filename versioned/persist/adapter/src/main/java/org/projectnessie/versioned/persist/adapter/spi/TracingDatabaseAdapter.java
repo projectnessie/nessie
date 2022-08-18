@@ -93,7 +93,7 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
   }
 
   @Override
-  public Map<Key, ContentAndState<ByteString>> values(
+  public Map<Key, ContentAndState> values(
       Hash commit, Collection<Key> keys, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
     try (Traced ignore =

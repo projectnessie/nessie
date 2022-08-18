@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.projectnessie.model.Content;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
@@ -51,7 +52,6 @@ import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterConfigItem;
-import org.projectnessie.versioned.testworker.BaseContent;
 import org.projectnessie.versioned.testworker.OnRefOnly;
 import org.projectnessie.versioned.testworker.SimpleStoreWorker;
 
@@ -143,8 +143,8 @@ public abstract class AbstractCommitScenarios {
 
     ImmutableCommitParams.Builder commit;
 
-    BaseContent initialContent = OnRefOnly.newOnRef("initial commit content");
-    BaseContent renamContent = OnRefOnly.onRef("rename commit content", initialContent.getId());
+    Content initialContent = OnRefOnly.newOnRef("initial commit content");
+    Content renamContent = OnRefOnly.onRef("rename commit content", initialContent.getId());
     byte payload = SimpleStoreWorker.INSTANCE.getPayload(initialContent);
 
     commit =

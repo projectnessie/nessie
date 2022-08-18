@@ -17,12 +17,16 @@ package org.projectnessie.versioned.testworker;
 
 import java.util.UUID;
 import org.immutables.value.Value;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.types.ContentTypes;
 
 /** Content with on-reference state and mandatory global state. */
 @Value.Immutable
-public interface WithGlobalStateContent extends BaseContent {
+public abstract class WithGlobalStateContent extends Content {
 
-  static WithGlobalStateContent withGlobal(String global, String onRef, String contentId) {
+  public static final Content.Type WITH_GLOBAL_STATE = ContentTypes.forName("WITH_GLOBAL_STATE");
+
+  public static WithGlobalStateContent withGlobal(String global, String onRef, String contentId) {
     return ImmutableWithGlobalStateContent.builder()
         .onRef(onRef)
         .global(global)
@@ -30,7 +34,7 @@ public interface WithGlobalStateContent extends BaseContent {
         .build();
   }
 
-  static WithGlobalStateContent newWithGlobal(String global, String onRef) {
+  public static WithGlobalStateContent newWithGlobal(String global, String onRef) {
     return ImmutableWithGlobalStateContent.builder()
         .onRef(onRef)
         .global(global)
@@ -38,7 +42,12 @@ public interface WithGlobalStateContent extends BaseContent {
         .build();
   }
 
-  String getOnRef();
+  @Override
+  public Content.Type getType() {
+    return WITH_GLOBAL_STATE;
+  }
 
-  String getGlobal();
+  public abstract String getOnRef();
+
+  public abstract String getGlobal();
 }

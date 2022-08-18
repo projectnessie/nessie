@@ -341,7 +341,7 @@ public abstract class AbstractManyKeys {
 
     for (int i = 0; i < keyNum; i++) {
       Key key = keyGen.apply(i);
-      Map<Key, ContentAndState<ByteString>> values =
+      Map<Key, ContentAndState> values =
           databaseAdapter.values(
               head, Collections.singletonList(key), KeyFilterPredicate.ALLOW_ALL);
       assertThat(values)
@@ -506,7 +506,7 @@ public abstract class AbstractManyKeys {
       throws ReferenceNotFoundException {
     for (int i = 0; i < keyCount; i++) {
       Key key = keyGen.apply(i);
-      Map<Key, ContentAndState<ByteString>> values =
+      Map<Key, ContentAndState> values =
           databaseAdapter.values(
               head, Collections.singletonList(key), KeyFilterPredicate.ALLOW_ALL);
       assertThat(values)

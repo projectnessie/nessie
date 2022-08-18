@@ -17,18 +17,27 @@ package org.projectnessie.versioned.testworker;
 
 import java.util.UUID;
 import org.immutables.value.Value;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.types.ContentTypes;
 
 /** Content with on-reference state only. */
 @Value.Immutable
-public interface OnRefOnly extends BaseContent {
+public abstract class OnRefOnly extends Content {
 
-  static OnRefOnly onRef(String onRef, String contentId) {
+  public static final Content.Type ON_REF_ONLY = ContentTypes.forName("ON_REF_ONLY");
+
+  public static OnRefOnly onRef(String onRef, String contentId) {
     return ImmutableOnRefOnly.builder().onRef(onRef).id(contentId).build();
   }
 
-  static OnRefOnly newOnRef(String onRef) {
+  public static OnRefOnly newOnRef(String onRef) {
     return ImmutableOnRefOnly.builder().onRef(onRef).id(UUID.randomUUID().toString()).build();
   }
 
-  String getOnRef();
+  public abstract String getOnRef();
+
+  @Override
+  public Content.Type getType() {
+    return ON_REF_ONLY;
+  }
 }

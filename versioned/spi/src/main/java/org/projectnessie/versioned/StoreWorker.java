@@ -20,45 +20,42 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Content;
 
-/**
- * A set of helpers that users of a VersionStore must implement.
- *
- * @param <CONTENT> The value type saved in the VersionStore.
- * @param <COMMIT_METADATA> The commit metadata type saved in the VersionStore.
- */
-public interface StoreWorker<CONTENT, COMMIT_METADATA, CONTENT_TYPE extends Enum<CONTENT_TYPE>> {
+/** A set of helpers that users of a VersionStore must implement. */
+public interface StoreWorker {
 
   /** Returns the serialized representation of the on-reference part of the given content-object. */
   ByteString toStoreOnReferenceState(
-      CONTENT content, Consumer<ContentAttachment> attachmentConsumer);
+      Content content, Consumer<ContentAttachment> attachmentConsumer);
 
-  ByteString toStoreGlobalState(CONTENT content);
+  ByteString toStoreGlobalState(Content content);
 
-  CONTENT valueFromStore(
+  Content valueFromStore(
       ByteString onReferenceValue,
       Supplier<ByteString> globalState,
       Function<Stream<ContentAttachmentKey>, Stream<ContentAttachment>> attachmentsRetriever);
 
-  CONTENT applyId(CONTENT content, String id);
+  Content applyId(Content content, String id);
 
-  String getId(CONTENT content);
+  String getId(Content content);
 
-  Byte getPayload(CONTENT content);
+  Byte getPayload(Content content);
 
   boolean requiresGlobalState(ByteString content);
 
-  boolean requiresGlobalState(CONTENT content);
+  boolean requiresGlobalState(Content content);
 
-  CONTENT_TYPE getType(ByteString onRefContent);
+  Content.Type getType(ByteString onRefContent);
 
-  CONTENT_TYPE getType(Byte payload);
+  Content.Type getType(Byte payload);
 
-  default CONTENT_TYPE getType(CONTENT content) {
+  default Content.Type getType(Content content) {
     return getType(getPayload(content));
   }
 
-  Serializer<COMMIT_METADATA> getMetadataSerializer();
+  Serializer<CommitMeta> getMetadataSerializer();
 
   default boolean isNamespace(ByteString type) {
     return false;

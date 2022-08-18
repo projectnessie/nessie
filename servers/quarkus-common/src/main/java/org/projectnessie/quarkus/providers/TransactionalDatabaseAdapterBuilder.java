@@ -34,7 +34,7 @@ public class TransactionalDatabaseAdapterBuilder implements DatabaseAdapterBuild
   @Inject TxConnectionProvider<TxConnectionConfig> connector;
 
   @Override
-  public DatabaseAdapter newDatabaseAdapter(StoreWorker<?, ?, ?> storeWorker) {
+  public DatabaseAdapter newDatabaseAdapter(StoreWorker storeWorker) {
     return new PostgresDatabaseAdapterFactory()
         .newBuilder()
         .withConfig(config)

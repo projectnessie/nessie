@@ -34,16 +34,14 @@ import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Content;
 
 /**
  * A {@link VersionStore} wrapper that publishes tracing information via OpenTracing/OpenTelemetry.
- *
- * @param <VALUE> see {@link VersionStore}
- * @param <METADATA> see {@link VersionStore}
  */
 @SuppressWarnings("MustBeClosedChecker")
-public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
-    implements VersionStore<VALUE, METADATA, VALUE_TYPE> {
+public class TracingVersionStore implements VersionStore {
 
   private static final String TAG_OPERATION = "nessie.version-store.operation";
   private static final String TAG_REF = "nessie.version-store.ref";
@@ -61,14 +59,14 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   private static final String TAG_FROM = "nessie.version-store.from";
   private static final String TAG_TO = "nessie.version-store.to";
 
-  private final VersionStore<VALUE, METADATA, VALUE_TYPE> delegate;
+  private final VersionStore delegate;
 
   /**
    * Takes the {@link VersionStore} instance to trace.
    *
    * @param delegate backing/delegate {@link VersionStore}
    */
-  public TracingVersionStore(VersionStore<VALUE, METADATA, VALUE_TYPE> delegate) {
+  public TracingVersionStore(VersionStore delegate) {
     this.delegate = delegate;
   }
 
@@ -93,8 +91,8 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   public Hash commit(
       @Nonnull BranchName branch,
       @Nonnull Optional<Hash> referenceHash,
-      @Nonnull METADATA metadata,
-      @Nonnull List<Operation<VALUE>> operations,
+      @Nonnull CommitMeta metadata,
+      @Nonnull List<Operation> operations,
       @Nonnull Callable<Void> validator)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return TracingVersionStore
@@ -108,11 +106,11 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   }
 
   @Override
-  public MergeResult<Commit<METADATA, VALUE>> transplant(
+  public MergeResult<Commit> transplant(
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
-      MetadataRewriter<METADATA> updateCommitMetadata,
+      MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean keepIndividualCommits,
       Map<Key, MergeType> mergeTypes,
       MergeType defaultMergeType,
@@ -120,8 +118,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
       boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return TracingVersionStore
-        .<MergeResult<Commit<METADATA, VALUE>>, ReferenceNotFoundException,
-            ReferenceConflictException>
+        .<MergeResult<Commit>, ReferenceNotFoundException, ReferenceConflictException>
             callWithTwoExceptions(
                 "Transplant",
                 b ->
@@ -142,11 +139,11 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   }
 
   @Override
-  public MergeResult<Commit<METADATA, VALUE>> merge(
+  public MergeResult<Commit> merge(
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
-      MetadataRewriter<METADATA> updateCommitMetadata,
+      MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean keepIndividualCommits,
       Map<Key, MergeType> mergeTypes,
       MergeType defaultMergeType,
@@ -154,8 +151,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
       boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return TracingVersionStore
-        .<MergeResult<Commit<METADATA, VALUE>>, ReferenceNotFoundException,
-            ReferenceConflictException>
+        .<MergeResult<Commit>, ReferenceNotFoundException, ReferenceConflictException>
             callWithTwoExceptions(
                 "Merge",
                 b ->
@@ -211,20 +207,20 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   }
 
   @Override
-  public ReferenceInfo<METADATA> getNamedRef(String ref, GetNamedRefsParams params)
+  public ReferenceInfo<CommitMeta> getNamedRef(String ref, GetNamedRefsParams params)
       throws ReferenceNotFoundException {
     return callWithOneException(
         "GetNamedRef", b -> b.withTag(TAG_REF, ref), () -> delegate.getNamedRef(ref, params));
   }
 
   @Override
-  public Stream<ReferenceInfo<METADATA>> getNamedRefs(GetNamedRefsParams params)
+  public Stream<ReferenceInfo<CommitMeta>> getNamedRefs(GetNamedRefsParams params)
       throws ReferenceNotFoundException {
     return callStreamWithOneException("GetNamedRefs", b -> {}, () -> delegate.getNamedRefs(params));
   }
 
   @Override
-  public Stream<Commit<METADATA, VALUE>> getCommits(Ref ref, boolean fetchAdditionalInfo)
+  public Stream<Commit> getCommits(Ref ref, boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException {
     return callStreamWithOneException(
         "GetCommits",
@@ -233,13 +229,13 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   }
 
   @Override
-  public Stream<KeyEntry<VALUE_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException {
+  public Stream<KeyEntry> getKeys(Ref ref) throws ReferenceNotFoundException {
     return callStreamWithOneException(
         "GetKeys", b -> b.withTag(TAG_REF, safeToString(ref)), () -> delegate.getKeys(ref));
   }
 
   @Override
-  public VALUE getValue(Ref ref, Key key) throws ReferenceNotFoundException {
+  public Content getValue(Ref ref, Key key) throws ReferenceNotFoundException {
     return callWithOneException(
         "GetValue",
         b -> b.withTag(TAG_REF, safeToString(ref)).withTag(TAG_KEY, safeToString(key)),
@@ -247,7 +243,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   }
 
   @Override
-  public Map<Key, VALUE> getValues(Ref ref, Collection<Key> keys)
+  public Map<Key, Content> getValues(Ref ref, Collection<Key> keys)
       throws ReferenceNotFoundException {
     return callWithOneException(
         "GetValues",
@@ -256,7 +252,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   }
 
   @Override
-  public Stream<Diff<VALUE>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
+  public Stream<Diff> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
     return callStreamWithOneException(
         "GetDiffs",
         b -> b.withTag(TAG_FROM, safeToString(from)).withTag(TAG_TO, safeToString(to)),

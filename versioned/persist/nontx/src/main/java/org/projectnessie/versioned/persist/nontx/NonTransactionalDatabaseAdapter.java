@@ -144,7 +144,7 @@ public abstract class NonTransactionalDatabaseAdapter<
   public static final String TAG_REF = "ref";
 
   protected NonTransactionalDatabaseAdapter(
-      CONFIG config, StoreWorker<?, ?, ?> storeWorker, AdapterEventConsumer eventConsumer) {
+      CONFIG config, StoreWorker storeWorker, AdapterEventConsumer eventConsumer) {
     super(config, storeWorker, eventConsumer);
   }
 
@@ -160,7 +160,7 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   @Override
-  public Map<Key, ContentAndState<ByteString>> values(
+  public Map<Key, ContentAndState> values(
       Hash commit, Collection<Key> keys, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
     return fetchValues(NON_TRANSACTIONAL_OPERATION_CONTEXT, commit, keys, keyFilter);

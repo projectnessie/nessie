@@ -69,7 +69,7 @@ public class InmemoryDatabaseAdapter
   public InmemoryDatabaseAdapter(
       NonTransactionalDatabaseAdapterConfig config,
       InmemoryStore store,
-      StoreWorker<?, ?, ?> storeWorker,
+      StoreWorker storeWorker,
       AdapterEventConsumer eventConsumer) {
     super(config, storeWorker, eventConsumer);
 

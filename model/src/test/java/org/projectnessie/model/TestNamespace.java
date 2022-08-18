@@ -89,7 +89,7 @@ public class TestNamespace {
   @Test
   public void testRoundTrip() {
     List<String> elements = asList("a", "b.c", "namespace");
-    String pathString = UriUtil.toPathString(elements);
+    String pathString = Util.toPathString(elements);
     String expectedPathString = "a.b\u001Dc.namespace";
     assertThat(pathString).isEqualTo(expectedPathString);
     Namespace namespace = Namespace.parse(pathString);
@@ -282,14 +282,14 @@ public class TestNamespace {
   static List<NamespaceOfParse> namespaceOfAndParseCases() {
     return asList(
         new NamespaceOfParse(
-            Namespace.fromPathString(UriUtil.toPathString(Arrays.asList("a", "b.c", "namespace"))),
+            Namespace.fromPathString(Util.toPathString(Arrays.asList("a", "b.c", "namespace"))),
             Arrays.asList("a", "b.c", "namespace"),
-            UriUtil.toPathString(Arrays.asList("a", "b.c", "namespace"))),
+            Util.toPathString(Arrays.asList("a", "b.c", "namespace"))),
         new NamespaceOfParse(
             Namespace.fromPathString(
-                UriUtil.toPathString(Arrays.asList("a", "b.c", "d.e.f.namespace"))),
+                Util.toPathString(Arrays.asList("a", "b.c", "d.e.f.namespace"))),
             Arrays.asList("a", "b.c", "d.e.f.namespace"),
-            UriUtil.toPathString(Arrays.asList("a", "b.c", "d.e.f.namespace"))),
+            Util.toPathString(Arrays.asList("a", "b.c", "d.e.f.namespace"))),
         new NamespaceOfParse(
             Namespace.fromPathString("a.namespace"), asList("a", "namespace"), "a.namespace"),
         new NamespaceOfParse(

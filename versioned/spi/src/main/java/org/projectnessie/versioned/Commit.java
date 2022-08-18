@@ -18,10 +18,11 @@ package org.projectnessie.versioned;
 import java.util.List;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
+import org.projectnessie.model.CommitMeta;
 
 @Value.Immutable
-public interface Commit<METADATA, VALUE> {
-  static <METADATA, VALUE> ImmutableCommit.Builder<METADATA, VALUE> builder() {
+public interface Commit {
+  static ImmutableCommit.Builder builder() {
     return ImmutableCommit.builder();
   }
 
@@ -29,11 +30,11 @@ public interface Commit<METADATA, VALUE> {
 
   List<Hash> getAdditionalParents();
 
-  METADATA getCommitMeta();
+  CommitMeta getCommitMeta();
 
   @Nullable
   Hash getParentHash();
 
   @Nullable
-  List<Operation<VALUE>> getOperations();
+  List<Operation> getOperations();
 }

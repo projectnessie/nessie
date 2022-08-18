@@ -84,23 +84,19 @@ public class TestContentBloomFilter {
   private List<Content> generateContents(int index, Content.Type contentType) {
     List<Content> contents = new ArrayList<>();
     for (int i = index; i < 10 + index; i++) {
-      switch (contentType) {
-        case ICEBERG_TABLE:
-          contents.add(IcebergTable.of("temp" + i, i, 42, 42, 42));
-          break;
-        case ICEBERG_VIEW:
-          contents.add(IcebergView.of("temp" + i, i, 42, "dialect" + i, "sql" + i));
-          break;
-        case DELTA_LAKE_TABLE:
-          contents.add(
-              ImmutableDeltaLakeTable.builder()
-                  .id(String.valueOf(i))
-                  .addAllCheckpointLocationHistory(Collections.emptyList())
-                  .addAllMetadataLocationHistory(Collections.emptyList())
-                  .build());
-          break;
-        default:
-          throw new RuntimeException("Unsupported type: " + contentType);
+      if (contentType.equals(ICEBERG_TABLE)) {
+        contents.add(IcebergTable.of("temp" + i, i, 42, 42, 42));
+      } else if (contentType.equals(ICEBERG_VIEW)) {
+        contents.add(IcebergView.of("temp" + i, i, 42, "dialect" + i, "sql" + i));
+      } else if (contentType.equals(DELTA_LAKE_TABLE)) {
+        contents.add(
+            ImmutableDeltaLakeTable.builder()
+                .id(String.valueOf(i))
+                .addAllCheckpointLocationHistory(Collections.emptyList())
+                .addAllMetadataLocationHistory(Collections.emptyList())
+                .build());
+      } else {
+        throw new RuntimeException("Unsupported type: " + contentType);
       }
     }
     return contents;

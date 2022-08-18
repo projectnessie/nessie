@@ -143,7 +143,7 @@ public abstract class TxDatabaseAdapter
   public TxDatabaseAdapter(
       TxDatabaseAdapterConfig config,
       TxConnectionProvider<?> db,
-      StoreWorker<?, ?, ?> storeWorker,
+      StoreWorker storeWorker,
       AdapterEventConsumer eventConsumer) {
     super(config, storeWorker, eventConsumer);
 
@@ -166,7 +166,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  public Map<Key, ContentAndState<ByteString>> values(
+  public Map<Key, ContentAndState> values(
       Hash commit, Collection<Key> keys, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
     try (ConnectionWrapper conn = borrowConnection()) {

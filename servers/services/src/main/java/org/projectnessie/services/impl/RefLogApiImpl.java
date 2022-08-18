@@ -35,8 +35,6 @@ import org.projectnessie.cel.tools.Script;
 import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieRefLogNotFoundException;
-import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Content;
 import org.projectnessie.model.ImmutableRefLogResponse;
 import org.projectnessie.model.ImmutableRefLogResponseEntry;
 import org.projectnessie.model.RefLogResponse;
@@ -52,10 +50,7 @@ public class RefLogApiImpl extends BaseApiImpl implements RefLogApi {
   private static final int MAX_REF_LOG_ENTRIES = 250;
 
   public RefLogApiImpl(
-      ServerConfig config,
-      VersionStore<Content, CommitMeta, Content.Type> store,
-      Authorizer authorizer,
-      Principal principal) {
+      ServerConfig config, VersionStore store, Authorizer authorizer, Principal principal) {
     super(config, store, authorizer, principal);
   }
 

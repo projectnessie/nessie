@@ -24,18 +24,15 @@ import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.ThreadSafe;
+import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Content;
 
 /**
  * A storage interface that maintains multiple versions of the VALUE type with each commit having an
- * associated METADATA value.
- *
- * @param <VALUE> The type of data that will be associated with each key. Values must provide an
- *     associated Serializer.
- * @param <METADATA> The type of data that will be associated with each commit. Metadata values must
- *     provide an associated Serializer.
+ * associated CommitMeta value.
  */
 @ThreadSafe
-public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>> {
+public interface VersionStore {
 
   /**
    * Verifies that the given {@code namedReference} exists and that {@code hashOnReference}, if
@@ -86,16 +83,16 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
   Hash commit(
       @Nonnull BranchName branch,
       @Nonnull Optional<Hash> referenceHash,
-      @Nonnull METADATA metadata,
-      @Nonnull List<Operation<VALUE>> operations,
+      @Nonnull CommitMeta metadata,
+      @Nonnull List<Operation> operations,
       @Nonnull Callable<Void> validator)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   default Hash commit(
       @Nonnull BranchName branch,
       @Nonnull Optional<Hash> referenceHash,
-      @Nonnull METADATA metadata,
-      @Nonnull List<Operation<VALUE>> operations)
+      @Nonnull CommitMeta metadata,
+      @Nonnull List<Operation> operations)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return commit(branch, referenceHash, metadata, operations, () -> null);
   }
@@ -126,11 +123,11 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @throws ReferenceNotFoundException if {@code branch} or if any of the hashes from {@code
    *     sequenceToTransplant} is not present in the store.
    */
-  MergeResult<Commit<METADATA, VALUE>> transplant(
+  MergeResult<Commit> transplant(
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
-      MetadataRewriter<METADATA> updateCommitMetadata,
+      MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean keepIndividualCommits,
       Map<Key, MergeType> mergeTypes,
       MergeType defaultMergeType,
@@ -171,11 +168,11 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @throws ReferenceNotFoundException if {@code toBranch} or {@code fromHash} is not present in
    *     the store.
    */
-  MergeResult<Commit<METADATA, VALUE>> merge(
+  MergeResult<Commit> merge(
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
-      MetadataRewriter<METADATA> updateCommitMetadata,
+      MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean keepIndividualCommits,
       Map<Key, MergeType> mergeTypes,
       MergeType defaultMergeType,
@@ -245,7 +242,7 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @throws NullPointerException if {@code ref} is {@code null}.
    * @throws ReferenceNotFoundException if the reference cannot be found
    */
-  ReferenceInfo<METADATA> getNamedRef(String ref, GetNamedRefsParams params)
+  ReferenceInfo<CommitMeta> getNamedRef(String ref, GetNamedRefsParams params)
       throws ReferenceNotFoundException;
 
   /**
@@ -258,7 +255,7 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @return All refs and their associated hashes.
    */
   @MustBeClosed
-  Stream<ReferenceInfo<METADATA>> getNamedRefs(GetNamedRefsParams params)
+  Stream<ReferenceInfo<CommitMeta>> getNamedRefs(GetNamedRefsParams params)
       throws ReferenceNotFoundException;
 
   /**
@@ -270,8 +267,7 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
   @MustBeClosed
-  Stream<Commit<METADATA, VALUE>> getCommits(Ref ref, boolean fetchAdditionalInfo)
-      throws ReferenceNotFoundException;
+  Stream<Commit> getCommits(Ref ref, boolean fetchAdditionalInfo) throws ReferenceNotFoundException;
 
   /**
    * Get a stream of all available keys for the given ref.
@@ -281,7 +277,7 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
   @MustBeClosed
-  Stream<KeyEntry<VALUE_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException;
+  Stream<KeyEntry> getKeys(Ref ref) throws ReferenceNotFoundException;
 
   /**
    * Get the value for a provided ref.
@@ -291,7 +287,7 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @return The value.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  VALUE getValue(Ref ref, Key key) throws ReferenceNotFoundException;
+  Content getValue(Ref ref, Key key) throws ReferenceNotFoundException;
 
   /**
    * Get the values for a list of keys.
@@ -301,7 +297,7 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @return A parallel list of values.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  Map<Key, VALUE> getValues(Ref ref, Collection<Key> keys) throws ReferenceNotFoundException;
+  Map<Key, Content> getValues(Ref ref, Collection<Key> keys) throws ReferenceNotFoundException;
 
   /**
    * Get list of diffs between two refs.
@@ -311,7 +307,7 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @return A stream of values that are different.
    */
   @MustBeClosed
-  Stream<Diff<VALUE>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException;
+  Stream<Diff> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException;
 
   /**
    * Get a stream of all reflog entries from the initial refLogId.

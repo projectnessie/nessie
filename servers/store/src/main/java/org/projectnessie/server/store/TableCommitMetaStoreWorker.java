@@ -37,17 +37,18 @@ import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.model.ImmutableIcebergView;
 import org.projectnessie.model.ImmutableNamespace;
 import org.projectnessie.model.Namespace;
+import org.projectnessie.model.types.ContentTypes;
 import org.projectnessie.server.store.proto.ObjectTypes;
 import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
 
-public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMeta, Content.Type> {
+public class TableCommitMetaStoreWorker implements StoreWorker {
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
-  private final Serializer<CommitMeta> metaSerializer = new MetadataSerializer();
+  private static final Serializer<CommitMeta> METADATA_SERIALIZER = new MetadataSerializer();
 
   @Override
   public ByteString toStoreOnReferenceState(
@@ -263,13 +264,13 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
   @Override
   public Byte getPayload(Content content) {
     if (content instanceof IcebergTable) {
-      return (byte) Content.Type.ICEBERG_TABLE.ordinal();
+      return Content.Type.ICEBERG_TABLE.payload();
     } else if (content instanceof DeltaLakeTable) {
-      return (byte) Content.Type.DELTA_LAKE_TABLE.ordinal();
+      return Content.Type.DELTA_LAKE_TABLE.payload();
     } else if (content instanceof IcebergView) {
-      return (byte) Content.Type.ICEBERG_VIEW.ordinal();
+      return Content.Type.ICEBERG_VIEW.payload();
     } else if (content instanceof Namespace) {
-      return (byte) Content.Type.NAMESPACE.ordinal();
+      return Content.Type.NAMESPACE.payload();
     } else {
       throw new IllegalArgumentException("Unknown type " + content);
     }
@@ -282,11 +283,12 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
 
   @Override
   public Content.Type getType(Byte payload) {
-    if (payload == null || payload > Content.Type.values().length || payload < 0) {
+    Content.Type type = ContentTypes.forPayload(payload);
+    if (type == null) {
       throw new IllegalArgumentException(
           String.format("Cannot create type from payload. Payload %d does not exist", payload));
     }
-    return Content.Type.values()[payload];
+    return type;
   }
 
   @Override
@@ -313,16 +315,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
 
   @Override
   public boolean requiresGlobalState(Content content) {
-    switch (content.getType()) {
-      case ICEBERG_TABLE:
-        // yes, Iceberg Tables used global state before, but no longer do so
-      case ICEBERG_VIEW:
-        // yes, Iceberg Views used global state before, but no longer do so
-      case DELTA_LAKE_TABLE:
-      case NAMESPACE:
-      default:
-        return false;
-    }
+    return false;
   }
 
   @Override
@@ -348,7 +341,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
 
   @Override
   public Serializer<CommitMeta> getMetadataSerializer() {
-    return metaSerializer;
+    return METADATA_SERIALIZER;
   }
 
   private static class MetadataSerializer implements Serializer<CommitMeta> {
@@ -378,7 +371,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Content, CommitMe
   @Override
   public boolean isNamespace(ByteString type) {
     try {
-      return Content.Type.NAMESPACE == getType(type);
+      return Content.Type.NAMESPACE.equals(getType(type));
     } catch (Exception e) {
       return false;
     }

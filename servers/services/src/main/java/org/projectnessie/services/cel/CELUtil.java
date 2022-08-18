@@ -204,7 +204,7 @@ public final class CELUtil {
       return new OperationForCelImpl();
     }
     if (model instanceof KeyEntry) {
-      KeyEntry<?> entry = (KeyEntry<?>) model;
+      KeyEntry entry = (KeyEntry) model;
       ContentKey key = ContentKey.of(entry.getKey().getElements());
       class KeyEntryForCelImpl extends AbstractKeyedEntity implements KeyEntryForCel {
         @Override

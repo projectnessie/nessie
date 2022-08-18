@@ -17,19 +17,26 @@ package org.projectnessie.tools.contentgenerator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Arrays;
+import java.util.List;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.types.ContentTypes;
 
 class ITGenerateContent extends AbstractContentGeneratorTest {
 
+  static List<Content.Type> basicGenerateContentTest() {
+    return Arrays.asList(ContentTypes.all());
+  }
+
   @ParameterizedTest
-  @EnumSource(Content.Type.class)
+  @MethodSource("basicGenerateContentTest")
   void basicGenerateContentTest(Content.Type contentType) throws Exception {
     Assumptions.assumeTrue(
-        contentType != Content.Type.UNKNOWN && contentType != Content.Type.NAMESPACE);
+        !contentType.equals(Content.Type.UNKNOWN) && !contentType.equals(Content.Type.NAMESPACE));
 
     int numCommits = 20;
 

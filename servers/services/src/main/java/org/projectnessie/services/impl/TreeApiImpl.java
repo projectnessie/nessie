@@ -120,10 +120,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   private static final int MAX_COMMIT_LOG_ENTRIES = 250;
 
   public TreeApiImpl(
-      ServerConfig config,
-      VersionStore<Content, CommitMeta, Content.Type> store,
-      Authorizer authorizer,
-      Principal principal) {
+      ServerConfig config, VersionStore store, Authorizer authorizer, Principal principal) {
     super(config, store, authorizer, principal);
   }
 
@@ -287,8 +284,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
             MAX_COMMIT_LOG_ENTRIES);
 
     boolean fetchAll = FetchOption.isFetchAll(params.fetchOption());
-    try (Stream<Commit<CommitMeta, Content>> commits =
-        getStore().getCommits(endRef.getHash(), fetchAll)) {
+    try (Stream<Commit> commits = getStore().getCommits(endRef.getHash(), fetchAll)) {
       Stream<LogEntry> logEntries = commits.map(commit -> commitToLogEntry(fetchAll, commit));
 
       logEntries =
@@ -314,7 +310,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     }
   }
 
-  private ImmutableLogEntry commitToLogEntry(boolean fetchAll, Commit<CommitMeta, Content> commit) {
+  private ImmutableLogEntry commitToLogEntry(boolean fetchAll, Commit commit) {
     CommitMeta commitMetaWithHash =
         enhanceCommitMeta(commit.getHash(), commit.getCommitMeta(), commit.getAdditionalParents());
     ImmutableLogEntry.Builder logEntry = LogEntry.builder();
@@ -338,7 +334,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
                 op -> {
                   ContentKey key = fromKey(op.getKey());
                   if (op instanceof Put) {
-                    Content content = ((Put<Content>) op).getValue();
+                    Content content = ((Put) op).getValue();
                     logEntry.addOperations(Operation.Put.of(key, content));
                   }
                   if (op instanceof Delete) {
@@ -417,7 +413,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
         transplants = s.collect(Collectors.toList());
       }
 
-      MergeResult<Commit<CommitMeta, Content>> result =
+      MergeResult<Commit> result =
           getStore()
               .transplant(
                   BranchName.of(branchName),
@@ -435,8 +431,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     } catch (MergeConflictException e) {
       if (Boolean.TRUE.equals(transplant.isReturnConflictAsResult())) {
         @SuppressWarnings("unchecked")
-        MergeResult<Commit<CommitMeta, Content>> mr =
-            (MergeResult<Commit<CommitMeta, Content>>) e.getMergeResult();
+        MergeResult<Commit> mr = (MergeResult<Commit>) e.getMergeResult();
         return createResponse(transplant, mr);
       }
       throw new NessieReferenceConflictException(e.getMessage(), e);
@@ -449,7 +444,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   public MergeResponse mergeRefIntoBranch(String branchName, String expectedHash, Merge merge)
       throws NessieNotFoundException, NessieConflictException {
     try {
-      MergeResult<Commit<CommitMeta, Content>> result =
+      MergeResult<Commit> result =
           getStore()
               .merge(
                   toHash(merge.getFromRefName(), merge.getFromHash()),
@@ -467,8 +462,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     } catch (MergeConflictException e) {
       if (Boolean.TRUE.equals(merge.isReturnConflictAsResult())) {
         @SuppressWarnings("unchecked")
-        MergeResult<Commit<CommitMeta, Content>> mr =
-            (MergeResult<Commit<CommitMeta, Content>>) e.getMergeResult();
+        MergeResult<Commit> mr = (MergeResult<Commit>) e.getMergeResult();
         return createResponse(merge, mr);
       }
       throw new NessieReferenceConflictException(e.getMessage(), e);
@@ -478,7 +472,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   }
 
   private MergeResponse createResponse(
-      BaseMergeTransplant mergeTransplant, MergeResult<Commit<CommitMeta, Content>> result) {
+      BaseMergeTransplant mergeTransplant, MergeResult<Commit> result) {
     Function<Hash, String> hashToString = h -> h != null ? h.asString() : null;
     ImmutableMergeResponse.Builder response =
         ImmutableMergeResponse.builder()
@@ -490,7 +484,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
             .wasApplied(result.wasApplied())
             .wasSuccessful(result.wasSuccessful());
 
-    BiConsumer<List<Commit<CommitMeta, Content>>, Consumer<LogEntry>> convertCommits =
+    BiConsumer<List<Commit>, Consumer<LogEntry>> convertCommits =
         (src, dest) -> {
           if (src == null) {
             return;
@@ -563,7 +557,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     //  all existing VersionStore implementations have to read all keys anyways so we don't get much
     try {
       ImmutableEntriesResponse.Builder response = EntriesResponse.builder();
-      try (Stream<KeyEntry<Content.Type>> entryStream = getStore().getKeys(refWithHash.getHash())) {
+      try (Stream<KeyEntry> entryStream = getStore().getKeys(refWithHash.getHash())) {
         Stream<EntriesResponse.Entry> entriesStream =
             filterEntries(refWithHash, entryStream, params.filter())
                 .map(
@@ -604,8 +598,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
    * @param filter The filter to filter by
    * @return A potentially filtered {@link Stream} of entries based on the filter
    */
-  protected Stream<KeyEntry<Content.Type>> filterEntries(
-      WithHash<NamedRef> refWithHash, Stream<KeyEntry<Content.Type>> entries, String filter) {
+  protected Stream<KeyEntry> filterEntries(
+      WithHash<NamedRef> refWithHash, Stream<KeyEntry> entries, String filter) {
     if (Strings.isNullOrEmpty(filter)) {
       return entries;
     }
@@ -637,7 +631,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   @Override
   public Branch commitMultipleOperations(String branch, String expectedHash, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
-    List<org.projectnessie.versioned.Operation<Content>> ops =
+    List<org.projectnessie.versioned.Operation> ops =
         operations.getOperations().stream()
             .map(TreeApiImpl::toOp)
             .collect(ImmutableList.toImmutableList());
@@ -774,7 +768,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     return builder.build();
   }
 
-  protected static org.projectnessie.versioned.Operation<Content> toOp(Operation o) {
+  protected static org.projectnessie.versioned.Operation toOp(Operation o) {
     Key key = toKey(o.getKey());
     if (o instanceof Operation.Delete) {
       return Delete.of(key);

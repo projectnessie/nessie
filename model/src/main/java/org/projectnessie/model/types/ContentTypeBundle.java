@@ -13,20 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.testworker;
+package org.projectnessie.model.types;
 
-/** Base content interface for {@link org.projectnessie.versioned.testworker.SimpleStoreWorker}. */
-public interface BaseContent {
-
-  enum Type {
-    /** Content type with on-reference state. */
-    ON_REF_ONLY,
-    /** Content type with on-reference state and mandatory global state. */
-    WITH_GLOBAL_STATE,
-    /** Content type with on-reference state and content attachments. */
-    WITH_ATTACHMENTS
-  }
-
-  /** Content-id. */
-  String getId();
+/**
+ * Used to provide custom {@link org.projectnessie.model.Content} implementations via the Java
+ * {@link java.util.ServiceLoader service loader} mechanism.
+ *
+ * <p><em>The functionality to actually use custom types is incomplete as long as ther is no
+ * store-worker support for custom content. </em>
+ */
+public interface ContentTypeBundle {
+  void register(ContentTypes.Registrar registrar);
 }

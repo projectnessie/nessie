@@ -87,7 +87,7 @@ public class RocksDatabaseAdapter
   public RocksDatabaseAdapter(
       NonTransactionalDatabaseAdapterConfig config,
       RocksDbInstance dbInstance,
-      StoreWorker<?, ?, ?> storeWorker,
+      StoreWorker storeWorker,
       AdapterEventConsumer eventConsumer) {
     super(config, storeWorker, eventConsumer);
 

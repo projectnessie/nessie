@@ -17,12 +17,13 @@ package org.projectnessie.versioned.tests;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.projectnessie.versioned.testworker.CommitMessage.commitMessage;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
 import com.google.common.collect.ImmutableList;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Content;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
@@ -31,11 +32,9 @@ import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
-import org.projectnessie.versioned.testworker.BaseContent;
-import org.projectnessie.versioned.testworker.CommitMessage;
 
 public abstract class AbstractContents extends AbstractNestedVersionStore {
-  protected AbstractContents(VersionStore<BaseContent, CommitMessage, BaseContent.Type> store) {
+  protected AbstractContents(VersionStore store) {
     super(store);
   }
 
@@ -57,13 +56,13 @@ public abstract class AbstractContents extends AbstractNestedVersionStore {
     store().create(branch, Optional.empty());
     // commit just something to have a "real" common ancestor and not "beginning of time", which
     // means no-common-ancestor
-    BaseContent initialState = newOnRef("value");
+    Content initialState = newOnRef("value");
     Hash ancestor =
         store()
             .commit(
                 branch,
                 Optional.empty(),
-                commitMessage("create table"),
+                CommitMeta.fromMessage("create table"),
                 singletonList(Put.of(key, initialState)));
     assertThat(store().getValue(branch, key)).isEqualTo(initialState);
     assertThat(store().getValue(ancestor, key)).isEqualTo(initialState);
@@ -73,18 +72,18 @@ public abstract class AbstractContents extends AbstractNestedVersionStore {
             .commit(
                 branch,
                 Optional.empty(),
-                commitMessage("drop table"),
+                CommitMeta.fromMessage("drop table"),
                 ImmutableList.of(Delete.of(key)));
     assertThat(store().getValue(branch, key)).isNull();
     assertThat(store().getValue(delete, key)).isNull();
 
-    BaseContent recreateState = newOnRef("value");
+    Content recreateState = newOnRef("value");
     Hash recreate =
         store()
             .commit(
                 branch,
                 Optional.empty(),
-                commitMessage("drop table"),
+                CommitMeta.fromMessage("drop table"),
                 ImmutableList.of(Put.of(key, recreateState)));
     assertThat(store().getValue(branch, key)).isEqualTo(recreateState);
     assertThat(store().getValue(recreate, key)).isEqualTo(recreateState);

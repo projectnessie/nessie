@@ -30,7 +30,9 @@ dependencies {
   compileOnly(platform(project(":nessie-deps-build-only")))
   annotationProcessor(platform(project(":nessie-deps-build-only")))
 
+  implementation(project(":nessie-model"))
   implementation(project(":nessie-versioned-spi"))
+  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
   compileOnly("org.immutables:value-annotations")
   compileOnly("org.immutables:value-fixture")
   annotationProcessor("org.immutables:value-processor")

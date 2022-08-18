@@ -15,13 +15,21 @@
  */
 package org.projectnessie.model;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.projectnessie.model.types.ContentTypes;
 
-final class UriUtil {
+final class Util {
 
-  private UriUtil() {}
+  private Util() {}
 
   public static final char ZERO_BYTE = '\u0000';
   public static final char DOT = '.';
@@ -51,5 +59,25 @@ final class UriUtil {
     return elements.stream()
         .map(x -> x.replace(DOT, GROUP_SEPARATOR).replace(ZERO_BYTE, GROUP_SEPARATOR))
         .collect(Collectors.joining("."));
+  }
+
+  static final class ContentTypeDeserializer extends JsonDeserializer<Content.Type> {
+    @Override
+    public Content.Type deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+      String name = p.readValueAs(String.class);
+      return name != null ? ContentTypes.forName(name) : null;
+    }
+  }
+
+  static final class ContentTypeSerializer extends JsonSerializer<Content.Type> {
+    @Override
+    public void serialize(Content.Type value, JsonGenerator gen, SerializerProvider serializers)
+        throws IOException {
+      if (value == null) {
+        gen.writeNull();
+      } else {
+        gen.writeString(value.name());
+      }
+    }
   }
 }

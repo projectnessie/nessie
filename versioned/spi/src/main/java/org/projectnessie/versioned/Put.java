@@ -18,20 +18,21 @@ package org.projectnessie.versioned;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
+import org.projectnessie.model.Content;
 
 /** Setting a new value. Can optionally declare whether the prior hash must match. */
 @Value.Immutable
-public interface Put<V> extends Operation<V> {
+public interface Put extends Operation {
 
   /**
    * The value to store for this operation.
    *
    * @return the value
    */
-  V getValue();
+  Content getValue();
 
   @Nullable
-  V getExpectedValue();
+  Content getExpectedValue();
 
   /**
    * Creates a put-operation for the given key and value without an expected-value so the returned
@@ -40,14 +41,13 @@ public interface Put<V> extends Operation<V> {
    * <p>Unconditional put-operations must be used for content-types that do not support global-state
    * and for those that do support global-state when a new content object is added.
    *
-   * @param <V> the store value type
    * @param key the key impacted by the operation
    * @param value the new value associated with the key
    * @return a put operation for the key and value
    */
   @Nonnull
-  public static <V> Put<V> of(@Nonnull Key key, @Nonnull V value) {
-    return ImmutablePut.<V>builder().key(key).value(value).build();
+  static Put of(@Nonnull Key key, @Nonnull Content value) {
+    return ImmutablePut.builder().key(key).value(value).build();
   }
 
   /**
@@ -58,14 +58,13 @@ public interface Put<V> extends Operation<V> {
    * <p>Using a conditional put-operation for a content-type that does not support global-state
    * results in an error.
    *
-   * @param <V> the store value type
    * @param key the key impacted by the operation
    * @param value the new value associated with the key
    * @param expectedValue the expected value associated with the key
    * @return a put operation for the key and value
    */
   @Nonnull
-  public static <V> Put<V> of(@Nonnull Key key, @Nonnull V value, @Nonnull V expectedValue) {
-    return ImmutablePut.<V>builder().key(key).value(value).expectedValue(expectedValue).build();
+  static Put of(@Nonnull Key key, @Nonnull Content value, @Nonnull Content expectedValue) {
+    return ImmutablePut.builder().key(key).value(value).expectedValue(expectedValue).build();
   }
 }

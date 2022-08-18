@@ -34,7 +34,7 @@ public class DynamoDatabaseAdapterFactory
   protected DynamoDatabaseAdapter create(
       NonTransactionalDatabaseAdapterConfig config,
       DynamoDatabaseClient dynamoDatabaseClient,
-      StoreWorker<?, ?, ?> storeWorker,
+      StoreWorker storeWorker,
       AdapterEventConsumer eventConsumer) {
     return new DynamoDatabaseAdapter(config, dynamoDatabaseClient, storeWorker, eventConsumer);
   }

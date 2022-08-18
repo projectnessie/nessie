@@ -17,7 +17,6 @@ package org.projectnessie.versioned.tests;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.projectnessie.versioned.testworker.CommitMessage.commitMessage;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,6 +24,7 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
@@ -35,12 +35,9 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
-import org.projectnessie.versioned.testworker.BaseContent;
-import org.projectnessie.versioned.testworker.CommitMessage;
 
 public abstract class AbstractReferenceNotFound extends AbstractNestedVersionStore {
-  protected AbstractReferenceNotFound(
-      VersionStore<BaseContent, CommitMessage, BaseContent.Type> store) {
+  protected AbstractReferenceNotFound(VersionStore store) {
     super(store);
   }
 
@@ -71,22 +68,21 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
 
     @FunctionalInterface
     interface ThrowingFunction {
-      void run(VersionStore<BaseContent, CommitMessage, BaseContent.Type> store)
-          throws VersionStoreException;
+      void run(VersionStore store) throws VersionStoreException;
     }
   }
 
   @SuppressWarnings("MustBeClosedChecker")
   static List<ReferenceNotFoundFunction> referenceNotFoundFunctions() {
-    MetadataRewriter<CommitMessage> metadataRewriter =
-        new MetadataRewriter<CommitMessage>() {
+    MetadataRewriter<CommitMeta> metadataRewriter =
+        new MetadataRewriter<CommitMeta>() {
           @Override
-          public CommitMessage rewriteSingle(CommitMessage metadata) {
+          public CommitMeta rewriteSingle(CommitMeta metadata) {
             return null;
           }
 
           @Override
-          public CommitMessage squash(List<CommitMessage> metadata) {
+          public CommitMeta squash(List<CommitMeta> metadata) {
             return null;
           }
         };
@@ -185,7 +181,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                     s.commit(
                         BranchName.of("this-one-should-not-exist"),
                         Optional.empty(),
-                        commitMessage("meta"),
+                        CommitMeta.fromMessage("meta"),
                         singletonList(Delete.of(Key.of("meep"))))),
         new ReferenceNotFoundFunction("commit/hash")
             .msg(
@@ -195,7 +191,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                     s.commit(
                         BranchName.of("main"),
                         Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
-                        commitMessage("meta"),
+                        CommitMeta.fromMessage("meta"),
                         singletonList(Delete.of(Key.of("meep"))))),
         // transplant()
         new ReferenceNotFoundFunction("transplant/branch/ok")

@@ -31,6 +31,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Content;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Delete;
@@ -70,14 +72,12 @@ import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.MergeParams;
 import org.projectnessie.versioned.persist.adapter.TransplantParams;
 
-public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CONTENT_TYPE>>
-    implements VersionStore<CONTENT, METADATA, CONTENT_TYPE> {
+public class PersistVersionStore implements VersionStore {
 
   private final DatabaseAdapter databaseAdapter;
-  protected final StoreWorker<CONTENT, METADATA, CONTENT_TYPE> storeWorker;
+  protected final StoreWorker storeWorker;
 
-  public PersistVersionStore(
-      DatabaseAdapter databaseAdapter, StoreWorker<CONTENT, METADATA, CONTENT_TYPE> storeWorker) {
+  public PersistVersionStore(DatabaseAdapter databaseAdapter, StoreWorker storeWorker) {
     this.databaseAdapter = databaseAdapter;
     this.storeWorker = storeWorker;
   }
@@ -98,8 +98,8 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   public Hash commit(
       @Nonnull BranchName branch,
       @Nonnull Optional<Hash> expectedHead,
-      @Nonnull METADATA metadata,
-      @Nonnull List<Operation<CONTENT>> operations,
+      @Nonnull CommitMeta metadata,
+      @Nonnull List<Operation> operations,
       @Nonnull Callable<Void> validator)
       throws ReferenceNotFoundException, ReferenceConflictException {
 
@@ -110,11 +110,11 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
             .commitMetaSerialized(serializeMetadata(metadata))
             .validator(validator);
 
-    for (Operation<CONTENT> operation : operations) {
+    for (Operation operation : operations) {
       if (operation instanceof Put) {
-        Put<CONTENT> op = (Put<CONTENT>) operation;
-        CONTENT content = op.getValue();
-        CONTENT expected = op.getExpectedValue();
+        Put op = (Put) operation;
+        Content content = op.getValue();
+        Content expected = op.getExpectedValue();
 
         if (storeWorker.getId(content) == null) {
           // No content-ID --> New content
@@ -169,11 +169,11 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   }
 
   @Override
-  public MergeResult<Commit<METADATA, CONTENT>> transplant(
+  public MergeResult<Commit> transplant(
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
-      MetadataRewriter<METADATA> updateCommitMetadata,
+      MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean keepIndividualCommits,
       Map<Key, MergeType> mergeTypes,
       MergeType defaultMergeType,
@@ -204,11 +204,11 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   }
 
   @Override
-  public MergeResult<Commit<METADATA, CONTENT>> merge(
+  public MergeResult<Commit> merge(
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
-      MetadataRewriter<METADATA> updateCommitMetadata,
+      MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean keepIndividualCommits,
       Map<Key, MergeType> mergeTypes,
       MergeType defaultMergeType,
@@ -238,10 +238,10 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
     }
   }
 
-  private MergeResult<Commit<METADATA, CONTENT>> storeMergeResult(
+  private MergeResult<Commit> storeMergeResult(
       MergeResult<CommitLogEntry> adapterMergeResult, boolean fetchAdditionalInfo) {
-    ImmutableMergeResult.Builder<Commit<METADATA, CONTENT>> storeResult =
-        ImmutableMergeResult.<Commit<METADATA, CONTENT>>builder()
+    ImmutableMergeResult.Builder<Commit> storeResult =
+        ImmutableMergeResult.<Commit>builder()
             .targetBranch(adapterMergeResult.getTargetBranch())
             .effectiveTargetHash(adapterMergeResult.getEffectiveTargetHash())
             .commonAncestor(adapterMergeResult.getCommonAncestor())
@@ -251,12 +251,12 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
             .wasSuccessful(adapterMergeResult.wasSuccessful())
             .details(adapterMergeResult.getDetails());
 
-    BiConsumer<ImmutableCommit.Builder<METADATA, CONTENT>, CommitLogEntry> enhancer =
+    BiConsumer<ImmutableCommit.Builder, CommitLogEntry> enhancer =
         enhancerForCommitLog(fetchAdditionalInfo);
 
-    Function<CommitLogEntry, Commit<METADATA, CONTENT>> mapper =
+    Function<CommitLogEntry, Commit> mapper =
         logEntry -> {
-          ImmutableCommit.Builder<METADATA, CONTENT> commit = Commit.builder();
+          ImmutableCommit.Builder commit = Commit.builder();
           commit.hash(logEntry.getHash()).commitMeta(deserializeMetadata(logEntry.getMetadata()));
           enhancer.accept(commit, logEntry);
           return commit.build();
@@ -277,7 +277,7 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   }
 
   private MetadataRewriter<ByteString> updateCommitMetadataFunction(
-      MetadataRewriter<METADATA> updateCommitMetadata) {
+      MetadataRewriter<CommitMeta> updateCommitMetadata) {
     return new MetadataRewriter<ByteString>() {
       @Override
       public ByteString rewriteSingle(ByteString metadata) {
@@ -315,7 +315,7 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
 
   @Nonnull
   @Override
-  public ReferenceInfo<METADATA> getNamedRef(@Nonnull String ref, GetNamedRefsParams params)
+  public ReferenceInfo<CommitMeta> getNamedRef(@Nonnull String ref, GetNamedRefsParams params)
       throws ReferenceNotFoundException {
     ReferenceInfo<ByteString> namedRef = databaseAdapter.namedRef(ref, params);
     return namedRef.withUpdatedCommitMeta(deserializeMetadata(namedRef.getHeadCommitMeta()));
@@ -323,7 +323,7 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
 
   @Override
   @MustBeClosed
-  public Stream<ReferenceInfo<METADATA>> getNamedRefs(GetNamedRefsParams params)
+  public Stream<ReferenceInfo<CommitMeta>> getNamedRefs(GetNamedRefsParams params)
       throws ReferenceNotFoundException {
     return databaseAdapter
         .namedRefs(params)
@@ -332,29 +332,29 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
                 namedRef.withUpdatedCommitMeta(deserializeMetadata(namedRef.getHeadCommitMeta())));
   }
 
-  private ByteString serializeMetadata(METADATA metadata) {
+  private ByteString serializeMetadata(CommitMeta metadata) {
     return metadata != null ? storeWorker.getMetadataSerializer().toBytes(metadata) : null;
   }
 
-  private METADATA deserializeMetadata(ByteString commitMeta) {
+  private CommitMeta deserializeMetadata(ByteString commitMeta) {
     return commitMeta != null ? storeWorker.getMetadataSerializer().fromBytes(commitMeta) : null;
   }
 
   @Override
   @MustBeClosed
-  public Stream<Commit<METADATA, CONTENT>> getCommits(Ref ref, boolean fetchAdditionalInfo)
+  public Stream<Commit> getCommits(Ref ref, boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException {
     Hash hash = refToHash(ref);
 
-    BiConsumer<ImmutableCommit.Builder<METADATA, CONTENT>, CommitLogEntry> enhancer =
+    BiConsumer<ImmutableCommit.Builder, CommitLogEntry> enhancer =
         enhancerForCommitLog(fetchAdditionalInfo);
 
     return databaseAdapter
         .commitLog(hash)
         .map(
             e -> {
-              ImmutableCommit.Builder<METADATA, CONTENT> commit =
-                  Commit.<METADATA, CONTENT>builder()
+              ImmutableCommit.Builder commit =
+                  Commit.builder()
                       .hash(e.getHash())
                       .commitMeta(deserializeMetadata(e.getMetadata()));
               enhancer.accept(commit, e);
@@ -366,8 +366,8 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
    * Utility function for {@link #getCommits(Ref, boolean)} to optionally enhance the returned
    * {@link Commit} instances with the parent hash and operations per commit.
    */
-  private BiConsumer<ImmutableCommit.Builder<METADATA, CONTENT>, CommitLogEntry>
-      enhancerForCommitLog(boolean fetchAdditionalInfo) {
+  private BiConsumer<ImmutableCommit.Builder, CommitLogEntry> enhancerForCommitLog(
+      boolean fetchAdditionalInfo) {
     if (!fetchAdditionalInfo) {
       return (commitBuilder, logEntry) -> {
         if (!logEntry.getParents().isEmpty()) {
@@ -410,7 +410,7 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
 
   @Override
   @MustBeClosed
-  public Stream<KeyEntry<CONTENT_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException {
+  public Stream<KeyEntry> getKeys(Ref ref) throws ReferenceNotFoundException {
     Hash hash = refToHash(ref);
     return databaseAdapter
         .keys(hash, KeyFilterPredicate.ALLOW_ALL)
@@ -423,26 +423,26 @@ public class PersistVersionStore<CONTENT, METADATA, CONTENT_TYPE extends Enum<CO
   }
 
   @Override
-  public CONTENT getValue(Ref ref, Key key) throws ReferenceNotFoundException {
+  public Content getValue(Ref ref, Key key) throws ReferenceNotFoundException {
     return getValues(ref, Collections.singletonList(key)).get(key);
   }
 
   @Override
-  public Map<Key, CONTENT> getValues(Ref ref, Collection<Key> keys)
+  public Map<Key, Content> getValues(Ref ref, Collection<Key> keys)
       throws ReferenceNotFoundException {
     Hash hash = refToHash(ref);
     return databaseAdapter.values(hash, keys, KeyFilterPredicate.ALLOW_ALL).entrySet().stream()
         .collect(Collectors.toMap(Map.Entry::getKey, e -> mapContentAndState(e.getValue())));
   }
 
-  private CONTENT mapContentAndState(ContentAndState<ByteString> cs) {
+  private Content mapContentAndState(ContentAndState cs) {
     return storeWorker.valueFromStore(
         cs.getRefState(), cs::getGlobalState, databaseAdapter::mapToAttachment);
   }
 
   @Override
   @MustBeClosed
-  public Stream<Diff<CONTENT>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
+  public Stream<Diff> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
     Hash fromHash = refToHash(from);
     Hash toHash = refToHash(to);
     return databaseAdapter

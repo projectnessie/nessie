@@ -16,23 +16,23 @@
 package org.projectnessie.versioned;
 
 import org.immutables.value.Value;
+import org.projectnessie.model.Content;
 
 @Value.Immutable
-public interface KeyEntry<TYPE extends Enum<TYPE>> {
+public interface KeyEntry {
 
-  /** Get the type of this entity as an enum. */
-  Enum<TYPE> getType();
+  /** Get the type of this entity. */
+  Content.Type getType();
 
   Key getKey();
 
   String getContentId();
 
-  static <T extends Enum<T>> ImmutableKeyEntry.Builder<T> builder() {
+  static ImmutableKeyEntry.Builder builder() {
     return ImmutableKeyEntry.builder();
   }
 
-  static <T extends Enum<T>> KeyEntry<T> of(T type, Key key, String contentId) {
-    ImmutableKeyEntry.Builder<T> builder = builder();
-    return builder.type(type).key(key).contentId(contentId).build();
+  static KeyEntry of(Content.Type type, Key key, String contentId) {
+    return builder().type(type).key(key).contentId(contentId).build();
   }
 }

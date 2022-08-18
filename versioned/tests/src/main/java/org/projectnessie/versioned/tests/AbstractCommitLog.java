@@ -18,7 +18,6 @@ package org.projectnessie.versioned.tests;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.projectnessie.versioned.testworker.CommitMessage.commitMessage;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
@@ -33,6 +32,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Delete;
@@ -40,11 +40,9 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.VersionStore;
-import org.projectnessie.versioned.testworker.BaseContent;
-import org.projectnessie.versioned.testworker.CommitMessage;
 
 public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
-  protected AbstractCommitLog(VersionStore<BaseContent, CommitMessage, BaseContent.Type> store) {
+  protected AbstractCommitLog(VersionStore store) {
     super(store);
   }
 
@@ -55,9 +53,9 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
 
     int commits = 95; // this should be enough
     Hash[] commitHashes = new Hash[commits];
-    List<CommitMessage> messages = new ArrayList<>(commits);
+    List<CommitMeta> messages = new ArrayList<>(commits);
     for (int i = 0; i < commits; i++) {
-      CommitMessage msg = commitMessage(String.format("commit#%05d", i));
+      CommitMeta msg = CommitMeta.fromMessage(String.format("commit#%05d", i));
       messages.add(msg);
       commitHashes[i] =
           store()
@@ -70,10 +68,10 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
     }
     Collections.reverse(messages);
 
-    List<CommitMessage> justTwo =
+    List<CommitMeta> justTwo =
         commitsList(branch, s -> s.limit(2).map(Commit::getCommitMeta), false);
     assertEquals(messages.subList(0, 2), justTwo);
-    List<CommitMessage> justTen =
+    List<CommitMeta> justTen =
         commitsList(branch, s -> s.limit(10).map(Commit::getCommitMeta), false);
     assertEquals(messages.subList(0, 10), justTen);
 
@@ -84,7 +82,7 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
 
     Hash lastHash = null;
     for (int offset = 0; ; ) {
-      List<Commit<CommitMessage, BaseContent>> logPage =
+      List<Commit> logPage =
           commitsList(lastHash == null ? branch : lastHash, s -> s.limit(pageSize), false);
 
       assertEquals(
@@ -142,11 +140,11 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
         .extracting(Commit::getHash)
         .containsExactlyElementsOf(hashes);
 
-    List<Commit<CommitMessage, BaseContent>> commits = Lists.reverse(commitsList(branch, true));
+    List<Commit> commits = Lists.reverse(commitsList(branch, true));
     assertThat(IntStream.rangeClosed(1, numCommits))
         .allSatisfy(
             i -> {
-              Commit<CommitMessage, BaseContent> c = commits.get(i - 1);
+              Commit c = commits.get(i - 1);
               assertThat(c)
                   .extracting(
                       Commit::getCommitMeta,
@@ -154,7 +152,7 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
                       Commit::getParentHash,
                       Commit::getOperations)
                   .containsExactly(
-                      commitMessage("Commit #" + i),
+                      CommitMeta.fromMessage("Commit #" + i),
                       hashes.get(i - 1),
                       parentHashes.get(i - 1),
                       Arrays.asList(

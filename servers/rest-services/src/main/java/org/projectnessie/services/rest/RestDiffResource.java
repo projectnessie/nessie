@@ -23,8 +23,6 @@ import org.projectnessie.api.DiffApi;
 import org.projectnessie.api.http.HttpDiffApi;
 import org.projectnessie.api.params.DiffParams;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Content;
 import org.projectnessie.model.DiffResponse;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
@@ -40,7 +38,7 @@ public class RestDiffResource implements HttpDiffApi {
   // empty resources (no REST methods defined) and potentially other.
 
   private final ServerConfig config;
-  private final VersionStore<Content, CommitMeta, Content.Type> store;
+  private final VersionStore store;
   private final Authorizer authorizer;
 
   @Context SecurityContext securityContext;
@@ -51,10 +49,7 @@ public class RestDiffResource implements HttpDiffApi {
   }
 
   @Inject
-  public RestDiffResource(
-      ServerConfig config,
-      VersionStore<Content, CommitMeta, Content.Type> store,
-      Authorizer authorizer) {
+  public RestDiffResource(ServerConfig config, VersionStore store, Authorizer authorizer) {
     this.config = config;
     this.store = store;
     this.authorizer = authorizer;

@@ -61,7 +61,7 @@ class ITEraseRepository {
                     CONFIRMATION_CODE)
                 .exitCode())
         .isEqualTo(0);
-    ReferenceInfo<ByteString> ref = adapter.namedRef("test123", GetNamedRefsParams.DEFAULT);
+    ReferenceInfo ref = adapter.namedRef("test123", GetNamedRefsParams.DEFAULT);
     assertThat(ref.getHash()).isNotNull();
   }
 }

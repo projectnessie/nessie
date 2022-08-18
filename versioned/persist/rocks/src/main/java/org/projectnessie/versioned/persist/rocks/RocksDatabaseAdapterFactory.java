@@ -34,7 +34,7 @@ public class RocksDatabaseAdapterFactory
   protected RocksDatabaseAdapter create(
       NonTransactionalDatabaseAdapterConfig config,
       RocksDbInstance rocksDbInstance,
-      StoreWorker<?, ?, ?> storeWorker,
+      StoreWorker storeWorker,
       AdapterEventConsumer eventConsumer) {
     return new RocksDatabaseAdapter(config, rocksDbInstance, storeWorker, eventConsumer);
   }

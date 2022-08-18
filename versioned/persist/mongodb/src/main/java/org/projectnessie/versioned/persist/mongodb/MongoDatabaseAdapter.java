@@ -110,7 +110,7 @@ public class MongoDatabaseAdapter
   protected MongoDatabaseAdapter(
       NonTransactionalDatabaseAdapterConfig config,
       MongoDatabaseClient client,
-      StoreWorker<?, ?, ?> storeWorker,
+      StoreWorker storeWorker,
       AdapterEventConsumer eventConsumer) {
     super(config, storeWorker, eventConsumer);
 

@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.GetNamedRefsParams;
@@ -32,11 +33,9 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
-import org.projectnessie.versioned.testworker.BaseContent;
-import org.projectnessie.versioned.testworker.CommitMessage;
 
 public abstract class AbstractAssign extends AbstractNestedVersionStore {
-  protected AbstractAssign(VersionStore<BaseContent, CommitMessage, BaseContent.Type> store) {
+  protected AbstractAssign(VersionStore store) {
     super(store);
   }
 
@@ -95,12 +94,11 @@ public abstract class AbstractAssign extends AbstractNestedVersionStore {
   public void assignReferenceToFreshMain()
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException,
           ReferenceConflictException {
-    ReferenceInfo<CommitMessage> main = store.getNamedRef("main", GetNamedRefsParams.DEFAULT);
-    try (Stream<Commit<CommitMessage, BaseContent>> commits =
-        store().getCommits(main.getHash(), false)) {
+    ReferenceInfo<CommitMeta> main = store.getNamedRef("main", GetNamedRefsParams.DEFAULT);
+    try (Stream<Commit> commits = store().getCommits(main.getHash(), false)) {
       assertThat(commits).isEmpty();
     }
-    try (Stream<ReferenceInfo<CommitMessage>> refs =
+    try (Stream<ReferenceInfo<CommitMeta>> refs =
         store().getNamedRefs(GetNamedRefsParams.DEFAULT)) {
       assertThat(refs)
           .extracting(r -> r.getNamedRef().getName())

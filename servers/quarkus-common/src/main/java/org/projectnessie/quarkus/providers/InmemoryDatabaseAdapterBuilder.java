@@ -32,7 +32,7 @@ public class InmemoryDatabaseAdapterBuilder implements DatabaseAdapterBuilder {
   @Inject NonTransactionalDatabaseAdapterConfig config;
 
   @Override
-  public DatabaseAdapter newDatabaseAdapter(StoreWorker<?, ?, ?> storeWorker) {
+  public DatabaseAdapter newDatabaseAdapter(StoreWorker storeWorker) {
     return new InmemoryDatabaseAdapterFactory()
         .newBuilder()
         .withConfig(config)

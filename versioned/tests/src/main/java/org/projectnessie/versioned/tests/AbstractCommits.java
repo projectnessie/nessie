@@ -19,7 +19,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.projectnessie.versioned.testworker.CommitMessage.commitMessage;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
 import com.google.common.collect.ImmutableList;
@@ -30,6 +29,8 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Content;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.GetNamedRefsParams;
@@ -43,8 +44,6 @@ import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
-import org.projectnessie.versioned.testworker.BaseContent;
-import org.projectnessie.versioned.testworker.CommitMessage;
 import org.projectnessie.versioned.testworker.OnRefOnly;
 
 public abstract class AbstractCommits extends AbstractNestedVersionStore {
@@ -59,7 +58,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
   private static final OnRefOnly V_4_1 = newOnRef("v4_1");
   private static final OnRefOnly NEW_v2_1 = newOnRef("new_v2_1");
 
-  protected AbstractCommits(VersionStore<BaseContent, CommitMessage, BaseContent.Type> store) {
+  protected AbstractCommits(VersionStore store) {
     super(store);
   }
 
@@ -84,7 +83,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             .commit(
                 branch,
                 Optional.of(initialHash),
-                commitMessage("Some commit"),
+                CommitMeta.fromMessage("Some commit"),
                 Collections.emptyList());
     final Hash commitHash = store().hashOnReference(branch, Optional.empty());
     assertEquals(commitHash, commitHash0);
@@ -94,7 +93,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
         .commit(
             branch,
             Optional.of(initialHash),
-            commitMessage("Another commit"),
+            CommitMeta.fromMessage("Another commit"),
             Collections.emptyList());
     final Hash anotherCommitHash = store().hashOnReference(branch, Optional.empty());
 
@@ -110,7 +109,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
     store().delete(branch, Optional.of(anotherCommitHash));
     assertThrows(
         ReferenceNotFoundException.class, () -> store().hashOnReference(branch, Optional.empty()));
-    try (Stream<ReferenceInfo<CommitMessage>> str =
+    try (Stream<ReferenceInfo<CommitMeta>> str =
         store().getNamedRefs(GetNamedRefsParams.DEFAULT).filter(this::filterMainBranch)) {
       assertThat(str).isEmpty();
     }
@@ -438,7 +437,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
         .commit(
             branch,
             Optional.empty(),
-            commitMessage("metadata"),
+            CommitMeta.fromMessage("metadata"),
             ImmutableList.of(put("keyA", foo1), put("keyB", foo2)));
 
     assertThat(store().getValue(branch, Key.of("keyA"))).isEqualTo(foo1);
@@ -460,7 +459,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                 .commit(
                     branch,
                     Optional.empty(),
-                    commitMessage("New commit"),
+                    CommitMeta.fromMessage("New commit"),
                     Collections.emptyList()));
   }
 
@@ -481,7 +480,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                 .commit(
                     branch,
                     Optional.of(Hash.of("1234567890abcdef")),
-                    commitMessage("New commit"),
+                    CommitMeta.fromMessage("New commit"),
                     Collections.emptyList()));
   }
 
@@ -501,7 +500,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
         .commit(
             branch,
             Optional.of(initialHash),
-            commitMessage("Some commit"),
+            CommitMeta.fromMessage("Some commit"),
             Collections.emptyList());
 
     final Hash commitHash = store().hashOnReference(branch, Optional.empty());
@@ -516,7 +515,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                 .commit(
                     branch2,
                     Optional.of(commitHash),
-                    commitMessage("Another commit"),
+                    CommitMeta.fromMessage("Another commit"),
                     Collections.emptyList()));
   }
 
@@ -538,7 +537,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                       // do some operations here
                       try {
                         assertThat(store().getValue(branch, key)).isNull();
-                        try (Stream<KeyEntry<BaseContent.Type>> ignore = store().getKeys(branch)) {}
+                        try (Stream<KeyEntry> ignore = store().getKeys(branch)) {}
                       } catch (ReferenceNotFoundException e) {
                         throw new RuntimeException(e);
                       }
@@ -559,7 +558,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
         .commit(
             branch,
             Optional.empty(),
-            CommitMessage.commitMessage("initial commit meta"),
+            CommitMeta.fromMessage("initial commit meta"),
             Collections.singletonList(Put.of(key, newOnRef("some value"))),
             validator);
   }
@@ -572,8 +571,8 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
     String oldContentsId = "cid";
     String tableRefState = "table ref state";
 
-    BaseContent createValue1 = OnRefOnly.onRef("no no - not this", oldContentsId);
-    BaseContent createValue2 = OnRefOnly.onRef(tableRefState, oldContentsId);
+    Content createValue1 = OnRefOnly.onRef("no no - not this", oldContentsId);
+    Content createValue2 = OnRefOnly.onRef(tableRefState, oldContentsId);
 
     assertThatThrownBy(
             () ->
@@ -581,7 +580,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                     .commit(
                         branch,
                         Optional.empty(),
-                        CommitMessage.commitMessage("initial"),
+                        CommitMeta.fromMessage("initial"),
                         Arrays.asList(Put.of(key, createValue1), Put.of(key, createValue2))))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(key.toString());
@@ -592,7 +591,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                     .commit(
                         branch,
                         Optional.empty(),
-                        CommitMessage.commitMessage("initial"),
+                        CommitMeta.fromMessage("initial"),
                         Arrays.asList(Unchanged.of(key), Put.of(key, createValue2))))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(key.toString());
@@ -603,7 +602,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                     .commit(
                         branch,
                         Optional.empty(),
-                        CommitMessage.commitMessage("initial"),
+                        CommitMeta.fromMessage("initial"),
                         Arrays.asList(Delete.of(key), Put.of(key, createValue2))))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(key.toString());
@@ -614,7 +613,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                     .commit(
                         branch,
                         Optional.empty(),
-                        CommitMessage.commitMessage("initial"),
+                        CommitMeta.fromMessage("initial"),
                         Arrays.asList(Delete.of(key), Unchanged.of(key))))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(key.toString());

@@ -28,7 +28,7 @@ public abstract class TxDatabaseAdapterFactory<
   protected abstract ADAPTER create(
       TxDatabaseAdapterConfig config,
       CONNECTOR connector,
-      StoreWorker<?, ?, ?> storeWorker,
+      StoreWorker storeWorker,
       AdapterEventConsumer eventConsumer);
 
   @Override
@@ -51,7 +51,7 @@ public abstract class TxDatabaseAdapterFactory<
     }
 
     @Override
-    public ADAPTER build(StoreWorker<?, ?, ?> storeWorker) {
+    public ADAPTER build(StoreWorker storeWorker) {
       return create(getConfig(), getConnector(), storeWorker, getEventConsumer());
     }
   }
