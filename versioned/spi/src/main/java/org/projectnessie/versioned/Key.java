@@ -25,7 +25,7 @@ public abstract class Key implements Comparable<Key> {
   /** Maximum number of characters in a key. Note: characters can take up to 3 bytes via UTF-8. */
   public static final int MAX_LENGTH = 500;
 
-  /** Maximum number of elemengts. */
+  /** Maximum number of elements. */
   public static final int MAX_ELEMENTS = 20;
 
   public abstract List<String> getElements();
