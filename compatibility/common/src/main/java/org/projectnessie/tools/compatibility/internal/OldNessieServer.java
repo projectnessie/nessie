@@ -15,16 +15,19 @@
  */
 package org.projectnessie.tools.compatibility.internal;
 
-import static org.projectnessie.tools.compatibility.internal.DependencyResolver.resolveToClassLoader;
+import static org.projectnessie.tools.compatibility.internal.DependencyResolver.resolve;
+import static org.projectnessie.tools.compatibility.internal.DependencyResolver.toClassLoader;
+import static org.projectnessie.tools.compatibility.internal.OldNessie.oldNessieClassLoader;
 import static org.projectnessie.tools.compatibility.internal.Util.extensionStore;
 import static org.projectnessie.tools.compatibility.internal.Util.withClassLoader;
 
 import java.net.URI;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
-import org.eclipse.aether.collection.DependencyCollectionException;
+import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.resolution.DependencyResolutionException;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
@@ -117,8 +120,10 @@ final class OldNessieServer implements NessieServer {
     Artifact rocksDbArtifact =
         new DefaultArtifact("org.rocksdb", "rocksdbjni", "jar", rocksdbVersion);
     try {
-      return resolveToClassLoader(rocksDbArtifact.toString(), rocksDbArtifact, null);
-    } catch (DependencyCollectionException | DependencyResolutionException e) {
+      Stream<Artifact> resolvedArtifacts =
+          resolve(r -> r.setRoot(new Dependency(rocksDbArtifact, "runtime")));
+      return toClassLoader(rocksDbArtifact.toString(), resolvedArtifacts, null);
+    } catch (DependencyResolutionException e) {
       throw new RuntimeException("Failed to resolve dependencies for RocksDB", e);
     }
   }
@@ -126,13 +131,11 @@ final class OldNessieServer implements NessieServer {
   static ClassLoader createClassLoader(Version version, ClassLoader sharedClassLoader) {
     // Use 'nessie-jaxrs' because it has all the necessary dependencies to the DatabaseAdapter
     // implementations, REST services, Version store implementation, etc.
-    Artifact nessieClientArtifact =
-        new DefaultArtifact("org.projectnessie", "nessie-jaxrs", "jar", version.toString());
     try {
-      return resolveToClassLoader(version.toString(), nessieClientArtifact, sharedClassLoader);
-    } catch (DependencyCollectionException | DependencyResolutionException e) {
+      return oldNessieClassLoader(version, "nessie-jaxrs");
+    } catch (DependencyResolutionException e) {
       throw new RuntimeException(
-          "Failed to resolve dependencies for Nessie client version " + version, e);
+          "Failed to resolve dependencies for Nessie server version " + version, e);
     }
   }
 

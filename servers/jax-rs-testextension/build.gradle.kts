@@ -29,6 +29,7 @@ description = "JUnit Jupyter Extension to run tests against an \"embedded\" Ness
 dependencies {
   api(platform(rootProject))
   api(project(":nessie-jaxrs"))
+  api(platform(project(":nessie-deps-testing")))
   api(platform("org.junit:junit-bom"))
   api("org.junit.jupiter:junit-jupiter-api")
   api("org.slf4j:slf4j-api")

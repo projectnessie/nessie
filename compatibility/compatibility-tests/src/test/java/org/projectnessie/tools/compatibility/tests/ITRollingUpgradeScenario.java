@@ -48,7 +48,7 @@ import org.projectnessie.tools.compatibility.internal.RollingUpgradesExtension;
 
 @ExtendWith(RollingUpgradesExtension.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@VersionCondition(minVersion = "0.31.0")
+@VersionCondition(minVersion = "0.40.0")
 public class ITRollingUpgradeScenario {
   public static final String NO_ANCESTOR =
       "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d";

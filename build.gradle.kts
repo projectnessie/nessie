@@ -136,7 +136,7 @@ dependencies {
     api("com.google.protobuf:protobuf-java:$versionProtobuf")
     api("info.picocli:picocli:$versionPicocli")
     api("io.quarkus:quarkus-smallrye-opentracing:$versionQuarkus")
-    api("jakarta.validation:jakarta.annotation-api:$versionJakartaAnnotationApi")
+    api("jakarta.annotation:jakarta.annotation-api:$versionJakartaAnnotationApi")
     api("jakarta.enterprise:jakarta.enterprise.cdi-api:$versionJakartaEnterpriseCdiApi")
     api("jakarta.validation:jakarta.validation-api:$versionJakartaValidationApi")
     api("javax.servlet:javax.servlet-api:$versionJavaxServlet")
