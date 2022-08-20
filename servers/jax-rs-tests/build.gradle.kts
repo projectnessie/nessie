@@ -28,8 +28,8 @@ description = "Artifact for REST-API tests, includes Glassfish/Jersey/Weld imple
 
 dependencies {
   implementation(platform(rootProject))
-  implementation(platform(project(":nessie-deps-testing")))
   implementation(platform("com.fasterxml.jackson:jackson-bom"))
+  api(platform(project(":nessie-deps-testing")))
   api(platform("org.junit:junit-bom"))
 
   implementation(project(":nessie-client"))
@@ -47,7 +47,6 @@ dependencies {
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   testImplementation(platform(project(":nessie-deps-persist")))
-  testImplementation(platform("org.junit:junit-bom"))
 
   testImplementation(project(":nessie-jaxrs-testextension"))
   testImplementation("org.slf4j:jcl-over-slf4j")

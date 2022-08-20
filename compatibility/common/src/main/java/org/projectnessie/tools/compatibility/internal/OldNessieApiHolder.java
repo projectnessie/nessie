@@ -15,13 +15,10 @@
  */
 package org.projectnessie.tools.compatibility.internal;
 
-import static org.projectnessie.tools.compatibility.internal.DependencyResolver.resolveToClassLoader;
+import static org.projectnessie.tools.compatibility.internal.OldNessie.oldNessieClassLoader;
 import static org.projectnessie.tools.compatibility.internal.Util.extensionStore;
 
 import com.google.common.annotations.VisibleForTesting;
-import org.eclipse.aether.artifact.Artifact;
-import org.eclipse.aether.artifact.DefaultArtifact;
-import org.eclipse.aether.collection.DependencyCollectionException;
 import org.eclipse.aether.resolution.DependencyResolutionException;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.projectnessie.client.api.NessieApi;
@@ -72,14 +69,11 @@ final class OldNessieApiHolder extends AbstractNessieApiHolder {
       return Thread.currentThread().getContextClassLoader();
     }
 
-    Artifact nessieClientArtifact =
-        new DefaultArtifact(
-            "org.projectnessie", "nessie-client", "jar", clientKey.getVersion().toString());
     try {
-      return resolveToClassLoader(clientKey.getVersion().toString(), nessieClientArtifact, null);
-    } catch (DependencyCollectionException | DependencyResolutionException e) {
+      return oldNessieClassLoader(clientKey.getVersion(), "nessie-client");
+    } catch (DependencyResolutionException e) {
       throw new RuntimeException(
-          "Failed to resolve dependencies for Nessie client version " + clientKey.getVersion());
+          "Failed to resolve dependencies for Nessie client version " + clientKey.getVersion(), e);
     }
   }
 }

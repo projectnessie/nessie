@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.error.ErrorCode;
 import org.projectnessie.error.ImmutableNessieError;
@@ -190,6 +191,10 @@ final class TranslatingVersionNessieApi implements AutoCloseable {
 
   @VisibleForTesting
   Object translateObject(Object o, ClassLoader classLoader, ClassLoader reverseClassLoader) {
+    if (o == null || o.getClass().getName().startsWith("java.lang.")) {
+      return o;
+    }
+
     if (o instanceof Map) {
       return ((Map<?, ?>) o)
           .entrySet().stream()
@@ -209,6 +214,9 @@ final class TranslatingVersionNessieApi implements AutoCloseable {
           .stream()
               .map(e -> translateObject(e, classLoader, reverseClassLoader))
               .collect(Collectors.toSet());
+    }
+    if (o instanceof Stream) {
+      return ((Stream<?>) o).map(e -> translateObject(e, classLoader, reverseClassLoader));
     }
 
     if (requiresProxy(o)) {

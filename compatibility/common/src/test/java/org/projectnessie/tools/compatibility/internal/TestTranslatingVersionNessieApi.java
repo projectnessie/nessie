@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.stream.Stream;
 import org.assertj.core.api.InstanceOfAssertFactories;
-import org.eclipse.aether.artifact.DefaultArtifact;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -58,10 +57,7 @@ class TestTranslatingVersionNessieApi {
   @BeforeAll
   static void init() throws Exception {
     oldVersionClassLoader =
-        DependencyResolver.resolveToClassLoader(
-            "test-stuff",
-            new DefaultArtifact("org.projectnessie", "nessie-client", "jar", "0.19.0"),
-            null);
+        OldNessie.oldNessieClassLoader(Version.parseVersion("0.19.0"), "nessie-client");
   }
 
   @Test

@@ -28,6 +28,8 @@ import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
 import org.junit.jupiter.engine.execution.ExtensionValuesStore;
 import org.junit.jupiter.engine.execution.NamespaceAwareStore;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.tools.compatibility.api.Version;
 
 class TestNessieServer {
@@ -65,8 +67,9 @@ class TestNessieServer {
         .hasMessageContaining("was already shut down");
   }
 
-  @Test
-  void oldNessieVersionServer() {
+  @ParameterizedTest
+  @ValueSource(strings = {"0.19.0", "0.41.0"})
+  void oldNessieVersionServer(String nessieVersion) {
     ExtensionValuesStore valuesStore = new ExtensionValuesStore(null);
     NessieServer server;
     try {
@@ -80,7 +83,7 @@ class TestNessieServer {
       when(ctx.getStore(any(Namespace.class))).thenReturn(store);
 
       ServerKey key =
-          new ServerKey(Version.parseVersion("0.19.0"), "In-Memory", Collections.emptyMap());
+          new ServerKey(Version.parseVersion(nessieVersion), "In-Memory", Collections.emptyMap());
 
       when(ctx.getStore(any(Namespace.class))).thenReturn(store);
       assertThatThrownBy(() -> NessieServer.nessieServerExisting(ctx, key))

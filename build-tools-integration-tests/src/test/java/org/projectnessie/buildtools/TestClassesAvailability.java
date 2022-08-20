@@ -24,10 +24,16 @@ public class TestClassesAvailability {
   @ValueSource(strings = {
     // from nessie-model
     "org.projectnessie.model.ImmutableIcebergTable",
+    // from nessie-versioned-persist-adapter
+    "org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter",
+    // from nessie-versioned-persist-inmem
+    "org.projectnessie.versioned.persist.inmem.InmemoryConfig",
     // from nessie-versioned-persist-inmem / test-jar
     "org.projectnessie.versioned.persist.inmem.InmemoryTestConnectionProviderSource",
     // from nessie-versioned-persist-rocks
     "org.projectnessie.versioned.persist.rocks.RocksDatabaseAdapterFactory",
+    // from nessie-versioned-persist-rocks / test-jar
+    "org.projectnessie.versioned.persist.rocks.RocksTestConnectionProviderSource",
     // from nessie-client
     "org.projectnessie.client.api.NessieApi"
   })
