@@ -55,6 +55,8 @@ from pynessie.model import (
     LogResponse,
     LogResponseSchema,
     Merge,
+    MergeResponse,
+    MergeResponseSchema,
     MergeSchema,
     MultiContents,
     MultiContentSchema,
@@ -239,7 +241,7 @@ class NessieClient:
         ref_json = ReferenceSchema().dumps(self._assign_to(to_ref, to_ref_hash))
         assign_tag(self._base_url, self._auth, tag, ref_json, old_hash, self._ssl_verify)
 
-    def merge(self, from_ref: str, onto_branch: str, from_hash: Optional[str] = None, old_hash: Optional[str] = None) -> None:
+    def merge(self, from_ref: str, onto_branch: str, from_hash: Optional[str] = None, old_hash: Optional[str] = None) -> MergeResponse:
         """Merge a branch into another branch."""
         onto_branch, old_hash_ref = split_into_reference_and_hash(onto_branch)
         if not old_hash:
@@ -259,7 +261,7 @@ class NessieClient:
             from_hash = from_hash_ref
 
         merge_json = MergeSchema().dump(Merge(from_ref, str(from_hash)))
-        merge(self._base_url, self._auth, onto_branch, merge_json, old_hash, self._ssl_verify)
+        return MergeResponseSchema().load(merge(self._base_url, self._auth, onto_branch, merge_json, old_hash, self._ssl_verify))
 
     # pylint: disable=keyword-arg-before-vararg
     def cherry_pick(self, branch: str, from_ref: str, old_hash: Optional[str] = None, *hashes: str) -> None:

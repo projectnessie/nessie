@@ -22,6 +22,7 @@ from click import UsageError
 
 from pynessie.cli_common_context import ContextObject, MutuallyExclusiveOption
 from pynessie.decorators import error_handler, pass_client, validate_reference
+from pynessie.model import MergeResponseSchema
 
 
 @click.command("merge")
@@ -70,5 +71,12 @@ def merge(ctx: ContextObject, ref: str, force: bool, expected_hash: str, hash_on
             """Either condition or force must be set. Condition should be set to a valid hash for concurrency
             control or force to ignore current state of Nessie Store."""
         )
-    ctx.nessie.merge(from_ref, ref, hash_on_ref, expected_hash)
-    click.echo()
+    merge_response = ctx.nessie.merge(from_ref, ref, hash_on_ref, expected_hash)
+    if ctx.json:
+        click.echo(MergeResponseSchema().dumps(merge_response))
+    else:
+        resultant_hash = merge_response.resultant_target_hash
+        if resultant_hash:
+            click.echo("Resultant Target Hash:\n" + resultant_hash)
+        else:
+            click.echo()

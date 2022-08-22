@@ -301,7 +301,7 @@ def cherry_pick(
 
 def merge(
     base_url: str, auth: Optional[AuthBase], branch: str, merge_json: dict, expected_hash: Optional[str], ssl_verify: bool = True
-) -> None:
+) -> dict:
     """Merge a branch into another branch.
 
     :param base_url: base Nessie url
@@ -310,12 +310,14 @@ def merge(
     :param merge_json: merge content
     :param expected_hash: expected hash of HEAD of branch
     :param ssl_verify: ignore ssl errors if False
+    :return: json dict of a merge response
     """
     url = "/trees/branch/{}/merge".format(branch)
     params = {}
     if expected_hash:
         params["expectedHash"] = expected_hash
-    _post(base_url + url, auth, json=merge_json, ssl_verify=ssl_verify, params=params)
+    ret_dict = cast(dict, _post(base_url + url, auth, json=merge_json, ssl_verify=ssl_verify, params=params))
+    return ret_dict
 
 
 def commit(
