@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-"""Makes sure the expression building functions work properly."""
 #  Copyright (C) 2020 Dremio
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +12,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+"""Makes sure the expression building functions work properly."""
 
 from assertpy import assert_that
 

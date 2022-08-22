@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-
-"""The purpose of this module is to provide different functions that can produce CEL Expressions based on given filtering parameters."""
-
 #  Copyright (C) 2020 Dremio
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +12,9 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+
+"""The purpose of this module is to provide different functions that can produce CEL Expressions based on given filtering parameters."""
+
 
 from datetime import timezone
 from typing import List, Optional
