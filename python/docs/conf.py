@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # flake8: noqa
 #
 # pynessie documentation build configuration file, created by
