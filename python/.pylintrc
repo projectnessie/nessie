@@ -45,7 +45,10 @@ limit-inference-results=100
 
 # List of plugins (as comma separated values of python module names) to load,
 # usually to register additional checkers.
-load-plugins=
+load-plugins=pylintfileheader
+
+#License file to be used directly as regex with pylintfileheader plugin.
+file-header-path=escaped_license.txt
 
 # Pickle collected data for later comparisons.
 persistent=yes

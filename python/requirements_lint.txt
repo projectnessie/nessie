@@ -26,3 +26,4 @@ isort==5.10.1
 pytest-mypy==0.9.1
 safety==2.1.1
 pylint==2.14.5
+pylintfileheader==0.3.2
