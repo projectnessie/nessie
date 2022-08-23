@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# flake8: noqa
 #
 # pynessie documentation build configuration file, created by
 # sphinx-quickstart on Fri Jun  9 13:47:02 2017.
@@ -17,6 +16,7 @@
 # relative to the documentation root, use os.path.abspath to make it
 # absolute, like shown here.
 #
+# flake8: noqa
 import os
 import sys
 
