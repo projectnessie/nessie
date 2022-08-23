@@ -47,7 +47,8 @@ limit-inference-results=100
 # usually to register additional checkers.
 load-plugins=pylintfileheader
 
-file-header-path=header.txt
+#License file to be used directly as regex with pylintfileheader plugin.
+file-header-path=escaped_license.txt
 
 # Pickle collected data for later comparisons.
 persistent=yes
