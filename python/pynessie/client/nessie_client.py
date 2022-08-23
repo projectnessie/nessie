@@ -261,7 +261,8 @@ class NessieClient:
             from_hash = from_hash_ref
 
         merge_json = MergeSchema().dump(Merge(from_ref, str(from_hash)))
-        return MergeResponseSchema().load(merge(self._base_url, self._auth, onto_branch, merge_json, old_hash, self._ssl_verify))
+        merge_response = merge(self._base_url, self._auth, onto_branch, merge_json, old_hash, self._ssl_verify)
+        return MergeResponseSchema().load(merge_response)
 
     # pylint: disable=keyword-arg-before-vararg
     def cherry_pick(self, branch: str, from_ref: str, old_hash: Optional[str] = None, *hashes: str) -> None:

@@ -316,8 +316,8 @@ def merge(
     params = {}
     if expected_hash:
         params["expectedHash"] = expected_hash
-    ret_dict = cast(dict, _post(base_url + url, auth, json=merge_json, ssl_verify=ssl_verify, params=params))
-    return ret_dict
+    response = _post(base_url + url, auth, json=merge_json, ssl_verify=ssl_verify, params=params)
+    return cast(dict, response)
 
 
 def commit(
