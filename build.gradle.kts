@@ -96,7 +96,7 @@ val versionProtobuf = "3.21.5"
 val versionReactor = "2020.0.21"
 val versionRestAssured = "5.1.1"
 val versionRocksDb = "7.4.5"
-val versionSlf4j = "1.7.36"
+val versionSlf4j = "2.0.0"
 val versionTestcontainers = "1.17.3"
 val versionWeld = "3.1.8.Final"
 
