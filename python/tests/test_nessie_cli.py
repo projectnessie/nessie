@@ -154,7 +154,7 @@ def test_log() -> None:
             "nessie_user2",
         ],
     )
-    assert_that(simplejson.loads(execute_cli_command(["--json", "log", "-n", 1]))).is_length(1)
+    assert_that(simplejson.loads(execute_cli_command(["--json", "log", "-n", "1"]))).is_length(1)
     assert_that(simplejson.loads(execute_cli_command(["--json", "log", "dev_test_log"]))).is_length(1)
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
     assert_that(logs).is_length(2)
@@ -414,7 +414,7 @@ def test_reflog() -> None:
     # validate the entries
     assert_that(response_entries[0:5]).extracting("ref_name", "operation").is_equal_to(expected_entries)
     # test pagination
-    response_entries_1: List[ReflogEntry] = ReflogEntrySchema().loads(execute_cli_command(["--json", "reflog", "-n", 2]), many=True)
+    response_entries_1: List[ReflogEntry] = ReflogEntrySchema().loads(execute_cli_command(["--json", "reflog", "-n", "2"]), many=True)
     assert_that(response_entries[0:2]).is_equal_to(response_entries_1)
     # test start hash (closer to the head)
     response_entries_2: List[ReflogEntry] = ReflogEntrySchema().loads(

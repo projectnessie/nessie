@@ -149,7 +149,7 @@ class NessieCliError(Exception):
         return json.dumps(dict(title=self.title, message=self.msg))
 
 
-def _create_nessie_exception(error: dict, status: int, reason: str, url: str) -> Optional[Exception]:
+def _create_nessie_exception(error: dict, status: int, reason: str, url: str) -> Optional[NessieException]:
     if "errorCode" not in error:
         return None
 
@@ -165,7 +165,7 @@ def _create_nessie_exception(error: dict, status: int, reason: str, url: str) ->
     return None
 
 
-def _create_exception(error: dict, status: int, reason: str, url: str) -> Exception:
+def _create_exception(error: dict, status: int, reason: str, url: str) -> NessieException:
     if 400 <= status < 500:
         reason = f"Client Error {reason}"
     elif 500 <= status < 600:

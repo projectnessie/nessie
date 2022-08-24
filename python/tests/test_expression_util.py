@@ -13,6 +13,8 @@
 # limitations under the License.
 """Makes sure the expression building functions work properly."""
 
+from typing import List
+
 from assertpy import assert_that
 
 from pynessie.utils import (
@@ -31,8 +33,8 @@ def test_building_empty_filter() -> None:
 
 def test_building_filter_for_commit_log() -> None:
     """Makes sure the filter building function for the commit log produces what we expect."""
-    authors = []
-    committers = []
+    authors: List[str] = []
+    committers: List[str] = []
     since = None
     until = None
     query_expr = ""

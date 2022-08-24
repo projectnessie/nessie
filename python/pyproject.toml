@@ -34,6 +34,8 @@ module = [
     'botocore.*',
     'confuse.*',
     'marshmallow_oneofschema.*',
-    'requests_aws4auth.*'
+    'requests_aws4auth.*',
+    'vcr.*',
+    'assertpy.*',
 ]
 ignore_missing_imports = true

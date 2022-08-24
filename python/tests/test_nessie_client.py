@@ -43,6 +43,7 @@ def test_client_interface_e2e() -> None:
     tables = client.list_keys(reference.name, reference.hash_)
     assert isinstance(tables, Entries)
     assert len(tables.entries) == 0
+    assert isinstance(main_commit, str)
     client.delete_branch("test", main_commit)
     references = client.list_references().references
     assert len(references) == 1
