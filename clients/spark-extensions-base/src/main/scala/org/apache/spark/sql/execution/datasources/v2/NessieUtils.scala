@@ -251,7 +251,7 @@ object NessieUtils {
       case e: NessieNotFoundException =>
         throw new NessieNotFoundException(
           s"Could not find current reference $refName configured in spark configuration for catalog '${catalog
-            .getOrElse(currentCatalog.name)}'.",
+              .getOrElse(currentCatalog.name)}'.",
           e
         )
     }
