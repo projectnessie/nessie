@@ -18,7 +18,6 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
   `java-library`
-  jacoco
   `maven-publish`
   signing
   id("com.github.johnrengelman.shadow")
