@@ -43,6 +43,6 @@ abstract class BaseDropReferenceExec(
 
   override def simpleString(maxFields: Int): String = {
     s"DropReferenceExec ${catalog.getOrElse(currentCatalog.name())} ${if (isBranch) "BRANCH"
-    else "TAG"} ${branch} "
+      else "TAG"} ${branch} "
   }
 }
