@@ -89,6 +89,7 @@ def make_commit(
     if not head_hash:
         refs = {i.name: i.hash_ for i in ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)}
         head_hash = refs[branch]
+    assert isinstance(head_hash, str)
     execute_cli_command(
         ["content", "commit", "--stdin", key, "--ref", branch, "-m", message, "-c", head_hash, "--author", author],
         input_data=ContentSchema().dumps(table),
