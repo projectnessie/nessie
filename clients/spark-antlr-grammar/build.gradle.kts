@@ -16,7 +16,6 @@
 
 plugins {
   `java-library`
-  jacoco
   `maven-publish`
   signing
   antlr

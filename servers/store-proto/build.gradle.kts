@@ -18,7 +18,6 @@ import com.google.protobuf.gradle.protoc
 
 plugins {
   `java-library`
-  jacoco
   `maven-publish`
   signing
   id("org.projectnessie.buildsupport.reflectionconfig")

@@ -15,7 +15,6 @@
  */
 
 plugins {
-  jacoco
   `maven-publish`
   signing
   scala

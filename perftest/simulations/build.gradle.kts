@@ -17,7 +17,6 @@
 import io.gatling.gradle.GatlingRunTask
 
 plugins {
-  jacoco
   `maven-publish`
   signing
   id("io.gatling.gradle")
