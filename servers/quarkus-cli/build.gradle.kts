@@ -41,6 +41,8 @@ dependencies {
   implementation(project(":nessie-server-store"))
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-spi"))
+  implementation(project(":nessie-versioned-transfer"))
+  implementation(project(":nessie-versioned-transfer-proto"))
   implementation(project(":nessie-model"))
   implementation(project(":nessie-versioned-persist-non-transactional"))
   implementation(project(":nessie-versioned-persist-in-memory"))
@@ -58,6 +60,10 @@ dependencies {
 
   implementation("com.fasterxml.jackson.core:jackson-databind")
   implementation("com.fasterxml.jackson.core:jackson-annotations")
+
+  implementation("io.agroal:agroal-pool")
+  implementation("com.h2database:h2")
+  implementation("org.postgresql:postgresql")
 
   compileOnly("org.immutables:builder")
   compileOnly("org.immutables:value-annotations")
