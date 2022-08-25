@@ -56,4 +56,9 @@ nessieQuarkusApp {
   environmentNonInput.put("HTTP_ACCESS_LOG_LEVEL", testLogLevel())
 }
 
-gatling { gatlingVersion = dependencyVersion("versionGatling") }
+gatling {
+  gatlingVersion = dependencyVersion("versionGatling")
+  if (null != System.getProperty("gatling.logLevel")) {
+    logLevel = System.getProperty("gatling.logLevel")
+  }
+}
