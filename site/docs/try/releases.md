@@ -2,6 +2,13 @@
 
 See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.
 
+## 0.42.0 Release (August 5, 2022)
+
+**Rolling upgrades from versions before 0.40.0 are not supported!**
+
+* Key list creation fixes
+* Pluggable content types
+
 ## 0.41.0 Release (August 5, 2022)
 
 **Rolling upgrades from versions before 0.40.0 are not supported!**
