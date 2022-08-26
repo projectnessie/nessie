@@ -46,7 +46,7 @@ dependencies {
   testImplementation(nessieProjectPlatform("nessie-deps-iceberg", gradle))
   testImplementation(platform("org.junit:junit-bom"))
 
-  testImplementation(project(":nessie-spark-extensions-base_${sparkScala.scalaMajorVersion}")) { testJarCapability() }
+  testImplementation(project(":nessie-spark-extensions-basetests_${sparkScala.scalaMajorVersion}"))
   testImplementation("org.apache.iceberg:iceberg-nessie")
   testImplementation("org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}")
   testImplementation("org.apache.iceberg:iceberg-hive-metastore")

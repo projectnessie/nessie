@@ -72,9 +72,7 @@ dependencies {
 
   testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
-  testImplementation(project(":nessie-spark-extensions-base_${sparkScala.scalaMajorVersion}")) {
-    testJarCapability()
-  }
+  testImplementation(project(":nessie-spark-extensions-basetests_${sparkScala.scalaMajorVersion}"))
   testImplementation(
     project(
       ":nessie-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}"
