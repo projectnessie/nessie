@@ -169,6 +169,10 @@ for (scalaVersion in allScalaVersions) {
     "nessie-spark-extensions-base_$scalaVersion",
     file("../clients/spark-extensions-base")
   )
+  nessieProject(
+    "nessie-spark-extensions-basetests_$scalaVersion",
+    file("../clients/spark-extensions-basetests")
+  )
   if (ideSyncActive) {
     break
   }
