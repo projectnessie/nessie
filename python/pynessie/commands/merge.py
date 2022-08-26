@@ -17,6 +17,8 @@
 
 """merge CLI command."""
 
+import json
+
 import click
 from click import UsageError
 
@@ -72,11 +74,22 @@ def merge(ctx: ContextObject, ref: str, force: bool, expected_hash: str, hash_on
             control or force to ignore current state of Nessie Store."""
         )
     merge_response = ctx.nessie.merge(from_ref, ref, hash_on_ref, expected_hash)
-    if ctx.json:
-        click.echo(MergeResponseSchema().dumps(merge_response))
-    else:
-        resultant_hash = merge_response.resultant_target_hash
-        if resultant_hash:
-            click.echo("Resultant Target Hash:\n" + resultant_hash)
+    if merge_response is None:
+        if ctx.json:
+            hint = {"hint": "Merge succeeded but legacy server did not respond with additional details."}
+            click.echo(json.dumps(hint))
         else:
-            click.echo()
+            click.echo("Merge succeeded but legacy server did not respond with additional details.")
+    else:
+        if ctx.json:
+            click.echo(MergeResponseSchema().dumps(merge_response))
+        else:
+            commits = merge_response.source_commits
+            click.echo(
+                "The following {N} commits were merged onto {target_branch}:".format(
+                    N=len(commits), target_branch=merge_response.target_branch
+                )
+            )
+            for commit in commits:
+                commit_meta = commit.commit_meta
+                click.echo(commit_meta.hash_ + ' "' + commit_meta.message + '" ' + commit_meta.committer)
