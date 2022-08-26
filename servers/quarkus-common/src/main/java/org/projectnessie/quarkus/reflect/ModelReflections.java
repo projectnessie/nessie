@@ -17,7 +17,6 @@ package org.projectnessie.quarkus.reflect;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import org.projectnessie.error.NessieError;
-import org.projectnessie.model.types.ContentTypeIdResolver;
 import org.projectnessie.services.cel.CELUtil;
 
 /**
@@ -33,7 +32,6 @@ import org.projectnessie.services.cel.CELUtil;
       CELUtil.KeyedEntityForCel.class,
       CELUtil.OperationForCel.class,
       CELUtil.ContentForCel.class,
-      CELUtil.KeyEntryForCel.class,
-      ContentTypeIdResolver.class
+      CELUtil.KeyEntryForCel.class
     })
 public abstract class ModelReflections {}
