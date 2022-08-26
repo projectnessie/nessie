@@ -20,7 +20,6 @@ plugins {
   `maven-publish`
   signing
   `nessie-conventions`
-  id("org.projectnessie.buildsupport.attach-test-jar")
 }
 
 extra["maven.name"] = "Nessie - Client"
