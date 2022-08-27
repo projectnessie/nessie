@@ -121,7 +121,7 @@ mapOf(
     "versionOpentracing" to versionOpentracing,
     "versionProtobuf" to versionProtobuf,
     "versionRocksDb" to versionRocksDb,
-    "quarkus.builder-image" to "quay.io/quarkus/ubi-quarkus-native-image:22.1-java17"
+    "quarkus.builder-image" to "quay.io/quarkus/ubi-quarkus-native-image:22.2-java17"
   )
   .plus(loadProperties(file("clients/spark-scala.properties")))
   .forEach { (k, v) -> extra[k.toString()] = v }
