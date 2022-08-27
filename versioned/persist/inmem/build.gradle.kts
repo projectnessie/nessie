@@ -20,7 +20,6 @@ plugins {
   `maven-publish`
   signing
   `nessie-conventions`
-  id("org.projectnessie.buildsupport.attach-test-jar")
 }
 
 extra["maven.name"] = "Nessie - Versioned - Persist - In-Memory"
@@ -43,8 +42,10 @@ dependencies {
   testImplementation(platform("org.junit:junit-bom"))
 
   testImplementation(project(":nessie-versioned-tests"))
+  testImplementation(project(":nessie-versioned-persist-testextension"))
   testImplementation(project(":nessie-versioned-persist-tests"))
-  testImplementation(project(":nessie-versioned-persist-non-transactional")) { testJarCapability() }
+  testImplementation(project(":nessie-versioned-persist-non-transactional-test"))
+  testImplementation(project(":nessie-versioned-persist-in-memory-test"))
 
   testImplementation("org.assertj:assertj-core")
   testImplementation("org.junit.jupiter:junit-jupiter-api")

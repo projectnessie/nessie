@@ -20,7 +20,6 @@ plugins {
   `maven-publish`
   signing
   `nessie-conventions`
-  id("org.projectnessie.buildsupport.attach-test-jar")
 }
 
 extra["maven.name"] = "Nessie - Versioned - Persist - Transactional"
@@ -52,12 +51,9 @@ dependencies {
   testImplementation(project(":nessie-versioned-tests"))
   testCompileOnly("org.immutables:value-annotations")
   testAnnotationProcessor("org.immutables:value-processor")
+  testImplementation(project(":nessie-versioned-persist-testextension"))
   testImplementation(project(":nessie-versioned-persist-tests"))
-  testImplementation("org.testcontainers:testcontainers")
-  testImplementation("org.testcontainers:postgresql")
-  testImplementation("org.testcontainers:cockroachdb")
-  testImplementation("com.github.docker-java:docker-java-api")
-  testImplementation("io.agroal:agroal-pool")
+  testImplementation(project(":nessie-versioned-persist-transactional-test"))
   testRuntimeOnly("com.h2database:h2")
   testRuntimeOnly("org.postgresql:postgresql")
 

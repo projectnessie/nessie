@@ -32,6 +32,7 @@ dependencies {
   implementation(project(":nessie-model"))
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-persist-store"))
+  implementation(project(":nessie-versioned-persist-testextension"))
   implementation(project(":nessie-versioned-spi"))
   implementation(project(":nessie-versioned-tests"))
   implementation("com.google.guava:guava")

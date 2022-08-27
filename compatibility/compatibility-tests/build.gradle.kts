@@ -48,11 +48,11 @@ dependencies {
   testImplementation(project(":nessie-versioned-persist-adapter"))
   testImplementation(project(":nessie-versioned-persist-non-transactional"))
   testImplementation(project(":nessie-versioned-persist-in-memory"))
-  testImplementation(project(":nessie-versioned-persist-in-memory")) { testJarCapability() }
+  testImplementation(project(":nessie-versioned-persist-in-memory-test"))
   testImplementation(project(":nessie-versioned-persist-rocks"))
-  testImplementation(project(":nessie-versioned-persist-rocks")) { testJarCapability() }
+  testImplementation(project(":nessie-versioned-persist-rocks-test"))
   testImplementation(project(":nessie-versioned-persist-mongodb"))
-  testImplementation(project(":nessie-versioned-persist-mongodb")) { testJarCapability() }
+  testImplementation(project(":nessie-versioned-persist-mongodb-test"))
 }
 
 tasks.withType<Test>().configureEach {

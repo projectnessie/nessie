@@ -20,11 +20,8 @@ import java.util.Properties
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Dependency
-import org.gradle.api.artifacts.DependencyConstraint
 import org.gradle.api.artifacts.ExternalModuleDependency
 import org.gradle.api.artifacts.ModuleDependency
-import org.gradle.api.artifacts.ProjectDependency
-import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependencyConstraint
 import org.gradle.api.invocation.Gradle
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
@@ -86,21 +83,6 @@ fun Project.forceJava11ForTests() {
 fun Project.dependencyVersion(key: String) = rootProject.extra[key].toString()
 
 fun Project.testLogLevel() = System.getProperty("test.log.level", "WARN")
-
-fun ProjectDependency.testJarCapability() {
-  val prj = this.dependencyProject
-  capabilities { requireCapability("${prj.rootProject.group}:${prj.name}-tests") }
-}
-
-fun DependencyConstraint.testJarCapability() {
-  if (this is DefaultProjectDependencyConstraint) {
-    this.projectDependency.testJarCapability()
-  } else {
-    throw java.lang.IllegalStateException(
-      "Expected an instance of DefaultProjectDependencyConstraint, but got ${this::class.java}"
-    )
-  }
-}
 
 /** Check whether the current build is run in the context of integrations-testing. */
 fun isIntegrationsTestingEnabled() =

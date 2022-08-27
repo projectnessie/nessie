@@ -41,20 +41,21 @@ dependencies {
   api(project(":nessie-server-store"))
   api(project(":nessie-versioned-spi"))
   api(project(":nessie-versioned-persist-store"))
-  api(project(":nessie-versioned-persist-tests"))
+  api(project(":nessie-versioned-persist-testextension"))
   api(project(":nessie-versioned-persist-adapter"))
   api(project(":nessie-versioned-persist-serialize"))
   api(project(":nessie-versioned-persist-in-memory"))
-  api(project(":nessie-versioned-persist-in-memory")) { testJarCapability() }
+  api(project(":nessie-versioned-persist-in-memory-test"))
   api(project(":nessie-versioned-persist-rocks"))
-  api(project(":nessie-versioned-persist-rocks")) { testJarCapability() }
+  api(project(":nessie-versioned-persist-rocks-test"))
   api(project(":nessie-versioned-persist-dynamodb"))
-  api(project(":nessie-versioned-persist-dynamodb")) { testJarCapability() }
+  api(project(":nessie-versioned-persist-dynamodb-test"))
   api(project(":nessie-versioned-persist-mongodb"))
-  api(project(":nessie-versioned-persist-mongodb")) { testJarCapability() }
+  api(project(":nessie-versioned-persist-mongodb-test"))
   api(project(":nessie-versioned-persist-non-transactional"))
+  api(project(":nessie-versioned-persist-non-transactional-test"))
   api(project(":nessie-versioned-persist-transactional"))
-  api(project(":nessie-versioned-persist-transactional")) { testJarCapability() }
+  api(project(":nessie-versioned-persist-transactional-test"))
   implementation("org.slf4j:slf4j-api")
   implementation("org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_2.1_spec")
   api("jakarta.enterprise:jakarta.enterprise.cdi-api")

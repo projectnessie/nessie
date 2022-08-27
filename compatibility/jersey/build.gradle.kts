@@ -39,7 +39,7 @@ dependencies {
   implementation(project(":nessie-server-store"))
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-persist-store"))
-  implementation(project(":nessie-versioned-persist-tests"))
+  implementation(project(":nessie-versioned-persist-testextension"))
   implementation(project(":nessie-versioned-spi"))
   implementation("org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_2.1_spec")
   implementation("jakarta.enterprise:jakarta.enterprise.cdi-api")

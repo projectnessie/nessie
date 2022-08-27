@@ -20,7 +20,6 @@ plugins {
   `maven-publish`
   signing
   `nessie-conventions`
-  id("org.projectnessie.buildsupport.attach-test-jar")
 }
 
 extra["maven.name"] = "Nessie - Versioned - Persist - Non-Transactional"
@@ -37,9 +36,11 @@ dependencies {
   compileOnly("org.immutables:value-annotations")
   annotationProcessor("org.immutables:value-processor")
 
-  testImplementation(project(":nessie-versioned-persist-tests"))
   testImplementation(platform(project(":nessie-deps-testing")))
   testImplementation(platform("org.junit:junit-bom"))
+
+  testImplementation(project(":nessie-versioned-persist-testextension"))
+  testImplementation(project(":nessie-versioned-persist-tests"))
 
   testImplementation("org.assertj:assertj-core")
   testImplementation("org.junit.jupiter:junit-jupiter-api")
