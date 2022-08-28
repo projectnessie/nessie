@@ -99,10 +99,11 @@ def make_commit(
 
 def reset_nessie_server_state() -> None:
     """Resets the Nessie Server to an initial, clean state for testing."""
-    # Delete all branches
+    # Delete all branches except main
     branches = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
     for branch in branches:
-        execute_cli_command(["branch", "-d", branch.name])
+        if branch.name != "main":
+            execute_cli_command(["branch", "-d", branch.name])
 
     # Delete all tags
     tags = ReferenceSchema().loads(execute_cli_command(["--json", "tag"]), many=True)
@@ -112,7 +113,7 @@ def reset_nessie_server_state() -> None:
     # Note: This hash should match the java constant AbstractDatabaseAdapter.NO_ANCESTOR
     no_ancestor_hash = "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
 
-    # Re-create the main branch from the "root" (a.k.a. no ancestor) hash
+    # Reset by re-creating the main branch from the "root" (a.k.a. no ancestor) hash
     execute_cli_command(["branch", "--force", "-o", no_ancestor_hash, "main", "main"])
 
     # Verify the re-created main branch
