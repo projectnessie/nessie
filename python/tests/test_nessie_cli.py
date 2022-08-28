@@ -36,6 +36,7 @@ from pynessie.model import (
     IcebergTable,
     LogEntry,
     LogEntrySchema,
+    MergeResponseSchema,
     ReferenceSchema,
     ReflogEntry,
     ReflogEntrySchema,
@@ -315,7 +316,16 @@ def test_merge() -> None:
     # Passing detached commit-id plus a _different_ hash-on-ref --> error
     execute_cli_command(["merge", f"dev@{dev_hash}", "-c", main_hash, "-o", main_hash], ret_val=1)
 
-    execute_cli_command(["merge", "dev", "-c", main_hash])
+    merge_response = MergeResponseSchema().loads(execute_cli_command(["--json", "merge", "dev", "-c", main_hash]))
+
+    # Check merge response
+    assert_that(merge_response.target_branch).is_equal_to("main")
+    assert_that(merge_response.expected_hash).is_equal_to(main_hash)
+    assert_that(merge_response.effective_target_hash).is_equal_to(main_hash)
+    assert len(merge_response.source_commits) == 1
+    assert len(merge_response.details) == 1
+    assert_that(merge_response.details[0].source_commits[0]).is_equal_to(dev_hash)
+
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
     # we don't check for equality of hashes here because a merge
     # produces a different commit hash on the target branch
@@ -335,7 +345,16 @@ def test_merge_detached() -> None:
     # Passing detached commit-id plus a _different_ hash-on-ref --> error
     execute_cli_command(["merge", dev_hash, "-c", main_hash, "-o", main_hash], ret_val=1)
 
-    execute_cli_command(["merge", dev_hash, "-c", main_hash])
+    merge_response = MergeResponseSchema().loads(execute_cli_command(["--json", "merge", dev_hash, "-c", main_hash]))
+
+    # Check merge response
+    assert_that(merge_response.target_branch).is_equal_to("main")
+    assert_that(merge_response.expected_hash).is_equal_to(main_hash)
+    assert_that(merge_response.effective_target_hash).is_equal_to(main_hash)
+    assert len(merge_response.source_commits) == 1
+    assert len(merge_response.details) == 1
+    assert_that(merge_response.details[0].source_commits[0]).is_equal_to(dev_hash)
+
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
     # we don't check for equality of hashes here because a merge
     # produces a different commit hash on the target branch
