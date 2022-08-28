@@ -113,7 +113,7 @@ def reset_nessie_server_state() -> None:
     # Note: This hash should match the java constant AbstractDatabaseAdapter.NO_ANCESTOR
     no_ancestor_hash = "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
 
-    # Reset by re-creating the main branch from the "root" (a.k.a. no ancestor) hash
+    # Reset the main branch to the "root" (a.k.a. no ancestor) hash
     execute_cli_command(["branch", "--force", "-o", no_ancestor_hash, "main", "main"])
 
     # Verify the re-created main branch
