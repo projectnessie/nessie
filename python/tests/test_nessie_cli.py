@@ -316,6 +316,26 @@ def test_merge() -> None:
     # Passing detached commit-id plus a _different_ hash-on-ref --> error
     execute_cli_command(["merge", f"dev@{dev_hash}", "-c", main_hash, "-o", main_hash], ret_val=1)
 
+    assert_that(execute_cli_command(["merge", "dev", "-c", main_hash])).starts_with("The following 1 commits were merged onto main:")
+    logs = simplejson.loads(execute_cli_command(["--json", "log"]))
+    # we don't check for equality of hashes here because a merge
+    # produces a different commit hash on the target branch
+    assert len(logs) == 1
+    logs = simplejson.loads(execute_cli_command(["--json", "log", "dev"]))
+    assert len(logs) == 1
+
+
+@pytest.mark.vcr
+def test_merge_json() -> None:
+    """Test merge operation."""
+    execute_cli_command(["branch", "dev"])
+    make_commit("merge.foo.bar", _new_table("test_merge"), "dev")
+    main_hash = ref_hash("main")
+    dev_hash = ref_hash("dev")
+
+    # Passing detached commit-id plus a _different_ hash-on-ref --> error
+    execute_cli_command(["merge", f"dev@{dev_hash}", "-c", main_hash, "-o", main_hash], ret_val=1)
+
     merge_response = MergeResponseSchema().loads(execute_cli_command(["--json", "merge", "dev", "-c", main_hash]))
 
     # Check merge response
@@ -336,6 +356,26 @@ def test_merge() -> None:
 
 @pytest.mark.vcr
 def test_merge_detached() -> None:
+    """Test merge operation."""
+    execute_cli_command(["branch", "dev"])
+    make_commit("merge.foo.bar", _new_table("test_merge_detached"), "dev")
+    main_hash = ref_hash("main")
+    dev_hash = ref_hash("dev")
+
+    # Passing detached commit-id plus a _different_ hash-on-ref --> error
+    execute_cli_command(["merge", dev_hash, "-c", main_hash, "-o", main_hash], ret_val=1)
+
+    assert_that(execute_cli_command(["merge", "dev", "-c", main_hash])).starts_with("The following 1 commits were merged onto main:")
+    logs = simplejson.loads(execute_cli_command(["--json", "log"]))
+    # we don't check for equality of hashes here because a merge
+    # produces a different commit hash on the target branch
+    assert len(logs) == 1
+    logs = simplejson.loads(execute_cli_command(["--json", "log", "dev"]))
+    assert len(logs) == 1
+
+
+@pytest.mark.vcr
+def test_merge_detached_json() -> None:
     """Test merge operation."""
     execute_cli_command(["branch", "dev"])
     make_commit("merge.foo.bar", _new_table("test_merge_detached"), "dev")
