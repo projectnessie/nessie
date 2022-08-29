@@ -17,7 +17,7 @@ package org.projectnessie.spark.extensions;
 
 import org.junit.jupiter.api.BeforeAll;
 
-public class ITNessieStatements extends AbstractSparkSqlTest {
+public class ITNessieStatements extends AbstractNessieSparkSqlExtensionTest {
 
   @BeforeAll
   protected static void useNessieExtensions() {

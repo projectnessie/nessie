@@ -18,139 +18,38 @@ package org.projectnessie.spark.extensions;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.errorprone.annotations.FormatMethod;
 import java.io.File;
-import java.lang.reflect.Method;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import org.apache.spark.SparkConf;
 import org.apache.spark.sql.AnalysisException;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.functions;
-import org.apache.spark.sql.internal.SQLConf;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.IcebergTable;
-import org.projectnessie.model.ImmutableCommitMeta;
-import org.projectnessie.model.ImmutableOperations;
-import org.projectnessie.model.Operation;
-import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Validation;
 
-public abstract class AbstractSparkSqlTest {
+public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBase {
 
   @TempDir File tempFile;
 
-  private static final int NESSIE_PORT = Integer.getInteger("quarkus.http.test-port", 19121);
-  private static final String NON_NESSIE_CATALOG = "invalid_hive";
-  protected static SparkConf conf = new SparkConf();
-
-  protected static SparkSession spark;
-  protected static String url = String.format("http://localhost:%d/api/v1", NESSIE_PORT);
-
-  private Branch initialDefaultBranch;
-
-  private String refName;
-  private String additionalRefName;
-  protected NessieApiV1 api;
-
-  @BeforeEach
-  void setupSparkAndApi(TestInfo testInfo) throws NessieNotFoundException {
-    api = HttpClientBuilder.builder().withUri(url).build(NessieApiV1.class);
-
-    refName = testInfo.getTestMethod().map(Method::getName).get();
-    additionalRefName = refName + "_other";
-
-    initialDefaultBranch = api.getDefaultBranch();
-
-    Map<String, String> nessieParams =
-        ImmutableMap.of(
-            "ref", defaultBranch(), "uri", url, "warehouse", tempFile.toURI().toString());
-
-    nessieParams.forEach(
-        (k, v) -> {
-          conf.set(String.format("spark.sql.catalog.nessie.%s", k), v);
-          conf.set(String.format("spark.sql.catalog.spark_catalog.%s", k), v);
-        });
-
-    conf.set(SQLConf.PARTITION_OVERWRITE_MODE().key(), "dynamic")
-        .set("spark.testing", "true")
-        .set("spark.sql.warehouse.dir", tempFile.toURI().toString())
-        .set("spark.sql.shuffle.partitions", "4")
-        .set("spark.sql.catalog.nessie.catalog-impl", "org.apache.iceberg.nessie.NessieCatalog")
-        .set("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog");
-
-    // the following catalog is only added to test a check in the nessie spark extensions
-    conf.set(
-            String.format("spark.sql.catalog.%s", NON_NESSIE_CATALOG),
-            "org.apache.iceberg.spark.SparkCatalog")
-        .set(
-            String.format("spark.sql.catalog.%s.catalog-impl", NON_NESSIE_CATALOG),
-            "org.apache.iceberg.hive.HiveCatalog");
-
-    spark = SparkSession.builder().master("local[2]").config(conf).getOrCreate();
-    spark.sparkContext().setLogLevel("WARN");
-  }
-
-  @AfterEach
-  void removeBranches() throws NessieConflictException, NessieNotFoundException {
-    // Reset potential "USE REFERENCE" statements from previous tests
-    SparkSession.active()
-        .sparkContext()
-        .conf()
-        .set(String.format("spark.sql.catalog.%s.ref", "nessie"), defaultBranch())
-        .remove(String.format("spark.sql.catalog.%s.ref.hash", "nessie"));
-
-    Branch defaultBranch = api.getDefaultBranch();
-    for (Reference ref : api.getAllReferences().get().getReferences()) {
-      if (ref instanceof Branch && !ref.getName().equals(defaultBranch.getName())) {
-        api.deleteBranch().branchName(ref.getName()).hash(ref.getHash()).delete();
-      }
-      if (ref instanceof Tag) {
-        api.deleteTag().tagName(ref.getName()).hash(ref.getHash()).delete();
-      }
-    }
-    api.assignBranch().assignTo(initialDefaultBranch).branch(defaultBranch).assign();
-    api.close();
-    api = null;
-  }
-
-  @AfterAll
-  static void tearDown() {
-    if (spark != null) {
-      spark.stop();
-      spark = null;
-    }
+  @Override
+  protected String warehouseURI() {
+    return tempFile.toURI().toString();
   }
 
   @Test
@@ -619,7 +518,7 @@ public abstract class AbstractSparkSqlTest {
                 .orderBy(functions.desc("committerTime"))
                 .collectAsList()
                 .stream()
-                .map(AbstractSparkSqlTest::toJava)
+                .map(AbstractNessieSparkSqlExtensionTest::toJava)
                 .peek(row -> row[7] = Collections.singletonMap("test", (String) row[7]))
                 .map(SparkCommitLogEntry::fromShowLog)
                 .collect(Collectors.toList()))
@@ -672,157 +571,5 @@ public abstract class AbstractSparkSqlTest {
     } finally {
       spark.sessionState().catalogManager().setCurrentCatalog(catalog);
     }
-  }
-
-  private String defaultBranch() {
-    return initialDefaultBranch.getName();
-  }
-
-  private String defaultHash() {
-    return initialDefaultBranch.getHash();
-  }
-
-  @FormatMethod
-  protected static List<Object[]> sql(String query, Object... args) {
-    List<Row> rows = spark.sql(String.format(query, args)).collectAsList();
-    if (rows.size() < 1) {
-      return ImmutableList.of();
-    }
-
-    return rows.stream().map(AbstractSparkSqlTest::toJava).collect(Collectors.toList());
-  }
-
-  @FormatMethod
-  private static List<Object[]> sqlWithEmptyCache(String query, Object... args) {
-    try (SparkSession sparkWithEmptyCache = spark.cloneSession()) {
-      List<Row> rows = sparkWithEmptyCache.sql(String.format(query, args)).collectAsList();
-      return rows.stream().map(AbstractSparkSqlTest::toJava).collect(Collectors.toList());
-    }
-  }
-
-  protected static Object[] toJava(Row row) {
-    return IntStream.range(0, row.size())
-        .mapToObj(
-            pos -> {
-              if (row.isNullAt(pos)) {
-                return null;
-              }
-
-              Object value = row.get(pos);
-              if (value instanceof Row) {
-                return toJava((Row) value);
-              } else if (value instanceof scala.collection.Seq) {
-                return row.getList(pos);
-              } else if (value instanceof scala.collection.Map) {
-                return row.getJavaMap(pos);
-              } else {
-                return value;
-              }
-            })
-        .toArray(Object[]::new);
-  }
-
-  /**
-   * This looks weird but it gives a clear semantic way to turn a list of objects into a 'row' for
-   * spark assertions.
-   */
-  protected static Object[] row(Object... values) {
-    return values;
-  }
-
-  private List<SparkCommitLogEntry> fetchLog(String branch) {
-    return sql("SHOW LOG %s IN nessie", branch).stream()
-        .map(SparkCommitLogEntry::fromShowLog)
-        .collect(Collectors.toList());
-  }
-
-  private void createBranchForTest(String branchName) throws NessieNotFoundException {
-    assertThat(sql("CREATE BRANCH %s IN nessie", branchName))
-        .containsExactly(row("Branch", branchName, defaultHash()));
-    assertThat(api.getReference().refName(branchName).get())
-        .isEqualTo(Branch.of(branchName, defaultHash()));
-  }
-
-  private void createTagForTest(String tagName) throws NessieNotFoundException {
-    assertThat(sql("CREATE TAG %s IN nessie", tagName))
-        .containsExactly(row("Tag", tagName, defaultHash()));
-    assertThat(api.getReference().refName(tagName).get()).isEqualTo(Tag.of(tagName, defaultHash()));
-  }
-
-  private List<SparkCommitLogEntry> createBranchCommitAndReturnLog()
-      throws NessieConflictException, NessieNotFoundException {
-    createBranchForTest(refName);
-    return commitAndReturnLog(refName, defaultHash());
-  }
-
-  private List<SparkCommitLogEntry> commitAndReturnLog(String branch, String initalHashOrBranch)
-      throws NessieNotFoundException, NessieConflictException {
-    ContentKey key = ContentKey.of("table", "name");
-    CommitMeta cm1 =
-        ImmutableCommitMeta.builder()
-            .author("sue")
-            .authorTime(Instant.ofEpochMilli(1))
-            .message("1")
-            .putProperties("test", "123")
-            .build();
-
-    CommitMeta cm2 =
-        ImmutableCommitMeta.builder()
-            .author("janet")
-            .authorTime(Instant.ofEpochMilli(10))
-            .message("2")
-            .putProperties("test", "123")
-            .build();
-
-    CommitMeta cm3 =
-        ImmutableCommitMeta.builder()
-            .author("alice")
-            .authorTime(Instant.ofEpochMilli(100))
-            .message("3")
-            .putProperties("test", "123")
-            .build();
-    Operations ops =
-        ImmutableOperations.builder()
-            .addOperations(Operation.Put.of(key, IcebergTable.of("foo", 42, 42, 42, 42)))
-            .commitMeta(cm1)
-            .build();
-    Operations ops2 =
-        ImmutableOperations.builder()
-            .addOperations(Operation.Put.of(key, IcebergTable.of("bar", 42, 42, 42, 42)))
-            .commitMeta(cm2)
-            .build();
-    Operations ops3 =
-        ImmutableOperations.builder()
-            .addOperations(Operation.Put.of(key, IcebergTable.of("baz", 42, 42, 42, 42)))
-            .commitMeta(cm3)
-            .build();
-
-    Branch ref1 =
-        api.commitMultipleOperations()
-            .branchName(branch)
-            .hash(initalHashOrBranch)
-            .operations(ops.getOperations())
-            .commitMeta(ops.getCommitMeta())
-            .commit();
-    Branch ref2 =
-        api.commitMultipleOperations()
-            .branchName(branch)
-            .hash(ref1.getHash())
-            .operations(ops2.getOperations())
-            .commitMeta(ops2.getCommitMeta())
-            .commit();
-    Branch ref3 =
-        api.commitMultipleOperations()
-            .branchName(branch)
-            .hash(ref2.getHash())
-            .operations(ops3.getOperations())
-            .commitMeta(ops3.getCommitMeta())
-            .commit();
-
-    List<SparkCommitLogEntry> resultList = new ArrayList<>();
-    resultList.add(SparkCommitLogEntry.fromCommitMeta(cm3, ref3.getHash()));
-    resultList.add(SparkCommitLogEntry.fromCommitMeta(cm2, ref2.getHash()));
-    resultList.add(SparkCommitLogEntry.fromCommitMeta(cm1, ref1.getHash()));
-    return resultList;
   }
 }
