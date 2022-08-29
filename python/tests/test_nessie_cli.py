@@ -363,6 +363,32 @@ def test_merge_json() -> None:
 
 
 @pytest.mark.vcr
+def test_merge_legacy() -> None:
+    """Test merge operation."""
+    execute_cli_command(["branch", "dev"])
+    make_commit("merge.foo.bar", _new_table("test_merge"), "dev")
+    main_hash = ref_hash("main")
+
+    merge_output = execute_cli_command(["merge", "dev", "-c", main_hash])
+    assert_that(merge_output).is_equal_to("Merge succeeded but legacy server did not respond with additional details.\n")
+
+
+@pytest.mark.vcr
+def test_merge_legacy_json() -> None:
+    """Test merge operation."""
+    execute_cli_command(["branch", "dev"])
+    make_commit("merge.foo.bar", _new_table("test_merge"), "dev")
+    main_hash = ref_hash("main")
+    dev_hash = ref_hash("dev")
+
+    # Passing detached commit-id plus a _different_ hash-on-ref --> error
+    execute_cli_command(["merge", f"dev@{dev_hash}", "-c", main_hash, "-o", main_hash], ret_val=1)
+
+    merge_output = execute_cli_command(["--json", "merge", "dev", "-c", main_hash])
+    assert_that(merge_output).is_equal_to('{"_cli_hint": "Merge succeeded but legacy server did not respond with additional details."}\n')
+
+
+@pytest.mark.vcr
 def test_merge_detached() -> None:
     """Test merge operation."""
     execute_cli_command(["branch", "dev"])
