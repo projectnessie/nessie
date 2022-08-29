@@ -168,7 +168,7 @@ public abstract class AbstractDatabaseAdapter<
     this.eventConsumer = eventConsumer;
   }
 
-  @VisibleForTesting
+  @Override
   public CONFIG getConfig() {
     return config;
   }
