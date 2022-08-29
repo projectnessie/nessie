@@ -324,6 +324,11 @@ def test_merge() -> None:
         "The following 1 commits were merged onto main:"
         '\n{} "test message" \nResultant hash on main after merge: {}\n'.format(refs["dev"], refs["main"])
     )
+
+    # if we try to merge again from dev to main we get an error
+    # this is because there is now a conflict as the same commit exists on both branches
+    merge_error = execute_cli_command(["merge", "dev", "-c", refs["main"]], ret_val=1)
+    assert "Client Error Conflict: The following keys have been changed in conflict:" in merge_error
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
     # we don't check for equality of hashes here because a merge
     # produces a different commit hash on the target branch
