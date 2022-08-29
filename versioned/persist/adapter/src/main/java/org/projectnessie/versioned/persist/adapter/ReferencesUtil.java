@@ -33,16 +33,13 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 @Beta
 public final class ReferencesUtil {
   private final DatabaseAdapter databaseAdapter;
-  private final DatabaseAdapterConfig config;
 
-  private ReferencesUtil(DatabaseAdapter databaseAdapter, DatabaseAdapterConfig config) {
+  private ReferencesUtil(DatabaseAdapter databaseAdapter) {
     this.databaseAdapter = databaseAdapter;
-    this.config = config;
   }
 
-  public static ReferencesUtil forDatabaseAdapter(
-      DatabaseAdapter databaseAdapter, DatabaseAdapterConfig config) {
-    return new ReferencesUtil(databaseAdapter, config);
+  public static ReferencesUtil forDatabaseAdapter(DatabaseAdapter databaseAdapter) {
+    return new ReferencesUtil(databaseAdapter);
   }
 
   private static <K, V> Map<K, V> newOpenAddressingHashMap() {
@@ -95,7 +92,7 @@ public final class ReferencesUtil {
     // non-deterministic order. Example: if (at least) two commits are added to a branch while this
     // function is running, the original HEAD of that branch could otherwise be returned as
     // "unreferenced".
-    long scanStartedAtInMicros = config.currentTimeInMicros();
+    long scanStartedAtInMicros = databaseAdapter.getConfig().currentTimeInMicros();
 
     // scanAllCommitLogEntries() returns all commits in no specific order, parents may be scanned
     // before or after their children.
@@ -143,7 +140,8 @@ public final class ReferencesUtil {
     Set<Hash> unreferenced = newOpenAddressingHashSet(heads);
 
     long stopAtCommitTimeMicros =
-        headsAndForkPoints.getScanStartedAtInMicros() - config.getAssumedWallClockDriftMicros();
+        headsAndForkPoints.getScanStartedAtInMicros()
+            - databaseAdapter.getConfig().getAssumedWallClockDriftMicros();
 
     try (Stream<ReferenceInfo<ByteString>> namedRefs =
         databaseAdapter.namedRefs(GetNamedRefsParams.DEFAULT)) {

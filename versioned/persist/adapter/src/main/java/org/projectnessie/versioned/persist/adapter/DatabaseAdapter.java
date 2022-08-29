@@ -61,6 +61,8 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
  */
 public interface DatabaseAdapter {
 
+  DatabaseAdapterConfig getConfig();
+
   /** Ensures that mandatory data is present in the repository, does not change an existing repo. */
   void initializeRepo(String defaultBranchName);
 
