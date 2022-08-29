@@ -20,7 +20,6 @@ plugins {
   `maven-publish`
   signing
   `nessie-conventions`
-  id("org.projectnessie.buildsupport.attach-test-jar")
 }
 
 extra["maven.name"] = "Nessie - Versioned - Persist - MongoDB"
@@ -45,10 +44,10 @@ dependencies {
   testImplementation(platform("org.junit:junit-bom"))
 
   testImplementation(project(":nessie-versioned-tests"))
-  testImplementation(project(":nessie-versioned-persist-adapter"))
+  testImplementation(project(":nessie-versioned-persist-testextension"))
   testImplementation(project(":nessie-versioned-persist-tests"))
-  testImplementation(project(":nessie-versioned-persist-non-transactional")) { testJarCapability() }
-  testImplementation("org.testcontainers:mongodb")
+  testImplementation(project(":nessie-versioned-persist-non-transactional-test"))
+  testImplementation(project(":nessie-versioned-persist-mongodb-test"))
 
   testImplementation("org.assertj:assertj-core")
   testImplementation("org.junit.jupiter:junit-jupiter-api")

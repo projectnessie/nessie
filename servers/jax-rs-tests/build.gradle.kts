@@ -49,11 +49,7 @@ dependencies {
 
   testImplementation(project(":nessie-jaxrs-testextension"))
   testImplementation("org.slf4j:jcl-over-slf4j")
-  testImplementation("io.agroal:agroal-pool")
-  testImplementation("com.h2database:h2")
-  testImplementation("org.testcontainers:testcontainers")
-  testImplementation("org.testcontainers:mongodb")
-  testImplementation("com.github.docker-java:docker-java-api")
+  testRuntimeOnly("com.h2database:h2")
 
   testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 

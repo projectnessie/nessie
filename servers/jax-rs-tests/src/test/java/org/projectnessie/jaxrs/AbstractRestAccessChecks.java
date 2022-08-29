@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
+import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -53,7 +54,6 @@ import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.authz.Check;
 import org.projectnessie.services.authz.Check.CheckType;
 import org.projectnessie.versioned.DetachedRef;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
 /** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestAccessChecks extends AbstractTestRest {

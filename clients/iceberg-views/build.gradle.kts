@@ -50,7 +50,7 @@ dependencies {
 
   testImplementation(platform("org.junit:junit-bom"))
 
-  testImplementation(nessieProject("nessie-versioned-persist-tests"))
+  testImplementation(nessieProject("nessie-versioned-persist-testextension"))
   testImplementation(nessieProject("nessie-versioned-persist-in-memory"))
   testImplementation(nessieProject("nessie-jaxrs-testextension"))
   testImplementation("org.slf4j:log4j-over-slf4j")

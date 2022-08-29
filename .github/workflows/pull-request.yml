@@ -60,7 +60,7 @@ jobs:
     - name: Gradle / compile
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: checkstyleMain checkstyleTest jar testClasses testJar
+        arguments: checkstyleMain checkstyleTest jar testClasses
 
     - name: Gradle / unit test
       uses: gradle/gradle-build-action@v2

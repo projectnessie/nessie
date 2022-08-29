@@ -67,7 +67,7 @@ dependencies {
   testImplementation(platform("org.junit:junit-bom"))
 
   testImplementation(project(":nessie-quarkus-tests"))
-  testImplementation(project(":nessie-versioned-persist-mongodb")) { testJarCapability() }
+  testImplementation(project(":nessie-versioned-persist-mongodb-test"))
   testImplementation(project(":nessie-versioned-tests"))
   testImplementation("io.quarkus:quarkus-jacoco")
   testImplementation("io.quarkus:quarkus-junit5")

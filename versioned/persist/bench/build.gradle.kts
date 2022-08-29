@@ -36,22 +36,22 @@ dependencies {
   implementation(project(":nessie-versioned-spi"))
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-persist-store"))
-  implementation(project(":nessie-versioned-persist-tests"))
   implementation("org.openjdk.jmh:jmh-core")
   annotationProcessor("org.openjdk.jmh:jmh-generator-annprocess")
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
   compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
   implementation(project(":nessie-versioned-persist-in-memory"))
-  implementation(project(":nessie-versioned-persist-in-memory")) { testJarCapability() }
+  implementation(project(":nessie-versioned-persist-in-memory-test"))
   implementation(project(":nessie-versioned-persist-rocks"))
-  implementation(project(":nessie-versioned-persist-rocks")) { testJarCapability() }
+  implementation(project(":nessie-versioned-persist-rocks-test"))
   implementation(project(":nessie-versioned-persist-dynamodb"))
-  implementation(project(":nessie-versioned-persist-dynamodb")) { testJarCapability() }
+  implementation(project(":nessie-versioned-persist-dynamodb-test"))
   implementation(project(":nessie-versioned-persist-mongodb"))
-  implementation(project(":nessie-versioned-persist-mongodb")) { testJarCapability() }
+  implementation(project(":nessie-versioned-persist-mongodb-test"))
   implementation(project(":nessie-versioned-persist-transactional"))
-  implementation(project(":nessie-versioned-persist-transactional")) { testJarCapability() }
+  implementation(project(":nessie-versioned-persist-transactional-test"))
+  implementation(project(":nessie-versioned-persist-testextension"))
   implementation("io.agroal:agroal-pool")
   implementation("com.h2database:h2")
   implementation("org.postgresql:postgresql")

@@ -33,13 +33,13 @@ dependencies {
   implementation(project(":nessie-quarkus-common"))
   implementation(project(":nessie-versioned-tests"))
   implementation(project(":nessie-versioned-persist-adapter"))
-  implementation(project(":nessie-versioned-persist-tests"))
+  implementation(project(":nessie-versioned-persist-testextension"))
   implementation(project(":nessie-versioned-persist-dynamodb"))
-  implementation(project(":nessie-versioned-persist-dynamodb")) { testJarCapability() }
+  implementation(project(":nessie-versioned-persist-dynamodb-test"))
   implementation(project(":nessie-versioned-persist-mongodb"))
-  implementation(project(":nessie-versioned-persist-mongodb")) { testJarCapability() }
+  implementation(project(":nessie-versioned-persist-mongodb-test"))
   implementation(project(":nessie-versioned-persist-transactional"))
-  implementation(project(":nessie-versioned-persist-transactional")) { testJarCapability() }
+  implementation(project(":nessie-versioned-persist-transactional-test"))
   implementation("io.quarkus:quarkus-junit5")
   implementation("org.testcontainers:testcontainers")
   implementation("org.testcontainers:postgresql")

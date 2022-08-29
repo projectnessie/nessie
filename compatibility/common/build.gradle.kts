@@ -53,11 +53,12 @@ dependencies {
 
   testImplementation("org.mockito:mockito-core")
   testImplementation("com.google.guava:guava")
+  testImplementation(project(":nessie-versioned-persist-non-transactional-test"))
   testImplementation(project(":nessie-versioned-persist-in-memory"))
-  testImplementation(project(":nessie-versioned-persist-in-memory")) { testJarCapability() }
+  testImplementation(project(":nessie-versioned-persist-in-memory-test"))
   testImplementation(project(":nessie-versioned-persist-rocks"))
-  testImplementation(project(":nessie-versioned-persist-rocks")) { testJarCapability() }
-  compileOnly(project(":nessie-versioned-persist-mongodb")) { testJarCapability() }
+  testImplementation(project(":nessie-versioned-persist-rocks-test"))
+  compileOnly(project(":nessie-versioned-persist-mongodb-test"))
 
   testImplementation("org.junit.platform:junit-platform-testkit")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
