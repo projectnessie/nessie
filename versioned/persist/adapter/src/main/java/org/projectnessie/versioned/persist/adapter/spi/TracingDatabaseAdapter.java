@@ -19,10 +19,12 @@ import static org.projectnessie.versioned.persist.adapter.spi.Traced.trace;
 
 import com.google.protobuf.ByteString;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.GetNamedRefsParams;
@@ -105,6 +107,13 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
     try (Traced ignore =
         trace("values").tag(TAG_HASH, commit.asString()).tag(TAG_COUNT, keys.size())) {
       return delegate.values(commit, keys, keyFilter);
+    }
+  }
+
+  @Override
+  public Stream<CommitLogEntry> fetchCommitLogEntries(Stream<Hash> hashes) {
+    try (Traced ignore = trace("fetchCommitLogEntries")) {
+      return delegate.fetchCommitLogEntries(hashes);
     }
   }
 
@@ -286,6 +295,32 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
   public void deleteAttachments(Stream<ContentAttachmentKey> keys) {
     try (Traced ignore = trace("deleteAttachments")) {
       delegate.deleteAttachments(keys);
+    }
+  }
+
+  @Override
+  public void writeMultipleCommits(List<CommitLogEntry> commitLogEntries)
+      throws ReferenceConflictException {
+    try (Traced ignore = trace("writeMultipleCommits").tag(TAG_COUNT, commitLogEntries.size())) {
+      delegate.writeMultipleCommits(commitLogEntries);
+    }
+  }
+
+  @Override
+  public void updateMultipleCommits(List<CommitLogEntry> commitLogEntries)
+      throws ReferenceNotFoundException {
+    try (Traced ignore = trace("updateMultipleCommits").tag(TAG_COUNT, commitLogEntries.size())) {
+      delegate.updateMultipleCommits(commitLogEntries);
+    }
+  }
+
+  @Override
+  public CommitLogEntry modifyCommitLogEntryWithKeyList(
+      CommitLogEntry entry, @Nonnull Function<Hash, CommitLogEntry> inMemoryCommits)
+      throws ReferenceNotFoundException {
+    try (Traced ignore =
+        trace("updateCommitLogEntryWithKeyList").tag(TAG_HASH, entry.getHash().asString())) {
+      return delegate.modifyCommitLogEntryWithKeyList(entry, inMemoryCommits);
     }
   }
 }

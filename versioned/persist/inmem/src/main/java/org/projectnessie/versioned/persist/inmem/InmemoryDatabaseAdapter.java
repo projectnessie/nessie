@@ -298,6 +298,17 @@ public class InmemoryDatabaseAdapter
   }
 
   @Override
+  protected void doUpdateMultipleCommits(
+      NonTransactionalOperationContext ctx, List<CommitLogEntry> entries)
+      throws ReferenceNotFoundException {
+    for (CommitLogEntry entry : entries) {
+      if (store.commitLog.replace(dbKey(entry.getHash()), toProto(entry).toByteString()) == null) {
+        throw referenceNotFound(entry.getHash());
+      }
+    }
+  }
+
+  @Override
   protected List<ReferenceNames> doFetchReferenceNames(
       NonTransactionalOperationContext ctx, int segment, int prefetchSegments) {
     return IntStream.rangeClosed(segment, segment + prefetchSegments)

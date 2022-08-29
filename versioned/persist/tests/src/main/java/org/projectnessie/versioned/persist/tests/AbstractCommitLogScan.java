@@ -109,7 +109,8 @@ public abstract class AbstractCommitLogScan {
 
     ReferencesUtil referencesUtil = ReferencesUtil.forDatabaseAdapter(databaseAdapter);
 
-    HeadsAndForkPoints headsAndForkPoints = referencesUtil.identifyAllHeadsAndForkPoints(100);
+    HeadsAndForkPoints headsAndForkPoints =
+        referencesUtil.identifyAllHeadsAndForkPoints(100, e -> {});
 
     ReferencedAndUnreferencedHeads refAndUnref =
         referencesUtil.identifyReferencedAndUnreferencedHeads(headsAndForkPoints);

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.nontx;
+package org.projectnessie.versioned.persist.adapter.spi;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,8 +22,13 @@ import java.util.Spliterators;
 import java.util.Spliterators.AbstractSpliterator;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
-final class BatchSpliterator<SRC, DST> extends AbstractSpliterator<DST> {
+/**
+ * Helper to implement batched retrieval of {@code DST} elements using a stream of keys of type
+ * {@code SRC}, or batched mapping of {@code SRC} to {@code DST}.
+ */
+public final class BatchSpliterator<SRC, DST> extends AbstractSpliterator<DST> {
 
   private final Spliterator<SRC> source;
   private final int batchSize;
@@ -46,7 +51,15 @@ final class BatchSpliterator<SRC, DST> extends AbstractSpliterator<DST> {
 
   private Spliterator<DST> mapped = Spliterators.emptySpliterator();
 
-  BatchSpliterator(
+  public BatchSpliterator(
+      int batchSize,
+      Stream<SRC> source,
+      Function<List<SRC>, Spliterator<DST>> batchMapper,
+      int characteristics) {
+    this(batchSize, source.spliterator(), batchMapper, characteristics);
+  }
+
+  public BatchSpliterator(
       int batchSize,
       Spliterator<SRC> source,
       Function<List<SRC>, Spliterator<DST>> batchMapper,

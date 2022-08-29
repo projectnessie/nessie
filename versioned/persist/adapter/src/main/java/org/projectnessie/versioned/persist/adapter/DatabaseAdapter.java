@@ -19,10 +19,12 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.errorprone.annotations.MustBeClosed;
 import com.google.protobuf.ByteString;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.Diff;
@@ -114,6 +116,14 @@ public interface DatabaseAdapter {
    */
   @MustBeClosed
   Stream<CommitLogEntry> commitLog(Hash offset) throws ReferenceNotFoundException;
+
+  /**
+   * Loads a single commit log entry.
+   *
+   * @return the loaded {@link CommitLogEntry}s, non-existing entries will not be returned.
+   */
+  @MustBeClosed
+  Stream<CommitLogEntry> fetchCommitLogEntries(Stream<Hash> hashes);
 
   /**
    * Retrieve the content-keys that are "present" for the specified commit.
@@ -355,4 +365,27 @@ public interface DatabaseAdapter {
 
   @VisibleForTesting
   void assertCleanStateForTests();
+
+  /**
+   * Write multiple new commit-entries, the given commit entries are to be persisted as is. All
+   * values of the given {@link CommitLogEntry} can be considered valid and consistent.
+   *
+   * <p>Implementations however can enforce strict consistency checks/guarantees, like a best-effort
+   * approach to prevent hash-collisions but without any other consistency checks/guarantees.
+   */
+  void writeMultipleCommits(List<CommitLogEntry> commitLogEntries)
+      throws ReferenceConflictException;
+
+  /**
+   * Updates multiple new commit-entries, the given commit entries are to be persisted as is. All
+   * values of the given {@link CommitLogEntry} can be considered valid and consistent.
+   *
+   * <p>Implementations however <em>can</em> enforce strict consistency checks/guarantees.
+   */
+  void updateMultipleCommits(List<CommitLogEntry> commitLogEntries)
+      throws ReferenceNotFoundException;
+
+  CommitLogEntry modifyCommitLogEntryWithKeyList(
+      CommitLogEntry entry, @Nonnull Function<Hash, CommitLogEntry> inMemoryCommits)
+      throws ReferenceNotFoundException;
 }

@@ -59,6 +59,7 @@ import org.bson.types.Binary;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
@@ -630,6 +631,30 @@ public class MongoDatabaseAdapter
             .map(e -> toDoc(e.getHash(), toProto(e).toByteArray()))
             .collect(Collectors.toList());
     insert(client.getCommitLog(), docs);
+  }
+
+  @Override
+  protected void doUpdateMultipleCommits(
+      NonTransactionalOperationContext ctx, List<CommitLogEntry> entries)
+      throws ReferenceNotFoundException {
+    List<WriteModel<Document>> requests =
+        entries.stream()
+            .map(e -> toDoc(e.getHash(), toProto(e).toByteArray()))
+            .map(
+                d ->
+                    new UpdateOneModel<Document>(
+                        Filters.eq(d.get(ID_PROPERTY_NAME)),
+                        new Document("$set", d),
+                        new UpdateOptions().upsert(false)))
+            .collect(Collectors.toList());
+
+    BulkWriteResult result = client.getCommitLog().bulkWrite(requests);
+
+    verifyAcknowledged(result, client.getCommitLog());
+
+    if (result.getMatchedCount() != entries.size()) {
+      throw new ReferenceNotFoundException("");
+    }
   }
 
   @Override

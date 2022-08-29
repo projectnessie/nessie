@@ -186,6 +186,41 @@ public abstract class AbstractDatabaseAdapter<
     return NO_ANCESTOR;
   }
 
+  @Override
+  public Stream<CommitLogEntry> fetchCommitLogEntries(Stream<Hash> hashes) {
+    OP_CONTEXT ctx = borrowConnection();
+
+    BatchSpliterator<Hash, CommitLogEntry> commitFetcher =
+        new BatchSpliterator<>(
+            config.getParentsPerCommit(),
+            hashes,
+            h -> fetchMultipleFromCommitLog(ctx, h, ignore -> null).spliterator(),
+            0);
+
+    return StreamSupport.stream(commitFetcher, false)
+        .onClose(
+            () -> {
+              try {
+                ctx.close();
+              } catch (Exception e) {
+                throw new RuntimeException(e);
+              }
+            });
+  }
+
+  @Override
+  public CommitLogEntry modifyCommitLogEntryWithKeyList(
+      CommitLogEntry entry, @Nonnull Function<Hash, CommitLogEntry> inMemoryCommits)
+      throws ReferenceNotFoundException {
+    try (OP_CONTEXT ctx = borrowConnection()) {
+      return buildKeyList(ctx, entry, h -> {}, inMemoryCommits);
+    } catch (ReferenceNotFoundException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   // /////////////////////////////////////////////////////////////////////////////////////////////
   // DatabaseAdapter subclass API (protected)
   // /////////////////////////////////////////////////////////////////////////////////////////////
@@ -1640,22 +1675,18 @@ public abstract class AbstractDatabaseAdapter<
   protected abstract void doWriteIndividualCommit(OP_CONTEXT ctx, CommitLogEntry entry)
       throws ReferenceConflictException;
 
-  /**
-   * Write multiple new commit-entries, the given commit entries are to be persisted as is. All
-   * values of the * given {@link CommitLogEntry} can be considered valid and consistent.
-   *
-   * <p>Implementations however can enforce strict consistency checks/guarantees, like a best-effort
-   * approach to prevent hash-collisions but without any other consistency checks/guarantees.
-   */
   protected final void writeMultipleCommits(OP_CONTEXT ctx, List<CommitLogEntry> entries)
       throws ReferenceConflictException {
-    try (Traced ignore = trace("writeMultipleCommits").tag(TAG_COUNT, entries.size())) {
+    try (Traced ignore = trace("writeMultipleCommits")) {
       doWriteMultipleCommits(ctx, entries);
     }
   }
 
   protected abstract void doWriteMultipleCommits(OP_CONTEXT ctx, List<CommitLogEntry> entries)
       throws ReferenceConflictException;
+
+  protected abstract void doUpdateMultipleCommits(OP_CONTEXT ctx, List<CommitLogEntry> entries)
+      throws ReferenceNotFoundException;
 
   @VisibleForTesting
   public final void writeKeyListEntities(OP_CONTEXT ctx, List<KeyListEntity> newKeyListEntities) {
