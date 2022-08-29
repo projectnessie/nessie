@@ -75,11 +75,12 @@ def merge(ctx: ContextObject, ref: str, force: bool, expected_hash: str, hash_on
         )
     merge_response = ctx.nessie.merge(from_ref, ref, hash_on_ref, expected_hash)
     if merge_response is None:
+        message = "Merge succeeded but legacy server did not respond with additional details."
         if ctx.json:
-            hint = {"hint": "Merge succeeded but legacy server did not respond with additional details."}
+            hint = {"_cli_hint": message}
             click.echo(json.dumps(hint))
         else:
-            click.echo("Merge succeeded but legacy server did not respond with additional details.")
+            click.echo(message)
     else:
         if ctx.json:
             click.echo(MergeResponseSchema().dumps(merge_response))
@@ -93,3 +94,7 @@ def merge(ctx: ContextObject, ref: str, force: bool, expected_hash: str, hash_on
             for commit in commits:
                 commit_meta = commit.commit_meta
                 click.echo(commit_meta.hash_ + ' "' + commit_meta.message + '" ' + commit_meta.committer)
+            if merge_response.resultant_target_hash:
+                click.echo(
+                    "Resultant hash on {} after merge: {}".format(merge_response.target_branch, merge_response.resultant_target_hash)
+                )

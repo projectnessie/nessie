@@ -244,7 +244,12 @@ class NessieClient:
     def merge(
         self, from_ref: str, onto_branch: str, from_hash: Optional[str] = None, old_hash: Optional[str] = None
     ) -> Optional[MergeResponse]:
-        """Merge a branch into another branch."""
+        """Merge a branch into another branch.
+
+        Note:
+            For legacy servers that return no response, method returns None.
+            For servers running nessie-quarkus > 0.30.0, a None response would imply error.
+        """
         onto_branch, old_hash_ref = split_into_reference_and_hash(onto_branch)
         if not old_hash:
             old_hash = old_hash_ref if old_hash_ref else self.get_reference(onto_branch).hash_
