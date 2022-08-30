@@ -399,7 +399,7 @@ public interface DatabaseAdapter {
    * Populates the aggregated key-list for the given {@code entry} and returns it.
    *
    * @param entry the {@link CommitLogEntry} to build the aggregated key list for
-   * @param inMemoryCommits when
+   * @param inMemoryCommits function to retrieve not-yet-written commit-log-entries
    * @return commit-log-entry with the aggregated key-list. The returned {@link CommitLogEntry} has
    *     not been persisted.
    */
