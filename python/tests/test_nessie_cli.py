@@ -348,16 +348,18 @@ def test_merge_detached() -> None:
 def test_transplant() -> None:
     """Test transplant operation."""
     execute_cli_command(["branch", "dev"])
-    make_commit("transplant.foo.bar", _new_table("test_transplant_1"), "dev")
-    make_commit("bar.bar", _new_table("test_transplant_2"), "dev")
-    make_commit("foo.baz", _new_table("test_transplant_3"), "dev")
+    make_commit("transplant.foo.bar", _new_table("test_transplant_1"), "dev", message="commit 1")
+    make_commit("bar.bar", _new_table("test_transplant_2"), "dev", message="commit 2")
+    make_commit("foo.baz", _new_table("test_transplant_3"), "dev", message="commit 3")
     main_hash = ref_hash("main")
     logs = simplejson.loads(execute_cli_command(["--json", "log", "dev"]))
     first_hash = [i["hash"] for i in logs]
     execute_cli_command(["cherry-pick", "-c", main_hash, "-s", "dev", first_hash[1], first_hash[0]])
 
+    # The default behaviour for cherry-pick is to squash commits into one
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
-    assert len(logs) == 2  # two commits were transplanted into an empty `main`
+    assert len(logs) == 1  # two commits were squashed into one and transplanted into an empty `main`
+    assert_that(logs[0]["message"]).is_equal_to("commit 2\n---------------------------------------------\ncommit 3")
 
 
 @pytest.mark.vcr
