@@ -41,7 +41,6 @@ plugins {
   id("org.projectnessie") version "0.27.3"
   id("org.projectnessie.buildsupport.spotless") version "0.2.8"
   // The above version "includes" the ones below
-  //  org.projectnessie.buildsupport.attach-test-jar
   //  org.projectnessie.buildsupport.checkstyle
   //  org.projectnessie.buildsupport.errorprone
   //  org.projectnessie.buildsupport.ide-integration
