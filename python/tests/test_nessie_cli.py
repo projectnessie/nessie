@@ -320,16 +320,20 @@ def test_merge() -> None:
     branches = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
     refs = {i.name: i.hash_ for i in branches}
 
+    expected_output_line1 = "The following 1 commits were merged onto main:\n"
+    expected_output_line2 = '{} "test message" \n'.format(refs["dev"])
+    expected_output_line3 = 'Resultant hash on main after merge: {}\n'.format(refs["main"])
     assert_that(merge_output).is_equal_to(
-        "The following 1 commits were merged onto main:"
-        '\n{} "test message" \nResultant hash on main after merge: {}\n'.format(refs["dev"], refs["main"])
-    )
+        expected_output_line1 + expected_output_line2 + expected_output_line3
+    );
 
     # if we try to merge again from dev to main we get an error
     # this is because there is now a conflict as the same commit exists on both branches
     merge_error = execute_cli_command(["merge", "dev", "-c", refs["main"]], ret_val=1)
     assert "Client Error Conflict: The following keys have been changed in conflict:" in merge_error
+
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
+    assert_that(logs[0]["message"]).is_equal_to("test message")
     # we don't check for equality of hashes here because a merge
     # produces a different commit hash on the target branch
     assert len(logs) == 1
@@ -377,19 +381,10 @@ def test_merge_legacy() -> None:
     merge_output = execute_cli_command(["merge", "dev", "-c", main_hash])
     assert_that(merge_output).is_equal_to("Merge succeeded but legacy server did not respond with additional details.\n")
 
+    execute_cli_command(["branch", "devjson"])
+    make_commit("merge.foo.far", _new_table("test_merge_json"), "devjson")
 
-@pytest.mark.vcr
-def test_merge_legacy_json() -> None:
-    """Test merge operation."""
-    execute_cli_command(["branch", "dev"])
-    make_commit("merge.foo.bar", _new_table("test_merge"), "dev")
-    main_hash = ref_hash("main")
-    dev_hash = ref_hash("dev")
-
-    # Passing detached commit-id plus a _different_ hash-on-ref --> error
-    execute_cli_command(["merge", f"dev@{dev_hash}", "-c", main_hash, "-o", main_hash], ret_val=1)
-
-    merge_output = execute_cli_command(["--json", "merge", "dev", "-c", main_hash])
+    merge_output = execute_cli_command(["--json", "merge", "-f", "-b", "main", "devjson"])
     assert_that(merge_output).is_equal_to('{"_cli_hint": "Merge succeeded but legacy server did not respond with additional details."}\n')
 
 
