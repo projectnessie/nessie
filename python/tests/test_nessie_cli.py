@@ -322,10 +322,8 @@ def test_merge() -> None:
 
     expected_output_line1 = "The following 1 commits were merged onto main:\n"
     expected_output_line2 = '{} "test message" \n'.format(refs["dev"])
-    expected_output_line3 = 'Resultant hash on main after merge: {}\n'.format(refs["main"])
-    assert_that(merge_output).is_equal_to(
-        expected_output_line1 + expected_output_line2 + expected_output_line3
-    );
+    expected_output_line3 = "Resultant hash on main after merge: {}\n".format(refs["main"])
+    assert_that(merge_output).is_equal_to(expected_output_line1 + expected_output_line2 + expected_output_line3)
 
     # if we try to merge again from dev to main we get an error
     # this is because there is now a conflict as the same commit exists on both branches
@@ -364,6 +362,7 @@ def test_merge_json() -> None:
     assert_that(merge_response.details[0].source_commits[0]).is_equal_to(dev_hash)
 
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
+    assert_that(logs[0]["message"]).is_equal_to("test message")
     # we don't check for equality of hashes here because a merge
     # produces a different commit hash on the target branch
     assert len(logs) == 1
@@ -408,7 +407,9 @@ def test_merge_detached() -> None:
         "The following 1 commits were merged onto main:"
         '\n{} "test message" \nResultant hash on main after merge: {}\n'.format(refs["dev"], refs["main"])
     )
+
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
+    assert_that(logs[0]["message"]).is_equal_to("test message")
     # we don't check for equality of hashes here because a merge
     # produces a different commit hash on the target branch
     assert len(logs) == 1
@@ -439,6 +440,7 @@ def test_merge_detached_json() -> None:
     assert_that(merge_response.details[0].source_commits[0]).is_equal_to(dev_hash)
 
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
+    assert_that(logs[0]["message"]).is_equal_to("test message")
     # we don't check for equality of hashes here because a merge
     # produces a different commit hash on the target branch
     assert len(logs) == 1
