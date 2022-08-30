@@ -47,7 +47,6 @@ dependencies {
   implementation("com.github.vlsi.gradle:jandex-plugin:$versionJandexPlugin")
   implementation("gradle.plugin.com.github.johnrengelman:shadow:$versionShadowPlugin")
   implementation("io.quarkus:gradle-application-plugin:$versionQuarkus")
-  implementation("org.projectnessie.buildsupport:attach-test-jar:$versionNessieBuildPlugins")
   implementation("org.projectnessie.buildsupport:checkstyle:$versionNessieBuildPlugins")
   implementation("org.projectnessie.buildsupport:errorprone:$versionNessieBuildPlugins")
   implementation("org.projectnessie.buildsupport:ide-integration:$versionNessieBuildPlugins")
