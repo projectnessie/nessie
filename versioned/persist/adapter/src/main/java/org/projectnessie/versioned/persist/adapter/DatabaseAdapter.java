@@ -118,7 +118,7 @@ public interface DatabaseAdapter {
   Stream<CommitLogEntry> commitLog(Hash offset) throws ReferenceNotFoundException;
 
   /**
-   * Loads a single commit log entry.
+   * Loads commit log entries.
    *
    * @return the loaded {@link CommitLogEntry}s, non-existing entries will not be returned.
    */
@@ -370,6 +370,11 @@ public interface DatabaseAdapter {
    * Write multiple new commit-entries, the given commit entries are to be persisted as is. All
    * values of the given {@link CommitLogEntry} can be considered valid and consistent.
    *
+   * <p>Callers must call {@link #updateMultipleCommits(List)} for already existing {@link
+   * CommitLogEntry}s and {@link #writeMultipleCommits(List)} for new {@link CommitLogEntry}s.
+   * Implementations can rely on this assumption (think: SQL {@code INSERT} + {@code UPDATE}
+   * compared to a "simple put" for NoSQL databases).
+   *
    * <p>Implementations however can enforce strict consistency checks/guarantees, like a best-effort
    * approach to prevent hash-collisions but without any other consistency checks/guarantees.
    */
@@ -377,15 +382,28 @@ public interface DatabaseAdapter {
       throws ReferenceConflictException;
 
   /**
-   * Updates multiple new commit-entries, the given commit entries are to be persisted as is. All
-   * values of the given {@link CommitLogEntry} can be considered valid and consistent.
+   * Updates multiple commit-entries, the given commit entries are to be persisted as is. All values
+   * of the given {@link CommitLogEntry} can be considered valid and consistent.
+   *
+   * <p>Callers must call {@link #updateMultipleCommits(List)} for already existing {@link
+   * CommitLogEntry}s and {@link #writeMultipleCommits(List)} for new {@link CommitLogEntry}s.
+   * Implementations can rely on this assumption (think: SQL {@code INSERT} + {@code UPDATE}
+   * compared to a "simple put" for NoSQL databases).
    *
    * <p>Implementations however <em>can</em> enforce strict consistency checks/guarantees.
    */
   void updateMultipleCommits(List<CommitLogEntry> commitLogEntries)
       throws ReferenceNotFoundException;
 
-  CommitLogEntry modifyCommitLogEntryWithKeyList(
+  /**
+   * Populates the aggregated key-list for the given {@code entry} and returns it.
+   *
+   * @param entry the {@link CommitLogEntry} to build the aggregated key list for
+   * @param inMemoryCommits when
+   * @return commit-log-entry with the aggregated key-list. The returned {@link CommitLogEntry} has
+   *     not been persisted.
+   */
+  CommitLogEntry rebuildKeyList(
       CommitLogEntry entry, @Nonnull Function<Hash, CommitLogEntry> inMemoryCommits)
       throws ReferenceNotFoundException;
 }

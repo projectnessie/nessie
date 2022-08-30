@@ -112,7 +112,7 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
 
   @Override
   public Stream<CommitLogEntry> fetchCommitLogEntries(Stream<Hash> hashes) {
-    try (Traced ignore = trace("fetchCommitLogEntries")) {
+    try (Traced ignore = trace("fetchCommitLogEntries.stream")) {
       return delegate.fetchCommitLogEntries(hashes);
     }
   }
@@ -315,12 +315,11 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
   }
 
   @Override
-  public CommitLogEntry modifyCommitLogEntryWithKeyList(
+  public CommitLogEntry rebuildKeyList(
       CommitLogEntry entry, @Nonnull Function<Hash, CommitLogEntry> inMemoryCommits)
       throws ReferenceNotFoundException {
-    try (Traced ignore =
-        trace("updateCommitLogEntryWithKeyList").tag(TAG_HASH, entry.getHash().asString())) {
-      return delegate.modifyCommitLogEntryWithKeyList(entry, inMemoryCommits);
+    try (Traced ignore = trace("rebuildKeyList").tag(TAG_HASH, entry.getHash().asString())) {
+      return delegate.rebuildKeyList(entry, inMemoryCommits);
     }
   }
 }

@@ -209,7 +209,7 @@ public abstract class AbstractDatabaseAdapter<
   }
 
   @Override
-  public CommitLogEntry modifyCommitLogEntryWithKeyList(
+  public CommitLogEntry rebuildKeyList(
       CommitLogEntry entry, @Nonnull Function<Hash, CommitLogEntry> inMemoryCommits)
       throws ReferenceNotFoundException {
     try (OP_CONTEXT ctx = borrowConnection()) {
@@ -1677,7 +1677,7 @@ public abstract class AbstractDatabaseAdapter<
 
   protected final void writeMultipleCommits(OP_CONTEXT ctx, List<CommitLogEntry> entries)
       throws ReferenceConflictException {
-    try (Traced ignore = trace("writeMultipleCommits")) {
+    try (Traced ignore = trace("writeMultipleCommits").tag(TAG_COUNT, entries.size())) {
       doWriteMultipleCommits(ctx, entries);
     }
   }
