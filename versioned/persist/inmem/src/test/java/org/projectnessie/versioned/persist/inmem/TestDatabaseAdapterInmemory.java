@@ -19,4 +19,9 @@ import org.projectnessie.versioned.persist.nontx.AbstractNonTxDatabaseAdapterTes
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
 @NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
-class TestDatabaseAdapterInmemory extends AbstractNonTxDatabaseAdapterTest {}
+class TestDatabaseAdapterInmemory extends AbstractNonTxDatabaseAdapterTest {
+  @Override
+  protected boolean commitWritesValidated() {
+    return true;
+  }
+}

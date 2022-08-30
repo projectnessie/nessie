@@ -33,6 +33,10 @@ import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterConfig
 public abstract class AbstractDatabaseAdapterTest {
   @NessieDbAdapter protected static DatabaseAdapter databaseAdapter;
 
+  protected boolean commitWritesValidated() {
+    return false;
+  }
+
   @Nested
   @SuppressWarnings("ClassCanBeStatic")
   public class CommitLogScan extends AbstractCommitLogScan {
@@ -70,6 +74,14 @@ public abstract class AbstractDatabaseAdapterTest {
   public class ManyCommits extends AbstractManyCommits {
     ManyCommits() {
       super(databaseAdapter);
+    }
+  }
+
+  @Nested
+  @SuppressWarnings("ClassCanBeStatic")
+  public class WriteUpdateCommits extends AbstractWriteUpdateCommits {
+    WriteUpdateCommits() {
+      super(databaseAdapter, commitWritesValidated());
     }
   }
 

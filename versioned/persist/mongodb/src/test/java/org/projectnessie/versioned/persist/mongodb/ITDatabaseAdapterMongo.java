@@ -21,4 +21,10 @@ import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabas
 
 @NessieExternalDatabase(LocalMongoTestConnectionProviderSource.class)
 public class ITDatabaseAdapterMongo extends AbstractNonTxDatabaseAdapterTest
-    implements LongerCommitTimeouts {}
+    implements LongerCommitTimeouts {
+
+  @Override
+  protected boolean commitWritesValidated() {
+    return true;
+  }
+}

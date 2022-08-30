@@ -25,6 +25,12 @@ import org.projectnessie.versioned.persist.tests.AbstractDatabaseAdapterTest;
 import org.projectnessie.versioned.persist.tx.TxDatabaseAdapter.NessieSqlDataType;
 
 public abstract class AbstractTxDatabaseAdapterTest extends AbstractDatabaseAdapterTest {
+
+  @Override
+  protected boolean commitWritesValidated() {
+    return true;
+  }
+
   @Test
   void insertOnConflict() throws Exception {
     TxDatabaseAdapter txDatabaseAdapter = (TxDatabaseAdapter) databaseAdapter;
