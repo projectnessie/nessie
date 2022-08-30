@@ -440,6 +440,9 @@ class Transplant:
 
     from_ref_name: str = attr.ib(metadata=desert.metadata(fields.Str(data_key="fromRefName")))
     hashes_to_transplant: List[str] = attr.ib(metadata=desert.metadata(fields.List(fields.Str(), data_key="hashesToTransplant")))
+    keep_individual_commits: bool = attr.ib(
+        default=True, metadata=desert.metadata(fields.Bool(allow_none=True, data_key="keepIndividualCommits"))
+    )
 
 
 TransplantSchema = desert.schema_class(Transplant)
