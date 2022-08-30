@@ -23,8 +23,10 @@ import com.google.common.collect.Maps;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.mongodb.DuplicateKeyException;
 import com.mongodb.ErrorCategory;
+import com.mongodb.MongoBulkWriteException;
 import com.mongodb.MongoServerException;
 import com.mongodb.MongoWriteException;
+import com.mongodb.bulk.BulkWriteError;
 import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
@@ -803,6 +805,14 @@ public class MongoDatabaseAdapter
       MongoWriteException writeException = (MongoWriteException) e;
       return writeException.getError().getCategory() == ErrorCategory.DUPLICATE_KEY;
     }
+    if (e instanceof MongoBulkWriteException) {
+      MongoBulkWriteException writeException = (MongoBulkWriteException) e;
+      for (BulkWriteError writeError : writeException.getWriteErrors()) {
+        if (writeError.getCategory() == ErrorCategory.DUPLICATE_KEY) {
+          return true;
+        }
+      }
+    }
     return false;
   }
 
@@ -876,8 +886,7 @@ public class MongoDatabaseAdapter
           return false;
         }
       } catch (MongoWriteException writeException) {
-        ErrorCategory category = writeException.getError().getCategory();
-        if (ErrorCategory.DUPLICATE_KEY == category) {
+        if (isDuplicateKeyError(writeException)) {
           return false;
         }
         throw writeException;
