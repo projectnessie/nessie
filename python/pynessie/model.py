@@ -457,6 +457,45 @@ MergeSchema = desert.schema_class(Merge)
 
 
 @attr.dataclass
+class MergeResponseDetails:
+    """Dataclass for details in MergeResponse."""
+
+    key: ContentKey = attr.ib(metadata=desert.metadata(fields.Nested(ContentKeySchema())))
+    merge_behaviour: str = attr.ib(metadata=desert.metadata(fields.Str(data_key="mergeBehavior")))
+    conflict_type: str = attr.ib(metadata=desert.metadata(fields.Str(data_key="conflictType")))
+    source_commits: List[str] = attr.ib(metadata=desert.metadata(fields.List(fields.Str(), data_key="sourceCommits")))
+    target_commits: List[str] = attr.ib(metadata=desert.metadata(fields.List(fields.Str(allow_none=True), data_key="targetCommits")))
+
+
+MergeResponseDetailsSchema = desert.schema_class(MergeResponseDetails)
+
+
+@attr.dataclass
+class MergeResponse:
+    """Dataclass for a MergeResponse."""
+
+    target_branch: str = attr.ib(metadata=desert.metadata(fields.Str(data_key="targetBranch")))
+    effective_target_hash: str = attr.ib(metadata=desert.metadata(fields.Str(data_key="effectiveTargetHash")))
+    source_commits: List[LogEntry] = attr.ib(
+        metadata=desert.metadata(fields.List(fields.Nested(LogEntrySchema()), data_key="sourceCommits"))
+    )
+    details: List[MergeResponseDetails] = attr.ib(
+        metadata=desert.metadata(fields.List(fields.Nested(MergeResponseDetailsSchema()), data_key="details"))
+    )
+    resultant_target_hash: str = attr.ib(metadata=desert.metadata(fields.Str(allow_none=True, data_key="resultantTargetHash")))
+    common_ancestor: str = attr.ib(metadata=desert.metadata(fields.Str(allow_none=True, data_key="commonAncestor")))
+    expected_hash: str = attr.ib(metadata=desert.metadata(fields.Str(allow_none=True, data_key="expectedHash")))
+    target_commits: List[LogEntry] = attr.ib(
+        metadata=desert.metadata(fields.List(fields.Nested(LogEntrySchema()), allow_none=True, data_key="targetCommits"))
+    )
+    was_applied: bool = attr.ib(default=False, metadata=desert.metadata(fields.Bool(data_key="wasApplied")))
+    was_successful: bool = attr.ib(default=False, metadata=desert.metadata(fields.Bool(data_key="wasSuccessful")))
+
+
+MergeResponseSchema = desert.schema_class(MergeResponse)
+
+
+@attr.dataclass
 class MultiContents:
     """Contents container for commit."""
 

@@ -33,6 +33,7 @@ from pynessie.model import (
     IcebergTable,
     LogEntry,
     LogEntrySchema,
+    MergeResponseSchema,
     ReferenceSchema,
     ReflogEntry,
     ReflogEntrySchema,
@@ -311,14 +312,78 @@ def test_merge() -> None:
 
     # Passing detached commit-id plus a _different_ hash-on-ref --> error
     execute_cli_command(["merge", f"dev@{dev_hash}", "-c", main_hash, "-o", main_hash], ret_val=1)
+    merge_output = execute_cli_command(["merge", "dev", "-c", main_hash])
 
-    execute_cli_command(["merge", "dev", "-c", main_hash])
+    branches = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
+    refs = {i.name: i.hash_ for i in branches}
+
+    expected_output_list = [
+        "The following 1 commits were merged onto main:",
+        '{} "test message" '.format(refs["dev"]),
+        "Resultant hash on main after merge: {}".format(refs["main"]),
+    ]
+    assert_that(merge_output.splitlines()).is_equal_to(expected_output_list)
+
+    # if we try to merge again from dev to main we get an error
+    # this is because there is now a conflict as the same commit exists on both branches
+    merge_error = execute_cli_command(["merge", "dev", "-c", refs["main"]], ret_val=1)
+    assert "Client Error Conflict: The following keys have been changed in conflict:" in merge_error
+
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
     # we don't check for equality of hashes here because a merge
     # produces a different commit hash on the target branch
     assert len(logs) == 1
+    assert_that(logs[0]["message"]).is_equal_to("test message")
     logs = simplejson.loads(execute_cli_command(["--json", "log", "dev"]))
     assert len(logs) == 1
+
+
+@pytest.mark.vcr
+def test_merge_json() -> None:
+    """Test merge operation."""
+    execute_cli_command(["branch", "dev"])
+    make_commit("merge.foo.bar", _new_table("test_merge"), "dev")
+    main_hash = ref_hash("main")
+    dev_hash = ref_hash("dev")
+
+    # Passing detached commit-id plus a _different_ hash-on-ref --> error
+    execute_cli_command(["merge", f"dev@{dev_hash}", "-c", main_hash, "-o", main_hash], ret_val=1)
+
+    merge_output = execute_cli_command(["--json", "merge", "dev", "-c", main_hash])
+    merge_response = MergeResponseSchema().loads(merge_output)
+
+    # Check merge response
+    assert_that(merge_response.target_branch).is_equal_to("main")
+    assert_that(merge_response.expected_hash).is_equal_to(main_hash)
+    assert_that(merge_response.effective_target_hash).is_equal_to(main_hash)
+    assert len(merge_response.source_commits) == 1
+    assert len(merge_response.details) == 1
+    assert_that(merge_response.details[0].source_commits[0]).is_equal_to(dev_hash)
+
+    logs = simplejson.loads(execute_cli_command(["--json", "log"]))
+    # we don't check for equality of hashes here because a merge
+    # produces a different commit hash on the target branch
+    assert len(logs) == 1
+    assert_that(logs[0]["message"]).is_equal_to("test message")
+    logs = simplejson.loads(execute_cli_command(["--json", "log", "dev"]))
+    assert len(logs) == 1
+
+
+@pytest.mark.vcr
+def test_merge_legacy() -> None:
+    """Test merge operation."""
+    execute_cli_command(["branch", "dev"])
+    make_commit("merge.foo.bar", _new_table("test_merge"), "dev")
+    main_hash = ref_hash("main")
+
+    merge_output = execute_cli_command(["merge", "dev", "-c", main_hash])
+    assert_that(merge_output).is_equal_to("Merge succeeded but legacy server did not respond with additional details.\n")
+
+    execute_cli_command(["branch", "devjson"])
+    make_commit("merge.foo.far", _new_table("test_merge_json"), "devjson")
+
+    merge_output = execute_cli_command(["--json", "merge", "-f", "-b", "main", "devjson"])
+    assert_that(merge_output).is_equal_to('{"_cli_hint": "Merge succeeded but legacy server did not respond with additional details."}\n')
 
 
 @pytest.mark.vcr
@@ -332,11 +397,54 @@ def test_merge_detached() -> None:
     # Passing detached commit-id plus a _different_ hash-on-ref --> error
     execute_cli_command(["merge", dev_hash, "-c", main_hash, "-o", main_hash], ret_val=1)
 
-    execute_cli_command(["merge", dev_hash, "-c", main_hash])
+    merge_output = execute_cli_command(["merge", "dev", "-c", main_hash])
+
+    branches = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
+    refs = {i.name: i.hash_ for i in branches}
+
+    expected_output_list = [
+        "The following 1 commits were merged onto main:",
+        '{} "test message" '.format(refs["dev"]),
+        "Resultant hash on main after merge: {}".format(refs["main"]),
+    ]
+    assert_that(merge_output.splitlines()).is_equal_to(expected_output_list)
+
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
     # we don't check for equality of hashes here because a merge
     # produces a different commit hash on the target branch
     assert len(logs) == 1
+    assert_that(logs[0]["message"]).is_equal_to("test message")
+    logs = simplejson.loads(execute_cli_command(["--json", "log", "dev"]))
+    assert len(logs) == 1
+
+
+@pytest.mark.vcr
+def test_merge_detached_json() -> None:
+    """Test merge operation."""
+    execute_cli_command(["branch", "dev"])
+    make_commit("merge.foo.bar", _new_table("test_merge_detached"), "dev")
+    main_hash = ref_hash("main")
+    dev_hash = ref_hash("dev")
+
+    # Passing detached commit-id plus a _different_ hash-on-ref --> error
+    execute_cli_command(["merge", dev_hash, "-c", main_hash, "-o", main_hash], ret_val=1)
+
+    merge_output = execute_cli_command(["--json", "merge", dev_hash, "-c", main_hash])
+    merge_response = MergeResponseSchema().loads(merge_output)
+
+    # Check merge response
+    assert_that(merge_response.target_branch).is_equal_to("main")
+    assert_that(merge_response.expected_hash).is_equal_to(main_hash)
+    assert_that(merge_response.effective_target_hash).is_equal_to(main_hash)
+    assert len(merge_response.source_commits) == 1
+    assert len(merge_response.details) == 1
+    assert_that(merge_response.details[0].source_commits[0]).is_equal_to(dev_hash)
+
+    logs = simplejson.loads(execute_cli_command(["--json", "log"]))
+    # we don't check for equality of hashes here because a merge
+    # produces a different commit hash on the target branch
+    assert len(logs) == 1
+    assert_that(logs[0]["message"]).is_equal_to("test message")
     logs = simplejson.loads(execute_cli_command(["--json", "log", "dev"]))
     assert len(logs) == 1
 

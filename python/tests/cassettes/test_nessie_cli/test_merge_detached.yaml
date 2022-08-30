@@ -9,7 +9,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.27.1
+      - python-requests/2.28.1
     method: GET
     uri: http://localhost:19120/api/v1/trees/tree
   response:
@@ -34,7 +34,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.27.1
+      - python-requests/2.28.1
     method: GET
     uri: http://localhost:19120/api/v1/trees/tree/main
   response:
@@ -64,7 +64,7 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.27.1
+      - python-requests/2.28.1
     method: POST
     uri: http://localhost:19120/api/v1/trees/tree?sourceRefName=main
   response:
@@ -89,14 +89,14 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.27.1
+      - python-requests/2.28.1
     method: GET
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
       string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "dev", "type": "BRANCH"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "main", "type": "BRANCH"}], "token": null}'
+        "name": "main", "type": "BRANCH"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "dev", "type": "BRANCH"}], "token": null}'
     headers:
       Content-Type:
       - application/json
@@ -115,7 +115,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.27.1
+      - python-requests/2.28.1
     method: GET
     uri: http://localhost:19120/api/v1/contents/merge.foo.bar?ref=dev
   response:
@@ -150,12 +150,12 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.27.1
+      - python-requests/2.28.1
     method: POST
     uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: '{"hash": "021eadb34b8d4ff07b1e75d9e6cc10dab76fcc631ca22ddbd6973c9822318791",
+      string: '{"hash": "d6edfa202e853c438af9310a11398558043a87b9e928d609151520a5dae6159b",
         "name": "dev", "type": "BRANCH"}'
     headers:
       Content-Type:
@@ -175,14 +175,14 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.27.1
+      - python-requests/2.28.1
     method: GET
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
-      string: '{"hasMore": false, "references": [{"hash": "021eadb34b8d4ff07b1e75d9e6cc10dab76fcc631ca22ddbd6973c9822318791",
-        "name": "dev", "type": "BRANCH"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "main", "type": "BRANCH"}], "token": null}'
+      string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "main", "type": "BRANCH"}, {"hash": "d6edfa202e853c438af9310a11398558043a87b9e928d609151520a5dae6159b",
+        "name": "dev", "type": "BRANCH"}], "token": null}'
     headers:
       Content-Type:
       - application/json
@@ -201,14 +201,14 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.27.1
+      - python-requests/2.28.1
     method: GET
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
-      string: '{"hasMore": false, "references": [{"hash": "021eadb34b8d4ff07b1e75d9e6cc10dab76fcc631ca22ddbd6973c9822318791",
-        "name": "dev", "type": "BRANCH"}, {"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
-        "name": "main", "type": "BRANCH"}], "token": null}'
+      string: '{"hasMore": false, "references": [{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "name": "main", "type": "BRANCH"}, {"hash": "d6edfa202e853c438af9310a11398558043a87b9e928d609151520a5dae6159b",
+        "name": "dev", "type": "BRANCH"}], "token": null}'
     headers:
       Content-Type:
       - application/json
@@ -227,7 +227,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.27.1
+      - python-requests/2.28.1
     method: GET
     uri: http://localhost:19120/api/v1/trees/tree
   response:
@@ -252,7 +252,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.27.1
+      - python-requests/2.28.1
     method: GET
     uri: http://localhost:19120/api/v1/trees/tree
   response:
@@ -268,8 +268,33 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"fromHash": "021eadb34b8d4ff07b1e75d9e6cc10dab76fcc631ca22ddbd6973c9822318791",
-      "fromRefName": "DETACHED"}'
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.28.1
+    method: GET
+    uri: http://localhost:19120/api/v1/trees/tree/dev
+  response:
+    body:
+      string: '{"hash": "d6edfa202e853c438af9310a11398558043a87b9e928d609151520a5dae6159b",
+        "name": "dev", "type": "BRANCH"}'
+    headers:
+      Content-Type:
+      - application/json
+      content-length:
+      - '109'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"fromHash": "d6edfa202e853c438af9310a11398558043a87b9e928d609151520a5dae6159b",
+      "fromRefName": "dev"}'
     headers:
       Accept:
       - '*/*'
@@ -278,20 +303,35 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '107'
+      - '102'
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.27.1
+      - python-requests/2.28.1
     method: POST
     uri: http://localhost:19120/api/v1/trees/branch/main/merge?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: ''
-    headers: {}
+      string: '{"commonAncestor": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "details": [{"conflictType": "NONE", "key": {"elements": ["merge", "foo",
+        "bar"]}, "mergeBehavior": "NORMAL", "sourceCommits": ["d6edfa202e853c438af9310a11398558043a87b9e928d609151520a5dae6159b"],
+        "targetCommits": []}], "effectiveTargetHash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "expectedHash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        "resultantTargetHash": "d2727d530fc472337ec57ecf58fbdebf008a310a441472ef1a5d4468a9f6686c",
+        "sourceCommits": [{"commitMeta": {"author": "nessie test", "authorTime": "2022-08-29T13:33:25.271048Z",
+        "commitTime": "2022-08-29T13:33:25.271048Z", "committer": "", "hash": "d6edfa202e853c438af9310a11398558043a87b9e928d609151520a5dae6159b",
+        "message": "test message", "properties": {}, "signedOffBy": null}, "operations":
+        null, "parentCommitHash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"}],
+        "targetBranch": "main", "targetCommits": null, "wasApplied": true, "wasSuccessful":
+        true}'
+    headers:
+      Content-Type:
+      - application/json
+      content-length:
+      - '1081'
     status:
-      code: 204
-      message: No Content
+      code: 200
+      message: OK
 - request:
     body: null
     headers:
@@ -302,12 +342,38 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.27.1
+      - python-requests/2.28.1
+    method: GET
+    uri: http://localhost:19120/api/v1/trees
+  response:
+    body:
+      string: '{"hasMore": false, "references": [{"hash": "d2727d530fc472337ec57ecf58fbdebf008a310a441472ef1a5d4468a9f6686c",
+        "name": "main", "type": "BRANCH"}, {"hash": "d6edfa202e853c438af9310a11398558043a87b9e928d609151520a5dae6159b",
+        "name": "dev", "type": "BRANCH"}], "token": null}'
+    headers:
+      Content-Type:
+      - application/json
+      content-length:
+      - '272'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.28.1
     method: GET
     uri: http://localhost:19120/api/v1/trees/tree
   response:
     body:
-      string: '{"hash": "6b0573ddcc8268ecd9c23d43c841df862b50cb25138b7ff4447d7b011a77686f",
+      string: '{"hash": "d2727d530fc472337ec57ecf58fbdebf008a310a441472ef1a5d4468a9f6686c",
         "name": "main", "type": "BRANCH"}'
     headers:
       Content-Type:
@@ -327,21 +393,22 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.27.1
+      - python-requests/2.28.1
     method: GET
     uri: http://localhost:19120/api/v1/trees/tree/main/log
   response:
     body:
       string: '{"hasMore": false, "logEntries": [{"commitMeta": {"author": "nessie
-        test", "authorTime": "2022-01-31T10:05:37.481719Z", "commitTime": "2022-01-31T10:05:37.536576Z",
-        "committer": "", "hash": "6b0573ddcc8268ecd9c23d43c841df862b50cb25138b7ff4447d7b011a77686f",
-        "message": "test message", "properties": {}, "signedOffBy": null}, "operations":
-        null, "parentCommitHash": null}], "token": null}'
+        test", "authorTime": "2022-08-29T13:33:25.271048Z", "commitTime": "2022-08-29T13:33:25.350077Z",
+        "committer": "", "hash": "d2727d530fc472337ec57ecf58fbdebf008a310a441472ef1a5d4468a9f6686c",
+        "message": "test message", "properties": {"_merge_parent": "d6edfa202e853c438af9310a11398558043a87b9e928d609151520a5dae6159b"},
+        "signedOffBy": null}, "operations": null, "parentCommitHash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"}],
+        "token": null}'
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '387'
+      - '532'
     status:
       code: 200
       message: OK
@@ -355,21 +422,22 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.27.1
+      - python-requests/2.28.1
     method: GET
     uri: http://localhost:19120/api/v1/trees/tree/dev/log
   response:
     body:
       string: '{"hasMore": false, "logEntries": [{"commitMeta": {"author": "nessie
-        test", "authorTime": "2022-01-31T10:05:37.481719Z", "commitTime": "2022-01-31T10:05:37.481719Z",
-        "committer": "", "hash": "021eadb34b8d4ff07b1e75d9e6cc10dab76fcc631ca22ddbd6973c9822318791",
+        test", "authorTime": "2022-08-29T13:33:25.271048Z", "commitTime": "2022-08-29T13:33:25.271048Z",
+        "committer": "", "hash": "d6edfa202e853c438af9310a11398558043a87b9e928d609151520a5dae6159b",
         "message": "test message", "properties": {}, "signedOffBy": null}, "operations":
-        null, "parentCommitHash": null}], "token": null}'
+        null, "parentCommitHash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"}],
+        "token": null}'
     headers:
       Content-Type:
       - application/json
       content-length:
-      - '387'
+      - '449'
     status:
       code: 200
       message: OK

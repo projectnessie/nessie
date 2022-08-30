@@ -15,11 +15,14 @@
 
 """merge CLI command."""
 
+import json
+
 import click
 from click import UsageError
 
 from pynessie.cli_common_context import ContextObject, MutuallyExclusiveOption
 from pynessie.decorators import error_handler, pass_client, validate_reference
+from pynessie.model import MergeResponseSchema
 
 
 @click.command("merge")
@@ -68,5 +71,28 @@ def merge(ctx: ContextObject, ref: str, force: bool, expected_hash: str, hash_on
             """Either condition or force must be set. Condition should be set to a valid hash for concurrency
             control or force to ignore current state of Nessie Store."""
         )
-    ctx.nessie.merge(from_ref, ref, hash_on_ref, expected_hash)
-    click.echo()
+    merge_response = ctx.nessie.merge(from_ref, ref, hash_on_ref, expected_hash)
+    if merge_response is None:
+        message = "Merge succeeded but legacy server did not respond with additional details."
+        if ctx.json:
+            hint = {"_cli_hint": message}
+            click.echo(json.dumps(hint))
+        else:
+            click.echo(message)
+    else:
+        if ctx.json:
+            click.echo(MergeResponseSchema().dumps(merge_response))
+        else:
+            commits = merge_response.source_commits
+            click.echo(
+                "The following {N} commits were merged onto {target_branch}:".format(
+                    N=len(commits), target_branch=merge_response.target_branch
+                )
+            )
+            for commit in commits:
+                commit_meta = commit.commit_meta
+                click.echo(commit_meta.hash_ + ' "' + commit_meta.message + '" ' + commit_meta.committer)
+            if merge_response.resultant_target_hash:
+                click.echo(
+                    "Resultant hash on {} after merge: {}".format(merge_response.target_branch, merge_response.resultant_target_hash)
+                )
