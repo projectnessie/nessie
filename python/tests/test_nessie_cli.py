@@ -320,10 +320,12 @@ def test_merge() -> None:
     branches = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
     refs = {i.name: i.hash_ for i in branches}
 
-    expected_output_line1 = "The following 1 commits were merged onto main:\n"
-    expected_output_line2 = '{} "test message" \n'.format(refs["dev"])
-    expected_output_line3 = "Resultant hash on main after merge: {}\n".format(refs["main"])
-    assert_that(merge_output).is_equal_to(expected_output_line1 + expected_output_line2 + expected_output_line3)
+    expected_output_list = [
+        "The following 1 commits were merged onto main:",
+        '{} "test message" '.format(refs["dev"]),
+        "Resultant hash on main after merge: {}".format(refs["main"]),
+    ]
+    assert_that(merge_output.splitlines()).is_equal_to(expected_output_list)
 
     # if we try to merge again from dev to main we get an error
     # this is because there is now a conflict as the same commit exists on both branches
@@ -331,10 +333,10 @@ def test_merge() -> None:
     assert "Client Error Conflict: The following keys have been changed in conflict:" in merge_error
 
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
-    assert_that(logs[0]["message"]).is_equal_to("test message")
     # we don't check for equality of hashes here because a merge
     # produces a different commit hash on the target branch
     assert len(logs) == 1
+    assert_that(logs[0]["message"]).is_equal_to("test message")
     logs = simplejson.loads(execute_cli_command(["--json", "log", "dev"]))
     assert len(logs) == 1
 
@@ -362,10 +364,10 @@ def test_merge_json() -> None:
     assert_that(merge_response.details[0].source_commits[0]).is_equal_to(dev_hash)
 
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
-    assert_that(logs[0]["message"]).is_equal_to("test message")
     # we don't check for equality of hashes here because a merge
     # produces a different commit hash on the target branch
     assert len(logs) == 1
+    assert_that(logs[0]["message"]).is_equal_to("test message")
     logs = simplejson.loads(execute_cli_command(["--json", "log", "dev"]))
     assert len(logs) == 1
 
@@ -403,16 +405,18 @@ def test_merge_detached() -> None:
     branches = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
     refs = {i.name: i.hash_ for i in branches}
 
-    assert_that(merge_output).is_equal_to(
-        "The following 1 commits were merged onto main:"
-        '\n{} "test message" \nResultant hash on main after merge: {}\n'.format(refs["dev"], refs["main"])
-    )
+    expected_output_list = [
+        "The following 1 commits were merged onto main:",
+        '{} "test message" '.format(refs["dev"]),
+        "Resultant hash on main after merge: {}".format(refs["main"]),
+    ]
+    assert_that(merge_output.splitlines()).is_equal_to(expected_output_list)
 
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
-    assert_that(logs[0]["message"]).is_equal_to("test message")
     # we don't check for equality of hashes here because a merge
     # produces a different commit hash on the target branch
     assert len(logs) == 1
+    assert_that(logs[0]["message"]).is_equal_to("test message")
     logs = simplejson.loads(execute_cli_command(["--json", "log", "dev"]))
     assert len(logs) == 1
 
@@ -440,10 +444,10 @@ def test_merge_detached_json() -> None:
     assert_that(merge_response.details[0].source_commits[0]).is_equal_to(dev_hash)
 
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
-    assert_that(logs[0]["message"]).is_equal_to("test message")
     # we don't check for equality of hashes here because a merge
     # produces a different commit hash on the target branch
     assert len(logs) == 1
+    assert_that(logs[0]["message"]).is_equal_to("test message")
     logs = simplejson.loads(execute_cli_command(["--json", "log", "dev"]))
     assert len(logs) == 1
 
