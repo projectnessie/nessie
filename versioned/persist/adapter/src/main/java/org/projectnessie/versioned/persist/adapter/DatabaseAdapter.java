@@ -19,10 +19,12 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.errorprone.annotations.MustBeClosed;
 import com.google.protobuf.ByteString;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.Diff;
@@ -114,6 +116,14 @@ public interface DatabaseAdapter {
    */
   @MustBeClosed
   Stream<CommitLogEntry> commitLog(Hash offset) throws ReferenceNotFoundException;
+
+  /**
+   * Loads commit log entries.
+   *
+   * @return the loaded {@link CommitLogEntry}s, non-existing entries will not be returned.
+   */
+  @MustBeClosed
+  Stream<CommitLogEntry> fetchCommitLogEntries(Stream<Hash> hashes);
 
   /**
    * Retrieve the content-keys that are "present" for the specified commit.
@@ -355,4 +365,45 @@ public interface DatabaseAdapter {
 
   @VisibleForTesting
   void assertCleanStateForTests();
+
+  /**
+   * Write multiple new commit-entries, the given commit entries are to be persisted as is. All
+   * values of the given {@link CommitLogEntry} can be considered valid and consistent.
+   *
+   * <p>Callers must call {@link #updateMultipleCommits(List)} for already existing {@link
+   * CommitLogEntry}s and {@link #writeMultipleCommits(List)} for new {@link CommitLogEntry}s.
+   * Implementations can rely on this assumption (think: SQL {@code INSERT} + {@code UPDATE}
+   * compared to a "simple put" for NoSQL databases).
+   *
+   * <p>Implementations however can enforce strict consistency checks/guarantees, like a best-effort
+   * approach to prevent hash-collisions but without any other consistency checks/guarantees.
+   */
+  void writeMultipleCommits(List<CommitLogEntry> commitLogEntries)
+      throws ReferenceConflictException;
+
+  /**
+   * Updates multiple commit-entries, the given commit entries are to be persisted as is. All values
+   * of the given {@link CommitLogEntry} can be considered valid and consistent.
+   *
+   * <p>Callers must call {@link #updateMultipleCommits(List)} for already existing {@link
+   * CommitLogEntry}s and {@link #writeMultipleCommits(List)} for new {@link CommitLogEntry}s.
+   * Implementations can rely on this assumption (think: SQL {@code INSERT} + {@code UPDATE}
+   * compared to a "simple put" for NoSQL databases).
+   *
+   * <p>Implementations however <em>can</em> enforce strict consistency checks/guarantees.
+   */
+  void updateMultipleCommits(List<CommitLogEntry> commitLogEntries)
+      throws ReferenceNotFoundException;
+
+  /**
+   * Populates the aggregated key-list for the given {@code entry} and returns it.
+   *
+   * @param entry the {@link CommitLogEntry} to build the aggregated key list for
+   * @param inMemoryCommits function to retrieve not-yet-written commit-log-entries
+   * @return commit-log-entry with the aggregated key-list. The returned {@link CommitLogEntry} has
+   *     not been persisted.
+   */
+  CommitLogEntry rebuildKeyList(
+      CommitLogEntry entry, @Nonnull Function<Hash, CommitLogEntry> inMemoryCommits)
+      throws ReferenceNotFoundException;
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.nontx;
+package org.projectnessie.versioned.persist.adapter.spi;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,7 +58,7 @@ public class TestBatchSpliterator {
     BatchSpliterator<Integer, String> batchSpliterator =
         new BatchSpliterator<>(
             3,
-            IntStream.range(0, 0).boxed().spliterator(),
+            IntStream.range(0, 0).boxed(),
             intMapper,
             Spliterator.NONNULL | Spliterator.DISTINCT | Spliterator.IMMUTABLE);
 
@@ -73,7 +73,7 @@ public class TestBatchSpliterator {
     BatchSpliterator<Integer, String> batchSpliterator =
         new BatchSpliterator<>(
             3,
-            IntStream.range(10, 20).boxed().spliterator(),
+            IntStream.range(10, 20).boxed(),
             intMapper,
             Spliterator.NONNULL | Spliterator.DISTINCT | Spliterator.IMMUTABLE);
 
@@ -89,7 +89,7 @@ public class TestBatchSpliterator {
     BatchSpliterator<Integer, String> batchSpliterator =
         new BatchSpliterator<>(
             3,
-            IntStream.range(10, 20).boxed().spliterator(),
+            IntStream.range(10, 20).boxed(),
             intMapper,
             Spliterator.NONNULL | Spliterator.DISTINCT | Spliterator.IMMUTABLE);
 
@@ -105,7 +105,7 @@ public class TestBatchSpliterator {
     BatchSpliterator<Integer, String> batchSpliterator =
         new BatchSpliterator<>(
             3,
-            IntStream.range(10, 20).boxed().spliterator(),
+            IntStream.range(10, 20).boxed(),
             intMapper,
             Spliterator.NONNULL | Spliterator.DISTINCT | Spliterator.IMMUTABLE);
 
@@ -121,7 +121,7 @@ public class TestBatchSpliterator {
     BatchSpliterator<Integer, String> batchSpliterator =
         new BatchSpliterator<>(
             3,
-            IntStream.range(10, 20).boxed().spliterator(),
+            IntStream.range(10, 20).boxed(),
             intMapper,
             Spliterator.NONNULL | Spliterator.DISTINCT | Spliterator.IMMUTABLE);
 
@@ -137,7 +137,7 @@ public class TestBatchSpliterator {
     BatchSpliterator<Integer, String> batchSpliterator =
         new BatchSpliterator<>(
             3,
-            IntStream.range(10, 20).boxed().spliterator(),
+            IntStream.range(10, 20).boxed(),
             intMapper,
             Spliterator.NONNULL | Spliterator.DISTINCT | Spliterator.IMMUTABLE);
 
@@ -153,7 +153,7 @@ public class TestBatchSpliterator {
     BatchSpliterator<Integer, String> batchSpliterator =
         new BatchSpliterator<>(
             3,
-            IntStream.range(10, 20).boxed().spliterator(),
+            IntStream.range(10, 20).boxed(),
             intMapper,
             Spliterator.NONNULL | Spliterator.DISTINCT | Spliterator.IMMUTABLE);
 
@@ -170,7 +170,7 @@ public class TestBatchSpliterator {
     BatchSpliterator<Integer, String> batchSpliterator =
         new BatchSpliterator<>(
             3,
-            IntStream.range(10, 20).boxed().spliterator(),
+            IntStream.range(10, 20).boxed(),
             intMapper,
             Spliterator.NONNULL | Spliterator.DISTINCT | Spliterator.IMMUTABLE);
 
@@ -189,7 +189,7 @@ public class TestBatchSpliterator {
     BatchSpliterator<Integer, String> batchSpliterator =
         new BatchSpliterator<>(
             3,
-            IntStream.range(10, 20).boxed().spliterator(),
+            IntStream.range(10, 20).boxed(),
             intMapper,
             Spliterator.NONNULL | Spliterator.DISTINCT | Spliterator.IMMUTABLE);
 
@@ -208,7 +208,7 @@ public class TestBatchSpliterator {
     BatchSpliterator<Integer, String> batchSpliterator =
         new BatchSpliterator<>(
             3,
-            IntStream.range(10, 20).boxed().skip(4).spliterator(),
+            IntStream.range(10, 20).boxed().skip(4),
             intMapper,
             Spliterator.NONNULL | Spliterator.DISTINCT | Spliterator.IMMUTABLE);
 
@@ -226,7 +226,7 @@ public class TestBatchSpliterator {
     BatchSpliterator<Integer, String> batchSpliterator =
         new BatchSpliterator<>(
             3,
-            IntStream.range(10, 20).boxed().skip(4).limit(5).spliterator(),
+            IntStream.range(10, 20).boxed().skip(4).limit(5),
             intMapper,
             Spliterator.NONNULL | Spliterator.DISTINCT | Spliterator.IMMUTABLE);
 

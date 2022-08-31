@@ -105,6 +105,7 @@ import org.projectnessie.versioned.persist.adapter.events.RepositoryInitializedE
 import org.projectnessie.versioned.persist.adapter.events.TransplantEvent;
 import org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization;
 import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
+import org.projectnessie.versioned.persist.adapter.spi.BatchSpliterator;
 import org.projectnessie.versioned.persist.adapter.spi.Traced;
 import org.projectnessie.versioned.persist.adapter.spi.TryLoopState;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentKey;
@@ -667,7 +668,7 @@ public abstract class NonTransactionalDatabaseAdapter<
     Spliterator<Entry<AttachmentKey, AttachmentValue>> split =
         new BatchSpliterator<>(
             attachmentChunkSize(),
-            keys.spliterator(),
+            keys,
             chunk ->
                 fetchAttachments(chunk.stream().map(ProtoSerialization::toProtoKey)).spliterator(),
             Spliterator.NONNULL | Spliterator.DISTINCT | Spliterator.IMMUTABLE);
@@ -690,6 +691,26 @@ public abstract class NonTransactionalDatabaseAdapter<
   @Override
   public void deleteAttachments(Stream<ContentAttachmentKey> keys) {
     purgeAttachments(keys.map(ProtoSerialization::toProtoKey));
+  }
+
+  @Override
+  public void writeMultipleCommits(List<CommitLogEntry> commitLogEntries)
+      throws ReferenceConflictException {
+    try {
+      doWriteMultipleCommits(NON_TRANSACTIONAL_OPERATION_CONTEXT, commitLogEntries);
+    } catch (ReferenceConflictException e) {
+      throw e;
+    }
+  }
+
+  @Override
+  public void updateMultipleCommits(List<CommitLogEntry> commitLogEntries)
+      throws ReferenceNotFoundException {
+    try {
+      doUpdateMultipleCommits(NON_TRANSACTIONAL_OPERATION_CONTEXT, commitLogEntries);
+    } catch (ReferenceNotFoundException e) {
+      throw e;
+    }
   }
 
   // /////////////////////////////////////////////////////////////////////////////////////////////
@@ -1560,7 +1581,7 @@ public abstract class NonTransactionalDatabaseAdapter<
       NonTransactionalOperationContext ctx, Stream<ContentAttachment> attachments) {
     new BatchSpliterator<ContentAttachment, Void>(
             attachmentChunkSize(),
-            attachments.spliterator(),
+            attachments,
             batch -> {
               writeAttachments(
                   batch.stream()

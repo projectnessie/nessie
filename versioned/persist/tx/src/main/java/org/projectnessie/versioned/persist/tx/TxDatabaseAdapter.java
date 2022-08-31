@@ -691,6 +691,28 @@ public abstract class TxDatabaseAdapter
     return ContentIdAndBytes.of(cid, value);
   }
 
+  @Override
+  public void writeMultipleCommits(List<CommitLogEntry> commitLogEntries)
+      throws ReferenceConflictException {
+    try (ConnectionWrapper conn = borrowConnection()) {
+      doWriteMultipleCommits(conn, commitLogEntries);
+      conn.commit();
+    } catch (ReferenceConflictException e) {
+      throw e;
+    }
+  }
+
+  @Override
+  public void updateMultipleCommits(List<CommitLogEntry> commitLogEntries)
+      throws ReferenceNotFoundException {
+    try (ConnectionWrapper conn = borrowConnection()) {
+      doUpdateMultipleCommits(conn, commitLogEntries);
+      conn.commit();
+    } catch (ReferenceNotFoundException e) {
+      throw e;
+    }
+  }
+
   // /////////////////////////////////////////////////////////////////////////////////////////////
   // Transactional DatabaseAdapter subclass API (protected)
   // /////////////////////////////////////////////////////////////////////////////////////////////
@@ -1104,12 +1126,33 @@ public abstract class TxDatabaseAdapter
   @Override
   protected void doWriteMultipleCommits(ConnectionWrapper c, List<CommitLogEntry> entries)
       throws ReferenceConflictException {
-    writeMany(
-        c,
-        SqlStatements.INSERT_COMMIT_LOG,
-        entries,
-        e -> e.getHash().asString(),
-        e -> toProto(e).toByteArray());
+    try {
+      writeMany(
+          c,
+          SqlStatements.INSERT_COMMIT_LOG,
+          entries,
+          e -> e.getHash().asString(),
+          e -> toProto(e).toByteArray(),
+          false);
+    } catch (ReferenceNotFoundException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  protected void doUpdateMultipleCommits(ConnectionWrapper c, List<CommitLogEntry> entries)
+      throws ReferenceNotFoundException {
+    try {
+      writeMany(
+          c,
+          SqlStatements.UPDATE_COMMIT_LOG,
+          entries,
+          e -> e.getHash().asString(),
+          e -> toProto(e).toByteArray(),
+          true);
+    } catch (ReferenceConflictException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
@@ -1121,8 +1164,9 @@ public abstract class TxDatabaseAdapter
           SqlStatements.INSERT_KEY_LIST,
           newKeyListEntities,
           e -> e.getId().asString(),
-          e -> toProto(e.getKeys()).toByteArray());
-    } catch (ReferenceConflictException e) {
+          e -> toProto(e.getKeys()).toByteArray(),
+          false);
+    } catch (ReferenceNotFoundException | ReferenceConflictException e) {
       throw new RuntimeException(e);
     }
   }
@@ -1132,23 +1176,44 @@ public abstract class TxDatabaseAdapter
       String sqlInsert,
       List<T> entries,
       Function<T, String> idRetriever,
-      Function<T, byte[]> serializer)
-      throws ReferenceConflictException {
+      Function<T, byte[]> serializer,
+      boolean update)
+      throws ReferenceConflictException, ReferenceNotFoundException {
     int cnt = 0;
     try (PreparedStatement ps = c.conn().prepareStatement(sqlInsert)) {
       for (T e : entries) {
-        ps.setString(1, config.getRepositoryId());
-        ps.setString(2, idRetriever.apply(e));
-        ps.setBytes(3, serializer.apply(e));
+        if (update) {
+          ps.setBytes(1, serializer.apply(e));
+          ps.setString(2, config.getRepositoryId());
+          ps.setString(3, idRetriever.apply(e));
+        } else {
+          ps.setString(1, config.getRepositoryId());
+          ps.setString(2, idRetriever.apply(e));
+          ps.setBytes(3, serializer.apply(e));
+        }
         ps.addBatch();
         cnt++;
         if (cnt == config.getBatchSize()) {
-          ps.executeBatch();
+          int[] result = ps.executeBatch();
+          if (update) {
+            for (int i : result) {
+              if (i != 1) {
+                throw new ReferenceNotFoundException("");
+              }
+            }
+          }
           cnt = 0;
         }
       }
       if (cnt > 0) {
-        ps.executeBatch();
+        int[] result = ps.executeBatch();
+        if (update) {
+          for (int i : result) {
+            if (i != 1) {
+              throw new ReferenceNotFoundException("");
+            }
+          }
+        }
       }
     } catch (SQLException e) {
       if (isRetryTransaction(e)) {

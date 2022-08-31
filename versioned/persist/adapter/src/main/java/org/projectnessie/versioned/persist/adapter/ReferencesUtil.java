@@ -20,6 +20,7 @@ import com.google.protobuf.ByteString;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.agrona.collections.Hashing;
 import org.agrona.collections.Object2ObjectHashMap;
@@ -75,8 +76,10 @@ public final class ReferencesUtil {
    *
    * @param expectedCommitCount it is recommended to tell the implementation the total number of
    *     commits in the Nessie repository
+   * @param commitHandler called for every commit while scanning all commits
    */
-  public HeadsAndForkPoints identifyAllHeadsAndForkPoints(int expectedCommitCount) {
+  public HeadsAndForkPoints identifyAllHeadsAndForkPoints(
+      int expectedCommitCount, Consumer<CommitLogEntry> commitHandler) {
     // Using open-addressing implementation here, because it's much more space-efficient than
     // java.util.HashSet.
     Set<Hash> parents = newOpenAddressingHashSet(expectedCommitCount);
@@ -97,26 +100,27 @@ public final class ReferencesUtil {
     // scanAllCommitLogEntries() returns all commits in no specific order, parents may be scanned
     // before or after their children.
     try (Stream<CommitLogEntry> scan = databaseAdapter.scanAllCommitLogEntries()) {
-      scan.forEach(
-          entry -> {
-            Hash parent = entry.getParents().get(0);
-            if (!parents.add(parent)) {
-              // If "parent" has already been added to the set of parents, then it must be a
-              // fork point.
-              forkPoints.add(parent);
-            } else {
-              // Commits in "parents" that are also contained in "heads" cannot be HEADs.
-              // This can happen because the commits are scanned in "random order".
-              // Should do this here to prevent the "heads" set from becoming unnecessarily big.
-              heads.remove(parent);
-            }
+      scan.peek(commitHandler)
+          .forEach(
+              entry -> {
+                Hash parent = entry.getParents().get(0);
+                if (!parents.add(parent)) {
+                  // If "parent" has already been added to the set of parents, then it must be a
+                  // fork point.
+                  forkPoints.add(parent);
+                } else {
+                  // Commits in "parents" that are also contained in "heads" cannot be HEADs.
+                  // This can happen because the commits are scanned in "random order".
+                  // Should do this here to prevent the "heads" set from becoming unnecessarily big.
+                  heads.remove(parent);
+                }
 
-            Hash commitId = entry.getHash();
-            if (!parents.contains(commitId)) {
-              // If the commit-ID is not present in "parents", it must be a HEAD
-              heads.add(commitId);
-            }
-          });
+                Hash commitId = entry.getHash();
+                if (!parents.contains(commitId)) {
+                  // If the commit-ID is not present in "parents", it must be a HEAD
+                  heads.add(commitId);
+                }
+              });
     }
 
     // Commits in "parents" that are also contained in "heads" cannot be HEADs.
@@ -131,7 +135,7 @@ public final class ReferencesUtil {
   /**
    * Identifies unreferenced heads and heads that are part of a named reference.
    *
-   * <p>Requires the output of {@link #identifyAllHeadsAndForkPoints(int)}.
+   * <p>Requires the output of {@link #identifyAllHeadsAndForkPoints(int, Consumer)}.
    */
   public ReferencedAndUnreferencedHeads identifyReferencedAndUnreferencedHeads(
       HeadsAndForkPoints headsAndForkPoints) throws ReferenceNotFoundException {

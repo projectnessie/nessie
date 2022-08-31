@@ -252,6 +252,16 @@ public class DynamoDatabaseAdapter
   @Override
   protected void doWriteMultipleCommits(
       NonTransactionalOperationContext ctx, List<CommitLogEntry> entries) {
+    persistMultipleCommits(entries);
+  }
+
+  @Override
+  protected void doUpdateMultipleCommits(
+      NonTransactionalOperationContext ctx, List<CommitLogEntry> entries) {
+    persistMultipleCommits(entries);
+  }
+
+  private void persistMultipleCommits(List<CommitLogEntry> entries) {
     batchWrite(
         TABLE_COMMIT_LOG,
         entries,

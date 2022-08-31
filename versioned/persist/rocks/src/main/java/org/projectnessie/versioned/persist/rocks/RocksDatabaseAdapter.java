@@ -180,6 +180,16 @@ public class RocksDatabaseAdapter
   @Override
   protected void doWriteMultipleCommits(
       NonTransactionalOperationContext ctx, List<CommitLogEntry> entries) {
+    persistMultipleCommits(entries);
+  }
+
+  @Override
+  protected void doUpdateMultipleCommits(
+      NonTransactionalOperationContext ctx, List<CommitLogEntry> entries) {
+    persistMultipleCommits(entries);
+  }
+
+  private void persistMultipleCommits(List<CommitLogEntry> entries) {
     Lock lock = dbInstance.getLock().writeLock();
     lock.lock();
     try {

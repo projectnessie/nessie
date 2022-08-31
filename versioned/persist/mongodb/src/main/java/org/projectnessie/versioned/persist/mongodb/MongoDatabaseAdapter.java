@@ -23,8 +23,10 @@ import com.google.common.collect.Maps;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.mongodb.DuplicateKeyException;
 import com.mongodb.ErrorCategory;
+import com.mongodb.MongoBulkWriteException;
 import com.mongodb.MongoServerException;
 import com.mongodb.MongoWriteException;
+import com.mongodb.bulk.BulkWriteError;
 import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
@@ -59,6 +61,7 @@ import org.bson.types.Binary;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyList;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
@@ -633,6 +636,30 @@ public class MongoDatabaseAdapter
   }
 
   @Override
+  protected void doUpdateMultipleCommits(
+      NonTransactionalOperationContext ctx, List<CommitLogEntry> entries)
+      throws ReferenceNotFoundException {
+    List<WriteModel<Document>> requests =
+        entries.stream()
+            .map(e -> toDoc(e.getHash(), toProto(e).toByteArray()))
+            .map(
+                d ->
+                    new UpdateOneModel<Document>(
+                        Filters.eq(d.get(ID_PROPERTY_NAME)),
+                        new Document("$set", d),
+                        new UpdateOptions().upsert(false)))
+            .collect(Collectors.toList());
+
+    BulkWriteResult result = client.getCommitLog().bulkWrite(requests);
+
+    verifyAcknowledged(result, client.getCommitLog());
+
+    if (result.getMatchedCount() != entries.size()) {
+      throw new ReferenceNotFoundException("");
+    }
+  }
+
+  @Override
   protected void doWriteKeyListEntities(
       NonTransactionalOperationContext ctx, List<KeyListEntity> newKeyListEntities) {
     try {
@@ -778,6 +805,14 @@ public class MongoDatabaseAdapter
       MongoWriteException writeException = (MongoWriteException) e;
       return writeException.getError().getCategory() == ErrorCategory.DUPLICATE_KEY;
     }
+    if (e instanceof MongoBulkWriteException) {
+      MongoBulkWriteException writeException = (MongoBulkWriteException) e;
+      for (BulkWriteError writeError : writeException.getWriteErrors()) {
+        if (writeError.getCategory() == ErrorCategory.DUPLICATE_KEY) {
+          return true;
+        }
+      }
+    }
     return false;
   }
 
@@ -851,8 +886,7 @@ public class MongoDatabaseAdapter
           return false;
         }
       } catch (MongoWriteException writeException) {
-        ErrorCategory category = writeException.getError().getCategory();
-        if (ErrorCategory.DUPLICATE_KEY == category) {
+        if (isDuplicateKeyError(writeException)) {
           return false;
         }
         throw writeException;
