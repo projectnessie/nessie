@@ -50,7 +50,7 @@ val versionCheckstyle = "10.3.3"
 // to fix circular dependencies with NessieClient, certain projects need to use the same Nessie
 // version as Iceberg/Delta has
 var versionClientNessie = "0.30.0"
-val versionDeltalake = "1.1.0-nessie"
+val versionDeltalake = "2.1.0"
 val versionDockerjava = "3.2.13"
 val versionErrorProneAnnotations = "2.15.0"
 val versionErrorProneCore = "2.15.0"
