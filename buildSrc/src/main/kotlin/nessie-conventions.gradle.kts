@@ -101,10 +101,6 @@ fun Project.testTasks() {
       if (testJvmArgs != null) {
         jvmArgs((testJvmArgs as String).split(" "))
       }
-      if (testHeapSize != null) {
-        setMinHeapSize(testHeapSize)
-        setMaxHeapSize(testHeapSize)
-      }
 
       systemProperty("file.encoding", "UTF-8")
       systemProperty("user.language", "en")
@@ -126,6 +122,19 @@ fun Project.testTasks() {
       }
       if (name != "test") {
         mustRunAfter(tasks.named<Test>("test"))
+      }
+
+      if (plugins.withType<QuarkusPlugin>().isNotEmpty()) {
+        jvmArgs("--add-opens=java.base/java.util=ALL-UNNAMED")
+        systemProperty("quarkus.log.level", testLogLevel())
+        systemProperty("quarkus.log.console.level", testLogLevel())
+        systemProperty("http.access.log.level", testLogLevel())
+
+        minHeapSize = if (testHeapSize != null) testHeapSize as String else "512m"
+        maxHeapSize = if (testHeapSize != null) testHeapSize as String else "1536m"
+      } else if (testHeapSize != null) {
+        setMinHeapSize(testHeapSize)
+        setMaxHeapSize(testHeapSize)
       }
     }
     val intTest =
