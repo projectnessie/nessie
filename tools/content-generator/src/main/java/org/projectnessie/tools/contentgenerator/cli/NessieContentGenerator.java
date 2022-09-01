@@ -73,6 +73,11 @@ public class NessieContentGenerator extends ContentGenerator<NessieApiV1> {
     if (null != out) {
       commandLine = commandLine.setOut(out);
     }
-    return commandLine.execute(arguments);
+    try {
+      return commandLine.execute(arguments);
+    } finally {
+      commandLine.getOut().flush();
+      commandLine.getErr().flush();
+    }
   }
 }
