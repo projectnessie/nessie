@@ -15,6 +15,7 @@
 
 """Direct API operations on Nessie with requests."""
 
+import os
 from typing import Any, Optional, Union, cast
 
 import requests
@@ -24,6 +25,16 @@ from requests.auth import AuthBase
 from pynessie.error import _create_exception
 from pynessie.model import ContentKey
 
+DEFAULT_TIMEOUT_SEC = int(os.getenv("PYNESSIE_HTTP_TIMEOUT_SEC", "60"))
+
+
+def _sanitize_timeout(timeout_sec: Optional[int]) -> Optional[int]:
+    if timeout_sec is None:
+        timeout_sec = DEFAULT_TIMEOUT_SEC
+    if timeout_sec > 0:
+        return timeout_sec
+    return None  # no timeout
+
 
 def _get_headers(has_body: bool = False) -> dict:
     headers = {"Accept": "application/json"}
@@ -32,29 +43,53 @@ def _get_headers(has_body: bool = False) -> dict:
     return headers
 
 
-def _get(url: str, auth: Optional[AuthBase], ssl_verify: bool = True, params: dict = None) -> Union[str, dict, list]:
-    r = requests.get(url, headers=_get_headers(), verify=ssl_verify, params=params, auth=auth)
+def _get(
+    url: str, auth: Optional[AuthBase], ssl_verify: bool = True, params: dict = None, timeout_sec: Optional[int] = None
+) -> Union[str, dict, list]:
+    timeout_sec = _sanitize_timeout(timeout_sec)
+    r = requests.get(url, headers=_get_headers(), verify=ssl_verify, params=params, auth=auth, timeout=timeout_sec)
     return _check_error(r)
 
 
 def _post(
-    url: str, auth: Optional[AuthBase], json: Union[str, dict] = None, ssl_verify: bool = True, params: dict = None
+    url: str,
+    auth: Optional[AuthBase],
+    json: Union[str, dict] = None,
+    ssl_verify: bool = True,
+    params: dict = None,
+    timeout_sec: Optional[int] = None,
 ) -> Union[str, dict, list]:
+    timeout_sec = _sanitize_timeout(timeout_sec)
     if isinstance(json, str):
         json = jsonlib.loads(json)
-    r = requests.post(url, headers=_get_headers(json is not None), verify=ssl_verify, json=json, params=params, auth=auth)
+    r = requests.post(
+        url, headers=_get_headers(json is not None), verify=ssl_verify, json=json, params=params, auth=auth, timeout=timeout_sec
+    )
     return _check_error(r)
 
 
-def _delete(url: str, auth: Optional[AuthBase], ssl_verify: bool = True, params: dict = None) -> Union[str, dict, list]:
-    r = requests.delete(url, headers=_get_headers(), verify=ssl_verify, params=params, auth=auth)
+def _delete(
+    url: str, auth: Optional[AuthBase], ssl_verify: bool = True, params: dict = None, timeout_sec: Optional[int] = None
+) -> Union[str, dict, list]:
+    timeout_sec = _sanitize_timeout(timeout_sec)
+    r = requests.delete(url, headers=_get_headers(), verify=ssl_verify, params=params, auth=auth, timeout=timeout_sec)
     return _check_error(r)
 
 
-def _put(url: str, auth: Optional[AuthBase], json: Union[str, dict] = None, ssl_verify: bool = True, params: dict = None) -> Any:
+def _put(
+    url: str,
+    auth: Optional[AuthBase],
+    json: Union[str, dict] = None,
+    ssl_verify: bool = True,
+    params: dict = None,
+    timeout_sec: Optional[int] = None,
+) -> Any:
+    timeout_sec = _sanitize_timeout(timeout_sec)
     if isinstance(json, str):
         json = jsonlib.loads(json)
-    r = requests.put(url, headers=_get_headers(json is not None), verify=ssl_verify, json=json, params=params, auth=auth)
+    r = requests.put(
+        url, headers=_get_headers(json is not None), verify=ssl_verify, json=json, params=params, auth=auth, timeout=timeout_sec
+    )
     return _check_error(r)
 
 
