@@ -92,15 +92,6 @@ tasks.withType<ProcessResources>().configureEach {
   }
 }
 
-tasks.withType<Test>().configureEach {
-  systemProperty("quarkus.log.level", testLogLevel())
-  systemProperty("quarkus.log.console.level", testLogLevel())
-
-  val testHeapSize: String? by project
-  minHeapSize = if (testHeapSize != null) testHeapSize as String else "256m"
-  maxHeapSize = if (testHeapSize != null) testHeapSize as String else "1024m"
-}
-
 // nessie-quarkus-cli module needs to be adopted before we can generate a native runner
 project.extra["quarkus.package.type"] =
   if (withUberJar() || project.hasProperty("native")) "uber-jar" else "fast-jar"
