@@ -22,6 +22,7 @@ import org.projectnessie.client.StreamingUtil
 import org.projectnessie.client.api.NessieApiV1
 import org.projectnessie.client.http.HttpClientBuilder
 import org.projectnessie.error.NessieNotFoundException
+import org.projectnessie.model.Reference.ReferenceType
 import org.projectnessie.model.{
   Branch,
   ImmutableBranch,
@@ -246,7 +247,16 @@ object NessieUtils {
   ): Reference = {
     val refName = getCurrentRefName(currentCatalog, catalog)
     try {
-      api.getReference.refName(refName).get
+      var ref = api.getReference.refName(refName).get
+      val refHash = getCurrentRefHash(currentCatalog, catalog);
+      if (refHash != null) {
+        if (ref.getType == ReferenceType.BRANCH) {
+          ref = Branch.of(ref.getName, refHash)
+        } else {
+          ref = Tag.of(ref.getName, refHash)
+        }
+      }
+      ref
     } catch {
       case e: NessieNotFoundException =>
         throw new NessieNotFoundException(
@@ -264,6 +274,15 @@ object NessieUtils {
     val catalogName = catalog.getOrElse(currentCatalog.name)
     SparkSession.active.sparkContext.conf
       .get(s"spark.sql.catalog.$catalogName.ref")
+  }
+
+  def getCurrentRefHash(
+      currentCatalog: CatalogPlugin,
+      catalog: Option[String]
+  ): String = {
+    val catalogName = catalog.getOrElse(currentCatalog.name)
+    SparkSession.active.sparkContext.conf
+      .get(s"spark.sql.catalog.$catalogName.ref.hash", null)
   }
 
   def getRefType(ref: Reference): String = {

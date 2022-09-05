@@ -374,7 +374,7 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
     assertThat(sql("USE REFERENCE %s AT `%s` IN nessie ", refName, timeWithZone))
         .containsExactly(row("Branch", refName, lastCommitBeforeTimePredicate.getHash()));
     assertThat(sql("SHOW REFERENCE IN nessie"))
-        .containsExactly(row("Branch", refName, lastRefHashGlobally));
+        .containsExactly(row("Branch", refName, lastCommitBeforeTimePredicate.getHash()));
   }
 
   private static Stream<Arguments> dateTimeFormatProvider() {
@@ -393,6 +393,8 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
     for (SparkCommitLogEntry commit : commits) {
       String currentHash = commit.getHash();
       assertThat(sql("USE REFERENCE %s AT %s IN nessie ", refName, currentHash))
+          .containsExactly(row("Branch", refName, currentHash));
+      assertThat(sql("SHOW REFERENCE IN nessie"))
           .containsExactly(row("Branch", refName, currentHash));
     }
   }
