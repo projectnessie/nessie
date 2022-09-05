@@ -64,7 +64,6 @@ val versionHadoop = "3.3.4"
 var versionIceberg = "0.14.0"
 val versionImmutables = "2.9.1"
 val versionJackson = "2.13.4"
-val versionJacksonSpark3 = "2.13.4"
 val versionJacoco = "0.8.8"
 val versionJakartaAnnotationApi = "1.3.5"
 val versionJakartaEnterpriseCdiApi = "2.0.2"
@@ -129,8 +128,6 @@ mapOf(
 dependencies {
   constraints {
     api("com.fasterxml.jackson:jackson-bom:$versionJackson")
-    api("com.fasterxml.jackson.core:jackson-databind:$versionJacksonSpark3")
-    api("com.fasterxml.jackson.module:jackson-module-scala_2.12:$versionJacksonSpark3")
     api("com.google.code.findbugs:jsr305:$versionJsr305")
     api("com.google.guava:guava:$versionGuava")
     api("com.google.protobuf:protobuf-java:$versionProtobuf")
