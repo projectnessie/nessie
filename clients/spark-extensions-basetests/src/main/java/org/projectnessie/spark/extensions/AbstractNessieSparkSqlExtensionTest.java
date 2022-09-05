@@ -367,7 +367,6 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
     SparkCommitLogEntry lastCommitBeforeTimePredicate = commits.get(0);
     commitAndReturnLog(refName, lastCommitBeforeTimePredicate.getHash());
 
-    String lastRefHashGlobally = api.getReference().refName(refName).get().getHash();
     // it should not include the current last hash
     // api.getReference().refName(refName).get().getHash()
     // because the last hash was committed after the commitTime
