@@ -41,7 +41,7 @@ The following declarations also contain some build dependencies.
 
 val versionAgroalPool = "2.0"
 val versionAgrona = "1.16.0"
-val versionAntlr = "4.10.1"
+val versionAntlr = "4.11.1"
 val versionAssertJ = "3.23.1"
 val versionAwssdk = "2.17.267"
 val versionBouncyCastle = "1.70"
