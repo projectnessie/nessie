@@ -35,11 +35,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.TableReference;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Validation;
 
@@ -572,5 +575,91 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
     } finally {
       spark.sessionState().catalogManager().setCurrentCatalog(catalog);
     }
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "testCompaction,tbl",
+    "main,tbl",
+    "testCompaction,`tbl@testCompaction`",
+    "main,`tbl@main`"
+  })
+  void testCompaction(String branchName, String tableName) throws NessieNotFoundException {
+    String branchHash = prepareForCompaction(branchName);
+
+    if (spark.version().compareTo("3.2.0") < 0) {
+      // In Iceberg versions >= 0.14.0 with Spark versions <= 3.1,
+      if (TableReference.parse(tableName).hasReference()) {
+        // Iceberg compaction procedure parse the table identifier using spark parser
+        // and fails because of backtick syntax used in table reference.
+        // Hence, compaction throws parsing error.
+        // In the newer versions, because of SparkCachedTableCatalog,
+        // table identifier is mapped to UUID and Spark parses UUID successfully.
+        assertThatThrownBy(() -> executeCompaction(tableName))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining(
+                String.format("Cannot parse path or identifier: nessie.db.tbl@%s", branchName));
+        return;
+      } else {
+        // On use reference cmd path, for non-default reference, compaction throws error.
+        if (!branchName.equals("main")) {
+          // DataframeReader in Iceberg compaction code uses SparkCatalog, which builds the
+          // IcebergCatalog using the original catalog conf from SQLConf instead of active session
+          // conf.
+          // As USE REFERENCE command only updates branch name in active session conf,
+          // compaction will try to use original reference ("main") instead of the one from USE
+          // REFERENCE.
+          // Hence, compaction throws table not found error.
+          assertThatThrownBy(() -> executeCompaction(tableName))
+              .isInstanceOf(RuntimeException.class)
+              .hasMessageContaining("Table db.tbl not found");
+          return;
+        }
+      }
+    }
+    executeAndValidateCompaction(branchName, branchHash, tableName);
+  }
+
+  private String prepareForCompaction(String branchName) throws NessieNotFoundException {
+    if (!branchName.equals("main")) {
+      assertThat(sql("CREATE BRANCH %s IN nessie FROM main", branchName))
+          .containsExactly(row("Branch", branchName, initialDefaultBranch.getHash()));
+    }
+
+    sql("USE REFERENCE %s IN nessie", branchName);
+    sql("CREATE TABLE nessie.db.tbl (id int, name string)");
+    sql("INSERT INTO nessie.db.tbl select 23, \"test\"");
+    sql("INSERT INTO nessie.db.tbl select 24, \"test24\"");
+
+    String branchHash = api.getReference().refName(branchName).get().getHash();
+    assertThat(sql("CREATE BRANCH dev IN nessie FROM %s", branchName))
+        .containsExactly(row("Branch", "dev", branchHash));
+    return branchHash;
+  }
+
+  private void executeAndValidateCompaction(String branchName, String branchHash, String tableName)
+      throws NessieNotFoundException {
+    List<Object[]> result = executeCompaction(tableName);
+    // re-written files count is 2 and the added files count is 1
+    assertThat(result).hasSize(1).containsExactly(row(2, 1));
+
+    // check for compaction commit
+    LogResponse.LogEntry logEntry =
+        api.getCommitLog().refName(branchName).maxRecords(1).get().getLogEntries().get(0);
+    assertThat(logEntry.getCommitMeta().getMessage()).isEqualTo("Iceberg replace against db.tbl");
+
+    assertThat(sql("SELECT * FROM nessie.db.tbl"))
+        .hasSize(2)
+        .containsExactlyInAnyOrder(row(23, "test"), row(24, "test24"));
+
+    // same table in other branch should not be modified
+    assertThat(api.getReference().refName("dev").get().getHash()).isEqualTo(branchHash);
+  }
+
+  private static List<Object[]> executeCompaction(String tableName) {
+    return sql(
+        "CALL nessie.system.rewrite_data_files(table => 'nessie.db.%s', options => map"
+            + "('min-input-files','2'))",
+        tableName);
   }
 }
