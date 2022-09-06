@@ -40,56 +40,45 @@ pluginManagement {
     }
   }
 
+  val versionErrorPronePlugin = "2.0.2"
+  val versionIdeaExtPlugin = "1.1.6"
+  val versionJandexPlugin = "1.82"
+  val versionNessiePlugins = "0.2.12"
+  val versionQuarkus = "2.12.3.Final"
+  val versionShadowPlugin = "7.1.2"
+  val versionSpotlessPlugin = "6.11.0"
+
   plugins {
+    id("com.diffplug.spotless") version versionSpotlessPlugin
+    id("com.github.johnrengelman.plugin-shadow") version versionShadowPlugin
+    id("com.github.node-gradle.node") version "3.4.0"
+    id("com.github.vlsi.jandex") version versionJandexPlugin
+    id("io.gatling.gradle") version "3.8.4"
+    id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
+    id("io.quarkus") version versionQuarkus
+    id("me.champeau.jmh") version "0.6.7"
+    id("net.ltgt.errorprone") version versionErrorPronePlugin
+    id("org.jetbrains.gradle.plugin.idea-ext") version versionIdeaExtPlugin
+    id("org.projectnessie") version "0.27.3"
+    id("org.projectnessie.buildsupport.spotless") version versionNessiePlugins
+    id("org.projectnessie.buildsupport.checkstyle") version versionNessiePlugins
+    id("org.projectnessie.buildsupport.errorprone") version versionNessiePlugins
+    id("org.projectnessie.buildsupport.ide-integration") version versionNessiePlugins
+    id("org.projectnessie.buildsupport.jacoco") version versionNessiePlugins
+    id("org.projectnessie.buildsupport.jacoco-aggregator") version versionNessiePlugins
+    id("org.projectnessie.buildsupport.jandex") version versionNessiePlugins
+    id("org.projectnessie.buildsupport.protobuf") version versionNessiePlugins
+    id("org.projectnessie.buildsupport.publishing") version versionNessiePlugins
+    id("org.projectnessie.buildsupport.reflectionconfig") version versionNessiePlugins
+    id("org.projectnessie.smallrye-open-api") version versionNessiePlugins
 
-    // Note: this is NOT a real project but a hack for dependabot to manage the plugin versions.
-    //
-    // Background: dependabot only manages dependencies (incl Gradle plugins) in build.gradle[.kts]
-    // files. It scans the root build.gradle[.kts] file and those in submodules referenced in
-    // settings.gradle[.kts].
-    // But dependabot does not manage managed plugin dependencies in settings.gradle[.kts].
-    // However, since dependabot is a "dumb search and replace engine", we can use a trick:
-    // 1. Have this "dummy" build.gradle.kts file with all managed plugin dependencies.
-    // 2. Add an `include()` to this build file in settings.gradle.kts, surrounded with an
-    //    `if (false)`, so Gradle does _not_ pick it up.
-    // 3. Parse this file in our settings.gradle.kts, provide a `ResolutionStrategy` to the
-    //    plugin dependencies.
-
-    val pulledVersions =
-      file("gradle/dependabot/build.gradle.kts")
-        .readLines()
-        .map { line -> pluginIdPattern.matcher(line) }
-        .filter { matcher -> matcher.matches() }
-        .associate { matcher -> matcher.group(1) to matcher.group(2) }
-
-    resolutionStrategy {
-      eachPlugin {
-        if (requested.version == null) {
-          var pluginId = requested.id.id
-          // All Gradle plugins in https://github.com/projectnessie/gradle-build-plugins/ use
-          // the same version, which is "managed" via the "org.projectnessie.buildsupport.spotless"
-          // plugin.
-          if (
-            pluginId.startsWith("org.projectnessie.buildsupport.") ||
-              pluginId == "org.projectnessie.smallrye-open-api"
-          ) {
-            pluginId = "org.projectnessie.buildsupport.spotless"
-          }
-          if (pulledVersions.containsKey(pluginId)) {
-            useVersion(pulledVersions[pluginId])
-          }
-        }
-      }
-    }
-
-    versions["versionQuarkus"] = pulledVersions["io.quarkus"]
-    versions["versionErrorPronePlugin"] = pulledVersions["net.ltgt.errorprone"]
-    versions["versionIdeaExtPlugin"] = pulledVersions["org.jetbrains.gradle.plugin.idea-ext"]
-    versions["versionSpotlessPlugin"] = pulledVersions["com.diffplug.spotless"]
-    versions["versionJandexPlugin"] = pulledVersions["com.github.vlsi.jandex"]
-    versions["versionShadowPlugin"] = pulledVersions["com.github.johnrengelman.plugin-shadow"]
-    versions["versionNessieBuildPlugins"] =
-      pulledVersions["org.projectnessie.buildsupport.spotless"]
+    versions["versionQuarkus"] = versionQuarkus
+    versions["versionErrorPronePlugin"] = versionErrorPronePlugin
+    versions["versionIdeaExtPlugin"] = versionIdeaExtPlugin
+    versions["versionSpotlessPlugin"] = versionSpotlessPlugin
+    versions["versionJandexPlugin"] = versionJandexPlugin
+    versions["versionShadowPlugin"] = versionShadowPlugin
+    versions["versionNessieBuildPlugins"] = versionNessiePlugins
 
     // The project's settings.gradle.kts is "executed" before buildSrc's settings.gradle.kts and
     // build.gradle.kts.

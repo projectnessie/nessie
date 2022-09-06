@@ -1,0 +1,54 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  extends: [
+    "config:base",
+    // https://docs.renovatebot.com/presets-npm/
+    "npm:unpublishSafe",
+    // Required to not pin dependencies to _exact_ versions (npm + pip)
+    ":preserveSemverRanges"
+  ],
+
+  "labels": ["dependencies"],
+
+  packageRules: [
+    // Check for updates, merge automatically
+    {
+      matchManagers: ["maven", "gradle", "gradle-wrapper"],
+      matchUpdateTypes: ["minor", "patch"],
+      automerge: true,
+      platformAutomerge: true
+    },
+
+    // Check for updates, merge automatically - npm + pip
+    {
+      matchManagers: ["npm", "pip_requirements", "pip_setup"],
+      matchUpdateTypes: ["minor", "patch"],
+      automerge: true,
+      platformAutomerge: true,
+      extends: ["schedule:weekends"]
+    },
+
+    // Check for major updates, but do not merge automatically
+    {
+      matchManagers: ["maven", "gradle", "gradle-wrapper", "npm", "pip_requirements", "pip_setup"],
+      matchUpdateTypes: ["major"],
+      automerge: false
+    },
+
+    // Exclude a couple packages that are known to break Nessie and/or downstream users
+    {
+      matchManagers: ["maven", "gradle"],
+      matchPackageNames: [
+        "io.delta:delta-core_2.12",
+        "jakarta.validation:jakarta.validation-api",
+        "jakarta.enterprise:jakarta.enterprise.cdi-api",
+        "org.glassfish.jersey:jersey-bom"
+      ],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"]
+    }
+  ],
+
+  // Max 50 PRs in total, 10 per hour
+  prConcurrentLimit: 50,
+  prHourlyLimit: 10
+}

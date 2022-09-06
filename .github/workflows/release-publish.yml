@@ -216,7 +216,7 @@ jobs:
         LAST_TAG=$(git describe --abbrev=0 --tags --match=nessie-* ${GIT_TAG}^1)
         NUM_COMMITS=$(git log --format='format:%h' ${LAST_TAG}..HEAD^1 | wc -l)
 
-        git log --perl-regexp --author '^(?!.*dependabot(-preview)?|.*nessie-release-workflow).*$' --format='format:* %s' ${LAST_TAG}..${GIT_TAG} | grep -v '^\* \[release\] .*$' > ${DIR}/release-log
+        git log --perl-regexp --author '^(?!.*renovate|.*dependabot(-preview)?|.*nessie-release-workflow).*$' --format='format:* %s' ${LAST_TAG}..${GIT_TAG} | grep -v '^\* \[release\] .*$' > ${DIR}/release-log
 
         Q_NATIVE_URL="https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-quarkus-${RELEASE_VERSION}-runner"
         Q_UBER_URL="https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-quarkus-${RELEASE_VERSION}-runner.jar"
@@ -245,7 +245,7 @@ jobs:
         The attached [\`nessie-helm-${RELEASE_VERSION}.tgz\`](${Q_HELM_CHART_URL}) is a packaged Helm chart, which can be downloaded and installed via Helm.
         There is also the [Nessie Helm chart repo](https://charts.projectnessie.org/), which can be added and used to install the Nessie Helm chart.
 
-        ## Full Changelog (minus dependabot commits):
+        ## Full Changelog (minus dependabot/renovate commits):
 
         $(cat ${DIR}/release-log)
         EOF
