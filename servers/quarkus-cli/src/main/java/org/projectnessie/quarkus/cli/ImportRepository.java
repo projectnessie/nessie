@@ -17,6 +17,7 @@ package org.projectnessie.quarkus.cli;
 
 import com.google.protobuf.ByteString;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -38,6 +39,7 @@ import org.projectnessie.versioned.transfer.ProgressListener;
 import org.projectnessie.versioned.transfer.ZipArchiveImporter;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 import picocli.CommandLine;
+import picocli.CommandLine.PicocliException;
 
 @CommandLine.Command(
     name = "import",
@@ -45,36 +47,25 @@ import picocli.CommandLine;
     description = "Imports a Nessie repository from the local file system.")
 public class ImportRepository extends BaseCommand {
 
-  static final String SOURCE_DIRECTORY = "--source-directory";
-  static final String ZIP_FILE = "--zip-file";
+  static final String PATH = "--path";
 
   static final String ERASE_BEFORE_IMPORT = "--erase-before-import";
   static final String NO_OPTIMIZE = "--no-optimize";
   static final String INPUT_BUFFER_SIZE = "--input-buffer-size";
   static final String COMMIT_BATCH_SIZE = "--commit-batch-size";
 
-  @CommandLine.ArgGroup(multiplicity = "1")
-  private Source source;
-
-  static class Source {
-
-    @CommandLine.Option(
-        names = {"-f", ZIP_FILE},
-        description =
-            "The ZIP file to read the export from, "
-                + "mutually exclusive with --source-directory.")
-    private Path zipFile;
-
-    @CommandLine.Option(
-        names = {"-d", SOURCE_DIRECTORY},
-        description =
-            "The target directory populated with the export contents, "
-                + "mutually exclusive with --zip-file.")
-    private Path sourceDirectory;
-  }
+  @CommandLine.Option(
+      names = {"-p", PATH},
+      paramLabel = "<import-from>",
+      required = true,
+      description = {
+        "The ZIP file or directory to read the export from.",
+        "If this parameter refers to a file, the import will assume that it is a ZIP file, otherwise a directory."
+      })
+  private Path path;
 
   @CommandLine.Option(
-      names = {COMMIT_BATCH_SIZE},
+      names = COMMIT_BATCH_SIZE,
       description =
           "Batch size when writing commits, defaults to "
               + ExportImportConstants.DEFAULT_COMMIT_BATCH_SIZE
@@ -82,13 +73,13 @@ public class ImportRepository extends BaseCommand {
   private Integer commitBatchSize;
 
   @CommandLine.Option(
-      names = {INPUT_BUFFER_SIZE},
+      names = INPUT_BUFFER_SIZE,
       description =
           "Input buffer size, defaults to " + ExportImportConstants.DEFAULT_BUFFER_SIZE + ".")
   private Integer inputBufferSize;
 
   @CommandLine.Option(
-      names = {NO_OPTIMIZE},
+      names = NO_OPTIMIZE,
       description = "Do not run commit log optimization after importing the repository.")
   private boolean noOptimize;
 
@@ -103,10 +94,12 @@ public class ImportRepository extends BaseCommand {
 
     @SuppressWarnings("rawtypes")
     AbstractNessieImporter.Builder builder;
-    if (source.zipFile != null) {
-      builder = ZipArchiveImporter.builder().sourceZipFile(source.zipFile);
+    if (Files.isRegularFile(path)) {
+      builder = ZipArchiveImporter.builder().sourceZipFile(path);
+    } else if (Files.isDirectory(path)) {
+      builder = FileImporter.builder().sourceDirectory(path);
     } else {
-      builder = FileImporter.builder().sourceDirectory(source.sourceDirectory);
+      throw new PicocliException(String.format("No such file or directory %s", path));
     }
 
     builder.databaseAdapter(databaseAdapter);

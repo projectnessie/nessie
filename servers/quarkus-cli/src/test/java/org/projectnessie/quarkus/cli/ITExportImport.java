@@ -15,11 +15,8 @@
  */
 package org.projectnessie.quarkus.cli;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
-import static org.projectnessie.quarkus.cli.ExportRepository.TARGET_DIRECTORY;
 import static org.projectnessie.quarkus.cli.ImportRepository.ERASE_BEFORE_IMPORT;
-import static org.projectnessie.quarkus.cli.ImportRepository.SOURCE_DIRECTORY;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
 import com.google.protobuf.ByteString;
@@ -27,12 +24,17 @@ import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.junit.main.LaunchResult;
 import io.quarkus.test.junit.main.QuarkusMainLauncher;
 import io.quarkus.test.junit.main.QuarkusMainTest;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.quarkus.cli.ExportRepository.Format;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.CommitMetaSerializer;
 import org.projectnessie.versioned.Hash;
@@ -48,92 +50,100 @@ import org.projectnessie.versioned.store.DefaultStoreWorker;
 
 @QuarkusMainTest
 @TestProfile(QuarkusCliTestProfileMongo.class)
-@ExtendWith(NessieCliTestExtension.class)
+@ExtendWith({NessieCliTestExtension.class, SoftAssertionsExtension.class})
 public class ITExportImport {
+  @InjectSoftAssertions private SoftAssertions soft;
 
   @Test
-  public void invalidArgs(QuarkusMainLauncher launcher, @TempDir Path tempDir) {
-    Path zipFile = tempDir.resolve("export.zip");
-
+  public void invalidArgs(QuarkusMainLauncher launcher, @TempDir Path tempDir) throws Exception {
     LaunchResult result = launcher.launch("export");
-    assertThat(result.exitCode()).isEqualTo(2);
-    assertThat(result.getErrorOutput())
-        .contains(
-            "Error: Missing required argument (specify one of these): (-f=<zipFile> | -d=<targetDirectory>)");
+    soft.assertThat(result.exitCode()).isEqualTo(2);
+    soft.assertThat(result.getErrorOutput())
+        .contains("Missing required option: '--path=<export-to>'");
 
     result =
         launcher.launch(
             "export",
-            ExportRepository.ZIP_FILE,
-            zipFile.toString(),
-            TARGET_DIRECTORY,
-            tempDir.toString());
-    assertThat(result.exitCode()).isEqualTo(2);
-    assertThat(result.getErrorOutput())
+            ExportRepository.OUTPUT_FORMAT,
+            "foo",
+            ExportRepository.PATH,
+            tempDir.resolve("some-file.zip").toString());
+    soft.assertThat(result.exitCode()).isEqualTo(2);
+    soft.assertThat(result.getErrorOutput())
         .contains(
-            "Error: --zip-file=<zipFile>, --target-directory=<targetDirectory> are mutually exclusive (specify only one)");
+            "Invalid value for option '--output-format': expected one of [ZIP, DIRECTORY] (case-sensitive) but was 'foo'");
+
+    Path existingZipFile = tempDir.resolve("existing-file.zip");
+    Files.createFile(existingZipFile);
+
+    result = launcher.launch("export", ExportRepository.PATH, existingZipFile.toString());
+    soft.assertThat(result.exitCode()).isEqualTo(1);
+    soft.assertThat(result.getErrorOutput())
+        .contains(
+            String.format(
+                "Export file %s already exists, please delete it first, if you want to overwrite it.",
+                existingZipFile));
+
+    result =
+        launcher.launch(
+            "export",
+            ExportRepository.PATH,
+            existingZipFile.toString(),
+            ExportRepository.OUTPUT_FORMAT,
+            Format.DIRECTORY.toString());
+    soft.assertThat(result.exitCode()).isEqualTo(1);
+    soft.assertThat(result.getErrorOutput())
+        .contains(
+            String.format(
+                "%s refers to a file, but export type is %s.", existingZipFile, Format.DIRECTORY));
 
     result = launcher.launch("import");
-    assertThat(result.exitCode()).isEqualTo(2);
-    assertThat(result.getErrorOutput())
-        .contains(
-            "Error: Missing required argument (specify one of these): (-f=<zipFile> | -d=<sourceDirectory>)");
+    soft.assertThat(result.exitCode()).isEqualTo(2);
+    soft.assertThat(result.getErrorOutput())
+        .contains("Missing required option: '--path=<import-from>'");
 
     result =
-        launcher.launch(
-            "import",
-            ImportRepository.ZIP_FILE,
-            zipFile.toString(),
-            SOURCE_DIRECTORY,
-            tempDir.toString());
-    assertThat(result.exitCode()).isEqualTo(2);
-    assertThat(result.getErrorOutput())
-        .contains(
-            "Error: --zip-file=<zipFile>, --source-directory=<sourceDirectory> are mutually exclusive (specify only one)");
+        launcher.launch("import", ImportRepository.PATH, tempDir.resolve("no-no.zip").toString());
+    soft.assertThat(result.exitCode()).isEqualTo(1);
+    soft.assertThat(result.getErrorOutput())
+        .contains("No such file or directory " + tempDir.resolve("no-no.zip"));
 
-    result =
-        launcher.launch(
-            "import", ImportRepository.ZIP_FILE, tempDir.resolve("no-no.zip").toString());
-    assertThat(result.exitCode()).isEqualTo(1);
-    assertThat(result.getErrorOutput())
-        .contains("java.nio.file.NoSuchFileException: " + tempDir.resolve("no-no.zip"));
-
-    result = launcher.launch("import", SOURCE_DIRECTORY, tempDir.resolve("no-no").toString());
-    assertThat(result.exitCode()).isEqualTo(1);
-    assertThat(result.getErrorOutput())
-        .contains("java.nio.file.NoSuchFileException: " + tempDir.resolve("no-no"));
+    result = launcher.launch("import", ImportRepository.PATH, tempDir.resolve("no-no").toString());
+    soft.assertThat(result.exitCode()).isEqualTo(1);
+    soft.assertThat(result.getErrorOutput())
+        .contains("No such file or directory " + tempDir.resolve("no-no"));
   }
 
   @Test
   public void emptyRepoExportToZip(QuarkusMainLauncher launcher, @TempDir Path tempDir) {
     Path zipFile = tempDir.resolve("export.zip");
-    LaunchResult result = launcher.launch("export", ExportRepository.ZIP_FILE, zipFile.toString());
-    assertThat(result.exitCode()).isEqualTo(0);
-    assertThat(result.getOutput())
+    LaunchResult result = launcher.launch("export", ExportRepository.PATH, zipFile.toString());
+    soft.assertThat(result.exitCode()).isEqualTo(0);
+    soft.assertThat(result.getOutput())
         .contains(
             "Exported Nessie repository, 0 commits into 0 files, 1 named references into 1 files.");
-    assertThat(zipFile).isRegularFile();
+    soft.assertThat(zipFile).isRegularFile();
 
     // Importing into an "empty" repository passes the "empty-repository-check" during import
-    result = launcher.launch("import", ImportRepository.ZIP_FILE, zipFile.toString());
-    assertThat(result.exitCode()).isEqualTo(0);
-    assertThat(result.getOutput())
+    result = launcher.launch("import", ImportRepository.PATH, zipFile.toString());
+    soft.assertThat(result.exitCode()).isEqualTo(0);
+    soft.assertThat(result.getOutput())
         .contains("Imported Nessie repository, 0 commits, 1 named references.");
   }
 
   @Test
   public void emptyRepoExportToDir(QuarkusMainLauncher launcher, @TempDir Path tempDir) {
-    LaunchResult result = launcher.launch("export", TARGET_DIRECTORY, tempDir.toString());
-    assertThat(result.exitCode()).isEqualTo(0);
-    assertThat(result.getOutput())
+    LaunchResult result = launcher.launch("export", ExportRepository.PATH, tempDir.toString());
+    soft.assertThat(result.exitCode()).isEqualTo(0);
+    soft.assertThat(result.getOutput())
         .contains(
             "Exported Nessie repository, 0 commits into 0 files, 1 named references into 1 files.");
-    assertThat(tempDir).isNotEmptyDirectory();
+    soft.assertThat(tempDir).isNotEmptyDirectory();
 
     // Importing into an "empty" repository passes the "empty-repository-check" during import
-    result = launcher.launch("import", SOURCE_DIRECTORY, tempDir.toString());
-    assertThat(result.exitCode()).isEqualTo(0);
-    assertThat(result.getOutput())
+    result = launcher.launch("import", ImportRepository.PATH, tempDir.toString());
+    soft.assertThat(result.exitCode()).isEqualTo(0);
+    soft.assertThat(result.getOutput())
         .contains("Imported Nessie repository, 0 commits, 1 named references.");
   }
 
@@ -144,17 +154,17 @@ public class ITExportImport {
     populateRepository(adapter);
 
     Path zipFile = tempDir.resolve("export.zip");
-    LaunchResult result = launcher.launch("export", ExportRepository.ZIP_FILE, zipFile.toString());
-    assertThat(result.exitCode()).isEqualTo(0);
-    assertThat(result.getOutput())
+    LaunchResult result = launcher.launch("export", ExportRepository.PATH, zipFile.toString());
+    soft.assertThat(result.exitCode()).isEqualTo(0);
+    soft.assertThat(result.getOutput())
         .contains(
             "Exported Nessie repository, 2 commits into 1 files, 2 named references into 1 files.");
-    assertThat(zipFile).isRegularFile();
+    soft.assertThat(zipFile).isRegularFile();
 
     // Importing into a "non-empty" repository does not pass the "empty-repository-check"
-    result = launcher.launch("import", ImportRepository.ZIP_FILE, zipFile.toString());
-    assertThat(result.exitCode()).isEqualTo(100);
-    assertThat(result.getErrorOutput())
+    result = launcher.launch("import", ImportRepository.PATH, zipFile.toString());
+    soft.assertThat(result.exitCode()).isEqualTo(100);
+    soft.assertThat(result.getErrorOutput())
         .contains(
             "The Nessie repository already exists and is not empty, aborting. "
                 + "Provide the "
@@ -162,10 +172,9 @@ public class ITExportImport {
                 + " option if you want to erase the repository.");
 
     result =
-        launcher.launch(
-            "import", ERASE_BEFORE_IMPORT, ImportRepository.ZIP_FILE, zipFile.toString());
-    assertThat(result.exitCode()).isEqualTo(0);
-    assertThat(result.getOutput())
+        launcher.launch("import", ERASE_BEFORE_IMPORT, ImportRepository.PATH, zipFile.toString());
+    soft.assertThat(result.exitCode()).isEqualTo(0);
+    soft.assertThat(result.getOutput())
         .contains("Imported Nessie repository, 2 commits, 2 named references.")
         .contains("Finished commit log optimization.");
   }
@@ -176,26 +185,27 @@ public class ITExportImport {
       throws Exception {
     populateRepository(adapter);
 
-    LaunchResult result = launcher.launch("export", TARGET_DIRECTORY, tempDir.toString());
-    assertThat(result.exitCode()).isEqualTo(0);
-    assertThat(result.getOutput())
+    LaunchResult result = launcher.launch("export", ExportRepository.PATH, tempDir.toString());
+    soft.assertThat(result.exitCode()).isEqualTo(0);
+    soft.assertThat(result.getOutput())
         .contains(
             "Exported Nessie repository, 2 commits into 1 files, 2 named references into 1 files.");
-    assertThat(tempDir).isNotEmptyDirectory();
+    soft.assertThat(tempDir).isNotEmptyDirectory();
 
     // Importing into a "non-empty" repository does not pass the "empty-repository-check"
-    result = launcher.launch("import", SOURCE_DIRECTORY, tempDir.toString());
-    assertThat(result.exitCode()).isEqualTo(100);
-    assertThat(result.getErrorOutput())
+    result = launcher.launch("import", ImportRepository.PATH, tempDir.toString());
+    soft.assertThat(result.exitCode()).isEqualTo(100);
+    soft.assertThat(result.getErrorOutput())
         .contains(
             "The Nessie repository already exists and is not empty, aborting. "
                 + "Provide the "
                 + ERASE_BEFORE_IMPORT
                 + " option if you want to erase the repository.");
 
-    result = launcher.launch("import", ERASE_BEFORE_IMPORT, SOURCE_DIRECTORY, tempDir.toString());
-    assertThat(result.exitCode()).isEqualTo(0);
-    assertThat(result.getOutput())
+    result =
+        launcher.launch("import", ERASE_BEFORE_IMPORT, ImportRepository.PATH, tempDir.toString());
+    soft.assertThat(result.exitCode()).isEqualTo(0);
+    soft.assertThat(result.getOutput())
         .contains("Imported Nessie repository, 2 commits, 2 named references.")
         .contains("Finished commit log optimization.");
   }

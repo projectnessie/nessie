@@ -16,7 +16,9 @@
 package org.projectnessie.quarkus.cli;
 
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
 import javax.annotation.Nonnull;
 import org.projectnessie.versioned.transfer.AbstractNessieExporter;
 import org.projectnessie.versioned.transfer.ExportImportConstants;
@@ -26,6 +28,7 @@ import org.projectnessie.versioned.transfer.ProgressListener;
 import org.projectnessie.versioned.transfer.ZipArchiveExporter;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 import picocli.CommandLine;
+import picocli.CommandLine.PicocliException;
 
 @CommandLine.Command(
     name = "export",
@@ -33,34 +36,37 @@ import picocli.CommandLine;
     description = "Exports a Nessie repository to the local file system.")
 public class ExportRepository extends BaseCommand {
 
-  static final String ZIP_FILE = "--zip-file";
-  static final String TARGET_DIRECTORY = "--target-directory";
+  static final String PATH = "--path";
+  static final String OUTPUT_FORMAT = "--output-format";
   static final String MAX_FILE_SIZE = "--max-file-size";
   static final String EXPECTED_COMMIT_COUNT = "--expected-commit-count";
   static final String OUTPUT_BUFFER_SIZE = "--output-buffer-size";
 
-  @CommandLine.ArgGroup(multiplicity = "1")
-  private Target target;
-
-  static class Target {
-
-    @CommandLine.Option(
-        names = {"-f", ZIP_FILE},
-        description =
-            "The ZIP file to create with the export contents, "
-                + "mutually exclusive with --target-directory.")
-    private Path zipFile;
-
-    @CommandLine.Option(
-        names = {"-d", TARGET_DIRECTORY},
-        description =
-            "The empty (or non existing) target directory to populate with the export contents, "
-                + "mutually exclusive with --zip-file.")
-    private Path targetDirectory;
+  enum Format {
+    ZIP,
+    DIRECTORY
   }
 
   @CommandLine.Option(
-      names = {MAX_FILE_SIZE},
+      names = {"-p", PATH},
+      required = true,
+      paramLabel = "<export-to>",
+      description = "The ZIP file or directory to create with the export contents.")
+  private Path path;
+
+  @CommandLine.Option(
+      names = {"-F", OUTPUT_FORMAT},
+      paramLabel = "<output-format>",
+      description = {
+        "Explicitly define the output format to use to the export.",
+        "If not specified, the implementation chooses the ZIP export, if "
+            + PATH
+            + " ends in .zip, otherwise will use the directory output format."
+      })
+  private Format outputFormat;
+
+  @CommandLine.Option(
+      names = MAX_FILE_SIZE,
       description = "Maximum size of a file in bytes inside the export.")
   private Long maxFileSize;
 
@@ -73,7 +79,7 @@ public class ExportRepository extends BaseCommand {
   private Integer expectedCommitCount;
 
   @CommandLine.Option(
-      names = {OUTPUT_BUFFER_SIZE},
+      names = OUTPUT_BUFFER_SIZE,
       description =
           "Output buffer size, defaults to " + ExportImportConstants.DEFAULT_BUFFER_SIZE + ".")
   private Integer outputBufferSize;
@@ -84,10 +90,25 @@ public class ExportRepository extends BaseCommand {
 
     @SuppressWarnings("rawtypes")
     AbstractNessieExporter.Builder builder;
-    if (target.zipFile != null) {
-      builder = ZipArchiveExporter.builder().outputFile(target.zipFile);
-    } else {
-      builder = FileExporter.builder().targetDirectory(target.targetDirectory);
+    switch (exportFormat()) {
+      case ZIP:
+        if (Files.isRegularFile(path)) {
+          throw new PicocliException(
+              String.format(
+                  "Export file %s already exists, please delete it first, if you want to overwrite it.",
+                  path));
+        }
+        builder = ZipArchiveExporter.builder().outputFile(path);
+        break;
+      case DIRECTORY:
+        if (Files.isRegularFile(path)) {
+          throw new PicocliException(
+              String.format("%s refers to a file, but export type is %s.", path, Format.DIRECTORY));
+        }
+        builder = FileExporter.builder().targetDirectory(path);
+        break;
+      default:
+        throw new IllegalStateException(exportFormat().toString());
     }
 
     builder.databaseAdapter(databaseAdapter);
@@ -106,6 +127,15 @@ public class ExportRepository extends BaseCommand {
     builder.progressListener(new ExportProgressListener(out)).build().exportNessieRepository();
 
     return 0;
+  }
+
+  private Format exportFormat() {
+    if (outputFormat != null) {
+      return outputFormat;
+    }
+
+    String fileName = path.getFileName().toString().toLowerCase(Locale.ROOT);
+    return fileName.endsWith(".zip") ? Format.ZIP : Format.DIRECTORY;
   }
 
   /** Mostly paints dots - but also some numbers about the progress. */
