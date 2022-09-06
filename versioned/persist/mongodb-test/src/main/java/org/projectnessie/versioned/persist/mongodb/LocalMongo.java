@@ -53,7 +53,7 @@ public class LocalMongo {
     String version = System.getProperty("it.nessie.container.mongodb.tag", "4.2-bionic");
 
     if (!quiet) {
-      LOGGER.info("Starting Dynamo test container (network-id: {})", containerNetworkId);
+      LOGGER.info("Starting Mongo test container (network-id: {})", containerNetworkId);
     }
 
     container = new MongoDBContainer("mongo:" + version).withLogConsumer(outputFrame -> {});
