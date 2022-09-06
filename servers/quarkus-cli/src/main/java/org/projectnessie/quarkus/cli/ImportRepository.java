@@ -85,7 +85,11 @@ public class ImportRepository extends BaseCommand {
 
   @CommandLine.Option(
       names = {"-e", ERASE_BEFORE_IMPORT},
-      description = "Do not run commit log optimization after importing the repository.")
+      description = {
+        "Erase an existing repository before the import is started.",
+        "This will delete all previously existing Nessie data.",
+        "Using this option has no effect, if the Nessie repository does not already exist."
+      })
   private boolean erase;
 
   @Override
