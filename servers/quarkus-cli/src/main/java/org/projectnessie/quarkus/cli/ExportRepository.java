@@ -94,9 +94,6 @@ public class ExportRepository extends BaseCommand {
     if (maxFileSize != null) {
       builder.maxFileSize(maxFileSize);
     }
-    if (maxFileSize != null) {
-      builder.maxFileSize(maxFileSize);
-    }
     if (expectedCommitCount != null) {
       builder.expectedCommitCount(expectedCommitCount);
     }

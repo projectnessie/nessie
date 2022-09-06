@@ -55,7 +55,7 @@ message Commit {
   bytes commit_id = 1;
   int64 commit_sequence = 2;
   bytes parent_commit_id = 3;
-  repeated bytes additional_Parents = 4;
+  repeated bytes additional_parents = 4;
   bytes metadata = 5;
   repeated Operation operations = 6;
   int64 created_time_micros = 7;
@@ -63,7 +63,7 @@ message Commit {
 
 message Operation {
   OperationType operation_type = 1;
-  string content_key = 2;
+  repeated string content_key = 2;
   optional string content_id = 3;
   optional int32 payload = 4;
   optional bytes value = 5;

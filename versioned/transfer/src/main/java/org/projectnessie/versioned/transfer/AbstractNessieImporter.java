@@ -28,7 +28,6 @@ import java.io.InputStream;
 import org.immutables.value.Value;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
-import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.CommitMetaSerializer;
 import org.projectnessie.versioned.ContentAttachment;
@@ -235,7 +234,7 @@ public abstract class AbstractNessieImporter {
                 .getOperationsList()
                 .forEach(
                     op -> {
-                      Key key = Key.of(ContentKey.fromPathString(op.getContentKey()).getElements());
+                      Key key = Key.of(op.getContentKeyList());
                       switch (op.getOperationType()) {
                         case Delete:
                           logEntry.addDeletes(key);

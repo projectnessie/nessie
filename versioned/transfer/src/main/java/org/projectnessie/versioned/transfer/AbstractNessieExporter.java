@@ -24,7 +24,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.errorprone.annotations.MustBeClosed;
 import com.google.protobuf.AbstractMessage;
 import com.google.protobuf.ByteString;
-import com.google.protobuf.CodedOutputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -33,7 +32,6 @@ import java.util.function.LongConsumer;
 import java.util.stream.Stream;
 import org.immutables.value.Value;
 import org.projectnessie.model.Content;
-import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Key;
@@ -237,13 +235,13 @@ public abstract class AbstractNessieExporter {
   protected Operation.Builder deleteOperationFromCommit(Key delete) {
     return Operation.newBuilder()
         .setOperationType(OperationType.Delete)
-        .setContentKey(ContentKey.of(delete.getElements()).toPathString());
+        .addAllContentKey(delete.getElements());
   }
 
   protected Operation.Builder putOperationFromCommit(KeyWithBytes put) {
     return Operation.newBuilder()
         .setOperationType(OperationType.Put)
-        .setContentKey(ContentKey.of(put.getKey().getElements()).toPathString())
+        .addAllContentKey(put.getKey().getElements())
         .setContentId(put.getContentId().getId())
         .setPayload(put.getPayload())
         .setValue(contentToValue(convertToContent(put)));
@@ -318,7 +316,6 @@ public abstract class AbstractNessieExporter {
     private long currentFileSize;
 
     private OutputStream output;
-    private CodedOutputStream codedOutput;
 
     SizeLimitedOutput(
         String fileNamePrefix, Consumer<String> newFileName, LongConsumer finalEntityCount) {
@@ -356,17 +353,13 @@ public abstract class AbstractNessieExporter {
     }
 
     private void finishCurrentFile() throws IOException {
-      try {
-        if (codedOutput != null) {
-          codedOutput.flush();
-        }
-        if (output != null) {
+      if (output != null) {
+        try {
           output.flush();
           output.close();
+        } finally {
+          output = null;
         }
-      } finally {
-        codedOutput = null;
-        output = null;
       }
     }
 

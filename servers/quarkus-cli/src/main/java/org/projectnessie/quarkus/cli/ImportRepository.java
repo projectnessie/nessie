@@ -144,7 +144,7 @@ public class ImportRepository extends BaseCommand {
       }
     }
 
-    // Always perform erase + initialize to reset any non-obvious contents (global log, global
+    // Perform erase + initialize to reset any non-obvious contents (global log, global
     // state, ref-log, repository description, etc).
     out.println("Erasing potentially existing repository...");
     databaseAdapter.eraseRepo();
