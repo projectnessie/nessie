@@ -92,6 +92,7 @@ val versionQuarkusLoggingSentry = "1.2.1"
 val versionParquet = "1.12.3"
 val versionPicocli = "4.6.3"
 val versionPostgres = "42.5.0"
+val versionPostgresContainerTag = "14"
 val versionProtobuf = "3.21.5"
 val versionReactor = "2020.0.21"
 val versionRestAssured = "5.1.1"
@@ -120,6 +121,7 @@ mapOf(
     "versionMicrometer" to versionMicrometer,
     "versionOpentracing" to versionOpentracing,
     "versionProtobuf" to versionProtobuf,
+    "versionPostgresContainerTag" to versionPostgresContainerTag,
     "versionRocksDb" to versionRocksDb,
     "quarkus.builder-image" to "quay.io/quarkus/ubi-quarkus-native-image:22.2-java17"
   )

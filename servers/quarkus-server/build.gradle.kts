@@ -157,6 +157,10 @@ tasks.withType<Test>().configureEach {
   systemProperty("quarkus.smallrye.jwt.enabled", "true")
   // TODO requires adjusting the tests - systemProperty("quarkus.http.test-port", "0") -  set this
   //  property in application.properties
+  systemProperty(
+    "it.nessie.container.postgres.tag",
+    dependencyVersion("versionPostgresContainerTag")
+  )
 }
 
 tasks.named<Test>("intTest") { filter { excludeTestsMatching("ITNative*") } }
