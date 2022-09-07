@@ -19,6 +19,7 @@ import static java.util.Collections.singletonList;
 import static org.projectnessie.versioned.transfer.ExportImportConstants.DEFAULT_EXPECTED_COMMIT_COUNT;
 
 import com.google.common.primitives.Ints;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -200,21 +201,28 @@ public abstract class CommitLogOptimization {
 
     private final DatabaseAdapter databaseAdapter;
     private final int parentsPerCommit;
-    private final BoundedList<CommitLogEntry> lastEntries;
+    private final ArrayDeque<CommitLogEntry> lastEntries;
 
     CommitParentsState(DatabaseAdapter databaseAdapter) {
       this.databaseAdapter = databaseAdapter;
       this.parentsPerCommit = databaseAdapter.getConfig().getParentsPerCommit();
-      this.lastEntries = new BoundedList<>(this.parentsPerCommit + 1);
+      this.lastEntries = new ArrayDeque<>(this.parentsPerCommit + 1);
     }
 
     boolean canStopIterating(CommitLogEntry entry) {
       return entry.getParents().size() >= parentsPerCommit;
     }
 
+    private boolean full() {
+      return lastEntries.size() == this.parentsPerCommit + 1;
+    }
+
     void handleEntry(CommitLogEntry entry) {
+      if (full()) {
+        lastEntries.removeFirst();
+      }
       lastEntries.add(entry);
-      if (lastEntries.size() == parentsPerCommit + 1) {
+      if (full()) {
         updateLeastRecentCommitLogEntryParents();
       }
     }
@@ -226,7 +234,7 @@ public abstract class CommitLogOptimization {
     }
 
     private void updateLeastRecentCommitLogEntryParents() {
-      CommitLogEntry commitToUpdate = lastEntries.removeLeastRecent();
+      CommitLogEntry commitToUpdate = lastEntries.removeFirst();
       if (commitToUpdate.getParents().size() >= parentsPerCommit) {
         return;
       }
@@ -235,7 +243,7 @@ public abstract class CommitLogOptimization {
           ImmutableCommitLogEntry.builder().from(commitToUpdate);
 
       List<Hash> parents = new ArrayList<>(lastEntries.size());
-      lastEntries.oldestToNewest(e -> parents.add(e.getHash()));
+      lastEntries.forEach(e -> parents.add(e.getHash()));
       if (parents.size() < parentsPerCommit) {
         parents.add(databaseAdapter.noAncestorHash());
       }
