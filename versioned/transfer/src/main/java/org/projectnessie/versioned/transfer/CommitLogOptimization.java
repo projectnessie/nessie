@@ -235,31 +235,28 @@ public abstract class CommitLogOptimization {
 
     private void updateLeastRecentCommitLogEntryParents() {
       CommitLogEntry commitToUpdate = lastEntries.removeFirst();
-      if (commitToUpdate.getParents().size() >= parentsPerCommit) {
+      List<Hash> currentParents = commitToUpdate.getParents();
+      if (currentParents.size() >= parentsPerCommit) {
         return;
       }
 
       ImmutableCommitLogEntry.Builder newEntry =
           ImmutableCommitLogEntry.builder().from(commitToUpdate);
 
-      List<Hash> parents = new ArrayList<>(lastEntries.size());
-      lastEntries.forEach(e -> parents.add(e.getHash()));
-      if (parents.size() < parentsPerCommit) {
-        parents.add(databaseAdapter.noAncestorHash());
+      List<Hash> calculatedParents = new ArrayList<>(lastEntries.size());
+      lastEntries.forEach(e -> calculatedParents.add(e.getHash()));
+      if (calculatedParents.size() < parentsPerCommit) {
+        calculatedParents.add(databaseAdapter.noAncestorHash());
       }
 
-      List<Hash> currentParents = new ArrayList<>(commitToUpdate.getParents());
-      Hash leastRecentParent = currentParents.get(currentParents.size() - 1);
-      for (int i = 0; i < parents.size(); i++) {
-        // This condition is needed, if `currentParents` is already populated, but potentially not
-        // fully populated up to `parentsPerCommit`, so we must only add the missing parents.
-        if (leastRecentParent.equals(parents.get(i))) {
-          for (i++; i < parents.size(); i++) {
-            currentParents.add(parents.get(i));
-          }
-        }
+      if (!calculatedParents.subList(0, currentParents.size()).equals(currentParents)) {
+        throw new IllegalStateException(
+            String.format(
+                "commit %s calculated parents %s must start with the exsting list of parents %s",
+                commitToUpdate.getHash().asString(), calculatedParents, currentParents));
       }
-      newEntry.parents(currentParents);
+
+      newEntry.parents(calculatedParents);
 
       try {
         databaseAdapter.updateMultipleCommits(singletonList(newEntry.build()));
