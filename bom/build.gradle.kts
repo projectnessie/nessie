@@ -65,6 +65,8 @@ dependencies {
     api(project(":nessie-versioned-persist-transactional-test"))
     api(project(":nessie-versioned-spi"))
     api(project(":nessie-versioned-tests"))
+    api(project(":nessie-versioned-transfer-proto"))
+    api(project(":nessie-versioned-transfer"))
     if (!isIntegrationsTestingEnabled()) {
       api(project(":nessie-deltalake"))
       api(project(":iceberg-views"))

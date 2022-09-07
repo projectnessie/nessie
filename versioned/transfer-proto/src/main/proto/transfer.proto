@@ -1,0 +1,79 @@
+/*
+ * Copyright (C) 2020 Dremio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+syntax = "proto3";
+package nessie.transfer;
+
+option java_package = "org.projectnessie.versioned.transfer.serialize";
+option java_outer_classname = "TransferTypes";
+option java_generate_equals_and_hash = true;
+
+message ExportMeta {
+  int64 created_millis_epoch = 1;
+  ExportVersion version = 2;
+  int64 named_references_count = 3;
+  int64 commit_count = 4;
+  repeated string named_references_files = 5;
+  repeated string commits_files = 6;
+}
+
+enum ExportVersion {
+  Unknown = 0;
+  V1 = 1;
+}
+
+message HeadsAndForks {
+  repeated bytes heads = 1;
+  repeated bytes fork_points = 2;
+  int64 scan_started_at_in_micros = 3;
+}
+
+message NamedReference {
+  RefType ref_type = 1;
+  string name = 2;
+  bytes commit_id = 3;
+}
+
+enum RefType {
+  Branch = 0;
+  Tag = 1;
+}
+
+message Commit {
+  bytes commit_id = 1;
+  int64 commit_sequence = 2;
+  bytes parent_commit_id = 3;
+  repeated bytes additional_parents = 4;
+  bytes metadata = 5;
+  repeated Operation operations = 6;
+  int64 created_time_micros = 7;
+}
+
+message Operation {
+  OperationType operation_type = 1;
+  repeated string content_key = 2;
+  optional string content_id = 3;
+  optional int32 payload = 4;
+  optional bytes value = 5;
+}
+
+enum OperationType {
+  Put = 0;
+  Delete = 1;
+}
+
+message RepositoryDescription {
+  map<string, string> properties = 1;
+}
