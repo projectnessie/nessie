@@ -15,11 +15,8 @@
  */
 package org.projectnessie.versioned.transfer;
 
-import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
+import org.projectnessie.versioned.persist.inmem.InmemoryTestConnectionProviderSource;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
-import org.projectnessie.versioned.persist.tx.h2.H2DatabaseAdapterFactory;
-import org.projectnessie.versioned.persist.tx.h2.H2TestConnectionProviderSource;
 
-@NessieDbAdapterName(H2DatabaseAdapterFactory.NAME)
-@NessieExternalDatabase(H2TestConnectionProviderSource.class)
-public class ITExportImportOptimizationH2 extends AbstractITExportImportOptimization {}
+@NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
+public class TestCommitLogOptimizationInMemory extends AbstractITCommitLogOptimization {}

@@ -15,11 +15,11 @@
  */
 package org.projectnessie.versioned.transfer;
 
-import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseAdapterFactory;
-import org.projectnessie.versioned.persist.dynamodb.LocalDynamoTestConnectionProviderSource;
+import org.projectnessie.versioned.persist.rocks.RocksDatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.rocks.RocksTestConnectionProviderSource;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
-@NessieDbAdapterName(DynamoDatabaseAdapterFactory.NAME)
-@NessieExternalDatabase(LocalDynamoTestConnectionProviderSource.class)
-public class ITExportImportOptimizationDynamo extends AbstractITExportImportOptimization {}
+@NessieDbAdapterName(RocksDatabaseAdapterFactory.NAME)
+@NessieExternalDatabase(RocksTestConnectionProviderSource.class)
+public class ITCommitLogOptimizationRocks extends AbstractITCommitLogOptimization {}

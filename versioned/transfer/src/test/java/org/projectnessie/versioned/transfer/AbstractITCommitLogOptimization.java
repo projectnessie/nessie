@@ -49,7 +49,7 @@ import org.projectnessie.versioned.store.DefaultStoreWorker;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 
 @ExtendWith(DatabaseAdapterExtension.class)
-public abstract class AbstractITExportImportOptimization {
+public abstract class AbstractITCommitLogOptimization {
   @NessieDbAdapter protected static DatabaseAdapter databaseAdapter;
 
   static Stream<Arguments> multipleBranches() {

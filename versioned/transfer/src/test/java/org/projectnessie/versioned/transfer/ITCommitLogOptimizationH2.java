@@ -15,11 +15,11 @@
  */
 package org.projectnessie.versioned.transfer;
 
-import org.projectnessie.versioned.persist.mongodb.LocalMongoTestConnectionProviderSource;
-import org.projectnessie.versioned.persist.mongodb.MongoDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
+import org.projectnessie.versioned.persist.tx.h2.H2DatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.tx.h2.H2TestConnectionProviderSource;
 
-@NessieDbAdapterName(MongoDatabaseAdapterFactory.NAME)
-@NessieExternalDatabase(LocalMongoTestConnectionProviderSource.class)
-public class ITExportImportOptimizationMongo extends AbstractITExportImportOptimization {}
+@NessieDbAdapterName(H2DatabaseAdapterFactory.NAME)
+@NessieExternalDatabase(H2TestConnectionProviderSource.class)
+public class ITCommitLogOptimizationH2 extends AbstractITCommitLogOptimization {}

@@ -15,11 +15,11 @@
  */
 package org.projectnessie.versioned.transfer;
 
-import org.projectnessie.versioned.persist.rocks.RocksDatabaseAdapterFactory;
-import org.projectnessie.versioned.persist.rocks.RocksTestConnectionProviderSource;
+import org.projectnessie.versioned.persist.mongodb.LocalMongoTestConnectionProviderSource;
+import org.projectnessie.versioned.persist.mongodb.MongoDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
-@NessieDbAdapterName(RocksDatabaseAdapterFactory.NAME)
-@NessieExternalDatabase(RocksTestConnectionProviderSource.class)
-public class ITExportImportOptimizationRocks extends AbstractITExportImportOptimization {}
+@NessieDbAdapterName(MongoDatabaseAdapterFactory.NAME)
+@NessieExternalDatabase(LocalMongoTestConnectionProviderSource.class)
+public class ITCommitLogOptimizationMongo extends AbstractITCommitLogOptimization {}
