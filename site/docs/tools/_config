@@ -5,4 +5,5 @@ arrange:
   - deltalake
   - auth_config.md
   - cli.md
+  - export_import.md
   - ui.md

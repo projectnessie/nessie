@@ -61,7 +61,8 @@ public class ExportRepository extends BaseCommand {
         "Explicitly define the output format to use to the export.",
         "If not specified, the implementation chooses the ZIP export, if "
             + PATH
-            + " ends in .zip, otherwise will use the directory output format."
+            + " ends in .zip, otherwise will use the directory output format.",
+        "Possible values: ${COMPLETION-CANDIDATES}"
       })
   private Format outputFormat;
 
