@@ -136,8 +136,6 @@ public class ImportRepository extends BaseCommand {
                       + " option if you want to erase the repository.");
           return 100;
         }
-
-        erase = true;
       }
     }
 

@@ -102,6 +102,7 @@ public abstract class CommitLogOptimization {
           } else {
             if (delayedStop == 0) {
               commitParentsState.clear();
+              break;
             }
             delayedStop--;
           }
@@ -163,14 +164,17 @@ public abstract class CommitLogOptimization {
     void updateCommitsWithKeyLists() {
       try (Stream<CommitLogEntry> entries =
           databaseAdapter.fetchCommitLogEntries(
-              updateCommitsByKeyListSeq.stream().flatMap(Collection::stream))) {
+              updateCommitsByKeyListSeq.stream()
+                  .filter(Objects::nonNull)
+                  .flatMap(Collection::stream))) {
         entries
             .map(
                 entry -> {
                   try {
                     return databaseAdapter.rebuildKeyList(entry, h -> null);
                   } catch (ReferenceNotFoundException ignore) {
-                    // ignore
+                    // Ignore this, because it can only happen if `entry`, which has been read
+                    // before, no longer exists.
                     return null;
                   }
                 })
@@ -239,6 +243,8 @@ public abstract class CommitLogOptimization {
       List<Hash> currentParents = new ArrayList<>(commitToUpdate.getParents());
       Hash leastRecentParent = currentParents.get(currentParents.size() - 1);
       for (int i = 0; i < parents.size(); i++) {
+        // This condition is needed, if `currentParents` is already populated, but potentially not
+        // fully populated up to `parentsPerCommit`, so we must only add the missing parents.
         if (leastRecentParent.equals(parents.get(i))) {
           for (i++; i < parents.size(); i++) {
             currentParents.add(parents.get(i));
