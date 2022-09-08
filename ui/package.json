@@ -18,7 +18,7 @@
     "@types/yup": "^0.32.0",
     "bfj": "^7.0.2",
     "bootstrap": "^5.2.1",
-    "camelcase": "^6.3.0",
+    "camelcase": "^7.0.0",
     "css-loader": "6.7.1",
     "dotenv": "16.0.2",
     "dotenv-expand": "9.0.0",
