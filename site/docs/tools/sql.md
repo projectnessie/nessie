@@ -128,6 +128,8 @@ Merging branch `dev` into `base` for the `nessie` catalog can be done via:
 
 Note that in case `base` doesn't exist, Nessie will fall back to the default branch (`main`).
 
+## Usage with Iceberg CALL procedures
+
 !!! note
     For Iceberg version >= 0.14.0 with spark versions <= 3.1
     or Iceberg version < 0.14.0 with any of the spark versions,

@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.spark.sql.AnalysisException;
 import org.apache.spark.sql.functions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -42,7 +43,6 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Reference;
-import org.projectnessie.model.TableReference;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Validation;
 
@@ -53,6 +53,15 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
   @Override
   protected String warehouseURI() {
     return tempFile.toURI().toString();
+  }
+
+  @BeforeAll
+  protected static void useNessieExtensions() {
+    conf.set(
+        "spark.sql.extensions",
+        "org.projectnessie.spark.extensions.NessieSparkSessionExtensions"
+            + ","
+            + "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions");
   }
 
   @Test
@@ -585,42 +594,10 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
     "main,`tbl@main`"
   })
   void testCompaction(String branchName, String tableName) throws NessieNotFoundException {
-    String branchHash = prepareForCompaction(branchName);
-
-    if (spark.version().compareTo("3.2.0") < 0) {
-      // In Iceberg versions >= 0.14.0 with Spark versions <= 3.1,
-      if (TableReference.parse(tableName).hasReference()) {
-        // Iceberg compaction procedure parse the table identifier using spark parser
-        // and fails because of backtick syntax used in table reference.
-        // Hence, compaction throws parsing error.
-        // In the newer versions, because of SparkCachedTableCatalog,
-        // table identifier is mapped to UUID and Spark parses UUID successfully.
-        assertThatThrownBy(() -> executeCompaction(tableName))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining(
-                String.format("Cannot parse path or identifier: nessie.db.tbl@%s", branchName));
-        return;
-      } else {
-        // On use reference cmd path, for non-default reference, compaction throws error.
-        if (!branchName.equals("main")) {
-          // DataframeReader in Iceberg compaction code uses SparkCatalog, which builds the
-          // IcebergCatalog using the original catalog conf from SQLConf instead of active session
-          // conf.
-          // As USE REFERENCE command only updates branch name in active session conf,
-          // compaction will try to use original reference ("main") instead of the one from USE
-          // REFERENCE.
-          // Hence, compaction throws table not found error.
-          assertThatThrownBy(() -> executeCompaction(tableName))
-              .isInstanceOf(RuntimeException.class)
-              .hasMessageContaining("Table db.tbl not found");
-          return;
-        }
-      }
-    }
-    executeAndValidateCompaction(branchName, branchHash, tableName);
+    executeAndValidateCompaction(branchName, prepareForCompaction(branchName), tableName);
   }
 
-  private String prepareForCompaction(String branchName) throws NessieNotFoundException {
+  String prepareForCompaction(String branchName) throws NessieNotFoundException {
     if (!branchName.equals("main")) {
       assertThat(sql("CREATE BRANCH %s IN nessie FROM main", branchName))
           .containsExactly(row("Branch", branchName, initialDefaultBranch.getHash()));
@@ -637,7 +614,7 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
     return branchHash;
   }
 
-  private void executeAndValidateCompaction(String branchName, String branchHash, String tableName)
+  void executeAndValidateCompaction(String branchName, String branchHash, String tableName)
       throws NessieNotFoundException {
     List<Object[]> result = executeCompaction(tableName);
     // re-written files count is 2 and the added files count is 1
@@ -656,7 +633,7 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
     assertThat(api.getReference().refName("dev").get().getHash()).isEqualTo(branchHash);
   }
 
-  private static List<Object[]> executeCompaction(String tableName) {
+  static List<Object[]> executeCompaction(String tableName) {
     return sql(
         "CALL nessie.system.rewrite_data_files(table => 'nessie.db.%s', options => map"
             + "('min-input-files','2'))",
