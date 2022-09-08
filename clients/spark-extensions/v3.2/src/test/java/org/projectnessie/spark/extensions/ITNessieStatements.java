@@ -15,12 +15,4 @@
  */
 package org.projectnessie.spark.extensions;
 
-import org.junit.jupiter.api.BeforeAll;
-
-public class ITNessieStatements extends AbstractNessieSparkSqlExtensionTest {
-
-  @BeforeAll
-  protected static void useNessieExtensions() {
-    conf.set("spark.sql.extensions", NessieSparkSessionExtensions.class.getCanonicalName());
-  }
-}
+public class ITNessieStatements extends AbstractNessieSparkSqlExtensionTest {}
