@@ -69,10 +69,7 @@ want to overwrite an existing Nessie repository, then use the `--erase-before-im
 ```java
 class CodeExamples {
 
-  void exportExample() {
-    Path exportZipFile;
-
-    DatabaseAdapter databaseAdapter;
+  void exportExample(DatabaseAdapter databaseAdapter, Path exportZipFile) {
 
     ZipArchiveExporter.builder()
       .outputFile(exportZipFile)
@@ -81,15 +78,12 @@ class CodeExamples {
       .exportNessieRepository();
   }
 
-  void importExample() {
-    Path exportZipFile;
-
-    DatabaseAdapter databaseAdapter;
+  void importExample(DatabaseAdapter databaseAdapter, Path importZipFile) {
 
     ImportResult importResult =
       ZipArchiveImporter.builder()
-        .sourceZipFile(exportZipFile)
-        .databaseAdapter(importDatabaseAdapter)
+        .sourceZipFile(importZipFile)
+        .databaseAdapter(databaseAdapter)
         .build()
         .importNessieRepository();
 
@@ -125,7 +119,7 @@ global state, there will multiple on-reference-states referring to the same Iceb
 
 ## Technical commit information
 
-Exported commits to _not_ contain key-lists or commit-parents or the like, because that is
+Exported commits do _not_ contain key-lists or commit-parents or the like, because that is
 rather internal, implementation specific information and, additionally, the configuration of the
 target repository that controls the aggregated key-lists and commit-parent-lists might be different
 from the source repository.
@@ -153,7 +147,7 @@ consistent, for example when commits have been created while the export is runni
 
 ## Export formats
 
-Exports can be generated into either an empty directory or as a compressed zip file.
+Exported data can be written either into an empty directory or as a compressed zip file.
 
 Users can optionally zip the contents of an export to a directory and pass that to the zip-file
 based importer.
