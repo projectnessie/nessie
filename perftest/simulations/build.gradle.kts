@@ -58,7 +58,6 @@ nessieQuarkusApp {
 
 gatling {
   gatlingVersion = dependencyVersion("versionGatling")
-  if (null != System.getProperty("gatling.logLevel")) {
-    logLevel = System.getProperty("gatling.logLevel")
-  }
+  // Null is OK (io.gatling.gradle.LogbackConfigTask checks for it)
+  logLevel = System.getProperty("gatling.logLevel")
 }

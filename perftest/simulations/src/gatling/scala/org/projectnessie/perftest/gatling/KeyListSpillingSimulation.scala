@@ -41,10 +41,10 @@ class KeyListSpillingSimulation extends Simulation {
    * Fixed-size key padding (256 chars, repeating every 8 chars)
    */
   private val paddingBuilder: mutable.StringBuilder = new mutable.StringBuilder()
-  for (i <- 1 to 32) {
+  for (_ <- 1 to 32) {
     paddingBuilder.append("abcdefg_")
   }
-  val padding: String = paddingBuilder.toString();
+  val padding: String = paddingBuilder.toString()
 
   /**
    * Configuration specific to this simulation and scenario.
@@ -76,8 +76,8 @@ class KeyListSpillingSimulation extends Simulation {
             val userId = session.userId
             val putOps: List[Operation] = List.range(0, params.putsPerTestCommit).map(
               i => {
-                val key = ContentKey.of(s"${userId} ${commitIndex} ${i}" + padding)
-                val table = IcebergTable.of(s"metadata_${userId}_${commitNum}_${i}", 42, 43, 44, 45)
+                val key = ContentKey.of(s"$userId $commitIndex $i" + padding)
+                val table = IcebergTable.of(s"metadata_${userId}_${commitNum}_$i", 42, 43, 44, 45)
                 Put.of(key, table, null)
               }
             )
@@ -87,7 +87,7 @@ class KeyListSpillingSimulation extends Simulation {
               .commitMultipleOperations()
               .branch(testBranch)
               .commitMeta(
-                CommitMeta.fromMessage(s"worker commit userId=${userId} testCommitNum=${commitNum}")
+                CommitMeta.fromMessage(s"worker commit userId=$userId testCommitNum=$commitNum")
               )
               .operations(putOps.asJava)
               .commit()
@@ -104,7 +104,7 @@ class KeyListSpillingSimulation extends Simulation {
    */
   private def dropAndCreateTestBranch: ChainBuilder = {
     exec(
-      nessie(s"DeleteTestBranchIfExists")
+      nessie("DeleteTestBranchIfExists")
         .execute { (client, session) =>
           val testBranchName = params.getTestBranchName(session)
 
@@ -117,13 +117,11 @@ class KeyListSpillingSimulation extends Simulation {
               .asInstanceOf[Branch]
 
             // Delete the test branch
-            if (null != testBranch) {
-              client
-                .deleteBranch()
-                .branchName(testBranchName)
-                .hash(testBranch.getHash)
-                .delete()
-            }
+            client
+              .deleteBranch()
+              .branchName(testBranchName)
+              .hash(testBranch.getHash)
+              .delete()
           } catch {
             case e: NessieReferenceNotFoundException =>
               log.debug("Test branch did not exist during delete-if-exists operation" +
@@ -133,18 +131,18 @@ class KeyListSpillingSimulation extends Simulation {
           session
         }
     ).exec(
-      nessie(s"CreateTestBranch")
+      nessie("CreateTestBranch")
         .execute { (client, session) =>
           // Get the base branch
           val parentBranch: Reference = client
             .getReference
-            .refName(params.getBaseBranchName())
+            .refName(params.getBaseBranchName)
             .get()
 
           // Create a new test branch from the base branch
           val testBranch = client
             .createReference()
-            .sourceRefName(params.getBaseBranchName())
+            .sourceRefName(params.getBaseBranchName)
             .reference(Branch.of(params.getTestBranchName(session), parentBranch.getHash))
             .create()
             .asInstanceOf[Branch]
@@ -174,24 +172,23 @@ class KeyListSpillingSimulation extends Simulation {
   private def doSetUp(): SetUp = {
     val nessieProtocol: NessieProtocol = nessie().clientFromSystemProperties()
 
-    val branchName = params.getBaseBranchName();
+    val branchName = params.getBaseBranchName
 
     // Drop base branch, if it exists
     try {
       val ref = nessieProtocol.client.getReference.refName(branchName).get()
 
       if (null != ref) {
-        nessieProtocol.client.deleteBranch().branch(Branch.of(params.getBaseBranchName(), ref.getHash)).delete()
+        nessieProtocol.client.deleteBranch().branch(Branch.of(params.getBaseBranchName, ref.getHash)).delete()
       }
     } catch {
-      case e: NessieReferenceNotFoundException => {
+      case e: NessieReferenceNotFoundException =>
         log.info(s"Base branch $branchName does not exist, " +
           s"not attempting to delete (this is normal when running against a clean Nessie backend)", e)
-      }
     }
 
     // Create base branch
-    nessieProtocol.client.createReference().reference(Branch.of(params.getBaseBranchName(), null)).create()
+    nessieProtocol.client.createReference().reference(Branch.of(params.getBaseBranchName, null)).create()
 
     // Load test fixture into base branch
     val branch = nessieProtocol.client.getReference.refName(branchName).get().asInstanceOf[Branch]
@@ -234,7 +231,7 @@ class KeyListSpillingSimulation extends Simulation {
       nessieProtocol.client.commitMultipleOperations()
         .operations(operations.asJava)
         .branch(branch)
-        .commitMeta(CommitMeta.fromMessage(s"Base branch commit ${i}/${commitCount}"))
+        .commitMeta(CommitMeta.fromMessage(s"Base branch commit $i/$commitCount"))
         .commit();
     }
   }

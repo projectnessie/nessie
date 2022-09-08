@@ -54,12 +54,8 @@ case class KeyListSpillingParams(
     |""".stripMargin
   }
 
-  def getBaseBranchName(): String = {
+  def getBaseBranchName: String = {
     prefix + "base"
-  }
-
-  def makeTableName(session: Session): String = {
-    prefix + "table"
   }
 
   def getTestBranchName(session: Session): String = {

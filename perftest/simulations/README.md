@@ -92,16 +92,17 @@ as in most cases, returned form the actions' code.
 
 ## Running a single Nessie Gatling simulation
 
-Gatling's Gradle plugin recognizes tasks in the form `gatlingRun-<fqcn>`, where `<fqcn>` is a dot-separated package-and-classname.  For instance, to run `KeyListSpillingSimulation` from this directory, execute:
+Gatling's Gradle plugin recognizes tasks in the form `gatlingRun-<fqcn>`, where `<fqcn>` is a dot-separated package-and-classname.  For instance, to run `KeyListSpillingSimulation` from the top-level project directory, execute:
 
 ```
-../../gradlew gatlingRun-org.projectnessie.perftest.gatling.KeyListSpillingSimulation
+./gradlew :nessie-perftest-simulations:gatlingRun-org.projectnessie.perftest.gatling.KeyListSpillingSimulation
+
 ```
 
 The simluations in this package take most configuration as JVM system properties passed to the `gradlew` wrapper command.  An example follows.  The `sim.` prefix on properties is pure convention.  Simulations could define properties with arbitrary names.
 
 ```
-../../gradlew gatlingRun-org.projectnessie.perftest.gatling.KeyListSpillingSimulation \
+./gradlew :nessie-perftest-simulations:gatlingRun-org.projectnessie.perftest.gatling.KeyListSpillingSimulation \
 	-Dsim.putsPerBaseCommit=1000 \
 	-Dsim.duration.seconds=60 \
 	-Dsim.putsPerTestCommit=1
@@ -110,14 +111,14 @@ The simluations in this package take most configuration as JVM system properties
 This works for other system properties related to client configuration.  For instance, to point the Gatling simulation's Nessie client at a different backend than the Quarkus instance started by the task's dependencies, pass `-Dnessie.uri=...`, e.g.:
 
 ```
-../../gradlew gatlingRun-org.projectnessie.perftest.gatling.KeyListSpillingSimulation \
+./gradlew :nessie-perftest-simulations:gatlingRun-org.projectnessie.perftest.gatling.KeyListSpillingSimulation \
 	-Dnessie.uri=http://127.0.0.1:19120/api/v1
 ```
 
 The system property `gatling.logLevel` is also specifically checked in build.gradle.kts.  When `-Dgatling.logLevel=...` is passed to the `gradlew` wrapper command, its value will be configured as the logLevel parameter on Gatling's Gradle plugin, changing what Gatling and the simulation logs.  This has no effect on the Nessie/server side.  This check is unique to `gatling.logLevel`; the plugin has other parameters that can't be configured this way, as of the time of writing.
 
 ```
-../../gradlew gatlingRun-org.projectnessie.perftest.gatling.KeyListSpillingSimulation \
+./gradlew :nessie-perftest-simulations:gatlingRun-org.projectnessie.perftest.gatling.KeyListSpillingSimulation \
 	-Dgatling.logLevel=DEBUG
 ```
 
