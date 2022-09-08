@@ -72,7 +72,6 @@ dependencies {
       api(project(":iceberg-views"))
       api(project(":nessie-spark-antlr-runtime"))
       api(project(":nessie-spark-extensions-grammar"))
-      api(project(":nessie-gc-base"))
 
       val ideSyncActive =
         System.getProperty("idea.sync.active").toBoolean() ||
