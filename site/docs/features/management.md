@@ -1,177 +1,276 @@
 # Management Services
 
-Nessie can and needs to manage several operations within your data lake. Each management
-service can be scheduled and Nessie reports the outcome of each scheduled operation.
-Scheduled operations require that Nessie have access to a Spark cluster to complete
-those operations and many of them are distributed compute operations.
+Nessie can and needs to manage several operations within your data lake.
+
+Each management service can be scheduled and Nessie reports the outcome of each operation.
 
 ## Garbage Collection
 
-Since Nessie is maintaining many versions of metadata and data-pointers simultaneously,
-you must rely on Nessie to clean up old data. Nessie calls this garbage collection.
+Since Nessie is maintaining many versions of metadata and data-pointers simultaneously, you must
+rely on Nessie to clean up old data. Users should run Nessie GC regularly.
 
-There are at least two steps to a garbage collection action. The first steps are instructive, and the last step is destructive.
+Nessie GC needs to know which content versions need to be retained. To identify this so called
+"live" content, Nessie GC uses some rules which are applied on each named reference. Those rules
+are described below.
+
+Nessie GC is composed of multiple phases:
+1. **Identify** (or "mark") phase: Inspects the Nessie repository to identify all commits and
+   content version (in Iceberg terms: a table's snapshot). These so-called "content references" are
+   stored as a live-content-set, ideally in a separate database (H2 or Postgres-compatible).
+   This phase requires access to the Nessie repository, but does not require access to the data lake.
+2. **Expire** ("sweep") phase: Uses the actual table format (e.g. Iceberg) to map the content
+   references from a live-content-set to a set of file-references, which are then matched against
+   a recursive listing of all files for the respective tables. Files that are not contained in the
+   set of file-references are going to be deleted. Deletion either happens immediately or be
+   persisted in the live-content-set as a set of orphan files.
+3. The **delete** phase can be split out of the **expire** phase, it basically means that orphan 
+   files are first collected, so these can be inspected, and then explicitly deleted. 
+
+All relevant operations required for Nessie GC can be run via the `nessie-gc` tool, which can be
+downloaded from the [release page on GitHub](https://github.com/projectnessie/nessie/releases).
 
 !!! info
-    currently the GC algorithm only works for Iceberg tables and Dynamo as a backend
+    Currently the GC algorithm only works for Iceberg tables and a H2 or Postgres database is
+    recommended as the storage for the live-content-sets.
 
-### Identify Unreferenced Assets
+!!! info
+    Information about the internals of Nessie GC can be found [here](./gc-internals.md).
 
-This is a Spark job which should be run periodically to identify no longer referenced assets. Assets are defined as the set of
-files, records, entries etc. that make up a table, view or other Nessie object. For example, Iceberg assets are:
+## Nessie GC tool
 
- * manifest files
- * manifest lists
- * data files
- * metadata files
- * the entire table directory on disk (if it is empty)
+It is recommended to run all Nessie GC phases via the Nessie GC command line tool `nessie-gc`,
+which can be downloaded from the
+[release page on GitHub](https://github.com/projectnessie/nessie/releases).
 
-To be marked as unreferenced an asset must either be:
+The Nessie GC tool comes as an uber-jar packaged with everything you need to run Nessie GC against
+a data lake using Iceberg.
 
- 1. No longer referenced by any branch or tag. For example, an entire branch was deleted, and a table on that branch is no longer accessible.
- 2. Assets created in a commit which has passed the (configurable) commit age. *If they are not referenced by newer commits*
+!!! note
+    Use `nessie-gc help` to get a list of commands supported by the Nessie GC tool.
 
-Identifying unreferenced assets is a non-destructive action. The result of the spark job is a Spark DataFrame of all the
-unreferenced assets. This dataframe is stored in an iceberg table managed by nessie at a configurable key. This table is
-referencable in Nessie so can be examined via Spark or any other Nessie/Iceberg compatible engine. An example of the table output
-is shown below.
+### Setting up the database for Nessie GC
 
-![Screenshot](../img/gc-table.png)
+You can either create the tables manually, use the DDL statements emitted by
+`nessie-gc jdbc-dump-schema` as a template that can be enriched with database specific optimizations.
 
-This action is designed to run concurrently to normal operational workloads and can/should be run regularly. This table is used as input
-into the destructive GC operation described below.
-
-#### Configuration and running
-GcActionsConfig actionsConfig, GcOptions gcConfig, TableIdentifier table
-The relevant configuration items are:
-
-| parameter                         | default value    | description                                                                      |
-|-----------------------------------|------------------|----------------------------------------------------------------------------------|
-| table                             | `null`           | The Iceberg `TableIdentifier` to which the unreferenced assets should be written |
-| GcOptions.getBloomFilterCapacity  | 10000000         | Size (number of items) of bloom filter for identification of referenced values   |
-| GcOptions.getMaxAgeMicros         | 7 days           | age at which a commit starts to expire                                           |
-| GcOptions.getTimeSlopMicros       | 1 day            | minimum age a values can be before it will be considered expired                 |
-| GcActionsConfig.getDynamoRegion   | provider default | AWS Region of the Nessie DynamoDB                                                |
-| GcActionsConfig.getDynamoEndpoint | provider default | Custom AWS endpoint of the Nessie DynamoDB                                       |
-| GcActionsConfig.getStoreType      | DYNAMO           | only backend which supports GC                                                   |
-
-Running the action can be done simply by:
-```java
-GcActionsConfig actionsConfig = GcActionsConfig.builder().build(); //use all defaults
-GcOptions gcOptions = GcOptions.builder().build(); //use all defaults
-GcActions actions = new GcActions.Builder(spark)
-                                 .setActionsConfig(actionsConfig)
-                                 .setGcOptions(gcOptions)
-                                 .setTable(TABLE_IDENTIFIER).build(); // (1)
-Dataset<Row> unreferencedAssets = actions.identifyUnreferencedAssets(); // (2)
-actions.updateUnreferencedAssetTable(unreferencedAssets); // (3)
+Or you let the Nessie GC tool create the schema in your existing database, for example like this:
+```bash
+nessie-gc jdbc-create-schema \
+  --jdbc-url jdbc:postgresql://127.0.0.1:5432/nessie_gc \
+  --jdbc-user pguser \
+  --jdbc-password mysecretpassword
 ```
-The first step above builds the action with known configs. Step 2 generates a DataFrame of unreferenced assets and
-Step 3 writes it as an iceberg table.
 
-### Delete Unreferenced Assets
+!!! note
+    Instead of specifying the JDBC parameters, especially the password, everytime on the command
+    line, most command line option values can be specified via environment variables. The naming
+    scheme follows this Java pseudo-code:
+    `"NESSIE_GC_" + optionName.substring(2).replace('-', '_').toUpperCase()`. For example, the
+    `--jdbc-password` command line option's value is taken from the environment variable
+    `NESSIE_GC_JDBC_PASSWORD`.
 
-The destructive garbage collection step is also a Spark job and takes as input the table that has been built above. This job
-is modelled as an Iceberg Action and has a similar API to the other Iceberg Actions. In the future it will be registered with
-Iceberg's Action APIs and callable via Iceberg's custom [SQL statements](http://iceberg.apache.org/spark-procedures/).
+!!! note
+    The availability of the database for Nessie GC is not critical for Nessie itself. Nessie does
+    not require anything from Nessie GC to continue to work.
 
-This Iceberg Action looks at the generated table from the [Identify](#identify-unreferenced-assets) step and counts the number of times a distinct asset has been
-seen. Effectively it performs a group-by and count on this table. If the count of an asset is over a specified threshold **AND** it
-was seen in the last run of the [Identify](#identify-unreferenced-assets) stage it is collectable. This asset is then deleted permanently. A report table of
-deleted object is returned to the user and either the records are removed from the 'identify' table or the whole table is purged.
+!!! note
+    For small, experimental Nessie repositories, that do not access and production data lake
+    information, you can experiment with the `nessie-gc gc` command, which also accepts the
+    `--inmemory` command line option, which does not require an external database for
+    live-content-set persistence. In fact, the `--inmemory` option does not persist anything and
+    keeps the live-content-set information in memory. The `gc` command runs the _identity_,
+    _expire_ and _delete_ phases sequentially.
 
-#### Configuration and running
+### Live content sets
 
-The relevant configuration items are:
+All Nessie GC operations work on exactly one so-called "live content set". Each live content set
+is composed of:
 
-| parameter     | default value | description                                                                                  |
-|---------------|---------------|----------------------------------------------------------------------------------------------|
-| seenCount     | 10            | How many times an asset has been seen as unreferenced in order to be considered for deletion |
-| deleteOnPurge | true          | Delete records from the underlying iceberg table of unreferenced assets                      |
-| dropGcTable   | true          | Drop the underlying iceberg table or attempt to clean only the missing rows                  |
-| table         | `null`        | The iceberg `Table` which stores the list of unreferenced assets                             |
+* **Unique ID** each live-content-set is identified by a UUID. The `nessie-gc mark-live` command
+  emits the ID of the live-content-set to the console, but it's recommended to write the new
+  live-content-set ID to a file using the `--write-live-set-id-to` option. Other commands that
+  work on a live-content-set allow reading the ID of the live-content-set using the command line
+  option `--read-live-set-id-from`.
+* **Status** tracks the state and/or progress of a live-content-set and is used to know whether
+  the _identify_ and _sweep_ phases started resp. ended and whether those finished successfully
+  or with an error. If, for example, the identify phase did not finish successfully, the sweep
+  phase cannot be started. A summary of the error message is stored with the live-content-set.
+* Timestamps of when the identify and expire phases started and completed.
+* **collection of content-IDs** as the result of the _identify_ phase
+* **set of content-references for each content-ID** as the result of the _identify_ phase
+* **set of base-table-locations** as the result of the _sweep_ phase
+* **set of file-references to be deleted** as the result of the _identify_ phase, if Nessie GC
+  was told to defer deletes using the `--defer-deletes` command line option.
 
-Running the action can be done simply by:
+A couple of `nessie-gc` commands allow the listing of all and inspection of individual
+live-content-sets. Those are:
 
-```java
-Table table = catalog.loadTable(TABLE_IDENTIFIER);
-GcTableCleanAction.GcTableCleanResult result = new GcTableCleanAction(table, spark).dropGcTable(true).deleteCountThreshold(2).deleteOnPurge(true).execute();
+* `list` lists all live-content-sets, starting with the most recent live-set.
+* `show` shows information about one live-content-set, optionally with details about the content
+  references or base-locations or deferred deletes.
+* `list-deferred` to show the file-references from a _sweep_ phase with the `--defer-deletes`
+  option.
+* `deferred-deletes` to delete the files referenced by file-references collected during a _sweep_
+  phase with the `--defer-deletes` option.
+* `delete` deletes a live-content-set.
+
+### Running the _mark_ (or _identify_) phase: Identifying live content references
+
+The _mark_ or _identify_ phase is run via the `mark-live` (or `identify` as an alias) nessie-gc
+command.
+
+```shell
+nessie-gc mark-live \
+  --jdbc... # JDBC settings omitted in this example
 ```
-The above snippet assumes a `TABLE_IDENTIFIER` which points to the unreferenced assets table. It also requires an active
-spark session and a nessie owned `Catalog`. The `result` object above returns the number of files the action tried to delete and the number that failed.
+
+It will walk the commits in all named references, and collect all content-references from the
+visited Nessie commits. So called "cut off policies" define, when the _mark_ phase should stop
+walking the commit log for a named reference. The default "cut off policy" is `NONE`, which means
+that _all_ Nessie commits and therefore all contents in that named reference are considered live.
 
 !!! note
-    You can follow along an interactive demo in a [Jupyter Notebook via Binder](https://mybinder.org/v2/gh/projectnessie/nessie-demos/main?filepath=notebooks/nessie-iceberg-demo-nba.ipynb).
-    
-### Internal Garbage collection
-
-Currently, the only garbage collection algorithm available is on the values and assets in a Nessie database only. The
-internal records of the Nessie Database are currently not cleaned up. Unreferenced objects stored in Nessie's internal
-database will be persisted forever currently. A future release will also clean up internal Nessie records if they are unreferenced.
-
-## Time-based AutoTagging
-
-!!! info
-    This service is currently in progress and is not yet included in a released version of Nessie.
-
-Nessie works against data based on a commit timeline. In many situations, it is useful
-to capture historical versions of data for analysis or comparison purposes. As such,
-you can configure Nessie to AutoTag (and auto-delete) using a timestamp based naming scheme.
-When enabled, Nessie will automatically generate and maintain tags based on time
-so that users can refer to historical data using timestamps as opposed to commits.
-This also works hand-in-hand with the Nessie garbage collection process by ensuring
-that older data is "referenced" and thus available for historical analysis.
-
-Currently, there is one AutoTagging policy. By default, it creates the following tags:
-
-* Hourly tags for the last 25 hours
-* Daily tags for the last 8 days
-* Weekly tags for the last 6 weeks
-* Monthly tags for the last 13 months
-* Yearly tags for the last 3 years
-
-Tags are automatically named using a `date/` prefix and a zero-extended underscore based naming scheme.
-For example: `date/2019_09_07_15_50` would be a tag for August 7, 2019 at 3:50pm.
-
-!!! warning
-    AutoTags are automatically deleted once the policy rolls-over. As such, if retention is desired post roll-over, manual tags should be created.
-
-AutoTagging is currently done based on the UTC roll-over of each item.
-
-## Manifest Reorganization
-
-!!! info
-    This service is currently in progress and is not yet included in a released version of Nessie.
-
-Rewrites the manifests associated with a table so that manifest files are organized
-around partitions. This extends on the ideas in the Iceberg [`RewriteManifestsAction`](http://iceberg.apache.org/javadoc/0.11.0/org/apache/iceberg/actions/RewriteManifestsAction.html).
+    Since the _mark_ phase requires access to Nessie, make sure to use the `--uri` command line
+    option to configure the Nessie endpoint and the `--nessie-option` command line option to
+    configure additional Nessie client parameters, for example a bearer token. The Nessie
+    repository is never modified by Nessie GC.
 
 !!! note
-    Manifest reorganization will show up as a commit, like any other table operation.
+    The _mark_ phase does not access the data lake nor does it use Iceberg.
 
-Key configuration parameters:
+#### Cut off policies
 
-| Name                 | Default | Meaning                                               |
-|----------------------|---------|-------------------------------------------------------|
-| effort               | medium  | How much rewriting is allowed to achieve the goals    |
-| target manifest size | 8mb     | What is the target                                    |
-| partition priority   | medium  | How important achieving partition-oriented manifests. |
+Nessie GC supports three types of cut off policies:
 
-## Compaction
+* `NONE`, not explicitly selectable via the CLI, it is the implicit default when a named reference
+  has no matching policy. It means, there is no cut-off time, everything in the named reference is
+  considered "live".
+* by **number of commits**: The given number of most recent commits are considered live.
+* by **cut off timestamp**: All commits that are younger than the configured timestamp are
+  considered live.
+* by **cut off duration**: Similar to _cut off timestamp_, all commits younger `now - duration` are
+  considered live. In the Nessie GC tool, a duration is always converted to a timestamp using a
+  common reference timestamp.
 
-!!! info
-    This service is currently in progress and is not yet included in a released version of Nessie.
+Relevant command line options for `nessie-gc mark-live` (alias `nessie-gc identify`):
 
-Because operations against table formats are done at the file level, a table can start
-to generate many small files. These small files will slow consumption. As such, Nessie
-can automatically run jobs to compact tables to ensure a consistent level of performance.
+* `--cutoff reference-name-regex=cut-off-policy` the specified `cut-off-policy` is applied to all
+  named references that match the given reference name regular expression.
+* `--cutoff-ref-time` Defaults to "now", but can also be configured to another timestamp, if
+  necessary.
 
-| Name                 | Default | Meaning                                                                                                              |
-|----------------------|---------|----------------------------------------------------------------------------------------------------------------------|
-| Maximum Small Files  | 10.0    | Maximum number of small files as a ratio to large files                                                              |
-| Maximum Delete Files | 10.0    | Maximum number of delete tombstones as a ratio to other files before merging the tombstones into a consolidated file |
-| Small File Size      | 100mb   | Size of file before it is considered small                                                                           |
-| Target Rewrite Size  | 256mb   | The target size for splittable units when rewriting data.                                                            |
+Cut-off policies are parsed using the following logic and precedence:
+
+1. An integer number is translated to the cut-off-policy using **number of commits**.
+2. The string representation of a `java.time.Duration` is translated to a duration. Java durations
+   string representation start with `P` followed the duration value. Examples:
+    * `P10D` means 10 days
+    * `PT10H` means 10 hours
+3. The string representation of a `java.time.format.DateTimeFormatter.ISO_INSTANT` is translated
+   to an exact cut-off-timestamp, using UTC. Example: `2011-12-03T10:15:30Z`
 
 !!! note
-    Compaction will show up as a commit, like any other table operation.
+    Nessie GC's _mark_ phase processes up to 4 named references in parallel. This setting can be
+    changed using the `--identify-parallelism` command line option.
+
+### Running the _sweep_ (or _expire_) phase: Identifying live content references
+
+Nessie GC's sweep phase uses the the actual table format, which is Iceberg, to map the collected
+live content references to live file references. The _sweep_ phase operates on each content-ID. So
+it collects the live file references for each content ID. Those file references refer to Iceberg
+assets:
+
+* metadata files
+* manifest lists
+* manifest files
+* data files
+
+After the _expire_ phase identified the live file references for a content-ID, it collects all files
+in the base table locations. While traversing the base locations, it collects the files that are
+definitely _not_ live file references. Those non-live file references are then deleted, aka
+immediate orphan files deletion.
+
+As an alternative, the _expire_ phase can just record the orphan files instead of immediately
+deleting those. This is called _deferred deletion_ in Nessie GC.
+
+Configuration options for Iceberg and Hadoop can be specified using the `--iceberg` and `--hadoop`
+options. Examples: `--iceberg s3.access-key-id=S3_ACCESS_KEY` and
+`--hadoop fs.s3a.access.key=S3_ACCESS_KEY`.
+
+Example of running the _expire_ command follows.
+
+```shell
+nessie-gc expire --live-set-id 0baaa1ff-90db-4ee5-b6d2-b60aea148c76 \
+  --jdbc... # JDBC settings omitted in this example
+```
+
+Example of running an _expire_ with _deferred deletion_:
+
+```shell
+nessie-gc expire --live-set-id 0baaa1ff-90db-4ee5-b6d2-b60aea148c76 \
+  --defer-deletes \
+  --jdbc... # JDBC settings omitted in this example
+
+# You can inspect the files to be deleted this way ...
+nessie-gc list-deferred --live-set-id 0baaa1ff-90db-4ee5-b6d2-b60aea148c76 \
+  --jdbc... # JDBC settings omitted in this example
+
+# ... or this way
+nessie-gc show --live-set-id 0baaa1ff-90db-4ee5-b6d2-b60aea148c76 \
+  --with-deferred-deletes \
+  --jdbc... # JDBC settings omitted in this example
+
+# Now perform the file deletions
+nessie-gc deferred-deletes --live-set-id 0baaa1ff-90db-4ee5-b6d2-b60aea148c76 \
+  --jdbc... # JDBC settings omitted in this example
+```
+
+!!! note
+The _sweep_ phase does not access Nessie. It does use Iceberg and accesses the data lake.
+If _deferred deletion_ is requested, no files will be deleted.
+
+!!! note
+Since data lakes can easily contain a huge amount of files, the _expire_ phase does not remember
+every live data file (see the Iceberg assets above) individually, but uses a probabilistic data
+structure (bloom filer). The default settings expect, for each content ID, 1,000,000 files and
+uses a false-positive-probability of 0.0001 (those defaults may change, but can be inspected
+with `nessie-gc help expire`). The _expire_ phase will abort, if it hits a content-ID that
+_massively_ exceeds the configured false-positive-probability, because it hits way more live
+file references.
+
+!!! note
+Nessie GC's _expire_ phase processes up to 4 content-IDs in parallel. This setting can be
+changed using the `--expiry-parallelism` command line option.
+
+### Recommended production setup for Nessie GC
+
+It is highly recommended to use a Postgres or compatible or H2 database to persist the
+live-content-sets. Running the different Nessie GC phases separately is only supported with such a
+database.
+
+Make yourself familiar with all the commands offered by `nessie-gc` and the available command line
+options. It is safe to run `nessie-gc mark-live`, because it is non-destructive. Use
+`nessie-gc show --with-content-references` to inspect the collected live content references.
+
+Use _deferred deletion_ and inspect the files to be deleted **before** running
+`nessie-gc deferred-deletes`.
+
+Use separate invocations for the _mark_, the _sweep_ and the _deferred deletion_ phases.
+
+### All-in-one
+
+As briefly mentioned above, the `nessie-gc gc` command can be used to combine the _mark_ and _sweep_
+phases, optionally using the `--inmemory` option.
+
+`gc` is equivalent to first running `identify` and then `expire`, and it takes the same set of
+command line options. 
+
+### Troubleshooting
+
+Nessie GC tool emits the log output at `INFO` level. The default log level for the console can be
+overridden using the Java system property `log.level.console`, for example using the following
+command. So instead of directly running `nessie-gc`, just run it as an executable jar.
+
+```shell
+java -Dlog.level.console=DEBUG -jar $(which nessie-gc) 
+```
