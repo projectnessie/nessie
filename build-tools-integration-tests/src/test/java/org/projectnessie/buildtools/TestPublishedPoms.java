@@ -98,7 +98,6 @@ public class TestPublishedPoms {
     //
     "iceberg-views",
     "nessie-deltalake",
-    "nessie-gc-base",
     "nessie-spark-antlr-runtime",
     "nessie-spark-extensions-grammar",
     "nessie-spark-extensions-3.1_2.12",
