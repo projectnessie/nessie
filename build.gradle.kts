@@ -72,6 +72,7 @@ val versionJandex = "2.4.3.Final"
 val versionJavaxServlet = "4.0.1"
 val versionJavaxWsRs = "2.1.1"
 val versionJaxrsApi21Spec = "2.0.2.Final"
+val versionJetbrainsAnnotations = "23.0.0"
 val versionJsr305 = "3.0.2"
 val versionJersey = "2.35"
 val versionJmh = "1.35"
@@ -106,6 +107,7 @@ versionIceberg = System.getProperty("nessie.versionIceberg", versionIceberg)
 versionClientNessie = System.getProperty("nessie.versionClientNessie", versionClientNessie)
 
 mapOf(
+    "versionAgrona" to versionAgrona,
     "versionAwssdk" to versionAwssdk,
     "versionCheckstyle" to versionCheckstyle,
     "versionClientNessie" to versionClientNessie,
@@ -114,8 +116,10 @@ mapOf(
     "versionErrorProneSlf4j" to versionErrorProneSlf4j,
     "versionGatling" to versionGatling,
     "versionGoogleJavaFormat" to versionGoogleJavaFormat,
+    "versionHadoop" to versionHadoop,
     "versionJacoco" to versionJacoco,
     "versionJandex" to versionJandex,
+    "versionLogback" to versionLogback,
     "versionMicrometer" to versionMicrometer,
     "versionOpentracing" to versionOpentracing,
     "versionProtobuf" to versionProtobuf,
@@ -189,16 +193,21 @@ dependenciesProject("nessie-deps-build-only", "Build-only dependency management"
   api("org.immutables:value-annotations:$versionImmutables")
   api("org.immutables:value-fixture:$versionImmutables")
   api("org.immutables:value-processor:$versionImmutables")
+  api("org.jetbrains:annotations:$versionJetbrainsAnnotations")
   api("org.openjdk.jmh:jmh-generator-annprocess:$versionJmh")
 }
 
 dependenciesProject("nessie-deps-iceberg", "Iceberg, Spark and related dependency management") {
   api("io.delta:delta-core_2.12:$versionDeltalake")
+  api("org.apache.hadoop:hadoop-aws:$versionHadoop")
   api("org.apache.hadoop:hadoop-client:$versionHadoop")
+  api("org.apache.hadoop:hadoop-common:$versionHadoop")
   api("org.apache.iceberg:iceberg-api:$versionIceberg")
+  api("org.apache.iceberg:iceberg-aws:$versionIceberg")
   api("org.apache.iceberg:iceberg-bundled-guava:$versionIceberg")
   api("org.apache.iceberg:iceberg-common:$versionIceberg")
   api("org.apache.iceberg:iceberg-core:$versionIceberg")
+  api("org.apache.iceberg:iceberg-gcp:$versionIceberg")
   api("org.apache.iceberg:iceberg-hive-metastore:$versionIceberg")
   api("org.apache.iceberg:iceberg-nessie:$versionIceberg")
   api("org.apache.iceberg:iceberg-parquet:$versionIceberg")
