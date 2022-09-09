@@ -524,4 +524,39 @@ public abstract class AbstractManyKeys {
           .isEqualTo(valueGen.apply(i).serialized());
     }
   }
+
+  public static Stream<List<String>> progressiveKeyNames() {
+    return IntStream.range(1, 100)
+        .mapToObj(i -> IntStream.range(1, i).mapToObj(j -> "a-" + j).collect(Collectors.toList()));
+  }
+
+  @ParameterizedTest
+  @MethodSource("progressiveKeyNames")
+  void manyKeysProgressive(List<String> names) throws Exception {
+    BranchName main = BranchName.of("main");
+    Hash head = databaseAdapter.hashOnReference(main, Optional.empty());
+    Set<Key> activeKeys = new HashSet<>();
+    for (String name : names) {
+      Key key = Key.of(name);
+      head =
+          databaseAdapter.commit(
+              ImmutableCommitParams.builder()
+                  .toBranch(main)
+                  .commitMetaSerialized(ByteString.copyFromUtf8("foo"))
+                  .expectedHead(Optional.of(head))
+                  .addPuts(
+                      KeyWithBytes.of(
+                          key,
+                          ContentId.of("id-" + name),
+                          payloadForContent(OnRefOnly.ON_REF_ONLY),
+                          DefaultStoreWorker.instance()
+                              .toStoreOnReferenceState(OnRefOnly.newOnRef("c" + name), att -> {})))
+                  .build());
+      activeKeys.add(key);
+    }
+
+    Map<Key, ContentAndState> values =
+        databaseAdapter.values(head, activeKeys, KeyFilterPredicate.ALLOW_ALL);
+    assertThat(values.keySet()).containsExactlyInAnyOrderElementsOf(activeKeys);
+  }
 }
