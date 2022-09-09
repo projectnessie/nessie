@@ -15,6 +15,7 @@
  */
 package org.projectnessie.spark.extensions;
 
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableList;
@@ -67,6 +68,10 @@ public abstract class SparkSqlTestBase {
 
   protected abstract String warehouseURI();
 
+  protected Map<String, String> sparkHadoop() {
+    return emptyMap();
+  }
+
   protected Map<String, String> nessieParams() {
     return ImmutableMap.of("ref", defaultBranch(), "uri", url, "warehouse", warehouseURI());
   }
@@ -79,6 +84,8 @@ public abstract class SparkSqlTestBase {
     additionalRefName = refName + "_other";
 
     initialDefaultBranch = api.getDefaultBranch();
+
+    sparkHadoop().forEach((k, v) -> conf.set(String.format("spark.hadoop.%s", k), v));
 
     nessieParams()
         .forEach(
