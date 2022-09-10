@@ -524,21 +524,19 @@ public abstract class AbstractResteasyTest {
     RefLogResponse refLogResponse =
         rest().get("reflogs").then().statusCode(200).extract().as(RefLogResponse.class);
 
-    assertThat(refLogResponse.getLogEntries().get(0).getOperation()).isEqualTo("COMMIT");
+    assertThat(refLogResponse.getLogEntries().get(0).getOperation()).isEqualTo("CREATE_REFERENCE");
     assertThat(refLogResponse.getLogEntries().get(0).getRefName()).isEqualTo("branch-temp");
-    assertThat(refLogResponse.getLogEntries().get(1).getOperation()).isEqualTo("CREATE_REFERENCE");
-    assertThat(refLogResponse.getLogEntries().get(1).getRefName()).isEqualTo("branch-temp");
 
     RefLogResponse refLogResponse1 =
         rest()
-            .queryParam("endHash", refLogResponse.getLogEntries().get(1).getRefLogId())
+            .queryParam("endHash", refLogResponse.getLogEntries().get(0).getRefLogId())
             .get("reflogs")
             .then()
             .statusCode(200)
             .extract()
             .as(RefLogResponse.class);
     assertThat(refLogResponse1.getLogEntries().get(0).getRefLogId())
-        .isEqualTo(refLogResponse.getLogEntries().get(1).getRefLogId());
+        .isEqualTo(refLogResponse.getLogEntries().get(0).getRefLogId());
   }
 
   @Test

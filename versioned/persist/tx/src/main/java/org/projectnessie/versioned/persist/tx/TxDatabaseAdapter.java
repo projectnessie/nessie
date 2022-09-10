@@ -269,14 +269,6 @@ public abstract class TxDatabaseAdapter
                 Hash resultHash =
                     tryMoveNamedReference(conn, mergeParams.getToBranch(), currentHead, toHead);
 
-                commitRefLog(
-                    conn,
-                    timeInMicros,
-                    toHead,
-                    mergeParams.getToBranch(),
-                    RefLogEntry.Operation.MERGE,
-                    Collections.singletonList(mergeParams.getMergeFromHash()));
-
                 return opResult(
                     resultHash,
                     () ->
@@ -338,14 +330,6 @@ public abstract class TxDatabaseAdapter
                     tryMoveNamedReference(
                         conn, transplantParams.getToBranch(), currentHead, targetHead);
 
-                commitRefLog(
-                    conn,
-                    timeInMicros,
-                    targetHead,
-                    transplantParams.getToBranch(),
-                    RefLogEntry.Operation.TRANSPLANT,
-                    transplantParams.getSequenceToTransplant());
-
                 return opResult(
                     resultHash,
                     () ->
@@ -389,14 +373,6 @@ public abstract class TxDatabaseAdapter
             Hash resultHash =
                 tryMoveNamedReference(
                     conn, commitParams.getToBranch(), branchHead, newBranchCommit.getHash());
-
-            commitRefLog(
-                conn,
-                timeInMicros,
-                newBranchCommit.getHash(),
-                commitParams.getToBranch(),
-                RefLogEntry.Operation.COMMIT,
-                emptyList());
 
             return opResult(
                 resultHash,

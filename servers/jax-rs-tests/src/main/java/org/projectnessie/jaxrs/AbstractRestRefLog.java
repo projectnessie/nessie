@@ -51,7 +51,7 @@ public abstract class AbstractRestRefLog extends AbstractRestReferences {
     String branch3 = "branch3_test_reflog";
     String root = "ref_name_test_reflog";
 
-    List<Tuple> expectedEntries = new ArrayList<>(12);
+    List<Tuple> expectedEntries = new ArrayList<>(10);
 
     // reflog 1: creating the default branch0
     Branch branch0 = createBranch(root);
@@ -108,7 +108,6 @@ public abstract class AbstractRestRefLog extends AbstractRestReferences {
                     .build())
             .operation(Operation.Put.of(ContentKey.of("meep"), meta))
             .commit();
-    expectedEntries.add(Tuple.tuple(root, "COMMIT"));
 
     // reflog 7: assign tag
     getApi().assignTag().tagName(tagName).hash(createdTag.getHash()).assignTo(branch0).assign();
@@ -131,7 +130,6 @@ public abstract class AbstractRestRefLog extends AbstractRestReferences {
         .fromRefName(branch1)
         .fromHash(branch0.getHash())
         .merge();
-    expectedEntries.add(Tuple.tuple(branch2, "MERGE"));
 
     // reflog 10: transplant
     getApi()
@@ -140,7 +138,6 @@ public abstract class AbstractRestRefLog extends AbstractRestReferences {
         .fromRefName(branch1)
         .branch(createdBranch3)
         .transplant();
-    expectedEntries.add(Tuple.tuple(branch3, "TRANSPLANT"));
 
     // reflog 11: delete branch
     getApi().deleteBranch().branchName(branch1).hash(branch0.getHash()).delete();
@@ -155,7 +152,7 @@ public abstract class AbstractRestRefLog extends AbstractRestReferences {
 
     RefLogResponse refLogResponse = getApi().getRefLog().get();
     // verify reflog entries
-    assertThat(refLogResponse.getLogEntries().subList(0, 12))
+    assertThat(refLogResponse.getLogEntries().subList(0, 9))
         .extracting(
             RefLogResponse.RefLogResponseEntry::getRefName,
             RefLogResponse.RefLogResponseEntry::getOperation)
@@ -170,13 +167,13 @@ public abstract class AbstractRestRefLog extends AbstractRestReferences {
     // should start from the token.
     assertThat(refLogResponse2.getLogEntries().get(0).getRefLogId())
         .isEqualTo(refLogResponse1.getToken());
-    assertThat(refLogResponse2.getLogEntries().subList(0, 10))
-        .isEqualTo(refLogResponse.getLogEntries().subList(2, 12));
+    assertThat(refLogResponse2.getLogEntries().subList(0, 8))
+        .isEqualTo(refLogResponse.getLogEntries().subList(2, 10));
     // verify startHash and endHash
     RefLogResponse refLogResponse3 =
-        getApi().getRefLog().fromHash(refLogResponse.getLogEntries().get(10).getRefLogId()).get();
+        getApi().getRefLog().fromHash(refLogResponse.getLogEntries().get(7).getRefLogId()).get();
     assertThat(refLogResponse3.getLogEntries().subList(0, 2))
-        .isEqualTo(refLogResponse.getLogEntries().subList(10, 12));
+        .isEqualTo(refLogResponse.getLogEntries().subList(7, 9));
     RefLogResponse refLogResponse4 =
         getApi()
             .getRefLog()
@@ -200,14 +197,8 @@ public abstract class AbstractRestRefLog extends AbstractRestReferences {
         .hasMessageContaining(
             "RefLog entry for 'f1234d75178d892a133a410355a5a990cf75d2f33eba25d575943d4df632f3a4' does not exist");
     // verify source hashes for assign reference
-    assertThat(refLogResponse.getLogEntries().get(4).getSourceHashes())
-        .isEqualTo(Collections.singletonList(createdBranch1.getHash()));
-    // verify source hashes for merge
     assertThat(refLogResponse.getLogEntries().get(3).getSourceHashes())
-        .isEqualTo(Collections.singletonList(branch0.getHash()));
-    // verify source hashes for transplant
-    assertThat(refLogResponse.getLogEntries().get(2).getSourceHashes())
-        .isEqualTo(Collections.singletonList(branch0.getHash()));
+        .isEqualTo(Collections.singletonList(createdBranch1.getHash()));
     // test filter with stream
     List<RefLogResponse.RefLogResponseEntry> filteredResult =
         StreamingUtil.getReflogStream(
@@ -225,6 +216,6 @@ public abstract class AbstractRestRefLog extends AbstractRestReferences {
         .extracting(
             RefLogResponse.RefLogResponseEntry::getRefName,
             RefLogResponse.RefLogResponseEntry::getOperation)
-        .isEqualTo(expectedEntries.get(5).toList());
+        .isEqualTo(expectedEntries.get(3).toList());
   }
 }
