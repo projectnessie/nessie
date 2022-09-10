@@ -56,4 +56,8 @@ nessieQuarkusApp {
   environmentNonInput.put("HTTP_ACCESS_LOG_LEVEL", testLogLevel())
 }
 
-gatling { gatlingVersion = dependencyVersion("versionGatling") }
+gatling {
+  gatlingVersion = dependencyVersion("versionGatling")
+  // Null is OK (io.gatling.gradle.LogbackConfigTask checks for it)
+  logLevel = System.getProperty("gatling.logLevel")
+}
