@@ -16,10 +16,9 @@
 
 package org.projectnessie.buildtools;
 
-import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
@@ -56,11 +55,13 @@ public class TestPublishedPoms {
     assertThat(nessieVersion).as("System property nessie.version").isNotNull();
     repositorySystem = buildRepositorySystem();
     repositorySystemSession = newSession(repositorySystem);
-    repositories =
-      singletonList(
-        new RemoteRepository.Builder(
-          "maven-central", "default", "https://repo1.maven.org/maven2/")
-          .build());
+    repositories = new ArrayList<>();
+    repositories.add(new RemoteRepository.Builder(
+      "maven-central", "default", "https://repo1.maven.org/maven2/")
+      .build());
+    repositories.add(new RemoteRepository.Builder(
+      "nessie-maven", "default", "https://storage.googleapis.com/nessie-maven")
+      .build());
   }
 
   @ParameterizedTest
