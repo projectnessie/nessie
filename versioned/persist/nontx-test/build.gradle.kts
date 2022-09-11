@@ -25,18 +25,13 @@ plugins {
 extra["maven.name"] = "Nessie - Versioned - Persist - Non-Transactional/tests"
 
 dependencies {
-  implementation(platform(rootProject))
-  implementation(platform(project(":nessie-deps-testing")))
-  implementation(platform("org.junit:junit-bom"))
-
   implementation(project(":nessie-versioned-spi"))
   implementation(project(":nessie-versioned-persist-non-transactional"))
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-persist-serialize"))
   implementation(project(":nessie-versioned-persist-tests"))
-  implementation("com.google.guava:guava")
+  implementation(libs.guava)
 
-  implementation("org.assertj:assertj-core")
-  implementation("org.junit.jupiter:junit-jupiter-api")
-  implementation("org.junit.jupiter:junit-jupiter-params")
+  implementation(platform(libs.junit.bom))
+  implementation(libs.bundles.junit.testing)
 }

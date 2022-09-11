@@ -21,19 +21,17 @@ plugins {
   `maven-publish`
   signing
   scala
-  id("com.github.johnrengelman.shadow")
-  id("org.projectnessie")
+  alias(libs.plugins.nessie.run)
   `nessie-conventions`
 }
+
+applyShadowJar()
 
 val sparkScala = useSparkScalaVersionsForProject("3.2")
 
 dependencies {
   // picks the right dependencies for scala compilation
   forScala(sparkScala.scalaVersion)
-
-  implementation(platform(nessieRootProject()))
-  implementation(nessieProjectPlatform("nessie-deps-iceberg", gradle))
 
   implementation(nessieProject("nessie-model"))
   implementation(nessieProject("nessie-client"))
@@ -43,11 +41,9 @@ dependencies {
   implementation("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") {
     forSpark(sparkScala.sparkVersion)
   }
-  implementation("io.delta:delta-core_${sparkScala.scalaMajorVersion}")
-  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-
-  testImplementation(nessieProjectPlatform("nessie-deps-testing", gradle))
-  testImplementation(platform("org.junit:junit-bom"))
+  implementation(libs.delta.core)
+  compileOnly(libs.microprofile.openapi)
+  compileOnly(libs.errorprone.annotations)
 
   testImplementation(
     nessieProject(
@@ -57,15 +53,15 @@ dependencies {
   testImplementation(
     "com.fasterxml.jackson.module:jackson-module-scala_${sparkScala.scalaMajorVersion}"
   )
-  testImplementation("com.fasterxml.jackson.core:jackson-databind")
-  testImplementation("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-  testImplementation("ch.qos.logback:logback-classic")
-  testImplementation("org.slf4j:log4j-over-slf4j")
+  testImplementation(libs.jackson.databind)
+  testImplementation(libs.microprofile.openapi)
+  testImplementation(libs.logback.classic)
+  testImplementation(libs.slf4j.log4j.over.slf4j)
+  testCompileOnly(libs.errorprone.annotations)
 
-  testImplementation("org.assertj:assertj-core")
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testImplementation("org.junit.jupiter:junit-jupiter-params")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+  testImplementation(platform(libs.junit.bom))
+  testImplementation(libs.bundles.junit.testing)
+  testRuntimeOnly(libs.junit.jupiter.engine)
 
   nessieQuarkusServer(nessieQuarkusServerRunner())
 }

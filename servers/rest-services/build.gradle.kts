@@ -25,32 +25,26 @@ plugins {
 extra["maven.name"] = "Nessie - REST Services"
 
 dependencies {
-  implementation(platform(rootProject))
-  implementation(platform("com.fasterxml.jackson:jackson-bom"))
-
   implementation(project(":nessie-model"))
   implementation(project(":nessie-services"))
   implementation(project(":nessie-versioned-spi"))
-  implementation("org.slf4j:slf4j-api")
-  implementation("jakarta.enterprise:jakarta.enterprise.cdi-api")
-  implementation("jakarta.annotation:jakarta.annotation-api")
-  implementation("jakarta.validation:jakarta.validation-api")
-  implementation("org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_2.1_spec")
-  implementation("javax.servlet:javax.servlet-api")
-  implementation("com.google.guava:guava")
-  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-  compileOnly("jakarta.validation:jakarta.validation-api")
+  implementation(libs.slf4j.api)
+  implementation(libs.jakarta.enterprise.cdi.api)
+  implementation(libs.jakarta.annotation.api)
+  implementation(libs.jakarta.validation.api)
+  implementation(libs.javax.ws.rs21)
+  implementation(libs.javax.servlet)
+  implementation(libs.guava)
+  compileOnly(libs.microprofile.openapi)
+  compileOnly(libs.jakarta.validation.api)
 
-  implementation("com.fasterxml.jackson.core:jackson-databind")
-  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
+  implementation(platform(libs.jackson.bom))
+  implementation(libs.jackson.databind)
+  compileOnly(libs.jackson.annotations)
 
-  testImplementation(platform("org.junit:junit-bom"))
-  testImplementation(platform(project(":nessie-deps-testing")))
+  testCompileOnly(libs.microprofile.openapi)
 
-  testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-
-  testImplementation("org.assertj:assertj-core")
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testImplementation("org.junit.jupiter:junit-jupiter-params")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+  testImplementation(platform(libs.junit.bom))
+  testImplementation(libs.bundles.junit.testing)
+  testRuntimeOnly(libs.junit.jupiter.engine)
 }

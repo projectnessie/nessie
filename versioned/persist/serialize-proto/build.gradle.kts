@@ -27,10 +27,7 @@ plugins {
 
 extra["maven.name"] = "Nessie - Versioned - Persist - Serialization (Proto)"
 
-dependencies {
-  api(platform(rootProject))
-  api("com.google.protobuf:protobuf-java")
-}
+dependencies { api(libs.protobuf.java) }
 
 // *.proto files taken from https://github.com/googleapis/googleapis/ repo, available as a git
 // submodule
@@ -38,7 +35,7 @@ protobuf {
   // Configure the protoc executable
   protobuf.protoc {
     // Download from repositories
-    artifact = "com.google.protobuf:protoc:${dependencyVersion("versionProtobuf")}"
+    artifact = "com.google.protobuf:protoc:${libs.versions.protobuf.get()}"
   }
 }
 

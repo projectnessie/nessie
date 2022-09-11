@@ -20,16 +20,14 @@ plugins {
   `java-library`
   `maven-publish`
   signing
-  id("com.github.johnrengelman.shadow")
   `nessie-conventions`
 }
 
+applyShadowJar()
+
 extra["maven.name"] = "Nessie - Antlr Runtime"
 
-dependencies {
-  implementation(nessieProjectPlatform("nessie-deps-antlr", gradle))
-  implementation("org.antlr:antlr4-runtime")
-}
+dependencies { implementation(libs.antlr.antlr4.runtime) }
 
 tasks.named<ShadowJar>("shadowJar") {
   dependencies { include(dependency("org.antlr:antlr4-runtime")) }

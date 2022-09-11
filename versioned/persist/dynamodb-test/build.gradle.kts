@@ -25,21 +25,15 @@ plugins {
 extra["maven.name"] = "Nessie - Versioned - Persist - DynamoDB/test-support"
 
 dependencies {
-  implementation(platform(rootProject))
-  implementation(platform(project(":nessie-deps-testing")))
-  implementation(platform("org.junit:junit-bom"))
-  implementation(platform("software.amazon.awssdk:bom:${dependencyVersion("versionAwssdk")}"))
-
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-persist-non-transactional"))
   implementation(project(":nessie-versioned-persist-dynamodb"))
   implementation(project(":nessie-versioned-persist-testextension"))
   implementation(project(":nessie-versioned-persist-non-transactional-test"))
 
-  implementation("software.amazon.awssdk:dynamodb") {
-    exclude("software.amazon.awssdk", "apache-client")
-  }
+  implementation(platform(libs.awssdk.bom))
+  implementation(libs.awssdk.dynamodb) { exclude("software.amazon.awssdk", "apache-client") }
 
-  implementation("org.testcontainers:testcontainers")
-  implementation("com.github.docker-java:docker-java-api")
+  implementation(libs.testcontainers.testcontainers)
+  implementation(libs.docker.java.api)
 }

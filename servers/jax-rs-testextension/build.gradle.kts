@@ -27,21 +27,19 @@ extra["maven.name"] = "Nessie - JUnit Jupyter Test Extension"
 description = "JUnit Jupyter Extension to run tests against an \"embedded\" Nessie instance."
 
 dependencies {
-  api(platform(rootProject))
   api(project(":nessie-jaxrs"))
-  api(platform(project(":nessie-deps-testing")))
-  api(platform("org.junit:junit-bom"))
-  api("org.junit.jupiter:junit-jupiter-api")
-  api("org.slf4j:slf4j-api")
-  api("org.assertj:assertj-core")
 
-  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
+  api(platform(libs.junit.bom))
+  api(libs.junit.jupiter.api)
 
-  testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
+  api(libs.slf4j.api)
+  api(libs.assertj.core)
 
-  testImplementation("org.assertj:assertj-core")
-  testImplementation(platform("org.junit:junit-bom"))
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testImplementation("org.junit.jupiter:junit-jupiter-params")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+  compileOnly(libs.microprofile.openapi)
+
+  testCompileOnly(libs.microprofile.openapi)
+
+  testImplementation(platform(libs.junit.bom))
+  testImplementation(libs.bundles.junit.testing)
+  testRuntimeOnly(libs.junit.jupiter.engine)
 }

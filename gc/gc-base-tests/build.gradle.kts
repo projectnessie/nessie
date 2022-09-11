@@ -24,22 +24,16 @@ plugins {
 extra["maven.name"] = "Nessie - GC - Base Implementation Tests"
 
 dependencies {
-  implementation(platform(nessieRootProject()))
-  compileOnly(nessieProjectPlatform("nessie-deps-build-only", gradle))
-  annotationProcessor(nessieProjectPlatform("nessie-deps-build-only", gradle))
-  implementation(nessieProjectPlatform("nessie-deps-testing", gradle))
-  implementation(platform("org.junit:junit-bom"))
-  compileOnly(platform("com.fasterxml.jackson:jackson-bom"))
-
   implementation(nessieProject("nessie-model"))
   implementation(nessieProject("nessie-gc-base"))
 
-  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-  compileOnly("jakarta.validation:jakarta.validation-api")
-  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
-  compileOnly("com.google.code.findbugs:jsr305")
+  compileOnly(libs.microprofile.openapi)
+  compileOnly(libs.jakarta.validation.api)
+  compileOnly(libs.findbugs.jsr305)
 
-  implementation("org.assertj:assertj-core")
-  implementation("org.junit.jupiter:junit-jupiter-api")
-  implementation("org.junit.jupiter:junit-jupiter-params")
+  compileOnly(platform(libs.jackson.bom))
+  compileOnly(libs.jackson.annotations)
+
+  implementation(platform(libs.junit.bom))
+  implementation(libs.bundles.junit.testing)
 }

@@ -25,15 +25,13 @@ plugins {
 extra["maven.name"] = "Nessie - Versioned - Persist - MongoDB/test-support"
 
 dependencies {
-  implementation(platform(rootProject))
-  implementation(platform(project(":nessie-deps-testing")))
-  implementation(platform("org.junit:junit-bom"))
-
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-persist-non-transactional"))
   implementation(project(":nessie-versioned-persist-mongodb"))
   implementation(project(":nessie-versioned-persist-testextension"))
   implementation(project(":nessie-versioned-persist-non-transactional-test"))
-  implementation("org.testcontainers:mongodb")
-  implementation("org.junit.jupiter:junit-jupiter-api")
+  implementation(libs.testcontainers.mongodb)
+
+  implementation(platform(libs.junit.bom))
+  implementation(libs.junit.jupiter.api)
 }

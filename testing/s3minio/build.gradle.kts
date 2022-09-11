@@ -26,30 +26,22 @@ extra["maven.name"] = "Nessie - Minio testcontainer"
 description = "JUnit extension providing a Minio instance."
 
 dependencies {
-  implementation(platform(rootProject))
-  compileOnly(platform(project(":nessie-deps-build-only")))
-  annotationProcessor(platform(project(":nessie-deps-build-only")))
-  implementation(platform(project(":nessie-deps-testing")))
-  implementation(platform("software.amazon.awssdk:bom:${dependencyVersion("versionAwssdk")}"))
+  implementation(libs.testcontainers.testcontainers)
 
-  compileOnly("com.google.errorprone:error_prone_annotations")
+  implementation(platform(libs.awssdk.bom))
+  implementation(libs.awssdk.s3)
+  implementation(libs.awssdk.url.connection.client)
 
-  implementation(platform("org.junit:junit-bom"))
+  compileOnly(libs.hadoop.common)
 
-  implementation("org.testcontainers:testcontainers")
+  implementation(platform(libs.junit.bom))
+  implementation(libs.junit.jupiter.api)
 
-  implementation("software.amazon.awssdk:s3")
-  implementation("software.amazon.awssdk:url-connection-client")
+  compileOnly(libs.errorprone.annotations)
 
-  compileOnly("org.apache.hadoop:hadoop-common:${dependencyVersion("versionHadoop")}")
-
-  implementation("org.junit.jupiter:junit-jupiter-api")
-
-  testImplementation("org.assertj:assertj-core")
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testImplementation("org.junit.jupiter:junit-jupiter-params")
-  testImplementation("org.junit.jupiter:junit-jupiter-engine")
-  testImplementation("org.apache.hadoop:hadoop-common:${dependencyVersion("versionHadoop")}")
+  testImplementation(libs.bundles.junit.testing)
+  testImplementation(libs.junit.jupiter.engine)
+  testImplementation(libs.hadoop.common)
 }
 
 tasks.withType(Test::class.java).configureEach { systemProperty("aws.region", "us-east-1") }

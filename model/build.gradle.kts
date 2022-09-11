@@ -21,36 +21,29 @@ plugins {
   jacoco
   `maven-publish`
   signing
-  id("org.projectnessie.smallrye-open-api")
+  alias(libs.plugins.nessie.build.smallrye.open.api)
   `nessie-conventions`
 }
 
 dependencies {
-  compileOnly(platform(project(":nessie-deps-build-only")))
-  annotationProcessor(platform(project(":nessie-deps-build-only")))
-  implementation(platform(rootProject))
+  implementation(platform(libs.jackson.bom))
+  implementation(libs.jackson.databind)
+  implementation(libs.jackson.annotations)
 
-  implementation(platform("com.fasterxml.jackson:jackson-bom"))
-  implementation("com.fasterxml.jackson.core:jackson-databind")
-  implementation("com.fasterxml.jackson.core:jackson-annotations")
+  implementation(libs.javax.ws.rs)
+  compileOnly(libs.microprofile.openapi)
+  compileOnly(libs.jakarta.validation.api)
+  implementation(libs.findbugs.jsr305)
 
-  implementation("javax.ws.rs:javax.ws.rs-api")
-  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-  compileOnly("jakarta.validation:jakarta.validation-api")
-  implementation("com.google.code.findbugs:jsr305")
+  compileOnly(libs.immutables.builder)
+  compileOnly(libs.immutables.value.annotations)
+  annotationProcessor(libs.immutables.value.processor)
 
-  compileOnly("org.immutables:builder")
-  compileOnly("org.immutables:value-annotations")
-  annotationProcessor("org.immutables:value-processor")
+  testCompileOnly(libs.microprofile.openapi)
 
-  testImplementation(platform(project(":nessie-deps-testing")))
-  testImplementation(platform("org.junit:junit-bom"))
-
-  testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-  testImplementation("org.assertj:assertj-core")
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testImplementation("org.junit.jupiter:junit-jupiter-params")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+  testImplementation(platform(libs.junit.bom))
+  testImplementation(libs.bundles.junit.testing)
+  testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
 smallryeOpenApi {

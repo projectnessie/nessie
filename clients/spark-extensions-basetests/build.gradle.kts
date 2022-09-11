@@ -27,28 +27,22 @@ dependencies {
   // picks the right dependencies for scala compilation
   forScala(sparkScala.scalaVersion)
 
-  implementation(platform(nessieRootProject()))
-  implementation(nessieProjectPlatform("nessie-deps-testing", gradle))
-  compileOnly(nessieProjectPlatform("nessie-deps-build-only", gradle))
-  annotationProcessor(nessieProjectPlatform("nessie-deps-build-only", gradle))
-  implementation(platform("org.junit:junit-bom"))
-
   implementation(nessieProject("nessie-spark-extensions-grammar"))
   compileOnly("org.apache.spark:spark-hive_${sparkScala.scalaMajorVersion}") {
     forSpark(sparkScala.sparkVersion)
   }
-  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-  implementation(nessieClientForIceberg())
-
   implementation("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") {
     forSpark(sparkScala.sparkVersion)
   }
-  implementation("org.eclipse.microprofile.openapi:microprofile-openapi-api")
 
-  compileOnly("org.immutables:value-annotations")
-  annotationProcessor("org.immutables:value-processor")
+  implementation(nessieClientForIceberg())
 
-  implementation("org.assertj:assertj-core")
-  implementation("org.junit.jupiter:junit-jupiter-api")
-  implementation("org.junit.jupiter:junit-jupiter-params")
+  implementation(libs.microprofile.openapi)
+
+  compileOnly(libs.errorprone.annotations)
+  compileOnly(libs.immutables.value.annotations)
+  annotationProcessor(libs.immutables.value.processor)
+
+  implementation(platform(libs.junit.bom))
+  implementation(libs.bundles.junit.testing)
 }

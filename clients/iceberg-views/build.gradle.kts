@@ -23,21 +23,23 @@ plugins {
 }
 
 dependencies {
-  implementation(platform(nessieRootProject()))
-  implementation(nessieProjectPlatform("nessie-deps-iceberg", gradle))
-
   implementation(nessieProject("nessie-client"))
   implementation(nessieProject("nessie-model"))
-  implementation("org.apache.iceberg:iceberg-api")
-  implementation("org.apache.iceberg:iceberg-core")
-  implementation("org.apache.iceberg:iceberg-common")
+
+  val versionIceberg = dependencyVersion("versionIceberg")
+  implementation("org.apache.iceberg:iceberg-api:$versionIceberg")
+  implementation("org.apache.iceberg:iceberg-core:$versionIceberg")
+  implementation("org.apache.iceberg:iceberg-common:$versionIceberg")
   implementation(
-    "org.apache.iceberg",
-    "iceberg-bundled-guava",
+    group = "org.apache.iceberg",
+    name = "iceberg-bundled-guava",
+    version = versionIceberg,
     configuration = if (isIntegrationsTestingEnabled()) "shadow" else null
   )
-  implementation("org.apache.iceberg:iceberg-nessie") { exclude("org.projectnessie", "*") }
-  implementation("org.apache.hadoop:hadoop-client") {
+  implementation("org.apache.iceberg:iceberg-nessie:$versionIceberg") {
+    exclude("org.projectnessie", "*")
+  }
+  implementation(libs.hadoop.client) {
     exclude("javax.servlet.jsp", "jsp-api")
     exclude("javax.ws.rs", "javax.ws.rs-api")
     exclude("log4j", "log4j")
@@ -46,18 +48,15 @@ dependencies {
     exclude("com.sun.jersey", "jersey-servlet")
     exclude("org.apache.hadoop", "hadoop-client")
   }
-  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-
-  testImplementation(platform("org.junit:junit-bom"))
+  compileOnly(libs.microprofile.openapi)
 
   testImplementation(nessieProject("nessie-versioned-persist-testextension"))
   testImplementation(nessieProject("nessie-versioned-persist-in-memory"))
   testImplementation(nessieProject("nessie-jaxrs-testextension"))
-  testImplementation("org.slf4j:log4j-over-slf4j")
-  testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
+  testImplementation(libs.slf4j.log4j.over.slf4j)
+  testCompileOnly(libs.microprofile.openapi)
 
-  testImplementation("org.assertj:assertj-core")
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testImplementation("org.junit.jupiter:junit-jupiter-params")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+  testImplementation(platform(libs.junit.bom))
+  testImplementation(libs.bundles.junit.testing)
+  testRuntimeOnly(libs.junit.jupiter.engine)
 }

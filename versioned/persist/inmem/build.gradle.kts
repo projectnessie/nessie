@@ -25,21 +25,14 @@ plugins {
 extra["maven.name"] = "Nessie - Versioned - Persist - In-Memory"
 
 dependencies {
-  implementation(platform(rootProject))
-  compileOnly(platform(project(":nessie-deps-build-only")))
-  annotationProcessor(platform(project(":nessie-deps-build-only")))
-
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-persist-non-transactional"))
   implementation(project(":nessie-versioned-persist-serialize"))
   implementation(project(":nessie-versioned-spi"))
-  implementation("com.google.guava:guava")
-  compileOnly("org.immutables:value-annotations")
-  annotationProcessor("org.immutables:value-processor")
-  implementation("com.google.code.findbugs:jsr305")
-
-  testImplementation(platform(project(":nessie-deps-testing")))
-  testImplementation(platform("org.junit:junit-bom"))
+  implementation(libs.guava)
+  compileOnly(libs.immutables.value.annotations)
+  annotationProcessor(libs.immutables.value.processor)
+  implementation(libs.findbugs.jsr305)
 
   testImplementation(project(":nessie-versioned-tests"))
   testImplementation(project(":nessie-versioned-persist-testextension"))
@@ -47,10 +40,9 @@ dependencies {
   testImplementation(project(":nessie-versioned-persist-non-transactional-test"))
   testImplementation(project(":nessie-versioned-persist-in-memory-test"))
 
-  testImplementation("org.assertj:assertj-core")
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testImplementation("org.junit.jupiter:junit-jupiter-params")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+  testImplementation(platform(libs.junit.bom))
+  testImplementation(libs.bundles.junit.testing)
+  testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
 tasks.named<Test>("test") { maxParallelForks = Runtime.getRuntime().availableProcessors() }

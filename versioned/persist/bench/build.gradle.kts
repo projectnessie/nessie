@@ -20,26 +20,24 @@ plugins {
   `java-library`
   `maven-publish`
   signing
-  id("com.github.johnrengelman.shadow")
   `nessie-conventions`
 }
 
-dependencies {
-  implementation(platform(rootProject))
-  implementation(platform(project(":nessie-deps-persist")))
-  implementation(platform(project(":nessie-deps-testing")))
-  annotationProcessor(platform(project(":nessie-deps-build-only")))
-  compileOnly(platform("com.fasterxml.jackson:jackson-bom"))
+applyShadowJar()
 
+dependencies {
   implementation(project(":nessie-model"))
   implementation(project(":nessie-versioned-tests"))
   implementation(project(":nessie-versioned-spi"))
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-persist-store"))
-  implementation("org.openjdk.jmh:jmh-core")
-  annotationProcessor("org.openjdk.jmh:jmh-generator-annprocess")
-  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
-  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
+  implementation(libs.jmh.core)
+  annotationProcessor(libs.jmh.generator.annprocess)
+
+  compileOnly(platform(libs.jackson.bom))
+  compileOnly(libs.jackson.annotations)
+
+  compileOnly(libs.microprofile.openapi)
 
   implementation(project(":nessie-versioned-persist-in-memory"))
   implementation(project(":nessie-versioned-persist-in-memory-test"))
@@ -52,13 +50,12 @@ dependencies {
   implementation(project(":nessie-versioned-persist-transactional"))
   implementation(project(":nessie-versioned-persist-transactional-test"))
   implementation(project(":nessie-versioned-persist-testextension"))
-  implementation("io.agroal:agroal-pool")
-  implementation("com.h2database:h2")
-  implementation("org.postgresql:postgresql")
+  implementation(libs.agroal.pool)
+  implementation(libs.h2)
+  implementation(libs.postgresql)
 }
 
 val shadowJar =
   tasks.named<ShadowJar>("shadowJar") {
-    outputs.cacheIf { false } // very big jar
     manifest { attributes["Main-Class"] = "org.openjdk.jmh.Main" }
   }

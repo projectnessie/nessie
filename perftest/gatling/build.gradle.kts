@@ -25,18 +25,15 @@ extra["maven.name"] = "Nessie - Perf Test - Gatling"
 
 val scalaMajorVersion = "2.13"
 
-val scalaVersion = dependencyVersion("versionScala-$scalaMajorVersion")
+val scalaVersion = scalaDependencyVersion(scalaMajorVersion)
 
 dependencies {
   // picks the right dependencies for scala compilation
   forScala(scalaVersion)
 
-  implementation(platform(rootProject))
-  implementation(platform(project(":nessie-deps-testing")))
-
   implementation(project(":nessie-model"))
   implementation(project(":nessie-client"))
-  implementation("io.gatling.highcharts:gatling-charts-highcharts") {
+  implementation(libs.gatling.charts.highcharts) {
     exclude("io.netty", "netty-tcnative-boringssl-static")
     exclude("commons-logging", "commons-logging")
   }

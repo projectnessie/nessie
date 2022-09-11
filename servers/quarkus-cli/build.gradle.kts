@@ -20,22 +20,13 @@ plugins {
   `java-library`
   `maven-publish`
   signing
-  id("io.quarkus")
+  alias(libs.plugins.quarkus)
   `nessie-conventions`
 }
 
 extra["maven.name"] = "Nessie - Quarkus CLI"
 
 dependencies {
-  compileOnly(platform(project(":nessie-deps-build-only")))
-  implementation(platform(rootProject))
-  implementation(platform(project(":nessie-deps-persist")))
-  implementation(platform(project(":nessie-deps-quarkus")))
-  annotationProcessor(platform(project(":nessie-deps-build-only")))
-  implementation(enforcedPlatform("io.quarkus:quarkus-bom"))
-  implementation(enforcedPlatform("io.quarkus.platform:quarkus-amazon-services-bom"))
-  implementation(platform("com.fasterxml.jackson:jackson-bom"))
-
   implementation(project(":nessie-quarkus-common"))
   implementation(project(":nessie-services"))
   implementation(project(":nessie-server-store"))
@@ -51,39 +42,37 @@ dependencies {
   implementation(project(":nessie-versioned-persist-rocks"))
   implementation(project(":nessie-versioned-persist-transactional"))
 
+  implementation(enforcedPlatform(libs.quarkus.bom))
+  implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
   implementation("io.quarkus:quarkus-picocli")
 
-  implementation("com.google.protobuf:protobuf-java")
+  implementation(libs.protobuf.java)
 
-  implementation("com.google.code.findbugs:jsr305")
-  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
+  implementation(libs.findbugs.jsr305)
+  compileOnly(libs.microprofile.openapi)
 
-  implementation("com.fasterxml.jackson.core:jackson-databind")
-  implementation("com.fasterxml.jackson.core:jackson-annotations")
+  implementation(platform(libs.jackson.bom))
+  implementation(libs.jackson.databind)
+  implementation(libs.jackson.annotations)
 
-  implementation("io.agroal:agroal-pool")
-  implementation("com.h2database:h2")
-  implementation("org.postgresql:postgresql")
+  implementation(libs.agroal.pool)
+  implementation(libs.h2)
+  implementation(libs.postgresql)
 
-  compileOnly("org.immutables:builder")
-  compileOnly("org.immutables:value-annotations")
-  annotationProcessor("org.immutables:value-processor")
-
-  testImplementation(platform(project(":nessie-deps-testing")))
-  testImplementation(platform("org.junit:junit-bom"))
+  compileOnly(libs.immutables.builder)
+  compileOnly(libs.immutables.value.annotations)
+  annotationProcessor(libs.immutables.value.processor)
 
   testImplementation(project(":nessie-quarkus-tests"))
   testImplementation(project(":nessie-versioned-persist-mongodb-test"))
   testImplementation(project(":nessie-versioned-tests"))
   testImplementation("io.quarkus:quarkus-jacoco")
   testImplementation("io.quarkus:quarkus-junit5")
-  testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
+  testCompileOnly(libs.microprofile.openapi)
 
-  testImplementation("org.assertj:assertj-core")
-  testImplementation("org.mockito:mockito-core")
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testImplementation("org.junit.jupiter:junit-jupiter-params")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+  testImplementation(platform(libs.junit.bom))
+  testImplementation(libs.bundles.junit.testing)
+  testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
 preferJava11()
@@ -105,11 +94,12 @@ quarkus { setFinalName("${project.name}-${project.version}") }
 tasks.withType<QuarkusBuild>().configureEach {
   inputs.property("quarkus.package.type", project.extra["quarkus.package.type"])
   inputs.property("final.name", quarkus.finalName())
-  inputs.property("builder-image", dependencyVersion("quarkus.builder-image"))
-  nativeArgs { "builder-image" to dependencyVersion("quarkus.builder-image") }
+  val quarkusBuilderImage = libs.versions.quarkusUbiNativeImage.get()
+  inputs.property("builder-image", quarkusBuilderImage)
+  nativeArgs { "builder-image" to quarkusBuilderImage }
   doFirst {
     // THIS IS A WORKAROUND! the nativeArgs{} thing above doesn't really work
-    System.setProperty("quarkus.native.builder-image", dependencyVersion("quarkus.builder-image"))
+    System.setProperty("quarkus.native.builder-image", quarkusBuilderImage)
   }
 }
 
