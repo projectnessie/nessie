@@ -59,5 +59,6 @@ dependencies {
 
 val shadowJar =
   tasks.named<ShadowJar>("shadowJar") {
+    outputs.cacheIf { false } // very big jar
     manifest { attributes["Main-Class"] = "org.openjdk.jmh.Main" }
   }
