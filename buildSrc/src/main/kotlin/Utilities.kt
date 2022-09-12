@@ -14,19 +14,23 @@
  * limitations under the License.
  */
 
+import com.github.jengelman.gradle.plugins.shadow.ShadowPlugin
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import com.github.vlsi.jandex.JandexProcessResources
 import java.io.File
+import java.lang.IllegalStateException
 import java.util.Properties
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ExternalModuleDependency
 import org.gradle.api.artifacts.ModuleDependency
-import org.gradle.api.invocation.Gradle
+import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaToolchainService
@@ -36,7 +40,9 @@ import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.exclude
 import org.gradle.kotlin.dsl.extra
 import org.gradle.kotlin.dsl.findByType
+import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.module
+import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.project
 import org.gradle.kotlin.dsl.provideDelegate
 import org.gradle.kotlin.dsl.withType
@@ -74,8 +80,8 @@ fun ModuleDependency.withSparkExcludes(): ModuleDependency {
 
 fun DependencyHandlerScope.forScala(scalaVersion: String) {
   // Note: Quarkus contains Scala dependencies since 2.9.0
-  add("implementation", "org.scala-lang:scala-library") { version { strictly(scalaVersion) } }
-  add("implementation", "org.scala-lang:scala-reflect") { version { strictly(scalaVersion) } }
+  add("implementation", "org.scala-lang:scala-library:$scalaVersion!!")
+  add("implementation", "org.scala-lang:scala-reflect:$scalaVersion!!")
 }
 
 /**
@@ -127,11 +133,6 @@ fun DependencyHandlerScope.nessieQuarkusServerRunner(): ModuleDependency {
   return nessieProject("nessie-quarkus", "quarkusRunner")
 }
 
-/** Resolves the root Gradle project via [nessieProject]. */
-fun DependencyHandlerScope.nessieRootProject(): ModuleDependency {
-  return nessieProject("nessie")
-}
-
 /**
  * Resolves a Nessie project in the "right" Gradle build.
  *
@@ -143,38 +144,32 @@ fun DependencyHandlerScope.nessieProject(
   configuration: String? = null
 ): ModuleDependency {
   if (!isIntegrationsTestingEnabled()) {
-    return project(if (artifactId == "nessie") ":" else ":$artifactId", configuration)
+    return project(":$artifactId", configuration)
   } else {
     return module("org.projectnessie", artifactId, configuration = configuration)
   }
 }
 
-/**
- * Resolves a `platform()` dependency to a project in another Gradle build.
- *
- * Ideally, it should be sufficient to use [nessieProject], but that does not work properly and
- * results in this Gradle error: `Incompatible because this component declares a platform and the
- * consumer needed a library`. Although it is correct that the component declares a platform, it is
- * wrong that the consumer needs a library...
- */
-fun DependencyHandlerScope.nessieProjectPlatform(artifactId: String, gradle: Gradle): Dependency {
-  if (!isIntegrationsTestingEnabled()) {
-    return platform(project(if (artifactId == "nessie") ":" else ":$artifactId"))
-  } else {
-    if (artifactId.startsWith("nessie-deps-")) {
-      val inclBuild = gradle.parent!!.includedBuild("nessie")
-      val inclBuildInternal = inclBuild as org.gradle.internal.composite.IncludedBuildInternal
-      val inclBuildTarget = inclBuildInternal.target
-      val nessiePrj = inclBuildTarget.projects.getProject(org.gradle.util.Path.path(":$artifactId"))
-      val model = nessiePrj.mutableModel
-      return platform(model.project)
-    }
-    return platform(module("org.projectnessie", artifactId))
-  }
-}
-
 /** Utility method to check whether a Quarkus build shall produce the uber-jar. */
 fun Project.withUberJar(): Boolean = hasProperty("uber-jar") || isIntegrationsTestingEnabled()
+
+fun Project.applyShadowJar() {
+  plugins.apply(ShadowPlugin::class.java)
+
+  plugins.withType<ShadowPlugin>().configureEach {
+    val shadowJar =
+      tasks.named<ShadowJar>("shadowJar") {
+        outputs.cacheIf { false } // do not cache uber/shaded jars
+        archiveClassifier.set("")
+        mergeServiceFiles()
+      }
+
+    tasks.named<Jar>("jar") {
+      dependsOn(shadowJar)
+      archiveClassifier.set("raw")
+    }
+  }
+}
 
 /** Just load [Properties] from a [File]. */
 fun loadProperties(file: File): Properties {
@@ -264,6 +259,27 @@ fun Project.getSparkScalaVersionsForProject(): SparkScalaVersions {
   return useSparkScalaVersionsForProject(sparkMajorVersion, scalaMajorVersion)
 }
 
+fun Project.scalaDependencyVersion(scalaMajorVersion: String): String {
+  val versionCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
+  val scalaDepName = "scala-library-v${scalaMajorVersion.replace("[.]".toRegex(), "")}"
+  val scalaDep =
+    versionCatalog.findLibrary(scalaDepName).orElseThrow {
+      IllegalStateException("No library '$scalaDepName' defined in version catalog 'libs'")
+    }
+  return scalaDep.get().versionConstraint.preferredVersion
+}
+
+fun Project.sparkDependencyVersion(sparkMajorVersion: String, scalaMajorVersion: String): String {
+  val versionCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
+  val sparkDepName =
+    "spark-sql-v${sparkMajorVersion.replace("[.]".toRegex(), "")}-v${scalaMajorVersion.replace("[.]".toRegex(), "")}"
+  val sparkDep =
+    versionCatalog.findLibrary(sparkDepName).orElseThrow {
+      IllegalStateException("No library '$sparkDepName' defined in version catalog 'libs'")
+    }
+  return sparkDep.get().versionConstraint.preferredVersion
+}
+
 fun Project.useSparkScalaVersionsForProject(sparkMajorVersion: String): SparkScalaVersions {
   val scalaMajorVersion =
     rootProject.extra["sparkVersion-${sparkMajorVersion}-scalaVersions"]
@@ -280,8 +296,8 @@ fun Project.useSparkScalaVersionsForProject(
   return SparkScalaVersions(
     sparkMajorVersion,
     scalaMajorVersion,
-    dependencyVersion("versionSpark-$sparkMajorVersion"),
-    dependencyVersion("versionScala-$scalaMajorVersion")
+    sparkDependencyVersion(sparkMajorVersion, scalaMajorVersion),
+    scalaDependencyVersion(scalaMajorVersion)
   )
 }
 

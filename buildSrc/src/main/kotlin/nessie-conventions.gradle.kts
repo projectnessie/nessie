@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-import com.github.jengelman.gradle.plugins.shadow.ShadowPlugin
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import com.github.vlsi.jandex.JandexExtension
-import io.quarkus.gradle.QuarkusPlugin
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.file.DuplicatesStrategy
@@ -57,8 +54,6 @@ configureJava()
 testTasks()
 
 scaladocJar()
-
-replaceJarWithUberJar()
 
 fun Project.scaladocJar() {
   plugins.withType<ScalaPlugin>().configureEach {
@@ -124,7 +119,7 @@ fun Project.testTasks() {
         mustRunAfter(tasks.named<Test>("test"))
       }
 
-      if (plugins.withType<QuarkusPlugin>().isNotEmpty()) {
+      if (plugins.hasPlugin("io.quarkus")) {
         jvmArgs("--add-opens=java.base/java.util=ALL-UNNAMED")
         systemProperty("quarkus.log.level", testLogLevel())
         systemProperty("quarkus.log.console.level", testLogLevel())
@@ -142,7 +137,7 @@ fun Project.testTasks() {
         group = "verification"
         description = "Runs the integration tests."
 
-        if (plugins.withType<QuarkusPlugin>().isNotEmpty()) {
+        if (plugins.hasPlugin("io.quarkus")) {
           dependsOn(tasks.named("quarkusBuild"))
         }
       }
@@ -193,21 +188,6 @@ fun Project.configureJava() {
       withSourcesJar()
       sourceCompatibility = JavaVersion.VERSION_1_8
       targetCompatibility = JavaVersion.VERSION_1_8
-    }
-  }
-}
-
-fun Project.replaceJarWithUberJar() {
-  plugins.withType<ShadowPlugin>().configureEach {
-    val shadowJar =
-      tasks.named<ShadowJar>("shadowJar") {
-        archiveClassifier.set("")
-        mergeServiceFiles()
-      }
-
-    tasks.named<Jar>("jar") {
-      dependsOn(shadowJar)
-      archiveClassifier.set("raw")
     }
   }
 }

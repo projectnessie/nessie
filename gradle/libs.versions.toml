@@ -1,0 +1,217 @@
+[versions]
+agrone = "1.17.1"
+antlr4 = "4.11.1"
+awssdk = "2.17.281"
+bouncycastle = "1.70"
+checkstyle = "10.3.4"
+errorprone = "2.15.0"
+errorproneSlf4j = "0.1.15"
+gatling = "3.8.4"
+googleJavaFormat = "1.15.0"
+guava = "31.1-jre"
+hadoop = "3.3.4"
+iceberg = "0.14.1"
+immutables = "2.9.2"
+jacoco = "0.8.8"
+jandex = "2.4.3.Final"
+jandexPlugin = "1.82"
+jmh = "1.35"
+junit = "5.9.1"
+logback = "1.2.11"
+maven = "3.8.6"
+mavenResolver = "1.7.3"
+micrometer = "1.9.4"
+nessieBuildPlugins = "0.2.12"
+nessieClientVersion = "0.30.0"
+opentracing = "0.33.0"
+parquet = "1.12.3"
+picocli = "4.6.3"
+postgresContainerTag = "14"
+protobuf = "3.21.6"
+quarkus = "2.13.0.Final"
+quarkusAmazon = "2.12.3.Final"
+quarkusLoggingSentry = "1.2.1"
+quarkusUbiNativeImage = "quay.io/quarkus/ubi-quarkus-native-image:22.2-java17"
+rocksdb = "7.6.0"
+shadowPlugin = "7.1.2"
+slf4j = "1.7.36"
+spotlessPlugin = "6.11.0"
+testcontainers = "1.17.3"
+
+[bundles]
+# Bundles serve two purposes:
+# 1. Group dependencies together for renovatebot, which cares about bundles. Those bundles, that
+#    _solely_ exist to for dependency management via renovatebot, start with `managed-`.
+# 2. Bundles used in build files to group dependencies that are commonly used together.
+managed-antlr4 = ["antlr-antlr4", "antlr-antlr4-runtime"]
+managed-awssdk = ["awssdk-auth", "awssdk-bom"]
+managed-bouncycastle = ["bouncycastle-bcpkix", "bouncycastle-bcprov"]
+managed-errorprone = ["errorprone-annotations", "errorprone-core"]
+managed-hadoop = ["hadoop-aws", "hadoop-common", "hadoop-client"]
+managed-iceberg = ["iceberg-api", "iceberg-bundled-guava", "iceberg-common", "iceberg-core",
+  "iceberg-hive-metastore", "iceberg-nessie", "iceberg-parquet",
+  "iceberg-spark-extensions31-scala212",
+  "iceberg-spark-extensions32-scala212", "iceberg-spark-extensions32-scala213",
+  "iceberg-spark-extensions33-scala212", "iceberg-spark-extensions33-scala213",
+  "iceberg-spark31-scala212",
+  "iceberg-spark32-scala212", "iceberg-spark32-scala213",
+  "iceberg-spark33-scala212", "iceberg-spark33-scala213"]
+managed-immutables = ["immutables-builder", "immutables-value-annotations",
+  "immutables-value-fixture", "immutables-value-processor"]
+managed-jmh = ["jmh-core", "jmh-generator-annprocess"]
+managed-maven-resolver = ["maven-resolver-connector-basic", "maven-resolver-transport-file",
+  "maven-resolver-transport-http"]
+managed-opentracing = ["opentracing-api", "opentracing-mock", "opentracing-util"]
+managed-picocli = ["picocli", "picocli-codegen"]
+managed-quarkus = ["quarkus-bom", "quarkus-smallrye-opentracing"]
+managed-slf4j = ["slf4j-jcl-over-slf4j", "slf4j-log4j-over-slf4j", "slf4j-jcl-over-slf4j"]
+managed-testcontainers = ["testcontainers-cockroachdb", "testcontainers-mongodb",
+  "testcontainers-postgresql", "testcontainers-testcontainers"]
+
+junit-testing = ["assertj-core", "mockito-core", "junit-jupiter-api", "junit-jupiter-params"]
+
+[libraries]
+agroal-pool = { module = "io.agroal:agroal-pool", version = "2.0" }
+agrona = { module = "org.agrona:agrona", version = "1.17.1" }
+antlr-antlr4 = { module = "org.antlr:antlr4", version.ref = "antlr4" }
+antlr-antlr4-runtime = { module = "org.antlr:antlr4-runtime", version.ref = "antlr4" }
+assertj-core = { module = "org.assertj:assertj-core", version = "3.23.1" }
+avro = { module = "org.apache.avro:avro", version = "1.11.1" }
+awssdk-apache-client = { module = "software.amazon.awssdk:apache-client" }
+awssdk-auth = { module = "software.amazon.awssdk:auth" }
+awssdk-bom = { module = "software.amazon.awssdk:bom", version.ref = "awssdk" }
+awssdk-dynamodb = { module = "software.amazon.awssdk:dynamodb" }
+awssdk-glue = { module = "software.amazon.awssdk:glue" }
+awssdk-kms = { module = "software.amazon.awssdk:kms" }
+awssdk-netty-nio-client = { module = "software.amazon.awssdk:netty-nio-client" }
+awssdk-s3 = { module = "software.amazon.awssdk:s3" }
+awssdk-url-connection-client = { module = "software.amazon.awssdk:url-connection-client" }
+bouncycastle-bcpkix = { module = "org.bouncycastle:bcpkix-jdk15on", version.ref = "bouncycastle" }
+bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk15on", version.ref = "bouncycastle" }
+cel-bom = { module = "org.projectnessie.cel:cel-bom", version = "0.3.10" }
+cel-jackson = { module = "org.projectnessie.cel:cel-jackson" }
+cel-tools = { module = "org.projectnessie.cel:cel-tools" }
+checkstyle = { module = "com.puppycrawl.tools:checkstyle", version.ref = "checkstyle" }
+delta-core = { module = "io.delta:delta-core_2.12", version = "1.1.0-nessie" }
+docker-java-api = { module = "com.github.docker-java:docker-java-api", version = "3.2.13" }
+errorprone-annotations = { module = "com.google.errorprone:error_prone_annotations", version.ref = "errorprone" }
+errorprone-core = { module = "com.google.errorprone:error_prone_core", version.ref = "errorprone" }
+errorprone-slf4j = { module = "jp.skypencil.errorprone.slf4j:errorprone-slf4j", version.ref = "errorproneSlf4j" }
+findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version = "3.0.2" }
+gatling-charts-highcharts = { module = "io.gatling.highcharts:gatling-charts-highcharts", version.ref = "gatling" }
+google-java-format = { module = "com.google.googlejavaformat:google-java-format", version.ref = "googleJavaFormat" }
+graalvm-nativeimage-svm = { module = "org.graalvm.nativeimage:svm", version = "22.2.0" }
+guava = { module = "com.google.guava:guava", version.ref = "guava" }
+h2 = { module = "com.h2database:h2", version = "2.1.214" }
+hadoop-aws = { module = "org.apache.hadoop:hadoop-aws", version.ref = "hadoop" }
+hadoop-client = { module = "org.apache.hadoop:hadoop-client", version.ref = "hadoop" }
+hadoop-common = { module = "org.apache.hadoop:hadoop-common", version.ref = "hadoop" }
+iceberg-api = { module = "org.apache.iceberg:iceberg-api", version.ref = "iceberg" }
+iceberg-aws = { module = "org.apache.iceberg:iceberg-aws", version.ref = "iceberg" }
+iceberg-bundled-guava = { module = "org.apache.iceberg:iceberg-bundled-guava", version.ref = "iceberg" }
+iceberg-common = { module = "org.apache.iceberg:iceberg-common", version.ref = "iceberg" }
+iceberg-core = { module = "org.apache.iceberg:iceberg-core", version.ref = "iceberg" }
+iceberg-hive-metastore = { module = "org.apache.iceberg:iceberg-hive-metastore", version.ref = "iceberg" }
+iceberg-nessie = { module = "org.apache.iceberg:iceberg-nessie", version.ref = "iceberg" }
+iceberg-parquet = { module = "org.apache.iceberg:iceberg-parquet", version.ref = "iceberg" }
+iceberg-spark-extensions31-scala212 = { module = "org.apache.iceberg:iceberg-spark-extensions-3.1_2.12", version.ref = "iceberg" }
+iceberg-spark-extensions32-scala212 = { module = "org.apache.iceberg:iceberg-spark-extensions-3.2_2.12", version.ref = "iceberg" }
+iceberg-spark-extensions32-scala213 = { module = "org.apache.iceberg:iceberg-spark-extensions-3.2_2.13", version.ref = "iceberg" }
+iceberg-spark-extensions33-scala212 = { module = "org.apache.iceberg:iceberg-spark-extensions-3.3_2.12", version.ref = "iceberg" }
+iceberg-spark-extensions33-scala213 = { module = "org.apache.iceberg:iceberg-spark-extensions-3.3_2.13", version.ref = "iceberg" }
+iceberg-spark31-scala212 = { module = "org.apache.iceberg:iceberg-spark-3.1_2.12", version.ref = "iceberg" }
+iceberg-spark32-scala212 = { module = "org.apache.iceberg:iceberg-spark-3.2_2.12", version.ref = "iceberg" }
+iceberg-spark32-scala213 = { module = "org.apache.iceberg:iceberg-spark-3.2_2.13", version.ref = "iceberg" }
+iceberg-spark33-scala212 = { module = "org.apache.iceberg:iceberg-spark-3.3_2.12", version.ref = "iceberg" }
+iceberg-spark33-scala213 = { module = "org.apache.iceberg:iceberg-spark-3.3_2.13", version.ref = "iceberg" }
+immutables-builder = { module = "org.immutables:builder", version.ref = "immutables" }
+immutables-value-annotations = { module = "org.immutables:value-annotations", version.ref = "immutables" }
+immutables-value-fixture = { module = "org.immutables:value-fixture", version.ref = "immutables" }
+immutables-value-processor = { module = "org.immutables:value-processor", version.ref = "immutables" }
+jackson-bom = { module = "com.fasterxml.jackson:jackson-bom", version = "2.13.4" }
+jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations" }
+jackson-core = { module = "com.fasterxml.jackson.core:jackson-databind" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind" }
+jackson-dataformat-xml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml" }
+jackson-jaxrs-json-provider = { module = "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider" }
+jackson-jaxrs-xml-provider = { module = "com.fasterxml.jackson.jaxrs:jackson-jaxrs-xml-provider" }
+jacoco-maven-plugin = { module = "org.jacoco:jacoco-maven-plugin", version.ref = "jacoco" }
+jakarta-annotation-api = { module = "jakarta.annotation:jakarta.annotation-api", version = "1.3.5" }
+jakarta-enterprise-cdi-api = { module = "jakarta.enterprise:jakarta.enterprise.cdi-api", version = "2.0.2" }
+jakarta-validation-api = { module = "jakarta.validation:jakarta.validation-api", version = "2.0.2" }
+jandex = { module = "org.jboss:jandex", version.ref = "jandex" }
+javax-servlet = { module = "javax.servlet:javax.servlet-api", version = "4.0.1" }
+javax-ws-rs = { module = "javax.ws.rs:javax.ws.rs-api", version = "2.1.1" }
+javax-ws-rs21 = { module = "org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_2.1_spec", version = "2.0.2.Final" }
+jersey-bom = { module = "org.glassfish.jersey:jersey-bom", version = "2.37" }
+jetbrains-annotations = { module = "org.jetbrains:annotations", version = "23.0.0" }
+jmh-core = { module = "org.openjdk.jmh:jmh-core", version.ref = "jmh" }
+jmh-generator-annprocess = { module = "org.openjdk.jmh:jmh-generator-annprocess", version.ref = "jmh" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine" }
+junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+junit-platform-testkit = { module = "org.junit.platform:junit-platform-testkit" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+maven-resolver-connector-basic = { module = "org.apache.maven.resolver:maven-resolver-connector-basic", version.ref = "mavenResolver" }
+maven-resolver-provider = { module = "org.apache.maven:maven-resolver-provider", version.ref = "maven" }
+maven-resolver-transport-file = { module = "org.apache.maven.resolver:maven-resolver-transport-file", version.ref = "mavenResolver" }
+maven-resolver-transport-http = { module = "org.apache.maven.resolver:maven-resolver-transport-http", version.ref = "mavenResolver" }
+micrometer-core = { module = "io.micrometer:micrometer-core", version.ref = "micrometer" }
+microprofile-openapi = { module = "org.eclipse.microprofile.openapi:microprofile-openapi-api", version = "3.0" }
+mockito-core = { module = "org.mockito:mockito-core", version = "4.8.0" }
+mongodb-driver-sync = { module = "org.mongodb:mongodb-driver-sync", version = "4.7.1" }
+opentracing-api = { module = "io.opentracing:opentracing-api", version.ref = "opentracing" }
+opentracing-mock = { module = "io.opentracing:opentracing-mock", version.ref = "opentracing" }
+opentracing-util = { module = "io.opentracing:opentracing-util", version.ref = "opentracing" }
+parquet-column = { module = "org.apache.parquet:parquet-column", version.ref = "parquet" }
+picocli = { module = "info.picocli:picocli-codegen", version.ref = "picocli" }
+picocli-codegen = { module = "info.picocli:picocli-codegen", version.ref = "picocli" }
+postgresql = { module = "org.postgresql:postgresql", version = "42.5.0" }
+protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf" }
+quarkus-amazon-services-bom = { module = "io.quarkus.platform:quarkus-amazon-services-bom", version.ref = "quarkusAmazon" }
+quarkus-bom = { module = "io.quarkus:quarkus-bom", version.ref = "quarkus" }
+quarkus-logging-sentry = { module = "io.quarkiverse.loggingsentry:quarkus-logging-sentry", version.ref = "quarkusLoggingSentry" }
+quarkus-smallrye-opentracing = { module = "io.quarkus:quarkus-smallrye-opentracing", version.ref = "quarkus" }
+rest-assured = { module = "io.rest-assured:rest-assured", version = "5.2.0" }
+rocksdb-jni = { module = "org.rocksdb:rocksdbjni", version.ref = "rocksdb" }
+scala-library-v212 = { module = "org.scala-lang:scala-library", version = { strictly = "[2.12, 2.13[", prefer = "2.12.17" }}
+scala-library-v213 = { module = "org.scala-lang:scala-library", version = { strictly = "[2.13, 2.14[", prefer = "2.13.9"}}
+slf4j-api = {  module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+slf4j-jcl-over-slf4j = { module = "org.slf4j:jcl-over-slf4j", version.ref = "slf4j" }
+slf4j-log4j-over-slf4j = { module = "org.slf4j:log4j-over-slf4j", version.ref = "slf4j" }
+spark-sql-v31-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { strictly = "[3.1, 3.2[", prefer = "3.1.2"}}
+spark-sql-v32-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { strictly = "[3.2, 3.3[", prefer = "3.2.1"}}
+spark-sql-v32-v213 = { module = "org.apache.spark:spark-sql_2_13", version = { strictly = "[3.2, 3.3[", prefer = "3.2.1"}}
+spark-sql-v33-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { strictly = "[3.3, 3.4[", prefer = "3.3.0"}}
+spark-sql-v33-v213 = { module = "org.apache.spark:spark-sql_2_13", version = { strictly = "[3.3, 3.4[", prefer = "3.3.0"}}
+testcontainers-cockroachdb = { module = "org.testcontainers:cockroachdb", version.ref = "testcontainers" }
+testcontainers-mongodb = { module = "org.testcontainers:mongodb", version.ref = "testcontainers" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+testcontainers-testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
+weld-se-core = { module = "org.jboss.weld.se:weld-se-core", version = "3.1.9.Final" }
+
+[plugins]
+errorprone = { id = "net.ltgt.errorprone", version = "2.0.2" }
+gatling = { id = "io.gatling.gradle", version = "3.8.3.2" }
+idea-ext = { id = "org.jetbrains.gradle.plugin.idea-ext", version = "1.1.6" }
+jandex = { id = "com.github.vlsi.jandex", version.ref = "jandexPlugin" }
+jmh = { id = "me.champeau.jmh", version = "0.6.8" }
+nessie-build-checkstyle = { id = "org.projectnessie.buildsupport.checkstyle", version.ref = "nessieBuildPlugins" }
+nessie-build-errorprone = { id = "org.projectnessie.buildsupport.errorprone", version.ref = "nessieBuildPlugins" }
+nessie-build-ide-integration = { id = "org.projectnessie.buildsupport.ide-integration", version.ref = "nessieBuildPlugins" }
+nessie-build-jacoco = { id = "org.projectnessie.buildsupport.jacoco", version.ref = "nessieBuildPlugins" }
+nessie-build-jacoco-aggregator = { id = "org.projectnessie.buildsupport.jacoco-aggregator", version.ref = "nessieBuildPlugins" }
+nessie-build-jandex = { id = "org.projectnessie.buildsupport.jandex", version.ref = "nessieBuildPlugins" }
+nessie-build-protobuf = { id = "org.projectnessie.buildsupport.protobuf", version.ref = "nessieBuildPlugins" }
+nessie-build-publishing = { id = "org.projectnessie.buildsupport.publishing", version.ref = "nessieBuildPlugins" }
+nessie-build-reflectionconfig = { id = "org.projectnessie.buildsupport.reflectionconfig", version.ref = "nessieBuildPlugins" }
+nessie-build-smallrye-open-api = { id = "org.projectnessie.smallrye-open-api", version.ref = "nessieBuildPlugins" }
+nessie-build-spotless = { id = "org.projectnessie.buildsupport.spotless", version.ref = "nessieBuildPlugins" }
+nessie-run = { id = "org.projectnessie", version = "0.27.3" }
+nexus-publish-plugin = { id = "io.github.gradle-nexus.publish-plugin", version = "1.1.0" }
+node-gradle = { id = "com.github.node-gradle.node", version = "3.4.0" }
+quarkus = { id = "io.quarkus", version.ref = "quarkus" }
+shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadowPlugin" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotlessPlugin" }
