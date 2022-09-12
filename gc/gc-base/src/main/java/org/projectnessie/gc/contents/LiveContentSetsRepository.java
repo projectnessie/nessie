@@ -119,9 +119,7 @@ public abstract class LiveContentSetsRepository {
 
       @Override
       public long addLiveContent(@NotNull Stream<ContentReference> contentReference) {
-        if (closed) {
-          throw new IllegalStateException("AddContents instance already closed.");
-        }
+        Preconditions.checkState(!closed, "AddContents instance already closed.");
         return persistenceSpi().addIdentifiedLiveContent(id, contentReference);
       }
 

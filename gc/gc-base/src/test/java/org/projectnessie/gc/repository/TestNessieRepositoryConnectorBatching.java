@@ -23,7 +23,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.projectnessie.gc.repository.Nessie.CONTENT_BATCH_SIZE;
+import static org.projectnessie.gc.repository.NessieRepositoryConnector.CONTENT_BATCH_SIZE;
 
 import java.util.Map;
 import java.util.function.IntFunction;
@@ -45,7 +45,7 @@ import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.IcebergTable;
 
 @ExtendWith(SoftAssertionsExtension.class)
-public class TestNessieBatching {
+public class TestNessieRepositoryConnectorBatching {
   @InjectSoftAssertions SoftAssertions soft;
 
   @Test
@@ -60,7 +60,7 @@ public class TestNessieBatching {
 
     when(api.getEntries()).thenReturn(getEntries);
 
-    try (RepositoryConnector nessie = Nessie.nessie(api)) {
+    try (RepositoryConnector nessie = NessieRepositoryConnector.nessie(api)) {
       soft.assertThat(nessie.allContents(ref, singleton(Content.Type.ICEBERG_TABLE))).isEmpty();
     }
 
@@ -94,7 +94,7 @@ public class TestNessieBatching {
     when(api.getEntries()).thenReturn(getEntries);
     when(api.getContent()).thenReturn(getContent);
 
-    try (RepositoryConnector nessie = Nessie.nessie(api)) {
+    try (RepositoryConnector nessie = NessieRepositoryConnector.nessie(api)) {
       soft.assertThat(nessie.allContents(ref, singleton(Content.Type.ICEBERG_TABLE))).isEmpty();
     }
 
@@ -132,7 +132,7 @@ public class TestNessieBatching {
     when(api.getEntries()).thenReturn(getEntries);
     when(api.getContent()).thenReturn(getContent);
 
-    try (RepositoryConnector nessie = Nessie.nessie(api)) {
+    try (RepositoryConnector nessie = NessieRepositoryConnector.nessie(api)) {
       soft.assertThat(nessie.allContents(ref, singleton(Content.Type.ICEBERG_TABLE)))
           .containsExactlyInAnyOrderElementsOf(expected.entrySet());
     }
@@ -174,7 +174,7 @@ public class TestNessieBatching {
     when(api.getEntries()).thenReturn(getEntries);
     when(api.getContent()).thenReturn(getContent);
 
-    try (RepositoryConnector nessie = Nessie.nessie(api)) {
+    try (RepositoryConnector nessie = NessieRepositoryConnector.nessie(api)) {
       soft.assertThat(nessie.allContents(ref, singleton(Content.Type.ICEBERG_TABLE)))
           .containsExactlyInAnyOrderElementsOf(expected.entrySet());
     }
@@ -229,7 +229,7 @@ public class TestNessieBatching {
     when(api.getEntries()).thenReturn(getEntries);
     when(api.getContent()).thenReturn(getContent1).thenReturn(getContent2);
 
-    try (RepositoryConnector nessie = Nessie.nessie(api)) {
+    try (RepositoryConnector nessie = NessieRepositoryConnector.nessie(api)) {
       soft.assertThat(nessie.allContents(ref, singleton(Content.Type.ICEBERG_TABLE)))
           .containsExactlyInAnyOrderElementsOf(expected.entrySet());
     }
@@ -287,7 +287,7 @@ public class TestNessieBatching {
     when(api.getEntries()).thenReturn(getEntries);
     when(api.getContent()).thenReturn(firstGetContent, nextGetContent);
 
-    try (RepositoryConnector nessie = Nessie.nessie(api)) {
+    try (RepositoryConnector nessie = NessieRepositoryConnector.nessie(api)) {
       soft.assertThat(nessie.allContents(ref, singleton(Content.Type.ICEBERG_TABLE)))
           .hasSize(CONTENT_BATCH_SIZE * 10)
           .containsExactlyInAnyOrderElementsOf(expected.entrySet());

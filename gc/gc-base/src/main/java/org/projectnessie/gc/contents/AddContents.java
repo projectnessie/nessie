@@ -22,7 +22,7 @@ import javax.validation.constraints.NotNull;
 import org.projectnessie.gc.identify.IdentifyLiveContents;
 
 /**
- * Used by {@link IdentifyLiveContents} to push identified live contents and prodice a set of
+ * Used by {@link IdentifyLiveContents} to push identified live contents and produce a set of
  * live-content.
  *
  * <p>Instances of this interface are obtained from {@link

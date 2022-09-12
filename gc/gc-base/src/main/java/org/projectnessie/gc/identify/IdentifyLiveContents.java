@@ -112,7 +112,7 @@ public abstract class IdentifyLiveContents {
     Builder liveContentSetsRepository(LiveContentSetsRepository liveContentSetsRepository);
 
     @CanIgnoreReturnValue
-    Builder contentToReference(ContentToReference contentToReference);
+    Builder contentToReference(ToContentReference toContentReference);
 
     /** Encapsulates all calls against Nessie, abstracted for testing purposes. */
     @CanIgnoreReturnValue
@@ -402,7 +402,7 @@ public abstract class IdentifyLiveContents {
 
   abstract LiveContentSetsRepository liveContentSetsRepository();
 
-  abstract ContentToReference contentToReference();
+  abstract ToContentReference contentToReference();
 
   abstract RepositoryConnector repositoryConnector();
 

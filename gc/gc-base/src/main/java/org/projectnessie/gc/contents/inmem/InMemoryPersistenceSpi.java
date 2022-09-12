@@ -52,7 +52,7 @@ public class InMemoryPersistenceSpi implements PersistenceSpi {
 
   static final class InMemoryLiveContentSet {
 
-    /** Map of content-ID to maps of content-reference to map of content-key to commit-IDs. */
+    /** Map of content-ID to set of content-references. */
     final Map<String, Set<ContentReference>> contents = new ConcurrentHashMap<>();
 
     final Map<String, Collection<URI>> baseLocations = new ConcurrentHashMap<>();

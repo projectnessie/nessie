@@ -36,16 +36,16 @@ import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Reference;
 
-public final class Nessie implements RepositoryConnector {
+public final class NessieRepositoryConnector implements RepositoryConnector {
 
   private final NessieApiV1 api;
 
-  private Nessie(NessieApiV1 api) {
+  private NessieRepositoryConnector(NessieApiV1 api) {
     this.api = api;
   }
 
   public static RepositoryConnector nessie(NessieApiV1 api) {
-    return new Nessie(api);
+    return new NessieRepositoryConnector(api);
   }
 
   @Override

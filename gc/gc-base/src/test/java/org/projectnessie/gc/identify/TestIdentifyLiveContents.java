@@ -31,7 +31,7 @@ import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.gc.contents.ContentReference;
 import org.projectnessie.gc.contents.LiveContentSetsRepository;
 import org.projectnessie.gc.contents.inmem.InMemoryPersistenceSpi;
-import org.projectnessie.gc.repository.Nessie;
+import org.projectnessie.gc.repository.NessieRepositoryConnector;
 import org.projectnessie.gc.repository.RepositoryConnector;
 import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
 import org.projectnessie.jaxrs.ext.NessieUri;
@@ -77,7 +77,7 @@ public class TestIdentifyLiveContents {
 
   @Test
   public void invalidParallelism() throws Exception {
-    try (RepositoryConnector nessie = Nessie.nessie(nessieApi)) {
+    try (RepositoryConnector nessie = NessieRepositoryConnector.nessie(nessieApi)) {
       assertThatThrownBy(
               () ->
                   IdentifyLiveContents.builder()
@@ -116,7 +116,7 @@ public class TestIdentifyLiveContents {
 
   @Test
   public void preventMultipleUsages() throws Exception {
-    try (RepositoryConnector nessie = Nessie.nessie(nessieApi)) {
+    try (RepositoryConnector nessie = NessieRepositoryConnector.nessie(nessieApi)) {
       IdentifyLiveContents identify =
           IdentifyLiveContents.builder()
               .contentTypeFilter(

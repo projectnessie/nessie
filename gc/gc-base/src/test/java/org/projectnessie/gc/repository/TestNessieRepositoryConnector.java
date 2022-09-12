@@ -64,7 +64,7 @@ import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabas
 @NessieDbAdapterName(InmemoryDatabaseAdapterFactory.NAME)
 @NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
 @ExtendWith({DatabaseAdapterExtension.class, SoftAssertionsExtension.class})
-public class TestNessie {
+public class TestNessieRepositoryConnector {
   @InjectSoftAssertions SoftAssertions soft;
 
   @NessieDbAdapter static DatabaseAdapter databaseAdapter;
@@ -113,7 +113,7 @@ public class TestNessie {
               .create());
     }
 
-    try (RepositoryConnector nessie = Nessie.nessie(nessieApi)) {
+    try (RepositoryConnector nessie = NessieRepositoryConnector.nessie(nessieApi)) {
       soft.assertThat(nessie.allReferences()).containsExactlyInAnyOrderElementsOf(references);
     }
   }
@@ -136,7 +136,7 @@ public class TestNessie {
                 entry.getCommitMeta().getHash(),
                 new SimpleEntry<>(entry.getCommitMeta().getMessage(), entry.getOperations()));
 
-    try (RepositoryConnector nessie = Nessie.nessie(nessieApi)) {
+    try (RepositoryConnector nessie = NessieRepositoryConnector.nessie(nessieApi)) {
       soft.assertThat(nessie.commitLog(defaultBranch))
           .map(entryMapper)
           .containsExactly(commitsOnBranch.get(commitsOnBranch.size() - 1));
@@ -156,7 +156,7 @@ public class TestNessie {
     Branch branch = Branch.of("commitLog", defaultBranch.getHash());
     prepareBranch(defaultBranch, commitsOnBranch, branch);
 
-    try (RepositoryConnector nessie = Nessie.nessie(nessieApi)) {
+    try (RepositoryConnector nessie = NessieRepositoryConnector.nessie(nessieApi)) {
       for (int i = 0; i < commitsOnBranch.size(); i++) {
 
         Map<ContentKey, Content> expectedContents =
