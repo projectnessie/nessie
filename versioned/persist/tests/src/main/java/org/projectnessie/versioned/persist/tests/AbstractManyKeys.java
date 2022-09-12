@@ -34,10 +34,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -525,14 +525,39 @@ public abstract class AbstractManyKeys {
     }
   }
 
-  public static Stream<List<String>> progressiveKeyNames() {
+  public static Stream<List<String>> progressivelyManyKeyNames() {
+    // The seed of `7` was chosen after a few manual tries because it caused the most test failures
+    // in the key lookup code before PR #5145, where this test was introduced.
+    Random random = new Random(7);
     return IntStream.range(1, 100)
-        .mapToObj(i -> IntStream.range(1, i).mapToObj(j -> "a-" + j).collect(Collectors.toList()));
+        // Use two test args of the same size (with random, deterministic values)
+        .flatMap(i -> IntStream.of(i, i))
+        .mapToObj(
+            i ->
+                IntStream.range(1, i)
+                    .mapToObj(j -> Long.toString(Math.abs(random.nextLong()), Character.MAX_RADIX))
+                    .collect(Collectors.toList()));
   }
 
+  /**
+   * Validates key construction and lookup with random, yet deterministic key names hoping to cover
+   * all edge cases and hash collisions by using a somewhat large test data set.
+   *
+   * <p>Note: the number of keys that is effective for validating the hash lookup indirectly depends
+   * on the "embedded" and "external" key list entity size limits, with which the adapter is
+   * configured.
+   */
   @ParameterizedTest
-  @MethodSource("progressiveKeyNames")
-  void manyKeysProgressive(List<String> names) throws Exception {
+  @MethodSource("progressivelyManyKeyNames")
+  void manyKeysProgressive(
+      List<String> names,
+      @NessieDbAdapterConfigItem(name = "max.key.list.size", value = "2048")
+          @NessieDbAdapterConfigItem(name = "max.key.list.entity.size", value = "1000000")
+          @NessieDbAdapterConfigItem(name = "key.list.distance", value = "20")
+          @NessieDbAdapterConfigItem(name = "key.list.hash.load.factor", value = "0.65")
+          @NessieDbAdapter
+          DatabaseAdapter databaseAdapter)
+      throws Exception {
     BranchName main = BranchName.of("main");
     Hash head = databaseAdapter.hashOnReference(main, Optional.empty());
     Set<Key> activeKeys = new HashSet<>();
