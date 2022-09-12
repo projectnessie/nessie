@@ -17,23 +17,19 @@ package org.projectnessie.versioned.persist.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.groups.Tuple.tuple;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
 import com.google.protobuf.ByteString;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
@@ -49,7 +45,6 @@ import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
-import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.store.DefaultStoreWorker;
 import org.projectnessie.versioned.testworker.OnRefOnly;
 
@@ -266,12 +261,9 @@ public abstract class AbstractReferences {
     databaseAdapter.hashOnReference(main, Optional.empty());
   }
 
-  /**
-   * Validates that multiple reference-name segments work, that the split ref-log-heads works over
-   * multiple pages.
-   */
+  /** Validates that multiple reference-name segments work. */
   @Test
-  void manyReferencesAndSplitRefLog() throws Exception {
+  void manyReferences() throws Exception {
     IntFunction<NamedRef> refGen =
         i -> {
           StringBuilder sb = new StringBuilder(120);
@@ -283,7 +275,6 @@ public abstract class AbstractReferences {
           return (i & 1) == 1 ? TagName.of(name) : BranchName.of(name);
         };
 
-    Map<NamedRef, List<Tuple>> refLogOpsPerRef = new HashMap<>();
     Map<NamedRef, Hash> refHeads = new HashMap<>();
 
     for (int i = 0; i < 50; i++) {
@@ -292,9 +283,6 @@ public abstract class AbstractReferences {
       assertThat(databaseAdapter.create(ref, databaseAdapter.noAncestorHash()))
           .isEqualTo(databaseAdapter.noAncestorHash());
 
-      refLogOpsPerRef
-          .computeIfAbsent(ref, x -> new ArrayList<>())
-          .add(tuple("CREATE_REFERENCE", databaseAdapter.noAncestorHash()));
       refHeads.put(ref, databaseAdapter.noAncestorHash());
 
       assertThat(databaseAdapter.namedRef(ref.getName(), GetNamedRefsParams.DEFAULT).getNamedRef())
@@ -333,9 +321,6 @@ public abstract class AbstractReferences {
                                   .toStoreOnReferenceState(
                                       OnRefOnly.newOnRef("c" + commit), att -> {})))
                       .build());
-          refLogOpsPerRef
-              .computeIfAbsent(ref, x -> new ArrayList<>())
-              .add(tuple("COMMIT", newHead));
           refHeads.put(ref, newHead);
         }
       }
@@ -347,10 +332,6 @@ public abstract class AbstractReferences {
       databaseAdapter.delete(ref, Optional.empty());
       assertThatThrownBy(() -> databaseAdapter.namedRef(ref.getName(), GetNamedRefsParams.DEFAULT))
           .isInstanceOf(ReferenceNotFoundException.class);
-
-      refLogOpsPerRef
-          .computeIfAbsent(ref, x -> new ArrayList<>())
-          .add(tuple("DELETE_REFERENCE", refHeads.get(ref)));
     }
 
     // Verify HEAD hashes for remaining branches + tags
@@ -367,27 +348,5 @@ public abstract class AbstractReferences {
                               refHeads.getOrDefault(ref, databaseAdapter.noAncestorHash()), ref))
                   .collect(Collectors.toList()));
     }
-
-    // Verify that the CREATE_REFERENCE + DROP_REFERENCE + COMMIT reflog entries exist and are in
-    // the right order -> DROP_REFERENCE appear before CREATE_REFERENCE.
-    try (Stream<RefLog> refLog = databaseAdapter.refLog(null)) {
-      refLog
-          .filter(l -> l.getRefName().startsWith("manyReferencesTest-"))
-          .forEach(
-              l -> {
-                NamedRef ref =
-                    "Branch".equals(l.getRefType())
-                        ? BranchName.of(l.getRefName())
-                        : TagName.of(l.getRefName());
-                List<Tuple> refOps = refLogOpsPerRef.get(ref);
-                assertThat(refOps)
-                    .describedAs("RefLog operations %s for %s", refOps, l)
-                    .isNotNull()
-                    .last()
-                    .isEqualTo(tuple(l.getOperation(), l.getCommitHash()));
-                refOps.remove(refOps.size() - 1);
-              });
-    }
-    assertThat(refLogOpsPerRef).allSatisfy((ref, ops) -> assertThat(ops).isEmpty());
   }
 }
