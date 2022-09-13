@@ -38,6 +38,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -557,6 +558,30 @@ public abstract class AbstractManyKeys {
           @NessieDbAdapterConfigItem(name = "key.list.hash.load.factor", value = "0.65")
           @NessieDbAdapter
           DatabaseAdapter databaseAdapter)
+      throws Exception {
+    testManyKeysProgressive(names, databaseAdapter);
+  }
+
+  /**
+   * Same as {@link #manyKeysProgressive(List, DatabaseAdapter)} but uses zero key list size limits,
+   * which caused the "embedded" key list segment to be empty, and the external key list "entities"
+   * to have at most one entry each.
+   */
+  @ParameterizedTest
+  @MethodSource("progressivelyManyKeyNames")
+  void manyKeysProgressiveSmallLists(
+      List<String> names,
+      @NessieDbAdapterConfigItem(name = "max.key.list.size", value = "0")
+          @NessieDbAdapterConfigItem(name = "max.key.list.entity.size", value = "0")
+          @NessieDbAdapterConfigItem(name = "key.list.distance", value = "20")
+          @NessieDbAdapterConfigItem(name = "key.list.hash.load.factor", value = "0.7")
+          @NessieDbAdapter
+          DatabaseAdapter databaseAdapter)
+      throws Exception {
+    testManyKeysProgressive(names, databaseAdapter);
+  }
+
+  private void testManyKeysProgressive(List<String> names, DatabaseAdapter databaseAdapter)
       throws Exception {
     BranchName main = BranchName.of("main");
     Hash head = databaseAdapter.hashOnReference(main, Optional.empty());

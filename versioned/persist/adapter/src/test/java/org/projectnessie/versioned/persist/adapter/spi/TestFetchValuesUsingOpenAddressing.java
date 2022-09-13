@@ -178,31 +178,52 @@ public class TestFetchValuesUsingOpenAddressing {
   @ParameterizedTest
   @CsvSource({
     // Jump ahead collision in the first segment.
-    "0, 2, 0",
-    "0, 3, 0",
-    "1, 2, 0",
-    "1, 3, 0",
+    "0, 2, 0, false",
+    "0, 3, 0, false",
+    "1, 2, 0, false",
+    "1, 3, 0, false",
     // Jump ahead collision from the first segment to the last.
-    "0, 15, 3",
-    "1, 14, 3",
-    "2, 13, 3",
-    "3, 12, 3",
+    "0, 15, 3, false",
+    "1, 14, 3, false",
+    "2, 13, 3, false",
+    "3, 12, 3, false",
     // Wraparound from the first segment to a small index in the same segment.
     // Note: the first segment is scanned twice
-    "2, 0, 4",
-    "2, 1, 4",
-    "3, 2, 4",
+    "2, 0, 4, false",
+    "2, 1, 4, false",
+    "3, 2, 4, false",
     // Wraparound from the second segment to and earlier index in the same segment.
     // Note: the second segment is scanned twice
-    "5, 4, 4",
-    "7, 5, 4",
+    "5, 4, 4, false",
+    "7, 5, 4, false",
     // Wraparound from the last segment to the second.
-    "15, 6, 2",
+    "15, 6, 2, false",
     // Wraparound from the last segment to the first.
-    "15, 0, 1",
-    "14, 3, 1",
+    "15, 0, 1, false",
+    "14, 3, 1, false",
+    // Wraparound from the first segment to a small index in the same segment without embedded.
+    // One extra round is required to skip over the empty embedded segment.
+    "2, 0, 5, true",
+    "2, 1, 5, true",
+    "3, 2, 5, true",
+    // Wraparound from the last segment to the second without embedded.
+    // One extra round is required to skip over the empty embedded segment.
+    "15, 6, 3, true",
+    // Wraparound from the last segment to the second without embedded.
+    // One extra round is required to skip over the empty embedded segment.
+    "15, 0, 2, true",
+    "14, 3, 2, true",
+    // Jump ahead collision in the same segment without embedded.
+    "0, 3, 0, true",
+    "1, 2, 0, true",
+    "4, 5, 0, true",
+    "12, 15, 0, true",
+    // Jump ahead collision from the first segment to the last without embedded
+    "0, 15, 3, true",
+    "1, 14, 3, true",
   })
-  public void keyCollision(int naturalPos, int movedPos, int movedKeyFoundInRound) {
+  public void keyCollision(
+      int naturalPos, int movedPos, int movedKeyFoundInRound, boolean skipEmbedded) {
     Function<Integer, Key> bucketToKey =
         bucket -> {
           // Simulate key collision by artificially crafting their hash codes instead of bothering
@@ -223,16 +244,22 @@ public class TestFetchValuesUsingOpenAddressing {
 
     // Note: test parameters depend on these two values
     int segmentCount = 4;
-    int entrySize = 4;
+    int segmentSize = 4;
 
-    CommitLogEntry entry = getCommitFixture(entrySize, segmentCount, bucketToKey);
+    if (skipEmbedded) {
+      segmentCount++; // the embedded segment moves into the first external segment
+    }
 
-    // Validate lookup for all keys
-    for (int b = 0; b < segmentCount * entrySize; b++) {
+    CommitLogEntry entry =
+        getCommitFixture(skipEmbedded ? 0 : segmentSize, segmentSize, segmentCount, bucketToKey);
+
+    // Validate lookup for all 16 keys
+    for (int b = 0; b < 16; b++) {
       Key key = bucketToKey.apply(b);
       // Reset FetchValuesUsingOpenAddressing for each key for ease of validation
       FetchValuesUsingOpenAddressing fetch = new FetchValuesUsingOpenAddressing(entry);
       AtomicReference<KeyListEntry> hit = new AtomicReference<>();
+      Collection<Key> remaining = ImmutableList.of(key);
       // Simulate loading key lists in multiple rounds
       for (int r = 0; r < segmentCount + 1; r++) {
         // Note: Do not preload segments for each of validation
@@ -240,12 +267,13 @@ public class TestFetchValuesUsingOpenAddressing {
         hashes.forEach(
             h -> {
               int segment = Integer.parseInt(h.asString());
+              int startingBucket = (skipEmbedded ? 0 : segmentSize) + ((segment - 1) * segmentSize);
               KeyListEntity keyListEntity =
-                  getKeyListEntity(segment * entrySize, segment, entrySize, bucketToKey);
+                  getKeyListEntity(startingBucket, segment, segmentSize, bucketToKey);
               fetch.entityLoaded(keyListEntity);
             });
 
-        fetch.checkForKeys(r, ImmutableList.of(key), hit::set);
+        remaining = fetch.checkForKeys(r, remaining, hit::set);
         if (hit.get() != null) {
           if (b == movedPos) { // The moved key requires loading extra segments
             assertThat(r)
@@ -295,6 +323,11 @@ public class TestFetchValuesUsingOpenAddressing {
         .hasMessage(expectedMessage);
   }
 
+  private CommitLogEntry getCommitFixture(
+      final int segmentSize, final int segmentCount, Function<Integer, Key> bucketToKey) {
+    return getCommitFixture(segmentSize, segmentSize, segmentCount, bucketToKey);
+  }
+
   /**
    * Build a commit with fake segments of uniform size.
    *
@@ -302,25 +335,29 @@ public class TestFetchValuesUsingOpenAddressing {
    * {@linkplain Integer#MAX_VALUE}, causing lookups against them to start in the final segment at
    * round zero.
    *
+   * @param embeddedSize size in units of individual entries (not bytes) of the embedded segment
    * @param segmentSize size in units of individual entries (not bytes)
    * @param segmentCount the number of segments, including the embedded segment
    */
   private CommitLogEntry getCommitFixture(
-      final int segmentSize, final int segmentCount, Function<Integer, Key> bucketToKey) {
+      final int embeddedSize,
+      final int segmentSize,
+      final int segmentCount,
+      Function<Integer, Key> bucketToKey) {
     // Create segments of uniform size.  This list has one fewer elements than segmentCount,
     // because the initial segment corresponding to the embedded-key-list doesn't have its
     // offset recorded (somewhere on the interval [0, second-segment-offset)).
-    List<Integer> segmentOffsets = new ArrayList<>(segmentCount / segmentSize);
-    List<Hash> keyListIds = new ArrayList<>(segmentCount / segmentSize);
-    for (int i = 1; i < segmentCount; i++) {
-      segmentOffsets.add(i * segmentSize);
+    List<Integer> segmentOffsets = new ArrayList<>(segmentCount);
+    List<Hash> keyListIds = new ArrayList<>(segmentCount);
+    for (int i = 1, offset = embeddedSize; i < segmentCount; i++, offset += segmentSize) {
+      segmentOffsets.add(offset);
       String hexString = intToPaddedHexString(i);
       keyListIds.add(Hash.of(hexString));
     }
 
     // Build some keys for the embedded-key-list stored with the commit
     ImmutableKeyList.Builder embeddedKeyListBuilder = ImmutableKeyList.builder();
-    for (int i = 0; i < segmentSize; i++) {
+    for (int i = 0; i < embeddedSize; i++) {
       ImmutableKeyListEntry entry = getKeyListEntry(bucketToKey.apply(i));
       embeddedKeyListBuilder.addKeys(entry);
     }
@@ -334,7 +371,7 @@ public class TestFetchValuesUsingOpenAddressing {
         .metadata(ByteString.EMPTY)
         .keyListDistance(20)
         .keyList(embeddedKeyList)
-        .keyListBucketCount(segmentCount * segmentSize)
+        .keyListBucketCount(embeddedSize + (segmentCount - 1) * segmentSize)
         .keyListsIds(keyListIds)
         .hash(Hash.of("c0ffee"))
         .build();

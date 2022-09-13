@@ -168,6 +168,11 @@ final class FetchValuesUsingOpenAddressing {
         KeyListEntry keyListEntry = i < keys.length ? keys[i] : null;
         if (keyListEntry == null) {
           // key _not_ found
+          if (keys.length == 0 && segment == 0) {
+            // ... however, the first (embedded) segment may be empty due to size restrictions.
+            // This means its keys had to be moved to key list entities - keep searching.
+            keysForNextRound.add(key);
+          }
           break;
         } else if (keyListEntry.getKey().equals(key)) {
           resultConsumer.accept(keyListEntry);
