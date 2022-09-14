@@ -17,8 +17,9 @@ There are at least two steps to a garbage collection action. The first steps are
 
 ### Identify Unreferenced Assets
 
-This is a spark job which should be run periodically to identify no longer referenced assets. Assets are defined as the set of
-files, records, entries etc. that make up a table, view or other Nessie object. For example, iceberg assets are:
+This is a Spark job which should be run periodically to identify no longer referenced assets. Assets are defined as the set of
+files, records, entries etc. that make up a table, view or other Nessie object. For example, Iceberg assets are:
+
  * manifest files
  * manifest lists
  * data files
@@ -26,6 +27,7 @@ files, records, entries etc. that make up a table, view or other Nessie object. 
  * the entire table directory on disk (if it is empty)
 
 To be marked as unreferenced an asset must either be:
+
  1. No longer referenced by any branch or tag. For example, an entire branch was deleted, and a table on that branch is no longer accessible.
  2. Assets created in a commit which has passed the (configurable) commit age. *If they are not referenced by newer commits*
 

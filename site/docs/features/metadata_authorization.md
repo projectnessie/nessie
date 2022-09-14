@@ -147,6 +147,7 @@ nessie.server.authorization.rules.allow_listing_reflog=\
 ### Example authorization rules from Stories section
 
 As mentioned in the Stories section, a few common scenarios that are possible are:
+
 * Alice attempts to execute a query against the table `Foo` on branch `prod`. As she has read access to the table on this branch, Nessie allows the execution engine to get the table details.
 * Bob attempts to execute a query against the table `Foo` on branch `prod`. However, Bob does not have read access to the table. Nessie returns an authorization error, and the execution engine refuses to execute the query.
 * Carol has access to the content on branch `prod`, but not to the table `Foo` on this branch. Carol creates a new reference named `carol-branch` with the same hash as `prod`, and attempts to change permissions on table `Foo`. However, request is denied and Carol cannot access the content of `Foo`.

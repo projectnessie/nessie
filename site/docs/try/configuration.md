@@ -25,7 +25,7 @@ docker run -p 8080:8080 projectnessie/nessie \
 
 | Property                              | Default values | Type               | Description                                                                                                                      |
 |---------------------------------------|----------------|--------------------|----------------------------------------------------------------------------------------------------------------------------------|
-| `nessie.version.store.type`           | `INMEMORY`     | `VersionStoreType` | Sets which type of version store to use by Nessie. Possible values are: `DYNAMO`, `INMEMORY`, `ROCKS`, `MONGO`, 'TRANSACTIONAL'. |
+| `nessie.version.store.type`           | `INMEMORY`     | `VersionStoreType` | Sets which type of version store to use by Nessie. Possible values are: `DYNAMO`, `INMEMORY`, `ROCKS`, `MONGO`, `TRANSACTIONAL`. |
 | `nessie.version.store.trace.enable`   | `true`         | `boolean`          | Sets whether calls against the version-store are traced with OpenTracing/OpenTelemetry (Jaeger).                                 |
 | `nessie.version.store.metrics.enable` | `true`         | `boolean`          | Sets whether metrics for the version-store are enabled.                                                                          |
 

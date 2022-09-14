@@ -60,6 +60,7 @@ operations like commit, transplants and merges as well as retrieving data.
 
 `AbstractDatabaseAdapter` implements the commit logic, commit conflict detection and operations
 to retrieve information. There are these subclasses: 
+
 * `NonTransactionalDatabaseAdapter` is used as a base for key-value stores.
   * Implementation for DynamoDB
   * Implementation for MongoDB
@@ -121,6 +122,7 @@ FunctionResult nessieWriteOperation(parameters...) {
 ### Transactional databases
 
 The data model for transactional databases defines tables for
+
 * the _global-state_, where the primary key is the globally unique _content-id_ and the
   value of the _global-state_,
 * the _named-references_, which define the commit hash/id of the "HEAD" of each named reference,
