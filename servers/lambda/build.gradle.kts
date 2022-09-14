@@ -116,7 +116,9 @@ artifacts {
   add(
     quarkusRunner.name,
     if (withUberJar()) quarkusBuild.runnerJar else quarkusBuild.fastJar.resolve("quarkus-run.jar")
-  ) { builtBy(quarkusBuild) }
+  ) {
+    builtBy(quarkusBuild)
+  }
 }
 
 // TODO there are no integration-tests ...

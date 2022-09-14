@@ -170,7 +170,9 @@ artifacts {
       if (withUberJar()) quarkusBuild.get().runnerJar
       else quarkusBuild.get().fastJar.resolve("quarkus-run.jar")
     }
-  ) { builtBy(quarkusBuild) }
+  ) {
+    builtBy(quarkusBuild)
+  }
 }
 
 // Add the uber-jar, if built, to the Maven publication
