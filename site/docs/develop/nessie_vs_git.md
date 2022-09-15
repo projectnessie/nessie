@@ -21,7 +21,7 @@ copies. This allows several other dimensions to be substantially more powerful.
 
 While we describe the reasoning and differences above, we actually support running 
 Nessie on top of Git. In fact, the first version of Nessie was built on top of Git. 
-Once implemented, we then evaluated it against one of our key design criterion. This   
+Once implemented, we then evaluated it against one of our key design criteria. This   
 design criterion was to support commits in the situation where there are 100,000 tables
 and each table is changing every 5 minutes. (For reference, the 
 5 minutes comes from community guidance on commit speed per table for Iceberg. The 
