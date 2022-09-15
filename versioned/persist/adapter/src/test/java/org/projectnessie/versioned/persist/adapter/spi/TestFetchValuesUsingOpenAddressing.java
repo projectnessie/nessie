@@ -266,7 +266,7 @@ public class TestFetchValuesUsingOpenAddressing {
         List<Hash> hashes = fetch.entityIdsToFetch(r, 0, ImmutableList.of(key));
         hashes.forEach(
             h -> {
-              int segment = Integer.parseInt(h.asString());
+              int segment = Integer.parseInt(h.asString(), 16);
               int startingBucket = (skipEmbedded ? 0 : segmentSize) + ((segment - 1) * segmentSize);
               KeyListEntity keyListEntity =
                   getKeyListEntity(startingBucket, segment, segmentSize, bucketToKey);
@@ -439,7 +439,13 @@ public class TestFetchValuesUsingOpenAddressing {
         return false;
       }
       Key that = (Key) o;
-      return Objects.equals(elements, that.getElements());
+      boolean equals = Objects.equals(elements, that.getElements());
+      if (equals) {
+        assertThat(hashCode)
+            .describedAs("equals/hashCode mismatch between %s and %s", this, that)
+            .isEqualTo(that.hashCode());
+      }
+      return equals;
     }
 
     @Override
