@@ -140,8 +140,16 @@ final class FetchValuesUsingOpenAddressing {
       int round, Collection<Key> remainingKeys, Consumer<KeyListEntry> resultConsumer) {
     List<Key> keysForNextRound = new ArrayList<>();
     // If we've already examined every segment (implying a miss on a completely full hashmap),
-    // then return an empty collection early
-    if (keyListsArray.length <= round) {
+    // then return an empty collection early. Note that the initial segment may need to be examined
+    // twice when the key is moved in front of its natural position due to key collisions. This
+    // is achieved by the `less than` comparison with `round`. On the first round the initial
+    // segment is scanned from the natural key position. On the last round the initial segment is
+    // scanned from index zero. This may incur some extra key comparisons if the segment is full and
+    // the scanning overtakes the "natural" key position on the last round. However, this is
+    // probably a rare case and not worth complicating the lookup logic to avoid it. In any case,
+    // the double lookup in the initial segment does not cause extra I/O because the segment is
+    // pre-fetched by the time it is reused.
+    if (keyListsArray.length < round) {
       return keysForNextRound;
     }
     for (Key key : remainingKeys) {
@@ -160,6 +168,11 @@ final class FetchValuesUsingOpenAddressing {
         KeyListEntry keyListEntry = i < keys.length ? keys[i] : null;
         if (keyListEntry == null) {
           // key _not_ found
+          if (keys.length == 0 && segment == 0) {
+            // ... however, the first (embedded) segment may be empty due to size restrictions.
+            // This means its keys had to be moved to key list entities - keep searching.
+            keysForNextRound.add(key);
+          }
           break;
         } else if (keyListEntry.getKey().equals(key)) {
           resultConsumer.accept(keyListEntry);

@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -523,5 +524,89 @@ public abstract class AbstractManyKeys {
           .extracting(ContentAndState::getRefState)
           .isEqualTo(valueGen.apply(i).serialized());
     }
+  }
+
+  public static Stream<List<String>> progressivelyManyKeyNames() {
+    // The seed of `7` was chosen after a few manual tries because it caused the most test failures
+    // in the key lookup code before PR #5145, where this test was introduced.
+    Random random = new Random(7);
+    return IntStream.range(1, 100)
+        // Use two test args of the same size (with random, deterministic values)
+        .flatMap(i -> IntStream.of(i, i))
+        .mapToObj(
+            i ->
+                IntStream.range(1, i)
+                    .mapToObj(j -> Long.toString(Math.abs(random.nextLong()), Character.MAX_RADIX))
+                    .collect(Collectors.toList()));
+  }
+
+  /**
+   * Validates key construction and lookup with random, yet deterministic key names hoping to cover
+   * all edge cases and hash collisions by using a somewhat large test data set.
+   *
+   * <p>Note: the number of keys that is effective for validating the hash lookup indirectly depends
+   * on the "embedded" and "external" key list entity size limits, with which the adapter is
+   * configured.
+   */
+  @ParameterizedTest
+  @MethodSource("progressivelyManyKeyNames")
+  void manyKeysProgressive(
+      List<String> names,
+      @NessieDbAdapterConfigItem(name = "max.key.list.size", value = "2048")
+          @NessieDbAdapterConfigItem(name = "max.key.list.entity.size", value = "1000000")
+          @NessieDbAdapterConfigItem(name = "key.list.distance", value = "20")
+          @NessieDbAdapterConfigItem(name = "key.list.hash.load.factor", value = "0.65")
+          @NessieDbAdapter
+          DatabaseAdapter databaseAdapter)
+      throws Exception {
+    testManyKeysProgressive(names, databaseAdapter);
+  }
+
+  /**
+   * Same as {@link #manyKeysProgressive(List, DatabaseAdapter)} but uses zero key list size limits,
+   * which caused the "embedded" key list segment to be empty, and the external key list "entities"
+   * to have at most one entry each.
+   */
+  @ParameterizedTest
+  @MethodSource("progressivelyManyKeyNames")
+  void manyKeysProgressiveSmallLists(
+      List<String> names,
+      @NessieDbAdapterConfigItem(name = "max.key.list.size", value = "0")
+          @NessieDbAdapterConfigItem(name = "max.key.list.entity.size", value = "0")
+          @NessieDbAdapterConfigItem(name = "key.list.distance", value = "20")
+          @NessieDbAdapterConfigItem(name = "key.list.hash.load.factor", value = "0.7")
+          @NessieDbAdapter
+          DatabaseAdapter databaseAdapter)
+      throws Exception {
+    testManyKeysProgressive(names, databaseAdapter);
+  }
+
+  private void testManyKeysProgressive(List<String> names, DatabaseAdapter databaseAdapter)
+      throws Exception {
+    BranchName main = BranchName.of("main");
+    Hash head = databaseAdapter.hashOnReference(main, Optional.empty());
+    Set<Key> activeKeys = new HashSet<>();
+    for (String name : names) {
+      Key key = Key.of(name);
+      head =
+          databaseAdapter.commit(
+              ImmutableCommitParams.builder()
+                  .toBranch(main)
+                  .commitMetaSerialized(ByteString.copyFromUtf8("foo"))
+                  .expectedHead(Optional.of(head))
+                  .addPuts(
+                      KeyWithBytes.of(
+                          key,
+                          ContentId.of("id-" + name),
+                          payloadForContent(OnRefOnly.ON_REF_ONLY),
+                          DefaultStoreWorker.instance()
+                              .toStoreOnReferenceState(OnRefOnly.newOnRef("c" + name), att -> {})))
+                  .build());
+      activeKeys.add(key);
+    }
+
+    Map<Key, ContentAndState> values =
+        databaseAdapter.values(head, activeKeys, KeyFilterPredicate.ALLOW_ALL);
+    assertThat(values.keySet()).containsExactlyInAnyOrderElementsOf(activeKeys);
   }
 }

@@ -18,11 +18,8 @@ package org.projectnessie.versioned.persist.adapter.spi;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -32,11 +29,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
@@ -66,10 +66,11 @@ public class TestFetchValuesUsingOpenAddressing {
     // Create four segments with two buckets each
     // The hashes of the non-embedded/external segments will be 01, 02, and 03 (as hex strings)
     FetchValuesUsingOpenAddressing fetch =
-        new FetchValuesUsingOpenAddressing(getCommitFixture(2, 4));
+        new FetchValuesUsingOpenAddressing(
+            getCommitFixture(2, 4, KeyWithSpecificHash::withMaxIntHash));
 
     // Make a key that won't match anything in the commit
-    Key nonExistentKey = new KeyWithMaxIntHash(ImmutableList.of("foo"));
+    Key nonExistentKey = new KeyWithSpecificHash(Integer.MAX_VALUE, ImmutableList.of("foo"));
 
     // Look for a non-existent key.
     // The fake segments here are all full, so this will probe through the entire hashtable.
@@ -84,52 +85,15 @@ public class TestFetchValuesUsingOpenAddressing {
     assertEquals(ImmutableList.of(Hash.of("02")), fetch.entityIdsToFetch(3, 0, singleton));
 
     Consumer<KeyListEntry> keyHits = mock(Consumer.class);
-    fetch.entityLoaded(getKeyListEntity(3, 2));
+    fetch.entityLoaded(getKeyListEntity(6, 3, 2, KeyWithSpecificHash::withMaxIntHash));
     fetch.checkForKeys(0, singleton, keyHits);
     // Round 1 uses the embedded segment, no need to load it
     fetch.checkForKeys(1, singleton, keyHits);
-    fetch.entityLoaded(getKeyListEntity(1, 2));
+    fetch.entityLoaded(getKeyListEntity(2, 1, 2, KeyWithSpecificHash::withMaxIntHash));
     fetch.checkForKeys(2, singleton, keyHits);
-    fetch.entityLoaded(getKeyListEntity(2, 2));
+    fetch.entityLoaded(getKeyListEntity(4, 2, 2, KeyWithSpecificHash::withMaxIntHash));
     fetch.checkForKeys(3, singleton, keyHits);
     verifyNoInteractions(keyHits);
-  }
-
-  /** Test finding extant keys pushed out of the final (highest-indexed) segment by collisions. */
-  @Test
-  public void segmentWrapAroundWithPresentKey() {
-    // Create four segments with two buckets each
-    // The hashes of the non-embedded/external segments will be 01, 02, and 03 (as hex strings)
-    FetchValuesUsingOpenAddressing fetch =
-        new FetchValuesUsingOpenAddressing(getCommitFixture(2, 4));
-
-    // This element is in the zeroth bucket and the zeroth/embedded segment, but its hash would have
-    // naturally placed it in the final segment.  This simulates a hash collision in the final
-    // segment resolved by a linear probe that wrapped into the embedded segment.
-    ImmutableKeyListEntry zerothEntry = getEmbeddedEntry(0);
-
-    // Start searching at round zero, expecting to touch the final segment
-    List<Key> zerothKeySingleton = ImmutableList.of(zerothEntry.getKey());
-    assertEquals(ImmutableList.of(Hash.of("03")), fetch.entityIdsToFetch(0, 0, zerothKeySingleton));
-    fetch.entityLoaded(getKeyListEntity(3, 2));
-
-    // Checking for keys at round zero should miss, but it should return our key
-    Consumer<KeyListEntry> keyHits = mock(Consumer.class);
-    assertEquals(
-        zerothKeySingleton, fetch.checkForKeys(0, ImmutableList.of(zerothEntry.getKey()), keyHits));
-    verifyNoInteractions(keyHits);
-
-    // Continue searching at round one, expecting to wrap into the embedded segment
-    keyHits = mock(Consumer.class);
-    // entityIdsToFetch should think we want the embedded segment, and so return an empty list
-    assertEquals(Collections.EMPTY_LIST, fetch.entityIdsToFetch(1, 0, zerothKeySingleton));
-    // checkForKeys should find a hit for our one and only search key, and so return no leftovers
-    assertEquals(
-        Collections.EMPTY_LIST,
-        fetch.checkForKeys(1, ImmutableList.of(zerothEntry.getKey()), keyHits));
-    // confirm the key hit
-    verify(keyHits).accept(eq(zerothEntry));
-    verifyNoMoreInteractions(keyHits);
   }
 
   /**
@@ -152,7 +116,8 @@ public class TestFetchValuesUsingOpenAddressing {
     final int segmentCount = 4;
 
     FetchValuesUsingOpenAddressing fetch =
-        new FetchValuesUsingOpenAddressing(getCommitFixture(segmentSize, segmentCount));
+        new FetchValuesUsingOpenAddressing(
+            getCommitFixture(segmentSize, segmentCount, KeyWithSpecificHash::withMaxIntHash));
 
     for (int bucketIndex = 0; bucketIndex < segmentSize * segmentCount; bucketIndex++) {
       assertEquals(bucketIndex / segmentSize, fetch.segmentForKey(bucketIndex, 0));
@@ -175,8 +140,9 @@ public class TestFetchValuesUsingOpenAddressing {
     final int segmentSize = 2;
     final int segmentCount = 4;
 
-    final CommitLogEntry commitFixture = getCommitFixture(segmentSize, segmentCount);
-    final Key nonExistentKey = new KeyWithMaxIntHash(ImmutableList.of("foo"));
+    final CommitLogEntry commitFixture =
+        getCommitFixture(segmentSize, segmentCount, KeyWithSpecificHash::withMaxIntHash);
+    final Key nonExistentKey = new KeyWithSpecificHash(Integer.MAX_VALUE, ImmutableList.of("foo"));
 
     for (int prefetch = 0; prefetch < segmentCount * 2; prefetch++) {
       List<Hash> expectedHashes =
@@ -200,6 +166,136 @@ public class TestFetchValuesUsingOpenAddressing {
   }
 
   /**
+   * Validates key lookup in case of hash collision. Only two keys collide in each test case. The
+   * {@code natural} position refers to the key that sits in the spot designated by its hash code.
+   * The {@code moved} position refers to the key that sits in a spot that does not match its hash
+   * code. This simulates key collision at key list construction time. The "moved" key may be moved
+   * ahead or behind its natural position. The latter case happens when the search for a free spot
+   * wraps around the end of the key list.
+   *
+   * @param movedKeyFoundInRound the lookup round when the "moved" key is expected to be found.
+   */
+  @ParameterizedTest
+  @CsvSource({
+    // Jump ahead collision in the first segment.
+    "0, 2, 0, false",
+    "0, 3, 0, false",
+    "1, 2, 0, false",
+    "1, 3, 0, false",
+    // Jump ahead collision from the first segment to the last.
+    "0, 15, 3, false",
+    "1, 14, 3, false",
+    "2, 13, 3, false",
+    "3, 12, 3, false",
+    // Wraparound from the first segment to a small index in the same segment.
+    // Note: the first segment is scanned twice
+    "2, 0, 4, false",
+    "2, 1, 4, false",
+    "3, 2, 4, false",
+    // Wraparound from the second segment to and earlier index in the same segment.
+    // Note: the second segment is scanned twice
+    "5, 4, 4, false",
+    "7, 5, 4, false",
+    // Wraparound from the last segment to the second.
+    "15, 6, 2, false",
+    // Wraparound from the last segment to the first.
+    "15, 0, 1, false",
+    "14, 3, 1, false",
+    // Wraparound from the first segment to a small index in the same segment without embedded.
+    // One extra round is required to skip over the empty embedded segment.
+    "2, 0, 5, true",
+    "2, 1, 5, true",
+    "3, 2, 5, true",
+    // Wraparound from the last segment to the second without embedded.
+    // One extra round is required to skip over the empty embedded segment.
+    "15, 6, 3, true",
+    // Wraparound from the last segment to the second without embedded.
+    // One extra round is required to skip over the empty embedded segment.
+    "15, 0, 2, true",
+    "14, 3, 2, true",
+    // Jump ahead collision in the same segment without embedded.
+    "0, 3, 0, true",
+    "1, 2, 0, true",
+    "4, 5, 0, true",
+    "12, 15, 0, true",
+    // Jump ahead collision from the first segment to the last without embedded
+    "0, 15, 3, true",
+    "1, 14, 3, true",
+  })
+  public void keyCollision(
+      int naturalPos, int movedPos, int movedKeyFoundInRound, boolean skipEmbedded) {
+    Function<Integer, Key> bucketToKey =
+        bucket -> {
+          // Simulate key collision by artificially crafting their hash codes instead of bothering
+          // with real insertion.
+          String name = "ordinary-" + bucket; // no hash collision
+          int hash = bucket;
+          if (bucket == movedPos) {
+            name = "moved-" + bucket;
+            // hash collides with `naturalPos` and this key is stored at `movedPos`
+            hash = naturalPos;
+          }
+          if (bucket == naturalPos) {
+            // hash collision, the key keeps its natural spot (the name helps debugging)
+            name = "natural-" + bucket;
+          }
+          return new KeyWithSpecificHash(hash, ImmutableList.of(name));
+        };
+
+    // Note: test parameters depend on these two values
+    int segmentCount = 4;
+    int segmentSize = 4;
+
+    if (skipEmbedded) {
+      segmentCount++; // the embedded segment moves into the first external segment
+    }
+
+    CommitLogEntry entry =
+        getCommitFixture(skipEmbedded ? 0 : segmentSize, segmentSize, segmentCount, bucketToKey);
+
+    // Validate lookup for all 16 keys
+    for (int b = 0; b < 16; b++) {
+      Key key = bucketToKey.apply(b);
+      // Reset FetchValuesUsingOpenAddressing for each key for ease of validation
+      FetchValuesUsingOpenAddressing fetch = new FetchValuesUsingOpenAddressing(entry);
+      AtomicReference<KeyListEntry> hit = new AtomicReference<>();
+      Collection<Key> remaining = ImmutableList.of(key);
+      // Simulate loading key lists in multiple rounds
+      for (int r = 0; r < segmentCount + 1; r++) {
+        // Note: Do not preload segments for each of validation
+        List<Hash> hashes = fetch.entityIdsToFetch(r, 0, ImmutableList.of(key));
+        hashes.forEach(
+            h -> {
+              int segment = Integer.parseInt(h.asString(), 16);
+              int startingBucket = (skipEmbedded ? 0 : segmentSize) + ((segment - 1) * segmentSize);
+              KeyListEntity keyListEntity =
+                  getKeyListEntity(startingBucket, segment, segmentSize, bucketToKey);
+              fetch.entityLoaded(keyListEntity);
+            });
+
+        remaining = fetch.checkForKeys(r, remaining, hit::set);
+        if (hit.get() != null) {
+          if (b == movedPos) { // The moved key requires loading extra segments
+            assertThat(r)
+                .describedAs("Expected round for key " + key)
+                .isEqualTo(movedKeyFoundInRound);
+          } else { // Ordinary keys are found on the first attempt
+            assertThat(r).describedAs("Expected round for key " + key).isEqualTo(0);
+          }
+          break;
+        }
+      }
+
+      // Make sure each key is found
+      assertThat(hit.get())
+          .describedAs("Key " + key)
+          .isNotNull()
+          .extracting(KeyListEntry::getKey)
+          .isEqualTo(key);
+    }
+  }
+
+  /**
    * Check {@link FetchValuesUsingOpenAddressing#entityIdsToFetch(int, int, Collection)} for an
    * informative exception when prefetch is negative.
    *
@@ -214,15 +310,22 @@ public class TestFetchValuesUsingOpenAddressing {
         String.format("Key-list segment prefetch parameter %s cannot be negative", invalidPrefetch);
 
     FetchValuesUsingOpenAddressing fetch =
-        new FetchValuesUsingOpenAddressing(getCommitFixture(2, 4));
+        new FetchValuesUsingOpenAddressing(
+            getCommitFixture(2, 4, KeyWithSpecificHash::withMaxIntHash));
     assertThatThrownBy(
             () ->
                 fetch.entityIdsToFetch(
                     0,
                     invalidPrefetch,
-                    ImmutableList.of(new KeyWithMaxIntHash(ImmutableList.of("foo")))))
+                    ImmutableList.of(
+                        new KeyWithSpecificHash(Integer.MAX_VALUE, ImmutableList.of("foo")))))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(expectedMessage);
+  }
+
+  private CommitLogEntry getCommitFixture(
+      final int segmentSize, final int segmentCount, Function<Integer, Key> bucketToKey) {
+    return getCommitFixture(segmentSize, segmentSize, segmentCount, bucketToKey);
   }
 
   /**
@@ -232,25 +335,30 @@ public class TestFetchValuesUsingOpenAddressing {
    * {@linkplain Integer#MAX_VALUE}, causing lookups against them to start in the final segment at
    * round zero.
    *
+   * @param embeddedSize size in units of individual entries (not bytes) of the embedded segment
    * @param segmentSize size in units of individual entries (not bytes)
    * @param segmentCount the number of segments, including the embedded segment
    */
-  private CommitLogEntry getCommitFixture(final int segmentSize, final int segmentCount) {
+  private CommitLogEntry getCommitFixture(
+      final int embeddedSize,
+      final int segmentSize,
+      final int segmentCount,
+      Function<Integer, Key> bucketToKey) {
     // Create segments of uniform size.  This list has one fewer elements than segmentCount,
     // because the initial segment corresponding to the embedded-key-list doesn't have its
     // offset recorded (somewhere on the interval [0, second-segment-offset)).
-    List<Integer> segmentOffsets = new ArrayList<>(segmentCount / segmentSize);
-    List<Hash> keyListIds = new ArrayList<>(segmentCount / segmentSize);
-    for (int i = 1; i < segmentCount; i++) {
-      segmentOffsets.add(i * segmentSize);
+    List<Integer> segmentOffsets = new ArrayList<>(segmentCount);
+    List<Hash> keyListIds = new ArrayList<>(segmentCount);
+    for (int i = 1, offset = embeddedSize; i < segmentCount; i++, offset += segmentSize) {
+      segmentOffsets.add(offset);
       String hexString = intToPaddedHexString(i);
       keyListIds.add(Hash.of(hexString));
     }
 
     // Build some keys for the embedded-key-list stored with the commit
     ImmutableKeyList.Builder embeddedKeyListBuilder = ImmutableKeyList.builder();
-    for (int i = 0; i < segmentSize; i++) {
-      ImmutableKeyListEntry entry = getEmbeddedEntry(i);
+    for (int i = 0; i < embeddedSize; i++) {
+      ImmutableKeyListEntry entry = getKeyListEntry(bucketToKey.apply(i));
       embeddedKeyListBuilder.addKeys(entry);
     }
     ImmutableKeyList embeddedKeyList = embeddedKeyListBuilder.build();
@@ -263,7 +371,7 @@ public class TestFetchValuesUsingOpenAddressing {
         .metadata(ByteString.EMPTY)
         .keyListDistance(20)
         .keyList(embeddedKeyList)
-        .keyListBucketCount(segmentCount * segmentSize)
+        .keyListBucketCount(embeddedSize + (segmentCount - 1) * segmentSize)
         .keyListsIds(keyListIds)
         .hash(Hash.of("c0ffee"))
         .build();
@@ -279,20 +387,13 @@ public class TestFetchValuesUsingOpenAddressing {
     return String.format("%02x", i);
   }
 
-  /**
-   * Builds a fake {@linkplain KeyListEntity}.
-   *
-   * <p>All keys appearing in this entity have a custom hashCode() that returns {@linkplain
-   * Integer#MAX_VALUE}.
-   */
-  private static KeyListEntity getKeyListEntity(int segmentIndex, int entryCount) {
-    String prefix = "seg" + intToPaddedHexString(segmentIndex) + "_";
-
+  /** Builds a fake {@linkplain KeyListEntity}. */
+  private static KeyListEntity getKeyListEntity(
+      int startingBucket, int segmentIndex, int entryCount, Function<Integer, Key> bucketToKey) {
     ImmutableKeyList.Builder listBuilder = ImmutableKeyList.builder();
 
-    for (int i = 0; i < entryCount; i++) {
-      String keyString = prefix + i;
-      listBuilder.addKeys(getKeyListEntry(keyString));
+    for (int i = 0, bucket = startingBucket; i < entryCount; i++, bucket++) {
+      listBuilder.addKeys(getKeyListEntry(bucketToKey.apply(bucket)));
     }
 
     return ImmutableKeyListEntity.builder()
@@ -301,26 +402,27 @@ public class TestFetchValuesUsingOpenAddressing {
         .build();
   }
 
-  private static ImmutableKeyListEntry getEmbeddedEntry(int bucketIndex) {
-    return getKeyListEntry("embedded_" + bucketIndex);
-  }
-
-  private static ImmutableKeyListEntry getKeyListEntry(String keyString) {
-    Key k = new KeyWithMaxIntHash(ImmutableList.of(keyString));
+  private static ImmutableKeyListEntry getKeyListEntry(Key k) {
     return ImmutableKeyListEntry.builder()
         .key(k)
         .payload((byte) 99)
-        .contentId(ImmutableContentId.of(keyString + "_id"))
+        .contentId(ImmutableContentId.of(k + "_id"))
         .build();
   }
 
   /** All instances return {@linkplain Integer#MAX_VALUE} from {@linkplain #hashCode()}. */
-  private static class KeyWithMaxIntHash extends Key {
+  private static class KeyWithSpecificHash extends Key {
 
+    private final int hashCode;
     final List<String> elements;
 
-    public KeyWithMaxIntHash(List<String> elements) {
+    public KeyWithSpecificHash(int hashCode, List<String> elements) {
+      this.hashCode = hashCode;
       this.elements = ImmutableList.copyOf(elements);
+    }
+
+    private static Key withMaxIntHash(int bucket) {
+      return new KeyWithSpecificHash(Integer.MAX_VALUE, ImmutableList.of("" + bucket));
     }
 
     @Override
@@ -337,12 +439,23 @@ public class TestFetchValuesUsingOpenAddressing {
         return false;
       }
       Key that = (Key) o;
-      return Objects.equals(elements, that.getElements());
+      boolean equals = Objects.equals(elements, that.getElements());
+      if (equals) {
+        assertThat(hashCode)
+            .describedAs("equals/hashCode mismatch between %s and %s", this, that)
+            .isEqualTo(that.hashCode());
+      }
+      return equals;
     }
 
     @Override
     public int hashCode() {
-      return Integer.MAX_VALUE;
+      return hashCode;
+    }
+
+    @Override
+    public String toString() {
+      return "" + hashCode + ":" + super.toString();
     }
   }
 }
