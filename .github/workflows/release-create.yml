@@ -72,15 +72,6 @@ jobs:
       with:
         ref: ${{ env.RELEASE_FROM }}
 
-    # Check that the commit that is becoming a release has passed CI.
-    # Note: intentionally hard-coded projectnessie/nessie, so this check even works when *testing*
-    # the workflow on a PR-branch.
-    - name: Check commit status
-      run: |
-        GIT_HEAD_SHA="$(git rev-parse HEAD)"
-        echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
-        gh api repos/projectnessie/nessie/commits/${GIT_HEAD_SHA}/check-runs --jq 'if ([.check_runs[] | select(.name | endswith(" release") or startswith("Publish ") or startswith("Dependabot ") or startswith("codecov/") or startswith("Report ") | not ) | select(.conclusion != "skipped") | .conclusion // "pending" ] | unique == ["success"]) then "OK" else error("Commit checks are not OK") end'
-
     ### BEGIN runner setup
     - name: Setup Java, Maven
       uses: ./.github/actions/dev-tool-java
