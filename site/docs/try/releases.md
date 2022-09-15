@@ -2,6 +2,15 @@
 
 See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.
 
+## 0.43.0 Release (September 15, 2022)
+
+**Rolling upgrades from versions before 0.40.0 are not supported!**
+
+* Prepare for Nessie GC
+* Nessie export/import functionality
+* Use Graal 22.2-java17 for native images
+* Several test and build improvements
+
 ## 0.42.0 Release (August 26, 2022)
 
 **Rolling upgrades from versions before 0.40.0 are not supported!**

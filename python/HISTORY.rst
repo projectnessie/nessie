@@ -2,6 +2,14 @@
 History
 =======
 
+0.43.0 (2022-09-15)
+-------------------
+
+* Configurable timeout of HTTP calls to Nessie (defaults to 60 seconds)
+* Fix default behaviour for transplant in CLI
+* Handle merge response in CLI
+* Fix key list lookup with hash collisions
+
 0.42.0 (2022-08-26)
 -------------------
 
