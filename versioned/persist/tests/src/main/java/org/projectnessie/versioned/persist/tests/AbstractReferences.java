@@ -300,8 +300,7 @@ public abstract class AbstractReferences {
                   .collect(Collectors.toList()));
     }
 
-    // add 50 commits to every branch (crossing the number of parents per commit log entry + ref log
-    // entry)
+    // add 50 commits to every branch (crossing the number of parents per commit log entry)
     for (int commit = 0; commit < 50; commit++) {
       for (int i = 0; i < 50; i++) {
         NamedRef ref = refGen.apply(i);

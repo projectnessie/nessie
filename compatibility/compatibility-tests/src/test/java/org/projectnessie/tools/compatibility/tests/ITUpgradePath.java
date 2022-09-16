@@ -242,7 +242,20 @@ public class ITUpgradePath {
   // //////////////////////////////////////////////////////////////////////////////////////////
 
   private void expectedRefLogEntry(String op) {
-    if (version.compareTo(Version.parseVersion("0.18.0")) >= 0) {
+    if (version.isGreaterThanOrEqual(Version.parseVersion("0.18.0"))) {
+      if (version.isGreaterThanOrEqual(Version.CURRENT)) {
+        switch (op) {
+          case "CREATE_REFERENCE":
+          case "DROP_REFERENCE":
+          case "ASSIGN_REFERENCE":
+            break;
+          case "COMMIT":
+          case "MERGE":
+          case "TRANSPLANT":
+          default:
+            return;
+        }
+      }
       expectedRefLog.computeIfAbsent(versionBranch.getName(), x -> new ArrayList<>()).add(op);
     }
   }

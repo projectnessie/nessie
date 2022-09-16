@@ -115,7 +115,6 @@ import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLog
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry.Operation;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogParents;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefPointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefType;
@@ -260,15 +259,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                 return casOpResult(
                     refHead,
                     newHead,
-                    refLog ->
-                        refLog
-                            .setRefName(
-                                ByteString.copyFromUtf8(mergeParams.getToBranch().getName()))
-                            .setRefType(refHead.getType())
-                            .setCommitHash(newHead.asBytes())
-                            .setOperationTime(timeInMicros)
-                            .setOperation(RefLogEntry.Operation.MERGE)
-                            .addSourceHashes(mergeParams.getMergeFromHash().asBytes()),
+                    null,
                     () ->
                         MergeEvent.builder()
                             .previousHash(currentHead)
@@ -328,18 +319,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                 return casOpResult(
                     refHead,
                     newHead,
-                    refLog -> {
-                      refLog
-                          .setRefName(
-                              ByteString.copyFromUtf8(transplantParams.getToBranch().getName()))
-                          .setRefType(refHead.getType())
-                          .setCommitHash(newHead.asBytes())
-                          .setOperationTime(timeInMicros)
-                          .setOperation(RefLogEntry.Operation.TRANSPLANT);
-                      transplantParams
-                          .getSequenceToTransplant()
-                          .forEach(hash -> refLog.addSourceHashes(hash.asBytes()));
-                    },
+                    null,
                     () ->
                         TransplantEvent.builder()
                             .previousHash(currentHead)
@@ -385,13 +365,7 @@ public abstract class NonTransactionalDatabaseAdapter<
             return casOpResult(
                 refHead,
                 newHead,
-                refLog ->
-                    refLog
-                        .setRefName(ByteString.copyFromUtf8(commitParams.getToBranch().getName()))
-                        .setRefType(refHead.getType())
-                        .setCommitHash(newHead.asBytes())
-                        .setOperationTime(timeInMicros)
-                        .setOperation(Operation.COMMIT),
+                null,
                 () ->
                     CommitEvent.builder()
                         .previousHash(currentHead)
@@ -928,32 +902,38 @@ public abstract class NonTransactionalDatabaseAdapter<
 
         repositoryEvent(result.adapterEventBuilder);
 
-        // CAS against branch-heads succeeded, now try to write the ref-log-entry
+        if (result.refLogEntry == null) {
+          // No ref-log entry to be written
 
-        // reset the retry-loop's sleep boundaries
-        tryState.resetBounds();
-        int stripe = refLogStripeForName(ref.getName());
-        while (true) {
-          RefLogParents refLogParents = fetchRefLogParents(ctx, stripe);
+          return tryState.success(result.newHead);
+        } else {
+          // CAS against branch-heads succeeded, now try to write the ref-log-entry
 
-          RefLogEntry newRefLog = writeRefLogEntry(ctx, refLogParents, result.refLogEntry);
+          // reset the retry-loop's sleep boundaries
+          tryState.resetBounds();
+          int stripe = refLogStripeForName(ref.getName());
+          while (true) {
+            RefLogParents refLogParents = fetchRefLogParents(ctx, stripe);
 
-          RefLogParents.Builder newRefLogParents =
-              RefLogParents.newBuilder()
-                  .addRefLogParentsInclHead(newRefLog.getRefLogId())
-                  .setVersion(randomHash().asBytes());
-          newRefLog.getParentsList().stream()
-              .limit(config.getParentsPerRefLogEntry() - 1)
-              .forEach(newRefLogParents::addRefLogParentsInclHead);
+            RefLogEntry newRefLog = writeRefLogEntry(ctx, refLogParents, result.refLogEntry);
 
-          if (refLogParentsCas(ctx, stripe, refLogParents, newRefLogParents.build())) {
-            return tryState.success(result.newHead);
+            RefLogParents.Builder newRefLogParents =
+                RefLogParents.newBuilder()
+                    .addRefLogParentsInclHead(newRefLog.getRefLogId())
+                    .setVersion(randomHash().asBytes());
+            newRefLog.getParentsList().stream()
+                .limit(config.getParentsPerRefLogEntry() - 1)
+                .forEach(newRefLogParents::addRefLogParentsInclHead);
+
+            if (refLogParentsCas(ctx, stripe, refLogParents, newRefLogParents.build())) {
+              return tryState.success(result.newHead);
+            }
+
+            cleanUpRefLogWrite(ctx, Hash.of(newRefLog.getRefLogId()));
+
+            // Need to retry "forever" until the ref-log entry could be added.
+            tryState.retryEndless();
           }
-
-          cleanUpRefLogWrite(ctx, Hash.of(newRefLog.getRefLogId()));
-
-          // Need to retry "forever" until the ref-log entry could be added.
-          tryState.retryEndless();
         }
       }
     }
