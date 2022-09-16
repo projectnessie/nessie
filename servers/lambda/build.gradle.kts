@@ -60,10 +60,7 @@ dependencies {
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 }
 
-java {
-  sourceCompatibility = JavaVersion.VERSION_11
-  targetCompatibility = JavaVersion.VERSION_11
-}
+preferJava11()
 
 project.extra["quarkus.package.type"] =
   if (withUberJar()) "uber-jar" else if (project.hasProperty("native")) "native" else "fast-jar"

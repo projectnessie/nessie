@@ -51,7 +51,4 @@ dependencies {
   implementation("io.quarkiverse.amazonservices:quarkus-amazon-dynamodb")
 }
 
-java {
-  sourceCompatibility = JavaVersion.VERSION_11
-  targetCompatibility = JavaVersion.VERSION_11
-}
+preferJava11()
