@@ -95,7 +95,7 @@ public class TestIdentifyLiveContents {
                             }
                           })
                       .cutOffPolicySupplier(r -> CutoffPolicy.atTimestamp(Instant.now()))
-                      .contentToReference(
+                      .contentToContentReference(
                           (content, commitId, key) ->
                               ContentReference.icebergTable(
                                   content.getId(),
@@ -132,7 +132,7 @@ public class TestIdentifyLiveContents {
                     }
                   })
               .cutOffPolicySupplier(r -> CutoffPolicy.atTimestamp(Instant.now()))
-              .contentToReference(
+              .contentToContentReference(
                   (content, commitId, key) ->
                       ContentReference.icebergTable(
                           content.getId(),

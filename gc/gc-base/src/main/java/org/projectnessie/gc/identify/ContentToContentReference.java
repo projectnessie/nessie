@@ -22,7 +22,7 @@ import org.projectnessie.model.ContentKey;
 
 /** Converts a content-object at a specific commit/content-key to a content-reference. */
 @FunctionalInterface
-public interface ToContentReference {
+public interface ContentToContentReference {
   ContentReference contentToReference(
       @NotNull Content content, @NotNull String commitId, @NotNull ContentKey key);
 }

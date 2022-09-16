@@ -112,7 +112,7 @@ public abstract class IdentifyLiveContents {
     Builder liveContentSetsRepository(LiveContentSetsRepository liveContentSetsRepository);
 
     @CanIgnoreReturnValue
-    Builder contentToReference(ToContentReference toContentReference);
+    Builder contentToContentReference(ContentToContentReference contentToContentReference);
 
     /** Encapsulates all calls against Nessie, abstracted for testing purposes. */
     @CanIgnoreReturnValue
@@ -300,7 +300,7 @@ public abstract class IdentifyLiveContents {
                                 put,
                                 commitHash);
 
-                            return contentToReference()
+                            return contentToContentReference()
                                 .contentToReference(content, commitHash, put.getKey());
                           }));
         } else {
@@ -341,7 +341,7 @@ public abstract class IdentifyLiveContents {
             .allContents(ref, contentTypeFilter().validTypes())
             .map(
                 e ->
-                    contentToReference()
+                    contentToContentReference()
                         .contentToReference(e.getValue(), ref.getHash(), e.getKey())));
   }
 
@@ -402,7 +402,7 @@ public abstract class IdentifyLiveContents {
 
   abstract LiveContentSetsRepository liveContentSetsRepository();
 
-  abstract ToContentReference contentToReference();
+  abstract ContentToContentReference contentToContentReference();
 
   abstract RepositoryConnector repositoryConnector();
 

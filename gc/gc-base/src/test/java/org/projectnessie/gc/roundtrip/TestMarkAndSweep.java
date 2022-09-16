@@ -185,7 +185,7 @@ public class TestMarkAndSweep {
                   }
                 })
             .cutOffPolicySupplier(r -> atTimestamp(markAndSweep.cutOff))
-            .contentToReference(
+            .contentToContentReference(
                 (content, commitId, key) ->
                     ContentReference.icebergTable(
                         content.getId(),
