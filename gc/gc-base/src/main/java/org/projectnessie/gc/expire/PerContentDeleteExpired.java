@@ -90,22 +90,16 @@ public abstract class PerContentDeleteExpired {
 
     expireParameters().liveContentSet().associateBaseLocations(contentId(), baseLocations);
 
-    DeleteSummary deleteSummary =
-        baseLocations.stream()
-            .map(
-                baseLocation -> {
-                  try (Stream<FileReference> fileObjects =
-                      identifyExpiredFiles(filter, baseLocation)) {
-                    return expireParameters()
-                        .fileDeleter()
-                        .deleteMultiple(baseLocation, fileObjects);
-                  } catch (NessieFileIOException e) {
-                    throw new RuntimeException(e);
-                  }
-                })
-            .reduce(DeleteSummary.of(0, 0), DeleteSummary::add, DeleteSummary::add);
-
-    return deleteSummary;
+    return baseLocations.stream()
+        .map(
+            baseLocation -> {
+              try (Stream<FileReference> fileObjects = identifyExpiredFiles(filter, baseLocation)) {
+                return expireParameters().fileDeleter().deleteMultiple(baseLocation, fileObjects);
+              } catch (NessieFileIOException e) {
+                throw new RuntimeException(e);
+              }
+            })
+        .reduce(DeleteSummary.EMPTY, DeleteSummary::add, DeleteSummary::add);
   }
 
   /**
