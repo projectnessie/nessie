@@ -17,6 +17,7 @@ package org.projectnessie.gc.roundtrip;
 
 import static java.util.Collections.singleton;
 import static org.projectnessie.gc.identify.CutoffPolicy.atTimestamp;
+import static org.projectnessie.gc.identify.CutoffPolicy.numCommits;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 
 import com.google.common.collect.Maps;
@@ -52,6 +53,7 @@ import org.projectnessie.gc.files.FileReference;
 import org.projectnessie.gc.files.FilesLister;
 import org.projectnessie.gc.identify.ContentTypeFilter;
 import org.projectnessie.gc.identify.IdentifyLiveContents;
+import org.projectnessie.gc.identify.PerRefCutoffPolicySupplier;
 import org.projectnessie.gc.repository.RepositoryConnector;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -71,8 +73,10 @@ public class TestMarkAndSweep {
 
   static Stream<Arguments> markAndSweep() {
     return Stream.of(
-        Arguments.arguments(new MarkAndSweep(100L, 10, 2L)),
-        Arguments.arguments(new MarkAndSweep(100_000L, 10_000, 2L)));
+        Arguments.arguments(new MarkAndSweep(100L, 10, 2L, false)),
+        Arguments.arguments(new MarkAndSweep(100L, 10, 2L, true)),
+        Arguments.arguments(new MarkAndSweep(100_000L, 10_000, 2L, false)),
+        Arguments.arguments(new MarkAndSweep(100_000L, 10_000, 2L, true)));
   }
 
   static class MarkAndSweep {
@@ -82,19 +86,19 @@ public class TestMarkAndSweep {
     final String cidPrefix = "cid-";
     final URI basePath = URI.create("meep://host-and-port/data/lake/");
     final Instant now = Instant.now();
-    final Instant cutOff;
     final Instant maxFileModificationTime;
     final long newestToDeleteMillis;
     final long tooNewMillis;
+    final boolean atTimestamp;
 
-    MarkAndSweep(long numCommits, int numKeysAtCutOff, long numExpired) {
+    MarkAndSweep(long numCommits, int numKeysAtCutOff, long numExpired, boolean atTimestamp) {
       this.numCommits = numCommits;
       this.numKeysAtCutOff = numKeysAtCutOff;
       this.numExpired = numExpired;
-      this.cutOff = now.minus(numCommits - numExpired, ChronoUnit.SECONDS);
       this.maxFileModificationTime = now.minus(1, ChronoUnit.SECONDS);
       this.newestToDeleteMillis = maxFileModificationTime.toEpochMilli();
       this.tooNewMillis = maxFileModificationTime.toEpochMilli() + 1;
+      this.atTimestamp = atTimestamp;
     }
 
     @Override
@@ -106,6 +110,8 @@ public class TestMarkAndSweep {
           + numKeysAtCutOff
           + ", numExpired="
           + numExpired
+          + ", atTimestamp="
+          + atTimestamp
           + '}';
     }
 
@@ -161,6 +167,11 @@ public class TestMarkAndSweep {
     long liveContentsCount() {
       return numCommits + numKeysAtCutOff - numExpired;
     }
+
+    PerRefCutoffPolicySupplier cutOffPolicySupplier() {
+      Instant cutOff = now.minus(numCommits - numExpired, ChronoUnit.SECONDS);
+      return atTimestamp ? r -> atTimestamp(cutOff) : r -> numCommits((int) numCommits);
+    }
   }
 
   @ParameterizedTest
@@ -184,7 +195,7 @@ public class TestMarkAndSweep {
                     return singleton(ICEBERG_TABLE);
                   }
                 })
-            .cutOffPolicySupplier(r -> atTimestamp(markAndSweep.cutOff))
+            .cutOffPolicySupplier(markAndSweep.cutOffPolicySupplier())
             .contentToContentReference(
                 (content, commitId, key) ->
                     ContentReference.icebergTable(
