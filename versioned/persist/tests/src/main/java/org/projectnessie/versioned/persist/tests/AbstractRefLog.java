@@ -180,23 +180,19 @@ public abstract class AbstractRefLog {
       for (int i = 0; i < 50; i++) {
         NamedRef ref = refGen.apply(i);
         if (ref instanceof BranchName) {
-          Hash newHead =
-              databaseAdapter.commit(
-                  ImmutableCommitParams.builder()
-                      .toBranch((BranchName) ref)
-                      .commitMetaSerialized(ByteString.copyFromUtf8("foo"))
-                      .addPuts(
-                          KeyWithBytes.of(
-                              Key.of("table", "c" + commit),
-                              ContentId.of("c" + commit),
-                              payloadForContent(OnRefOnly.ON_REF_ONLY),
-                              DefaultStoreWorker.instance()
-                                  .toStoreOnReferenceState(
-                                      OnRefOnly.newOnRef("c" + commit), att -> {})))
-                      .build());
-          refLogOpsPerRef
-              .computeIfAbsent(ref, x -> new ArrayList<>())
-              .add(tuple("COMMIT", newHead));
+          databaseAdapter.commit(
+              ImmutableCommitParams.builder()
+                  .toBranch((BranchName) ref)
+                  .commitMetaSerialized(ByteString.copyFromUtf8("foo"))
+                  .addPuts(
+                      KeyWithBytes.of(
+                          Key.of("table", "c" + commit),
+                          ContentId.of("c" + commit),
+                          payloadForContent(OnRefOnly.ON_REF_ONLY),
+                          DefaultStoreWorker.instance()
+                              .toStoreOnReferenceState(
+                                  OnRefOnly.newOnRef("c" + commit), att -> {})))
+                  .build());
         }
       }
     }
