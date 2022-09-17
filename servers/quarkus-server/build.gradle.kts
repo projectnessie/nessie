@@ -100,10 +100,7 @@ dependencies {
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 }
 
-java {
-  sourceCompatibility = JavaVersion.VERSION_11
-  targetCompatibility = JavaVersion.VERSION_11
-}
+preferJava11()
 
 val openApiSpecDir = project.buildDir.resolve("openapi-extra").relativeTo(project.projectDir)
 
