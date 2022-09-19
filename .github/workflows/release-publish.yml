@@ -118,48 +118,22 @@ jobs:
         MAVEN_OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
         MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
       run: |
-        if [[ -f build.gradle.kts ]] ; then
-          echo "::group::Publish to Sonatype"
-          ./gradlew --no-watch-fs --no-daemon publishToMavenLocal publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar
-          echo "::endgroup::"
-  
-          # Build the native-image, it's not released to Maven Central
-          echo "::group::Build native image"
-          ./gradlew --no-watch-fs --no-daemon :nessie-quarkus:quarkusBuild -Prelease -Pnative -Pdocker
-          echo "::endgroup::"
-  
-          # Add version to the openapi file name
-          cp model/build/resources/main/META-INF/openapi/openapi.yaml model/build/nessie-openapi-${RELEASE_VERSION}.yaml
-  
-          echo "QUARKUS_NATIVE_BINARY=servers/quarkus-server/build/nessie-quarkus-${RELEASE_VERSION}-runner" >> ${GITHUB_ENV}
-          echo "QUARKUS_UBER_JAR=servers/quarkus-server/build/nessie-quarkus-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
-          echo "CLI_UBER_JAR=servers/quarkus-cli/build/nessie-quarkus-cli-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
-          echo "NESSIE_OPENAPI=model/build/nessie-openapi-${RELEASE_VERSION}.yaml" >> ${GITHUB_ENV}
-        else
-          NEXUS_ARGS="-DnexusUrl=https://oss.sonatype.org -DserverId=ossrh -DautoReleaseAfterClose=true"
-          PROFILES="-Puber-jar -Prelease"
-          GOALS="install org.sonatype.plugins:nexus-staging-maven-plugin:1.6.8:deploy"
-          BUILD_ARGS="-DskipTests -Dmaven.deploy.skip -Dgpg.skip"
-        
-          echo "::group::Publish to Sonatype"
-          ./mvnw --batch-mode ${GOALS} ${PROFILES} ${NEXUS_ARGS} ${BUILD_ARGS}
-          echo "::endgroup::"
-        
-          echo "::group::Build native image"
-          # Build the native-image, it's not released to Maven Central anyway
-          PROFILES="-Pnative -Pdocker"
-          BUILD_ARGS="-DskipTests -Dquarkus.native.remote-container-build=true -Dquarkus.native.container-build=false -Dquarkus.native.native-image-xmx=6g"
-          ./mvnw --batch-mode install ${PROFILES} ${BUILD_ARGS} -pl servers/quarkus-server
-          echo "::endgroup::"
-  
-          # Add version to the openapi file name
-          cp model/target/classes/META-INF/openapi/openapi.yaml model/target/nessie-openapi-${RELEASE_VERSION}.yaml
-  
-          echo "QUARKUS_NATIVE_BINARY=servers/quarkus-server/target/nessie-quarkus-${RELEASE_VERSION}-runner" >> ${GITHUB_ENV}
-          echo "QUARKUS_UBER_JAR=servers/quarkus-server/target/nessie-quarkus-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
-          echo "CLI_UBER_JAR=servers/quarkus-cli/target/nessie-quarkus-cli-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
-          echo "NESSIE_OPENAPI=model/target/nessie-openapi-${RELEASE_VERSION}.yaml" >> ${GITHUB_ENV}
-        fi
+        echo "::group::Publish to Sonatype"
+        ./gradlew --no-watch-fs --no-daemon publishToMavenLocal publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar
+        echo "::endgroup::"
+
+        # Build the native-image, it's not released to Maven Central
+        echo "::group::Build native image"
+        ./gradlew --no-watch-fs --no-daemon :nessie-quarkus:quarkusBuild -Prelease -Pnative -Pdocker
+        echo "::endgroup::"
+
+        # Add version to the openapi file name
+        cp model/build/resources/main/META-INF/openapi/openapi.yaml model/build/nessie-openapi-${RELEASE_VERSION}.yaml
+
+        echo "QUARKUS_NATIVE_BINARY=servers/quarkus-server/build/nessie-quarkus-${RELEASE_VERSION}-runner" >> ${GITHUB_ENV}
+        echo "QUARKUS_UBER_JAR=servers/quarkus-server/build/nessie-quarkus-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
+        echo "CLI_UBER_JAR=servers/quarkus-cli/build/nessie-quarkus-cli-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
+        echo "NESSIE_OPENAPI=model/build/nessie-openapi-${RELEASE_VERSION}.yaml" >> ${GITHUB_ENV}
 
         echo "## Successfully released ${RELEASE_VERSION} to Sonatype" >> $GITHUB_STEP_SUMMARY
 
