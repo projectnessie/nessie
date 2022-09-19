@@ -13,10 +13,11 @@
 # limitations under the License.
 
 
-# Projectnessie Update development version on 'main'
+# Projectnessie Update development version on 'main' (or another branch) to the next
+# patch/minor/major version as a -SNAPSHOT version.
 
-# Manually triggered workflow, takes the "next-version" argument.
-# This workflow creates the git commit to bump the development version.
+# Manually triggered workflow, takes the optional "bumpType" and "bumpBranch" arguments.
+# This workflow creates a Git commit to bump the development version.
 
 # Secrets:
 #   NESSIE_BUILDER  GH access-token to push the release-commits+tag to the branch,
@@ -28,33 +29,34 @@ on:
   # Manually triggered
   workflow_dispatch:
     inputs:
-      nextVersion:
-        description: 'The new version - e.g. `0.5.0`'
+      bumpType:
+        description: 'Bump what (`patch`, `minor`, `major`), defaults to `patch`'
         required: true
+        type: string
+        default: "patch"
+      bumpBranch:
+        description: 'The branch name to bump the version in, leave empty to bump the version on the `main` branch.'
+        required: true
+        type: string
+        default: "main"
 
 jobs:
   create-release:
     name: Bump version
     runs-on: ubuntu-20.04
     env:
-      NEXT_VERSION: ${{ github.event.inputs.nextVersion }}
+      BUMP_ON_BRANCH: ${{ github.event.inputs.bumpBranch }}
+      BUMP_TYPE: ${{ github.event.inputs.bumpType }}
 
     steps:
-
-    # Check the given version parameter strings for valid version patterns and inequality.
-    - name: Check parameters
-      run: |
-        # check if tag matches patterns like nessie-0.5, nessie-0.10.4.3-alpha1, etc
-        if [[ ${NEXT_VERSION} =~ ^[0-9]+[.][0-9.]*[0-9](-[a-zA-Z0-9]+)?$ ]]; then
-          echo "Parameter check OK"
-        else
-          echo "NEXT_VERSION is not a valid release version."
-          exit 1
-        fi
 
     ### BEGIN runner setup
     - name: Checkout
       uses: actions/checkout@v3
+      with:
+        ref: ${{ env.BUMP_ON_BRANCH }}
+    - name: Setup Java, Maven
+      uses: ./.github/actions/dev-tool-java
     - name: Setup Python
       uses: ./.github/actions/dev-tool-python
       with:
@@ -68,32 +70,18 @@ jobs:
         python3 -m pip install -r python/requirements.txt
     ### END runner setup
 
-    - name: Bump Python version ${{ github.event.inputs.releaseVersion }}
-      working-directory: ./python
-      run: |
-        # bump2version 1.0.1 has a bug: https://github.com/c4urself/bump2version/issues/30
-        if [[ "$(cd python/ ; python -c 'import pynessie; print(pynessie.__version__)')" != ${NEXT_VERSION} ]] ; then
-          bump2version --no-commit --no-tag --new-version ${NEXT_VERSION} minor
-          # Call into pynessie to ensure bump2version didn't mess up anything
-          echo "pynessie at release-version $(python -c 'import pynessie; print(pynessie.__version__)')"
-        else
-          echo "pynessie already at release-version ${NEXT_VERSION}"
-        fi
+    - name: Bump to version
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: :bumpVersion --bumpType ${BUMP_TYPE}
 
-    # Update ui-version to next development iteration
-    - name: Bump UI to next development version
-      working-directory: ./ui
-      env:
-        NEXT_UI_VERSION: ${{ env.NEXT_VERSION }}-snapshot
-      run: |
-        cp package.json /tmp/nessie-ui-package.json
-        cp package-lock.json /tmp/nessie-ui-package-lock.json
-        cat /tmp/nessie-ui-package.json | jq ".version = \"${NEXT_UI_VERSION}\"" > package.json
-        cat /tmp/nessie-ui-package-lock.json | jq ".version = \"${NEXT_UI_VERSION}\" | .packages[\"\"].version = \"${NEXT_UI_VERSION}\"" > package-lock.json
+    - name: Get bumped version information
+      run: echo "NEXT_VERSION=$(cat version.txt | sed 's/-SNAPSHOT//')" >> ${GITHUB_ENV}
 
-    # Update versions in version.txt to next development iteration
-    - name: Bump to next development version version
-      run: echo "${NEXT_VERSION}-SNAPSHOT" > version.txt
+    - name: Bump versions for Python, site/, helm and UI
+      uses: ./.github/actions/bump-versions
+      with:
+        new-version: ${{ env.NEXT_VERSION }}
 
     - name: Configure bump-version-bot-user in git config
       run: |
@@ -104,14 +92,21 @@ jobs:
     - name: Record next development version in git
       run: git commit -a -m "[bump-version] bump to ${NEXT_VERSION}-SNAPSHOT"
 
-    # Record the next development iteration in git
-    - name: Show Git log
-      run: git log -n2
+    - name: Version information
+      run: |
+        CURRENT_VERSION=$(cat version.txt)
 
-    # Push the 2 git commits and git tag. If this one fails, some other commit was pushed to the
+        cat <<! >> $GITHUB_STEP_SUMMARY
+        ## Version information
+
+        | **Previous Nessie version** | ${CURRENT_VERSION}        |
+        | **Bump type**               | ${BUMP_TYPE}              |
+        | Git HEAD                    | \`$(git rev-parse HEAD)\` |
+        !
+
+    # Push the Git commit. If this one fails, some other commit was pushed to the
     # 'main' branch and break the linear history for the Nessie git repo.
-    # The `release-publish.yml` job will run when the release tag `nessie-x.y.z` has been pushed.
-    - name: Push
+    - name: Push Git commit
       run: |
         # Push directly using the remote repo URL, which includes the secret so this job can push to the repo
         UPSTREAM="https://${{ secrets.NESSIE_BUILDER }}@github.com/${GITHUB_REPOSITORY}.git"
@@ -119,7 +114,7 @@ jobs:
         # Move the default auth settings in ~/.gitconfig out of the way, so the git-push can use the token
         git config --rename-section http.https://github.com/ http.https://save.github.com/
 
-        git push --no-verify "${UPSTREAM}" HEAD:${GITHUB_REF} ${GIT_TAG}
+        git push --no-verify "${UPSTREAM}" HEAD:${GITHUB_REF}
 
         # Move the default auth settings in ~/.gitconfig back
         git config --rename-section http.https://save.github.com/ http.https://github.com/

@@ -15,14 +15,12 @@
 
 # Projectnessie GitHub Release workflow
 
-# Manually triggered workflow, takes the "release-version" argument.
+# Creates a release tag for the current in-tree version from the main or another branch.
 
 # This workflow creates the git commits + git tag for a Nessie release.
-# It requires a fully successful CI status of the commit going to be released, i.e. we rely on
-# the "Main CI" workflow here.
 
 # When this workflow pushes the release tag (e.g. `nessie-0.5.1`), the `release-publish.yml`
-# workflow publishes the release artifacts
+# workflow publishes the release artifacts.
 
 # Projectnessie really prefers a linear git history - aka no merges. PRs must not be merged
 # while the release workflow runs. In case the git history would not be linear, this workflow will
@@ -38,12 +36,14 @@ on:
   # Manually triggered
   workflow_dispatch:
     inputs:
-      releaseVersion:
-        description: 'The version to release - e.g. `0.5.0`'
-        required: true
       releaseFromBranch:
         description: 'The branch name the release from, leave empty to release from latest commit on main.'
         required: false
+      bumpType:
+        description: 'Optional: bump patch, minor or major version (`patch`, `minor`, `major`). Default is `none` to release the current in-tree SNAPSHOT version.'
+        required: true
+        type: string
+        default: "none"
 
 jobs:
   create-release:
@@ -51,28 +51,16 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       RELEASE_FROM: ${{ github.event.inputs.releaseFromBranch }}
-      GIT_TAG: nessie-${{ github.event.inputs.releaseVersion }}
-      RELEASE_VERSION: ${{ github.event.inputs.releaseVersion }}
+      BUMP_TYPE: ${{ github.event.inputs.bumpType }}
 
     steps:
 
-    # Check the given version parameter strings for valid version patterns and inequality.
-    - name: Check parameters
-      run: |
-        # check if tag matches patterns like nessie-0.5, nessie-0.10.4.3-alpha1, etc
-        if [[ ${RELEASE_VERSION} =~ ^[0-9]+[.][0-9.]*[0-9](-[a-zA-Z0-9]+)?$ ]]; then
-          echo "Parameter check OK"
-        else
-          echo "RELEASE_VERSION is not a valid release version."
-          exit 1
-        fi
-
+    ### BEGIN runner setup
     - name: Checkout
       uses: actions/checkout@v3
       with:
         ref: ${{ env.RELEASE_FROM }}
-
-    ### BEGIN runner setup
+        fetch-depth: '0'
     - name: Setup Java, Maven
       uses: ./.github/actions/dev-tool-java
     - name: Setup Python
@@ -88,55 +76,99 @@ jobs:
         python3 -m pip install -r python/requirements.txt
     ### END runner setup
 
-    # Two steps that verify that the HISTORY.rst, server-upgrade.md and releases.md files contain
-    # information about the release
+    - name: Bump to release version
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: :bumpVersion --bumpType ${BUMP_TYPE} --bumpToRelease
+
+    - name: Get release version
+      run: |
+        RELEASE_VERSION=$(cat version.txt)
+        LAST_TAG=$(git describe --abbrev=0 --tags --match=nessie-*)
+
+        echo "LAST_TAG=${LAST_TAG}" >> ${GITHUB_ENV}
+        echo "RELEASE_VERSION=${RELEASE_VERSION}" >> ${GITHUB_ENV}
+        echo "GIT_TAG=nessie-${RELEASE_VERSION}" >> ${GITHUB_ENV}
+
+        cat <<! >> $GITHUB_STEP_SUMMARY
+        ## About to release
+        
+        Version information right before the Git release tag and commit:
+
+        | **Nessie release version** | ${RELEASE_VERSION}        | 
+        | **Git tag name**           | \`${GIT_TAG}\`            | 
+        | **Previous Git tag**       | \`${LAST_TAG}\`           | 
+        | **Release from branch**    | ${RELEASE_FROM}           | 
+        | **Bump type**              | ${BUMP_TYPE}              |
+        | Before release Git HEAD    | \`$(git rev-parse HEAD)\` |
+        !
+
+    # Two steps that verify that the README.md, SECURITY.md and server-upgrade.md files contain
+    # information about the release, ignoring the patch version
     - name: Check release version number in text files
       run: |
         FAILS=""
-        VERSION_PATTERH="$(echo ${RELEASE_VERSION} | sed 's/\./\\./g' )"
-        grep -q "^${VERSION_PATTERH} [(][0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9][)]$" < python/HISTORY.rst || FAILS="${FAILS} python/HISTORY.rst"
-        grep -q "^## ${VERSION_PATTERH} Release [(][A-Z][a-z]* [0-9][0-9]*, [0-9][0-9][0-9][0-9][)]$" < site/docs/try/releases.md || FAILS="${FAILS} site/docs/try/releases.md"
-        grep -q " ${VERSION_PATTERH} " < site/docs/try/server-upgrade.md || FAILS="${FAILS} site/docs/try/server-upgrade.md"
-        grep -q "^| ${VERSION_PATTERH} .*check_mark.*$" < SECURITY.md || FAILS="${FAILS} SECURITY.md"
+        # version pattern without patch version
+        VERSION_PATTERN="$(echo ${RELEASE_VERSION} | sed 's/\([^.]*\)[.]\([^.]*\)[.].*/\1\\.\2/')\\."
+        grep -q " ${VERSION_PATTERN}" < site/docs/try/server-upgrade.md || FAILS="${FAILS} site/docs/try/server-upgrade.md"
+        grep -q "^| ${VERSION_PATTERN}" < README.md || FAILS="${FAILS} README.md"
+        grep -q "^| ${VERSION_PATTERN}.* .*check_mark.*$" < SECURITY.md || FAILS="${FAILS} SECURITY.md"
         if [[ -n ${FAILS} ]] ; then
-          echo ${FAILS} "do not contain the release version ${RELEASE_VERSION}."
+          echo ${FAILS} "do not match the version pattern ${VERSION_PATTERN}."
           exit 1
         fi
 
-    - name: Bump Python release version ${{ github.event.inputs.releaseVersion }}
-      working-directory: ./python
-      run: |
-        # bump2version 1.0.1 has a bug: https://github.com/c4urself/bump2version/issues/214
-        if [[ "$(cd python/ ; python -c 'import pynessie; print(pynessie.__version__)')" != ${RELEASE_VERSION} ]] ; then
-          bump2version --no-commit --no-tag --new-version ${RELEASE_VERSION} minor
-          # Call into pynessie to ensure bump2version didn't mess up anything
-          echo "pynessie at release-version $(python -c 'import pynessie; print(pynessie.__version__)')"
-        else
-          echo "pynessie already at release-version ${RELEASE_VERSION}"
-        fi
+    - name: Bump versions for Python, site/, helm and UI
+      uses: ./.github/actions/bump-versions
+      with:
+        new-version: ${{ env.RELEASE_VERSION }}
 
-    - name: Bump versions in site/ to ${{ github.event.inputs.releaseVersion }}
-      working-directory: ./site
+    # Updates the site/docs/try/releases.md file, takes the first four lines (the big heading),
+    # adds a heading with the version and a note referencing the release notes on GitHub,
+    # followed by the Git change log, finalized with the remainder of the
+    # previous site/docs/try/releases.md file.
+    - name: Update releases.md file
       run: |
-        cp mkdocs.yml /tmp/nessie-mkdocs.yml
-        cat /tmp/nessie-mkdocs.yml | sed "s/^    java: [0-9.]*$/    java: ${RELEASE_VERSION}/" | sed "s/^    python: v[0-9.]*$/    python: v${RELEASE_VERSION}/"> mkdocs.yml
+        head -4 site/docs/try/releases.md > /tmp/releases.md
+        cat <<!  >> /tmp/releases.md
+        ## ${RELEASE_VERSION} Release ($(date '+%B %d, %Y'))
+        
+        See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-${RELEASE_VERSION}).
+        
+        !
+        
+        git log --perl-regexp --author '^(?!.*dependabot(-preview)?|.*nessie-release-workflow).*$'\
+          --format='format:* %s' ${LAST_TAG}..HEAD |\
+          grep -v '^\* \[release\] .*$' >> /tmp/releases.md
+        
+        tail +4 site/docs/try/releases.md >> /tmp/releases.md
+        
+        cp /tmp/releases.md site/docs/try/releases.md
+        rm /tmp/releases.md
 
-    - name: Bump version in helm/nessie to ${{ github.event.inputs.releaseVersion }}
-      working-directory: ./helm/nessie
+    # Updates the python/HISTORY.rst file, takes the first four lines (the big heading),
+    # adds a heading with the version and a single item referencing the release notes on GitHub,
+    # followed by the Git change log for the python/ directory, finalized with the remainder of the
+    # previous python/HISTORY.rst file.
+    - name: Update HISTORY.rst file
       run: |
-        cp Chart.yaml /tmp/nessie-Chart.yaml
-        cat /tmp/nessie-Chart.yaml | sed "s/^version: [0-9.]*$/version: ${RELEASE_VERSION}/" > Chart.yaml
-
-    - name: Bump UI release version ${{ github.event.inputs.releaseVersion }}
-      working-directory: ./ui
-      run: |
-        cp package.json /tmp/nessie-ui-package.json
-        cp package-lock.json /tmp/nessie-ui-package-lock.json
-        cat /tmp/nessie-ui-package.json | jq ".version = \"${RELEASE_VERSION}\"" > package.json
-        cat /tmp/nessie-ui-package-lock.json | jq ".version = \"${RELEASE_VERSION}\" | .packages[\"\"].version = \"${RELEASE_VERSION}\"" > package-lock.json
-
-    - name: Bump to release version ${{ github.event.inputs.releaseVersion }}
-      run: echo "${RELEASE_VERSION}" > version.txt
+        head -4 python/HISTORY.rst > /tmp/HISTORY.rst
+        HEAD="${RELEASE_VERSION} ($(date '+%Y-%m-%d'))"
+        cat <<!  >> /tmp/HISTORY.rst
+        ${HEAD}
+        $(echo -n $HEAD | sed 's/./-/g')
+        
+        * See release notes and changelog on GitHub: https://github.com/projectnessie/nessie/releases/tag/nessie-${RELEASE_VERSION}
+        !
+        
+        git log --perl-regexp --author '^(?!.*dependabot(-preview)?|.*nessie-release-workflow).*$'\
+          --format='format:* %s' ${LAST_TAG}..HEAD python/ |\
+          grep -v '^\* \[release\] .*$' >> /tmp/HISTORY.rst
+        
+        tail +4 python/HISTORY.rst >> /tmp/HISTORY.rst
+        
+        cp /tmp/HISTORY.rst python/HISTORY.rst
+        rm /tmp/HISTORY.rst
 
     - name: Configure release-bot-user in git config
       run: |
@@ -144,40 +176,54 @@ jobs:
         git config --global user.name "Nessie Release Workflow [bot]"
 
     # Record the release-version in git and add the git tag for the release.
-    - name: Record ${{ github.event.inputs.releaseVersion }} release in git
+    - name: Record ${{ env.RELEASE_VERSION }} release in git
       run: |
         git commit -a -m "[release] release nessie-${RELEASE_VERSION}"
-        git tag -f ${GIT_TAG}
+        git tag -f -a -m "Release ${RELEASE_VERSION} from ${RELEASE_FROM} with bump-type ${BUMP_TYPE}" ${GIT_TAG}
 
-    # Update versions to next development iteration, use bump2version as the "source of truth" here
-    - name: Set Python to next development version version
-      id: next_version
-      working-directory: ./python
+        cat <<! >> $GITHUB_STEP_SUMMARY
+        ## Release version information
+        
+        Version information after the Git release tag:
+        
+        | **Nessie release version** | ${RELEASE_VERSION}        | 
+        | **Git tag name**           | \`${GIT_TAG}\`\           | 
+        | **Previous Git tag**       | \`${LAST_TAG}\`           | 
+        | **Release from branch**    | ${RELEASE_FROM}           | 
+        | **Bump type**              | ${BUMP_TYPE}              |
+        | Release Git HEAD           | \`$(git rev-parse HEAD)\` |
+        !
+
+    # Bump to the next patch version as a SNAPSHOT
+    - name: Bump to next patch version
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: bumpToNextPatchVersion
+
+    - name: Get next patch version
+      run: echo "NEXT_VERSION=$(cat version.txt | sed 's/-SNAPSHOT//')" >> ${GITHUB_ENV}
+
+    # Record the next development iteration in Git
+    - name: Record next development version in Git
+      run: git commit -a -m "[release] next development iteration ${NEXT_VERSION}"
+
+    - name: Get next patch version
       run: |
-        bump2version --no-commit --no-tag patch
-        # Call into pynessie to ensure bump2version didn't mess up anything. See https://github.com/c4urself/bump2version/issues/214
-        NEXT_VERSION="$(python -c 'import pynessie; print(pynessie.__version__)')"
-        echo "pynessie at next development iteration ${NEXT_VERSION}"
+        NEXT_VERSION=$(cat version.txt | sed 's/-SNAPSHOT//')
         echo "NEXT_VERSION=${NEXT_VERSION}" >> ${GITHUB_ENV}
 
-    # Update ui-version to next development iteration
-    - name: Bump UI to next development version
-      working-directory: ./ui
-      env:
-        NEXT_UI_VERSION: ${{ env.NEXT_VERSION }}-snapshot
-      run: |
-        cp package.json /tmp/nessie-ui-package.json
-        cp package-lock.json /tmp/nessie-ui-package-lock.json
-        cat /tmp/nessie-ui-package.json | jq ".version = \"${NEXT_UI_VERSION}\"" > package.json
-        cat /tmp/nessie-ui-package-lock.json | jq ".version = \"${NEXT_UI_VERSION}\" | .packages[\"\"].version = \"${NEXT_UI_VERSION}\"" > package-lock.json
+        cat <<! >> $GITHUB_STEP_SUMMARY
+        ## Next development version information
 
-    # Update versions in version.txt to next development iteration
-    - name: Bump to next development version version
-      run: echo "${NEXT_VERSION}-SNAPSHOT" > version.txt
+        | **Nessie development version**   | ${NEXT_VERSION}           |
+        | **\`version.txt\` content**      | \`$(cat version.txt)\`    |
+        | Git HEAD                         | \`$(git rev-parse HEAD)\` |
+        !
 
-    # Record the next development iteration in git
-    - name: Record next development version in git
-      run: git commit -a -m "[release] next development iteration"
+    - name: Bump versions for Python, site/, helm and UI
+      uses: ./.github/actions/bump-versions
+      with:
+        new-version: ${{ env.NEXT_VERSION }}
 
     # Push the 2 git commits and git tag. If this one fails, some other commit was pushed to the
     # 'main' branch and break the linear history for the Nessie git repo.

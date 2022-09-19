@@ -57,6 +57,14 @@ dependencies {
   implementation("org.projectnessie.buildsupport:reflection-config:$versionNessieBuildPlugins")
   implementation("org.projectnessie.buildsupport:smallrye-openapi:$versionNessieBuildPlugins")
   implementation("org.projectnessie.buildsupport:spotless:$versionNessieBuildPlugins")
+
+  testImplementation(platform("org.junit:junit-bom:5.9.0"))
+  testImplementation("org.assertj:assertj-core:3.23.1")
+  testImplementation("org.junit.jupiter:junit-jupiter-api")
+  testImplementation("org.junit.jupiter:junit-jupiter-params")
+  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 }
 
 kotlinDslPluginOptions { jvmTarget.set(JavaVersion.VERSION_11.toString()) }
+
+tasks.withType<Test>().configureEach { useJUnitPlatform() }

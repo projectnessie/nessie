@@ -23,6 +23,8 @@ plugins {
   id("io.github.gradle-nexus.publish-plugin")
 }
 
+apply<ReleaseSupportPlugin>()
+
 extra["maven.name"] = "Nessie"
 
 description = "Transactional Catalog for Data Lakes"
