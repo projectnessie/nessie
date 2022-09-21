@@ -1,6 +1,6 @@
 # Releases
 
-See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.
+**See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
 ## 0.43.0 Release (September 15, 2022)
 
