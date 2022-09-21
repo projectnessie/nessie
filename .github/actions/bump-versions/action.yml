@@ -1,0 +1,47 @@
+name: 'Bump versions'
+description: 'Updates versions for Python, UI, helm + site'
+inputs:
+  new-version:
+    required: true
+    description: 'Version to bump to'
+runs:
+  using: "composite"
+  steps:
+    - name: Bump Python release version ${{ inputs.new-version }}
+      shell: bash
+      working-directory: ./python
+      env:
+        NEW_VERSION: ${{ inputs.new-version }}
+      run: |
+        # bump2version 1.0.1 has a bug: https://github.com/c4urself/bump2version/issues/214
+        if [[ "$(cd python/ ; python -c 'import pynessie; print(pynessie.__version__)')" != ${NEW_VERSION} ]] ; then
+          bump2version --no-commit --no-tag --allow-dirty --new-version ${NEW_VERSION} minor
+          # Call into pynessie to ensure bump2version didn't mess up anything
+          echo "pynessie at release-version $(python -c 'import pynessie; print(pynessie.__version__)')"
+        else
+          echo "pynessie already at release-version ${NEW_VERSION}"
+        fi
+
+    - name: Bump versions in site/ to ${{ inputs.new-version }}
+      shell: bash
+      env:
+        NEW_VERSION: ${{ inputs.new-version }}
+      run: |
+        sed -i "s/^    java: [0-9.]*$/    java: ${NEW_VERSION}/"  site/mkdocs.yml
+        sed -i "s/^    python: v[0-9.]*$/    python: v${NEW_VERSION}/" site/mkdocs.yml
+
+    - name: Bump version in helm/nessie to ${{ inputs.new-version }}
+      shell: bash
+      env:
+        NEW_VERSION: ${{ inputs.new-version }}
+      run: |
+        sed -i "s/^version: [0-9.]*$/version: ${NEW_VERSION}/" helm/nessie/Chart.yaml
+
+    - name: Bump UI release version ${{ inputs.new-version }}
+      shell: bash
+      working-directory: ./ui
+      env:
+        NEW_VERSION: ${{ inputs.new-version }}
+      run: |
+        jq ".version = \"${NEW_VERSION}\"" < package.json > /tmp/package.json && mv /tmp/package.json package.json
+        jq ".version = \"${NEW_VERSION}\" | .packages[\"\"].version = \"${NEW_VERSION}\"" < package-lock.json > /tmp/package-lock.json && mv /tmp/package-lock.json package-lock.json
