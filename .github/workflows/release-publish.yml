@@ -65,7 +65,7 @@ jobs:
         # check if tag matches patterns like nessie-0.5, nessie-0.10.4.3-alpha1, etc
         if [[ ${V} =~ ^nessie-[0-9]+[.][0-9.]*[0-9](-[a-zA-Z0-9]+)?$ ]]; then
           echo "RELEASE_VERSION=${V/nessie-}" >> ${GITHUB_ENV}
-          echo "GIT_TAG=nessie-${RELEASE_VERSION}" >> ${GITHUB_ENV}
+          echo "GIT_TAG=${V}" >> ${GITHUB_ENV}
         else
           echo "Tag must start with nessie- followed by a valid version (got tag ${V}, ref is ${GITHUB_REF} )"
           exit 1
@@ -210,8 +210,6 @@ jobs:
     # The final markdown is just a `cat` of the above information including some basic markdown formatting.
     #
     - name: Prepare Nessie release for GitHub
-      env:
-        GIT_TAG: nessie-${{ env.RELEASE_VERSION }}
       run: |
         DIR=$(mktemp -d)
         NOTES_FILE=${DIR}/release-notes.md
@@ -257,8 +255,6 @@ jobs:
         cat "${NOTES_FILE}" >> $GITHUB_STEP_SUMMARY
 
     - name: Create Nessie release in GitHub
-      env:
-        GIT_TAG: nessie-${{ env.RELEASE_VERSION }}
       run: |
         echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
         gh release create ${GIT_TAG} \

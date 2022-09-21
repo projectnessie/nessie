@@ -19,7 +19,7 @@ import java.nio.file.Path
 import java.util.regex.Pattern
 
 /** Represents a version tuple with mandatory major, minor and patch numbers and snapshot-flag. */
-class VersionTuple(val major: Int, val minor: Int, val patch: Int, val snapshot: Boolean) :
+data class VersionTuple(val major: Int, val minor: Int, val patch: Int, val snapshot: Boolean) :
   Comparable<VersionTuple> {
 
   companion object Factory {
@@ -28,8 +28,7 @@ class VersionTuple(val major: Int, val minor: Int, val patch: Int, val snapshot:
         "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?\$"
       )
 
-    fun fromFile(file: Path): VersionTuple =
-      create(String(Files.readAllBytes(file), Charsets.UTF_8).trim())
+    fun fromFile(file: Path): VersionTuple = create(Files.readString(file, Charsets.UTF_8).trim())
 
     @JvmStatic
     fun create(string: String): VersionTuple {
@@ -70,19 +69,7 @@ class VersionTuple(val major: Int, val minor: Int, val patch: Int, val snapshot:
 
   fun asRelease(): VersionTuple = VersionTuple(major, minor, patch, false)
 
-  override fun equals(other: Any?): Boolean {
-    if (this === other) return true
-    if (javaClass != other?.javaClass) return false
-
-    other as VersionTuple
-
-    if (major != other.major) return false
-    if (minor != other.minor) return false
-    if (patch != other.patch) return false
-    if (snapshot != other.snapshot) return false
-
-    return true
-  }
+  fun writeToFile(file: Path) = Files.writeString(file, toString(), Charsets.UTF_8)
 
   override fun compareTo(other: VersionTuple): Int {
     var cmp: Int
@@ -106,14 +93,6 @@ class VersionTuple(val major: Int, val minor: Int, val patch: Int, val snapshot:
       return 0
     }
     return if (snapshot) -1 else 1
-  }
-
-  override fun hashCode(): Int {
-    var result = major
-    result = 31 * result + minor
-    result = 31 * result + patch
-    result = 31 * result + snapshot.hashCode()
-    return result
   }
 
   override fun toString(): String {

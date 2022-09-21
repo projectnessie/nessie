@@ -24,23 +24,18 @@ runs:
 
     - name: Bump versions in site/ to ${{ inputs.new-version }}
       shell: bash
-      working-directory: ./site
       env:
         NEW_VERSION: ${{ inputs.new-version }}
       run: |
-        cp mkdocs.yml /tmp/nessie-mkdocs.yml
-        cat /tmp/nessie-mkdocs.yml | sed "s/^    java: [0-9.]*$/    java: ${NEW_VERSION}/" | sed "s/^    python: v[0-9.]*$/    python: v${NEW_VERSION}/"> mkdocs.yml
-        rm /tmp/nessie-mkdocs.yml
+        sed -i "s/^    java: [0-9.]*$/    java: ${NEW_VERSION}/"  site/mkdocs.yml
+        sed -i "s/^    python: v[0-9.]*$/    python: v${NEW_VERSION}/" site/mkdocs.yml
 
     - name: Bump version in helm/nessie to ${{ inputs.new-version }}
       shell: bash
-      working-directory: ./helm/nessie
       env:
         NEW_VERSION: ${{ inputs.new-version }}
       run: |
-        cp Chart.yaml /tmp/nessie-Chart.yaml
-        cat /tmp/nessie-Chart.yaml | sed "s/^version: [0-9.]*$/version: ${NEW_VERSION}/" > Chart.yaml
-        rm /tmp/nessie-Chart.yaml
+        sed -i "s/^version: [0-9.]*$/version: ${NEW_VERSION}/" helm/nessie/Chart.yaml
 
     - name: Bump UI release version ${{ inputs.new-version }}
       shell: bash
@@ -48,9 +43,5 @@ runs:
       env:
         NEW_VERSION: ${{ inputs.new-version }}
       run: |
-        cp package.json /tmp/nessie-ui-package.json
-        cp package-lock.json /tmp/nessie-ui-package-lock.json
-        cat /tmp/nessie-ui-package.json | jq ".version = \"${NEW_VERSION}\"" > package.json
-        cat /tmp/nessie-ui-package-lock.json | jq ".version = \"${NEW_VERSION}\" | .packages[\"\"].version = \"${NEW_VERSION}\"" > package-lock.json
-        rm /tmp/nessie-ui-package.json
-        rm /tmp/nessie-ui-package-lock.json
+        jq ".version = \"${NEW_VERSION}\"" < package.json > /tmp/package.json && mv /tmp/package.json package.json
+        jq ".version = \"${NEW_VERSION}\" | .packages[\"\"].version = \"${NEW_VERSION}\"" < package-lock.json > /tmp/package-lock.json && mv /tmp/package-lock.json package-lock.json

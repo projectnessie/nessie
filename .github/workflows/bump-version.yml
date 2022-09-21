@@ -70,18 +70,23 @@ jobs:
         python3 -m pip install -r python/requirements.txt
     ### END runner setup
 
+    - name: Get previous version information
+      run: echo "PREVIOUS_VERSION=$(cat version.txt)" >> ${GITHUB_ENV}
+
     - name: Bump to version
       uses: gradle/gradle-build-action@v2
       with:
         arguments: :bumpVersion --bumpType ${BUMP_TYPE}
 
     - name: Get bumped version information
-      run: echo "NEXT_VERSION=$(cat version.txt | sed 's/-SNAPSHOT//')" >> ${GITHUB_ENV}
+      run: |
+        echo "BUMPED_VERSION=$(cat version.txt)" >> ${GITHUB_ENV}
+        echo "BUMPED_VERSION_NO_SNAPSHOT=${BUMPED_VERSION%-SNAPSHOT}" >> ${GITHUB_ENV}
 
     - name: Bump versions for Python, site/, helm and UI
       uses: ./.github/actions/bump-versions
       with:
-        new-version: ${{ env.NEXT_VERSION }}
+        new-version: ${{ env.BUMPED_VERSION_NO_SNAPSHOT }}
 
     - name: Configure bump-version-bot-user in git config
       run: |
@@ -90,16 +95,15 @@ jobs:
 
     # Record the next development iteration in git
     - name: Record next development version in git
-      run: git commit -a -m "[bump-version] bump to ${NEXT_VERSION}-SNAPSHOT"
+      run: git commit -a -m "[bump-version] bump to ${BUMPED_VERSION}"
 
     - name: Version information
       run: |
-        CURRENT_VERSION=$(cat version.txt)
-
         cat <<! >> $GITHUB_STEP_SUMMARY
         ## Version information
 
-        | **Previous Nessie version** | ${CURRENT_VERSION}        |
+        | **Previous Nessie version** | ${PREVIOUS_VERSION}       |
+        | **Current Nessie version**  | ${BUMPED_VERSION}         |
         | **Bump type**               | ${BUMP_TYPE}              |
         | Git HEAD                    | \`$(git rev-parse HEAD)\` |
         !

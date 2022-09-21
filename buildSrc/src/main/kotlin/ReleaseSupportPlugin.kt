@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import java.nio.file.Files
 import java.nio.file.Path
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
@@ -93,7 +92,7 @@ class ReleaseSupportPlugin : Plugin<Project> {
       }
 
       if (finalVersion != currentVersion) {
-        Files.write(versionFile, finalVersion.toString().toByteArray(Charsets.UTF_8))
+        finalVersion.writeToFile(versionFile)
         logger.lifecycle("New version is $finalVersion.")
       } else {
         throw GradleException("Bump version tasks results in no change.")
@@ -102,6 +101,7 @@ class ReleaseSupportPlugin : Plugin<Project> {
   }
 
   enum class BumpType {
+    // lower-case, used as command line option values
     none,
     patch,
     minor,
