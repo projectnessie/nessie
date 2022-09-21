@@ -28,7 +28,7 @@ data class VersionTuple(val major: Int, val minor: Int, val patch: Int, val snap
         "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?\$"
       )
 
-    fun fromFile(file: Path): VersionTuple = create(Files.readString(file, Charsets.UTF_8).trim())
+    fun fromFile(file: Path): VersionTuple = create(Files.readString(file).trim())
 
     @JvmStatic
     fun create(string: String): VersionTuple {
@@ -69,7 +69,7 @@ data class VersionTuple(val major: Int, val minor: Int, val patch: Int, val snap
 
   fun asRelease(): VersionTuple = VersionTuple(major, minor, patch, false)
 
-  fun writeToFile(file: Path) = Files.writeString(file, toString(), Charsets.UTF_8)
+  fun writeToFile(file: Path) = Files.writeString(file, toString())
 
   override fun compareTo(other: VersionTuple): Int {
     var cmp: Int

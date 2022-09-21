@@ -209,7 +209,7 @@ jobs:
     - name: Record next development version in Git
       run: git commit -a -m "[release] next development iteration ${NEXT_VERSION}"
 
-    - name: Get next patch version
+    - name: Next version information
       run: |
         cat <<! >> $GITHUB_STEP_SUMMARY
         ## Next development version information
