@@ -25,7 +25,7 @@ extra:
   versions:
     java: 0.43.0
     python: v0.43.0
-    iceberg: 0.13.0
+    iceberg: 0.14.1
     iceberg_spark32: 3.2_2.12
   analytics:
     provider: google
