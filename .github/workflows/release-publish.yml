@@ -204,7 +204,7 @@ jobs:
     # `NUM_COMMITS` is the total number of commits "between" LAST_TAG and GIT_TAG
     #
     # "Full Changelog" is the output of a `git log` considering the commits "between" LAST_TAG and
-    # GIT_TAG, removing the commits by `dependabot-preview` and `nessie-release-workflow`.
+    # GIT_TAG, removing the commits by `renovate` and `nessie-release-workflow`.
     # Also removes commits that start with `[release] `.
     #
     # The final markdown is just a `cat` of the above information including some basic markdown formatting.
