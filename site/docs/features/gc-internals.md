@@ -32,7 +32,7 @@ repository as a "live contents set". The "mark phase" is implemented in `Identif
 The "sweep phase", or "delete orphan files", operates per content-id. For each content, all live
 versions of a `Content` are scanned to identify the set of live data files. After that, the
 base-location(s)  are scanned and all files that are not in the set of live data files are deleted.
-The "seep phase" is implemented by `DefaultLocalExpire`.
+The "sweep phase" is implemented by `DefaultLocalExpire`.
 
 ## Inner workings
 
@@ -80,7 +80,7 @@ Examples of abstracted/isolated functionality:
 
 ## File references
 
-All files (or objects, in case of an object store like S3) are described using a `FileObject`,
+All files (or objects, in case of an object store like S3) are described using a `FileReference`,
 using a _base_ URI plus a URI _relative_ to the base URI. Noteworthy: the "sweep phase", which
 "collects" all live files in a bloom filter and after that lists files in all _base_ URIs, always
 uses only the _relative_ URI, never the _full_ URI, to check whether a file is orphan or probably
@@ -144,7 +144,7 @@ locations, it is possible to identify ...
 
 * ... the base content locations that are no longer used. In other words: storage of e.g. Iceberg
   tables that have been deleted and are no longer referenced in any live Nessie commit.
-* ... the content references (aka Iceberg snapshots) are a no longer used. This information can be
+* ... the content references (aka Iceberg snapshots) are no longer used. This information can be
   used to no longer expose the affected e.g. Iceberg snapshots in any table metadata.
 
 ### Completely unreferenced contents

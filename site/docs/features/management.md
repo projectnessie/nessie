@@ -21,7 +21,7 @@ Nessie GC is composed of multiple phases:
 2. **Expire** ("sweep") phase: Uses the actual table format (e.g. Iceberg) to map the content
    references from a live-content-set to a set of file-references, which are then matched against
    a recursive listing of all files for the respective tables. Files that are not contained in the
-   set of file-references are going to be deleted. Deletion either happens immediately or be
+   set of file-references are going to be deleted. Deletion either happens immediately or is
    persisted in the live-content-set as a set of orphan files.
 3. The **delete** phase can be split out of the **expire** phase, it basically means that orphan 
    files are first collected, so these can be inspected, and then explicitly deleted. 
@@ -51,11 +51,12 @@ a data lake using Iceberg.
 ### Setting up the database for Nessie GC
 
 You can either create the tables manually, use the DDL statements emitted by
-`nessie-gc jdbc-dump-schema` as a template that can be enriched with database specific optimizations.
+`nessie-gc show-sql-create-schema-script` as a template that can be enriched with database specific
+optimizations.
 
 Or you let the Nessie GC tool create the schema in your existing database, for example like this:
 ```bash
-nessie-gc jdbc-create-schema \
+nessie-gc show-sql-create-schema-script \
   --jdbc-url jdbc:postgresql://127.0.0.1:5432/nessie_gc \
   --jdbc-user pguser \
   --jdbc-password mysecretpassword
@@ -74,7 +75,7 @@ nessie-gc jdbc-create-schema \
     not require anything from Nessie GC to continue to work.
 
 !!! note
-    For small, experimental Nessie repositories, that do not access and production data lake
+    For small, experimental Nessie repositories, that do not access any production data lake
     information, you can experiment with the `nessie-gc gc` command, which also accepts the
     `--inmemory` command line option, which does not require an external database for
     live-content-set persistence. In fact, the `--inmemory` option does not persist anything and
@@ -127,7 +128,8 @@ nessie-gc mark-live \
 It will walk the commits in all named references, and collect all content-references from the
 visited Nessie commits. So called "cut off policies" define, when the _mark_ phase should stop
 walking the commit log for a named reference. The default "cut off policy" is `NONE`, which means
-that _all_ Nessie commits and therefore all contents in that named reference are considered live.
+that _all_ Nessie commits and therefore all contents in the named references using the `NONE`
+policy are considered live.
 
 !!! note
     Since the _mark_ phase requires access to Nessie, make sure to use the `--uri` command line
@@ -163,7 +165,7 @@ Cut-off policies are parsed using the following logic and precedence:
 
 1. An integer number is translated to the cut-off-policy using **number of commits**.
 2. The string representation of a `java.time.Duration` is translated to a duration. Java durations
-   string representation start with `P` followed the duration value. Examples:
+   string representation starts with `P` followed by the duration value. Examples:
     * `P10D` means 10 days
     * `PT10H` means 10 hours
 3. The string representation of a `java.time.format.DateTimeFormatter.ISO_INSTANT` is translated
@@ -175,7 +177,7 @@ Cut-off policies are parsed using the following logic and precedence:
 
 ### Running the _sweep_ (or _expire_) phase: Identifying live content references
 
-Nessie GC's sweep phase uses the the actual table format, which is Iceberg, to map the collected
+Nessie GC's sweep phase uses the the actual table format, for example Iceberg, to map the collected
 live content references to live file references. The _sweep_ phase operates on each content-ID. So
 it collects the live file references for each content ID. Those file references refer to Iceberg
 assets:
@@ -232,7 +234,7 @@ If _deferred deletion_ is requested, no files will be deleted.
 !!! note
 Since data lakes can easily contain a huge amount of files, the _expire_ phase does not remember
 every live data file (see the Iceberg assets above) individually, but uses a probabilistic data
-structure (bloom filer). The default settings expect, for each content ID, 1,000,000 files and
+structure (bloom filter). The default settings expect, for each content ID, 1,000,000 files and
 uses a false-positive-probability of 0.0001 (those defaults may change, but can be inspected
 with `nessie-gc help expire`). The _expire_ phase will abort, if it hits a content-ID that
 _massively_ exceeds the configured false-positive-probability, because it hits way more live
