@@ -78,6 +78,8 @@ dependencies {
     implementation("io.quarkus:quarkus-minikube")
   }
 
+  implementation("com.google.guava:guava")
+
   openapiSource(project(":nessie-model", "openapiSource"))
 
   testImplementation(platform(project(":nessie-deps-testing")))
