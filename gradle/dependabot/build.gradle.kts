@@ -35,7 +35,7 @@ plugins {
   id("io.gatling.gradle") version "3.8.4"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
   id("io.quarkus") version "2.12.3.Final"
-  id("me.champeau.jmh") version "0.6.7"
+  id("me.champeau.jmh") version "0.6.8"
   id("net.ltgt.errorprone") version "2.0.2"
   id("org.jetbrains.gradle.plugin.idea-ext") version "1.1.6"
   id("org.projectnessie") version "0.27.3"
