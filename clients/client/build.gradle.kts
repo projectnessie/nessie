@@ -27,23 +27,10 @@ extra["maven.name"] = "Nessie - Client"
 dependencies {
   api(project(":nessie-model"))
 
-  if (project.hasProperty("jackson-tests")) {
-    val jacksonVersion = project.property("jackson-tests") as String
-    if (jacksonVersion.isEmpty()) {
-      throw GradleException(
-        "Project property 'jackson-tests' must contain the Jackson version, must not be empty"
-      )
-    }
-    // No jackson-bom here
-    implementation("com.fasterxml.jackson.core:jackson-core:$jacksonVersion!!")
-    implementation("com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion!!")
-    implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion!!")
-  } else {
-    implementation(platform(libs.jackson.bom))
-    implementation(libs.jackson.core)
-    implementation(libs.jackson.databind)
-    implementation(libs.jackson.annotations)
-  }
+  implementation(platform(libs.jackson.bom))
+  implementation(libs.jackson.core)
+  implementation(libs.jackson.databind)
+  implementation(libs.jackson.annotations)
   implementation(libs.microprofile.openapi)
   compileOnly(libs.jakarta.validation.api)
   implementation(libs.javax.ws.rs)
@@ -72,3 +59,63 @@ dependencies {
 }
 
 jandex { skipDefaultProcessing() }
+
+val jacksonTestVersions =
+  mapOf(
+    "2.10.0" to "Spark 3.1.2+3.1.3",
+    "2.11.4" to "Spark 3.?.? (reason unknown)",
+    "2.12.3" to "Spark 3.2.1+3.2.2",
+    "2.13.3" to "Spark 3.3.0"
+  )
+
+val jacksonTests by
+  tasks.registering {
+    description = "Runs tests against Jackson versions ${jacksonTestVersions.keys}."
+    group = "verification"
+  }
+
+tasks.named("check") { dependsOn(jacksonTests) }
+
+jacksonTestVersions.forEach { (jacksonVersion, reason) ->
+  val safeName = jacksonVersion.replace("[.]".toRegex(), "_")
+  val sourceSetName = "jackson_${safeName}_test"
+
+  val sourceSets: SourceSetContainer by project
+  sourceSets.create(sourceSetName) {
+    java.srcDir(sourceSets.test.get().java)
+    compileClasspath += sourceSets.main.get().output
+    runtimeClasspath += sourceSets.main.get().output
+  }
+
+  val implConfigName = "${sourceSetName}Implementation"
+  val runtimeConfigName = "${sourceSetName}RuntimeOnly"
+  configurations.named(implConfigName) {
+    extendsFrom(configurations.implementation.get())
+    extendsFrom(configurations.testImplementation.get())
+  }
+  configurations.named(runtimeConfigName) {
+    extendsFrom(configurations.runtimeOnly.get())
+    extendsFrom(configurations.testRuntimeOnly.get())
+  }
+
+  dependencies.add(implConfigName, "com.fasterxml.jackson.core:jackson-core:$jacksonVersion!!")
+  dependencies.add(
+    implConfigName,
+    "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion!!"
+  )
+  dependencies.add(implConfigName, "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion!!")
+
+  val taskName = "testJackson_$safeName"
+  val testTask =
+    tasks.register<Test>(taskName) {
+      description = "Runs tests using Jackson $jacksonVersion for $reason."
+      group = "verification"
+
+      dependsOn("test")
+
+      testClassesDirs = sourceSets[sourceSetName].output.classesDirs
+      classpath = sourceSets[sourceSetName].runtimeClasspath
+    }
+
+  jacksonTests { dependsOn(testTask) }
+}
