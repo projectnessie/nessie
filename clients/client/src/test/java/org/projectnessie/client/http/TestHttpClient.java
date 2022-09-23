@@ -16,39 +16,50 @@
 package org.projectnessie.client.http;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.projectnessie.client.util.TestHttpUtil.emptyResponse;
+import static org.projectnessie.client.util.TestHttpUtil.writeResponseBody;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.sun.net.httpserver.HttpHandler;
 import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.zip.GZIPInputStream;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
-import org.projectnessie.client.util.TestHttpUtil;
 import org.projectnessie.client.util.TestServer;
 import org.projectnessie.model.CommitMeta;
 
 @Execution(ExecutionMode.CONCURRENT)
+@ExtendWith(SoftAssertionsExtension.class)
 public class TestHttpClient {
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
   private static final Instant NOW = Instant.now();
+
+  @InjectSoftAssertions protected SoftAssertions soft;
 
   private static HttpRequest get(InetSocketAddress address) {
     return get(address, false);
@@ -71,13 +82,86 @@ public class TestHttpClient {
   }
 
   @Test
+  void testWriteWithVariousSizes() throws Exception {
+
+    TestServer.RequestHandler handler =
+        (req, resp) -> {
+          ArrayBean input;
+          switch (req.getMethod()) {
+            case "PUT":
+            case "POST":
+              try (InputStream in = req.getInputStream()) {
+                input = MAPPER.readValue(in, ArrayBean.class);
+              }
+              break;
+            case "GET":
+            case "DELETE":
+              input =
+                  ArrayBean.construct(
+                      Integer.parseInt(req.getParameter("len")),
+                      Integer.parseInt(req.getParameter("num")));
+              break;
+            default:
+              fail();
+              return;
+          }
+
+          resp.addHeader("Content-Type", "application/json");
+          resp.setStatus(200);
+
+          try (OutputStream os = resp.getOutputStream()) {
+            MAPPER.writeValue(os, input);
+          }
+        };
+
+    try (TestServer server = new TestServer(handler)) {
+      for (boolean disableCompression : new boolean[] {false, true}) {
+        for (int num : new int[] {1, 10, 20, 100}) {
+          int len = 10_000;
+
+          ArrayBean inputBean = ArrayBean.construct(10_000, num);
+
+          soft.assertThat(
+                  get(server.getAddress(), disableCompression)
+                      .queryParam("len", Integer.toString(len))
+                      .queryParam("num", Integer.toString(num))
+                      .get()
+                      .readEntity(ArrayBean.class))
+              .describedAs("GET, disableCompression:%s, num:%d", disableCompression, num)
+              .isEqualTo(inputBean);
+          soft.assertThat(
+                  get(server.getAddress(), disableCompression)
+                      .queryParam("len", Integer.toString(len))
+                      .queryParam("num", Integer.toString(num))
+                      .delete()
+                      .readEntity(ArrayBean.class))
+              .describedAs("DELETE, disableCompression:%s, num:%d", disableCompression, num)
+              .isEqualTo(inputBean);
+          soft.assertThat(
+                  get(server.getAddress(), disableCompression)
+                      .put(inputBean)
+                      .readEntity(ArrayBean.class))
+              .describedAs("PUT, disableCompression:%s, num:%d", disableCompression, num)
+              .isEqualTo(inputBean);
+          soft.assertThat(
+                  get(server.getAddress(), disableCompression)
+                      .post(inputBean)
+                      .readEntity(ArrayBean.class))
+              .describedAs("POST, disableCompression:%s, num:%d", disableCompression, num)
+              .isEqualTo(inputBean);
+        }
+      }
+    }
+  }
+
+  @Test
   void testGet() throws Exception {
     ExampleBean inputBean = new ExampleBean("x", 1, NOW);
-    HttpHandler handler =
-        h -> {
-          Assertions.assertEquals("GET", h.getRequestMethod());
+    TestServer.RequestHandler handler =
+        (req, resp) -> {
+          Assertions.assertEquals("GET", req.getMethod());
           String response = MAPPER.writeValueAsString(inputBean);
-          TestHttpUtil.writeResponseBody(h, response);
+          writeResponseBody(resp, response);
         };
     try (TestServer server = new TestServer(handler)) {
       ExampleBean bean = get(server.getAddress()).get().readEntity(ExampleBean.class);
@@ -87,7 +171,7 @@ public class TestHttpClient {
 
   @Test
   void testReadTimeout() {
-    HttpHandler handler = h -> {};
+    TestServer.RequestHandler handler = (req, resp) -> {};
     Assertions.assertThrows(
         HttpClientReadTimeoutException.class,
         () -> {
@@ -100,16 +184,14 @@ public class TestHttpClient {
   @Test
   void testPut() throws Exception {
     ExampleBean inputBean = new ExampleBean("x", 1, NOW);
-    HttpHandler handler =
-        h -> {
-          Assertions.assertEquals("PUT", h.getRequestMethod());
-          assertThat(h.getRequestHeaders())
-              .containsEntry("Content-Encoding", Collections.singletonList("gzip"));
-          try (InputStream in = new GZIPInputStream(h.getRequestBody())) {
+    TestServer.RequestHandler handler =
+        (req, resp) -> {
+          Assertions.assertEquals("PUT", req.getMethod());
+          try (InputStream in = req.getInputStream()) {
             Object bean = MAPPER.readerFor(ExampleBean.class).readValue(in);
             Assertions.assertEquals(inputBean, bean);
           }
-          h.sendResponseHeaders(200, 0);
+          emptyResponse(resp);
         };
     try (TestServer server = new TestServer(handler)) {
       get(server.getAddress()).put(inputBean);
@@ -119,16 +201,14 @@ public class TestHttpClient {
   @Test
   void testPost() throws Exception {
     ExampleBean inputBean = new ExampleBean("x", 1, NOW);
-    HttpHandler handler =
-        h -> {
-          Assertions.assertEquals("POST", h.getRequestMethod());
-          assertThat(h.getRequestHeaders())
-              .containsEntry("Content-Encoding", Collections.singletonList("gzip"));
-          try (InputStream in = new GZIPInputStream(h.getRequestBody())) {
+    TestServer.RequestHandler handler =
+        (req, resp) -> {
+          Assertions.assertEquals("POST", req.getMethod());
+          try (InputStream in = req.getInputStream()) {
             Object bean = MAPPER.readerFor(ExampleBean.class).readValue(in);
             Assertions.assertEquals(inputBean, bean);
           }
-          h.sendResponseHeaders(200, 0);
+          emptyResponse(resp);
         };
     try (TestServer server = new TestServer(handler)) {
       get(server.getAddress()).post(inputBean);
@@ -136,47 +216,11 @@ public class TestHttpClient {
   }
 
   @Test
-  void testPutNoCompression() throws Exception {
-    ExampleBean inputBean = new ExampleBean("x", 1, NOW);
-    HttpHandler handler =
-        h -> {
-          Assertions.assertEquals("PUT", h.getRequestMethod());
-          assertThat(h.getRequestHeaders()).doesNotContainKeys("Content-Encoding");
-          try (InputStream in = h.getRequestBody()) {
-            Object bean = MAPPER.readerFor(ExampleBean.class).readValue(in);
-            Assertions.assertEquals(inputBean, bean);
-          }
-          h.sendResponseHeaders(200, 0);
-        };
-    try (TestServer server = new TestServer(handler)) {
-      get(server.getAddress(), true).put(inputBean);
-    }
-  }
-
-  @Test
-  void testPostNoCompression() throws Exception {
-    ExampleBean inputBean = new ExampleBean("x", 1, NOW);
-    HttpHandler handler =
-        h -> {
-          Assertions.assertEquals("POST", h.getRequestMethod());
-          assertThat(h.getRequestHeaders()).doesNotContainKeys("Content-Encoding");
-          try (InputStream in = h.getRequestBody()) {
-            Object bean = MAPPER.readerFor(ExampleBean.class).readValue(in);
-            Assertions.assertEquals(inputBean, bean);
-          }
-          h.sendResponseHeaders(200, 0);
-        };
-    try (TestServer server = new TestServer(handler)) {
-      get(server.getAddress(), true).post(inputBean);
-    }
-  }
-
-  @Test
   void testDelete() throws Exception {
-    HttpHandler handler =
-        h -> {
-          Assertions.assertEquals("DELETE", h.getRequestMethod());
-          h.sendResponseHeaders(200, 0);
+    TestServer.RequestHandler handler =
+        (req, resp) -> {
+          Assertions.assertEquals("DELETE", req.getMethod());
+          emptyResponse(resp);
         };
     try (TestServer server = new TestServer(handler)) {
       get(server.getAddress()).delete();
@@ -186,12 +230,12 @@ public class TestHttpClient {
   @Test
   void testGetQueryParam() throws Exception {
     ExampleBean inputBean = new ExampleBean("x", 1, NOW);
-    HttpHandler handler =
-        h -> {
-          Assertions.assertEquals("x=y", h.getRequestURI().getQuery());
-          Assertions.assertEquals("GET", h.getRequestMethod());
+    TestServer.RequestHandler handler =
+        (req, resp) -> {
+          Assertions.assertEquals("x=y", req.getQueryString());
+          Assertions.assertEquals("GET", req.getMethod());
           String response = MAPPER.writeValueAsString(inputBean);
-          TestHttpUtil.writeResponseBody(h, response);
+          writeResponseBody(resp, response);
         };
     try (TestServer server = new TestServer(handler)) {
       ExampleBean bean =
@@ -203,16 +247,16 @@ public class TestHttpClient {
   @Test
   void testGetMultipleQueryParam() throws Exception {
     ExampleBean inputBean = new ExampleBean("x", 1, NOW);
-    HttpHandler handler =
-        h -> {
-          String[] queryParams = h.getRequestURI().getQuery().split("&");
+    TestServer.RequestHandler handler =
+        (req, resp) -> {
+          String[] queryParams = req.getQueryString().split("&");
           Assertions.assertEquals(2, queryParams.length);
           Set<String> queryParamSet = new HashSet<>(Arrays.asList(queryParams));
           Assertions.assertTrue(queryParamSet.contains("x=y"));
           Assertions.assertTrue(queryParamSet.contains("a=b"));
-          Assertions.assertEquals("GET", h.getRequestMethod());
+          Assertions.assertEquals("GET", req.getMethod());
           String response = MAPPER.writeValueAsString(inputBean);
-          TestHttpUtil.writeResponseBody(h, response);
+          writeResponseBody(resp, response);
         };
     try (TestServer server = new TestServer(handler)) {
       ExampleBean bean =
@@ -228,13 +272,13 @@ public class TestHttpClient {
   @Test
   void testGetNullQueryParam() throws Exception {
     ExampleBean inputBean = new ExampleBean("x", 1, NOW);
-    HttpHandler handler =
-        h -> {
-          String queryParams = h.getRequestURI().getQuery();
+    TestServer.RequestHandler handler =
+        (req, resp) -> {
+          String queryParams = req.getQueryString();
           Assertions.assertNull(queryParams);
-          Assertions.assertEquals("GET", h.getRequestMethod());
+          Assertions.assertEquals("GET", req.getMethod());
           String response = MAPPER.writeValueAsString(inputBean);
-          TestHttpUtil.writeResponseBody(h, response);
+          writeResponseBody(resp, response);
         };
     try (TestServer server = new TestServer(handler)) {
       ExampleBean bean =
@@ -249,11 +293,11 @@ public class TestHttpClient {
   @Test
   void testGetTemplate() throws Exception {
     ExampleBean inputBean = new ExampleBean("x", 1, NOW);
-    HttpHandler handler =
-        h -> {
-          Assertions.assertEquals("GET", h.getRequestMethod());
+    TestServer.RequestHandler handler =
+        (req, resp) -> {
+          Assertions.assertEquals("GET", req.getMethod());
           String response = MAPPER.writeValueAsString(inputBean);
-          TestHttpUtil.writeResponseBody(h, response);
+          writeResponseBody(resp, response);
         };
     try (TestServer server = new TestServer("/a/b", handler)) {
       ExampleBean bean = get(server.getAddress()).path("a/b").get().readEntity(ExampleBean.class);
@@ -270,7 +314,7 @@ public class TestHttpClient {
 
   @Test
   void testGetTemplateThrows() throws Exception {
-    HttpHandler handler = h -> Assertions.fail();
+    TestServer.RequestHandler handler = (req, resp) -> fail();
     try (TestServer server = new TestServer("/a/b", handler)) {
       Assertions.assertThrows(
           HttpClientException.class,
@@ -292,10 +336,10 @@ public class TestHttpClient {
     AtomicBoolean responseFilterCalled = new AtomicBoolean(false);
     AtomicReference<ResponseContext> responseContextGotCallback = new AtomicReference<>();
     AtomicReference<ResponseContext> responseContextGotFilter = new AtomicReference<>();
-    HttpHandler handler =
-        h -> {
-          Assertions.assertTrue(h.getRequestHeaders().containsKey("x"));
-          h.sendResponseHeaders(200, 0);
+    TestServer.RequestHandler handler =
+        (req, resp) -> {
+          assertThat(req.getHeader("x")).isEqualTo("y");
+          emptyResponse(resp);
         };
     try (TestServer server = new TestServer(handler)) {
       HttpClient.Builder client =
@@ -332,10 +376,10 @@ public class TestHttpClient {
 
   @Test
   void testHeaders() throws Exception {
-    HttpHandler handler =
-        h -> {
-          Assertions.assertTrue(h.getRequestHeaders().containsKey("x"));
-          h.sendResponseHeaders(200, 0);
+    TestServer.RequestHandler handler =
+        (req, resp) -> {
+          assertThat(req.getHeader("x")).isEqualTo("y");
+          emptyResponse(resp);
         };
     try (TestServer server = new TestServer(handler)) {
       get(server.getAddress()).header("x", "y").get();
@@ -344,20 +388,21 @@ public class TestHttpClient {
 
   @Test
   void testMultiValueHeaders() throws Exception {
-    HttpHandler handler =
-        h -> {
-          Assertions.assertTrue(h.getRequestHeaders().containsKey("x"));
-          List<String> values = h.getRequestHeaders().get("x");
-          Assertions.assertEquals(2, values.size());
-          Assertions.assertEquals("y", values.get(0));
-          Assertions.assertEquals("z", values.get(1));
-          h.sendResponseHeaders(200, 0);
+    TestServer.RequestHandler handler =
+        (req, resp) -> {
+          List<String> values = new ArrayList<>();
+          for (Enumeration<String> e = req.getHeaders("x"); e != null && e.hasMoreElements(); ) {
+            values.add(e.nextElement());
+          }
+          assertThat(values).containsExactly("y", "z");
+          emptyResponse(resp);
         };
     try (TestServer server = new TestServer(handler)) {
       get(server.getAddress()).header("x", "y").header("x", "z").get();
     }
   }
 
+  @SuppressWarnings("unused")
   public static class ExampleBean {
     private String field1;
     private int field2;
@@ -417,6 +462,57 @@ public class TestHttpClient {
     @Override
     public int hashCode() {
       return Objects.hash(field1, field2, field3);
+    }
+  }
+
+  @SuppressWarnings("unused")
+  public static class ArrayBean {
+    private List<String> data;
+
+    public static ArrayBean construct(int elementLength, int numElements) {
+      List<String> data =
+          IntStream.range(0, numElements)
+              .mapToObj(
+                  e -> {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(e).append(':');
+                    while (sb.length() < elementLength) {
+                      sb.append(e);
+                    }
+                    return sb.toString();
+                  })
+              .collect(Collectors.toList());
+
+      ArrayBean bean = new ArrayBean();
+      bean.data = data;
+      return bean;
+    }
+
+    public ArrayBean() {}
+
+    public List<String> getData() {
+      return data;
+    }
+
+    public void setData(List<String> data) {
+      this.data = data;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (!(o instanceof ArrayBean)) {
+        return false;
+      }
+      ArrayBean arrayBean = (ArrayBean) o;
+      return data.equals(arrayBean.data);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(data);
     }
   }
 }

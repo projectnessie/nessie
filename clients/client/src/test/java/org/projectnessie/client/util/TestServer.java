@@ -15,20 +15,28 @@
  */
 package org.projectnessie.client.util;
 
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.function.Consumer;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 
 /** A HTTP test server. */
 public class TestServer implements AutoCloseable {
 
-  private final HttpServer server;
+  @FunctionalInterface
+  public interface RequestHandler {
+    void handle(HttpServletRequest request, HttpServletResponse response) throws IOException;
+  }
 
-  public TestServer(String context, HttpHandler handler) throws IOException {
+  private final Server server;
+
+  public TestServer(String context, RequestHandler handler) throws Exception {
     this(context, handler, null);
   }
 
@@ -40,48 +48,53 @@ public class TestServer implements AutoCloseable {
    * @param init init method (optional)
    * @throws IOException maybe
    */
-  public TestServer(String context, HttpHandler handler, Consumer<HttpsServer> init)
-      throws IOException {
-    HttpHandler safeHandler =
-        exchange -> {
-          try {
-            handler.handle(exchange);
-          } catch (RuntimeException | Error e) {
-            exchange.sendResponseHeaders(503, 0);
-            throw e;
+  public TestServer(String context, RequestHandler handler, Consumer<Server> init)
+      throws Exception {
+    server = new Server(0);
+
+    AbstractHandler requestHandler =
+        new AbstractHandler() {
+          @Override
+          public void handle(
+              String target,
+              Request baseRequest,
+              HttpServletRequest request,
+              HttpServletResponse response)
+              throws IOException {
+            if (target.startsWith(context)) {
+              handler.handle(request, response);
+            }
           }
         };
-    if (init == null) {
-      server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
-    } else {
-      server = HttpsServer.create(new InetSocketAddress("localhost", 0), 0);
-      init.accept((HttpsServer) server);
+
+    GzipHandler gzip = new GzipHandler();
+    gzip.setInflateBufferSize(8192);
+    gzip.addIncludedMethods("PUT");
+    server.setHandler(requestHandler);
+    server.insertHandler(gzip);
+
+    if (init != null) {
+      init.accept(server);
     }
-    server.createContext(context, safeHandler);
-    server.setExecutor(null);
 
     server.start();
   }
 
-  public TestServer(HttpHandler handler) throws IOException {
+  public TestServer(RequestHandler handler) throws Exception {
     this("/", handler);
   }
 
   public InetSocketAddress getAddress() {
-    return server.getAddress();
+    URI uri = server.getURI();
+    return InetSocketAddress.createUnresolved("localhost", uri.getPort());
   }
 
   public URI getUri() {
-    return URI.create(
-        "http://"
-            + getAddress().getAddress().getHostAddress()
-            + ":"
-            + getAddress().getPort()
-            + "/");
+    return URI.create("http://localhost:" + getAddress().getPort() + "/");
   }
 
   @Override
-  public void close() {
-    server.stop(0);
+  public void close() throws Exception {
+    server.stop();
   }
 }
