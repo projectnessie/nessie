@@ -40,6 +40,9 @@ public final class UrlConnectionClient implements HttpClient {
    */
   public UrlConnectionClient(HttpRuntimeConfig config) {
     this.config = config;
+    if (config.getSslParameters() != null) {
+      throw new IllegalArgumentException(UNSUPPORTED_CONFIG_MESSAGE);
+    }
   }
 
   @Override

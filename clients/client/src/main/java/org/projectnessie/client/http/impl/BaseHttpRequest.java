@@ -22,7 +22,6 @@ import static org.projectnessie.client.http.impl.HttpUtils.HEADER_ACCEPT_ENCODIN
 import static org.projectnessie.client.http.impl.HttpUtils.HEADER_CONTENT_ENCODING;
 import static org.projectnessie.client.http.impl.HttpUtils.HEADER_CONTENT_TYPE;
 
-import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
@@ -61,9 +60,7 @@ public abstract class BaseHttpRequest extends HttpRequest {
   }
 
   protected OutputStream wrapOutputStream(OutputStream base) throws IOException {
-    return config.isDisableCompression()
-        ? new BufferedOutputStream(base)
-        : new GZIPOutputStream(base);
+    return config.isDisableCompression() ? base : new GZIPOutputStream(base);
   }
 
   protected void writeBody(HttpRuntimeConfig config, OutputStream out, Object body)

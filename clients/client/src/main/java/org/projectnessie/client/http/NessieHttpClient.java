@@ -180,7 +180,4 @@ public class NessieHttpClient extends NessieApiClient {
   public URI getUri() {
     return client.getBaseUri();
   }
-
-  @Override
-  public void close() {}
 }

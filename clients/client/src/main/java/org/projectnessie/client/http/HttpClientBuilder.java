@@ -17,14 +17,25 @@ package org.projectnessie.client.http;
 
 import static org.projectnessie.client.NessieConfigConstants.CONF_CONNECT_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_DISABLE_COMPRESSION;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_HTTP_2;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_HTTP_REDIRECT;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_SNI_HOSTS;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_SNI_MATCHER;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_SSL_CIPHER_SUITES;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_SSL_PROTOCOLS;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_TRACING;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
 import static org.projectnessie.client.NessieConfigConstants.CONF_READ_TIMEOUT;
 
 import java.net.URI;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.NessieConfigConstants;
 import org.projectnessie.client.api.NessieApi;
@@ -92,6 +103,58 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
     s = configuration.apply(CONF_NESSIE_DISABLE_COMPRESSION);
     if (s != null) {
       withDisableCompression(Boolean.parseBoolean(s));
+    }
+
+    SSLParameters sslParameters = null;
+    s = configuration.apply(CONF_NESSIE_SSL_CIPHER_SUITES);
+    if (s != null) {
+      sslParameters = new SSLParameters();
+      sslParameters.setCipherSuites(
+          Arrays.stream(s.split(","))
+              .map(String::trim)
+              .filter(v -> !v.isEmpty())
+              .toArray(String[]::new));
+    }
+    s = configuration.apply(CONF_NESSIE_SSL_PROTOCOLS);
+    if (s != null) {
+      if (sslParameters == null) {
+        sslParameters = new SSLParameters();
+      }
+      sslParameters.setProtocols(
+          Arrays.stream(s.split(","))
+              .map(String::trim)
+              .filter(v -> !v.isEmpty())
+              .toArray(String[]::new));
+    }
+    s = configuration.apply(CONF_NESSIE_SNI_HOSTS);
+    if (s != null) {
+      if (sslParameters == null) {
+        sslParameters = new SSLParameters();
+      }
+      sslParameters.setServerNames(
+          Arrays.stream(s.split(","))
+              .map(String::trim)
+              .filter(v -> !v.isEmpty())
+              .map(SNIHostName::new)
+              .collect(Collectors.toList()));
+    }
+    s = configuration.apply(CONF_NESSIE_SNI_MATCHER);
+    if (s != null) {
+      if (sslParameters == null) {
+        sslParameters = new SSLParameters();
+      }
+      sslParameters.setSNIMatchers(Collections.singletonList(SNIHostName.createSNIMatcher(s)));
+    }
+    withSSLParameters(sslParameters);
+
+    s = configuration.apply(CONF_NESSIE_HTTP_2);
+    if (s != null) {
+      withHttp2Upgrade(Boolean.parseBoolean(s.trim()));
+    }
+
+    s = configuration.apply(CONF_NESSIE_HTTP_REDIRECT);
+    if (s != null) {
+      withFollowRedirects(s.trim());
     }
 
     return this;
@@ -189,6 +252,21 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
    */
   public HttpClientBuilder withSSLContext(SSLContext sslContext) {
     builder.setSslContext(sslContext);
+    return this;
+  }
+
+  public HttpClientBuilder withSSLParameters(SSLParameters sslParameters) {
+    builder.setSslParameters(sslParameters);
+    return this;
+  }
+
+  public HttpClientBuilder withHttp2Upgrade(boolean http2Upgrade) {
+    builder.setHttp2Upgrade(http2Upgrade);
+    return this;
+  }
+
+  public HttpClientBuilder withFollowRedirects(String redirects) {
+    builder.setFollowRedirects(redirects);
     return this;
   }
 

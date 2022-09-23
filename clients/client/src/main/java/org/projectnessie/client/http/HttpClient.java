@@ -20,9 +20,12 @@ import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 import org.projectnessie.client.http.impl.HttpRuntimeConfig;
 import org.projectnessie.client.http.impl.HttpUtils;
+import org.projectnessie.client.http.impl.jdk11.JavaHttpClient;
 import org.projectnessie.client.http.impl.jdk8.UrlConnectionClient;
 
 /**
@@ -52,6 +55,7 @@ public interface HttpClient {
     private URI baseUri;
     private ObjectMapper mapper;
     private SSLContext sslContext;
+    private SSLParameters sslParameters;
     private int readTimeoutMillis =
         Integer.parseInt(System.getProperty("sun.net.client.defaultReadTimeout", "25000"));
     private int connectionTimeoutMillis =
@@ -59,6 +63,8 @@ public interface HttpClient {
     private boolean disableCompression;
     private final List<RequestFilter> requestFilters = new ArrayList<>();
     private final List<ResponseFilter> responseFilters = new ArrayList<>();
+    private boolean http2Upgrade;
+    private String followRedirects;
 
     private Builder() {}
 
@@ -83,6 +89,21 @@ public interface HttpClient {
 
     public Builder setSslContext(SSLContext sslContext) {
       this.sslContext = sslContext;
+      return this;
+    }
+
+    public Builder setSslParameters(SSLParameters sslParameters) {
+      this.sslParameters = sslParameters;
+      return this;
+    }
+
+    public Builder setHttp2Upgrade(boolean http2Upgrade) {
+      this.http2Upgrade = http2Upgrade;
+      return this;
+    }
+
+    public Builder setFollowRedirects(String followRedirects) {
+      this.followRedirects = followRedirects;
       return this;
     }
 
@@ -137,11 +158,32 @@ public interface HttpClient {
               .connectionTimeoutMillis(connectionTimeoutMillis)
               .isDisableCompression(disableCompression)
               .sslContext(sslContext)
+              .sslParameters(sslParameters)
               .addAllRequestFilters(requestFilters)
               .addAllResponseFilters(responseFilters)
+              .isHttp11Only(!http2Upgrade)
+              .followRedirects(followRedirects)
               .build();
 
-      return new UrlConnectionClient(config);
+      return ImplSwitch.FACTORY.apply(config);
+    }
+
+    static class ImplSwitch {
+      static final Function<HttpRuntimeConfig, HttpClient> FACTORY;
+
+      static {
+        Function<HttpRuntimeConfig, HttpClient> factory;
+        try {
+          Class.forName("java.net.http.HttpClient");
+          factory =
+              Boolean.getBoolean("nessie.client.force-url-connection-client")
+                  ? UrlConnectionClient::new
+                  : JavaHttpClient::new;
+        } catch (ClassNotFoundException e) {
+          factory = UrlConnectionClient::new;
+        }
+        FACTORY = factory;
+      }
     }
   }
 }

@@ -37,6 +37,7 @@ dependencies {
   implementation(libs.guava)
   compileOnly(libs.findbugs.jsr305)
   compileOnly(libs.microprofile.openapi)
+  runtimeOnly(libs.slf4j.api)
 
   implementation(platform(libs.jackson.bom))
   implementation(libs.jackson.annotations)
