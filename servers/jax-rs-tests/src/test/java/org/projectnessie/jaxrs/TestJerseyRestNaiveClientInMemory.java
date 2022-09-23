@@ -16,7 +16,7 @@
 package org.projectnessie.jaxrs;
 
 import static org.assertj.core.api.Assumptions.assumeThat;
-import static org.projectnessie.client.http.HttpUtils.HEADER_ACCEPT;
+import static org.projectnessie.client.http.impl.HttpUtils.HEADER_ACCEPT;
 
 import java.net.URI;
 import javax.annotation.Nullable;

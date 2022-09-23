@@ -21,6 +21,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.net.ssl.SSLContext;
+import org.projectnessie.client.http.impl.HttpRuntimeConfig;
+import org.projectnessie.client.http.impl.HttpUtils;
+import org.projectnessie.client.http.impl.jdk8.UrlConnectionClient;
 
 /**
  * Simple Http client to make REST calls.
@@ -28,39 +31,24 @@ import javax.net.ssl.SSLContext;
  * <p>Assumptions: - always send/receive JSON - set headers accordingly by default - very simple
  * interactions w/ API - no cookies - no caching of connections. Could be slow
  */
-public class HttpClient {
+public interface HttpClient {
 
-  private final HttpRuntimeConfig config;
-
-  public enum Method {
+  enum Method {
     GET,
     POST,
     PUT,
     DELETE;
   }
 
-  /**
-   * Construct an HTTP client with a universal Accept header.
-   *
-   * @param config http client configuration
-   */
-  private HttpClient(HttpRuntimeConfig config) {
-    this.config = config;
-  }
+  HttpRequest newRequest();
 
-  public HttpRequest newRequest() {
-    return new HttpRequest(config);
-  }
-
-  public static Builder builder() {
+  static Builder builder() {
     return new Builder();
   }
 
-  public URI getBaseUri() {
-    return config.getBaseUri();
-  }
+  URI getBaseUri();
 
-  public static class Builder {
+  class Builder {
     private URI baseUri;
     private ObjectMapper mapper;
     private SSLContext sslContext;
@@ -140,16 +128,20 @@ public class HttpClient {
               "Cannot construct Http Client. Default SSL config is invalid.", e);
         }
       }
-      return new HttpClient(
-          new HttpRuntimeConfig(
-              baseUri,
-              mapper,
-              readTimeoutMillis,
-              connectionTimeoutMillis,
-              disableCompression,
-              sslContext,
-              requestFilters,
-              responseFilters));
+
+      HttpRuntimeConfig config =
+          HttpRuntimeConfig.builder()
+              .baseUri(baseUri)
+              .mapper(mapper)
+              .readTimeoutMillis(readTimeoutMillis)
+              .connectionTimeoutMillis(connectionTimeoutMillis)
+              .isDisableCompression(disableCompression)
+              .sslContext(sslContext)
+              .addAllRequestFilters(requestFilters)
+              .addAllResponseFilters(responseFilters)
+              .build();
+
+      return new UrlConnectionClient(config);
     }
   }
 }

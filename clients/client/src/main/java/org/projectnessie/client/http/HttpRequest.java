@@ -15,50 +15,32 @@
  */
 package org.projectnessie.client.http;
 
-import static org.projectnessie.client.http.HttpUtils.ACCEPT_ENCODING;
-import static org.projectnessie.client.http.HttpUtils.GZIP;
-import static org.projectnessie.client.http.HttpUtils.HEADER_ACCEPT;
-import static org.projectnessie.client.http.HttpUtils.HEADER_ACCEPT_ENCODING;
-import static org.projectnessie.client.http.HttpUtils.HEADER_CONTENT_ENCODING;
-import static org.projectnessie.client.http.HttpUtils.HEADER_CONTENT_TYPE;
-
-import com.fasterxml.jackson.core.JsonGenerationException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
-import java.net.SocketTimeoutException;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.zip.GZIPOutputStream;
-import javax.net.ssl.HttpsURLConnection;
 import org.projectnessie.client.http.HttpClient.Method;
+import org.projectnessie.client.http.impl.HttpHeaders;
+import org.projectnessie.client.http.impl.HttpRuntimeConfig;
+import org.projectnessie.client.http.impl.UriBuilder;
 
 /** Class to hold an ongoing HTTP request and its parameters/filters. */
-public class HttpRequest {
+public abstract class HttpRequest {
 
-  private final HttpRuntimeConfig config;
-  private final UriBuilder uriBuilder;
-  private final HttpHeaders headers = new HttpHeaders();
-  private String contentsType = "application/json; charset=utf-8";
-  private String accept = "application/json; charset=utf-8";
+  protected final HttpRuntimeConfig config;
+  protected final UriBuilder uriBuilder;
+  protected final HttpHeaders headers = new HttpHeaders();
+  protected String contentsType = "application/json; charset=utf-8";
+  protected String accept = "application/json; charset=utf-8";
 
-  HttpRequest(HttpRuntimeConfig config) {
+  protected HttpRequest(HttpRuntimeConfig config) {
     this.uriBuilder = new UriBuilder(config.getBaseUri());
     this.config = config;
   }
 
-  public HttpRequest contentsType(String contentsType) {
-    this.contentsType = contentsType;
+  public HttpRequest contentsType(String contentType) {
+    this.contentsType = contentType;
     return this;
   }
 
-  public HttpRequest accept(String contentsType) {
-    this.accept = contentsType;
+  public HttpRequest accept(String accept) {
+    this.accept = accept;
     return this;
   }
 
@@ -84,105 +66,8 @@ public class HttpRequest {
     return this;
   }
 
-  private HttpResponse executeRequest(Method method, Object body) throws HttpClientException {
-    URI uri = uriBuilder.build();
-    try {
-      HttpURLConnection con = (HttpURLConnection) uri.toURL().openConnection();
-      con.setReadTimeout(config.getReadTimeoutMillis());
-      con.setConnectTimeout(config.getConnectionTimeoutMillis());
-      if (con instanceof HttpsURLConnection) {
-        ((HttpsURLConnection) con).setSSLSocketFactory(config.getSslContext().getSocketFactory());
-      }
-      RequestContext context = new RequestContext(headers, uri, method, body);
-      ResponseContext responseContext = new ResponseContextImpl(con, uri);
-      try {
-        headers.put(HEADER_ACCEPT, accept);
-
-        boolean postOrPut = method == Method.PUT || method == Method.POST;
-
-        if (postOrPut) {
-          // Need to set the Content-Type even if body==null, otherwise the server responds with
-          // RESTEASY003065: Cannot consume content type
-          headers.put(HEADER_CONTENT_TYPE, contentsType);
-        }
-
-        boolean doesOutput = postOrPut && body != null;
-
-        if (!config.isDisableCompression()) {
-          headers.put(HEADER_ACCEPT_ENCODING, ACCEPT_ENCODING);
-          if (doesOutput) {
-            headers.put(HEADER_CONTENT_ENCODING, GZIP);
-          }
-        }
-
-        config.getRequestFilters().forEach(a -> a.filter(context));
-        headers.applyTo(con);
-        con.setRequestMethod(method.name());
-
-        if (doesOutput) {
-          con.setDoOutput(true);
-
-          OutputStream out = con.getOutputStream();
-          try {
-            if (!config.isDisableCompression()) {
-              out = new GZIPOutputStream(out);
-            }
-
-            Class<?> bodyType = body.getClass();
-            if (bodyType != String.class) {
-              config.getMapper().writerFor(bodyType).writeValue(out, body);
-            } else {
-              // This is mostly used for testing bad/broken JSON
-              out.write(((String) body).getBytes(StandardCharsets.UTF_8));
-            }
-          } finally {
-            out.close();
-          }
-        }
-        con.connect();
-        con.getResponseCode(); // call to ensure http request is complete
-
-        List<BiConsumer<ResponseContext, Exception>> callbacks = context.getResponseCallbacks();
-        if (callbacks != null) {
-          callbacks.forEach(callback -> callback.accept(responseContext, null));
-        }
-      } catch (IOException e) {
-        List<BiConsumer<ResponseContext, Exception>> callbacks = context.getResponseCallbacks();
-        if (callbacks != null) {
-          callbacks.forEach(callback -> callback.accept(null, e));
-        }
-        throw e;
-      }
-
-      config.getResponseFilters().forEach(responseFilter -> responseFilter.filter(responseContext));
-
-      return new HttpResponse(responseContext, config.getMapper());
-    } catch (ProtocolException e) {
-      throw new HttpClientException(
-          String.format("Cannot perform request against '%s'. Invalid protocol %s", uri, method),
-          e);
-    } catch (JsonGenerationException | JsonMappingException e) {
-      throw new HttpClientException(
-          String.format(
-              "Cannot serialize body of %s request against '%s'. Unable to serialize %s",
-              method, uri, body.getClass()),
-          e);
-    } catch (MalformedURLException e) {
-      throw new HttpClientException(
-          String.format(
-              "Cannot perform %s request. Malformed Url for %s", method, uriBuilder.build()),
-          e);
-    } catch (SocketTimeoutException e) {
-      throw new HttpClientReadTimeoutException(
-          String.format(
-              "Cannot finish %s request against '%s'. Timeout while waiting for response with a timeout of %ds",
-              method, uri, config.getReadTimeoutMillis() / 1000),
-          e);
-    } catch (IOException e) {
-      throw new HttpClientException(
-          String.format("Failed to execute %s request against '%s'.", method, uri), e);
-    }
-  }
+  public abstract HttpResponse executeRequest(Method method, Object body)
+      throws HttpClientException;
 
   public HttpResponse get() throws HttpClientException {
     return executeRequest(Method.GET, null);

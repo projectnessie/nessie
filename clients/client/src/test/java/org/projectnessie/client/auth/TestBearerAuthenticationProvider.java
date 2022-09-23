@@ -30,9 +30,9 @@ import org.mockito.Mockito;
 import org.projectnessie.client.NessieConfigConstants;
 import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClient;
-import org.projectnessie.client.http.HttpHeaders;
 import org.projectnessie.client.http.RequestContext;
 import org.projectnessie.client.http.RequestFilter;
+import org.projectnessie.client.http.impl.HttpHeaders;
 
 @Execution(ExecutionMode.CONCURRENT)
 class TestBearerAuthenticationProvider {

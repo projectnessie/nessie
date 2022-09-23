@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http;
+package org.projectnessie.client.http.impl;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -22,12 +22,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
+import org.projectnessie.client.http.HttpClientException;
 
 /**
  * Construct a URI from base and paths. Adds query parameters, supports templates and handles url
  * encoding of path.
  */
-class UriBuilder {
+public class UriBuilder {
 
   private static final Pattern BACKSLASH_PATTERN = Pattern.compile("\\+");
   private final URI baseUri;
@@ -35,11 +36,11 @@ class UriBuilder {
   private final StringBuilder query = new StringBuilder();
   private final Map<String, String> templateValues = new HashMap<>();
 
-  UriBuilder(URI baseUri) {
+  public UriBuilder(URI baseUri) {
     this.baseUri = Objects.requireNonNull(baseUri);
   }
 
-  UriBuilder path(String path) {
+  public UriBuilder path(String path) {
     if (uri.length() > 0) {
       uri.append('/');
     }
@@ -50,7 +51,7 @@ class UriBuilder {
     return this;
   }
 
-  UriBuilder queryParam(String name, String value) {
+  public UriBuilder queryParam(String name, String value) {
     if (value == null) {
       return this;
     }
@@ -67,7 +68,7 @@ class UriBuilder {
     return this;
   }
 
-  UriBuilder resolveTemplate(String name, String value) {
+  public UriBuilder resolveTemplate(String name, String value) {
     templateValues.put(HttpUtils.checkNonNullTrim(name), HttpUtils.checkNonNullTrim(value));
     return this;
   }
@@ -81,7 +82,7 @@ class UriBuilder {
     }
   }
 
-  URI build() throws HttpClientException {
+  public URI build() throws HttpClientException {
     StringBuilder uriBuilder = new StringBuilder();
     uriBuilder.append(baseUri);
 

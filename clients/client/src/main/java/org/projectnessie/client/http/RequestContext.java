@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import org.projectnessie.client.http.HttpClient.Method;
+import org.projectnessie.client.http.impl.HttpHeaders;
 
 /** Context containing all important info about a request. */
 public class RequestContext {
@@ -87,7 +88,7 @@ public class RequestContext {
     responseCallbacks.add(responseCallback);
   }
 
-  List<BiConsumer<ResponseContext, Exception>> getResponseCallbacks() {
+  public List<BiConsumer<ResponseContext, Exception>> getResponseCallbacks() {
     return responseCallbacks;
   }
 }
