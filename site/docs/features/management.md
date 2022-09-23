@@ -169,7 +169,7 @@ Cut-off policies are parsed using the following logic and precedence:
     * `P10D` means 10 days
     * `PT10H` means 10 hours
 3. The string representation of a `java.time.format.DateTimeFormatter.ISO_INSTANT` is translated
-   to an exact cut-off-timestamp, using UTC. Example: `2011-12-03T10:15:30Z`
+   to an exact cut-off-timestamp. Example using UTC: `2011-12-03T10:15:30Z`
 
 !!! note
     Nessie GC's _mark_ phase processes up to 4 named references in parallel. This setting can be
