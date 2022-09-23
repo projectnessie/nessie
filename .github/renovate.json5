@@ -13,18 +13,15 @@
   packageRules: [
     // Check for updates, merge automatically
     {
-      matchManagers: ["maven", "gradle", "gradle-wrapper"],
+      matchManagers: ["maven", "gradle", "gradle-wrapper", "npm", "pip_requirements", "pip_setup"],
       matchUpdateTypes: ["minor", "patch"],
       automerge: true,
       platformAutomerge: true
     },
 
-    // Check for updates, merge automatically - npm + pip
+    // Schedule npm + pip on weekends
     {
       matchManagers: ["npm", "pip_requirements", "pip_setup"],
-      matchUpdateTypes: ["minor", "patch"],
-      automerge: true,
-      platformAutomerge: true,
       extends: ["schedule:weekends"]
     },
 
