@@ -190,7 +190,7 @@ testcontainers-cockroachdb = { module = "org.testcontainers:cockroachdb", versio
 testcontainers-mongodb = { module = "org.testcontainers:mongodb", version.ref = "testcontainers" }
 testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
 testcontainers-testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
-weld-se-core = { module = "org.jboss.weld.se:weld-se-core", version = "3.1.9.Final" }
+weld-se-core = { module = "org.jboss.weld.se:weld-se-core", version = "5.0.1.Final" }
 
 [plugins]
 errorprone = { id = "net.ltgt.errorprone", version = "2.0.2" }
