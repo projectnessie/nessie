@@ -38,7 +38,11 @@ public class PostgresTestResourceLifecycleManager
 
   @Override
   public Map<String, String> start() {
-    String version = System.getProperty("it.nessie.container.postgres.tag", "14");
+    String version = System.getProperty("it.nessie.container.postgres.tag");
+    if (version == null) {
+      throw new RuntimeException(
+          "postgres container version is not specified. Please configure it using the system property it.nessie.container.postgres.tag");
+    }
 
     container = new PostgreSQLContainer<>("postgres:" + version).withLogConsumer(outputFrame -> {});
     containerNetworkId.ifPresent(container::withNetworkMode);

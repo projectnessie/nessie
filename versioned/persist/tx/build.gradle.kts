@@ -67,4 +67,11 @@ tasks.named<Test>("test") { maxParallelForks = Runtime.getRuntime().availablePro
 
 tasks.named<Test>("intTest") {
   systemProperty("it.nessie.dbs", System.getProperty("it.nessie.dbs", "postgres"))
+  systemProperty(
+    "it.nessie.container.postgres.tag",
+    System.getProperty(
+      "it.nessie.container.postgres.tag",
+      dependencyVersion("versionPostgresContainerTag")
+    )
+  )
 }
