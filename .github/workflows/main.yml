@@ -10,7 +10,7 @@ on:
       - 'NOTICE'
       - '**.md'
       - '!site/**'
-      - '.github/dependabot.yml'
+      - '.github/renovate.json5'
       - '.github/workflows/release*.yml'
       - '.github/workflows/check*.yml'
       - '.idea/**'
