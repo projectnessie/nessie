@@ -24,47 +24,35 @@ plugins {
 extra["maven.name"] = "Nessie - GC - Mocked Iceberg data for tests"
 
 dependencies {
-  implementation(platform(nessieRootProject()))
-  implementation(nessieProjectPlatform("nessie-deps-testing", gradle))
-  compileOnly(nessieProjectPlatform("nessie-deps-iceberg", gradle))
-  compileOnly(nessieProjectPlatform("nessie-deps-build-only", gradle))
-  annotationProcessor(nessieProjectPlatform("nessie-deps-build-only", gradle))
-  implementation(platform("com.fasterxml.jackson:jackson-bom"))
+  compileOnly(libs.iceberg.core)
 
-  compileOnly("org.apache.iceberg:iceberg-core")
+  compileOnly(libs.errorprone.annotations)
+  compileOnly(libs.immutables.value.annotations)
+  annotationProcessor(libs.immutables.value.processor)
 
-  compileOnly("com.google.errorprone:error_prone_annotations")
-  compileOnly("org.immutables:value-annotations")
-  annotationProcessor("org.immutables:value-processor")
+  implementation(libs.guava)
+  implementation(platform(libs.jackson.bom))
+  implementation(libs.jackson.annotations)
+  implementation(libs.jackson.databind)
+  compileOnly(libs.avro)
 
-  implementation("com.google.guava:guava")
-  implementation("com.fasterxml.jackson.core:jackson-annotations")
-  implementation("com.fasterxml.jackson.core:jackson-databind")
-  compileOnly("org.apache.avro:avro:1.11.0")
+  implementation(libs.slf4j.api)
 
-  implementation("org.slf4j:slf4j-api")
+  compileOnly(libs.microprofile.openapi)
+  compileOnly(libs.jakarta.validation.api)
+  compileOnly(libs.jackson.annotations)
+  compileOnly(libs.findbugs.jsr305)
 
-  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-  compileOnly("jakarta.validation:jakarta.validation-api")
-  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
-  compileOnly("com.google.code.findbugs:jsr305")
+  testRuntimeOnly(libs.logback.classic)
 
-  testImplementation(platform("org.junit:junit-bom"))
-  testCompileOnly(nessieProjectPlatform("nessie-deps-build-only", gradle))
-  testAnnotationProcessor(nessieProjectPlatform("nessie-deps-build-only", gradle))
-  testImplementation(nessieProjectPlatform("nessie-deps-iceberg", gradle))
+  testImplementation(libs.iceberg.core)
 
-  testRuntimeOnly("ch.qos.logback:logback-classic")
+  testCompileOnly(libs.immutables.value.annotations)
+  testAnnotationProcessor(libs.immutables.value.processor)
 
-  testImplementation("org.apache.iceberg:iceberg-core")
+  testCompileOnly(libs.microprofile.openapi)
 
-  testCompileOnly("org.immutables:value-annotations")
-  testAnnotationProcessor("org.immutables:value-processor")
-
-  testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-
-  testImplementation("org.assertj:assertj-core")
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testImplementation("org.junit.jupiter:junit-jupiter-params")
-  testImplementation("org.junit.jupiter:junit-jupiter-engine")
+  testImplementation(platform(libs.junit.bom))
+  testImplementation(libs.bundles.junit.testing)
+  testRuntimeOnly(libs.junit.jupiter.engine)
 }

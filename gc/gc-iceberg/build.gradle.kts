@@ -25,45 +25,33 @@ plugins {
 extra["maven.name"] = "Nessie - GC - Iceberg content functionality"
 
 dependencies {
-  implementation(platform(nessieRootProject()))
-  implementation(nessieProjectPlatform("nessie-deps-iceberg", gradle))
-  compileOnly(nessieProjectPlatform("nessie-deps-build-only", gradle))
-  annotationProcessor(nessieProjectPlatform("nessie-deps-build-only", gradle))
-  compileOnly(platform("com.fasterxml.jackson:jackson-bom"))
+  implementation(libs.iceberg.core)
 
-  implementation("org.apache.iceberg:iceberg-core")
-
-  compileOnly("com.google.errorprone:error_prone_annotations")
-  compileOnly("org.immutables:value-annotations")
-  annotationProcessor("org.immutables:value-processor")
+  compileOnly(libs.errorprone.annotations)
+  compileOnly(libs.immutables.value.annotations)
+  annotationProcessor(libs.immutables.value.processor)
 
   implementation(nessieProject("nessie-model"))
   implementation(nessieProject("nessie-gc-base"))
 
-  implementation("org.slf4j:slf4j-api")
+  implementation(libs.slf4j.api)
 
-  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-  compileOnly("jakarta.validation:jakarta.validation-api")
-  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
-  compileOnly("com.google.code.findbugs:jsr305")
-
-  testImplementation(nessieProjectPlatform("nessie-deps-testing", gradle))
-  testImplementation(platform("com.fasterxml.jackson:jackson-bom"))
-  testImplementation(platform("org.junit:junit-bom"))
-  testCompileOnly(nessieProjectPlatform("nessie-deps-build-only", gradle))
-  testAnnotationProcessor(nessieProjectPlatform("nessie-deps-build-only", gradle))
+  compileOnly(platform(libs.jackson.bom))
+  compileOnly(libs.jackson.annotations)
+  compileOnly(libs.microprofile.openapi)
+  compileOnly(libs.jakarta.validation.api)
+  compileOnly(libs.findbugs.jsr305)
 
   testImplementation(nessieProject("nessie-gc-iceberg-mock"))
-  testRuntimeOnly("ch.qos.logback:logback-classic")
+  testRuntimeOnly(libs.logback.classic)
 
-  testImplementation("com.google.guava:guava")
+  testImplementation(libs.guava)
 
-  testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
-  testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
+  testCompileOnly(platform(libs.jackson.bom))
+  testCompileOnly(libs.jackson.annotations)
+  testCompileOnly(libs.microprofile.openapi)
 
-  testImplementation("org.mockito:mockito-core")
-  testImplementation("org.assertj:assertj-core")
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testImplementation("org.junit.jupiter:junit-jupiter-params")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+  testImplementation(platform(libs.junit.bom))
+  testImplementation(libs.bundles.junit.testing)
+  testRuntimeOnly(libs.junit.jupiter.engine)
 }

@@ -29,13 +29,7 @@ description =
     "due to the hugely different set of dependencies"
 
 dependencies {
-  implementation(platform(nessieRootProject()))
-  implementation(nessieProjectPlatform("nessie-deps-iceberg", gradle))
-  compileOnly(nessieProjectPlatform("nessie-deps-build-only", gradle))
-  annotationProcessor(nessieProjectPlatform("nessie-deps-build-only", gradle))
-  compileOnly(platform("com.fasterxml.jackson:jackson-bom"))
-
-  implementation("org.apache.hadoop:hadoop-common") {
+  implementation(libs.hadoop.common) {
     exclude("javax.servlet.jsp", "jsp-api")
     exclude("javax.ws.rs", "javax.ws.rs-api")
     exclude("log4j", "log4j")
@@ -45,46 +39,38 @@ dependencies {
     exclude("org.eclipse.jetty")
     exclude("org.apache.zookeeper")
   }
-  implementation("org.apache.iceberg:iceberg-core")
-  implementation("org.apache.iceberg:iceberg-aws")
+  implementation(libs.iceberg.core)
+  implementation(libs.iceberg.aws)
 
-  compileOnly("com.google.errorprone:error_prone_annotations")
-  compileOnly("org.immutables:value-annotations")
-  annotationProcessor("org.immutables:value-processor")
+  compileOnly(libs.errorprone.annotations)
+  compileOnly(libs.immutables.value.annotations)
+  annotationProcessor(libs.immutables.value.processor)
 
   implementation(nessieProject("nessie-gc-base"))
 
-  implementation("org.slf4j:slf4j-api")
-
-  testImplementation(nessieProjectPlatform("nessie-deps-testing", gradle))
-  testCompileOnly(platform("com.fasterxml.jackson:jackson-bom"))
-  testImplementation(platform("org.junit:junit-bom"))
-  testCompileOnly(nessieProjectPlatform("nessie-deps-build-only", gradle))
-  testAnnotationProcessor(nessieProjectPlatform("nessie-deps-build-only", gradle))
-  testImplementation(platform("software.amazon.awssdk:bom:${dependencyVersion("versionAwssdk")}"))
+  implementation(libs.slf4j.api)
 
   testImplementation(nessieProject("nessie-gc-base-tests"))
   testImplementation(nessieProject("nessie-s3mock"))
   testImplementation(nessieProject("nessie-s3minio"))
 
-  testImplementation("org.apache.iceberg:iceberg-core")
-  testRuntimeOnly("org.apache.iceberg:iceberg-aws")
+  testRuntimeOnly(libs.logback.classic)
 
-  testRuntimeOnly("ch.qos.logback:logback-classic")
+  testCompileOnly(libs.immutables.value.annotations)
+  testAnnotationProcessor(libs.immutables.value.processor)
 
-  testCompileOnly("org.immutables:value-annotations")
-  testAnnotationProcessor("org.immutables:value-processor")
+  testCompileOnly(platform(libs.jackson.bom))
+  testCompileOnly(libs.jackson.annotations)
 
-  testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
-  testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
+  testCompileOnly(libs.microprofile.openapi)
 
-  testRuntimeOnly("org.apache.hadoop:hadoop-aws")
-  testImplementation("software.amazon.awssdk:s3")
+  testImplementation(platform(libs.awssdk.bom))
+  testImplementation(libs.awssdk.s3)
+  testRuntimeOnly(libs.hadoop.aws)
 
-  testImplementation("org.assertj:assertj-core")
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testImplementation("org.junit.jupiter:junit-jupiter-params")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+  testImplementation(platform(libs.junit.bom))
+  testImplementation(libs.bundles.junit.testing)
+  testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
 tasks.withType(Test::class.java).configureEach {
