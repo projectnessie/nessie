@@ -19,7 +19,7 @@ plugins {
   jacoco
   `maven-publish`
   signing
-  id("org.projectnessie")
+  alias(libs.plugins.nessie.run)
   `nessie-conventions`
 }
 
@@ -28,21 +28,13 @@ extra["maven.name"] = "Nessie - GC - CLI integration test"
 val sparkScala = useSparkScalaVersionsForProject("3.3", "2.12")
 
 dependencies {
-  implementation(platform(nessieRootProject()))
-  implementation(nessieProjectPlatform("nessie-deps-iceberg", gradle))
-  compileOnly(nessieProjectPlatform("nessie-deps-build-only", gradle))
-  annotationProcessor(nessieProjectPlatform("nessie-deps-build-only", gradle))
-  runtimeOnly(platform(project(":nessie-deps-persist")))
-  compileOnly(platform("com.fasterxml.jackson:jackson-bom"))
-  implementation(platform("software.amazon.awssdk:bom:${dependencyVersion("versionAwssdk")}"))
-
-  compileOnly("com.google.errorprone:error_prone_annotations")
-  compileOnly("org.immutables:value-annotations")
-  annotationProcessor("org.immutables:value-processor")
-
   implementation(nessieProject("nessie-gc-tool", "shadow"))
 
-  implementation("org.apache.hadoop:hadoop-common") {
+  compileOnly(libs.errorprone.annotations)
+  compileOnly(libs.immutables.value.annotations)
+  annotationProcessor(libs.immutables.value.processor)
+
+  implementation(libs.hadoop.common) {
     exclude("javax.servlet.jsp", "jsp-api")
     exclude("javax.ws.rs", "javax.ws.rs-api")
     exclude("log4j", "log4j")
@@ -54,17 +46,11 @@ dependencies {
     exclude("org.apache.zookeeper")
   }
 
-  implementation("org.slf4j:slf4j-api")
+  implementation(libs.slf4j.api)
 
-  runtimeOnly("com.h2database:h2")
+  runtimeOnly(libs.h2)
 
-  testImplementation(nessieProjectPlatform("nessie-deps-testing", gradle))
-  testCompileOnly(platform("com.fasterxml.jackson:jackson-bom"))
-  testImplementation(platform("org.junit:junit-bom"))
-  testCompileOnly(nessieProjectPlatform("nessie-deps-build-only", gradle))
-  testAnnotationProcessor(nessieProjectPlatform("nessie-deps-build-only", gradle))
-
-  testRuntimeOnly("ch.qos.logback:logback-classic:${dependencyVersion("versionLogback")}")
+  testRuntimeOnly(libs.logback.classic)
 
   testImplementation(
     nessieProject("nessie-spark-extensions-basetests_${sparkScala.scalaMajorVersion}")
@@ -81,34 +67,34 @@ dependencies {
     forSpark(sparkScala.sparkVersion)
   }
 
-  testImplementation("org.apache.iceberg:iceberg-core")
-  testRuntimeOnly("org.apache.iceberg:iceberg-hive-metastore")
-  testRuntimeOnly("org.apache.iceberg:iceberg-aws")
-  testRuntimeOnly("org.apache.iceberg:iceberg-nessie")
-  testRuntimeOnly("org.apache.iceberg:iceberg-core")
+  testImplementation(libs.iceberg.core)
+  testRuntimeOnly(libs.iceberg.hive.metastore)
+  testRuntimeOnly(libs.iceberg.aws)
+  testRuntimeOnly(libs.iceberg.nessie)
+  testRuntimeOnly(libs.iceberg.core)
   testRuntimeOnly(
-    "org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}"
+    "org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:${libs.versions.iceberg.get()}"
   )
-  testRuntimeOnly("org.apache.iceberg:iceberg-hive-metastore")
-  testRuntimeOnly("org.apache.iceberg:iceberg-aws")
+  testRuntimeOnly(libs.iceberg.hive.metastore)
+  testRuntimeOnly(libs.iceberg.aws)
 
-  testRuntimeOnly("org.apache.hadoop:hadoop-client")
-  testRuntimeOnly("org.apache.hadoop:hadoop-aws")
+  testRuntimeOnly(libs.hadoop.client)
+  testRuntimeOnly(libs.hadoop.aws)
 
-  testRuntimeOnly("software.amazon.awssdk:s3")
-  testRuntimeOnly("software.amazon.awssdk:url-connection-client")
+  testRuntimeOnly(platform(libs.awssdk.bom))
+  testRuntimeOnly(libs.awssdk.s3)
+  testRuntimeOnly(libs.awssdk.url.connection.client)
   // TODO those are needed, because Spark serializes some configuration stuff (Spark broadcast)
-  testRuntimeOnly("software.amazon.awssdk:dynamodb")
-  testRuntimeOnly("software.amazon.awssdk:glue")
-  testRuntimeOnly("software.amazon.awssdk:kms")
+  testRuntimeOnly(libs.awssdk.dynamodb)
+  testRuntimeOnly(libs.awssdk.glue)
+  testRuntimeOnly(libs.awssdk.kms)
 
-  testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
-  testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
+  testCompileOnly(libs.jackson.annotations)
+  testCompileOnly(libs.microprofile.openapi)
 
-  testImplementation("org.assertj:assertj-core")
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testImplementation("org.junit.jupiter:junit-jupiter-params")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+  testImplementation(platform(libs.junit.bom))
+  testImplementation(libs.bundles.junit.testing)
+  testRuntimeOnly(libs.junit.jupiter.engine)
 
   nessieQuarkusServer(nessieQuarkusServerRunner())
 }

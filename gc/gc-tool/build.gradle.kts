@@ -28,28 +28,21 @@ plugins {
 extra["maven.name"] = "Nessie - GC - Standalone command line tool"
 
 dependencies {
-  implementation(platform(nessieRootProject()))
-  implementation(nessieProjectPlatform("nessie-deps-iceberg", gradle))
-  compileOnly(nessieProjectPlatform("nessie-deps-build-only", gradle))
-  annotationProcessor(nessieProjectPlatform("nessie-deps-build-only", gradle))
-  compileOnly(platform("com.fasterxml.jackson:jackson-bom"))
-  implementation(platform("software.amazon.awssdk:bom:${dependencyVersion("versionAwssdk")}"))
-
-  compileOnly("com.google.errorprone:error_prone_annotations")
-  compileOnly("org.immutables:value-annotations")
-  annotationProcessor("org.immutables:value-processor")
-
   implementation(nessieProject("nessie-client"))
   implementation(nessieProject("nessie-gc-base"))
   implementation(nessieProject("nessie-gc-iceberg"))
   implementation(nessieProject("nessie-gc-iceberg-files"))
   implementation(nessieProject("nessie-gc-repository-jdbc"))
 
-  implementation("org.apache.iceberg:iceberg-core")
-  runtimeOnly("org.apache.iceberg:iceberg-hive-metastore")
-  runtimeOnly("org.apache.iceberg:iceberg-aws")
+  compileOnly(libs.errorprone.annotations)
+  compileOnly(libs.immutables.value.annotations)
+  annotationProcessor(libs.immutables.value.processor)
 
-  implementation("org.apache.hadoop:hadoop-common") {
+  implementation(libs.iceberg.core)
+  runtimeOnly(libs.iceberg.hive.metastore)
+  runtimeOnly(libs.iceberg.aws)
+
+  implementation(libs.hadoop.common) {
     exclude("javax.servlet.jsp", "jsp-api")
     exclude("javax.ws.rs", "javax.ws.rs-api")
     exclude("log4j", "log4j")
@@ -61,43 +54,39 @@ dependencies {
     exclude("org.apache.zookeeper")
   }
 
-  runtimeOnly("software.amazon.awssdk:s3")
-  runtimeOnly("software.amazon.awssdk:url-connection-client")
+  implementation(platform(libs.awssdk.bom))
+  runtimeOnly(libs.awssdk.s3)
+  runtimeOnly(libs.awssdk.url.connection.client)
 
-  implementation("info.picocli:picocli")
-  annotationProcessor("info.picocli:picocli-codegen")
+  implementation(libs.picocli)
+  annotationProcessor(libs.picocli.codegen)
 
-  implementation("org.slf4j:slf4j-api")
-  runtimeOnly("ch.qos.logback:logback-classic:${dependencyVersion("versionLogback")}")
+  implementation(libs.slf4j.api)
+  runtimeOnly(libs.logback.classic)
 
-  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-  compileOnly("jakarta.validation:jakarta.validation-api")
-  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
-  compileOnly("com.google.code.findbugs:jsr305")
+  compileOnly(libs.microprofile.openapi)
+  compileOnly(libs.jakarta.validation.api)
+  compileOnly(libs.jackson.annotations)
+  compileOnly(libs.findbugs.jsr305)
 
-  runtimeOnly("com.h2database:h2")
-  runtimeOnly("org.postgresql:postgresql")
+  runtimeOnly(libs.h2)
+  runtimeOnly(libs.postgresql)
 
-  testImplementation(nessieProjectPlatform("nessie-deps-testing", gradle))
-  testCompileOnly(platform("com.fasterxml.jackson:jackson-bom"))
-  testImplementation(platform("org.junit:junit-bom"))
-  testCompileOnly(nessieProjectPlatform("nessie-deps-build-only", gradle))
-  testAnnotationProcessor(nessieProjectPlatform("nessie-deps-build-only", gradle))
+  testCompileOnly(platform(libs.jackson.bom))
 
   testImplementation(nessieProject("nessie-jaxrs-testextension"))
 
-  testRuntimeOnly("ch.qos.logback:logback-classic")
+  testRuntimeOnly(libs.logback.classic)
 
-  testCompileOnly("org.immutables:value-annotations")
-  testAnnotationProcessor("org.immutables:value-processor")
+  testCompileOnly(libs.immutables.value.annotations)
+  testAnnotationProcessor(libs.immutables.value.processor)
 
-  testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
-  testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
+  testCompileOnly(libs.jackson.annotations)
+  testCompileOnly(libs.microprofile.openapi)
 
-  testImplementation("org.assertj:assertj-core")
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testImplementation("org.junit.jupiter:junit-jupiter-params")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+  testImplementation(platform(libs.junit.bom))
+  testImplementation(libs.bundles.junit.testing)
+  testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
 tasks.named<ProcessResources>("processResources") {
