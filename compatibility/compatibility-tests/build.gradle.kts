@@ -25,26 +25,17 @@ plugins {
 extra["maven.name"] = "Nessie - Backward Compatibility - Tests"
 
 dependencies {
-  implementation(platform(rootProject))
-  implementation(platform("com.fasterxml.jackson:jackson-bom"))
-  implementation(platform(project(":nessie-deps-testing")))
-  implementation(platform("org.junit:junit-bom"))
+  implementation(platform(libs.junit.bom))
+  implementation(libs.bundles.junit.testing)
 
-  implementation(platform("org.junit:junit-bom"))
-  implementation(platform("com.fasterxml.jackson:jackson-bom"))
-  implementation("org.assertj:assertj-core")
-  implementation("org.junit.jupiter:junit-jupiter-api")
-  implementation("org.junit.jupiter:junit-jupiter-params")
   implementation(project(":nessie-compatibility-common"))
   implementation(project(":nessie-client"))
-  implementation("org.eclipse.microprofile.openapi:microprofile-openapi-api")
+  implementation(libs.microprofile.openapi)
 
-  implementation("com.fasterxml.jackson.core:jackson-annotations")
+  implementation(platform(libs.jackson.bom))
+  implementation(libs.jackson.annotations)
 
-  implementation("org.assertj:assertj-core")
-  implementation("org.junit.jupiter:junit-jupiter-api")
-
-  testImplementation("com.google.guava:guava")
+  testImplementation(libs.guava)
   testImplementation(project(":nessie-versioned-persist-adapter"))
   testImplementation(project(":nessie-versioned-persist-non-transactional"))
   testImplementation(project(":nessie-versioned-persist-in-memory"))
@@ -56,6 +47,6 @@ dependencies {
 }
 
 tasks.withType<Test>().configureEach {
-  systemProperty("rocksdb.version", dependencyVersion("versionRocksDb"))
+  systemProperty("rocksdb.version", libs.versions.rocksdb.get())
   systemProperty("junit.jupiter.extensions.autodetection.enabled", "true")
 }

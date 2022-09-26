@@ -25,33 +25,26 @@ plugins {
 extra["maven.name"] = "Nessie - Import/Export"
 
 dependencies {
-  implementation(platform(rootProject))
-  compileOnly(platform(project(":nessie-deps-build-only")))
-  annotationProcessor(platform(project(":nessie-deps-build-only")))
-  implementation(platform(project(":nessie-deps-persist")))
-  implementation(platform("com.fasterxml.jackson:jackson-bom"))
-
   implementation(project(":nessie-model"))
   implementation(project(":nessie-versioned-spi"))
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-transfer-proto"))
 
-  implementation("com.google.protobuf:protobuf-java")
-  implementation("com.fasterxml.jackson.core:jackson-databind")
-  implementation("com.fasterxml.jackson.core:jackson-annotations")
+  implementation(libs.protobuf.java)
 
-  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-  compileOnly("jakarta.validation:jakarta.validation-api")
-  implementation("com.google.code.findbugs:jsr305")
-  compileOnly("com.google.errorprone:error_prone_annotations")
-  implementation("com.google.guava:guava")
+  implementation(platform(libs.jackson.bom))
+  implementation(libs.jackson.databind)
+  implementation(libs.jackson.annotations)
 
-  compileOnly("org.immutables:builder")
-  compileOnly("org.immutables:value-annotations")
-  annotationProcessor("org.immutables:value-processor")
+  compileOnly(libs.microprofile.openapi)
+  compileOnly(libs.jakarta.validation.api)
+  implementation(libs.findbugs.jsr305)
+  compileOnly(libs.errorprone.annotations)
+  implementation(libs.guava)
 
-  testImplementation(platform(project(":nessie-deps-testing")))
-  testImplementation(platform("org.junit:junit-bom"))
+  compileOnly(libs.immutables.builder)
+  compileOnly(libs.immutables.value.annotations)
+  annotationProcessor(libs.immutables.value.processor)
 
   testImplementation(project(":nessie-client"))
 
@@ -68,14 +61,13 @@ dependencies {
   testImplementation(project(":nessie-versioned-persist-transactional"))
   testImplementation(project(":nessie-versioned-persist-transactional-test"))
 
-  testRuntimeOnly("com.h2database:h2")
+  testRuntimeOnly(libs.h2)
 
-  testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-  testImplementation("org.mockito:mockito-core")
-  testImplementation("org.assertj:assertj-core")
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testImplementation("org.junit.jupiter:junit-jupiter-params")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+  testCompileOnly(libs.microprofile.openapi)
+
+  testImplementation(platform(libs.junit.bom))
+  testImplementation(libs.bundles.junit.testing)
+  testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
 tasks.named<Test>("test") { maxParallelForks = Runtime.getRuntime().availableProcessors() }

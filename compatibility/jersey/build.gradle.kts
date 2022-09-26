@@ -25,14 +25,6 @@ plugins {
 extra["maven.name"] = "Nessie - Backward Compatibility - Jersey"
 
 dependencies {
-  implementation(platform(rootProject))
-  implementation(platform(project(":nessie-deps-testing")))
-  implementation(platform("org.glassfish.jersey:jersey-bom"))
-  implementation(platform("com.fasterxml.jackson:jackson-bom"))
-  implementation(
-    platform("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-bundle")
-  )
-
   implementation(project(":nessie-model"))
   implementation(project(":nessie-rest-services"))
   implementation(project(":nessie-services"))
@@ -41,12 +33,19 @@ dependencies {
   implementation(project(":nessie-versioned-persist-store"))
   implementation(project(":nessie-versioned-persist-testextension"))
   implementation(project(":nessie-versioned-spi"))
-  implementation("org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_2.1_spec")
-  implementation("jakarta.enterprise:jakarta.enterprise.cdi-api")
-  implementation("jakarta.annotation:jakarta.annotation-api")
-  implementation("jakarta.validation:jakarta.validation-api")
-  implementation("javax.ws.rs:javax.ws.rs-api")
-  implementation("com.fasterxml.jackson.core:jackson-databind")
+  implementation(libs.javax.ws.rs21)
+  implementation(libs.jakarta.enterprise.cdi.api)
+  implementation(libs.jakarta.annotation.api)
+  implementation(libs.jakarta.validation.api)
+  implementation(libs.javax.ws.rs)
+
+  implementation(platform(libs.jackson.bom))
+  implementation(libs.jackson.databind)
+  implementation(libs.jackson.annotations)
+
+  implementation(libs.microprofile.openapi)
+
+  implementation(platform(libs.jersey.bom))
   implementation("org.glassfish.jersey.core:jersey-server")
   implementation("org.glassfish.jersey.inject:jersey-hk2")
   implementation("org.glassfish.jersey.media:jersey-media-json-jackson")
@@ -54,11 +53,11 @@ dependencies {
   implementation("org.glassfish.jersey.ext.cdi:jersey-cdi1x")
   implementation("org.glassfish.jersey.ext.cdi:jersey-cdi-rs-inject")
   implementation("org.glassfish.jersey.ext.cdi:jersey-weld2-se")
+  implementation(
+    platform("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-bundle")
+  )
   implementation("org.glassfish.jersey.test-framework:jersey-test-framework-core")
   implementation("org.glassfish.jersey.test-framework:jersey-test-framework-util")
-  implementation("com.fasterxml.jackson.core:jackson-annotations")
-  implementation("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-
   implementation(
     "org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2"
   )
@@ -82,5 +81,5 @@ dependencies {
 }
 
 tasks.withType<Test>().configureEach {
-  systemProperty("rocksdb.version", dependencyVersion("versionRocksDb"))
+  systemProperty("rocksdb.version", libs.versions.rocksdb.get())
 }

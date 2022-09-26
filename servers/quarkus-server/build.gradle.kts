@@ -20,7 +20,7 @@ plugins {
   `java-library`
   `maven-publish`
   signing
-  id("io.quarkus")
+  alias(libs.plugins.quarkus)
   `nessie-conventions`
 }
 
@@ -35,13 +35,6 @@ val openapiSource by
   configurations.creating { description = "Used to reference OpenAPI spec files" }
 
 dependencies {
-  implementation(platform(rootProject))
-  implementation(platform(project(":nessie-deps-persist")))
-  implementation(platform(project(":nessie-deps-quarkus")))
-  implementation(enforcedPlatform("io.quarkus:quarkus-bom"))
-  implementation(enforcedPlatform("io.quarkus.platform:quarkus-amazon-services-bom"))
-  implementation(platform("org.projectnessie.cel:cel-bom"))
-
   implementation(project(":nessie-model"))
   implementation(project(":nessie-services"))
   implementation(project(":nessie-quarkus-common"))
@@ -50,6 +43,9 @@ dependencies {
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-persist-store"))
   implementation(project(":nessie-ui"))
+
+  implementation(enforcedPlatform(libs.quarkus.bom))
+  implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
   implementation("org.jboss.resteasy:resteasy-core-spi")
   implementation("io.quarkus:quarkus-resteasy")
   implementation("io.quarkus:quarkus-resteasy-jackson")
@@ -60,13 +56,15 @@ dependencies {
   implementation("io.quarkus:quarkus-smallrye-openapi")
   implementation("io.quarkus:quarkus-micrometer")
   implementation("io.quarkus:quarkus-core-deployment")
-  implementation("io.quarkus:quarkus-smallrye-opentracing")
+  implementation(libs.quarkus.smallrye.opentracing)
   implementation("io.quarkus:quarkus-container-image-jib")
-  implementation("io.quarkiverse.loggingsentry:quarkus-logging-sentry")
+  implementation(libs.quarkus.logging.sentry)
   implementation("io.smallrye:smallrye-open-api-jaxrs")
   implementation("io.micrometer:micrometer-registry-prometheus")
-  implementation("org.projectnessie.cel:cel-tools")
-  implementation("org.projectnessie.cel:cel-jackson")
+
+  implementation(platform(libs.cel.bom))
+  implementation(libs.cel.tools)
+  implementation(libs.cel.jackson)
 
   if (project.hasProperty("k8s")) {
     /*
@@ -78,12 +76,9 @@ dependencies {
     implementation("io.quarkus:quarkus-minikube")
   }
 
-  implementation("com.google.guava:guava")
+  implementation(libs.guava)
 
   openapiSource(project(":nessie-model", "openapiSource"))
-
-  testImplementation(platform(project(":nessie-deps-testing")))
-  testImplementation(platform("org.junit:junit-bom"))
 
   testImplementation(project(":nessie-client"))
   testImplementation(project(":nessie-jaxrs-tests"))
@@ -95,11 +90,9 @@ dependencies {
   testImplementation("io.quarkus:quarkus-test-oidc-server")
   testImplementation("io.quarkus:quarkus-jacoco")
 
-  testImplementation("org.assertj:assertj-core")
-  testImplementation("org.mockito:mockito-core")
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testImplementation("org.junit.jupiter:junit-jupiter-params")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+  testImplementation(platform(libs.junit.bom))
+  testImplementation(libs.bundles.junit.testing)
+  testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
 preferJava11()
@@ -130,17 +123,18 @@ val quarkusBuild =
     dependsOn(pullOpenApiSpec)
     inputs.property("quarkus.package.type", project.extra["quarkus.package.type"])
     inputs.property("final.name", quarkus.finalName())
-    inputs.property("builder-image", dependencyVersion("quarkus.builder-image"))
     inputs.property("container-build", useDocker)
+    val quarkusBuilderImage = libs.versions.quarkusUbiNativeImage.get()
+    inputs.property("builder-image", quarkusBuilderImage)
     if (useDocker) {
       // Use the "docker" profile to just build the Docker container image when the native image's
       // been built
       nativeArgs { "container-build" to true }
     }
-    nativeArgs { "builder-image" to dependencyVersion("quarkus.builder-image") }
+    nativeArgs { "builder-image" to quarkusBuilderImage }
     doFirst {
       // THIS IS A WORKAROUND! the nativeArgs{} thing above doesn't really work
-      System.setProperty("quarkus.native.builder-image", dependencyVersion("quarkus.builder-image"))
+      System.setProperty("quarkus.native.builder-image", quarkusBuilderImage)
       if (useDocker) {
         System.setProperty("quarkus.native.container-build", "true")
         System.setProperty("quarkus.container-image.build", "true")
@@ -158,10 +152,7 @@ tasks.withType<Test>().configureEach {
   //  property in application.properties
   systemProperty(
     "it.nessie.container.postgres.tag",
-    System.getProperty(
-      "it.nessie.container.postgres.tag",
-      dependencyVersion("versionPostgresContainerTag")
-    )
+    System.getProperty("it.nessie.container.postgres.tag", libs.versions.postgresContainerTag.get())
   )
 }
 

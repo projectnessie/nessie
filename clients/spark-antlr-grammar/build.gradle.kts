@@ -23,10 +23,8 @@ plugins {
 }
 
 dependencies {
-  antlr(nessieProjectPlatform("nessie-deps-antlr", gradle))
-  antlr("org.antlr:antlr4")
+  antlr(libs.antlr.antlr4)
 
-  api(platform(nessieRootProject()))
   api(project(":nessie-spark-antlr-runtime", "shadow"))
 }
 

@@ -25,29 +25,23 @@ plugins {
 extra["maven.name"] = "Nessie - Versioned - Persist - Transactional/test-support"
 
 dependencies {
-  implementation(platform(rootProject))
-  implementation(platform(project(":nessie-deps-persist")))
-  compileOnly(platform(project(":nessie-deps-build-only")))
-  annotationProcessor(platform(project(":nessie-deps-build-only")))
-  implementation(platform(project(":nessie-deps-testing")))
-
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-persist-transactional"))
   implementation(project(":nessie-versioned-persist-testextension"))
   implementation(project(":nessie-versioned-spi"))
   implementation(project(":nessie-versioned-tests"))
 
-  implementation("com.google.guava:guava")
-  implementation("com.google.code.findbugs:jsr305")
-  compileOnly("org.immutables:value-annotations")
-  annotationProcessor("org.immutables:value-processor")
-  implementation("org.slf4j:slf4j-api")
+  implementation(libs.guava)
+  implementation(libs.findbugs.jsr305)
+  compileOnly(libs.immutables.value.annotations)
+  annotationProcessor(libs.immutables.value.processor)
+  implementation(libs.slf4j.api)
 
-  implementation("io.agroal:agroal-pool")
-  compileOnly("com.h2database:h2")
-  compileOnly("org.postgresql:postgresql")
+  implementation(libs.agroal.pool)
+  compileOnly(libs.h2)
+  compileOnly(libs.postgresql)
 
-  implementation("org.testcontainers:postgresql")
-  implementation("org.testcontainers:cockroachdb")
-  implementation("com.github.docker-java:docker-java-api")
+  implementation(libs.testcontainers.postgresql)
+  implementation(libs.testcontainers.cockroachdb)
+  implementation(libs.docker.java.api)
 }

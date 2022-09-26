@@ -14,4 +14,6 @@
  * limitations under the License.
  */
 
-// Recommended to exist, even if empty
+dependencyResolutionManagement {
+  versionCatalogs { create("libs") { from(files("../gradle/libs.versions.toml")) } }
+}

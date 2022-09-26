@@ -25,30 +25,25 @@ plugins {
 extra["maven.name"] = "Nessie - Server - Store"
 
 dependencies {
-  implementation(platform(rootProject))
-
   implementation(project(":nessie-model"))
   implementation(project(":nessie-versioned-spi"))
   api(project(":nessie-server-store-proto"))
-  implementation(platform("com.fasterxml.jackson:jackson-bom"))
-  implementation("com.fasterxml.jackson.core:jackson-databind")
-  implementation("com.google.guava:guava")
+  implementation(libs.guava)
 
-  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
-  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-  compileOnly("jakarta.validation:jakarta.validation-api")
+  implementation(platform(libs.jackson.bom))
+  implementation(libs.jackson.databind)
+  compileOnly(libs.jackson.annotations)
 
-  testImplementation(platform(project(":nessie-deps-testing")))
-  testImplementation(platform("org.junit:junit-bom"))
-  testCompileOnly(platform("com.fasterxml.jackson:jackson-bom"))
+  compileOnly(libs.microprofile.openapi)
+  compileOnly(libs.jakarta.validation.api)
 
-  testImplementation("com.google.guava:guava")
-  testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
+  testImplementation(libs.guava)
+  testCompileOnly(libs.microprofile.openapi)
 
-  testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
+  testCompileOnly(platform(libs.jackson.bom))
+  testCompileOnly(libs.jackson.annotations)
 
-  testImplementation("org.assertj:assertj-core")
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testImplementation("org.junit.jupiter:junit-jupiter-params")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+  testImplementation(platform(libs.junit.bom))
+  testImplementation(libs.bundles.junit.testing)
+  testRuntimeOnly(libs.junit.jupiter.engine)
 }

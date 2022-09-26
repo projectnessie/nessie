@@ -21,39 +21,32 @@ plugins {
   jacoco
   `maven-publish`
   signing
-  id("com.github.johnrengelman.shadow")
-  id("org.projectnessie")
+  alias(libs.plugins.nessie.run)
   `nessie-conventions`
 }
 
-dependencies {
-  implementation(platform(rootProject))
-  compileOnly(platform(project(":nessie-deps-build-only")))
-  annotationProcessor(platform(project(":nessie-deps-build-only")))
-  implementation(platform("com.fasterxml.jackson:jackson-bom"))
+applyShadowJar()
 
+dependencies {
   implementation(project(":nessie-client"))
 
-  implementation("jakarta.validation:jakarta.validation-api")
-  implementation("info.picocli:picocli")
+  implementation(libs.jakarta.validation.api)
+  implementation(libs.picocli)
   // TODO help picocli to make their annotation-processor incremental
-  annotationProcessor("info.picocli:picocli-codegen")
-  implementation("com.google.guava:guava")
-  compileOnly("com.google.code.findbugs:jsr305")
-  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
+  annotationProcessor(libs.picocli.codegen)
+  implementation(libs.guava)
+  compileOnly(libs.findbugs.jsr305)
+  compileOnly(libs.microprofile.openapi)
 
-  implementation("com.fasterxml.jackson.core:jackson-annotations")
-  implementation("com.fasterxml.jackson.core:jackson-databind")
+  implementation(platform(libs.jackson.bom))
+  implementation(libs.jackson.annotations)
+  implementation(libs.jackson.databind)
 
-  testImplementation(platform(project(":nessie-deps-testing")))
-  testImplementation(platform("org.junit:junit-bom"))
+  testCompileOnly(libs.microprofile.openapi)
 
-  testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-
-  testImplementation("org.assertj:assertj-core")
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testImplementation("org.junit.jupiter:junit-jupiter-params")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+  testImplementation(platform(libs.junit.bom))
+  testImplementation(libs.bundles.junit.testing)
+  testRuntimeOnly(libs.junit.jupiter.engine)
 
   nessieQuarkusServer(project(":nessie-quarkus", "quarkusRunner"))
 }

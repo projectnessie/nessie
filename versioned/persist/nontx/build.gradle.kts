@@ -25,25 +25,17 @@ plugins {
 extra["maven.name"] = "Nessie - Versioned - Persist - Non-Transactional"
 
 dependencies {
-  implementation(platform(rootProject))
-  compileOnly(platform(project(":nessie-deps-build-only")))
-  annotationProcessor(platform(project(":nessie-deps-build-only")))
-
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-persist-serialize"))
   implementation(project(":nessie-versioned-spi"))
-  implementation("com.google.guava:guava")
-  compileOnly("org.immutables:value-annotations")
-  annotationProcessor("org.immutables:value-processor")
-
-  testImplementation(platform(project(":nessie-deps-testing")))
-  testImplementation(platform("org.junit:junit-bom"))
+  implementation(libs.guava)
+  compileOnly(libs.immutables.value.annotations)
+  annotationProcessor(libs.immutables.value.processor)
 
   testImplementation(project(":nessie-versioned-persist-testextension"))
   testImplementation(project(":nessie-versioned-persist-tests"))
 
-  testImplementation("org.assertj:assertj-core")
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testImplementation("org.junit.jupiter:junit-jupiter-params")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+  testImplementation(platform(libs.junit.bom))
+  testImplementation(libs.bundles.junit.testing)
+  testRuntimeOnly(libs.junit.jupiter.engine)
 }

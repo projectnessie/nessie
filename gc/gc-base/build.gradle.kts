@@ -28,48 +28,36 @@ description =
   "Mark and sweep GC base functionality to identify live contents, map to live files, list existing files and to purge orphan files."
 
 dependencies {
-  implementation(platform(rootProject))
-  compileOnly(platform(project(":nessie-deps-build-only")))
-  annotationProcessor(platform(project(":nessie-deps-build-only")))
-  compileOnly(platform("com.fasterxml.jackson:jackson-bom"))
-
-  compileOnly("com.google.errorprone:error_prone_annotations")
-  compileOnly("org.immutables:value-annotations")
-  annotationProcessor("org.immutables:value-processor")
+  compileOnly(libs.errorprone.annotations)
+  compileOnly(libs.immutables.value.annotations)
+  annotationProcessor(libs.immutables.value.processor)
 
   implementation(project(":nessie-client"))
-  implementation("org.slf4j:slf4j-api")
-  implementation("com.google.guava:guava")
-  implementation("org.agrona:agrona:${dependencyVersion("versionAgrona")}")
+  implementation(libs.slf4j.api)
+  implementation(libs.guava)
+  implementation(libs.agrona)
 
-  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-  compileOnly("jakarta.validation:jakarta.validation-api")
-  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
-  compileOnly("com.google.code.findbugs:jsr305")
+  compileOnly(libs.microprofile.openapi)
+  compileOnly(libs.jakarta.validation.api)
+  compileOnly(libs.findbugs.jsr305)
 
-  testImplementation(platform(project(":nessie-deps-testing")))
-  testCompileOnly(platform("com.fasterxml.jackson:jackson-bom"))
-  testImplementation(platform("org.junit:junit-bom"))
-  testCompileOnly(platform(project(":nessie-deps-build-only")))
-  testAnnotationProcessor(platform(project(":nessie-deps-build-only")))
+  compileOnly(platform(libs.jackson.bom))
+  compileOnly(libs.jackson.annotations)
 
   testImplementation(project(":nessie-gc-base-tests"))
   testImplementation(project(":nessie-jaxrs-testextension"))
 
-  testRuntimeOnly("ch.qos.logback:logback-classic")
+  testRuntimeOnly(libs.logback.classic)
 
-  testCompileOnly("jakarta.validation:jakarta.validation-api")
-  testCompileOnly("org.immutables:value-annotations")
-  testAnnotationProcessor("org.immutables:value-processor")
+  testCompileOnly(libs.microprofile.openapi)
+  testCompileOnly(libs.jakarta.validation.api)
+  testCompileOnly(libs.immutables.value.annotations)
+  testAnnotationProcessor(libs.immutables.value.processor)
 
-  testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
-  testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
+  testCompileOnly(platform(libs.jackson.bom))
+  testCompileOnly(libs.jackson.annotations)
 
-  testRuntimeOnly("ch.qos.logback:logback-classic")
-
-  testImplementation("org.mockito:mockito-core")
-  testImplementation("org.assertj:assertj-core")
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testImplementation("org.junit.jupiter:junit-jupiter-params")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+  testImplementation(platform(libs.junit.bom))
+  testImplementation(libs.bundles.junit.testing)
+  testRuntimeOnly(libs.junit.jupiter.engine)
 }

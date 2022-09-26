@@ -20,7 +20,7 @@ plugins {
   `java-library`
   `maven-publish`
   signing
-  id("io.quarkus")
+  alias(libs.plugins.quarkus)
   `nessie-conventions`
 }
 
@@ -32,32 +32,24 @@ val quarkusRunner by
   }
 
 dependencies {
-  implementation(platform(rootProject))
-  implementation(platform(project(":nessie-deps-persist")))
-  implementation(platform(project(":nessie-deps-quarkus")))
-  implementation(enforcedPlatform("io.quarkus:quarkus-bom"))
-  implementation(platform("software.amazon.awssdk:bom"))
-
   implementation(project(":nessie-quarkus")) { exclude("io.quarkus", "quarkus-smallrye-openapi") }
+
+  implementation(enforcedPlatform(libs.quarkus.bom))
   implementation("io.quarkus:quarkus-amazon-lambda")
   implementation("io.quarkus:quarkus-amazon-lambda-http")
-  implementation("software.amazon.awssdk:apache-client") {
-    exclude("commons-logging", "commons-logging")
-  }
-  implementation("software.amazon.awssdk:netty-nio-client")
-  implementation("software.amazon.awssdk:url-connection-client")
 
-  testImplementation(platform(project(":nessie-deps-testing")))
-  testImplementation(platform("org.junit:junit-bom"))
+  implementation(platform(libs.awssdk.bom))
+  implementation(libs.awssdk.apache.client)
+  implementation(libs.awssdk.apache.client) { exclude("commons-logging", "commons-logging") }
+  implementation(libs.awssdk.netty.nio.client)
+  implementation(libs.awssdk.url.connection.client)
 
   testImplementation("io.quarkus:quarkus-test-amazon-lambda")
   testImplementation("io.quarkus:quarkus-jacoco")
 
-  testImplementation("org.mockito:mockito-core")
-  testImplementation("org.assertj:assertj-core")
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testImplementation("org.junit.jupiter:junit-jupiter-params")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+  testImplementation(platform(libs.junit.bom))
+  testImplementation(libs.bundles.junit.testing)
+  testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
 preferJava11()
@@ -74,17 +66,18 @@ val quarkusBuild by
   tasks.getting(QuarkusBuild::class) {
     inputs.property("quarkus.package.type", project.extra["quarkus.package.type"])
     inputs.property("final.name", quarkus.finalName())
-    inputs.property("builder-image", dependencyVersion("quarkus.builder-image"))
     inputs.property("container-build", useDocker)
+    val quarkusBuilderImage = libs.versions.quarkusUbiNativeImage.get()
+    inputs.property("builder-image", quarkusBuilderImage)
     if (useDocker) {
       // Use the "docker" profile to just build the Docker container image when the native image's
       // been built
       nativeArgs { "container-build" to true }
     }
-    nativeArgs { "builder-image" to dependencyVersion("quarkus.builder-image") }
+    nativeArgs { "builder-image" to quarkusBuilderImage }
     doFirst {
       // THIS IS A WORKAROUND! the nativeArgs{} thing above doesn't really work
-      System.setProperty("quarkus.native.builder-image", dependencyVersion("quarkus.builder-image"))
+      System.setProperty("quarkus.native.builder-image", quarkusBuilderImage)
       if (useDocker) {
         System.setProperty("quarkus.native.container-build", "true")
       }

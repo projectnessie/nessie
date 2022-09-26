@@ -26,37 +26,31 @@ extra["maven.name"] = "Nessie - REST-API Tests"
 description = "Artifact for REST-API tests, includes Glassfish/Jersey/Weld implementation."
 
 dependencies {
-  implementation(platform(rootProject))
-  implementation(platform("com.fasterxml.jackson:jackson-bom"))
-  api(platform(project(":nessie-deps-testing")))
-  api(platform("org.junit:junit-bom"))
-
   implementation(project(":nessie-client"))
-  implementation("com.google.guava:guava")
-  api("io.rest-assured:rest-assured")
-  implementation("com.google.code.findbugs:jsr305")
+  implementation(libs.guava)
+  api(libs.rest.assured)
+  implementation(libs.findbugs.jsr305)
 
-  api("org.assertj:assertj-core")
-  api("org.junit.jupiter:junit-jupiter-api")
-  api("org.junit.jupiter:junit-jupiter-params")
+  api(libs.assertj.core)
+  api(platform(libs.junit.bom))
+  api(libs.junit.jupiter.api)
+  api(libs.junit.jupiter.params)
 
-  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-  compileOnly("jakarta.validation:jakarta.validation-api")
-  implementation("com.fasterxml.jackson.core:jackson-databind")
-  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
+  compileOnly(libs.microprofile.openapi)
+  compileOnly(libs.jakarta.validation.api)
 
-  testImplementation(platform(project(":nessie-deps-persist")))
+  implementation(platform(libs.jackson.bom))
+  implementation(libs.jackson.databind)
+  compileOnly(libs.jackson.annotations)
 
   testImplementation(project(":nessie-jaxrs-testextension"))
-  testImplementation("org.slf4j:jcl-over-slf4j")
-  testRuntimeOnly("com.h2database:h2")
+  testImplementation(libs.slf4j.jcl.over.slf4j)
+  testRuntimeOnly(libs.h2)
 
-  testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
+  testCompileOnly(libs.microprofile.openapi)
 
-  testImplementation("org.assertj:assertj-core")
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testImplementation("org.junit.jupiter:junit-jupiter-params")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+  testImplementation(libs.bundles.junit.testing)
+  testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
 tasks.named<Test>("test") { maxParallelForks = Runtime.getRuntime().availableProcessors() }

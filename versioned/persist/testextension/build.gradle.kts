@@ -24,17 +24,14 @@ plugins {
 extra["maven.name"] = "Nessie - Versioned - Persist - Testextension"
 
 dependencies {
-  implementation(platform(rootProject))
-  implementation(platform(project(":nessie-deps-testing")))
-  implementation(platform("org.junit:junit-bom"))
-
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-persist-store"))
   compileOnly(project(":nessie-versioned-tests"))
   implementation(project(":nessie-versioned-spi"))
-  implementation("io.micrometer:micrometer-core:${dependencyVersion("versionMicrometer")}")
-  implementation("io.opentracing:opentracing-mock:${dependencyVersion("versionOpentracing")}")
+  implementation(libs.micrometer.core)
+  implementation(libs.opentracing.mock)
 
-  implementation("org.junit.jupiter:junit-jupiter-api")
-  implementation("org.junit.jupiter:junit-jupiter-params")
+  implementation(platform(libs.junit.bom))
+  implementation(libs.junit.jupiter.api)
+  implementation(libs.junit.jupiter.params)
 }

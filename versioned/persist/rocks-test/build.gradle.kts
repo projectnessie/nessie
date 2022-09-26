@@ -25,8 +25,6 @@ plugins {
 extra["maven.name"] = "Nessie - Versioned - Persist - Rocks/test-support"
 
 dependencies {
-  implementation(platform(rootProject))
-
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-persist-non-transactional"))
   implementation(project(":nessie-versioned-persist-rocks"))

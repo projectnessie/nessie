@@ -25,34 +25,32 @@ plugins {
 extra["maven.name"] = "Nessie - Backward Compatibility - Common"
 
 dependencies {
-  implementation(platform(rootProject))
-  implementation(platform(project(":nessie-deps-testing")))
-  implementation(platform("com.fasterxml.jackson:jackson-bom"))
-  implementation(platform("org.junit:junit-bom"))
-
   api(project(":nessie-client"))
   api(project(":nessie-compatibility-jersey"))
   implementation(project(":nessie-services"))
   implementation(project(":nessie-versioned-persist-adapter"))
 
-  implementation(platform("org.glassfish.jersey:jersey-bom"))
-  api("org.slf4j:slf4j-api")
-  api("ch.qos.logback:logback-classic")
-  implementation("org.apache.maven:maven-resolver-provider")
-  implementation("org.apache.maven.resolver:maven-resolver-connector-basic")
-  implementation("org.apache.maven.resolver:maven-resolver-transport-file")
-  implementation("org.apache.maven.resolver:maven-resolver-transport-http")
-  implementation("com.google.guava:guava")
-  implementation("jakarta.enterprise:jakarta.enterprise.cdi-api")
-  implementation("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-  implementation("com.fasterxml.jackson.core:jackson-annotations")
+  implementation(platform(libs.jersey.bom))
+  api(libs.slf4j.api)
+  api(libs.logback.classic)
+  implementation(libs.maven.resolver.provider)
+  implementation(libs.maven.resolver.connector.basic)
+  implementation(libs.maven.resolver.transport.file)
+  implementation(libs.maven.resolver.transport.http)
+  implementation(libs.guava)
+  implementation(libs.jakarta.enterprise.cdi.api)
+  implementation(libs.microprofile.openapi)
 
-  api("org.junit.jupiter:junit-jupiter-api")
-  implementation("org.junit.jupiter:junit-jupiter-engine")
-  implementation("org.junit.platform:junit-platform-launcher")
+  implementation(platform(libs.jackson.bom))
+  implementation(libs.jackson.annotations)
 
-  testImplementation("org.mockito:mockito-core")
-  testImplementation("com.google.guava:guava")
+  implementation(platform(libs.junit.bom))
+  api(libs.junit.jupiter.api)
+  implementation(libs.junit.jupiter.engine)
+  implementation(libs.junit.platform.launcher)
+
+  testImplementation(libs.mockito.core)
+  testImplementation(libs.guava)
   testImplementation(project(":nessie-versioned-persist-non-transactional-test"))
   testImplementation(project(":nessie-versioned-persist-in-memory"))
   testImplementation(project(":nessie-versioned-persist-in-memory-test"))
@@ -60,12 +58,12 @@ dependencies {
   testImplementation(project(":nessie-versioned-persist-rocks-test"))
   compileOnly(project(":nessie-versioned-persist-mongodb-test"))
 
-  testImplementation("org.junit.platform:junit-platform-testkit")
-  testImplementation("org.junit.jupiter:junit-jupiter-params")
+  testImplementation(libs.junit.platform.testkit)
+  testImplementation(libs.junit.jupiter.params)
 }
 
 tasks.withType<Test>().configureEach {
-  systemProperty("rocksdb.version", dependencyVersion("versionRocksDb"))
+  systemProperty("rocksdb.version", libs.versions.rocksdb.get())
   filter {
     // Exclude test-classes for the tests
     excludeTestsMatching("TestNessieCompatibilityExtensions\$*")

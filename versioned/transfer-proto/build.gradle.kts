@@ -27,16 +27,13 @@ plugins {
 
 extra["maven.name"] = "Nessie - Export/Import - Serialization (Proto)"
 
-dependencies {
-  implementation(platform(rootProject))
-  implementation("com.google.protobuf:protobuf-java")
-}
+dependencies { implementation(libs.protobuf.java) }
 
 protobuf {
   // Configure the protoc executable
   protobuf.protoc {
     // Download from repositories
-    artifact = "com.google.protobuf:protoc:${dependencyVersion("versionProtobuf")}"
+    artifact = "com.google.protobuf:protoc:${libs.versions.protobuf.get()}"
   }
 }
 

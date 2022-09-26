@@ -25,12 +25,6 @@ plugins {
 extra["maven.name"] = "Nessie - Quarkus Common"
 
 dependencies {
-  implementation(platform(rootProject))
-  implementation(platform(project(":nessie-deps-quarkus")))
-  implementation(enforcedPlatform("io.quarkus:quarkus-bom"))
-  implementation(enforcedPlatform("io.quarkus.platform:quarkus-amazon-services-bom"))
-  compileOnly(platform("com.fasterxml.jackson:jackson-bom"))
-
   implementation(project(":nessie-model"))
   implementation(project(":nessie-server-store"))
   implementation(project(":nessie-services"))
@@ -43,20 +37,24 @@ dependencies {
   implementation(project(":nessie-versioned-persist-dynamodb"))
   implementation(project(":nessie-versioned-persist-mongodb"))
   implementation(project(":nessie-versioned-persist-transactional"))
+
+  implementation(enforcedPlatform(libs.quarkus.bom))
+  implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
   implementation("io.quarkus:quarkus-hibernate-validator")
-  implementation("jakarta.validation:jakarta.validation-api")
-  implementation("com.google.protobuf:protobuf-java")
-  implementation("org.jboss.slf4j:slf4j-jboss-logmanager")
   implementation("io.quarkus:quarkus-agroal")
   implementation("io.quarkus:quarkus-jdbc-postgresql")
   implementation("io.quarkiverse.amazonservices:quarkus-amazon-dynamodb")
-  implementation("software.amazon.awssdk:apache-client") {
-    exclude("commons-logging", "commons-logging")
-  }
+  implementation(libs.awssdk.apache.client) { exclude("commons-logging", "commons-logging") }
   implementation("io.quarkus:quarkus-mongodb-client")
+  implementation("org.jboss.slf4j:slf4j-jboss-logmanager")
 
-  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
-  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
+  implementation(libs.jakarta.validation.api)
+  implementation(libs.protobuf.java)
+
+  compileOnly(platform(libs.jackson.bom))
+  compileOnly(libs.jackson.annotations)
+
+  compileOnly(libs.microprofile.openapi)
 }
 
 preferJava11()

@@ -25,10 +25,6 @@ plugins {
 extra["maven.name"] = "Nessie - Client"
 
 dependencies {
-  compileOnly(platform(project(":nessie-deps-build-only")))
-  annotationProcessor(platform(project(":nessie-deps-build-only")))
-  implementation(platform(rootProject))
-
   api(project(":nessie-model"))
 
   if (project.hasProperty("jackson-tests")) {
@@ -39,48 +35,40 @@ dependencies {
       )
     }
     // No jackson-bom here
-    implementation("com.fasterxml.jackson.core:jackson-core") {
-      version { strictly(jacksonVersion) }
-    }
-    implementation("com.fasterxml.jackson.core:jackson-annotations") {
-      version { strictly(jacksonVersion) }
-    }
-    implementation("com.fasterxml.jackson.core:jackson-databind") {
-      version { strictly(jacksonVersion) }
-    }
+    implementation("com.fasterxml.jackson.core:jackson-core:$jacksonVersion!!")
+    implementation("com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion!!")
+    implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion!!")
   } else {
-    implementation(platform("com.fasterxml.jackson:jackson-bom"))
-    implementation("com.fasterxml.jackson.core:jackson-core")
-    implementation("com.fasterxml.jackson.core:jackson-annotations")
-    implementation("com.fasterxml.jackson.core:jackson-databind")
+    implementation(platform(libs.jackson.bom))
+    implementation(libs.jackson.core)
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.annotations)
   }
-  implementation("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-  compileOnly("jakarta.validation:jakarta.validation-api")
-  implementation("javax.ws.rs:javax.ws.rs-api")
-  implementation("com.google.code.findbugs:jsr305")
-  compileOnly("com.google.errorprone:error_prone_annotations")
+  implementation(libs.microprofile.openapi)
+  compileOnly(libs.jakarta.validation.api)
+  implementation(libs.javax.ws.rs)
+  implementation(libs.findbugs.jsr305)
+  compileOnly(libs.errorprone.annotations)
 
-  compileOnly("org.immutables:builder")
-  compileOnly("org.immutables:value-annotations")
-  annotationProcessor("org.immutables:value-processor")
+  compileOnly(libs.immutables.builder)
+  compileOnly(libs.immutables.value.annotations)
+  annotationProcessor(libs.immutables.value.processor)
 
-  testImplementation(platform(project(":nessie-deps-testing")))
-  testImplementation(platform("org.junit:junit-bom"))
+  testImplementation(libs.guava)
+  testImplementation(libs.bouncycastle.bcprov)
+  testImplementation(libs.bouncycastle.bcpkix)
+  testImplementation(libs.mockito.core)
 
-  testImplementation("com.google.guava:guava")
-  testImplementation("org.bouncycastle:bcprov-jdk15on")
-  testImplementation("org.bouncycastle:bcpkix-jdk15on")
-  testImplementation("org.mockito:mockito-core")
+  testImplementation(platform(libs.junit.bom))
+  testImplementation(libs.bundles.junit.testing)
+  testRuntimeOnly(libs.junit.jupiter.engine)
 
-  testImplementation("org.assertj:assertj-core")
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testImplementation("org.junit.jupiter:junit-jupiter-params")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
-
-  compileOnly("io.quarkus:quarkus-smallrye-opentracing")
-  compileOnly("software.amazon.awssdk:auth")
-  testImplementation("io.quarkus:quarkus-smallrye-opentracing")
-  testImplementation("software.amazon.awssdk:auth")
+  compileOnly(libs.quarkus.smallrye.opentracing)
+  compileOnly(platform(libs.awssdk.bom))
+  compileOnly(libs.awssdk.auth)
+  testImplementation(libs.quarkus.smallrye.opentracing)
+  testImplementation(platform(libs.awssdk.bom))
+  testImplementation(libs.awssdk.auth)
 }
 
 jandex { skipDefaultProcessing() }

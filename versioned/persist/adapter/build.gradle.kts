@@ -25,33 +25,25 @@ plugins {
 extra["maven.name"] = "Nessie - Versioned - Persist - Adapter"
 
 dependencies {
-  implementation(platform(rootProject))
-  implementation(platform(project(":nessie-deps-persist")))
-  compileOnly(platform(project(":nessie-deps-build-only")))
-  annotationProcessor(platform(project(":nessie-deps-build-only")))
-
   implementation(project(":nessie-model"))
   implementation(project(":nessie-versioned-spi"))
-  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-  compileOnly("org.immutables:value-annotations")
-  compileOnly("org.immutables:value-fixture")
-  annotationProcessor("org.immutables:value-processor")
-  implementation("com.google.protobuf:protobuf-java")
-  implementation("com.google.code.findbugs:jsr305")
-  implementation("com.google.guava:guava")
-  implementation("org.slf4j:slf4j-api")
-  implementation("org.agrona:agrona")
 
-  implementation("io.opentracing:opentracing-api:${dependencyVersion("versionOpentracing")}")
-  implementation("io.opentracing:opentracing-util:${dependencyVersion("versionOpentracing")}")
-  implementation("io.micrometer:micrometer-core:${dependencyVersion("versionMicrometer")}")
+  compileOnly(libs.microprofile.openapi)
 
-  testImplementation(platform(project(":nessie-deps-testing")))
-  testImplementation(platform("org.junit:junit-bom"))
+  compileOnly(libs.immutables.value.annotations)
+  compileOnly(libs.immutables.value.fixture)
+  annotationProcessor(libs.immutables.value.processor)
 
-  testImplementation("org.assertj:assertj-core")
-  testImplementation("org.mockito:mockito-core")
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testImplementation("org.junit.jupiter:junit-jupiter-params")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+  implementation(libs.protobuf.java)
+  implementation(libs.findbugs.jsr305)
+  implementation(libs.guava)
+  implementation(libs.slf4j.api)
+  implementation(libs.agrona)
+  implementation(libs.opentracing.api)
+  implementation(libs.opentracing.util)
+  implementation(libs.micrometer.core)
+
+  testImplementation(platform(libs.junit.bom))
+  testImplementation(libs.bundles.junit.testing)
+  testRuntimeOnly(libs.junit.jupiter.engine)
 }

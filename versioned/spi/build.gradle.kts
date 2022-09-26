@@ -25,40 +25,35 @@ plugins {
 extra["maven.name"] = "Nessie - Versioned Store SPI"
 
 dependencies {
-  implementation(platform(rootProject))
-  compileOnly(platform(project(":nessie-deps-build-only")))
-  annotationProcessor(platform(project(":nessie-deps-build-only")))
-  implementation(platform("com.fasterxml.jackson:jackson-bom"))
-
   implementation(project(":nessie-model"))
-  implementation("com.google.protobuf:protobuf-java")
-  implementation("com.fasterxml.jackson.core:jackson-databind")
-  compileOnly("org.immutables:builder")
-  compileOnly("org.immutables:value-annotations")
-  annotationProcessor("org.immutables:value-processor")
-  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
-  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-  compileOnly("jakarta.validation:jakarta.validation-api")
-  implementation("com.google.guava:guava")
-  implementation("com.google.code.findbugs:jsr305")
+  implementation(libs.protobuf.java)
+  implementation(libs.jackson.databind)
+  compileOnly(libs.immutables.builder)
+  compileOnly(libs.immutables.value.annotations)
+  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(libs.microprofile.openapi)
+  compileOnly(libs.jakarta.validation.api)
 
-  testImplementation(platform(project(":nessie-deps-testing")))
-  testImplementation(platform("org.junit:junit-bom"))
-  testCompileOnly(platform("com.fasterxml.jackson:jackson-bom"))
+  implementation(platform(libs.jackson.bom))
+  compileOnly(libs.jackson.annotations)
 
-  testImplementation("org.assertj:assertj-core")
-  testImplementation("org.mockito:mockito-core")
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testImplementation("org.junit.jupiter:junit-jupiter-params")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
-  testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
-  testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
+  implementation(libs.guava)
+  implementation(libs.findbugs.jsr305)
+
+  testImplementation(platform(libs.junit.bom))
+  testImplementation(libs.bundles.junit.testing)
+  testRuntimeOnly(libs.junit.jupiter.engine)
+
+  testCompileOnly(platform(libs.jackson.bom))
+  testCompileOnly(libs.jackson.annotations)
+
+  testCompileOnly(libs.microprofile.openapi)
 
   // Need a few things from Quarkus, but don't leak the dependencies
-  compileOnly("io.opentracing:opentracing-api:${dependencyVersion("versionOpentracing")}")
-  compileOnly("io.opentracing:opentracing-util:${dependencyVersion("versionOpentracing")}")
-  compileOnly("io.micrometer:micrometer-core:${dependencyVersion("versionMicrometer")}")
-  testImplementation("io.opentracing:opentracing-api:${dependencyVersion("versionOpentracing")}")
-  testImplementation("io.opentracing:opentracing-util:${dependencyVersion("versionOpentracing")}")
-  testImplementation("io.micrometer:micrometer-core:${dependencyVersion("versionMicrometer")}")
+  compileOnly(libs.opentracing.api)
+  compileOnly(libs.opentracing.util)
+  compileOnly(libs.micrometer.core)
+  testImplementation(libs.opentracing.api)
+  testImplementation(libs.opentracing.util)
+  testImplementation(libs.micrometer.core)
 }

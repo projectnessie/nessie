@@ -25,37 +25,32 @@ plugins {
 extra["maven.name"] = "Nessie - Services"
 
 dependencies {
-  implementation(platform(rootProject))
-  compileOnly(platform(project(":nessie-deps-build-only")))
-  annotationProcessor(platform(project(":nessie-deps-build-only")))
-  implementation(platform("org.projectnessie.cel:cel-bom"))
-  compileOnly(platform("com.fasterxml.jackson:jackson-bom"))
-
   implementation(project(":nessie-model"))
   implementation(project(":nessie-versioned-spi"))
-  implementation("org.slf4j:slf4j-api")
-  implementation("org.projectnessie.cel:cel-tools")
-  implementation("org.projectnessie.cel:cel-jackson")
-  compileOnly("org.immutables:builder")
-  compileOnly("org.immutables:value-annotations")
-  annotationProcessor("org.immutables:value-processor")
-  implementation("com.google.guava:guava")
-  implementation("com.google.code.findbugs:jsr305")
+  implementation(libs.slf4j.api)
 
-  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
-  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-  compileOnly("jakarta.validation:jakarta.validation-api")
+  implementation(platform(libs.cel.bom))
+  implementation(libs.cel.tools)
+  implementation(libs.cel.jackson)
 
-  testImplementation(platform(project(":nessie-deps-testing")))
-  testImplementation(platform("org.junit:junit-bom"))
-  testCompileOnly(platform("com.fasterxml.jackson:jackson-bom"))
+  compileOnly(libs.immutables.builder)
+  compileOnly(libs.immutables.value.annotations)
+  annotationProcessor(libs.immutables.value.processor)
+  implementation(libs.guava)
+  implementation(libs.findbugs.jsr305)
 
-  testCompileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
+  compileOnly(platform(libs.jackson.bom))
+  compileOnly(libs.jackson.annotations)
 
-  testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
+  compileOnly(libs.microprofile.openapi)
+  compileOnly(libs.jakarta.validation.api)
 
-  testImplementation("org.assertj:assertj-core")
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testImplementation("org.junit.jupiter:junit-jupiter-params")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+  testCompileOnly(libs.microprofile.openapi)
+
+  testCompileOnly(platform(libs.jackson.bom))
+  testCompileOnly(libs.jackson.annotations)
+
+  testImplementation(platform(libs.junit.bom))
+  testImplementation(libs.bundles.junit.testing)
+  testRuntimeOnly(libs.junit.jupiter.engine)
 }

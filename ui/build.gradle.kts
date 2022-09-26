@@ -28,7 +28,7 @@ plugins {
   `java-library`
   `maven-publish`
   signing
-  id("com.github.node-gradle.node")
+  alias(libs.plugins.node.gradle)
   `nessie-conventions`
 }
 

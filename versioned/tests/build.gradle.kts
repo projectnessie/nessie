@@ -24,25 +24,20 @@ plugins {
 extra["maven.name"] = "Nessie - Versioned Store Integration Tests"
 
 dependencies {
-  implementation(platform(rootProject))
-  compileOnly(platform(project(":nessie-deps-build-only")))
-  annotationProcessor(platform(project(":nessie-deps-build-only")))
-  implementation(platform(project(":nessie-deps-testing")))
-  compileOnly(platform("com.fasterxml.jackson:jackson-bom"))
-
   implementation(project(":nessie-model"))
   implementation(project(":nessie-versioned-spi"))
-  implementation("com.google.guava:guava")
-  implementation("org.slf4j:slf4j-api")
-  implementation("com.google.protobuf:protobuf-java")
-  compileOnly("org.immutables:value-annotations")
-  annotationProcessor("org.immutables:value-processor")
-  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
-  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-  compileOnly("jakarta.validation:jakarta.validation-api")
+  implementation(libs.guava)
+  implementation(libs.slf4j.api)
+  implementation(libs.protobuf.java)
+  compileOnly(libs.immutables.value.annotations)
+  annotationProcessor(libs.immutables.value.processor)
 
-  implementation("org.assertj:assertj-core")
-  implementation(platform("org.junit:junit-bom"))
-  implementation("org.junit.jupiter:junit-jupiter-api")
-  implementation("org.junit.jupiter:junit-jupiter-params")
+  compileOnly(platform(libs.jackson.bom))
+  compileOnly(libs.jackson.annotations)
+
+  compileOnly(libs.microprofile.openapi)
+  compileOnly(libs.jakarta.validation.api)
+
+  implementation(platform(libs.junit.bom))
+  implementation(libs.bundles.junit.testing)
 }

@@ -21,21 +21,29 @@ plugins {
   `nessie-conventions`
 }
 
-// Pull the extra properties from the "main" Nessie build. This ensures that the same versions
-// are being used and we don't need to tweak the dependabot config.
-val extraPropertyPattern =
-  java.util.regex.Pattern.compile("va[lr] (version[A-Z][A-Za-z0-9_]+) = \"([0-9a-zA-Z-.]+)\"")
+// To fix circular dependencies with NessieClient, certain projects need to use the same Nessie
+// version as Iceberg/Delta has.
+// Allow overriding the Iceberg version used by Nessie and the Nessie version used by integration
+// tests that depend on Iceberg.
+val versionIceberg: String =
+  System.getProperty("nessie.versionIceberg", libs.versions.iceberg.get())
+val versionClientNessie: String =
+  System.getProperty("nessie.versionClientNessie", libs.versions.nessieClientVersion.get())
 
-file("../build.gradle.kts").readLines().forEach { line ->
-  val lineMatch = extraPropertyPattern.matcher(line)
-  if (lineMatch.matches()) {
-    extra[lineMatch.group(1)] = lineMatch.group(2)
-  }
-}
-
-for (e in loadProperties(file("../clients/spark-scala.properties"))) {
-  extra[e.key.toString()] = e.value
-}
+mapOf(
+    "versionClientNessie" to versionClientNessie,
+    "versionIceberg" to versionIceberg,
+    // TODO update the Nessie Gradle plugins to not depend on these properties / move some of the
+    //  plugins into the Nessie repository.
+    "versionCheckstyle" to libs.versions.checkstyle.get(),
+    "versionErrorProneCore" to libs.versions.errorprone.get(),
+    "versionErrorProneSlf4j" to libs.versions.errorproneSlf4j.get(),
+    "versionGoogleJavaFormat" to libs.versions.googleJavaFormat.get(),
+    "versionJacoco" to libs.versions.jacoco.get(),
+    "versionJandex" to libs.versions.jandex.get()
+  )
+  .plus(loadProperties(file("../clients/spark-scala.properties")))
+  .forEach { (k, v) -> extra[k.toString()] = v }
 
 publishingHelper {
   nessieRepoName.set("nessie")

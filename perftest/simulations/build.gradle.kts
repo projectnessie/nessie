@@ -19,27 +19,25 @@ import io.gatling.gradle.GatlingRunTask
 plugins {
   `maven-publish`
   signing
-  id("io.gatling.gradle")
+  alias(libs.plugins.gatling)
   `nessie-conventions`
-  id("org.projectnessie")
+  alias(libs.plugins.nessie.run)
 }
 
 extra["maven.name"] = "Nessie - Perf Test - Simulations"
 
 dependencies {
-  gatling(platform(rootProject))
-  gatling(platform(project(":nessie-deps-testing")))
-
   gatling(project(":nessie-model"))
   gatling(project(":nessie-client"))
   gatling(project(":nessie-perftest-gatling"))
-  gatling("io.gatling.highcharts:gatling-charts-highcharts") {
+  gatling(libs.gatling.charts.highcharts) {
     exclude("io.netty", "netty-tcnative-boringssl-static")
     exclude("commons-logging", "commons-logging")
   }
-  gatling("org.eclipse.microprofile.openapi:microprofile-openapi-api")
-  gatling(platform("com.fasterxml.jackson:jackson-bom"))
-  gatling("com.fasterxml.jackson.core:jackson-annotations")
+  gatling(libs.microprofile.openapi)
+
+  gatling(platform(libs.jackson.bom))
+  gatling(libs.jackson.annotations)
 
   nessieQuarkusServer(project(":nessie-quarkus", "quarkusRunner"))
 }
@@ -57,7 +55,7 @@ nessieQuarkusApp {
 }
 
 gatling {
-  gatlingVersion = dependencyVersion("versionGatling")
+  gatlingVersion = libs.versions.gatling.get()
   // Null is OK (io.gatling.gradle.LogbackConfigTask checks for it)
   logLevel = System.getProperty("gatling.logLevel")
 }

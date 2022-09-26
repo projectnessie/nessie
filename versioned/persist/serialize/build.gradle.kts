@@ -25,19 +25,12 @@ plugins {
 extra["maven.name"] = "Nessie - Versioned - Persist - Serialization"
 
 dependencies {
-  implementation(platform(rootProject))
-
   implementation(project(":nessie-versioned-spi"))
   implementation(project(":nessie-versioned-persist-adapter"))
   api(project(":nessie-versioned-persist-serialize-proto"))
-  implementation("com.google.guava:guava")
+  implementation(libs.guava)
 
-  testImplementation(platform(project(":nessie-deps-testing")))
-  testImplementation(platform("org.junit:junit-bom"))
-
-  testImplementation("org.assertj:assertj-core")
-  testImplementation("org.mockito:mockito-core")
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
-  testImplementation("org.junit.jupiter:junit-jupiter-params")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+  testImplementation(platform(libs.junit.bom))
+  testImplementation(libs.bundles.junit.testing)
+  testRuntimeOnly(libs.junit.jupiter.engine)
 }

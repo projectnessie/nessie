@@ -28,11 +28,10 @@ dependencies {
   // picks the right dependencies for scala compilation
   forScala(sparkScala.scalaVersion)
 
-  implementation(platform(nessieRootProject()))
   implementation(nessieProject("nessie-spark-extensions-grammar"))
   compileOnly("org.apache.spark:spark-hive_${sparkScala.scalaMajorVersion}") {
     forSpark(sparkScala.sparkVersion)
   }
-  compileOnly("org.eclipse.microprofile.openapi:microprofile-openapi-api")
+  compileOnly(libs.microprofile.openapi)
   implementation(nessieClientForIceberg())
 }
