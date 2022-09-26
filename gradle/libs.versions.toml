@@ -34,7 +34,7 @@ quarkusLoggingSentry = "1.2.1"
 quarkusUbiNativeImage = "quay.io/quarkus/ubi-quarkus-native-image:22.2-java17"
 rocksdb = "7.6.0"
 shadowPlugin = "7.1.2"
-slf4j = "1.7.36"
+slf4j = "2.0.2"
 spotlessPlugin = "6.11.0"
 testcontainers = "1.17.3"
 
