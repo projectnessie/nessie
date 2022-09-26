@@ -52,7 +52,7 @@ dependencies {
   implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml")
   implementation("com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider")
   implementation("com.fasterxml.jackson.jaxrs:jackson-jaxrs-xml-provider")
-  compileOnly("org.apache.avro:avro:1.11.0")
+  compileOnly("org.apache.avro:avro:1.11.1")
 
   implementation("org.slf4j:slf4j-api")
 
