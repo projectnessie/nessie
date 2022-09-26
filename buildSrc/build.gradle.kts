@@ -58,7 +58,7 @@ dependencies {
   implementation("org.projectnessie.buildsupport:smallrye-openapi:$versionNessieBuildPlugins")
   implementation("org.projectnessie.buildsupport:spotless:$versionNessieBuildPlugins")
 
-  testImplementation(platform("org.junit:junit-bom:5.9.0"))
+  testImplementation(platform("org.junit:junit-bom:5.9.1"))
   testImplementation("org.assertj:assertj-core:3.23.1")
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
