@@ -119,45 +119,6 @@ jobs:
             **/build/reports/*
             **/build/test-results/*
 
-  jackson-tests:
-    name: Jackson Integration Tests
-    runs-on: ubuntu-20.04
-
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup runner
-        uses: ./.github/actions/setup-runner
-      - name: Setup Java, Gradle
-        uses: ./.github/actions/dev-tool-java
-
-      # These steps are "too quick" to justify a matrix job
-      - name: Jackson compatibility tests / 2.6.4 for Spark 2.4.4
-        uses: gradle/gradle-build-action@v2
-        with:
-          cache-read-only: true
-          arguments: :nessie-client:test -Pjackson-tests=2.6.4
-      - name: Jackson compatibility tests / 2.10.0 for Spark 3.0.1
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: :nessie-client:test -Pjackson-tests=2.10.0
-      - name: Jackson compatibility tests / 2.11.4 for Spark 3.0.1
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: :nessie-client:test -Pjackson-tests=2.11.4
-      - name: Jackson compatibility tests / 2.12.5 for Spark 3.0.1
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: :nessie-client:test -Pjackson-tests=2.12.5
-
-      - name: Capture Test Reports
-        uses: actions/upload-artifact@v3
-        if: ${{ failure() }}
-        with:
-          name: test-results-jackson
-          path: |
-            **/build/reports/*
-            **/build/test-results/*
-
   python:
     name: Python
     runs-on: ubuntu-20.04
