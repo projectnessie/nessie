@@ -41,6 +41,8 @@ import org.projectnessie.gc.files.FileDeleter;
 import org.projectnessie.gc.files.FileReference;
 import org.projectnessie.gc.files.FilesLister;
 import org.projectnessie.gc.files.NessieFileIOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Provides functionality to {@link FilesLister list} and {@link FileDeleter delete} files using
@@ -50,6 +52,8 @@ import org.projectnessie.gc.files.NessieFileIOException;
  */
 @Value.Immutable
 public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoCloseable {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(IcebergFiles.class);
 
   public static Builder builder() {
     return ImmutableIcebergFiles.builder();
@@ -97,6 +101,7 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
     fileIO.initialize(properties());
     fileIO.setConf(hadoopConfiguration());
     hasResolvingFileIO = true;
+    LOGGER.debug("Instantiated Iceberg's ResolvingFileIO");
     return fileIO;
   }
 
@@ -105,6 +110,7 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
     S3FileIO fileIO = new S3FileIO();
     fileIO.initialize(properties());
     hasS3FileIO = true;
+    LOGGER.debug("Instantiated Iceberg's S3FileIO");
     return fileIO;
   }
 
@@ -125,7 +131,6 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
     switch (uri.getScheme()) {
       case "s3":
       case "s3a":
-      case "s3b":
         return true;
       default:
         return false;
@@ -204,6 +209,7 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
       fileIO.deleteFile(absolutePath.toString());
       return DeleteResult.SUCCESS;
     } catch (Exception e) {
+      LOGGER.debug("Failed to delete {}", fileReference, e);
       return DeleteResult.FAILURE;
     }
   }
@@ -228,6 +234,7 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
       fileIo.deleteFiles(files);
     } catch (BulkDeletionFailureException e) {
       failed = e.numberFailedObjects();
+      LOGGER.debug("Failed to delete {} files (no further details available)", failed, e);
     }
     return DeleteSummary.of(files.size() - failed, failed);
   }
@@ -243,6 +250,7 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
                 fileIo.deleteFile(f);
                 return DeleteResult.SUCCESS;
               } catch (Exception e) {
+                LOGGER.debug("Failed to delete {}", f, e);
                 return DeleteResult.FAILURE;
               }
             })
