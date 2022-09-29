@@ -17,11 +17,6 @@ package org.projectnessie.client.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.BaseEncoding;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsParameters;
-import com.sun.net.httpserver.HttpsServer;
 import java.math.BigInteger;
 import java.net.URI;
 import java.security.GeneralSecurityException;
@@ -37,8 +32,6 @@ import java.time.ZonedDateTime;
 import java.util.Date;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import org.bouncycastle.asn1.DERSequence;
@@ -53,12 +46,21 @@ import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.eclipse.jetty.http.HttpVersion;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.HttpConfiguration;
+import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.SecureRequestCustomizer;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
-import org.projectnessie.client.util.TestHttpUtil;
-import org.projectnessie.client.util.TestServer;
+import org.projectnessie.client.util.HttpTestServer;
+import org.projectnessie.client.util.HttpTestUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,14 +71,14 @@ class TestHttpsClient {
 
   @Test
   void testHttps() throws Exception {
-    HttpHandler handler =
-        h -> {
-          Assertions.assertEquals("GET", h.getRequestMethod());
-          TestHttpUtil.writeResponseBody(h, "hello");
+    HttpTestServer.RequestHandler handler =
+        (req, resp) -> {
+          Assertions.assertEquals("GET", req.getMethod());
+          HttpTestUtil.writeResponseBody(resp, "hello");
         };
     TrustManager[][] trustManager = new TrustManager[1][];
-    try (TestServer server =
-        new TestServer(
+    try (HttpTestServer server =
+        new HttpTestServer(
             "/",
             handler,
             s -> {
@@ -108,15 +110,14 @@ class TestHttpsClient {
   }
 
   private static KeyPair generateKeyPair(SecureRandom random) throws Exception {
-    final KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+    KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
     keyPairGenerator.initialize(2048, random);
-    final KeyPair keyPair = keyPairGenerator.generateKeyPair();
-    return keyPair;
+    return keyPairGenerator.generateKeyPair();
   }
 
   private static X509CertificateHolder generateCertHolder(
       SecureRandom random, ZonedDateTime now, KeyPair keyPair) throws Exception {
-    final X500NameBuilder nameBuilder =
+    X500NameBuilder nameBuilder =
         new X500NameBuilder(BCStyle.INSTANCE)
             .addRDN(BCStyle.CN, "localhost")
             .addRDN(BCStyle.OU, "Dremio Corp. (auto-generated)")
@@ -125,16 +126,16 @@ class TestHttpsClient {
             .addRDN(BCStyle.ST, "California")
             .addRDN(BCStyle.C, "US");
 
-    final Date notBefore = Date.from(now.minusDays(1).toInstant());
-    final Date notAfter = Date.from(now.plusYears(1).toInstant());
-    final BigInteger serialNumber = new BigInteger(128, random);
+    Date notBefore = Date.from(now.minusDays(1).toInstant());
+    Date notAfter = Date.from(now.plusYears(1).toInstant());
+    BigInteger serialNumber = new BigInteger(128, random);
 
     // create a certificate valid for 1 years from now
     // add the main hostname + the alternative hostnames to the SAN extension
-    final GeneralName[] alternativeSubjectNames = new GeneralName[1];
+    GeneralName[] alternativeSubjectNames = new GeneralName[1];
     alternativeSubjectNames[0] = new GeneralName(GeneralName.dNSName, "localhost");
 
-    final X509v3CertificateBuilder certificateBuilder =
+    X509v3CertificateBuilder certificateBuilder =
         new JcaX509v3CertificateBuilder(
                 nameBuilder.build(),
                 serialNumber,
@@ -146,7 +147,7 @@ class TestHttpsClient {
                 Extension.subjectAlternativeName, false, new DERSequence(alternativeSubjectNames));
 
     // sign the certificate using the private key
-    final ContentSigner contentSigner;
+    ContentSigner contentSigner;
     try {
       contentSigner =
           new JcaContentSignerBuilder("SHA256WithRSAEncryption").build(keyPair.getPrivate());
@@ -159,8 +160,7 @@ class TestHttpsClient {
   private static X509Certificate generateCert(ZonedDateTime now, X509CertificateHolder certHolder)
       throws Exception {
 
-    final X509Certificate certificate =
-        new JcaX509CertificateConverter().getCertificate(certHolder);
+    X509Certificate certificate = new JcaX509CertificateConverter().getCertificate(certHolder);
 
     // check the validity
     certificate.checkValidity(Date.from(now.toInstant()));
@@ -168,7 +168,7 @@ class TestHttpsClient {
     // make sure the certificate is self-signed
     certificate.verify(certificate.getPublicKey());
 
-    final String fingerprint =
+    String fingerprint =
         BaseEncoding.base16()
             .withSeparator(":", 2)
             .encode(MessageDigest.getInstance("SHA-256").digest(certificate.getEncoded()));
@@ -176,17 +176,17 @@ class TestHttpsClient {
     return certificate;
   }
 
-  private static TrustManager[] ssl(HttpServer httpsServer) throws Exception {
+  private static TrustManager[] ssl(Server server) throws Exception {
     SSLContext sslContext = SSLContext.getInstance("TLS");
 
     // Initialise the keystore
-    final String storeType = KeyStore.getDefaultType();
-    final KeyStore keyStore = KeyStore.getInstance(storeType);
-    final KeyStore trustStore = KeyStore.getInstance(storeType);
+    String storeType = KeyStore.getDefaultType();
+    KeyStore keyStore = KeyStore.getInstance(storeType);
+    KeyStore trustStore = KeyStore.getInstance(storeType);
     keyStore.load(null, null);
     trustStore.load(null, null);
     ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
-    final SecureRandom random = new SecureRandom();
+    SecureRandom random = new SecureRandom();
 
     KeyPair keyPair = generateKeyPair(random);
     X509CertificateHolder certHolder = generateCertHolder(random, now, keyPair);
@@ -210,27 +210,28 @@ class TestHttpsClient {
 
     // Set up the HTTPS context and parameters
     sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-    ((HttpsServer) httpsServer)
-        .setHttpsConfigurator(
-            new HttpsConfigurator(sslContext) {
-              @Override
-              public void configure(HttpsParameters params) {
-                try {
-                  // Initialise the SSL context
-                  SSLContext c = SSLContext.getDefault();
-                  SSLEngine engine = c.createSSLEngine();
-                  params.setNeedClientAuth(false);
-                  params.setCipherSuites(engine.getEnabledCipherSuites());
-                  params.setProtocols(engine.getEnabledProtocols());
 
-                  // Get the default parameters
-                  SSLParameters defaultSSLParameters = c.getDefaultSSLParameters();
-                  params.setSSLParameters(defaultSSLParameters);
-                } catch (Exception ex) {
-                  throw new RuntimeException(ex);
-                }
-              }
-            });
+    SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
+    sslContextFactory.setNeedClientAuth(false);
+    sslContextFactory.setSniRequired(false);
+    sslContextFactory.setWantClientAuth(false);
+    sslContextFactory.setKeyStore(keyStore);
+    sslContextFactory.setKeyStorePassword("password");
+    sslContextFactory.setTrustStore(trustStore);
+
+    HttpConfiguration httpsConfiguration = new HttpConfiguration();
+    httpsConfiguration.addCustomizer(new SecureRequestCustomizer(false));
+
+    ServerConnector httpsConnector =
+        new ServerConnector(
+            server,
+            new SslConnectionFactory(sslContextFactory, HttpVersion.HTTP_1_1.asString()),
+            new HttpConnectionFactory(httpsConfiguration));
+
+    Connector connector = server.getConnectors()[0];
+    server.removeConnector(connector);
+    server.addConnector(httpsConnector);
+
     return tmf.getTrustManagers();
   }
 }

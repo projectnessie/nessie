@@ -20,10 +20,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sun.net.httpserver.HttpHandler;
 import io.opentracing.Scope;
 import io.opentracing.util.GlobalTracer;
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -35,9 +33,9 @@ import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.client.rest.NessieBadResponseException;
 import org.projectnessie.client.rest.NessieInternalServerException;
 import org.projectnessie.client.rest.NessieNotAuthorizedException;
+import org.projectnessie.client.util.HttpTestServer;
+import org.projectnessie.client.util.HttpTestUtil;
 import org.projectnessie.client.util.JaegerTestTracer;
-import org.projectnessie.client.util.TestHttpUtil;
-import org.projectnessie.client.util.TestServer;
 import org.projectnessie.model.Branch;
 
 class TestNessieHttpClient {
@@ -48,12 +46,12 @@ class TestNessieHttpClient {
 
   @Test
   void testNonJsonResponse() throws Exception {
-    HttpHandler handler =
-        h -> {
-          Assertions.assertEquals("GET", h.getRequestMethod());
-          TestHttpUtil.writeResponseBody(h, "<html>hello world>", "text/html");
+    HttpTestServer.RequestHandler handler =
+        (req, resp) -> {
+          Assertions.assertEquals("GET", req.getMethod());
+          HttpTestUtil.writeResponseBody(resp, "<html>hello world>", "text/html");
         };
-    try (TestServer server = new TestServer(handler)) {
+    try (HttpTestServer server = new HttpTestServer(handler)) {
       NessieApiV1 api =
           HttpClientBuilder.builder()
               .withUri(server.getUri())
@@ -76,13 +74,13 @@ class TestNessieHttpClient {
         "mystuff/foo+json;charset=utf-8"
       })
   void testValidJsonResponse(String contentType) throws Exception {
-    HttpHandler handler =
-        h -> {
-          Assertions.assertEquals("GET", h.getRequestMethod());
+    HttpTestServer.RequestHandler handler =
+        (req, resp) -> {
+          Assertions.assertEquals("GET", req.getMethod());
           String response = new ObjectMapper().writeValueAsString(Branch.of("foo", "deadbeef"));
-          TestHttpUtil.writeResponseBody(h, response, contentType);
+          HttpTestUtil.writeResponseBody(resp, response, contentType);
         };
-    try (TestServer server = new TestServer("/trees/tree", handler);
+    try (HttpTestServer server = new HttpTestServer("/trees/tree", handler);
         NessieApiV1 api =
             HttpClientBuilder.builder()
                 .withUri(server.getUri())
@@ -96,7 +94,8 @@ class TestNessieHttpClient {
   void testTracing() throws Exception {
     AtomicReference<String> traceId = new AtomicReference<>();
 
-    try (TestServer server = new TestServer(handlerForHeaderTest("Uber-trace-id", traceId));
+    try (HttpTestServer server =
+            new HttpTestServer(handlerForHeaderTest("Uber-trace-id", traceId));
         NessieApiV1 api =
             HttpClientBuilder.builder()
                 .withUri(server.getUri())
@@ -119,7 +118,8 @@ class TestNessieHttpClient {
   void testTracingNotEnabled() throws Exception {
     AtomicReference<String> traceId = new AtomicReference<>();
 
-    try (TestServer server = new TestServer(handlerForHeaderTest("Uber-trace-id", traceId));
+    try (HttpTestServer server =
+            new HttpTestServer(handlerForHeaderTest("Uber-trace-id", traceId));
         NessieApiV1 api =
             HttpClientBuilder.builder()
                 .withUri(server.getUri())
@@ -135,17 +135,17 @@ class TestNessieHttpClient {
     assertNull(traceId.get());
   }
 
-  private TestServer errorServer(int status) throws IOException {
-    return new TestServer(
-        h -> {
-          h.sendResponseHeaders(status, 0);
-          h.getResponseBody().close();
+  private HttpTestServer errorServer(int status) throws Exception {
+    return new HttpTestServer(
+        (req, resp) -> {
+          resp.setStatus(status);
+          resp.getOutputStream().close();
         });
   }
 
   @Test
-  void testNotFoundOnBaseUri() throws IOException {
-    try (TestServer server = errorServer(404);
+  void testNotFoundOnBaseUri() throws Exception {
+    try (HttpTestServer server = errorServer(404);
         NessieApiV1 api =
             HttpClientBuilder.builder()
                 .withUri(server.getUri().resolve("/unknownPath"))
@@ -157,8 +157,8 @@ class TestNessieHttpClient {
   }
 
   @Test
-  void testInternalServerError() throws IOException {
-    try (TestServer server = errorServer(500);
+  void testInternalServerError() throws Exception {
+    try (HttpTestServer server = errorServer(500);
         NessieApiV1 api =
             HttpClientBuilder.builder()
                 .withUri(server.getUri().resolve("/broken"))
@@ -170,8 +170,8 @@ class TestNessieHttpClient {
   }
 
   @Test
-  void testUnauthorized() throws IOException {
-    try (TestServer server = errorServer(401);
+  void testUnauthorized() throws Exception {
+    try (HttpTestServer server = errorServer(401);
         NessieApiV1 api =
             HttpClientBuilder.builder()
                 .withUri(server.getUri().resolve("/unauthorized"))
@@ -182,12 +182,13 @@ class TestNessieHttpClient {
     }
   }
 
-  static HttpHandler handlerForHeaderTest(String headerName, AtomicReference<String> receiver) {
-    return h -> {
-      receiver.set(h.getRequestHeaders().getFirst(headerName));
-      h.getRequestBody().close();
-      h.getResponseHeaders().add("Content-Type", "application/json");
-      TestHttpUtil.writeResponseBody(h, "{\"maxSupportedApiVersion\":1}");
+  static HttpTestServer.RequestHandler handlerForHeaderTest(
+      String headerName, AtomicReference<String> receiver) {
+    return (req, resp) -> {
+      receiver.set(req.getHeader(headerName));
+      req.getInputStream().close();
+      resp.addHeader("Content-Type", "application/json");
+      HttpTestUtil.writeResponseBody(resp, "{\"maxSupportedApiVersion\":1}");
     };
   }
 }

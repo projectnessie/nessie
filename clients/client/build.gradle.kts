@@ -58,6 +58,8 @@ dependencies {
   testImplementation(libs.jaeger.core)
   testImplementation(platform(libs.awssdk.bom))
   testImplementation(libs.awssdk.auth)
+  testImplementation(platform(libs.jetty.bom))
+  testImplementation(libs.jetty.http2.server)
 }
 
 jandex { skipDefaultProcessing() }

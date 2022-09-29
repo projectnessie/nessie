@@ -19,7 +19,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.sun.net.httpserver.HttpHandler;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Base64;
@@ -36,8 +35,8 @@ import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.auth.BasicAuthenticationProvider;
 import org.projectnessie.client.auth.NessieAuthentication;
-import org.projectnessie.client.util.TestHttpUtil;
-import org.projectnessie.client.util.TestServer;
+import org.projectnessie.client.util.HttpTestServer;
+import org.projectnessie.client.util.HttpTestUtil;
 
 @Execution(ExecutionMode.CONCURRENT)
 public class TestHttpClientBuilder {
@@ -120,12 +119,14 @@ public class TestHttpClientBuilder {
   void testAuthBasic(Function<HttpClientBuilder, HttpClientBuilder> config) throws Exception {
     AtomicReference<String> authHeader = new AtomicReference<>();
 
-    try (TestServer server = new TestServer(handlerForHeaderTest("Authorization", authHeader))) {
-      NessieApiV1 client =
+    try (HttpTestServer server =
+        new HttpTestServer(handlerForHeaderTest("Authorization", authHeader))) {
+      try (NessieApiV1 client =
           config
               .apply(HttpClientBuilder.builder().withUri(server.getUri()))
-              .build(NessieApiV1.class);
-      client.getConfig();
+              .build(NessieApiV1.class)) {
+        client.getConfig();
+      }
     }
 
     assertThat(authHeader.get())
@@ -137,11 +138,12 @@ public class TestHttpClientBuilder {
                     UTF_8));
   }
 
-  static HttpHandler handlerForHeaderTest(String headerName, AtomicReference<String> receiver) {
-    return h -> {
-      receiver.set(h.getRequestHeaders().getFirst(headerName));
-      h.getRequestBody().close();
-      TestHttpUtil.writeResponseBody(h, "{\"maxSupportedApiVersion\":1}");
+  static HttpTestServer.RequestHandler handlerForHeaderTest(
+      String headerName, AtomicReference<String> receiver) {
+    return (req, resp) -> {
+      receiver.set(req.getHeader(headerName));
+      req.getInputStream().close();
+      HttpTestUtil.writeResponseBody(resp, "{\"maxSupportedApiVersion\":1}");
     };
   }
 }

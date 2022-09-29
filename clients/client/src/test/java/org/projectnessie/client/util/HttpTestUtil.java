@@ -15,25 +15,31 @@
  */
 package org.projectnessie.client.util;
 
-import com.sun.net.httpserver.HttpExchange;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import javax.servlet.http.HttpServletResponse;
 
-public class TestHttpUtil {
+public class HttpTestUtil {
 
-  private TestHttpUtil() {}
+  private HttpTestUtil() {}
 
-  public static void writeResponseBody(HttpExchange http, String response) throws IOException {
-    writeResponseBody(http, response, "application/json");
+  public static void writeEmptyResponse(HttpServletResponse resp) throws IOException {
+    writeResponseBody(resp, "", "text/plain");
   }
 
-  public static void writeResponseBody(HttpExchange http, String response, String contentType)
+  public static void writeResponseBody(HttpServletResponse resp, String response)
       throws IOException {
-    http.getResponseHeaders().add("Content-Type", contentType);
+    writeResponseBody(resp, response, "application/json");
+  }
+
+  public static void writeResponseBody(
+      HttpServletResponse resp, String response, String contentType) throws IOException {
+    resp.addHeader("Content-Type", contentType);
     byte[] body = response.getBytes(StandardCharsets.UTF_8);
-    http.sendResponseHeaders(200, body.length);
-    try (OutputStream os = http.getResponseBody()) {
+    resp.setContentLength(body.length);
+    resp.setStatus(200);
+    try (OutputStream os = resp.getOutputStream()) {
       os.write(body);
     }
   }
