@@ -16,60 +16,25 @@
 package org.projectnessie.client.http;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import org.projectnessie.client.http.HttpClient.Method;
-import org.projectnessie.client.http.impl.HttpHeaders;
 
 /** Context containing all important info about a request. */
-public class RequestContext {
+public interface RequestContext {
 
-  private final HttpHeaders headers;
-  private final URI uri;
-  private final Method method;
-  private final Object body;
-  private List<BiConsumer<ResponseContext, Exception>> responseCallbacks;
+  void putHeader(String name, String value);
 
-  /**
-   * Construct a request context.
-   *
-   * @param headers map of all headers
-   * @param uri uri of the request
-   * @param method verb to be used
-   * @param body optional body of request
-   */
-  public RequestContext(HttpHeaders headers, URI uri, Method method, Object body) {
-    this.headers = headers;
-    this.uri = uri;
-    this.method = method;
-    this.body = body;
-  }
+  boolean containsHeader(String name);
 
-  public void putHeader(String name, String value) {
-    headers.put(name, value);
-  }
+  void removeHeader(String name);
 
-  public boolean containsHeader(String name) {
-    return headers.contains(name);
-  }
+  URI getUri();
 
-  public void removeHeader(String name) {
-    headers.remove(name);
-  }
+  Method getMethod();
 
-  public URI getUri() {
-    return uri;
-  }
-
-  public Method getMethod() {
-    return method;
-  }
-
-  public Optional<Object> getBody() {
-    return body == null ? Optional.empty() : Optional.of(body);
-  }
+  Optional<Object> getBody();
 
   /**
    * Adds a callback to be called when the request has finished. The {@code responseCallback} {@link
@@ -81,14 +46,7 @@ public class RequestContext {
    * @param responseCallback callback that receives either a non-{@code null} {@link
    *     ResponseContext} or a non-{@code null} {@link Exception}.
    */
-  public void addResponseCallback(BiConsumer<ResponseContext, Exception> responseCallback) {
-    if (responseCallbacks == null) {
-      responseCallbacks = new ArrayList<>();
-    }
-    responseCallbacks.add(responseCallback);
-  }
+  void addResponseCallback(BiConsumer<ResponseContext, Exception> responseCallback);
 
-  public List<BiConsumer<ResponseContext, Exception>> getResponseCallbacks() {
-    return responseCallbacks;
-  }
+  List<BiConsumer<ResponseContext, Exception>> getResponseCallbacks();
 }

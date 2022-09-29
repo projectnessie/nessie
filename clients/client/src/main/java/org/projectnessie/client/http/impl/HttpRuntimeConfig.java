@@ -23,7 +23,7 @@ import org.immutables.value.Value;
 import org.projectnessie.client.http.RequestFilter;
 import org.projectnessie.client.http.ResponseFilter;
 
-/** Package-private HTTP configuration holder. */
+/** Implementation specific HTTP configuration holder. */
 @Value.Immutable
 public interface HttpRuntimeConfig {
 

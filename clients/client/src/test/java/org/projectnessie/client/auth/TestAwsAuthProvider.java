@@ -39,6 +39,7 @@ import org.projectnessie.client.http.HttpClient.Method;
 import org.projectnessie.client.http.RequestContext;
 import org.projectnessie.client.http.RequestFilter;
 import org.projectnessie.client.http.impl.HttpHeaders;
+import org.projectnessie.client.http.impl.RequestContextImpl;
 import software.amazon.awssdk.core.SdkSystemSetting;
 import software.amazon.awssdk.profiles.ProfileFileSystemSetting;
 import software.amazon.awssdk.regions.Region;
@@ -187,7 +188,7 @@ class TestAwsAuthProvider {
 
     HttpHeaders headers = new HttpHeaders();
     RequestContext context =
-        new RequestContext(headers, URI.create("http://localhost/"), Method.GET, null);
+        new RequestContextImpl(headers, URI.create("http://localhost/"), Method.GET, null);
     authFilter[0].filter(context);
 
     assertThat(headers.asMap())

@@ -34,6 +34,7 @@ import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.RequestContext;
 import org.projectnessie.client.http.RequestFilter;
 import org.projectnessie.client.http.impl.HttpHeaders;
+import org.projectnessie.client.http.impl.RequestContextImpl;
 
 @Execution(ExecutionMode.CONCURRENT)
 class TestBasicAuthProvider {
@@ -126,7 +127,7 @@ class TestBasicAuthProvider {
     assertThat(authFilter[0]).isInstanceOf(RequestFilter.class);
 
     HttpHeaders headers = new HttpHeaders();
-    RequestContext context = new RequestContext(headers, null, null, null);
+    RequestContext context = new RequestContextImpl(headers, null, null, null);
     authFilter[0].filter(context);
 
     assertThat(headers.asMap())

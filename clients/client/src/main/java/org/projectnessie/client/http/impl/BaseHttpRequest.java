@@ -28,9 +28,10 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.GZIPOutputStream;
 import org.projectnessie.client.http.HttpClient.Method;
+import org.projectnessie.client.http.HttpRequest;
 import org.projectnessie.client.http.RequestContext;
 
-public abstract class BaseHttpRequest extends org.projectnessie.client.http.HttpRequest {
+public abstract class BaseHttpRequest extends HttpRequest {
 
   protected BaseHttpRequest(HttpRuntimeConfig config) {
     super(config);

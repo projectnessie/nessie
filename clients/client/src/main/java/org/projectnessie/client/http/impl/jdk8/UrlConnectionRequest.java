@@ -38,6 +38,7 @@ import org.projectnessie.client.http.RequestContext;
 import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.impl.BaseHttpRequest;
 import org.projectnessie.client.http.impl.HttpRuntimeConfig;
+import org.projectnessie.client.http.impl.RequestContextImpl;
 
 /** Class to hold an ongoing HTTP request and its parameters/filters. */
 final class UrlConnectionRequest extends BaseHttpRequest {
@@ -56,7 +57,7 @@ final class UrlConnectionRequest extends BaseHttpRequest {
       if (con instanceof HttpsURLConnection) {
         ((HttpsURLConnection) con).setSSLSocketFactory(config.getSslContext().getSocketFactory());
       }
-      RequestContext context = new RequestContext(headers, uri, method, body);
+      RequestContext context = new RequestContextImpl(headers, uri, method, body);
       ResponseContext responseContext = new UrlConnectionResponseContext(con, uri);
       try {
 
