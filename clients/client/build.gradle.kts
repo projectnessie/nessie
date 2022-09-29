@@ -75,6 +75,8 @@ val testJava8 by
     description = "Runs tests using URLConnection client using Java 8."
     group = "verification"
 
+    dependsOn("testClasses")
+
     val test = tasks.named<Test>("test").get()
 
     testClassesDirs = test.testClassesDirs
@@ -96,32 +98,23 @@ tasks.named("check") { dependsOn(jacksonTests, testJava8) }
 
 jacksonTestVersions.forEach { (jacksonVersion, reason) ->
   val safeName = jacksonVersion.replace("[.]".toRegex(), "_")
-  val sourceSetName = "jackson_${safeName}_test"
 
-  val sourceSets: SourceSetContainer by project
-  sourceSets.create(sourceSetName) {
-    java.srcDir(sourceSets.test.get().java)
-    compileClasspath += sourceSets.main.get().output
-    runtimeClasspath += sourceSets.main.get().output
-  }
+  val runtimeConfigName = "testRuntimeClasspath_$safeName"
+  val runtimeConfig =
+    configurations.register(runtimeConfigName) {
+      extendsFrom(configurations.runtimeClasspath.get())
+      extendsFrom(configurations.testRuntimeClasspath.get())
+    }
 
-  val implConfigName = "${sourceSetName}Implementation"
-  val runtimeConfigName = "${sourceSetName}RuntimeOnly"
-  configurations.named(implConfigName) {
-    extendsFrom(configurations.implementation.get())
-    extendsFrom(configurations.testImplementation.get())
-  }
-  configurations.named(runtimeConfigName) {
-    extendsFrom(configurations.runtimeOnly.get())
-    extendsFrom(configurations.testRuntimeOnly.get())
-  }
-
-  dependencies.add(implConfigName, "com.fasterxml.jackson.core:jackson-core:$jacksonVersion!!")
+  dependencies.add(runtimeConfigName, "com.fasterxml.jackson.core:jackson-core:$jacksonVersion!!")
   dependencies.add(
-    implConfigName,
+    runtimeConfigName,
     "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion!!"
   )
-  dependencies.add(implConfigName, "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion!!")
+  dependencies.add(
+    runtimeConfigName,
+    "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion!!"
+  )
 
   val taskName = "testJackson_$safeName"
   val testTask =
@@ -129,10 +122,12 @@ jacksonTestVersions.forEach { (jacksonVersion, reason) ->
       description = "Runs tests using Jackson $jacksonVersion for $reason."
       group = "verification"
 
-      dependsOn("test")
+      dependsOn("testClasses")
 
-      testClassesDirs = sourceSets[sourceSetName].output.classesDirs
-      classpath = sourceSets[sourceSetName].runtimeClasspath
+      val test = tasks.named<Test>("test").get()
+
+      testClassesDirs = test.testClassesDirs
+      classpath = runtimeConfig.get().plus(test.classpath)
     }
 
   val taskName8 = "testJackson_${safeName}_java8"
@@ -141,10 +136,12 @@ jacksonTestVersions.forEach { (jacksonVersion, reason) ->
       description = "Runs tests using Jackson $jacksonVersion for $reason using Java 8."
       group = "verification"
 
-      dependsOn("test")
+      dependsOn("testClasses")
 
-      testClassesDirs = sourceSets[sourceSetName].output.classesDirs
-      classpath = sourceSets[sourceSetName].runtimeClasspath
+      val test = tasks.named<Test>("test").get()
+
+      testClassesDirs = test.testClassesDirs
+      classpath = runtimeConfig.get().plus(test.classpath)
 
       val javaToolchains = project.extensions.findByType(JavaToolchainService::class.java)
       javaLauncher.set(
