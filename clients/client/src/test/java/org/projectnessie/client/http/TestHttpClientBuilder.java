@@ -35,8 +35,8 @@ import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.auth.BasicAuthenticationProvider;
 import org.projectnessie.client.auth.NessieAuthentication;
-import org.projectnessie.client.util.TestHttpUtil;
-import org.projectnessie.client.util.TestServer;
+import org.projectnessie.client.util.HttpTestServer;
+import org.projectnessie.client.util.HttpTestUtil;
 
 @Execution(ExecutionMode.CONCURRENT)
 public class TestHttpClientBuilder {
@@ -119,7 +119,8 @@ public class TestHttpClientBuilder {
   void testAuthBasic(Function<HttpClientBuilder, HttpClientBuilder> config) throws Exception {
     AtomicReference<String> authHeader = new AtomicReference<>();
 
-    try (TestServer server = new TestServer(handlerForHeaderTest("Authorization", authHeader))) {
+    try (HttpTestServer server =
+        new HttpTestServer(handlerForHeaderTest("Authorization", authHeader))) {
       try (NessieApiV1 client =
           config
               .apply(HttpClientBuilder.builder().withUri(server.getUri()))
@@ -137,12 +138,12 @@ public class TestHttpClientBuilder {
                     UTF_8));
   }
 
-  static TestServer.RequestHandler handlerForHeaderTest(
+  static HttpTestServer.RequestHandler handlerForHeaderTest(
       String headerName, AtomicReference<String> receiver) {
     return (req, resp) -> {
       receiver.set(req.getHeader(headerName));
       req.getInputStream().close();
-      TestHttpUtil.writeResponseBody(resp, "{\"maxSupportedApiVersion\":1}");
+      HttpTestUtil.writeResponseBody(resp, "{\"maxSupportedApiVersion\":1}");
     };
   }
 }

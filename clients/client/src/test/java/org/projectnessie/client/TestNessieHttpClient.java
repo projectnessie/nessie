@@ -33,9 +33,9 @@ import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.client.rest.NessieBadResponseException;
 import org.projectnessie.client.rest.NessieInternalServerException;
 import org.projectnessie.client.rest.NessieNotAuthorizedException;
+import org.projectnessie.client.util.HttpTestServer;
+import org.projectnessie.client.util.HttpTestUtil;
 import org.projectnessie.client.util.JaegerTestTracer;
-import org.projectnessie.client.util.TestHttpUtil;
-import org.projectnessie.client.util.TestServer;
 import org.projectnessie.model.Branch;
 
 class TestNessieHttpClient {
@@ -46,12 +46,12 @@ class TestNessieHttpClient {
 
   @Test
   void testNonJsonResponse() throws Exception {
-    TestServer.RequestHandler handler =
+    HttpTestServer.RequestHandler handler =
         (req, resp) -> {
           Assertions.assertEquals("GET", req.getMethod());
-          TestHttpUtil.writeResponseBody(resp, "<html>hello world>", "text/html");
+          HttpTestUtil.writeResponseBody(resp, "<html>hello world>", "text/html");
         };
-    try (TestServer server = new TestServer(handler)) {
+    try (HttpTestServer server = new HttpTestServer(handler)) {
       NessieApiV1 api =
           HttpClientBuilder.builder()
               .withUri(server.getUri())
@@ -74,13 +74,13 @@ class TestNessieHttpClient {
         "mystuff/foo+json;charset=utf-8"
       })
   void testValidJsonResponse(String contentType) throws Exception {
-    TestServer.RequestHandler handler =
+    HttpTestServer.RequestHandler handler =
         (req, resp) -> {
           Assertions.assertEquals("GET", req.getMethod());
           String response = new ObjectMapper().writeValueAsString(Branch.of("foo", "deadbeef"));
-          TestHttpUtil.writeResponseBody(resp, response, contentType);
+          HttpTestUtil.writeResponseBody(resp, response, contentType);
         };
-    try (TestServer server = new TestServer("/trees/tree", handler);
+    try (HttpTestServer server = new HttpTestServer("/trees/tree", handler);
         NessieApiV1 api =
             HttpClientBuilder.builder()
                 .withUri(server.getUri())
@@ -94,7 +94,8 @@ class TestNessieHttpClient {
   void testTracing() throws Exception {
     AtomicReference<String> traceId = new AtomicReference<>();
 
-    try (TestServer server = new TestServer(handlerForHeaderTest("Uber-trace-id", traceId));
+    try (HttpTestServer server =
+            new HttpTestServer(handlerForHeaderTest("Uber-trace-id", traceId));
         NessieApiV1 api =
             HttpClientBuilder.builder()
                 .withUri(server.getUri())
@@ -117,7 +118,8 @@ class TestNessieHttpClient {
   void testTracingNotEnabled() throws Exception {
     AtomicReference<String> traceId = new AtomicReference<>();
 
-    try (TestServer server = new TestServer(handlerForHeaderTest("Uber-trace-id", traceId));
+    try (HttpTestServer server =
+            new HttpTestServer(handlerForHeaderTest("Uber-trace-id", traceId));
         NessieApiV1 api =
             HttpClientBuilder.builder()
                 .withUri(server.getUri())
@@ -133,8 +135,8 @@ class TestNessieHttpClient {
     assertNull(traceId.get());
   }
 
-  private TestServer errorServer(int status) throws Exception {
-    return new TestServer(
+  private HttpTestServer errorServer(int status) throws Exception {
+    return new HttpTestServer(
         (req, resp) -> {
           resp.setStatus(status);
           resp.getOutputStream().close();
@@ -143,7 +145,7 @@ class TestNessieHttpClient {
 
   @Test
   void testNotFoundOnBaseUri() throws Exception {
-    try (TestServer server = errorServer(404);
+    try (HttpTestServer server = errorServer(404);
         NessieApiV1 api =
             HttpClientBuilder.builder()
                 .withUri(server.getUri().resolve("/unknownPath"))
@@ -156,7 +158,7 @@ class TestNessieHttpClient {
 
   @Test
   void testInternalServerError() throws Exception {
-    try (TestServer server = errorServer(500);
+    try (HttpTestServer server = errorServer(500);
         NessieApiV1 api =
             HttpClientBuilder.builder()
                 .withUri(server.getUri().resolve("/broken"))
@@ -169,7 +171,7 @@ class TestNessieHttpClient {
 
   @Test
   void testUnauthorized() throws Exception {
-    try (TestServer server = errorServer(401);
+    try (HttpTestServer server = errorServer(401);
         NessieApiV1 api =
             HttpClientBuilder.builder()
                 .withUri(server.getUri().resolve("/unauthorized"))
@@ -180,13 +182,13 @@ class TestNessieHttpClient {
     }
   }
 
-  static TestServer.RequestHandler handlerForHeaderTest(
+  static HttpTestServer.RequestHandler handlerForHeaderTest(
       String headerName, AtomicReference<String> receiver) {
     return (req, resp) -> {
       receiver.set(req.getHeader(headerName));
       req.getInputStream().close();
       resp.addHeader("Content-Type", "application/json");
-      TestHttpUtil.writeResponseBody(resp, "{\"maxSupportedApiVersion\":1}");
+      HttpTestUtil.writeResponseBody(resp, "{\"maxSupportedApiVersion\":1}");
     };
   }
 }

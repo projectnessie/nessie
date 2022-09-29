@@ -17,8 +17,8 @@ package org.projectnessie.client.http;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.projectnessie.client.util.TestHttpUtil.emptyResponse;
-import static org.projectnessie.client.util.TestHttpUtil.writeResponseBody;
+import static org.projectnessie.client.util.HttpTestUtil.writeEmptyResponse;
+import static org.projectnessie.client.util.HttpTestUtil.writeResponseBody;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -49,7 +49,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
-import org.projectnessie.client.util.TestServer;
+import org.projectnessie.client.util.HttpTestServer;
 import org.projectnessie.model.CommitMeta;
 
 @Execution(ExecutionMode.CONCURRENT)
@@ -84,7 +84,7 @@ public class TestHttpClient {
   @Test
   void testWriteWithVariousSizes() throws Exception {
 
-    TestServer.RequestHandler handler =
+    HttpTestServer.RequestHandler handler =
         (req, resp) -> {
           ArrayBean input;
           switch (req.getMethod()) {
@@ -114,7 +114,7 @@ public class TestHttpClient {
           }
         };
 
-    try (TestServer server = new TestServer(handler)) {
+    try (HttpTestServer server = new HttpTestServer(handler)) {
       for (boolean disableCompression : new boolean[] {false, true}) {
         for (int num : new int[] {1, 10, 20, 100}) {
           int len = 10_000;
@@ -169,13 +169,13 @@ public class TestHttpClient {
   @Test
   void testGet() throws Exception {
     ExampleBean inputBean = new ExampleBean("x", 1, NOW);
-    TestServer.RequestHandler handler =
+    HttpTestServer.RequestHandler handler =
         (req, resp) -> {
           Assertions.assertEquals("GET", req.getMethod());
           String response = MAPPER.writeValueAsString(inputBean);
           writeResponseBody(resp, response);
         };
-    try (TestServer server = new TestServer(handler)) {
+    try (HttpTestServer server = new HttpTestServer(handler)) {
       ExampleBean bean = get(server.getAddress()).get().readEntity(ExampleBean.class);
       Assertions.assertEquals(inputBean, bean);
     }
@@ -183,11 +183,11 @@ public class TestHttpClient {
 
   @Test
   void testReadTimeout() {
-    TestServer.RequestHandler handler = (req, resp) -> {};
+    HttpTestServer.RequestHandler handler = (req, resp) -> {};
     Assertions.assertThrows(
         HttpClientReadTimeoutException.class,
         () -> {
-          try (TestServer server = new TestServer(handler)) {
+          try (HttpTestServer server = new HttpTestServer(handler)) {
             get(server.getAddress(), 15000, 1, true).get().readEntity(ExampleBean.class);
           }
         });
@@ -196,16 +196,16 @@ public class TestHttpClient {
   @Test
   void testPut() throws Exception {
     ExampleBean inputBean = new ExampleBean("x", 1, NOW);
-    TestServer.RequestHandler handler =
+    HttpTestServer.RequestHandler handler =
         (req, resp) -> {
           Assertions.assertEquals("PUT", req.getMethod());
           try (InputStream in = req.getInputStream()) {
             Object bean = MAPPER.readerFor(ExampleBean.class).readValue(in);
             Assertions.assertEquals(inputBean, bean);
           }
-          emptyResponse(resp);
+          writeEmptyResponse(resp);
         };
-    try (TestServer server = new TestServer(handler)) {
+    try (HttpTestServer server = new HttpTestServer(handler)) {
       get(server.getAddress()).put(inputBean);
     }
   }
@@ -213,28 +213,28 @@ public class TestHttpClient {
   @Test
   void testPost() throws Exception {
     ExampleBean inputBean = new ExampleBean("x", 1, NOW);
-    TestServer.RequestHandler handler =
+    HttpTestServer.RequestHandler handler =
         (req, resp) -> {
           Assertions.assertEquals("POST", req.getMethod());
           try (InputStream in = req.getInputStream()) {
             Object bean = MAPPER.readerFor(ExampleBean.class).readValue(in);
             Assertions.assertEquals(inputBean, bean);
           }
-          emptyResponse(resp);
+          writeEmptyResponse(resp);
         };
-    try (TestServer server = new TestServer(handler)) {
+    try (HttpTestServer server = new HttpTestServer(handler)) {
       get(server.getAddress()).post(inputBean);
     }
   }
 
   @Test
   void testDelete() throws Exception {
-    TestServer.RequestHandler handler =
+    HttpTestServer.RequestHandler handler =
         (req, resp) -> {
           Assertions.assertEquals("DELETE", req.getMethod());
-          emptyResponse(resp);
+          writeEmptyResponse(resp);
         };
-    try (TestServer server = new TestServer(handler)) {
+    try (HttpTestServer server = new HttpTestServer(handler)) {
       get(server.getAddress()).delete();
     }
   }
@@ -242,14 +242,14 @@ public class TestHttpClient {
   @Test
   void testGetQueryParam() throws Exception {
     ExampleBean inputBean = new ExampleBean("x", 1, NOW);
-    TestServer.RequestHandler handler =
+    HttpTestServer.RequestHandler handler =
         (req, resp) -> {
           Assertions.assertEquals("x=y", req.getQueryString());
           Assertions.assertEquals("GET", req.getMethod());
           String response = MAPPER.writeValueAsString(inputBean);
           writeResponseBody(resp, response);
         };
-    try (TestServer server = new TestServer(handler)) {
+    try (HttpTestServer server = new HttpTestServer(handler)) {
       ExampleBean bean =
           get(server.getAddress()).queryParam("x", "y").get().readEntity(ExampleBean.class);
       Assertions.assertEquals(inputBean, bean);
@@ -259,7 +259,7 @@ public class TestHttpClient {
   @Test
   void testGetMultipleQueryParam() throws Exception {
     ExampleBean inputBean = new ExampleBean("x", 1, NOW);
-    TestServer.RequestHandler handler =
+    HttpTestServer.RequestHandler handler =
         (req, resp) -> {
           String[] queryParams = req.getQueryString().split("&");
           Assertions.assertEquals(2, queryParams.length);
@@ -270,7 +270,7 @@ public class TestHttpClient {
           String response = MAPPER.writeValueAsString(inputBean);
           writeResponseBody(resp, response);
         };
-    try (TestServer server = new TestServer(handler)) {
+    try (HttpTestServer server = new HttpTestServer(handler)) {
       ExampleBean bean =
           get(server.getAddress())
               .queryParam("x", "y")
@@ -284,7 +284,7 @@ public class TestHttpClient {
   @Test
   void testGetNullQueryParam() throws Exception {
     ExampleBean inputBean = new ExampleBean("x", 1, NOW);
-    TestServer.RequestHandler handler =
+    HttpTestServer.RequestHandler handler =
         (req, resp) -> {
           String queryParams = req.getQueryString();
           Assertions.assertNull(queryParams);
@@ -292,7 +292,7 @@ public class TestHttpClient {
           String response = MAPPER.writeValueAsString(inputBean);
           writeResponseBody(resp, response);
         };
-    try (TestServer server = new TestServer(handler)) {
+    try (HttpTestServer server = new HttpTestServer(handler)) {
       ExampleBean bean =
           get(server.getAddress())
               .queryParam("x", (String) null)
@@ -305,13 +305,13 @@ public class TestHttpClient {
   @Test
   void testGetTemplate() throws Exception {
     ExampleBean inputBean = new ExampleBean("x", 1, NOW);
-    TestServer.RequestHandler handler =
+    HttpTestServer.RequestHandler handler =
         (req, resp) -> {
           Assertions.assertEquals("GET", req.getMethod());
           String response = MAPPER.writeValueAsString(inputBean);
           writeResponseBody(resp, response);
         };
-    try (TestServer server = new TestServer("/a/b", handler)) {
+    try (HttpTestServer server = new HttpTestServer("/a/b", handler)) {
       ExampleBean bean = get(server.getAddress()).path("a/b").get().readEntity(ExampleBean.class);
       Assertions.assertEquals(inputBean, bean);
       bean =
@@ -326,8 +326,8 @@ public class TestHttpClient {
 
   @Test
   void testGetTemplateThrows() throws Exception {
-    TestServer.RequestHandler handler = (req, resp) -> fail();
-    try (TestServer server = new TestServer("/a/b", handler)) {
+    HttpTestServer.RequestHandler handler = (req, resp) -> fail();
+    try (HttpTestServer server = new HttpTestServer("/a/b", handler)) {
       Assertions.assertThrows(
           HttpClientException.class,
           () -> get(server.getAddress()).path("a/{b}").get().readEntity(ExampleBean.class));
@@ -348,12 +348,12 @@ public class TestHttpClient {
     AtomicBoolean responseFilterCalled = new AtomicBoolean(false);
     AtomicReference<ResponseContext> responseContextGotCallback = new AtomicReference<>();
     AtomicReference<ResponseContext> responseContextGotFilter = new AtomicReference<>();
-    TestServer.RequestHandler handler =
+    HttpTestServer.RequestHandler handler =
         (req, resp) -> {
           assertThat(req.getHeader("x")).isEqualTo("y");
-          emptyResponse(resp);
+          writeEmptyResponse(resp);
         };
-    try (TestServer server = new TestServer(handler)) {
+    try (HttpTestServer server = new HttpTestServer(handler)) {
       HttpClient.Builder client =
           HttpClient.builder()
               .setBaseUri(URI.create("http://localhost:" + server.getAddress().getPort()))
@@ -388,28 +388,28 @@ public class TestHttpClient {
 
   @Test
   void testHeaders() throws Exception {
-    TestServer.RequestHandler handler =
+    HttpTestServer.RequestHandler handler =
         (req, resp) -> {
           assertThat(req.getHeader("x")).isEqualTo("y");
-          emptyResponse(resp);
+          writeEmptyResponse(resp);
         };
-    try (TestServer server = new TestServer(handler)) {
+    try (HttpTestServer server = new HttpTestServer(handler)) {
       get(server.getAddress()).header("x", "y").get();
     }
   }
 
   @Test
   void testMultiValueHeaders() throws Exception {
-    TestServer.RequestHandler handler =
+    HttpTestServer.RequestHandler handler =
         (req, resp) -> {
           List<String> values = new ArrayList<>();
           for (Enumeration<String> e = req.getHeaders("x"); e != null && e.hasMoreElements(); ) {
             values.add(e.nextElement());
           }
           assertThat(values).containsExactly("y", "z");
-          emptyResponse(resp);
+          writeEmptyResponse(resp);
         };
-    try (TestServer server = new TestServer(handler)) {
+    try (HttpTestServer server = new HttpTestServer(handler)) {
       get(server.getAddress()).header("x", "y").header("x", "z").get();
     }
   }

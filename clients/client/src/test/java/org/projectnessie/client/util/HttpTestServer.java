@@ -27,7 +27,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 
 /** A HTTP test server. */
-public class TestServer implements AutoCloseable {
+public class HttpTestServer implements AutoCloseable {
 
   @FunctionalInterface
   public interface RequestHandler {
@@ -36,7 +36,7 @@ public class TestServer implements AutoCloseable {
 
   private final Server server;
 
-  public TestServer(String context, RequestHandler handler) throws Exception {
+  public HttpTestServer(String context, RequestHandler handler) throws Exception {
     this(context, handler, null);
   }
 
@@ -46,9 +46,8 @@ public class TestServer implements AutoCloseable {
    * @param context server context
    * @param handler http request handler
    * @param init init method (optional)
-   * @throws IOException maybe
    */
-  public TestServer(String context, RequestHandler handler, Consumer<Server> init)
+  public HttpTestServer(String context, RequestHandler handler, Consumer<Server> init)
       throws Exception {
     server = new Server(0);
 
@@ -80,7 +79,7 @@ public class TestServer implements AutoCloseable {
     server.start();
   }
 
-  public TestServer(RequestHandler handler) throws Exception {
+  public HttpTestServer(RequestHandler handler) throws Exception {
     this("/", handler);
   }
 

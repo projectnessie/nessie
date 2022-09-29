@@ -20,11 +20,11 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import javax.servlet.http.HttpServletResponse;
 
-public class TestHttpUtil {
+public class HttpTestUtil {
 
-  private TestHttpUtil() {}
+  private HttpTestUtil() {}
 
-  public static void emptyResponse(HttpServletResponse resp) throws IOException {
+  public static void writeEmptyResponse(HttpServletResponse resp) throws IOException {
     writeResponseBody(resp, "", "text/plain");
   }
 

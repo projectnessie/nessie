@@ -59,8 +59,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
-import org.projectnessie.client.util.TestHttpUtil;
-import org.projectnessie.client.util.TestServer;
+import org.projectnessie.client.util.HttpTestServer;
+import org.projectnessie.client.util.HttpTestUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,14 +71,14 @@ class TestHttpsClient {
 
   @Test
   void testHttps() throws Exception {
-    TestServer.RequestHandler handler =
+    HttpTestServer.RequestHandler handler =
         (req, resp) -> {
           Assertions.assertEquals("GET", req.getMethod());
-          TestHttpUtil.writeResponseBody(resp, "hello");
+          HttpTestUtil.writeResponseBody(resp, "hello");
         };
     TrustManager[][] trustManager = new TrustManager[1][];
-    try (TestServer server =
-        new TestServer(
+    try (HttpTestServer server =
+        new HttpTestServer(
             "/",
             handler,
             s -> {
