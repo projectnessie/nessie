@@ -15,7 +15,7 @@ runs:
     - name: Set up JDK ${{ inputs.java-version }}
       uses: actions/setup-java@v3
       with:
-        distribution: 'zulu'
+        distribution: 'temurin'
         java-version: ${{ inputs.java-version }}
         server-id: ossrh
         server-username: MAVEN_USERNAME
