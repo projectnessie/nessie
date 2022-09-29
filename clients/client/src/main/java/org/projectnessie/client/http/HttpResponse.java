@@ -23,12 +23,12 @@ import org.projectnessie.client.rest.NessieBadResponseException;
 import org.projectnessie.error.ImmutableNessieError;
 
 /** Simple holder for http response object. */
-public class HttpResponse {
+public final class HttpResponse {
 
   private final ResponseContext responseContext;
   private final ObjectMapper mapper;
 
-  HttpResponse(ResponseContext context, ObjectMapper mapper) {
+  public HttpResponse(ResponseContext context, ObjectMapper mapper) {
     this.responseContext = context;
     this.mapper = mapper;
   }

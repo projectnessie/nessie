@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http;
+package org.projectnessie.client.http.impl.jdk8;
 
-import static org.projectnessie.client.http.HttpUtils.DEFLATE;
-import static org.projectnessie.client.http.HttpUtils.GZIP;
-import static org.projectnessie.client.http.HttpUtils.HEADER_CONTENT_ENCODING;
-import static org.projectnessie.client.http.HttpUtils.HEADER_CONTENT_TYPE;
+import static org.projectnessie.client.http.impl.HttpUtils.DEFLATE;
+import static org.projectnessie.client.http.impl.HttpUtils.GZIP;
+import static org.projectnessie.client.http.impl.HttpUtils.HEADER_CONTENT_ENCODING;
+import static org.projectnessie.client.http.impl.HttpUtils.HEADER_CONTENT_TYPE;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,13 +26,15 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
+import org.projectnessie.client.http.ResponseContext;
+import org.projectnessie.client.http.Status;
 
-class ResponseContextImpl implements ResponseContext {
+final class UrlConnectionResponseContext implements ResponseContext {
 
   private final HttpURLConnection connection;
   private final URI uri;
 
-  ResponseContextImpl(HttpURLConnection connection, URI uri) {
+  UrlConnectionResponseContext(HttpURLConnection connection, URI uri) {
     this.connection = connection;
     this.uri = uri;
   }
@@ -50,19 +52,6 @@ class ResponseContextImpl implements ResponseContext {
   @Override
   public InputStream getErrorStream() throws IOException {
     return maybeDecompress(connection.getErrorStream());
-  }
-
-  @Override
-  public boolean isJsonCompatibleResponse() {
-    String contentType = getContentType();
-    if (contentType == null) {
-      return false;
-    }
-    int i = contentType.indexOf(';');
-    if (i > 0) {
-      contentType = contentType.substring(0, i);
-    }
-    return contentType.endsWith("/json") || contentType.endsWith("+json");
   }
 
   @Override

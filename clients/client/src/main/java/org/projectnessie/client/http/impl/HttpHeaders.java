@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http;
+package org.projectnessie.client.http.impl;
 
-import java.net.URLConnection;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -48,17 +48,13 @@ public final class HttpHeaders {
     return h != null ? h.getValues() : Collections.emptyList();
   }
 
-  public void applyTo(URLConnection con) {
-    for (HttpHeader header : headers.values()) {
-      for (String value : header.values) {
-        con.addRequestProperty(header.name, value);
-      }
-    }
-  }
-
   public Map<String, Iterable<String>> asMap() {
     return headers.values().stream()
         .collect(Collectors.toMap(HttpHeader::getName, HttpHeader::getValues));
+  }
+
+  public Collection<HttpHeader> allHeaders() {
+    return headers.values();
   }
 
   public static final class HttpHeader {

@@ -28,7 +28,17 @@ public interface ResponseContext {
 
   InputStream getErrorStream() throws IOException;
 
-  boolean isJsonCompatibleResponse();
+  default boolean isJsonCompatibleResponse() {
+    String contentType = getContentType();
+    if (contentType == null) {
+      return false;
+    }
+    int i = contentType.indexOf(';');
+    if (i > 0) {
+      contentType = contentType.substring(0, i);
+    }
+    return contentType.endsWith("/json") || contentType.endsWith("+json");
+  }
 
   String getContentType();
 

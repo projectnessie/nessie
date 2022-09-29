@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http;
+package org.projectnessie.client.http.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.projectnessie.client.http.impl.HttpUtils.applyHeaders;
 
 import java.net.URLConnection;
 import java.util.Arrays;
@@ -61,7 +62,8 @@ public class TestHttpHeaders {
     ArgumentCaptor<String> nameCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> valueCaptor = ArgumentCaptor.forClass(String.class);
 
-    headers.applyTo(urlConnectionMock);
+    applyHeaders(headers, urlConnectionMock);
+
     verify(urlConnectionMock, times(4))
         .addRequestProperty(nameCaptor.capture(), valueCaptor.capture());
 

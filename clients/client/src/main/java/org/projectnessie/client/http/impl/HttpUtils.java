@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http;
+package org.projectnessie.client.http.impl;
 
 import com.google.errorprone.annotations.FormatMethod;
+import java.net.URLConnection;
 import java.util.Objects;
+import org.projectnessie.client.http.impl.HttpHeaders.HttpHeader;
 
 public final class HttpUtils {
 
@@ -53,5 +55,13 @@ public final class HttpUtils {
   public static String checkNonNullTrim(String str) {
     Objects.requireNonNull(str);
     return str.trim();
+  }
+
+  public static void applyHeaders(HttpHeaders headers, URLConnection con) {
+    for (HttpHeader header : headers.allHeaders()) {
+      for (String value : header.getValues()) {
+        con.addRequestProperty(header.getName(), value);
+      }
+    }
   }
 }
