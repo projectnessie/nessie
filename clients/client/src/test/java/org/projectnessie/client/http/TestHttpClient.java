@@ -121,34 +121,46 @@ public class TestHttpClient {
 
           ArrayBean inputBean = ArrayBean.construct(10_000, num);
 
-          soft.assertThat(
-                  get(server.getAddress(), disableCompression)
-                      .queryParam("len", Integer.toString(len))
-                      .queryParam("num", Integer.toString(num))
-                      .get()
-                      .readEntity(ArrayBean.class))
+          soft.assertThatCode(
+                  () ->
+                      assertThat(
+                              get(server.getAddress(), disableCompression)
+                                  .queryParam("len", Integer.toString(len))
+                                  .queryParam("num", Integer.toString(num))
+                                  .get()
+                                  .readEntity(ArrayBean.class))
+                          .isEqualTo(inputBean))
               .describedAs("GET, disableCompression:%s, num:%d", disableCompression, num)
-              .isEqualTo(inputBean);
-          soft.assertThat(
-                  get(server.getAddress(), disableCompression)
-                      .queryParam("len", Integer.toString(len))
-                      .queryParam("num", Integer.toString(num))
-                      .delete()
-                      .readEntity(ArrayBean.class))
+              .isNull();
+          soft.assertThatCode(
+                  () ->
+                      assertThat(
+                              get(server.getAddress(), disableCompression)
+                                  .queryParam("len", Integer.toString(len))
+                                  .queryParam("num", Integer.toString(num))
+                                  .delete()
+                                  .readEntity(ArrayBean.class))
+                          .isEqualTo(inputBean))
               .describedAs("DELETE, disableCompression:%s, num:%d", disableCompression, num)
-              .isEqualTo(inputBean);
-          soft.assertThat(
-                  get(server.getAddress(), disableCompression)
-                      .put(inputBean)
-                      .readEntity(ArrayBean.class))
+              .isNull();
+          soft.assertThatCode(
+                  () ->
+                      assertThat(
+                              get(server.getAddress(), disableCompression)
+                                  .put(inputBean)
+                                  .readEntity(ArrayBean.class))
+                          .isEqualTo(inputBean))
               .describedAs("PUT, disableCompression:%s, num:%d", disableCompression, num)
-              .isEqualTo(inputBean);
-          soft.assertThat(
-                  get(server.getAddress(), disableCompression)
-                      .post(inputBean)
-                      .readEntity(ArrayBean.class))
+              .isNull();
+          soft.assertThatCode(
+                  () ->
+                      assertThat(
+                              get(server.getAddress(), disableCompression)
+                                  .post(inputBean)
+                                  .readEntity(ArrayBean.class))
+                          .isEqualTo(inputBean))
               .describedAs("POST, disableCompression:%s, num:%d", disableCompression, num)
-              .isEqualTo(inputBean);
+              .isNull();
         }
       }
     }
