@@ -50,10 +50,12 @@ dependencies {
   testImplementation(libs.bundles.junit.testing)
   testRuntimeOnly(libs.junit.jupiter.engine)
 
-  compileOnly(libs.quarkus.smallrye.opentracing)
+  compileOnly(libs.opentracing.util)
   compileOnly(platform(libs.awssdk.bom))
   compileOnly(libs.awssdk.auth)
-  testImplementation(libs.quarkus.smallrye.opentracing)
+
+  testImplementation(libs.opentracing.util)
+  testImplementation(libs.jaeger.core)
   testImplementation(platform(libs.awssdk.bom))
   testImplementation(libs.awssdk.auth)
 }
@@ -68,13 +70,29 @@ val jacksonTestVersions =
     "2.13.3" to "Spark 3.3.0"
   )
 
+val testJava8 by
+  tasks.registering(Test::class) {
+    description = "Runs tests using URLConnection client using Java 8."
+    group = "verification"
+
+    val test = tasks.named<Test>("test").get()
+
+    testClassesDirs = test.testClassesDirs
+    classpath = test.classpath
+
+    val javaToolchains = project.extensions.findByType(JavaToolchainService::class.java)
+    javaLauncher.set(
+      javaToolchains!!.launcherFor { languageVersion.set(JavaLanguageVersion.of(8)) }
+    )
+  }
+
 val jacksonTests by
   tasks.registering {
     description = "Runs tests against Jackson versions ${jacksonTestVersions.keys}."
     group = "verification"
   }
 
-tasks.named("check") { dependsOn(jacksonTests) }
+tasks.named("check") { dependsOn(jacksonTests, testJava8) }
 
 jacksonTestVersions.forEach { (jacksonVersion, reason) ->
   val safeName = jacksonVersion.replace("[.]".toRegex(), "_")
@@ -117,5 +135,22 @@ jacksonTestVersions.forEach { (jacksonVersion, reason) ->
       classpath = sourceSets[sourceSetName].runtimeClasspath
     }
 
-  jacksonTests { dependsOn(testTask) }
+  val taskName8 = "testJackson_${safeName}_java8"
+  val testTask8 =
+    tasks.register<Test>(taskName8) {
+      description = "Runs tests using Jackson $jacksonVersion for $reason using Java 8."
+      group = "verification"
+
+      dependsOn("test")
+
+      testClassesDirs = sourceSets[sourceSetName].output.classesDirs
+      classpath = sourceSets[sourceSetName].runtimeClasspath
+
+      val javaToolchains = project.extensions.findByType(JavaToolchainService::class.java)
+      javaLauncher.set(
+        javaToolchains!!.launcherFor { languageVersion.set(JavaLanguageVersion.of(8)) }
+      )
+    }
+
+  jacksonTests { dependsOn(testTask, testTask8) }
 }
