@@ -59,7 +59,7 @@ jobs:
       if: steps.check_status.outputs.result == 'OK'
       uses: actions/setup-java@v3
       with:
-        distribution: 'zulu'
+        distribution: 'temurin'
         java-version: 11
 
     - name: Create simlog-dir
