@@ -10,6 +10,7 @@ jobs:
   java:
     name: Exercise Java version
     runs-on: ubuntu-20.04
+    if: github.repository_owner == 'projectnessie'
     strategy:
       max-parallel: 4
       matrix:
