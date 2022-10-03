@@ -8,7 +8,11 @@
     ":preserveSemverRanges"
   ],
 
-  "labels": ["dependencies"],
+  "labels": [
+    "dependencies",
+    "pr-integrations",
+    "pr-native",
+  ],
 
   packageRules: [
     // Check for updates, merge automatically
