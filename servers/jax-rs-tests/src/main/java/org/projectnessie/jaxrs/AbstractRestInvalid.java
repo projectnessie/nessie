@@ -21,20 +21,15 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.projectnessie.model.Validation.HASH_MESSAGE;
 import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
 
-import org.assertj.core.api.Assumptions;
-import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.error.NessieBadRequestException;
-import org.projectnessie.error.NessieConflictException;
-import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Tag;
 
 /** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
-public abstract class AbstractRestInvalidWithHttp extends AbstractRestInvalidRefs {
+public abstract class AbstractRestInvalid extends AbstractRestInvalidRefs {
   public static final String COMMA_VALID_HASH_1 =
       ",1234567890123456789012345678901234567890123456789012345678901234";
   public static final String COMMA_VALID_HASH_2 = ",1234567890123456789012345678901234567890";
@@ -51,7 +46,6 @@ public abstract class AbstractRestInvalidWithHttp extends AbstractRestInvalidRef
   })
   public void invalidBranchNames(String invalidBranchName, String validHash) {
     ContentKey key = ContentKey.of("x");
-    Tag tag = Tag.of("valid", validHash);
 
     String opsCountMsg = ".operations.operations: size must be between 1 and 2147483647";
 
@@ -103,34 +97,6 @@ public abstract class AbstractRestInvalidWithHttp extends AbstractRestInvalidRef
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining(REF_NAME_MESSAGE),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        getApi()
-                            .assignTag()
-                            .tagName(invalidBranchName)
-                            .hash(validHash)
-                            .assignTo(tag)
-                            .assign())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(REF_NAME_MESSAGE),
-        () -> {
-          if (null != getHttpClient()) {
-            assertThatThrownBy(
-                    () ->
-                        getHttpClient()
-                            .newRequest()
-                            .path("trees/branch/{branchName}/merge")
-                            .resolveTemplate("branchName", invalidBranchName)
-                            .queryParam("expectedHash", validHash)
-                            .post(null))
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(REF_NAME_MESSAGE)
-                .hasMessageContaining(".merge: must not be null");
-          }
-        },
         () ->
             assertThatThrownBy(
                     () ->
@@ -251,22 +217,6 @@ public abstract class AbstractRestInvalidWithHttp extends AbstractRestInvalidRef
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining(".expectedHash: " + HASH_MESSAGE),
-        () -> {
-          if (null != getHttpClient()) {
-            assertThatThrownBy(
-                    () ->
-                        getHttpClient()
-                            .newRequest()
-                            .path("trees/branch/{branchName}/merge")
-                            .resolveTemplate("branchName", validBranchName)
-                            .queryParam("expectedHash", invalidHash)
-                            .post(null))
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining("mergeRefIntoBranch.merge: must not be null")
-                .hasMessageContaining(".expectedHash: " + HASH_MESSAGE);
-          }
-        },
         () ->
             assertThatThrownBy(
                     () ->
@@ -361,116 +311,31 @@ public abstract class AbstractRestInvalidWithHttp extends AbstractRestInvalidRef
 
   @ParameterizedTest
   @CsvSource({
-    "" + COMMA_VALID_HASH_1,
     "abc'" + COMMA_VALID_HASH_1,
     ".foo" + COMMA_VALID_HASH_2,
     "abc'def'..'blah" + COMMA_VALID_HASH_2,
     "abc'de..blah" + COMMA_VALID_HASH_3,
     "abc'de@{blah" + COMMA_VALID_HASH_3
   })
-  public void invalidTags(String invalidTagNameIn, String validHash) {
-    Assumptions.assumeThat(getHttpClient()).isNotNull();
-    // CsvSource maps an empty string as null
-    String invalidTagName = invalidTagNameIn != null ? invalidTagNameIn : "";
-
-    String validBranchName = "hello";
-    // Need the string-ified JSON representation of `Tag` here, because `Tag` itself performs
-    // validation.
-    String tag =
-        "{\"type\": \"TAG\", \"name\": \""
-            + invalidTagName
-            + "\", \"hash\": \""
-            + validHash
-            + "\"}";
-    String branch =
-        "{\"type\": \"BRANCH\", \"name\": \""
-            + invalidTagName
-            + "\", \"hash\": \""
-            + validHash
-            + "\"}";
-    String different =
-        "{\"type\": \"FOOBAR\", \"name\": \""
-            + invalidTagName
-            + "\", \"hash\": \""
-            + validHash
-            + "\"}";
+  public void invalidTags(String invalidTagName, String validHash) {
     assertAll(
         () ->
             assertThatThrownBy(
                     () ->
-                        unwrap(
-                            () ->
-                                getHttpClient()
-                                    .newRequest()
-                                    .path("trees/tag/{tagName}")
-                                    .resolveTemplate("tagName", validBranchName)
-                                    .queryParam("expectedHash", validHash)
-                                    .put(null)))
+                        getApi()
+                            .assignTag()
+                            .tagName(invalidTagName)
+                            .hash(validHash)
+                            .assignTo(Tag.of("validTag", validHash))
+                            .assign())
                 .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageStartingWith("Bad Request (HTTP/400):")
-                .hasMessageContaining(".assignTo: must not be null"),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        unwrap(
-                            () ->
-                                getHttpClient()
-                                    .newRequest()
-                                    .path("trees/tag/{tagName}")
-                                    .resolveTemplate("tagName", validBranchName)
-                                    .queryParam("expectedHash", validHash)
-                                    .put(tag)))
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageStartingWith(
-                    "Bad Request (HTTP/400): Cannot construct instance of "
-                        + "`org.projectnessie.model.ImmutableTag`, problem: "
-                        + REF_NAME_MESSAGE
-                        + " - but was: "
-                        + invalidTagName
-                        + "\n"),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        unwrap(
-                            () ->
-                                getHttpClient()
-                                    .newRequest()
-                                    .path("trees/tag/{tagName}")
-                                    .resolveTemplate("tagName", validBranchName)
-                                    .queryParam("expectedHash", validHash)
-                                    .put(branch)))
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageStartingWith("Bad Request (HTTP/400): Cannot construct instance of ")
+                .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining(REF_NAME_MESSAGE),
         () ->
             assertThatThrownBy(
-                    () ->
-                        unwrap(
-                            () ->
-                                getHttpClient()
-                                    .newRequest()
-                                    .path("trees/tag/{tagName}")
-                                    .resolveTemplate("tagName", validBranchName)
-                                    .queryParam("expectedHash", validHash)
-                                    .put(different)))
+                    () -> getApi().deleteTag().tagName(invalidTagName).hash(validHash).delete())
                 .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageStartingWith(
-                    "Bad Request (HTTP/400): Could not resolve type id 'FOOBAR' as a subtype of "
-                        + "`org.projectnessie.model.Reference`: known type ids = ["));
-  }
-
-  void unwrap(Executable exec) throws Throwable {
-    try {
-      exec.execute();
-    } catch (Throwable targetException) {
-      if (targetException instanceof HttpClientException) {
-        if (targetException.getCause() instanceof NessieNotFoundException
-            || targetException.getCause() instanceof NessieConflictException) {
-          throw targetException.getCause();
-        }
-      }
-
-      throw targetException;
-    }
+                .hasMessageContaining("Bad Request (HTTP/400):")
+                .hasMessageContaining(REF_NAME_MESSAGE));
   }
 }
