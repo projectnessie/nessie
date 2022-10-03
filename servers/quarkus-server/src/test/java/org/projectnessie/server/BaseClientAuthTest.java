@@ -42,9 +42,9 @@ public abstract class BaseClientAuthTest {
     if (api != null) {
       return api;
     }
-
+    String port = System.getProperty("quarkus.http.test-port");
     HttpClientBuilder builder =
-        HttpClientBuilder.builder().withUri("http://localhost:19121/api/v1");
+        HttpClientBuilder.builder().withUri("http://localhost:" + port + "/api/v1");
 
     if (customizer != null) {
       customizer.accept(builder);

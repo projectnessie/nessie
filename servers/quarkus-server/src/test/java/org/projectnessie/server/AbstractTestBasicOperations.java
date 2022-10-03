@@ -47,9 +47,10 @@ abstract class AbstractTestBasicOperations {
   }
 
   void getCatalog(String branch) throws BaseNessieClientServerException {
+    String port = System.getProperty("quarkus.http.test-port");
     api =
         HttpClientBuilder.builder()
-            .withUri("http://localhost:19121/api/v1")
+            .withUri("http://localhost:" + port + "/api/v1")
             .build(NessieApiV1.class);
     if (branch != null) {
       api.createReference().reference(Branch.of(branch, null)).sourceRefName("main").create();

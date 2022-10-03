@@ -45,9 +45,10 @@ public class ITNessieError {
 
   @BeforeEach
   void init() {
+    String port = System.getProperty("quarkus.http.test-port");
     api =
         HttpClientBuilder.builder()
-            .withUri("http://localhost:19121/api/v1")
+            .withUri("http://localhost:" + port + "/api/v1")
             .build(NessieApiV1.class);
   }
 

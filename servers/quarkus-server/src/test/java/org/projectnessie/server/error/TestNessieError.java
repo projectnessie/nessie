@@ -50,7 +50,8 @@ import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
     QuarkusTestProfileInmemory.class) // use the QuarkusTestProfileInmemory, as it can be reused
 class TestNessieError {
 
-  static String baseURI = "http://localhost:19121/api/v1/nessieErrorTest";
+  static String port = System.getProperty("quarkus.http.test-port");
+  static String baseURI = "http://localhost:" + port + "/api/v1/nessieErrorTest";
 
   private static HttpClient client;
 

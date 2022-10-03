@@ -78,7 +78,8 @@ public abstract class AbstractRest {
 
   @BeforeEach
   public void setUp() {
-    init(URI.create("http://localhost:19121/api/v1"));
+    String port = System.getProperty("quarkus.http.test-port");
+    init(URI.create("http://localhost:" + port + "/api/v1"));
   }
 
   @AfterEach
