@@ -45,8 +45,6 @@ import org.projectnessie.model.Tag;
 public abstract class AbstractRest {
 
   private NessieApiV1 api;
-  private HttpClient httpClient;
-  private URI uri;
 
   static {
     // Note: REST tests validate some locale-specific error messages, but expect on the messages to
@@ -67,13 +65,11 @@ public abstract class AbstractRest {
     HttpClient.Builder httpClient = HttpClient.builder().setBaseUri(uri).setObjectMapper(mapper);
     httpClient.addResponseFilter(new NessieHttpResponseFilter(mapper));
 
-    init(api, httpClient, uri);
+    init(api, httpClient);
   }
 
-  protected void init(NessieApiV1 api, @Nullable HttpClient.Builder httpClient, URI uri) {
+  protected void init(NessieApiV1 api, @Nullable HttpClient.Builder httpClient) {
     this.api = api;
-    this.httpClient = httpClient != null ? httpClient.build() : null;
-    this.uri = uri;
   }
 
   @BeforeEach
@@ -102,14 +98,6 @@ public abstract class AbstractRest {
 
   public NessieApiV1 getApi() {
     return api;
-  }
-
-  public HttpClient getHttpClient() {
-    return httpClient;
-  }
-
-  public URI getUri() {
-    return uri;
   }
 
   protected String createCommits(

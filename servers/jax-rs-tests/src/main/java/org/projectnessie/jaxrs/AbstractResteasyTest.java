@@ -17,7 +17,9 @@ package org.projectnessie.jaxrs;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
 
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
@@ -31,6 +33,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.projectnessie.error.NessieError;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
@@ -559,5 +563,100 @@ public abstract class AbstractResteasyTest {
 
     // Rerun the request, but with a supported content type (text/json)
     rest().body(ns).put(path).then().statusCode(200);
+  }
+
+  @Test
+  public void testNullMergePayload() {
+    NessieError response =
+        rest()
+            .post("trees/branch/main/merge")
+            .then()
+            .statusCode(400)
+            .extract()
+            .as(NessieError.class);
+    assertThat(response.getMessage()).contains(".merge: must not be null");
+  }
+
+  @Test
+  public void testNullTagPayload() {
+    NessieError response =
+        rest().put("trees/tag/newTag").then().statusCode(400).extract().as(NessieError.class);
+    assertThat(response.getMessage()).contains(".assignTo: must not be null");
+    assertThat(response.getMessage()).contains(".expectedHash: must not be null");
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "",
+        "abc'",
+        ".foo",
+        "abc'def'..'blah",
+        "abc'de..blah",
+        "abc'de@{blah",
+      })
+  public void testInvalidTag(String invalidTagName) {
+    String validHash = "0011223344556677";
+    String validRefName = "hello";
+
+    assertAll(
+        () ->
+            assertThat(
+                    rest()
+                        // Need the string-ified JSON representation of `Tag` here, because `Tag`
+                        // itself performs validation.
+                        .body(
+                            "{\"type\": \"TAG\", \"name\": \""
+                                + invalidTagName
+                                + "\", \"hash\": \""
+                                + validHash
+                                + "\"}")
+                        .put("trees/tag/" + validRefName)
+                        .then()
+                        .statusCode(400)
+                        .extract()
+                        .as(NessieError.class)
+                        .getMessage())
+                .contains(
+                    "Cannot construct instance of `org.projectnessie.model.ImmutableTag`, problem: "
+                        + REF_NAME_MESSAGE
+                        + " - but was: "
+                        + invalidTagName
+                        + "\n"),
+        () ->
+            assertThat(
+                    rest()
+                        .body(
+                            "{\"type\": \"TAG\", \"name\": \""
+                                + invalidTagName
+                                + "\", \"hash\": \""
+                                + validHash
+                                + "\"}")
+                        .put("trees/tag/" + validRefName)
+                        .then()
+                        .statusCode(400)
+                        .extract()
+                        .as(NessieError.class)
+                        .getMessage())
+                .contains(
+                    "Cannot construct instance of `org.projectnessie.model.ImmutableTag`, problem: "
+                        + REF_NAME_MESSAGE),
+        () ->
+            assertThat(
+                    rest()
+                        .body(
+                            "{\"type\": \"FOOBAR\", \"name\": \""
+                                + validRefName
+                                + "\", \"hash\": \""
+                                + validHash
+                                + "\"}")
+                        .put("trees/tag/" + validRefName)
+                        .then()
+                        .statusCode(400)
+                        .extract()
+                        .as(NessieError.class)
+                        .getMessage())
+                .contains(
+                    "Could not resolve type id 'FOOBAR' as a subtype of `org.projectnessie.model.Reference`"));
   }
 }

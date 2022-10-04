@@ -18,7 +18,6 @@ package org.projectnessie.jaxrs;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.projectnessie.client.http.impl.HttpUtils.HEADER_ACCEPT;
 
-import java.net.URI;
 import javax.annotation.Nullable;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpAuthentication;
@@ -49,7 +48,7 @@ import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabas
 class TestJerseyRestNaiveClientInMemory extends AbstractTestJerseyRest {
 
   @Override
-  protected void init(NessieApiV1 api, @Nullable HttpClient.Builder httpClient, URI uri) {
+  protected void init(NessieApiV1 api, @Nullable HttpClient.Builder httpClient) {
     assumeThat(httpClient).isNotNull();
 
     // Intentionally remove the `Accept` header from requests.
@@ -68,6 +67,6 @@ class TestJerseyRestNaiveClientInMemory extends AbstractTestJerseyRest {
             .withUri(httpClient.getBaseUri())
             .build(NessieApiV1.class);
 
-    super.init(api, httpClient, uri);
+    super.init(api, httpClient);
   }
 }
