@@ -1,7 +1,7 @@
 [versions]
 agrone = "1.17.1"
 antlr4 = "4.11.1"
-awssdk = "2.17.285"
+awssdk = "2.17.286"
 bouncycastle = "1.70"
 checkstyle = "10.3.4"
 errorprone = "2.15.0"
@@ -27,7 +27,7 @@ opentracing = "0.33.0"
 parquet = "1.12.3"
 picocli = "4.6.3"
 postgresContainerTag = "14"
-protobuf = "3.21.7"
+protobuf = "3.21.6"
 quarkus = "2.13.0.Final"
 quarkusAmazon = "2.13.0.Final"
 quarkusLoggingSentry = "1.2.1"
@@ -164,7 +164,7 @@ maven-resolver-transport-http = { module = "org.apache.maven.resolver:maven-reso
 micrometer-core = { module = "io.micrometer:micrometer-core", version.ref = "micrometer" }
 microprofile-openapi = { module = "org.eclipse.microprofile.openapi:microprofile-openapi-api", version = "3.0" }
 mockito-core = { module = "org.mockito:mockito-core", version = "4.8.0" }
-mongodb-driver-sync = { module = "org.mongodb:mongodb-driver-sync", version = "4.7.1" }
+mongodb-driver-sync = { module = "org.mongodb:mongodb-driver-sync", version = "4.7.2" }
 opentracing-api = { module = "io.opentracing:opentracing-api", version.ref = "opentracing" }
 opentracing-mock = { module = "io.opentracing:opentracing-mock", version.ref = "opentracing" }
 opentracing-util = { module = "io.opentracing:opentracing-util", version.ref = "opentracing" }
