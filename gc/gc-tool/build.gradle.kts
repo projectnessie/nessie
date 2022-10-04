@@ -25,6 +25,8 @@ plugins {
   `nessie-conventions`
 }
 
+applyShadowJar()
+
 extra["maven.name"] = "Nessie - GC - Standalone command line tool"
 
 dependencies {
@@ -157,5 +159,4 @@ val unixExecutable by
 shadowJar {
   manifest { attributes["Main-Class"] = mainClassName }
   finalizedBy(unixExecutable)
-  outputs.cacheIf { false } // very big jar
 }
