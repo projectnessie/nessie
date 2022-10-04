@@ -56,7 +56,7 @@ optimizations.
 
 Or you let the Nessie GC tool create the schema in your existing database, for example like this:
 ```bash
-nessie-gc show-sql-create-schema-script \
+nessie-gc create-sql-schema \
   --jdbc-url jdbc:postgresql://127.0.0.1:5432/nessie_gc \
   --jdbc-user pguser \
   --jdbc-password mysecretpassword
