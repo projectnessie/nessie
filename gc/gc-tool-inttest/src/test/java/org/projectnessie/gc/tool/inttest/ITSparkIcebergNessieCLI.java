@@ -91,7 +91,7 @@ public class ITSparkIcebergNessieCLI extends SparkSqlTestBase {
 
     Path liveSetIdFile = workDir.resolve("live-set-id.txt");
 
-    RunCLI createTables = runCli("show-sql-create-schema-script");
+    RunCLI createTables = runCli("create-sql-schema");
     soft.assertThat(createTables.getExitCode()).isEqualTo(0);
 
     RunCLI identify =
