@@ -35,6 +35,7 @@ dependencies {
   implementation(nessieProject("nessie-gc-base"))
 
   implementation(libs.slf4j.api)
+  implementation(libs.guava)
 
   compileOnly(platform(libs.jackson.bom))
   compileOnly(libs.jackson.annotations)
@@ -44,8 +45,6 @@ dependencies {
 
   testImplementation(nessieProject("nessie-gc-iceberg-mock"))
   testRuntimeOnly(libs.logback.classic)
-
-  testImplementation(libs.guava)
 
   testCompileOnly(platform(libs.jackson.bom))
   testCompileOnly(libs.jackson.annotations)

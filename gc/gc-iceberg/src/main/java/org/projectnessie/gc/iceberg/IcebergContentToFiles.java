@@ -15,10 +15,14 @@
  */
 package org.projectnessie.gc.iceberg;
 
+import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Objects;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.apache.iceberg.ManifestFile;
@@ -65,8 +69,16 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
 
     TableMetadata tableMetadata = TableMetadataParser.read(io, contentReference.metadataLocation());
 
-    long snapshotId = contentReference.snapshotId();
-    URI metadataUri = URI.create(contentReference.metadataLocation());
+    long snapshotId =
+        Objects.requireNonNull(
+            contentReference.snapshotId(),
+            "Iceberg content is expected to have a non-null snapshot-ID");
+    URI metadataUri =
+        URI.create(
+            Objects.requireNonNull(
+                contentReference.metadataLocation(),
+                "Iceberg content is expected to have a non-null metadata-location"));
+    metadataUri = checkUri("metadata", metadataUri, contentReference);
 
     // This is to respect Nessie's global state
     Snapshot snapshot =
@@ -75,7 +87,9 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
     Stream<URI> allFiles;
 
     if (snapshot != null) {
-      allFiles = Stream.of(metadataUri, URI.create(snapshot.manifestListLocation()));
+      URI manifestListUri = URI.create(snapshot.manifestListLocation());
+      manifestListUri = checkUri("manifest list", manifestListUri, contentReference);
+      allFiles = Stream.of(metadataUri, manifestListUri);
 
       allFiles =
           Stream.concat(
@@ -93,9 +107,24 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
       allFiles = Stream.of(metadataUri);
     }
 
-    URI baseUri = baseUri(tableMetadata);
+    URI baseUri = checkUri("location", baseUri(tableMetadata), contentReference);
 
     return allFiles.map(baseUri::relativize).map(u -> FileReference.of(u, baseUri, -1L));
+  }
+
+  static URI checkUri(String type, URI uri, ContentReference contentReference) {
+    if (uri.getScheme() == null) {
+      Path path = Paths.get(uri.getPath());
+      Preconditions.checkArgument(
+          path.isAbsolute(),
+          "Iceberg content reference points to a relative %s URI '%s' as content-key %s on commit %s without a scheme, which is not supported.",
+          type,
+          uri,
+          contentReference.contentKey(),
+          contentReference.commitId());
+      uri = path.toUri();
+    }
+    return uri;
   }
 
   protected URI baseUri(TableMetadata tableMetadata) {

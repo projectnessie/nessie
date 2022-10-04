@@ -94,6 +94,38 @@ public class TestIcebergContentToFiles {
     return Stream.of(args1);
   }
 
+  @Test
+  public void checkUri() {
+    soft.assertThat(
+            IcebergContentToFiles.checkUri(
+                "meep",
+                URI.create("/foo/bar/baz"),
+                ContentReference.icebergTable("a", "b", ContentKey.of("foo"), "x", 42)))
+        .isEqualTo(URI.create("file:///foo/bar/baz"));
+    soft.assertThat(
+            IcebergContentToFiles.checkUri(
+                "meep",
+                URI.create("file:///foo/bar/baz"),
+                ContentReference.icebergTable("a", "b", ContentKey.of("foo"), "x", 42)))
+        .isEqualTo(URI.create("file:///foo/bar/baz"));
+    soft.assertThat(
+            IcebergContentToFiles.checkUri(
+                "meep",
+                URI.create("http://foo/bar/baz"),
+                ContentReference.icebergTable("a", "b", ContentKey.of("foo"), "x", 42)))
+        .isEqualTo(URI.create("http://foo/bar/baz"));
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(
+            () ->
+                IcebergContentToFiles.checkUri(
+                    "meep",
+                    URI.create("foo/bar/baz"),
+                    ContentReference.icebergTable("a", "b", ContentKey.of("foo"), "x", 42)))
+        .withMessageStartingWith(
+            "Iceberg content reference points to a relative meep URI '%s' as",
+            URI.create("foo/bar/baz"));
+  }
+
   @ParameterizedTest
   @MethodSource("contentToFiles")
   public void contentToFiles(
