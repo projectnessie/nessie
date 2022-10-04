@@ -8,9 +8,20 @@
     ":preserveSemverRanges"
   ],
 
-  "labels": ["dependencies"],
-
   packageRules: [
+    {
+      matchManagers: ["maven", "gradle", "gradle-wrapper"],
+      "labels": ["dependencies", "java"]
+    },
+    {
+      matchManagers: ["npm"],
+      "labels": ["dependencies", "javascript"]
+    },
+    {
+      matchManagers: ["pip_requirements", "pip_setup"],
+      "labels": ["dependencies", "python"]
+    },
+
     // Check for updates, merge automatically
     {
       matchManagers: ["maven", "gradle", "gradle-wrapper", "npm", "pip_requirements", "pip_setup"],
