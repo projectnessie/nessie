@@ -28,7 +28,7 @@ import picocli.CommandLine;
     mixinStandardHelpOptions = true,
     defaultValueProvider = EnvironmentDefaultProvider.class,
     description =
-        "Run expire-snapshots + delete-orphan-files phase of Nessie GC using a live-contents-set "
+        "Run expire-files + delete-orphan-files phase of Nessie GC using a live-contents-set "
             + "stored by a previous run of the mark-live command, "
             + "must not be used with the in-memory contents-storage.")
 public class Sweep extends BaseLiveSetCommand {

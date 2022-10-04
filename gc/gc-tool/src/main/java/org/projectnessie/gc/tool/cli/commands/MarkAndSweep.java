@@ -29,7 +29,7 @@ import picocli.CommandLine;
     mixinStandardHelpOptions = true,
     defaultValueProvider = EnvironmentDefaultProvider.class,
     description = {
-      "Run identify-live-content and expire-snapshots + delete-orphan-files.",
+      "Run identify-live-content and expire-files + delete-orphan-files.",
       "This is the same as running a 'mark-live' + a 'sweep' command, but this variant works with the in-memory contents storage."
     })
 public class MarkAndSweep extends BaseRepositoryCommand {

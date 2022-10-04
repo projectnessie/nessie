@@ -59,7 +59,7 @@ public class DeferredDeleteFiles extends BaseLiveSetCommand {
     out.println();
 
     DeleteSummary total;
-    try (IcebergFiles icebergFiles = createIcebergFilees(icebergOptions);
+    try (IcebergFiles icebergFiles = createIcebergFiles(icebergOptions);
         BatchDelete batchDelete =
             new BatchDelete(
                 100,

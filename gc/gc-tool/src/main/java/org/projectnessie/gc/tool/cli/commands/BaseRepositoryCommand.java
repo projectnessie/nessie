@@ -139,7 +139,7 @@ public abstract class BaseRepositoryCommand extends BaseCommand {
       MarkOptions markOptions,
       CommandSpec commandSpec) {
 
-    // Sanity ehck, whether that file can be written
+    // Sanity check, whether that file can be written
     if (markOptions.getLiveSetIdFile() != null) {
       try {
         Files.createDirectories(markOptions.getLiveSetIdFile().getParent());
@@ -217,7 +217,7 @@ public abstract class BaseRepositoryCommand extends BaseCommand {
               + liveContentSet.status());
     }
 
-    try (IcebergFiles icebergFiles = createIcebergFilees(icebergOptions)) {
+    try (IcebergFiles icebergFiles = createIcebergFiles(icebergOptions)) {
       Instant maxFileModificationTime = sweepOptions.getMaxFileModificationTime();
       if (maxFileModificationTime == null) {
         maxFileModificationTime = liveContentSet.created();
@@ -272,7 +272,7 @@ public abstract class BaseRepositoryCommand extends BaseCommand {
     }
   }
 
-  protected IcebergFiles createIcebergFilees(IcebergOptions icebergOptions) {
+  protected IcebergFiles createIcebergFiles(IcebergOptions icebergOptions) {
     Configuration conf = new Configuration();
     icebergOptions.getHadoopConf().forEach(conf::set);
 

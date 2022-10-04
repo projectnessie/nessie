@@ -137,6 +137,21 @@ public class TestCLI {
   }
 
   @Test
+  @Order(0)
+  public void createTables() throws Exception {
+    RunCLI run = RunCLI.run("create-sql-schema", "--jdbc-url", JDBC_URL);
+    soft.assertThat(run.getExitCode()).as(run::getErr).isEqualTo(0);
+  }
+
+  @Test
+  @Order(0)
+  public void version() throws Exception {
+    RunCLI run = RunCLI.run("--version");
+    soft.assertThat(run.getExitCode()).as(run::getErr).isEqualTo(0);
+    soft.assertThat(run.getOut()).startsWith(System.getProperty("expectedNessieVersion"));
+  }
+
+  @Test
   @Order(1)
   public void smokeTest() throws Exception {
     RunCLI run = RunCLI.run("gc", "--inmemory", "--uri", nessieUri.toString());
@@ -215,17 +230,17 @@ public class TestCLI {
 
   @Test
   @Order(4)
-  public void dumpSchema() throws Exception {
-    RunCLI run = RunCLI.run("jdbc-dump-schema");
+  public void showCreateSchemaScript() throws Exception {
+    RunCLI run = RunCLI.run("show-sql-create-schema-script");
     soft.assertThat(run.getExitCode()).as(run::getErr).isEqualTo(0);
     soft.assertThat(run.getOut()).contains("CREATE TABLE ");
   }
 
   @Test
   @Order(4)
-  public void dumpSchemaToFile(@TempDir Path dir) throws Exception {
+  public void showCreateSchemaScriptToFile(@TempDir Path dir) throws Exception {
     Path file = dir.resolve("schema.sql");
-    RunCLI run = RunCLI.run("jdbc-dump-schema", "--output-file", file.toString());
+    RunCLI run = RunCLI.run("show-sql-create-schema-script", "--output-file", file.toString());
     soft.assertThat(run.getExitCode()).as(run::getErr).isEqualTo(0);
     soft.assertThat(run.getOut()).doesNotContain("CREATE TABLE ");
     soft.assertThat(file).content().contains("CREATE TABLE ");
@@ -400,20 +415,5 @@ public class TestCLI {
     run = RunCLI.run("completion-script", "--output-file", file.toString());
     soft.assertThat(run.getExitCode()).as(run::getErr).isEqualTo(1);
     soft.assertThat(run.getErr()).contains("File already exists.");
-  }
-
-  @Test
-  @Order(0)
-  public void createTables() throws Exception {
-    RunCLI run = RunCLI.run("show-sql-create-schema-script", "--jdbc-url", JDBC_URL);
-    soft.assertThat(run.getExitCode()).as(run::getErr).isEqualTo(0);
-  }
-
-  @Test
-  @Order(0)
-  public void version() throws Exception {
-    RunCLI run = RunCLI.run("--version");
-    soft.assertThat(run.getExitCode()).as(run::getErr).isEqualTo(0);
-    soft.assertThat(run.getOut()).startsWith(System.getProperty("expectedNessieVersion"));
   }
 }

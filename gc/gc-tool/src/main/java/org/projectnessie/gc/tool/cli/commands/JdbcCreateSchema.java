@@ -26,7 +26,7 @@ import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Model.CommandSpec;
 
 @CommandLine.Command(
-    name = "show-sql-create-schema-script",
+    name = "create-sql-schema",
     mixinStandardHelpOptions = true,
     defaultValueProvider = EnvironmentDefaultProvider.class,
     description = "JDBC schema creation.")

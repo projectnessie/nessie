@@ -27,7 +27,7 @@ import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 
 @CommandLine.Command(
-    name = "jdbc-dump-schema",
+    name = "show-sql-create-schema-script",
     mixinStandardHelpOptions = true,
     defaultValueProvider = EnvironmentDefaultProvider.class,
     description = "Print DDL statements to create the schema.")

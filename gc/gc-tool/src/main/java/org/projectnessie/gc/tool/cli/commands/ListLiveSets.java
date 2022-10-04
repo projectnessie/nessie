@@ -27,8 +27,7 @@ import picocli.CommandLine;
     name = "list",
     mixinStandardHelpOptions = true,
     defaultValueProvider = EnvironmentDefaultProvider.class,
-    description =
-        "List existing live-sets, " + "must not be used with the in-memory contents-storage.")
+    description = "List existing live-sets, must not be used with the in-memory contents-storage.")
 public class ListLiveSets extends BaseRepositoryCommand {
 
   @Override
