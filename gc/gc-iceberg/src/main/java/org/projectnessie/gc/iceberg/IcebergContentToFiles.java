@@ -20,11 +20,11 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import javax.annotation.Nonnull;
 import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.ManifestFiles;
 import org.apache.iceberg.Snapshot;
@@ -73,24 +73,14 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
         Objects.requireNonNull(
             contentReference.snapshotId(),
             "Iceberg content is expected to have a non-null snapshot-ID");
-    URI metadataUri =
-        URI.create(
-            Objects.requireNonNull(
-                contentReference.metadataLocation(),
-                "Iceberg content is expected to have a non-null metadata-location"));
-    metadataUri = checkUri("metadata", metadataUri, contentReference);
 
     // This is to respect Nessie's global state
     Snapshot snapshot =
         snapshotId < 0L ? tableMetadata.currentSnapshot() : tableMetadata.snapshot(snapshotId);
 
-    Stream<URI> allFiles;
+    Stream<URI> allFiles = elementaryUrisFromSnapshot(snapshot, contentReference);
 
     if (snapshot != null) {
-      URI manifestListUri = URI.create(snapshot.manifestListLocation());
-      manifestListUri = checkUri("manifest list", manifestListUri, contentReference);
-      allFiles = Stream.of(metadataUri, manifestListUri);
-
       allFiles =
           Stream.concat(
               allFiles,
@@ -99,56 +89,35 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
                   .flatMap(
                       x -> {
                         @SuppressWarnings("MustBeClosedChecker")
-                        Stream<URI> r = allManifestsAndDataFiles(io, snapshot);
+                        Stream<URI> r = allManifestsAndDataFiles(io, snapshot, contentReference);
                         return r;
                       }));
-    } else {
-      // snapshot == null
-      allFiles = Stream.of(metadataUri);
     }
 
-    URI baseUri = checkUri("location", baseUri(tableMetadata), contentReference);
+    URI baseUri = baseUri(tableMetadata, contentReference);
 
     return allFiles.map(baseUri::relativize).map(u -> FileReference.of(u, baseUri, -1L));
   }
 
-  static URI checkUri(String type, URI uri, ContentReference contentReference) {
-    if (uri.getScheme() == null) {
-      Path path = Paths.get(uri.getPath());
-      Preconditions.checkArgument(
-          path.isAbsolute(),
-          "Iceberg content reference points to a relative %s URI '%s' as content-key %s on commit %s without a scheme, which is not supported.",
-          type,
-          uri,
-          contentReference.contentKey(),
-          contentReference.commitId());
-      uri = path.toUri();
-    }
-    return uri;
-  }
-
-  protected URI baseUri(TableMetadata tableMetadata) {
-    String location = tableMetadata.location();
-    return URI.create(location.endsWith("/") ? location : (location + "/"));
-  }
-
   /**
    * For the given {@link Snapshot}, provide a {@link Stream} of all manifest files with {@link
-   * #allDataFiles(FileIO, ManifestFile) all included data files}.
+   * #allDataFiles(FileIO, ManifestFile, ContentReference) all included data files}.
    */
   @MustBeClosed
-  protected Stream<URI> allManifestsAndDataFiles(FileIO io, Snapshot snapshot) {
+  static Stream<URI> allManifestsAndDataFiles(
+      FileIO io, Snapshot snapshot, ContentReference contentReference) {
     return allManifests(io, snapshot)
         .flatMap(
             mf -> {
+              URI manifestFileUri = manifestFileUri(mf, contentReference);
               @SuppressWarnings("MustBeClosedChecker")
-              Stream<URI> allDataFile = allDataFiles(io, mf);
-              return Stream.concat(Stream.of(URI.create(mf.path())), allDataFile);
+              Stream<URI> allDataFile = allDataFiles(io, mf, contentReference);
+              return Stream.concat(Stream.of(manifestFileUri), allDataFile);
             });
   }
 
   /** Provide all {@link ManifestFile}s for the given {@link Snapshot}. */
-  protected Stream<ManifestFile> allManifests(FileIO io, Snapshot snapshot) {
+  static Stream<ManifestFile> allManifests(FileIO io, Snapshot snapshot) {
     return snapshot.allManifests(io).stream();
   }
 
@@ -158,10 +127,11 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
    * {@code ADDED}, {@code DELETED}.
    */
   @MustBeClosed
-  protected Stream<URI> allDataFiles(FileIO io, ManifestFile manifestFile) {
+  static Stream<URI> allDataFiles(
+      FileIO io, ManifestFile manifestFile, ContentReference contentReference) {
     CloseableIterable<String> iter = ManifestFiles.readPaths(manifestFile, io);
     return StreamSupport.stream(iter.spliterator(), false)
-        .map(URI::create)
+        .map(dataFilePath -> dataFileUri(dataFilePath, contentReference))
         .onClose(
             () -> {
               try {
@@ -170,5 +140,96 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
                 throw new RuntimeException(e);
               }
             });
+  }
+
+  /**
+   * All processed {@link URI}s must have a schema part and, if the schema is {@code file}, the path
+   * must be an absolute path.
+   */
+  static URI checkUri(String type, URI uri, ContentReference contentReference) {
+    String scheme = uri.getScheme();
+    if (scheme == null) {
+      String path = uri.getPath();
+      Preconditions.checkArgument(
+          Paths.get(path).isAbsolute(),
+          "Iceberg content reference points to the relative %s URI '%s' as content-key %s on commit %s without a scheme, which is not supported.",
+          type,
+          uri,
+          contentReference.contentKey(),
+          contentReference.commitId());
+      uri = URI.create("file://" + path);
+    }
+    if ("file".equals(scheme)) {
+      String schemeSpecific = uri.getSchemeSpecificPart();
+      Preconditions.checkArgument(
+          schemeSpecific.startsWith("/"),
+          "Iceberg content reference points to the relative %s URI '%s' as content-key %s on commit %s without a scheme, which is not supported.",
+          type,
+          uri,
+          contentReference.contentKey(),
+          contentReference.commitId());
+      Preconditions.checkArgument(
+          uri.getHost() == null,
+          "Iceberg content reference points to the host-specific %s URI '%s' as content-key %s on commit %s without a scheme, which is not supported.",
+          type,
+          uri,
+          contentReference.contentKey(),
+          contentReference.commitId());
+      if (!schemeSpecific.startsWith("///")) {
+        uri = URI.create("file://" + uri.getPath());
+      }
+    }
+    return uri;
+  }
+
+  static Stream<URI> elementaryUrisFromSnapshot(
+      Snapshot snapshot, ContentReference contentReference) {
+    String metadataLocation =
+        Preconditions.checkNotNull(
+            contentReference.metadataLocation(),
+            "Iceberg content is expected to have a non-null metadata-location for content-key %s on commit %s",
+            contentReference.contentKey(),
+            contentReference.commitId());
+    URI metadataUri = URI.create(metadataLocation);
+    metadataUri = checkUri("metadata", metadataUri, contentReference);
+
+    if (snapshot == null) {
+      return Stream.of(metadataUri);
+    }
+
+    String manifestListLocation = snapshot.manifestListLocation();
+    if (manifestListLocation == null) {
+      // Iceberg spec v1 has the manifest files embedded in the table-metadata, Iceberg spec v2
+      // has a separate manifest list file.
+      return Stream.of(metadataUri);
+    }
+
+    URI manifestListUri = URI.create(snapshot.manifestListLocation());
+    manifestListUri = checkUri("manifest list", manifestListUri, contentReference);
+
+    return Stream.of(metadataUri, manifestListUri);
+  }
+
+  static URI baseUri(
+      @Nonnull TableMetadata tableMetadata, @Nonnull ContentReference contentReference) {
+    String location = tableMetadata.location();
+    URI uri = URI.create(location.endsWith("/") ? location : (location + "/"));
+    return checkUri("location", uri, contentReference);
+  }
+
+  static URI manifestFileUri(@Nonnull ManifestFile mf, @Nonnull ContentReference contentReference) {
+    String manifestFilePath =
+        Preconditions.checkNotNull(
+            mf.path(),
+            "Iceberg manifest file is expected to have a non-null path for content-key %s on commit %s",
+            contentReference.contentKey(),
+            contentReference.commitId());
+    URI manifestFile = URI.create(manifestFilePath);
+    return checkUri("manifest file", manifestFile, contentReference);
+  }
+
+  static URI dataFileUri(@Nonnull String dataFilePath, @Nonnull ContentReference contentReference) {
+    URI uri = URI.create(dataFilePath);
+    return checkUri("data file", uri, contentReference);
   }
 }

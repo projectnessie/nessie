@@ -15,7 +15,7 @@
  */
 package org.projectnessie.gc.iceberg;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 import java.util.stream.Stream;
@@ -42,12 +42,12 @@ public class TestIcebergContentToContentReference {
   @ParameterizedTest
   @MethodSource("nonIcebergTable")
   public void nonIcebergTable(Content content) {
-    assertThatThrownBy(
+    assertThatIllegalArgumentException()
+        .isThrownBy(
             () ->
                 IcebergContentToContentReference.INSTANCE.contentToReference(
                     content, "12345678", ContentKey.of("foo", "bar")))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Expect ICEBERG_TABLE, but got " + content.getType());
+        .withMessageStartingWith("Expect ICEBERG_TABLE, but got " + content.getType());
   }
 
   @Test
