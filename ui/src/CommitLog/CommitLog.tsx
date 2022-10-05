@@ -19,9 +19,9 @@ import moment from "moment";
 import React, { Fragment } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { LogEntry } from "../utils";
-import CodeIcon from "@material-ui/icons/Code";
+import { Code } from "@mui/icons-material";
 import "./CommitLog.css";
-import { Icon, TablePagination, Tooltip } from "@material-ui/core";
+import { Icon, TablePagination, Tooltip } from "@mui/material";
 import { ExploreLink } from "../ExploreLink";
 import { EmptyMessageView } from "../EmptyMessageView";
 
@@ -122,7 +122,7 @@ const CommitLog = ({
                   className={"ml-3 rightBtnHover"}
                   onClick={() => history(`/tree/${branch}:${hash as string}`)}
                 >
-                  <CodeIcon />
+                  <Code />
                 </Button>
               </Tooltip>
             </div>

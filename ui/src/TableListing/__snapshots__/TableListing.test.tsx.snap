@@ -52,7 +52,8 @@ exports[`TableListing renders 2`] = `
         >
           <svg
             aria-hidden="true"
-            class="MuiSvgIcon-root"
+            class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-i4bv87-MuiSvgIcon-root"
+            data-testid="FolderIcon"
             focusable="false"
             viewBox="0 0 24 24"
           >

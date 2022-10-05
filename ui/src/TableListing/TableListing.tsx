@@ -15,8 +15,7 @@
  */
 import React, { useEffect, useState } from "react";
 import { Card, ListGroup, ListGroupItem } from "react-bootstrap";
-import InsertDriveFileOutlinedIcon from "@material-ui/icons/InsertDriveFileOutlined";
-import FolderIcon from "@material-ui/icons/Folder";
+import { Folder, InsertDriveFileOutlined } from "@mui/icons-material";
 import { ExploreLink } from "../ExploreLink";
 import { api, ContentKey, Entry } from "../utils";
 import { logProvider } from "../ConfigLog4j";
@@ -30,7 +29,7 @@ const groupItem = (
   path: string[]
 ): React.ReactElement => {
   const icon =
-    key.type === "CONTAINER" ? <FolderIcon /> : <InsertDriveFileOutlinedIcon />;
+    key.type === "CONTAINER" ? <Folder /> : <InsertDriveFileOutlined />;
   return (
     <ListGroupItem key={key.name}>
       <ExploreLink
