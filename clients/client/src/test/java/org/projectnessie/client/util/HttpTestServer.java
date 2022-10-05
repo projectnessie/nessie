@@ -21,8 +21,10 @@ import java.net.URI;
 import java.util.function.Consumer;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.eclipse.jetty.server.CustomRequestLog;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.Slf4jRequestLogWriter;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 
@@ -68,9 +70,13 @@ public class HttpTestServer implements AutoCloseable {
 
     GzipHandler gzip = new GzipHandler();
     gzip.setInflateBufferSize(8192);
-    gzip.addIncludedMethods("PUT");
+    gzip.addIncludedMethods("PUT", "POST", "DELETE");
     server.setHandler(requestHandler);
     server.insertHandler(gzip);
+    server.setRequestLog(
+        new CustomRequestLog(
+            new Slf4jRequestLogWriter(),
+            "%{local}a:%{local}p - %{remote}a:%{remote}p \"%r\" status.%s in:%I out:%O"));
 
     if (init != null) {
       init.accept(server);
