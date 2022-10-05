@@ -15,9 +15,7 @@
  */
 import React, { Fragment } from "react";
 import { Badge, Nav, NavDropdown } from "react-bootstrap";
-import DeviceHubIcon from "@material-ui/icons/DeviceHub";
-import LocalOfferIcon from "@material-ui/icons/LocalOffer";
-import HistoryIcon from "@material-ui/icons/History";
+import { DeviceHub, History, LocalOffer } from "@mui/icons-material";
 import { ExploreLink } from "../ExploreLink";
 import { Branch, Tag } from "../generated/utils/api";
 import "./TableHead.css";
@@ -117,13 +115,13 @@ const TreeTableHead = ({
         <Fragment key="icons">
           <Nav.Item>
             <Nav.Link>
-              <DeviceHubIcon />
+              <DeviceHub />
               {branches.length}
             </Nav.Link>
           </Nav.Item>
           <Nav.Item>
             <Nav.Link>
-              <LocalOfferIcon />
+              <LocalOffer />
               {tags.length}
             </Nav.Link>
           </Nav.Item>
@@ -137,7 +135,7 @@ const TreeTableHead = ({
           className="nav-link"
         >
           <>
-            <HistoryIcon />
+            <History />
             Commit History
           </>
         </ExploreLink>
