@@ -18,10 +18,14 @@ package org.projectnessie.jaxrs;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import javax.ws.rs.core.SecurityContext;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.jaxrs.ext.NessieSecurityContext;
 import org.projectnessie.jaxrs.ext.PrincipalSecurityContext;
 import org.projectnessie.model.Branch;
@@ -33,63 +37,54 @@ import org.projectnessie.model.Operation.Put;
 
 /** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestSecurityContext extends AbstractRestAccessChecks {
-  @Test
-  public void committerAndAuthor(
-      @NessieSecurityContext Consumer<SecurityContext> securityContextConsumer) throws Exception {
-    Branch main = createBranch("committerAndAuthor");
-    Branch merge2 = createBranch("committerAndAuthorMergeTarget2");
-    Branch merge = createBranch("committerAndAuthorMerge");
-    Branch transplant = createBranch("committerAndAuthorTransplant");
 
+  private Branch makeCommits(Branch head, Consumer<SecurityContext> securityContextConsumer)
+      throws NessieConflictException, NessieNotFoundException {
     IcebergTable meta1 = IcebergTable.of("meep", 42, 42, 42, 42);
     IcebergTable meta2 = IcebergTable.of("meep_meep", 42, 42, 42, 42);
-    Branch noSecurityContext =
+
+    head =
         getApi()
             .commitMultipleOperations()
-            .branchName(main.getName())
-            .hash(main.getHash())
+            .branchName(head.getName())
+            .hash(head.getHash())
             .commitMeta(CommitMeta.builder().message("no security context").build())
             .operation(Put.of(ContentKey.of("meep"), meta1))
             .commit();
-    assertThat(
-            getApi()
-                .getCommitLog()
-                .reference(noSecurityContext)
-                .maxRecords(1)
-                .get()
-                .getLogEntries())
+    assertThat(getApi().getCommitLog().reference(head).maxRecords(1).get().getLogEntries())
         .extracting(LogEntry::getCommitMeta)
         .extracting(CommitMeta::getCommitter, CommitMeta::getAuthor, CommitMeta::getMessage)
         .containsExactly(tuple("", "", "no security context"));
 
     securityContextConsumer.accept(PrincipalSecurityContext.forName("ThatNessieGuy"));
 
-    Branch withSecurityContext =
+    head =
         getApi()
             .commitMultipleOperations()
-            .branchName(noSecurityContext.getName())
-            .hash(noSecurityContext.getHash())
+            .branchName(head.getName())
+            .hash(head.getHash())
             .commitMeta(CommitMeta.builder().message("with security").build())
             .operation(Put.of(ContentKey.of("meep_meep"), meta2))
             .commit();
-    assertThat(
-            getApi()
-                .getCommitLog()
-                .reference(withSecurityContext)
-                .maxRecords(2)
-                .get()
-                .getLogEntries())
+    assertThat(getApi().getCommitLog().reference(head).maxRecords(2).get().getLogEntries())
         .extracting(LogEntry::getCommitMeta)
         .extracting(CommitMeta::getCommitter, CommitMeta::getAuthor, CommitMeta::getMessage)
         .containsExactly(
             tuple("ThatNessieGuy", "ThatNessieGuy", "with security"),
             tuple("", "", "no security context"));
 
-    securityContextConsumer.accept(PrincipalSecurityContext.forName("NessieHerself"));
+    return head;
+  }
 
-    // Merge
+  @Test
+  public void committerAndAuthorMerge(@NessieSecurityContext Consumer<SecurityContext> secContext)
+      throws Exception {
+    Branch main = makeCommits(createBranch("committerAndAuthorMerge_main"), secContext);
+    Branch merge = createBranch("committerAndAuthorMerge_target");
 
-    getApi().mergeRefIntoBranch().fromRef(withSecurityContext).branch(merge).merge();
+    secContext.accept(PrincipalSecurityContext.forName("NessieHerself"));
+
+    getApi().mergeRefIntoBranch().fromRef(main).branch(merge).merge();
 
     merge = (Branch) getApi().getReference().refName(merge.getName()).get();
 
@@ -103,32 +98,46 @@ public abstract class AbstractRestSecurityContext extends AbstractRestAccessChec
                   .contains("with security")
                   .contains("no security context");
             });
+  }
 
-    // Merge (individual commits)
+  @Test
+  public void committerAndAuthorMergeUnsquashed(
+      @NessieSecurityContext Consumer<SecurityContext> secContext) throws Exception {
+    Branch main = makeCommits(createBranch("committerAndAuthorMergeUnsquashed_main"), secContext);
+    Branch merge = createBranch("committerAndAuthorMergeUnsquashed_target");
 
-    getApi()
-        .mergeRefIntoBranch()
-        .fromRef(withSecurityContext)
-        .branch(merge2)
-        .keepIndividualCommits(true)
-        .merge();
+    secContext.accept(PrincipalSecurityContext.forName("NessieHerself"));
 
-    merge2 = (Branch) getApi().getReference().refName(merge2.getName()).get();
+    getApi().mergeRefIntoBranch().fromRef(main).branch(merge).keepIndividualCommits(true).merge();
 
-    assertThat(getApi().getCommitLog().reference(merge2).maxRecords(2).get().getLogEntries())
+    merge = (Branch) getApi().getReference().refName(merge.getName()).get();
+
+    assertThat(getApi().getCommitLog().reference(merge).maxRecords(2).get().getLogEntries())
         .extracting(LogEntry::getCommitMeta)
         .extracting(CommitMeta::getCommitter, CommitMeta::getAuthor, CommitMeta::getMessage)
         .containsExactly(
             tuple("NessieHerself", "ThatNessieGuy", "with security"),
             tuple("NessieHerself", "", "no security context"));
+  }
 
-    // Transplant
+  @Test
+  public void committerAndAuthorTransplant(
+      @NessieSecurityContext Consumer<SecurityContext> secContext) throws Exception {
+    Branch main = makeCommits(createBranch("committerAndAuthorTransplant_main"), secContext);
+    Branch transplant = createBranch("committerAndAuthorTransplant_target");
+
+    List<String> hashesToTransplant =
+        getApi().getCommitLog().reference(main).maxRecords(2).get().getLogEntries().stream()
+            .map(logEntry -> logEntry.getCommitMeta().getHash())
+            .collect(Collectors.toList());
+    Collections.reverse(hashesToTransplant); // transplant in the original commit order
+
+    secContext.accept(PrincipalSecurityContext.forName("NessieHerself"));
 
     getApi()
         .transplantCommitsIntoBranch()
-        .fromRefName(withSecurityContext.getName())
-        .hashesToTransplant(
-            Arrays.asList(noSecurityContext.getHash(), withSecurityContext.getHash()))
+        .fromRefName(main.getName())
+        .hashesToTransplant(hashesToTransplant)
         .branch(transplant)
         .keepIndividualCommits(true)
         .transplant();
