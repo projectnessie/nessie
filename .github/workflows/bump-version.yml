@@ -52,7 +52,7 @@ jobs:
 
     ### BEGIN runner setup
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3.1.0
       with:
         ref: ${{ env.BUMP_ON_BRANCH }}
     - name: Setup Java, Maven

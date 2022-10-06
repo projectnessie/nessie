@@ -45,7 +45,7 @@ jobs:
       SPARK_LOCAL_IP: localhost
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v3.1.0
     - name: Setup runner
       uses: ./.github/actions/setup-runner
     - name: Setup Java, Maven
@@ -117,7 +117,7 @@ jobs:
         python-version: ['3.7', '3.8', '3.9', '3.10']
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v3.1.0
     - name: Setup Python
       uses: ./.github/actions/dev-tool-python
       with:
@@ -137,7 +137,7 @@ jobs:
     name: Build Website
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v3.1.0
       - name: Setup Python
         uses: ./.github/actions/dev-tool-python
         with:
@@ -156,7 +156,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
         with:
           fetch-depth: 0
       - name: Set up Helm
