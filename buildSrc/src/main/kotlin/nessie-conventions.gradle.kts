@@ -140,6 +140,8 @@ fun Project.testTasks() {
         if (plugins.hasPlugin("io.quarkus")) {
           dependsOn(tasks.named("quarkusBuild"))
         }
+
+        systemProperty("nessie.integrationTest", "true")
       }
     tasks.named("check") { dependsOn(intTest) }
   }
