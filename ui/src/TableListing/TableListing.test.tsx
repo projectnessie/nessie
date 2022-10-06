@@ -73,6 +73,6 @@ it("TableListing redirects on an invalid ref", async () => {
     })
   );
 
-  scope.done();
+  scope.isDone();
   expect(asFragment()).toMatchSnapshot();
 });
