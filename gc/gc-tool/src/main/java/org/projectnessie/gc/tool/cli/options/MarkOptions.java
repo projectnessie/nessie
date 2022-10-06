@@ -19,13 +19,14 @@ import com.google.common.collect.Maps;
 import java.nio.file.Path;
 import java.time.DateTimeException;
 import java.time.Duration;
-import java.time.Instant;
-import java.time.format.DateTimeFormatter;
+import java.time.ZonedDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.projectnessie.gc.identify.CutoffPolicy;
@@ -35,14 +36,26 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.ParameterException;
 
 public class MarkOptions {
-  public static final Instant NOW = Instant.now();
+  public static final ZonedDateTime NOW = ZonedDateTime.now();
 
   @CommandLine.Mixin NessieOptions nessie;
 
   @CommandLine.Option(
-      names = "--cutoff-ref-time",
+      names = {"-R", "--cutoff-ref-time"},
       description = "Reference timestamp for durations specified for --cutoff. Defaults to 'now'.")
-  Instant cutoffPolicyRefTime = NOW;
+  ZonedDateTime cutoffPolicyRefTime = NOW;
+
+  @CommandLine.Option(
+      names = {"-c", "--default-cutoff"},
+      description = {
+        "Default cutoff policy. Policies can be one of:",
+        "- number of commits as an integer value",
+        "- a duration (see java.time.Duration)",
+        "- an ISO instant",
+        "- 'NONE', means everything's considered as live"
+      },
+      defaultValue = "NONE")
+  String defaultCutoffPolicy;
 
   @CommandLine.Option(
       names = {"-C", "--cutoff"},
@@ -54,7 +67,8 @@ public class MarkOptions {
         "Policies can be one of:",
         "- number of commits as an integer value",
         "- a duration (see java.time.Duration)",
-        "- an ISO instant"
+        "- an ISO instant",
+        "- 'NONE', means everything's considered as live"
       })
   Map<String, String> cutoffPolicies = new LinkedHashMap<>();
 
@@ -92,39 +106,15 @@ public class MarkOptions {
         cutoffPolicies.entrySet().stream()
             .map(
                 e -> {
-                  Predicate<String> predicate = Pattern.compile(e.getKey()).asPredicate();
+                  String pattern = "^" + e.getKey() + "$";
+                  Predicate<String> predicate = Pattern.compile(pattern).asPredicate();
 
-                  Exception ex;
-                  try {
-                    return Maps.immutableEntry(
-                        predicate, CutoffPolicy.numCommits(Integer.parseInt(e.getValue())));
-                  } catch (NumberFormatException f) {
-                    ex = f;
-                  }
-                  try {
-                    return Maps.immutableEntry(
-                        predicate,
-                        CutoffPolicy.atTimestamp(
-                            cutoffPolicyRefTime.minus(Duration.parse(e.getValue()))));
-                  } catch (DateTimeException f) {
-                    ex.addSuppressed(f);
-                  }
-                  try {
-                    return Maps.immutableEntry(
-                        predicate,
-                        CutoffPolicy.atTimestamp(
-                            Instant.from(DateTimeFormatter.ISO_INSTANT.parse(e.getValue()))));
-                  } catch (DateTimeException f) {
-                    ex.addSuppressed(f);
-                  }
-                  throw new ParameterException(
-                      commandSpec.commandLine(),
-                      "Failed to parse cutoff-value '"
-                          + e.getValue()
-                          + "' for key '"
-                          + e.getKey()
-                          + "', must be either the number of commits, a duration (as per java.time.Duration) or an ISO instant (like 2011-12-03T10:15:30Z)",
-                      ex);
+                  CutoffPolicy cutoffPolicy =
+                      parseCutoffPolicy(
+                          e.getValue(),
+                          () -> "for regular expression predicate '" + e.getKey() + "'");
+
+                  return Maps.immutableEntry(predicate, cutoffPolicy);
                 })
             .collect(Collectors.toList());
 
@@ -133,6 +123,43 @@ public class MarkOptions {
             .filter(e -> e.getKey().test(namedReference.getName()))
             .map(Entry::getValue)
             .findFirst()
-            .orElse(CutoffPolicy.NONE);
+            .orElse(defaultCutoffPolicy());
+  }
+
+  private CutoffPolicy defaultCutoffPolicy() {
+    return parseCutoffPolicy(defaultCutoffPolicy, () -> "default cutoff policy");
+  }
+
+  CutoffPolicy parseCutoffPolicy(String value, Supplier<String> errorMessageSuffix) {
+    value = value.toUpperCase(Locale.ROOT);
+
+    Exception ex;
+    if ("NONE".equals(value)) {
+      return CutoffPolicy.NONE;
+    }
+
+    try {
+      return CutoffPolicy.numCommits(Integer.parseInt(value));
+    } catch (NumberFormatException f) {
+      ex = f;
+    }
+    try {
+      return CutoffPolicy.atTimestamp(cutoffPolicyRefTime.minus(Duration.parse(value)).toInstant());
+    } catch (DateTimeException f) {
+      ex.addSuppressed(f);
+    }
+    try {
+      return CutoffPolicy.atTimestamp(ZonedDateTime.parse(value).toInstant());
+    } catch (DateTimeException f) {
+      ex.addSuppressed(f);
+    }
+    throw new ParameterException(
+        commandSpec.commandLine(),
+        "Failed to parse cutoff-value '"
+            + value
+            + "' "
+            + errorMessageSuffix.get()
+            + ", must be either the number of commits, a duration (as per java.time.Duration) or an ISO instant (like 2011-12-03T10:15:30Z)",
+        ex);
   }
 }

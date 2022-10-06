@@ -23,7 +23,7 @@ import picocli.CommandLine;
 
 @CommandLine.Command(
     name = "mark-live",
-    aliases = {"identify"},
+    aliases = {"identify", "mark"},
     mixinStandardHelpOptions = true,
     defaultValueProvider = EnvironmentDefaultProvider.class,
     description =
