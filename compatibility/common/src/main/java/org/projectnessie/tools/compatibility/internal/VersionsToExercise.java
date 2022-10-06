@@ -25,7 +25,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.junit.platform.engine.EngineDiscoveryRequest;
+import org.junit.platform.engine.ConfigurationParameters;
 import org.projectnessie.tools.compatibility.api.Version;
 
 final class VersionsToExercise {
@@ -67,8 +67,8 @@ final class VersionsToExercise {
   }
 
   public static SortedSet<Version> versionsForEngine(
-      EngineDiscoveryRequest discoveryRequest, String propertyName) {
-    String value = discoveryRequest.getConfigurationParameters().get(propertyName).orElse(null);
+      ConfigurationParameters configuration, String propertyName) {
+    String value = configuration.get(propertyName).orElse(null);
     if (value == null) {
       value = System.getProperty(propertyName);
     }
@@ -81,7 +81,7 @@ final class VersionsToExercise {
     return versionsFromValue(value);
   }
 
-  public static SortedSet<Version> versionsForEngine(EngineDiscoveryRequest discoveryRequest) {
-    return versionsForEngine(discoveryRequest, NESSIE_VERSIONS_PROPERTY);
+  public static SortedSet<Version> versionsForEngine(ConfigurationParameters configuration) {
+    return versionsForEngine(configuration, NESSIE_VERSIONS_PROPERTY);
   }
 }

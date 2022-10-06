@@ -26,6 +26,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.platform.testkit.engine.EngineTestKit;
 import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.junit.engine.MultiEnvTestEngine;
+import org.projectnessie.junit.engine.MultiEnvTestFilter;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.tools.compatibility.api.NessieAPI;
@@ -37,7 +39,7 @@ class TestNessieCompatibilityExtensions {
   @Test
   void noVersions() {
     assertThat(
-            EngineTestKit.engine(MultiNessieVersionsTestEngine.ENGINE_ID)
+            EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
                 .selectors(selectClass(OldClientsSample.class))
                 .execute()
                 .testEvents()
@@ -57,10 +59,10 @@ class TestNessieCompatibilityExtensions {
             c ->
                 assertThatThrownBy(
                         () ->
-                            EngineTestKit.engine(MultiNessieVersionsTestEngine.ENGINE_ID)
+                            EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
                                 .configurationParameter("nessie.versions", "0.18.0,0.19.0")
                                 .selectors(selectClass(c))
-                                .filters(new ExcludeJunitEnginesFilter())
+                                .filters(new MultiEnvTestFilter())
                                 .execute())
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageEndingWith(
@@ -69,7 +71,7 @@ class TestNessieCompatibilityExtensions {
 
   @Test
   void olderClients() {
-    EngineTestKit.engine(MultiNessieVersionsTestEngine.ENGINE_ID)
+    EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
         .configurationParameter("nessie.versions", "0.18.0,current")
         .selectors(selectClass(OldClientsSample.class))
         .execute();
@@ -82,7 +84,7 @@ class TestNessieCompatibilityExtensions {
 
   @Test
   void olderServers() {
-    EngineTestKit.engine(MultiNessieVersionsTestEngine.ENGINE_ID)
+    EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
         .configurationParameter("nessie.versions", "0.18.0,current")
         .selectors(selectClass(OldServersSample.class))
         .execute();
@@ -95,7 +97,7 @@ class TestNessieCompatibilityExtensions {
 
   @Test
   void upgrade() {
-    EngineTestKit.engine(MultiNessieVersionsTestEngine.ENGINE_ID)
+    EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
         .configurationParameter("nessie.versions", "0.18.0,current")
         .selectors(selectClass(UpgradeSample.class))
         .execute();

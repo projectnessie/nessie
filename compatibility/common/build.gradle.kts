@@ -27,6 +27,7 @@ extra["maven.name"] = "Nessie - Backward Compatibility - Common"
 dependencies {
   api(project(":nessie-client"))
   api(project(":nessie-compatibility-jersey"))
+  api(project(":nessie-multi-env-test-engine"))
   implementation(project(":nessie-services"))
   implementation(project(":nessie-versioned-persist-adapter"))
 

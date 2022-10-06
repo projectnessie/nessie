@@ -20,12 +20,14 @@ import static org.junit.jupiter.api.extension.ConditionEvaluationResult.enabled;
 import static org.junit.platform.commons.support.AnnotationSupport.findAnnotation;
 import static org.projectnessie.tools.compatibility.api.Version.parseVersion;
 import static org.projectnessie.tools.compatibility.internal.AnnotatedFields.populateAnnotatedFields;
-import static org.projectnessie.tools.compatibility.internal.MultiNessieVersionsTestEngine.NESSIE_VERSION_SEGMENT_TYPE;
 
 import java.lang.reflect.AnnotatedElement;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -34,8 +36,10 @@ import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.platform.commons.util.AnnotationUtils;
+import org.junit.platform.engine.ConfigurationParameters;
 import org.junit.platform.engine.UniqueId;
 import org.junit.platform.engine.UniqueId.Segment;
+import org.projectnessie.junit.engine.MultiEnvTestExtension;
 import org.projectnessie.tools.compatibility.api.NessieVersion;
 import org.projectnessie.tools.compatibility.api.Version;
 import org.projectnessie.tools.compatibility.api.VersionCondition;
@@ -46,9 +50,43 @@ import org.projectnessie.tools.compatibility.api.VersionCondition;
  * <p>Implements extension to handle {@link VersionCondition}.
  */
 abstract class AbstractMultiVersionExtension
-    implements BeforeAllCallback, BeforeEachCallback, ExecutionCondition {
+    implements BeforeAllCallback, BeforeEachCallback, ExecutionCondition, MultiEnvTestExtension {
+
+  private static final String NESSIE_VERSION_SEGMENT_TYPE = "nessie-version";
 
   private static final ConditionEvaluationResult PASS = enabled(null);
+
+  @Override
+  public String segmentType() {
+    return NESSIE_VERSION_SEGMENT_TYPE;
+  }
+
+  @Override
+  public List<String> allEnvironmentIds(ConfigurationParameters configuration) {
+    try {
+      return VersionsToExercise.versionsForEngine(configuration).stream()
+          .map(Objects::toString)
+          .collect(Collectors.toList());
+    } catch (IllegalStateException e) {
+      // No versions to test found - return early
+      return Collections.emptyList();
+    }
+  }
+
+  @Override
+  public boolean accepts(Class<?> testClass) {
+    long count = multiVersionExtensionsForTestClass(Stream.of(testClass)).count();
+    if (count > 1) {
+      // Sanity check, it's illegal to have multiple nessie-compatibility extensions on one test
+      // class
+      throw new IllegalStateException(
+          String.format(
+              "Test class %s contains more than one Nessie multi-version extension",
+              testClass.getName()));
+    }
+
+    return count == 1;
+  }
 
   @Override
   public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
