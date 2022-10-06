@@ -28,7 +28,7 @@ runs:
   steps:
 
     - name: Checkout ${{ inputs.name }} repo
-      uses: actions/checkout@v3
+      uses: actions/checkout@v3.1.0
       with:
         repository: ${{ inputs.main-repository }}
         ref: ${{ inputs.main-branch }}
