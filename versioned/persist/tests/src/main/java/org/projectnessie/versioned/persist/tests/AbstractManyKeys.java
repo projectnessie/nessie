@@ -44,6 +44,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.versioned.BranchName;
@@ -550,6 +551,10 @@ public abstract class AbstractManyKeys {
    */
   @ParameterizedTest
   @MethodSource("progressivelyManyKeyNames")
+  @DisabledIfSystemProperty(
+      named = "nessie.integrationTest",
+      matches = "true",
+      disabledReason = "runs too long for integration tests, non-IT coverage's sufficient")
   void manyKeysProgressive(
       List<String> names,
       @NessieDbAdapterConfigItem(name = "max.key.list.size", value = "2048")
@@ -569,6 +574,10 @@ public abstract class AbstractManyKeys {
    */
   @ParameterizedTest
   @MethodSource("progressivelyManyKeyNames")
+  @DisabledIfSystemProperty(
+      named = "nessie.integrationTest",
+      matches = "true",
+      disabledReason = "runs too long for integration tests, non-IT coverage's sufficient")
   void manyKeysProgressiveSmallLists(
       List<String> names,
       @NessieDbAdapterConfigItem(name = "max.key.list.size", value = "0")

@@ -25,8 +25,10 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 
 /** DynamoDB test connection-provider source using a local DynamoDB instance via testcontainers. */
 public class LocalDynamoTestConnectionProviderSource extends DynamoTestConnectionProviderSource {
+
   private static final Logger LOGGER =
       LoggerFactory.getLogger(LocalDynamoTestConnectionProviderSource.class);
+  public static final int DYNAMODB_PORT = 8000;
 
   private GenericContainer<?> container;
   private String endpointURI;
@@ -74,11 +76,8 @@ public class LocalDynamoTestConnectionProviderSource extends DynamoTestConnectio
       throw new IllegalStateException("Already started");
     }
 
-    // dynalite is much faster than dynamodb-local
-    // String version = System.getProperty("it.nessie.container.dynamodb.tag", "latest");
-    // String imageName = "amazon/dynamodb-local:" + version;
-    String version = System.getProperty("it.nessie.container.dynalite.tag", "latest");
-    String imageName = "dimaqq/dynalite:" + version;
+    String version = System.getProperty("it.nessie.container.dynamodb-local.tag", "latest");
+    String imageName = "amazon/dynamodb-local:" + version;
 
     if (!quiet) {
       LOGGER.info("Starting Dynamo test container (network-id: {})", containerNetworkId);
@@ -87,11 +86,12 @@ public class LocalDynamoTestConnectionProviderSource extends DynamoTestConnectio
     container =
         new GenericContainer<>(imageName)
             .withLogConsumer(quiet ? outputFrame -> {} : new Slf4jLogConsumer(LOGGER))
-            .withExposedPorts(8000);
+            .withExposedPorts(DYNAMODB_PORT)
+            .withCommand("-jar", "DynamoDBLocal.jar", "-inMemory", "-sharedDb");
     containerNetworkId.ifPresent(container::withNetworkMode);
     container.start();
 
-    Integer port = containerNetworkId.isPresent() ? 8000 : container.getFirstMappedPort();
+    Integer port = containerNetworkId.isPresent() ? DYNAMODB_PORT : container.getFirstMappedPort();
     String host =
         containerNetworkId.isPresent()
             ? container.getCurrentContainerInfo().getConfig().getHostName()
