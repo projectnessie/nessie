@@ -34,7 +34,7 @@
     "postcss-normalize": "10.0.1",
     "postcss-preset-env": "7.8.2",
     "postcss-safe-parser": "6.0.0",
-    "pretty-ms": "^7.0.1",
+    "pretty-ms": "^8.0.0",
     "prompts": "2.4.2",
     "ramda": "^0.28.0",
     "react": "^18.2.0",
@@ -163,7 +163,7 @@
       "^(?!.*\\.(js|jsx|mjs|cjs|ts|tsx|css|json)$)": "<rootDir>/config/jest/fileTransform.js"
     },
     "transformIgnorePatterns": [
-      "[/\\\\]node_modules[/\\\\].+\\.(js|jsx|mjs|cjs|ts|tsx)$",
+      "([/\\\\]node_modules[/\\\\])(?!(parse-ms|pretty-ms)).+\\.(js|jsx|mjs|cjs|ts|tsx)$",
       "^.+\\.module\\.(css|sass|scss)$"
     ],
     "modulePaths": [],
