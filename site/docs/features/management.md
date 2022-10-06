@@ -51,7 +51,7 @@ a data lake using Iceberg.
 ### Setting up the database for Nessie GC
 
 You can either create the tables manually, use the DDL statements emitted by
-`nessie-gc show-sql-create-schema-script` as a template that can be enriched with database specific
+`nessie-gc create-sql-schema` as a template that can be enriched with database specific
 optimizations.
 
 Or you let the Nessie GC tool create the schema in your existing database, for example like this:
