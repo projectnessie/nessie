@@ -16,7 +16,6 @@
 package org.projectnessie.gc.identify;
 
 import java.time.Instant;
-import java.util.Objects;
 import javax.annotation.Nonnull;
 
 /**
@@ -46,97 +45,5 @@ public interface CutoffPolicy {
 
   static CutoffPolicy numCommits(int commits) {
     return new NumCommitsCutoffPolicy(commits);
-  }
-}
-
-final class NoneCutoffPolicy implements CutoffPolicy {
-  @Override
-  public boolean isCutoff(@Nonnull Instant commitTime, int numCommits) {
-    return false;
-  }
-
-  @Override
-  public String toString() {
-    return "no cutoff (keep everything)";
-  }
-
-  @Override
-  public int hashCode() {
-    return 0;
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    return obj instanceof NoneCutoffPolicy;
-  }
-}
-
-final class TimestampCutoffPolicy implements CutoffPolicy {
-  private final Instant cutoffTimestamp;
-
-  TimestampCutoffPolicy(Instant cutoffTimestamp) {
-    this.cutoffTimestamp = cutoffTimestamp;
-  }
-
-  @Override
-  public boolean isCutoff(@Nonnull Instant commitTime, int numCommits) {
-    return commitTime.compareTo(cutoffTimestamp) < 0L;
-  }
-
-  @Override
-  public String toString() {
-    return "cutoff at timestamp " + cutoffTimestamp;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (!(o instanceof TimestampCutoffPolicy)) {
-      return false;
-    }
-    TimestampCutoffPolicy that = (TimestampCutoffPolicy) o;
-    return cutoffTimestamp.equals(that.cutoffTimestamp);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(cutoffTimestamp);
-  }
-}
-
-final class NumCommitsCutoffPolicy implements CutoffPolicy {
-  private final int commits;
-
-  NumCommitsCutoffPolicy(int commits) {
-    this.commits = commits;
-  }
-
-  @Override
-  public boolean isCutoff(@Nonnull Instant commitTime, int numCommits) {
-    return numCommits >= commits;
-  }
-
-  @Override
-  public String toString() {
-    return "cutoff after " + commits + " commits";
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (!(o instanceof NumCommitsCutoffPolicy)) {
-      return false;
-    }
-    NumCommitsCutoffPolicy that = (NumCommitsCutoffPolicy) o;
-    return commits == that.commits;
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(commits);
   }
 }
