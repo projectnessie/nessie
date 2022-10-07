@@ -280,6 +280,23 @@ public class ITSparkIcebergNessieS3 extends SparkSqlTestBase {
       soft.assertThat(deleteSummary)
           .extracting(DeleteSummary::deleted, DeleteSummary::failures)
           .containsExactly((long) expectedDeletes, 0L);
+
+      // Run GC another time, but this time assuming that all commits are live. This triggers a
+      // read-attempt against a previously deleted table-metadata, which is equal to "no files
+      // from this snapshot". Note: this depends on the cutoff-policies from the test-case.
+
+      // Mark...
+      liveContentSet =
+          identifyLiveContents(
+              new InMemoryPersistenceSpi(),
+              ref -> CutoffPolicy.NONE,
+              NessieRepositoryConnector.nessie(api));
+      // ... and sweep
+      deleteSummary = expire(icebergFiles, liveContentSet, maxFileModificationTime);
+
+      soft.assertThat(deleteSummary)
+          .extracting(DeleteSummary::deleted, DeleteSummary::failures)
+          .containsExactly(0L, 0L);
     }
   }
 

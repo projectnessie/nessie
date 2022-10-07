@@ -68,8 +68,6 @@ public class ITSparkIcebergNessieLocal extends SparkSqlTestBase {
       sql("create table nessie.db1.t1(id int) using iceberg");
       sql("insert into nessie.db1.t1 select 42");
       sql("insert into nessie.db1.t1 select 42");
-      sql("select * from nessie.db1.t1");
-      sql("describe formatted nessie.db1.t1");
 
       Set<URI> filesBefore = allFiles(icebergFiles);
 
@@ -107,6 +105,20 @@ public class ITSparkIcebergNessieLocal extends SparkSqlTestBase {
       // got cleaned up.
       soft.assertThat(removedFiles)
           .allMatch(u -> u.getPath().endsWith(".json") || u.getPath().endsWith(".avro"));
+
+      // Run GC another time, but this time assuming that all commits are live. This triggers a
+      // read-attempt against a previously deleted table-metadata, which is equal to "no files
+      // from this snapshot".
+
+      // Mark...
+      liveContentSet =
+          identifyLiveContents(
+              new InMemoryPersistenceSpi(),
+              ref -> CutoffPolicy.NONE,
+              NessieRepositoryConnector.nessie(api));
+      // ... and sweep
+      deleteSummary = expire(icebergFiles, liveContentSet, maxFileModificationTime);
+      soft.assertThat(deleteSummary.deleted()).isEqualTo(0L);
     }
   }
 

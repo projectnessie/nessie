@@ -30,12 +30,15 @@ import org.apache.iceberg.ManifestFiles;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableMetadataParser;
+import org.apache.iceberg.exceptions.NotFoundException;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.FileIO;
 import org.immutables.value.Value;
 import org.projectnessie.gc.contents.ContentReference;
 import org.projectnessie.gc.expire.ContentToFiles;
 import org.projectnessie.gc.files.FileReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Provides functionality to extract information about files and base locations from Iceberg
@@ -43,6 +46,10 @@ import org.projectnessie.gc.files.FileReference;
  */
 @Value.Immutable
 public abstract class IcebergContentToFiles implements ContentToFiles {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(IcebergContentToFiles.class);
+  public static final String S3_KEY_NOT_FOUND =
+      "software.amazon.awssdk.services.s3.model.NoSuchKeyException";
 
   public static Builder builder() {
     return ImmutableIcebergContentToFiles.builder();
@@ -67,7 +74,26 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
   public Stream<FileReference> extractFiles(ContentReference contentReference) {
     FileIO io = io();
 
-    TableMetadata tableMetadata = TableMetadataParser.read(io, contentReference.metadataLocation());
+    TableMetadata tableMetadata;
+    try {
+      tableMetadata = TableMetadataParser.read(io, contentReference.metadataLocation());
+    } catch (Exception notFoundCandidate) {
+      if (notFoundCandidate instanceof NotFoundException
+          // Iceberg does not map software.amazon.awssdk.services.s3.model.NoSuchKeyException to
+          // its native org.apache.iceberg.exceptions.NotFoundException,
+          || S3_KEY_NOT_FOUND.equals(notFoundCandidate.getClass().getName())) {
+        // It is safe to assume that a missing table-metadata means no referenced files.
+        // A table-metadata can be missing, because a previous Nessie GC "sweep" phase deleted it.
+        LOGGER.info(
+            "Table metadata {} for snapshot ID {} for content-key {} at Nessie commit {} does not exist, probably already deleted, assuming no files",
+            contentReference.metadataLocation(),
+            contentReference.snapshotId(),
+            contentReference.contentKey(),
+            contentReference.commitId());
+        return Stream.empty();
+      }
+      throw new RuntimeException(notFoundCandidate);
+    }
 
     long snapshotId =
         Objects.requireNonNull(

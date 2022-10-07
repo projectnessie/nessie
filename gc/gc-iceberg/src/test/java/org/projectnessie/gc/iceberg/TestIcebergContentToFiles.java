@@ -17,6 +17,7 @@ package org.projectnessie.gc.iceberg;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.projectnessie.gc.iceberg.mocks.IcebergFileIOMocking.dataFilePath;
@@ -33,6 +34,9 @@ import java.util.stream.Stream;
 import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.TableMetadata;
+import org.apache.iceberg.exceptions.NotFoundException;
+import org.apache.iceberg.io.FileIO;
+import org.apache.iceberg.io.InputFile;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -112,6 +116,24 @@ public class TestIcebergContentToFiles {
           .allSatisfy(f -> assertThat(f.absolutePath()).isEqualTo(f.base().resolve(f.path())))
           .map(FileReference::absolutePath)
           .containsExactlyInAnyOrderElementsOf(expectedFiles);
+    }
+  }
+
+  @Test
+  public void safeAgainstMissingTableMetadata() {
+    InputFile inputFile = mock(InputFile.class);
+    FileIO fileIO = mock(FileIO.class);
+
+    when(inputFile.location()).thenReturn("/blah.metadata.json");
+    when(inputFile.newStream()).thenThrow(new NotFoundException("mocked"));
+    when(fileIO.newInputFile(any())).thenReturn(inputFile);
+
+    IcebergContentToFiles contentToFiles = IcebergContentToFiles.builder().io(fileIO).build();
+    try (Stream<FileReference> extractFiles =
+        contentToFiles.extractFiles(
+            ContentReference.icebergTable(
+                "cid", "1234", ContentKey.of("foo"), "/blah.metadata.json", 42L))) {
+      assertThat(extractFiles).isEmpty();
     }
   }
 
