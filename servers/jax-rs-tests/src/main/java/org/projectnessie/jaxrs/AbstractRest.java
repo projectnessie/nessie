@@ -17,18 +17,14 @@ package org.projectnessie.jaxrs;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ImmutableMap;
 import java.net.URI;
 import java.util.Locale;
-import javax.annotation.Nullable;
+import java.util.Objects;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientBuilder;
-import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -55,26 +51,22 @@ public abstract class AbstractRest {
     Locale.setDefault(Locale.ENGLISH);
   }
 
-  protected void init(URI uri) {
-    NessieApiV1 api = HttpClientBuilder.builder().withUri(uri).build(NessieApiV1.class);
-
-    ObjectMapper mapper =
-        new ObjectMapper()
-            .enable(SerializationFeature.INDENT_OUTPUT)
-            .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-    HttpClient.Builder httpClient = HttpClient.builder().setBaseUri(uri).setObjectMapper(mapper);
-    httpClient.addResponseFilter(new NessieHttpResponseFilter(mapper));
-
-    init(api, httpClient);
+  protected void initApi(URI nessieApiUri) {
+    NessieApiV1 api = HttpClientBuilder.builder().withUri(nessieApiUri).build(NessieApiV1.class);
+    initApi(api);
   }
 
-  protected void init(NessieApiV1 api, @Nullable HttpClient.Builder httpClient) {
+  protected void initApi(NessieApiV1 api) {
     this.api = api;
+  }
+
+  public NessieApiV1 getApi() {
+    return Objects.requireNonNull(api, "Tests need to call initApi in @BeforeEach");
   }
 
   @BeforeEach
   public void setUp() {
-    init(URI.create("http://localhost:19121/api/v1"));
+    initApi(URI.create("http://localhost:19121/api/v1"));
   }
 
   @AfterEach
@@ -94,10 +86,6 @@ public abstract class AbstractRest {
               }
             });
     api.close();
-  }
-
-  public NessieApiV1 getApi() {
-    return api;
   }
 
   protected String createCommits(

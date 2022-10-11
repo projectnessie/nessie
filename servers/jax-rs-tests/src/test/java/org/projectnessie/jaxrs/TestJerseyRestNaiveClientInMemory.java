@@ -15,13 +15,11 @@
  */
 package org.projectnessie.jaxrs;
 
-import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.projectnessie.client.http.impl.HttpUtils.HEADER_ACCEPT;
 
-import javax.annotation.Nullable;
+import java.net.URI;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpAuthentication;
-import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.client.http.RequestFilter;
 import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
@@ -48,25 +46,22 @@ import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabas
 class TestJerseyRestNaiveClientInMemory extends AbstractTestJerseyRest {
 
   @Override
-  protected void init(NessieApiV1 api, @Nullable HttpClient.Builder httpClient) {
-    assumeThat(httpClient).isNotNull();
-
+  protected void initApi(URI nessieApiUri) {
     // Intentionally remove the `Accept` header from requests.
     // Service endpoints should declare the content type for their return values,
     // which should allow the Web Container to properly format output even in the absence
     // of `Accept` HTTP headers.
     RequestFilter noAcceptFilter = context -> context.removeHeader(HEADER_ACCEPT);
-    httpClient.addRequestFilter(noAcceptFilter);
 
-    api =
+    NessieApiV1 api =
         HttpClientBuilder.builder()
             // Abuse the authentication callback a bit to inject the noAcceptFilter into
             // the java client.
             .withAuthentication(
                 (HttpAuthentication) client -> client.addRequestFilter(noAcceptFilter))
-            .withUri(httpClient.getBaseUri())
+            .withUri(nessieApiUri)
             .build(NessieApiV1.class);
 
-    super.init(api, httpClient);
+    super.initApi(api);
   }
 }
