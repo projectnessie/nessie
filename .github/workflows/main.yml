@@ -18,7 +18,7 @@ on:
 
 jobs:
   java:
-    name: Java/Maven
+    name: Java/Gradle
     runs-on: ubuntu-20.04
     env:
       SPARK_LOCAL_IP: localhost
@@ -87,7 +87,7 @@ jobs:
       uses: ./.github/actions/ci-results
 
   native:
-    name: Java/Maven/Native
+    name: Java/Gradle/Native
     runs-on: ubuntu-20.04
 
     steps:
