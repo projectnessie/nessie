@@ -15,16 +15,28 @@
  */
 package org.projectnessie.server;
 
+import com.google.common.base.Preconditions;
+import java.net.URI;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpClientBuilder;
 
 /** Base class for client-base authentication and authorization tests. */
+@ExtendWith(QuarkusNessieUriResolver.class)
 public abstract class BaseClientAuthTest {
+
+  private URI quarkusNessieUri;
 
   private NessieApiV1 api;
   private Consumer<HttpClientBuilder> customizer;
+
+  @BeforeEach
+  void setUp(URI quarkusNessieUri) {
+    this.quarkusNessieUri = quarkusNessieUri;
+  }
 
   @AfterEach
   void closeClient() {
@@ -35,6 +47,7 @@ public abstract class BaseClientAuthTest {
   }
 
   protected void withClientCustomizer(Consumer<HttpClientBuilder> customizer) {
+    Preconditions.checkState(api == null, "withClientCustomizer but api has already been created!");
     this.customizer = customizer;
   }
 
@@ -43,8 +56,7 @@ public abstract class BaseClientAuthTest {
       return api;
     }
 
-    HttpClientBuilder builder =
-        HttpClientBuilder.builder().withUri("http://localhost:19121/api/v1");
+    HttpClientBuilder builder = HttpClientBuilder.builder().withUri(quarkusNessieUri);
 
     if (customizer != null) {
       customizer.accept(builder);

@@ -20,8 +20,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.TestProfile;
+import java.net.URI;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.error.NessieBadRequestException;
@@ -30,6 +32,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
+import org.projectnessie.server.QuarkusNessieUriResolver;
 
 /**
  * Rudimentary version of {@link TestNessieError}, because we cannot dynamically add beans and
@@ -39,16 +42,14 @@ import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
 @QuarkusIntegrationTest
 @TestProfile(
     QuarkusTestProfileInmemory.class) // use the QuarkusTestProfileInmemory, as it can be reused
+@ExtendWith(QuarkusNessieUriResolver.class)
 public class ITNessieError {
 
   private NessieApiV1 api;
 
   @BeforeEach
-  void init() {
-    api =
-        HttpClientBuilder.builder()
-            .withUri("http://localhost:19121/api/v1")
-            .build(NessieApiV1.class);
+  void init(URI quarkusNessieUri) {
+    api = HttpClientBuilder.builder().withUri(quarkusNessieUri).build(NessieApiV1.class);
   }
 
   @Test

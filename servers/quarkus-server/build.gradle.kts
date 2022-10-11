@@ -148,8 +148,6 @@ tasks.withType<Test>().configureEach {
   }
   systemProperty("quarkus.container-image.build", useDocker)
   systemProperty("quarkus.smallrye.jwt.enabled", "true")
-  // TODO requires adjusting the tests - systemProperty("quarkus.http.test-port", "0") -  set this
-  //  property in application.properties
   systemProperty(
     "it.nessie.container.postgres.tag",
     System.getProperty("it.nessie.container.postgres.tag", libs.versions.postgresContainerTag.get())

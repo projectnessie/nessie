@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,20 @@
  */
 package org.projectnessie.server;
 
-import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.quarkus.test.junit.TestProfile;
-import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfilePostgres;
+import java.net.URI;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.projectnessie.jaxrs.AbstractTestRest;
 
-@QuarkusIntegrationTest
-@TestProfile(QuarkusTestProfilePostgres.class)
-class ITRestApiPostgres extends AbstractTestQuarkusRest {}
+/**
+ * Tests need to subclass this class and use @QuarkusIntegrationTest or @QuarkusTest, so that the
+ * quarkus context is available to resolve the nessie URI.
+ */
+@ExtendWith(QuarkusNessieUriResolver.class)
+public abstract class AbstractTestQuarkusRest extends AbstractTestRest {
+
+  @BeforeEach
+  public void setUp(URI quarkusNessieUri) {
+    initApi(quarkusNessieUri);
+  }
+}

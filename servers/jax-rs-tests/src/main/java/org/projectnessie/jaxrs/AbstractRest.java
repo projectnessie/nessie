@@ -22,7 +22,6 @@ import java.net.URI;
 import java.util.Locale;
 import java.util.Objects;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.error.BaseNessieClientServerException;
@@ -62,11 +61,6 @@ public abstract class AbstractRest {
 
   public NessieApiV1 getApi() {
     return Objects.requireNonNull(api, "Tests need to call initApi in @BeforeEach");
-  }
-
-  @BeforeEach
-  public void setUp() {
-    initApi(URI.create("http://localhost:19121/api/v1"));
   }
 
   @AfterEach
