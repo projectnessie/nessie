@@ -17,9 +17,8 @@ package org.projectnessie.server;
 
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.TestProfile;
-import org.projectnessie.jaxrs.AbstractTestRest;
 import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileRocks;
 
 @QuarkusIntegrationTest
 @TestProfile(QuarkusTestProfileRocks.class)
-class ITRestApiRocks extends AbstractTestRest {}
+class ITRestApiRocks extends AbstractTestQuarkusRest {}

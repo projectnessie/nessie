@@ -21,4 +21,4 @@ import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
 
 @QuarkusTest
 @TestProfile(QuarkusTestProfileInmemory.class)
-class TestRestApiInMemory extends AbstractRestWithMetrics {}
+class TestRestApiInMemory extends AbstractQuarkusRestWithMetrics {}

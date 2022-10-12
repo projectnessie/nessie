@@ -19,13 +19,12 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 import io.restassured.RestAssured;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.jaxrs.AbstractTestRest;
 
-public abstract class AbstractRestWithMetrics extends AbstractTestRest {
-  // We need to extend the AbstractTestRest because all Nessie metrics are created lazily.
+public abstract class AbstractQuarkusRestWithMetrics extends AbstractTestQuarkusRest {
+  // We need to extend the base class because all Nessie metrics are created lazily.
   // They will appear in the `/q/metrics` endpoint only when some REST actions are executed.
 
-  // this test is executed after all tests from the AbstractTestRest
+  // this test is executed after all tests from the base class
   @Test
   void smokeTestMetrics() {
     // when

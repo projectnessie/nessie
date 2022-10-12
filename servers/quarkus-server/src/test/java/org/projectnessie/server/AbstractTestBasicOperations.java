@@ -18,10 +18,13 @@ package org.projectnessie.server;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.quarkus.test.security.TestSecurity;
+import java.net.URI;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpClientBuilder;
@@ -34,9 +37,15 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 
+@ExtendWith(QuarkusNessieUriResolver.class)
 abstract class AbstractTestBasicOperations {
 
   private NessieApiV1 api;
+
+  @BeforeEach
+  void setUp(URI quarkusNessieUri) {
+    api = HttpClientBuilder.builder().withUri(quarkusNessieUri).build(NessieApiV1.class);
+  }
 
   @AfterEach
   void closeClient() {
@@ -47,10 +56,6 @@ abstract class AbstractTestBasicOperations {
   }
 
   void getCatalog(String branch) throws BaseNessieClientServerException {
-    api =
-        HttpClientBuilder.builder()
-            .withUri("http://localhost:19121/api/v1")
-            .build(NessieApiV1.class);
     if (branch != null) {
       api.createReference().reference(Branch.of(branch, null)).sourceRefName("main").create();
     }

@@ -43,7 +43,6 @@ abstract class AbstractTestJerseyRest extends AbstractRestSecurityContext {
     nessieUri = uri;
   }
 
-  @Override
   @BeforeEach
   public void setUp() {
     initApi(nessieUri);
