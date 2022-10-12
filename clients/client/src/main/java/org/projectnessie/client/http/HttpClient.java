@@ -62,6 +62,10 @@ public interface HttpClient {
 
     private Builder() {}
 
+    public URI getBaseUri() {
+      return baseUri;
+    }
+
     public Builder setBaseUri(URI baseUri) {
       this.baseUri = baseUri;
       return this;

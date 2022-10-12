@@ -52,9 +52,6 @@ public class QuarkusNessieUriResolver implements ParameterResolver {
       return URI.create(getNessieApiV1Url());
     }
     throw new ParameterResolutionException(
-        "Unsupported annotation on parameter "
-            + paramCtx.getParameter()
-            + " on "
-            + paramCtx.getTarget());
+        "Unsupported parameter " + paramCtx.getParameter() + " on " + paramCtx.getTarget());
   }
 }
