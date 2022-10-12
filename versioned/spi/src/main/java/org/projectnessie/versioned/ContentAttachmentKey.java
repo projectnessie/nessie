@@ -42,7 +42,7 @@ public interface ContentAttachmentKey {
         getContentId().indexOf(':') == -1
             && getAttachmentType().indexOf(':') == -1
             && getAttachmentId().indexOf(':') == -1,
-        "Elements of ContentAttachmentKey must not contain ':' characters, content-id='%s', object-type=':', object-ID='%s'",
+        "Elements of ContentAttachmentKey must not contain ':' characters, content-id='%s', object-type='%s', object-ID='%s'",
         getContentId(),
         getAttachmentType(),
         getAttachmentId());
