@@ -39,7 +39,7 @@ concurrency:
 
 jobs:
   java:
-    name: Java/Maven
+    name: Java/Gradle
     runs-on: ubuntu-20.04
     env:
       SPARK_LOCAL_IP: localhost
@@ -48,7 +48,7 @@ jobs:
     - uses: actions/checkout@v3.1.0
     - name: Setup runner
       uses: ./.github/actions/setup-runner
-    - name: Setup Java, Maven
+    - name: Setup Java, Gradle
       uses: ./.github/actions/dev-tool-java
 
     - name: Gradle / spotless
