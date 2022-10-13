@@ -30,12 +30,6 @@ dependencies {
   implementation("org.apache.iceberg:iceberg-api:$versionIceberg")
   implementation("org.apache.iceberg:iceberg-core:$versionIceberg")
   implementation("org.apache.iceberg:iceberg-common:$versionIceberg")
-  implementation(
-    group = "org.apache.iceberg",
-    name = "iceberg-bundled-guava",
-    version = versionIceberg,
-    configuration = if (isIntegrationsTestingEnabled()) "shadow" else null
-  )
   implementation("org.apache.iceberg:iceberg-nessie:$versionIceberg") {
     exclude("org.projectnessie", "*")
   }
