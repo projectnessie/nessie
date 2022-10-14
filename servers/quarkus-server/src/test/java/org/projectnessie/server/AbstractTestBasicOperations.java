@@ -18,7 +18,6 @@ package org.projectnessie.server;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.quarkus.test.security.TestSecurity;
-import java.net.URI;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -27,7 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.http.HttpClientBuilder;
+import org.projectnessie.client.ext.NessieApiProvider;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -43,8 +42,8 @@ abstract class AbstractTestBasicOperations {
   private NessieApiV1 api;
 
   @BeforeEach
-  void setUp(URI quarkusNessieUri) {
-    api = HttpClientBuilder.builder().withUri(quarkusNessieUri).build(NessieApiV1.class);
+  void setUp(NessieApiProvider apiProvider) {
+    api = apiProvider.get();
   }
 
   @AfterEach

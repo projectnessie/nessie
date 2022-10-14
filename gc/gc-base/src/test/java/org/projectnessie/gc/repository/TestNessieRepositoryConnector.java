@@ -18,7 +18,6 @@ package org.projectnessie.gc.repository;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 
-import java.net.URI;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,17 +31,15 @@ import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.http.HttpClientBuilder;
+import org.projectnessie.client.ext.NessieApiProvider;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
-import org.projectnessie.jaxrs.ext.NessieUri;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
@@ -73,18 +70,11 @@ public class TestNessieRepositoryConnector {
   static org.projectnessie.jaxrs.ext.NessieJaxRsExtension server =
       new NessieJaxRsExtension(() -> databaseAdapter);
 
-  private static URI nessieUri;
-
-  @BeforeAll
-  static void setNessieUri(@NessieUri URI uri) {
-    nessieUri = uri;
-  }
-
   private NessieApiV1 nessieApi;
 
   @BeforeEach
-  public void setUp() {
-    nessieApi = HttpClientBuilder.builder().withUri(nessieUri).build(NessieApiV1.class);
+  public void setUp(NessieApiProvider apiProvider) {
+    nessieApi = apiProvider.get();
   }
 
   @AfterEach

@@ -18,11 +18,9 @@ package org.projectnessie.server;
 import java.net.URI;
 import java.util.Objects;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ParameterContext;
-import org.junit.jupiter.api.extension.ParameterResolutionException;
-import org.junit.jupiter.api.extension.ParameterResolver;
+import org.projectnessie.client.ext.NessieClientResolver;
 
-public class QuarkusNessieUriResolver implements ParameterResolver {
+public class QuarkusNessieUriResolver extends NessieClientResolver {
 
   private static Integer getQuarkusTestPort() {
     return Objects.requireNonNull(
@@ -30,28 +28,8 @@ public class QuarkusNessieUriResolver implements ParameterResolver {
         "System property not set correctly: quarkus.http.test-port");
   }
 
-  private static String getNessieApiV1Url() {
-    return String.format("http://localhost:%d/api/v1", getQuarkusTestPort());
-  }
-
-  private boolean isQuarkusNessieUriParam(ParameterContext paramCtx) {
-    return paramCtx.getParameter().getName().equals("quarkusNessieUri")
-        && paramCtx.getParameter().getType().equals(URI.class);
-  }
-
   @Override
-  public boolean supportsParameter(ParameterContext paramCtx, ExtensionContext extensionCtx)
-      throws ParameterResolutionException {
-    return isQuarkusNessieUriParam(paramCtx);
-  }
-
-  @Override
-  public Object resolveParameter(ParameterContext paramCtx, ExtensionContext extensionCtx)
-      throws ParameterResolutionException {
-    if (isQuarkusNessieUriParam(paramCtx)) {
-      return URI.create(getNessieApiV1Url());
-    }
-    throw new ParameterResolutionException(
-        "Unsupported parameter " + paramCtx.getParameter() + " on " + paramCtx.getTarget());
+  protected URI findBaseUri(ExtensionContext extensionContext) {
+    return URI.create(String.format("http://localhost:%d/api/v1", getQuarkusTestPort()));
   }
 }

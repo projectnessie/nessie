@@ -18,12 +18,12 @@ package org.projectnessie.jaxrs;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableMap;
-import java.net.URI;
 import java.util.Locale;
 import java.util.Objects;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.http.HttpClientBuilder;
+import org.projectnessie.client.ext.NessieApiProvider;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -50,17 +50,13 @@ public abstract class AbstractRest {
     Locale.setDefault(Locale.ENGLISH);
   }
 
-  protected void initApi(URI nessieApiUri) {
-    NessieApiV1 api = HttpClientBuilder.builder().withUri(nessieApiUri).build(NessieApiV1.class);
-    initApi(api);
-  }
-
-  protected void initApi(NessieApiV1 api) {
-    this.api = api;
+  @BeforeEach
+  void initApi(NessieApiProvider api) {
+    this.api = Objects.requireNonNull(api.get());
   }
 
   public NessieApiV1 getApi() {
-    return Objects.requireNonNull(api, "Tests need to call initApi in @BeforeEach");
+    return Objects.requireNonNull(api, "Nessie API field was not injected.");
   }
 
   @AfterEach

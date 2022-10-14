@@ -22,7 +22,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,7 +46,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.jaxrs.ext.NessieUri;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
@@ -77,10 +75,8 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
     super(BRANCH);
   }
 
-  @Override
   @BeforeEach
-  public void beforeEach(@NessieUri URI uri) throws IOException {
-    super.beforeEach(uri);
+  public void beforeEach() {
     Table table = catalog.createTable(TABLE_IDENTIFIER, SCHEMA);
     this.tableLocation = new Path(table.location());
     catalog.create(

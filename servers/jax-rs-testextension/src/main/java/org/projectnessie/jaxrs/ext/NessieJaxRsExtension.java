@@ -17,6 +17,7 @@ package org.projectnessie.jaxrs.ext;
 
 import static org.projectnessie.services.config.ServerConfigExtension.SERVER_CONFIG;
 
+import java.net.URI;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -39,6 +40,7 @@ import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
+import org.projectnessie.client.ext.NessieClientResolver;
 import org.projectnessie.services.authz.AbstractBatchAccessChecker;
 import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.AuthorizerExtension;
@@ -65,7 +67,7 @@ import org.projectnessie.versioned.PersistVersionStoreExtension;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 
 /** A JUnit 5 extension that starts up Weld/JerseyTest. */
-public class NessieJaxRsExtension
+public class NessieJaxRsExtension extends NessieClientResolver
     implements BeforeAllCallback,
         BeforeEachCallback,
         AfterEachCallback,
@@ -125,7 +127,8 @@ public class NessieJaxRsExtension
   public boolean supportsParameter(
       ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
-    return parameterContext.isAnnotated(NessieUri.class)
+    return super.supportsParameter(parameterContext, extensionContext)
+        || parameterContext.isAnnotated(NessieUri.class)
         || parameterContext.isAnnotated(NessieSecurityContext.class)
         || parameterContext.isAnnotated(NessieAccessChecker.class);
   }
@@ -134,6 +137,10 @@ public class NessieJaxRsExtension
   public Object resolveParameter(
       ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
+    if (super.supportsParameter(parameterContext, extensionContext)) {
+      return super.resolveParameter(parameterContext, extensionContext);
+    }
+
     EnvHolder env = extensionContext.getStore(NAMESPACE).get(EnvHolder.class, EnvHolder.class);
     if (env == null) {
       throw new ParameterResolutionException(
@@ -141,7 +148,8 @@ public class NessieJaxRsExtension
     }
 
     if (parameterContext.isAnnotated(NessieUri.class)) {
-      return env.jerseyTest.target().getUri();
+      // Backward compatibility with older (external) tests
+      return findBaseUri(extensionContext);
     }
 
     if (parameterContext.isAnnotated(NessieSecurityContext.class)) {
@@ -157,6 +165,17 @@ public class NessieJaxRsExtension
             + parameterContext.getParameter()
             + " on "
             + parameterContext.getTarget());
+  }
+
+  @Override
+  protected URI findBaseUri(ExtensionContext extensionContext) {
+    EnvHolder env = extensionContext.getStore(NAMESPACE).get(EnvHolder.class, EnvHolder.class);
+    if (env == null) {
+      throw new ParameterResolutionException(
+          "Nessie JaxRs env. is not initialized in " + extensionContext.getUniqueId());
+    }
+
+    return env.jerseyTest.target().getUri();
   }
 
   private static class EnvHolder implements CloseableResource {

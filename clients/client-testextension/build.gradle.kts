@@ -13,14 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server;
 
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.projectnessie.jaxrs.AbstractTestRest;
+plugins {
+  `java-library`
+  jacoco
+  `maven-publish`
+  signing
+  `nessie-conventions`
+}
 
-/**
- * Tests need to subclass this class and use @QuarkusIntegrationTest or @QuarkusTest, so that the
- * quarkus context is available to resolve the nessie URI.
- */
-@ExtendWith(QuarkusNessieUriResolver.class)
-public abstract class AbstractTestQuarkusRest extends AbstractTestRest {}
+extra["maven.name"] = "Nessie - JUnit Jupyter Test Extension for Client-Side Tests"
+
+dependencies {
+  api(platform(libs.junit.bom))
+  api(libs.junit.jupiter.api)
+
+  implementation(project(":nessie-client"))
+}

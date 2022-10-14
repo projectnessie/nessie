@@ -81,6 +81,7 @@ dependencies {
   openapiSource(project(":nessie-model", "openapiSource"))
 
   testImplementation(project(":nessie-client"))
+  testImplementation(project(":nessie-client-testextension"))
   testImplementation(project(":nessie-jaxrs-tests"))
   testImplementation(project(":nessie-quarkus-tests"))
   testImplementation(project(":nessie-versioned-tests"))

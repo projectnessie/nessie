@@ -13,14 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server;
+package org.projectnessie.client.ext;
 
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.projectnessie.jaxrs.AbstractTestRest;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-/**
- * Tests need to subclass this class and use @QuarkusIntegrationTest or @QuarkusTest, so that the
- * quarkus context is available to resolve the nessie URI.
- */
-@ExtendWith(QuarkusNessieUriResolver.class)
-public abstract class AbstractTestQuarkusRest extends AbstractTestRest {}
+/** Annotation for JUnit5 method parameters that need a URI to the Nessie server under test. */
+@Target({ElementType.FIELD, ElementType.PARAMETER})
+@Retention(RetentionPolicy.RUNTIME)
+@Inherited
+public @interface NessieUri {}

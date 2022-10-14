@@ -13,14 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server;
+package org.projectnessie.client.ext;
 
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.projectnessie.jaxrs.AbstractTestRest;
+import org.projectnessie.client.api.NessieApiV1;
 
 /**
- * Tests need to subclass this class and use @QuarkusIntegrationTest or @QuarkusTest, so that the
- * quarkus context is available to resolve the nessie URI.
+ * Interface for declaring parameters in test methods wishing to operate on a Nessie Client
+ * pre-configured to talk to the Nessie Server running in the current test environment.
+ *
+ * <p>An implementation of this interface will be injected into test method parameters by {@link
+ * NessieClientResolver}.
  */
-@ExtendWith(QuarkusNessieUriResolver.class)
-public abstract class AbstractTestQuarkusRest extends AbstractTestRest {}
+public interface NessieApiProvider {
+
+  default NessieApiV1 get() {
+    return get(builder -> builder);
+  }
+
+  NessieApiV1 get(NessieClientCustomizer customizer);
+}

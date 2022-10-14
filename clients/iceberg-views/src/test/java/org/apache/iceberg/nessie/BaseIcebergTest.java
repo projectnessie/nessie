@@ -38,11 +38,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.http.HttpClientBuilder;
+import org.projectnessie.client.ext.NessieApiProvider;
+import org.projectnessie.client.ext.NessieUri;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
-import org.projectnessie.jaxrs.ext.NessieUri;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.Tag;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
@@ -94,9 +94,9 @@ public class BaseIcebergTest {
   }
 
   @BeforeEach
-  public void beforeEach(@NessieUri URI x) throws IOException {
-    uri = x.toString();
-    this.api = HttpClientBuilder.builder().withUri(uri).build(NessieApiV1.class);
+  public void beforeEach(NessieApiProvider apiProvider, @NessieUri URI uri) throws IOException {
+    this.uri = uri.toASCIIString();
+    this.api = apiProvider.get();
 
     resetData();
 
