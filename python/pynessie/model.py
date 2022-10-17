@@ -276,9 +276,9 @@ class OperationsSchema(OneOfSchema):
 class CommitMeta:
     """Dataclass for commit metadata."""
 
-    hash_: str = desert.ib(fields.Str(data_key="hash"), default=None)
-    commitTime: datetime = desert.ib(fields.DateTime(), default=None)
-    authorTime: datetime = desert.ib(fields.DateTime(), default=None)
+    hash_: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(data_key="hash")))
+    commitTime: datetime = attr.ib(default=None, metadata=desert.metadata(fields.DateTime()))
+    authorTime: datetime = attr.ib(default=None, metadata=desert.metadata(fields.DateTime()))
     committer: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
     author: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
     signedOffBy: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
