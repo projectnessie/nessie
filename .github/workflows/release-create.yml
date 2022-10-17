@@ -103,6 +103,17 @@ jobs:
         | Before release Git HEAD    | \`$(git rev-parse HEAD)\` |
         !
 
+    - name: Update README.md + SECURITY.md + server-upgrade.md files
+      run: |
+        LAST_VERSION="${LAST_TAG#nessie-}"
+        LAST_VERSION_PATTERN="$(echo ${LAST_VERSION} | sed 's/\([^.]*\)[.]\([^.]*\)[.].*/\1\\.\2/')\\."
+
+        for fn in SECURITY.md README.md site/docs/try/server-upgrade.md ; do
+          cp ${fn} /tmp/temp-release-file.md
+          sed "s/${LAST_VERSION_PATTERN}[^ ]*/${RELEASE_VERSION}/" < /tmp/temp-release-file.md > ${fn}
+          rm /tmp/temp-release-file.md
+        done
+
     # Two steps that verify that the README.md, SECURITY.md and server-upgrade.md files contain
     # information about the release, ignoring the patch version
     - name: Check release version number in text files
