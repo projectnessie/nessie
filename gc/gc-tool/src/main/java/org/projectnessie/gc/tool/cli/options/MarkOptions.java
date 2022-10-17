@@ -112,7 +112,7 @@ public class MarkOptions {
                   CutoffPolicy cutoffPolicy =
                       parseCutoffPolicy(
                           e.getValue(),
-                          () -> "for regular expression predicate '" + e.getKey() + "'");
+                          () -> "for reference name regexpression predicate '" + e.getKey() + "'");
 
                   return Maps.immutableEntry(predicate, cutoffPolicy);
                 })

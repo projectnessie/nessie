@@ -124,7 +124,7 @@ public class TestCLI {
             asList("gc", "--inmemory", "--cutoff", "ABC"), "Unmatched argument at index 3: 'ABC'"),
         arguments(
             asList("gc", "--inmemory", "--cutoff", "main=ABC"),
-            "Failed to parse cutoff-value 'ABC' for key 'main'"));
+            "Failed to parse cutoff-value 'ABC' for reference name regexpression predicate 'main'"));
   }
 
   @ParameterizedTest
