@@ -72,11 +72,6 @@ extra:
     java: 0.43.0
     python: v0.43.0
     iceberg: 0.14.1
-    spark31: 3.1
-    spark32: 3.2
-    spark33: 3.3
-    scala212: 2.12
-    scala213: 2.13
   analytics:
     provider: google
     property: UA-177850801-1
