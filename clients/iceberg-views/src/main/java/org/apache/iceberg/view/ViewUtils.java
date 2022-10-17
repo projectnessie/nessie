@@ -20,7 +20,6 @@ import static org.apache.iceberg.view.CommonViewConstants.OPERATION;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
-import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -224,7 +223,7 @@ public class ViewUtils {
   }
 
   public static TableIdentifier toCatalogTableIdentifier(String tableIdentifier) {
-    List<String> namespace = Lists.newArrayList();
+    List<String> namespace = new ArrayList<>();
     Iterable<String> parts = Splitter.on(".").split(tableIdentifier);
 
     String lastPart = "";
