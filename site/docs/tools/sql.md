@@ -23,8 +23,6 @@ bin/spark-sql
 In order to be able to use Nessie's custom Spark SQL extensions with Spark 3.2.x, one needs to configure
 `org.projectnessie:nessie-spark-extensions-{{ versions.spark32 }}_{{ versions.scala212 }}:{{ versions.java }}` along with `org.apache.iceberg:iceberg-spark-runtime-{{ versions.spark32 }}_{{ versions.scala212 }}:{{ versions.iceberg }}`.
 
-This differentiates from Spark 3.1 usage: `NessieSpark32SessionExtensions` must be used instead of `NessieSparkSessionExtensions`.
-
 Here's an example of how this is done when starting the `spark-sql` shell:
 
 ```
