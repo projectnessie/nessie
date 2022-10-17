@@ -103,6 +103,15 @@ jobs:
         | Before release Git HEAD    | \`$(git rev-parse HEAD)\` |
         !
 
+    - name: Update .md files referencing latest Nessie version
+      run: |
+        LAST_VERSION="${LAST_TAG#nessie-}"
+        LAST_VERSION_PATTERN="$(echo ${LAST_VERSION} | sed 's/\([^.]*\)[.]\([^.]*\)[.].*/\1\\.\2/')\\."
+
+        for fn in SECURITY.md README.md site/docs/try/server-upgrade.md ; do
+          sed -i "s/${LAST_VERSION_PATTERN}[^ ]*/${RELEASE_VERSION}/" ${fn}
+        done
+
     # Two steps that verify that the README.md, SECURITY.md and server-upgrade.md files contain
     # information about the release, ignoring the patch version
     - name: Check release version number in text files
