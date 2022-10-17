@@ -14,7 +14,7 @@ To access Nessie on Iceberg from a spark cluster make sure the `spark.jars` spar
   ('3.2', '2.13', artifacts.iceberg_spark_runtime_32_213, artifacts.nessie_spark_extensions_32_213),
   ('3.1', '2.12', artifacts.iceberg_spark_runtime_31_212, artifacts.nessie_spark_extensions_31_212),
 ] %}
-| Spark **{{sparkver}}**, Scala **{{scalaver}}**: | `{{iceberg_spark_runtime.spark_jar_package}}`<br />*([All]({{iceberg_spark_runtime.group_url}}), [Latest]({{iceberg_spark_runtime.jar_url}}))* | `{{nessie_spark_extensions.spark_jar_package}}`<br />*([All]({{nessie_spark_extensions.group_url}}), [Latest]({{nessie_spark_extensions.jar_url}}))* |
+| Spark **{{sparkver}}**, Scala **{{scalaver}}**: | `{{iceberg_spark_runtime.spark_jar_package}}`<br />*([All]({{iceberg_spark_runtime.all_versions_url}}), [Latest]({{iceberg_spark_runtime.jar_url}}))* | `{{nessie_spark_extensions.spark_jar_package}}`<br />*([All]({{nessie_spark_extensions.all_versions_url}}), [Latest]({{nessie_spark_extensions.jar_url}}))* |
 {%- endfor %}
 
 The `iceberg-spark-runtime` fat jars are distributed by the Apache Iceberg project and contains all Apache Iceberg libraries required for operation, including the built-in Nessie Catalog.

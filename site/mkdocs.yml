@@ -25,47 +25,47 @@ extra:
   artifacts:
     # Spark 3.3 and Scala 2.12:
     iceberg_spark_runtime_33_212:
-        group_url: https://search.maven.org/artifact/org.apache.iceberg/iceberg-spark-runtime-3.3_2.12
+        all_versions_url: https://search.maven.org/artifact/org.apache.iceberg/iceberg-spark-runtime-3.3_2.12
         jar_url: https://repo.maven.apache.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.3_2.12/0.14.1/iceberg-spark-runtime-3.3_2.12-0.14.1.jar
         spark_jar_package: org.apache.iceberg:iceberg-spark-runtime-3.3_2.12:0.14.1
     nessie_spark_extensions_33_212:
-        group_url: https://search.maven.org/artifact/org.projectnessie/nessie-spark-extensions-3.3_2.12
+        all_versions_url: https://search.maven.org/artifact/org.projectnessie/nessie-spark-extensions-3.3_2.12
         jar_url: https://repo.maven.apache.org/maven2/org/projectnessie/nessie-spark-extensions-3.3_2.12/0.43.0/nessie-spark-extensions-3.3_2.12-0.43.0.jar
         spark_jar_package: org.projectnessie:nessie-spark-extensions-3.3_2.12:0.43.0
     # Spark 3.3 and Scala 2.13:
     iceberg_spark_runtime_33_213:
-        group_url: https://search.maven.org/artifact/org.apache.iceberg/iceberg-spark-runtime-3.3_2.13
+        all_versions_url: https://search.maven.org/artifact/org.apache.iceberg/iceberg-spark-runtime-3.3_2.13
         jar_url: https://repo.maven.apache.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.3_2.13/0.14.1/iceberg-spark-runtime-3.3_2.13-0.14.1.jar
         spark_jar_package: org.apache.iceberg:iceberg-spark-runtime-3.3_2.13:0.14.1
     nessie_spark_extensions_33_213:
-        group_url: https://search.maven.org/artifact/org.projectnessie/nessie-spark-extensions-3.3_2.13
+        all_versions_url: https://search.maven.org/artifact/org.projectnessie/nessie-spark-extensions-3.3_2.13
         jar_url: https://repo.maven.apache.org/maven2/org/projectnessie/nessie-spark-extensions-3.3_2.13/0.43.0/nessie-spark-extensions-3.3_2.13-0.43.0.jar
         spark_jar_package: org.projectnessie:nessie-spark-extensions-3.3_2.13:0.43.0
     # Spark 3.2 and Scala 2.12:
     iceberg_spark_runtime_32_212:
-        group_url: https://search.maven.org/artifact/org.apache.iceberg/iceberg-spark-runtime-3.2_2.12
+        all_versions_url: https://search.maven.org/artifact/org.apache.iceberg/iceberg-spark-runtime-3.2_2.12
         jar_url: https://repo.maven.apache.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.2_2.12/0.14.1/iceberg-spark-runtime-3.2_2.12-0.14.1.jar
         spark_jar_package: org.apache.iceberg:iceberg-spark-runtime-3.2_2.12:0.14.1
     nessie_spark_extensions_32_212:
-        group_url: https://search.maven.org/artifact/org.projectnessie/nessie-spark-extensions-3.2_2.12
+        all_versions_url: https://search.maven.org/artifact/org.projectnessie/nessie-spark-extensions-3.2_2.12
         jar_url: https://repo.maven.apache.org/maven2/org/projectnessie/nessie-spark-extensions-3.2_2.12/0.43.0/nessie-spark-extensions-3.2_2.12-0.43.0.jar
         spark_jar_package: org.projectnessie:nessie-spark-extensions-3.2_2.12:0.43.0
     # Spark 3.2 and Scala 2.13:
     iceberg_spark_runtime_32_213:
-        group_url: https://search.maven.org/artifact/org.apache.iceberg/iceberg-spark-runtime-3.2_2.13
+        all_versions_url: https://search.maven.org/artifact/org.apache.iceberg/iceberg-spark-runtime-3.2_2.13
         jar_url: https://repo.maven.apache.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.2_2.13/0.14.1/iceberg-spark-runtime-3.2_2.13-0.14.1.jar
         spark_jar_package: org.apache.iceberg:iceberg-spark-runtime-3.2_2.13:0.14.1
     nessie_spark_extensions_32_213:
-        group_url: https://search.maven.org/artifact/org.projectnessie/nessie-spark-extensions-3.2_2.13
+        all_versions_url: https://search.maven.org/artifact/org.projectnessie/nessie-spark-extensions-3.2_2.13
         jar_url: https://repo.maven.apache.org/maven2/org/projectnessie/nessie-spark-extensions-3.2_2.13/0.43.0/nessie-spark-extensions-3.2_2.13-0.43.0.jar
         spark_jar_package: org.projectnessie:nessie-spark-extensions-3.2_2.13:0.43.0    
     # Spark 3.1 and Scala 2.12:
     iceberg_spark_runtime_31_212:
-        group_url: https://search.maven.org/artifact/org.apache.iceberg/iceberg-spark-runtime-3.1_2.12
+        all_versions_url: https://search.maven.org/artifact/org.apache.iceberg/iceberg-spark-runtime-3.1_2.12
         jar_url: https://repo.maven.apache.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.1_2.12/0.14.1/iceberg-spark-runtime-3.1_2.12-0.14.1.jar
         spark_jar_package: org.apache.iceberg:iceberg-spark-runtime-3.1_2.12:0.14.1
     nessie_spark_extensions_31_212:
-        group_url: https://search.maven.org/artifact/org.projectnessie/nessie-spark-extensions-3.1_2.12
+        all_versions_url: https://search.maven.org/artifact/org.projectnessie/nessie-spark-extensions-3.1_2.12
         jar_url: https://repo.maven.apache.org/maven2/org/projectnessie/nessie-spark-extensions-3.1_2.12/0.43.0/nessie-spark-extensions-3.1_2.12-0.43.0.jar
         spark_jar_package: org.projectnessie:nessie-spark-extensions-3.1_2.12:0.43.0
   versions:
