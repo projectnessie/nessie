@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.ext.NessieApiProvider;
+import org.projectnessie.client.ext.NessieClientFactory;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
@@ -46,9 +46,9 @@ class TestNessieJaxRsExtension {
   private static NessieApiV1 api;
 
   @BeforeAll
-  static void setupClient(NessieApiProvider apiProvider) {
+  static void setupClient(NessieClientFactory clientFactory) {
     assertThat(databaseAdapter).isNotNull();
-    api = apiProvider.get();
+    api = clientFactory.make();
   }
 
   private void checkServer() throws NessieNotFoundException {

@@ -42,7 +42,7 @@ import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieUnsupportedMediaTypeException;
 import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
-import org.projectnessie.server.QuarkusNessieUriResolver;
+import org.projectnessie.server.QuarkusNessieClientResolver;
 
 /**
  * Test reported exceptions both for cases when {@code javax.validation} fails (when the Nessie
@@ -51,7 +51,7 @@ import org.projectnessie.server.QuarkusNessieUriResolver;
 @QuarkusTest
 @TestProfile(
     QuarkusTestProfileInmemory.class) // use the QuarkusTestProfileInmemory, as it can be reused
-@ExtendWith(QuarkusNessieUriResolver.class)
+@ExtendWith(QuarkusNessieClientResolver.class)
 class TestNessieError {
 
   private static HttpClient client;

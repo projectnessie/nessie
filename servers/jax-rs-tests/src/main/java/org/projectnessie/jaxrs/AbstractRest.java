@@ -19,11 +19,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Locale;
-import java.util.Objects;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.ext.NessieApiProvider;
+import org.projectnessie.client.ext.NessieClientFactory;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -51,12 +50,12 @@ public abstract class AbstractRest {
   }
 
   @BeforeEach
-  void initApi(NessieApiProvider api) {
-    this.api = Objects.requireNonNull(api.get());
+  void initApi(NessieClientFactory clientFactory) {
+    this.api = clientFactory.make();
   }
 
   public NessieApiV1 getApi() {
-    return Objects.requireNonNull(api, "Nessie API field was not injected.");
+    return api;
   }
 
   @AfterEach

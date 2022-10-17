@@ -22,5 +22,5 @@ import org.projectnessie.jaxrs.AbstractTestRest;
  * Tests need to subclass this class and use @QuarkusIntegrationTest or @QuarkusTest, so that the
  * quarkus context is available to resolve the nessie URI.
  */
-@ExtendWith(QuarkusNessieUriResolver.class)
+@ExtendWith(QuarkusNessieClientResolver.class)
 public abstract class AbstractTestQuarkusRest extends AbstractTestRest {}

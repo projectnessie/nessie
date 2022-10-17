@@ -133,6 +133,15 @@ public class NessieJaxRsExtension extends NessieClientResolver
         || parameterContext.isAnnotated(NessieAccessChecker.class);
   }
 
+  private EnvHolder getEnv(ExtensionContext extensionContext) {
+    EnvHolder env = extensionContext.getStore(NAMESPACE).get(EnvHolder.class, EnvHolder.class);
+    if (env == null) {
+      throw new ParameterResolutionException(
+          "Nessie JaxRs env. is not initialized in " + extensionContext.getUniqueId());
+    }
+    return env;
+  }
+
   @Override
   public Object resolveParameter(
       ParameterContext parameterContext, ExtensionContext extensionContext)
@@ -141,16 +150,12 @@ public class NessieJaxRsExtension extends NessieClientResolver
       return super.resolveParameter(parameterContext, extensionContext);
     }
 
-    EnvHolder env = extensionContext.getStore(NAMESPACE).get(EnvHolder.class, EnvHolder.class);
-    if (env == null) {
-      throw new ParameterResolutionException(
-          "Nessie JaxRs env. is not initialized in " + extensionContext.getUniqueId());
-    }
-
     if (parameterContext.isAnnotated(NessieUri.class)) {
       // Backward compatibility with older (external) tests
-      return findBaseUri(extensionContext);
+      return getBaseUri(extensionContext);
     }
+
+    EnvHolder env = getEnv(extensionContext);
 
     if (parameterContext.isAnnotated(NessieSecurityContext.class)) {
       return (Consumer<SecurityContext>) env::setSecurityContext;
@@ -168,14 +173,8 @@ public class NessieJaxRsExtension extends NessieClientResolver
   }
 
   @Override
-  protected URI findBaseUri(ExtensionContext extensionContext) {
-    EnvHolder env = extensionContext.getStore(NAMESPACE).get(EnvHolder.class, EnvHolder.class);
-    if (env == null) {
-      throw new ParameterResolutionException(
-          "Nessie JaxRs env. is not initialized in " + extensionContext.getUniqueId());
-    }
-
-    return env.jerseyTest.target().getUri();
+  protected URI getBaseUri(ExtensionContext extensionContext) {
+    return getEnv(extensionContext).jerseyTest.target().getUri();
   }
 
   private static class EnvHolder implements CloseableResource {

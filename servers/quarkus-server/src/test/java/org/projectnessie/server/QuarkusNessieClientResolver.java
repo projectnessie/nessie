@@ -20,7 +20,7 @@ import java.util.Objects;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.projectnessie.client.ext.NessieClientResolver;
 
-public class QuarkusNessieUriResolver extends NessieClientResolver {
+public class QuarkusNessieClientResolver extends NessieClientResolver {
 
   private static Integer getQuarkusTestPort() {
     return Objects.requireNonNull(
@@ -29,7 +29,7 @@ public class QuarkusNessieUriResolver extends NessieClientResolver {
   }
 
   @Override
-  protected URI findBaseUri(ExtensionContext extensionContext) {
+  protected URI getBaseUri(ExtensionContext extensionContext) {
     return URI.create(String.format("http://localhost:%d/api/v1", getQuarkusTestPort()));
   }
 }

@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.ext.NessieApiProvider;
+import org.projectnessie.client.ext.NessieClientFactory;
 import org.projectnessie.gc.contents.ContentReference;
 import org.projectnessie.gc.contents.LiveContentSetsRepository;
 import org.projectnessie.gc.contents.inmem.InMemoryPersistenceSpi;
@@ -56,8 +56,8 @@ public class TestIdentifyLiveContents {
   private NessieApiV1 nessieApi;
 
   @BeforeEach
-  public void setUp(NessieApiProvider apiProvider) {
-    nessieApi = apiProvider.get();
+  public void setUp(NessieClientFactory clientFactory) {
+    nessieApi = clientFactory.make();
   }
 
   @AfterEach

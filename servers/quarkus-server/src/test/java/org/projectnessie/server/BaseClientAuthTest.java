@@ -22,18 +22,18 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.ext.NessieApiProvider;
+import org.projectnessie.client.ext.NessieClientFactory;
 
 /** Base class for client-base authentication and authorization tests. */
-@ExtendWith(QuarkusNessieUriResolver.class)
+@ExtendWith(QuarkusNessieClientResolver.class)
 public abstract class BaseClientAuthTest {
 
-  private NessieApiProvider apiProvider;
+  private NessieClientFactory apiProvider;
   private NessieApiV1 api;
   private Consumer<NessieClientBuilder<?>> customizer;
 
   @BeforeEach
-  void setUp(NessieApiProvider apiProvider) {
+  void setUp(NessieClientFactory apiProvider) {
     this.apiProvider = apiProvider;
   }
 
@@ -56,7 +56,7 @@ public abstract class BaseClientAuthTest {
     }
 
     api =
-        apiProvider.get(
+        apiProvider.make(
             builder -> {
               if (customizer != null) {
                 customizer.accept(builder);

@@ -20,7 +20,7 @@ import org.projectnessie.client.NessieClientBuilder;
 /**
  * Interface for customizing the Nessie Client use in tests. This interface can be implemented by
  * the test class (in which case it will be called implicitly by {@link NessieClientResolver}), or
- * its implementation can be passed to {@link NessieApiProvider#get(NessieClientCustomizer)}
+ * its implementation can be passed to {@link NessieClientFactory#make(NessieClientCustomizer)}
  * explicitly.
  */
 @FunctionalInterface

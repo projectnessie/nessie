@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.ext.NessieApiProvider;
+import org.projectnessie.client.ext.NessieClientFactory;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -36,14 +36,14 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 
-@ExtendWith(QuarkusNessieUriResolver.class)
+@ExtendWith(QuarkusNessieClientResolver.class)
 abstract class AbstractTestBasicOperations {
 
   private NessieApiV1 api;
 
   @BeforeEach
-  void setUp(NessieApiProvider apiProvider) {
-    api = apiProvider.get();
+  void setUp(NessieClientFactory clientFactory) {
+    api = clientFactory.make();
   }
 
   @AfterEach

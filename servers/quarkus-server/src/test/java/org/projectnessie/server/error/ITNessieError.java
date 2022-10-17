@@ -24,14 +24,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.ext.NessieApiProvider;
+import org.projectnessie.client.ext.NessieClientFactory;
 import org.projectnessie.error.NessieBadRequestException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
-import org.projectnessie.server.QuarkusNessieUriResolver;
+import org.projectnessie.server.QuarkusNessieClientResolver;
 
 /**
  * Rudimentary version of {@link TestNessieError}, because we cannot dynamically add beans and
@@ -41,14 +41,14 @@ import org.projectnessie.server.QuarkusNessieUriResolver;
 @QuarkusIntegrationTest
 @TestProfile(
     QuarkusTestProfileInmemory.class) // use the QuarkusTestProfileInmemory, as it can be reused
-@ExtendWith(QuarkusNessieUriResolver.class)
+@ExtendWith(QuarkusNessieClientResolver.class)
 public class ITNessieError {
 
   private NessieApiV1 api;
 
   @BeforeEach
-  void init(NessieApiProvider apiProvider) {
-    api = apiProvider.get();
+  void init(NessieClientFactory clientFactory) {
+    api = clientFactory.make();
   }
 
   @Test

@@ -17,6 +17,7 @@ package org.projectnessie.client.ext;
 
 import java.io.Serializable;
 import java.net.URI;
+import javax.annotation.Nonnull;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
@@ -30,18 +31,18 @@ import org.projectnessie.client.http.HttpClientBuilder;
  * concrete subclasses.
  *
  * @see NessieUri
- * @see NessieApiProvider
+ * @see NessieClientFactory
  */
 public abstract class NessieClientResolver implements ParameterResolver {
 
-  protected abstract URI findBaseUri(ExtensionContext extensionContext);
+  protected abstract URI getBaseUri(ExtensionContext extensionContext);
 
   private boolean isNessieUri(ParameterContext parameterContext) {
     return parameterContext.isAnnotated(NessieUri.class);
   }
 
   private boolean isNessieClient(ParameterContext parameterContext) {
-    return parameterContext.getParameter().getType().isAssignableFrom(NessieApiProvider.class);
+    return parameterContext.getParameter().getType().isAssignableFrom(NessieClientFactory.class);
   }
 
   @Override
@@ -56,43 +57,45 @@ public abstract class NessieClientResolver implements ParameterResolver {
       ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
     if (isNessieUri(parameterContext)) {
-      return findBaseUri(extensionContext);
+      return getBaseUri(extensionContext);
     }
 
     if (isNessieClient(parameterContext)) {
-      return makeClient(extensionContext);
+      return clientFactoryForContext(extensionContext);
     }
 
     throw new IllegalStateException("Unsupported parameter: " + parameterContext);
   }
 
-  private NessieApiProvider makeClient(ExtensionContext extensionContext) {
-    URI uri = findBaseUri(extensionContext);
+  private NessieClientFactory clientFactoryForContext(ExtensionContext extensionContext) {
+    URI uri = getBaseUri(extensionContext);
     Object testInstance = extensionContext.getTestInstance().orElse(null);
     if (testInstance instanceof NessieClientCustomizer) {
       NessieClientCustomizer testCustomizer = (NessieClientCustomizer) testInstance;
-      return new ApiProvider(uri) {
+      return new ClientFactory(uri) {
+        @Nonnull
         @Override // Note: this object is not serializable
-        public NessieApiV1 get(NessieClientCustomizer customizer) {
-          return super.get(builder -> customizer.configure(testCustomizer.configure(builder)));
+        public NessieApiV1 make(NessieClientCustomizer customizer) {
+          return super.make(builder -> customizer.configure(testCustomizer.configure(builder)));
         }
       };
     }
 
     // We use a serializable impl. here as a workaround for @QuarkusTest instances, whose parameters
     // are deep-cloned by the Quarkus test extension.
-    return new ApiProvider(uri);
+    return new ClientFactory(uri);
   }
 
-  private static class ApiProvider implements NessieApiProvider, Serializable {
+  private static class ClientFactory implements NessieClientFactory, Serializable {
     private final URI uri;
 
-    private ApiProvider(URI uri) {
+    private ClientFactory(URI uri) {
       this.uri = uri;
     }
 
+    @Nonnull
     @Override
-    public NessieApiV1 get(NessieClientCustomizer customizer) {
+    public NessieApiV1 make(NessieClientCustomizer customizer) {
       return customizer
           .configure(HttpClientBuilder.builder().withUri(uri))
           .build(NessieApiV1.class);

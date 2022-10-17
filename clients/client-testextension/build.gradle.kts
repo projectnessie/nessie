@@ -29,4 +29,5 @@ dependencies {
   api(libs.junit.jupiter.api)
 
   implementation(project(":nessie-client"))
+  implementation(libs.findbugs.jsr305)
 }

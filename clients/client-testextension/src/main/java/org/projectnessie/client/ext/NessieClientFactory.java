@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.ext;
 
+import javax.annotation.Nonnull;
 import org.projectnessie.client.api.NessieApiV1;
 
 /**
@@ -24,11 +25,13 @@ import org.projectnessie.client.api.NessieApiV1;
  * <p>An implementation of this interface will be injected into test method parameters by {@link
  * NessieClientResolver}.
  */
-public interface NessieApiProvider {
+public interface NessieClientFactory {
 
-  default NessieApiV1 get() {
-    return get(builder -> builder);
+  @Nonnull
+  default NessieApiV1 make() {
+    return make(builder -> builder);
   }
 
-  NessieApiV1 get(NessieClientCustomizer customizer);
+  @Nonnull
+  NessieApiV1 make(NessieClientCustomizer customizer);
 }

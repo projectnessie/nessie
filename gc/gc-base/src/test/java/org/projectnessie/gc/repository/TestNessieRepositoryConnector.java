@@ -36,7 +36,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.ext.NessieApiProvider;
+import org.projectnessie.client.ext.NessieClientFactory;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
@@ -73,8 +73,8 @@ public class TestNessieRepositoryConnector {
   private NessieApiV1 nessieApi;
 
   @BeforeEach
-  public void setUp(NessieApiProvider apiProvider) {
-    nessieApi = apiProvider.get();
+  public void setUp(NessieClientFactory clientFactory) {
+    nessieApi = clientFactory.make();
   }
 
   @AfterEach
