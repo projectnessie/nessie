@@ -5,8 +5,6 @@
 
 To access Nessie from a spark cluster make sure the `spark.jars` spark option is set to include
 the 
-[Spark 2.4](https://repo.maven.apache.org/maven2/org/apache/iceberg/iceberg-spark-runtime-{{ versions.spark24 }}/{{ versions.iceberg }}/iceberg-spark-runtime-{{ versions.spark24 }}-{{ versions.iceberg }}.jar) or 
-[Spark 3.0](https://repo.maven.apache.org/maven2/org/apache/iceberg/iceberg-spark-runtime-{{ versions.spark30 }}_{{ versions.scala212 }}/{{ versions.iceberg }}/iceberg-spark-runtime-{{ versions.spark30 }}_{{ versions.scala212 }}-{{ versions.iceberg }}.jar) or 
 [Spark 3.1](https://repo.maven.apache.org/maven2/org/apache/iceberg/iceberg-spark-runtime-{{ versions.spark31 }}_{{ versions.scala212 }}/{{ versions.iceberg }}/iceberg-spark-runtime-{{ versions.spark31 }}_{{ versions.scala212 }}-{{ versions.iceberg }}.jar) or
 [Spark 3.2_2.12](https://repo.maven.apache.org/maven2/org/apache/iceberg/iceberg-spark-runtime-{{ versions.spark32 }}_{{ versions.scala212 }}/{{ versions.iceberg }}/iceberg-spark-runtime-{{ versions.spark32 }}_{{ versions.scala212 }}-{{ versions.iceberg }}.jar) or
 [Spark 3.2_2.13](https://repo.maven.apache.org/maven2/org/apache/iceberg/iceberg-spark-runtime-{{ versions.spark32 }}_{{ versions.scala213 }}/{{ versions.iceberg }}/iceberg-spark-runtime-{{ versions.spark32 }}_{{ versions.scala213 }}-{{ versions.iceberg }}.jar) or
