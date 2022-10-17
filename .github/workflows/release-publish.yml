@@ -134,6 +134,7 @@ jobs:
         echo "QUARKUS_NATIVE_BINARY=servers/quarkus-server/build/nessie-quarkus-${RELEASE_VERSION}-runner" >> ${GITHUB_ENV}
         echo "QUARKUS_UBER_JAR=servers/quarkus-server/build/nessie-quarkus-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
         echo "CLI_UBER_JAR=servers/quarkus-cli/build/nessie-quarkus-cli-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
+        echo "GC_EXEC=gc/gc-shell/build/executable/nessie-gc" >> ${GITHUB_ENV}
         echo "NESSIE_OPENAPI=model/build/nessie-openapi-${RELEASE_VERSION}.yaml" >> ${GITHUB_ENV}
 
         echo "## Successfully released ${RELEASE_VERSION} to Sonatype" >> $GITHUB_STEP_SUMMARY
@@ -242,6 +243,9 @@ jobs:
         java -jar nessie-quarkus-${RELEASE_VERSION}-runner.jar
         \`\`\`
 
+        Nessie GC tool is attached as [\`nessie-gc\`](${GC_EXEC}), which is an executable. Can also be run using `java -jar nessie-gc`, because it is actually a Java archive.
+        Shell completion can be generated from the nessie-gc tool.
+
         The attached [\`nessie-helm-${RELEASE_VERSION}.tgz\`](${Q_HELM_CHART_URL}) is a packaged Helm chart, which can be downloaded and installed via Helm.
         There is also the [Nessie Helm chart repo](https://charts.projectnessie.org/), which can be added and used to install the Nessie Helm chart.
 
@@ -263,6 +267,7 @@ jobs:
           "${QUARKUS_NATIVE_BINARY}" \
           "${QUARKUS_UBER_JAR}" \
           "${CLI_UBER_JAR}" \
+          ${GC_JAR} \
           "${NESSIE_OPENAPI}" \
           "${NESSIE_HELM_CHART}"
 
