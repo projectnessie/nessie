@@ -3,52 +3,26 @@ Spark SQL extensions provide an easy way to execute common Nessie commands via S
 
 ## How to use them
 
+{%- for (sparkver, iceberg_spark_runtime, nessie_spark_extensions) in [
+  ('3.3', artifacts.iceberg_spark_runtime_33_212, artifacts.nessie_spark_extensions_33_212),
+  ('3.2', artifacts.iceberg_spark_runtime_32_212, artifacts.nessie_spark_extensions_32_212),
+  ('3.1', artifacts.iceberg_spark_runtime_31_212, artifacts.nessie_spark_extensions_31_212),
+] %}
 
-### Spark 3.1
+### Spark {{sparkver}}
 
-In order to be able to use Nessie's custom Spark SQL extensions with Spark 3.1.x, one needs to configure
-`org.projectnessie:nessie-spark-extensions-{{ versions.spark31 }}_{{ versions.scala212 }}:{{ versions.java }}` along with `org.apache.iceberg:iceberg-spark-runtime-{{ versions.spark31 }}_{{ versions.scala212 }}:{{ versions.iceberg }}`.
-
-Here's an example of how this is done when starting the `spark-sql` shell:
-
-```
-bin/spark-sql 
-  --packages "org.apache.iceberg:iceberg-spark-runtime-{{ versions.spark31 }}_{{ versions.scala212 }}:{{ versions.iceberg }},org.projectnessie:nessie-spark-extensions-{{ versions.spark31 }}_{{ versions.scala212 }}:{{ versions.java }}"
-  --conf spark.sql.extensions="org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSparkSessionExtensions"
-  --conf <other settings>
-```
-
-### Spark 3.2
-
-In order to be able to use Nessie's custom Spark SQL extensions with Spark 3.2.x, one needs to configure
-`org.projectnessie:nessie-spark-extensions-{{ versions.spark32 }}_{{ versions.scala212 }}:{{ versions.java }}` along with `org.apache.iceberg:iceberg-spark-runtime-{{ versions.spark32 }}_{{ versions.scala212 }}:{{ versions.iceberg }}`.
-
-Artifacts are available that support for both scala 2.12 and 2.13.
+In order to be able to use Nessie's custom Spark SQL extensions with Spark {{sparkver}}.x, one needs to configure
+`{{iceberg_spark_runtime.spark_jar_package}}` along with `{{nessie_spark_extensions.spark_jar_package}}`.
 
 Here's an example of how this is done when starting the `spark-sql` shell:
 
-```
+``` sh
 bin/spark-sql 
-  --packages "org.apache.iceberg:iceberg-spark-runtime-{{ versions.spark32 }}_{{ versions.scala212 }}:{{ versions.iceberg }},org.projectnessie:nessie-spark-extensions-{{ versions.spark32 }}_{{ versions.scala212 }}:{{ versions.java }}"
+  --packages "{{iceberg_spark_runtime.spark_jar_package}},{{nessie_spark_extensions.spark_jar_package}}"
   --conf spark.sql.extensions="org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSparkSessionExtensions"
   --conf <other settings>
 ```
-
-### Spark 3.3
-
-In order to be able to use Nessie's custom Spark SQL extensions with Spark 3.3.x, one needs to configure
-`org.projectnessie:nessie-spark-extensions-{{ versions.spark33 }}_{{ versions.scala212 }}:{{ versions.java }}` along with `org.apache.iceberg:iceberg-spark-runtime-{{ versions.spark33 }}_{{ versions.scala212 }}:{{ versions.iceberg }}`.
-
-Artifacts are available that support for both scala 2.12 and 2.13.
-
-Here's an example of how this is done when starting the `spark-sql` shell:
-
-```
-bin/spark-sql 
-  --packages "org.apache.iceberg:iceberg-spark-runtime-{{ versions.spark33 }}_{{ versions.scala212 }}:{{ versions.iceberg }},org.projectnessie:nessie-spark-extensions-{{ versions.spark33 }}_{{ versions.scala212 }}:{{ versions.java }}"
-  --conf spark.sql.extensions="org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSparkSessionExtensions"
-  --conf <other settings>
-```
+{%- endfor %}
 
 Additional configuration details can be found in the [Spark via Iceberg](iceberg/spark.md) docs.
 
