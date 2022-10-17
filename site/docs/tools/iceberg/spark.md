@@ -133,7 +133,7 @@ auth_type = "NONE"
     conf.set("spark.jars.packages",
             "org.apache.iceberg:iceberg-spark-runtime-{{ versions.spark32 }}_{{ versions.scala212 }}:{{ versions.iceberg }},org.projectnessie:nessie-spark-extensions-{{ versions.spark32 }}_{{ versions.scala212 }}:{{ versions.java }}")
         .set("spark.sql.extensions", 
-            "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSpark32SessionExtensions")
+            "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSparkSessionExtensions")
         .set("spark.sql.catalog.nessie.uri", url)
         .set("spark.sql.catalog.nessie.ref", ref)
         .set("spark.sql.catalog.nessie.authentication.type", authType)
