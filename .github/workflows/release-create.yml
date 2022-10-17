@@ -40,10 +40,10 @@ on:
         description: 'The branch name the release from, leave empty to release from latest commit on main.'
         required: false
       bumpType:
-        description: 'Optional: bump patch, minor or major version (`patch`, `minor`, `major`). Default is `none` to release the current in-tree SNAPSHOT version.'
+        description: 'Optional: bump patch, minor or major version (`patch`, `minor`, `major`). Default is `minor`.'
         required: true
         type: string
-        default: "none"
+        default: "minor"
 
 jobs:
   create-release:
