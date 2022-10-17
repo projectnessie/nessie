@@ -75,7 +75,7 @@ The Nessie Catalog needs the following parameters set in the Spark/Hadoop config
 
 These are set as follows in code (or through other methods as described [here](https://spark.apache.org/docs/latest/configuration.html))
 
-In these examples, `spark.jars.packages` is configured for Spark 3.2.  Consult the table above to find the version of that correspond to your Spark deployment.
+In these examples, `spark.jars.packages` is configured for Spark 3.3.x.  Consult the table above to find the version of that correspond to your Spark deployment.
 
 === "Java"
 ``` java
