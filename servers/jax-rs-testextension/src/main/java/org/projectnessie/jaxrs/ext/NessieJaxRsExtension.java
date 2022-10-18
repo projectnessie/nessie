@@ -86,6 +86,15 @@ public class NessieJaxRsExtension extends NessieClientResolver
     this.databaseAdapterSupplier = databaseAdapterSupplier;
   }
 
+  private EnvHolder getEnv(ExtensionContext extensionContext) {
+    EnvHolder env = extensionContext.getStore(NAMESPACE).get(EnvHolder.class, EnvHolder.class);
+    if (env == null) {
+      throw new ParameterResolutionException(
+          "Nessie JaxRs env. is not initialized in " + extensionContext.getUniqueId());
+    }
+    return env;
+  }
+
   @Override
   public void beforeAll(ExtensionContext extensionContext) {
     // Put EnvHolder into the top-most context handled by this exception. Nested contexts will reuse
@@ -107,20 +116,17 @@ public class NessieJaxRsExtension extends NessieClientResolver
 
   @Override
   public void afterEach(ExtensionContext extensionContext) {
-    EnvHolder env = extensionContext.getStore(NAMESPACE).get(EnvHolder.class, EnvHolder.class);
-    env.reset();
+    getEnv(extensionContext).reset();
   }
 
   @Override
   public void afterTestExecution(ExtensionContext extensionContext) {
-    EnvHolder env = extensionContext.getStore(NAMESPACE).get(EnvHolder.class, EnvHolder.class);
-    env.reset();
+    getEnv(extensionContext).reset();
   }
 
   @Override
   public void beforeEach(ExtensionContext extensionContext) {
-    EnvHolder env = extensionContext.getStore(NAMESPACE).get(EnvHolder.class, EnvHolder.class);
-    env.reset();
+    getEnv(extensionContext).reset();
   }
 
   @Override
@@ -131,15 +137,6 @@ public class NessieJaxRsExtension extends NessieClientResolver
         || parameterContext.isAnnotated(NessieUri.class)
         || parameterContext.isAnnotated(NessieSecurityContext.class)
         || parameterContext.isAnnotated(NessieAccessChecker.class);
-  }
-
-  private EnvHolder getEnv(ExtensionContext extensionContext) {
-    EnvHolder env = extensionContext.getStore(NAMESPACE).get(EnvHolder.class, EnvHolder.class);
-    if (env == null) {
-      throw new ParameterResolutionException(
-          "Nessie JaxRs env. is not initialized in " + extensionContext.getUniqueId());
-    }
-    return env;
   }
 
   @Override
