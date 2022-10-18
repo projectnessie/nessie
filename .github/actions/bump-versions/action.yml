@@ -14,7 +14,7 @@ runs:
         NEW_VERSION: ${{ inputs.new-version }}
       run: |
         # bump2version 1.0.1 has a bug: https://github.com/c4urself/bump2version/issues/214
-        if [[ "$(cd python/ ; python -c 'import pynessie; print(pynessie.__version__)')" != ${NEW_VERSION} ]] ; then
+        if [[ "$(python -c 'import pynessie; print(pynessie.__version__)')" != ${NEW_VERSION} ]] ; then
           bump2version --no-commit --no-tag --allow-dirty --new-version ${NEW_VERSION} minor
           # Call into pynessie to ensure bump2version didn't mess up anything
           echo "pynessie at release-version $(python -c 'import pynessie; print(pynessie.__version__)')"

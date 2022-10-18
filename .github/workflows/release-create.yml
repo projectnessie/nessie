@@ -211,7 +211,8 @@ jobs:
 
     - name: Get next patch version
       run: |
-        echo "NEXT_VERSION=$(cat version.txt)" >> ${GITHUB_ENV}
+        NEXT_VERSION="$(cat version.txt)"
+        echo "NEXT_VERSION=${NEXT_VERSION}" >> ${GITHUB_ENV}
         echo "NEXT_VERSION_NO_SNAPSHOT=${NEXT_VERSION%-SNAPSHOT}" >> ${GITHUB_ENV}
 
     # Record the next development iteration in Git
