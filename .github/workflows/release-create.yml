@@ -95,12 +95,14 @@ jobs:
         
         Version information right before the Git release tag and commit:
 
-        | **Nessie release version** | ${RELEASE_VERSION}        | 
-        | **Git tag name**           | \`${GIT_TAG}\`            | 
-        | **Previous Git tag**       | \`${LAST_TAG}\`           | 
-        | **Release from branch**    | ${RELEASE_FROM}           | 
-        | **Bump type**              | ${BUMP_TYPE}              |
-        | Before release Git HEAD    | \`$(git rev-parse HEAD)\` |
+        | Name | Value |
+        | --- | --- |
+        | Nessie release version  | ${RELEASE_VERSION}            | 
+        | Git tag name            | \`nessie-${RELEASE_VERSION}\` | 
+        | Previous Git tag        | \`${LAST_TAG}\`               | 
+        | Release from branch     | ${RELEASE_FROM}               | 
+        | Bump type               | ${BUMP_TYPE}                  |
+        | Before release Git HEAD | \`$(git rev-parse HEAD)\`     |
         !
 
     - name: Update .md files referencing latest Nessie version
@@ -195,12 +197,14 @@ jobs:
         
         Version information after the Git release tag:
         
-        | **Nessie release version** | ${RELEASE_VERSION}        | 
-        | **Git tag name**           | \`${GIT_TAG}\`\           | 
-        | **Previous Git tag**       | \`${LAST_TAG}\`           | 
-        | **Release from branch**    | ${RELEASE_FROM}           | 
-        | **Bump type**              | ${BUMP_TYPE}              |
-        | Release Git HEAD           | \`$(git rev-parse HEAD)\` |
+        | Name | Value |
+        | --- | --- |
+        | Nessie release version | ${RELEASE_VERSION}        | 
+        | Git tag name           | \`${GIT_TAG}\`\           | 
+        | Previous Git tag       | \`${LAST_TAG}\`           | 
+        | Release from branch    | ${RELEASE_FROM}           | 
+        | Bump type              | ${BUMP_TYPE}              |
+        | Release Git HEAD       | \`$(git rev-parse HEAD)\` |
         !
 
     # Bump to the next patch version as a SNAPSHOT
@@ -215,24 +219,26 @@ jobs:
         echo "NEXT_VERSION=${NEXT_VERSION}" >> ${GITHUB_ENV}
         echo "NEXT_VERSION_NO_SNAPSHOT=${NEXT_VERSION%-SNAPSHOT}" >> ${GITHUB_ENV}
 
-    # Record the next development iteration in Git
-    - name: Record next development version in Git
-      run: git commit -a -m "[release] next development iteration ${NEXT_VERSION}"
-
     - name: Next version information
       run: |
         cat <<! >> $GITHUB_STEP_SUMMARY
         ## Next development version information
 
-        | **Nessie development version**   | ${NEXT_VERSION}           |
-        | **\`version.txt\` content**      | \`$(cat version.txt)\`    |
-        | Git HEAD                         | \`$(git rev-parse HEAD)\` |
+        | Name | Value |
+        | --- | --- |
+        | Nessie development version | ${NEXT_VERSION}           |
+        | \`version.txt\` content    | \`$(cat version.txt)\`    |
+        | Git HEAD                   | \`$(git rev-parse HEAD)\` |
         !
 
     - name: Bump versions for Python, site/, helm and UI
       uses: ./.github/actions/bump-versions
       with:
         new-version: ${{ env.NEXT_VERSION_NO_SNAPSHOT }}
+      
+      # Record the next development iteration in Git
+    - name: Record next development version in Git
+      run: git commit -a -m "[release] next development iteration ${NEXT_VERSION}"
 
     # Push the 2 git commits and git tag. If this one fails, some other commit was pushed to the
     # 'main' branch and break the linear history for the Nessie git repo.
