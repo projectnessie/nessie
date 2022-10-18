@@ -76,6 +76,7 @@ jobs:
     - name: Bump to version
       uses: gradle/gradle-build-action@v2
       with:
+        cache-read-only: true
         arguments: :bumpVersion --bumpType ${{ env.BUMP_TYPE }}
 
     - name: Get bumped version information
