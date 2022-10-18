@@ -42,6 +42,7 @@ jobs:
     - name: Gradle / integration test native
       uses: gradle/gradle-build-action@v2
       with:
+        cache-read-only: true
         arguments: |
           --no-watch-fs
           :nessie-quarkus:quarkusBuild

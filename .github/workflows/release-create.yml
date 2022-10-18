@@ -79,6 +79,7 @@ jobs:
     - name: Bump to release version
       uses: gradle/gradle-build-action@v2
       with:
+        cache-read-only: true
         arguments: :bumpVersion --bumpType ${{ env.BUMP_TYPE }} --bumpToRelease
 
     - name: Get release version
