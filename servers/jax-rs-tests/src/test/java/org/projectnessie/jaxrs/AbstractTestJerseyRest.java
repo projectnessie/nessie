@@ -15,13 +15,9 @@
  */
 package org.projectnessie.jaxrs;
 
-import java.net.URI;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
-import org.projectnessie.jaxrs.ext.NessieUri;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.tests.extension.DatabaseAdapterExtension;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
@@ -35,16 +31,4 @@ abstract class AbstractTestJerseyRest extends AbstractRestSecurityContext {
   @RegisterExtension
   static org.projectnessie.jaxrs.ext.NessieJaxRsExtension server =
       new NessieJaxRsExtension(() -> databaseAdapter);
-
-  private static URI nessieUri;
-
-  @BeforeAll
-  static void setNessieUri(@NessieUri URI uri) {
-    nessieUri = uri;
-  }
-
-  @BeforeEach
-  public void setUp() {
-    initApi(nessieUri);
-  }
 }

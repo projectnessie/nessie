@@ -15,12 +15,13 @@
  */
 package org.projectnessie.jaxrs;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.client.http.impl.HttpUtils.HEADER_ACCEPT;
 
-import java.net.URI;
-import org.projectnessie.client.api.NessieApiV1;
+import org.junit.jupiter.api.AfterEach;
+import org.projectnessie.client.NessieClientBuilder;
+import org.projectnessie.client.ext.NessieClientCustomizer;
 import org.projectnessie.client.http.HttpAuthentication;
-import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.client.http.RequestFilter;
 import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.inmem.InmemoryTestConnectionProviderSource;
@@ -43,25 +44,31 @@ import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabas
  */
 @NessieDbAdapterName(InmemoryDatabaseAdapterFactory.NAME)
 @NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
-class TestJerseyRestNaiveClientInMemory extends AbstractTestJerseyRest {
+class TestJerseyRestNaiveClientInMemory extends AbstractTestJerseyRest
+    implements NessieClientCustomizer {
+
+  private boolean headersProcessed;
 
   @Override
-  protected void initApi(URI nessieApiUri) {
+  public NessieClientBuilder<?> configure(NessieClientBuilder<?> builder) {
     // Intentionally remove the `Accept` header from requests.
     // Service endpoints should declare the content type for their return values,
     // which should allow the Web Container to properly format output even in the absence
     // of `Accept` HTTP headers.
-    RequestFilter noAcceptFilter = context -> context.removeHeader(HEADER_ACCEPT);
+    headersProcessed = false;
+    RequestFilter noAcceptFilter =
+        context -> {
+          headersProcessed = true;
+          context.removeHeader(HEADER_ACCEPT);
+        };
 
-    NessieApiV1 api =
-        HttpClientBuilder.builder()
-            // Abuse the authentication callback a bit to inject the noAcceptFilter into
-            // the java client.
-            .withAuthentication(
-                (HttpAuthentication) client -> client.addRequestFilter(noAcceptFilter))
-            .withUri(nessieApiUri)
-            .build(NessieApiV1.class);
+    // Abuse the authentication callback a bit to inject the noAcceptFilter into the java client.
+    return builder.withAuthentication(
+        (HttpAuthentication) client -> client.addRequestFilter(noAcceptFilter));
+  }
 
-    super.initApi(api);
+  @AfterEach
+  void ensureHeadersProcessed() {
+    assertThat(headersProcessed).isTrue();
   }
 }

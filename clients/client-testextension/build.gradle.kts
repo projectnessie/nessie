@@ -22,25 +22,12 @@ plugins {
   `nessie-conventions`
 }
 
-extra["maven.name"] = "Nessie - JUnit Jupyter Test Extension"
-
-description = "JUnit Jupyter Extension to run tests against an \"embedded\" Nessie instance."
+extra["maven.name"] = "Nessie - JUnit Jupyter Test Extension for Client-Side Tests"
 
 dependencies {
-  api(project(":nessie-jaxrs"))
-  api(project(":nessie-client-testextension"))
-
   api(platform(libs.junit.bom))
   api(libs.junit.jupiter.api)
 
-  api(libs.slf4j.api)
-  api(libs.assertj.core)
-
-  compileOnly(libs.microprofile.openapi)
-
-  testCompileOnly(libs.microprofile.openapi)
-
-  testImplementation(platform(libs.junit.bom))
-  testImplementation(libs.bundles.junit.testing)
-  testRuntimeOnly(libs.junit.jupiter.engine)
+  implementation(project(":nessie-client"))
+  implementation(libs.findbugs.jsr305)
 }

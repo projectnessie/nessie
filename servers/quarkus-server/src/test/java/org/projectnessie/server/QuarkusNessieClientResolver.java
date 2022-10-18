@@ -15,12 +15,21 @@
  */
 package org.projectnessie.server;
 
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.projectnessie.jaxrs.AbstractTestRest;
+import java.net.URI;
+import java.util.Objects;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.projectnessie.client.ext.NessieClientResolver;
 
-/**
- * Tests need to subclass this class and use @QuarkusIntegrationTest or @QuarkusTest, so that the
- * quarkus context is available to resolve the nessie URI.
- */
-@ExtendWith(QuarkusNessieClientResolver.class)
-public abstract class AbstractTestQuarkusRest extends AbstractTestRest {}
+public class QuarkusNessieClientResolver extends NessieClientResolver {
+
+  private static Integer getQuarkusTestPort() {
+    return Objects.requireNonNull(
+        Integer.getInteger("quarkus.http.test-port"),
+        "System property not set correctly: quarkus.http.test-port");
+  }
+
+  @Override
+  protected URI getBaseUri(ExtensionContext extensionContext) {
+    return URI.create(String.format("http://localhost:%d/api/v1", getQuarkusTestPort()));
+  }
+}

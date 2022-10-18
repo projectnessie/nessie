@@ -17,14 +17,13 @@ package org.projectnessie.jaxrs.ext;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.net.URI;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.http.HttpClientBuilder;
+import org.projectnessie.client.ext.NessieClientFactory;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
@@ -47,9 +46,9 @@ class TestNessieJaxRsExtension {
   private static NessieApiV1 api;
 
   @BeforeAll
-  static void setupClient(@NessieUri URI uri) {
+  static void setupClient(NessieClientFactory clientFactory) {
     assertThat(databaseAdapter).isNotNull();
-    api = HttpClientBuilder.builder().withUri(uri).build(NessieApiV1.class);
+    api = clientFactory.make();
   }
 
   private void checkServer() throws NessieNotFoundException {

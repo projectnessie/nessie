@@ -27,6 +27,7 @@ description = "Artifact for REST-API tests, includes Glassfish/Jersey/Weld imple
 
 dependencies {
   implementation(project(":nessie-client"))
+  implementation(project(":nessie-client-testextension"))
   implementation(libs.guava)
   api(libs.rest.assured)
   implementation(libs.findbugs.jsr305)

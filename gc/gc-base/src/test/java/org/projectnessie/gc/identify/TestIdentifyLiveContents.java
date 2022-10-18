@@ -17,24 +17,21 @@ package org.projectnessie.gc.identify;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.net.URI;
 import java.time.Instant;
 import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.http.HttpClientBuilder;
+import org.projectnessie.client.ext.NessieClientFactory;
 import org.projectnessie.gc.contents.ContentReference;
 import org.projectnessie.gc.contents.LiveContentSetsRepository;
 import org.projectnessie.gc.contents.inmem.InMemoryPersistenceSpi;
 import org.projectnessie.gc.repository.NessieRepositoryConnector;
 import org.projectnessie.gc.repository.RepositoryConnector;
 import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
-import org.projectnessie.jaxrs.ext.NessieUri;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
@@ -56,18 +53,11 @@ public class TestIdentifyLiveContents {
   static org.projectnessie.jaxrs.ext.NessieJaxRsExtension server =
       new NessieJaxRsExtension(() -> databaseAdapter);
 
-  private static URI nessieUri;
-
-  @BeforeAll
-  static void setNessieUri(@NessieUri URI uri) {
-    nessieUri = uri;
-  }
-
   private NessieApiV1 nessieApi;
 
   @BeforeEach
-  public void setUp() {
-    nessieApi = HttpClientBuilder.builder().withUri(nessieUri).build(NessieApiV1.class);
+  public void setUp(NessieClientFactory clientFactory) {
+    nessieApi = clientFactory.make();
   }
 
   @AfterEach

@@ -24,8 +24,11 @@ import java.lang.annotation.Target;
 /**
  * Annotation for JUnit5 method parameters that need a URI to the Nessie server managed by {@link
  * NessieJaxRsExtension}.
+ *
+ * @deprecated Use {@link org.projectnessie.client.ext.NessieUri} instead.
  */
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
+@Deprecated
 public @interface NessieUri {}
