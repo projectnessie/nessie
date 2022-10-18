@@ -76,7 +76,7 @@ jobs:
     - name: Bump to version
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: :bumpVersion --bumpType ${BUMP_TYPE}
+        arguments: :bumpVersion --bumpType ${{ env.BUMP_TYPE }}
 
     - name: Get bumped version information
       run: |
