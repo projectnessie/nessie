@@ -2,6 +2,12 @@
 History
 =======
 
+0.44.0 (2022-10-18)
+-------------------
+
+* See release notes and changelog on GitHub: https://github.com/projectnessie/nessie/releases/tag/nessie-0.44.0
+* Upgrade desert to 2022.9.22 (#5345)
+
 0.43.0 (2022-09-15)
 -------------------
 

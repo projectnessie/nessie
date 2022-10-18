@@ -2,6 +2,62 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.44.0 Release (October 18, 2022)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.44.0).
+
+* Ninja: fix create-release WF
+* Ninja: fix GH env reference
+* Update README mentioning Iceberg 1.0 (#5384)
+* Add Dan + Vladimir to devs list (#5381)
+* GH release WF: default to "minor" version bump (#5380)
+* GH release WF: Fix wrong task name (#5379)
+* Automatically update release text files (#5377)
+* GH release WF - fix log exclusion + log filter for rel-notes (#5378)
+* Nessie GC: Docs (#5209)
+* Nessie GC: Command line tool (#5227)
+* Nessie GC: Iceberg functionality (#5207)
+* Avoid direct dependency on iceberg-bundled-guava (#5366)
+* quarkus-server tests use dynamic port from env (#5352)
+* Fix missing placeholder for Preconditons.checkState (#5360)
+* fix GH workflows still mentioning maven (#5353)
+* Remove httpClient param from AbstractRest.init (#5354)
+* Update pretty-ms to 8.x (#5341)
+* DynamoDB related test changes (#5338)
+* Split unsquashed merge tests into dedicated test methods (#5328)
+* Update testing-library-react to 13.x (#5334)
+* Bump actions/checkout from v3 to v3.1.0 (#5335)
+* Update material-ui to mui 5.x.x (#5326)
+* nessie-client/test: compress responses for all relevant HTTP methods (#5323)
+* Fix micrometer path replacement patterns (#5321)
+* Renovate: labels for java/javascript/python (#5318)
+* Revert protobuf to 3.21.6 (#5317)
+* Renovate: limit to 2 PRs per hour (#5319)
+* Isolate http-level test from java client-level tests (#5314)
+* Skip newer-java workflow on forks (#5294)
+* Nessie client tests: Replace JDK's HTTP server w/ Jetty (#5285)
+* Move internal classes of the Nessie HTTP client (#5286)
+* GH/WF: Use `temurin` instead of 'zulu` (#5289)
+* Nessie-client tests: do not compile w/ older Jackson versions (#5287)
+* Test Nessie client with Java 8 (#5284)
+* Integrate Jackson-version tests into Gradle build (#5279)
+* Migrate to Gradle version catalogs (#5167)
+* Unify Postgres container version declaration for tests
+* Migrate from dependabot to renovate (#5166)
+* Testing pre-requisites for Nessie GC: Two S3 testing projects (#5142)
+* Fix iceberg verison on web site (#5222)
+* Java 19 testing (#5221)
+* Automatic patch releases (#5214)
+* Unsupport 0.30.x versions (#5212)
+* WF: Remove Maven part (#5213)
+* Nessie GC: JDBC Live-Set-Repository (#5208)
+* Allow Hadoop Spark config in tests (#5206)
+* Nessie GC: mark & sweep (`gc-base` module only) (#5144)
+* Slight build scripts change for Java11+ target compat (#5203)
+* Fix test failure caused by #5147 (#5204)
+* No longer write ref-log entries for commit/merge/transplant (#5147)
+* Schedule dependabot for npm + pip less frequently (#5201)
+
 ## 0.43.0 Release (September 15, 2022)
 
 **Rolling upgrades from versions before 0.40.0 are not supported!**
