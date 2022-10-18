@@ -1,0 +1,459 @@
+/*
+ * Copyright (C) 2022 Dremio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.projectnessie.versioned.storage.commontests;
+
+import static com.google.common.collect.Lists.newArrayList;
+import static com.google.protobuf.ByteString.copyFromUtf8;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
+import static java.util.stream.IntStream.rangeClosed;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
+import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_COMMIT_TIMEOUT_MILLIS;
+import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
+import static org.projectnessie.versioned.storage.common.logic.InternalRef.REF_REPO;
+import static org.projectnessie.versioned.storage.common.logic.InternalRef.allInternalRefs;
+import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
+import static org.projectnessie.versioned.storage.common.logic.PagingToken.emptyPagingToken;
+import static org.projectnessie.versioned.storage.common.logic.PagingToken.pagingToken;
+import static org.projectnessie.versioned.storage.common.logic.ReferencesQuery.referencesQuery;
+import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
+import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
+import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
+import static org.projectnessie.versioned.storage.common.persist.Reference.INTERNAL_PREFIX;
+import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
+import org.projectnessie.versioned.storage.common.exceptions.RefConditionFailedException;
+import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundException;
+import org.projectnessie.versioned.storage.common.exceptions.RetryTimeoutException;
+import org.projectnessie.versioned.storage.common.logic.InternalRef;
+import org.projectnessie.versioned.storage.common.logic.PagedResult;
+import org.projectnessie.versioned.storage.common.logic.PagingToken;
+import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
+import org.projectnessie.versioned.storage.common.objtypes.CommitType;
+import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.testextension.NessiePersist;
+import org.projectnessie.versioned.storage.testextension.NessieStoreConfig;
+import org.projectnessie.versioned.storage.testextension.PersistExtension;
+
+/** {@link ReferenceLogic} related tests to be run against every {@link Persist} implementation. */
+@ExtendWith({PersistExtension.class, SoftAssertionsExtension.class})
+public class AbstractReferenceLogicTests {
+  @InjectSoftAssertions protected SoftAssertions soft;
+
+  @NessiePersist protected Persist persist;
+
+  @Test
+  public void internalReferencesNotVisible() {
+    ReferenceLogic refLogic = referenceLogic(persist);
+
+    String[] intNames = allInternalRefs().stream().map(InternalRef::name).toArray(String[]::new);
+
+    soft.assertThat(persist.findReferences(intNames)).hasSize(intNames.length).doesNotContainNull();
+
+    soft.assertThat(refLogic.getReferences(asList(intNames)))
+        .hasSize(intNames.length)
+        .containsOnlyNulls();
+  }
+
+  @Test
+  public void internalRefsCannotBeManaged() {
+    ReferenceLogic refLogic = referenceLogic(persist);
+    ObjId initialPointer = randomObjId();
+
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(() -> refLogic.createReference(INTERNAL_PREFIX, initialPointer));
+
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(() -> refLogic.deleteReference(REF_REPO.name(), randomObjId()));
+
+    Reference refRefs = persist.findReference(REF_REPO.name());
+
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(() -> refLogic.assignReference(refRefs, initialPointer));
+    soft.assertThat(persist.findReference(REF_REPO.name())).isEqualTo(refRefs);
+  }
+
+  @Test
+  public void createDeleteGoodCase() throws Exception {
+    ReferenceLogic refLogic = referenceLogic(persist);
+    ObjId initialPointer = randomObjId();
+    String refName = "refs/foo/bar";
+
+    Reference reference = refLogic.createReference(refName, initialPointer);
+    soft.assertThat(reference).isEqualTo(reference(refName, initialPointer, false));
+
+    soft.assertThatThrownBy(() -> refLogic.createReference(refName, initialPointer))
+        .isInstanceOf(RefAlreadyExistsException.class);
+
+    soft.assertThat(refLogic.getReferences(singletonList(refName))).containsExactly(reference);
+
+    soft.assertThatCode(() -> refLogic.deleteReference(refName, initialPointer))
+        .doesNotThrowAnyException();
+
+    soft.assertThat(refLogic.getReferences(singletonList(refName))).hasSize(1).containsOnlyNulls();
+
+    soft.assertThat(
+            newArrayList(
+                commitLogic(persist)
+                    .commitLog(commitLogQuery(persist.findReference(REF_REPO.name()).pointer()))))
+        .allMatch(c -> c.commitType() == CommitType.INTERNAL);
+  }
+
+  @Test
+  public void assign() throws Exception {
+    ReferenceLogic refLogic = referenceLogic(persist);
+    Reference ref = reference("foo", randomObjId(), false);
+
+    persist.addReference(ref);
+
+    ObjId to = objIdFromString("1234");
+    Reference refTo = reference("foo", to, false);
+
+    soft.assertThat(refLogic.assignReference(ref, to)).isEqualTo(refTo);
+
+    Reference notExists = reference("not-exists", randomObjId(), false);
+    soft.assertThatThrownBy(() -> refLogic.assignReference(notExists, randomObjId()))
+        .isInstanceOf(RefNotFoundException.class);
+
+    soft.assertThat(persist.findReference("foo")).isEqualTo(refTo);
+    soft.assertThat(refLogic.getReferences(singletonList("foo"))).containsExactly(refTo);
+
+    soft.assertThat(
+            newArrayList(
+                commitLogic(persist)
+                    .commitLog(commitLogQuery(persist.findReference(REF_REPO.name()).pointer()))))
+        .allMatch(c -> c.commitType() == CommitType.INTERNAL);
+  }
+
+  @Test
+  public void deleteNonExisting() {
+    ReferenceLogic refLogic = referenceLogic(persist);
+
+    Reference notExists = reference("not-exists", randomObjId(), false);
+    soft.assertThatThrownBy(() -> refLogic.deleteReference(notExists.name(), notExists.pointer()))
+        .isInstanceOf(RefNotFoundException.class);
+  }
+
+  @Test
+  public void getSingle() throws Exception {
+    ReferenceLogic refLogic = referenceLogic(persist);
+    ObjId initialPointer = objIdFromString("0000");
+    String refName = "refs/foo/bar";
+    Reference ref = reference(refName, initialPointer, false);
+
+    soft.assertThat(refLogic.createReference(refName, initialPointer)).isEqualTo(ref);
+    soft.assertThat(refLogic.getReference(refName)).isEqualTo(ref);
+
+    String notThere = "refs/heads/not_there";
+    soft.assertThatThrownBy(() -> refLogic.getReference(notThere))
+        .isInstanceOf(RefNotFoundException.class)
+        .hasMessage("Reference " + notThere + " does not exist")
+        .asInstanceOf(type(RefNotFoundException.class))
+        .extracting(RefNotFoundException::reference)
+        .isNull();
+
+    soft.assertThat(
+            newArrayList(
+                commitLogic(persist)
+                    .commitLog(commitLogQuery(persist.findReference(REF_REPO.name()).pointer()))))
+        .allMatch(c -> c.commitType() == CommitType.INTERNAL);
+  }
+
+  /**
+   * Verifies that commit-retries during {@code ReferenceLogicImpl#createReference(String, ObjId)}
+   * work.
+   */
+  @Test
+  public void createWithCommitRetry(
+      @NessieStoreConfig(name = CONFIG_COMMIT_TIMEOUT_MILLIS, value = "300000") @NessiePersist
+          Persist persist)
+      throws Exception {
+    Persist persistSpy = spy(persist);
+    ReferenceLogic refLogic = referenceLogic(persist);
+
+    ObjId initialPointer = randomObjId();
+    String refName = "refs/foo/bar";
+
+    singleCommitRetry(persistSpy);
+
+    Reference reference = refLogic.createReference(refName, initialPointer);
+    soft.assertThat(reference).isEqualTo(reference(refName, initialPointer, false));
+
+    soft.assertThat(persist.findReference(refName)).isEqualTo(reference);
+
+    soft.assertThat(
+            newArrayList(
+                commitLogic(persist)
+                    .commitLog(commitLogQuery(persist.findReference(REF_REPO.name()).pointer()))))
+        .allMatch(c -> c.commitType() == CommitType.INTERNAL);
+  }
+
+  @Test
+  public void deleteRecoverFromMarkDeletedWithCommitRetry(
+      @NessieStoreConfig(name = CONFIG_COMMIT_TIMEOUT_MILLIS, value = "300000") @NessiePersist
+          Persist persist)
+      throws Exception {
+    Persist persistSpy = spy(persist);
+    ReferenceLogic refLogic = referenceLogic(persist);
+    ObjId initialPointer = randomObjId();
+    String refName = "refs/foo/bar";
+
+    Reference reference = refLogic.createReference(refName, initialPointer);
+    soft.assertThat(reference).isEqualTo(reference(refName, initialPointer, false));
+
+    Reference deleted = persistSpy.markReferenceAsDeleted(reference);
+    soft.assertThat(persistSpy.findReference(refName)).isEqualTo(deleted);
+    soft.assertThat(deleted.deleted()).isTrue();
+
+    singleCommitRetry(persistSpy);
+
+    soft.assertThat(refLogic.getReferences(singletonList(refName))).hasSize(1).containsOnlyNulls();
+
+    soft.assertThat(persistSpy.findReference(refName)).isNull();
+
+    soft.assertThat(
+            newArrayList(
+                commitLogic(persist)
+                    .commitLog(commitLogQuery(persist.findReference(REF_REPO.name()).pointer()))))
+        .allMatch(c -> c.commitType() == CommitType.INTERNAL);
+  }
+
+  protected static void singleCommitRetry(Persist persistSpy) {
+    // Force one retry-exception during ReferenceLogic.commitCreateReference() commitRetry()-loop
+    try {
+      doThrow(new RefConditionFailedException(reference(REF_REPO.name(), EMPTY_OBJ_ID, false)))
+          .doCallRealMethod()
+          .when(persistSpy)
+          .updateReferencePointer(any(), any());
+    } catch (RefNotFoundException | RefConditionFailedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {0, 1, 3, 10, 99, 100, 101, 305})
+  public void referencesQueryAll(int numRefs) {
+    ReferenceLogic refLogic = referenceLogic(persist);
+
+    List<Reference> created =
+        IntStream.range(0, numRefs)
+            .mapToObj(i -> String.format("ref-%10d", i))
+            .map(
+                n -> {
+                  try {
+                    return refLogic.createReference(n, randomObjId());
+                  } catch (RefAlreadyExistsException | RetryTimeoutException e) {
+                    throw new RuntimeException(e);
+                  }
+                })
+            .collect(Collectors.toList());
+
+    soft.assertThat(created)
+        .hasSize(numRefs)
+        .isEqualTo(
+            refLogic.getReferences(
+                IntStream.range(0, numRefs)
+                    .mapToObj(i -> String.format("ref-%10d", i))
+                    .collect(Collectors.toList())));
+
+    soft.assertThat(newArrayList(refLogic.queryReferences(referencesQuery("ref-"))))
+        .containsExactlyInAnyOrderElementsOf(created);
+
+    PagedResult<Reference, String> iter = refLogic.queryReferences(referencesQuery());
+    soft.assertThat(iter.tokenForKey(null)).isEqualTo(emptyPagingToken());
+    while (iter.hasNext()) {
+      String name = iter.next().name();
+      PagingToken t = iter.tokenForKey(name);
+      soft.assertThat(t).isNotEqualTo(emptyPagingToken());
+      soft.assertThat(t.token().toStringUtf8()).isEqualTo(name);
+
+      soft.assertAll();
+    }
+  }
+
+  /**
+   * Exercises a bunch of reference names that can be problematic, if the database uses collators
+   * that for example collapse adjacent spaces.
+   */
+  @Test
+  public void referencesListing() throws Exception {
+    List<String> refNames =
+        Stream.of(
+                //
+                "a-01",
+                "a-1",
+                "a-10",
+                "a-2",
+                "a-20",
+                //
+                "a01",
+                "a1",
+                "a10",
+                "a2",
+                "a20",
+                //
+                "a-   01",
+                "a-    1",
+                "a-   10",
+                "a-    2",
+                "a-   20",
+                //
+                "ä-   01",
+                "ä-    1",
+                "ä-   10",
+                "ä-    2",
+                "ä-   20",
+                //
+                "b-   01",
+                "b-    1",
+                "b-   10",
+                "b-    2",
+                "b-   20",
+                //
+                "a-     01",
+                "a-      1",
+                "a-     10",
+                "a-      2",
+                "a-     20")
+            .sorted()
+            .collect(Collectors.toList());
+
+    ReferenceLogic refLogic = referenceLogic(persist);
+
+    refLogic.deleteReference("refs/heads/main", EMPTY_OBJ_ID);
+
+    Map<String, Reference> references = new LinkedHashMap<>();
+    for (String refName : refNames) {
+      references.put(refName, refLogic.createReference(refName, EMPTY_OBJ_ID));
+    }
+
+    ArrayList<Reference> queryResult = newArrayList(refLogic.queryReferences(referencesQuery()));
+    soft.assertThat(queryResult).containsExactlyInAnyOrderElementsOf(references.values());
+
+    for (String checkPrefix :
+        new String[] {"a", "ä", "a-", "ä-", "a-  ", "ä-  ", "a   ", "a-   ", "a-    "}) {
+      queryResult = newArrayList(refLogic.queryReferences(referencesQuery(checkPrefix)));
+      soft.assertThat(queryResult)
+          .describedAs("prefix: '%s'", checkPrefix)
+          .containsExactlyElementsOf(
+              references.values().stream()
+                  .filter(r -> r.name().startsWith(checkPrefix))
+                  .collect(Collectors.toList()));
+    }
+
+    soft.assertThat(refLogic.getReferences(refNames))
+        .containsExactlyElementsOf(references.values());
+
+    for (String refName : refNames) {
+      queryResult = newArrayList(refLogic.queryReferences(referencesQuery(refName)));
+      soft.assertThat(queryResult)
+          .describedAs("ref: %s", refName)
+          .containsExactlyElementsOf(
+              references.values().stream()
+                  .filter(r -> r.name().startsWith(refName))
+                  .collect(Collectors.toList()));
+
+      soft.assertThat(refLogic.getReference(refName)).isEqualTo(references.get(refName));
+    }
+  }
+
+  @Test
+  public void referencesQueryPrefix() {
+    ReferenceLogic refLogic = referenceLogic(persist);
+    List<Reference> created =
+        rangeClosed('A', 'E')
+            .mapToObj(c -> "" + ((char) c) + "/")
+            .flatMap(pre -> rangeClosed('A', 'E').mapToObj(c -> pre + (char) c))
+            .map(
+                n -> {
+                  try {
+                    return refLogic.createReference(n, randomObjId());
+                  } catch (RefAlreadyExistsException | RetryTimeoutException e) {
+                    throw new RuntimeException(e);
+                  }
+                })
+            .collect(Collectors.toList());
+
+    soft.assertThat(created).hasSize(5 * 5);
+
+    // Just prefix
+    rangeClosed('A', 'E')
+        .mapToObj(c -> "" + ((char) c))
+        .forEach(
+            pre -> {
+              List<Reference> result =
+                  newArrayList(refLogic.queryReferences(referencesQuery(null, pre, false)));
+              soft.assertThat(result).hasSize(5).allMatch(r -> r.name().startsWith(pre + "/"));
+            });
+
+    // Begin == page-token
+    rangeClosed('A', 'E')
+        .mapToObj(c -> "" + ((char) c))
+        .forEach(
+            pre -> {
+              List<Reference> result =
+                  newArrayList(
+                      refLogic.queryReferences(
+                          referencesQuery(pagingToken(copyFromUtf8(pre)), pre, false)));
+              soft.assertThat(result).hasSize(5).allMatch(r -> r.name().startsWith(pre + "/"));
+            });
+
+    // Begin < page-token
+    rangeClosed('A', 'E')
+        .mapToObj(c -> "" + ((char) c))
+        .forEach(
+            pre -> {
+              List<Reference> result =
+                  newArrayList(
+                      refLogic.queryReferences(
+                          referencesQuery(pagingToken(copyFromUtf8(pre + "/C")), pre, false)));
+              soft.assertThat(result).hasSize(3).allMatch(r -> r.name().startsWith(pre + "/"));
+            });
+
+    // dumb page-token (outside prefix)
+    rangeClosed('A', 'E')
+        .mapToObj(c -> "" + ((char) c))
+        .forEach(
+            pre -> {
+              List<Reference> result =
+                  newArrayList(
+                      refLogic.queryReferences(
+                          referencesQuery(pagingToken(copyFromUtf8("Z")), pre, false)));
+              soft.assertThat(result).isEmpty();
+            });
+  }
+}

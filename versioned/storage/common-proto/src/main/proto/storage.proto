@@ -37,8 +37,9 @@ message CommitProto {
 }
 
 message RefProto {
-  bytes initial_pointer = 1;
-  int64 created_at_micros = 2;
+  string name = 1;
+  bytes initial_pointer = 2;
+  int64 created_at_micros = 3;
 }
 
 message ContentValueProto {

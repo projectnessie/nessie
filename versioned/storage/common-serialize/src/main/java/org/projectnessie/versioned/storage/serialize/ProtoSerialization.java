@@ -280,11 +280,13 @@ public final class ProtoSerialization {
   }
 
   private static RefObj deserializeRef(ObjId id, RefProto ref) {
-    return ref(id, deserializeObjId(ref.getInitialPointer()), ref.getCreatedAtMicros());
+    return ref(
+        id, ref.getName(), deserializeObjId(ref.getInitialPointer()), ref.getCreatedAtMicros());
   }
 
   private static RefProto.Builder serializeRef(RefObj obj) {
     return RefProto.newBuilder()
+        .setName(obj.name())
         .setCreatedAtMicros(obj.createdAtMicros())
         .setInitialPointer(serializeObjId(obj.initialPointer()));
   }
