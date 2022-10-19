@@ -3,10 +3,6 @@ This file is enabled by mkdocs-macros-plugin: https://mkdocs-macros-plugin.readt
 ...and is directly targetted in the plugins.macros.module_name key of the mkdocs.yml configuration.
 """
 
-from dataclasses import dataclass
-from tokenize import group
-
-
 def define_env(env):
     """
     This is the hook for defining variables, macros and filters.
