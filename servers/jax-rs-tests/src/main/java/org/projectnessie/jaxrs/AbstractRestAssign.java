@@ -58,4 +58,51 @@ public abstract class AbstractRestAssign extends AbstractRest {
     testTagRef = getApi().getReference().refName(testTag).get();
     assertThat(testTagRef.getHash()).isEqualTo(main.getHash());
   }
+
+  @ParameterizedTest
+  @EnumSource(ReferenceMode.class)
+  public void testAssignBranch(ReferenceMode refMode) throws BaseNessieClientServerException {
+    Reference main = createBranch("test-main");
+    Branch branch = createBranch("test-branch");
+
+    // make a commit in main
+    createCommits(main, 1, 1, main.getHash());
+    main = getApi().getReference().refName(main.getName()).get();
+
+    assertThat(branch.getHash()).isNotEqualTo(main.getHash());
+
+    // Assign the test branch to main
+    getApi().assignBranch().branch(branch).assignTo(refMode.transform(main)).assign();
+    Reference assignedBranch = getApi().getReference().refName(branch.getName()).get();
+    assertThat(assignedBranch.getHash()).isEqualTo(main.getHash());
+  }
+
+  @ParameterizedTest
+  @EnumSource(ReferenceMode.class)
+  public void testAssignTag(ReferenceMode refMode) throws BaseNessieClientServerException {
+    Reference main = createBranch("test-main");
+
+    Reference tag =
+        getApi()
+            .createReference()
+            .sourceRefName(main.getName())
+            .reference(Tag.of("testTag", main.getHash()))
+            .create();
+
+    // make a commit in main
+    createCommits(main, 1, 1, main.getHash());
+    main = getApi().getReference().refName(main.getName()).get();
+
+    assertThat(tag.getHash()).isNotEqualTo(main.getHash());
+
+    // Assign the test tag to main
+    getApi()
+        .assignTag()
+        .tagName(tag.getName())
+        .hash(tag.getHash())
+        .assignTo(refMode.transform(main))
+        .assign();
+    Reference assignedTag = getApi().getReference().refName(tag.getName()).get();
+    assertThat(assignedTag.getHash()).isEqualTo(main.getHash());
+  }
 }
