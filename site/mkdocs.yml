@@ -84,10 +84,12 @@ extra:
       link: https://www.youtube.com/channel/UC5xjzYuGGuGPCY9FNtqZMsQ?view_as=subscriber
 repo_url: https://github.com/projectnessie/nessie
 plugins:
-  - markdownextradata
   - search
   - awesome-pages:
       filename: _config
+  - macros:
+      on_error_fail: true
+      module_name: macros
   - minify:
       minify_html: true
 markdown_extensions:
