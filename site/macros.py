@@ -28,18 +28,22 @@ def define_env(env):
             'all_versions_url': f"https://search.maven.org/artifact/{group}/{artifact}"
         }
 
+    __latest_iceberg_version = env.variables.versions['iceberg']
+
     @env.macro
-    def iceberg_spark_runtime(spark="3.3", scala="2.12"):
+    def iceberg_spark_runtime(spark="3.3", scala="2.12", version=__latest_iceberg_version):
         return __maven_artifact(
             "org.apache.iceberg",
             f"iceberg-spark-runtime-{spark}_{scala}",
-            env.variables.versions['iceberg']
+            version
         )
 
+    __latest_nessie_version = env.variables.versions['java']
+
     @env.macro
-    def nessie_spark_extensions(spark="3.3", scala="2.12"):
+    def nessie_spark_extensions(spark="3.3", scala="2.12", version=__latest_nessie_version):
         return __maven_artifact(
             "org.projectnessie",
             f"nessie-spark-extensions-{spark}_{scala}",
-            env.variables.versions['java']
+            version
         )
