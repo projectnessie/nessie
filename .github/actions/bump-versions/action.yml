@@ -4,6 +4,10 @@ inputs:
   new-version:
     required: true
     description: 'Version to bump to'
+  bump-helm-version:
+    required: false
+    default: 'false'
+    description: 'Whether to apply the new version to helm charts'
 runs:
   using: "composite"
   steps:
@@ -31,6 +35,7 @@ runs:
         sed -i "s/^    python: v[0-9.]*$/    python: v${NEW_VERSION}/" site/mkdocs.yml
 
     - name: Bump version in helm/nessie to ${{ inputs.new-version }}
+      if: ${{ inputs.bump-helm-version == 'true' }}
       shell: bash
       env:
         NEW_VERSION: ${{ inputs.new-version }}

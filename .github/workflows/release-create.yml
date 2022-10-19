@@ -134,6 +134,7 @@ jobs:
       uses: ./.github/actions/bump-versions
       with:
         new-version: ${{ env.RELEASE_VERSION }}
+        bump-helm-version: 'true'
 
     # Updates the site/docs/try/releases.md file, takes the first four lines (the big heading),
     # adds a heading with the version and a note referencing the release notes on GitHub,
