@@ -3,22 +3,22 @@ Spark SQL extensions provide an easy way to execute common Nessie commands via S
 
 ## How to use them
 
-{%- for (sparkver, iceberg_spark_runtime, nessie_spark_extensions) in [
-  ('3.3', artifacts.iceberg_spark_runtime_33_212, artifacts.nessie_spark_extensions_33_212),
-  ('3.2', artifacts.iceberg_spark_runtime_32_212, artifacts.nessie_spark_extensions_32_212),
-  ('3.1', artifacts.iceberg_spark_runtime_31_212, artifacts.nessie_spark_extensions_31_212),
+{%- for sparkver in [
+  '3.3',
+  '3.2',
+  '3.1',
 ] %}
 
 ### Spark {{sparkver}}
 
 In order to be able to use Nessie's custom Spark SQL extensions with Spark {{sparkver}}.x, one needs to configure
-`{{iceberg_spark_runtime.spark_jar_package}}` along with `{{nessie_spark_extensions.spark_jar_package}}`.
+`{{ iceberg_spark_runtime(sparkver).spark_jar_package }}` along with `{{ nessie_spark_extensions(sparkver).spark_jar_package }}`
 
 Here's an example of how this is done when starting the `spark-sql` shell:
 
 ``` sh
 bin/spark-sql 
-  --packages "{{iceberg_spark_runtime.spark_jar_package}},{{nessie_spark_extensions.spark_jar_package}}"
+  --packages "{{ iceberg_spark_runtime(sparkver).spark_jar_package }},{{ nessie_spark_extensions(sparkver).spark_jar_package }}"
   --conf spark.sql.extensions="org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSparkSessionExtensions"
   --conf <other settings>
 ```

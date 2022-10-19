@@ -7,14 +7,16 @@ To access Nessie on Iceberg from a spark cluster make sure the `spark.jars` spar
 
 | | `iceberg-spark-runtime` *(required)* | `nessie-spark-extensions` *(optional)* |
 |---|:---:|:---:|
-{%- for (sparkver, scalaver, iceberg_spark_runtime, nessie_spark_extensions) in [
-  ('3.3', '2.12', artifacts.iceberg_spark_runtime_33_212, artifacts.nessie_spark_extensions_33_212),
-  ('3.3', '2.13', artifacts.iceberg_spark_runtime_33_213, artifacts.nessie_spark_extensions_33_213),
-  ('3.2', '2.12', artifacts.iceberg_spark_runtime_32_212, artifacts.nessie_spark_extensions_32_212),
-  ('3.2', '2.13', artifacts.iceberg_spark_runtime_32_213, artifacts.nessie_spark_extensions_32_213),
-  ('3.1', '2.12', artifacts.iceberg_spark_runtime_31_212, artifacts.nessie_spark_extensions_31_212),
+{%- for (sparkver, scalaver) in [
+  ('3.3', '2.12'),
+  ('3.3', '2.13'),
+  ('3.2', '2.12'),
+  ('3.2', '2.13'),
+  ('3.1', '2.12'),
 ] %}
-| Spark **{{sparkver}}**, Scala **{{scalaver}}**: | `{{iceberg_spark_runtime.spark_jar_package}}`<br />*([All]({{iceberg_spark_runtime.all_versions_url}}), [Latest]({{iceberg_spark_runtime.jar_url}}))* | `{{nessie_spark_extensions.spark_jar_package}}`<br />*([All]({{nessie_spark_extensions.all_versions_url}}), [Latest]({{nessie_spark_extensions.jar_url}}))* |
+{%- set runtime = iceberg_spark_runtime(sparkver, scalaver) %}
+{%- set extensions = nessie_spark_extensions(sparkver, scalaver) %}
+| Spark **{{sparkver}}**, Scala **{{scalaver}}**: | `{{runtime.spark_jar_package}}`<br />*([All]({{runtime.all_versions_url}}), [Latest]({{runtime.jar_url}}))* | `{{extensions.spark_jar_package}}`<br />*([All]({{extensions.all_versions_url}}), [Latest]({{extensions.jar_url}}))* |
 {%- endfor %}
 
 The `iceberg-spark-runtime` fat jars are distributed by the Apache Iceberg project and contains all Apache Iceberg libraries required for operation, including the built-in Nessie Catalog.
@@ -28,7 +30,7 @@ In pyspark, usage would look like...
     ``` python
     SparkSession.builder
         .config('spark.jars.packages',
-                '{{ artifacts.iceberg_spark_runtime_33_212.spark_jar_package }}')
+                '{{ iceberg_spark_runtime().spark_jar_package }}')
         ... rest of spark config
         .getOrCreate()
     ```
@@ -40,7 +42,7 @@ In pyspark, usage would look like...
     ``` python
     SparkSession.builder
         .config('spark.jars.packages',
-                '{{ artifacts.iceberg_spark_runtime_33_212.spark_jar_package }},{{ artifacts.nessie_spark_extensions_33_212.spark_jar_package }}')
+                '{{ iceberg_spark_runtime().spark_jar_package }},{{ nessie_spark_extensions().spark_jar_package }}')
         ... rest of spark config
         .getOrCreate()
     ```
@@ -91,7 +93,7 @@ String ref = "main";
 String authType = "NONE";
 
     //for a local spark instance
-    conf.set("spark.jars.packages", "{{ artifacts.iceberg_spark_runtime_33_212.spark_jar_package }},{{ artifacts.nessie_spark_extensions_33_212.spark_jar_package }}")
+    conf.set("spark.jars.packages", "{{ iceberg_spark_runtime().spark_jar_package }},{{ nessie_spark_extensions().spark_jar_package }}")
         .set("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSparkSessionExtensions")
         .set("spark.sql.catalog.nessie.uri", url)
         .set("spark.sql.catalog.nessie.ref", ref)
@@ -118,7 +120,7 @@ auth_type = "NONE"
 
     # here we are assuming NONE authorisation
     spark = SparkSession.builder \
-            .config("spark.jars.packages","{{ artifacts.iceberg_spark_runtime_33_212.spark_jar_package }},{{ artifacts.nessie_spark_extensions_33_212.spark_jar_package }}") \
+            .config("spark.jars.packages","{{ iceberg_spark_runtime().spark_jar_package }},{{ nessie_spark_extensions().spark_jar_package }}") \
             .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSparkSessionExtensions") \
             .config("spark.sql.catalog.nessie.uri", url) \
             .config("spark.sql.catalog.nessie.ref", ref) \
