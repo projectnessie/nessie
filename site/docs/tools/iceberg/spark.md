@@ -21,7 +21,7 @@ To access Nessie on Iceberg from a spark cluster make sure the `spark.jars` spar
 
 The `iceberg-spark-runtime` fat jars are distributed by the Apache Iceberg project and contains all Apache Iceberg libraries required for operation, including the built-in Nessie Catalog.
 
-The `nessie-spark-extensions` jars are distributed by the Nessie project and contain extensions that allow you to manage your tables with nessie's git-like syntax.
+The `nessie-spark-extensions` jars are distributed by the Nessie project and contain [SQL extensions](../sql.md) that allow you to manage your tables with nessie's git-like syntax.
 
 
 In pyspark, usage would look like...
