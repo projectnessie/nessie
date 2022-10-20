@@ -65,6 +65,7 @@ public interface HttpClient {
     private final List<ResponseFilter> responseFilters = new ArrayList<>();
     private boolean http2Upgrade;
     private String followRedirects;
+    private boolean forceUrlConnectionClient;
 
     private Builder() {}
 
@@ -104,6 +105,11 @@ public interface HttpClient {
 
     public Builder setFollowRedirects(String followRedirects) {
       this.followRedirects = followRedirects;
+      return this;
+    }
+
+    public Builder setForceUrlConnectionClient(boolean forceUrlConnectionClient) {
+      this.forceUrlConnectionClient = forceUrlConnectionClient;
       return this;
     }
 
@@ -163,6 +169,7 @@ public interface HttpClient {
               .addAllResponseFilters(responseFilters)
               .isHttp11Only(!http2Upgrade)
               .followRedirects(followRedirects)
+              .forceUrlConnectionClient(forceUrlConnectionClient)
               .build();
 
       return ImplSwitch.FACTORY.apply(config);
@@ -176,9 +183,13 @@ public interface HttpClient {
         try {
           Class.forName("java.net.http.HttpClient");
           factory =
-              Boolean.getBoolean("nessie.client.force-url-connection-client")
-                  ? UrlConnectionClient::new
-                  : JavaHttpClient::new;
+              config ->
+                  // Need the system property for tests, "normal" users can use standard
+                  // configuration options.
+                  Boolean.getBoolean("nessie.client.force-url-connection-client")
+                          || config.forceUrlConnectionClient()
+                      ? new UrlConnectionClient(config)
+                      : new JavaHttpClient(config);
         } catch (ClassNotFoundException e) {
           factory = UrlConnectionClient::new;
         }

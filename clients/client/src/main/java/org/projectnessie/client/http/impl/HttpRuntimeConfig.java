@@ -79,4 +79,9 @@ public interface HttpRuntimeConfig {
 
     return true;
   }
+
+  @Value.Default
+  default boolean forceUrlConnectionClient() {
+    return false;
+  }
 }

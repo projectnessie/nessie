@@ -128,6 +128,8 @@ final class JavaRequest extends BaseHttpRequest {
       config.getResponseFilters().forEach(responseFilter -> responseFilter.filter(responseContext));
 
       if (response.statusCode() >= 400) {
+        // This mimics the (weird) behavior of java.net.HttpURLConnection.getResponseCode() that
+        // throws an IOException for these status codes.
         throw new HttpClientException(
             String.format(
                 "%s request to %s failed with HTTP/%d", method, uri, response.statusCode()));
@@ -156,7 +158,7 @@ final class JavaRequest extends BaseHttpRequest {
    *
    * <p>Java's new {@link HttpClient} uses the {@link Flow.Publisher}/{@link Flow.Subscriber}/{@link
    * Flow.Subscription} mechanism to write and read request and response data. We have to use that
-   * protocol. Since none of the implementations must not block, writes and reads run in a separate
+   * protocol. Since none of the implementations must block, writes and reads run in a separate
    * pool.
    *
    * <p>Jackson has no "reactive" serialization mechanism, which means that we have to provide a

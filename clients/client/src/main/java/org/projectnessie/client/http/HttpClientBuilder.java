@@ -16,6 +16,7 @@
 package org.projectnessie.client.http;
 
 import static org.projectnessie.client.NessieConfigConstants.CONF_CONNECT_TIMEOUT;
+import static org.projectnessie.client.NessieConfigConstants.CONF_FORCE_URL_CONNECTION_CLIENT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_DISABLE_COMPRESSION;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_HTTP_2;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_HTTP_REDIRECT;
@@ -105,10 +106,11 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
       withDisableCompression(Boolean.parseBoolean(s));
     }
 
-    SSLParameters sslParameters = null;
+    SSLParameters sslParameters = new SSLParameters();
+    boolean hasSslParameters = false;
     s = configuration.apply(CONF_NESSIE_SSL_CIPHER_SUITES);
     if (s != null) {
-      sslParameters = new SSLParameters();
+      hasSslParameters = true;
       sslParameters.setCipherSuites(
           Arrays.stream(s.split(","))
               .map(String::trim)
@@ -117,9 +119,7 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
     }
     s = configuration.apply(CONF_NESSIE_SSL_PROTOCOLS);
     if (s != null) {
-      if (sslParameters == null) {
-        sslParameters = new SSLParameters();
-      }
+      hasSslParameters = true;
       sslParameters.setProtocols(
           Arrays.stream(s.split(","))
               .map(String::trim)
@@ -128,9 +128,7 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
     }
     s = configuration.apply(CONF_NESSIE_SNI_HOSTS);
     if (s != null) {
-      if (sslParameters == null) {
-        sslParameters = new SSLParameters();
-      }
+      hasSslParameters = true;
       sslParameters.setServerNames(
           Arrays.stream(s.split(","))
               .map(String::trim)
@@ -140,12 +138,12 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
     }
     s = configuration.apply(CONF_NESSIE_SNI_MATCHER);
     if (s != null) {
-      if (sslParameters == null) {
-        sslParameters = new SSLParameters();
-      }
+      hasSslParameters = true;
       sslParameters.setSNIMatchers(Collections.singletonList(SNIHostName.createSNIMatcher(s)));
     }
-    withSSLParameters(sslParameters);
+    if (hasSslParameters) {
+      withSSLParameters(sslParameters);
+    }
 
     s = configuration.apply(CONF_NESSIE_HTTP_2);
     if (s != null) {
@@ -155,6 +153,11 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
     s = configuration.apply(CONF_NESSIE_HTTP_REDIRECT);
     if (s != null) {
       withFollowRedirects(s.trim());
+    }
+
+    s = configuration.apply(CONF_FORCE_URL_CONNECTION_CLIENT);
+    if (s != null) {
+      withForceUrlConnectionClient(Boolean.parseBoolean(s.trim()));
     }
 
     return this;
@@ -267,6 +270,11 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
 
   public HttpClientBuilder withFollowRedirects(String redirects) {
     builder.setFollowRedirects(redirects);
+    return this;
+  }
+
+  public HttpClientBuilder withForceUrlConnectionClient(boolean forceUrlConnectionClient) {
+    builder.setForceUrlConnectionClient(forceUrlConnectionClient);
     return this;
   }
 

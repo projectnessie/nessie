@@ -102,6 +102,6 @@ public class RequestContextImpl implements RequestContext {
 
   @Override
   public String toString() {
-    return method.toString() + " to " + uri;
+    return method.toString() + " " + uri;
   }
 }

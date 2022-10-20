@@ -142,6 +142,15 @@ public final class NessieConfigConstants {
    */
   public static final String CONF_NESSIE_HTTP_REDIRECT = "nessie.http-redirects";
 
+  /**
+   * Optional, when running on Java 11 force the use of the old {@link java.net.URLConnection} based
+   * client for HTTP.
+   *
+   * <p>This parameter only works on Java 11 and newer.
+   */
+  public static final String CONF_FORCE_URL_CONNECTION_CLIENT =
+      "nessie.force-url-connection-client";
+
   private NessieConfigConstants() {
     // empty
   }
