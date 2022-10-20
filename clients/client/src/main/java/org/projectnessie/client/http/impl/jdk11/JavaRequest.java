@@ -30,20 +30,14 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpTimeoutException;
-import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.Pipe;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
-import javax.annotation.Nonnull;
 import org.projectnessie.client.http.HttpClient.Method;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.http.HttpClientReadTimeoutException;
@@ -87,8 +81,7 @@ final class JavaRequest extends BaseHttpRequest {
       }
     }
 
-    BodyPublisher bodyPublisher =
-        doesOutput ? BodyPublishers.fromPublisher(new Submitter(context)) : BodyPublishers.noBody();
+    BodyPublisher bodyPublisher = doesOutput ? bodyPublisher(context) : BodyPublishers.noBody();
     request = request.method(method.name(), bodyPublisher);
 
     HttpResponse<InputStream> response = null;
@@ -153,6 +146,31 @@ final class JavaRequest extends BaseHttpRequest {
     }
   }
 
+  private BodyPublisher bodyPublisher(RequestContext context) {
+    ClassLoader cl = Thread.currentThread().getContextClassLoader();
+    return BodyPublishers.ofInputStream(
+        () -> {
+          try {
+            Pipe pipe = Pipe.open();
+            writerPool.execute(
+                () -> {
+                  try {
+                    // Okay - this is weird - but it is necessary when running tests with Quarkus
+                    // via `./gradlew :nessie-quarkus:test`.
+                    Thread.currentThread().setContextClassLoader(cl);
+
+                    writeToOutputStream(context, Channels.newOutputStream(pipe.sink()));
+                  } catch (Exception e) {
+                    throw new RuntimeException(e);
+                  }
+                });
+            return Channels.newInputStream(pipe.source());
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+        });
+  }
+
   /**
    * Executor used to serialize the response object to JSON.
    *
@@ -181,253 +199,6 @@ final class JavaRequest extends BaseHttpRequest {
               "Cannot serialize body of %s request against '%s'. Unable to serialize %s",
               context.getMethod(), context.getUri(), body.getClass()),
           e);
-    }
-  }
-
-  /**
-   * {@link Submitter} performs asynchronous writes using a plain, old {@link OutputStream}.
-   *
-   * <p>Sadly Jackson only provides functionality to serialize to an {@link OutputStream} or the
-   * like, for which neither Java's {@link Flow} API nor the new HTTP client API have support for.
-   */
-  private final class Submitter extends OutputStream
-      implements Flow.Publisher<ByteBuffer>, Runnable, Flow.Subscription {
-
-    // Okay - this is weird - but it is necessary when running tests with Quarkus via
-    // `./gradlew :nessie-quarkus:test`.
-    private final ClassLoader cl = Thread.currentThread().getContextClassLoader();
-    private final RequestContext context;
-    private final AtomicBoolean subscribed = new AtomicBoolean();
-    private final AtomicLong demand = new AtomicLong();
-    private final Lock demandLock = new ReentrantLock();
-    private final Condition demanded = demandLock.newCondition();
-    private volatile ByteBuffer currentBuffer;
-    private volatile Flow.Subscriber<? super ByteBuffer> subscriber;
-
-    public Submitter(RequestContext context) {
-      this.context = context;
-    }
-
-    @Override
-    public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
-      if (!subscribed.compareAndSet(false, true)) {
-        IllegalStateException err = new IllegalStateException("Only one subscription allowed");
-        LOGGER.error(
-            "{}: subscribe() for request called twice, subscriber: {}, submitter: {}",
-            context,
-            subscriber,
-            this,
-            err);
-        subscriber.onError(err);
-        return;
-      }
-
-      LOGGER.debug("{}: Subscribe called, submitter: {}", context, this);
-
-      this.subscriber = subscriber;
-      // Perform the writes to the java.io.OutputStream in a separate thread, so we do not block
-      // any other thread.
-      writerPool.execute(this);
-      subscriber.onSubscribe(this);
-    }
-
-    @Override
-    public void run() {
-      LOGGER.trace(
-          "{}: Async output stream publisher running, subscriber: {}, submitter: {}",
-          context,
-          subscriber,
-          this);
-      try {
-        // Okay - this is weird - but it is necessary when running tests with Quarkus via
-        // `./gradlew :nessie-quarkus:test`.
-        Thread.currentThread().setContextClassLoader(cl);
-
-        writeToOutputStream(context, this);
-      } catch (Exception e) {
-        LOGGER.debug(
-            "{}: Async output stream publisher finished, subscriber: {}, submitter: {}",
-            context,
-            subscriber,
-            this);
-        finishError(e);
-      }
-    }
-
-    private void finishSuccess() {
-      Flow.Subscriber<? super ByteBuffer> s = subscriber;
-      if (s != null) {
-        subscriber = null;
-        LOGGER.debug("{}: Calling onComplete, subscriber: {}, submitter: {}", context, s, this);
-        s.onComplete();
-      } else {
-        LOGGER.trace(
-            "{}: Non-propagated (subscription finished) onComplete, submitter: {}", context, this);
-      }
-    }
-
-    private void finishError(Throwable error) {
-      Flow.Subscriber<? super ByteBuffer> s = subscriber;
-      if (s != null) {
-        subscriber = null;
-        LOGGER.debug("{}: Calling onError, subscriber: {}, submitter: {}", context, s, this, error);
-        s.onError(error);
-      } else {
-        LOGGER.trace(
-            "{}: Non-propagated (subscription finished) onError, submitter: {}",
-            context,
-            this,
-            error);
-      }
-    }
-
-    private void addDemand(long items) {
-      demandLock.lock();
-      try {
-        long current = demand.get();
-        long updated = current + items;
-        if (updated < 0) {
-          finishError(
-              new IllegalArgumentException(
-                  "Too many items requested, current demand=" + current + " requested=" + items));
-        }
-        demand.set(updated);
-        demanded.signalAll();
-      } finally {
-        demandLock.unlock();
-      }
-    }
-
-    @SuppressWarnings("ResultOfMethodCallIgnored") // demanded.await()
-    private void consumeDemand() throws InterruptedException {
-      while (subscriber != null) {
-        // Do not lock() if there's demand already signalled and a CAS-op is sufficient.
-        long current = demand.get();
-        if (current > 0) {
-          demand.decrementAndGet();
-          return;
-        }
-
-        demandLock.lock();
-        try {
-          demanded.await(250, TimeUnit.MILLISECONDS);
-        } finally {
-          demandLock.unlock();
-        }
-      }
-    }
-
-    @Override
-    public void request(long items) {
-      if (items <= 0) {
-        LOGGER.error(
-            "{}: Illegal number of requested items: {}, subscriber: {}, submitter: {}",
-            context,
-            items,
-            subscriber,
-            this);
-        finishError(new IllegalArgumentException("Illegal number of requested items: " + items));
-        return;
-      }
-      LOGGER.debug(
-          "{}: Requested {} items, current: {}, subscriber: {}, submitter: {}",
-          context,
-          items,
-          demand,
-          subscriber,
-          this);
-
-      addDemand(items);
-    }
-
-    @Override
-    public void cancel() {
-      LOGGER.debug(
-          "{}: cancel() called, subscriber: {}, submitter: {}",
-          context,
-          subscriber,
-          this,
-          new Exception("Stacktrace for cancel()"));
-      subscriber = null;
-    }
-
-    @Override
-    public void write(int b) {
-      // this is never called in practice, but better be on the safe side and implement it
-      byte[] arr = new byte[] {(byte) b};
-      write(arr, 0, 1);
-    }
-
-    @Override
-    public void write(@Nonnull byte[] b, int off, int len) {
-      while (len > 0 && subscriber != null) {
-
-        ByteBuffer buffer = currentBuffer;
-        if (buffer == null) {
-          currentBuffer = buffer = newBuffer();
-        }
-
-        int wr = Math.min(len, buffer.remaining());
-        buffer.put(b, off, wr);
-        off += wr;
-        len -= wr;
-
-        if (buffer.remaining() == 0) {
-          flush();
-        }
-      }
-    }
-
-    private ByteBuffer newBuffer() {
-      return ByteBuffer.allocate(16384);
-    }
-
-    @Override
-    public void flush() {
-      flush(newBuffer());
-    }
-
-    private void flush(ByteBuffer nextBuffer) {
-      try {
-        ByteBuffer buffer = currentBuffer;
-        if (buffer != null && subscriber != null && buffer.position() > 0) {
-          buffer.flip();
-          try {
-            LOGGER.debug(
-                "{}: Wait for acquire (available permits: {}), subscriber: {}, submitter: {}",
-                context,
-                demand,
-                subscriber,
-                this);
-
-            consumeDemand();
-
-            Flow.Subscriber<? super ByteBuffer> s = subscriber;
-            if (s != null) {
-              LOGGER.debug(
-                  "{}: Acquired, calling onNext for {} bytes, subscriber: {}, submitter: {}",
-                  context,
-                  buffer.remaining(),
-                  s,
-                  this);
-              s.onNext(buffer);
-            }
-          } catch (InterruptedException e) {
-            finishError(e);
-          }
-        }
-      } finally {
-        currentBuffer = nextBuffer;
-      }
-    }
-
-    @Override
-    public void close() {
-      try {
-        flush(null);
-      } finally {
-        finishSuccess();
-      }
     }
   }
 }
