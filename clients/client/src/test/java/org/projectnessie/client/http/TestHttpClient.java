@@ -49,6 +49,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.net.ssl.SSLHandshakeException;
+import org.assertj.core.api.AbstractThrowableAssert;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -59,6 +60,7 @@ import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.projectnessie.client.util.HttpTestServer;
 import org.projectnessie.model.CommitMeta;
 
@@ -384,6 +386,46 @@ public class TestHttpClient {
               .get()
               .readEntity(ExampleBean.class);
       soft.assertThat(bean).isEqualTo(inputBean);
+    }
+  }
+
+  @ParameterizedTest
+  @EnumSource(Status.class)
+  void testHttpResponses(Status status) throws Exception {
+    // HTTP/304 defines that no response body must be sent
+    assumeThat(status).isNotEqualTo(Status.NOT_MODIFIED);
+
+    HttpTestServer.RequestHandler handler =
+        (req, resp) -> {
+          resp.setStatus(status.getCode());
+          resp.setContentType("application/json");
+          try (OutputStream os = resp.getOutputStream()) {
+            MAPPER.writeValue(os, new ExampleBean());
+          }
+        };
+    try (HttpTestServer server = new HttpTestServer("/a/b", handler)) {
+      AtomicReference<ResponseContext> responseContext = new AtomicReference<>();
+      HttpClient client =
+          createClient(server.getUri(), b -> b.addResponseFilter(responseContext::set));
+
+      AbstractThrowableAssert<?, ? extends Throwable> reqAssert =
+          soft.assertThatCode(() -> client.newRequest().get().readEntity(ExampleBean.class));
+      if (status.getCode() < 400) {
+        reqAssert.doesNotThrowAnyException();
+      } else {
+        reqAssert.isInstanceOf(HttpClientException.class);
+      }
+      soft.assertThat(responseContext.get())
+          .isNotNull()
+          .extracting(
+              rc -> {
+                try {
+                  return rc.getResponseCode();
+                } catch (IOException e) {
+                  throw new RuntimeException(e);
+                }
+              })
+          .isEqualTo(status);
     }
   }
 
