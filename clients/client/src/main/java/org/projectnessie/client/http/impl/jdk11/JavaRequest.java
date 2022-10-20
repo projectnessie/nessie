@@ -154,6 +154,7 @@ final class JavaRequest extends BaseHttpRequest {
             Pipe pipe = Pipe.open();
             writerPool.execute(
                 () -> {
+                  ClassLoader restore = Thread.currentThread().getContextClassLoader();
                   try {
                     // Okay - this is weird - but it is necessary when running tests with Quarkus
                     // via `./gradlew :nessie-quarkus:test`.
@@ -162,6 +163,8 @@ final class JavaRequest extends BaseHttpRequest {
                     writeToOutputStream(context, Channels.newOutputStream(pipe.sink()));
                   } catch (Exception e) {
                     throw new RuntimeException(e);
+                  } finally {
+                    Thread.currentThread().setContextClassLoader(restore);
                   }
                 });
             return Channels.newInputStream(pipe.source());
