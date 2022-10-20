@@ -18,7 +18,6 @@ package org.projectnessie.client.http;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assumptions.assumeThat;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.projectnessie.client.util.HttpTestUtil.writeEmptyResponse;
 import static org.projectnessie.client.util.HttpTestUtil.writeResponseBody;
 
@@ -53,7 +52,6 @@ import javax.net.ssl.SSLHandshakeException;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.JRE;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -174,7 +172,7 @@ public class TestHttpClient {
                       Integer.parseInt(req.getParameter("num")));
               break;
             default:
-              fail();
+              resp.sendError(500);
               return;
           }
 
@@ -252,13 +250,13 @@ public class TestHttpClient {
     ExampleBean inputBean = new ExampleBean("x", 1, NOW);
     HttpTestServer.RequestHandler handler =
         (req, resp) -> {
-          Assertions.assertEquals("GET", req.getMethod());
+          soft.assertThat(req.getMethod()).isEqualTo("GET");
           String response = MAPPER.writeValueAsString(inputBean);
           writeResponseBody(resp, response);
         };
     try (HttpTestServer server = new HttpTestServer(handler)) {
       ExampleBean bean = get(server.getUri()).get().readEntity(ExampleBean.class);
-      Assertions.assertEquals(inputBean, bean);
+      soft.assertThat(bean).isEqualTo(inputBean);
     }
   }
 
@@ -267,10 +265,10 @@ public class TestHttpClient {
     ExampleBean inputBean = new ExampleBean("x", 1, NOW);
     HttpTestServer.RequestHandler handler =
         (req, resp) -> {
-          Assertions.assertEquals("PUT", req.getMethod());
+          soft.assertThat(req.getMethod()).isEqualTo("PUT");
           try (InputStream in = req.getInputStream()) {
             Object bean = MAPPER.readerFor(ExampleBean.class).readValue(in);
-            Assertions.assertEquals(inputBean, bean);
+            soft.assertThat(bean).isEqualTo(inputBean);
           }
           writeEmptyResponse(resp);
         };
@@ -284,10 +282,10 @@ public class TestHttpClient {
     ExampleBean inputBean = new ExampleBean("x", 1, NOW);
     HttpTestServer.RequestHandler handler =
         (req, resp) -> {
-          Assertions.assertEquals("POST", req.getMethod());
+          soft.assertThat(req.getMethod()).isEqualTo("POST");
           try (InputStream in = req.getInputStream()) {
             Object bean = MAPPER.readerFor(ExampleBean.class).readValue(in);
-            Assertions.assertEquals(inputBean, bean);
+            soft.assertThat(bean).isEqualTo(inputBean);
           }
           writeEmptyResponse(resp);
         };
@@ -300,7 +298,7 @@ public class TestHttpClient {
   void testDelete() throws Exception {
     HttpTestServer.RequestHandler handler =
         (req, resp) -> {
-          Assertions.assertEquals("DELETE", req.getMethod());
+          soft.assertThat(req.getMethod()).isEqualTo("DELETE");
           writeEmptyResponse(resp);
         };
     try (HttpTestServer server = new HttpTestServer(handler)) {
@@ -313,15 +311,15 @@ public class TestHttpClient {
     ExampleBean inputBean = new ExampleBean("x", 1, NOW);
     HttpTestServer.RequestHandler handler =
         (req, resp) -> {
-          Assertions.assertEquals("x=y", req.getQueryString());
-          Assertions.assertEquals("GET", req.getMethod());
+          soft.assertThat(req.getQueryString()).isEqualTo("x=y");
+          soft.assertThat(req.getMethod()).isEqualTo("GET");
           String response = MAPPER.writeValueAsString(inputBean);
           writeResponseBody(resp, response);
         };
     try (HttpTestServer server = new HttpTestServer(handler)) {
       ExampleBean bean =
           get(server.getUri()).queryParam("x", "y").get().readEntity(ExampleBean.class);
-      Assertions.assertEquals(inputBean, bean);
+      soft.assertThat(bean).isEqualTo(inputBean);
     }
   }
 
@@ -331,11 +329,10 @@ public class TestHttpClient {
     HttpTestServer.RequestHandler handler =
         (req, resp) -> {
           String[] queryParams = req.getQueryString().split("&");
-          Assertions.assertEquals(2, queryParams.length);
+          soft.assertThat(queryParams).hasSize(2);
           Set<String> queryParamSet = new HashSet<>(Arrays.asList(queryParams));
-          Assertions.assertTrue(queryParamSet.contains("x=y"));
-          Assertions.assertTrue(queryParamSet.contains("a=b"));
-          Assertions.assertEquals("GET", req.getMethod());
+          assertThat(queryParamSet).contains("x=y", "a=b");
+          soft.assertThat(req.getMethod()).isEqualTo("GET");
           String response = MAPPER.writeValueAsString(inputBean);
           writeResponseBody(resp, response);
         };
@@ -346,7 +343,7 @@ public class TestHttpClient {
               .queryParam("a", "b")
               .get()
               .readEntity(ExampleBean.class);
-      Assertions.assertEquals(inputBean, bean);
+      soft.assertThat(bean).isEqualTo(inputBean);
     }
   }
 
@@ -356,15 +353,15 @@ public class TestHttpClient {
     HttpTestServer.RequestHandler handler =
         (req, resp) -> {
           String queryParams = req.getQueryString();
-          Assertions.assertNull(queryParams);
-          Assertions.assertEquals("GET", req.getMethod());
+          soft.assertThat(queryParams).isNull();
+          soft.assertThat(req.getMethod()).isEqualTo("GET");
           String response = MAPPER.writeValueAsString(inputBean);
           writeResponseBody(resp, response);
         };
     try (HttpTestServer server = new HttpTestServer(handler)) {
       ExampleBean bean =
           get(server.getUri()).queryParam("x", (String) null).get().readEntity(ExampleBean.class);
-      Assertions.assertEquals(inputBean, bean);
+      soft.assertThat(bean).isEqualTo(inputBean);
     }
   }
 
@@ -373,38 +370,59 @@ public class TestHttpClient {
     ExampleBean inputBean = new ExampleBean("x", 1, NOW);
     HttpTestServer.RequestHandler handler =
         (req, resp) -> {
-          Assertions.assertEquals("GET", req.getMethod());
+          soft.assertThat(req.getMethod()).isEqualTo("GET");
           String response = MAPPER.writeValueAsString(inputBean);
           writeResponseBody(resp, response);
         };
     try (HttpTestServer server = new HttpTestServer("/a/b", handler)) {
       ExampleBean bean = get(server.getUri()).path("a/b").get().readEntity(ExampleBean.class);
-      Assertions.assertEquals(inputBean, bean);
+      soft.assertThat(bean).isEqualTo(inputBean);
       bean =
           get(server.getUri())
               .path("a/{b}")
               .resolveTemplate("b", "b")
               .get()
               .readEntity(ExampleBean.class);
-      Assertions.assertEquals(inputBean, bean);
+      soft.assertThat(bean).isEqualTo(inputBean);
     }
   }
 
   @Test
   void testGetTemplateThrows() throws Exception {
-    HttpTestServer.RequestHandler handler = (req, resp) -> fail();
+    HttpTestServer.RequestHandler handler =
+        (req, resp) -> resp.sendError(Status.INTERNAL_SERVER_ERROR.getCode());
     try (HttpTestServer server = new HttpTestServer("/a/b", handler)) {
-      Assertions.assertThrows(
-          HttpClientException.class,
-          () -> get(server.getUri()).path("a/{b}").get().readEntity(ExampleBean.class));
-      Assertions.assertThrows(
-          HttpClientException.class,
-          () ->
-              get(server.getUri())
-                  .path("a/b")
-                  .resolveTemplate("b", "b")
-                  .get()
-                  .readEntity(ExampleBean.class));
+      AtomicReference<ResponseContext> responseContext = new AtomicReference<>();
+      HttpClient client =
+          createClient(server.getUri(), b -> b.addResponseFilter(responseContext::set));
+
+      soft.assertThatThrownBy(
+              () -> client.newRequest().path("a/{b}").get().readEntity(ExampleBean.class))
+          .isInstanceOf(HttpClientException.class);
+      soft.assertThat(responseContext.get())
+          .isNotNull()
+          .extracting(
+              rc -> {
+                try {
+                  return rc.getResponseCode();
+                } catch (IOException e) {
+                  throw new RuntimeException(e);
+                }
+              })
+          .isEqualTo(Status.INTERNAL_SERVER_ERROR);
+
+      responseContext.set(null);
+      soft.assertThatThrownBy(
+              () ->
+                  client
+                      .newRequest()
+                      .path("a/b")
+                      .resolveTemplate("b", "b")
+                      .get()
+                      .readEntity(ExampleBean.class))
+          .isInstanceOf(HttpClientException.class)
+          .hasMessageContaining("Cannot build uri. Not all template keys (b) were used in uri a/b");
+      soft.assertThat(responseContext.get()).isNull();
     }
   }
 
@@ -429,13 +447,13 @@ public class TestHttpClient {
             context.addResponseCallback(
                 (responseContext, failure) -> {
                   responseContextGotCallback.set(responseContext);
-                  Assertions.assertNull(failure);
+                  soft.assertThat(failure).isNull();
                 });
           });
       client.addResponseFilter(
           con -> {
             try {
-              Assertions.assertEquals(Status.OK, con.getResponseCode());
+              soft.assertThat(con.getResponseCode()).isEqualTo(Status.OK);
               responseFilterCalled.set(true);
               responseContextGotFilter.set(con);
             } catch (IOException e) {
@@ -443,10 +461,11 @@ public class TestHttpClient {
             }
           });
       client.build().newRequest().get();
-      Assertions.assertNotNull(responseContextGotFilter.get());
-      Assertions.assertSame(responseContextGotFilter.get(), responseContextGotCallback.get());
-      Assertions.assertTrue(responseFilterCalled.get());
-      Assertions.assertTrue(requestFilterCalled.get());
+      soft.assertThat(responseContextGotFilter.get())
+          .isNotNull()
+          .isSameAs(responseContextGotCallback.get());
+      soft.assertThat(responseFilterCalled.get()).isTrue();
+      soft.assertThat(requestFilterCalled.get()).isTrue();
     }
   }
 
