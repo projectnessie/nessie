@@ -15,6 +15,8 @@
  */
 package org.projectnessie.client.http.impl.jdk11;
 
+import static java.lang.Thread.currentThread;
+
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import java.io.IOException;
@@ -147,24 +149,24 @@ final class JavaRequest extends BaseHttpRequest {
   }
 
   private BodyPublisher bodyPublisher(RequestContext context) {
-    ClassLoader cl = Thread.currentThread().getContextClassLoader();
+    ClassLoader cl = getClass().getClassLoader();
     return BodyPublishers.ofInputStream(
         () -> {
           try {
             Pipe pipe = Pipe.open();
             writerPool.execute(
                 () -> {
-                  ClassLoader restore = Thread.currentThread().getContextClassLoader();
+                  ClassLoader restore = currentThread().getContextClassLoader();
                   try {
                     // Okay - this is weird - but it is necessary when running tests with Quarkus
                     // via `./gradlew :nessie-quarkus:test`.
-                    Thread.currentThread().setContextClassLoader(cl);
+                    currentThread().setContextClassLoader(cl);
 
                     writeToOutputStream(context, Channels.newOutputStream(pipe.sink()));
                   } catch (Exception e) {
                     throw new RuntimeException(e);
                   } finally {
-                    Thread.currentThread().setContextClassLoader(restore);
+                    currentThread().setContextClassLoader(restore);
                   }
                 });
             return Channels.newInputStream(pipe.source());
