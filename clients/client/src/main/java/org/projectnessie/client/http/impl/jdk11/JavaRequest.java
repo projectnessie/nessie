@@ -17,8 +17,6 @@ package org.projectnessie.client.http.impl.jdk11;
 
 import static java.lang.Thread.currentThread;
 
-import com.fasterxml.jackson.core.JsonGenerationException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -190,20 +188,4 @@ final class JavaRequest extends BaseHttpRequest {
    */
   private static final Executor writerPool =
       new ForkJoinPool(Math.max(8, ForkJoinPool.getCommonPoolParallelism()));
-
-  private void writeToOutputStream(RequestContext context, OutputStream outputStream)
-      throws Exception {
-    Object body = context.getBody().orElseThrow(NullPointerException::new);
-    try {
-      try (OutputStream out = wrapOutputStream(outputStream)) {
-        writeBody(config, out, body);
-      }
-    } catch (JsonGenerationException | JsonMappingException e) {
-      throw new HttpClientException(
-          String.format(
-              "Cannot serialize body of %s request against '%s'. Unable to serialize %s",
-              context.getMethod(), context.getUri(), body.getClass()),
-          e);
-    }
-  }
 }
