@@ -15,6 +15,9 @@
  */
 package org.projectnessie.client;
 
+import java.util.Collection;
+import java.util.List;
+
 /** Configuration constants for Nessie. */
 public final class NessieConfigConstants {
   /** Config property name ({@value #CONF_NESSIE_URI}) for the Nessie service URL. */
@@ -92,6 +95,61 @@ public final class NessieConfigConstants {
    * class name.
    */
   public static final String CONF_NESSIE_CLIENT_BUILDER_IMPL = "nessie.client-builder-impl";
+
+  /**
+   * Optional, the cipher suites for SSL connections, see {@link
+   * javax.net.ssl.SSLParameters#setCipherSuites(String[])}.
+   *
+   * <p>This parameter only works on Java 11 and newer.
+   */
+  public static final String CONF_NESSIE_SSL_CIPHER_SUITES = "nessie.ssl.cipher-suites";
+
+  /**
+   * Optional, the protocols for SSL connections, see {@link
+   * javax.net.ssl.SSLParameters#setProtocols(String[])}.
+   *
+   * <p>This parameter only works on Java 11 and newer.
+   */
+  public static final String CONF_NESSIE_SSL_PROTOCOLS = "nessie.ssl.protocols";
+
+  /**
+   * Optional, the SNI host names for SSL connections, see {@link
+   * javax.net.ssl.SSLParameters#setServerNames(List)}.
+   *
+   * <p>This parameter only works on Java 11 and newer.
+   */
+  public static final String CONF_NESSIE_SNI_HOSTS = "nessie.ssl.sni-hosts";
+
+  /**
+   * Optional, a single SNI matcher for SSL connections, see {@link
+   * javax.net.ssl.SSLParameters#setSNIMatchers(Collection)}.
+   *
+   * <p>This parameter only works on Java 11 and newer.
+   */
+  public static final String CONF_NESSIE_SNI_MATCHER = "nessie.ssl.sni-matcher";
+
+  /**
+   * Optional, allow HTTP/2 upgrade.
+   *
+   * <p>This parameter only works on Java 11 and newer.
+   */
+  public static final String CONF_NESSIE_HTTP_2 = "nessie.http2-upgrade";
+
+  /**
+   * Optional, specify how redirects are handled.
+   *
+   * <p>This parameter only works on Java 11 and newer.
+   */
+  public static final String CONF_NESSIE_HTTP_REDIRECT = "nessie.http-redirects";
+
+  /**
+   * Optional, when running on Java 11 force the use of the old {@link java.net.URLConnection} based
+   * client for HTTP.
+   *
+   * <p>This parameter only works on Java 11 and newer.
+   */
+  public static final String CONF_FORCE_URL_CONNECTION_CLIENT =
+      "nessie.force-url-connection-client";
 
   private NessieConfigConstants() {
     // empty

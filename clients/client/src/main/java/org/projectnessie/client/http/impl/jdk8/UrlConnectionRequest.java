@@ -17,10 +17,7 @@ package org.projectnessie.client.http.impl.jdk8;
 
 import static org.projectnessie.client.http.impl.HttpUtils.applyHeaders;
 
-import com.fasterxml.jackson.core.JsonGenerationException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
@@ -69,9 +66,7 @@ final class UrlConnectionRequest extends BaseHttpRequest {
         if (doesOutput) {
           con.setDoOutput(true);
 
-          try (OutputStream out = wrapOutputStream(con.getOutputStream())) {
-            writeBody(config, out, body);
-          }
+          writeToOutputStream(context, con.getOutputStream());
         }
         con.connect();
         con.getResponseCode(); // call to ensure http request is complete
@@ -94,12 +89,6 @@ final class UrlConnectionRequest extends BaseHttpRequest {
     } catch (ProtocolException e) {
       throw new HttpClientException(
           String.format("Cannot perform request against '%s'. Invalid protocol %s", uri, method),
-          e);
-    } catch (JsonGenerationException | JsonMappingException e) {
-      throw new HttpClientException(
-          String.format(
-              "Cannot serialize body of %s request against '%s'. Unable to serialize %s",
-              method, uri, body.getClass()),
           e);
     } catch (MalformedURLException e) {
       throw new HttpClientException(

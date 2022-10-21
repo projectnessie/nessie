@@ -22,12 +22,14 @@ import static org.projectnessie.client.http.impl.HttpUtils.HEADER_ACCEPT_ENCODIN
 import static org.projectnessie.client.http.impl.HttpUtils.HEADER_CONTENT_ENCODING;
 import static org.projectnessie.client.http.impl.HttpUtils.HEADER_CONTENT_TYPE;
 
-import java.io.BufferedOutputStream;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.GZIPOutputStream;
 import org.projectnessie.client.http.HttpClient.Method;
+import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.http.HttpRequest;
 import org.projectnessie.client.http.RequestContext;
 
@@ -60,13 +62,27 @@ public abstract class BaseHttpRequest extends HttpRequest {
     return doesOutput;
   }
 
-  protected OutputStream wrapOutputStream(OutputStream base) throws IOException {
-    return config.isDisableCompression()
-        ? new BufferedOutputStream(base)
-        : new GZIPOutputStream(base);
+  protected void writeToOutputStream(RequestContext context, OutputStream outputStream)
+      throws IOException {
+    Object body = context.getBody().orElseThrow(NullPointerException::new);
+    try {
+      try (OutputStream out = wrapOutputStream(outputStream)) {
+        writeBody(config, out, body);
+      }
+    } catch (JsonGenerationException | JsonMappingException e) {
+      throw new HttpClientException(
+          String.format(
+              "Cannot serialize body of %s request against '%s'. Unable to serialize %s",
+              context.getMethod(), context.getUri(), body.getClass()),
+          e);
+    }
   }
 
-  protected void writeBody(HttpRuntimeConfig config, OutputStream out, Object body)
+  private OutputStream wrapOutputStream(OutputStream base) throws IOException {
+    return config.isDisableCompression() ? base : new GZIPOutputStream(base);
+  }
+
+  private void writeBody(HttpRuntimeConfig config, OutputStream out, Object body)
       throws IOException {
     Class<?> bodyType = body.getClass();
     if (bodyType != String.class) {

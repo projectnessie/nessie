@@ -99,4 +99,9 @@ public class RequestContextImpl implements RequestContext {
   public List<BiConsumer<ResponseContext, Exception>> getResponseCallbacks() {
     return responseCallbacks;
   }
+
+  @Override
+  public String toString() {
+    return method.toString() + " " + uri;
+  }
 }

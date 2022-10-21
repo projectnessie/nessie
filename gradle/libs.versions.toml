@@ -37,6 +37,7 @@ shadowPlugin = "7.1.2"
 slf4j = "1.7.36"
 spotlessPlugin = "6.11.0"
 testcontainers = "1.17.5"
+undertow = "2.2.19.Final"
 
 [bundles]
 # Bundles serve two purposes:
@@ -146,8 +147,6 @@ javax-ws-rs = { module = "javax.ws.rs:javax.ws.rs-api", version = "2.1.1" }
 javax-ws-rs21 = { module = "org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_2.1_spec", version = "2.0.2.Final" }
 jersey-bom = { module = "org.glassfish.jersey:jersey-bom", version = "2.37" }
 jetbrains-annotations = { module = "org.jetbrains:annotations", version = "23.0.0" }
-jetty-bom = { module = "org.eclipse.jetty:jetty-bom", version = "9.4.49.v20220914" }
-jetty-http2-server = { module = "org.eclipse.jetty.http2:http2-server" }
 jmh-core = { module = "org.openjdk.jmh:jmh-core", version.ref = "jmh" }
 jmh-generator-annprocess = { module = "org.openjdk.jmh:jmh-generator-annprocess", version.ref = "jmh" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
@@ -193,6 +192,8 @@ testcontainers-cockroachdb = { module = "org.testcontainers:cockroachdb", versio
 testcontainers-mongodb = { module = "org.testcontainers:mongodb", version.ref = "testcontainers" }
 testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
 testcontainers-testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
+undertow-core = { module = "io.undertow:undertow-core", version.ref = "undertow" }
+undertow-servlet = { module = "io.undertow:undertow-servlet", version.ref = "undertow" }
 weld-se-core = { module = "org.jboss.weld.se:weld-se-core", version = "3.1.9.Final" }
 
 [plugins]

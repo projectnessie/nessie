@@ -3,7 +3,7 @@ arrange:
   - index.md
   - iceberg
   - deltalake
-  - auth_config.md
+  - client_config.md
   - cli.md
   - export_import.md
   - ui.md

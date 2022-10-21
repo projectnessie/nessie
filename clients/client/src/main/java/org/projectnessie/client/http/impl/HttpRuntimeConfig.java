@@ -18,7 +18,9 @@ package org.projectnessie.client.http.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.util.List;
+import javax.annotation.Nullable;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 import org.immutables.value.Value;
 import org.projectnessie.client.http.RequestFilter;
 import org.projectnessie.client.http.ResponseFilter;
@@ -56,4 +58,30 @@ public interface HttpRuntimeConfig {
   List<RequestFilter> getRequestFilters();
 
   List<ResponseFilter> getResponseFilters();
+
+  @Nullable
+  String getFollowRedirects();
+
+  @Nullable
+  SSLParameters getSslParameters();
+
+  @Value.Default
+  default boolean isHttp11Only() {
+    // TODO Jersey/Grizzly has a serious bug that prevents it from working with Java's new HTTP
+    //  client, if the HTTP client's not tied to a particular HTTP version.
+    //  Background: HTTP clients send an 'Upgrade' header using HTTP/1.1 in the first request.
+    //  This lets Jersey/Grizzly call
+    //  'org.glassfish.grizzly.http.HttpHeader.setIgnoreContentModifiers(true)'
+    //  from 'org.glassfish.grizzly.http.HttpCodecFilter.handleRead', which __prevents__ that the
+    //  response contains the 'Content-Type' header, which in turn lets Nessie's HTTP client fail,
+    //  because there's not 'Content-Type' header.
+    //  Quarkus is not affected by the above issue.
+
+    return true;
+  }
+
+  @Value.Default
+  default boolean forceUrlConnectionClient() {
+    return false;
+  }
 }
