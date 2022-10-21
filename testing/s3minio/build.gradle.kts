@@ -41,7 +41,9 @@ dependencies {
 
   testImplementation(libs.bundles.junit.testing)
   testImplementation(libs.junit.jupiter.engine)
-  testImplementation(libs.hadoop.common)
+  testImplementation(libs.hadoop.common) { withSparkExcludes() }
+
+  testRuntimeOnly(libs.logback.classic)
 }
 
 tasks.withType(Test::class.java).configureEach { systemProperty("aws.region", "us-east-1") }
