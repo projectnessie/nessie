@@ -73,6 +73,7 @@ fun ModuleDependency.withSparkExcludes(): ModuleDependency {
   return this.exclude("commons-logging", "commons-logging")
     .exclude("log4j", "log4j")
     .exclude("org.slf4j", "slf4j-log4j12")
+    .exclude("org.slf4j", "slf4j-reload4j")
     .exclude("org.eclipse.jetty", "jetty-util")
     .exclude("org.apache.avro", "avro")
     .exclude("org.apache.arrow", "arrow-vector")
