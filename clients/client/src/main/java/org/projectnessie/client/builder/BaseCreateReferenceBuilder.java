@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,29 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http.v1api;
+package org.projectnessie.client.builder;
 
-import org.projectnessie.client.api.OnTagBuilder;
-import org.projectnessie.client.http.NessieApiClient;
+import org.projectnessie.client.api.CreateReferenceBuilder;
+import org.projectnessie.model.Reference;
 
-abstract class BaseHttpOnTagRequest<R extends OnTagBuilder<R>> extends BaseHttpRequest
-    implements OnTagBuilder<R> {
-  protected String tagName;
-  protected String hash;
+public abstract class BaseCreateReferenceBuilder implements CreateReferenceBuilder {
 
-  BaseHttpOnTagRequest(NessieApiClient client) {
-    super(client);
+  protected Reference reference;
+  protected String sourceRefName;
+
+  @Override
+  public CreateReferenceBuilder sourceRefName(String sourceRefName) {
+    this.sourceRefName = sourceRefName;
+    return this;
   }
 
   @Override
-  public R tagName(String tagName) {
-    this.tagName = tagName;
-    return (R) this;
-  }
-
-  @Override
-  public R hash(String hash) {
-    this.hash = hash;
-    return (R) this;
+  public CreateReferenceBuilder reference(Reference reference) {
+    this.reference = reference;
+    return this;
   }
 }

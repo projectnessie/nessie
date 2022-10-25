@@ -15,74 +15,35 @@
  */
 package org.projectnessie.client.http.v1api;
 
-import java.util.stream.Stream;
 import org.projectnessie.api.params.CommitLogParams;
-import org.projectnessie.api.params.CommitLogParamsBuilder;
-import org.projectnessie.api.params.FetchOption;
-import org.projectnessie.client.StreamingUtil;
-import org.projectnessie.client.api.GetCommitLogBuilder;
+import org.projectnessie.client.builder.BaseGetCommitLogBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.LogResponse;
-import org.projectnessie.model.LogResponse.LogEntry;
 
-final class HttpGetCommitLog extends BaseHttpOnReferenceRequest<GetCommitLogBuilder>
-    implements GetCommitLogBuilder {
+final class HttpGetCommitLog extends BaseGetCommitLogBuilder<CommitLogParams> {
 
-  private final CommitLogParamsBuilder params = CommitLogParams.builder();
+  private final NessieApiClient client;
 
   HttpGetCommitLog(NessieApiClient client) {
-    super(client);
+    super(CommitLogParams::forNextPage);
+    this.client = client;
   }
 
   @Override
-  public GetCommitLogBuilder fetch(FetchOption fetchOption) {
-    params.fetchOption(fetchOption);
-    return this;
+  protected CommitLogParams params() {
+    return CommitLogParams.builder()
+        .filter(filter)
+        .startHash(untilHash)
+        .maxRecords(maxRecords)
+        .fetchOption(fetchOption)
+        .startHash(untilHash)
+        .endHash(hashOnRef)
+        .build();
   }
 
   @Override
-  public GetCommitLogBuilder untilHash(String untilHash) {
-    params.startHash(untilHash);
-    return this;
-  }
-
-  @Override
-  public GetCommitLogBuilder maxRecords(int maxRecords) {
-    params.maxRecords(maxRecords);
-    return this;
-  }
-
-  @Override
-  public GetCommitLogBuilder pageToken(String pageToken) {
-    params.pageToken(pageToken);
-    return this;
-  }
-
-  @Override
-  public GetCommitLogBuilder filter(String filter) {
-    params.filter(filter);
-    return this;
-  }
-
-  private CommitLogParams params() {
-    params.endHash(hashOnRef);
-    return params.build();
-  }
-
-  @Override
-  public LogResponse get() throws NessieNotFoundException {
-    return get(params());
-  }
-
-  private LogResponse get(CommitLogParams p) throws NessieNotFoundException {
+  protected LogResponse get(CommitLogParams p) throws NessieNotFoundException {
     return client.getTreeApi().getCommitLog(refName, p);
-  }
-
-  @Override
-  public Stream<LogEntry> stream() throws NessieNotFoundException {
-    CommitLogParams p = params();
-    return StreamingUtil.generateStream(
-        LogResponse::getLogEntries, pageToken -> get(p.forNextPage(pageToken)));
   }
 }

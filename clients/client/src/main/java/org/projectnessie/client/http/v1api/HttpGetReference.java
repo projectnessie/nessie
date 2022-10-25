@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,35 +15,24 @@
  */
 package org.projectnessie.client.http.v1api;
 
-import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.api.params.GetReferenceParams;
-import org.projectnessie.api.params.GetReferenceParamsBuilder;
-import org.projectnessie.client.api.GetReferenceBuilder;
+import org.projectnessie.client.builder.BaseGetReferenceBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Reference;
 
-final class HttpGetReference extends BaseHttpRequest implements GetReferenceBuilder {
-  private GetReferenceParamsBuilder builder = GetReferenceParams.builder();
+final class HttpGetReference extends BaseGetReferenceBuilder {
+  private final NessieApiClient client;
 
   HttpGetReference(NessieApiClient client) {
-    super(client);
-  }
-
-  @Override
-  public GetReferenceBuilder refName(String refName) {
-    builder.refName(refName);
-    return this;
-  }
-
-  @Override
-  public GetReferenceBuilder fetch(FetchOption fetchOption) {
-    builder.fetchOption(fetchOption);
-    return this;
+    this.client = client;
   }
 
   @Override
   public Reference get() throws NessieNotFoundException {
-    return client.getTreeApi().getReferenceByName(builder.build());
+    return client
+        .getTreeApi()
+        .getReferenceByName(
+            GetReferenceParams.builder().refName(refName).fetchOption(fetchOption).build());
   }
 }

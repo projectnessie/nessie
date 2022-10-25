@@ -16,15 +16,18 @@
 package org.projectnessie.client.http.v1api;
 
 import org.projectnessie.client.api.DeleteBranchBuilder;
+import org.projectnessie.client.builder.BaseOnBranchBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Reference;
 
-final class HttpDeleteBranch extends BaseHttpOnBranchRequest<DeleteBranchBuilder>
+final class HttpDeleteBranch extends BaseOnBranchBuilder<DeleteBranchBuilder>
     implements DeleteBranchBuilder {
+  private final NessieApiClient client;
+
   HttpDeleteBranch(NessieApiClient client) {
-    super(client);
+    this.client = client;
   }
 
   @Override
