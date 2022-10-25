@@ -15,11 +15,11 @@
  */
 package org.projectnessie.services.rest;
 
+import com.google.common.base.Preconditions;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
-import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.http.HttpTreeApi;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.EntriesParams;
@@ -39,6 +39,7 @@ import org.projectnessie.model.Transplant;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.impl.TreeApiImplWithAuthorization;
+import org.projectnessie.services.spi.TreeService;
 import org.projectnessie.versioned.VersionStore;
 
 /** REST endpoint for the tree-API. */
@@ -67,7 +68,7 @@ public class RestTreeResource implements HttpTreeApi {
     this.authorizer = authorizer;
   }
 
-  private TreeApi resource() {
+  private TreeService resource() {
     return new TreeApiImplWithAuthorization(
         config,
         store,
@@ -77,7 +78,8 @@ public class RestTreeResource implements HttpTreeApi {
 
   @Override
   public ReferencesResponse getAllReferences(ReferencesParams params) {
-    return resource().getAllReferences(params);
+    Preconditions.checkArgument(params.pageToken() == null, "Paging not supported");
+    return resource().getAllReferences(params.fetchOption(), params.filter());
   }
 
   @Override
@@ -88,24 +90,36 @@ public class RestTreeResource implements HttpTreeApi {
   @Override
   public Reference createReference(String sourceRefName, Reference reference)
       throws NessieNotFoundException, NessieConflictException {
-    return resource().createReference(sourceRefName, reference);
+    return resource()
+        .createReference(
+            reference.getName(), reference.getType(), reference.getHash(), sourceRefName);
   }
 
   @Override
   public Reference getReferenceByName(GetReferenceParams params) throws NessieNotFoundException {
-    return resource().getReferenceByName(params);
+    return resource().getReferenceByName(params.getRefName(), params.fetchOption());
   }
 
   @Override
   public EntriesResponse getEntries(String refName, EntriesParams params)
       throws NessieNotFoundException {
-    return resource().getEntries(refName, params);
+    Preconditions.checkArgument(params.pageToken() == null, "Paging not supported");
+    return resource()
+        .getEntries(refName, params.hashOnRef(), params.namespaceDepth(), params.filter());
   }
 
   @Override
   public LogResponse getCommitLog(String ref, CommitLogParams params)
       throws NessieNotFoundException {
-    return resource().getCommitLog(ref, params);
+    return resource()
+        .getCommitLog(
+            ref,
+            params.fetchOption(),
+            params.startHash(),
+            params.endHash(),
+            params.filter(),
+            params.maxRecords(),
+            params.pageToken());
   }
 
   @Override
@@ -129,13 +143,36 @@ public class RestTreeResource implements HttpTreeApi {
   public MergeResponse transplantCommitsIntoBranch(
       String branchName, String expectedHash, String message, Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
-    return resource().transplantCommitsIntoBranch(branchName, expectedHash, message, transplant);
+    return resource()
+        .transplantCommitsIntoBranch(
+            branchName,
+            expectedHash,
+            message,
+            transplant.getHashesToTransplant(),
+            transplant.getFromRefName(),
+            transplant.keepIndividualCommits(),
+            transplant.getKeyMergeModes(),
+            transplant.getDefaultKeyMergeMode(),
+            transplant.isDryRun(),
+            transplant.isFetchAdditionalInfo(),
+            transplant.isReturnConflictAsResult());
   }
 
   @Override
   public MergeResponse mergeRefIntoBranch(String branchName, String expectedHash, Merge merge)
       throws NessieNotFoundException, NessieConflictException {
-    return resource().mergeRefIntoBranch(branchName, expectedHash, merge);
+    return resource()
+        .mergeRefIntoBranch(
+            branchName,
+            expectedHash,
+            merge.getFromRefName(),
+            merge.getFromHash(),
+            merge.keepIndividualCommits(),
+            merge.getKeyMergeModes(),
+            merge.getDefaultKeyMergeMode(),
+            merge.isDryRun(),
+            merge.isFetchAdditionalInfo(),
+            merge.isReturnConflictAsResult());
   }
 
   @Override

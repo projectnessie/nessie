@@ -29,8 +29,6 @@ import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.projectnessie.model.BaseMergeTransplant.MergeBehavior;
-import org.projectnessie.model.BaseMergeTransplant.MergeKeyBehavior;
 import org.projectnessie.model.LogResponse.LogEntry;
 
 /**

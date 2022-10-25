@@ -31,11 +31,11 @@ import static org.projectnessie.services.cel.CELUtil.VAR_REF_META;
 import static org.projectnessie.services.cel.CELUtil.VAR_REF_TYPE;
 import static org.projectnessie.services.impl.RefUtil.toNamedRef;
 
-import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.security.Principal;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -48,12 +48,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
-import org.projectnessie.api.TreeApi;
-import org.projectnessie.api.params.CommitLogParams;
-import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.api.params.FetchOption;
-import org.projectnessie.api.params.GetReferenceParams;
-import org.projectnessie.api.params.ReferencesParams;
 import org.projectnessie.cel.tools.Script;
 import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.error.NessieConflictException;
@@ -61,8 +56,6 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceAlreadyExistsException;
 import org.projectnessie.error.NessieReferenceConflictException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
-import org.projectnessie.model.BaseMergeTransplant;
-import org.projectnessie.model.BaseMergeTransplant.MergeBehavior;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
@@ -80,7 +73,8 @@ import org.projectnessie.model.ImmutableReferencesResponse;
 import org.projectnessie.model.ImmutableTag;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
-import org.projectnessie.model.Merge;
+import org.projectnessie.model.MergeBehavior;
+import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.MergeResponse.ContentKeyConflict;
 import org.projectnessie.model.Operation;
@@ -88,11 +82,11 @@ import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferenceMetadata;
 import org.projectnessie.model.ReferencesResponse;
-import org.projectnessie.model.Transplant;
 import org.projectnessie.model.Validation;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.cel.CELUtil;
 import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.services.spi.TreeService;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Delete;
@@ -115,7 +109,7 @@ import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 
-public class TreeApiImpl extends BaseApiImpl implements TreeApi {
+public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
   private static final int MAX_COMMIT_LOG_ENTRIES = 250;
 
@@ -125,15 +119,14 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   }
 
   @Override
-  public ReferencesResponse getAllReferences(ReferencesParams params) {
-    Preconditions.checkArgument(params.pageToken() == null, "Paging not supported");
+  public ReferencesResponse getAllReferences(FetchOption fetchOption, String filter) {
     ImmutableReferencesResponse.Builder resp = ReferencesResponse.builder();
-    boolean fetchAll = FetchOption.isFetchAll(params.fetchOption());
+    boolean fetchAll = FetchOption.isFetchAll(fetchOption);
     try (Stream<ReferenceInfo<CommitMeta>> str =
         getStore().getNamedRefs(getGetNamedRefsParams(fetchAll))) {
       Stream<Reference> unfiltered =
           str.map(refInfo -> TreeApiImpl.makeReference(refInfo, fetchAll));
-      Stream<Reference> filtered = filterReferences(unfiltered, params.filter());
+      Stream<Reference> filtered = filterReferences(unfiltered, filter);
       filtered.forEach(resp::addReferences);
     } catch (ReferenceNotFoundException e) {
       throw new IllegalArgumentException(
@@ -206,28 +199,30 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   }
 
   @Override
-  public Reference getReferenceByName(GetReferenceParams params) throws NessieNotFoundException {
+  public Reference getReferenceByName(String refName, FetchOption fetchOption)
+      throws NessieNotFoundException {
     try {
-      boolean fetchAll = FetchOption.isFetchAll(params.fetchOption());
+      boolean fetchAll = FetchOption.isFetchAll(fetchOption);
       return makeReference(
-          getStore().getNamedRef(params.getRefName(), getGetNamedRefsParams(fetchAll)), fetchAll);
+          getStore().getNamedRef(refName, getGetNamedRefsParams(fetchAll)), fetchAll);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
   }
 
   @Override
-  public Reference createReference(String sourceRefName, Reference reference)
+  public Reference createReference(
+      String refName, Reference.ReferenceType type, String targetHash, String sourceRefName)
       throws NessieNotFoundException, NessieConflictException {
-    Validation.validateForbiddenReferenceName(reference.getName());
-    NamedRef namedReference = toNamedRef(reference);
-    if (reference.getType() == Reference.ReferenceType.TAG && reference.getHash() == null) {
+    Validation.validateForbiddenReferenceName(refName);
+    NamedRef namedReference = toNamedRef(type, refName);
+    if (type == Reference.ReferenceType.TAG && targetHash == null) {
       throw new IllegalArgumentException(
           "Tag-creation requires a target named-reference and hash.");
     }
 
     try {
-      Hash hash = getStore().create(namedReference, toHash(reference.getHash(), false));
+      Hash hash = getStore().create(namedReference, toHash(targetHash, false));
       return RefUtil.toReference(namedReference, hash);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
@@ -238,9 +233,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
 
   @Override
   public Branch getDefaultBranch() throws NessieNotFoundException {
-    Reference r =
-        getReferenceByName(
-            GetReferenceParams.builder().refName(getConfig().getDefaultBranch()).build());
+    Reference r = getReferenceByName(getConfig().getDefaultBranch(), FetchOption.MINIMAL);
     if (!(r instanceof Branch)) {
       throw new IllegalStateException("Default branch isn't a branch");
     }
@@ -265,25 +258,34 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   }
 
   @Override
-  public LogResponse getCommitLog(String namedRef, CommitLogParams params)
+  public LogResponse getCommitLog(
+      String namedRef,
+      FetchOption fetchOption,
+      String oldestHashLimit,
+      String youngestHash,
+      String filter,
+      Integer maxRecords,
+      String pageToken)
       throws NessieNotFoundException {
 
     // we should only allow named references when no paging is defined
     WithHash<NamedRef> endRef =
-        namedRefWithHashOrThrow(
-            namedRef, null == params.pageToken() ? params.endHash() : params.pageToken());
+        namedRefWithHashOrThrow(namedRef, null == pageToken ? youngestHash : pageToken);
 
-    return getCommitLog(params, endRef);
+    return getCommitLog(maxRecords, fetchOption, filter, endRef, oldestHashLimit);
   }
 
-  protected LogResponse getCommitLog(CommitLogParams params, WithHash<NamedRef> endRef)
+  protected LogResponse getCommitLog(
+      Integer maxRecords,
+      FetchOption fetchOption,
+      String filter,
+      WithHash<NamedRef> endRef,
+      String startHash)
       throws NessieNotFoundException {
     int max =
-        Math.min(
-            params.maxRecords() != null ? params.maxRecords() : MAX_COMMIT_LOG_ENTRIES,
-            MAX_COMMIT_LOG_ENTRIES);
+        Math.min(maxRecords != null ? maxRecords : MAX_COMMIT_LOG_ENTRIES, MAX_COMMIT_LOG_ENTRIES);
 
-    boolean fetchAll = FetchOption.isFetchAll(params.fetchOption());
+    boolean fetchAll = FetchOption.isFetchAll(fetchOption);
     try (Stream<Commit> commits = getStore().getCommits(endRef.getHash(), fetchAll)) {
       Stream<LogEntry> logEntries = commits.map(commit -> commitToLogEntry(fetchAll, commit));
 
@@ -291,11 +293,11 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
           StreamSupport.stream(
               StreamUtil.takeUntilIncl(
                   logEntries.spliterator(),
-                  x -> Objects.equals(x.getCommitMeta().getHash(), params.startHash())),
+                  x -> Objects.equals(x.getCommitMeta().getHash(), startHash)),
               false);
 
       List<LogEntry> items =
-          filterCommitLog(logEntries, params.filter()).limit(max + 1).collect(Collectors.toList());
+          filterCommitLog(logEntries, filter).limit(max + 1).collect(Collectors.toList());
 
       if (items.size() == max + 1) {
         return LogResponse.builder()
@@ -405,11 +407,21 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
 
   @Override
   public MergeResponse transplantCommitsIntoBranch(
-      String branchName, String expectedHash, String message, Transplant transplant)
+      String branchName,
+      String expectedHash,
+      String message,
+      List<String> hashesToTransplant,
+      String fromRefName,
+      Boolean keepIndividualCommits,
+      Collection<MergeKeyBehavior> keyMergeTypes,
+      MergeBehavior defaultMergeType,
+      Boolean dryRun,
+      Boolean fetchAdditionalInfo,
+      Boolean returnConflictAsResult)
       throws NessieNotFoundException, NessieConflictException {
     try {
       List<Hash> transplants;
-      try (Stream<Hash> s = transplant.getHashesToTransplant().stream().map(Hash::of)) {
+      try (Stream<Hash> s = hashesToTransplant.stream().map(Hash::of)) {
         transplants = s.collect(Collectors.toList());
       }
 
@@ -420,19 +432,19 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
                   toHash(expectedHash, true),
                   transplants,
                   commitMetaUpdate(),
-                  Boolean.TRUE.equals(transplant.keepIndividualCommits()),
-                  keyMergeTypes(transplant),
-                  defaultMergeType(transplant),
-                  Boolean.TRUE.equals(transplant.isDryRun()),
-                  Boolean.TRUE.equals(transplant.isFetchAdditionalInfo()));
-      return createResponse(transplant, result);
+                  Boolean.TRUE.equals(keepIndividualCommits),
+                  keyMergeTypes(keyMergeTypes),
+                  defaultMergeType(defaultMergeType),
+                  Boolean.TRUE.equals(dryRun),
+                  Boolean.TRUE.equals(fetchAdditionalInfo));
+      return createResponse(fetchAdditionalInfo, result);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (MergeConflictException e) {
-      if (Boolean.TRUE.equals(transplant.isReturnConflictAsResult())) {
+      if (Boolean.TRUE.equals(returnConflictAsResult)) {
         @SuppressWarnings("unchecked")
         MergeResult<Commit> mr = (MergeResult<Commit>) e.getMergeResult();
-        return createResponse(transplant, mr);
+        return createResponse(fetchAdditionalInfo, mr);
       }
       throw new NessieReferenceConflictException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -441,29 +453,39 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
   }
 
   @Override
-  public MergeResponse mergeRefIntoBranch(String branchName, String expectedHash, Merge merge)
+  public MergeResponse mergeRefIntoBranch(
+      String branchName,
+      String expectedHash,
+      String fromRefName,
+      String fromHash,
+      Boolean keepIndividualCommits,
+      Collection<MergeKeyBehavior> keyMergeTypes,
+      MergeBehavior defaultMergeType,
+      Boolean dryRun,
+      Boolean fetchAdditionalInfo,
+      Boolean returnConflictAsResult)
       throws NessieNotFoundException, NessieConflictException {
     try {
       MergeResult<Commit> result =
           getStore()
               .merge(
-                  toHash(merge.getFromRefName(), merge.getFromHash()),
+                  toHash(fromRefName, fromHash),
                   BranchName.of(branchName),
                   toHash(expectedHash, true),
                   commitMetaUpdate(),
-                  Boolean.TRUE.equals(merge.keepIndividualCommits()),
-                  keyMergeTypes(merge),
-                  defaultMergeType(merge),
-                  Boolean.TRUE.equals(merge.isDryRun()),
-                  Boolean.TRUE.equals(merge.isFetchAdditionalInfo()));
-      return createResponse(merge, result);
+                  Boolean.TRUE.equals(keepIndividualCommits),
+                  keyMergeTypes(keyMergeTypes),
+                  defaultMergeType(defaultMergeType),
+                  Boolean.TRUE.equals(dryRun),
+                  Boolean.TRUE.equals(fetchAdditionalInfo));
+      return createResponse(fetchAdditionalInfo, result);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (MergeConflictException e) {
-      if (Boolean.TRUE.equals(merge.isReturnConflictAsResult())) {
+      if (Boolean.TRUE.equals(returnConflictAsResult)) {
         @SuppressWarnings("unchecked")
         MergeResult<Commit> mr = (MergeResult<Commit>) e.getMergeResult();
-        return createResponse(merge, mr);
+        return createResponse(fetchAdditionalInfo, mr);
       }
       throw new NessieReferenceConflictException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -471,8 +493,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     }
   }
 
-  private MergeResponse createResponse(
-      BaseMergeTransplant mergeTransplant, MergeResult<Commit> result) {
+  private MergeResponse createResponse(Boolean fetchAdditionalInfo, MergeResult<Commit> result) {
     Function<Hash, String> hashToString = h -> h != null ? h.asString() : null;
     ImmutableMergeResponse.Builder response =
         ImmutableMergeResponse.builder()
@@ -490,10 +511,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
             return;
           }
           src.stream()
-              .map(
-                  c ->
-                      commitToLogEntry(
-                          Boolean.TRUE.equals(mergeTransplant.isFetchAdditionalInfo()), c))
+              .map(c -> commitToLogEntry(Boolean.TRUE.equals(fetchAdditionalInfo), c))
               .forEach(dest);
         };
 
@@ -527,26 +545,24 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     return response.build();
   }
 
-  private static Map<Key, MergeType> keyMergeTypes(BaseMergeTransplant params) {
-    return params.getKeyMergeModes() != null
-        ? params.getKeyMergeModes().stream()
+  private static Map<Key, MergeType> keyMergeTypes(Collection<MergeKeyBehavior> behaviors) {
+    return behaviors != null
+        ? behaviors.stream()
             .collect(
                 Collectors.toMap(
                     e -> toKey(e.getKey()), e -> MergeType.valueOf(e.getMergeBehavior().name())))
         : Collections.emptyMap();
   }
 
-  private static MergeType defaultMergeType(BaseMergeTransplant params) {
-    return params.getDefaultKeyMergeMode() != null
-        ? MergeType.valueOf(params.getDefaultKeyMergeMode().name())
-        : MergeType.NORMAL;
+  private static MergeType defaultMergeType(MergeBehavior mergeBehavior) {
+    return mergeBehavior != null ? MergeType.valueOf(mergeBehavior.name()) : MergeType.NORMAL;
   }
 
   @Override
-  public EntriesResponse getEntries(String namedRef, EntriesParams params)
+  public EntriesResponse getEntries(
+      String namedRef, String hashOnRef, Integer namespaceDepth, String filter)
       throws NessieNotFoundException {
-    Preconditions.checkArgument(params.pageToken() == null, "Paging not supported");
-    WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(namedRef, params.hashOnRef());
+    WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(namedRef, hashOnRef);
     // TODO Implement paging. At the moment, we do not expect that many keys/entries to be returned.
     //  So the size of the whole result is probably reasonable and unlikely to "kill" either the
     //  server or client. We have to figure out _how_ to implement paging for keys/entries, i.e.
@@ -559,18 +575,18 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
       ImmutableEntriesResponse.Builder response = EntriesResponse.builder();
       try (Stream<KeyEntry> entryStream = getStore().getKeys(refWithHash.getHash())) {
         Stream<EntriesResponse.Entry> entriesStream =
-            filterEntries(refWithHash, entryStream, params.filter())
+            filterEntries(refWithHash, entryStream, filter)
                 .map(
                     key ->
                         EntriesResponse.Entry.builder()
                             .name(fromKey(key.getKey()))
-                            .type((Content.Type) key.getType())
+                            .type(key.getType())
                             .build());
-        if (params.namespaceDepth() != null && params.namespaceDepth() > 0) {
+        if (namespaceDepth != null && namespaceDepth > 0) {
           entriesStream =
               entriesStream
-                  .filter(e -> e.getName().getElements().size() >= params.namespaceDepth())
-                  .map(e -> truncate(e, params.namespaceDepth()))
+                  .filter(e -> e.getName().getElements().size() >= namespaceDepth)
+                  .map(e -> truncate(e, namespaceDepth))
                   .distinct();
         }
         entriesStream.forEach(response::addEntries);
@@ -714,7 +730,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeApi {
     return ContentKey.of(key.getElements());
   }
 
-  protected static Key toKey(ContentKey key) {
+  public static Key toKey(ContentKey key) {
     return Key.of(key.getElements());
   }
 

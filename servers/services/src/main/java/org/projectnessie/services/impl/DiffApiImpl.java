@@ -17,8 +17,6 @@ package org.projectnessie.services.impl;
 
 import java.security.Principal;
 import java.util.stream.Stream;
-import org.projectnessie.api.DiffApi;
-import org.projectnessie.api.params.DiffParams;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.ContentKey;
@@ -27,6 +25,7 @@ import org.projectnessie.model.ImmutableDiffEntry;
 import org.projectnessie.model.ImmutableDiffResponse;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.services.spi.DiffService;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
@@ -34,7 +33,7 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 
-public class DiffApiImpl extends BaseApiImpl implements DiffApi {
+public class DiffApiImpl extends BaseApiImpl implements DiffService {
 
   public DiffApiImpl(
       ServerConfig config, VersionStore store, Authorizer authorizer, Principal principal) {
@@ -42,10 +41,10 @@ public class DiffApiImpl extends BaseApiImpl implements DiffApi {
   }
 
   @Override
-  public DiffResponse getDiff(DiffParams params) throws NessieNotFoundException {
-    WithHash<NamedRef> from =
-        namedRefWithHashOrThrow(params.getFromRef(), params.getFromHashOnRef());
-    WithHash<NamedRef> to = namedRefWithHashOrThrow(params.getToRef(), params.getToHashOnRef());
+  public DiffResponse getDiff(String fromRef, String fromHash, String toRef, String toHash)
+      throws NessieNotFoundException {
+    WithHash<NamedRef> from = namedRefWithHashOrThrow(fromRef, fromHash);
+    WithHash<NamedRef> to = namedRefWithHashOrThrow(toRef, toHash);
     return getDiff(from.getHash(), to.getHash());
   }
 

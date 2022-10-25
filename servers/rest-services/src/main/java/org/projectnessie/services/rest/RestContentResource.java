@@ -19,7 +19,6 @@ import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
-import org.projectnessie.api.ContentApi;
 import org.projectnessie.api.http.HttpContentApi;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Content;
@@ -29,6 +28,7 @@ import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.impl.ContentApiImplWithAuthorization;
+import org.projectnessie.services.spi.ContentService;
 import org.projectnessie.versioned.VersionStore;
 
 /** REST endpoint for the content-API. */
@@ -57,7 +57,7 @@ public class RestContentResource implements HttpContentApi {
     this.authorizer = authorizer;
   }
 
-  private ContentApi resource() {
+  private ContentService resource() {
     return new ContentApiImplWithAuthorization(
         config,
         store,
@@ -75,6 +75,6 @@ public class RestContentResource implements HttpContentApi {
   public GetMultipleContentsResponse getMultipleContents(
       String ref, String hashOnRef, GetMultipleContentsRequest request)
       throws NessieNotFoundException {
-    return resource().getMultipleContents(ref, hashOnRef, request);
+    return resource().getMultipleContents(ref, hashOnRef, request.getRequestedKeys());
   }
 }

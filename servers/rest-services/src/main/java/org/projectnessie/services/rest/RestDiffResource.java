@@ -19,7 +19,6 @@ import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
-import org.projectnessie.api.DiffApi;
 import org.projectnessie.api.http.HttpDiffApi;
 import org.projectnessie.api.params.DiffParams;
 import org.projectnessie.error.NessieNotFoundException;
@@ -27,6 +26,7 @@ import org.projectnessie.model.DiffResponse;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.impl.DiffApiImplWithAuthorization;
+import org.projectnessie.services.spi.DiffService;
 import org.projectnessie.versioned.VersionStore;
 
 /** REST endpoint for the diff-API. */
@@ -55,7 +55,7 @@ public class RestDiffResource implements HttpDiffApi {
     this.authorizer = authorizer;
   }
 
-  private DiffApi resource() {
+  private DiffService resource() {
     return new DiffApiImplWithAuthorization(
         config,
         store,
@@ -65,6 +65,11 @@ public class RestDiffResource implements HttpDiffApi {
 
   @Override
   public DiffResponse getDiff(DiffParams params) throws NessieNotFoundException {
-    return resource().getDiff(params);
+    return resource()
+        .getDiff(
+            params.getFromRef(),
+            params.getFromHashOnRef(),
+            params.getToRef(),
+            params.getToHashOnRef());
   }
 }

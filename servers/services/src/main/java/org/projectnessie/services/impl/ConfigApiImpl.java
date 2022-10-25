@@ -15,12 +15,12 @@
  */
 package org.projectnessie.services.impl;
 
-import org.projectnessie.api.ConfigApi;
 import org.projectnessie.model.ImmutableNessieConfiguration;
 import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.services.spi.ConfigService;
 
-public class ConfigApiImpl implements ConfigApi {
+public class ConfigApiImpl implements ConfigService {
 
   private final ServerConfig config;
 

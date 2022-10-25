@@ -22,7 +22,6 @@ import javax.annotation.Nullable;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
-import org.projectnessie.model.BaseMergeTransplant.MergeBehavior;
 import org.projectnessie.model.LogResponse.LogEntry;
 
 @Schema(type = SchemaType.OBJECT, title = "Merge Response")
