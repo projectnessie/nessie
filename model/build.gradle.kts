@@ -47,12 +47,7 @@ dependencies {
 }
 
 smallryeOpenApi {
-  infoTitle.set("Nessie API")
   infoVersion.set(project.version.toString())
-  infoContactName.set("Project Nessie")
-  infoContactUrl.set("https://projectnessie.org")
-  infoLicenseName.set("Apache 2.0")
-  infoLicenseUrl.set("http://www.apache.org/licenses/LICENSE-2.0.html")
   schemaFilename.set("META-INF/openapi/openapi")
   operationIdStrategy.set("METHOD")
   scanPackages.set(
