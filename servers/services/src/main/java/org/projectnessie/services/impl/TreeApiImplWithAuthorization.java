@@ -25,10 +25,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
-import org.projectnessie.api.params.CommitLogParams;
-import org.projectnessie.api.params.GetReferenceParams;
-import org.projectnessie.api.params.ReferencesParams;
+import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -38,13 +35,13 @@ import org.projectnessie.model.ImmutableLogResponse;
 import org.projectnessie.model.ImmutableReferencesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
-import org.projectnessie.model.Merge;
+import org.projectnessie.model.MergeBehavior;
+import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
-import org.projectnessie.model.Transplant;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.authz.Check;
@@ -64,11 +61,11 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
   }
 
   @Override
-  public ReferencesResponse getAllReferences(ReferencesParams params) {
+  public ReferencesResponse getAllReferences(FetchOption fetchOption, String filter) {
     ImmutableReferencesResponse.Builder resp = ReferencesResponse.builder();
     BatchAccessChecker check = startAccessCheck();
     List<Reference> refs =
-        super.getAllReferences(params).getReferences().stream()
+        super.getAllReferences(fetchOption, filter).getReferences().stream()
             .peek(ref -> check.canViewReference(RefUtil.toNamedRef(ref)))
             .collect(Collectors.toList());
     Set<NamedRef> notAllowed =
@@ -83,33 +80,34 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
   }
 
   @Override
-  public Reference getReferenceByName(GetReferenceParams params) throws NessieNotFoundException {
-    Reference ref = super.getReferenceByName(params);
+  public Reference getReferenceByName(String refName, FetchOption fetchOption)
+      throws NessieNotFoundException {
+    Reference ref = super.getReferenceByName(refName, fetchOption);
     startAccessCheck().canViewReference(RefUtil.toNamedRef(ref)).checkAndThrow();
     return ref;
   }
 
   @Override
-  public Reference createReference(@Nullable String sourceRefName, Reference reference)
+  public Reference createReference(
+      String refName, Reference.ReferenceType type, String targetHash, String sourceRefName)
       throws NessieNotFoundException, NessieConflictException {
-    BatchAccessChecker check = startAccessCheck().canCreateReference(RefUtil.toNamedRef(reference));
+    BatchAccessChecker check =
+        startAccessCheck().canCreateReference(RefUtil.toNamedRef(type, refName));
 
     try {
-      check.canViewReference(
-          namedRefWithHashOrThrow(sourceRefName, reference.getHash()).getValue());
+      check.canViewReference(namedRefWithHashOrThrow(sourceRefName, targetHash).getValue());
     } catch (NessieNotFoundException e) {
       // If the default-branch does not exist and hashOnRef points to the "beginning of time",
       // then do not throw a NessieNotFoundException, but re-create the default branch. In all
       // cases, re-throw the exception.
-      if (!(reference instanceof Branch
-          && reference.getName().equals(getConfig().getDefaultBranch())
-          && (null == reference.getHash()
-              || getStore().noAncestorHash().asString().equals(reference.getHash())))) {
+      if (!(Reference.ReferenceType.BRANCH.equals(type)
+          && refName.equals(getConfig().getDefaultBranch())
+          && (null == targetHash || getStore().noAncestorHash().asString().equals(targetHash)))) {
         throw e;
       }
     }
     check.checkAndThrow();
-    return super.createReference(sourceRefName, reference);
+    return super.createReference(refName, type, targetHash, sourceRefName);
   }
 
   @Override
@@ -165,12 +163,18 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
   }
 
   @Override
-  protected LogResponse getCommitLog(CommitLogParams params, WithHash<NamedRef> endRef)
+  protected LogResponse getCommitLog(
+      Integer maxRecords,
+      FetchOption fetchOption,
+      String filter,
+      WithHash<NamedRef> endRef,
+      String startHash)
       throws NessieNotFoundException {
     NamedRef ref = endRef.getValue();
 
     startAccessCheck().canListCommitLog(ref).checkAndThrow();
-    LogResponse logResponse = super.getCommitLog(params, endRef);
+    LogResponse logResponse =
+        super.getCommitLog(maxRecords, fetchOption, filter, endRef, startHash);
 
     Stream<Operation> allOperations =
         logResponse.getLogEntries().stream()
@@ -224,34 +228,71 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
 
   @Override
   public MergeResponse transplantCommitsIntoBranch(
-      String branchName, String expectedHash, String message, Transplant transplant)
+      String branchName,
+      String expectedHash,
+      String message,
+      List<String> hashesToTransplant,
+      String fromRefName,
+      Boolean keepIndividualCommits,
+      Collection<MergeKeyBehavior> keyMergeTypes,
+      MergeBehavior defaultMergeType,
+      Boolean dryRun,
+      Boolean fetchAdditionalInfo,
+      Boolean returnConflictAsResult)
       throws NessieNotFoundException, NessieConflictException {
-    if (transplant.getHashesToTransplant().isEmpty()) {
+    if (hashesToTransplant.isEmpty()) {
       throw new IllegalArgumentException("No hashes given to transplant.");
     }
 
     startAccessCheck()
         .canViewReference(
             namedRefWithHashOrThrow(
-                    transplant.getFromRefName(),
-                    transplant
-                        .getHashesToTransplant()
-                        .get(transplant.getHashesToTransplant().size() - 1))
+                    fromRefName, hashesToTransplant.get(hashesToTransplant.size() - 1))
                 .getValue())
         .canCommitChangeAgainstReference(BranchName.of(branchName))
         .checkAndThrow();
-    return super.transplantCommitsIntoBranch(branchName, expectedHash, message, transplant);
+    return super.transplantCommitsIntoBranch(
+        branchName,
+        expectedHash,
+        message,
+        hashesToTransplant,
+        fromRefName,
+        keepIndividualCommits,
+        keyMergeTypes,
+        defaultMergeType,
+        dryRun,
+        fetchAdditionalInfo,
+        returnConflictAsResult);
   }
 
   @Override
-  public MergeResponse mergeRefIntoBranch(String branchName, String expectedHash, Merge merge)
+  public MergeResponse mergeRefIntoBranch(
+      String branchName,
+      String expectedHash,
+      String fromRefName,
+      String fromHash,
+      Boolean keepIndividualCommits,
+      Collection<MergeKeyBehavior> keyMergeTypes,
+      MergeBehavior defaultMergeType,
+      Boolean dryRun,
+      Boolean fetchAdditionalInfo,
+      Boolean returnConflictAsResult)
       throws NessieNotFoundException, NessieConflictException {
     startAccessCheck()
-        .canViewReference(
-            namedRefWithHashOrThrow(merge.getFromRefName(), merge.getFromHash()).getValue())
+        .canViewReference(namedRefWithHashOrThrow(fromRefName, fromHash).getValue())
         .canCommitChangeAgainstReference(BranchName.of(branchName))
         .checkAndThrow();
-    return super.mergeRefIntoBranch(branchName, expectedHash, merge);
+    return super.mergeRefIntoBranch(
+        branchName,
+        expectedHash,
+        fromRefName,
+        fromHash,
+        keepIndividualCommits,
+        keyMergeTypes,
+        defaultMergeType,
+        dryRun,
+        fetchAdditionalInfo,
+        returnConflictAsResult);
   }
 
   @Override

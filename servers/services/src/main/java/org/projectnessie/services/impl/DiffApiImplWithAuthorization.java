@@ -16,7 +16,6 @@
 package org.projectnessie.services.impl;
 
 import java.security.Principal;
-import org.projectnessie.api.params.DiffParams;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.DiffResponse;
 import org.projectnessie.services.authz.Authorizer;
@@ -34,10 +33,10 @@ public class DiffApiImplWithAuthorization extends DiffApiImpl {
   }
 
   @Override
-  public DiffResponse getDiff(DiffParams params) throws NessieNotFoundException {
-    WithHash<NamedRef> from =
-        namedRefWithHashOrThrow(params.getFromRef(), params.getFromHashOnRef());
-    WithHash<NamedRef> to = namedRefWithHashOrThrow(params.getToRef(), params.getToHashOnRef());
+  public DiffResponse getDiff(String fromRef, String fromHash, String toRef, String toHash)
+      throws NessieNotFoundException {
+    WithHash<NamedRef> from = namedRefWithHashOrThrow(fromRef, fromHash);
+    WithHash<NamedRef> to = namedRefWithHashOrThrow(toRef, toHash);
     startAccessCheck()
         .canViewReference(from.getValue())
         .canViewReference(to.getValue())

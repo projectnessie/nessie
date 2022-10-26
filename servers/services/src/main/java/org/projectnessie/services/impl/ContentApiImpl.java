@@ -19,25 +19,24 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.projectnessie.api.ContentApi;
 import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.GetMultipleContentsRequest;
 import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.GetMultipleContentsResponse.ContentWithKey;
 import org.projectnessie.model.ImmutableGetMultipleContentsResponse;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.services.spi.ContentService;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 
-public class ContentApiImpl extends BaseApiImpl implements ContentApi {
+public class ContentApiImpl extends BaseApiImpl implements ContentService {
 
   public ContentApiImpl(
       ServerConfig config, VersionStore store, Authorizer authorizer, Principal principal) {
@@ -61,11 +60,10 @@ public class ContentApiImpl extends BaseApiImpl implements ContentApi {
 
   @Override
   public GetMultipleContentsResponse getMultipleContents(
-      String namedRef, String hashOnRef, GetMultipleContentsRequest request)
+      String namedRef, String hashOnRef, List<ContentKey> externalKeys)
       throws NessieNotFoundException {
     try {
       WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
-      List<ContentKey> externalKeys = request.getRequestedKeys();
       List<Key> internalKeys =
           externalKeys.stream().map(ContentApiImpl::toKey).collect(Collectors.toList());
       Map<Key, Content> values = getStore().getValues(ref.getHash(), internalKeys);
@@ -84,7 +82,7 @@ public class ContentApiImpl extends BaseApiImpl implements ContentApi {
     return Key.of(key.getElements().toArray(new String[0]));
   }
 
-  static ContentKey toContentKey(Key key) {
+  public static ContentKey toContentKey(Key key) {
     return ContentKey.of(key.getElements());
   }
 }

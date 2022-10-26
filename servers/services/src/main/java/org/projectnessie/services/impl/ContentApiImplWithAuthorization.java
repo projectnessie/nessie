@@ -16,10 +16,10 @@
 package org.projectnessie.services.impl;
 
 import java.security.Principal;
+import java.util.List;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.GetMultipleContentsRequest;
 import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.BatchAccessChecker;
@@ -46,12 +46,12 @@ public class ContentApiImplWithAuthorization extends ContentApiImpl {
 
   @Override
   public GetMultipleContentsResponse getMultipleContents(
-      String namedRef, String hashOnRef, GetMultipleContentsRequest request)
+      String namedRef, String hashOnRef, List<ContentKey> externalKeys)
       throws NessieNotFoundException {
     WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
     BatchAccessChecker check = startAccessCheck();
-    request.getRequestedKeys().forEach(k -> check.canReadEntityValue(ref.getValue(), k, null));
+    externalKeys.forEach(k -> check.canReadEntityValue(ref.getValue(), k, null));
     check.checkAndThrow();
-    return super.getMultipleContents(namedRef, hashOnRef, request);
+    return super.getMultipleContents(namedRef, hashOnRef, externalKeys);
   }
 }
