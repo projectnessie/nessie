@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,29 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http.v1api;
+package org.projectnessie.client.builder;
 
-import org.projectnessie.client.api.OnReferenceBuilder;
-import org.projectnessie.client.http.NessieApiClient;
+import javax.annotation.Nullable;
+import org.projectnessie.client.api.GetNamespaceBuilder;
+import org.projectnessie.model.Namespace;
 
-abstract class BaseHttpOnReferenceRequest<R extends OnReferenceBuilder<R>> extends BaseHttpRequest
-    implements OnReferenceBuilder<R> {
+public abstract class BaseGetNamespaceBuilder implements GetNamespaceBuilder {
+
+  protected Namespace namespace;
   protected String refName;
   protected String hashOnRef;
 
-  BaseHttpOnReferenceRequest(NessieApiClient client) {
-    super(client);
+  @Override
+  public BaseGetNamespaceBuilder namespace(Namespace namespace) {
+    this.namespace = namespace;
+    return this;
   }
 
   @Override
-  public R refName(String refName) {
+  public BaseGetNamespaceBuilder refName(String refName) {
     this.refName = refName;
-    return (R) this;
+    return this;
   }
 
   @Override
-  public R hashOnRef(String hashOnRef) {
+  public GetNamespaceBuilder hashOnRef(@Nullable String hashOnRef) {
     this.hashOnRef = hashOnRef;
-    return (R) this;
+    return this;
   }
 }

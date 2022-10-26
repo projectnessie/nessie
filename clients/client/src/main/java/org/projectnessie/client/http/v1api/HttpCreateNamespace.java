@@ -15,68 +15,34 @@
  */
 package org.projectnessie.client.http.v1api;
 
-import java.util.HashMap;
-import java.util.Map;
-import javax.annotation.Nullable;
 import org.projectnessie.api.params.NamespaceParams;
-import org.projectnessie.api.params.NamespaceParamsBuilder;
-import org.projectnessie.client.api.CreateNamespaceBuilder;
+import org.projectnessie.client.builder.BaseCreateNamespaceBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.ImmutableNamespace;
 import org.projectnessie.model.Namespace;
 
-final class HttpCreateNamespace extends BaseHttpRequest implements CreateNamespaceBuilder {
+final class HttpCreateNamespace extends BaseCreateNamespaceBuilder {
 
-  private final NamespaceParamsBuilder builder = NamespaceParams.builder();
-  private final Map<String, String> properties = new HashMap<>();
+  private final NessieApiClient client;
 
   HttpCreateNamespace(NessieApiClient client) {
-    super(client);
-  }
-
-  @Override
-  public CreateNamespaceBuilder namespace(Namespace namespace) {
-    builder.namespace(namespace);
-    return this;
-  }
-
-  @Override
-  public CreateNamespaceBuilder refName(String refName) {
-    builder.refName(refName);
-    return this;
-  }
-
-  @Override
-  public CreateNamespaceBuilder hashOnRef(@Nullable String hashOnRef) {
-    builder.hashOnRef(hashOnRef);
-    return this;
-  }
-
-  @Override
-  public CreateNamespaceBuilder properties(Map<String, String> properties) {
-    this.properties.putAll(properties);
-    return this;
-  }
-
-  @Override
-  public CreateNamespaceBuilder property(String key, String value) {
-    this.properties.put(key, value);
-    return this;
+    this.client = client;
   }
 
   @Override
   public Namespace create()
       throws NessieNamespaceAlreadyExistsException, NessieReferenceNotFoundException {
-    NamespaceParams params = builder.build();
+    NamespaceParams params =
+        NamespaceParams.builder()
+            .namespace(namespace)
+            .refName(refName)
+            .hashOnRef(hashOnRef)
+            .build();
     return client
         .getNamespaceApi()
         .createNamespace(
-            params,
-            ImmutableNamespace.builder()
-                .from(params.getNamespace())
-                .properties(properties)
-                .build());
+            params, ImmutableNamespace.builder().from(namespace).properties(properties).build());
   }
 }

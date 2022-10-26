@@ -15,68 +15,31 @@
  */
 package org.projectnessie.client.http.v1api;
 
-import java.util.List;
-import org.projectnessie.client.api.TransplantCommitsBuilder;
+import org.projectnessie.client.builder.BaseTransplantCommitsBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.ImmutableTransplant;
 import org.projectnessie.model.MergeResponse;
 
-final class HttpTransplantCommits extends BaseHttpOnBranchRequest<TransplantCommitsBuilder>
-    implements TransplantCommitsBuilder {
+final class HttpTransplantCommits extends BaseTransplantCommitsBuilder {
 
-  private final ImmutableTransplant.Builder transplant = ImmutableTransplant.builder();
-  private String message;
+  private final NessieApiClient client;
 
   HttpTransplantCommits(NessieApiClient client) {
-    super(client);
-  }
-
-  @Override
-  public TransplantCommitsBuilder message(String message) {
-    this.message = message;
-    return this;
-  }
-
-  @Override
-  public TransplantCommitsBuilder fromRefName(String fromRefName) {
-    transplant.fromRefName(fromRefName);
-    return this;
-  }
-
-  @Override
-  public TransplantCommitsBuilder hashesToTransplant(List<String> hashesToTransplant) {
-    transplant.addAllHashesToTransplant(hashesToTransplant);
-    return this;
-  }
-
-  @Override
-  public TransplantCommitsBuilder keepIndividualCommits(boolean keepIndividualCommits) {
-    transplant.keepIndividualCommits(keepIndividualCommits);
-    return this;
-  }
-
-  @Override
-  public TransplantCommitsBuilder dryRun(boolean dryRun) {
-    transplant.isDryRun(dryRun);
-    return this;
-  }
-
-  @Override
-  public TransplantCommitsBuilder fetchAdditionalInfo(boolean fetchAdditionalInfo) {
-    transplant.isFetchAdditionalInfo(fetchAdditionalInfo);
-    return this;
-  }
-
-  @Override
-  public TransplantCommitsBuilder returnConflictAsResult(boolean returnConflictAsResult) {
-    transplant.isReturnConflictAsResult(returnConflictAsResult);
-    return this;
+    this.client = client;
   }
 
   @Override
   public MergeResponse transplant() throws NessieNotFoundException, NessieConflictException {
+    ImmutableTransplant.Builder transplant =
+        ImmutableTransplant.builder()
+            .fromRefName(fromRefName)
+            .hashesToTransplant(hashesToTransplant)
+            .isDryRun(dryRun)
+            .isReturnConflictAsResult(returnConflictAsResult)
+            .isFetchAdditionalInfo(fetchAdditionalInfo)
+            .keepIndividualCommits(keepIndividualCommits);
     return client
         .getTreeApi()
         .transplantCommitsIntoBranch(branchName, hash, message, transplant.build());

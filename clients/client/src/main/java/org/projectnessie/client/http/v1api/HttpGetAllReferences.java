@@ -15,71 +15,31 @@
  */
 package org.projectnessie.client.http.v1api;
 
-import java.util.stream.Stream;
-import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.api.params.ReferencesParams;
-import org.projectnessie.api.params.ReferencesParamsBuilder;
-import org.projectnessie.client.StreamingUtil;
-import org.projectnessie.client.api.GetAllReferencesBuilder;
+import org.projectnessie.client.builder.BaseGetAllReferencesBuilder;
 import org.projectnessie.client.http.NessieApiClient;
-import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
 
-final class HttpGetAllReferences extends BaseHttpRequest implements GetAllReferencesBuilder {
+final class HttpGetAllReferences extends BaseGetAllReferencesBuilder<ReferencesParams> {
 
-  private final ReferencesParamsBuilder params;
+  private final NessieApiClient client;
 
-  HttpGetAllReferences(NessieApiClient client) {
-    this(client, ReferencesParams.builder());
-  }
-
-  HttpGetAllReferences(NessieApiClient client, ReferencesParamsBuilder params) {
-    super(client);
-    this.params = params;
+  public HttpGetAllReferences(NessieApiClient client) {
+    super(ReferencesParams::forNextPage);
+    this.client = client;
   }
 
   @Override
-  public GetAllReferencesBuilder maxRecords(int maxRecords) {
-    params.maxRecords(maxRecords);
-    return this;
+  protected ReferencesParams params() {
+    return ReferencesParams.builder()
+        .maxRecords(maxRecords)
+        .fetchOption(fetchOption)
+        .filter(filter)
+        .build();
   }
 
   @Override
-  public GetAllReferencesBuilder pageToken(String pageToken) {
-    params.pageToken(pageToken);
-    return this;
-  }
-
-  @Override
-  public GetAllReferencesBuilder fetch(FetchOption fetchOption) {
-    params.fetchOption(fetchOption);
-    return this;
-  }
-
-  @Override
-  public GetAllReferencesBuilder filter(String filter) {
-    params.filter(filter);
-    return this;
-  }
-
-  private ReferencesParams params() {
-    return params.build();
-  }
-
-  @Override
-  public ReferencesResponse get() {
-    return get(params());
-  }
-
-  private ReferencesResponse get(ReferencesParams p) {
+  protected ReferencesResponse get(ReferencesParams p) {
     return client.getTreeApi().getAllReferences(p);
-  }
-
-  @Override
-  public Stream<Reference> stream() throws NessieNotFoundException {
-    ReferencesParams p = params();
-    return StreamingUtil.generateStream(
-        ReferencesResponse::getReferences, pageToken -> get(p.forNextPage(pageToken)));
   }
 }

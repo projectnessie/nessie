@@ -16,16 +16,18 @@
 package org.projectnessie.client.http.v1api;
 
 import org.projectnessie.client.api.DeleteTagBuilder;
+import org.projectnessie.client.builder.BaseOnTagBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Reference;
 
-final class HttpDeleteTag extends BaseHttpOnTagRequest<DeleteTagBuilder>
-    implements DeleteTagBuilder {
+final class HttpDeleteTag extends BaseOnTagBuilder<DeleteTagBuilder> implements DeleteTagBuilder {
+
+  private final NessieApiClient client;
 
   HttpDeleteTag(NessieApiClient client) {
-    super(client);
+    this.client = client;
   }
 
   @Override

@@ -15,67 +15,33 @@
  */
 package org.projectnessie.client.http.v1api;
 
-import java.util.stream.Stream;
 import org.projectnessie.api.params.EntriesParams;
-import org.projectnessie.api.params.EntriesParamsBuilder;
-import org.projectnessie.client.StreamingUtil;
-import org.projectnessie.client.api.GetEntriesBuilder;
+import org.projectnessie.client.builder.BaseGetEntriesBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.EntriesResponse;
-import org.projectnessie.model.EntriesResponse.Entry;
 
-final class HttpGetEntries extends BaseHttpOnReferenceRequest<GetEntriesBuilder>
-    implements GetEntriesBuilder {
+final class HttpGetEntries extends BaseGetEntriesBuilder<EntriesParams> {
 
-  private final EntriesParamsBuilder params = EntriesParams.builder();
+  private final NessieApiClient client;
 
   HttpGetEntries(NessieApiClient client) {
-    super(client);
+    super(EntriesParams::forNextPage);
+    this.client = client;
   }
 
   @Override
-  public GetEntriesBuilder maxRecords(int maxRecords) {
-    params.maxRecords(maxRecords);
-    return this;
+  protected EntriesParams params() {
+    return EntriesParams.builder()
+        .namespaceDepth(namespaceDepth)
+        .filter(filter)
+        .maxRecords(maxRecords)
+        .hashOnRef(hashOnRef)
+        .build();
   }
 
   @Override
-  public GetEntriesBuilder pageToken(String pageToken) {
-    params.pageToken(pageToken);
-    return this;
-  }
-
-  @Override
-  public GetEntriesBuilder filter(String filter) {
-    params.filter(filter);
-    return this;
-  }
-
-  @Override
-  public GetEntriesBuilder namespaceDepth(Integer namespaceDepth) {
-    params.namespaceDepth(namespaceDepth);
-    return this;
-  }
-
-  private EntriesParams params() {
-    params.hashOnRef(hashOnRef);
-    return params.build();
-  }
-
-  @Override
-  public EntriesResponse get() throws NessieNotFoundException {
-    return get(params());
-  }
-
-  private EntriesResponse get(EntriesParams p) throws NessieNotFoundException {
+  protected EntriesResponse get(EntriesParams p) throws NessieNotFoundException {
     return client.getTreeApi().getEntries(refName, p);
-  }
-
-  @Override
-  public Stream<Entry> stream() throws NessieNotFoundException {
-    EntriesParams p = params();
-    return StreamingUtil.generateStream(
-        EntriesResponse::getEntries, pageToken -> get(p.forNextPage(pageToken)));
   }
 }

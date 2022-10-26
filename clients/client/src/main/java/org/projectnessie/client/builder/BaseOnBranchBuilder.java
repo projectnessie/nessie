@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http.v1api;
+package org.projectnessie.client.builder;
 
 import org.projectnessie.client.api.OnBranchBuilder;
-import org.projectnessie.client.http.NessieApiClient;
 
-abstract class BaseHttpOnBranchRequest<R extends OnBranchBuilder<R>> extends BaseHttpRequest
+public abstract class BaseOnBranchBuilder<R extends OnBranchBuilder<R>>
     implements OnBranchBuilder<R> {
   protected String branchName;
   protected String hash;
-
-  BaseHttpOnBranchRequest(NessieApiClient client) {
-    super(client);
-  }
 
   @Override
   public R branchName(String branchName) {

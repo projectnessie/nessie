@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http.v1api;
+package org.projectnessie.client.builder;
 
-import org.projectnessie.client.http.NessieApiClient;
+import org.projectnessie.client.api.OnReferenceBuilder;
 
-abstract class BaseHttpRequest {
+abstract class BaseOnReferenceBuilder<R extends OnReferenceBuilder<R>>
+    implements OnReferenceBuilder<R> {
+  protected String refName;
+  protected String hashOnRef;
 
-  protected final NessieApiClient client;
+  @Override
+  public R refName(String refName) {
+    this.refName = refName;
+    return (R) this;
+  }
 
-  BaseHttpRequest(NessieApiClient client) {
-    this.client = client;
+  @Override
+  public R hashOnRef(String hashOnRef) {
+    this.hashOnRef = hashOnRef;
+    return (R) this;
   }
 }

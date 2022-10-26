@@ -15,46 +15,28 @@
  */
 package org.projectnessie.client.http.v1api;
 
-import javax.annotation.Nullable;
 import org.projectnessie.api.params.NamespaceParams;
 import org.projectnessie.api.params.NamespaceParamsBuilder;
-import org.projectnessie.client.api.DeleteNamespaceBuilder;
+import org.projectnessie.client.builder.BaseDeleteNamespaceBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNamespaceNotEmptyException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
-import org.projectnessie.model.Namespace;
 
-final class HttpDeleteNamespace extends BaseHttpRequest implements DeleteNamespaceBuilder {
+final class HttpDeleteNamespace extends BaseDeleteNamespaceBuilder {
 
-  private final NamespaceParamsBuilder builder = NamespaceParams.builder();
+  private final NessieApiClient client;
 
   HttpDeleteNamespace(NessieApiClient client) {
-    super(client);
-  }
-
-  @Override
-  public DeleteNamespaceBuilder namespace(Namespace namespace) {
-    builder.namespace(namespace);
-    return this;
-  }
-
-  @Override
-  public DeleteNamespaceBuilder refName(String refName) {
-    builder.refName(refName);
-    return this;
-  }
-
-  @Override
-  public DeleteNamespaceBuilder hashOnRef(@Nullable String hashOnRef) {
-    builder.hashOnRef(hashOnRef);
-    return this;
+    this.client = client;
   }
 
   @Override
   public void delete()
       throws NessieReferenceNotFoundException, NessieNamespaceNotEmptyException,
           NessieNamespaceNotFoundException {
+    NamespaceParamsBuilder builder =
+        NamespaceParams.builder().namespace(namespace).hashOnRef(hashOnRef).refName(refName);
     client.getNamespaceApi().deleteNamespace(builder.build());
   }
 }

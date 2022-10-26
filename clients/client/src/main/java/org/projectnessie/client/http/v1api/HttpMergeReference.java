@@ -15,60 +15,31 @@
  */
 package org.projectnessie.client.http.v1api;
 
-import org.projectnessie.client.api.MergeReferenceBuilder;
+import org.projectnessie.client.builder.BaseMergeReferenceBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.ImmutableMerge;
 import org.projectnessie.model.MergeResponse;
 
-final class HttpMergeReference extends BaseHttpOnBranchRequest<MergeReferenceBuilder>
-    implements MergeReferenceBuilder {
+final class HttpMergeReference extends BaseMergeReferenceBuilder {
 
-  private final ImmutableMerge.Builder merge = ImmutableMerge.builder();
+  private final NessieApiClient client;
 
   HttpMergeReference(NessieApiClient client) {
-    super(client);
-  }
-
-  @Override
-  public MergeReferenceBuilder fromRefName(String fromRefName) {
-    merge.fromRefName(fromRefName);
-    return this;
-  }
-
-  @Override
-  public MergeReferenceBuilder fromHash(String fromHash) {
-    merge.fromHash(fromHash);
-    return this;
-  }
-
-  @Override
-  public MergeReferenceBuilder keepIndividualCommits(boolean keepIndividualCommits) {
-    merge.keepIndividualCommits(keepIndividualCommits);
-    return this;
-  }
-
-  @Override
-  public MergeReferenceBuilder dryRun(boolean dryRun) {
-    merge.isDryRun(dryRun);
-    return this;
-  }
-
-  @Override
-  public MergeReferenceBuilder fetchAdditionalInfo(boolean fetchAdditionalInfo) {
-    merge.isFetchAdditionalInfo(fetchAdditionalInfo);
-    return this;
-  }
-
-  @Override
-  public MergeReferenceBuilder returnConflictAsResult(boolean returnConflictAsResult) {
-    merge.isReturnConflictAsResult(returnConflictAsResult);
-    return this;
+    this.client = client;
   }
 
   @Override
   public MergeResponse merge() throws NessieNotFoundException, NessieConflictException {
+    ImmutableMerge.Builder merge =
+        ImmutableMerge.builder()
+            .fromHash(fromHash)
+            .fromRefName(fromRefName)
+            .isDryRun(dryRun)
+            .isReturnConflictAsResult(returnConflictAsResult)
+            .isFetchAdditionalInfo(fetchAdditionalInfo)
+            .keepIndividualCommits(keepIndividualCommits);
     return client.getTreeApi().mergeRefIntoBranch(branchName, hash, merge.build());
   }
 }

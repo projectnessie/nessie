@@ -15,38 +15,22 @@
  */
 package org.projectnessie.client.http.v1api;
 
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.projectnessie.client.api.GetContentBuilder;
+import org.projectnessie.client.builder.BaseGetContentBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.GetMultipleContentsResponse.ContentWithKey;
-import org.projectnessie.model.ImmutableGetMultipleContentsRequest;
 
-final class HttpGetContent extends BaseHttpOnReferenceRequest<GetContentBuilder>
-    implements GetContentBuilder {
+final class HttpGetContent extends BaseGetContentBuilder {
 
-  private final ImmutableGetMultipleContentsRequest.Builder request =
-      ImmutableGetMultipleContentsRequest.builder();
+  private final NessieApiClient client;
 
   HttpGetContent(NessieApiClient client) {
-    super(client);
-  }
-
-  @Override
-  public GetContentBuilder key(ContentKey key) {
-    request.addRequestedKeys(key);
-    return this;
-  }
-
-  @Override
-  public GetContentBuilder keys(List<ContentKey> keys) {
-    request.addAllRequestedKeys(keys);
-    return this;
+    this.client = client;
   }
 
   @Override
