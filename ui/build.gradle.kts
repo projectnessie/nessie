@@ -32,10 +32,6 @@ plugins {
   `nessie-conventions`
 }
 
-val openapi by configurations.creating { description = "Used to reference OpenAPI spec files" }
-
-dependencies { openapi(project(":nessie-model", "openapi")) }
-
 node {
   download.set(true)
   version.set("16.14.2")
@@ -45,7 +41,7 @@ node {
 val dotGradle = project.projectDir.resolve(".gradle")
 val npmBuildTarget = project.buildDir.resolve("npm")
 val npmBuildDir = npmBuildTarget.resolve("META-INF/resources")
-val openApiSpecDir = project.buildDir.resolve("openapi")
+val openApiSpecDir = project.projectDir.resolve("src/openapi")
 val generatedOpenApiCodeUnfixed = project.buildDir.resolve("generated/ts")
 val generatedOpenApiCode = project.projectDir.resolve("src/generated")
 val testCoverageDir = project.projectDir.resolve("coverage")
@@ -61,12 +57,6 @@ val clean =
       delete(testCoverageDir)
       delete(generatedOpenApiCode)
     }
-  }
-
-val pullOpenApiSpec by
-  tasks.registering(Sync::class) {
-    destinationDir = openApiSpecDir
-    from(project.objects.property(Configuration::class).value(openapi))
   }
 
 val nodeSetup =
@@ -122,7 +112,7 @@ val npmInstall =
 val npmGenerateAPI =
   tasks.register<NpmTask>("npmGenerateApi") {
     description = "Generate from OpenAPI spec"
-    dependsOn(pullOpenApiSpec, npmInstall)
+    dependsOn(npmInstall)
     inputs.dir(openApiSpecDir).withPathSensitivity(PathSensitivity.RELATIVE)
     outputs.dir(generatedOpenApiCodeUnfixed)
     doFirst {
