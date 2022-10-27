@@ -18,15 +18,11 @@ package org.projectnessie.services.authz;
 import java.security.AccessControlException;
 import java.util.Map;
 import javax.annotation.Nullable;
-import org.projectnessie.api.TreeApi;
-import org.projectnessie.api.params.CommitLogParams;
-import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Detached;
 import org.projectnessie.model.Operation;
-import org.projectnessie.model.Operations;
 import org.projectnessie.model.Tag;
 import org.projectnessie.versioned.NamedRef;
 
@@ -111,9 +107,8 @@ public interface BatchAccessChecker {
   BatchAccessChecker canReadEntries(NamedRef ref);
 
   /**
-   * Called for every content-key about to be returned by for example {@link
-   * TreeApi#getEntries(String, EntriesParams)} and {@link Operation}s in commit-log entries from
-   * {@link TreeApi#getCommitLog(String, CommitLogParams)}.
+   * Called for every content-key about to be returned from, for example, a "get commit log"
+   * operation.
    *
    * <p>This is an additional check for each content-key. "Early" checks, that run before generating
    * the result, like {@link #canReadEntries(NamedRef)} or {@link #canListCommitLog(NamedRef)}, run
@@ -123,8 +118,8 @@ public interface BatchAccessChecker {
    *
    * @param ref current reference
    * @param key content key to check
-   * @param contentId content id to check, will be {@code null} for a {@link Operation.Delete} from
-   *     {@link TreeApi#getCommitLog(String, CommitLogParams)}
+   * @param contentId content id to check, may be {@code null}, for example, for {@link
+   *     Operation.Delete} from {@link Operation}s in the commit log.
    */
   BatchAccessChecker canReadContentKey(NamedRef ref, ContentKey key, @Nullable String contentId);
 
@@ -165,7 +160,7 @@ public interface BatchAccessChecker {
   /**
    * Checks whether the given role/principal is allowed to update an entity value as defined by the
    * {@link ContentKey} for the given {@link Branch}, called for a {@link Operation.Put} operation
-   * for a {@link TreeApi#commitMultipleOperations(String, String, Operations) commit}.
+   * in a commit.
    *
    * <p>Adds an implicit {@link #canViewReference(NamedRef)}.
    *
@@ -182,7 +177,7 @@ public interface BatchAccessChecker {
   /**
    * Checks whether the given role/principal is allowed to delete an entity value as defined by the
    * {@link ContentKey} for the given {@link Branch}, called for a {@link Operation.Delete}
-   * operation for a {@link TreeApi#commitMultipleOperations(String, String, Operations) commit}.
+   * operation in a commit.
    *
    * <p>Adds an implicit {@link #canViewReference(NamedRef)}.
    *

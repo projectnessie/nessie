@@ -33,9 +33,10 @@ import java.util.stream.Stream;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.assertj.core.api.ThrowingConsumer;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.api.params.CommitLogParams;
-import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.api.params.FetchOption;
+import org.projectnessie.api.v1.TreeApi;
+import org.projectnessie.api.v1.params.CommitLogParams;
+import org.projectnessie.api.v1.params.EntriesParams;
 import org.projectnessie.error.NessieForbiddenException;
 import org.projectnessie.jaxrs.ext.NessieAccessChecker;
 import org.projectnessie.model.Branch;
@@ -71,9 +72,9 @@ public abstract class AbstractRestAccessChecks extends AbstractTestRest {
           CheckType.READ_ENTRIES, READ_MSG);
 
   /**
-   * Verify that response filtering for {@link org.projectnessie.api.TreeApi#getCommitLog(String,
-   * CommitLogParams)} and {@link org.projectnessie.api.TreeApi#getEntries(String, EntriesParams)}
-   * does not return disallowed commit-log entries / commit-operations.
+   * Verify that response filtering for {@link TreeApi#getCommitLog(String, CommitLogParams)} and
+   * {@link TreeApi#getEntries(String, EntriesParams)} does not return disallowed commit-log entries
+   * / commit-operations.
    */
   @Test
   public void forbiddenContentKeys(

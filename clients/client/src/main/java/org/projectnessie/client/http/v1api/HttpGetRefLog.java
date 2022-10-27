@@ -15,7 +15,7 @@
  */
 package org.projectnessie.client.http.v1api;
 
-import org.projectnessie.api.params.RefLogParams;
+import org.projectnessie.api.v1.params.RefLogParams;
 import org.projectnessie.client.builder.BaseGetRefLogBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;

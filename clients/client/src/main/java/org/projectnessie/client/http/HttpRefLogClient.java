@@ -16,8 +16,8 @@
 package org.projectnessie.client.http;
 
 import javax.validation.constraints.NotNull;
-import org.projectnessie.api.http.HttpRefLogApi;
-import org.projectnessie.api.params.RefLogParams;
+import org.projectnessie.api.v1.http.HttpRefLogApi;
+import org.projectnessie.api.v1.params.RefLogParams;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.RefLogResponse;
 

@@ -15,8 +15,8 @@
  */
 package org.projectnessie.client.http.v1api;
 
-import org.projectnessie.api.params.DiffParams;
-import org.projectnessie.api.params.DiffParamsBuilder;
+import org.projectnessie.api.v1.params.DiffParams;
+import org.projectnessie.api.v1.params.DiffParamsBuilder;
 import org.projectnessie.client.builder.BaseGetDiffBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;

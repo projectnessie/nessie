@@ -15,7 +15,7 @@
  */
 package org.projectnessie.client.http.v1api;
 
-import org.projectnessie.api.params.MultipleNamespacesParams;
+import org.projectnessie.api.v1.params.MultipleNamespacesParams;
 import org.projectnessie.client.builder.BaseGetMultipleNamespacesBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieReferenceNotFoundException;

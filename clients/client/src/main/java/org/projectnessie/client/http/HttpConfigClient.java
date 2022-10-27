@@ -15,7 +15,7 @@
  */
 package org.projectnessie.client.http;
 
-import org.projectnessie.api.http.HttpConfigApi;
+import org.projectnessie.api.v1.http.HttpConfigApi;
 import org.projectnessie.model.NessieConfiguration;
 
 class HttpConfigClient implements HttpConfigApi {

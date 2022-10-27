@@ -16,8 +16,8 @@
 package org.projectnessie.client.http;
 
 import javax.validation.constraints.NotNull;
-import org.projectnessie.api.http.HttpDiffApi;
-import org.projectnessie.api.params.DiffParams;
+import org.projectnessie.api.v1.http.HttpDiffApi;
+import org.projectnessie.api.v1.params.DiffParams;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.DiffResponse;
 
