@@ -20,7 +20,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
-import org.projectnessie.api.params.NamespaceParams;
 import org.projectnessie.model.Namespace;
 
 @Execution(ExecutionMode.CONCURRENT)
@@ -29,11 +28,7 @@ public class NamespaceApiTest {
   @Test
   public void emptyNamespaceCreation() {
     NamespaceApiImpl api = new NamespaceApiImpl(null, null, null, null);
-    assertThatThrownBy(
-            () ->
-                api.createNamespace(
-                    NamespaceParams.builder().refName("main").namespace(Namespace.EMPTY).build(),
-                    Namespace.EMPTY))
+    assertThatThrownBy(() -> api.createNamespace("main", Namespace.EMPTY))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Namespace name must not be empty");
   }

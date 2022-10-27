@@ -30,9 +30,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import org.projectnessie.api.NamespaceApi;
-import org.projectnessie.api.params.MultipleNamespacesParams;
 import org.projectnessie.api.params.NamespaceParams;
-import org.projectnessie.api.params.NamespaceUpdate;
 import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieNamespaceNotEmptyException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
@@ -48,6 +46,7 @@ import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.services.spi.NamespaceService;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
@@ -59,7 +58,7 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 
-public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
+public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
 
   public NamespaceApiImpl(
       ServerConfig config, VersionStore store, Authorizer authorizer, Principal principal) {
@@ -67,11 +66,11 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
   }
 
   @Override
-  public Namespace createNamespace(NamespaceParams params, Namespace namespace)
-      throws NessieNamespaceAlreadyExistsException, NessieReferenceNotFoundException {
+  public Namespace createNamespace(String refName, Namespace namespace)
+      throws NessieReferenceNotFoundException {
     Preconditions.checkArgument(!namespace.isEmpty(), "Namespace name must not be empty");
 
-    WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(params.getRefName(), null);
+    WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(refName, null);
     try {
       Callable<Void> validator =
           () -> {
@@ -115,12 +114,11 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
   }
 
   @Override
-  public void deleteNamespace(NamespaceParams params)
-      throws NessieReferenceNotFoundException, NessieNamespaceNotEmptyException,
-          NessieNamespaceNotFoundException {
-    WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(params.getRefName(), null);
+  public void deleteNamespace(String refName, Namespace namespaceToDelete)
+      throws NessieReferenceNotFoundException, NessieNamespaceNotFoundException {
+    WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(refName, null);
     try {
-      Namespace namespace = getNamespace(params.getNamespace(), refWithHash.getHash());
+      Namespace namespace = getNamespace(namespaceToDelete, refWithHash.getHash());
       Delete delete = Delete.of(ContentKey.of(namespace.getElements()));
 
       Callable<Void> validator =
@@ -128,10 +126,9 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
             try (Stream<KeyEntry> keys = getStore().getKeys(refWithHash.getHash())) {
               if (keys.anyMatch(
                   k ->
-                      Namespace.of(k.getKey().getElements())
-                              .isSameOrSubElementOf(params.getNamespace())
+                      Namespace.of(k.getKey().getElements()).isSameOrSubElementOf(namespaceToDelete)
                           && !k.getType().equals(Content.Type.NAMESPACE))) {
-                throw namespaceNotEmptyException(params.getNamespace());
+                throw namespaceNotEmptyException(namespaceToDelete);
               }
             }
             return null;
@@ -148,12 +145,10 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
   }
 
   @Override
-  public Namespace getNamespace(NamespaceParams params)
+  public Namespace getNamespace(String refName, String hashOnRef, Namespace namespace)
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException {
     try {
-      return getNamespace(
-          params.getNamespace(),
-          namedRefWithHashOrThrow(params.getRefName(), params.getHashOnRef()).getHash());
+      return getNamespace(namespace, namedRefWithHashOrThrow(refName, hashOnRef).getHash());
     } catch (ReferenceNotFoundException e) {
       throw refNotFoundException(e);
     }
@@ -186,10 +181,9 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
   }
 
   @Override
-  public GetNamespacesResponse getNamespaces(MultipleNamespacesParams params)
+  public GetNamespacesResponse getNamespaces(String refName, String hashOnRef, Namespace namespace)
       throws NessieReferenceNotFoundException {
-    WithHash<NamedRef> refWithHash =
-        namedRefWithHashOrThrow(params.getRefName(), params.getHashOnRef());
+    WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(refName, hashOnRef);
     try {
       // Note: `Namespace` objects are supposed to get more attributes (e.g. a properties map)
       // which will make it impossible to use the `Namespace` object itself as an identifier to
@@ -200,7 +194,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
       Set<Key> explicitNamespaceKeys = new HashSet<>();
       Map<List<String>, Namespace> implicitNamespaces = new HashMap<>();
       try (Stream<KeyEntry> stream =
-          getNamespacesKeyStream(params.getNamespace(), refWithHash.getHash(), k -> true)) {
+          getNamespacesKeyStream(namespace, refWithHash.getHash(), k -> true)) {
         stream.forEach(
             namespaceKeyWithType -> {
               if (namespaceKeyWithType.getType().equals(Content.Type.NAMESPACE)) {
@@ -240,18 +234,22 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceApi {
   }
 
   @Override
-  public void updateProperties(NamespaceParams params, NamespaceUpdate namespaceUpdate)
+  public void updateProperties(
+      String refName,
+      Namespace namespaceToUpdate,
+      Map<String, String> propertyUpdates,
+      Set<String> propertyRemovals)
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException {
     try {
-      WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(params.getRefName(), null);
+      WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(refName, null);
 
-      Namespace namespace = getNamespace(params.getNamespace(), refWithHash.getHash());
+      Namespace namespace = getNamespace(namespaceToUpdate, refWithHash.getHash());
       Map<String, String> properties = new HashMap<>(namespace.getProperties());
-      if (null != namespaceUpdate.getPropertyRemovals()) {
-        namespaceUpdate.getPropertyRemovals().forEach(properties::remove);
+      if (null != propertyRemovals) {
+        propertyRemovals.forEach(properties::remove);
       }
-      if (null != namespaceUpdate.getPropertyUpdates()) {
-        properties.putAll(namespaceUpdate.getPropertyUpdates());
+      if (null != propertyUpdates) {
+        properties.putAll(propertyUpdates);
       }
 
       Namespace updatedNamespace = ImmutableNamespace.copyOf(namespace).withProperties(properties);

@@ -20,7 +20,6 @@ import javax.inject.Inject;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
-import org.projectnessie.api.NamespaceApi;
 import org.projectnessie.api.http.HttpNamespaceApi;
 import org.projectnessie.api.params.MultipleNamespacesParams;
 import org.projectnessie.api.params.NamespaceParams;
@@ -34,6 +33,7 @@ import org.projectnessie.model.Namespace;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.impl.NamespaceApiImplWithAuthorization;
+import org.projectnessie.services.spi.NamespaceService;
 import org.projectnessie.versioned.VersionStore;
 
 /** REST endpoint for the namespace-API. */
@@ -62,7 +62,7 @@ public class RestNamespaceResource implements HttpNamespaceApi {
     this.authorizer = authorizer;
   }
 
-  private NamespaceApi resource() {
+  private NamespaceService resource() {
     return new NamespaceApiImplWithAuthorization(
         config,
         store,
@@ -73,31 +73,38 @@ public class RestNamespaceResource implements HttpNamespaceApi {
   @Override
   public Namespace createNamespace(NamespaceParams params, Namespace namespace)
       throws NessieNamespaceAlreadyExistsException, NessieReferenceNotFoundException {
-    return resource().createNamespace(params, namespace);
+    return resource().createNamespace(params.getRefName(), namespace);
   }
 
   @Override
   public void deleteNamespace(@NotNull NamespaceParams params)
       throws NessieReferenceNotFoundException, NessieNamespaceNotEmptyException,
           NessieNamespaceNotFoundException {
-    resource().deleteNamespace(params);
+    resource().deleteNamespace(params.getRefName(), params.getNamespace());
   }
 
   @Override
   public Namespace getNamespace(@NotNull NamespaceParams params)
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException {
-    return resource().getNamespace(params);
+    return resource()
+        .getNamespace(params.getRefName(), params.getHashOnRef(), params.getNamespace());
   }
 
   @Override
   public GetNamespacesResponse getNamespaces(@NotNull MultipleNamespacesParams params)
       throws NessieReferenceNotFoundException {
-    return resource().getNamespaces(params);
+    return resource()
+        .getNamespaces(params.getRefName(), params.getHashOnRef(), params.getNamespace());
   }
 
   @Override
   public void updateProperties(NamespaceParams params, NamespaceUpdate namespaceUpdate)
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException {
-    resource().updateProperties(params, namespaceUpdate);
+    resource()
+        .updateProperties(
+            params.getRefName(),
+            params.getNamespace(),
+            namespaceUpdate.getPropertyUpdates(),
+            namespaceUpdate.getPropertyRemovals());
   }
 }

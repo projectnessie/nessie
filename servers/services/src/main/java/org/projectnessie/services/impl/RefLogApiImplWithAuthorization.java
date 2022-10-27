@@ -16,7 +16,6 @@
 package org.projectnessie.services.impl;
 
 import java.security.Principal;
-import org.projectnessie.api.params.RefLogParams;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.RefLogResponse;
 import org.projectnessie.services.authz.Authorizer;
@@ -32,8 +31,14 @@ public class RefLogApiImplWithAuthorization extends RefLogApiImpl {
   }
 
   @Override
-  public RefLogResponse getRefLog(RefLogParams params) throws NessieNotFoundException {
+  public RefLogResponse getRefLog(
+      String startHashString,
+      String endHashString,
+      String filter,
+      Integer maxRecords,
+      String pageToken)
+      throws NessieNotFoundException {
     startAccessCheck().canViewRefLog().checkAndThrow();
-    return super.getRefLog(params);
+    return super.getRefLog(startHashString, endHashString, filter, maxRecords, pageToken);
   }
 }

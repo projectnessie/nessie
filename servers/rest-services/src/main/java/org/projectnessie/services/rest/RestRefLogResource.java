@@ -19,7 +19,6 @@ import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
-import org.projectnessie.api.RefLogApi;
 import org.projectnessie.api.http.HttpRefLogApi;
 import org.projectnessie.api.params.RefLogParams;
 import org.projectnessie.error.NessieNotFoundException;
@@ -27,6 +26,7 @@ import org.projectnessie.model.RefLogResponse;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.impl.RefLogApiImplWithAuthorization;
+import org.projectnessie.services.spi.RefLogService;
 import org.projectnessie.versioned.VersionStore;
 
 /** REST endpoint for the reflog-API. */
@@ -51,7 +51,7 @@ public class RestRefLogResource implements HttpRefLogApi {
     this.authorizer = authorizer;
   }
 
-  private RefLogApi resource() {
+  private RefLogService resource() {
     return new RefLogApiImplWithAuthorization(
         config,
         store,
@@ -61,6 +61,12 @@ public class RestRefLogResource implements HttpRefLogApi {
 
   @Override
   public RefLogResponse getRefLog(RefLogParams params) throws NessieNotFoundException {
-    return resource().getRefLog(params);
+    return resource()
+        .getRefLog(
+            params.startHash(),
+            params.endHash(),
+            params.filter(),
+            params.maxRecords(),
+            params.pageToken());
   }
 }
