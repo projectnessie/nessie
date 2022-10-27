@@ -149,7 +149,9 @@ public class NessieJaxRsExtension extends NessieClientResolver
 
     if (parameterContext.isAnnotated(NessieUri.class)) {
       // Backward compatibility with older (external) tests
-      return getBaseUri(extensionContext);
+      // Inject v1 URIs in this case. Version-aware test should use
+      // `org.projectnessie.client.ext.NessieUri`.
+      return getBaseUri(extensionContext).resolve("v1");
     }
 
     EnvHolder env = getEnv(extensionContext);

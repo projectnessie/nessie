@@ -15,6 +15,8 @@
  */
 package org.projectnessie.client.ext;
 
+import static org.projectnessie.client.ext.MultiVersionApiTest.apiVersion;
+
 import java.io.Serializable;
 import java.net.URI;
 import javax.annotation.Nonnull;
@@ -22,6 +24,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
+import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpClientBuilder;
 
@@ -57,7 +60,8 @@ public abstract class NessieClientResolver implements ParameterResolver {
       ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
     if (isNessieUri(parameterContext)) {
-      return getBaseUri(extensionContext);
+      NessieApiVersion apiVersion = apiVersion(extensionContext);
+      return apiVersion.resolve(getBaseUri(extensionContext));
     }
 
     if (isNessieClient(parameterContext)) {
@@ -68,11 +72,12 @@ public abstract class NessieClientResolver implements ParameterResolver {
   }
 
   private NessieClientFactory clientFactoryForContext(ExtensionContext extensionContext) {
-    URI uri = getBaseUri(extensionContext);
+    NessieApiVersion apiVersion = apiVersion(extensionContext);
+    URI uri = apiVersion.resolve(getBaseUri(extensionContext));
     Object testInstance = extensionContext.getTestInstance().orElse(null);
     if (testInstance instanceof NessieClientCustomizer) {
       NessieClientCustomizer testCustomizer = (NessieClientCustomizer) testInstance;
-      return new ClientFactory(uri) {
+      return new ClientFactory(uri, apiVersion) {
         @Nonnull
         @Override // Note: this object is not serializable
         public NessieApiV1 make(NessieClientCustomizer customizer) {
@@ -83,22 +88,25 @@ public abstract class NessieClientResolver implements ParameterResolver {
 
     // We use a serializable impl. here as a workaround for @QuarkusTest instances, whose parameters
     // are deep-cloned by the Quarkus test extension.
-    return new ClientFactory(uri);
+    return new ClientFactory(uri, apiVersion);
   }
 
   private static class ClientFactory implements NessieClientFactory, Serializable {
-    private final URI uri;
+    private final URI baseUri;
+    private final NessieApiVersion apiVersion;
 
-    private ClientFactory(URI uri) {
-      this.uri = uri;
+    private ClientFactory(URI baseUri, NessieApiVersion apiVersion) {
+      this.baseUri = baseUri;
+      this.apiVersion = apiVersion;
     }
 
     @Nonnull
     @Override
     public NessieApiV1 make(NessieClientCustomizer customizer) {
-      return customizer
-          .configure(HttpClientBuilder.builder().withUri(uri))
-          .build(NessieApiV1.class);
+      URI uri = apiVersion.resolve(baseUri);
+      NessieClientBuilder<?> builder =
+          customizer.configure(HttpClientBuilder.builder().withUri(uri));
+      return apiVersion.build(builder);
     }
   }
 }

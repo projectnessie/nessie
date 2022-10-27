@@ -18,6 +18,7 @@ package org.projectnessie.services.rest;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
 import org.projectnessie.api.http.HttpNamespaceApi;
@@ -38,6 +39,7 @@ import org.projectnessie.versioned.VersionStore;
 
 /** REST endpoint for the namespace-API. */
 @RequestScoped
+@Path("v1/namespaces")
 public class RestNamespaceResource implements HttpNamespaceApi {
   // Cannot extend the NamespaceApiImplWithAuthz class, because then CDI gets confused
   // about which interface to use - either HttpNamespaceApi or the plain NamespaceApi. This can lead
