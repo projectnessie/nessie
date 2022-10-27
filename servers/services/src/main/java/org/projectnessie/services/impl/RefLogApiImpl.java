@@ -29,8 +29,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import org.projectnessie.api.RefLogApi;
-import org.projectnessie.api.params.RefLogParams;
 import org.projectnessie.cel.tools.Script;
 import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -40,12 +38,13 @@ import org.projectnessie.model.ImmutableRefLogResponseEntry;
 import org.projectnessie.model.RefLogResponse;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.services.spi.RefLogService;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.RefLogDetails;
 import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 
-public class RefLogApiImpl extends BaseApiImpl implements RefLogApi {
+public class RefLogApiImpl extends BaseApiImpl implements RefLogService {
 
   private static final int MAX_REF_LOG_ENTRIES = 250;
 
@@ -55,17 +54,20 @@ public class RefLogApiImpl extends BaseApiImpl implements RefLogApi {
   }
 
   @Override
-  public RefLogResponse getRefLog(RefLogParams params) throws NessieNotFoundException {
-    int max =
-        Math.min(
-            params.maxRecords() != null ? params.maxRecords() : MAX_REF_LOG_ENTRIES,
-            MAX_REF_LOG_ENTRIES);
+  public RefLogResponse getRefLog(
+      String startHashString,
+      String endHashString,
+      String filter,
+      Integer maxRecords,
+      String pageToken)
+      throws NessieNotFoundException {
+    int max = Math.min(maxRecords != null ? maxRecords : MAX_REF_LOG_ENTRIES, MAX_REF_LOG_ENTRIES);
 
     Hash endHash = null;
-    if (params.endHash() != null) {
-      endHash = Hash.of(Objects.requireNonNull(params.endHash()));
+    if (endHashString != null) {
+      endHash = Hash.of(Objects.requireNonNull(endHashString));
     }
-    Hash endRef = null == params.pageToken() ? endHash : Hash.of(params.pageToken());
+    Hash endRef = null == pageToken ? endHash : Hash.of(pageToken);
 
     try (Stream<RefLogDetails> entries = getStore().getRefLog(endRef)) {
       Stream<RefLogResponse.RefLogResponseEntry> logEntries =
@@ -88,12 +90,11 @@ public class RefLogApiImpl extends BaseApiImpl implements RefLogApi {
       logEntries =
           StreamSupport.stream(
               StreamUtil.takeUntilIncl(
-                  logEntries.spliterator(),
-                  x -> Objects.equals(x.getRefLogId(), params.startHash())),
+                  logEntries.spliterator(), x -> Objects.equals(x.getRefLogId(), startHashString)),
               false);
 
       List<RefLogResponse.RefLogResponseEntry> items =
-          filterRefLog(logEntries, params.filter()).limit(max + 1).collect(Collectors.toList());
+          filterRefLog(logEntries, filter).limit(max + 1).collect(Collectors.toList());
 
       if (items.size() == max + 1) {
         return ImmutableRefLogResponse.builder()
