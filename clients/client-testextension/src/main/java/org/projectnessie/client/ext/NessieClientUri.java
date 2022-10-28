@@ -21,8 +21,11 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/** Annotation for JUnit5 method parameters that need a URI to the Nessie server under test. */
+/**
+ * Annotation for JUnit5 method parameters that need a URI for constructing clients to the Nessie
+ * server under test.
+ */
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
-public @interface NessieUri {}
+public @interface NessieClientUri {}

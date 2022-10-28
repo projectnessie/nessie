@@ -33,7 +33,7 @@ import org.projectnessie.client.http.HttpClientBuilder;
  * Nessie java client instances and/or URIs based on the specific environment details provided by
  * concrete subclasses.
  *
- * @see NessieUri
+ * @see NessieClientUri
  * @see NessieClientFactory
  */
 public abstract class NessieClientResolver implements ParameterResolver {
@@ -41,7 +41,7 @@ public abstract class NessieClientResolver implements ParameterResolver {
   protected abstract URI getBaseUri(ExtensionContext extensionContext);
 
   private boolean isNessieUri(ParameterContext parameterContext) {
-    return parameterContext.isAnnotated(NessieUri.class);
+    return parameterContext.isAnnotated(NessieClientUri.class);
   }
 
   private boolean isNessieClient(ParameterContext parameterContext) {

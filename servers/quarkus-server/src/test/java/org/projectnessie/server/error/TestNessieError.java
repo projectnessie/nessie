@@ -31,7 +31,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
-import org.projectnessie.client.ext.NessieUri;
+import org.projectnessie.client.ext.NessieClientUri;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.rest.NessieHttpResponseFilter;
@@ -57,7 +57,7 @@ class TestNessieError {
   private static HttpClient client;
 
   @BeforeAll
-  static void setup(@NessieUri URI uri) {
+  static void setup(@NessieClientUri URI uri) {
     ObjectMapper mapper =
         new ObjectMapper()
             .enable(SerializationFeature.INDENT_OUTPUT)

@@ -43,7 +43,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.projectnessie.client.ext.NessieUri;
+import org.projectnessie.client.ext.NessieClientUri;
 import org.projectnessie.gc.contents.ContentReference;
 import org.projectnessie.gc.contents.jdbc.AgroalJdbcDataSourceProvider;
 import org.projectnessie.gc.contents.jdbc.JdbcPersistenceSpi;
@@ -76,7 +76,7 @@ public class TestCLI {
   private static URI nessieUri;
 
   @BeforeAll
-  static void setNessieUri(@NessieUri URI uri) {
+  static void setNessieUri(@NessieClientUri URI uri) {
     nessieUri = uri;
   }
 

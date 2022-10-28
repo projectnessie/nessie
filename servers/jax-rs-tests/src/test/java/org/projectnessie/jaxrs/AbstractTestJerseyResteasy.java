@@ -22,7 +22,7 @@ import java.net.URI;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.projectnessie.client.ext.NessieUri;
+import org.projectnessie.client.ext.NessieClientUri;
 import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.tests.extension.DatabaseAdapterExtension;
@@ -37,7 +37,7 @@ abstract class AbstractTestJerseyResteasy extends AbstractResteasyTest {
   static NessieJaxRsExtension server = new NessieJaxRsExtension(() -> databaseAdapter);
 
   @BeforeAll
-  static void setup(@NessieUri URI uri) {
+  static void setup(@NessieClientUri URI uri) {
     RestAssured.baseURI = uri.toString();
     RestAssured.port = uri.getPort();
     RestAssured.requestSpecification =
