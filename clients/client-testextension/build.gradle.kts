@@ -29,7 +29,7 @@ dependencies {
   api(libs.junit.jupiter.api)
 
   implementation(project(":nessie-client"))
-  api(project(":nessie-multi-env-test-engine"))
-  api(libs.junit.jupiter.engine)
+  implementation(project(":nessie-multi-env-test-engine"))
+  implementation(libs.junit.jupiter.engine)
   implementation(libs.findbugs.jsr305)
 }
