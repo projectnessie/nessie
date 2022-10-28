@@ -34,6 +34,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.projectnessie.client.ext.NessieApiVersion;
+import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.error.NessieError;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -54,6 +56,8 @@ import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Tag;
 
+// Resteasy requests in these tests are crafted for v1 REST paths.
+@NessieApiVersions(versions = {NessieApiVersion.V1})
 public abstract class AbstractResteasyTest {
 
   protected static String basePath = "/api/v1/";

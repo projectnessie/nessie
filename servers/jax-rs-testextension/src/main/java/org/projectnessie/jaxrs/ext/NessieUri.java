@@ -20,12 +20,13 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import org.projectnessie.client.ext.NessieClientUri;
 
 /**
  * Annotation for JUnit5 method parameters that need a URI to the Nessie server managed by {@link
  * NessieJaxRsExtension}.
  *
- * @deprecated Use {@link org.projectnessie.client.ext.NessieUri} instead.
+ * @deprecated Use {@link NessieClientUri} instead.
  */
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)

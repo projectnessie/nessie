@@ -20,9 +20,21 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-/** Annotation for JUnit5 method parameters that need a URI to the Nessie server under test. */
-@Target({ElementType.FIELD, ElementType.PARAMETER})
+/**
+ * Annotation for JUnit5 test classes that need to run with a specific set of Nessie API versions.
+ *
+ * <p>By default, if this annotation is present all Nessie API versions will be enabled in tests,
+ * but if this annotation is absent only the latest Nessie API version will be enabled.
+ *
+ * <p>This annotation activates {@link MultiVersionApiTest}. Actual API-specific parameter injection
+ * is handled by related JUnit5 extensions, such as {@link NessieClientResolver} sub-classes.
+ */
+@Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
+@ExtendWith(MultiVersionApiTest.class)
 @Inherited
-public @interface NessieUri {}
+public @interface NessieApiVersions {
+  NessieApiVersion[] versions() default {NessieApiVersion.V1};
+}

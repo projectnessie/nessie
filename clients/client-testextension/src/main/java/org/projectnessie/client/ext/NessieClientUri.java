@@ -13,23 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.projectnessie.client.ext;
 
-plugins {
-  `java-library`
-  jacoco
-  `maven-publish`
-  signing
-  `nessie-conventions`
-}
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-extra["maven.name"] = "Nessie - JUnit Jupyter Test Extension for Client-Side Tests"
-
-dependencies {
-  api(platform(libs.junit.bom))
-  api(libs.junit.jupiter.api)
-
-  implementation(project(":nessie-client"))
-  implementation(project(":nessie-multi-env-test-engine"))
-  implementation(libs.junit.jupiter.engine)
-  implementation(libs.findbugs.jsr305)
-}
+/**
+ * Annotation for JUnit5 method parameters that need a URI for constructing clients to the Nessie
+ * server under test.
+ */
+@Target({ElementType.FIELD, ElementType.PARAMETER})
+@Retention(RetentionPolicy.RUNTIME)
+@Inherited
+public @interface NessieClientUri {}

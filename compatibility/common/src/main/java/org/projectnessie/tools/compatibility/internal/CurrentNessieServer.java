@@ -54,7 +54,7 @@ final class CurrentNessieServer implements NessieServer {
 
   @Override
   public URI getUri() {
-    return jersey.getUri();
+    return jersey.getUri().resolve("v1");
   }
 
   @Override

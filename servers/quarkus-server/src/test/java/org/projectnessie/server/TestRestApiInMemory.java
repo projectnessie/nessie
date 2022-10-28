@@ -17,8 +17,10 @@ package org.projectnessie.server;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
 
 @QuarkusTest
 @TestProfile(QuarkusTestProfileInmemory.class)
+@NessieApiVersions // all versions
 class TestRestApiInMemory extends AbstractQuarkusRestWithMetrics {}

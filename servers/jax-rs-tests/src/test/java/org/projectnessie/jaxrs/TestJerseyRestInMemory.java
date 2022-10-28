@@ -15,6 +15,7 @@
  */
 package org.projectnessie.jaxrs;
 
+import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.inmem.InmemoryTestConnectionProviderSource;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
@@ -22,4 +23,5 @@ import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabas
 
 @NessieDbAdapterName(InmemoryDatabaseAdapterFactory.NAME)
 @NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
+@NessieApiVersions // all versions
 class TestJerseyRestInMemory extends AbstractTestJerseyRest {}
