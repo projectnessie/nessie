@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.tests;
+package org.projectnessie.versioned.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -38,7 +38,6 @@ import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.VersionStore;
-import org.projectnessie.versioned.tests.AbstractNestedVersionStore;
 
 public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
   protected AbstractSingleBranch(VersionStore store) {
