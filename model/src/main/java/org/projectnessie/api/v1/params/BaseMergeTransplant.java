@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.model;
+package org.projectnessie.api.v1.params;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -21,6 +21,10 @@ import java.util.List;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Pattern;
+import org.projectnessie.model.MergeBehavior;
+import org.projectnessie.model.MergeKeyBehavior;
+import org.projectnessie.model.MergeResponse;
+import org.projectnessie.model.Validation;
 
 public interface BaseMergeTransplant {
 

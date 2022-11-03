@@ -23,18 +23,18 @@ import org.projectnessie.api.v1.http.HttpTreeApi;
 import org.projectnessie.api.v1.params.CommitLogParams;
 import org.projectnessie.api.v1.params.EntriesParams;
 import org.projectnessie.api.v1.params.GetReferenceParams;
+import org.projectnessie.api.v1.params.Merge;
 import org.projectnessie.api.v1.params.ReferencesParams;
+import org.projectnessie.api.v1.params.Transplant;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
-import org.projectnessie.model.Merge;
 import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
-import org.projectnessie.model.Transplant;
 
 class HttpTreeClient implements HttpTreeApi {
 

@@ -15,11 +15,11 @@
  */
 package org.projectnessie.client.http.v1api;
 
+import org.projectnessie.api.v1.params.ImmutableTransplant;
 import org.projectnessie.client.builder.BaseTransplantCommitsBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.ImmutableTransplant;
 import org.projectnessie.model.MergeResponse;
 
 final class HttpTransplantCommits extends BaseTransplantCommitsBuilder {
