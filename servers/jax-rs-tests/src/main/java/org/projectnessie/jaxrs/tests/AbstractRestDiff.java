@@ -24,8 +24,11 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.client.ext.NessieApiVersion;
+import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -166,6 +169,49 @@ public abstract class AbstractRestDiff extends AbstractRestContents {
                 .get()
                 .getDiffs())
         .hasSize(commitsPerBranch)
+        .allSatisfy(
+            diff -> {
+              assertThat(diff.getKey()).isNotNull();
+              assertThat(diff.getFrom()).isNotNull();
+              assertThat(diff.getTo()).isNull();
+            });
+  }
+
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void testDiffByNamelessReference() throws BaseNessieClientServerException {
+    Reference fromRef = getApi().createReference().reference(Branch.of("testFrom", null)).create();
+    Reference toRef = getApi().createReference().reference(Branch.of("testTo", null)).create();
+    String toRefHash = createCommits(toRef, 1, 1, toRef.getHash());
+
+    assertThat(getApi().getDiff().fromRef(fromRef).toHashOnRef(toRefHash).get().getDiffs())
+        .hasSize(1)
+        .allSatisfy(
+            diff -> {
+              assertThat(diff.getKey()).isNotNull();
+              assertThat(diff.getFrom()).isNull();
+              assertThat(diff.getTo()).isNotNull();
+            });
+
+    // both nameless references
+    assertThat(
+            getApi()
+                .getDiff()
+                .fromHashOnRef(fromRef.getHash())
+                .toHashOnRef(toRefHash)
+                .get()
+                .getDiffs())
+        .hasSize(1)
+        .allSatisfy(
+            diff -> {
+              assertThat(diff.getKey()).isNotNull();
+              assertThat(diff.getFrom()).isNull();
+              assertThat(diff.getTo()).isNotNull();
+            });
+
+    // reverse to/from
+    assertThat(getApi().getDiff().fromHashOnRef(toRefHash).toRef(fromRef).get().getDiffs())
+        .hasSize(1)
         .allSatisfy(
             diff -> {
               assertThat(diff.getKey()).isNotNull();

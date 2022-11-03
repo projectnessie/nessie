@@ -18,9 +18,11 @@ package org.projectnessie.client.ext;
 import java.net.URI;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.NessieApiV2;
 
 public enum NessieApiVersion {
   V1("v1", NessieApiV1.class),
+  V2("v2", NessieApiV2.class),
   ;
 
   private final String uriPathElement;

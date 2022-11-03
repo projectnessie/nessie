@@ -24,16 +24,17 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
 @Value.Immutable
-@Schema(type = SchemaType.OBJECT, title = "RefLogResponse")
+@Schema(type = SchemaType.OBJECT, title = "RefLogResponse", deprecated = true, hidden = true)
 @JsonSerialize(as = ImmutableRefLogResponse.class)
 @JsonDeserialize(as = ImmutableRefLogResponse.class)
+@Deprecated // Not supported since API v2
 public interface RefLogResponse extends PaginatedResponse {
 
   @NotNull
   List<RefLogResponseEntry> getLogEntries();
 
   @Value.Immutable
-  @Schema(type = SchemaType.OBJECT, title = "RefLogResponseEntry")
+  @Schema(type = SchemaType.OBJECT, title = "RefLogResponseEntry", deprecated = true, hidden = true)
   @JsonSerialize(as = ImmutableRefLogResponseEntry.class)
   @JsonDeserialize(as = ImmutableRefLogResponseEntry.class)
   interface RefLogResponseEntry {

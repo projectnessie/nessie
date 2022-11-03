@@ -17,9 +17,9 @@ package org.projectnessie.server;
 
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.TestProfile;
-import org.projectnessie.jaxrs.tests.AbstractResteasyTest;
-import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfilePostgres;
+import org.projectnessie.jaxrs.tests.AbstractResteasyV2Test;
+import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
 
 @QuarkusIntegrationTest
-@TestProfile(QuarkusTestProfilePostgres.class)
-public class ITResteasyPostgres extends AbstractResteasyTest {}
+@TestProfile(QuarkusTestProfileInmemory.class)
+public class ITResteasyV2InMemory extends AbstractResteasyV2Test {}

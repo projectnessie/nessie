@@ -24,6 +24,8 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.SecurityContext;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.client.ext.NessieApiVersion;
+import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.jaxrs.ext.NessieSecurityContext;
@@ -101,6 +103,7 @@ public abstract class AbstractRestSecurityContext extends AbstractRestAccessChec
   }
 
   @Test
+  @NessieApiVersions(versions = NessieApiVersion.V1)
   public void committerAndAuthorMergeUnsquashed(
       @NessieSecurityContext Consumer<SecurityContext> secContext) throws Exception {
     Branch main = makeCommits(createBranch("committerAndAuthorMergeUnsquashed_main"), secContext);

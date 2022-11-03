@@ -36,5 +36,5 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith(MultiVersionApiTest.class)
 @Inherited
 public @interface NessieApiVersions {
-  NessieApiVersion[] versions() default {NessieApiVersion.V1};
+  NessieApiVersion[] versions() default {NessieApiVersion.V1, NessieApiVersion.V2};
 }

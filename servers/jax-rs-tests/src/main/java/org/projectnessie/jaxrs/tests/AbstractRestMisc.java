@@ -34,7 +34,7 @@ public abstract class AbstractRestMisc extends AbstractRestMergeTransplant {
 
   @Test
   public void testSupportedApiVersions() {
-    assertThat(getApi().getConfig().getMaxSupportedApiVersion()).isEqualTo(1);
+    assertThat(getApi().getConfig().getMaxSupportedApiVersion()).isEqualTo(2);
   }
 
   @Test

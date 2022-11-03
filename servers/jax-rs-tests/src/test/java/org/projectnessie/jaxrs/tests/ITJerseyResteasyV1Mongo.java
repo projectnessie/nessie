@@ -22,4 +22,4 @@ import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabas
 
 @NessieDbAdapterName(MongoDatabaseAdapterFactory.NAME)
 @NessieExternalDatabase(LocalMongoTestConnectionProviderSource.class)
-class ITJerseyResteasyMongo extends AbstractTestDatabaseAdapterResteasy {}
+class ITJerseyResteasyV1Mongo extends AbstractTestDatabaseAdapterResteasyV1 {}

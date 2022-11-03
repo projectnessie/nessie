@@ -17,9 +17,9 @@ package org.projectnessie.server;
 
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.TestProfile;
-import org.projectnessie.jaxrs.tests.AbstractResteasyTest;
+import org.projectnessie.jaxrs.tests.AbstractResteasyV1Test;
 import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileMongo;
 
 @QuarkusIntegrationTest
 @TestProfile(QuarkusTestProfileMongo.class)
-public class ITResteasyMongo extends AbstractResteasyTest {}
+public class ITResteasyV1Mongo extends AbstractResteasyV1Test {}

@@ -34,6 +34,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.projectnessie.api.v1.TreeApi;
 import org.projectnessie.api.v1.params.CommitLogParams;
 import org.projectnessie.api.v1.params.EntriesParams;
@@ -51,8 +52,9 @@ import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
 
+@Tag(name = "v1")
 @Consumes(value = MediaType.APPLICATION_JSON)
-@Path("trees")
+@Path("v1/trees")
 public interface HttpTreeApi extends TreeApi {
 
   @Override

@@ -15,11 +15,11 @@
  */
 package org.projectnessie.jaxrs.tests;
 
-import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseAdapterFactory;
-import org.projectnessie.versioned.persist.dynamodb.LocalDynamoTestConnectionProviderSource;
+import org.projectnessie.versioned.persist.rocks.RocksDatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.rocks.RocksTestConnectionProviderSource;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
-@NessieDbAdapterName(DynamoDatabaseAdapterFactory.NAME)
-@NessieExternalDatabase(LocalDynamoTestConnectionProviderSource.class)
-class ITJerseyResteasyDynamo extends AbstractTestDatabaseAdapterResteasy {}
+@NessieDbAdapterName(RocksDatabaseAdapterFactory.NAME)
+@NessieExternalDatabase(RocksTestConnectionProviderSource.class)
+class ITJerseyResteasyV1Rocks extends AbstractTestDatabaseAdapterResteasyV1 {}

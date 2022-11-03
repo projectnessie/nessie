@@ -18,7 +18,7 @@ package org.projectnessie.jaxrs.tests;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.projectnessie.model.Validation.HASH_MESSAGE;
+import static org.projectnessie.model.Validation.HASH_RULE;
 import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
 
 import org.junit.jupiter.params.ParameterizedTest;
@@ -192,7 +192,7 @@ public abstract class AbstractRestInvalid extends AbstractRestInvalidRefs {
                             .commit())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(".expectedHash: " + HASH_MESSAGE)
+                .hasMessageContaining(HASH_RULE)
                 .hasMessageContaining(opsCountMsg),
         () ->
             assertThatThrownBy(
@@ -204,7 +204,7 @@ public abstract class AbstractRestInvalid extends AbstractRestInvalidRefs {
                             .delete())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(".expectedHash: " + HASH_MESSAGE),
+                .hasMessageContaining(HASH_RULE),
         () ->
             assertThatThrownBy(
                     () ->
@@ -216,7 +216,7 @@ public abstract class AbstractRestInvalid extends AbstractRestInvalidRefs {
                             .assign())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(".expectedHash: " + HASH_MESSAGE),
+                .hasMessageContaining(HASH_RULE),
         () ->
             assertThatThrownBy(
                     () ->
@@ -228,13 +228,13 @@ public abstract class AbstractRestInvalid extends AbstractRestInvalidRefs {
                             .merge())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(".expectedHash: " + HASH_MESSAGE),
+                .hasMessageContaining(HASH_RULE),
         () ->
             assertThatThrownBy(
                     () -> getApi().deleteTag().tagName(validBranchName).hash(invalidHash).delete())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(".expectedHash: " + HASH_MESSAGE),
+                .hasMessageContaining(HASH_RULE),
         () ->
             assertThatThrownBy(
                     () ->
@@ -249,7 +249,7 @@ public abstract class AbstractRestInvalid extends AbstractRestInvalidRefs {
                             .transplant())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(".expectedHash: " + HASH_MESSAGE),
+                .hasMessageContaining(HASH_RULE),
         () ->
             assertThatThrownBy(() -> getApi().getContent().refName(invalidHash).get())
                 .isInstanceOf(NessieBadRequestException.class)
@@ -265,7 +265,7 @@ public abstract class AbstractRestInvalid extends AbstractRestInvalidRefs {
                 .hasMessageContaining("Bad Request (HTTP/400):")
                 .hasMessageContaining(
                     ".request.requestedKeys: size must be between 1 and 2147483647")
-                .hasMessageContaining(".hashOnRef: " + HASH_MESSAGE),
+                .hasMessageContaining(HASH_RULE),
         () ->
             assertThatThrownBy(
                     () ->
@@ -277,7 +277,7 @@ public abstract class AbstractRestInvalid extends AbstractRestInvalidRefs {
                             .get())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(".hashOnRef: " + HASH_MESSAGE),
+                .hasMessageContaining(HASH_RULE),
         () ->
             assertThatThrownBy(
                     () ->
@@ -288,7 +288,7 @@ public abstract class AbstractRestInvalid extends AbstractRestInvalidRefs {
                             .get())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(".params.startHash: " + HASH_MESSAGE),
+                .hasMessageContaining(HASH_RULE),
         () ->
             assertThatThrownBy(
                     () ->
@@ -299,14 +299,14 @@ public abstract class AbstractRestInvalid extends AbstractRestInvalidRefs {
                             .get())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(".params.endHash: " + HASH_MESSAGE),
+                .hasMessageContaining(HASH_RULE),
         () ->
             assertThatThrownBy(
                     () ->
                         getApi().getEntries().refName(validBranchName).hashOnRef(invalidHash).get())
                 .isInstanceOf(NessieBadRequestException.class)
                 .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(".params.hashOnRef: " + HASH_MESSAGE));
+                .hasMessageContaining(HASH_RULE));
   }
 
   @ParameterizedTest

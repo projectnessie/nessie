@@ -31,6 +31,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.projectnessie.api.v1.ContentApi;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Content;
@@ -38,8 +39,9 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.GetMultipleContentsRequest;
 import org.projectnessie.model.GetMultipleContentsResponse;
 
+@Tag(name = "v1")
 @Consumes(value = MediaType.APPLICATION_JSON)
-@Path("contents")
+@Path("v1/contents")
 public interface HttpContentApi extends ContentApi {
   @Override
   @GET

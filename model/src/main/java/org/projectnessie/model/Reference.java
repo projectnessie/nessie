@@ -89,6 +89,18 @@ public interface Reference extends Base {
   @Value.Redacted
   ReferenceType getType();
 
+  default String toPathString() {
+    return toPathString(getName(), getHash());
+  }
+
+  static String toPathString(String name, String hash) {
+    return Util.toPathStringRef(name, hash);
+  }
+
+  static Reference fromPathString(String value, ReferenceType parseAsType) {
+    return Util.fromPathStringRef(value, parseAsType);
+  }
+
   /** The reference type as an enum. */
   @Schema(enumeration = {"branch", "tag"}) // Required to have lower-case values in OpenAPI
   enum ReferenceType {

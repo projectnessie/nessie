@@ -89,4 +89,13 @@ public abstract class HttpRequest {
     uriBuilder.resolveTemplate(name, value);
     return this;
   }
+
+  public <E extends Exception> ApiHttpRequest<E, RuntimeException> unwrap(Class<E> ex) {
+    return new ApiHttpRequest<>(this, ex, RuntimeException.class);
+  }
+
+  public <E1 extends Exception, E2 extends Exception> ApiHttpRequest<E1, E2> unwrap(
+      Class<E1> ex1, Class<E2> ex2) {
+    return new ApiHttpRequest<>(this, ex1, ex2);
+  }
 }

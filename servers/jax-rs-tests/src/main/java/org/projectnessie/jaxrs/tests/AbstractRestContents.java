@@ -30,6 +30,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
+import org.projectnessie.client.ext.NessieApiVersion;
+import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -376,5 +378,23 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
                 assertThat(content)
                     .isEqualTo(IcebergTable.builder().from(tableB).id(content.getId()).build()))
         .doesNotContainKey(ContentKey.of("noexist"));
+  }
+
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void fetchContentByNamelessReference() throws BaseNessieClientServerException {
+    Branch branch = createBranch("fetchContentByNamelessReference");
+    IcebergTable t = IcebergTable.of("loc", 1, 2, 3, 4);
+    ContentKey key = ContentKey.of("key1");
+    CommitMultipleOperationsBuilder commit =
+        getApi()
+            .commitMultipleOperations()
+            .branch(branch)
+            .commitMeta(CommitMeta.fromMessage("test commit"))
+            .operation(Put.of(key, t));
+    Branch committed = commit.commit();
+
+    assertThat(getApi().getContent().hashOnRef(committed.getHash()).key(key).get().get(key))
+        .isInstanceOf(IcebergTable.class);
   }
 }

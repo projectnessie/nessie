@@ -15,11 +15,11 @@
  */
 package org.projectnessie.jaxrs.tests;
 
-import org.projectnessie.versioned.persist.rocks.RocksDatabaseAdapterFactory;
-import org.projectnessie.versioned.persist.rocks.RocksTestConnectionProviderSource;
+import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.inmem.InmemoryTestConnectionProviderSource;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
-@NessieDbAdapterName(RocksDatabaseAdapterFactory.NAME)
-@NessieExternalDatabase(RocksTestConnectionProviderSource.class)
-class ITJerseyResteasyRocks extends AbstractTestDatabaseAdapterResteasy {}
+@NessieDbAdapterName(InmemoryDatabaseAdapterFactory.NAME)
+@NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
+class TestJerseyResteasyV1InMemory extends AbstractTestDatabaseAdapterResteasyV1 {}
