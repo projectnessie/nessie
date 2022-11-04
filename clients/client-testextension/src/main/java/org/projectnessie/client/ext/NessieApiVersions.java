@@ -31,7 +31,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * <p>This annotation activates {@link MultiVersionApiTest}. Actual API-specific parameter injection
  * is handled by related JUnit5 extensions, such as {@link NessieClientResolver} sub-classes.
  */
-@Target(ElementType.TYPE)
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @ExtendWith(MultiVersionApiTest.class)
 @Inherited
