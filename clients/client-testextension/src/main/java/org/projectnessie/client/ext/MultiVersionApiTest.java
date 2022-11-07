@@ -65,10 +65,16 @@ public class MultiVersionApiTest implements MultiEnvTestExtension, ExecutionCond
     NessieApiVersion apiVersion = apiVersion(context);
     boolean matches =
         Arrays.asList(
-                AnnotationUtils.findAnnotation(
-                        context.getRequiredTestClass(), NessieApiVersions.class)
+                context
+                    .getTestMethod()
+                    .flatMap(m -> AnnotationUtils.findAnnotation(m, NessieApiVersions.class))
                     .map(NessieApiVersions::versions)
-                    .orElseGet(() -> new NessieApiVersion[] {DEFAULT_API_VERSION}))
+                    .orElseGet(
+                        () ->
+                            AnnotationUtils.findAnnotation(
+                                    context.getRequiredTestClass(), NessieApiVersions.class)
+                                .map(NessieApiVersions::versions)
+                                .orElseGet(() -> new NessieApiVersion[] {DEFAULT_API_VERSION})))
             .contains(apiVersion);
     return matches
         ? ConditionEvaluationResult.enabled(null)

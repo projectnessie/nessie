@@ -25,9 +25,9 @@ import static org.assertj.core.data.MapEntry.entry;
 import com.google.common.collect.ImmutableList;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -51,9 +51,20 @@ import org.projectnessie.model.Reference;
 public abstract class AbstractRestMergeTransplant extends AbstractRestInvalid {
 
   @ParameterizedTest
-  @CsvSource(
-      value = {"true,true", "true,false", "false,true", "false,false"}) // merge requires the hash
-  public void transplant(boolean withDetachedCommit, boolean keepIndividualCommits)
+  @ValueSource(booleans = {true, false})
+  public void transplantKeepCommits(boolean withDetachedCommit)
+      throws BaseNessieClientServerException {
+    testTransplant(withDetachedCommit, true);
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void transplantSquashed(boolean withDetachedCommit)
+      throws BaseNessieClientServerException {
+    testTransplant(withDetachedCommit, false);
+  }
+
+  private void testTransplant(boolean withDetachedCommit, boolean keepIndividualCommits)
       throws BaseNessieClientServerException {
     mergeTransplant(
         false,
@@ -70,14 +81,18 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalid {
   }
 
   @ParameterizedTest
-  @CsvSource(
-      value = {
-        "UNCHANGED,true",
-        "UNCHANGED,false",
-        "DETACHED,true",
-        "DETACHED,false"
-      }) // merge requires the hash
-  public void merge(ReferenceMode refMode, boolean keepIndividualCommits)
+  @EnumSource(names = {"UNCHANGED", "DETACHED"}) // hash is required
+  public void mergeKeepCommits(ReferenceMode refMode) throws BaseNessieClientServerException {
+    testMerge(refMode, true);
+  }
+
+  @ParameterizedTest
+  @EnumSource(names = {"UNCHANGED", "DETACHED"}) // hash is required
+  public void mergeSquashed(ReferenceMode refMode) throws BaseNessieClientServerException {
+    testMerge(refMode, false);
+  }
+
+  private void testMerge(ReferenceMode refMode, boolean keepIndividualCommits)
       throws BaseNessieClientServerException {
     mergeTransplant(
         !keepIndividualCommits,
