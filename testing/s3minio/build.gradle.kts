@@ -32,6 +32,8 @@ dependencies {
   implementation(libs.awssdk.s3)
   implementation(libs.awssdk.url.connection.client)
 
+  // hadoop-common brings Jackson in ancient versions, pulling in the Jackson BOM to avoid that
+  implementation(platform(libs.jackson.bom))
   compileOnly(libs.hadoop.common)
 
   implementation(platform(libs.junit.bom))

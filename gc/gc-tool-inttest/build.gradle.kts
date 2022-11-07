@@ -34,6 +34,8 @@ dependencies {
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
 
+  // hadoop-common brings Jackson in ancient versions, pulling in the Jackson BOM to avoid that
+  implementation(platform(libs.jackson.bom))
   implementation(libs.hadoop.common) {
     exclude("javax.servlet.jsp", "jsp-api")
     exclude("javax.ws.rs", "javax.ws.rs-api")
