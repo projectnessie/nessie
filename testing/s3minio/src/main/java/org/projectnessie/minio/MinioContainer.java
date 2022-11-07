@@ -43,6 +43,7 @@ final class MinioContainer extends GenericContainer<MinioContainer>
 
   private static final String MINIO_ACCESS_KEY = "MINIO_ROOT_USER";
   private static final String MINIO_SECRET_KEY = "MINIO_ROOT_PASSWORD";
+  private static final String MINIO_DOMAIN = "MINIO_DOMAIN";
 
   private static final String DEFAULT_STORAGE_DIRECTORY = "/data";
   private static final String HEALTH_ENDPOINT = "/minio/health/ready";
@@ -56,6 +57,7 @@ final class MinioContainer extends GenericContainer<MinioContainer>
   private S3Client s3;
   private URI bucketBaseUri;
 
+  @SuppressWarnings("unused")
   public MinioContainer() {
     this(null, null, null, null);
   }
@@ -71,6 +73,8 @@ final class MinioContainer extends GenericContainer<MinioContainer>
     this.bucket = bucket != null ? bucket : randomString("bucket");
     withEnv(MINIO_ACCESS_KEY, this.accessKey);
     withEnv(MINIO_SECRET_KEY, this.secretKey);
+    // S3 SDK encodes bucket names in host names - need to tell Minio which domain to use
+    withEnv(MINIO_DOMAIN, "localhost");
     withCommand("server", DEFAULT_STORAGE_DIRECTORY);
     setWaitStrategy(
         new HttpWaitStrategy()
