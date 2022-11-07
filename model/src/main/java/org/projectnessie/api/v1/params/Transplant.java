@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,45 +13,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.model;
+package org.projectnessie.api.v1.params;
 
 import static org.projectnessie.model.Validation.validateHash;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Pattern;
+import java.util.List;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty;
 import org.immutables.value.Value;
+import org.projectnessie.model.Validation;
 
 @Schema(
     type = SchemaType.OBJECT,
-    title = "Merge Operation",
+    title = "Transplant",
     // Smallrye does neither support JsonFormat nor javax.validation.constraints.Pattern :(
     properties = {
       @SchemaProperty(name = "fromRefName", pattern = Validation.REF_NAME_REGEX),
-      @SchemaProperty(name = "fromHash", pattern = Validation.HASH_REGEX)
+      @SchemaProperty(name = "hashesToTransplant", uniqueItems = true)
     })
 @Value.Immutable
-@JsonSerialize(as = ImmutableMerge.class)
-@JsonDeserialize(as = ImmutableMerge.class)
-public interface Merge extends BaseMergeTransplant {
+@JsonSerialize(as = ImmutableTransplant.class)
+@JsonDeserialize(as = ImmutableTransplant.class)
+public interface Transplant extends BaseMergeTransplant {
 
-  @NotBlank
-  @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-  String getFromHash();
+  @NotNull
+  @Size(min = 1)
+  List<String> getHashesToTransplant();
 
   /**
    * Validation rule using {@link org.projectnessie.model.Validation#validateHash(String)}
    * (String)}.
    */
   @Value.Check
-  default void checkHash() {
-    String hash = getFromHash();
-    if (hash != null) {
-      validateHash(hash);
+  default void checkHashes() {
+    List<String> hashes = getHashesToTransplant();
+    if (hashes != null) {
+      for (String hash : hashes) {
+        validateHash(hash);
+      }
     }
   }
 }

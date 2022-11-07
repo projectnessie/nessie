@@ -39,7 +39,7 @@ import org.projectnessie.model.LogResponse.LogEntry;
 public class TestModelObjectsSerialization {
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
-  private static final String HASH =
+  protected static final String HASH =
       "3e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10e";
 
   @ParameterizedTest
@@ -78,23 +78,6 @@ public class TestModelObjectsSerialization {
             Tag.of("tagname", HASH),
             Tag.class,
             Json.from("type", "TAG").add("name", "tagname").add("hash", HASH)),
-        new Case(
-            ImmutableTransplant.builder()
-                .addHashesToTransplant(HASH)
-                .fromRefName(branchName)
-                .build(),
-            Transplant.class,
-            Json.from("fromRefName", "testBranch").addArr("hashesToTransplant", HASH)),
-        new Case(
-            ImmutableTransplant.builder()
-                .addHashesToTransplant(HASH)
-                .fromRefName(branchName)
-                .keepIndividualCommits(true)
-                .build(),
-            Transplant.class,
-            Json.from("fromRefName", "testBranch")
-                .addNoQuotes("keepIndividualCommits", "true")
-                .addArr("hashesToTransplant", HASH)),
         new Case(
             EntriesResponse.builder()
                 .addEntries(
@@ -147,63 +130,7 @@ public class TestModelObjectsSerialization {
                                 .addNoQuotes("properties", Json.from("prop1", "val1")))
                         .addNoQuotes("parentCommitHash", null)
                         .addNoQuotes("operations", null))
-                .addNoQuotes("hasMore", true)),
-        new Case(
-            ImmutableMerge.builder().fromHash(HASH).fromRefName(branchName).build(),
-            Merge.class,
-            Json.from("fromRefName", "testBranch").add("fromHash", HASH)),
-        new Case(
-            ImmutableMerge.builder()
-                .fromHash(HASH)
-                .fromRefName(branchName)
-                .keepIndividualCommits(true)
-                .build(),
-            Merge.class,
-            Json.from("fromRefName", "testBranch")
-                .addNoQuotes("keepIndividualCommits", "true")
-                .add("fromHash", HASH)),
-        new Case(
-            ImmutableMerge.builder()
-                .fromHash(HASH)
-                .fromRefName(branchName)
-                .defaultKeyMergeMode(MergeBehavior.FORCE)
-                .isFetchAdditionalInfo(true)
-                .addKeyMergeModes(
-                    MergeKeyBehavior.of(ContentKey.of("merge", "me"), MergeBehavior.NORMAL),
-                    MergeKeyBehavior.of(ContentKey.of("ignore", "this"), MergeBehavior.DROP))
-                .build(),
-            Merge.class,
-            Json.from("fromRefName", "testBranch")
-                .addArrNoQuotes(
-                    "keyMergeModes",
-                    Json.noQuotes("key", Json.arr("elements", "merge", "me"))
-                        .add("mergeBehavior", "NORMAL"),
-                    Json.noQuotes("key", Json.arr("elements", "ignore", "this"))
-                        .add("mergeBehavior", "DROP"))
-                .add("defaultKeyMergeMode", "FORCE")
-                .add("fromHash", HASH)
-                .addNoQuotes("isFetchAdditionalInfo", "true")),
-        new Case(
-            ImmutableMerge.builder()
-                .fromHash(HASH)
-                .fromRefName(branchName)
-                .keepIndividualCommits(true)
-                .isDryRun(false)
-                .addKeyMergeModes(
-                    MergeKeyBehavior.of(ContentKey.of("merge", "me"), MergeBehavior.NORMAL),
-                    MergeKeyBehavior.of(ContentKey.of("ignore", "this"), MergeBehavior.DROP))
-                .build(),
-            Merge.class,
-            Json.from("fromRefName", "testBranch")
-                .addNoQuotes("keepIndividualCommits", "true")
-                .addArrNoQuotes(
-                    "keyMergeModes",
-                    Json.noQuotes("key", Json.arr("elements", "merge", "me"))
-                        .add("mergeBehavior", "NORMAL"),
-                    Json.noQuotes("key", Json.arr("elements", "ignore", "this"))
-                        .add("mergeBehavior", "DROP"))
-                .add("fromHash", HASH)
-                .addNoQuotes("isDryRun", "false")));
+                .addNoQuotes("hasMore", true)));
   }
 
   static List<Case> negativeCases() {
@@ -222,18 +149,10 @@ public class TestModelObjectsSerialization {
             Branch.class,
             Json.from("type", "BRANCH").addNoQuotes("name", "null").add("hash", HASH)),
         new Case(
-            Transplant.class,
-            Json.arr("hashesToTransplant", "invalidhash").addNoQuotes("fromRefName", "null")),
-
-        // Invalid hash
-        new Case(
-            Transplant.class,
-            Json.arr("hashesToTransplant", "invalidhash").add("fromRefName", "testBranch")),
-        new Case(
             Tag.class, Json.from("type", "TAG").add("name", "tagname").add("hash", "invalidhash")));
   }
 
-  static class Case {
+  protected static class Case {
 
     final Object obj;
     final Class<?> deserializeAs;
@@ -255,7 +174,8 @@ public class TestModelObjectsSerialization {
     }
   }
 
-  static class Json { // Helps in building json strings, which can be used for verification.
+  protected static
+  class Json { // Helps in building json strings, which can be used for verification.
 
     @SuppressWarnings("InlineFormatString")
     private static final String STR_KV_FORMAT = "%s,\"%s\":\"%s\"";
@@ -269,15 +189,15 @@ public class TestModelObjectsSerialization {
       this.currentContent = currentContent;
     }
 
-    static Json from(String key, String val) {
+    public static Json from(String key, String val) {
       return new Json(String.format("\"%s\":\"%s\"", key, val));
     }
 
-    static Json noQuotes(String key, Object val) {
+    public static Json noQuotes(String key, Object val) {
       return new Json(String.format("\"%s\":%s", key, val));
     }
 
-    static Json arr(String key, String... val) {
+    public static Json arr(String key, String... val) {
       String currentContent =
           Stream.of(val)
               .collect(Collectors.joining("\",\"", String.format("\"%s\":[\"", key), "\"]"));
