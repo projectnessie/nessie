@@ -15,7 +15,7 @@
  */
 package org.projectnessie.client.http.v1api;
 
-import org.projectnessie.api.params.CommitLogParams;
+import org.projectnessie.api.v1.params.CommitLogParams;
 import org.projectnessie.client.builder.BaseGetCommitLogBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;

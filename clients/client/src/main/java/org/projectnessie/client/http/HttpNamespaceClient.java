@@ -16,10 +16,10 @@
 package org.projectnessie.client.http;
 
 import javax.validation.constraints.NotNull;
-import org.projectnessie.api.http.HttpNamespaceApi;
-import org.projectnessie.api.params.MultipleNamespacesParams;
-import org.projectnessie.api.params.NamespaceParams;
-import org.projectnessie.api.params.NamespaceUpdate;
+import org.projectnessie.api.v1.http.HttpNamespaceApi;
+import org.projectnessie.api.v1.params.MultipleNamespacesParams;
+import org.projectnessie.api.v1.params.NamespaceParams;
+import org.projectnessie.api.v1.params.NamespaceUpdate;
 import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieNamespaceNotEmptyException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;

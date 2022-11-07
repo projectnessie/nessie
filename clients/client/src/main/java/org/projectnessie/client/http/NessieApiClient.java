@@ -16,12 +16,12 @@
 package org.projectnessie.client.http;
 
 import java.io.Closeable;
-import org.projectnessie.api.http.HttpConfigApi;
-import org.projectnessie.api.http.HttpContentApi;
-import org.projectnessie.api.http.HttpDiffApi;
-import org.projectnessie.api.http.HttpNamespaceApi;
-import org.projectnessie.api.http.HttpRefLogApi;
-import org.projectnessie.api.http.HttpTreeApi;
+import org.projectnessie.api.v1.http.HttpConfigApi;
+import org.projectnessie.api.v1.http.HttpContentApi;
+import org.projectnessie.api.v1.http.HttpDiffApi;
+import org.projectnessie.api.v1.http.HttpNamespaceApi;
+import org.projectnessie.api.v1.http.HttpRefLogApi;
+import org.projectnessie.api.v1.http.HttpTreeApi;
 
 public class NessieApiClient implements Closeable {
   private final HttpConfigApi config;

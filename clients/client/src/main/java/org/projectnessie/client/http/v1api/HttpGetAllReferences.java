@@ -15,7 +15,7 @@
  */
 package org.projectnessie.client.http.v1api;
 
-import org.projectnessie.api.params.ReferencesParams;
+import org.projectnessie.api.v1.params.ReferencesParams;
 import org.projectnessie.client.builder.BaseGetAllReferencesBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.model.ReferencesResponse;

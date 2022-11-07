@@ -16,7 +16,7 @@
 package org.projectnessie.client.http;
 
 import javax.validation.constraints.NotNull;
-import org.projectnessie.api.http.HttpContentApi;
+import org.projectnessie.api.v1.http.HttpContentApi;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
