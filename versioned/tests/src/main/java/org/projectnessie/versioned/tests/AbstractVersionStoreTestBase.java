@@ -85,4 +85,20 @@ public abstract class AbstractVersionStoreTestBase {
       super(AbstractVersionStoreTestBase.this.store());
     }
   }
+
+  @Nested
+  @SuppressWarnings("ClassCanBeStatic")
+  public class SingleBranch extends AbstractSingleBranch {
+    public SingleBranch() {
+      super(AbstractVersionStoreTestBase.this.store());
+    }
+  }
+
+  @Nested
+  @SuppressWarnings("ClassCanBeStatic")
+  public class DuplicateTable extends AbstractDuplicateTable {
+    public DuplicateTable() {
+      super(AbstractVersionStoreTestBase.this.store());
+    }
+  }
 }

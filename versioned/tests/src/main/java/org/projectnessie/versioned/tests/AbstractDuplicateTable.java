@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.persist.tests;
+package org.projectnessie.versioned.tests;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,7 +34,6 @@ import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.VersionStore;
-import org.projectnessie.versioned.tests.AbstractNestedVersionStore;
 
 public abstract class AbstractDuplicateTable extends AbstractNestedVersionStore {
   protected AbstractDuplicateTable(VersionStore store) {
