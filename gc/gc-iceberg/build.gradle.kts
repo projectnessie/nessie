@@ -46,7 +46,8 @@ dependencies {
   testImplementation(nessieProject("nessie-gc-iceberg-mock"))
   testRuntimeOnly(libs.logback.classic)
 
-  testCompileOnly(platform(libs.jackson.bom))
+  // hadoop-common brings Jackson in ancient versions, pulling in the Jackson BOM to avoid that
+  testImplementation(platform(libs.jackson.bom))
   testCompileOnly(libs.jackson.annotations)
   testCompileOnly(libs.microprofile.openapi)
 
