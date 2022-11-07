@@ -16,8 +16,6 @@
 package org.projectnessie.versioned.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
@@ -31,7 +29,11 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
@@ -41,7 +43,10 @@ import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.VersionStore;
 
+@ExtendWith(SoftAssertionsExtension.class)
 public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
+  @InjectSoftAssertions protected SoftAssertions soft;
+
   protected AbstractCommitLog(VersionStore store) {
     super(store);
   }
@@ -70,24 +75,23 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
 
     List<CommitMeta> justTwo =
         commitsList(branch, s -> s.limit(2).map(Commit::getCommitMeta), false);
-    assertEquals(messages.subList(0, 2), justTwo);
+    soft.assertThat(justTwo).isEqualTo(messages.subList(0, 2));
     List<CommitMeta> justTen =
         commitsList(branch, s -> s.limit(10).map(Commit::getCommitMeta), false);
-    assertEquals(messages.subList(0, 10), justTen);
+    soft.assertThat(justTen).isEqualTo(messages.subList(0, 10));
 
     int pageSize = 10;
 
     // Test parameter sanity check. Want the last page to be smaller than the page-size.
-    assertNotEquals(0, commits % (pageSize - 1));
+    soft.assertThat(commits % (pageSize - 1)).isNotEqualTo(0);
 
     Hash lastHash = null;
     for (int offset = 0; ; ) {
       List<Commit> logPage =
           commitsList(lastHash == null ? branch : lastHash, s -> s.limit(pageSize), false);
 
-      assertEquals(
-          messages.subList(offset, Math.min(offset + pageSize, commits)),
-          logPage.stream().map(Commit::getCommitMeta).collect(Collectors.toList()));
+      soft.assertThat(logPage.stream().map(Commit::getCommitMeta).collect(Collectors.toList()))
+          .isEqualTo(messages.subList(offset, Math.min(offset + pageSize, commits)));
 
       lastHash = logPage.get(logPage.size() - 1).getHash();
 
@@ -96,9 +100,8 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
         // The "next after last page" should always return just a single commit, that's basically
         // the "end of commit-log"-condition.
         logPage = commitsList(lastHash, s -> s.limit(pageSize), false);
-        assertEquals(
-            Collections.singletonList(messages.get(commits - 1)),
-            logPage.stream().map(Commit::getCommitMeta).collect(Collectors.toList()));
+        soft.assertThat(logPage.stream().map(Commit::getCommitMeta).collect(Collectors.toList()))
+            .isEqualTo(Collections.singletonList(messages.get(commits - 1)));
         break;
       }
     }
@@ -130,7 +133,7 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
         Stream.concat(Stream.of(firstParent), hashes.subList(0, 9).stream())
             .collect(Collectors.toList());
 
-    assertThat(Lists.reverse(commitsList(branch, false)))
+    soft.assertThat(Lists.reverse(commitsList(branch, false)))
         .allSatisfy(
             c -> {
               assertThat(c.getOperations()).isNull();
@@ -141,7 +144,7 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
         .containsExactlyElementsOf(hashes);
 
     List<Commit> commits = Lists.reverse(commitsList(branch, true));
-    assertThat(IntStream.rangeClosed(1, numCommits))
+    soft.assertThat(IntStream.rangeClosed(1, numCommits))
         .allSatisfy(
             i -> {
               Commit c = commits.get(i - 1);

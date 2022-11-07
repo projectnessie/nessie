@@ -16,14 +16,17 @@
 package org.projectnessie.versioned.tests;
 
 import static java.util.Collections.singletonList;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.Optional;
+import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.projectnessie.model.CommitMeta;
@@ -35,7 +38,10 @@ import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.VersionStore;
 
+@ExtendWith(SoftAssertionsExtension.class)
 public abstract class AbstractDuplicateTable extends AbstractNestedVersionStore {
+  @InjectSoftAssertions protected SoftAssertions soft;
+
   protected AbstractDuplicateTable(VersionStore store) {
     super(store);
   }
@@ -93,8 +99,8 @@ public abstract class AbstractDuplicateTable extends AbstractNestedVersionStore 
     // WITHOUT global-state, it is okay to work
     BranchName branch1 = BranchName.of("globalStateDuplicateTable-branch1");
     BranchName branch2 = BranchName.of("globalStateDuplicateTable-branch2");
-    assertThat(store().create(branch1, Optional.of(ancestor))).isEqualTo(ancestor);
-    assertThat(store().create(branch2, Optional.of(ancestor))).isEqualTo(ancestor);
+    soft.assertThat(store().create(branch1, Optional.of(ancestor))).isEqualTo(ancestor);
+    soft.assertThat(store().create(branch2, Optional.of(ancestor))).isEqualTo(ancestor);
 
     List<Operation> putForBranch1;
     List<Operation> putForBranch2;
@@ -125,7 +131,7 @@ public abstract class AbstractDuplicateTable extends AbstractNestedVersionStore 
 
     store()
         .commit(branch1, Optional.empty(), CommitMeta.fromMessage("create table"), putForBranch1);
-    assertThat(store().getValue(branch1, key)).isEqualTo(valuebranch1);
+    soft.assertThat(store().getValue(branch1, key)).isEqualTo(valuebranch1);
 
     ThrowingCallable createTableOnOtherBranch =
         () ->
@@ -137,6 +143,6 @@ public abstract class AbstractDuplicateTable extends AbstractNestedVersionStore 
                     putForBranch2);
 
     createTableOnOtherBranch.call();
-    assertThat(store().getValue(branch2, key)).isEqualTo(valuebranch2);
+    soft.assertThat(store().getValue(branch2, key)).isEqualTo(valuebranch2);
   }
 }

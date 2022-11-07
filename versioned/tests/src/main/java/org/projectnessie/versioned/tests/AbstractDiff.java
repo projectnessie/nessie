@@ -15,15 +15,17 @@
  */
 package org.projectnessie.versioned.tests;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.Hash;
@@ -33,7 +35,9 @@ import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.testworker.OnRefOnly;
 
+@ExtendWith(SoftAssertionsExtension.class)
 public abstract class AbstractDiff extends AbstractNestedVersionStore {
+  @InjectSoftAssertions protected SoftAssertions soft;
 
   public static final OnRefOnly V_1 = newOnRef("v1");
   public static final OnRefOnly V_2 = newOnRef("v2");
@@ -55,27 +59,27 @@ public abstract class AbstractDiff extends AbstractNestedVersionStore {
         commit("Second Commit").put("k2", V_2_A).put("k3", V_3).toBranch(branch);
 
     List<Diff> startToSecond = diffAsList(initial, secondCommit);
-    assertThat(startToSecond)
+    soft.assertThat(startToSecond)
         .containsExactlyInAnyOrder(
             Diff.of(Key.of("k1"), Optional.empty(), Optional.of(V_1)),
             Diff.of(Key.of("k2"), Optional.empty(), Optional.of(V_2_A)),
             Diff.of(Key.of("k3"), Optional.empty(), Optional.of(V_3)));
 
     List<Diff> secondToStart = diffAsList(secondCommit, initial);
-    assertThat(secondToStart)
+    soft.assertThat(secondToStart)
         .containsExactlyInAnyOrder(
             Diff.of(Key.of("k1"), Optional.of(V_1), Optional.empty()),
             Diff.of(Key.of("k2"), Optional.of(V_2_A), Optional.empty()),
             Diff.of(Key.of("k3"), Optional.of(V_3), Optional.empty()));
 
     List<Diff> firstToSecond = diffAsList(firstCommit, secondCommit);
-    assertThat(firstToSecond)
+    soft.assertThat(firstToSecond)
         .containsExactlyInAnyOrder(
             Diff.of(Key.of("k2"), Optional.of(V_2), Optional.of(V_2_A)),
             Diff.of(Key.of("k3"), Optional.empty(), Optional.of(V_3)));
 
     List<Diff> firstToFirst = diffAsList(firstCommit, firstCommit);
-    assertTrue(firstToFirst.isEmpty());
+    soft.assertThat(firstToFirst).isEmpty();
   }
 
   private List<Diff> diffAsList(Hash initial, Hash secondCommit) throws ReferenceNotFoundException {
