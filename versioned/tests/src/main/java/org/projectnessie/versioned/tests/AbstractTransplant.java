@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
 import com.google.common.collect.ImmutableMap;
@@ -25,7 +24,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.model.CommitMeta;
@@ -41,7 +44,9 @@ import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.testworker.OnRefOnly;
 
+@ExtendWith(SoftAssertionsExtension.class)
 public abstract class AbstractTransplant extends AbstractNestedVersionStore {
+  @InjectSoftAssertions protected SoftAssertions soft;
 
   private static final OnRefOnly V_1_1 = newOnRef("v1_1");
   private static final OnRefOnly V_1_2 = newOnRef("v1_2");
@@ -151,7 +156,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             MergeType.NORMAL,
             false,
             false);
-    assertThat(
+    soft.assertThat(
             store()
                 .getValues(
                     newBranch,
@@ -163,7 +168,8 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                 Key.of("t4"), V_4_1));
 
     if (individualCommits) {
-      assertCommitMeta(commitsList(newBranch, false).subList(0, 3), commits, commitMetaModify);
+      assertCommitMeta(
+          soft, commitsList(newBranch, false).subList(0, 3), commits, commitMetaModify);
     }
 
     return newBranch;
@@ -210,20 +216,20 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     store().create(newBranch, Optional.empty());
     commit("Another commit").put("t1", V_1_4).toBranch(newBranch);
 
-    assertThrows(
-        ReferenceConflictException.class,
-        () ->
-            store()
-                .transplant(
-                    newBranch,
-                    Optional.of(initialHash),
-                    Arrays.asList(firstCommit, secondCommit, thirdCommit),
-                    createMetadataRewriter(""),
-                    individualCommits,
-                    Collections.emptyMap(),
-                    MergeType.NORMAL,
-                    false,
-                    false));
+    soft.assertThatThrownBy(
+            () ->
+                store()
+                    .transplant(
+                        newBranch,
+                        Optional.of(initialHash),
+                        Arrays.asList(firstCommit, secondCommit, thirdCommit),
+                        createMetadataRewriter(""),
+                        individualCommits,
+                        Collections.emptyMap(),
+                        MergeType.NORMAL,
+                        false,
+                        false))
+        .isInstanceOf(ReferenceConflictException.class);
   }
 
   @ParameterizedTest
@@ -245,7 +251,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             MergeType.NORMAL,
             false,
             false);
-    assertThat(
+    soft.assertThat(
             store()
                 .getValues(
                     newBranch,
@@ -261,20 +267,20 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
   @ValueSource(booleans = {false, true})
   protected void checkTransplantOnNonExistingBranch(boolean individualCommits) {
     final BranchName newBranch = BranchName.of("bar_5");
-    assertThrows(
-        ReferenceNotFoundException.class,
-        () ->
-            store()
-                .transplant(
-                    newBranch,
-                    Optional.of(initialHash),
-                    Arrays.asList(firstCommit, secondCommit, thirdCommit),
-                    createMetadataRewriter(""),
-                    individualCommits,
-                    Collections.emptyMap(),
-                    MergeType.NORMAL,
-                    false,
-                    false));
+    soft.assertThatThrownBy(
+            () ->
+                store()
+                    .transplant(
+                        newBranch,
+                        Optional.of(initialHash),
+                        Arrays.asList(firstCommit, secondCommit, thirdCommit),
+                        createMetadataRewriter(""),
+                        individualCommits,
+                        Collections.emptyMap(),
+                        MergeType.NORMAL,
+                        false,
+                        false))
+        .isInstanceOf(ReferenceNotFoundException.class);
   }
 
   @ParameterizedTest
@@ -283,20 +289,20 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
       throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_6");
     store().create(newBranch, Optional.empty());
-    assertThrows(
-        ReferenceNotFoundException.class,
-        () ->
-            store()
-                .transplant(
-                    newBranch,
-                    Optional.of(initialHash),
-                    Collections.singletonList(Hash.of("1234567890abcdef")),
-                    createMetadataRewriter(""),
-                    individualCommits,
-                    Collections.emptyMap(),
-                    MergeType.NORMAL,
-                    false,
-                    false));
+    soft.assertThatThrownBy(
+            () ->
+                store()
+                    .transplant(
+                        newBranch,
+                        Optional.of(initialHash),
+                        Collections.singletonList(Hash.of("1234567890abcdef")),
+                        createMetadataRewriter(""),
+                        individualCommits,
+                        Collections.emptyMap(),
+                        MergeType.NORMAL,
+                        false,
+                        false))
+        .isInstanceOf(ReferenceNotFoundException.class);
   }
 
   @ParameterizedTest
@@ -319,7 +325,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             MergeType.NORMAL,
             false,
             false);
-    assertThat(
+    soft.assertThat(
             store()
                 .getValues(
                     newBranch,
@@ -340,20 +346,20 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     final BranchName newBranch = BranchName.of("bar_8");
     store().create(newBranch, Optional.empty());
 
-    assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            store()
-                .transplant(
-                    newBranch,
-                    Optional.empty(),
-                    Arrays.asList(secondCommit, firstCommit, thirdCommit),
-                    createMetadataRewriter(""),
-                    individualCommits,
-                    Collections.emptyMap(),
-                    MergeType.NORMAL,
-                    false,
-                    false));
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(
+            () ->
+                store()
+                    .transplant(
+                        newBranch,
+                        Optional.empty(),
+                        Arrays.asList(secondCommit, firstCommit, thirdCommit),
+                        createMetadataRewriter(""),
+                        individualCommits,
+                        Collections.emptyMap(),
+                        MergeType.NORMAL,
+                        false,
+                        false));
   }
 
   @ParameterizedTest
@@ -371,20 +377,20 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     final BranchName newBranch = BranchName.of("bar_1");
     store().create(newBranch, Optional.empty());
 
-    assertThrows(
-        ReferenceNotFoundException.class,
-        () ->
-            store()
-                .transplant(
-                    newBranch,
-                    Optional.of(unrelatedCommit),
-                    Arrays.asList(firstCommit, secondCommit, thirdCommit),
-                    createMetadataRewriter(""),
-                    individualCommits,
-                    Collections.emptyMap(),
-                    MergeType.NORMAL,
-                    false,
-                    false));
+    soft.assertThatThrownBy(
+            () ->
+                store()
+                    .transplant(
+                        newBranch,
+                        Optional.of(unrelatedCommit),
+                        Arrays.asList(firstCommit, secondCommit, thirdCommit),
+                        createMetadataRewriter(""),
+                        individualCommits,
+                        Collections.emptyMap(),
+                        MergeType.NORMAL,
+                        false,
+                        false))
+        .isInstanceOf(ReferenceNotFoundException.class);
   }
 
   @ParameterizedTest
@@ -405,7 +411,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             MergeType.NORMAL,
             false,
             false);
-    assertThat(
+    soft.assertThat(
             store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t4"), Key.of("t5"))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(

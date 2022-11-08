@@ -16,12 +16,15 @@
 package org.projectnessie.versioned.tests;
 
 import static java.util.Collections.singletonList;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
 import com.google.common.collect.ImmutableList;
 import java.util.Optional;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.versioned.BranchName;
@@ -33,7 +36,10 @@ import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 
+@ExtendWith(SoftAssertionsExtension.class)
 public abstract class AbstractContents extends AbstractNestedVersionStore {
+  @InjectSoftAssertions protected SoftAssertions soft;
+
   protected AbstractContents(VersionStore store) {
     super(store);
   }
@@ -45,7 +51,7 @@ public abstract class AbstractContents extends AbstractNestedVersionStore {
     store().create(branch, Optional.empty());
     final Hash hash = store().hashOnReference(branch, Optional.empty());
 
-    assertThat(store().getValue(hash, Key.of("arbitrary"))).isNull();
+    soft.assertThat(store().getValue(hash, Key.of("arbitrary"))).isNull();
   }
 
   @Test
@@ -64,8 +70,8 @@ public abstract class AbstractContents extends AbstractNestedVersionStore {
                 Optional.empty(),
                 CommitMeta.fromMessage("create table"),
                 singletonList(Put.of(key, initialState)));
-    assertThat(store().getValue(branch, key)).isEqualTo(initialState);
-    assertThat(store().getValue(ancestor, key)).isEqualTo(initialState);
+    soft.assertThat(store().getValue(branch, key)).isEqualTo(initialState);
+    soft.assertThat(store().getValue(ancestor, key)).isEqualTo(initialState);
 
     Hash delete =
         store()
@@ -74,8 +80,8 @@ public abstract class AbstractContents extends AbstractNestedVersionStore {
                 Optional.empty(),
                 CommitMeta.fromMessage("drop table"),
                 ImmutableList.of(Delete.of(key)));
-    assertThat(store().getValue(branch, key)).isNull();
-    assertThat(store().getValue(delete, key)).isNull();
+    soft.assertThat(store().getValue(branch, key)).isNull();
+    soft.assertThat(store().getValue(delete, key)).isNull();
 
     Content recreateState = newOnRef("value");
     Hash recreate =
@@ -85,7 +91,7 @@ public abstract class AbstractContents extends AbstractNestedVersionStore {
                 Optional.empty(),
                 CommitMeta.fromMessage("drop table"),
                 ImmutableList.of(Put.of(key, recreateState)));
-    assertThat(store().getValue(branch, key)).isEqualTo(recreateState);
-    assertThat(store().getValue(recreate, key)).isEqualTo(recreateState);
+    soft.assertThat(store().getValue(branch, key)).isEqualTo(recreateState);
+    soft.assertThat(store().getValue(recreate, key)).isEqualTo(recreateState);
   }
 }

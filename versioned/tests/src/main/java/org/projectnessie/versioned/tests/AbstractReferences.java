@@ -15,16 +15,15 @@
  */
 package org.projectnessie.versioned.tests;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
@@ -36,7 +35,10 @@ import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
 
+@ExtendWith(SoftAssertionsExtension.class)
 public abstract class AbstractReferences extends AbstractNestedVersionStore {
+  @InjectSoftAssertions protected SoftAssertions soft;
+
   protected AbstractReferences(VersionStore store) {
     super(store);
   }
@@ -55,47 +57,48 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
     final BranchName branch = BranchName.of("foo");
     store().create(branch, Optional.empty());
     final Hash hash = store().hashOnReference(branch, Optional.empty());
-    assertThat(hash).isNotNull();
+    soft.assertThat(hash).isNotNull();
 
     final BranchName anotherBranch = BranchName.of("bar");
     final Hash createHash = store().create(anotherBranch, Optional.of(hash));
     final Hash commitHash = commit("Some Commit").toBranch(anotherBranch);
-    assertNotEquals(createHash, commitHash);
+    soft.assertThat(commitHash).isNotEqualTo(createHash);
 
     final BranchName anotherAnotherBranch = BranchName.of("baz");
     final Hash otherCreateHash = store().create(anotherAnotherBranch, Optional.of(commitHash));
-    assertEquals(commitHash, otherCreateHash);
+    soft.assertThat(otherCreateHash).isEqualTo(commitHash);
 
     List<ReferenceInfo<CommitMeta>> namedRefs;
     try (Stream<ReferenceInfo<CommitMeta>> str =
         store().getNamedRefs(GetNamedRefsParams.DEFAULT).filter(this::filterMainBranch)) {
       namedRefs = str.collect(Collectors.toList());
     }
-    assertThat(namedRefs)
+    soft.assertThat(namedRefs)
         .containsExactlyInAnyOrder(
             ReferenceInfo.of(hash, branch),
             ReferenceInfo.of(commitHash, anotherBranch),
             ReferenceInfo.of(commitHash, anotherAnotherBranch));
 
-    assertThat(commitsList(branch, false)).isEmpty();
-    assertThat(commitsList(anotherBranch, false)).hasSize(1);
-    assertThat(commitsList(anotherAnotherBranch, false)).hasSize(1);
-    assertThat(commitsList(hash, false)).isEmpty(); // empty commit should not be listed
-    assertThat(commitsList(commitHash, false)).hasSize(1); // empty commit should not be listed
+    soft.assertThat(commitsList(branch, false)).isEmpty();
+    soft.assertThat(commitsList(anotherBranch, false)).hasSize(1);
+    soft.assertThat(commitsList(anotherAnotherBranch, false)).hasSize(1);
+    soft.assertThat(commitsList(hash, false)).isEmpty(); // empty commit should not be listed
+    soft.assertThat(commitsList(commitHash, false)).hasSize(1); // empty commit should not be listed
 
-    assertThrows(
-        ReferenceAlreadyExistsException.class, () -> store().create(branch, Optional.empty()));
-    assertThrows(
-        ReferenceAlreadyExistsException.class, () -> store().create(branch, Optional.of(hash)));
+    soft.assertThatThrownBy(() -> store().create(branch, Optional.empty()))
+        .isInstanceOf(ReferenceAlreadyExistsException.class);
+    soft.assertThatThrownBy(() -> store().create(branch, Optional.of(hash)))
+        .isInstanceOf(ReferenceAlreadyExistsException.class);
 
     store().delete(branch, Optional.of(hash));
-    assertThrows(
-        ReferenceNotFoundException.class, () -> store().hashOnReference(branch, Optional.empty()));
+    soft.assertThatThrownBy(() -> store().hashOnReference(branch, Optional.empty()))
+        .isInstanceOf(ReferenceNotFoundException.class);
     try (Stream<ReferenceInfo<CommitMeta>> str =
         store().getNamedRefs(GetNamedRefsParams.DEFAULT).filter(this::filterMainBranch)) {
-      assertThat(str).hasSize(2); // bar + baz
+      soft.assertThat(str).hasSize(2); // bar + baz
     }
-    assertThrows(ReferenceNotFoundException.class, () -> store().delete(branch, Optional.of(hash)));
+    soft.assertThatThrownBy(() -> store().delete(branch, Optional.of(hash)))
+        .isInstanceOf(ReferenceNotFoundException.class);
   }
 
   /*
@@ -124,38 +127,38 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
     final TagName anotherTag = TagName.of("another-tag");
     store().create(anotherTag, Optional.of(commitHash));
 
-    assertThrows(
-        ReferenceAlreadyExistsException.class, () -> store().create(tag, Optional.of(initialHash)));
+    soft.assertThatThrownBy(() -> store().create(tag, Optional.of(initialHash)))
+        .isInstanceOf(ReferenceAlreadyExistsException.class);
 
-    assertThat(store().hashOnReference(tag, Optional.empty())).isEqualTo(initialHash);
-    assertThat(store().hashOnReference(anotherTag, Optional.empty())).isEqualTo(commitHash);
+    soft.assertThat(store().hashOnReference(tag, Optional.empty())).isEqualTo(initialHash);
+    soft.assertThat(store().hashOnReference(anotherTag, Optional.empty())).isEqualTo(commitHash);
 
     List<ReferenceInfo<CommitMeta>> namedRefs;
     try (Stream<ReferenceInfo<CommitMeta>> str =
         store().getNamedRefs(GetNamedRefsParams.DEFAULT).filter(this::filterMainBranch)) {
       namedRefs = str.collect(Collectors.toList());
     }
-    assertThat(namedRefs)
+    soft.assertThat(namedRefs)
         .containsExactlyInAnyOrder(
             ReferenceInfo.of(commitHash, branch),
             ReferenceInfo.of(initialHash, tag),
             ReferenceInfo.of(commitHash, anotherTag));
 
-    assertThat(commitsList(tag, false)).isEmpty();
-    assertThat(commitsList(initialHash, false)).isEmpty(); // empty commit should not be listed
+    soft.assertThat(commitsList(tag, false)).isEmpty();
+    soft.assertThat(commitsList(initialHash, false)).isEmpty(); // empty commit should not be listed
 
-    assertThat(commitsList(anotherTag, false)).hasSize(1);
-    assertThat(commitsList(commitHash, false)).hasSize(1); // empty commit should not be listed
+    soft.assertThat(commitsList(anotherTag, false)).hasSize(1);
+    soft.assertThat(commitsList(commitHash, false)).hasSize(1); // empty commit should not be listed
 
     store().delete(tag, Optional.of(initialHash));
-    assertThrows(
-        ReferenceNotFoundException.class, () -> store().hashOnReference(tag, Optional.empty()));
+    soft.assertThatThrownBy(() -> store().hashOnReference(tag, Optional.empty()))
+        .isInstanceOf(ReferenceNotFoundException.class);
     try (Stream<ReferenceInfo<CommitMeta>> str =
         store().getNamedRefs(GetNamedRefsParams.DEFAULT).filter(this::filterMainBranch)) {
-      assertThat(str).hasSize(2); // foo + another-tag
+      soft.assertThat(str).hasSize(2); // foo + another-tag
     }
-    assertThrows(
-        ReferenceNotFoundException.class, () -> store().delete(tag, Optional.of(initialHash)));
+    soft.assertThatThrownBy(() -> store().delete(tag, Optional.of(initialHash)))
+        .isInstanceOf(ReferenceNotFoundException.class);
   }
 
   /**
@@ -166,11 +169,11 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
   void getNamedRef() throws VersionStoreException {
     final BranchName branch = BranchName.of("getNamedRef");
     Hash hashFromCreate = store().create(branch, Optional.empty());
-    assertThat(store().hashOnReference(branch, Optional.empty())).isEqualTo(hashFromCreate);
+    soft.assertThat(store().hashOnReference(branch, Optional.empty())).isEqualTo(hashFromCreate);
 
     final Hash firstCommitHash = commit("First Commit").toBranch(branch);
 
-    assertThat(store().getNamedRef(branch.getName(), GetNamedRefsParams.DEFAULT))
+    soft.assertThat(store().getNamedRef(branch.getName(), GetNamedRefsParams.DEFAULT))
         .extracting(ReferenceInfo::getHash, ReferenceInfo::getNamedRef)
         .containsExactly(firstCommitHash, branch);
 
@@ -185,26 +188,25 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
 
     // Verifies that the result of "getNamedRef" for the branch created at "firstCommitHash" is
     // correct
-    assertThat(store().getNamedRef(branchName.getName(), GetNamedRefsParams.DEFAULT))
+    soft.assertThat(store().getNamedRef(branchName.getName(), GetNamedRefsParams.DEFAULT))
         .extracting(ReferenceInfo::getHash, ReferenceInfo::getNamedRef)
         .containsExactly(secondCommitHash, branchName);
 
     // Verifies that the result of "getNamedRef" for the tag created at "firstCommitHash" is correct
-    assertThat(store().getNamedRef(tagName.getName(), GetNamedRefsParams.DEFAULT))
+    soft.assertThat(store().getNamedRef(tagName.getName(), GetNamedRefsParams.DEFAULT))
         .extracting(ReferenceInfo::getHash, ReferenceInfo::getNamedRef)
         .containsExactly(thirdCommitHash, tagName);
 
     // Verifies that the result of "getNamedRef" for the branch created at "firstCommitHash" is
     // correct
-    assertThat(store().getNamedRef(branchName.getName(), GetNamedRefsParams.DEFAULT))
+    soft.assertThat(store().getNamedRef(branchName.getName(), GetNamedRefsParams.DEFAULT))
         .extracting(ReferenceInfo::getHash, ReferenceInfo::getNamedRef)
         .containsExactly(secondCommitHash, branchName);
 
-    assertThrows(
-        ReferenceNotFoundException.class,
-        () -> store().getNamedRef("unknown-ref", GetNamedRefsParams.DEFAULT));
-    assertThrows(
-        ReferenceNotFoundException.class,
-        () -> store().getNamedRef("1234567890abcdef", GetNamedRefsParams.DEFAULT));
+    soft.assertThatThrownBy(() -> store().getNamedRef("unknown-ref", GetNamedRefsParams.DEFAULT))
+        .isInstanceOf(ReferenceNotFoundException.class);
+    soft.assertThatThrownBy(
+            () -> store().getNamedRef("1234567890abcdef", GetNamedRefsParams.DEFAULT))
+        .isInstanceOf(ReferenceNotFoundException.class);
   }
 }

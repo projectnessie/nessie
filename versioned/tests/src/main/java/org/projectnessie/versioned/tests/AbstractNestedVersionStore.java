@@ -15,12 +15,11 @@
  */
 package org.projectnessie.versioned.tests;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.assertj.core.api.SoftAssertions;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.versioned.Commit;
@@ -106,10 +105,11 @@ public abstract class AbstractNestedVersionStore {
   }
 
   protected static void assertCommitMeta(
+      SoftAssertions soft,
       List<Commit> current,
       List<Commit> expected,
       MetadataRewriter<CommitMeta> commitMetaModifier) {
-    assertThat(current)
+    soft.assertThat(current)
         .map(Commit::getCommitMeta)
         .containsExactlyElementsOf(
             expected.stream()

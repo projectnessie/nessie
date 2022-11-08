@@ -17,10 +17,7 @@ package org.projectnessie.versioned.tests;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
 import com.google.common.collect.ImmutableMap;
@@ -31,7 +28,11 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.assertj.core.api.InstanceOfAssertFactories;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.model.CommitMeta;
@@ -51,7 +52,9 @@ import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.testworker.OnRefOnly;
 
+@ExtendWith(SoftAssertionsExtension.class)
 public abstract class AbstractMerge extends AbstractNestedVersionStore {
+  @InjectSoftAssertions protected SoftAssertions soft;
 
   private static final OnRefOnly V_1_1 = newOnRef("v1_1");
   private static final OnRefOnly V_1_2 = newOnRef("v1_2");
@@ -133,14 +136,15 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
     if (individualCommits) {
       // not modifying commit meta, will just "fast forward"
-      assertThat(store().hashOnReference(newBranch, Optional.empty())).isEqualTo(thirdCommit);
+      soft.assertThat(store().hashOnReference(newBranch, Optional.empty())).isEqualTo(thirdCommit);
 
-      assertCommitMeta(commitsList(newBranch, false).subList(0, 3), commits, metadataRewriter);
+      assertCommitMeta(
+          soft, commitsList(newBranch, false).subList(0, 3), commits, metadataRewriter);
     } else {
       // must modify commit meta, it's more than one commit
       assertThat(store().hashOnReference(newBranch, Optional.empty())).isNotEqualTo(thirdCommit);
 
-      assertThat(commitsList(newBranch, false))
+      soft.assertThat(commitsList(newBranch, false))
           .first()
           .extracting(Commit::getCommitMeta)
           .extracting(CommitMeta::getMessage)
@@ -169,7 +173,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             MergeType.NORMAL,
             false,
             false);
-    assertThat(
+    soft.assertThat(
             store()
                 .getValues(
                     newBranch,
@@ -216,7 +220,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
     Hash head = store().getNamedRef(newBranch.getName(), GetNamedRefsParams.DEFAULT).getHash();
 
-    assertThat(mergeResult)
+    soft.assertThat(mergeResult)
         .satisfies(
             r ->
                 // Check expected values in sourceCommits, targetCommits and details
@@ -287,7 +291,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             MergeType.NORMAL,
             false,
             false);
-    assertThat(
+    soft.assertThat(
             store()
                 .getValues(
                     newBranch,
@@ -299,13 +303,13 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 Key.of("t3"), V_3_1));
 
     // not modifying commit meta, will just "fast forward"
-    assertThat(store().hashOnReference(newBranch, Optional.empty())).isEqualTo(firstCommit);
+    soft.assertThat(store().hashOnReference(newBranch, Optional.empty())).isEqualTo(firstCommit);
 
     List<Commit> mergedCommit = commitsList(newBranch, false).subList(0, 1);
-    assertCommitMeta(mergedCommit, commits.subList(2, 3), metadataRewriter);
+    assertCommitMeta(soft, mergedCommit, commits.subList(2, 3), metadataRewriter);
 
     // fast-forward merge, additional parents not necessary (and not set)
-    assertThat(mergedCommit.get(0))
+    soft.assertThat(mergedCommit.get(0))
         .extracting(Commit::getAdditionalParents)
         .asInstanceOf(InstanceOfAssertFactories.list(Hash.class))
         .isEmpty();
@@ -323,13 +327,13 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     doMergeIntoEmpty(individualCommits, newBranch, metadataRewriter);
 
     // modify the commit meta, will generate new commits and therefore new commit hashes
-    assertThat(store().hashOnReference(newBranch, Optional.empty())).isNotEqualTo(thirdCommit);
+    soft.assertThat(store().hashOnReference(newBranch, Optional.empty())).isNotEqualTo(thirdCommit);
 
     List<Commit> mergedCommits = commitsList(newBranch, false);
     if (individualCommits) {
-      assertCommitMeta(mergedCommits.subList(0, 3), commits, metadataRewriter);
+      assertCommitMeta(soft, mergedCommits.subList(0, 3), commits, metadataRewriter);
     } else {
-      assertThat(mergedCommits)
+      soft.assertThat(mergedCommits)
           .first()
           .extracting(Commit::getCommitMeta)
           .extracting(CommitMeta::getMessage)
@@ -340,7 +344,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                   .map(CommitMeta::getMessage)
                   .toArray(String[]::new));
 
-      assertThat(mergedCommits)
+      soft.assertThat(mergedCommits)
           .first()
           .extracting(Commit::getAdditionalParents)
           .isEqualTo(singletonList(commits.get(0).getHash()));
@@ -369,7 +373,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             false,
             false);
 
-    assertThat(
+    soft.assertThat(
             store()
                 .getValues(
                     newBranch,
@@ -384,7 +388,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
     final List<Commit> commits = commitsList(newBranch, false);
     if (individualCommits) {
-      assertThat(commits)
+      soft.assertThat(commits)
           .satisfiesExactly(
               c0 ->
                   assertThat(c0)
@@ -401,7 +405,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
               c3 -> assertThat(c3).extracting(Commit::getHash).isEqualTo(newCommit),
               c4 -> assertThat(c4).extracting(Commit::getHash).isEqualTo(initialHash));
     } else {
-      assertThat(commits)
+      soft.assertThat(commits)
           .satisfiesExactly(
               c0 ->
                   assertThat(c0)
@@ -458,7 +462,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             MergeType.NORMAL,
             false,
             false);
-    assertEquals(store().getValue(review, key), VALUE_2);
+    soft.assertThat(store().getValue(review, key)).isEqualTo(VALUE_2);
   }
 
   @ParameterizedTest
@@ -482,7 +486,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             MergeType.NORMAL,
             false,
             false);
-    assertThat(
+    soft.assertThat(
             store()
                 .getValues(
                     newBranch,
@@ -497,7 +501,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
     final List<Commit> commits = commitsList(newBranch, false);
     if (individualCommits) {
-      assertThat(commits)
+      soft.assertThat(commits)
           .hasSize(5)
           .satisfiesExactly(
               c -> assertThat(c.getCommitMeta().getMessage()).isEqualTo("Third Commit"),
@@ -506,7 +510,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
               c -> assertThat(c.getHash()).isEqualTo(firstCommit),
               c -> assertThat(c.getHash()).isEqualTo(initialHash));
     } else {
-      assertThat(commits)
+      soft.assertThat(commits)
           .hasSize(4)
           .satisfiesExactly(
               c ->
@@ -516,7 +520,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
               c -> assertThat(c.getHash()).isEqualTo(firstCommit),
               c -> assertThat(c.getHash()).isEqualTo(initialHash));
 
-      assertThat(commits)
+      soft.assertThat(commits)
           .first()
           .extracting(Commit::getAdditionalParents)
           .isEqualTo(singletonList(thirdCommit));
@@ -566,7 +570,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 singletonList(Put.of(conflictingKey2, VALUE_4)));
 
     // "Plain" merge attempt - all keys default to MergeType.NORMAL
-    assertThatThrownBy(
+    soft.assertThatThrownBy(
             () ->
                 store()
                     .merge(
@@ -585,7 +589,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
         .hasMessageContaining(conflictingKey2.toString());
 
     // default to MergeType.NORMAL, but ignore conflictingKey1
-    assertThatThrownBy(
+    soft.assertThatThrownBy(
             () ->
                 store()
                     .merge(
@@ -604,7 +608,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
         .hasMessageNotContaining(conflictingKey2.toString());
 
     // default to MergeType.DROP (don't merge keys by default), but include conflictingKey1
-    assertThatThrownBy(
+    soft.assertThatThrownBy(
             () ->
                 store()
                     .merge(
@@ -623,7 +627,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
         .hasMessageNotContaining(conflictingKey2.toString());
 
     // default to MergeType.NORMAL, but include conflictingKey1
-    assertThatThrownBy(
+    soft.assertThatThrownBy(
             () ->
                 store()
                     .merge(
@@ -650,7 +654,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
           }
         };
 
-    assertThat(mergeIntoHeadSupplier.get()).isEqualTo(mergeIntoHead);
+    soft.assertThat(mergeIntoHeadSupplier.get()).isEqualTo(mergeIntoHead);
 
     // Merge with force-merge of conflictingKey1 + drop of conflictingKey2
     store()
@@ -664,7 +668,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             MergeType.NORMAL,
             false,
             false);
-    assertThat(
+    soft.assertThat(
             store.getValues(
                 mergeIntoHeadSupplier.get(),
                 Arrays.asList(conflictingKey1, conflictingKey2, key3, key4)))
@@ -688,7 +692,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             MergeType.FORCE,
             false,
             false);
-    assertThat(
+    soft.assertThat(
             store.getValues(
                 mergeIntoHeadSupplier.get(),
                 Arrays.asList(conflictingKey1, conflictingKey2, key3, key4)))
@@ -706,40 +710,40 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     store().create(newBranch, Optional.of(initialHash));
     commit("Another commit").put("t1", V_1_4).toBranch(newBranch);
 
-    assertThrows(
-        ReferenceConflictException.class,
-        () ->
-            store()
-                .merge(
-                    thirdCommit,
-                    newBranch,
-                    Optional.of(initialHash),
-                    createMetadataRewriter(""),
-                    individualCommits,
-                    Collections.emptyMap(),
-                    MergeType.NORMAL,
-                    false,
-                    false));
+    soft.assertThatThrownBy(
+            () ->
+                store()
+                    .merge(
+                        thirdCommit,
+                        newBranch,
+                        Optional.of(initialHash),
+                        createMetadataRewriter(""),
+                        individualCommits,
+                        Collections.emptyMap(),
+                        MergeType.NORMAL,
+                        false,
+                        false))
+        .isInstanceOf(ReferenceConflictException.class);
   }
 
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   protected void mergeIntoNonExistingBranch(boolean individualCommits) {
     final BranchName newBranch = BranchName.of("bar_5");
-    assertThrows(
-        ReferenceNotFoundException.class,
-        () ->
-            store()
-                .merge(
-                    thirdCommit,
-                    newBranch,
-                    Optional.of(initialHash),
-                    createMetadataRewriter(""),
-                    individualCommits,
-                    Collections.emptyMap(),
-                    MergeType.NORMAL,
-                    false,
-                    false));
+    soft.assertThatThrownBy(
+            () ->
+                store()
+                    .merge(
+                        thirdCommit,
+                        newBranch,
+                        Optional.of(initialHash),
+                        createMetadataRewriter(""),
+                        individualCommits,
+                        Collections.emptyMap(),
+                        MergeType.NORMAL,
+                        false,
+                        false))
+        .isInstanceOf(ReferenceNotFoundException.class);
   }
 
   @ParameterizedTest
@@ -748,19 +752,19 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
       throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_6");
     store().create(newBranch, Optional.of(initialHash));
-    assertThrows(
-        ReferenceNotFoundException.class,
-        () ->
-            store()
-                .merge(
-                    Hash.of("1234567890abcdef"),
-                    newBranch,
-                    Optional.of(initialHash),
-                    createMetadataRewriter(""),
-                    individualCommits,
-                    Collections.emptyMap(),
-                    MergeType.NORMAL,
-                    false,
-                    false));
+    soft.assertThatThrownBy(
+            () ->
+                store()
+                    .merge(
+                        Hash.of("1234567890abcdef"),
+                        newBranch,
+                        Optional.of(initialHash),
+                        createMetadataRewriter(""),
+                        individualCommits,
+                        Collections.emptyMap(),
+                        MergeType.NORMAL,
+                        false,
+                        false))
+        .isInstanceOf(ReferenceNotFoundException.class);
   }
 }

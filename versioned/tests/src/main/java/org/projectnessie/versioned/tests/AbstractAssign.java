@@ -15,12 +15,13 @@
  */
 package org.projectnessie.versioned.tests;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
@@ -34,7 +35,10 @@ import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
 
+@ExtendWith(SoftAssertionsExtension.class)
 public abstract class AbstractAssign extends AbstractNestedVersionStore {
+  @InjectSoftAssertions protected SoftAssertions soft;
+
   protected AbstractAssign(VersionStore store) {
     super(store);
   }
@@ -55,35 +59,37 @@ public abstract class AbstractAssign extends AbstractNestedVersionStore {
     store().assign(TagName.of("tag2"), Optional.of(commit), anotherCommit);
     store().assign(TagName.of("tag3"), Optional.empty(), anotherCommit);
 
-    assertThrows(
-        ReferenceNotFoundException.class,
-        () -> store().assign(BranchName.of("baz"), Optional.empty(), anotherCommit));
-    assertThrows(
-        ReferenceNotFoundException.class,
-        () -> store().assign(TagName.of("unknowon-tag"), Optional.empty(), anotherCommit));
+    soft.assertThatThrownBy(
+            () -> store().assign(BranchName.of("baz"), Optional.empty(), anotherCommit))
+        .isInstanceOf(ReferenceNotFoundException.class);
+    soft.assertThatThrownBy(
+            () -> store().assign(TagName.of("unknowon-tag"), Optional.empty(), anotherCommit))
+        .isInstanceOf(ReferenceNotFoundException.class);
 
-    assertThrows(
-        ReferenceConflictException.class,
-        () -> store().assign(TagName.of("tag1"), Optional.of(initialHash), commit));
-    assertThrows(
-        ReferenceConflictException.class,
-        () -> store().assign(TagName.of("tag1"), Optional.of(initialHash), anotherCommit));
-    assertThrows(
-        ReferenceNotFoundException.class,
-        () -> store().assign(TagName.of("tag1"), Optional.of(commit), Hash.of("1234567890abcdef")));
+    soft.assertThatThrownBy(
+            () -> store().assign(TagName.of("tag1"), Optional.of(initialHash), commit))
+        .isInstanceOf(ReferenceConflictException.class);
+    soft.assertThatThrownBy(
+            () -> store().assign(TagName.of("tag1"), Optional.of(initialHash), anotherCommit))
+        .isInstanceOf(ReferenceConflictException.class);
+    soft.assertThatThrownBy(
+            () ->
+                store()
+                    .assign(TagName.of("tag1"), Optional.of(commit), Hash.of("1234567890abcdef")))
+        .isInstanceOf(ReferenceNotFoundException.class);
 
-    assertThat(commitsList(branch, false))
+    soft.assertThat(commitsList(branch, false))
         .contains(
             commit(anotherCommit, "Another commit", commit),
             commit(commit, "Some commit", initialHash));
 
-    assertThat(commitsList(BranchName.of("bar"), false))
+    soft.assertThat(commitsList(BranchName.of("bar"), false))
         .contains(commit(commit, "Some commit", initialHash));
 
-    assertThat(commitsList(TagName.of("tag1"), false))
+    soft.assertThat(commitsList(TagName.of("tag1"), false))
         .contains(commit(commit, "Some commit", initialHash));
 
-    assertThat(commitsList(TagName.of("tag2"), false))
+    soft.assertThat(commitsList(TagName.of("tag2"), false))
         .contains(
             commit(anotherCommit, "Another commit", commit),
             commit(commit, "Some commit", initialHash));
@@ -96,11 +102,11 @@ public abstract class AbstractAssign extends AbstractNestedVersionStore {
           ReferenceConflictException {
     ReferenceInfo<CommitMeta> main = store.getNamedRef("main", GetNamedRefsParams.DEFAULT);
     try (Stream<Commit> commits = store().getCommits(main.getHash(), false)) {
-      assertThat(commits).isEmpty();
+      soft.assertThat(commits).isEmpty();
     }
     try (Stream<ReferenceInfo<CommitMeta>> refs =
         store().getNamedRefs(GetNamedRefsParams.DEFAULT)) {
-      assertThat(refs)
+      soft.assertThat(refs)
           .extracting(r -> r.getNamedRef().getName())
           .containsExactly(main.getNamedRef().getName());
     }
@@ -108,13 +114,13 @@ public abstract class AbstractAssign extends AbstractNestedVersionStore {
     BranchName testBranch = BranchName.of("testBranch");
     Hash testBranchHash = store.create(testBranch, Optional.empty());
     store.assign(testBranch, Optional.of(testBranchHash), main.getHash());
-    assertThat(store.getNamedRef(testBranch.getName(), GetNamedRefsParams.DEFAULT).getHash())
+    soft.assertThat(store.getNamedRef(testBranch.getName(), GetNamedRefsParams.DEFAULT).getHash())
         .isEqualTo(main.getHash());
 
     TagName testTag = TagName.of("testTag");
     Hash testTagHash = store.create(testTag, Optional.empty());
     store.assign(testTag, Optional.of(testTagHash), main.getHash());
-    assertThat(store.getNamedRef(testTag.getName(), GetNamedRefsParams.DEFAULT).getHash())
+    soft.assertThat(store.getNamedRef(testTag.getName(), GetNamedRefsParams.DEFAULT).getHash())
         .isEqualTo(main.getHash());
   }
 }
