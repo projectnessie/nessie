@@ -317,7 +317,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     final BranchName newBranch = BranchName.of("bar_7");
     store().create(newBranch, Optional.empty());
     commit("Another commit").put(T_5, V_5_1).toBranch(newBranch);
-    commit("Another commit").put(T_1, V_1_4).toBranch(newBranch);
+    commit("Another commit").put(T_5, V_1_4).toBranch(newBranch);
 
     store()
         .transplant(
@@ -342,7 +342,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                 Key.of(T_1), V_1_2,
                 Key.of(T_2), V_2_2,
                 Key.of(T_4), V_4_1,
-                Key.of(T_5), V_5_1));
+                Key.of(T_5), V_1_4));
   }
 
   @ParameterizedTest
