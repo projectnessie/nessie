@@ -183,7 +183,7 @@ public abstract class AbstractRefLog {
           databaseAdapter.commit(
               ImmutableCommitParams.builder()
                   .toBranch((BranchName) ref)
-                  .commitMetaSerialized(ByteString.copyFromUtf8("foo"))
+                  .commitMetaSerialized(ByteString.copyFromUtf8("foo on " + ref.getName()))
                   .addPuts(
                       KeyWithBytes.of(
                           Key.of("table", "c" + commit),
