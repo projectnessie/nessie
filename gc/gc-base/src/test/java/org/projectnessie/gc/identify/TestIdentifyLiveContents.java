@@ -16,6 +16,7 @@
 package org.projectnessie.gc.identify;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.projectnessie.jaxrs.ext.NessieJaxRsExtension.jaxRsExtensionForDatabaseAdapter;
 
 import java.time.Instant;
 import java.util.Set;
@@ -31,7 +32,6 @@ import org.projectnessie.gc.contents.LiveContentSetsRepository;
 import org.projectnessie.gc.contents.inmem.InMemoryPersistenceSpi;
 import org.projectnessie.gc.repository.NessieRepositoryConnector;
 import org.projectnessie.gc.repository.RepositoryConnector;
-import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
@@ -51,7 +51,7 @@ public class TestIdentifyLiveContents {
 
   @RegisterExtension
   static org.projectnessie.jaxrs.ext.NessieJaxRsExtension server =
-      new NessieJaxRsExtension(() -> databaseAdapter);
+      jaxRsExtensionForDatabaseAdapter(() -> databaseAdapter);
 
   private NessieApiV1 nessieApi;
 

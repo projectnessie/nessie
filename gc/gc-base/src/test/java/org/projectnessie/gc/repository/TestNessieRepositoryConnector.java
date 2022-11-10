@@ -17,6 +17,7 @@ package org.projectnessie.gc.repository;
 
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
+import static org.projectnessie.jaxrs.ext.NessieJaxRsExtension.jaxRsExtensionForDatabaseAdapter;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
@@ -39,7 +40,6 @@ import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.ext.NessieClientFactory;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
@@ -68,7 +68,7 @@ public class TestNessieRepositoryConnector {
 
   @RegisterExtension
   static org.projectnessie.jaxrs.ext.NessieJaxRsExtension server =
-      new NessieJaxRsExtension(() -> databaseAdapter);
+      jaxRsExtensionForDatabaseAdapter(() -> databaseAdapter);
 
   private NessieApiV1 nessieApi;
 

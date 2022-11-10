@@ -16,6 +16,7 @@
 package org.apache.iceberg.nessie;
 
 import static org.apache.iceberg.types.Types.NestedField.required;
+import static org.projectnessie.jaxrs.ext.NessieJaxRsExtension.jaxRsExtensionForDatabaseAdapter;
 
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
@@ -61,7 +62,7 @@ public class BaseIcebergTest {
   @NessieDbAdapter static DatabaseAdapter databaseAdapter;
 
   @RegisterExtension
-  static NessieJaxRsExtension server = new NessieJaxRsExtension(() -> databaseAdapter);
+  static NessieJaxRsExtension server = jaxRsExtensionForDatabaseAdapter(() -> databaseAdapter);
 
   @TempDir public Path temp;
 
