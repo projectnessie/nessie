@@ -184,18 +184,32 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
 
   @Test
   public void testNamespaceDeletion() throws BaseNessieClientServerException {
-    Branch branch = createBranch("testNamespaceDeletion");
+    Branch init = createBranch("testNamespaceDeletion");
+
+    List<ContentAndOperationType> contentAndOps =
+        contentAndOperationTypes().collect(Collectors.toList());
+
+    CommitMultipleOperationsBuilder prepare =
+        getApi()
+            .commitMultipleOperations()
+            .branch(init)
+            .commitMeta(CommitMeta.fromMessage("verifyAllContentAndOperationTypes prepare"));
+    contentAndOps.stream()
+        .filter(co -> co.prepare != null)
+        .map(co -> co.prepare)
+        .forEach(prepare::operation);
+    Branch branch = prepare.commit();
 
     CommitMultipleOperationsBuilder commit =
         getApi()
             .commitMultipleOperations()
             .branch(branch)
             .commitMeta(CommitMeta.fromMessage("verifyAllContentAndOperationTypes"));
-    contentAndOperationTypes().map(c -> c.operation).forEach(commit::operation);
+    contentAndOps.stream().map(c -> c.operation).forEach(commit::operation);
     commit.commit();
 
     List<Entry> entries =
-        contentAndOperationTypes()
+        contentAndOps.stream()
             .filter(c -> c.operation instanceof Put)
             .map(c -> Entry.entry(c.operation.getKey(), c.type))
             .collect(Collectors.toList());
@@ -240,11 +254,18 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
   @Test
   public void testNamespaceMerge() throws BaseNessieClientServerException {
     Branch base = createBranch("merge-base");
-    Branch branch = createBranch("merge-branch");
+    base =
+        getApi()
+            .commitMultipleOperations()
+            .branch(base)
+            .commitMeta(CommitMeta.fromMessage("root"))
+            .operation(Put.of(ContentKey.of("root"), IcebergTable.of("/dev/null", 42, 42, 42, 42)))
+            .commit();
+
+    Branch branch = createBranch("merge-branch", base);
     Namespace ns = Namespace.parse("a.b.c");
     // create the same namespace on both branches
     getApi().createNamespace().namespace(ns).refName(branch.getName()).create();
-    getApi().createNamespace().namespace(ns).refName(base.getName()).create();
 
     base = (Branch) getApi().getReference().refName(base.getName()).get();
     branch = (Branch) getApi().getReference().refName(branch.getName()).get();
@@ -255,12 +276,12 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
     String expectedCommitMsg = "create namespace a.b.c";
     soft.assertThat(
             log.getLogEntries().stream().map(LogEntry::getCommitMeta).map(CommitMeta::getMessage))
-        .containsExactly(expectedCommitMsg, expectedCommitMsg);
+        .containsExactly(expectedCommitMsg, "root");
 
     soft.assertThat(
             getApi().getEntries().refName(base.getName()).get().getEntries().stream()
                 .map(Entry::getName))
-        .containsExactly(ContentKey.of(ns.getElements()));
+        .contains(ContentKey.of(ns.getElements()));
 
     soft.assertThat(getApi().getNamespace().refName(base.getName()).namespace(ns).get())
         .isNotNull();
@@ -269,7 +290,15 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
   @Test
   public void testNamespaceMergeWithConflict() throws BaseNessieClientServerException {
     Branch base = createBranch("merge-base");
-    Branch branch = createBranch("merge-branch");
+    base =
+        getApi()
+            .commitMultipleOperations()
+            .branch(base)
+            .commitMeta(CommitMeta.fromMessage("root"))
+            .operation(Put.of(ContentKey.of("root"), IcebergTable.of("/dev/null", 42, 42, 42, 42)))
+            .commit();
+
+    Branch branch = createBranch("merge-branch", base);
     Namespace ns = Namespace.parse("a.b.c");
     // create a namespace on the base branch
     getApi().createNamespace().namespace(ns).refName(base.getName()).create();
@@ -280,8 +309,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
     branch =
         getApi()
             .commitMultipleOperations()
-            .branchName(branch.getName())
-            .hash(branch.getHash())
+            .branch(branch)
             .commitMeta(CommitMeta.fromMessage("test-merge-branch1"))
             .operation(Put.of(ContentKey.of("a", "b", "c"), table))
             .commit();
@@ -300,8 +328,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
         .containsExactly("create namespace a.b.c");
 
     List<Entry> entries = getApi().getEntries().refName(base.getName()).get().getEntries();
-    soft.assertThat(entries.stream().map(Entry::getName))
-        .containsExactly(ContentKey.of(ns.getElements()));
+    soft.assertThat(entries.stream().map(Entry::getName)).contains(ContentKey.of(ns.getElements()));
 
     soft.assertThat(getApi().getNamespace().refName(base.getName()).namespace(ns).get())
         .isNotNull();

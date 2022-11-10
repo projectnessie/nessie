@@ -18,7 +18,9 @@ package org.projectnessie.jaxrs.tests;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,9 +31,16 @@ import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.DeltaLakeTable;
 import org.projectnessie.model.Detached;
+import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.IcebergView;
+import org.projectnessie.model.ImmutableDeltaLakeTable;
+import org.projectnessie.model.Namespace;
+import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
@@ -94,7 +103,28 @@ public abstract class AbstractRest {
     for (int j = 0; j < numAuthors; j++) {
       String author = "author-" + j;
       for (int i = 0; i < commitsPerAuthor; i++) {
-        IcebergTable meta = IcebergTable.of("some-file-" + i, 42, 42, 42, 42);
+        ContentKey key = ContentKey.of("table" + i);
+
+        Content existing =
+            getApi()
+                .getContent()
+                .refName(branch.getName())
+                .hashOnRef(currentHash)
+                .key(key)
+                .get()
+                .get(key);
+
+        Put op;
+        if (existing != null) {
+          op =
+              Put.of(
+                  key,
+                  IcebergTable.of("some-file-" + i, 42, 42, 42, 42, existing.getId()),
+                  existing);
+        } else {
+          op = Put.of(key, IcebergTable.of("some-file-" + i, 42, 42, 42, 42));
+        }
+
         String nextHash =
             getApi()
                 .commitMultipleOperations()
@@ -106,7 +136,7 @@ public abstract class AbstractRest {
                         .message("committed-by-" + author)
                         .properties(ImmutableMap.of("prop1", "val1", "prop2", "val2"))
                         .build())
-                .operation(Put.of(ContentKey.of("table" + i), meta))
+                .operation(op)
                 .commit()
                 .getHash();
         assertThat(currentHash).isNotEqualTo(nextHash);
@@ -167,6 +197,75 @@ public abstract class AbstractRest {
     return withDetachedCommit ? Detached.REF_NAME : ref.getName();
   }
 
+  protected static Content contentWithoutId(Content content) {
+    if (content == null) {
+      return null;
+    }
+    if (content instanceof IcebergTable) {
+      IcebergTable t = (IcebergTable) content;
+      return IcebergTable.of(
+          t.getMetadataLocation(),
+          t.getSnapshotId(),
+          t.getSchemaId(),
+          t.getSpecId(),
+          t.getSortOrderId());
+    }
+    if (content instanceof IcebergView) {
+      IcebergView t = (IcebergView) content;
+      return IcebergView.of(
+          t.getMetadataLocation(),
+          t.getVersionId(),
+          t.getSchemaId(),
+          t.getDialect(),
+          t.getSqlText());
+    }
+    if (content instanceof DeltaLakeTable) {
+      DeltaLakeTable t = (DeltaLakeTable) content;
+      return ImmutableDeltaLakeTable.builder().from(t).id(null).build();
+    }
+    if (content instanceof Namespace) {
+      Namespace t = (Namespace) content;
+      return Namespace.of(t.getElements());
+    }
+    throw new IllegalArgumentException(content.toString());
+  }
+
+  protected static Operation operationWithoutContentId(Operation op) {
+    if (op instanceof Put) {
+      Put put = (Put) op;
+      return put.getExpectedContent() != null
+          ? Put.of(
+              put.getKey(),
+              contentWithoutId(put.getContent()),
+              contentWithoutId(put.getExpectedContent()))
+          : Put.of(put.getKey(), contentWithoutId(put.getContent()));
+    }
+    return op;
+  }
+
+  protected static DiffEntry diffEntryWithoutContentId(DiffEntry diff) {
+    if (diff == null) {
+      return null;
+    }
+    return DiffEntry.diffEntry(
+        diff.getKey(), contentWithoutId(diff.getFrom()), contentWithoutId(diff.getTo()));
+  }
+
+  protected static List<DiffEntry> diffEntriesWithoutContentId(List<DiffEntry> diff) {
+    if (diff == null) {
+      return null;
+    }
+    return diff.stream().map(AbstractRest::diffEntryWithoutContentId).collect(Collectors.toList());
+  }
+
+  protected static List<Operation> operationsWithoutContentId(List<Operation> operations) {
+    if (operations == null) {
+      return null;
+    }
+    return operations.stream()
+        .map(AbstractRest::operationWithoutContentId)
+        .collect(Collectors.toList());
+  }
   /**
    * Enum intended to be used a test method parameter to transform a {@link Reference} in multiple
    * ways.

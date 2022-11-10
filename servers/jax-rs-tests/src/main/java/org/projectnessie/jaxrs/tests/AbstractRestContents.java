@@ -18,10 +18,11 @@ package org.projectnessie.jaxrs.tests;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.groups.Tuple.tuple;
-import static org.junit.jupiter.api.Assertions.fail;
 
+import com.google.common.collect.Maps;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -56,10 +57,16 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
   public static final class ContentAndOperationType {
     final Content.Type type;
     final Operation operation;
+    final Put prepare;
 
     public ContentAndOperationType(Content.Type type, Operation operation) {
+      this(type, operation, null);
+    }
+
+    public ContentAndOperationType(Content.Type type, Operation operation, Put prepare) {
       this.type = type;
       this.operation = operation;
+      this.prepare = prepare;
     }
 
     @Override
@@ -86,18 +93,8 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
         new ContentAndOperationType(
             Content.Type.ICEBERG_VIEW,
             Put.of(
-                ContentKey.of("a", "view_dremio"),
-                IcebergView.of("/iceberg/view", 1, 1, "Dremio", "SELECT foo FROM dremio"))),
-        new ContentAndOperationType(
-            Content.Type.ICEBERG_VIEW,
-            Put.of(
-                ContentKey.of("a", "view_presto"),
-                IcebergView.of("/iceberg/view", 1, 1, "Presto", "SELECT foo FROM presto"))),
-        new ContentAndOperationType(
-            Content.Type.ICEBERG_VIEW,
-            Put.of(
-                ContentKey.of("b", "view_spark"),
-                IcebergView.of("/iceberg/view2", 1, 1, "Spark", "SELECT foo FROM spark"))),
+                ContentKey.of("a", "view"),
+                IcebergView.of("/iceberg/view", 1, 1, "dial", "SELECT foo FROM table"))),
         new ContentAndOperationType(
             Content.Type.DELTA_LAKE_TABLE,
             Put.of(
@@ -107,21 +104,49 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
                     .addMetadataLocationHistory("metadata")
                     .build())),
         new ContentAndOperationType(
-            Content.Type.ICEBERG_TABLE, Delete.of(ContentKey.of("a", "iceberg_delete"))),
+            Content.Type.ICEBERG_TABLE,
+            Delete.of(ContentKey.of("a", "iceberg_delete")),
+            Put.of(
+                ContentKey.of("a", "iceberg_delete"),
+                IcebergTable.of("/iceberg/table", 42, 42, 42, 42))),
         new ContentAndOperationType(
-            Content.Type.ICEBERG_TABLE, Unchanged.of(ContentKey.of("a", "iceberg_unchanged"))),
+            Content.Type.ICEBERG_TABLE,
+            Unchanged.of(ContentKey.of("a", "iceberg_unchanged")),
+            Put.of(
+                ContentKey.of("a", "iceberg_unchanged"),
+                IcebergTable.of("/iceberg/table", 42, 42, 42, 42))),
         new ContentAndOperationType(
-            Content.Type.ICEBERG_VIEW, Delete.of(ContentKey.of("a", "view_dremio_delete"))),
+            Content.Type.ICEBERG_VIEW,
+            Delete.of(ContentKey.of("a", "view_delete")),
+            Put.of(
+                ContentKey.of("a", "view_delete"),
+                IcebergView.of("/iceberg/view", 42, 42, "dial", "sql"))),
         new ContentAndOperationType(
-            Content.Type.ICEBERG_VIEW, Unchanged.of(ContentKey.of("a", "view_dremio_unchanged"))),
+            Content.Type.ICEBERG_VIEW,
+            Unchanged.of(ContentKey.of("a", "view_unchanged")),
+            Put.of(
+                ContentKey.of("a", "view_unchanged"),
+                IcebergView.of("/iceberg/view", 42, 42, "dial", "sql"))),
         new ContentAndOperationType(
-            Content.Type.ICEBERG_VIEW, Delete.of(ContentKey.of("a", "view_spark_delete"))),
+            Content.Type.DELTA_LAKE_TABLE,
+            Delete.of(ContentKey.of("a", "delta_delete")),
+            Put.of(
+                ContentKey.of("a", "delta_delete"),
+                ImmutableDeltaLakeTable.builder()
+                    .addMetadataLocationHistory("/delta/table")
+                    .addCheckpointLocationHistory("/delta/history")
+                    .lastCheckpoint("/delta/check")
+                    .build())),
         new ContentAndOperationType(
-            Content.Type.ICEBERG_VIEW, Unchanged.of(ContentKey.of("a", "view_spark_unchanged"))),
-        new ContentAndOperationType(
-            Content.Type.DELTA_LAKE_TABLE, Delete.of(ContentKey.of("a", "delta_delete"))),
-        new ContentAndOperationType(
-            Content.Type.DELTA_LAKE_TABLE, Unchanged.of(ContentKey.of("a", "delta_unchanged"))));
+            Content.Type.DELTA_LAKE_TABLE,
+            Unchanged.of(ContentKey.of("a", "delta_unchanged")),
+            Put.of(
+                ContentKey.of("a", "delta_unchanged"),
+                ImmutableDeltaLakeTable.builder()
+                    .addMetadataLocationHistory("/delta/table")
+                    .addCheckpointLocationHistory("/delta/history")
+                    .lastCheckpoint("/delta/check")
+                    .build())));
   }
 
   @Test
@@ -130,6 +155,17 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
 
     List<ContentAndOperationType> contentAndOps =
         contentAndOperationTypes().collect(Collectors.toList());
+
+    CommitMultipleOperationsBuilder prepare =
+        getApi()
+            .commitMultipleOperations()
+            .branch(branch)
+            .commitMeta(CommitMeta.fromMessage("verifyAllContentAndOperationTypes prepare"));
+    contentAndOps.stream()
+        .filter(co -> co.prepare != null)
+        .map(co -> co.prepare)
+        .forEach(prepare::operation);
+    branch = prepare.commit();
 
     CommitMultipleOperationsBuilder commit =
         getApi()
@@ -146,19 +182,25 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
             .filter(c -> c.operation instanceof Put)
             .map(c -> Entry.entry(c.operation.getKey(), c.type))
             .collect(Collectors.toList());
-    soft.assertThat(entries).containsExactlyInAnyOrderElementsOf(expect);
+    List<Entry> notExpect =
+        contentAndOps.stream()
+            .filter(c -> c.operation instanceof Delete)
+            .map(c -> Entry.entry(c.operation.getKey(), c.type))
+            .collect(Collectors.toList());
+    soft.assertThat(entries).containsAll(expect).doesNotContainAnyElementsOf(notExpect);
 
     // Diff against of committed HEAD and previous commit must yield the content in the
     // Put operations
     soft.assertThat(getApi().getDiff().fromRef(committed).toRef(branch).get())
         .extracting(DiffResponse::getDiffs, list(DiffEntry.class))
-        .extracting(DiffEntry::getKey, e -> clearIdOnContent(e.getFrom()), DiffEntry::getTo)
+        .filteredOn(e -> e.getFrom() != null)
+        .extracting(AbstractRest::diffEntryWithoutContentId)
         .containsExactlyInAnyOrderElementsOf(
             contentAndOps.stream()
                 .map(c -> c.operation)
                 .filter(op -> op instanceof Put)
                 .map(Put.class::cast)
-                .map(put -> tuple(put.getKey(), put.getContent(), null))
+                .map(put -> DiffEntry.diffEntry(put.getKey(), put.getContent()))
                 .collect(Collectors.toList()));
 
     // Verify that 'get contents' for the HEAD commit returns exactly the committed contents
@@ -168,9 +210,20 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
             .collect(Collectors.toList());
     Map<ContentKey, Content> expected =
         contentAndOps.stream()
-            .filter(c -> c.operation instanceof Put)
-            .collect(
-                Collectors.toMap(e -> e.operation.getKey(), e -> ((Put) e.operation).getContent()));
+            .map(
+                c -> {
+                  if (c.operation instanceof Put) {
+                    return Maps.immutableEntry(
+                        c.operation.getKey(), ((Put) c.operation).getContent());
+                  }
+                  if (c.operation instanceof Unchanged) {
+                    return Maps.immutableEntry(
+                        c.operation.getKey(), ((Put) c.prepare).getContent());
+                  }
+                  return null;
+                })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     soft.assertThat(getApi().getContent().reference(committed).keys(allKeys).get())
         .containsOnlyKeys(expected.keySet())
         .allSatisfy(
@@ -193,6 +246,17 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
   public void verifyContentAndOperationTypesIndividually(
       ContentAndOperationType contentAndOperationType) throws BaseNessieClientServerException {
     Branch branch = createBranch("contentAndOperation_" + contentAndOperationType);
+
+    if (contentAndOperationType.prepare != null) {
+      branch =
+          getApi()
+              .commitMultipleOperations()
+              .branch(branch)
+              .commitMeta(CommitMeta.fromMessage("verifyAllContentAndOperationTypes prepare"))
+              .operation(contentAndOperationType.prepare)
+              .commit();
+    }
+
     CommitMultipleOperationsBuilder commit =
         getApi()
             .commitMultipleOperations()
@@ -241,8 +305,7 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
           // Clear content ID for comparison
           .extracting(this::clearIdOnOperation)
           .isEqualTo(put);
-    } else {
-      // not a Put operation
+    } else if (contentAndOperationType.operation instanceof Delete) {
       List<Entry> entries =
           getApi().getEntries().refName(branch.getName()).stream().collect(Collectors.toList());
       soft.assertThat(entries).isEmpty();
@@ -251,6 +314,7 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
       // Put operations
       soft.assertThat(getApi().getDiff().fromRef(committed).toRef(branch).get())
           .extracting(DiffResponse::getDiffs, list(DiffEntry.class))
+          .filteredOn(e -> e.getFrom() != null)
           .isEmpty();
 
       // Compare content on HEAD commit with the committed content
@@ -264,19 +328,34 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
               .collect(Collectors.toList());
       soft.assertThat(log)
           .element(0)
-          .extracting(LogEntry::getOperations)
-          .satisfies(
-              ops -> {
-                if (contentAndOperationType.operation instanceof Delete) {
-                  // Delete ops are persisted - must occur in commit
-                  assertThat(ops).containsExactly(contentAndOperationType.operation);
-                } else if (contentAndOperationType.operation instanceof Unchanged) {
-                  // Unchanged ops are not persisted - cannot occur in commit
-                  assertThat(ops).isNullOrEmpty();
-                } else {
-                  fail("Unexpected operation " + contentAndOperationType.operation);
-                }
-              });
+          .extracting(LogEntry::getOperations, list(Operation.class))
+          .containsExactly(contentAndOperationType.operation);
+    } else if (contentAndOperationType.operation instanceof Unchanged) {
+      List<Entry> entries =
+          getApi().getEntries().refName(branch.getName()).stream().collect(Collectors.toList());
+      soft.assertThat(entries)
+          .containsExactly(Entry.entry(fixedContentKey, contentAndOperationType.type));
+
+      // Diff against of committed HEAD and previous commit must yield the content in the
+      // Put operations
+      soft.assertThat(getApi().getDiff().fromRef(committed).toRef(branch).get())
+          .extracting(DiffResponse::getDiffs, list(DiffEntry.class))
+          .filteredOn(e -> e.getFrom() != null)
+          .isEmpty();
+
+      // Compare content on HEAD commit with the committed content
+      Map<ContentKey, Content> content =
+          getApi().getContent().key(fixedContentKey).reference(committed).get();
+      soft.assertThat(content)
+          .extractingByKey(fixedContentKey)
+          .extracting(this::clearIdOnContent)
+          .isEqualTo(contentAndOperationType.prepare.getContent());
+
+      // Compare operation on HEAD commit with the committed operation
+      List<LogResponse.LogEntry> log =
+          getApi().getCommitLog().reference(committed).fetch(FetchOption.ALL).stream()
+              .collect(Collectors.toList());
+      soft.assertThat(log).element(0).extracting(LogEntry::getOperations).isNull();
     }
   }
 
