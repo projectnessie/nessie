@@ -16,10 +16,6 @@
 package org.projectnessie.jaxrs.tests;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.common.collect.ImmutableList;
 import java.util.Arrays;
@@ -75,7 +71,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     List<Entry> expected =
         asList(
             Entry.entry(a, Content.Type.ICEBERG_TABLE), Entry.entry(b, Content.Type.ICEBERG_VIEW));
-    assertThat(entries).containsExactlyInAnyOrderElementsOf(expected);
+    soft.assertThat(entries).containsExactlyInAnyOrderElementsOf(expected);
 
     entries =
         getApi()
@@ -84,7 +80,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .filter("entry.contentType=='ICEBERG_TABLE'")
             .get()
             .getEntries();
-    assertEquals(singletonList(expected.get(0)), entries);
+    soft.assertThat(entries).containsExactly(expected.get(0));
 
     entries =
         getApi()
@@ -93,7 +89,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .filter("entry.contentType=='ICEBERG_VIEW'")
             .get()
             .getEntries();
-    assertEquals(singletonList(expected.get(1)), entries);
+    soft.assertThat(entries).containsExactly(expected.get(1));
 
     entries =
         getApi()
@@ -102,7 +98,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .filter("entry.contentType in ['ICEBERG_TABLE', 'ICEBERG_VIEW']")
             .get()
             .getEntries();
-    assertThat(entries).containsExactlyInAnyOrderElementsOf(expected);
+    soft.assertThat(entries).containsExactlyInAnyOrderElementsOf(expected);
   }
 
   @ParameterizedTest
@@ -127,7 +123,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .filter("entry.name.startsWith('first')")
             .get()
             .getEntries();
-    assertThat(entries.stream().map(Entry::getName)).containsExactly(first);
+    soft.assertThat(entries.stream().map(Entry::getName)).containsExactly(first);
 
     entries =
         getApi()
@@ -136,7 +132,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .filter("entry.name.endsWith('Table')")
             .get()
             .getEntries();
-    assertThat(entries.stream().map(Entry::getName)).containsExactlyInAnyOrder(first, second);
+    soft.assertThat(entries.stream().map(Entry::getName)).containsExactlyInAnyOrder(first, second);
 
     getApi()
         .deleteBranch()
@@ -168,7 +164,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .filter("entry.key == 'a.b.c.table'")
             .get()
             .getEntries();
-    assertThat(entries.stream().map(Entry::getName)).containsExactly(first);
+    soft.assertThat(entries.stream().map(Entry::getName)).containsExactly(first);
 
     entries =
         getApi()
@@ -177,7 +173,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .filter("entry.key.endsWith('.b.c.table')")
             .get()
             .getEntries();
-    assertThat(entries.stream().map(Entry::getName)).containsExactlyInAnyOrder(first, second);
+    soft.assertThat(entries.stream().map(Entry::getName)).containsExactlyInAnyOrder(first, second);
 
     getApi()
         .deleteBranch()
@@ -223,10 +219,10 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
 
     List<Entry> entries =
         getApi().getEntries().reference(refMode.transform(branch)).get().getEntries();
-    assertThat(entries).isNotNull().hasSize(4);
+    soft.assertThat(entries).isNotNull().hasSize(4);
 
     entries = getApi().getEntries().reference(refMode.transform(branch)).get().getEntries();
-    assertThat(entries).isNotNull().hasSize(4);
+    soft.assertThat(entries).isNotNull().hasSize(4);
 
     entries =
         getApi()
@@ -235,8 +231,10 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .filter("entry.namespace.startsWith('a.b')")
             .get()
             .getEntries();
-    assertThat(entries).hasSize(2);
-    entries.forEach(e -> assertThat(e.getName().getNamespace().name()).startsWith("a.b"));
+    soft.assertThat(entries)
+        .hasSize(2)
+        .map(e -> e.getName().getNamespace().name())
+        .allMatch(n -> n.startsWith("a.b"));
 
     entries =
         getApi()
@@ -245,8 +243,10 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .filter("entry.namespace.startsWith('a')")
             .get()
             .getEntries();
-    assertThat(entries).hasSize(4);
-    entries.forEach(e -> assertThat(e.getName().getNamespace().name()).startsWith("a"));
+    soft.assertThat(entries)
+        .hasSize(4)
+        .map(e -> e.getName().getNamespace().name())
+        .allMatch(n -> n.startsWith("a"));
 
     entries =
         getApi()
@@ -255,7 +255,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .filter("entry.namespace.startsWith('a.b.c.firstTable')")
             .get()
             .getEntries();
-    assertThat(entries).isEmpty();
+    soft.assertThat(entries).isEmpty();
 
     entries =
         getApi()
@@ -264,7 +264,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .filter("entry.namespace.startsWith('a.fourthTable')")
             .get()
             .getEntries();
-    assertThat(entries).isEmpty();
+    soft.assertThat(entries).isEmpty();
 
     getApi()
         .deleteBranch()
@@ -299,7 +299,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     Reference reference = refMode.transform(branch);
     List<Entry> entries =
         getApi().getEntries().reference(reference).namespaceDepth(0).get().getEntries();
-    assertThat(entries).isNotNull().hasSize(6);
+    soft.assertThat(entries).isNotNull().hasSize(6);
 
     entries =
         getApi()
@@ -309,7 +309,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .filter("entry.namespace.matches('a(\\\\.|$)')")
             .get()
             .getEntries();
-    assertThat(entries).isNotNull().hasSize(5);
+    soft.assertThat(entries).isNotNull().hasSize(5);
 
     entries =
         getApi()
@@ -319,10 +319,9 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .filter("entry.namespace.matches('a(\\\\.|$)')")
             .get()
             .getEntries();
-    assertThat(entries).hasSize(1);
-    assertThat(entries.get(0))
-        .matches(e -> e.getType().equals(Content.Type.NAMESPACE))
-        .matches(e -> e.getName().equals(ContentKey.of("a")));
+    soft.assertThat(entries)
+        .hasSize(1)
+        .containsExactly(Entry.entry(ContentKey.of("a"), Content.Type.NAMESPACE));
 
     entries =
         getApi()
@@ -332,16 +331,12 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .filter("entry.namespace.matches('a(\\\\.|$)')")
             .get()
             .getEntries();
-    assertThat(entries).hasSize(3);
-    assertThat(entries.get(2))
-        .matches(e -> e.getType().equals(Content.Type.ICEBERG_TABLE))
-        .matches(e -> e.getName().equals(ContentKey.of("a", "thirdTable")));
-    assertThat(entries.get(1))
-        .matches(e -> e.getType().equals(Content.Type.NAMESPACE))
-        .matches(e -> e.getName().equals(ContentKey.of("a", "b")));
-    assertThat(entries.get(0))
-        .matches(e -> e.getType().equals(Content.Type.NAMESPACE))
-        .matches(e -> e.getName().equals(ContentKey.of("a", "boo")));
+    soft.assertThat(entries)
+        .hasSize(3)
+        .containsExactlyInAnyOrder(
+            Entry.entry(ContentKey.of("a", "boo"), Content.Type.NAMESPACE),
+            Entry.entry(ContentKey.of("a", "b"), Content.Type.NAMESPACE),
+            Entry.entry(ContentKey.of("a", "thirdTable"), Content.Type.ICEBERG_TABLE));
 
     entries =
         getApi()
@@ -351,13 +346,11 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .filter("entry.namespace.matches('a\\\\.b(\\\\.|$)')")
             .get()
             .getEntries();
-    assertThat(entries).hasSize(2);
-    assertThat(entries.get(1))
-        .matches(e -> e.getType().equals(Content.Type.NAMESPACE))
-        .matches(e -> e.getName().equals(ContentKey.of("a", "b", "c")));
-    assertThat(entries.get(0))
-        .matches(e -> e.getType().equals(Content.Type.ICEBERG_TABLE))
-        .matches(e -> e.getName().equals(ContentKey.of("a", "b", "fourthTable")));
+    soft.assertThat(entries)
+        .hasSize(2)
+        .containsExactlyInAnyOrder(
+            Entry.entry(ContentKey.of("a", "b", "fourthTable"), Content.Type.ICEBERG_TABLE),
+            Entry.entry(ContentKey.of("a", "b", "c"), Content.Type.NAMESPACE));
 
     entries =
         getApi()
@@ -367,13 +360,11 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .filter("entry.namespace.matches('a\\\\.b\\\\.c(\\\\.|$)')")
             .get()
             .getEntries();
-    assertThat(entries).hasSize(2);
-    assertThat(entries.get(1))
-        .matches(e -> e.getType().equals(Content.Type.ICEBERG_TABLE))
-        .matches(e -> e.getName().equals(ContentKey.of("a", "b", "c", "firstTable")));
-    assertThat(entries.get(0))
-        .matches(e -> e.getType().equals(Content.Type.ICEBERG_TABLE))
-        .matches(e -> e.getName().equals(ContentKey.of("a", "b", "c", "secondTable")));
+    soft.assertThat(entries)
+        .hasSize(2)
+        .containsExactlyInAnyOrder(
+            Entry.entry(ContentKey.of("a", "b", "c", "secondTable"), Content.Type.ICEBERG_TABLE),
+            Entry.entry(ContentKey.of("a", "b", "c", "firstTable"), Content.Type.ICEBERG_TABLE));
 
     entries =
         getApi()
@@ -383,7 +374,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .filter("entry.namespace.matches('(\\\\.|$)')")
             .get()
             .getEntries();
-    assertThat(entries).isEmpty();
+    soft.assertThat(entries).isEmpty();
 
     entries =
         getApi()
@@ -393,16 +384,12 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .filter("entry.namespace.matches('(\\\\.|$)')")
             .get()
             .getEntries();
-    assertThat(entries).hasSize(3);
-    assertThat(entries.get(2))
-        .matches(e -> e.getType().equals(Content.Type.NAMESPACE))
-        .matches(e -> e.getName().equals(ContentKey.of("a", "b", "c")));
-    assertThat(entries.get(1))
-        .matches(e -> e.getType().equals(Content.Type.ICEBERG_TABLE))
-        .matches(e -> e.getName().equals(ContentKey.of("a", "b", "fourthTable")));
-    assertThat(entries.get(0))
-        .matches(e -> e.getType().equals(Content.Type.ICEBERG_TABLE))
-        .matches(e -> e.getName().equals(ContentKey.of("a", "boo", "fifthTable")));
+    soft.assertThat(entries)
+        .hasSize(3)
+        .containsExactlyInAnyOrder(
+            Entry.entry(ContentKey.of("a", "boo", "fifthTable"), Content.Type.ICEBERG_TABLE),
+            Entry.entry(ContentKey.of("a", "b", "fourthTable"), Content.Type.ICEBERG_TABLE),
+            Entry.entry(ContentKey.of("a", "b", "c"), Content.Type.NAMESPACE));
 
     if (ReferenceMode.DETACHED != refMode) {
       // check that implicit namespaces are properly detected
@@ -430,7 +417,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .commitMeta(CommitMeta.fromMessage("commit 1"))
             .commit();
     List<Entry> entries = getApi().getEntries().hashOnRef(branch.getHash()).get().getEntries();
-    assertThat(entries)
+    soft.assertThat(entries)
         .containsExactlyInAnyOrderElementsOf(
             Arrays.<Entry>asList(
                 Entry.entry(a, Content.Type.ICEBERG_TABLE),
@@ -441,7 +428,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
       Reference reference, List<String> knownNamespaces, List<ContentKey> knownContentKeys)
       throws NessieReferenceNotFoundException, NessieNamespaceNotFoundException {
 
-    assertThat(
+    soft.assertThat(
             getApi()
                 .getMultipleNamespaces()
                 .reference(reference)
@@ -451,14 +438,14 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
         .hasSize(4);
     for (String namespace : knownNamespaces) {
       Namespace ns = Namespace.parse(namespace);
-      assertThat(getApi().getNamespace().reference(reference).namespace(ns).get()).isNotNull();
+      soft.assertThat(getApi().getNamespace().reference(reference).namespace(ns).get()).isNotNull();
 
-      assertThatThrownBy(
+      soft.assertThatThrownBy(
               () -> getApi().createNamespace().reference(reference).namespace(ns).create())
           .isInstanceOf(NessieNamespaceAlreadyExistsException.class)
           .hasMessage(String.format("Namespace '%s' already exists", namespace));
 
-      assertThatThrownBy(
+      soft.assertThatThrownBy(
               () -> getApi().deleteNamespace().reference(reference).namespace(ns).delete())
           .isInstanceOf(NessieNamespaceNotEmptyException.class)
           .hasMessage(String.format("Namespace '%s' is not empty", namespace));
@@ -468,7 +455,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     List<String> unknownNamespaces =
         knownContentKeys.stream().map(ContentKey::toString).collect(Collectors.toList());
     for (String namespace : unknownNamespaces) {
-      assertThatThrownBy(
+      soft.assertThatThrownBy(
               () ->
                   getApi()
                       .getNamespace()

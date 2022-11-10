@@ -73,7 +73,7 @@ public abstract class AbstractRestDiff extends AbstractRestContents {
             .getDiffs();
 
     // we only committed to toRef, the "from" diff should be null
-    assertThat(diffOnRefHeadResponse)
+    soft.assertThat(diffOnRefHeadResponse)
         .hasSize(commitsPerBranch)
         .allSatisfy(
             diff -> {
@@ -83,7 +83,7 @@ public abstract class AbstractRestDiff extends AbstractRestContents {
             });
 
     // Some combinations with explicit fromHashOnRef/toHashOnRef
-    assertThat(
+    soft.assertThat(
             getApi()
                 .getDiff()
                 .fromRefName(fromRef.getName())
@@ -98,7 +98,7 @@ public abstract class AbstractRestDiff extends AbstractRestContents {
     // result
     if (refModeTo != ReferenceMode.NAME_ONLY) {
       Branch toRefAtFrom = Branch.of(toRef.getName(), fromRef.getHash());
-      assertThat(
+      soft.assertThat(
               getApi()
                   .getDiff()
                   .fromRef(refModeFrom.transform(fromRef))
@@ -113,7 +113,7 @@ public abstract class AbstractRestDiff extends AbstractRestContents {
         Branch.of(
             fromRef.getName(), createCommits(fromRef, 1, commitsPerBranch, fromRef.getHash()));
 
-    assertThat(
+    soft.assertThat(
             getApi()
                 .getDiff()
                 .fromRef(refModeFrom.transform(fromRef))
@@ -161,7 +161,7 @@ public abstract class AbstractRestDiff extends AbstractRestContents {
     }
 
     // now that we deleted all tables on toRef, the diff for "to" should be null
-    assertThat(
+    soft.assertThat(
             getApi()
                 .getDiff()
                 .fromRef(refModeFrom.transform(fromRef))
@@ -184,7 +184,7 @@ public abstract class AbstractRestDiff extends AbstractRestContents {
     Reference toRef = getApi().createReference().reference(Branch.of("testTo", null)).create();
     String toRefHash = createCommits(toRef, 1, 1, toRef.getHash());
 
-    assertThat(getApi().getDiff().fromRef(fromRef).toHashOnRef(toRefHash).get().getDiffs())
+    soft.assertThat(getApi().getDiff().fromRef(fromRef).toHashOnRef(toRefHash).get().getDiffs())
         .hasSize(1)
         .allSatisfy(
             diff -> {
@@ -194,7 +194,7 @@ public abstract class AbstractRestDiff extends AbstractRestContents {
             });
 
     // both nameless references
-    assertThat(
+    soft.assertThat(
             getApi()
                 .getDiff()
                 .fromHashOnRef(fromRef.getHash())
@@ -210,7 +210,7 @@ public abstract class AbstractRestDiff extends AbstractRestContents {
             });
 
     // reverse to/from
-    assertThat(getApi().getDiff().fromHashOnRef(toRefHash).toRef(fromRef).get().getDiffs())
+    soft.assertThat(getApi().getDiff().fromHashOnRef(toRefHash).toRef(fromRef).get().getDiffs())
         .hasSize(1)
         .allSatisfy(
             diff -> {

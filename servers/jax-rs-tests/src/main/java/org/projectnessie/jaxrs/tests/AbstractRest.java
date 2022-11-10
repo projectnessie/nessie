@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Locale;
+import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.projectnessie.client.api.NessieApiV1;
@@ -40,6 +41,10 @@ public abstract class AbstractRest {
 
   private NessieApiV1 api;
 
+  // Cannot use @ExtendWith(SoftAssertionsExtension.class) + @InjectSoftAssertions here, because
+  // of Quarkus class loading issues. See https://github.com/quarkusio/quarkus/issues/19814
+  protected final SoftAssertions soft = new SoftAssertions();
+
   static {
     // Note: REST tests validate some locale-specific error messages, but expect on the messages to
     // be in ENGLISH. However, the JRE's startup classes (in particular class loaders) may cause the
@@ -60,6 +65,10 @@ public abstract class AbstractRest {
 
   @AfterEach
   public void tearDown() throws Exception {
+    // Cannot use @ExtendWith(SoftAssertionsExtension.class) + @InjectSoftAssertions here, because
+    // of Quarkus class loading issues. See https://github.com/quarkusio/quarkus/issues/19814
+    soft.assertAll();
+
     Branch defaultBranch = api.getDefaultBranch();
     api.getAllReferences().stream()
         .forEach(

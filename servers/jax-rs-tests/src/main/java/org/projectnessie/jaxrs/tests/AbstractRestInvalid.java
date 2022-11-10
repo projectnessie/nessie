@@ -16,8 +16,6 @@
 package org.projectnessie.jaxrs.tests;
 
 import static java.util.Collections.singletonList;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.projectnessie.model.Validation.HASH_RULE;
 import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
 
@@ -49,117 +47,103 @@ public abstract class AbstractRestInvalid extends AbstractRestInvalidRefs {
 
     String opsCountMsg = ".operations.operations: size must be between 1 and 2147483647";
 
-    assertAll(
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        getApi()
-                            .commitMultipleOperations()
-                            .branchName(invalidBranchName)
-                            .hash(validHash)
-                            .commitMeta(CommitMeta.fromMessage(""))
-                            .commit())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(REF_NAME_MESSAGE)
-                .hasMessageContaining(opsCountMsg),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        getApi()
-                            .deleteBranch()
-                            .branchName(invalidBranchName)
-                            .hash(validHash)
-                            .delete())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(REF_NAME_MESSAGE),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        getApi()
-                            .getCommitLog()
-                            .refName(invalidBranchName)
-                            .untilHash(validHash)
-                            .get())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(REF_NAME_MESSAGE),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        getApi().getEntries().refName(invalidBranchName).hashOnRef(validHash).get())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(REF_NAME_MESSAGE),
-        () ->
-            assertThatThrownBy(() -> getApi().getReference().refName(invalidBranchName).get())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(REF_NAME_MESSAGE),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        getApi()
-                            .mergeRefIntoBranch()
-                            .branchName(invalidBranchName)
-                            .hash(validHash)
-                            .fromRef(getApi().getDefaultBranch())
-                            .merge())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(REF_NAME_MESSAGE),
-        () ->
-            assertThatThrownBy(
-                    () -> getApi().deleteTag().tagName(invalidBranchName).hash(validHash).delete())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(REF_NAME_MESSAGE),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        getApi()
-                            .transplantCommitsIntoBranch()
-                            .branchName(invalidBranchName)
-                            .hash(validHash)
-                            .fromRefName("main")
-                            .hashesToTransplant(
-                                singletonList(
-                                    getApi().getReference().refName("main").get().getHash()))
-                            .transplant())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(REF_NAME_MESSAGE),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        getApi()
-                            .getContent()
-                            .key(key)
-                            .refName(invalidBranchName)
-                            .hashOnRef(validHash)
-                            .get())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(REF_NAME_MESSAGE),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        getApi()
-                            .getContent()
-                            .key(key)
-                            .refName(invalidBranchName)
-                            .hashOnRef(validHash)
-                            .get())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(REF_NAME_MESSAGE),
-        () ->
-            assertThatThrownBy(
-                    () -> getApi().getDiff().fromRefName(invalidBranchName).toRefName("main").get())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(REF_NAME_MESSAGE));
+    soft.assertThatThrownBy(
+            () ->
+                getApi()
+                    .commitMultipleOperations()
+                    .branchName(invalidBranchName)
+                    .hash(validHash)
+                    .commitMeta(CommitMeta.fromMessage(""))
+                    .commit())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining(REF_NAME_MESSAGE)
+        .hasMessageContaining(opsCountMsg);
+
+    soft.assertThatThrownBy(
+            () -> getApi().deleteBranch().branchName(invalidBranchName).hash(validHash).delete())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining(REF_NAME_MESSAGE);
+
+    soft.assertThatThrownBy(
+            () -> getApi().getCommitLog().refName(invalidBranchName).untilHash(validHash).get())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining(REF_NAME_MESSAGE);
+
+    soft.assertThatThrownBy(
+            () -> getApi().getEntries().refName(invalidBranchName).hashOnRef(validHash).get())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining(REF_NAME_MESSAGE);
+
+    soft.assertThatThrownBy(() -> getApi().getReference().refName(invalidBranchName).get())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining(REF_NAME_MESSAGE);
+
+    soft.assertThatThrownBy(
+            () ->
+                getApi()
+                    .mergeRefIntoBranch()
+                    .branchName(invalidBranchName)
+                    .hash(validHash)
+                    .fromRef(getApi().getDefaultBranch())
+                    .merge())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining(REF_NAME_MESSAGE);
+
+    soft.assertThatThrownBy(
+            () -> getApi().deleteTag().tagName(invalidBranchName).hash(validHash).delete())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining(REF_NAME_MESSAGE);
+
+    soft.assertThatThrownBy(
+            () ->
+                getApi()
+                    .transplantCommitsIntoBranch()
+                    .branchName(invalidBranchName)
+                    .hash(validHash)
+                    .fromRefName("main")
+                    .hashesToTransplant(
+                        singletonList(getApi().getReference().refName("main").get().getHash()))
+                    .transplant())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining(REF_NAME_MESSAGE);
+
+    soft.assertThatThrownBy(
+            () ->
+                getApi()
+                    .getContent()
+                    .key(key)
+                    .refName(invalidBranchName)
+                    .hashOnRef(validHash)
+                    .get())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining(REF_NAME_MESSAGE);
+
+    soft.assertThatThrownBy(
+            () ->
+                getApi()
+                    .getContent()
+                    .key(key)
+                    .refName(invalidBranchName)
+                    .hashOnRef(validHash)
+                    .get())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining(REF_NAME_MESSAGE);
+
+    soft.assertThatThrownBy(
+            () -> getApi().getDiff().fromRefName(invalidBranchName).toRefName("main").get())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining(REF_NAME_MESSAGE);
   }
 
   @ParameterizedTest
@@ -180,133 +164,100 @@ public abstract class AbstractRestInvalid extends AbstractRestInvalidRefs {
 
     String opsCountMsg = ".operations.operations: size must be between 1 and 2147483647";
 
-    assertAll(
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        getApi()
-                            .commitMultipleOperations()
-                            .branchName(validBranchName)
-                            .hash(invalidHash)
-                            .commitMeta(CommitMeta.fromMessage(""))
-                            .commit())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(HASH_RULE)
-                .hasMessageContaining(opsCountMsg),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        getApi()
-                            .deleteBranch()
-                            .branchName(validBranchName)
-                            .hash(invalidHash)
-                            .delete())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(HASH_RULE),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        getApi()
-                            .assignTag()
-                            .tagName(validBranchName)
-                            .hash(invalidHash)
-                            .assignTo(tag)
-                            .assign())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(HASH_RULE),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        getApi()
-                            .mergeRefIntoBranch()
-                            .branchName(validBranchName)
-                            .hash(invalidHash)
-                            .fromRef(getApi().getDefaultBranch())
-                            .merge())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(HASH_RULE),
-        () ->
-            assertThatThrownBy(
-                    () -> getApi().deleteTag().tagName(validBranchName).hash(invalidHash).delete())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(HASH_RULE),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        getApi()
-                            .transplantCommitsIntoBranch()
-                            .branchName(validBranchName)
-                            .hash(invalidHash)
-                            .fromRefName("main")
-                            .hashesToTransplant(
-                                singletonList(
-                                    getApi().getReference().refName("main").get().getHash()))
-                            .transplant())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(HASH_RULE),
-        () ->
-            assertThatThrownBy(() -> getApi().getContent().refName(invalidHash).get())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(
-                    ".request.requestedKeys: size must be between 1 and 2147483647")
-                .hasMessageContaining(REF_NAME_MESSAGE),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        getApi().getContent().refName(validBranchName).hashOnRef(invalidHash).get())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(
-                    ".request.requestedKeys: size must be between 1 and 2147483647")
-                .hasMessageContaining(HASH_RULE),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        getApi()
-                            .getContent()
-                            .key(key)
-                            .refName(validBranchName)
-                            .hashOnRef(invalidHash)
-                            .get())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(HASH_RULE),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        getApi()
-                            .getCommitLog()
-                            .refName(validBranchName)
-                            .untilHash(invalidHash)
-                            .get())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(HASH_RULE),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        getApi()
-                            .getCommitLog()
-                            .refName(validBranchName)
-                            .hashOnRef(invalidHash)
-                            .get())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(HASH_RULE),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        getApi().getEntries().refName(validBranchName).hashOnRef(invalidHash).get())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(HASH_RULE));
+    soft.assertThatThrownBy(
+            () ->
+                getApi()
+                    .commitMultipleOperations()
+                    .branchName(validBranchName)
+                    .hash(invalidHash)
+                    .commitMeta(CommitMeta.fromMessage(""))
+                    .commit())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining(HASH_RULE)
+        .hasMessageContaining(opsCountMsg);
+    soft.assertThatThrownBy(
+            () -> getApi().deleteBranch().branchName(validBranchName).hash(invalidHash).delete())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining(HASH_RULE);
+    soft.assertThatThrownBy(
+            () ->
+                getApi()
+                    .assignTag()
+                    .tagName(validBranchName)
+                    .hash(invalidHash)
+                    .assignTo(tag)
+                    .assign())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining(HASH_RULE);
+    soft.assertThatThrownBy(
+            () ->
+                getApi()
+                    .mergeRefIntoBranch()
+                    .branchName(validBranchName)
+                    .hash(invalidHash)
+                    .fromRef(getApi().getDefaultBranch())
+                    .merge())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining(HASH_RULE);
+    soft.assertThatThrownBy(
+            () -> getApi().deleteTag().tagName(validBranchName).hash(invalidHash).delete())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining(HASH_RULE);
+    soft.assertThatThrownBy(
+            () ->
+                getApi()
+                    .transplantCommitsIntoBranch()
+                    .branchName(validBranchName)
+                    .hash(invalidHash)
+                    .fromRefName("main")
+                    .hashesToTransplant(
+                        singletonList(getApi().getReference().refName("main").get().getHash()))
+                    .transplant())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining(HASH_RULE);
+    soft.assertThatThrownBy(() -> getApi().getContent().refName(invalidHash).get())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining(".request.requestedKeys: size must be between 1 and 2147483647")
+        .hasMessageContaining(REF_NAME_MESSAGE);
+    soft.assertThatThrownBy(
+            () -> getApi().getContent().refName(validBranchName).hashOnRef(invalidHash).get())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining(".request.requestedKeys: size must be between 1 and 2147483647")
+        .hasMessageContaining(HASH_RULE);
+    soft.assertThatThrownBy(
+            () ->
+                getApi()
+                    .getContent()
+                    .key(key)
+                    .refName(validBranchName)
+                    .hashOnRef(invalidHash)
+                    .get())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining(HASH_RULE);
+    soft.assertThatThrownBy(
+            () -> getApi().getCommitLog().refName(validBranchName).untilHash(invalidHash).get())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining(HASH_RULE);
+    soft.assertThatThrownBy(
+            () -> getApi().getCommitLog().refName(validBranchName).hashOnRef(invalidHash).get())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining(HASH_RULE);
+    soft.assertThatThrownBy(
+            () -> getApi().getEntries().refName(validBranchName).hashOnRef(invalidHash).get())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining(HASH_RULE);
   }
 
   @ParameterizedTest
@@ -318,24 +269,22 @@ public abstract class AbstractRestInvalid extends AbstractRestInvalidRefs {
     "abc'de@{blah" + COMMA_VALID_HASH_3
   })
   public void invalidTags(String invalidTagName, String validHash) {
-    assertAll(
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        getApi()
-                            .assignTag()
-                            .tagName(invalidTagName)
-                            .hash(validHash)
-                            .assignTo(Tag.of("validTag", validHash))
-                            .assign())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(REF_NAME_MESSAGE),
-        () ->
-            assertThatThrownBy(
-                    () -> getApi().deleteTag().tagName(invalidTagName).hash(validHash).delete())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining(REF_NAME_MESSAGE));
+    soft.assertThatThrownBy(
+            () ->
+                getApi()
+                    .assignTag()
+                    .tagName(invalidTagName)
+                    .hash(validHash)
+                    .assignTo(Tag.of("validTag", validHash))
+                    .assign())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining(REF_NAME_MESSAGE);
+
+    soft.assertThatThrownBy(
+            () -> getApi().deleteTag().tagName(invalidTagName).hash(validHash).delete())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining(REF_NAME_MESSAGE);
   }
 }

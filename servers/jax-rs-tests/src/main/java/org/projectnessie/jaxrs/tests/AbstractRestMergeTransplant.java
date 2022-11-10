@@ -16,7 +16,6 @@
 package org.projectnessie.jaxrs.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.map;
@@ -148,7 +147,7 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalid {
             .commitMeta(CommitMeta.fromMessage("test-branch1"))
             .operation(Put.of(key1, table1))
             .commit();
-    assertThat(committed1.getHash()).isNotNull();
+    soft.assertThat(committed1.getHash()).isNotNull();
 
     table1 =
         getApi()
@@ -168,7 +167,7 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalid {
             .commitMeta(CommitMeta.fromMessage("test-branch2"))
             .operation(Put.of(key1, table1, table1))
             .commit();
-    assertThat(committed2.getHash()).isNotNull();
+    soft.assertThat(committed2.getHash()).isNotNull();
 
     int commitCount = 2;
 
@@ -195,7 +194,7 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalid {
 
     // try again --> conflict
 
-    assertThatThrownBy(() -> actor.act(target, source, committed1, committed2, false))
+    soft.assertThatThrownBy(() -> actor.act(target, source, committed1, committed2, false))
         .isInstanceOf(NessieReferenceConflictException.class)
         .hasMessageContaining("keys have been changed in conflict");
 
@@ -207,11 +206,11 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalid {
     LogResponse log =
         getApi().getCommitLog().refName(target.getName()).untilHash(target.getHash()).get();
     if (keepIndividualCommits) {
-      assertThat(
+      soft.assertThat(
               log.getLogEntries().stream().map(LogEntry::getCommitMeta).map(CommitMeta::getMessage))
           .containsExactly("test-branch2", "test-branch1", "test-main");
     } else {
-      assertThat(
+      soft.assertThat(
               log.getLogEntries().stream().map(LogEntry::getCommitMeta).map(CommitMeta::getMessage))
           .hasSize(2)
           .first(InstanceOfAssertFactories.STRING)
@@ -222,7 +221,7 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalid {
     // Verify that the commit-timestamp was updated
     LogResponse logOfMerged =
         getApi().getCommitLog().refName(target.getName()).maxRecords(commitCount).get();
-    assertThat(
+    soft.assertThat(
             logOfMerged.getLogEntries().stream()
                 .map(LogEntry::getCommitMeta)
                 .map(CommitMeta::getCommitTime))
@@ -231,13 +230,13 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalid {
                 .map(LogEntry::getCommitMeta)
                 .map(CommitMeta::getCommitTime));
 
-    assertThat(
+    soft.assertThat(
             getApi().getEntries().refName(target.getName()).get().getEntries().stream()
                 .map(e -> e.getName().getName()))
         .containsExactlyInAnyOrder("key1", "key2");
 
     if (verifyAdditionalParents) {
-      assertThat(logOfMerged.getLogEntries())
+      soft.assertThat(logOfMerged.getLogEntries())
           .first()
           .satisfies(
               logEntry ->
@@ -273,65 +272,57 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalid {
       MergeResponse response)
       throws NessieNotFoundException {
     Reference newHead = getApi().getReference().refName(target.getName()).get();
-    assertThat(response)
-        .satisfies(
-            r ->
-                assertThat(r)
+    soft.assertThat(response)
+        .extracting(
+            MergeResponse::wasApplied,
+            MergeResponse::wasSuccessful,
+            MergeResponse::getExpectedHash,
+            MergeResponse::getTargetBranch,
+            MergeResponse::getEffectiveTargetHash,
+            MergeResponse::getResultantTargetHash)
+        .containsExactly(
+            true, true, source.getHash(), target.getName(), baseHead.getHash(), newHead.getHash());
+
+    soft.assertThat(response)
+        .extracting(
+            MergeResponse::getCommonAncestor,
+            MergeResponse::getDetails,
+            MergeResponse::getSourceCommits,
+            MergeResponse::getTargetCommits)
+        .satisfiesExactly(
+            commonAncestor ->
+                assertThat(commonAncestor)
+                    .satisfiesAnyOf(
+                        a -> assertThat(a).isNull(),
+                        b -> assertThat(b).isEqualTo(target.getHash())),
+            details ->
+                assertThat(details)
+                    .asInstanceOf(list(ContentKeyDetails.class))
                     .extracting(
-                        MergeResponse::wasApplied,
-                        MergeResponse::wasSuccessful,
-                        MergeResponse::getExpectedHash,
-                        MergeResponse::getTargetBranch,
-                        MergeResponse::getEffectiveTargetHash,
-                        MergeResponse::getResultantTargetHash)
+                        ContentKeyDetails::getKey,
+                        ContentKeyDetails::getConflictType,
+                        ContentKeyDetails::getMergeBehavior)
+                    .containsExactlyInAnyOrder(
+                        tuple(key1, ContentKeyConflict.NONE, MergeBehavior.NORMAL),
+                        tuple(key2, ContentKeyConflict.NONE, MergeBehavior.NORMAL)),
+            sourceCommits ->
+                assertThat(sourceCommits)
+                    .asInstanceOf(list(LogEntry.class))
+                    .extracting(LogEntry::getCommitMeta)
+                    .extracting(CommitMeta::getHash, CommitMeta::getMessage)
                     .containsExactly(
-                        true,
-                        true,
-                        source.getHash(),
-                        target.getName(),
-                        baseHead.getHash(),
-                        newHead.getHash()),
-            r ->
-                assertThat(r)
-                    .extracting(
-                        MergeResponse::getCommonAncestor,
-                        MergeResponse::getDetails,
-                        MergeResponse::getSourceCommits,
-                        MergeResponse::getTargetCommits)
-                    .satisfiesExactly(
-                        commonAncestor ->
-                            assertThat(commonAncestor)
-                                .satisfiesAnyOf(
-                                    a -> assertThat(a).isNull(),
-                                    b -> assertThat(b).isEqualTo(target.getHash())),
-                        details ->
-                            assertThat(details)
-                                .asInstanceOf(list(ContentKeyDetails.class))
-                                .extracting(
-                                    ContentKeyDetails::getKey,
-                                    ContentKeyDetails::getConflictType,
-                                    ContentKeyDetails::getMergeBehavior)
-                                .containsExactlyInAnyOrder(
-                                    tuple(key1, ContentKeyConflict.NONE, MergeBehavior.NORMAL),
-                                    tuple(key2, ContentKeyConflict.NONE, MergeBehavior.NORMAL)),
-                        sourceCommits ->
-                            assertThat(sourceCommits)
-                                .asInstanceOf(list(LogEntry.class))
-                                .extracting(LogEntry::getCommitMeta)
-                                .extracting(CommitMeta::getHash, CommitMeta::getMessage)
-                                .containsExactly(
-                                    tuple(committed2.getHash(), "test-branch2"),
-                                    tuple(committed1.getHash(), "test-branch1")),
-                        targetCommits ->
-                            assertThat(targetCommits)
-                                .asInstanceOf(list(LogEntry.class))
-                                .extracting(LogEntry::getCommitMeta)
-                                .extracting(CommitMeta::getHash, CommitMeta::getMessage)
-                                .containsExactly(tuple(baseHead.getHash(), "test-main"))));
+                        tuple(committed2.getHash(), "test-branch2"),
+                        tuple(committed1.getHash(), "test-branch1")),
+            targetCommits ->
+                assertThat(targetCommits)
+                    .asInstanceOf(list(LogEntry.class))
+                    .extracting(LogEntry::getCommitMeta)
+                    .extracting(CommitMeta::getHash, CommitMeta::getMessage)
+                    .containsExactly(tuple(baseHead.getHash(), "test-main")));
     return newHead;
   }
 
-  private static void conflictExceptionReturnedAsMergeResult(
+  private void conflictExceptionReturnedAsMergeResult(
       MergeTransplantActor actor,
       Branch target,
       Branch source,
@@ -342,64 +333,54 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalid {
       Reference newHead)
       throws NessieNotFoundException, NessieConflictException {
     MergeResponse conflictResult = actor.act(target, source, committed1, committed2, true);
-    assertThat(conflictResult)
-        .satisfies(
-            r ->
-                assertThat(r)
+
+    soft.assertThat(conflictResult)
+        .extracting(
+            MergeResponse::wasApplied,
+            MergeResponse::wasSuccessful,
+            MergeResponse::getExpectedHash,
+            MergeResponse::getTargetBranch,
+            MergeResponse::getEffectiveTargetHash,
+            MergeResponse::getResultantTargetHash)
+        .containsExactly(
+            false, false, source.getHash(), target.getName(), newHead.getHash(), newHead.getHash());
+
+    soft.assertThat(conflictResult)
+        .extracting(
+            MergeResponse::getCommonAncestor,
+            MergeResponse::getDetails,
+            MergeResponse::getSourceCommits,
+            MergeResponse::getTargetCommits)
+        .satisfiesExactly(
+            commonAncestor ->
+                assertThat(commonAncestor)
+                    .satisfiesAnyOf(
+                        a -> assertThat(a).isNull(),
+                        b -> assertThat(b).isEqualTo(target.getHash())),
+            details ->
+                assertThat(details)
+                    .asInstanceOf(list(ContentKeyDetails.class))
                     .extracting(
-                        MergeResponse::wasApplied,
-                        MergeResponse::wasSuccessful,
-                        MergeResponse::getExpectedHash,
-                        MergeResponse::getTargetBranch,
-                        MergeResponse::getEffectiveTargetHash,
-                        MergeResponse::getResultantTargetHash)
+                        ContentKeyDetails::getKey,
+                        ContentKeyDetails::getConflictType,
+                        ContentKeyDetails::getMergeBehavior)
+                    .containsExactlyInAnyOrder(
+                        tuple(key1, ContentKeyConflict.UNRESOLVABLE, MergeBehavior.NORMAL),
+                        tuple(key2, ContentKeyConflict.NONE, MergeBehavior.NORMAL)),
+            sourceCommits ->
+                assertThat(sourceCommits)
+                    .asInstanceOf(list(LogEntry.class))
+                    .extracting(LogEntry::getCommitMeta)
+                    .extracting(CommitMeta::getHash, CommitMeta::getMessage)
                     .containsExactly(
-                        false,
-                        false,
-                        source.getHash(),
-                        target.getName(),
-                        newHead.getHash(),
-                        newHead.getHash()),
-            r ->
-                assertThat(r)
-                    .extracting(
-                        MergeResponse::getCommonAncestor,
-                        MergeResponse::getDetails,
-                        MergeResponse::getSourceCommits,
-                        MergeResponse::getTargetCommits)
-                    .satisfiesExactly(
-                        commonAncestor ->
-                            assertThat(commonAncestor)
-                                .satisfiesAnyOf(
-                                    a -> assertThat(a).isNull(),
-                                    b -> assertThat(b).isEqualTo(target.getHash())),
-                        details ->
-                            assertThat(details)
-                                .asInstanceOf(list(ContentKeyDetails.class))
-                                .extracting(
-                                    ContentKeyDetails::getKey,
-                                    ContentKeyDetails::getConflictType,
-                                    ContentKeyDetails::getMergeBehavior)
-                                .containsExactlyInAnyOrder(
-                                    tuple(
-                                        key1,
-                                        ContentKeyConflict.UNRESOLVABLE,
-                                        MergeBehavior.NORMAL),
-                                    tuple(key2, ContentKeyConflict.NONE, MergeBehavior.NORMAL)),
-                        sourceCommits ->
-                            assertThat(sourceCommits)
-                                .asInstanceOf(list(LogEntry.class))
-                                .extracting(LogEntry::getCommitMeta)
-                                .extracting(CommitMeta::getHash, CommitMeta::getMessage)
-                                .containsExactly(
-                                    tuple(committed2.getHash(), "test-branch2"),
-                                    tuple(committed1.getHash(), "test-branch1")),
-                        targetCommits ->
-                            assertThat(targetCommits)
-                                .asInstanceOf(list(LogEntry.class))
-                                .extracting(LogEntry::getCommitMeta)
-                                .extracting(CommitMeta::getMessage)
-                                .containsAnyOf("test-branch2", "test-branch1", "test-main")));
+                        tuple(committed2.getHash(), "test-branch2"),
+                        tuple(committed1.getHash(), "test-branch1")),
+            targetCommits ->
+                assertThat(targetCommits)
+                    .asInstanceOf(list(LogEntry.class))
+                    .extracting(LogEntry::getCommitMeta)
+                    .extracting(CommitMeta::getMessage)
+                    .containsAnyOf("test-branch2", "test-branch1", "test-main"));
   }
 
   @ParameterizedTest
@@ -428,7 +409,7 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalid {
             .commitMeta(CommitMeta.fromMessage("test-branch1"))
             .operation(Put.of(key1, table1))
             .commit();
-    assertThat(committed1.getHash()).isNotNull();
+    soft.assertThat(committed1.getHash()).isNotNull();
 
     table1 =
         getApi()
@@ -448,7 +429,7 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalid {
             .commitMeta(CommitMeta.fromMessage("test-branch2"))
             .operation(Put.of(key1, table1, table1))
             .commit();
-    assertThat(committed2.getHash()).isNotNull();
+    soft.assertThat(committed2.getHash()).isNotNull();
 
     getApi()
         .commitMultipleOperations()
@@ -467,7 +448,7 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalid {
 
     LogResponse log =
         getApi().getCommitLog().refName(base.getName()).untilHash(base.getHash()).get();
-    assertThat(
+    soft.assertThat(
             log.getLogEntries().stream()
                 .map(LogEntry::getCommitMeta)
                 .map(CommitMeta::getMessage)
@@ -476,11 +457,12 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalid {
         .hasValueSatisfying(v -> assertThat(v).contains("test-branch1"))
         .hasValueSatisfying(v -> assertThat(v).contains("test-branch2"));
 
-    assertThat(
+    soft.assertThat(
             getApi().getEntries().refName(base.getName()).get().getEntries().stream()
                 .map(Entry::getName))
         .containsExactlyInAnyOrder(key1, key2, ContentKey.of(ns.getElements()));
 
-    assertThat(getApi().getNamespace().refName(base.getName()).namespace(ns).get()).isNotNull();
+    soft.assertThat(getApi().getNamespace().refName(base.getName()).namespace(ns).get())
+        .isNotNull();
   }
 }

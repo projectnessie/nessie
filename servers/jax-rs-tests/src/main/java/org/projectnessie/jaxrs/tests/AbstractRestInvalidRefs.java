@@ -15,7 +15,6 @@
  */
 package org.projectnessie.jaxrs.tests;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
 
@@ -41,22 +40,22 @@ public abstract class AbstractRestInvalidRefs extends AbstractRestEntries {
     ContentKey key = ContentKey.of("x");
     String invalidRef = "1234567890123456";
 
-    assertThatThrownBy(() -> getApi().getCommitLog().refName(invalidRef).get())
+    soft.assertThatThrownBy(() -> getApi().getCommitLog().refName(invalidRef).get())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("Bad Request (HTTP/400):")
         .hasMessageContaining(REF_NAME_MESSAGE);
 
-    assertThatThrownBy(() -> getApi().getEntries().refName(invalidRef).get())
+    soft.assertThatThrownBy(() -> getApi().getEntries().refName(invalidRef).get())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("Bad Request (HTTP/400):")
         .hasMessageContaining(REF_NAME_MESSAGE);
 
-    assertThatThrownBy(() -> getApi().getContent().key(key).refName(invalidRef).get())
+    soft.assertThatThrownBy(() -> getApi().getContent().key(key).refName(invalidRef).get())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("Bad Request (HTTP/400):")
         .hasMessageContaining(REF_NAME_MESSAGE);
 
-    assertThatThrownBy(() -> getApi().getContent().refName(invalidRef).key(key).get())
+    soft.assertThatThrownBy(() -> getApi().getContent().refName(invalidRef).key(key).get())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("Bad Request (HTTP/400):")
         .hasMessageContaining(REF_NAME_MESSAGE);
@@ -71,12 +70,12 @@ public abstract class AbstractRestInvalidRefs extends AbstractRestEntries {
     String currentHash = branch.getHash();
     createCommits(branch, 1, commits, currentHash);
     LogResponse entireLog = getApi().getCommitLog().refName(branch.getName()).get();
-    assertThat(entireLog).isNotNull();
-    assertThat(entireLog.getLogEntries()).hasSize(commits);
+    soft.assertThat(entireLog).isNotNull();
+    soft.assertThat(entireLog.getLogEntries()).hasSize(commits);
 
     EntriesResponse allEntries = getApi().getEntries().refName(branch.getName()).get();
-    assertThat(allEntries).isNotNull();
-    assertThat(allEntries.getEntries()).hasSize(commits);
+    soft.assertThat(allEntries).isNotNull();
+    soft.assertThat(allEntries.getEntries()).hasSize(commits);
 
     List<ContentKey> keys = new ArrayList<>();
     IntStream.range(0, commits).forEach(i -> keys.add(ContentKey.of("table" + i)));
@@ -88,21 +87,21 @@ public abstract class AbstractRestInvalidRefs extends AbstractRestEntries {
     for (int i = 0; i < commits; i++) {
       String hash = entireLog.getLogEntries().get(i).getCommitMeta().getHash();
       LogResponse log = getApi().getCommitLog().refName(branch.getName()).hashOnRef(hash).get();
-      assertThat(log).isNotNull();
-      assertThat(log.getLogEntries()).hasSize(commits - i);
-      assertThat(ImmutableList.copyOf(entireLog.getLogEntries()).subList(i, commits))
+      soft.assertThat(log).isNotNull();
+      soft.assertThat(log.getLogEntries()).hasSize(commits - i);
+      soft.assertThat(ImmutableList.copyOf(entireLog.getLogEntries()).subList(i, commits))
           .containsExactlyElementsOf(log.getLogEntries());
 
       EntriesResponse entries =
           getApi().getEntries().refName(branch.getName()).hashOnRef(hash).get();
-      assertThat(entries).isNotNull();
-      assertThat(entries.getEntries()).hasSize(commits - i);
+      soft.assertThat(entries).isNotNull();
+      soft.assertThat(entries.getEntries()).hasSize(commits - i);
 
       int idx = commits - 1 - i;
       ContentKey key = ContentKey.of("table" + idx);
       Content c =
           getApi().getContent().key(key).refName(branch.getName()).hashOnRef(hash).get().get(key);
-      assertThat(c).isNotNull().isEqualTo(allContent.get(key));
+      soft.assertThat(c).isNotNull().isEqualTo(allContent.get(key));
     }
   }
 
