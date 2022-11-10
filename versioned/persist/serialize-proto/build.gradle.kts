@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import com.google.protobuf.gradle.protobuf
 import com.google.protobuf.gradle.protoc
 
 plugins {
@@ -21,9 +22,10 @@ plugins {
   `maven-publish`
   signing
   id("org.projectnessie.buildsupport.reflectionconfig")
-  id("org.projectnessie.buildsupport.protobuf")
   `nessie-conventions`
 }
+
+apply<ProtobufHelperPlugin>()
 
 extra["maven.name"] = "Nessie - Versioned - Persist - Serialization (Proto)"
 
@@ -33,7 +35,7 @@ dependencies { api(libs.protobuf.java) }
 // submodule
 protobuf {
   // Configure the protoc executable
-  protobuf.protoc {
+  protoc {
     // Download from repositories
     artifact = "com.google.protobuf:protoc:${libs.versions.protobuf.get()}"
   }

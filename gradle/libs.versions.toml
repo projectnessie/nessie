@@ -28,6 +28,7 @@ parquet = "1.12.3"
 picocli = "4.7.0"
 postgresContainerTag = "14"
 protobuf = "3.21.9"
+protobufPlugin = "0.8.19"
 quarkus = "2.14.0.Final"
 quarkusAmazon = "2.14.0.Final"
 quarkusLoggingSentry = "1.2.1"
@@ -208,7 +209,6 @@ nessie-build-ide-integration = { id = "org.projectnessie.buildsupport.ide-integr
 nessie-build-jacoco = { id = "org.projectnessie.buildsupport.jacoco", version.ref = "nessieBuildPlugins" }
 nessie-build-jacoco-aggregator = { id = "org.projectnessie.buildsupport.jacoco-aggregator", version.ref = "nessieBuildPlugins" }
 nessie-build-jandex = { id = "org.projectnessie.buildsupport.jandex", version.ref = "nessieBuildPlugins" }
-nessie-build-protobuf = { id = "org.projectnessie.buildsupport.protobuf", version.ref = "nessieBuildPlugins" }
 nessie-build-publishing = { id = "org.projectnessie.buildsupport.publishing", version.ref = "nessieBuildPlugins" }
 nessie-build-reflectionconfig = { id = "org.projectnessie.buildsupport.reflectionconfig", version.ref = "nessieBuildPlugins" }
 nessie-build-smallrye-open-api = { id = "org.projectnessie.smallrye-open-api", version.ref = "nessieBuildPlugins" }
@@ -216,6 +216,7 @@ nessie-build-spotless = { id = "org.projectnessie.buildsupport.spotless", versio
 nessie-run = { id = "org.projectnessie", version = "0.27.3" }
 nexus-publish-plugin = { id = "io.github.gradle-nexus.publish-plugin", version = "1.1.0" }
 node-gradle = { id = "com.github.node-gradle.node", version = "3.5.0" }
+protobuf = { id = "com.google.protobuf", version.ref = "protobufPlugin" }
 quarkus = { id = "io.quarkus", version.ref = "quarkus" }
 shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadowPlugin" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotlessPlugin" }
