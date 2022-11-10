@@ -17,7 +17,7 @@ package org.projectnessie.server;
 
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.TestProfile;
-import org.projectnessie.jaxrs.AbstractResteasyTest;
+import org.projectnessie.jaxrs.tests.AbstractResteasyTest;
 import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfilePostgres;
 
 @QuarkusIntegrationTest

@@ -17,7 +17,7 @@ package org.projectnessie.server;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
-import org.projectnessie.jaxrs.AbstractResteasyTest;
+import org.projectnessie.jaxrs.tests.AbstractResteasyTest;
 import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
 
 @QuarkusTest

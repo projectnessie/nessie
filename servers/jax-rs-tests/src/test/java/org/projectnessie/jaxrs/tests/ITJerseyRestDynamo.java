@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.jaxrs;
+package org.projectnessie.jaxrs.tests;
 
-import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
-import org.projectnessie.versioned.persist.inmem.InmemoryTestConnectionProviderSource;
+import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.dynamodb.LocalDynamoTestConnectionProviderSource;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
-@NessieDbAdapterName(InmemoryDatabaseAdapterFactory.NAME)
-@NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
-class TestJerseyResteasyInMemory extends AbstractTestJerseyResteasy {}
+@NessieDbAdapterName(DynamoDatabaseAdapterFactory.NAME)
+@NessieExternalDatabase(LocalDynamoTestConnectionProviderSource.class)
+class ITJerseyRestDynamo extends AbstractTestDatabaseAdapterRest {}
