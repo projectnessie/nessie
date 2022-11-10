@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import com.google.protobuf.gradle.protobuf
-import com.google.protobuf.gradle.protoc
+import com.google.protobuf.gradle.ProtobufExtension
 
 plugins {
   `java-library`
@@ -31,7 +30,7 @@ extra["maven.name"] = "Nessie - Export/Import - Serialization (Proto)"
 
 dependencies { implementation(libs.protobuf.java) }
 
-protobuf {
+extensions.configure<ProtobufExtension> {
   // Configure the protoc executable
   protoc {
     // Download from repositories

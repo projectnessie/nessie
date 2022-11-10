@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import com.google.protobuf.gradle.protobuf
-import com.google.protobuf.gradle.protoc
+import com.google.protobuf.gradle.ProtobufExtension
 
 plugins {
   `java-library`
@@ -33,7 +32,7 @@ dependencies { api(libs.protobuf.java) }
 
 // *.proto files taken from https://github.com/googleapis/googleapis/ repo, available as a git
 // submodule
-protobuf {
+extensions.configure<ProtobufExtension> {
   // Configure the protoc executable
   protoc {
     // Download from repositories
