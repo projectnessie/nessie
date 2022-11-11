@@ -3,21 +3,49 @@
 !!! note    
     Detailed steps on how to set up Pyspark + Iceberg + Nessie with Python is available on [Binder](https://mybinder.org/v2/gh/projectnessie/nessie-demos/main?filepath=notebooks/nessie-iceberg-demo-nba.ipynb)
 
-To access Nessie from a spark cluster make sure the `spark.jars` spark option is set to include
-the [Spark 2](https://repo.maven.apache.org/maven2/org/apache/iceberg/iceberg-spark/{{ versions.iceberg }}/iceberg-spark-{{ versions.iceberg }}.jar)
-or [Spark 3](https://repo.maven.apache.org/maven2/org/apache/iceberg/iceberg-spark3/{{ versions.iceberg }}/iceberg-spark3-{{ versions.iceberg }}.jar) or
-[Spark 3.2](https://repo.maven.apache.org/maven2/org/apache/iceberg/iceberg-spark-runtime-{{ versions.iceberg_spark32 }}/{{ versions.iceberg }}/iceberg-spark-runtime-{{ versions.iceberg_spark32 }}-{{ versions.iceberg }}.jar) Nessie plugin jar. This fat jar
-is distributed by the Apache Iceberg project and contains all Apache Iceberg libraries required for operation, including the built-in Nessie Catalog.
+To access Nessie on Iceberg from a spark cluster make sure the `spark.jars` spark option is set to include a jar of the iceberg spark runtime, or the `spark.jars.packages` spark option is set to include a Maven coordinate of the iceberg spark runtime.
 
-In pyspark this would look like
+| | `iceberg-spark-runtime` *(required)* | `nessie-spark-extensions` *(optional)* |
+|---|:---:|:---:|
+{%- for (sparkver, scalaver) in [
+  ('3.3', '2.12'),
+  ('3.3', '2.13'),
+  ('3.2', '2.12'),
+  ('3.2', '2.13'),
+  ('3.1', '2.12'),
+] %}
+{%- set runtime = iceberg_spark_runtime(sparkver, scalaver) %}
+{%- set extensions = nessie_spark_extensions(sparkver, scalaver) %}
+| Spark **{{sparkver}}**, Scala **{{scalaver}}**: | `{{runtime.spark_jar_package}}`<br />*([All]({{runtime.all_versions_url}}), [Latest]({{runtime.jar_url}}))* | `{{extensions.spark_jar_package}}`<br />*([All]({{extensions.all_versions_url}}), [Latest]({{extensions.jar_url}}))* |
+{%- endfor %}
 
-``` python
-SparkSession.builder
-    .config('spark.jars.packages',
-            'org.apache.iceberg:iceberg-spark-runtime-{{ versions.iceberg_spark32 }}:{{ versions.iceberg }}')
-    ... rest of spark config
-    .getOrCreate()
-```
+The `iceberg-spark-runtime` fat jars are distributed by the Apache Iceberg project and contains all Apache Iceberg libraries required for operation, including the built-in Nessie Catalog.
+
+The `nessie-spark-extensions` jars are distributed by the Nessie project and contain [SQL extensions](../sql.md) that allow you to manage your tables with nessie's git-like syntax.
+
+
+In pyspark, usage would look like...
+
+=== "Python"
+    ``` python
+    SparkSession.builder
+        .config('spark.jars.packages',
+                '{{ iceberg_spark_runtime().spark_jar_package }}')
+        ... rest of spark config
+        .getOrCreate()
+    ```
+
+
+*...or if using the nessie extensions...*
+
+=== "Python"
+    ``` python
+    SparkSession.builder
+        .config('spark.jars.packages',
+                '{{ iceberg_spark_runtime().spark_jar_package }},{{ nessie_spark_extensions().spark_jar_package }}')
+        ... rest of spark config
+        .getOrCreate()
+    ```
 
 !!! note
     The Spark config parameter `spark.jars.packages` uses Maven coordinates to pull the given
@@ -49,7 +77,7 @@ The Nessie Catalog needs the following parameters set in the Spark/Hadoop config
 
 These are set as follows in code (or through other methods as described [here](https://spark.apache.org/docs/latest/configuration.html))
 
-### Spark 3.1
+In these examples, `spark.jars.packages` is configured for Spark 3.3.x.  Consult the table above to find the version of that correspond to your Spark deployment.
 
 === "Java"
 ``` java
@@ -65,15 +93,12 @@ String ref = "main";
 String authType = "NONE";
 
     //for a local spark instance
-    conf.set("spark.jars.packages",
-            "org.apache.iceberg:iceberg-spark3-runtime-{{ versions.iceberg }}:{{ versions.iceberg }},org.projectnessie:nessie-spark-extensions:{{ versions.java }}")
-        .set("spark.sql.extensions", 
-            "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSparkSessionExtensions")
+    conf.set("spark.jars.packages", "{{ iceberg_spark_runtime().spark_jar_package }},{{ nessie_spark_extensions().spark_jar_package }}")
+        .set("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSparkSessionExtensions")
         .set("spark.sql.catalog.nessie.uri", url)
         .set("spark.sql.catalog.nessie.ref", ref)
         .set("spark.sql.catalog.nessie.authentication.type", authType)
-        .set("spark.sql.catalog.nessie.catalog-impl",
-            "org.apache.iceberg.nessie.NessieCatalog")
+        .set("spark.sql.catalog.nessie.catalog-impl", "org.apache.iceberg.nessie.NessieCatalog")
         .set("spark.sql.catalog.nessie.warehouse", fullPathToWarehouse)
         .set("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog");
     spark = SparkSession.builder()
@@ -95,80 +120,17 @@ auth_type = "NONE"
 
     # here we are assuming NONE authorisation
     spark = SparkSession.builder \
-            .config("spark.jars.packages",
-                "org.apache.iceberg:iceberg-spark3-runtime-{{ versions.iceberg_spark32 }}:{{ versions.iceberg }},org.projectnessie:nessie-spark-extensions:{{ versions.java }}") \
-            .config("spark.sql.extensions", 
-                "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSparkSessionExtensions") \
+            .config("spark.jars.packages","{{ iceberg_spark_runtime().spark_jar_package }},{{ nessie_spark_extensions().spark_jar_package }}") \
+            .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSparkSessionExtensions") \
             .config("spark.sql.catalog.nessie.uri", url) \
             .config("spark.sql.catalog.nessie.ref", ref) \
             .config("spark.sql.catalog.nessie.authentication.type", auth_type) \
-            .config("spark.sql.catalog.nessie.catalog-impl", 
-                "org.apache.iceberg.nessie.NessieCatalog") \
+            .config("spark.sql.catalog.nessie.catalog-impl", "org.apache.iceberg.nessie.NessieCatalog") \
             .config("spark.sql.catalog.nessie.warehouse", full_path_to_warehouse) \
-            .config("spark.sql.catalog.nessie",
-                "org.apache.iceberg.spark.SparkCatalog") \
+            .config("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog") \
             .getOrCreate()
 ```
 
-### Spark 3.2
-=== "Java"
-    ``` java
-    // Full url of the Nessie API endpoint to nessie
-    String url = "http://localhost:19120/api/v1";
-    // Where to store nessie tables
-    String fullPathToWarehouse = ...;
-    // The ref or context that nessie will operate on
-    // (if different from default branch).
-    // Can be the name of a Nessie branch or tag name. 
-    String ref = "main";
-    // Nessie authentication type (BASIC, NONE or AWS)
-    String authType = "NONE";
-
-    //for a local spark instance
-    conf.set("spark.jars.packages",
-            "org.apache.iceberg:iceberg-spark-runtime-{{ versions.iceberg_spark32 }}:{{ versions.iceberg }},org.projectnessie:nessie-spark-3.2-extensions:{{ versions.java }}")
-        .set("spark.sql.extensions", 
-            "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSpark32SessionExtensions")
-        .set("spark.sql.catalog.nessie.uri", url)
-        .set("spark.sql.catalog.nessie.ref", ref)
-        .set("spark.sql.catalog.nessie.authentication.type", authType)
-        .set("spark.sql.catalog.nessie.catalog-impl",
-            "org.apache.iceberg.nessie.NessieCatalog")
-        .set("spark.sql.catalog.nessie.warehouse", fullPathToWarehouse)
-        .set("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog");
-    spark = SparkSession.builder()
-                        .master("local[2]")
-                        .config(conf)
-                        .getOrCreate();
-    ```
-=== "Python"
-    ``` python
-    # Full url of the Nessie API endpoint to nessie
-    url = "http://localhost:19120/api/v1"
-    # Where to store nessie tables
-    full_path_to_warehouse = ...
-    # The ref or context that nessie will operate on (if different from default branch).
-    # Can be the name of a Nessie branch or tag name.
-    ref = "main"
-    # Nessie authentication type (BASIC, NONE or AWS)
-    auth_type = "NONE"
-
-    # here we are assuming NONE authorisation
-    spark = SparkSession.builder \
-            .config("spark.jars.packages",
-                "org.apache.iceberg:iceberg-spark-runtime-{{ versions.iceberg_spark32 }}:{{ versions.iceberg }},org.projectnessie:nessie-spark-3.2-extensions:{{ versions.java }}") \
-            .config("spark.sql.extensions", 
-                "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSparkSessionExtensions") \
-            .config("spark.sql.catalog.nessie.uri", url) \
-            .config("spark.sql.catalog.nessie.ref", ref) \
-            .config("spark.sql.catalog.nessie.authentication.type", auth_type) \
-            .config("spark.sql.catalog.nessie.catalog-impl", 
-                "org.apache.iceberg.nessie.NessieCatalog") \
-            .config("spark.sql.catalog.nessie.warehouse", full_path_to_warehouse) \
-            .config("spark.sql.catalog.nessie",
-                "org.apache.iceberg.spark.SparkCatalog") \
-            .getOrCreate()
-    ```
 
 All configuration for the Nessie catalog exists below this `spark.sql.catalog.nessie` configuration namespace. The catalog name is not important, it is important that the
 required options are all given below the catalog name.
