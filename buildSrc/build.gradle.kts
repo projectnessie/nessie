@@ -37,7 +37,6 @@ dependencies {
   implementation("org.projectnessie.buildsupport:ide-integration:$nessieVer")
   implementation("org.projectnessie.buildsupport:jacoco:$nessieVer")
   implementation("org.projectnessie.buildsupport:jandex:$nessieVer")
-  implementation("org.projectnessie.buildsupport:protobuf:$nessieVer")
   implementation("org.projectnessie.buildsupport:publishing:$nessieVer")
   implementation("org.projectnessie.buildsupport:reflection-config:$nessieVer")
   implementation("org.projectnessie.buildsupport:spotless:$nessieVer")
