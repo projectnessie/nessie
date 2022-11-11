@@ -148,6 +148,7 @@ public class TestMarkOptions {
         .isEqualTo(CutoffPolicy.numCommits(1));
   }
 
+  @SuppressWarnings("TypeParameterUnusedInFormals")
   static <T extends BaseCommand> T parseCommand(String... args) {
     ParseResult parsed = new CommandLine(new CLI(), CommandLine.defaultFactory()).parseArgs(args);
     List<CommandLine> commandLineList = parsed.asCommandLineList();
