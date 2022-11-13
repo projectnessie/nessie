@@ -83,7 +83,7 @@
   "devDependencies": {
     "@babel/core": "^7.19.1",
     "@openapitools/openapi-generator-cli": "^2.5.2",
-    "@pmmmwh/react-refresh-webpack-plugin": "0.5.8",
+    "@pmmmwh/react-refresh-webpack-plugin": "0.5.9",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.0.0",
     "@testing-library/user-event": "^14.4.3",
