@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Tests for `content CLI command`."""
-from typing import List
+from typing import List, Optional
 
 import pytest
 import simplejson
@@ -265,7 +265,10 @@ def _create_iceberg_table(
 
 
 def _create_delta_lake_table(
-    table_id: str, metadata_location_history: List[str] = None, checkpoint_location_history: List[str] = None, last_checkpoint: str = "x"
+    table_id: str,
+    metadata_location_history: Optional[List[str]] = None,
+    checkpoint_location_history: Optional[List[str]] = None,
+    last_checkpoint: str = "x",
 ) -> DeltaLakeTable:
     if checkpoint_location_history is None:
         checkpoint_location_history = ["def"]

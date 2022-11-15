@@ -68,7 +68,7 @@ class Content:
 
     def pretty_print(self) -> str:
         """Print out for cli."""
-        pass
+        raise NotImplementedError
 
 
 @attr.dataclass
@@ -209,7 +209,7 @@ class Operation:
 
     def pretty_print(self) -> str:
         """Print out for cli."""
-        pass
+        raise NotImplementedError
 
 
 @attr.dataclass
@@ -245,7 +245,10 @@ DeleteOperationSchema = desert.schema_class(Delete)
 class Unchanged(Operation):
     """Unchanged single key."""
 
-    pass
+    def pretty_print(self) -> str:
+        """Print out for cli."""
+        # pylint: disable=E1101
+        return f"Unchanged of {self.key.to_string()}"
 
 
 UnchangedOperationSchema = desert.schema_class(Unchanged)

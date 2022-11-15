@@ -14,6 +14,7 @@
 #
 """Parser for confuse Configuration object."""
 import os
+from typing import Optional
 
 import confuse
 
@@ -29,7 +30,7 @@ def _get_env_args() -> dict:
     return args
 
 
-def build_config(args: dict = None) -> confuse.Configuration:
+def build_config(args: Optional[dict] = None) -> confuse.Configuration:
     """Build configuration object from input params, env variables and yaml file."""
     config = confuse.Configuration("nessie", __name__)
     env_args = _get_env_args()

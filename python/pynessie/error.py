@@ -27,7 +27,7 @@ class NessieException(Exception):
         status: int,
         url: str,
         reason: str,
-        msg: str = None,
+        msg: Optional[str] = None,
     ) -> None:
         """Construct base Nessie Exception."""
         if "message" in parsed_response:
@@ -137,7 +137,7 @@ class NessieServerException(NessieException):
 class NessieCliError(Exception):
     """Base Nessie CLI related errors."""
 
-    def __init__(self, title: str, msg: str = None) -> None:
+    def __init__(self, title: str, msg: Optional[str] = None) -> None:
         """Construct base Nessie CLI Error."""
         super().__init__()
 

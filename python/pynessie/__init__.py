@@ -14,6 +14,7 @@
 #
 """Top-level package for Python API and CLI for Nessie."""
 import os
+from typing import Optional
 
 import confuse
 
@@ -25,14 +26,14 @@ __email__ = "nessie-release-builder@dremio.com"
 __version__ = "0.44.1"
 
 
-def get_config(config_dir: str = None, args: dict = None) -> confuse.Configuration:
+def get_config(config_dir: Optional[str] = None, args: Optional[dict] = None) -> confuse.Configuration:
     """Retrieve a confuse Configuration object."""
     if config_dir:
         os.environ["NESSIE_CLIENTDIR"] = config_dir
     return build_config(args)
 
 
-def init(config_dir: str = None, config_dict: dict = None) -> NessieClient:
+def init(config_dir: Optional[str] = None, config_dict: Optional[dict] = None) -> NessieClient:
     """Create a new Nessie client object.
 
     :param config_dir: optional directory to look for config in
