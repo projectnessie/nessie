@@ -16,6 +16,7 @@
 package org.projectnessie.gc.identify;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.projectnessie.jaxrs.ext.NessieJaxRsExtension.jaxRsExtensionForDatabaseAdapter;
 
 import java.time.Instant;
 import java.util.Set;
@@ -50,8 +51,7 @@ public class TestIdentifyLiveContents {
   @NessieDbAdapter static DatabaseAdapter databaseAdapter;
 
   @RegisterExtension
-  static org.projectnessie.jaxrs.ext.NessieJaxRsExtension server =
-      new NessieJaxRsExtension(() -> databaseAdapter);
+  static NessieJaxRsExtension server = jaxRsExtensionForDatabaseAdapter(() -> databaseAdapter);
 
   private NessieApiV1 nessieApi;
 

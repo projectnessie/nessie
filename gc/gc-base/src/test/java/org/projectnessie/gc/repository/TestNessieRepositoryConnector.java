@@ -17,6 +17,7 @@ package org.projectnessie.gc.repository;
 
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
+import static org.projectnessie.jaxrs.ext.NessieJaxRsExtension.jaxRsExtensionForDatabaseAdapter;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
@@ -67,8 +68,7 @@ public class TestNessieRepositoryConnector {
   @NessieDbAdapter static DatabaseAdapter databaseAdapter;
 
   @RegisterExtension
-  static org.projectnessie.jaxrs.ext.NessieJaxRsExtension server =
-      new NessieJaxRsExtension(() -> databaseAdapter);
+  static NessieJaxRsExtension server = jaxRsExtensionForDatabaseAdapter(() -> databaseAdapter);
 
   private NessieApiV1 nessieApi;
 

@@ -21,6 +21,7 @@ import java.net.URI;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import javax.enterprise.inject.spi.Extension;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.SecurityContext;
@@ -82,8 +83,14 @@ public class NessieJaxRsExtension extends NessieClientResolver
     throw new UnsupportedOperationException();
   }
 
+  @Deprecated
   public NessieJaxRsExtension(Supplier<DatabaseAdapter> databaseAdapterSupplier) {
     this.databaseAdapterSupplier = databaseAdapterSupplier;
+  }
+
+  public static NessieJaxRsExtension jaxRsExtensionForDatabaseAdapter(
+      Supplier<DatabaseAdapter> databaseAdapterSupplier) {
+    return new NessieJaxRsExtension(databaseAdapterSupplier);
   }
 
   private EnvHolder getEnv(ExtensionContext extensionContext) {
@@ -107,7 +114,16 @@ public class NessieJaxRsExtension extends NessieClientResolver
             EnvHolder.class,
             key -> {
               try {
-                return new EnvHolder(databaseAdapterSupplier);
+                Extension versionStoreExtension =
+                    PersistVersionStoreExtension.forDatabaseAdapter(
+                        () -> {
+                          DatabaseAdapter databaseAdapter = databaseAdapterSupplier.get();
+                          databaseAdapter.eraseRepo();
+                          databaseAdapter.initializeRepo(SERVER_CONFIG.getDefaultBranch());
+                          return databaseAdapter;
+                        });
+
+                return new EnvHolder(versionStoreExtension);
               } catch (Exception e) {
                 throw new IllegalStateException(e);
               }
@@ -195,20 +211,13 @@ public class NessieJaxRsExtension extends NessieClientResolver
       this.accessChecker = accessChecker;
     }
 
-    public EnvHolder(Supplier<DatabaseAdapter> databaseAdapterSupplier) throws Exception {
+    public EnvHolder(Extension versionStoreExtension) throws Exception {
       weld = new Weld();
       // Let Weld scan all the resources to discover injection points and dependencies
       weld.addPackages(true, TreeApiImpl.class);
       // Inject external beans
       weld.addExtension(new ServerConfigExtension());
-      weld.addExtension(
-          PersistVersionStoreExtension.forDatabaseAdapter(
-              () -> {
-                DatabaseAdapter databaseAdapter = databaseAdapterSupplier.get();
-                databaseAdapter.eraseRepo();
-                databaseAdapter.initializeRepo(SERVER_CONFIG.getDefaultBranch());
-                return databaseAdapter;
-              }));
+      weld.addExtension(versionStoreExtension);
       weld.addExtension(new AuthorizerExtension().setAccessCheckerSupplier(this::createNewChecker));
       weld.initialize();
 

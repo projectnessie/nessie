@@ -18,6 +18,7 @@ package org.projectnessie.gc.tool;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.projectnessie.jaxrs.ext.NessieJaxRsExtension.jaxRsExtensionForDatabaseAdapter;
 
 import java.io.BufferedReader;
 import java.io.StringReader;
@@ -71,7 +72,7 @@ public class TestCLI {
   @InjectSoftAssertions private SoftAssertions soft;
 
   @RegisterExtension
-  static NessieJaxRsExtension server = new NessieJaxRsExtension(() -> databaseAdapter);
+  static NessieJaxRsExtension server = jaxRsExtensionForDatabaseAdapter(() -> databaseAdapter);
 
   private static URI nessieUri;
 

@@ -15,6 +15,8 @@
  */
 package org.projectnessie.jaxrs.tests;
 
+import static org.projectnessie.jaxrs.ext.NessieJaxRsExtension.jaxRsExtensionForDatabaseAdapter;
+
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
@@ -34,7 +36,7 @@ abstract class AbstractTestDatabaseAdapterResteasy extends AbstractResteasyTest 
   @NessieDbAdapter static DatabaseAdapter databaseAdapter;
 
   @RegisterExtension
-  static NessieJaxRsExtension server = new NessieJaxRsExtension(() -> databaseAdapter);
+  static NessieJaxRsExtension server = jaxRsExtensionForDatabaseAdapter(() -> databaseAdapter);
 
   @BeforeAll
   static void setup(@NessieClientUri URI uri) {

@@ -15,9 +15,10 @@
  */
 package org.projectnessie.jaxrs.tests;
 
+import static org.projectnessie.jaxrs.ext.NessieJaxRsExtension.jaxRsExtensionForDatabaseAdapter;
+
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.tests.extension.DatabaseAdapterExtension;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
@@ -30,5 +31,5 @@ abstract class AbstractTestDatabaseAdapterRest extends AbstractRestSecurityConte
 
   @RegisterExtension
   static org.projectnessie.jaxrs.ext.NessieJaxRsExtension server =
-      new NessieJaxRsExtension(() -> databaseAdapter);
+      jaxRsExtensionForDatabaseAdapter(() -> databaseAdapter);
 }
