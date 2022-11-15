@@ -537,7 +537,8 @@ public abstract class AbstractManyKeys {
         .mapToObj(
             i ->
                 IntStream.range(1, i)
-                    .mapToObj(j -> Long.toString(Math.abs(random.nextLong()), Character.MAX_RADIX))
+                    .mapToObj(
+                        j -> Long.toString(random.nextLong() & Long.MAX_VALUE, Character.MAX_RADIX))
                     .collect(Collectors.toList()));
   }
 

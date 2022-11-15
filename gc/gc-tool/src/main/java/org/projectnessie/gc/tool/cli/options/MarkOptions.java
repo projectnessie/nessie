@@ -36,6 +36,7 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.ParameterException;
 
 public class MarkOptions {
+  @SuppressWarnings("JavaTimeDefaultTimeZone")
   public static final ZonedDateTime NOW = ZonedDateTime.now();
 
   @CommandLine.Mixin NessieOptions nessie;
