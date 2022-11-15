@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.jaxrs;
+package org.projectnessie.jaxrs.tests;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;

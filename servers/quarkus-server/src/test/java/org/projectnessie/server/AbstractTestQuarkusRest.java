@@ -16,7 +16,7 @@
 package org.projectnessie.server;
 
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.projectnessie.jaxrs.AbstractTestRest;
+import org.projectnessie.jaxrs.tests.AbstractTestRest;
 
 /**
  * Tests need to subclass this class and use @QuarkusIntegrationTest or @QuarkusTest, so that the
