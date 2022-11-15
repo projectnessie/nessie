@@ -83,7 +83,8 @@ public class NessieJaxRsExtension extends NessieClientResolver
     throw new UnsupportedOperationException();
   }
 
-  private NessieJaxRsExtension(Supplier<DatabaseAdapter> databaseAdapterSupplier) {
+  @Deprecated
+  public NessieJaxRsExtension(Supplier<DatabaseAdapter> databaseAdapterSupplier) {
     this.databaseAdapterSupplier = databaseAdapterSupplier;
   }
 
