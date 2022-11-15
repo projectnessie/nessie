@@ -49,6 +49,7 @@ dependencies {
   implementation(libs.protobuf.java)
 
   implementation(libs.findbugs.jsr305)
+  compileOnly(libs.errorprone.annotations)
   compileOnly(libs.microprofile.openapi)
 
   implementation(platform(libs.jackson.bom))

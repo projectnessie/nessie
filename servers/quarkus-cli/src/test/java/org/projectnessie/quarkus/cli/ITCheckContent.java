@@ -19,28 +19,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
 import io.quarkus.test.junit.TestProfile;
-import io.quarkus.test.junit.main.LaunchResult;
 import io.quarkus.test.junit.main.QuarkusMainLauncher;
 import io.quarkus.test.junit.main.QuarkusMainTest;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.versioned.BranchName;
-import org.projectnessie.versioned.CommitMetaSerializer;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceInfo;
@@ -48,46 +38,20 @@ import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
-import org.projectnessie.versioned.store.DefaultStoreWorker;
 import org.projectnessie.versioned.testworker.OnRefOnly;
 
 @QuarkusMainTest
 @TestProfile(QuarkusCliTestProfileMongo.class)
 @ExtendWith(NessieCliTestExtension.class)
-class ITCheckContent {
+class ITCheckContent extends BaseContentTest<CheckContentEntry> {
 
-  private static final ObjectMapper MAPPER = new ObjectMapper();
   private static final IcebergTable table1 = IcebergTable.of("meta_111", 1, 2, 3, 4, "111");
   private static final IcebergTable table2 = IcebergTable.of("meta_222", 2, 3, 4, 5, "222");
   private static final IcebergTable table3 = IcebergTable.of("meta_333", 3, 4, 5, 6, "333");
   private static final IcebergTable table4 = IcebergTable.of("meta_444", 4, 5, 6, 7, "444");
 
-  @TempDir File tempDir;
-
-  private LaunchResult result;
-  private List<CheckContentEntry> entries;
-
-  private void launchNoFile(QuarkusMainLauncher launcher, String... args) {
-    launch(launcher, null, args);
-  }
-
-  private void launch(QuarkusMainLauncher launcher, String... args) throws Exception {
-    File output = new File(tempDir, "check-content.json");
-    launch(launcher, output, args);
-    JavaType type =
-        MAPPER.getTypeFactory().constructCollectionType(List.class, CheckContentEntry.class);
-    entries = MAPPER.readValue(output, type);
-  }
-
-  private void launch(QuarkusMainLauncher launcher, File outputFile, String... args) {
-    List<String> cmdArgs = new ArrayList<>(Arrays.asList(args));
-
-    if (outputFile != null) {
-      cmdArgs.add("--output");
-      cmdArgs.add(outputFile.getAbsolutePath());
-    }
-
-    result = launcher.launch(cmdArgs.toArray(new String[0]));
+  ITCheckContent() {
+    super(CheckContentEntry.class);
   }
 
   @Test
@@ -142,29 +106,6 @@ class ITCheckContent {
                   .contains("Protocol message contained an invalid tag");
             });
     assertThat(result.exitCode()).isEqualTo(2);
-  }
-
-  private void commit(IcebergTable table, DatabaseAdapter adapter) throws Exception {
-    commit(table, adapter, DefaultStoreWorker.instance().toStoreOnReferenceState(table, att -> {}));
-  }
-
-  private void commit(IcebergTable table, DatabaseAdapter adapter, ByteString serializes)
-      throws Exception {
-    commit(table.getId(), payloadForContent(table), serializes, adapter);
-  }
-
-  private void commit(String testId, byte payload, ByteString value, DatabaseAdapter adapter)
-      throws Exception {
-    Key key = Key.of("test_namespace", "table_" + testId);
-    ContentId id = ContentId.of(testId);
-
-    adapter.commit(
-        ImmutableCommitParams.builder()
-            .toBranch(BranchName.of("main"))
-            .commitMetaSerialized(
-                CommitMetaSerializer.METADATA_SERIALIZER.toBytes(CommitMeta.fromMessage(testId)))
-            .addPuts(KeyWithBytes.of(key, id, payload, value))
-            .build());
   }
 
   @ParameterizedTest
