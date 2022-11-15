@@ -40,6 +40,7 @@ def test_client_interface_e2e() -> None:
     assert next(i for i in references if i.name == "test") == Branch("test", main_commit)
     reference = client.get_reference("test")
     assert created_reference == reference
+    assert isinstance(reference.hash_, str)
     tables = client.list_keys(reference.name, reference.hash_)
     assert isinstance(tables, Entries)
     assert len(tables.entries) == 0

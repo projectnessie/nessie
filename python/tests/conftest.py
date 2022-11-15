@@ -83,7 +83,7 @@ def ref_hash(ref: str) -> str:
 
 
 def make_commit(
-    key: str, table: Content, branch: str, head_hash: str = None, message: str = "test message", author: str = "nessie test"
+    key: str, table: Content, branch: str, head_hash: Optional[str] = None, message: str = "test message", author: str = "nessie test"
 ) -> None:
     """Make commit through Nessie CLI."""
     if not head_hash:

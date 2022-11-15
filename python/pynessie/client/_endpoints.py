@@ -44,7 +44,7 @@ def _get_headers(has_body: bool = False) -> dict:
 
 
 def _get(
-    url: str, auth: Optional[AuthBase], ssl_verify: bool = True, params: dict = None, timeout_sec: Optional[int] = None
+    url: str, auth: Optional[AuthBase], ssl_verify: bool = True, params: Optional[dict] = None, timeout_sec: Optional[int] = None
 ) -> Union[str, dict, list]:
     timeout_sec = _sanitize_timeout(timeout_sec)
     r = requests.get(url, headers=_get_headers(), verify=ssl_verify, params=params, auth=auth, timeout=timeout_sec)
@@ -54,9 +54,9 @@ def _get(
 def _post(
     url: str,
     auth: Optional[AuthBase],
-    json: Union[str, dict] = None,
+    json: Union[str, dict, None] = None,
     ssl_verify: bool = True,
-    params: dict = None,
+    params: Optional[dict] = None,
     timeout_sec: Optional[int] = None,
 ) -> Union[str, dict, list]:
     timeout_sec = _sanitize_timeout(timeout_sec)
@@ -69,7 +69,7 @@ def _post(
 
 
 def _delete(
-    url: str, auth: Optional[AuthBase], ssl_verify: bool = True, params: dict = None, timeout_sec: Optional[int] = None
+    url: str, auth: Optional[AuthBase], ssl_verify: bool = True, params: Optional[dict] = None, timeout_sec: Optional[int] = None
 ) -> Union[str, dict, list]:
     timeout_sec = _sanitize_timeout(timeout_sec)
     r = requests.delete(url, headers=_get_headers(), verify=ssl_verify, params=params, auth=auth, timeout=timeout_sec)
@@ -79,9 +79,9 @@ def _delete(
 def _put(
     url: str,
     auth: Optional[AuthBase],
-    json: Union[str, dict] = None,
+    json: Union[str, dict, None] = None,
     ssl_verify: bool = True,
-    params: dict = None,
+    params: Optional[dict] = None,
     timeout_sec: Optional[int] = None,
 ) -> Any:
     timeout_sec = _sanitize_timeout(timeout_sec)
@@ -141,7 +141,9 @@ def get_reference(base_url: str, auth: Optional[AuthBase], ref: str, ssl_verify:
     return cast(dict, _get(base_url + "/trees/tree/{}".format(ref), auth, ssl_verify=ssl_verify))
 
 
-def create_reference(base_url: str, auth: Optional[AuthBase], ref_json: dict, source_ref: str = None, ssl_verify: bool = True) -> dict:
+def create_reference(
+    base_url: str, auth: Optional[AuthBase], ref_json: dict, source_ref: Optional[str] = None, ssl_verify: bool = True
+) -> dict:
     """Create a reference.
 
     :param base_url: base Nessie url
