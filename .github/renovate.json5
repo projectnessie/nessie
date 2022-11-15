@@ -10,7 +10,7 @@
 
   pip_requirements: {
     // fileMatch default: (^|/)([\\w-]*)requirements\\.(txt|pip)$
-    "fileMatch": ["(^|/)([\\w-]*)requirements.*\\.txt)$"],
+    "fileMatch": ["(^|/)([\\w-]*)requirements.*\\.txt$"],
   },
 
   packageRules: [
