@@ -5,21 +5,26 @@
     // https://docs.renovatebot.com/presets-npm/
     "npm:unpublishSafe",
     // Required to not pin dependencies to _exact_ versions (npm + pip)
-    ":preserveSemverRanges"
+    ":preserveSemverRanges",
   ],
+
+  pip_requirements: {
+    // fileMatch default: (^|/)([\\w-]*)requirements\\.(txt|pip)$
+    "fileMatch": ["(^|/)([\\w-]*)requirements.*\\.txt)$"],
+  },
 
   packageRules: [
     {
       matchManagers: ["maven", "gradle", "gradle-wrapper"],
-      "labels": ["dependencies", "java"]
+      "labels": ["dependencies", "java"],
     },
     {
       matchManagers: ["npm"],
-      "labels": ["dependencies", "javascript"]
+      "labels": ["dependencies", "javascript"],
     },
     {
       matchManagers: ["pip_requirements", "pip_setup"],
-      "labels": ["dependencies", "python"]
+      "labels": ["dependencies", "python"],
     },
 
     // Check for updates, merge automatically
@@ -27,20 +32,20 @@
       matchManagers: ["maven", "gradle", "gradle-wrapper", "npm", "pip_requirements", "pip_setup"],
       matchUpdateTypes: ["minor", "patch"],
       automerge: true,
-      platformAutomerge: true
+      platformAutomerge: true,
     },
 
     // Schedule npm + pip on weekends
     {
-      matchManagers: ["npm", "pip_requirements", "pip_setup"],
-      extends: ["schedule:weekends"]
+      matchManagers: ["npm"],
+      extends: ["schedule:weekends"],
     },
 
     // Check for major updates, but do not merge automatically
     {
       matchManagers: ["maven", "gradle", "gradle-wrapper", "npm", "pip_requirements", "pip_setup"],
       matchUpdateTypes: ["major"],
-      automerge: false
+      automerge: false,
     },
 
     // Exclude a couple packages that are known to break Nessie and/or downstream users
@@ -50,13 +55,13 @@
         "io.delta:delta-core_2.12",
         "jakarta.validation:jakarta.validation-api",
         "jakarta.enterprise:jakarta.enterprise.cdi-api",
-        "org.glassfish.jersey:jersey-bom"
+        "org.glassfish.jersey:jersey-bom",
       ],
-      "matchUpdateTypes": ["minor", "patch", "pin", "digest"]
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
     }
   ],
 
   // Max 50 PRs in total, 10 per hour
   prConcurrentLimit: 50,
-  prHourlyLimit: 2
+  prHourlyLimit: 2,
 }
