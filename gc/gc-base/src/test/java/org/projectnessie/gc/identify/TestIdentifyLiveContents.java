@@ -32,6 +32,7 @@ import org.projectnessie.gc.contents.LiveContentSetsRepository;
 import org.projectnessie.gc.contents.inmem.InMemoryPersistenceSpi;
 import org.projectnessie.gc.repository.NessieRepositoryConnector;
 import org.projectnessie.gc.repository.RepositoryConnector;
+import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
@@ -50,8 +51,7 @@ public class TestIdentifyLiveContents {
   @NessieDbAdapter static DatabaseAdapter databaseAdapter;
 
   @RegisterExtension
-  static org.projectnessie.jaxrs.ext.NessieJaxRsExtension server =
-      jaxRsExtensionForDatabaseAdapter(() -> databaseAdapter);
+  static NessieJaxRsExtension server = jaxRsExtensionForDatabaseAdapter(() -> databaseAdapter);
 
   private NessieApiV1 nessieApi;
 

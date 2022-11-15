@@ -40,6 +40,7 @@ import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.ext.NessieClientFactory;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
@@ -67,8 +68,7 @@ public class TestNessieRepositoryConnector {
   @NessieDbAdapter static DatabaseAdapter databaseAdapter;
 
   @RegisterExtension
-  static org.projectnessie.jaxrs.ext.NessieJaxRsExtension server =
-      jaxRsExtensionForDatabaseAdapter(() -> databaseAdapter);
+  static NessieJaxRsExtension server = jaxRsExtensionForDatabaseAdapter(() -> databaseAdapter);
 
   private NessieApiV1 nessieApi;
 
