@@ -8,6 +8,10 @@ inputs:
     required: false
     default: 'false'
     description: 'Whether to apply the new version to helm charts'
+  bump-site-version:
+    required: false
+    default: 'false'
+    description: 'Whether to apply the new version to site docs'
 runs:
   using: "composite"
   steps:
@@ -27,6 +31,7 @@ runs:
         fi
 
     - name: Bump versions in site/ to ${{ inputs.new-version }}
+      if: ${{ inputs.bump-site-version == 'true' }}
       shell: bash
       env:
         NEW_VERSION: ${{ inputs.new-version }}
