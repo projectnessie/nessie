@@ -166,7 +166,9 @@ public class ContentInfo extends BaseCommand {
             });
       }
 
-      check(head, batch, generator); // check remaining keys
+      if (!batch.isEmpty()) {
+        check(head, batch, generator); // check remaining keys
+      }
     }
   }
 
