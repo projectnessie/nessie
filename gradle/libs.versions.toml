@@ -37,7 +37,7 @@ rocksdb = "7.7.3"
 shadowPlugin = "7.1.2"
 slf4j = "1.7.36"
 spotlessPlugin = "6.11.0"
-testcontainers = "1.17.5"
+testcontainers = "1.17.6"
 undertow = "2.2.19.Final"
 
 [bundles]
