@@ -29,4 +29,4 @@ pytest-recording==0.12.1
 tox==3.27.1
 twine==4.0.1
 watchdog==2.1.9
-wheel==0.37.1
+wheel==0.38.4
