@@ -24,7 +24,7 @@ flake8==5.0.4
 pip==22.3.1
 pytest==7.2.0
 pytest-cov==3.0.0
-pytest-mock==3.8.2
+pytest-mock==3.10.0
 pytest-recording==0.12.1
 tox==3.26.0
 twine==4.0.1
