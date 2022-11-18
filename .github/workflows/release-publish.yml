@@ -272,7 +272,7 @@ jobs:
           "${NESSIE_HELM_CHART}"
 
     - name: Update SwaggerHub
-      uses: smartbear/swaggerhub-cli@v0.6.3
+      uses: smartbear/swaggerhub-cli@v0.6.4
       env:
         XDG_CONFIG_HOME: "/tmp"
         SWAGGERHUB_API_KEY: ${{ secrets.SWAGGERHUB_API_KEY }}
