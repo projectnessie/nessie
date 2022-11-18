@@ -125,7 +125,7 @@ val quarkusBuild =
     inputs.property("quarkus.package.type", project.extra["quarkus.package.type"])
     inputs.property("final.name", quarkus.finalName())
     inputs.property("container-build", useDocker)
-    val quarkusBuilderImage = libs.versions.quarkusUbiNativeImage.get()
+    val quarkusBuilderImage = libs.versions.quarkusBuilderImage.get()
     inputs.property("builder-image", quarkusBuilderImage)
     if (useDocker) {
       // Use the "docker" profile to just build the Docker container image when the native image's
