@@ -37,7 +37,7 @@
 
     // Schedule npm + pip on weekends
     {
-      matchManagers: ["npm"],
+      matchManagers: ["npm", "pip_requirements", "pip_setup"],
       extends: ["schedule:weekends"],
     },
 
