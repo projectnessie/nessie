@@ -167,9 +167,10 @@ addressing jvm objects directly in Python (until the python library for iceberg 
     // first instantiate the catalog
     NessieCatalog catalog = new NessieCatalog();
     catalog.setConf(sc.hadoopConfiguration());
+    // other catalog properties can be added based on the requirement. For example, "io-impl","authentication.type", etc.
     catalog.initialize("nessie", ImmutableMap.of(
         "ref", ref,
-        "url", url,
+        "uri", url,
         "warehouse", pathToWarehouse));
 
     // Creating table by first creating a table name with namespace
@@ -204,8 +205,9 @@ addressing jvm objects directly in Python (until the python library for iceberg 
     # first instantiate the catalog
     catalog = jvm.NessieCatalog()
     catalog.setConf(sc._jsc.hadoopConfiguration())
+    # other catalog properties can be added based on the requirement. For example, "io-impl","authentication.type", etc.
     catalog.initialize("nessie", {"ref": ref,
-        "url": url,
+        "uri": url,
         "warehouse": pathToWarehouse})
 
     # Creating table by first creating a table name with namespace
