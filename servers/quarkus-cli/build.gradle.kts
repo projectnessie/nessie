@@ -94,7 +94,7 @@ quarkus { setFinalName("${project.name}-${project.version}") }
 tasks.withType<QuarkusBuild>().configureEach {
   inputs.property("quarkus.package.type", project.extra["quarkus.package.type"])
   inputs.property("final.name", quarkus.finalName())
-  val quarkusBuilderImage = libs.versions.quarkusUbiNativeImage.get()
+  val quarkusBuilderImage = libs.versions.quarkusBuilderImage.get()
   inputs.property("builder-image", quarkusBuilderImage)
   nativeArgs { "builder-image" to quarkusBuilderImage }
   doFirst {
