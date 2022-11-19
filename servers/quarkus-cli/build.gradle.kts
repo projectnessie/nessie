@@ -103,6 +103,14 @@ tasks.withType<QuarkusBuild>().configureEach {
   }
 }
 
+tasks.named<Test>("intTest") {
+  // Quarkus accumulates stuff in QuarkusClassLoader.transformedClasses throughout CLI
+  // re-invocations during testing. Therefore, we restart the test JVM after running 2 test
+  // classes. The number is rather arbitrary since the real factor seems to be the number
+  // of CLI launches performed in the same JVM.
+  setForkEvery(2)
+}
+
 if (withUberJar()) {
   afterEvaluate {
     publishing {
