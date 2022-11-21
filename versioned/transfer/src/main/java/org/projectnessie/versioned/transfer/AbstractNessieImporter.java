@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.transfer;
 
+import static com.google.common.base.Preconditions.checkState;
 import static org.projectnessie.versioned.transfer.ExportImportConstants.DEFAULT_ATTACHMENT_BATCH_SIZE;
 import static org.projectnessie.versioned.transfer.ExportImportConstants.DEFAULT_BUFFER_SIZE;
 import static org.projectnessie.versioned.transfer.ExportImportConstants.DEFAULT_COMMIT_BATCH_SIZE;
@@ -49,6 +50,7 @@ import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.store.DefaultStoreWorker;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Commit;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
+import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportVersion;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.HeadsAndForks;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.NamedReference;
 
@@ -129,6 +131,12 @@ public abstract class AbstractNessieImporter {
       exportMeta = ExportMeta.parseFrom(input);
     }
     progressListener().progress(ProgressEvent.END_META, exportMeta);
+
+    checkState(
+        exportMeta.getVersion() == ExportVersion.V1,
+        "This Nessie-version version does not support importing a %s (%s) export",
+        exportMeta.getVersion().name(),
+        exportMeta.getVersionValue());
 
     HeadsAndForkPoints headsAndForkPoints;
     try (InputStream input = newFileInput(HEADS_AND_FORKS)) {
