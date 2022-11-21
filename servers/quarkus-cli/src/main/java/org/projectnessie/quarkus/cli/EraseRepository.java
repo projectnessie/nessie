@@ -15,7 +15,7 @@
  */
 package org.projectnessie.quarkus.cli;
 
-import javax.inject.Inject;
+import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import picocli.CommandLine;
 
@@ -38,13 +38,11 @@ public class EraseRepository extends BaseCommand {
           "Confirmation code for erasing the repository (will be emitted by this command if not set).")
   private String confirmationCode;
 
-  @Inject DatabaseAdapterConfig adapterConfig;
-
   @Override
   public Integer call() {
     warnOnInMemory();
 
-    String code = getConfirmationCode();
+    String code = getConfirmationCode(databaseAdapter);
     if (!code.equals(confirmationCode)) {
       spec.commandLine()
           .getErr()
@@ -64,13 +62,15 @@ public class EraseRepository extends BaseCommand {
     return 0;
   }
 
-  private String getConfirmationCode() {
+  static String getConfirmationCode(DatabaseAdapter databaseAdapter) {
+    DatabaseAdapterConfig adapterConfig = databaseAdapter.getConfig();
+
     // Derive some stable number from configuration
-    int code = adapterConfig.getRepositoryId().hashCode();
+    long code = adapterConfig.getRepositoryId().hashCode();
     code += 1; // avoid zero for an empty repo ID
-    code *= adapterConfig.getParentsPerCommit();
-    code *= adapterConfig.getKeyListDistance();
-    code *= adapterConfig.getMaxKeyListSize();
+    code = 31L * code + adapterConfig.getParentsPerCommit();
+    code = 31L * code + adapterConfig.getKeyListDistance();
+    code = 31L * code + adapterConfig.getMaxKeyListSize();
     // Format the code using MAX_RADIX to reduce the resultant string length
     return Long.toString(code, Character.MAX_RADIX);
   }
