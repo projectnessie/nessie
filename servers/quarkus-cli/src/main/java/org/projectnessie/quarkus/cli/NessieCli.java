@@ -31,6 +31,7 @@ import picocli.CommandLine.HelpCommand;
       RepoMaintenance.class,
       HelpCommand.class,
       CheckContent.class,
+      ContentInfo.class,
       EraseRepository.class,
       ExportRepository.class,
       ImportRepository.class
