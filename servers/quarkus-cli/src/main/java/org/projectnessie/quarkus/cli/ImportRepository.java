@@ -93,7 +93,7 @@ public class ImportRepository extends BaseCommand {
   private boolean erase;
 
   @Override
-  public Integer call() throws Exception {
+  protected Integer callWithDatabaseAdapter() throws Exception {
     warnOnInMemory();
 
     @SuppressWarnings("rawtypes")

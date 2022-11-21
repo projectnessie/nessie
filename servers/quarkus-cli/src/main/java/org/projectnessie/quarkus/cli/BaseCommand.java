@@ -16,6 +16,7 @@
 package org.projectnessie.quarkus.cli;
 
 import java.util.concurrent.Callable;
+import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
@@ -25,11 +26,32 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
 
 public abstract class BaseCommand implements Callable<Integer> {
-  @Inject DatabaseAdapter databaseAdapter;
+  DatabaseAdapter databaseAdapter;
   @Inject VersionStoreConfig versionStoreConfig;
   @Inject ServerConfig serverConfig;
 
+  @Inject Instance<DatabaseAdapter> databaseAdapterInstance;
+
   @Spec CommandSpec spec;
+
+  @Override
+  public final Integer call() throws Exception {
+    databaseAdapter = databaseAdapterInstance.get();
+    return callWithDatabaseAdapter();
+  }
+
+  protected Integer callWithDatabaseAdapter() throws Exception {
+    spec.commandLine()
+        .getErr()
+        .println(
+            spec.commandLine()
+                .getColorScheme()
+                .errorText(
+                    "Command '"
+                        + spec.name()
+                        + "' is not (yet) supported for old Nessie storage."));
+    return 1;
+  }
 
   protected void warnOnInMemory() {
     if (versionStoreConfig.getVersionStoreType() == VersionStoreType.INMEMORY) {

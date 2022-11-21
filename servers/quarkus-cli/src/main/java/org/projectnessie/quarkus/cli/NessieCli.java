@@ -39,7 +39,11 @@ import picocli.CommandLine.HelpCommand;
 public class NessieCli extends BaseCommand {
 
   @Override
-  public Integer call() {
+  protected Integer callWithDatabaseAdapter() {
+    return info();
+  }
+
+  private int info() {
     warnOnInMemory();
 
     PrintWriter out = spec.commandLine().getOut();

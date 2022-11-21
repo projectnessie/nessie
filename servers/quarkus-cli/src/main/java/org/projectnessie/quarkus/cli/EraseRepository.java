@@ -41,7 +41,7 @@ public class EraseRepository extends BaseCommand {
   @Inject DatabaseAdapterConfig adapterConfig;
 
   @Override
-  public Integer call() {
+  protected Integer callWithDatabaseAdapter() {
     warnOnInMemory();
 
     String code = getConfirmationCode();
@@ -56,9 +56,11 @@ public class EraseRepository extends BaseCommand {
     }
 
     databaseAdapter.eraseRepo();
+    spec.commandLine().getOut().println("Repository erased.");
 
     if (newDefaultBranch != null) {
       databaseAdapter.initializeRepo(newDefaultBranch);
+      spec.commandLine().getOut().println("Repository initialized.");
     }
 
     return 0;
