@@ -18,6 +18,8 @@ package org.projectnessie.quarkus.providers;
 import io.quarkus.runtime.Startup;
 import java.io.IOError;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Any;
+import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -42,7 +44,7 @@ public class ConfigurableVersionStoreFactory {
       LoggerFactory.getLogger(ConfigurableVersionStoreFactory.class);
 
   private final VersionStoreConfig storeConfig;
-  private final DatabaseAdapter databaseAdapter;
+  private final Instance<DatabaseAdapter> databaseAdapter;
 
   /**
    * Configurable version store factory.
@@ -51,7 +53,7 @@ public class ConfigurableVersionStoreFactory {
    */
   @Inject
   public ConfigurableVersionStoreFactory(
-      VersionStoreConfig storeConfig, DatabaseAdapter databaseAdapter) {
+      VersionStoreConfig storeConfig, @Any Instance<DatabaseAdapter> databaseAdapter) {
     this.storeConfig = storeConfig;
     this.databaseAdapter = databaseAdapter;
   }
@@ -64,7 +66,7 @@ public class ConfigurableVersionStoreFactory {
     VersionStoreType versionStoreType = storeConfig.getVersionStoreType();
 
     try {
-      VersionStore versionStore = new PersistVersionStore(databaseAdapter);
+      VersionStore versionStore = databaseAdapterVersionStore();
 
       if (storeConfig.isTracingEnabled()) {
         versionStore = new TracingVersionStore(versionStore);
@@ -76,6 +78,18 @@ public class ConfigurableVersionStoreFactory {
       return versionStore;
     } catch (RuntimeException | IOError e) {
       LOGGER.error("Failed to configure/start {} version store", versionStoreType, e);
+      throw e;
+    }
+  }
+
+  private VersionStore databaseAdapterVersionStore() {
+    try {
+      DatabaseAdapter da = databaseAdapter.select().get();
+
+      return new PersistVersionStore(da);
+    } catch (RuntimeException | IOError e) {
+      LOGGER.error(
+          "Failed to configure/start {} version store", storeConfig.getVersionStoreType(), e);
       throw e;
     }
   }
