@@ -41,6 +41,6 @@ class TestNessieCli {
 
     assertThat(result.getErrorOutput())
         .contains(
-            "Repository information & maintenance for the INMEMORY implementation is meaningless");
+            "Repository information & maintenance for an in-memory implementation is meaningless");
   }
 }
