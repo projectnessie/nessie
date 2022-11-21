@@ -86,7 +86,7 @@ public class ExportRepository extends BaseCommand {
   private Integer outputBufferSize;
 
   @Override
-  public Integer call() throws Exception {
+  protected Integer callWithDatabaseAdapter() throws Exception {
     warnOnInMemory();
 
     @SuppressWarnings("rawtypes")

@@ -30,7 +30,7 @@ import picocli.CommandLine.Command;
 public class NessieInfo extends BaseCommand {
 
   @Override
-  public Integer call() throws Exception {
+  protected Integer callWithDatabaseAdapter() throws Exception {
     warnOnInMemory();
 
     ReferenceInfo<ByteString> refInfo =

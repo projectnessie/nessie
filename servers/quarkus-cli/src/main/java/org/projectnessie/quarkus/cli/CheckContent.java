@@ -95,7 +95,7 @@ public class CheckContent extends BaseCommand {
   private final AtomicInteger errorDetected = new AtomicInteger();
 
   @Override
-  public Integer call() throws Exception {
+  protected Integer callWithDatabaseAdapter() throws Exception {
     warnOnInMemory();
 
     if (outputSpec != null) {

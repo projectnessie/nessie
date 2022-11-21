@@ -30,7 +30,7 @@ import picocli.CommandLine.Command;
 public class RepoMaintenance extends BaseCommand {
 
   @Override
-  public Integer call() {
+  protected Integer callWithDatabaseAdapter() {
     warnOnInMemory();
 
     PrintWriter out = spec.commandLine().getOut();
