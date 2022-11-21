@@ -25,21 +25,22 @@ import org.immutables.value.Value;
 
 /** Nessie exporter that writes to individual files into an empty target directory. */
 @Value.Immutable
-public abstract class FileExporter extends AbstractNessieExporter {
+public abstract class FileExporter implements ExportFileSupplier {
 
   public static Builder builder() {
     return ImmutableFileExporter.builder();
   }
 
-  public interface Builder
-      extends AbstractNessieExporter.Builder<FileExporter.Builder, FileExporter> {
+  public interface Builder {
     Builder targetDirectory(Path targetDirectory);
+
+    FileExporter build();
   }
 
   abstract Path targetDirectory();
 
   @Override
-  protected void preValidate() throws IOException {
+  public void preValidate() throws IOException {
     if (Files.isDirectory(targetDirectory())) {
       try (Stream<Path> listing = Files.list(targetDirectory())) {
         Preconditions.checkState(
@@ -53,7 +54,10 @@ public abstract class FileExporter extends AbstractNessieExporter {
   }
 
   @Override
-  protected OutputStream newFileOutput(String fileName) throws IOException {
+  public OutputStream newFileOutput(String fileName) throws IOException {
     return Files.newOutputStream(targetDirectory().resolve(fileName));
   }
+
+  @Override
+  public void close() {}
 }

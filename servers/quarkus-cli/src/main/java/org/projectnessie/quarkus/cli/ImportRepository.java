@@ -29,11 +29,12 @@ import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
-import org.projectnessie.versioned.transfer.AbstractNessieImporter;
 import org.projectnessie.versioned.transfer.CommitLogOptimization;
 import org.projectnessie.versioned.transfer.ExportImportConstants;
 import org.projectnessie.versioned.transfer.FileImporter;
+import org.projectnessie.versioned.transfer.ImportFileSupplier;
 import org.projectnessie.versioned.transfer.ImportResult;
+import org.projectnessie.versioned.transfer.NessieImporter;
 import org.projectnessie.versioned.transfer.ProgressEvent;
 import org.projectnessie.versioned.transfer.ProgressListener;
 import org.projectnessie.versioned.transfer.ZipArchiveImporter;
@@ -96,80 +97,92 @@ public class ImportRepository extends BaseCommand {
   public Integer call() throws Exception {
     warnOnInMemory();
 
-    @SuppressWarnings("rawtypes")
-    AbstractNessieImporter.Builder builder;
+    try (ImportFileSupplier importFileSupplier = createImportFileSupplier()) {
+
+      NessieImporter.Builder builder =
+          NessieImporter.builder()
+              .importFileSupplier(importFileSupplier)
+              .databaseAdapter(databaseAdapter);
+      if (commitBatchSize != null) {
+        builder.commitBatchSize(commitBatchSize);
+      }
+
+      PrintWriter out = spec.commandLine().getOut();
+
+      if (!erase) {
+        try (Stream<ReferenceInfo<ByteString>> refs =
+                databaseAdapter.namedRefs(GetNamedRefsParams.DEFAULT);
+            Stream<CommitLogEntry> commits = databaseAdapter.scanAllCommitLogEntries()) {
+          AtomicReference<ReferenceInfo<ByteString>> ref = new AtomicReference<>();
+          long refCount = refs.peek(ref::set).count();
+          boolean hasCommit = commits.findAny().isPresent();
+
+          if (hasCommit
+              || refCount > 1
+              || (refCount == 1 && !ref.get().getHash().equals(databaseAdapter.noAncestorHash()))) {
+            spec.commandLine()
+                .getErr()
+                .println(
+                    "The Nessie repository already exists and is not empty, aborting. "
+                        + "Provide the "
+                        + ERASE_BEFORE_IMPORT
+                        + " option if you want to erase the repository.");
+            return 100;
+          }
+        }
+      }
+
+      // Perform erase + initialize to reset any non-obvious contents (global log, global
+      // state, ref-log, repository description, etc).
+      out.println("Erasing potentially existing repository...");
+      databaseAdapter.eraseRepo();
+      databaseAdapter.initializeRepo("main");
+      try {
+        databaseAdapter.delete(BranchName.of("main"), Optional.empty());
+      } catch (ReferenceNotFoundException | ReferenceConflictException e) {
+        throw new RuntimeException(e);
+      }
+
+      ImportResult importResult =
+          builder
+              .progressListener(new ImportProgressListener(out))
+              .build()
+              .importNessieRepository();
+
+      out.printf(
+          "Imported Nessie repository, %d commits, %d named references.%n",
+          importResult.importedCommitCount(), importResult.importedReferenceCount());
+
+      if (!noOptimize) {
+        out.println("Optimizing...");
+
+        CommitLogOptimization.builder()
+            .headsAndForks(importResult.headsAndForkPoints())
+            .databaseAdapter(databaseAdapter)
+            .build()
+            .optimize();
+
+        out.println("Finished commit log optimization.");
+      }
+
+      return 0;
+    }
+  }
+
+  private ImportFileSupplier createImportFileSupplier() {
+    ImportFileSupplier importFileSupplier;
     if (Files.isRegularFile(path)) {
-      builder = ZipArchiveImporter.builder().sourceZipFile(path);
+      importFileSupplier = ZipArchiveImporter.builder().sourceZipFile(path).build();
     } else if (Files.isDirectory(path)) {
-      builder = FileImporter.builder().sourceDirectory(path);
+      FileImporter.Builder b = FileImporter.builder().sourceDirectory(path);
+      if (inputBufferSize != null) {
+        b.inputBufferSize(inputBufferSize);
+      }
+      importFileSupplier = b.build();
     } else {
       throw new PicocliException(String.format("No such file or directory %s", path));
     }
-
-    builder.databaseAdapter(databaseAdapter);
-    if (commitBatchSize != null) {
-      builder.commitBatchSize(commitBatchSize);
-    }
-    if (inputBufferSize != null) {
-      builder.inputBufferSize(inputBufferSize);
-    }
-
-    PrintWriter out = spec.commandLine().getOut();
-
-    if (!erase) {
-      try (Stream<ReferenceInfo<ByteString>> refs =
-              databaseAdapter.namedRefs(GetNamedRefsParams.DEFAULT);
-          Stream<CommitLogEntry> commits = databaseAdapter.scanAllCommitLogEntries()) {
-        AtomicReference<ReferenceInfo<ByteString>> ref = new AtomicReference<>();
-        long refCount = refs.peek(ref::set).count();
-        boolean hasCommit = commits.findAny().isPresent();
-
-        if (hasCommit
-            || refCount > 1
-            || (refCount == 1 && !ref.get().getHash().equals(databaseAdapter.noAncestorHash()))) {
-          spec.commandLine()
-              .getErr()
-              .println(
-                  "The Nessie repository already exists and is not empty, aborting. "
-                      + "Provide the "
-                      + ERASE_BEFORE_IMPORT
-                      + " option if you want to erase the repository.");
-          return 100;
-        }
-      }
-    }
-
-    // Perform erase + initialize to reset any non-obvious contents (global log, global
-    // state, ref-log, repository description, etc).
-    out.println("Erasing potentially existing repository...");
-    databaseAdapter.eraseRepo();
-    databaseAdapter.initializeRepo("main");
-    try {
-      databaseAdapter.delete(BranchName.of("main"), Optional.empty());
-    } catch (ReferenceNotFoundException | ReferenceConflictException e) {
-      throw new RuntimeException(e);
-    }
-
-    ImportResult importResult =
-        builder.progressListener(new ImportProgressListener(out)).build().importNessieRepository();
-
-    out.printf(
-        "Imported Nessie repository, %d commits, %d named references.%n",
-        importResult.importedCommitCount(), importResult.importedReferenceCount());
-
-    if (!noOptimize) {
-      out.println("Optimizing...");
-
-      CommitLogOptimization.builder()
-          .headsAndForks(importResult.headsAndForkPoints())
-          .databaseAdapter(databaseAdapter)
-          .build()
-          .optimize();
-
-      out.println("Finished commit log optimization.");
-    }
-
-    return 0;
+    return importFileSupplier;
   }
 
   /** Mostly paints dots - but also some numbers about the progress. */

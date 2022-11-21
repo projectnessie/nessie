@@ -55,43 +55,50 @@ import org.projectnessie.versioned.transfer.serialize.TransferTypes.Operation;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.OperationType;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.RefType;
 
-public abstract class AbstractNessieExporter {
+@Value.Immutable
+public abstract class NessieExporter {
 
   public static final String NAMED_REFS_PREFIX = "named-refs";
   public static final String COMMITS_PREFIX = "commits";
 
+  public static Builder builder() {
+    return ImmutableNessieExporter.builder();
+  }
+
   @SuppressWarnings("UnusedReturnValue")
-  public interface Builder<B extends Builder<B, T>, T extends AbstractNessieExporter> {
+  public interface Builder {
     /** Mandatory, specify the {@code DatabaseAdapter} to use. */
-    B databaseAdapter(DatabaseAdapter databaseAdapter);
+    Builder databaseAdapter(DatabaseAdapter databaseAdapter);
 
     /** Optional, specify a custom {@link ObjectMapper}. */
-    B objectMapper(ObjectMapper objectMapper);
+    Builder objectMapper(ObjectMapper objectMapper);
 
     /** Optional, specify a custom {@link StoreWorker}. */
-    B storeWorker(StoreWorker storeWorker);
+    Builder storeWorker(StoreWorker storeWorker);
 
     /**
      * Optional, specify a different buffer size than the default value of {@value
      * ExportImportConstants#DEFAULT_BUFFER_SIZE}.
      */
-    B outputBufferSize(int outputBufferSize);
+    Builder outputBufferSize(int outputBufferSize);
 
     /**
      * Maximum size of a file containing commits or named references. Default is to write everything
      * into a single file.
      */
-    B maxFileSize(long maxFileSize);
+    Builder maxFileSize(long maxFileSize);
 
     /**
      * The expected number of commits in the Nessie repository, default is {@value
      * ExportImportConstants#DEFAULT_EXPECTED_COMMIT_COUNT}.
      */
-    B expectedCommitCount(int expectedCommitCount);
+    Builder expectedCommitCount(int expectedCommitCount);
 
-    B progressListener(ProgressListener progressListener);
+    Builder progressListener(ProgressListener progressListener);
 
-    T build();
+    Builder exportFileSupplier(ExportFileSupplier exportFileSupplier);
+
+    NessieExporter build();
   }
 
   abstract DatabaseAdapter databaseAdapter();
@@ -121,9 +128,7 @@ public abstract class AbstractNessieExporter {
     return ExportImportConstants.DEFAULT_EXPECTED_COMMIT_COUNT;
   }
 
-  protected abstract void preValidate() throws IOException;
-
-  protected abstract OutputStream newFileOutput(String fileName) throws IOException;
+  abstract ExportFileSupplier exportFileSupplier();
 
   @Value.Default
   ProgressListener progressListener() {
@@ -131,7 +136,9 @@ public abstract class AbstractNessieExporter {
   }
 
   public ExportMeta exportNessieRepository() throws IOException {
-    preValidate();
+    ExportFileSupplier exportFiles = exportFileSupplier();
+
+    exportFiles.preValidate();
 
     ExportContext exportContext =
         new ExportContext(
@@ -171,13 +178,13 @@ public abstract class AbstractNessieExporter {
               .setScanStartedAtInMicros(headsAndForks.getScanStartedAtInMicros());
       headsAndForks.getHeads().forEach(h -> hf.addHeads(h.asBytes()));
       headsAndForks.getForkPoints().forEach(h -> hf.addForkPoints(h.asBytes()));
-      try (OutputStream output = newFileOutput(HEADS_AND_FORKS)) {
+      try (OutputStream output = exportFiles.newFileOutput(HEADS_AND_FORKS)) {
         hf.build().writeTo(output);
       }
 
       progressListener().progress(ProgressEvent.START_META);
       ExportMeta meta = exportContext.finish();
-      try (OutputStream output = newFileOutput(EXPORT_METADATA)) {
+      try (OutputStream output = exportFiles.newFileOutput(EXPORT_METADATA)) {
         meta.writeTo(output);
       }
       progressListener().progress(ProgressEvent.END_META, meta);
@@ -335,9 +342,13 @@ public abstract class AbstractNessieExporter {
           }
         }
         if (output == null) {
+          @SuppressWarnings("resource")
+          ExportFileSupplier exportFiles = exportFileSupplier();
+
           fileNum++;
           String fileName = String.format("%s-%08d", fileNamePrefix, fileNum);
-          output = new BufferedOutputStream(newFileOutput(fileName), outputBufferSize());
+          output =
+              new BufferedOutputStream(exportFiles.newFileOutput(fileName), outputBufferSize());
           newFileName.accept(fileName);
         }
         message.writeDelimitedTo(output);

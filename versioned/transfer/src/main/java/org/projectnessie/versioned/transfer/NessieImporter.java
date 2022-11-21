@@ -17,7 +17,6 @@ package org.projectnessie.versioned.transfer;
 
 import static com.google.common.base.Preconditions.checkState;
 import static org.projectnessie.versioned.transfer.ExportImportConstants.DEFAULT_ATTACHMENT_BATCH_SIZE;
-import static org.projectnessie.versioned.transfer.ExportImportConstants.DEFAULT_BUFFER_SIZE;
 import static org.projectnessie.versioned.transfer.ExportImportConstants.DEFAULT_COMMIT_BATCH_SIZE;
 import static org.projectnessie.versioned.transfer.ExportImportConstants.EXPORT_METADATA;
 import static org.projectnessie.versioned.transfer.ExportImportConstants.HEADS_AND_FORKS;
@@ -54,48 +53,44 @@ import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportVersio
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.HeadsAndForks;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.NamedReference;
 
-public abstract class AbstractNessieImporter {
+@Value.Immutable
+public abstract class NessieImporter {
+
+  public static NessieImporter.Builder builder() {
+    return ImmutableNessieImporter.builder();
+  }
 
   @SuppressWarnings("UnusedReturnValue")
-  public interface Builder<B extends Builder<B, T>, T extends AbstractNessieImporter> {
+  public interface Builder {
     /** Mandatory, specify the {@code DatabaseAdapter} to use. */
-    B databaseAdapter(DatabaseAdapter databaseAdapter);
+    Builder databaseAdapter(DatabaseAdapter databaseAdapter);
 
     /** Optional, specify a custom {@link ObjectMapper}. */
-    B objectMapper(ObjectMapper objectMapper);
+    Builder objectMapper(ObjectMapper objectMapper);
 
     /** Optional, specify a custom {@link StoreWorker}. */
-    B storeWorker(StoreWorker storeWorker);
-
-    /**
-     * Optional, specify a different buffer size than the default value of {@value
-     * ExportImportConstants#DEFAULT_BUFFER_SIZE}.
-     */
-    B inputBufferSize(int inputBufferSize);
+    Builder storeWorker(StoreWorker storeWorker);
 
     /**
      * Optional, specify the number of commit log entries to be written at once, defaults to {@value
      * ExportImportConstants#DEFAULT_COMMIT_BATCH_SIZE}.
      */
-    B commitBatchSize(int commitBatchSize);
+    Builder commitBatchSize(int commitBatchSize);
 
     /**
      * Optional, specify the number of content attachments to be written at once, defaults to
      * {@value ExportImportConstants#DEFAULT_ATTACHMENT_BATCH_SIZE}.
      */
-    B attachmentBatchSize(int attachmentBatchSize);
+    Builder attachmentBatchSize(int attachmentBatchSize);
 
-    B progressListener(ProgressListener progressListener);
+    Builder progressListener(ProgressListener progressListener);
 
-    T build();
+    Builder importFileSupplier(ImportFileSupplier importFileSupplier);
+
+    NessieImporter build();
   }
 
   abstract DatabaseAdapter databaseAdapter();
-
-  @Value.Default
-  int inputBufferSize() {
-    return DEFAULT_BUFFER_SIZE;
-  }
 
   @Value.Default
   int commitBatchSize() {
@@ -122,12 +117,17 @@ public abstract class AbstractNessieImporter {
     return (x, y) -> {};
   }
 
+  abstract ImportFileSupplier importFileSupplier();
+
   public ImportResult importNessieRepository() throws IOException {
+    @SuppressWarnings("resource")
+    ImportFileSupplier importFiles = importFileSupplier();
+
     progressListener().progress(ProgressEvent.STARTED);
 
     progressListener().progress(ProgressEvent.START_META);
     ExportMeta exportMeta;
-    try (InputStream input = newFileInput(EXPORT_METADATA)) {
+    try (InputStream input = importFiles.newFileInput(EXPORT_METADATA)) {
       exportMeta = ExportMeta.parseFrom(input);
     }
     progressListener().progress(ProgressEvent.END_META, exportMeta);
@@ -139,7 +139,7 @@ public abstract class AbstractNessieImporter {
         exportMeta.getVersionValue());
 
     HeadsAndForkPoints headsAndForkPoints;
-    try (InputStream input = newFileInput(HEADS_AND_FORKS)) {
+    try (InputStream input = importFiles.newFileInput(HEADS_AND_FORKS)) {
       HeadsAndForks hf = HeadsAndForks.parseFrom(input);
       ImmutableHeadsAndForkPoints.Builder hfBuilder =
           ImmutableHeadsAndForkPoints.builder()
@@ -169,8 +169,10 @@ public abstract class AbstractNessieImporter {
 
   private long importNamedReferences(ExportMeta exportMeta) throws IOException {
     long namedReferenceCount = 0L;
+    @SuppressWarnings("resource")
+    ImportFileSupplier importFiles = importFileSupplier();
     for (String fileName : exportMeta.getNamedReferencesFilesList()) {
-      try (InputStream input = newFileInput(fileName)) {
+      try (InputStream input = importFiles.newFileInput(fileName)) {
         while (true) {
           NamedReference namedReference = NamedReference.parseDelimitedFrom(input);
           if (namedReference == null) {
@@ -212,8 +214,10 @@ public abstract class AbstractNessieImporter {
         BatchWriter<ContentAttachmentKey, ContentAttachment> attachmentsBatchWriter =
             BatchWriter.attachmentsBatchWriter(attachmentBatchSize(), databaseAdapter())) {
 
+      @SuppressWarnings("resource")
+      ImportFileSupplier importFiles = importFileSupplier();
       for (String fileName : exportMeta.getCommitsFilesList()) {
-        try (InputStream input = newFileInput(fileName)) {
+        try (InputStream input = importFiles.newFileInput(fileName)) {
           while (true) {
             Commit commit = Commit.parseDelimitedFrom(input);
             if (commit == null) {
@@ -280,6 +284,4 @@ public abstract class AbstractNessieImporter {
     }
     return commitCount;
   }
-
-  protected abstract InputStream newFileInput(String fileName) throws IOException;
 }

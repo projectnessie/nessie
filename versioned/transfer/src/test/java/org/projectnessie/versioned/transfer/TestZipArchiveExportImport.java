@@ -64,14 +64,14 @@ public class TestZipArchiveExportImport extends AbstractExportImport {
   }
 
   @Override
-  protected AbstractNessieExporter.Builder<?, ?> prepareExporter(Path targetDir) {
+  protected ExportFileSupplier prepareExporter(Path targetDir) {
     Path zipFile = targetDir.resolve("export.zip");
-    return ZipArchiveExporter.builder().outputFile(zipFile);
+    return ZipArchiveExporter.builder().outputFile(zipFile).build();
   }
 
   @Override
-  protected AbstractNessieImporter.Builder<?, ?> prepareImporter(Path targetDir) {
+  protected ImportFileSupplier prepareImporter(Path targetDir) {
     Path zipFile = targetDir.resolve("export.zip");
-    return ZipArchiveImporter.builder().sourceZipFile(zipFile);
+    return ZipArchiveImporter.builder().sourceZipFile(zipFile).build();
   }
 }

@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.transfer;
 
+import static org.projectnessie.versioned.transfer.ExportImportConstants.DEFAULT_BUFFER_SIZE;
+
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,20 +26,36 @@ import org.immutables.value.Value;
 
 /** Nessie importer using data from directory. */
 @Value.Immutable
-public abstract class FileImporter extends AbstractNessieImporter {
+public abstract class FileImporter implements ImportFileSupplier {
   public static Builder builder() {
     return ImmutableFileImporter.builder();
   }
 
-  public interface Builder extends AbstractNessieImporter.Builder<Builder, FileImporter> {
+  public interface Builder {
     Builder sourceDirectory(Path sourceDirectory);
+
+    /**
+     * Optional, specify a different buffer size than the default value of {@value
+     * ExportImportConstants#DEFAULT_BUFFER_SIZE}.
+     */
+    Builder inputBufferSize(int inputBufferSize);
+
+    FileImporter build();
+  }
+
+  @Value.Default
+  int inputBufferSize() {
+    return DEFAULT_BUFFER_SIZE;
   }
 
   abstract Path sourceDirectory();
 
   @Override
-  protected InputStream newFileInput(String fileName) throws IOException {
+  public InputStream newFileInput(String fileName) throws IOException {
     return new BufferedInputStream(
         Files.newInputStream(sourceDirectory().resolve(fileName)), inputBufferSize());
   }
+
+  @Override
+  public void close() {}
 }

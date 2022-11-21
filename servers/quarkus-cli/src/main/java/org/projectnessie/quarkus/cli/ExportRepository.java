@@ -20,9 +20,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
 import javax.annotation.Nonnull;
-import org.projectnessie.versioned.transfer.AbstractNessieExporter;
+import org.projectnessie.versioned.transfer.ExportFileSupplier;
 import org.projectnessie.versioned.transfer.ExportImportConstants;
 import org.projectnessie.versioned.transfer.FileExporter;
+import org.projectnessie.versioned.transfer.NessieExporter;
 import org.projectnessie.versioned.transfer.ProgressEvent;
 import org.projectnessie.versioned.transfer.ProgressListener;
 import org.projectnessie.versioned.transfer.ZipArchiveExporter;
@@ -89,8 +90,31 @@ public class ExportRepository extends BaseCommand {
   public Integer call() throws Exception {
     warnOnInMemory();
 
-    @SuppressWarnings("rawtypes")
-    AbstractNessieExporter.Builder builder;
+    try (ExportFileSupplier exportFileSupplier = createExportFileSupplier()) {
+      NessieExporter.Builder builder =
+          NessieExporter.builder()
+              .exportFileSupplier(exportFileSupplier)
+              .databaseAdapter(databaseAdapter);
+      if (maxFileSize != null) {
+        builder.maxFileSize(maxFileSize);
+      }
+      if (expectedCommitCount != null) {
+        builder.expectedCommitCount(expectedCommitCount);
+      }
+      if (outputBufferSize != null) {
+        builder.outputBufferSize(outputBufferSize);
+      }
+
+      PrintWriter out = spec.commandLine().getOut();
+
+      builder.progressListener(new ExportProgressListener(out)).build().exportNessieRepository();
+
+      return 0;
+    }
+  }
+
+  private ExportFileSupplier createExportFileSupplier() {
+    ExportFileSupplier exportFileSupplier;
     switch (exportFormat()) {
       case ZIP:
         if (Files.isRegularFile(path)) {
@@ -99,35 +123,19 @@ public class ExportRepository extends BaseCommand {
                   "Export file %s already exists, please delete it first, if you want to overwrite it.",
                   path));
         }
-        builder = ZipArchiveExporter.builder().outputFile(path);
+        exportFileSupplier = ZipArchiveExporter.builder().outputFile(path).build();
         break;
       case DIRECTORY:
         if (Files.isRegularFile(path)) {
           throw new PicocliException(
               String.format("%s refers to a file, but export type is %s.", path, Format.DIRECTORY));
         }
-        builder = FileExporter.builder().targetDirectory(path);
+        exportFileSupplier = FileExporter.builder().targetDirectory(path).build();
         break;
       default:
         throw new IllegalStateException(exportFormat().toString());
     }
-
-    builder.databaseAdapter(databaseAdapter);
-    if (maxFileSize != null) {
-      builder.maxFileSize(maxFileSize);
-    }
-    if (expectedCommitCount != null) {
-      builder.expectedCommitCount(expectedCommitCount);
-    }
-    if (outputBufferSize != null) {
-      builder.outputBufferSize(outputBufferSize);
-    }
-
-    PrintWriter out = spec.commandLine().getOut();
-
-    builder.progressListener(new ExportProgressListener(out)).build().exportNessieRepository();
-
-    return 0;
+    return exportFileSupplier;
   }
 
   private Format exportFormat() {

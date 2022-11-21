@@ -148,12 +148,15 @@ public abstract class AbstractITCommitLogOptimization {
     List<CommitLogEntry> scannedCommits = allCommits();
 
     Path file = tempDir.resolve("export.zip");
-    ExportMeta exportMeta =
-        ZipArchiveExporter.builder()
-            .outputFile(file)
-            .databaseAdapter(databaseAdapter)
-            .build()
-            .exportNessieRepository();
+    ExportMeta exportMeta;
+    try (ZipArchiveExporter zipExporter = ZipArchiveExporter.builder().outputFile(file).build()) {
+      exportMeta =
+          NessieExporter.builder()
+              .exportFileSupplier(zipExporter)
+              .databaseAdapter(databaseAdapter)
+              .build()
+              .exportNessieRepository();
+    }
     assertThat(exportMeta)
         .extracting(ExportMeta::getCommitCount, ExportMeta::getNamedReferencesCount)
         .containsExactly(totalCommits, 1L + branches);
@@ -166,8 +169,8 @@ public abstract class AbstractITCommitLogOptimization {
     assertThat(allCommits()).isEmpty();
 
     ImportResult importResult =
-        ZipArchiveImporter.builder()
-            .sourceZipFile(file)
+        NessieImporter.builder()
+            .importFileSupplier(ZipArchiveImporter.builder().sourceZipFile(file).build())
             .databaseAdapter(databaseAdapter)
             .build()
             .importNessieRepository();

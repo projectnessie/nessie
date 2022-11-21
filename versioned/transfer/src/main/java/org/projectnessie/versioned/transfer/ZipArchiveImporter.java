@@ -25,13 +25,15 @@ import org.immutables.value.Value;
 
 /** Nessie importer using data from a ZIP file. */
 @Value.Immutable
-public abstract class ZipArchiveImporter extends AbstractNessieImporter {
+public abstract class ZipArchiveImporter implements ImportFileSupplier {
   public static Builder builder() {
     return ImmutableZipArchiveImporter.builder();
   }
 
-  public interface Builder extends AbstractNessieImporter.Builder<Builder, ZipArchiveImporter> {
+  public interface Builder {
     Builder sourceZipFile(Path sourceZipFile);
+
+    ZipArchiveImporter build();
   }
 
   abstract Path sourceZipFile();
@@ -42,10 +44,13 @@ public abstract class ZipArchiveImporter extends AbstractNessieImporter {
   }
 
   @Override
-  protected InputStream newFileInput(String fileName) throws IOException {
+  public InputStream newFileInput(String fileName) throws IOException {
     @SuppressWarnings("resource")
     ZipFile zip = zipFile();
     ZipEntry entry = zip.getEntry(fileName);
     return new BufferedInputStream(zip.getInputStream(entry));
   }
+
+  @Override
+  public void close() {}
 }
