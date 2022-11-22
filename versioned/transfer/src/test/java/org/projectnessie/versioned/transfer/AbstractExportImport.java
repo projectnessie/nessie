@@ -69,7 +69,13 @@ public abstract class AbstractExportImport {
     when(databaseAdapter.namedRefs(any())).thenReturn(empty());
     when(databaseAdapter.scanAllCommitLogEntries()).thenReturn(empty());
 
-    prepareExporter(targetDir).databaseAdapter(databaseAdapter).build().exportNessieRepository();
+    try (ExportFileSupplier exportFileSupplier = prepareExporter(targetDir)) {
+      NessieExporter.builder()
+          .exportFileSupplier(exportFileSupplier)
+          .databaseAdapter(databaseAdapter)
+          .build()
+          .exportNessieRepository();
+    }
 
     assertThat(readMeta(targetDir))
         .extracting(
@@ -108,11 +114,14 @@ public abstract class AbstractExportImport {
         .thenReturn(
             IntStream.rangeClosed(1, numCommits).mapToObj(ExportImportTestUtil::toCommitLogEntry));
 
-    prepareExporter(targetDir)
-        .databaseAdapter(exportDatabaseAdapter)
-        .maxFileSize(128 * 1024)
-        .build()
-        .exportNessieRepository();
+    try (ExportFileSupplier exportFileSupplier = prepareExporter(targetDir)) {
+      NessieExporter.builder()
+          .exportFileSupplier(exportFileSupplier)
+          .databaseAdapter(exportDatabaseAdapter)
+          .maxFileSize(128 * 1024)
+          .build()
+          .exportNessieRepository();
+    }
 
     int expectedCommitsFileCount = 126;
     List<String> expectedCommitsFileNames =
@@ -229,8 +238,12 @@ public abstract class AbstractExportImport {
                   }
                 });
 
-    AbstractNessieImporter importer =
-        prepareImporter(targetDir).databaseAdapter(importDatabaseAdapter).build();
+    ImportFileSupplier importFileSupplier = prepareImporter(targetDir);
+    NessieImporter importer =
+        NessieImporter.builder()
+            .importFileSupplier(importFileSupplier)
+            .databaseAdapter(importDatabaseAdapter)
+            .build();
     importer.importNessieRepository();
 
     assertThat(createdReferences.cardinality()).isEqualTo(numNamedRefs);
@@ -243,7 +256,7 @@ public abstract class AbstractExportImport {
 
   protected abstract List<String> listFiles(Path targetDir) throws IOException;
 
-  protected abstract AbstractNessieExporter.Builder<?, ?> prepareExporter(Path targetDir);
+  protected abstract ExportFileSupplier prepareExporter(Path targetDir);
 
-  protected abstract AbstractNessieImporter.Builder<?, ?> prepareImporter(Path targetDir);
+  protected abstract ImportFileSupplier prepareImporter(Path targetDir);
 }

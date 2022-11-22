@@ -47,12 +47,12 @@ public class TestFileExportImport extends AbstractExportImport {
   }
 
   @Override
-  protected AbstractNessieExporter.Builder<?, ?> prepareExporter(Path targetDir) {
-    return FileExporter.builder().targetDirectory(targetDir);
+  protected ExportFileSupplier prepareExporter(Path targetDir) {
+    return FileExporter.builder().targetDirectory(targetDir).build();
   }
 
   @Override
-  protected AbstractNessieImporter.Builder<?, ?> prepareImporter(Path targetDir) {
-    return FileImporter.builder().sourceDirectory(targetDir);
+  protected ImportFileSupplier prepareImporter(Path targetDir) {
+    return FileImporter.builder().sourceDirectory(targetDir).build();
   }
 }

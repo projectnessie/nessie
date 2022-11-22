@@ -19,7 +19,7 @@ import org.immutables.value.Value;
 import org.projectnessie.versioned.persist.adapter.HeadsAndForkPoints;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 
-/** The result of a {@link AbstractNessieImporter#importNessieRepository()} operation. */
+/** The result of a {@link NessieImporter#importNessieRepository()} operation. */
 @Value.Immutable
 public interface ImportResult {
 

@@ -24,18 +24,19 @@ import java.nio.file.Path;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import org.immutables.value.Value;
-import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 
 /** Nessie exporter that creates a ZIP file. */
 @Value.Immutable
-public abstract class ZipArchiveExporter extends AbstractNessieExporter {
+public abstract class ZipArchiveExporter implements ExportFileSupplier {
 
   public static Builder builder() {
     return ImmutableZipArchiveExporter.builder();
   }
 
-  public interface Builder extends AbstractNessieExporter.Builder<Builder, ZipArchiveExporter> {
+  public interface Builder {
     Builder outputFile(Path outputFile);
+
+    ZipArchiveExporter build();
   }
 
   abstract Path outputFile();
@@ -46,22 +47,18 @@ public abstract class ZipArchiveExporter extends AbstractNessieExporter {
   }
 
   @Override
-  protected void preValidate() {}
+  public void preValidate() {}
 
   @Override
-  protected OutputStream newFileOutput(String fileName) throws IOException {
+  public OutputStream newFileOutput(String fileName) throws IOException {
     ZipOutputStream out = zipOutput();
     out.putNextEntry(new ZipEntry(fileName));
     return new NonClosingOutputStream(out);
   }
 
   @Override
-  public ExportMeta exportNessieRepository() throws IOException {
-    try {
-      return super.exportNessieRepository();
-    } finally {
-      zipOutput().close();
-    }
+  public void close() throws Exception {
+    zipOutput().close();
   }
 
   private static final class NonClosingOutputStream extends OutputStream {
