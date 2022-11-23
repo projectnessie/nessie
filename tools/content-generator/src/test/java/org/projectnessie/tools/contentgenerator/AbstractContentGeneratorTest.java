@@ -20,6 +20,7 @@ import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.error.NessieConflictException;
@@ -27,13 +28,18 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.Detached;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.Tag;
 import org.projectnessie.tools.contentgenerator.cli.NessieContentGenerator;
 
 /** Base class for content generator tests. */
 public class AbstractContentGeneratorTest {
+
+  public static final String NO_ANCESTOR =
+      "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d";
 
   static final Integer NESSIE_HTTP_PORT = Integer.getInteger("quarkus.http.test-port");
 
@@ -42,6 +48,27 @@ public class AbstractContentGeneratorTest {
 
   protected static final String COMMIT_MSG = "testMessage";
   protected static final ContentKey CONTENT_KEY = ContentKey.of("first", "second");
+
+  @BeforeEach
+  void emptyRepo() throws Exception {
+    try (NessieApiV1 api = buildNessieApi()) {
+      Branch defaultBranch = api.getDefaultBranch();
+      api.assignBranch().branch(defaultBranch).assignTo(Detached.of(NO_ANCESTOR));
+      api.getAllReferences().stream()
+          .forEach(
+              ref -> {
+                try {
+                  if (ref instanceof Branch && !ref.getName().equals(defaultBranch.getName())) {
+                    api.deleteBranch().branch((Branch) ref).delete();
+                  } else if (ref instanceof Tag) {
+                    api.deleteTag().tag((Tag) ref).delete();
+                  }
+                } catch (NessieConflictException | NessieNotFoundException e) {
+                  throw new RuntimeException(e);
+                }
+              });
+    }
+  }
 
   protected Branch makeCommit(NessieApiV1 api, String contentId)
       throws NessieConflictException, NessieNotFoundException {
