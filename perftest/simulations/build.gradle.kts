@@ -52,6 +52,11 @@ nessieQuarkusApp {
     )
   }
   environmentNonInput.put("HTTP_ACCESS_LOG_LEVEL", testLogLevel())
+  System.getProperties()
+    .filter { e ->
+      e.key.toString().startsWith("nessie.") || e.key.toString().startsWith("quarkus.")
+    }
+    .forEach { e -> systemProperties.put(e.key.toString(), e.value.toString()) }
 }
 
 gatling {
