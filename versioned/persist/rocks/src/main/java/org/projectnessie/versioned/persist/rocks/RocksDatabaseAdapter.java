@@ -124,8 +124,9 @@ public class RocksDatabaseAdapter
   protected void doEraseRepo() {
     try {
       db.delete(dbInstance.getCfGlobalPointer(), globalPointerKey());
+      db.delete(dbInstance.getCfRepoProps(), globalPointerKey());
       dbInstance
-          .allExceptGlobalPointer()
+          .allWithCompositeKey()
           .forEach(
               cf -> {
                 try (RocksIterator iter = db.newIterator(cf)) {

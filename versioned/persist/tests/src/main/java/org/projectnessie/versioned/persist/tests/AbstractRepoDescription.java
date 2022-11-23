@@ -69,4 +69,21 @@ public abstract class AbstractRepoDescription {
         });
     assertThat(databaseAdapter.fetchRepositoryDescription()).isEqualTo(update2);
   }
+
+  @Test
+  void emptyAfterEraseRepo() throws Exception {
+    RepoDescription update =
+        RepoDescription.builder().repoVersion(43).putProperties("e", "f").build();
+
+    databaseAdapter.updateRepositoryDescription(
+        d -> {
+          assertThat(d).isEqualTo(RepoDescription.DEFAULT);
+          return update;
+        });
+
+    assertThat(databaseAdapter.fetchRepositoryDescription()).isEqualTo(update);
+
+    databaseAdapter.eraseRepo();
+    assertThat(databaseAdapter.fetchRepositoryDescription()).isEqualTo(RepoDescription.DEFAULT);
+  }
 }

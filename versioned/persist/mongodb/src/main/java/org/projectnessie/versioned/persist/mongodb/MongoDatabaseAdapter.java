@@ -127,8 +127,9 @@ public class MongoDatabaseAdapter
   @Override
   protected void doEraseRepo() {
     client.getGlobalPointers().deleteMany(Filters.eq(globalPointerKey));
+    client.getRepoDesc().deleteMany(Filters.eq(globalPointerKey));
     Bson idPrefixFilter = Filters.eq(ID_REPO_PATH, repositoryId);
-    client.allExceptGlobalPointer().forEach(coll -> coll.deleteMany(idPrefixFilter));
+    client.allWithCompositeId().forEach(coll -> coll.deleteMany(idPrefixFilter));
   }
 
   private Document toId(Hash id) {
