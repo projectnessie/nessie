@@ -95,7 +95,7 @@ cel-jackson = { module = "org.projectnessie.cel:cel-jackson" }
 cel-tools = { module = "org.projectnessie.cel:cel-tools" }
 checkstyle = { module = "com.puppycrawl.tools:checkstyle", version.ref = "checkstyle" }
 delta-core = { module = "io.delta:delta-core_2.12", version = "1.1.0-nessie" }
-docker-java-api = { module = "com.github.docker-java:docker-java-api", version = "3.2.13" }
+docker-java-api = { module = "com.github.docker-java:docker-java-api", version = "3.2.14" }
 errorprone-annotations = { module = "com.google.errorprone:error_prone_annotations", version.ref = "errorprone" }
 errorprone-core = { module = "com.google.errorprone:error_prone_core", version.ref = "errorprone" }
 errorprone-slf4j = { module = "jp.skypencil.errorprone.slf4j:errorprone-slf4j", version.ref = "errorproneSlf4j" }
