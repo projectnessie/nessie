@@ -42,9 +42,7 @@ import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.adapter.HeadsAndForkPoints;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitLogEntry;
-import org.projectnessie.versioned.persist.adapter.ImmutableHeadsAndForkPoints;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.store.DefaultStoreWorker;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Commit;
@@ -138,15 +136,9 @@ public abstract class NessieImporter {
         exportMeta.getVersion().name(),
         exportMeta.getVersionValue());
 
-    HeadsAndForkPoints headsAndForkPoints;
+    HeadsAndForks headsAndForks;
     try (InputStream input = importFiles.newFileInput(HEADS_AND_FORKS)) {
-      HeadsAndForks hf = HeadsAndForks.parseFrom(input);
-      ImmutableHeadsAndForkPoints.Builder hfBuilder =
-          ImmutableHeadsAndForkPoints.builder()
-              .scanStartedAtInMicros(hf.getScanStartedAtInMicros());
-      hf.getHeadsList().forEach(h -> hfBuilder.addHeads(Hash.of(h)));
-      hf.getForkPointsList().forEach(h -> hfBuilder.addForkPoints(Hash.of(h)));
-      headsAndForkPoints = hfBuilder.build();
+      headsAndForks = HeadsAndForks.parseFrom(input);
     }
 
     progressListener().progress(ProgressEvent.START_COMMITS);
@@ -161,7 +153,7 @@ public abstract class NessieImporter {
 
     return ImmutableImportResult.builder()
         .exportMeta(exportMeta)
-        .headsAndForkPoints(headsAndForkPoints)
+        .headsAndForks(headsAndForks)
         .importedCommitCount(commitCount)
         .importedReferenceCount(namedReferenceCount)
         .build();

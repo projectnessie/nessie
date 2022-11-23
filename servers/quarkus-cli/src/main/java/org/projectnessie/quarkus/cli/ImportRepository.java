@@ -25,10 +25,13 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
+import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
+import org.projectnessie.versioned.persist.adapter.HeadsAndForkPoints;
+import org.projectnessie.versioned.persist.adapter.ImmutableHeadsAndForkPoints;
 import org.projectnessie.versioned.transfer.CommitLogOptimization;
 import org.projectnessie.versioned.transfer.ExportImportConstants;
 import org.projectnessie.versioned.transfer.FileImporter;
@@ -39,6 +42,7 @@ import org.projectnessie.versioned.transfer.ProgressEvent;
 import org.projectnessie.versioned.transfer.ProgressListener;
 import org.projectnessie.versioned.transfer.ZipArchiveImporter;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
+import org.projectnessie.versioned.transfer.serialize.TransferTypes.HeadsAndForks;
 import picocli.CommandLine;
 import picocli.CommandLine.PicocliException;
 
@@ -157,7 +161,7 @@ public class ImportRepository extends BaseCommand {
         out.println("Optimizing...");
 
         CommitLogOptimization.builder()
-            .headsAndForks(importResult.headsAndForkPoints())
+            .headsAndForks(toHeadsAndForkPoints(importResult.headsAndForks()))
             .databaseAdapter(databaseAdapter)
             .build()
             .optimize();
@@ -167,6 +171,15 @@ public class ImportRepository extends BaseCommand {
 
       return 0;
     }
+  }
+
+  static HeadsAndForkPoints toHeadsAndForkPoints(HeadsAndForks headsAndForks) {
+    ImmutableHeadsAndForkPoints.Builder hfBuilder =
+        ImmutableHeadsAndForkPoints.builder()
+            .scanStartedAtInMicros(headsAndForks.getScanStartedAtInMicros());
+    headsAndForks.getHeadsList().forEach(h -> hfBuilder.addHeads(Hash.of(h)));
+    headsAndForks.getForkPointsList().forEach(h -> hfBuilder.addForkPoints(Hash.of(h)));
+    return hfBuilder.build();
   }
 
   private ImportFileSupplier createImportFileSupplier() {
