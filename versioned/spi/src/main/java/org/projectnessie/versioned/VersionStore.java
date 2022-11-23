@@ -316,5 +316,6 @@ public interface VersionStore {
    * @return A stream of reflog entries.
    */
   @MustBeClosed
+  @Deprecated
   Stream<RefLogDetails> getRefLog(Hash refLogId) throws RefLogNotFoundException;
 }
