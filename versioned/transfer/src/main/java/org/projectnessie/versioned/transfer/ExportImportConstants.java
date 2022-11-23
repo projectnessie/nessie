@@ -17,6 +17,7 @@ package org.projectnessie.versioned.transfer;
 
 public final class ExportImportConstants {
 
+  public static final String REPOSITORY_DESCRIPTION = "repository-description";
   public static final String EXPORT_METADATA = "export-metadata";
   public static final String HEADS_AND_FORKS = "heads-and-forks";
   public static final int DEFAULT_BUFFER_SIZE = 32768;
