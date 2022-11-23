@@ -145,9 +145,8 @@ public class MongoDatabaseClient implements DatabaseConnectionProvider<MongoClie
     return attachmentKeys;
   }
 
-  public Stream<MongoCollection<Document>> allExceptGlobalPointer() {
+  public Stream<MongoCollection<Document>> allWithCompositeId() {
     return Stream.of(
-        repoDesc,
         globalLog,
         commitLog,
         keyLists,

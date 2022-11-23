@@ -213,7 +213,7 @@ public class RocksDbInstance implements DatabaseConnectionProvider<RocksDbConfig
     return cfAttachmentKeys;
   }
 
-  public Stream<ColumnFamilyHandle> allExceptGlobalPointer() {
+  public Stream<ColumnFamilyHandle> allWithCompositeKey() {
     return Stream.of(
         cfGlobalLog,
         cfCommitLog,
