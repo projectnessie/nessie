@@ -41,12 +41,15 @@ import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.persist.adapter.HeadsAndForkPoints;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
+import org.projectnessie.versioned.persist.adapter.ImmutableHeadsAndForkPoints;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.tests.extension.DatabaseAdapterExtension;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
 import org.projectnessie.versioned.store.DefaultStoreWorker;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
+import org.projectnessie.versioned.transfer.serialize.TransferTypes.HeadsAndForks;
 
 @ExtendWith(DatabaseAdapterExtension.class)
 public abstract class AbstractITCommitLogOptimization {
@@ -190,12 +193,21 @@ public abstract class AbstractITCommitLogOptimization {
 
     CommitLogOptimization.builder()
         .databaseAdapter(databaseAdapter)
-        .headsAndForks(importResult.headsAndForkPoints())
+        .headsAndForks(toHeadsAndForkPoints(importResult.headsAndForks()))
         .build()
         .optimize();
 
     assertThat(allRefs()).containsExactlyInAnyOrderElementsOf(namedRefs);
     assertThat(allCommits()).containsExactlyInAnyOrderElementsOf(scannedCommits);
+  }
+
+  static HeadsAndForkPoints toHeadsAndForkPoints(HeadsAndForks headsAndForks) {
+    ImmutableHeadsAndForkPoints.Builder hfBuilder =
+        ImmutableHeadsAndForkPoints.builder()
+            .scanStartedAtInMicros(headsAndForks.getScanStartedAtInMicros());
+    headsAndForks.getHeadsList().forEach(h -> hfBuilder.addHeads(Hash.of(h)));
+    headsAndForks.getForkPointsList().forEach(h -> hfBuilder.addForkPoints(Hash.of(h)));
+    return hfBuilder.build();
   }
 
   static List<ReferenceInfo<ByteString>> allRefs() throws Exception {

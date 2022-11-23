@@ -18,6 +18,7 @@ package org.projectnessie.versioned.transfer;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.persist.adapter.HeadsAndForkPoints;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
+import org.projectnessie.versioned.transfer.serialize.TransferTypes.HeadsAndForks;
 
 /** The result of a {@link NessieImporter#importNessieRepository()} operation. */
 @Value.Immutable
@@ -32,9 +33,9 @@ public interface ImportResult {
    * optimization after a repository import.
    *
    * <p>Note: the HEADS of the named references in an export may not match the heads in {@link
-   * HeadsAndForkPoints} when commits happened while the export has been created.
+   * HeadsAndForks} when commits happened while the export has been created.
    */
-  HeadsAndForkPoints headsAndForkPoints();
+  HeadsAndForks headsAndForks();
 
   /** Number of commits that have been imported. */
   long importedCommitCount();

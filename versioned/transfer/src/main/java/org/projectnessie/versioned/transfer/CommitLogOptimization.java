@@ -50,7 +50,7 @@ public abstract class CommitLogOptimization {
 
     /**
      * When a {@link HeadsAndForkPoints} is available, for example from a {@link
-     * ImportResult#headsAndForkPoints()}, specify it to prevent one full scan of all commits.
+     * ImportResult#headsAndForks()}, specify it to prevent one full scan of all commits.
      */
     Builder headsAndForks(HeadsAndForkPoints headsAndForks);
 
