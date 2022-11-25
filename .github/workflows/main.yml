@@ -19,7 +19,7 @@ on:
 jobs:
   java:
     name: Java/Gradle
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       SPARK_LOCAL_IP: localhost
       MAVEN_USERNAME: ${{ secrets.OSSRH_ACCESS_ID }}
@@ -88,7 +88,7 @@ jobs:
 
   native:
     name: Java/Gradle/Native
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v3.1.0
@@ -121,7 +121,7 @@ jobs:
 
   python:
     name: Python
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       working-directory: ./python
     strategy:

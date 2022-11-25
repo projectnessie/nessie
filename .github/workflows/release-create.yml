@@ -48,7 +48,7 @@ on:
 jobs:
   create-release:
     name: Create release
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       RELEASE_FROM: ${{ github.event.inputs.releaseFromBranch }}
       BUMP_TYPE: ${{ github.event.inputs.bumpType }}

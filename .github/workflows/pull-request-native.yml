@@ -28,7 +28,7 @@ concurrency:
 jobs:
   java:
     name: Java/Gradle Native
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: contains(github.event.pull_request.labels.*.name, 'pr-native')
     steps:
     - uses: actions/checkout@v3.1.0
