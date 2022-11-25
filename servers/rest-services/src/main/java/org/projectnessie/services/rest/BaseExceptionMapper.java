@@ -61,6 +61,10 @@ public abstract class BaseExceptionMapper<T extends Throwable> implements Except
       status = Response.Status.INTERNAL_SERVER_ERROR;
     }
 
+    if (message == null) {
+      message = "";
+    }
+
     NessieError error =
         ImmutableNessieError.builder()
             .message(message)
