@@ -131,27 +131,27 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
    */
   @Test
   public void commitSomeOperations() throws Exception {
-    final BranchName branch = BranchName.of("foo");
+    BranchName branch = BranchName.of("foo");
 
-    final Hash base = store().create(branch, Optional.empty());
+    Hash base = store().create(branch, Optional.empty());
 
-    final Hash initialCommit =
+    Hash initialCommit =
         commit("Initial Commit")
             .put("t1", V_1_1)
             .put("t2", V_2_1)
             .put("t3", V_3_1)
             .toBranch(branch);
+    Content t1 = store().getValue(branch, Key.of("t1"));
 
-    final Hash secondCommit =
+    Hash secondCommit =
         commit("Second Commit")
-            .put("t1", V_1_2)
+            .put("t1", V_1_2.withId(t1), t1)
             .delete("t2")
             .delete("t3")
             .put("t4", V_4_1)
             .toBranch(branch);
 
-    final Hash thirdCommit =
-        commit("Third Commit").put("t2", V_2_2).unchanged("t4").toBranch(branch);
+    Hash thirdCommit = commit("Third Commit").put("t2", V_2_2).unchanged("t4").toBranch(branch);
 
     soft.assertThat(commitsList(branch, false))
         .contains(
@@ -226,30 +226,36 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
    */
   @Test
   public void commitNonConflictingOperations() throws Exception {
-    final BranchName branch = BranchName.of("foo");
+    BranchName branch = BranchName.of("foo");
 
-    final Hash base = store().create(branch, Optional.empty());
+    Hash base = store().create(branch, Optional.empty());
 
-    final Hash initialCommit =
+    Hash initialCommit =
         commit("Initial Commit")
             .put("t1", V_1_1)
             .put("t2", V_2_1)
             .put("t3", V_3_1)
             .toBranch(branch);
+    Content t1 = store().getValue(branch, Key.of("t1"));
+    Content t3 = store().getValue(branch, Key.of("t3"));
 
-    final Hash t1Commit =
-        commit("T1 Commit").fromReference(initialCommit).put("t1", V_1_2).toBranch(branch);
-    final Hash t2Commit =
-        commit("T2 Commit").fromReference(initialCommit).delete("t2").toBranch(branch);
-    final Hash t3Commit =
+    Hash t1Commit =
+        commit("T1 Commit")
+            .fromReference(initialCommit)
+            .put("t1", V_1_2.withId(t1), t1)
+            .toBranch(branch);
+    t1 = store().getValue(branch, Key.of("t1"));
+
+    Hash t2Commit = commit("T2 Commit").fromReference(initialCommit).delete("t2").toBranch(branch);
+    Hash t3Commit =
         commit("T3 Commit").fromReference(initialCommit).unchanged("t3").toBranch(branch);
-    final Hash extraCommit =
+    Hash extraCommit =
         commit("Extra Commit")
             .fromReference(t1Commit)
-            .put("t1", V_1_3)
-            .put("t3", V_3_2)
+            .put("t1", V_1_3.withId(t1), t1)
+            .put("t3", V_3_2.withId(t3), t3)
             .toBranch(branch);
-    final Hash newT2Commit =
+    Hash newT2Commit =
         commit("New T2 Commit").fromReference(t2Commit).put("t2", NEW_v2_1).toBranch(branch);
 
     soft.assertThat(commitsList(branch, false))
@@ -336,15 +342,23 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
    */
   @Test
   public void commitConflictingOperations() throws Exception {
-    final BranchName branch = BranchName.of("foo");
+    BranchName branch = BranchName.of("foo");
 
     store().create(branch, Optional.empty());
 
-    final Hash initialCommit =
+    Hash initialCommit =
         commit("Initial Commit").put("t1", V_1_1).put("t2", V_2_1).toBranch(branch);
 
-    final Hash secondCommit =
-        commit("Second Commit").put("t1", V_1_2).delete("t2").put("t3", V_3_1).toBranch(branch);
+    Content t1 = store().getValue(branch, Key.of("t1"));
+    store().getValue(branch, Key.of("t2"));
+
+    Hash secondCommit =
+        commit("Second Commit")
+            .put("t1", V_1_2.withId(t1), t1)
+            .delete("t2")
+            .put("t3", V_3_1)
+            .toBranch(branch);
+    store().getValue(branch, Key.of("t3"));
 
     soft.assertThatThrownBy(
             () ->
@@ -407,19 +421,25 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
    */
   @Test
   public void forceCommitConflictingOperations() throws Exception {
-    final BranchName branch = BranchName.of("foo");
+    BranchName branch = BranchName.of("foo");
 
     store().create(branch, Optional.empty());
 
     commit("Initial Commit").put("t1", V_1_1).put("t2", V_2_1).toBranch(branch);
+    Content t1 = store().getValue(branch, Key.of("t1"));
 
-    commit("Second Commit").put("t1", V_1_2).delete("t2").put("t3", V_3_1).toBranch(branch);
+    commit("Second Commit")
+        .put("t1", V_1_2.withId(t1), t1)
+        .delete("t2")
+        .put("t3", V_3_1)
+        .toBranch(branch);
+    Content t3 = store().getValue(branch, Key.of("t3"));
 
-    final Hash putCommit =
+    Hash putCommit =
         forceCommit("Conflicting Commit")
-            .put("t1", V_1_3)
+            .put("t1", V_1_3.withId(t1), t1)
             .put("t2", V_2_2)
-            .put("t3", V_3_2)
+            .put("t3", V_3_2.withId(t3), t3)
             .toBranch(branch);
 
     soft.assertThat(store().hashOnReference(branch, Optional.empty())).isEqualTo(putCommit);
@@ -432,7 +452,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                 Key.of("t2"), V_2_2,
                 Key.of("t3"), V_3_2));
 
-    final Hash unchangedCommit =
+    Hash unchangedCommit =
         commit("Conflicting Commit")
             .unchanged("t1")
             .unchanged("t2")
@@ -448,7 +468,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                 Key.of("t2"), V_2_2,
                 Key.of("t3"), V_3_2));
 
-    final Hash deleteCommit =
+    Hash deleteCommit =
         commit("Conflicting Commit").delete("t1").delete("t2").delete("t3").toBranch(branch);
     soft.assertThat(store().hashOnReference(branch, Optional.empty())).isEqualTo(deleteCommit);
     soft.assertThat(

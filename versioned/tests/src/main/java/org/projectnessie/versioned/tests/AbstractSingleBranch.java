@@ -18,6 +18,7 @@ package org.projectnessie.versioned.tests;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
+import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
 import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 
 public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
@@ -106,16 +108,16 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
         expectedValues.add(msg);
 
         Key key = Key.of(param.tableNameGen.apply(user));
-        Content value = newOnRef(String.format("data_file_%03d_%03d", user, commitNum));
-        Operation put = Put.of(key, value);
+        List<Operation> ops =
+            singleBranchManyUsersOps(branch, commitNum, user, hashKnownByUser, key);
 
         Hash commitHash;
-        List<Operation> ops = ImmutableList.of(put);
         try {
           commitHash = store().commit(branch, Optional.of(hashKnownByUser), msg, ops);
         } catch (ReferenceConflictException inconsistentValueException) {
           if (param.allowInconsistentValueException) {
             hashKnownByUser = store().hashOnReference(branch, Optional.empty());
+            ops = singleBranchManyUsersOps(branch, commitNum, user, hashKnownByUser, key);
             commitHash = store().commit(branch, Optional.of(hashKnownByUser), msg, ops);
           } else {
             throw inconsistentValueException;
@@ -133,5 +135,22 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
         commitsList(branch, s -> s.map(Commit::getCommitMeta), false);
     Collections.reverse(expectedValues);
     assertEquals(expectedValues, committedValues);
+  }
+
+  private List<Operation> singleBranchManyUsersOps(
+      BranchName branch, int commitNum, int user, Hash hashKnownByUser, Key key)
+      throws ReferenceNotFoundException {
+    List<Operation> ops;
+    Content existing =
+        store().getValue(store.hashOnReference(branch, Optional.of(hashKnownByUser)), key);
+    if (existing != null) {
+      Content value =
+          onRef(String.format("data_file_%03d_%03d", user, commitNum), existing.getId());
+      ops = ImmutableList.of(Put.of(key, value, existing));
+    } else {
+      Content value = newOnRef(String.format("data_file_%03d_%03d", user, commitNum));
+      ops = ImmutableList.of(Put.of(key, value));
+    }
+    return ops;
   }
 }

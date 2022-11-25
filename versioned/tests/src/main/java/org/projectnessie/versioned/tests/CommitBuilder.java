@@ -55,6 +55,10 @@ public class CommitBuilder {
     return put(Key.of(key), value);
   }
 
+  public CommitBuilder put(String key, Content value, Content expected) {
+    return put(Key.of(key), value, expected);
+  }
+
   /**
    * Adds a put operation to the current commit.
    *
@@ -64,6 +68,10 @@ public class CommitBuilder {
    */
   public CommitBuilder put(Key key, Content value) {
     return add(Put.of(key, value));
+  }
+
+  public CommitBuilder put(Key key, Content value, Content expected) {
+    return add(Put.of(key, value, expected));
   }
 
   /**

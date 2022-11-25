@@ -17,6 +17,7 @@ package org.projectnessie.versioned.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
+import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -33,6 +34,7 @@ import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Content;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Delete;
@@ -58,16 +60,30 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
     Hash[] commitHashes = new Hash[commits];
     List<CommitMeta> messages = new ArrayList<>(commits);
     for (int i = 0; i < commits; i++) {
-      CommitMeta msg = CommitMeta.fromMessage(String.format("commit#%05d", i));
+      String str = String.format("commit#%05d", i);
+      CommitMeta msg = CommitMeta.fromMessage(str);
       messages.add(msg);
+
+      Key key = Key.of("table");
+      Content value =
+          store()
+              .getValue(
+                  store()
+                      .hashOnReference(
+                          branch, Optional.of(i == 0 ? createHash : commitHashes[i - 1])),
+                  key);
+      Put op =
+          value != null
+              ? Put.of(key, onRef(str, value.getId()), value)
+              : Put.of(key, newOnRef(str));
+
       commitHashes[i] =
           store()
               .commit(
                   branch,
                   Optional.of(i == 0 ? createHash : commitHashes[i - 1]),
                   msg,
-                  ImmutableList.of(
-                      Put.of(Key.of("table"), newOnRef(String.format("value#%05d", i)))));
+                  ImmutableList.of(op));
     }
     Collections.reverse(messages);
 
