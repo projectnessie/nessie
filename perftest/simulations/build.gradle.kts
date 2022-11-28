@@ -52,6 +52,7 @@ nessieQuarkusApp {
     )
   }
   environmentNonInput.put("HTTP_ACCESS_LOG_LEVEL", testLogLevel())
+  jvmArgumentsNonInput.add("-XX:SelfDestructTimer=30")
   System.getProperties()
     .filter { e ->
       e.key.toString().startsWith("nessie.") || e.key.toString().startsWith("quarkus.")
