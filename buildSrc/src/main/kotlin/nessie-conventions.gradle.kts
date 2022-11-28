@@ -51,12 +51,17 @@ plugins {
 
 configureJava()
 
+configureScala()
+
 testTasks()
 
-scaladocJar()
-
-fun Project.scaladocJar() {
+fun Project.configureScala() {
   plugins.withType<ScalaPlugin>().configureEach {
+    tasks.withType<ScalaCompile>().configureEach {
+      scalaCompileOptions.keepAliveMode.set(KeepAliveMode.DAEMON)
+      scalaCompileOptions.encoding = "UTF-8"
+    }
+
     val scaladoc = tasks.named<ScalaDoc>("scaladoc")
 
     val jandexExt = extensions.findByType<JandexExtension>()
