@@ -21,7 +21,6 @@ import static java.util.UUID.nameUUIDFromBytes;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Queue;
 import java.util.Random;
 import org.projectnessie.tools.contentgenerator.keygen.KeyGenerator.Func;
@@ -41,44 +40,44 @@ public final class Functions {
   static Map<String, FuncGenerator> FUNCTIONS = new HashMap<>();
 
   static {
-    FUNCTIONS.put("uuid", params -> Optional.of(new UuidFunc()));
+    FUNCTIONS.put("uuid", params -> new UuidFunc());
     FUNCTIONS.put(
         "int",
         params -> {
           long bound = FuncGenerator.longParam(params);
-          return Optional.of(new IntFunc(bound));
+          return new IntFunc(bound);
         });
     FUNCTIONS.put(
         "string",
         params -> {
           int len = FuncGenerator.intParam(params);
-          return Optional.of(new StringFunc(len));
+          return new StringFunc(len);
         });
     FUNCTIONS.put(
         "seq",
         params -> {
           int offset = FuncGenerator.intParam(params);
-          return Optional.of(new SeqFunc(offset));
+          return new SeqFunc(offset);
         });
     FUNCTIONS.put(
         "prob",
         params -> {
           double prob = FuncGenerator.doubleParam(params);
           Func func = FuncGenerator.funcParam(params);
-          return Optional.of(new ProbFunc(prob, func));
+          return new ProbFunc(prob, func);
         });
     FUNCTIONS.put(
         "every",
         params -> {
           int seq = FuncGenerator.intParam(params);
           Func func = FuncGenerator.funcParam(params);
-          return Optional.of(new EveryFunc(seq, func));
+          return new EveryFunc(seq, func);
         });
   }
 
   @FunctionalInterface
   interface FuncGenerator {
-    Optional<Func> generate(Queue<String> params);
+    Func generate(Queue<String> params);
 
     static double doubleParam(Queue<String> params) {
       return Double.parseDouble(params.remove());
@@ -94,12 +93,7 @@ public final class Functions {
 
     static Func funcParam(Queue<String> params) {
       String name = params.remove();
-      return resolveFunction(name)
-          .generate(params)
-          .orElseThrow(
-              () ->
-                  new IllegalArgumentException(
-                      "Nested function pattern did not resolve to a function"));
+      return resolveFunction(name).generate(params);
     }
   }
 

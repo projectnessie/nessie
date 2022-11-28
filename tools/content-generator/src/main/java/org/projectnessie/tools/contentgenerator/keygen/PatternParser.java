@@ -140,7 +140,7 @@ class PatternParser {
     }
 
     Queue<String> params = new ArrayDeque<>(args);
-    resolveFunction(name).generate(params).ifPresent(generators::add);
+    generators.add(resolveFunction(name).generate(params));
   }
 
   private void maybeAddConstant(StringBuilder currentConstant) {
