@@ -15,6 +15,10 @@
  */
 package org.projectnessie.tools.contentgenerator.cli;
 
+import static java.util.stream.Collectors.toList;
+import static org.projectnessie.model.ContentKey.fromPathString;
+import static org.projectnessie.tools.contentgenerator.keygen.KeyGenerator.newKeyGenerator;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -22,15 +26,18 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.validation.constraints.Min;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.error.BaseNessieClientServerException;
+import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -44,6 +51,7 @@ import org.projectnessie.model.ImmutableIcebergView;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.types.ContentTypes;
+import org.projectnessie.tools.contentgenerator.keygen.KeyGenerator;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.Model.CommandSpec;
@@ -103,6 +111,15 @@ public class GenerateContent extends AbstractCommand {
       converter = ContentTypeConverter.class)
   private Content.Type contentType;
 
+  @Option(names = "--key-pattern")
+  private String keyPattern;
+
+  @Option(names = "--puts-per-commit", defaultValue = "1")
+  private int putsPerCommit;
+
+  @Option(names = "--continue-on-error", defaultValue = "false")
+  private boolean continueOnError;
+
   @Spec private CommandSpec spec;
 
   @Override
@@ -123,15 +140,7 @@ public class GenerateContent extends AbstractCommand {
     String runStartTime =
         DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss").format(LocalDateTime.now());
 
-    List<ContentKey> tableNames =
-        IntStream.range(0, numTables)
-            .mapToObj(
-                i ->
-                    ContentKey.of(
-                        String.format("create-contents-%s", runStartTime),
-                        "contents",
-                        Integer.toString(i)))
-            .collect(Collectors.toList());
+    List<ContentKey> tableNames = generateTableNames(runStartTime);
 
     try (NessieApiV1 api = createNessieApiInstance()) {
       Branch defaultBranch;
@@ -173,23 +182,27 @@ public class GenerateContent extends AbstractCommand {
           .getOut()
           .printf("Starting contents generation, %d commits...%n", numCommits);
 
-      for (int i = 0; i < numCommits; i++) {
+      for (int commitNum = 0; commitNum < numCommits; commitNum++) {
         // Choose a random branch to commit to
         String branchName = branches.get(random.nextInt(branches.size()));
 
         Branch commitToBranch = (Branch) api.getReference().refName(branchName).get();
 
-        ContentKey tableName = tableNames.get(random.nextInt(tableNames.size()));
+        List<ContentKey> keys =
+            IntStream.range(0, putsPerCommit)
+                .mapToObj(i -> tableNames.get(random.nextInt(tableNames.size())))
+                .distinct()
+                .collect(toList());
 
-        Content tableContents =
-            api.getContent().refName(branchName).key(tableName).get().get(tableName);
-        Content newContents = createContents(tableContents, random);
+        Map<ContentKey, Content> existing = api.getContent().refName(branchName).keys(keys).get();
 
         spec.commandLine()
             .getOut()
             .printf(
-                "Committing content-key '%s' to branch '%s' at %s%n",
-                tableName, commitToBranch.getName(), commitToBranch.getHash());
+                "Committing content-keys '%s' to branch '%s' at %s%n",
+                keys.stream().map(ContentKey::toString).collect(Collectors.joining(", ")),
+                commitToBranch.getName(),
+                commitToBranch.getHash());
 
         CommitMultipleOperationsBuilder commit =
             api.commitMultipleOperations()
@@ -198,29 +211,39 @@ public class GenerateContent extends AbstractCommand {
                     CommitMeta.builder()
                         .message(
                             String.format(
-                                "%s table %s on %s, commit #%d of %d",
-                                tableContents != null ? "Update" : "Create",
-                                tableName,
-                                branchName,
-                                i,
-                                numCommits))
+                                "Commit #%d of %d on %s", commitNum, numCommits, branchName))
                         .author(System.getProperty("user.name"))
                         .authorTime(Instant.now())
                         .build());
-        if (newContents instanceof IcebergTable || newContents instanceof IcebergView) {
-          commit.operation(Put.of(tableName, newContents, tableContents));
-        } else {
-          commit.operation(Put.of(tableName, newContents));
+        for (ContentKey key : keys) {
+          Content existingContent = existing.get(key);
+          Content newContents = createContents(existingContent, random);
+          if (existingContent instanceof IcebergTable || existingContent instanceof IcebergView) {
+            commit.operation(Put.of(key, newContents, existingContent));
+          } else {
+            commit.operation(Put.of(key, newContents));
+          }
         }
-        Branch newHead = commit.commit();
+        try {
+          Branch newHead = commit.commit();
 
-        if (random.nextDouble() < newTagProbability) {
-          Tag tag = Tag.of("new-tag-" + random.nextLong(), newHead.getHash());
+          if (random.nextDouble() < newTagProbability) {
+            Tag tag = Tag.of("new-tag-" + random.nextLong(), newHead.getHash());
+            spec.commandLine()
+                .getOut()
+                .printf(
+                    "Creating tag '%s' from '%s' at %s%n",
+                    tag.getName(), branchName, tag.getHash());
+            api.createReference().reference(tag).sourceRefName(branchName).create();
+          }
+        } catch (NessieConflictException e) {
+          if (!continueOnError) {
+            throw e;
+          }
+
           spec.commandLine()
-              .getOut()
-              .printf(
-                  "Creating tag '%s' from '%s' at %s%n", tag.getName(), branchName, tag.getHash());
-          api.createReference().reference(tag).sourceRefName(branchName).create();
+              .getErr()
+              .println(spec.commandLine().getColorScheme().errorText("Conflict: " + e));
         }
 
         try {
@@ -233,6 +256,23 @@ public class GenerateContent extends AbstractCommand {
     }
 
     spec.commandLine().getOut().printf("Done creating contents.%n");
+  }
+
+  private List<ContentKey> generateTableNames(String runStartTime) {
+    IntFunction<ContentKey> mapper;
+    if (keyPattern != null) {
+      KeyGenerator generator = newKeyGenerator(keyPattern);
+      mapper = i -> fromPathString(generator.generate());
+    } else {
+      mapper =
+          i ->
+              ContentKey.of(
+                  String.format("create-contents-%s", runStartTime),
+                  "contents",
+                  Integer.toString(i));
+    }
+
+    return IntStream.range(0, numTables).mapToObj(mapper).collect(toList());
   }
 
   private Content createContents(Content currentContents, ThreadLocalRandom random) {

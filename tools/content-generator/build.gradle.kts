@@ -43,6 +43,10 @@ dependencies {
   implementation(libs.jackson.annotations)
   implementation(libs.jackson.databind)
 
+  compileOnly(libs.immutables.builder)
+  compileOnly(libs.immutables.value.annotations)
+  annotationProcessor(libs.immutables.value.processor)
+
   testCompileOnly(libs.microprofile.openapi)
 
   testImplementation(platform(libs.junit.bom))
