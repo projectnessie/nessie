@@ -216,10 +216,10 @@ public class GenerateContent extends AbstractCommand {
                         .authorTime(Instant.now())
                         .build());
         for (ContentKey key : keys) {
-          Content ex = existing.get(key);
-          Content newContents = createContents(ex, random);
-          if (ex instanceof IcebergTable || ex instanceof IcebergView) {
-            commit.operation(Put.of(key, newContents, ex));
+          Content existingContent = existing.get(key);
+          Content newContents = createContents(existingContent, random);
+          if (existingContent instanceof IcebergTable || existingContent instanceof IcebergView) {
+            commit.operation(Put.of(key, newContents, existingContent));
           } else {
             commit.operation(Put.of(key, newContents));
           }

@@ -20,8 +20,8 @@ import static org.projectnessie.tools.contentgenerator.keygen.Functions.resolveF
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Deque;
 import java.util.List;
+import java.util.Queue;
 import org.projectnessie.tools.contentgenerator.keygen.KeyGenerator.Func;
 
 class PatternParser {
@@ -139,7 +139,7 @@ class PatternParser {
       }
     }
 
-    Deque<String> params = new ArrayDeque<>(args);
+    Queue<String> params = new ArrayDeque<>(args);
     resolveFunction(name).generate(params).ifPresent(generators::add);
   }
 

@@ -43,6 +43,13 @@ public class TestKeyGenerator {
   }
 
   @Test
+  public void constantStringWithDollar() {
+    KeyGenerator gen = KeyGenerator.newKeyGenerator("hello $$world");
+    List<String> values = Stream.generate(gen::generate).limit(20).collect(Collectors.toList());
+    soft.assertThat(values).hasSize(20).allMatch("hello $world"::equals);
+  }
+
+  @Test
   public void intFunc() {
     KeyGenerator gen = KeyGenerator.newKeyGenerator("hello world ${int,100} foo");
     List<String> values = Stream.generate(gen::generate).limit(20).collect(Collectors.toList());

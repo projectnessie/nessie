@@ -16,13 +16,13 @@
 package org.projectnessie.tools.contentgenerator.keygen;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.UUID.randomUUID;
+import static java.util.UUID.nameUUIDFromBytes;
 
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.Random;
 import org.projectnessie.tools.contentgenerator.keygen.KeyGenerator.Func;
 
@@ -78,22 +78,22 @@ public final class Functions {
 
   @FunctionalInterface
   interface FuncGenerator {
-    Optional<Func> generate(Deque<String> params);
+    Optional<Func> generate(Queue<String> params);
 
-    static double doubleParam(Deque<String> params) {
-      return Double.parseDouble(params.removeFirst());
+    static double doubleParam(Queue<String> params) {
+      return Double.parseDouble(params.remove());
     }
 
-    static int intParam(Deque<String> params) {
-      return Integer.parseInt(params.removeFirst());
+    static int intParam(Queue<String> params) {
+      return Integer.parseInt(params.remove());
     }
 
-    static long longParam(Deque<String> params) {
-      return Long.parseLong(params.removeFirst());
+    static long longParam(Queue<String> params) {
+      return Long.parseLong(params.remove());
     }
 
-    static Func funcParam(Deque<String> params) {
-      String name = params.removeFirst();
+    static Func funcParam(Queue<String> params) {
+      String name = params.remove();
       return resolveFunction(name)
           .generate(params)
           .orElseThrow(
@@ -108,7 +108,9 @@ public final class Functions {
 
     @Override
     public void apply(Random random, StringBuilder target) {
-      target.append(randomUUID());
+      byte[] uuid = new byte[16];
+      random.nextBytes(uuid);
+      target.append(nameUUIDFromBytes(uuid));
     }
   }
 
@@ -131,7 +133,7 @@ public final class Functions {
     private final int len;
 
     private static final char[] CHARS =
-        ("ABCDEFGHIJKLMNOPQRSTUVWXYZ" + "abcdefghijklmnopqrstuvwxyz" + "0123456789" + "b._-")
+        ("ABCDEFGHIJKLMNOPQRSTUVWXYZ" + "abcdefghijklmnopqrstuvwxyz" + "0123456789" + " ._-")
             .toCharArray();
 
     StringFunc(int len) {
