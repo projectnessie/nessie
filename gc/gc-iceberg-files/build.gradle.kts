@@ -69,6 +69,7 @@ dependencies {
 
   testImplementation(platform(libs.awssdk.bom))
   testImplementation(libs.awssdk.s3)
+  testRuntimeOnly(libs.awssdk.sts)
   testRuntimeOnly(libs.hadoop.aws)
 
   testImplementation(platform(libs.junit.bom))

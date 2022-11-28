@@ -82,6 +82,7 @@ dependencies {
 
   testRuntimeOnly(libs.hadoop.client)
   testRuntimeOnly(libs.hadoop.aws)
+  testRuntimeOnly(libs.awssdk.sts)
 
   testRuntimeOnly(platform(libs.awssdk.bom))
   testRuntimeOnly(libs.awssdk.s3)

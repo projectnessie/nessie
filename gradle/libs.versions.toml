@@ -87,6 +87,7 @@ awssdk-glue = { module = "software.amazon.awssdk:glue" }
 awssdk-kms = { module = "software.amazon.awssdk:kms" }
 awssdk-netty-nio-client = { module = "software.amazon.awssdk:netty-nio-client" }
 awssdk-s3 = { module = "software.amazon.awssdk:s3" }
+awssdk-sts = { module = "software.amazon.awssdk:sts" }
 awssdk-url-connection-client = { module = "software.amazon.awssdk:url-connection-client" }
 bouncycastle-bcpkix = { module = "org.bouncycastle:bcpkix-jdk15on", version.ref = "bouncycastle" }
 bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk15on", version.ref = "bouncycastle" }
