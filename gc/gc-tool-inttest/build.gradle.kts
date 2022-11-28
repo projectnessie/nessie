@@ -108,6 +108,7 @@ intTest { systemProperty("aws.region", "us-east-1") }
 nessieQuarkusApp {
   includeTask(intTest)
   environmentNonInput.put("HTTP_ACCESS_LOG_LEVEL", testLogLevel())
+  jvmArgumentsNonInput.add("-XX:SelfDestructTimer=30")
 }
 
 forceJava11ForTests()

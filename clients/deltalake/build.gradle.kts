@@ -69,6 +69,7 @@ dependencies {
 nessieQuarkusApp {
   includeTask(tasks.named<Test>("intTest"))
   environmentNonInput.put("HTTP_ACCESS_LOG_LEVEL", testLogLevel())
+  jvmArgumentsNonInput.add("-XX:SelfDestructTimer=30")
 }
 
 forceJava11ForTests()
