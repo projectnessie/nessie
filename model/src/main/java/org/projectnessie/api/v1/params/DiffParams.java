@@ -32,30 +32,18 @@ public class DiffParams {
 
   @NotNull
   @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-  @Parameter(
-      description = "The 'from' reference to start the diff from",
-      examples = {@ExampleObject(ref = "ref")})
   private String fromRef;
 
   @Nullable
   @Pattern(regexp = HASH_OPTIONAL_REGEX, message = Validation.HASH_MESSAGE)
-  @Parameter(
-      description = "Optional hash on the 'from' reference to start the diff from",
-      examples = {@ExampleObject(ref = "hash")})
   private String fromHashOnRef;
 
   @NotNull
   @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-  @Parameter(
-      description = "The 'to' reference to end the diff at.",
-      examples = {@ExampleObject(ref = "ref")})
   private String toRef;
 
   @Nullable
   @Pattern(regexp = HASH_OPTIONAL_REGEX, message = Validation.HASH_MESSAGE)
-  @Parameter(
-      description = "Optional hash on the 'to' reference to end the diff at.",
-      examples = {@ExampleObject(ref = "hash")})
   private String toHashOnRef;
 
   public DiffParams() {}
@@ -72,12 +60,18 @@ public class DiffParams {
     this.toHashOnRef = toHashOnRef;
   }
 
+  @Parameter(
+      description = "The 'from' reference (and optional hash) to start the diff from",
+      examples = {@ExampleObject(ref = "ref"), @ExampleObject(ref = "refForDiffWithHash")})
   @PathParam("fromRefWithHash")
   public void setFromRefWithHash(String value) {
     this.fromRef = parseRefName(value);
     this.fromHashOnRef = parseHash(value);
   }
 
+  @Parameter(
+      description = "The 'to' reference (and optional hash) to end the diff at.",
+      examples = {@ExampleObject(ref = "ref"), @ExampleObject(ref = "refForDiffWithHash")})
   @PathParam("toRefWithHash")
   public void setToRefWithHash(String value) {
     this.toRef = parseRefName(value);
