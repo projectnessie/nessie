@@ -38,8 +38,7 @@ public interface HttpDiffApi extends DiffApi {
 
   @GET
   @Produces(MediaType.APPLICATION_JSON)
-  @Path(
-      "{fromRef : [^*]+}{f : [*]?}{fromHashOnRef : ([^.]*)?}...{toRef : [^*]+}{t : [*]?}{toHashOnRef : ([^.]*)?}")
+  @Path("{fromRefWithHash}...{toRefWithHash}")
   @Operation(
       summary = "Get a diff for two given references",
       description =
@@ -49,9 +48,9 @@ public interface HttpDiffApi extends DiffApi {
               + "\n"
               + "Examples: \n"
               + "  diffs/main...myBranch\n"
-              + "  diffs/main...myBranch*1234567890123456\n"
-              + "  diffs/main*1234567890123456...myBranch\n"
-              + "  diffs/main*1234567890123456...myBranch*1234567890123456\n")
+              + "  diffs/main...myBranch\\*1234567890123456\n"
+              + "  diffs/main\\*1234567890123456...myBranch\n"
+              + "  diffs/main\\*1234567890123456...myBranch\\*1234567890123456\n")
   @APIResponses({
     @APIResponse(
         responseCode = "200",
