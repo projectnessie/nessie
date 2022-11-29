@@ -61,7 +61,7 @@
     "build": "node scripts/build.js",
     "test": "node scripts/test.js",
     "lint": "eslint src/**/*.{ts,tsx} --fix",
-    "generate-api": "openapi-generator-cli generate -g typescript-fetch -i src/openapi/nessie-openapi-0.44.0.yaml -o build/generated/ts/src/generated/utils/api --skip-validate-spec --additional-properties=supportsES6=true",
+    "generate-api": "openapi-generator-cli generate -g typescript-fetch -i src/openapi/nessie-openapi-0.45.0.yaml -o build/generated/ts/src/generated/utils/api --additional-properties=supportsES6=true",
     "fix-generated-client": "node src/build-scripts/fix-generated-client.js"
   },
   "eslintConfig": {

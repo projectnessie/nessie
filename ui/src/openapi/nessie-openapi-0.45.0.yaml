@@ -1,5 +1,5 @@
 ---
-# A copy of OpenAPI definition of Nessie 0.44.0, a.k.a. API v1
+# A copy of OpenAPI definition of Nessie 0.45.0, a.k.a. API v1
 openapi: 3.0.3
 info:
   title: Nessie API
@@ -9,7 +9,7 @@ info:
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  version: 0.44.0
+  version: 0.45.0
 paths:
   /config:
     get:
@@ -136,56 +136,27 @@ paths:
             for a key
         "404":
           description: Table not found on ref
-  /diffs/{fromRef}{f}{fromHashOnRef}...{toRef}{t}{toHashOnRef}:
+  /diffs/{fromRefWithHash}...{toRefWithHash}:
     get:
       summary: Get a diff for two given references
       description: "The URL pattern is basically 'from' and 'to' separated by '...'\
         \ (three dots). 'from' and 'to' must start with a reference name, optionally\
         \ followed by hash on that reference, the hash prefixed with the'*' character.\n\
-        \nExamples: \n  diffs/main...myBranch\n  diffs/main...myBranch*1234567890123456\n\
-        \  diffs/main*1234567890123456...myBranch\n  diffs/main*1234567890123456...myBranch*1234567890123456\n"
+        \nExamples: \n  diffs/main...myBranch\n  diffs/main...myBranch\\*1234567890123456\n\
+        \  diffs/main\\*1234567890123456...myBranch\n  diffs/main\\*1234567890123456...myBranch\\\
+        *1234567890123456\n"
       operationId: getDiff
       parameters:
-      - name: fromHashOnRef
+      - name: fromRefWithHash
         in: path
-        description: Optional hash on the 'from' reference to start the diff from
         required: true
         schema:
-          pattern: "(^[0-9a-fA-F]{8,64}$)?"
           type: string
-        examples:
-          hash:
-            $ref: '#/components/examples/hash'
-      - name: fromRef
+      - name: toRefWithHash
         in: path
-        description: The 'from' reference to start the diff from
         required: true
         schema:
-          pattern: "^[A-Za-z](((?![.][.])[A-Za-z0-9./_-])*[A-Za-z0-9_-])?$"
           type: string
-        examples:
-          ref:
-            $ref: '#/components/examples/ref'
-      - name: toHashOnRef
-        in: path
-        description: Optional hash on the 'to' reference to end the diff at.
-        required: true
-        schema:
-          pattern: "(^[0-9a-fA-F]{8,64}$)?"
-          type: string
-        examples:
-          hash:
-            $ref: '#/components/examples/hash'
-      - name: toRef
-        in: path
-        description: The 'to' reference to end the diff at.
-        required: true
-        schema:
-          pattern: "^[A-Za-z](((?![.][.])[A-Za-z0-9./_-])*[A-Za-z0-9_-])?$"
-          type: string
-        examples:
-          ref:
-            $ref: '#/components/examples/ref'
       responses:
         "200":
           description: Returned diff for the given references.
