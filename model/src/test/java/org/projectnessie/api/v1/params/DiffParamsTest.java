@@ -21,6 +21,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 @Execution(ExecutionMode.CONCURRENT)
 public class DiffParamsTest {
@@ -68,5 +70,25 @@ public class DiffParamsTest {
     assertThatThrownBy(() -> DiffParams.builder().toRef("x").build())
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("Cannot build DiffParams, some of required attributes are not set [fromRef]");
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "main*1122334455667788,main,1122334455667788",
+    "main,main,",
+    "main/,main/,",
+    "main/*1122334455667788,main/,1122334455667788",
+    "*1122334455667788,,1122334455667788",
+    "*,,",
+    "main*,main,",
+  })
+  public void testParameterParsing(String param, String expectedRefName, String expectedHash) {
+    DiffParams diffParams = new DiffParams();
+    diffParams.setFromRefWithHash(param);
+    diffParams.setToRefWithHash(param);
+    assertThat(diffParams.getFromRef()).isEqualTo(expectedRefName);
+    assertThat(diffParams.getToRef()).isEqualTo(expectedRefName);
+    assertThat(diffParams.getFromHashOnRef()).isEqualTo(expectedHash);
+    assertThat(diffParams.getToHashOnRef()).isEqualTo(expectedHash);
   }
 }

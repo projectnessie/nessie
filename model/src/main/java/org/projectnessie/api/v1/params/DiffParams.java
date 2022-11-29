@@ -28,12 +28,13 @@ public class DiffParams {
 
   public static final String HASH_OPTIONAL_REGEX = "(" + Validation.HASH_REGEX + ")?";
 
+  private static final char HASH_SEPARATOR = '*';
+
   @NotNull
   @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
   @Parameter(
       description = "The 'from' reference to start the diff from",
       examples = {@ExampleObject(ref = "ref")})
-  @PathParam("fromRef")
   private String fromRef;
 
   @Nullable
@@ -41,7 +42,6 @@ public class DiffParams {
   @Parameter(
       description = "Optional hash on the 'from' reference to start the diff from",
       examples = {@ExampleObject(ref = "hash")})
-  @PathParam("fromHashOnRef")
   private String fromHashOnRef;
 
   @NotNull
@@ -49,7 +49,6 @@ public class DiffParams {
   @Parameter(
       description = "The 'to' reference to end the diff at.",
       examples = {@ExampleObject(ref = "ref")})
-  @PathParam("toRef")
   private String toRef;
 
   @Nullable
@@ -57,7 +56,6 @@ public class DiffParams {
   @Parameter(
       description = "Optional hash on the 'to' reference to end the diff at.",
       examples = {@ExampleObject(ref = "hash")})
-  @PathParam("toHashOnRef")
   private String toHashOnRef;
 
   public DiffParams() {}
@@ -72,6 +70,28 @@ public class DiffParams {
     this.fromHashOnRef = fromHashOnRef;
     this.toRef = toRef;
     this.toHashOnRef = toHashOnRef;
+  }
+
+  @PathParam("fromRefWithHash")
+  public void setFromRefWithHash(String value) {
+    this.fromRef = parseRefName(value);
+    this.fromHashOnRef = parseHash(value);
+  }
+
+  @PathParam("toRefWithHash")
+  public void setToRefWithHash(String value) {
+    this.toRef = parseRefName(value);
+    this.toHashOnRef = parseHash(value);
+  }
+
+  private String parseRefName(String param) {
+    int idx = param.indexOf(HASH_SEPARATOR);
+    return idx == 0 ? null : idx < 0 ? param : param.substring(0, idx);
+  }
+
+  private String parseHash(String param) {
+    int idx = param.indexOf(HASH_SEPARATOR);
+    return idx < 0 ? null : param.substring(idx + 1);
   }
 
   public String getFromRef() {
