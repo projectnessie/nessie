@@ -2,6 +2,14 @@
 History
 =======
 
+0.45.0 (2022-11-29)
+-------------------
+
+* See release notes and changelog on GitHub: https://github.com/projectnessie/nessie/releases/tag/nessie-0.45.0
+* python: ignore unimportant CVE to fix linting (#5525)
+* python: fix lint with new mypy version (#5480)
+* Record next development version (#5387)
+
 0.44.0 (2022-10-18)
 -------------------
 
