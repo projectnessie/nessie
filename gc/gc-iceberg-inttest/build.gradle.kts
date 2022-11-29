@@ -75,6 +75,7 @@ dependencies {
 
   testRuntimeOnly(libs.hadoop.client)
   testRuntimeOnly(libs.hadoop.aws)
+  testRuntimeOnly(libs.awssdk.sts)
 
   testImplementation(platform(libs.awssdk.bom))
   testImplementation(libs.awssdk.s3)
