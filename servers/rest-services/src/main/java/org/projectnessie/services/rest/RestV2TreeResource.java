@@ -123,8 +123,9 @@ public class RestV2TreeResource implements HttpTreeApi {
   @Override
   public SingleReferenceResponse getReferenceByName(GetReferenceParams params)
       throws NessieNotFoundException {
+    Reference reference = Reference.fromPathString(params.getRef(), Reference.ReferenceType.BRANCH);
     return SingleReferenceResponse.builder()
-        .reference(tree().getReferenceByName(params.getRefName(), params.fetchOption()))
+        .reference(tree().getReferenceByName(reference.getName(), params.fetchOption()))
         .build();
   }
 

@@ -35,8 +35,8 @@ public class GetReferenceParams {
       examples = {@ExampleObject(ref = "ref")})
   @PathParam("ref")
   @NotNull
-  @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-  private String refName;
+  @Pattern(regexp = Validation.REF_NAME_PATH_REGEX, message = Validation.REF_NAME_MESSAGE)
+  private String ref;
 
   @Parameter(
       description =
@@ -56,8 +56,8 @@ public class GetReferenceParams {
   public GetReferenceParams() {}
 
   @Constructor
-  GetReferenceParams(@NotNull String refName, @Nullable FetchOption fetchOption) {
-    this.refName = refName;
+  GetReferenceParams(@NotNull String ref, @Nullable FetchOption fetchOption) {
+    this.ref = ref;
     this.fetchOption = fetchOption;
   }
 
@@ -66,8 +66,8 @@ public class GetReferenceParams {
     return fetchOption;
   }
 
-  public String getRefName() {
-    return refName;
+  public String getRef() {
+    return ref;
   }
 
   public static GetReferenceParamsBuilder builder() {
