@@ -31,31 +31,40 @@ import java.util.function.Supplier;
  * @param <E1> the first API-level exception that should be unwrapped
  * @param <E2> the second API-level exception that should be unwrapped
  */
-public class ApiHttpRequest<E1 extends Throwable, E2 extends Throwable> {
-  private final HttpRequest request;
+class HttpRequestWrapper<E1 extends Throwable, E2 extends Throwable>
+    implements ExecutableHttpRequest<E1, E2> {
+
+  private final ExecutableHttpRequest<HttpClientException, RuntimeException> delegate;
   private final Class<E1> ex1;
   private final Class<E2> ex2;
 
-  ApiHttpRequest(HttpRequest request, Class<E1> ex1, Class<E2> ex2) {
-    this.request = request;
+  HttpRequestWrapper(
+      ExecutableHttpRequest<HttpClientException, RuntimeException> delegate,
+      Class<E1> ex1,
+      Class<E2> ex2) {
+    this.delegate = delegate;
     this.ex1 = ex1;
     this.ex2 = ex2;
   }
 
+  @Override
   public HttpResponse get() throws E1, E2 {
-    return unwrap(request::get);
+    return unwrap(delegate::get);
   }
 
+  @Override
   public HttpResponse delete() throws E1, E2 {
-    return unwrap(request::delete);
+    return unwrap(delegate::delete);
   }
 
+  @Override
   public HttpResponse post(Object obj) throws E1, E2 {
-    return unwrap(() -> request.post(obj));
+    return unwrap(() -> delegate.post(obj));
   }
 
+  @Override
   public HttpResponse put(Object obj) throws E1, E2 {
-    return unwrap(() -> request.put(obj));
+    return unwrap(() -> delegate.put(obj));
   }
 
   private HttpResponse unwrap(Supplier<HttpResponse> action) throws E1, E2 {
