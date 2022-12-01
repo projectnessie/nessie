@@ -50,13 +50,11 @@ public final class ClientSideGetNamespace extends BaseGetNamespaceBuilder {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
 
-    Optional<Namespace> result =
-        Optional.ofNullable(contentMap.get(key)).flatMap(c -> c.unwrap(Namespace.class));
-    if (!result.isPresent()) {
-      throw new NessieNamespaceNotFoundException(
-          String.format("Namespace '%s' does not exist", key.toPathString()));
-    }
-
-    return result.get();
+    return Optional.ofNullable(contentMap.get(key))
+        .flatMap(c -> c.unwrap(Namespace.class)) // Converts non-Namespace entries to `empty`
+        .orElseThrow(
+            () ->
+                new NessieNamespaceNotFoundException(
+                    String.format("Namespace '%s' does not exist", key.toPathString())));
   }
 }

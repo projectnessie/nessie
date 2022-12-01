@@ -27,7 +27,6 @@ import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation;
 
@@ -56,31 +55,27 @@ public final class ClientSideDeleteNamespace extends BaseDeleteNamespaceBuilder 
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
 
-    Optional<Object> existingNamespace =
-        Optional.ofNullable(contentMap.get(key)).flatMap(c -> c.unwrap(Namespace.class));
-
-    if (!existingNamespace.isPresent()) {
+    if (!Optional.ofNullable(contentMap.get(key))
+        .flatMap(c -> c.unwrap(Namespace.class)) // Converts non-Namespace entries to `empty`
+        .isPresent()) {
       throw new NessieNamespaceNotFoundException(
           String.format("Namespace '%s' does not exist", key.toPathString()));
     }
 
-    Optional<EntriesResponse.Entry> entry;
     try {
-      entry =
-          api
-              .getEntries()
-              .refName(refName)
-              .hashOnRef(hashOnRef)
-              .filter(String.format("entry.namespace.startsWith('%s')", key))
-              .stream()
-              .findAny();
+      if (api
+          .getEntries()
+          .refName(refName)
+          .hashOnRef(hashOnRef)
+          .filter(String.format("entry.namespace.startsWith('%s')", key))
+          .stream()
+          .findAny()
+          .isPresent()) {
+        throw new NessieNamespaceNotEmptyException(
+            String.format("Namespace '%s' is not empty", key.toPathString()));
+      }
     } catch (NessieNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
-    }
-
-    if (entry.isPresent()) {
-      throw new NessieNamespaceNotEmptyException(
-          String.format("Namespace '%s' is not empty", key.toPathString()));
     }
 
     try {
