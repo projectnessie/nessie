@@ -19,31 +19,42 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 import io.restassured.RestAssured;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.client.ext.NessieApiVersion;
+import org.projectnessie.client.ext.NessieApiVersions;
 
 public abstract class AbstractQuarkusRestWithMetrics extends AbstractTestQuarkusRest {
   // We need to extend the base class because all Nessie metrics are created lazily.
   // They will appear in the `/q/metrics` endpoint only when some REST actions are executed.
 
   // this test is executed after all tests from the base class
+
+  private String getMetrics() {
+    return RestAssured.given()
+        .when()
+        .basePath("/q/metrics")
+        .get()
+        .then()
+        .statusCode(200)
+        .extract()
+        .asString();
+  }
+
   @Test
   void smokeTestMetrics() {
-    // when
-    String body =
-        RestAssured.given()
-            .when()
-            .basePath("/q/metrics")
-            .get()
-            .then()
-            .statusCode(200)
-            .extract()
-            .asString();
-
-    // then
+    String body = getMetrics();
     assertThat(body).contains("jvm_threads_live_threads");
     assertThat(body).contains("nessie_versionstore_request_seconds_max");
     assertThat(body).contains("nessie_versionstore_request_seconds_bucket");
     assertThat(body).contains("nessie_versionstore_request_seconds_count");
     assertThat(body).contains("nessie_versionstore_request_seconds_sum");
+    assertThat(body).contains("http_server_connections_seconds_max");
+    assertThat(body).contains("http_server_connections_seconds_active_count");
+  }
+
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V1)
+  void smokeHttpApiV1Metrics() {
+    String body = getMetrics();
     assertThat(body).contains("/api/v1/diffs/{diff_params}");
     assertThat(body).contains("/api/v1/trees/{referenceType}/{ref}");
     assertThat(body).contains("/api/v1/trees/branch/{branchName}/commit");
@@ -53,7 +64,20 @@ public abstract class AbstractQuarkusRestWithMetrics extends AbstractTestQuarkus
     assertThat(body).contains("/api/v1/trees/tree/{ref}/entries");
     assertThat(body).contains("/api/v1/namespaces/{ref}");
     assertThat(body).contains("/api/v1/namespaces/namespace/{ref}/{name}");
-    assertThat(body).contains("http_server_connections_seconds_max");
-    assertThat(body).contains("http_server_connections_seconds_active_count");
+  }
+
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  void smokeHttpApiV2Metrics() {
+    String body = getMetrics();
+    assertThat(body).contains("/api/v2/config");
+    assertThat(body).contains("/api/v2/trees/{ref}");
+    assertThat(body).contains("/api/v2/trees/{ref}/contents");
+    assertThat(body).contains("/api/v2/trees/{ref}/entries");
+    assertThat(body).contains("/api/v2/trees/{ref}/history");
+    assertThat(body).contains("/api/v2/trees/{ref}/history/commit");
+    assertThat(body).contains("/api/v2/trees/{ref}/history/merge");
+    assertThat(body).contains("/api/v2/trees/{ref}/history/transplant");
+    assertThat(body).contains("/api/v2/trees/{from-ref}/diff/{to-ref}");
   }
 }

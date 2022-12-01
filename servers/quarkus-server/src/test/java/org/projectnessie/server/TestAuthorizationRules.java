@@ -26,6 +26,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
+import org.projectnessie.client.ext.NessieApiVersion;
+import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieForbiddenException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -202,6 +204,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
 
   @Test
   @TestSecurity(user = "admin_user")
+  @NessieApiVersions(versions = NessieApiVersion.V1) // Reflog is not supported in API v2
   void testRefLogAllowed() throws Exception {
     //noinspection deprecation
     assertThat(api().getRefLog().stream()).isNotNull();
@@ -209,6 +212,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
 
   @Test
   @TestSecurity(user = "disallowed_user")
+  @NessieApiVersions(versions = NessieApiVersion.V1) // Reflog is not supported in API v2
   void testRefLogDisallowed() {
     //noinspection deprecation
     assertThatThrownBy(() -> api().getRefLog().stream())

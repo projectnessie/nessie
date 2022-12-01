@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 import org.projectnessie.model.types.ContentTypes;
 
 final class Util {
@@ -34,6 +35,8 @@ final class Util {
   public static final char ZERO_BYTE = '\u0000';
   public static final char DOT = '.';
   public static final char GROUP_SEPARATOR = '\u001D';
+  public static final char REF_HASH_SEPARATOR = '@';
+  public static final char URL_PATH_SEPARATOR = '/';
   public static final String DOT_STRING = ".";
   public static final String ZERO_BYTE_STRING = Character.toString(ZERO_BYTE);
   public static final String GROUP_SEPARATOR_STRING = Character.toString(GROUP_SEPARATOR);
@@ -59,6 +62,60 @@ final class Util {
     return elements.stream()
         .map(x -> x.replace(DOT, GROUP_SEPARATOR).replace(ZERO_BYTE, GROUP_SEPARATOR))
         .collect(Collectors.joining("."));
+  }
+
+  public static String toPathStringRef(String name, String hash) {
+    StringBuilder builder = new StringBuilder();
+    boolean separatorRequired = hash != null;
+    if (name != null) {
+      builder.append(name);
+      separatorRequired |= name.indexOf(URL_PATH_SEPARATOR) >= 0;
+    }
+
+    if (separatorRequired) {
+      builder.append(REF_HASH_SEPARATOR);
+    }
+
+    if (hash != null) {
+      builder.append(hash);
+    }
+
+    return builder.toString();
+  }
+
+  public static Reference fromPathStringRef(
+      @Nonnull String value, @Nonnull Reference.ReferenceType namedRefType) {
+    String name = null;
+    String hash = null;
+    int hashIdx = value.indexOf(REF_HASH_SEPARATOR);
+
+    if (hashIdx > 0) {
+      name = value.substring(0, hashIdx);
+    }
+
+    if (hashIdx < 0) {
+      name = value;
+    }
+
+    if (hashIdx >= 0) {
+      hash = value.substring(hashIdx + 1);
+      if (hash.isEmpty()) {
+        hash = null;
+      }
+    }
+
+    if (name == null) {
+      return Detached.of(hash);
+    } else {
+      switch (namedRefType) {
+        case TAG:
+          return Tag.of(name, hash);
+        case BRANCH:
+          return Branch.of(name, hash);
+        default:
+          throw new IllegalArgumentException("Unsupported reference type: " + namedRefType);
+      }
+    }
   }
 
   static final class ContentTypeDeserializer extends JsonDeserializer<Content.Type> {

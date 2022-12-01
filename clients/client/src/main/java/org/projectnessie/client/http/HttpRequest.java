@@ -21,7 +21,8 @@ import org.projectnessie.client.http.impl.HttpRuntimeConfig;
 import org.projectnessie.client.http.impl.UriBuilder;
 
 /** Class to hold an ongoing HTTP request and its parameters/filters. */
-public abstract class HttpRequest {
+public abstract class HttpRequest
+    implements ExecutableHttpRequest<HttpClientException, RuntimeException> {
 
   protected final HttpRuntimeConfig config;
   protected final UriBuilder uriBuilder;
@@ -69,18 +70,22 @@ public abstract class HttpRequest {
   public abstract HttpResponse executeRequest(Method method, Object body)
       throws HttpClientException;
 
+  @Override
   public HttpResponse get() throws HttpClientException {
     return executeRequest(Method.GET, null);
   }
 
+  @Override
   public HttpResponse delete() throws HttpClientException {
     return executeRequest(Method.DELETE, null);
   }
 
+  @Override
   public HttpResponse post(Object obj) throws HttpClientException {
     return executeRequest(Method.POST, obj);
   }
 
+  @Override
   public HttpResponse put(Object obj) throws HttpClientException {
     return executeRequest(Method.PUT, obj);
   }
@@ -88,5 +93,14 @@ public abstract class HttpRequest {
   public HttpRequest resolveTemplate(String name, String value) {
     uriBuilder.resolveTemplate(name, value);
     return this;
+  }
+
+  public <E extends Exception> ExecutableHttpRequest<E, RuntimeException> unwrap(Class<E> ex) {
+    return new HttpRequestWrapper<>(this, ex, RuntimeException.class);
+  }
+
+  public <E1 extends Exception, E2 extends Exception> ExecutableHttpRequest<E1, E2> unwrap(
+      Class<E1> ex1, Class<E2> ex2) {
+    return new HttpRequestWrapper<>(this, ex1, ex2);
   }
 }

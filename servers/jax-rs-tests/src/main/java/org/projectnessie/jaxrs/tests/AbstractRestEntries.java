@@ -25,8 +25,11 @@ import com.google.common.collect.ImmutableList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.projectnessie.client.ext.NessieApiVersion;
+import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieNamespaceNotEmptyException;
@@ -273,6 +276,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
 
   @ParameterizedTest
   @EnumSource(ReferenceMode.class)
+  @NessieApiVersions(versions = NessieApiVersion.V1)
   public void filterEntriesByNamespaceAndPrefixDepth(ReferenceMode refMode)
       throws BaseNessieClientServerException {
     Branch branch = createBranch("filterEntriesByNamespaceAndPrefixDepth");
@@ -408,6 +412,30 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
           Arrays.asList("a", "a.b", "a.boo", "a.b.c"),
           Arrays.asList(first, second, third, fourth, fifth));
     }
+  }
+
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void fetchEntriesByNamelessReference() throws BaseNessieClientServerException {
+    Branch branch = createBranch("fetchEntriesByNamelessReference");
+    ContentKey a = ContentKey.of("a");
+    ContentKey b = ContentKey.of("b");
+    IcebergTable ta = IcebergTable.of("path1", 42, 42, 42, 42);
+    IcebergView tb = IcebergView.of("pathx", 1, 1, "select * from table", "Dremio");
+    branch =
+        getApi()
+            .commitMultipleOperations()
+            .branch(branch)
+            .operation(Put.of(a, ta))
+            .operation(Put.of(b, tb))
+            .commitMeta(CommitMeta.fromMessage("commit 1"))
+            .commit();
+    List<Entry> entries = getApi().getEntries().hashOnRef(branch.getHash()).get().getEntries();
+    assertThat(entries)
+        .containsExactlyInAnyOrderElementsOf(
+            Arrays.<Entry>asList(
+                Entry.builder().name(a).type(Content.Type.ICEBERG_TABLE).build(),
+                Entry.builder().name(b).type(Content.Type.ICEBERG_VIEW).build()));
   }
 
   private void checkNamespaces(

@@ -58,7 +58,7 @@ import org.projectnessie.model.Tag;
 
 // Resteasy requests in these tests are crafted for v1 REST paths.
 @NessieApiVersions(versions = {NessieApiVersion.V1})
-public abstract class AbstractResteasyTest {
+public abstract class AbstractResteasyV1Test {
 
   protected static String basePath = "/api/v1/";
 

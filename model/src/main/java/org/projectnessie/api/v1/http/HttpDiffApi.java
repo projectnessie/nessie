@@ -27,13 +27,15 @@ import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.projectnessie.api.v1.DiffApi;
 import org.projectnessie.api.v1.params.DiffParams;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.DiffResponse;
 
+@Tag(name = "v1")
 @Consumes(value = MediaType.APPLICATION_JSON)
-@Path("diffs")
+@Path("v1/diffs")
 public interface HttpDiffApi extends DiffApi {
 
   @GET

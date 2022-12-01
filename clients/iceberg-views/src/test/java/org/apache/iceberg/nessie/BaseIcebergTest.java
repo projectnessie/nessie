@@ -97,7 +97,8 @@ public class BaseIcebergTest {
   @BeforeEach
   public void beforeEach(NessieClientFactory clientFactory, @NessieClientUri URI uri)
       throws IOException {
-    this.uri = uri.toASCIIString();
+    // The underlying NessieCatalog from Iceberg assumes v1 API
+    this.uri = uri.resolve("v1").toASCIIString();
     this.api = clientFactory.make();
 
     resetData();

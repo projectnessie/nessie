@@ -20,6 +20,7 @@ import static org.projectnessie.client.http.impl.HttpUtils.HEADER_ACCEPT;
 
 import org.junit.jupiter.api.AfterEach;
 import org.projectnessie.client.NessieClientBuilder;
+import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.client.ext.NessieClientCustomizer;
 import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.RequestFilter;
@@ -44,6 +45,7 @@ import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabas
  */
 @NessieDbAdapterName(InmemoryDatabaseAdapterFactory.NAME)
 @NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
+@NessieApiVersions
 class TestJerseyRestNaiveClientInMemory extends AbstractTestDatabaseAdapterRest
     implements NessieClientCustomizer {
 

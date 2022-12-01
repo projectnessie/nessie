@@ -30,6 +30,8 @@ import java.util.stream.Collectors;
 import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.StreamingUtil;
+import org.projectnessie.client.ext.NessieApiVersion;
+import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieRefLogNotFoundException;
 import org.projectnessie.model.Branch;
@@ -44,7 +46,9 @@ import org.projectnessie.model.Tag;
 /** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestRefLog extends AbstractRestReferences {
   @Test
+  @NessieApiVersions(versions = NessieApiVersion.V1)
   public void testReflog() throws BaseNessieClientServerException {
+
     String tagName = "tag1_test_reflog_" + ThreadLocalRandom.current().nextInt();
     String branch1 = "branch1_test_reflog";
     String branch2 = "branch2_test_reflog";

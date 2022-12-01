@@ -13,13 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.jaxrs.tests;
+package org.projectnessie.client.http;
 
-import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
-import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
-import org.projectnessie.versioned.persist.tx.h2.H2DatabaseAdapterFactory;
-import org.projectnessie.versioned.persist.tx.h2.H2TestConnectionProviderSource;
+/**
+ * This interface defines execution methods for HTTP client requests.
+ *
+ * @see HttpRequestWrapper
+ */
+public interface ExecutableHttpRequest<E1 extends Throwable, E2 extends Throwable> {
 
-@NessieDbAdapterName(H2DatabaseAdapterFactory.NAME)
-@NessieExternalDatabase(H2TestConnectionProviderSource.class)
-class TestJerseyResteasyH2 extends AbstractTestDatabaseAdapterResteasy {}
+  HttpResponse get() throws E1, E2;
+
+  HttpResponse delete() throws E1, E2;
+
+  HttpResponse post(Object obj) throws E1, E2;
+
+  HttpResponse put(Object obj) throws E1, E2;
+}

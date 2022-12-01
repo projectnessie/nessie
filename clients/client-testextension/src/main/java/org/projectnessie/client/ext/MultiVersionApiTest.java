@@ -34,7 +34,7 @@ public class MultiVersionApiTest implements MultiEnvTestExtension, ExecutionCond
   public static final String API_VERSION_SEGMENT_TYPE = "nessie-api";
 
   // API version to be used for tests not annotated with `@ForNessieApiVersions`
-  private static final NessieApiVersion DEFAULT_API_VERSION = NessieApiVersion.V1;
+  private static final NessieApiVersion DEFAULT_API_VERSION = NessieApiVersion.V2;
 
   @Override
   public String segmentType() {

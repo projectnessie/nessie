@@ -63,6 +63,8 @@ import org.projectnessie.services.rest.RestDiffResource;
 import org.projectnessie.services.rest.RestNamespaceResource;
 import org.projectnessie.services.rest.RestRefLogResource;
 import org.projectnessie.services.rest.RestTreeResource;
+import org.projectnessie.services.rest.RestV2ConfigResource;
+import org.projectnessie.services.rest.RestV2TreeResource;
 import org.projectnessie.services.rest.ValidationExceptionMapper;
 import org.projectnessie.versioned.PersistVersionStoreExtension;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
@@ -226,6 +228,8 @@ public class NessieJaxRsExtension extends NessieClientResolver
             @Override
             protected Application configure() {
               ResourceConfig config = new ResourceConfig();
+              config.register(RestV2ConfigResource.class);
+              config.register(RestV2TreeResource.class);
               config.register(RestConfigResource.class);
               config.register(RestTreeResource.class);
               config.register(RestContentResource.class);

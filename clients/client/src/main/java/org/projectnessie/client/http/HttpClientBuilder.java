@@ -43,6 +43,7 @@ import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.client.auth.NessieAuthentication;
 import org.projectnessie.client.auth.NessieAuthenticationProvider;
 import org.projectnessie.client.http.v1api.HttpApiV1;
+import org.projectnessie.client.http.v2api.HttpApiV2;
 
 /**
  * A builder class that creates a {@link NessieHttpClient} via {@link HttpClientBuilder#builder()}.
@@ -282,10 +283,15 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
   @Override
   public <API extends NessieApi> API build(Class<API> apiVersion) {
     Objects.requireNonNull(apiVersion, "API version class must be non-null");
-    NessieHttpClient client = new NessieHttpClient(authentication, tracing, builder);
 
     if (apiVersion.isAssignableFrom(HttpApiV1.class)) {
+      NessieHttpClient client = new NessieHttpClient(authentication, tracing, builder);
       return (API) new HttpApiV1(client);
+    }
+
+    if (apiVersion.isAssignableFrom(HttpApiV2.class)) {
+      HttpClient httpClient = NessieHttpClient.buildClient(authentication, tracing, builder);
+      return (API) new HttpApiV2(httpClient);
     }
 
     throw new IllegalArgumentException(

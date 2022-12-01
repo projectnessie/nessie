@@ -41,6 +41,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.StreamingUtil;
+import org.projectnessie.client.ext.NessieApiVersion;
+import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -554,6 +556,17 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
     assertThat(logEntries.size()).isEqualTo(1);
     assertThat(logEntries.get(0).getCommitMeta().getMessage()).contains("Commit #1");
     assertThat(logEntries.get(0).getOperations()).isNull();
+  }
+
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void commitLogForNamelessReference() throws BaseNessieClientServerException {
+    Branch branch = createBranch("commitLogForNamelessReference");
+    String head = createCommits(branch, 1, 5, branch.getHash());
+    List<LogResponse.LogEntry> log =
+        getApi().getCommitLog().hashOnRef(head).stream().collect(Collectors.toList());
+    // Verifying size is sufficient to make sure the right log was retrieved
+    assertThat(log).hasSize(5);
   }
 
   void verifyPaging(

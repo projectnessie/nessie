@@ -201,10 +201,30 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
             .map(c -> Entry.builder().type(c.type).name(c.operation.getKey()).build())
             .collect(Collectors.toList());
 
+    CommitMultipleOperationsBuilder commit2 =
+        getApi()
+            .commitMultipleOperations()
+            .branch(branch)
+            .commitMeta(CommitMeta.fromMessage("create namespaces"));
+    entries.stream()
+        .map(e -> e.getName().getNamespace())
+        .distinct()
+        .forEach(
+            ns -> {
+              commit2.operation(Put.of(ContentKey.of(ns.getElements()), ns));
+            });
+    commit2.commit();
+
     for (Entry e : entries) {
       Namespace namespace = e.getName().getNamespace();
-      assertThat(getApi().getNamespace().refName(branch.getName()).namespace(namespace).get())
-          .isEqualTo(namespace);
+      assertThat(
+              getApi()
+                  .getNamespace()
+                  .refName(branch.getName())
+                  .namespace(namespace)
+                  .get()
+                  .getElements())
+          .isEqualTo(namespace.getElements());
 
       assertThatThrownBy(
               () ->
@@ -315,10 +335,6 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
             () -> getApi().deleteNamespace().refName(branch.getName()).namespace(ns).delete())
         .isInstanceOf(NessieNamespaceNotFoundException.class)
         .hasMessage("Namespace 'a.b.c' does not exist");
-
-    // it should only contain the parent namespace of the "a.b.c" table
-    assertThat(getApi().getMultipleNamespaces().refName(branch.getName()).get().getNamespaces())
-        .containsExactly(Namespace.parse("a.b"));
   }
 
   @Test
@@ -519,7 +535,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
 
     getApi()
         .updateProperties()
-        .reference(branch)
+        .refName(branch.getName())
         .namespace(namespace)
         .updateProperties(properties)
         .update();

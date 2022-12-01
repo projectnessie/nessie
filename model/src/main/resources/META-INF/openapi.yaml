@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2020 Dremio
+# Copyright (C) 2022 Dremio
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,16 +28,35 @@ info:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
 
+tags:
+  - name: v1
+    description: End points from the legacy v1 API
+  - name: v2-beta
+    description: End points from the Nessie v2 API
+
 paths: {} # inferred from java annotations
 
 components:
   examples:
+    nessieConfig:
+      value:
+        defaultBranch: main
+        maxSupportedApiVersion: 2
 
     namespace:
       value: "a.b.c"
 
     ref:
       value: "main"
+
+    refWithHash:
+      value: "main@2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
+
+    refDefault:
+      value: "-"
+
+    refDetached:
+      value: "@2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
 
     refForDiffWithHash:
       value: "main*2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
@@ -177,6 +196,13 @@ components:
                 - example
                 - key
             type: ICEBERG_TABLE
+        prefixes:
+          - elements:
+              - example
+              - a
+          - elements:
+              - example
+              - b
 
     types:
       value:
@@ -186,7 +212,6 @@ components:
       value:
         fromHash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
         fromRefName: "source-ref-name"
-        keepIndividualCommits: false
         defaultKeyMergeMode: "NORMAL"
         keyMergeModes:
           - key:
@@ -203,7 +228,6 @@ components:
         hashesToTransplant:
           - "abcdef4242424242424242424242beef00dead42112233445566778899001122"
         fromRefName: "source-ref-name"
-        keepIndividualCommits: false
         defaultKeyMergeMode: "NORMAL"
         keyMergeModes:
           - key:
@@ -517,8 +541,8 @@ components:
         diffs:
           - key:
               elements:
-                 - example
-                 - key
+                - example
+                - key
             from:
               type: ICEBERG_TABLE
               id: "f350b391-f492-41eb-9959-730a8c49f01e"

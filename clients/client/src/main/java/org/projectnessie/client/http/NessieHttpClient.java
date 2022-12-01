@@ -65,7 +65,7 @@ public class NessieHttpClient extends NessieApiClient {
     this(buildClient(authentication, enableTracing, clientBuilder));
   }
 
-  private static HttpClient buildClient(
+  static HttpClient buildClient(
       HttpAuthentication authentication, boolean enableTracing, HttpClient.Builder clientBuilder) {
     clientBuilder.setObjectMapper(MAPPER);
     if (enableTracing) {

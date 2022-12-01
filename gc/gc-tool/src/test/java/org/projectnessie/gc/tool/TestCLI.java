@@ -44,6 +44,8 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.client.ext.NessieApiVersion;
+import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.client.ext.NessieClientUri;
 import org.projectnessie.gc.contents.ContentReference;
 import org.projectnessie.gc.contents.jdbc.AgroalJdbcDataSourceProvider;
@@ -64,6 +66,7 @@ import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabas
 @NessieDbAdapterName(InmemoryDatabaseAdapterFactory.NAME)
 @NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@NessieApiVersions(versions = NessieApiVersion.V1)
 public class TestCLI {
 
   public static final String JDBC_URL = "jdbc:h2:mem:nessie_gc;DB_CLOSE_DELAY=-1";

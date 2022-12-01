@@ -13,13 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server;
+package org.projectnessie.model;
 
-import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.TestProfile;
-import org.projectnessie.jaxrs.tests.AbstractResteasyTest;
-import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import javax.validation.constraints.NotNull;
+import org.immutables.value.Value;
 
-@QuarkusTest
-@TestProfile(QuarkusTestProfileInmemory.class)
-public class TestResteasyInMemory extends AbstractResteasyTest {}
+@Value.Immutable
+@JsonSerialize(as = ImmutableContentResponse.class)
+@JsonDeserialize(as = ImmutableContentResponse.class)
+public interface ContentResponse {
+
+  static ImmutableContentResponse.Builder builder() {
+    return ImmutableContentResponse.builder();
+  }
+
+  @NotNull
+  Content getContent();
+}

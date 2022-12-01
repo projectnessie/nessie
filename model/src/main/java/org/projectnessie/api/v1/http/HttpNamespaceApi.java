@@ -32,6 +32,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.projectnessie.api.v1.NamespaceApi;
 import org.projectnessie.api.v1.params.MultipleNamespacesParams;
 import org.projectnessie.api.v1.params.NamespaceParams;
@@ -43,7 +44,8 @@ import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.GetNamespacesResponse;
 import org.projectnessie.model.Namespace;
 
-@Path("namespaces")
+@Tag(name = "v1")
+@Path("v1/namespaces")
 @Consumes(value = MediaType.APPLICATION_JSON)
 public interface HttpNamespaceApi extends NamespaceApi {
 

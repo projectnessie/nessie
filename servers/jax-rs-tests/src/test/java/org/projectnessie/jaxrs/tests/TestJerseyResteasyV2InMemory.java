@@ -15,8 +15,6 @@
  */
 package org.projectnessie.jaxrs.tests;
 
-import static org.projectnessie.jaxrs.ext.NessieJaxRsExtension.jaxRsExtensionForDatabaseAdapter;
-
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
@@ -27,26 +25,32 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.projectnessie.client.ext.NessieClientUri;
 import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.inmem.InmemoryTestConnectionProviderSource;
 import org.projectnessie.versioned.persist.tests.extension.DatabaseAdapterExtension;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
+import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
+import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
 @ExtendWith(DatabaseAdapterExtension.class)
-abstract class AbstractTestDatabaseAdapterResteasy extends AbstractResteasyTest {
+@NessieDbAdapterName(InmemoryDatabaseAdapterFactory.NAME)
+@NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
+class TestJerseyResteasyV2InMemory extends AbstractResteasyV2Test {
 
   @NessieDbAdapter static DatabaseAdapter databaseAdapter;
 
   @RegisterExtension
-  static NessieJaxRsExtension server = jaxRsExtensionForDatabaseAdapter(() -> databaseAdapter);
+  static NessieJaxRsExtension server = new NessieJaxRsExtension(() -> databaseAdapter);
 
   @BeforeAll
   static void setup(@NessieClientUri URI uri) {
     RestAssured.baseURI = uri.toString();
+    basePath = ""; // baseURI has the full base path
     RestAssured.port = uri.getPort();
     RestAssured.requestSpecification =
         new RequestSpecBuilder()
             .setContentType(ContentType.JSON)
             .setAccept(ContentType.JSON)
             .build();
-    basePath = "/";
   }
 }
