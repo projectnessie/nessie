@@ -48,16 +48,16 @@ class TestReference {
   void fromPathString(String pathParameter, String expectedName, String expectedHash) {
     for (ReferenceType type : ReferenceType.values()) {
       assertThat(Reference.fromPathString(pathParameter, type))
-          .satisfies(r -> assertThat(r.getType()).isEqualTo(type))
-          .satisfies(r -> assertThat(r.getName()).isEqualTo(expectedName))
-          .satisfies(r -> assertThat(r.getHash()).isEqualTo(expectedHash));
+          .extracting(Reference::getType, Reference::getName, Reference::getHash)
+          .containsExactly(type, expectedName, expectedHash);
     }
   }
 
   @Test
   void fromPathStringDetached() {
     assertThat(Reference.fromPathString("@11223344", ReferenceType.BRANCH))
-        .satisfies(r -> assertThat(r).isInstanceOf(Detached.class))
-        .satisfies(r -> assertThat(r.getHash()).isEqualTo("11223344"));
+        .isInstanceOf(Detached.class)
+        .extracting(Reference::getHash)
+        .isEqualTo("11223344");
   }
 }
