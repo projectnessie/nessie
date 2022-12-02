@@ -42,7 +42,6 @@ import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.MergeResult;
-import org.projectnessie.versioned.MergeResult.KeyDetails;
 import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.Put;
@@ -205,6 +204,16 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 true,
                 true);
 
+    soft.assertThat(dryMergeResult)
+        .extracting(
+            MergeResult::wasApplied,
+            MergeResult::wasSuccessful,
+            MergeResult::getCommonAncestor,
+            MergeResult::getTargetBranch,
+            MergeResult::getEffectiveTargetHash,
+            MergeResult::getExpectedHash)
+        .containsExactly(false, true, initialHash, newBranch, initialHash, initialHash);
+
     MergeResult<Commit> mergeResult =
         store()
             .merge(
@@ -220,35 +229,20 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
     Hash head = store().getNamedRef(newBranch.getName(), GetNamedRefsParams.DEFAULT).getHash();
 
+    soft.assertThat(mergeResult.getSourceCommits())
+        .extracting(Commit::getHash, c -> c.getCommitMeta().getMessage(), Commit::getOperations)
+        .containsExactly(
+            tuple(
+                firstCommit,
+                "First Commit",
+                Arrays.asList(
+                    Put.of(Key.of("t1"), V_1_1),
+                    Put.of(Key.of("t2"), V_2_1),
+                    Put.of(Key.of("t3"), V_3_1))));
+    soft.assertThat(mergeResult.getTargetCommits()).isNull();
+    soft.assertThat(mergeResult.getDetails())
+        .containsKeys(Key.of("t1"), Key.of("t2"), Key.of("t3"));
     soft.assertThat(mergeResult)
-        .satisfies(
-            r ->
-                // Check expected values in sourceCommits, targetCommits and details
-                assertThat(r)
-                    .extracting(
-                        MergeResult::getSourceCommits,
-                        MergeResult::getTargetCommits,
-                        MergeResult::getDetails)
-                    .satisfiesExactly(
-                        sourceCommits ->
-                            assertThat(sourceCommits)
-                                .asInstanceOf(InstanceOfAssertFactories.list(Commit.class))
-                                .extracting(
-                                    Commit::getHash, Commit::getCommitMeta, Commit::getOperations)
-                                .containsExactly(
-                                    tuple(
-                                        firstCommit,
-                                        CommitMeta.fromMessage("First Commit"),
-                                        Arrays.asList(
-                                            Put.of(Key.of("t1"), V_1_1),
-                                            Put.of(Key.of("t2"), V_2_1),
-                                            Put.of(Key.of("t3"), V_3_1)))),
-                        targetCommits -> assertThat(targetCommits).isNull(),
-                        details ->
-                            assertThat(details)
-                                .asInstanceOf(
-                                    InstanceOfAssertFactories.map(Key.class, KeyDetails.class))
-                                .containsKeys(Key.of("t1"), Key.of("t2"), Key.of("t3"))))
         // compare "effective" merge-result with re-constructed merge-result
         .isEqualTo(
             MergeResult.<Commit>builder()
