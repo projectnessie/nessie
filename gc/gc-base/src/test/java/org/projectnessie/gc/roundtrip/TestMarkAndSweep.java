@@ -236,12 +236,7 @@ public class TestMarkAndSweep {
                         IntStream.range(0, markAndSweep.numKeysAtCutOff)
                             .mapToObj(
                                 i -> markAndSweep.numToContentKey(markAndSweep.numCommits + i))
-                            .map(
-                                ck ->
-                                    EntriesResponse.Entry.builder()
-                                        .type(ICEBERG_TABLE)
-                                        .name(ck)
-                                        .build());
+                            .map(ck -> EntriesResponse.Entry.entry(ck, ICEBERG_TABLE));
 
                     List<ContentKey> keys =
                         keysStream.map(EntriesResponse.Entry::getName).collect(Collectors.toList());

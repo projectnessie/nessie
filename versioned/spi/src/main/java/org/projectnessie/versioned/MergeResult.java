@@ -82,6 +82,10 @@ public interface MergeResult<COMMIT> {
     static ImmutableKeyDetails.Builder builder() {
       return ImmutableKeyDetails.builder();
     }
+
+    static KeyDetails keyDetails(MergeType mergeType, ConflictType conflictType) {
+      return KeyDetails.builder().mergeType(mergeType).conflictType(conflictType).build();
+    }
   }
 
   enum ConflictType {

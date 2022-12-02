@@ -21,7 +21,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.DiffResponse;
-import org.projectnessie.model.ImmutableDiffEntry;
+import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.model.ImmutableDiffResponse;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
@@ -55,11 +55,10 @@ public class DiffApiImpl extends BaseApiImpl implements DiffService {
         diffs
             .map(
                 diff ->
-                    ImmutableDiffEntry.builder()
-                        .key(ContentKey.of(diff.getKey().getElements()))
-                        .from(diff.getFromValue().orElse(null))
-                        .to(diff.getToValue().orElse(null))
-                        .build())
+                    DiffEntry.diffEntry(
+                        ContentKey.of(diff.getKey().getElements()),
+                        diff.getFromValue().orElse(null),
+                        diff.getToValue().orElse(null)))
             .forEach(builder::addDiffs);
       }
 

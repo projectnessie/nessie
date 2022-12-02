@@ -43,9 +43,15 @@ public interface EntriesResponse extends PaginatedResponse {
     }
 
     @NotNull
+    @Value.Parameter(order = 2)
     Content.Type getType();
 
     @NotNull
+    @Value.Parameter(order = 1)
     ContentKey getName();
+
+    static Entry entry(ContentKey name, Content.Type type) {
+      return ImmutableEntry.of(name, type);
+    }
   }
 }

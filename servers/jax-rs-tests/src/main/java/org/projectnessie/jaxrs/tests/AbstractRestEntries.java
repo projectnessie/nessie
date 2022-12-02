@@ -74,8 +74,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
         getApi().getEntries().reference(refMode.transform(branch)).get().getEntries();
     List<Entry> expected =
         asList(
-            Entry.builder().name(a).type(Content.Type.ICEBERG_TABLE).build(),
-            Entry.builder().name(b).type(Content.Type.ICEBERG_VIEW).build());
+            Entry.entry(a, Content.Type.ICEBERG_TABLE), Entry.entry(b, Content.Type.ICEBERG_VIEW));
     assertThat(entries).containsExactlyInAnyOrderElementsOf(expected);
 
     entries =
@@ -434,8 +433,8 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     assertThat(entries)
         .containsExactlyInAnyOrderElementsOf(
             Arrays.<Entry>asList(
-                Entry.builder().name(a).type(Content.Type.ICEBERG_TABLE).build(),
-                Entry.builder().name(b).type(Content.Type.ICEBERG_VIEW).build()));
+                Entry.entry(a, Content.Type.ICEBERG_TABLE),
+                Entry.entry(b, Content.Type.ICEBERG_VIEW)));
   }
 
   private void checkNamespaces(
