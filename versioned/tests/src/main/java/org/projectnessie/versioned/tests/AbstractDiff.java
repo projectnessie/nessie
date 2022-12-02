@@ -43,6 +43,7 @@ public abstract class AbstractDiff extends AbstractNestedVersionStore {
   public static final OnRefOnly V_2 = newOnRef("v2");
   public static final OnRefOnly V_2_A = newOnRef("v2a");
   public static final OnRefOnly V_3 = newOnRef("v3");
+  public static final OnRefOnly V_1_A = newOnRef("v1a");
 
   protected AbstractDiff(VersionStore store) {
     super(store);
@@ -50,33 +51,43 @@ public abstract class AbstractDiff extends AbstractNestedVersionStore {
 
   @Test
   protected void checkDiff() throws VersionStoreException {
-    final BranchName branch = BranchName.of("checkDiff");
+    BranchName branch = BranchName.of("checkDiff");
     store().create(branch, Optional.empty());
-    final Hash initial = store().hashOnReference(branch, Optional.empty());
+    Hash initial = store().hashOnReference(branch, Optional.empty());
 
-    final Hash firstCommit = commit("First Commit").put("k1", V_1).put("k2", V_2).toBranch(branch);
-    final Hash secondCommit =
-        commit("Second Commit").put("k2", V_2_A).put("k3", V_3).toBranch(branch);
+    Hash firstCommit = commit("First Commit").put("k1", V_1).put("k2", V_2).toBranch(branch);
+    Hash secondCommit =
+        commit("Second Commit").put("k2", V_2_A).put("k3", V_3).put("k1a", V_1_A).toBranch(branch);
 
     List<Diff> startToSecond = diffAsList(initial, secondCommit);
     soft.assertThat(startToSecond)
         .containsExactlyInAnyOrder(
             Diff.of(Key.of("k1"), Optional.empty(), Optional.of(V_1)),
             Diff.of(Key.of("k2"), Optional.empty(), Optional.of(V_2_A)),
-            Diff.of(Key.of("k3"), Optional.empty(), Optional.of(V_3)));
+            Diff.of(Key.of("k3"), Optional.empty(), Optional.of(V_3)),
+            Diff.of(Key.of("k1a"), Optional.empty(), Optional.of(V_1_A)));
 
     List<Diff> secondToStart = diffAsList(secondCommit, initial);
     soft.assertThat(secondToStart)
         .containsExactlyInAnyOrder(
             Diff.of(Key.of("k1"), Optional.of(V_1), Optional.empty()),
             Diff.of(Key.of("k2"), Optional.of(V_2_A), Optional.empty()),
-            Diff.of(Key.of("k3"), Optional.of(V_3), Optional.empty()));
+            Diff.of(Key.of("k3"), Optional.of(V_3), Optional.empty()),
+            Diff.of(Key.of("k1a"), Optional.of(V_1_A), Optional.empty()));
 
     List<Diff> firstToSecond = diffAsList(firstCommit, secondCommit);
     soft.assertThat(firstToSecond)
         .containsExactlyInAnyOrder(
+            Diff.of(Key.of("k1a"), Optional.empty(), Optional.of(V_1_A)),
             Diff.of(Key.of("k2"), Optional.of(V_2), Optional.of(V_2_A)),
             Diff.of(Key.of("k3"), Optional.empty(), Optional.of(V_3)));
+
+    List<Diff> secondToFirst = diffAsList(secondCommit, firstCommit);
+    soft.assertThat(secondToFirst)
+        .containsExactlyInAnyOrder(
+            Diff.of(Key.of("k1a"), Optional.of(V_1_A), Optional.empty()),
+            Diff.of(Key.of("k2"), Optional.of(V_2_A), Optional.of(V_2)),
+            Diff.of(Key.of("k3"), Optional.of(V_3), Optional.empty()));
 
     List<Diff> firstToFirst = diffAsList(firstCommit, firstCommit);
     soft.assertThat(firstToFirst).isEmpty();
