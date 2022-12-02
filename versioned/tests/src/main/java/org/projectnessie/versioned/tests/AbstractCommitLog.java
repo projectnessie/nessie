@@ -27,7 +27,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -114,24 +113,26 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
 
     int numCommits = 10;
 
-    List<Hash> hashes =
-        IntStream.rangeClosed(1, numCommits)
-            .mapToObj(
-                i -> {
-                  try {
-                    return commit("Commit #" + i)
-                        .put("k" + i, onRef("v" + i, "c" + i))
-                        .put("key" + i, onRef("value" + i, "cid" + i))
-                        .delete("delete" + i)
-                        .toBranch(branch);
-                  } catch (Exception e) {
-                    throw new RuntimeException(e);
-                  }
-                })
-            .collect(Collectors.toList());
+    CommitBuilder init = commit("initial");
+    List<Hash> hashes = new ArrayList<>();
+
+    for (int i = 1; i <= numCommits; i++) {
+      init = init.put("delete" + i, onRef("to delete " + i, "d" + i));
+    }
+    hashes.add(init.toBranch(branch));
+
+    for (int i = 1; i <= numCommits; i++) {
+      Hash head =
+          commit("Commit #" + i)
+              .put("k" + i, onRef("v" + i, "c" + i))
+              .put("key" + i, onRef("value" + i, "cid" + i))
+              .delete("delete" + i)
+              .toBranch(branch);
+      hashes.add(head);
+    }
+
     List<Hash> parentHashes =
-        Stream.concat(Stream.of(firstParent), hashes.subList(0, 9).stream())
-            .collect(Collectors.toList());
+        Stream.concat(Stream.of(firstParent), hashes.stream()).collect(Collectors.toList());
 
     soft.assertThat(Lists.reverse(commitsList(branch, false)))
         .allSatisfy(
@@ -144,24 +145,23 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
         .containsExactlyElementsOf(hashes);
 
     List<Commit> commits = Lists.reverse(commitsList(branch, true));
-    soft.assertThat(IntStream.rangeClosed(1, numCommits))
-        .allSatisfy(
-            i -> {
-              Commit c = commits.get(i - 1);
-              assertThat(c)
-                  .extracting(
-                      Commit::getCommitMeta,
-                      Commit::getHash,
-                      Commit::getParentHash,
-                      Commit::getOperations)
-                  .containsExactly(
-                      CommitMeta.fromMessage("Commit #" + i),
-                      hashes.get(i - 1),
-                      parentHashes.get(i - 1),
-                      Arrays.asList(
-                          Delete.of(Key.of("delete" + i)),
-                          Put.of(Key.of("k" + i), onRef("v" + i, "c" + i)),
-                          Put.of(Key.of("key" + i), onRef("value" + i, "cid" + i))));
-            });
+    for (int i = 1; i <= numCommits; i++) {
+      Commit c = commits.get(i);
+      soft.assertThat(c.getCommitMeta())
+          .describedAs("Commit number %s", i)
+          .satisfiesAnyOf(
+              cm -> assertThat(cm.getHash()).isNull(),
+              cm -> assertThat(cm.getHash()).isEqualTo(c.getHash().asString()));
+      soft.assertThat(c)
+          .describedAs("Commit number %s", i)
+          .extracting(Commit::getHash, Commit::getParentHash, Commit::getOperations)
+          .containsExactly(
+              hashes.get(i),
+              parentHashes.get(i),
+              Arrays.asList(
+                  Delete.of(Key.of("delete" + i)),
+                  Put.of(Key.of("k" + i), onRef("v" + i, "c" + i)),
+                  Put.of(Key.of("key" + i), onRef("value" + i, "cid" + i))));
+    }
   }
 }
