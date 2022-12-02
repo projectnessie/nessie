@@ -17,21 +17,10 @@ package org.projectnessie.client.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import io.opentelemetry.api.GlobalOpenTelemetry;
-import io.opentelemetry.api.OpenTelemetry;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.StatusCode;
-import io.opentelemetry.api.trace.Tracer;
-import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
-import io.opentelemetry.context.Context;
-import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
-import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.net.URI;
-import org.projectnessie.api.NessieVersion;
 import org.projectnessie.api.v1.http.HttpConfigApi;
 import org.projectnessie.api.v1.http.HttpContentApi;
 import org.projectnessie.api.v1.http.HttpDiffApi;
@@ -40,15 +29,17 @@ import org.projectnessie.api.v1.http.HttpRefLogApi;
 import org.projectnessie.api.v1.http.HttpTreeApi;
 import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.error.BaseNessieClientServerException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class NessieHttpClient extends NessieApiClient {
+final class NessieHttpClient extends NessieApiClient {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(NessieHttpClient.class);
 
   private static final ObjectMapper MAPPER =
       new ObjectMapper()
           .enable(SerializationFeature.INDENT_OUTPUT)
           .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-
-  private final HttpClient client;
 
   /**
    * Create new HTTP Nessie client. All REST api endpoints are mapped here. This client should
@@ -84,48 +75,14 @@ public class NessieHttpClient extends NessieApiClient {
         wrap(HttpDiffApi.class, new HttpDiffClient(client)),
         wrap(HttpRefLogApi.class, new HttpRefLogClient(client)),
         wrap(HttpNamespaceApi.class, new HttpNamespaceClient(client)));
-    this.client = client;
   }
 
   private static void addTracing(HttpClient.Builder httpClient) {
-    // It's safe to reference `GlobalTracer` here even without the required dependencies available
-    // at runtime, as long as tracing is not enabled. I.e. as long as tracing is not enabled, this
-    // method will not be called and the JVM won't try to load + initialize `GlobalTracer`.
-    OpenTelemetry otel = GlobalOpenTelemetry.get();
-    Tracer tracer = otel.getTracer("Nessie");
-    if (tracer != null) {
-      httpClient.addRequestFilter(
-          context -> {
-            Span span =
-                tracer
-                    .spanBuilder("Nessie-HTTP")
-                    .startSpan()
-                    .setAttribute(SemanticAttributes.HTTP_URL, context.getUri().toString())
-                    .setAttribute(SemanticAttributes.HTTP_METHOD, context.getMethod().name())
-                    .setAttribute("nessie.version", NessieVersion.NESSIE_VERSION);
-
-            W3CTraceContextPropagator.getInstance()
-                .inject(Context.current().with(span), context, RequestContext::putHeader);
-
-            context.addResponseCallback(
-                (responseContext, exception) -> {
-                  if (responseContext != null) {
-                    try {
-                      span.setAttribute(
-                          SemanticAttributes.HTTP_STATUS_CODE,
-                          responseContext.getResponseCode().getCode());
-                    } catch (IOException e) {
-                      // There's not much we can (and probably should) do here.
-                    }
-                  }
-                  if (exception != null) {
-                    span.setStatus(StatusCode.ERROR).recordException(exception);
-                  } else {
-                    span.setStatus(StatusCode.OK);
-                  }
-                  span.end();
-                });
-          });
+    try {
+      OpentelemetryTracing.addTracing(httpClient);
+    } catch (NoClassDefFoundError e) {
+      LOGGER.warn(
+          "Failed to initialize tracing, the opentracing libraries are probably missing.", e);
     }
   }
 
@@ -170,9 +127,5 @@ public class NessieHttpClient extends NessieApiClient {
         throw ex;
       }
     }
-  }
-
-  public URI getUri() {
-    return client.getBaseUri();
   }
 }
