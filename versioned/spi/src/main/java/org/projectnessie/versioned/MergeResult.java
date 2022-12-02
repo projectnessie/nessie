@@ -54,6 +54,7 @@ public interface MergeResult<COMMIT> {
   Hash getExpectedHash();
 
   /** List of commit-IDs to be merged or transplanted. */
+  @Deprecated // for removal and replaced with something else
   List<COMMIT> getSourceCommits();
 
   /**
@@ -61,6 +62,7 @@ public interface MergeResult<COMMIT> {
    * the expected hash was provided.
    */
   @Nullable
+  @Deprecated // for removal and replaced with something else
   List<COMMIT> getTargetCommits();
 
   /** Details of all keys encountered during the merge or transplant operation. */
@@ -75,8 +77,10 @@ public interface MergeResult<COMMIT> {
       return ConflictType.NONE;
     }
 
+    @Deprecated // for removal and replaced with something else
     List<Hash> getSourceCommits();
 
+    @Deprecated // for removal and replaced with something else
     List<Hash> getTargetCommits();
 
     static ImmutableKeyDetails.Builder builder() {
