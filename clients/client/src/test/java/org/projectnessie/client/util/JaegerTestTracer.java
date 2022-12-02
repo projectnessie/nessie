@@ -15,20 +15,45 @@
  */
 package org.projectnessie.client.util;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import io.jaegertracing.internal.JaegerTracer;
-import io.opentracing.util.GlobalTracer;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
+import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.resources.Resource;
+import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
+import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class JaegerTestTracer {
+  private static final AtomicBoolean REGISTERED = new AtomicBoolean();
+
   public static void register() {
-    if (GlobalTracer.isRegistered()) {
-      // if already registered, check that it's the right tracer (and no other test accidentally
-      // registered a different one)
-      assertThat(GlobalTracer.get().toString())
-          .contains("serviceName=TestNessieHttpClient")
-          .contains("JaegerTracer");
+    if (!REGISTERED.compareAndSet(false, true)) {
+      return;
     }
-    GlobalTracer.registerIfAbsent(new JaegerTracer.Builder("TestNessieHttpClient").build());
+
+    OtlpGrpcSpanExporter jaegerOtlpExporter =
+        OtlpGrpcSpanExporter.builder()
+            .setEndpoint("http://localhost:4317")
+            .setTimeout(30, TimeUnit.SECONDS)
+            .build();
+
+    Resource serviceNameResource =
+        Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, "TestNessieHttpClient"));
+
+    SdkTracerProvider tracerProvider =
+        SdkTracerProvider.builder()
+            .addSpanProcessor(BatchSpanProcessor.builder(jaegerOtlpExporter).build())
+            .setResource(Resource.getDefault().merge(serviceNameResource))
+            .build();
+    OpenTelemetry openTelemetry =
+        OpenTelemetrySdk.builder().setTracerProvider(tracerProvider).build();
+
+    Runtime.getRuntime().addShutdownHook(new Thread(tracerProvider::close));
+
+    GlobalOpenTelemetry.set(openTelemetry);
   }
 }

@@ -17,23 +17,21 @@ package org.projectnessie.client.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import io.opentracing.Scope;
-import io.opentracing.Span;
-import io.opentracing.Tracer;
-import io.opentracing.log.Fields;
-import io.opentracing.propagation.Format.Builtin;
-import io.opentracing.propagation.TextMap;
-import io.opentracing.propagation.TextMapAdapter;
-import io.opentracing.tag.Tags;
-import io.opentracing.util.GlobalTracer;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
+import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
 import org.projectnessie.api.v1.http.HttpConfigApi;
 import org.projectnessie.api.v1.http.HttpContentApi;
 import org.projectnessie.api.v1.http.HttpDiffApi;
@@ -93,43 +91,41 @@ public class NessieHttpClient extends NessieApiClient {
     // It's safe to reference `GlobalTracer` here even without the required dependencies available
     // at runtime, as long as tracing is not enabled. I.e. as long as tracing is not enabled, this
     // method will not be called and the JVM won't try to load + initialize `GlobalTracer`.
-    Tracer tracer = GlobalTracer.get();
+    OpenTelemetry otel = GlobalOpenTelemetry.get();
+    Tracer tracer = otel.getTracer("Nessie");
     if (tracer != null) {
       httpClient.addRequestFilter(
           context -> {
-            Span span = tracer.activeSpan();
-            if (span != null) {
-              Span inner = tracer.buildSpan("Nessie-HTTP").start();
-              Scope scope = tracer.activateSpan(inner);
-              context.addResponseCallback(
-                  (responseContext, exception) -> {
-                    if (responseContext != null) {
-                      try {
-                        inner.setTag(
-                            "http.status_code", responseContext.getResponseCode().getCode());
-                      } catch (IOException e) {
-                        // There's not much we can (and probably should) do here.
-                      }
-                    }
-                    if (exception != null) {
-                      Map<String, String> log = new HashMap<>();
-                      log.put(Fields.EVENT, Tags.ERROR.getKey());
-                      log.put(Fields.ERROR_OBJECT, exception.toString());
-                      Tags.ERROR.set(inner.log(log), true);
-                    }
-                    scope.close();
-                    inner.finish();
-                  });
+            Span span =
+                tracer
+                    .spanBuilder("Nessie-HTTP")
+                    .startSpan()
+                    .setAttribute(SemanticAttributes.HTTP_URL, context.getUri().toString())
+                    .setAttribute(SemanticAttributes.HTTP_METHOD, context.getMethod().name())
+                    .setAttribute("component", "http");
 
-              inner
-                  .setTag("http.uri", context.getUri().toString())
-                  .setTag("http.method", context.getMethod().name());
+            @SuppressWarnings({"resource", "MustBeClosedChecker"})
+            Scope scope = span.makeCurrent();
 
-              HashMap<String, String> headerMap = new HashMap<>();
-              TextMap httpHeadersCarrier = new TextMapAdapter(headerMap);
-              tracer.inject(inner.context(), Builtin.HTTP_HEADERS, httpHeadersCarrier);
-              headerMap.forEach(context::putHeader);
-            }
+            W3CTraceContextPropagator.getInstance()
+                .inject(Context.current(), context, RequestContext::putHeader);
+
+            context.addResponseCallback(
+                (responseContext, exception) -> {
+                  if (responseContext != null) {
+                    try {
+                      span.setAttribute(
+                          "http.status_code", responseContext.getResponseCode().getCode());
+                    } catch (IOException e) {
+                      // There's not much we can (and probably should) do here.
+                    }
+                  }
+                  if (exception != null) {
+                    span.setStatus(StatusCode.ERROR, exception.toString());
+                  }
+                  scope.close();
+                  span.end();
+                });
           });
     }
   }
