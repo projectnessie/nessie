@@ -57,4 +57,12 @@ public class RepoMaintenance extends BaseCommand {
 
     return 0;
   }
+
+  @Override
+  protected Integer callWithPersist() {
+    spec.commandLine()
+        .getOut()
+        .println("New Nessie storage does not need/provide any maintenance operations.");
+    return 0;
+  }
 }

@@ -41,7 +41,7 @@ import org.projectnessie.error.NessieBadRequestException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieUnsupportedMediaTypeException;
-import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
+import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfilePersistInmemory;
 import org.projectnessie.server.QuarkusNessieClientResolver;
 
 /**
@@ -49,8 +49,7 @@ import org.projectnessie.server.QuarkusNessieClientResolver;
  * infra code isn't even run) and exceptions reported <em>by</em> Nessie.
  */
 @QuarkusTest
-@TestProfile(
-    QuarkusTestProfileInmemory.class) // use the QuarkusTestProfileInmemory, as it can be reused
+@TestProfile(QuarkusTestProfilePersistInmemory.class)
 @ExtendWith(QuarkusNessieClientResolver.class)
 class TestNessieError {
 

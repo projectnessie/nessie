@@ -38,6 +38,17 @@ dependencies {
   implementation(project(":nessie-versioned-persist-mongodb"))
   implementation(project(":nessie-versioned-persist-transactional"))
 
+  implementation(project(":nessie-versioned-storage-cache"))
+  implementation(project(":nessie-versioned-storage-cassandra"))
+  implementation(project(":nessie-versioned-storage-common"))
+  implementation(project(":nessie-versioned-storage-dynamodb"))
+  implementation(project(":nessie-versioned-storage-inmemory"))
+  implementation(project(":nessie-versioned-storage-jdbc"))
+  implementation(project(":nessie-versioned-storage-mongodb"))
+  implementation(project(":nessie-versioned-storage-rocksdb"))
+  implementation(project(":nessie-versioned-storage-store"))
+  implementation(project(":nessie-versioned-storage-telemetry"))
+
   implementation(enforcedPlatform(libs.quarkus.bom))
   implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
   implementation("io.quarkus:quarkus-hibernate-validator")
@@ -46,7 +57,11 @@ dependencies {
   implementation("io.quarkiverse.amazonservices:quarkus-amazon-dynamodb")
   implementation(libs.awssdk.apache.client) { exclude("commons-logging", "commons-logging") }
   implementation("io.quarkus:quarkus-mongodb-client")
+  implementation(platform(libs.cassandra.driver.bom))
+  implementation(libs.cassandra.driver.core)
+  implementation(libs.cassandra.quarkus)
   implementation("org.jboss.slf4j:slf4j-jboss-logmanager")
+  implementation(libs.opentelemetry.api)
 
   // javax/jakarta
   compileOnly(libs.jakarta.validation.api)

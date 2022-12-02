@@ -13,24 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.providers;
+package org.projectnessie.server;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Disposes;
-import javax.enterprise.inject.Produces;
-import javax.inject.Singleton;
-import org.projectnessie.versioned.persist.inmem.InmemoryStore;
+import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.TestProfile;
+import org.projectnessie.client.ext.NessieApiVersions;
+import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfilePersistInmemory;
 
-@ApplicationScoped
-public class InmemoryStoreProvider {
+@QuarkusTest
+@TestProfile(QuarkusTestProfilePersistInmemory.class)
+@NessieApiVersions // all versions
+class TestQuarkusRestInMemoryPersist extends AbstractQuarkusRestWithMetrics {
 
-  @Produces
-  @Singleton
-  public InmemoryStore inmemoryStore() {
-    return new InmemoryStore();
-  }
-
-  public void dispose(@Disposes InmemoryStore store) {
-    store.close();
+  @Override
+  protected boolean fullPagingSupport() {
+    return true;
   }
 }

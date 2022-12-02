@@ -31,6 +31,8 @@ public class BaseConfigProfile implements QuarkusTestProfile {
   static {
     ImmutableMap.Builder<String, String> config =
         ImmutableMap.<String, String>builder()
+            .put("nessie.version.store.persist.repository-id", TEST_REPO_ID)
+            .put("nessie.version.store.persist.commit-retries", "42")
             .put("nessie.version.store.advanced.repository-id", TEST_REPO_ID)
             .put("nessie.version.store.advanced.commit-retries", "42")
             .put("nessie.version.store.advanced.tx.batch-size", "41");

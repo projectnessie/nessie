@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server;
+package org.projectnessie.quarkus.providers;
 
-import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.quarkus.test.junit.TestProfile;
-import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
+import org.projectnessie.versioned.storage.common.persist.Backend;
 
-@QuarkusIntegrationTest
-@TestProfile(QuarkusTestProfileInmemory.class)
-public class ITBasicOperations extends AbstractTestBasicOperations {}
+public interface BackendBuilder {
+
+  Backend buildBackend();
+}

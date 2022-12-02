@@ -22,15 +22,14 @@ import io.quarkus.test.junit.TestProfile;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.auth.BasicAuthenticationProvider;
 import org.projectnessie.client.auth.BearerAuthenticationProvider;
-import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
+import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfilePersistInmemory;
 
 /**
  * This test validates that setting `nessie.server.authentication.enabled=false` allows all requests
  * regardless of their authentication type.
  */
 @QuarkusTest
-@TestProfile(
-    QuarkusTestProfileInmemory.class) // use the QuarkusTestProfileInmemory, as it can be reused
+@TestProfile(QuarkusTestProfilePersistInmemory.class)
 public class TestDisabledAuthentication extends BaseClientAuthTest {
 
   @Test

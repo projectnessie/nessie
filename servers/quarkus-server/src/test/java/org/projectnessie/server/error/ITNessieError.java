@@ -39,7 +39,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Reference;
-import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
+import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfilePersistInmemory;
 import org.projectnessie.server.QuarkusNessieClientResolver;
 
 /**
@@ -48,8 +48,7 @@ import org.projectnessie.server.QuarkusNessieClientResolver;
  * very basic validation functionality.
  */
 @QuarkusIntegrationTest
-@TestProfile(
-    QuarkusTestProfileInmemory.class) // use the QuarkusTestProfileInmemory, as it can be reused
+@TestProfile(QuarkusTestProfilePersistInmemory.class)
 @ExtendWith(QuarkusNessieClientResolver.class)
 @NessieApiVersions
 public class ITNessieError {

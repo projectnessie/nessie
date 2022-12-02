@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dremio
+ * Copyright (C) 2020 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,24 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.providers;
+package org.projectnessie.server;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Disposes;
-import javax.enterprise.inject.Produces;
-import javax.inject.Singleton;
-import org.projectnessie.versioned.persist.inmem.InmemoryStore;
+import io.quarkus.test.junit.QuarkusIntegrationTest;
+import io.quarkus.test.junit.TestProfile;
+import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfilePersistRocks;
 
-@ApplicationScoped
-public class InmemoryStoreProvider {
-
-  @Produces
-  @Singleton
-  public InmemoryStore inmemoryStore() {
-    return new InmemoryStore();
-  }
-
-  public void dispose(@Disposes InmemoryStore store) {
-    store.close();
-  }
-}
+@QuarkusIntegrationTest
+@TestProfile(QuarkusTestProfilePersistRocks.class)
+class ITRestApiPersistRocks extends AbstractQuarkusSmoke {}

@@ -43,6 +43,11 @@ public class NessieCli extends BaseCommand {
     return info();
   }
 
+  @Override
+  protected Integer callWithPersist() {
+    return info();
+  }
+
   private int info() {
     warnOnInMemory();
 

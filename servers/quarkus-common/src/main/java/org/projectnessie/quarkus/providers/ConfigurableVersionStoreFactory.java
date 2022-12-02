@@ -30,6 +30,8 @@ import org.projectnessie.versioned.TracingVersionStore;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
+import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.versionstore.VersionStoreImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,6 +47,7 @@ public class ConfigurableVersionStoreFactory {
 
   private final VersionStoreConfig storeConfig;
   private final Instance<DatabaseAdapter> databaseAdapter;
+  private final Instance<Persist> persist;
 
   /**
    * Configurable version store factory.
@@ -53,9 +56,12 @@ public class ConfigurableVersionStoreFactory {
    */
   @Inject
   public ConfigurableVersionStoreFactory(
-      VersionStoreConfig storeConfig, @Any Instance<DatabaseAdapter> databaseAdapter) {
+      VersionStoreConfig storeConfig,
+      @Any Instance<DatabaseAdapter> databaseAdapter,
+      @Any Instance<Persist> persist) {
     this.storeConfig = storeConfig;
     this.databaseAdapter = databaseAdapter;
+    this.persist = persist;
   }
 
   /** Version store producer. */
@@ -66,7 +72,12 @@ public class ConfigurableVersionStoreFactory {
     VersionStoreType versionStoreType = storeConfig.getVersionStoreType();
 
     try {
-      VersionStore versionStore = databaseAdapterVersionStore();
+      VersionStore versionStore;
+      if (versionStoreType.isNewStorage()) {
+        versionStore = persistVersionStore();
+      } else {
+        versionStore = databaseAdapterVersionStore();
+      }
 
       if (storeConfig.isTracingEnabled()) {
         versionStore = new TracingVersionStore(versionStore);
@@ -74,10 +85,21 @@ public class ConfigurableVersionStoreFactory {
       if (storeConfig.isMetricsEnabled()) {
         versionStore = new MetricsVersionStore(versionStore);
       }
-
       return versionStore;
     } catch (RuntimeException | IOError e) {
       LOGGER.error("Failed to configure/start {} version store", versionStoreType, e);
+      throw e;
+    }
+  }
+
+  private VersionStore persistVersionStore() {
+    try {
+      Persist p = persist.select().get();
+
+      return new VersionStoreImpl(p);
+    } catch (RuntimeException | IOError e) {
+      LOGGER.error(
+          "Failed to configure/start {} version store", storeConfig.getVersionStoreType(), e);
       throw e;
     }
   }

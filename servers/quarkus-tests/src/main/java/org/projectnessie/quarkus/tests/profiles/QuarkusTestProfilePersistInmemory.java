@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,24 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.providers;
+package org.projectnessie.quarkus.tests.profiles;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Disposes;
-import javax.enterprise.inject.Produces;
-import javax.inject.Singleton;
-import org.projectnessie.versioned.persist.inmem.InmemoryStore;
+import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.IN_MEMORY;
 
-@ApplicationScoped
-public class InmemoryStoreProvider {
+import com.google.common.collect.ImmutableMap;
+import java.util.Map;
 
-  @Produces
-  @Singleton
-  public InmemoryStore inmemoryStore() {
-    return new InmemoryStore();
-  }
+public class QuarkusTestProfilePersistInmemory extends BaseConfigProfile {
 
-  public void dispose(@Disposes InmemoryStore store) {
-    store.close();
+  @Override
+  public Map<String, String> getConfigOverrides() {
+    return ImmutableMap.<String, String>builder()
+        .putAll(super.getConfigOverrides())
+        .put("nessie.version.store.type", IN_MEMORY.name())
+        .build();
   }
 }

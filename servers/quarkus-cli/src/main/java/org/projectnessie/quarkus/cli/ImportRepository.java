@@ -15,6 +15,8 @@
  */
 package org.projectnessie.quarkus.cli;
 
+import static org.projectnessie.versioned.storage.common.logic.Logics.setupLogic;
+
 import com.google.protobuf.ByteString;
 import java.io.PrintWriter;
 import java.nio.file.Files;
@@ -98,6 +100,10 @@ public class ImportRepository extends BaseCommand {
   protected Integer callWithDatabaseAdapter() throws Exception {
     warnOnInMemory();
 
+    spec.commandLine()
+        .getOut()
+        .printf("Importing into a %s version store...%n", versionStoreConfig.getVersionStoreType());
+
     try (ImportFileSupplier importFileSupplier = createImportFileSupplier()) {
 
       NessieImporter.Builder builder =
@@ -154,6 +160,47 @@ public class ImportRepository extends BaseCommand {
 
         out.println("Finished commit log optimization.");
       }
+
+      return 0;
+    }
+  }
+
+  @Override
+  protected Integer callWithPersist() throws Exception {
+    warnOnInMemory();
+
+    spec.commandLine()
+        .getOut()
+        .printf("Importing into a %s version store...%n", versionStoreConfig.getVersionStoreType());
+
+    try (ImportFileSupplier importFileSupplier = createImportFileSupplier()) {
+
+      NessieImporter.Builder builder =
+          NessieImporter.builder().importFileSupplier(importFileSupplier).persist(persist);
+      if (commitBatchSize != null) {
+        builder.commitBatchSize(commitBatchSize);
+      }
+
+      PrintWriter out = spec.commandLine().getOut();
+
+      if (!erase && setupLogic(persist).repositoryExists()) {
+        spec.commandLine()
+            .getErr()
+            .println(
+                "The Nessie repository already exists and is not empty, aborting. "
+                    + "Provide the "
+                    + ERASE_BEFORE_IMPORT
+                    + " option if you want to erase the repository.");
+        return 100;
+      }
+
+      NessieImporter importer = builder.progressListener(new ImportProgressListener(out)).build();
+
+      ImportResult importResult = importer.importNessieRepository();
+
+      out.printf(
+          "Imported Nessie repository, %d commits, %d named references.%n",
+          importResult.importedCommitCount(), importResult.importedReferenceCount());
 
       return 0;
     }
@@ -254,6 +301,16 @@ public class ImportRepository extends BaseCommand {
             out.println();
           }
           out.printf("%d named references imported.%n%n", count);
+          break;
+        case START_FINALIZE:
+          out.printf("Finalizing import...%n");
+          dot = false;
+          break;
+        case END_FINALIZE:
+          if (dot) {
+            out.println();
+          }
+          out.printf("Import finalization finished.%n%n");
           break;
         default:
           break;

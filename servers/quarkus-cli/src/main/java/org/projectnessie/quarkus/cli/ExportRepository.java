@@ -19,6 +19,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
+import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 import org.projectnessie.versioned.transfer.ExportImportConstants;
 import org.projectnessie.versioned.transfer.NessieExporter;
@@ -96,14 +97,25 @@ public class ExportRepository extends BaseCommand {
 
   @Override
   protected Integer callWithDatabaseAdapter() throws Exception {
+    return export(b -> b.databaseAdapter(databaseAdapter));
+  }
+
+  @Override
+  protected Integer callWithPersist() throws Exception {
+    return export(b -> b.persist(persist));
+  }
+
+  Integer export(Consumer<NessieExporter.Builder> builderConsumer) throws Exception {
     warnOnInMemory();
+
+    spec.commandLine()
+        .getOut()
+        .printf("Exporting from a %s version store...%n", versionStoreConfig.getVersionStoreType());
 
     try (ExportFileSupplier exportFileSupplier = createExportFileSupplier()) {
       NessieExporter.Builder builder =
-          NessieExporter.builder()
-              .exportFileSupplier(exportFileSupplier)
-              .databaseAdapter(databaseAdapter)
-              .fullScan(fullScan);
+          NessieExporter.builder().exportFileSupplier(exportFileSupplier).fullScan(fullScan);
+      builderConsumer.accept(builder);
       if (maxFileSize != null) {
         builder.maxFileSize(maxFileSize);
       }
@@ -214,6 +226,16 @@ public class ExportRepository extends BaseCommand {
             out.println();
           }
           out.printf("%d named references exported.%n%n", count);
+          break;
+        case START_FINALIZE:
+          out.printf("Finalizing export...%n");
+          dot = false;
+          break;
+        case END_FINALIZE:
+          if (dot) {
+            out.println();
+          }
+          out.printf("Export finalization finished.%n%n");
           break;
         default:
           break;

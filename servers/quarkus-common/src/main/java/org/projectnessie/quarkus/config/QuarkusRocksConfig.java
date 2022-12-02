@@ -13,10 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.tests.profiles;
+package org.projectnessie.quarkus.config;
 
-public class RocksTestResourceLifecycleManager extends AbstractRocksTestResourceLifecycleManager {
-  public RocksTestResourceLifecycleManager() {
-    super("nessie.version.store.rocks.db-path");
-  }
+import io.quarkus.runtime.annotations.StaticInitSafe;
+import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithDefault;
+import io.smallrye.config.WithName;
+import java.nio.file.Path;
+import org.projectnessie.versioned.storage.rocksdb.RocksDBBackendBaseConfig;
+
+@StaticInitSafe
+@ConfigMapping(prefix = "nessie.version.store.persist.rocks")
+public interface QuarkusRocksConfig extends RocksDBBackendBaseConfig {
+
+  @WithName("database-path")
+  @WithDefault("/tmp/nessie-rocksdb-store")
+  @Override
+  Path databasePath();
 }
