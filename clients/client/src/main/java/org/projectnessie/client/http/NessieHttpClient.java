@@ -24,7 +24,6 @@ import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.Context;
-import io.opentelemetry.context.Scope;
 import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
@@ -32,6 +31,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.URI;
+import org.projectnessie.api.NessieVersion;
 import org.projectnessie.api.v1.http.HttpConfigApi;
 import org.projectnessie.api.v1.http.HttpContentApi;
 import org.projectnessie.api.v1.http.HttpDiffApi;
@@ -102,28 +102,27 @@ public class NessieHttpClient extends NessieApiClient {
                     .startSpan()
                     .setAttribute(SemanticAttributes.HTTP_URL, context.getUri().toString())
                     .setAttribute(SemanticAttributes.HTTP_METHOD, context.getMethod().name())
-                    .setAttribute("component", "http");
-
-            @SuppressWarnings({"resource", "MustBeClosedChecker"})
-            Scope scope = span.makeCurrent();
+                    .setAttribute("nessie.version", NessieVersion.NESSIE_VERSION);
 
             W3CTraceContextPropagator.getInstance()
-                .inject(Context.current(), context, RequestContext::putHeader);
+                .inject(Context.current().with(span), context, RequestContext::putHeader);
 
             context.addResponseCallback(
                 (responseContext, exception) -> {
                   if (responseContext != null) {
                     try {
                       span.setAttribute(
-                          "http.status_code", responseContext.getResponseCode().getCode());
+                          SemanticAttributes.HTTP_STATUS_CODE,
+                          responseContext.getResponseCode().getCode());
                     } catch (IOException e) {
                       // There's not much we can (and probably should) do here.
                     }
                   }
                   if (exception != null) {
-                    span.setStatus(StatusCode.ERROR, exception.toString());
+                    span.setStatus(StatusCode.ERROR).recordException(exception);
+                  } else {
+                    span.setStatus(StatusCode.OK);
                   }
-                  scope.close();
                   span.end();
                 });
           });
