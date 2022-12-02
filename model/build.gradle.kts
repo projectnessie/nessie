@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import org.apache.tools.ant.filters.ReplaceTokens
 import org.projectnessie.buildtools.smallryeopenapi.SmallryeOpenApiTask
 
 plugins {
@@ -54,6 +55,11 @@ smallryeOpenApi {
     listOf("org.projectnessie.api", "org.projectnessie.api.http", "org.projectnessie.model")
   )
 }
+
+val processResources =
+  tasks.named<ProcessResources>("processResources") {
+    filter(ReplaceTokens::class, mapOf("tokens" to mapOf("projectVersion" to project.version)))
+  }
 
 val openapi by
   configurations.creating {
