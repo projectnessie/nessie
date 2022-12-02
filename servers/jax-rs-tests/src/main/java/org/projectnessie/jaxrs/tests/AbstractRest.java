@@ -65,25 +65,27 @@ public abstract class AbstractRest {
 
   @AfterEach
   public void tearDown() throws Exception {
-    // Cannot use @ExtendWith(SoftAssertionsExtension.class) + @InjectSoftAssertions here, because
-    // of Quarkus class loading issues. See https://github.com/quarkusio/quarkus/issues/19814
-    soft.assertAll();
-
-    Branch defaultBranch = api.getDefaultBranch();
-    api.getAllReferences().stream()
-        .forEach(
-            ref -> {
-              try {
-                if (ref instanceof Branch && !ref.getName().equals(defaultBranch.getName())) {
-                  api.deleteBranch().branch((Branch) ref).delete();
-                } else if (ref instanceof Tag) {
-                  api.deleteTag().tag((Tag) ref).delete();
+    try {
+      // Cannot use @ExtendWith(SoftAssertionsExtension.class) + @InjectSoftAssertions here, because
+      // of Quarkus class loading issues. See https://github.com/quarkusio/quarkus/issues/19814
+      soft.assertAll();
+    } finally {
+      Branch defaultBranch = api.getDefaultBranch();
+      api.getAllReferences().stream()
+          .forEach(
+              ref -> {
+                try {
+                  if (ref instanceof Branch && !ref.getName().equals(defaultBranch.getName())) {
+                    api.deleteBranch().branch((Branch) ref).delete();
+                  } else if (ref instanceof Tag) {
+                    api.deleteTag().tag((Tag) ref).delete();
+                  }
+                } catch (NessieConflictException | NessieNotFoundException e) {
+                  throw new RuntimeException(e);
                 }
-              } catch (NessieConflictException | NessieNotFoundException e) {
-                throw new RuntimeException(e);
-              }
-            });
-    api.close();
+              });
+      api.close();
+    }
   }
 
   protected String createCommits(
