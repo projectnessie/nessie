@@ -59,7 +59,7 @@ public final class ClientSideUpdateNamespace extends BaseUpdateNamespaceBuilder 
           .branchName(refName)
           .hash(hashOnRef)
           .commitMeta(CommitMeta.fromMessage("update namespace " + key))
-          .operation(Operation.Put.of(key, builder.build()))
+          .operation(Operation.Put.of(key, builder.build(), oldNamespace))
           .commit();
     } catch (NessieNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
