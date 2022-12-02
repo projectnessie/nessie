@@ -237,6 +237,29 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                         MergeType.NORMAL,
                         false,
                         false)),
+        // diff()
+        new ReferenceNotFoundFunction("diff/from-hash")
+            .msg("Commit '12341234123412341234123412341234123412341234' not found")
+            .function(
+                s ->
+                    s.getDiffs(
+                        Hash.of("12341234123412341234123412341234123412341234"),
+                        BranchName.of("main"))),
+        new ReferenceNotFoundFunction("diff/to-branch")
+            .msg("Named reference 'this-one-should-not-exist' not found")
+            .function(
+                s -> s.getDiffs(BranchName.of("main"), BranchName.of("this-one-should-not-exist"))),
+        new ReferenceNotFoundFunction("diff/from-hash")
+            .msg("Commit '12341234123412341234123412341234123412341234' not found")
+            .function(
+                s ->
+                    s.getDiffs(
+                        Hash.of("12341234123412341234123412341234123412341234"),
+                        BranchName.of("main"))),
+        new ReferenceNotFoundFunction("diff/from-branch")
+            .msg("Named reference 'this-one-should-not-exist' not found")
+            .function(
+                s -> s.getDiffs(BranchName.of("this-one-should-not-exist"), BranchName.of("main"))),
         // merge()
         new ReferenceNotFoundFunction("merge/hash/empty")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")
@@ -263,6 +286,35 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                         Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
                         metadataRewriter,
                         true,
+                        Collections.emptyMap(),
+                        MergeType.NORMAL,
+                        false,
+                        false)),
+        new ReferenceNotFoundFunction("merge/hash/empty")
+            .msg("Commit '12341234123412341234123412341234123412341234' not found")
+            .function(
+                s ->
+                    s.merge(
+                        Hash.of("12341234123412341234123412341234123412341234"),
+                        BranchName.of("main"),
+                        Optional.empty(),
+                        metadataRewriter,
+                        false,
+                        Collections.emptyMap(),
+                        MergeType.NORMAL,
+                        false,
+                        false)),
+        new ReferenceNotFoundFunction("merge/empty/hash")
+            .msg(
+                "Could not find commit '12341234123412341234123412341234123412341234' in reference 'main'.")
+            .function(
+                s ->
+                    s.merge(
+                        s.noAncestorHash(),
+                        BranchName.of("main"),
+                        Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
+                        metadataRewriter,
+                        false,
                         Collections.emptyMap(),
                         MergeType.NORMAL,
                         false,
