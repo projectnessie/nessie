@@ -22,15 +22,21 @@ import static org.assertj.core.api.Assertions.entry;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URL;
 import java.util.stream.Stream;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.assertj.core.data.MapEntry;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.client.ext.NessieApiVersion;
 import org.projectnessie.client.ext.NessieApiVersions;
+import org.projectnessie.client.ext.NessieClientUri;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.CommitResponse;
@@ -152,5 +158,28 @@ public abstract class AbstractResteasyV2Test {
                         ((IcebergTable) content.getContent()).getMetadataLocation()));
 
     assertThat(entries).containsExactlyInAnyOrder(entry(key1, "loc1"), entry(key2, "loc2"));
+  }
+
+  /** Dedicated test for human-readable references in URL paths. */
+  @Test
+  void testBranchWithSlashInUrlPath(@NessieClientUri URI clientUri) throws IOException {
+    Branch branch = createBranch("test/branch/name1");
+
+    assertThat(
+            rest()
+                .get("trees/test/branch/name1@")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(SingleReferenceResponse.class)
+                .getReference())
+        .isEqualTo(branch);
+
+    // The above request encodes `@` as `%40`, now try the same URL with a literal `@` char to
+    // simulate handwritten `curl` requests.
+    URL url = new URL(clientUri + "/trees/test/branch/name1@");
+    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+    assertThat(conn.getResponseCode()).isEqualTo(200);
+    conn.disconnect();
   }
 }

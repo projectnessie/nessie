@@ -17,9 +17,11 @@ package org.projectnessie.server;
 
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.TestProfile;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.jaxrs.tests.AbstractResteasyV2Test;
 import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
 
 @QuarkusIntegrationTest
 @TestProfile(QuarkusTestProfileInmemory.class)
+@ExtendWith(QuarkusNessieClientResolver.class)
 public class ITResteasyV2InMemory extends AbstractResteasyV2Test {}
