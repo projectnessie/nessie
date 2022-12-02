@@ -56,7 +56,7 @@ dependencies {
   implementation("io.quarkus:quarkus-smallrye-openapi")
   implementation("io.quarkus:quarkus-micrometer")
   implementation("io.quarkus:quarkus-core-deployment")
-  implementation(libs.quarkus.smallrye.opentracing)
+  implementation(libs.quarkus.opentelemetry)
   implementation("io.quarkus:quarkus-container-image-jib")
   implementation(libs.quarkus.logging.sentry)
   implementation("io.smallrye:smallrye-open-api-jaxrs")
@@ -77,6 +77,9 @@ dependencies {
   }
 
   implementation(libs.guava)
+  implementation("io.opentelemetry:opentelemetry-opentracing-shim")
+  implementation("io.opentelemetry.instrumentation:opentelemetry-micrometer-1.5")
+  implementation(libs.opentracing.util)
 
   openapiSource(project(":nessie-model", "openapiSource"))
 
