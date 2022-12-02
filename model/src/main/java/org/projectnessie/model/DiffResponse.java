@@ -35,13 +35,24 @@ public interface DiffResponse {
   @JsonSerialize(as = ImmutableDiffEntry.class)
   @JsonDeserialize(as = ImmutableDiffEntry.class)
   interface DiffEntry {
+    @Value.Parameter(order = 1)
     ContentKey getKey();
 
     @Nullable
+    @Value.Parameter(order = 2)
     @SuppressWarnings("immutables:from")
     Content getFrom();
 
     @Nullable
+    @Value.Parameter(order = 3)
     Content getTo();
+
+    static DiffEntry diffEntry(ContentKey key, Content from) {
+      return diffEntry(key, from, null);
+    }
+
+    static DiffEntry diffEntry(ContentKey key, Content from, Content to) {
+      return ImmutableDiffEntry.of(key, from, to);
+    }
   }
 }

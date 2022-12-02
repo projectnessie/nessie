@@ -198,7 +198,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
     List<Entry> entries =
         contentAndOperationTypes()
             .filter(c -> c.operation instanceof Put)
-            .map(c -> Entry.builder().type(c.type).name(c.operation.getKey()).build())
+            .map(c -> Entry.entry(c.operation.getKey(), c.type))
             .collect(Collectors.toList());
 
     CommitMultipleOperationsBuilder commit2 =

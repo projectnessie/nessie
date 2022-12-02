@@ -147,7 +147,7 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
           List<Entry> expect =
               contentAndOps.stream()
                   .filter(c -> c.operation instanceof Put)
-                  .map(c -> Entry.builder().type(c.type).name(c.operation.getKey()).build())
+                  .map(c -> Entry.entry(c.operation.getKey(), c.type))
                   .collect(Collectors.toList());
           assertThat(entries).containsExactlyInAnyOrderElementsOf(expect);
         },
@@ -223,11 +223,7 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
                 getApi().getEntries().refName(branch.getName()).stream()
                     .collect(Collectors.toList());
             assertThat(entries)
-                .containsExactly(
-                    Entry.builder()
-                        .name(fixedContentKey)
-                        .type(contentAndOperationType.type)
-                        .build());
+                .containsExactly(Entry.entry(fixedContentKey, contentAndOperationType.type));
           },
           () -> {
             // Diff against of committed HEAD and previous commit must yield the content in the
