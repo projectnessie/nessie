@@ -421,6 +421,7 @@ public abstract class AbstractMergeTransplant {
         .isEqualTo(expectedMergeResult);
   }
 
+  @SuppressWarnings("deprecation")
   private MergeResult<CommitLogEntry> conflictExpectedMergeResult(
       boolean merge,
       BranchName conflict,
@@ -465,6 +466,7 @@ public abstract class AbstractMergeTransplant {
     return expectedMergeResult.build();
   }
 
+  @SuppressWarnings("deprecation")
   private static ImmutableMergeResult.Builder<CommitLogEntry> successExpectedMergeResult(
       boolean merge,
       BranchName targetBranch,

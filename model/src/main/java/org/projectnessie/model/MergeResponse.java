@@ -59,14 +59,11 @@ public interface MergeResponse {
   @Nullable
   String getExpectedHash();
 
-  /** List of commit-IDs to be merged or transplanted. */
+  @Deprecated // for removal and replaced with something else
   List<LogEntry> getSourceCommits();
 
-  /**
-   * List of commit-IDs between {@link #getExpectedHash()} and {@link #getEffectiveTargetHash()}, if
-   * the expected hash was provided.
-   */
   @Nullable
+  @Deprecated // for removal and replaced with something else
   List<LogEntry> getTargetCommits();
 
   /** Details of all keys encountered during the merge or transplant operation. */
@@ -86,8 +83,10 @@ public interface MergeResponse {
       return ContentKeyConflict.NONE;
     }
 
+    @Deprecated // for removal and replaced with something else
     List<String> getSourceCommits();
 
+    @Deprecated // for removal and replaced with something else
     List<String> getTargetCommits();
   }
 
