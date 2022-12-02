@@ -32,6 +32,9 @@ dependencies {
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-transfer-proto"))
 
+  implementation(project(":nessie-versioned-storage-common"))
+  implementation(project(":nessie-versioned-storage-store"))
+
   implementation(libs.protobuf.java)
 
   implementation(platform(libs.jackson.bom))
@@ -66,6 +69,16 @@ dependencies {
   testImplementation(project(":nessie-versioned-persist-rocks-test"))
   testImplementation(project(":nessie-versioned-persist-transactional"))
   testImplementation(project(":nessie-versioned-persist-transactional-test"))
+
+  testImplementation(project(":nessie-versioned-storage-cache"))
+  testImplementation(project(":nessie-versioned-storage-cassandra"))
+  testImplementation(project(":nessie-versioned-storage-common"))
+  testImplementation(project(":nessie-versioned-storage-dynamodb"))
+  testImplementation(project(":nessie-versioned-storage-inmemory"))
+  testImplementation(project(":nessie-versioned-storage-jdbc"))
+  testImplementation(project(":nessie-versioned-storage-mongodb"))
+  testImplementation(project(":nessie-versioned-storage-rocksdb"))
+  testImplementation(project(":nessie-versioned-storage-testextension"))
 
   testRuntimeOnly(libs.h2)
 

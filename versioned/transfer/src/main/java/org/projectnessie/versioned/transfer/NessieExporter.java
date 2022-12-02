@@ -15,13 +15,16 @@
  */
 package org.projectnessie.versioned.transfer;
 
+import static com.google.common.base.Preconditions.checkState;
 import static org.projectnessie.versioned.transfer.ExportImportConstants.DEFAULT_BUFFER_SIZE;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.store.DefaultStoreWorker;
 import org.projectnessie.versioned.transfer.files.ExportFileSupplier;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
@@ -38,8 +41,11 @@ public abstract class NessieExporter {
 
   @SuppressWarnings("UnusedReturnValue")
   public interface Builder {
-    /** Mandatory, specify the {@code DatabaseAdapter} to use. */
+    /** Specify the {@code DatabaseAdapter} to use. */
     Builder databaseAdapter(DatabaseAdapter databaseAdapter);
+
+    /** Specify the {@code Persist} to use. */
+    Builder persist(Persist persist);
 
     /** Optional, specify a custom {@link ObjectMapper}. */
     Builder objectMapper(ObjectMapper objectMapper);
@@ -74,7 +80,20 @@ public abstract class NessieExporter {
     NessieExporter build();
   }
 
+  @Nullable
+  @jakarta.annotation.Nullable
   abstract DatabaseAdapter databaseAdapter();
+
+  @Nullable
+  @jakarta.annotation.Nullable
+  abstract Persist persist();
+
+  @Value.Check
+  void check() {
+    checkState(
+        persist() == null ^ databaseAdapter() == null,
+        "Must supply either persist() or databaseAdapter(), never both");
+  }
 
   /**
    * Flag whether to do an expensive scan the database for all commits, when set to {@code true},
@@ -123,6 +142,10 @@ public abstract class NessieExporter {
 
     exportFiles.preValidate();
 
-    return new ExportDatabaseAdapter(exportFiles, this).exportRepo();
+    if (databaseAdapter() != null) {
+      return new ExportDatabaseAdapter(exportFiles, this).exportRepo();
+    }
+
+    return new ExportPersist(exportFiles, this).exportRepo();
   }
 }

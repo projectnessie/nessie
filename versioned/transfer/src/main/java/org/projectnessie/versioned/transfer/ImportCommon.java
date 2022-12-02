@@ -47,6 +47,10 @@ abstract class ImportCommon {
     long namedReferenceCount = importNamedReferences();
     importer.progressListener().progress(ProgressEvent.END_NAMED_REFERENCES);
 
+    importer.progressListener().progress(ProgressEvent.START_FINALIZE);
+    importFinalize(headsAndForks);
+    importer.progressListener().progress(ProgressEvent.END_FINALIZE);
+
     importer.progressListener().progress(ProgressEvent.FINISHED);
 
     return ImmutableImportResult.builder()
@@ -62,4 +66,6 @@ abstract class ImportCommon {
   abstract long importNamedReferences() throws IOException;
 
   abstract long importCommits() throws IOException;
+
+  abstract void importFinalize(HeadsAndForks headsAndForks);
 }

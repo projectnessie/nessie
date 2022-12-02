@@ -17,6 +17,7 @@ package org.projectnessie.versioned.transfer;
 
 import static org.projectnessie.versioned.transfer.ExportImportConstants.EXPORT_METADATA;
 import static org.projectnessie.versioned.transfer.ExportImportConstants.HEADS_AND_FORKS;
+import static org.projectnessie.versioned.transfer.ExportImportConstants.REPOSITORY_DESCRIPTION;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -25,6 +26,7 @@ import org.projectnessie.versioned.transfer.files.ExportFileSupplier;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportVersion;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.HeadsAndForks;
+import org.projectnessie.versioned.transfer.serialize.TransferTypes.RepositoryDescriptionProto;
 
 abstract class ExportCommon {
   final ExportFileSupplier exportFiles;
@@ -95,6 +97,13 @@ abstract class ExportCommon {
   void writeHeadsAndForks(HeadsAndForks hf) throws IOException {
     try (OutputStream output = exportFiles.newFileOutput(HEADS_AND_FORKS)) {
       hf.writeTo(output);
+    }
+  }
+
+  void writeRepositoryDescription(RepositoryDescriptionProto repositoryDescription)
+      throws IOException {
+    try (OutputStream output = exportFiles.newFileOutput(REPOSITORY_DESCRIPTION)) {
+      repositoryDescription.writeTo(output);
     }
   }
 }
