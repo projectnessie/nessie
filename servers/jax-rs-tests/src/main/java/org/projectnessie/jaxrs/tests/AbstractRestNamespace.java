@@ -15,9 +15,6 @@
  */
 package org.projectnessie.jaxrs.tests;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import java.util.Arrays;
@@ -55,33 +52,34 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
     Namespace namespace =
         getApi().createNamespace().refName(branch.getName()).namespace(ns).create();
 
-    assertThat(namespace)
+    soft.assertThat(namespace)
         .isNotNull()
         .extracting(Namespace::getElements, Namespace::toPathString)
         .containsExactly(ns.getElements(), ns.toPathString());
 
     Namespace got = getApi().getNamespace().refName(branch.getName()).namespace(ns).get();
-    assertThat(got).isEqualTo(namespace);
+    soft.assertThat(got).isEqualTo(namespace);
 
     // the namespace in the error message will contain the representation with u001D
     String namespaceInErrorMsg = namespaceName.replace("\u0000", "\u001D");
 
-    assertThatThrownBy(
+    soft.assertThatThrownBy(
             () -> getApi().createNamespace().refName(branch.getName()).namespace(ns).create())
         .isInstanceOf(NessieNamespaceAlreadyExistsException.class)
         .hasMessage(String.format("Namespace '%s' already exists", namespaceInErrorMsg));
 
     getApi().deleteNamespace().refName(branch.getName()).namespace(ns).delete();
-    assertThatThrownBy(
+    soft.assertThatThrownBy(
             () -> getApi().deleteNamespace().refName(branch.getName()).namespace(ns).delete())
         .isInstanceOf(NessieNamespaceNotFoundException.class)
         .hasMessage(String.format("Namespace '%s' does not exist", namespaceInErrorMsg));
 
-    assertThatThrownBy(() -> getApi().getNamespace().refName(branch.getName()).namespace(ns).get())
+    soft.assertThatThrownBy(
+            () -> getApi().getNamespace().refName(branch.getName()).namespace(ns).get())
         .isInstanceOf(NessieNamespaceNotFoundException.class)
         .hasMessage(String.format("Namespace '%s' does not exist", namespaceInErrorMsg));
 
-    assertThatThrownBy(
+    soft.assertThatThrownBy(
             () ->
                 getApi()
                     .deleteNamespace()
@@ -109,13 +107,14 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
     Namespace three = createNamespace.apply("x.y.z");
     Namespace four = createNamespace.apply("one.two");
     for (Namespace namespace : Arrays.asList(one, two, three, four)) {
-      assertThat(namespace).isNotNull();
+      soft.assertThat(namespace).isNotNull();
     }
 
-    assertThat(getApi().getMultipleNamespaces().refName(branch.getName()).get().getNamespaces())
+    soft.assertThat(
+            getApi().getMultipleNamespaces().refName(branch.getName()).get().getNamespaces())
         .containsExactlyInAnyOrder(one, two, three, four);
 
-    assertThat(
+    soft.assertThat(
             getApi()
                 .getMultipleNamespaces()
                 .refName(branch.getName())
@@ -124,7 +123,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
                 .getNamespaces())
         .containsExactlyInAnyOrder(one, two, three, four);
 
-    assertThat(
+    soft.assertThat(
             getApi()
                 .getMultipleNamespaces()
                 .refName(branch.getName())
@@ -132,7 +131,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
                 .get()
                 .getNamespaces())
         .containsExactlyInAnyOrder(one, two);
-    assertThat(
+    soft.assertThat(
             getApi()
                 .getMultipleNamespaces()
                 .refName(branch.getName())
@@ -140,7 +139,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
                 .get()
                 .getNamespaces())
         .containsExactlyInAnyOrder(one, two);
-    assertThat(
+    soft.assertThat(
             getApi()
                 .getMultipleNamespaces()
                 .refName(branch.getName())
@@ -148,7 +147,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
                 .get()
                 .getNamespaces())
         .containsExactlyInAnyOrder(one);
-    assertThat(
+    soft.assertThat(
             getApi()
                 .getMultipleNamespaces()
                 .refName(branch.getName())
@@ -157,7 +156,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
                 .getNamespaces())
         .containsExactlyInAnyOrder(two);
 
-    assertThat(
+    soft.assertThat(
             getApi()
                 .getMultipleNamespaces()
                 .refName(branch.getName())
@@ -165,7 +164,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
                 .get()
                 .getNamespaces())
         .containsExactly(three);
-    assertThat(
+    soft.assertThat(
             getApi()
                 .getMultipleNamespaces()
                 .refName(branch.getName())
@@ -173,7 +172,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
                 .get()
                 .getNamespaces())
         .isEmpty();
-    assertThat(
+    soft.assertThat(
             getApi()
                 .getMultipleNamespaces()
                 .refName(branch.getName())
@@ -217,7 +216,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
 
     for (Entry e : entries) {
       Namespace namespace = e.getName().getNamespace();
-      assertThat(
+      soft.assertThat(
               getApi()
                   .getNamespace()
                   .refName(branch.getName())
@@ -226,7 +225,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
                   .getElements())
           .isEqualTo(namespace.getElements());
 
-      assertThatThrownBy(
+      soft.assertThatThrownBy(
               () ->
                   getApi()
                       .deleteNamespace()
@@ -254,16 +253,17 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
     LogResponse log =
         getApi().getCommitLog().refName(base.getName()).untilHash(base.getHash()).get();
     String expectedCommitMsg = "create namespace a.b.c";
-    assertThat(
+    soft.assertThat(
             log.getLogEntries().stream().map(LogEntry::getCommitMeta).map(CommitMeta::getMessage))
         .containsExactly(expectedCommitMsg, expectedCommitMsg);
 
-    assertThat(
+    soft.assertThat(
             getApi().getEntries().refName(base.getName()).get().getEntries().stream()
                 .map(Entry::getName))
         .containsExactly(ContentKey.of(ns.getElements()));
 
-    assertThat(getApi().getNamespace().refName(base.getName()).namespace(ns).get()).isNotNull();
+    soft.assertThat(getApi().getNamespace().refName(base.getName()).namespace(ns).get())
+        .isNotNull();
   }
 
   @Test
@@ -287,7 +287,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
             .commit();
     Branch finalBase = base;
     Branch finalBranch = branch;
-    assertThatThrownBy(
+    soft.assertThatThrownBy(
             () -> getApi().mergeRefIntoBranch().branch(finalBase).fromRef(finalBranch).merge())
         .isInstanceOf(NessieReferenceConflictException.class)
         .hasMessage("The following keys have been changed in conflict: 'a.b.c'");
@@ -295,15 +295,16 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
     LogResponse log =
         getApi().getCommitLog().refName(base.getName()).untilHash(base.getHash()).get();
     // merging should not have been possible ("test-merge-branch1" shouldn't be in the commits)
-    assertThat(
+    soft.assertThat(
             log.getLogEntries().stream().map(LogEntry::getCommitMeta).map(CommitMeta::getMessage))
         .containsExactly("create namespace a.b.c");
 
     List<Entry> entries = getApi().getEntries().refName(base.getName()).get().getEntries();
-    assertThat(entries.stream().map(Entry::getName))
+    soft.assertThat(entries.stream().map(Entry::getName))
         .containsExactly(ContentKey.of(ns.getElements()));
 
-    assertThat(getApi().getNamespace().refName(base.getName()).namespace(ns).get()).isNotNull();
+    soft.assertThat(getApi().getNamespace().refName(base.getName()).namespace(ns).get())
+        .isNotNull();
   }
 
   @Test
@@ -322,19 +323,19 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
         .commit();
 
     Namespace ns = Namespace.of(elements);
-    assertThatThrownBy(
+    soft.assertThatThrownBy(
             () -> getApi().createNamespace().refName(branch.getName()).namespace(ns).create())
         .isInstanceOf(NessieNamespaceAlreadyExistsException.class)
         .hasMessage("Another content object with name 'a.b.c' already exists");
 
-    assertThatThrownBy(() -> getApi().getNamespace().refName(branch.getName()).namespace(ns).get())
+    soft.assertThatThrownBy(
+            () -> getApi().getNamespace().refName(branch.getName()).namespace(ns).get())
         .isInstanceOf(NessieNamespaceNotFoundException.class)
         .hasMessage("Namespace 'a.b.c' does not exist");
 
-    assertThatThrownBy(
+    soft.assertThatThrownBy(
             () -> getApi().deleteNamespace().refName(branch.getName()).namespace(ns).delete())
-        .isInstanceOf(NessieNamespaceNotFoundException.class)
-        .hasMessage("Namespace 'a.b.c' does not exist");
+        .isInstanceOf(NessieNamespaceNotFoundException.class);
   }
 
   @Test
@@ -350,15 +351,16 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
 
           Namespace created =
               getApi().createNamespace().refName(branch.getName()).namespace(namespace).create();
-          assertThat(created)
+          soft.assertThat(created)
               .isNotNull()
               .extracting(Namespace::getElements, Namespace::toPathString)
               .containsExactly(namespace.getElements(), namespace.toPathString());
 
-          assertThat(getApi().getNamespace().refName(branch.getName()).namespace(namespace).get())
+          soft.assertThat(
+                  getApi().getNamespace().refName(branch.getName()).namespace(namespace).get())
               .isEqualTo(created);
 
-          assertThatThrownBy(
+          soft.assertThatThrownBy(
                   () ->
                       getApi()
                           .createNamespace()
@@ -368,6 +370,8 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
               .isInstanceOf(NessieNamespaceAlreadyExistsException.class)
               .hasMessage(String.format("Namespace '%s' already exists", namespace.name()));
 
+          soft.assertAll();
+
           return created;
         };
 
@@ -376,10 +380,11 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
     List<Namespace> namespaces = Arrays.asList(first, second);
 
     // retrieval by prefix
-    assertThat(getApi().getMultipleNamespaces().refName(branch.getName()).get().getNamespaces())
+    soft.assertThat(
+            getApi().getMultipleNamespaces().refName(branch.getName()).get().getNamespaces())
         .containsExactlyInAnyOrderElementsOf(namespaces);
 
-    assertThat(
+    soft.assertThat(
             getApi()
                 .getMultipleNamespaces()
                 .namespace("a")
@@ -388,7 +393,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
                 .getNamespaces())
         .containsExactlyInAnyOrderElementsOf(namespaces);
 
-    assertThat(
+    soft.assertThat(
             getApi()
                 .getMultipleNamespaces()
                 .namespace("a.b")
@@ -397,7 +402,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
                 .getNamespaces())
         .containsExactly(second);
 
-    assertThat(
+    soft.assertThat(
             getApi()
                 .getMultipleNamespaces()
                 .namespace("a.b\u001Dc")
@@ -406,7 +411,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
                 .getNamespaces())
         .containsExactly(first);
 
-    assertThat(
+    soft.assertThat(
             getApi()
                 .getMultipleNamespaces()
                 .namespace("a.b\u0000c")
@@ -415,7 +420,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
                 .getNamespaces())
         .containsExactly(first);
 
-    assertThat(
+    soft.assertThat(
             getApi()
                 .getMultipleNamespaces()
                 .namespace("a.b.c")
@@ -428,7 +433,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
     for (Namespace namespace : namespaces) {
       getApi().deleteNamespace().refName(branch.getName()).namespace(namespace).delete();
 
-      assertThatThrownBy(
+      soft.assertThatThrownBy(
               () ->
                   getApi()
                       .deleteNamespace()
@@ -439,7 +444,8 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
           .hasMessage(String.format("Namespace '%s' does not exist", namespace.name()));
     }
 
-    assertThat(getApi().getMultipleNamespaces().refName(branch.getName()).get().getNamespaces())
+    soft.assertThat(
+            getApi().getMultipleNamespaces().refName(branch.getName()).get().getNamespaces())
         .isEmpty();
   }
 
@@ -447,7 +453,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
   public void testEmptyNamespace() throws BaseNessieClientServerException {
     Branch branch = createBranch("emptyNamespace");
     // can't create/fetch/delete an empty namespace due to empty REST path
-    assertThatThrownBy(
+    soft.assertThatThrownBy(
             () ->
                 getApi()
                     .createNamespace()
@@ -456,12 +462,12 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
                     .create())
         .isInstanceOf(Exception.class);
 
-    assertThatThrownBy(
+    soft.assertThatThrownBy(
             () ->
                 getApi().getNamespace().refName(branch.getName()).namespace(Namespace.EMPTY).get())
         .isInstanceOf(Exception.class);
 
-    assertThatThrownBy(
+    soft.assertThatThrownBy(
             () ->
                 getApi()
                     .deleteNamespace()
@@ -470,7 +476,8 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
                     .delete())
         .isInstanceOf(Exception.class);
 
-    assertThat(getApi().getMultipleNamespaces().refName(branch.getName()).get().getNamespaces())
+    soft.assertThat(
+            getApi().getMultipleNamespaces().refName(branch.getName()).get().getNamespaces())
         .isEmpty();
 
     ContentKey keyWithoutNamespace = ContentKey.of("icebergTable");
@@ -482,9 +489,10 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
         .operation(Put.of(keyWithoutNamespace, IcebergTable.of("icebergTable", 42, 42, 42, 42)))
         .commit();
 
-    assertThat(getApi().getMultipleNamespaces().refName(branch.getName()).get().getNamespaces())
+    soft.assertThat(
+            getApi().getMultipleNamespaces().refName(branch.getName()).get().getNamespaces())
         .isEmpty();
-    assertThat(
+    soft.assertThat(
             getApi()
                 .getMultipleNamespaces()
                 .refName(branch.getName())
@@ -507,9 +515,9 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
             .properties(properties)
             .reference(branch)
             .create();
-    assertThat(ns.getProperties()).isEqualTo(properties);
+    soft.assertThat(ns.getProperties()).isEqualTo(properties);
 
-    assertThatThrownBy(
+    soft.assertThatThrownBy(
             () ->
                 getApi()
                     .updateProperties()
@@ -522,7 +530,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
 
     // Re-run with invalid name, but different parameters to ensure that missing parameters do not
     // fail the request before the name is validated.
-    assertThatThrownBy(
+    soft.assertThatThrownBy(
             () ->
                 getApi()
                     .updateProperties()
@@ -541,12 +549,13 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
         .update();
 
     // namespace does not exist at the previous hash
-    assertThatThrownBy(() -> getApi().getNamespace().reference(branch).namespace(namespace).get())
+    soft.assertThatThrownBy(
+            () -> getApi().getNamespace().reference(branch).namespace(namespace).get())
         .isInstanceOf(NessieNamespaceNotFoundException.class);
 
     Branch updated = (Branch) getApi().getReference().refName(branch.getName()).get();
     ns = getApi().getNamespace().reference(updated).namespace(namespace).get();
-    assertThat(ns.getProperties()).isEqualTo(properties);
+    soft.assertThat(ns.getProperties()).isEqualTo(properties);
 
     getApi()
         .updateProperties()
@@ -557,12 +566,12 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
         .update();
 
     // "updated" still points to the hash prior to the update
-    assertThat(
+    soft.assertThat(
             getApi().getNamespace().reference(updated).namespace(namespace).get().getProperties())
         .isEqualTo(properties);
 
     updated = (Branch) getApi().getReference().refName(branch.getName()).get();
     ns = getApi().getNamespace().reference(updated).namespace(namespace).get();
-    assertThat(ns.getProperties()).isEqualTo(ImmutableMap.of("key1", "xyz", "key3", "val3"));
+    soft.assertThat(ns.getProperties()).isEqualTo(ImmutableMap.of("key1", "xyz", "key3", "val3"));
   }
 }

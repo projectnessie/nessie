@@ -15,8 +15,6 @@
  */
 package org.projectnessie.jaxrs.tests;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.projectnessie.error.BaseNessieClientServerException;
@@ -34,12 +32,12 @@ public abstract class AbstractRestAssign extends AbstractRest {
       throws BaseNessieClientServerException {
     Reference main = getApi().getReference().refName("main").get();
     // make sure main doesn't have any commits
-    assertThat(getApi().getCommitLog().refName(main.getName()).stream()).isEmpty();
+    soft.assertThat(getApi().getCommitLog().refName(main.getName()).stream()).isEmpty();
 
     Branch testBranch = createBranch("testBranch");
     getApi().assignBranch().branch(testBranch).assignTo(main).assign();
     Reference testBranchRef = getApi().getReference().refName(testBranch.getName()).get();
-    assertThat(testBranchRef.getHash()).isEqualTo(main.getHash());
+    soft.assertThat(testBranchRef.getHash()).isEqualTo(main.getHash());
 
     String testTag = "testTag";
     Reference testTagRef =
@@ -48,7 +46,7 @@ public abstract class AbstractRestAssign extends AbstractRest {
             .sourceRefName(main.getName())
             .reference(Tag.of(testTag, main.getHash()))
             .create();
-    assertThat(testTagRef.getHash()).isNotNull();
+    soft.assertThat(testTagRef.getHash()).isNotNull();
     getApi()
         .assignTag()
         .hash(testTagRef.getHash())
@@ -56,7 +54,7 @@ public abstract class AbstractRestAssign extends AbstractRest {
         .assignTo(refMode.transform(main))
         .assign();
     testTagRef = getApi().getReference().refName(testTag).get();
-    assertThat(testTagRef.getHash()).isEqualTo(main.getHash());
+    soft.assertThat(testTagRef.getHash()).isEqualTo(main.getHash());
   }
 
   @ParameterizedTest
@@ -69,12 +67,12 @@ public abstract class AbstractRestAssign extends AbstractRest {
     createCommits(main, 1, 1, main.getHash());
     main = getApi().getReference().refName(main.getName()).get();
 
-    assertThat(branch.getHash()).isNotEqualTo(main.getHash());
+    soft.assertThat(branch.getHash()).isNotEqualTo(main.getHash());
 
     // Assign the test branch to main
     getApi().assignBranch().branch(branch).assignTo(refMode.transform(main)).assign();
     Reference assignedBranch = getApi().getReference().refName(branch.getName()).get();
-    assertThat(assignedBranch.getHash()).isEqualTo(main.getHash());
+    soft.assertThat(assignedBranch.getHash()).isEqualTo(main.getHash());
   }
 
   @ParameterizedTest
@@ -93,7 +91,7 @@ public abstract class AbstractRestAssign extends AbstractRest {
     createCommits(main, 1, 1, main.getHash());
     main = getApi().getReference().refName(main.getName()).get();
 
-    assertThat(tag.getHash()).isNotEqualTo(main.getHash());
+    soft.assertThat(tag.getHash()).isNotEqualTo(main.getHash());
 
     // Assign the test tag to main
     getApi()
@@ -103,6 +101,6 @@ public abstract class AbstractRestAssign extends AbstractRest {
         .assignTo(refMode.transform(main))
         .assign();
     Reference assignedTag = getApi().getReference().refName(tag.getName()).get();
-    assertThat(assignedTag.getHash()).isEqualTo(main.getHash());
+    soft.assertThat(assignedTag.getHash()).isEqualTo(main.getHash());
   }
 }

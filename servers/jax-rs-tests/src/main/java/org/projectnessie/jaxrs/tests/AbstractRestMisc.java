@@ -16,7 +16,6 @@
 package org.projectnessie.jaxrs.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.Test;
 import org.projectnessie.error.BaseNessieClientServerException;
@@ -50,7 +49,7 @@ public abstract class AbstractRestMisc extends AbstractRestMergeTransplant {
         .commitMeta(CommitMeta.fromMessage("commit 1"))
         .commit();
 
-    assertThat(getApi().getContent().key(key).refName(branch.getName()).get())
+    soft.assertThat(getApi().getContent().key(key).refName(branch.getName()).get())
         .containsKey(key)
         .hasEntrySatisfying(
             key,
@@ -63,12 +62,12 @@ public abstract class AbstractRestMisc extends AbstractRestMergeTransplant {
   public void checkServerErrorPropagation() throws BaseNessieClientServerException {
     Branch branch = createBranch("bar");
 
-    assertThatThrownBy(
+    soft.assertThatThrownBy(
             () -> getApi().createReference().sourceRefName("main").reference(branch).create())
         .isInstanceOf(NessieReferenceAlreadyExistsException.class)
         .hasMessageContaining("already exists");
 
-    assertThatThrownBy(
+    soft.assertThatThrownBy(
             () ->
                 getApi()
                     .commitMultipleOperations()
@@ -87,11 +86,13 @@ public abstract class AbstractRestMisc extends AbstractRestMergeTransplant {
 
   @Test
   public void checkCelScriptFailureReporting() {
-    assertThatThrownBy(() -> getApi().getEntries().refName("main").filter("invalid_script").get())
+    soft.assertThatThrownBy(
+            () -> getApi().getEntries().refName("main").filter("invalid_script").get())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("undeclared reference to 'invalid_script'");
 
-    assertThatThrownBy(() -> getApi().getCommitLog().refName("main").filter("invalid_script").get())
+    soft.assertThatThrownBy(
+            () -> getApi().getCommitLog().refName("main").filter("invalid_script").get())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("undeclared reference to 'invalid_script'");
   }

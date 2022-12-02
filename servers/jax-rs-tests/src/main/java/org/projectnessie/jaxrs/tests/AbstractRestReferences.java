@@ -17,8 +17,6 @@ package org.projectnessie.jaxrs.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.List;
@@ -57,11 +55,11 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
   public void defaultBranchProtection() throws BaseNessieClientServerException {
     Branch defaultBranch = getApi().getDefaultBranch();
 
-    assertThatThrownBy(() -> getApi().deleteBranch().branch(defaultBranch).delete())
+    soft.assertThatThrownBy(() -> getApi().deleteBranch().branch(defaultBranch).delete())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("cannot be deleted");
 
-    assertThatThrownBy(
+    soft.assertThatThrownBy(
             () ->
                 getApi()
                     .createReference()
@@ -119,7 +117,7 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
   }
 
   @Test
-  public void createReferences() throws NessieNotFoundException {
+  public void createReferences() throws Exception {
     String mainHash = getApi().getReference().refName("main").get().getHash();
 
     String tagName1 = "createReferences_tag1";
@@ -127,67 +125,58 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
     String branchName1 = "createReferences_branch1";
     String branchName2 = "createReferences_branch2";
 
-    assertAll(
-        // invalid source ref & null hash
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        getApi()
-                            .createReference()
-                            .sourceRefName("unknownSource")
-                            .reference(Tag.of(tagName2, null))
-                            .create())
-                .isInstanceOf(NessieReferenceNotFoundException.class)
-                .hasMessageContainingAll("'unknownSource'", "not"),
-        // Tag without sourceRefName & null hash
-        () ->
-            assertThatThrownBy(
-                    () -> getApi().createReference().reference(Tag.of(tagName1, null)).create())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining("Tag-creation requires a target named-reference and hash."),
-        // Tag without hash
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        getApi()
-                            .createReference()
-                            .sourceRefName("main")
-                            .reference(Tag.of(tagName1, null))
-                            .create())
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageContaining("Bad Request (HTTP/400):")
-                .hasMessageContaining("Tag-creation requires a target named-reference and hash."),
-        // legit Tag with name + hash
-        () -> {
-          Reference refTag1 =
-              getApi()
-                  .createReference()
-                  .sourceRefName("main")
-                  .reference(Tag.of(tagName2, mainHash))
-                  .create();
-          assertEquals(Tag.of(tagName2, mainHash), refTag1);
-        },
-        // Branch without hash
-        () -> {
-          Reference refBranch1 =
-              getApi()
-                  .createReference()
-                  .sourceRefName("main")
-                  .reference(Branch.of(branchName1, null))
-                  .create();
-          assertEquals(Branch.of(branchName1, mainHash), refBranch1);
-        },
-        // Branch with name + hash
-        () -> {
-          Reference refBranch2 =
-              getApi()
-                  .createReference()
-                  .sourceRefName("main")
-                  .reference(Branch.of(branchName2, mainHash))
-                  .create();
-          assertEquals(Branch.of(branchName2, mainHash), refBranch2);
-        });
+    // invalid source ref & null hash
+    soft.assertThatThrownBy(
+            () ->
+                getApi()
+                    .createReference()
+                    .sourceRefName("unknownSource")
+                    .reference(Tag.of(tagName2, null))
+                    .create())
+        .isInstanceOf(NessieReferenceNotFoundException.class)
+        .hasMessageContainingAll("'unknownSource'", "not");
+    // Tag without sourceRefName & null hash
+    soft.assertThatThrownBy(
+            () -> getApi().createReference().reference(Tag.of(tagName1, null)).create())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining("Tag-creation requires a target named-reference and hash.");
+    // Tag without hash
+    soft.assertThatThrownBy(
+            () ->
+                getApi()
+                    .createReference()
+                    .sourceRefName("main")
+                    .reference(Tag.of(tagName1, null))
+                    .create())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining("Tag-creation requires a target named-reference and hash.");
+    // legit Tag with name + hash
+    Reference refTag1 =
+        getApi()
+            .createReference()
+            .sourceRefName("main")
+            .reference(Tag.of(tagName2, mainHash))
+            .create();
+    soft.assertThat(refTag1).isEqualTo(Tag.of(tagName2, mainHash));
+
+    // Branch without hash
+    Reference refBranch1 =
+        getApi()
+            .createReference()
+            .sourceRefName("main")
+            .reference(Branch.of(branchName1, null))
+            .create();
+    soft.assertThat(refBranch1).isEqualTo(Branch.of(branchName1, mainHash));
+    // Branch with name + hash
+    Reference refBranch2 =
+        getApi()
+            .createReference()
+            .sourceRefName("main")
+            .reference(Branch.of(branchName2, mainHash))
+            .create();
+    soft.assertThat(refBranch2).isEqualTo(Branch.of(branchName2, mainHash));
   }
 
   @ParameterizedTest
@@ -221,28 +210,28 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
             .sourceRefName(main.getName())
             .reference(Tag.of(tagName, someHash))
             .create();
-    assertEquals(Tag.of(tagName, someHash), createdTag);
+    soft.assertThat(createdTag).isEqualTo(Tag.of(tagName, someHash));
     Reference createdBranch1 =
         getApi()
             .createReference()
             .sourceRefName(main.getName())
             .reference(Branch.of(branchName, someHash))
             .create();
-    assertEquals(Branch.of(branchName, someHash), createdBranch1);
+    soft.assertThat(createdBranch1).isEqualTo(Branch.of(branchName, someHash));
     Reference createdBranch2 =
         getApi()
             .createReference()
             .sourceRefName(main.getName())
             .reference(Branch.of(branchName2, someHash))
             .create();
-    assertEquals(Branch.of(branchName2, someHash), createdBranch2);
+    soft.assertThat(createdBranch2).isEqualTo(Branch.of(branchName2, someHash));
 
     Map<String, Reference> references =
         getApi().getAllReferences().stream()
             .filter(r -> root.equals(r.getName()) || r.getName().endsWith(refNamePart))
             .collect(Collectors.toMap(Reference::getName, Function.identity()));
 
-    assertThat(references)
+    soft.assertThat(references)
         .containsAllEntriesOf(
             ImmutableMap.of(
                 main.getName(),
@@ -253,10 +242,10 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
                 createdBranch1,
                 createdBranch2.getName(),
                 createdBranch2));
-    assertThat(references.get(main.getName())).isInstanceOf(Branch.class);
-    assertThat(references.get(createdTag.getName())).isInstanceOf(Tag.class);
-    assertThat(references.get(createdBranch1.getName())).isInstanceOf(Branch.class);
-    assertThat(references.get(createdBranch2.getName())).isInstanceOf(Branch.class);
+    soft.assertThat(references.get(main.getName())).isInstanceOf(Branch.class);
+    soft.assertThat(references.get(createdTag.getName())).isInstanceOf(Tag.class);
+    soft.assertThat(references.get(createdBranch1.getName())).isInstanceOf(Branch.class);
+    soft.assertThat(references.get(createdBranch2.getName())).isInstanceOf(Branch.class);
 
     Reference tagRef = references.get(tagName);
     Reference branchRef = references.get(branchName);
@@ -266,18 +255,18 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
     String branchHash = branchRef.getHash();
     String branchHash2 = branchRef2.getHash();
 
-    assertThat(getApi().getReference().refName(tagName).get()).isEqualTo(tagRef);
-    assertThat(getApi().getReference().refName(branchName).get()).isEqualTo(branchRef);
+    soft.assertThat(getApi().getReference().refName(tagName).get()).isEqualTo(tagRef);
+    soft.assertThat(getApi().getReference().refName(branchName).get()).isEqualTo(branchRef);
 
     EntriesResponse entries = getApi().getEntries().refName(tagName).get();
-    assertThat(entries).isNotNull();
+    soft.assertThat(entries).isNotNull();
     entries = getApi().getEntries().refName(branchName).get();
-    assertThat(entries).isNotNull();
+    soft.assertThat(entries).isNotNull();
 
     LogResponse log = getApi().getCommitLog().refName(tagName).get();
-    assertThat(log).isNotNull();
+    soft.assertThat(log).isNotNull();
     log = getApi().getCommitLog().refName(branchName).get();
-    assertThat(log).isNotNull();
+    soft.assertThat(log).isNotNull();
 
     // Need to have at least one op, otherwise all following operations (assignTag/Branch, merge,
     // delete) will fail
@@ -352,7 +341,7 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
                 .sourceRefName(b2.getName())
                 .create();
 
-    assertThat(getApi().getAllReferences().filter("ref.name == 'other-development'").stream())
+    soft.assertThat(getApi().getAllReferences().filter("ref.name == 'other-development'").stream())
         .hasSize(1)
         .allSatisfy(
             ref ->
@@ -360,17 +349,17 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
                     .isInstanceOf(Branch.class)
                     .extracting(Reference::getName, Reference::getHash)
                     .containsExactly(b2.getName(), b2.getHash()));
-    assertThat(getApi().getAllReferences().filter("refType == 'TAG'").stream())
+    soft.assertThat(getApi().getAllReferences().filter("refType == 'TAG'").stream())
         .allSatisfy(ref -> assertThat(ref).isInstanceOf(Tag.class));
-    assertThat(getApi().getAllReferences().filter("refType == 'BRANCH'").stream())
+    soft.assertThat(getApi().getAllReferences().filter("refType == 'BRANCH'").stream())
         .allSatisfy(ref -> assertThat(ref).isInstanceOf(Branch.class));
-    assertThat(
+    soft.assertThat(
             getApi()
                 .getAllReferences()
                 .filter("has(refMeta.numTotalCommits) && refMeta.numTotalCommits < 0")
                 .stream())
         .isEmpty();
-    assertThat(
+    soft.assertThat(
             getApi()
                 .getAllReferences()
                 .fetch(FetchOption.ALL)
@@ -378,7 +367,7 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
                 .stream())
         .hasSize(2)
         .allSatisfy(ref -> assertThat(ref.getName()).isIn(b2.getName(), t1.getName()));
-    assertThat(
+    soft.assertThat(
             getApi()
                 .getAllReferences()
                 .fetch(FetchOption.ALL)
@@ -411,23 +400,24 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
     List<Reference> references = getApi().getAllReferences().stream().collect(Collectors.toList());
     Optional<Reference> main =
         references.stream().filter(r -> r.getName().equals("main")).findFirst();
-    assertThat(main).isPresent();
+    soft.assertThat(main).isPresent();
 
-    assertThat(
+    soft.assertThat(
             references.stream()
                 .filter(r -> r.getName().startsWith(branchPrefix))
                 .map(r -> (Branch) r))
         .hasSize(numBranches)
         .allSatisfy(branch -> assertThat(branch.getMetadata()).isNull());
 
-    assertThat(references.stream().filter(r -> r.getName().startsWith(tagPrefix)).map(r -> (Tag) r))
+    soft.assertThat(
+            references.stream().filter(r -> r.getName().startsWith(tagPrefix)).map(r -> (Tag) r))
         .hasSize(numBranches)
         .allSatisfy(tag -> assertThat(tag.getMetadata()).isNull());
 
     // fetching additional metadata for each reference
     references =
         getApi().getAllReferences().fetch(FetchOption.ALL).stream().collect(Collectors.toList());
-    assertThat(
+    soft.assertThat(
             references.stream()
                 .filter(r -> r.getName().startsWith(branchPrefix))
                 .map(r -> (Branch) r))
@@ -437,7 +427,8 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
                 verifyMetadataProperties(
                     commitsPerBranch, 0, branch, main.get(), commitsPerBranch));
 
-    assertThat(references.stream().filter(r -> r.getName().startsWith(tagPrefix)).map(r -> (Tag) r))
+    soft.assertThat(
+            references.stream().filter(r -> r.getName().startsWith(tagPrefix)).map(r -> (Tag) r))
         .hasSize(numBranches)
         .allSatisfy(this::verifyMetadataProperties);
   }
@@ -459,22 +450,21 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
 
     // not fetching additional metadata for a single branch
     Reference ref = getApi().getReference().refName(branchName).get();
-    assertThat(ref).isNotNull().isInstanceOf(Branch.class);
-    assertThat(ref).isNotNull().isInstanceOf(Branch.class).extracting("metadata").isNull();
+    soft.assertThat(ref).isNotNull().isInstanceOf(Branch.class).extracting("metadata").isNull();
 
     // not fetching additional metadata for a single tag
     ref = getApi().getReference().refName(tagName).get();
-    assertThat(ref).isNotNull().isInstanceOf(Tag.class).extracting("metadata").isNull();
+    soft.assertThat(ref).isNotNull().isInstanceOf(Tag.class).extracting("metadata").isNull();
 
     // fetching additional metadata for a single branch
     ref = getApi().getReference().refName(branchName).fetch(FetchOption.ALL).get();
-    assertThat(ref).isNotNull().isInstanceOf(Branch.class);
+    soft.assertThat(ref).isNotNull().isInstanceOf(Branch.class);
     verifyMetadataProperties(
         numCommits, 0, (Branch) ref, getApi().getReference().refName("main").get(), numCommits);
 
     // fetching additional metadata for a single tag
     ref = getApi().getReference().refName(tagName).fetch(FetchOption.ALL).get();
-    assertThat(ref).isNotNull().isInstanceOf(Tag.class);
+    soft.assertThat(ref).isNotNull().isInstanceOf(Tag.class);
     verifyMetadataProperties((Tag) ref);
   }
 
@@ -488,31 +478,41 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
     CommitMeta commitMeta = commitMetaForVerify(branch);
 
     ReferenceMetadata referenceMetadata = branch.getMetadata();
-    assertThat(referenceMetadata).isNotNull();
-    assertThat(referenceMetadata.getNumCommitsAhead()).isEqualTo(expectedCommitsAhead);
-    assertThat(referenceMetadata.getNumCommitsBehind()).isEqualTo(expectedCommitsBehind);
-    assertThat(referenceMetadata.getCommitMetaOfHEAD()).isEqualTo(commitMeta);
-    assertThat(referenceMetadata.getCommonAncestorHash()).isEqualTo(reference.getHash());
-    assertThat(referenceMetadata.getNumTotalCommits()).isEqualTo(expectedCommits);
+    soft.assertThat(referenceMetadata)
+        .isNotNull()
+        .extracting(
+            ReferenceMetadata::getNumCommitsAhead,
+            ReferenceMetadata::getNumCommitsBehind,
+            ReferenceMetadata::getCommitMetaOfHEAD,
+            ReferenceMetadata::getCommonAncestorHash,
+            ReferenceMetadata::getNumTotalCommits)
+        .containsExactly(
+            expectedCommitsAhead,
+            expectedCommitsBehind,
+            commitMeta,
+            reference.getHash(),
+            expectedCommits);
   }
 
   void verifyMetadataProperties(Tag tag) throws NessieNotFoundException {
     CommitMeta commitMeta = commitMetaForVerify(tag);
 
     ReferenceMetadata referenceMetadata = tag.getMetadata();
-    assertThat(referenceMetadata).isNotNull();
-    assertThat(referenceMetadata.getNumCommitsAhead()).isNull();
-    assertThat(referenceMetadata.getNumCommitsBehind()).isNull();
-    assertThat(referenceMetadata.getCommitMetaOfHEAD()).isEqualTo(commitMeta);
-    assertThat(referenceMetadata.getCommonAncestorHash()).isNull();
-    assertThat(referenceMetadata.getNumTotalCommits()).isEqualTo(3);
+    soft.assertThat(referenceMetadata)
+        .isNotNull()
+        .extracting(
+            ReferenceMetadata::getNumCommitsAhead,
+            ReferenceMetadata::getNumCommitsBehind,
+            ReferenceMetadata::getCommitMetaOfHEAD,
+            ReferenceMetadata::getCommonAncestorHash,
+            ReferenceMetadata::getNumTotalCommits)
+        .containsExactly(null, null, commitMeta, null, 3L);
   }
 
   private CommitMeta commitMetaForVerify(Reference ref) throws NessieNotFoundException {
     List<LogEntry> commits =
         getApi().getCommitLog().refName(ref.getName()).maxRecords(1).get().getLogEntries();
-    assertThat(commits).hasSize(1);
-    CommitMeta commitMeta = commits.get(0).getCommitMeta();
-    return commitMeta;
+    soft.assertThat(commits).hasSize(1);
+    return commits.get(0).getCommitMeta();
   }
 }
