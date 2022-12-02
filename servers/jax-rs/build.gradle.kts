@@ -38,6 +38,9 @@ dependencies {
   api(project(":nessie-versioned-persist-testextension"))
   api(project(":nessie-versioned-persist-adapter"))
   api(project(":nessie-versioned-persist-serialize"))
+  api(project(":nessie-versioned-storage-common"))
+  api(project(":nessie-versioned-storage-store"))
+  api(project(":nessie-versioned-storage-testextension"))
   implementation(libs.slf4j.api)
 
   // javax/jakarta

@@ -22,8 +22,8 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.FetchOption.ALL;
 
@@ -175,7 +175,14 @@ public abstract class BaseTestNessieApi {
     return Put.of(ContentKey.of(elements), IcebergTable.of("foo", 1, 2, 3, 4));
   }
 
-  protected static boolean pagingSupported(PagingBuilder<?, ?, ?> apiRequestBuilder) {
+  protected boolean fullPagingSupport() {
+    return false;
+  }
+
+  protected boolean pagingSupported(PagingBuilder<?, ?, ?> apiRequestBuilder) {
+    if (fullPagingSupport()) {
+      return isV2() || !(apiRequestBuilder instanceof GetDiffBuilder);
+    }
     // Note: paging API is provided for diff, entries and references API, but the server does not
     // support that yet.
     return !(apiRequestBuilder instanceof GetDiffBuilder)
@@ -381,7 +388,7 @@ public abstract class BaseTestNessieApi {
 
   @Test
   public void referencesWithLimitInFirstPage() throws Exception {
-    assumeThat(pagingSupported(api().getAllReferences())).isFalse();
+    assumeFalse(pagingSupported(api().getAllReferences()));
     // Verify that result limiting produces expected errors when paging is not supported
     api().createReference().reference(Branch.of("branch", null)).create();
     assertThatThrownBy(() -> api().getAllReferences().maxRecords(1).get())
@@ -564,7 +571,7 @@ public abstract class BaseTestNessieApi {
   @NessieApiVersions(versions = NessieApiVersion.V2) // v1 throws on getDiff().maxRecords(1)
   public void diffWithLimitInFirstPage() throws Exception {
     Branch main = api().getDefaultBranch();
-    assumeThat(pagingSupported(api().getDiff())).isFalse();
+    assumeFalse(pagingSupported(api().getDiff()));
     // Verify that result limiting produces expected errors when paging is not supported
     Branch branch1 = createReference(Branch.of("b1", main.getHash()), main.getName());
     Branch branch2 = createReference(Branch.of("b2", main.getHash()), main.getName());
@@ -750,7 +757,7 @@ public abstract class BaseTestNessieApi {
 
   @Test
   public void entriesWithLimitInFirstPage() throws Exception {
-    assumeThat(pagingSupported(api().getEntries())).isFalse();
+    assumeFalse(pagingSupported(api().getEntries()));
     // Verify that result limiting produces expected errors when paging is not supported
     Branch main =
         prepCommit(api().getDefaultBranch(), "commit", dummyPut("t1"), dummyPut("t2")).commit();
