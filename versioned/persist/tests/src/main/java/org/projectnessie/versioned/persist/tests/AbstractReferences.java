@@ -309,7 +309,7 @@ public abstract class AbstractReferences {
               databaseAdapter.commit(
                   ImmutableCommitParams.builder()
                       .toBranch((BranchName) ref)
-                      .commitMetaSerialized(ByteString.copyFromUtf8("foo"))
+                      .commitMetaSerialized(ByteString.copyFromUtf8("foo on " + ref.getName()))
                       .expectedHead(Optional.of(refHeads.get(ref)))
                       .addPuts(
                           KeyWithBytes.of(

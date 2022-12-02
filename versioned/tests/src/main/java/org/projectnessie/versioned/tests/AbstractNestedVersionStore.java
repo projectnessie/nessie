@@ -16,6 +16,8 @@
 package org.projectnessie.versioned.tests;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -24,6 +26,7 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Delete;
+import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableCommit;
 import org.projectnessie.versioned.Key;
@@ -34,6 +37,7 @@ import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.store.DefaultStoreWorker;
 
 public abstract class AbstractNestedVersionStore {
   protected final VersionStore store;
@@ -116,5 +120,51 @@ public abstract class AbstractNestedVersionStore {
                 .map(Commit::getCommitMeta)
                 .map(commitMetaModifier::rewriteSingle)
                 .collect(Collectors.toList()));
+  }
+
+  protected static Content contentWithoutId(Content content) {
+    return content != null ? DefaultStoreWorker.instance().applyId(content, null) : null;
+  }
+
+  protected static Optional<Content> contentWithoutId(Optional<Content> content) {
+    return content.map(AbstractNestedVersionStore::contentWithoutId);
+  }
+
+  protected static Map<Key, Content> contentsWithoutId(Map<Key, Content> valueMap) {
+    return valueMap.entrySet().stream()
+        .collect(Collectors.toMap(Map.Entry::getKey, e -> contentWithoutId(e.getValue())));
+  }
+
+  protected static List<Diff> diffsWithoutContentId(List<Diff> diffs) {
+    return diffs.stream()
+        .map(
+            d ->
+                Diff.of(
+                    d.getKey(),
+                    contentWithoutId(d.getFromValue()),
+                    contentWithoutId(d.getToValue())))
+        .collect(Collectors.toList());
+  }
+
+  protected static List<org.projectnessie.versioned.Operation> operationsWithoutContentId(
+      List<org.projectnessie.versioned.Operation> operations) {
+    if (operations == null) {
+      return null;
+    }
+    return operations.stream()
+        .map(
+            op -> {
+              if (op instanceof Put) {
+                Put put = (Put) op;
+                return put.getExpectedValue() != null
+                    ? Put.of(
+                        put.getKey(),
+                        contentWithoutId(put.getValue()),
+                        contentWithoutId(put.getExpectedValue()))
+                    : Put.of(put.getKey(), contentWithoutId(put.getValue()));
+              }
+              return op;
+            })
+        .collect(Collectors.toList());
   }
 }

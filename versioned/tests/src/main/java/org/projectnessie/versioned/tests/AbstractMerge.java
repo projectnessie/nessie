@@ -173,10 +173,11 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             false,
             false);
     soft.assertThat(
-            store()
-                .getValues(
-                    newBranch,
-                    Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))))
+            contentsWithoutId(
+                store()
+                    .getValues(
+                        newBranch,
+                        Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4")))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
                 Key.of("t1"), V_1_2,
@@ -230,7 +231,10 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     Hash head = store().getNamedRef(newBranch.getName(), GetNamedRefsParams.DEFAULT).getHash();
 
     soft.assertThat(mergeResult.getSourceCommits())
-        .extracting(Commit::getHash, c -> c.getCommitMeta().getMessage(), Commit::getOperations)
+        .extracting(
+            Commit::getHash,
+            c -> c.getCommitMeta().getMessage(),
+            c -> operationsWithoutContentId(c.getOperations()))
         .containsExactly(
             tuple(
                 firstCommit,
@@ -286,10 +290,11 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             false,
             false);
     soft.assertThat(
-            store()
-                .getValues(
-                    newBranch,
-                    Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))))
+            contentsWithoutId(
+                store()
+                    .getValues(
+                        newBranch,
+                        Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4")))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
                 Key.of("t1"), V_1_1,
@@ -355,24 +360,33 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
     MetadataRewriter<CommitMeta> metadataRewriter = createMetadataRewriter("");
 
-    store()
-        .merge(
-            thirdCommit,
-            newBranch,
-            Optional.empty(),
-            metadataRewriter,
-            individualCommits,
-            Collections.emptyMap(),
-            MergeType.NORMAL,
-            false,
-            false);
+    MergeResult<Commit> result =
+        store()
+            .merge(
+                thirdCommit,
+                newBranch,
+                Optional.empty(),
+                metadataRewriter,
+                individualCommits,
+                Collections.emptyMap(),
+                MergeType.NORMAL,
+                false,
+                false);
+
+    soft.assertThat(result.getResultantTargetHash()).isNotEqualTo(thirdCommit);
+    soft.assertThat(result.getSourceCommits()).hasSize(3);
+    soft.assertThat(result)
+        .extracting(
+            MergeResult::getCommonAncestor, MergeResult::wasSuccessful, MergeResult::wasApplied)
+        .containsExactly(initialHash, true, true);
 
     soft.assertThat(
-            store()
-                .getValues(
-                    newBranch,
-                    Arrays.asList(
-                        Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5"))))
+            contentsWithoutId(
+                store()
+                    .getValues(
+                        newBranch,
+                        Arrays.asList(
+                            Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5")))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
                 Key.of("t1"), V_1_2,
@@ -422,41 +436,49 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     store().create(review, Optional.of(initialHash));
 
     MetadataRewriter<CommitMeta> metadataRewriter = createMetadataRewriter("");
-    store()
-        .commit(
-            etl,
-            Optional.empty(),
-            CommitMeta.fromMessage("commit 1"),
-            singletonList(Put.of(key, VALUE_1)));
-    store()
-        .merge(
-            store().hashOnReference(etl, Optional.empty()),
-            review,
-            Optional.empty(),
-            metadataRewriter,
-            individualCommits,
-            Collections.emptyMap(),
-            MergeType.NORMAL,
-            false,
-            false);
-    store()
-        .commit(
-            etl,
-            Optional.empty(),
-            CommitMeta.fromMessage("commit 2"),
-            singletonList(Put.of(key, VALUE_2)));
-    store()
-        .merge(
-            store().hashOnReference(etl, Optional.empty()),
-            review,
-            Optional.empty(),
-            metadataRewriter,
-            individualCommits,
-            Collections.emptyMap(),
-            MergeType.NORMAL,
-            false,
-            false);
-    soft.assertThat(store().getValue(review, key)).isEqualTo(VALUE_2);
+    Hash etl1 =
+        store()
+            .commit(
+                etl,
+                Optional.empty(),
+                CommitMeta.fromMessage("commit 1"),
+                singletonList(Put.of(key, VALUE_1)));
+    MergeResult<Commit> mergeResult1 =
+        store()
+            .merge(
+                store().hashOnReference(etl, Optional.empty()),
+                review,
+                Optional.empty(),
+                metadataRewriter,
+                individualCommits,
+                Collections.emptyMap(),
+                MergeType.NORMAL,
+                false,
+                false);
+    soft.assertThat(mergeResult1.getResultantTargetHash()).isEqualTo(etl1);
+
+    Hash etl2 =
+        store()
+            .commit(
+                etl,
+                Optional.empty(),
+                CommitMeta.fromMessage("commit 2"),
+                singletonList(Put.of(key, VALUE_2)));
+    MergeResult<Commit> mergeResult2 =
+        store()
+            .merge(
+                store().hashOnReference(etl, Optional.empty()),
+                review,
+                Optional.empty(),
+                metadataRewriter,
+                individualCommits,
+                Collections.emptyMap(),
+                MergeType.NORMAL,
+                false,
+                false);
+    soft.assertThat(mergeResult2.getResultantTargetHash()).isEqualTo(etl2);
+
+    soft.assertThat(contentWithoutId(store().getValue(review, key))).isEqualTo(VALUE_2);
   }
 
   @ParameterizedTest
@@ -481,11 +503,12 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             false,
             false);
     soft.assertThat(
-            store()
-                .getValues(
-                    newBranch,
-                    Arrays.asList(
-                        Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5"))))
+            contentsWithoutId(
+                store()
+                    .getValues(
+                        newBranch,
+                        Arrays.asList(
+                            Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5")))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
                 Key.of("t1"), V_1_2,
@@ -663,9 +686,10 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             false,
             false);
     soft.assertThat(
-            store.getValues(
-                mergeIntoHeadSupplier.get(),
-                Arrays.asList(conflictingKey1, conflictingKey2, key3, key4)))
+            contentsWithoutId(
+                store.getValues(
+                    mergeIntoHeadSupplier.get(),
+                    Arrays.asList(conflictingKey1, conflictingKey2, key3, key4))))
         .containsEntry(conflictingKey1, VALUE_2) // value as in "mergeFrom"
         .containsEntry(conflictingKey2, VALUE_3) // value as in "mergeInto"
         .containsEntry(key3, VALUE_5)
@@ -687,9 +711,10 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             false,
             false);
     soft.assertThat(
-            store.getValues(
-                mergeIntoHeadSupplier.get(),
-                Arrays.asList(conflictingKey1, conflictingKey2, key3, key4)))
+            contentsWithoutId(
+                store.getValues(
+                    mergeIntoHeadSupplier.get(),
+                    Arrays.asList(conflictingKey1, conflictingKey2, key3, key4))))
         .containsEntry(conflictingKey1, VALUE_2) // value as in "mergeFrom"
         .containsEntry(conflictingKey2, VALUE_4) // value as in "mergeFrom"
         .containsEntry(key3, VALUE_5)

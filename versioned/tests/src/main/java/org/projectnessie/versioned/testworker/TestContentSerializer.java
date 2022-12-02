@@ -55,6 +55,9 @@ abstract class TestContentSerializer<C extends Content> implements ContentSerial
 
     i = serialized.indexOf(':');
     String contentId = serialized.substring(0, i);
+    if (contentId.isEmpty()) {
+      contentId = null;
+    }
     i = serialized.indexOf(':');
     String onRef = serialized.substring(i + 1);
 

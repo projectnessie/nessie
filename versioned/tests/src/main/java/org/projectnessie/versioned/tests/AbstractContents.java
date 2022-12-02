@@ -70,8 +70,8 @@ public abstract class AbstractContents extends AbstractNestedVersionStore {
                 Optional.empty(),
                 CommitMeta.fromMessage("create table"),
                 singletonList(Put.of(key, initialState)));
-    soft.assertThat(store().getValue(branch, key)).isEqualTo(initialState);
-    soft.assertThat(store().getValue(ancestor, key)).isEqualTo(initialState);
+    soft.assertThat(contentWithoutId(store().getValue(branch, key))).isEqualTo(initialState);
+    soft.assertThat(contentWithoutId(store().getValue(ancestor, key))).isEqualTo(initialState);
 
     Hash delete =
         store()
@@ -91,7 +91,7 @@ public abstract class AbstractContents extends AbstractNestedVersionStore {
                 Optional.empty(),
                 CommitMeta.fromMessage("drop table"),
                 ImmutableList.of(Put.of(key, recreateState)));
-    soft.assertThat(store().getValue(branch, key)).isEqualTo(recreateState);
-    soft.assertThat(store().getValue(recreate, key)).isEqualTo(recreateState);
+    soft.assertThat(contentWithoutId(store().getValue(branch, key))).isEqualTo(recreateState);
+    soft.assertThat(contentWithoutId(store().getValue(recreate, key))).isEqualTo(recreateState);
   }
 }

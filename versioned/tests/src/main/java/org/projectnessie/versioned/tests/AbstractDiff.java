@@ -60,7 +60,7 @@ public abstract class AbstractDiff extends AbstractNestedVersionStore {
         commit("Second Commit").put("k2", V_2_A).put("k3", V_3).put("k1a", V_1_A).toBranch(branch);
 
     List<Diff> startToSecond = diffAsList(initial, secondCommit);
-    soft.assertThat(startToSecond)
+    soft.assertThat(diffsWithoutContentId(startToSecond))
         .containsExactlyInAnyOrder(
             Diff.of(Key.of("k1"), Optional.empty(), Optional.of(V_1)),
             Diff.of(Key.of("k2"), Optional.empty(), Optional.of(V_2_A)),
@@ -68,7 +68,7 @@ public abstract class AbstractDiff extends AbstractNestedVersionStore {
             Diff.of(Key.of("k1a"), Optional.empty(), Optional.of(V_1_A)));
 
     List<Diff> secondToStart = diffAsList(secondCommit, initial);
-    soft.assertThat(secondToStart)
+    soft.assertThat(diffsWithoutContentId(secondToStart))
         .containsExactlyInAnyOrder(
             Diff.of(Key.of("k1"), Optional.of(V_1), Optional.empty()),
             Diff.of(Key.of("k2"), Optional.of(V_2_A), Optional.empty()),
@@ -76,14 +76,14 @@ public abstract class AbstractDiff extends AbstractNestedVersionStore {
             Diff.of(Key.of("k1a"), Optional.of(V_1_A), Optional.empty()));
 
     List<Diff> firstToSecond = diffAsList(firstCommit, secondCommit);
-    soft.assertThat(firstToSecond)
+    soft.assertThat(diffsWithoutContentId(firstToSecond))
         .containsExactlyInAnyOrder(
             Diff.of(Key.of("k1a"), Optional.empty(), Optional.of(V_1_A)),
             Diff.of(Key.of("k2"), Optional.of(V_2), Optional.of(V_2_A)),
             Diff.of(Key.of("k3"), Optional.empty(), Optional.of(V_3)));
 
     List<Diff> secondToFirst = diffAsList(secondCommit, firstCommit);
-    soft.assertThat(secondToFirst)
+    soft.assertThat(diffsWithoutContentId(secondToFirst))
         .containsExactlyInAnyOrder(
             Diff.of(Key.of("k1a"), Optional.of(V_1_A), Optional.empty()),
             Diff.of(Key.of("k2"), Optional.of(V_2_A), Optional.of(V_2)),

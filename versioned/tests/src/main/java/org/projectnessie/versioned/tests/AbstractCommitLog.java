@@ -17,7 +17,6 @@ package org.projectnessie.versioned.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
-import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -107,7 +106,7 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
   }
 
   @Test
-  public void commitLogExtendedNoGlobalState() throws Exception {
+  public void commitLogExtended() throws Exception {
     BranchName branch = BranchName.of("commitLogExtended");
     Hash firstParent = store().create(branch, Optional.empty());
 
@@ -117,15 +116,15 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
     List<Hash> hashes = new ArrayList<>();
 
     for (int i = 1; i <= numCommits; i++) {
-      init = init.put("delete" + i, onRef("to delete " + i, "d" + i));
+      init = init.put("delete" + i, newOnRef("to delete " + i));
     }
     hashes.add(init.toBranch(branch));
 
     for (int i = 1; i <= numCommits; i++) {
       Hash head =
           commit("Commit #" + i)
-              .put("k" + i, onRef("v" + i, "c" + i))
-              .put("key" + i, onRef("value" + i, "cid" + i))
+              .put("k" + i, newOnRef("v" + i))
+              .put("key" + i, newOnRef("value" + i))
               .delete("delete" + i)
               .toBranch(branch);
       hashes.add(head);
@@ -154,14 +153,17 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
               cm -> assertThat(cm.getHash()).isEqualTo(c.getHash().asString()));
       soft.assertThat(c)
           .describedAs("Commit number %s", i)
-          .extracting(Commit::getHash, Commit::getParentHash, Commit::getOperations)
+          .extracting(
+              Commit::getHash,
+              Commit::getParentHash,
+              commit -> operationsWithoutContentId(commit.getOperations()))
           .containsExactly(
               hashes.get(i),
               parentHashes.get(i),
               Arrays.asList(
                   Delete.of(Key.of("delete" + i)),
-                  Put.of(Key.of("k" + i), onRef("v" + i, "c" + i)),
-                  Put.of(Key.of("key" + i), onRef("value" + i, "cid" + i))));
+                  Put.of(Key.of("k" + i), newOnRef("v" + i)),
+                  Put.of(Key.of("key" + i), newOnRef("value" + i))));
     }
   }
 }

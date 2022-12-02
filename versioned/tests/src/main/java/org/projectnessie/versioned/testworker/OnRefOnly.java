@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.testworker;
 
 import com.google.protobuf.ByteString;
-import java.util.UUID;
 import org.immutables.value.Value;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.types.ContentTypes;
@@ -32,7 +31,7 @@ public abstract class OnRefOnly extends Content {
   }
 
   public static OnRefOnly newOnRef(String onRef) {
-    return ImmutableOnRefOnly.builder().onRef(onRef).id(UUID.randomUUID().toString()).build();
+    return ImmutableOnRefOnly.builder().onRef(onRef).build();
   }
 
   public abstract String getOnRef();
@@ -43,6 +42,10 @@ public abstract class OnRefOnly extends Content {
   }
 
   public ByteString serialized() {
-    return ByteString.copyFromUtf8(getType().name() + ":" + getId() + ":" + getOnRef());
+    String id = getId();
+    if (id == null) {
+      id = "";
+    }
+    return ByteString.copyFromUtf8(getType().name() + ":" + id + ":" + getOnRef());
   }
 }
