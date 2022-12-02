@@ -60,10 +60,12 @@ public interface MergeResponse {
   String getExpectedHash();
 
   @Deprecated // for removal and replaced with something else
+  @Schema(deprecated = true, hidden = true)
   List<LogEntry> getSourceCommits();
 
   @Nullable
   @Deprecated // for removal and replaced with something else
+  @Schema(deprecated = true, hidden = true)
   List<LogEntry> getTargetCommits();
 
   /** Details of all keys encountered during the merge or transplant operation. */
@@ -84,9 +86,11 @@ public interface MergeResponse {
     }
 
     @Deprecated // for removal and replaced with something else
+    @Schema(deprecated = true, hidden = true)
     List<String> getSourceCommits();
 
     @Deprecated // for removal and replaced with something else
+    @Schema(deprecated = true, hidden = true)
     List<String> getTargetCommits();
   }
 
