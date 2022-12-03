@@ -15,12 +15,16 @@
  */
 package org.projectnessie.versioned.transfer.files;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import java.io.BufferedInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import javax.annotation.Nonnull;
 import org.immutables.value.Value;
 
 /** Nessie importer using data from a ZIP file. */
@@ -44,10 +48,15 @@ public abstract class ZipArchiveImporter implements ImportFileSupplier {
   }
 
   @Override
-  public InputStream newFileInput(String fileName) throws IOException {
+  @Nonnull
+  public InputStream newFileInput(@Nonnull String fileName) throws IOException {
     @SuppressWarnings("resource")
     ZipFile zip = zipFile();
     ZipEntry entry = zip.getEntry(fileName);
+    if (entry == null) {
+      throw new FileNotFoundException(fileName);
+    }
+    checkState(!entry.isDirectory(), "%s is a directory, expect a file", fileName);
     return new BufferedInputStream(zip.getInputStream(entry));
   }
 

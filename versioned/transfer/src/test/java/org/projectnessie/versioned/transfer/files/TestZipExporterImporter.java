@@ -15,11 +15,16 @@
  */
 package org.projectnessie.versioned.transfer.files;
 
-import java.io.IOException;
-import java.io.InputStream;
-import javax.annotation.Nonnull;
+public class TestZipExporterImporter
+    extends AbstractTestExporterImporter<ZipArchiveExporter, ZipArchiveImporter> {
 
-public interface ImportFileSupplier extends AutoCloseable {
-  @Nonnull
-  InputStream newFileInput(@Nonnull String fileName) throws IOException;
+  @Override
+  protected ZipArchiveExporter newExportFileSupplier(String target) {
+    return ZipArchiveExporter.builder().outputFile(dir.resolve(target)).build();
+  }
+
+  @Override
+  protected ZipArchiveImporter newImportFileSupplier(ZipArchiveExporter exporter) {
+    return ZipArchiveImporter.builder().sourceZipFile(exporter.outputFile()).build();
+  }
 }

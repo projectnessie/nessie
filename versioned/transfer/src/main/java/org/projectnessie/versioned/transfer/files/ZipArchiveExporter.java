@@ -15,14 +15,18 @@
  */
 package org.projectnessie.versioned.transfer.files;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+import static java.nio.file.Files.createDirectories;
+import static java.nio.file.Files.newOutputStream;
+
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import javax.annotation.Nonnull;
 import org.immutables.value.Value;
 
 /** Nessie exporter that creates a ZIP file. */
@@ -43,14 +47,26 @@ public abstract class ZipArchiveExporter implements ExportFileSupplier {
 
   @Value.Lazy
   ZipOutputStream zipOutput() throws IOException {
-    return new ZipOutputStream(new BufferedOutputStream(Files.newOutputStream(outputFile())));
+    createDirectories(outputFile().getParent());
+    return new ZipOutputStream(new BufferedOutputStream(newOutputStream(outputFile())));
   }
 
   @Override
   public void preValidate() {}
 
   @Override
-  public OutputStream newFileOutput(String fileName) throws IOException {
+  @Nonnull
+  public Path getTargetPath() {
+    return outputFile();
+  }
+
+  @Override
+  @Nonnull
+  public OutputStream newFileOutput(@Nonnull String fileName) throws IOException {
+    checkArgument(
+        fileName.indexOf('/') == -1 && fileName.indexOf('\\') == -1, "Directories not supported");
+    checkArgument(!fileName.isEmpty(), "Invalid file name argument");
+
     ZipOutputStream out = zipOutput();
     out.putNextEntry(new ZipEntry(fileName));
     return new NonClosingOutputStream(out);
@@ -71,25 +87,25 @@ public abstract class ZipArchiveExporter implements ExportFileSupplier {
 
     @Override
     public void write(byte[] b) throws IOException {
-      Preconditions.checkState(open);
+      checkState(open);
       out.write(b);
     }
 
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
-      Preconditions.checkState(open);
+      checkState(open);
       out.write(b, off, len);
     }
 
     @Override
     public void write(int b) throws IOException {
-      Preconditions.checkState(open);
+      checkState(open);
       out.write(b);
     }
 
     @Override
     public void flush() throws IOException {
-      Preconditions.checkState(open);
+      checkState(open);
       out.flush();
     }
 

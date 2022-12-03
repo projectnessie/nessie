@@ -15,13 +15,14 @@
  */
 package org.projectnessie.versioned.transfer.files;
 
+import static java.nio.file.Files.newInputStream;
 import static org.projectnessie.versioned.transfer.ExportImportConstants.DEFAULT_BUFFER_SIZE;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
+import javax.annotation.Nonnull;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.transfer.ExportImportConstants;
 
@@ -52,9 +53,10 @@ public abstract class FileImporter implements ImportFileSupplier {
   abstract Path sourceDirectory();
 
   @Override
-  public InputStream newFileInput(String fileName) throws IOException {
+  @Nonnull
+  public InputStream newFileInput(@Nonnull String fileName) throws IOException {
     return new BufferedInputStream(
-        Files.newInputStream(sourceDirectory().resolve(fileName)), inputBufferSize());
+        newInputStream(sourceDirectory().resolve(fileName)), inputBufferSize());
   }
 
   @Override

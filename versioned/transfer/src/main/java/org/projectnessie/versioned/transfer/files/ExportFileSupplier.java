@@ -17,9 +17,16 @@ package org.projectnessie.versioned.transfer.files;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Path;
+import javax.annotation.Nonnull;
 
 public interface ExportFileSupplier extends AutoCloseable {
+
+  @Nonnull
+  Path getTargetPath();
+
   void preValidate() throws IOException;
 
-  OutputStream newFileOutput(String fileName) throws IOException;
+  @Nonnull
+  OutputStream newFileOutput(@Nonnull String fileName) throws IOException;
 }
