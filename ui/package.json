@@ -30,7 +30,7 @@
     "moment": "^2.29.4",
     "postcss": "8.4.19",
     "postcss-flexbugs-fixes": "5.0.2",
-    "postcss-loader": "7.0.1",
+    "postcss-loader": "7.0.2",
     "postcss-normalize": "10.0.1",
     "postcss-preset-env": "7.8.3",
     "postcss-safe-parser": "6.0.0",
