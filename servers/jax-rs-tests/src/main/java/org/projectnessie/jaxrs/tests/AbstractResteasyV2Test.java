@@ -43,6 +43,7 @@ import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
+import org.projectnessie.model.DiffResponse;
 import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableOperations;
@@ -181,5 +182,53 @@ public abstract class AbstractResteasyV2Test {
     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
     assertThat(conn.getResponseCode()).isEqualTo(200);
     conn.disconnect();
+  }
+
+  /** Dedicated test for human-readable default branch references in URL paths. */
+  @Test
+  void testDefaultBranchSpecInUrlPath() {
+    Reference main =
+        rest()
+            .get("trees/-")
+            .then()
+            .statusCode(200)
+            .extract()
+            .as(SingleReferenceResponse.class)
+            .getReference();
+    assertThat(main.getName()).isEqualTo("main");
+
+    Branch branch = createBranch("testDefaultBranchSpecInUrlPath");
+    ContentKey key = ContentKey.of("test1");
+    commit(branch, key, IcebergTable.of("loc", 1, 2, 3, 4));
+
+    assertThat(
+            rest()
+                .get("trees/-/diff/{name}", branch.getName())
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(DiffResponse.class)
+                .getDiffs())
+        .satisfiesExactly(e -> assertThat(e.getKey()).isEqualTo(key));
+
+    assertThat(
+            rest()
+                .get("trees/{name}/diff/-", branch.getName())
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(DiffResponse.class)
+                .getDiffs())
+        .satisfiesExactly(e -> assertThat(e.getKey()).isEqualTo(key));
+
+    assertThat(
+            rest()
+                .get("trees/-/diff/-")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(DiffResponse.class)
+                .getDiffs())
+        .isEmpty();
   }
 }

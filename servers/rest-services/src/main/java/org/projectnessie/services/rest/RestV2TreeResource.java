@@ -58,6 +58,8 @@ import org.projectnessie.versioned.VersionStore;
 @RequestScoped
 public class RestV2TreeResource implements HttpTreeApi {
 
+  private static final String DEFAULT_REF_IN_PATH = "-";
+
   private final ServerConfig config;
   private final VersionStore store;
   private final Authorizer authorizer;
@@ -74,6 +76,18 @@ public class RestV2TreeResource implements HttpTreeApi {
     this.config = config;
     this.store = store;
     this.authorizer = authorizer;
+  }
+
+  private Reference resolveRef(String refPathString) {
+    if (DEFAULT_REF_IN_PATH.equals(refPathString)) {
+      return Branch.of(config.getDefaultBranch(), null);
+    }
+
+    return resolveRef(refPathString, Reference.ReferenceType.BRANCH);
+  }
+
+  private Reference resolveRef(String refPathString, Reference.ReferenceType type) {
+    return Reference.fromPathString(refPathString, type);
   }
 
   private TreeService tree() {
@@ -123,7 +137,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   @Override
   public SingleReferenceResponse getReferenceByName(GetReferenceParams params)
       throws NessieNotFoundException {
-    Reference reference = Reference.fromPathString(params.getRef(), Reference.ReferenceType.BRANCH);
+    Reference reference = resolveRef(params.getRef());
     return SingleReferenceResponse.builder()
         .reference(tree().getReferenceByName(reference.getName(), params.fetchOption()))
         .build();
@@ -132,14 +146,14 @@ public class RestV2TreeResource implements HttpTreeApi {
   @Override
   public EntriesResponse getEntries(String ref, EntriesParams params)
       throws NessieNotFoundException {
-    Reference reference = Reference.fromPathString(ref, Reference.ReferenceType.BRANCH);
+    Reference reference = resolveRef(ref);
     return tree().getEntries(reference.getName(), reference.getHash(), null, params.filter());
   }
 
   @Override
   public LogResponse getCommitLog(String ref, CommitLogParams params)
       throws NessieNotFoundException {
-    Reference reference = Reference.fromPathString(ref, Reference.ReferenceType.BRANCH);
+    Reference reference = resolveRef(ref);
     return tree()
         .getCommitLog(
             reference.getName(),
@@ -153,8 +167,8 @@ public class RestV2TreeResource implements HttpTreeApi {
 
   @Override
   public DiffResponse getDiff(DiffParams params) throws NessieNotFoundException {
-    Reference from = Reference.fromPathString(params.getFromRef(), Reference.ReferenceType.BRANCH);
-    Reference to = Reference.fromPathString(params.getToRef(), Reference.ReferenceType.BRANCH);
+    Reference from = resolveRef(params.getFromRef());
+    Reference to = resolveRef(params.getToRef());
     return diff().getDiff(from.getName(), from.getHash(), to.getName(), to.getHash());
   }
 
@@ -162,7 +176,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   public SingleReferenceResponse assignReference(
       Reference.ReferenceType type, String ref, Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
-    Reference reference = Reference.fromPathString(ref, type);
+    Reference reference = resolveRef(ref, type);
     tree().assignReference(type, reference.getName(), reference.getHash(), assignTo);
     return SingleReferenceResponse.builder().reference(reference).build();
   }
@@ -170,14 +184,14 @@ public class RestV2TreeResource implements HttpTreeApi {
   @Override
   public SingleReferenceResponse deleteReference(Reference.ReferenceType type, String ref)
       throws NessieConflictException, NessieNotFoundException {
-    Reference reference = Reference.fromPathString(ref, type);
+    Reference reference = resolveRef(ref, type);
     tree().deleteReference(type, reference.getName(), reference.getHash());
     return SingleReferenceResponse.builder().reference(reference).build();
   }
 
   @Override
   public ContentResponse getContent(ContentKey key, String ref) throws NessieNotFoundException {
-    Reference reference = Reference.fromPathString(ref, Reference.ReferenceType.BRANCH);
+    Reference reference = resolveRef(ref);
     Content content = content().getContent(key, reference.getName(), reference.getHash());
     return ContentResponse.builder().content(content).build();
   }
@@ -185,7 +199,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   @Override
   public GetMultipleContentsResponse getMultipleContents(
       String ref, GetMultipleContentsRequest request) throws NessieNotFoundException {
-    Reference reference = Reference.fromPathString(ref, Reference.ReferenceType.BRANCH);
+    Reference reference = resolveRef(ref);
     return content()
         .getMultipleContents(reference.getName(), reference.getHash(), request.getRequestedKeys());
   }
@@ -193,7 +207,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   @Override
   public MergeResponse transplantCommitsIntoBranch(String branch, Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
-    Reference ref = Reference.fromPathString(branch, Reference.ReferenceType.BRANCH);
+    Reference ref = resolveRef(branch);
     return tree()
         .transplantCommitsIntoBranch(
             ref.getName(),
@@ -212,7 +226,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   @Override
   public MergeResponse mergeRefIntoBranch(String branch, Merge merge)
       throws NessieNotFoundException, NessieConflictException {
-    Reference ref = Reference.fromPathString(branch, Reference.ReferenceType.BRANCH);
+    Reference ref = resolveRef(branch);
     return tree()
         .mergeRefIntoBranch(
             ref.getName(),
@@ -230,7 +244,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   @Override
   public CommitResponse commitMultipleOperations(String branch, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
-    Reference ref = Reference.fromPathString(branch, Reference.ReferenceType.BRANCH);
+    Reference ref = resolveRef(branch);
     Branch head = tree().commitMultipleOperations(ref.getName(), ref.getHash(), operations);
     return CommitResponse.builder().targetBranch(head).build();
   }
