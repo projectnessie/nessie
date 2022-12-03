@@ -69,8 +69,3 @@ tasks.named<ShadowJar>("shadowJar") {
 }
 
 tasks.named<Test>("intTest") { systemProperty("expectedNessieVersion", project.version) }
-
-tasks.named<ProcessResources>("processResources") {
-  inputs.property("nessieVersion", project.version)
-  expand("nessieVersion" to project.version)
-}

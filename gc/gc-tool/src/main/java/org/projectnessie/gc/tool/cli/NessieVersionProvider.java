@@ -15,21 +15,12 @@
  */
 package org.projectnessie.gc.tool.cli;
 
-import java.io.InputStream;
-import java.util.Properties;
+import org.projectnessie.api.NessieVersion;
 import picocli.CommandLine.IVersionProvider;
 
 public class NessieVersionProvider implements IVersionProvider {
   @Override
-  public String[] getVersion() throws Exception {
-    try (InputStream input =
-        NessieVersionProvider.class
-            .getResource("version.properties")
-            .openConnection()
-            .getInputStream()) {
-      Properties props = new Properties();
-      props.load(input);
-      return new String[] {props.getProperty("nessie.version")};
-    }
+  public String[] getVersion() {
+    return new String[] {NessieVersion.NESSIE_VERSION};
   }
 }

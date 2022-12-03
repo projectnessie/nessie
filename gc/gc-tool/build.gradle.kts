@@ -93,11 +93,6 @@ dependencies {
   testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
-tasks.named<ProcessResources>("processResources") {
-  inputs.property("nessieVersion", project.version)
-  expand("nessieVersion" to project.version)
-}
-
 tasks.named<Test>("test") { systemProperty("expectedNessieVersion", project.version) }
 
 val mainClassName = "org.projectnessie.gc.tool.cli.CLI"
