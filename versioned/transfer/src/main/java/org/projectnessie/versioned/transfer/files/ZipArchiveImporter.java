@@ -13,47 +13,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.transfer;
-
-import static org.projectnessie.versioned.transfer.ExportImportConstants.DEFAULT_BUFFER_SIZE;
+package org.projectnessie.versioned.transfer.files;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import org.immutables.value.Value;
 
-/** Nessie importer using data from directory. */
+/** Nessie importer using data from a ZIP file. */
 @Value.Immutable
-public abstract class FileImporter implements ImportFileSupplier {
+public abstract class ZipArchiveImporter implements ImportFileSupplier {
   public static Builder builder() {
-    return ImmutableFileImporter.builder();
+    return ImmutableZipArchiveImporter.builder();
   }
 
   public interface Builder {
-    Builder sourceDirectory(Path sourceDirectory);
+    Builder sourceZipFile(Path sourceZipFile);
 
-    /**
-     * Optional, specify a different buffer size than the default value of {@value
-     * ExportImportConstants#DEFAULT_BUFFER_SIZE}.
-     */
-    Builder inputBufferSize(int inputBufferSize);
-
-    FileImporter build();
+    ZipArchiveImporter build();
   }
 
-  @Value.Default
-  int inputBufferSize() {
-    return DEFAULT_BUFFER_SIZE;
-  }
+  abstract Path sourceZipFile();
 
-  abstract Path sourceDirectory();
+  @Value.Lazy
+  ZipFile zipFile() throws IOException {
+    return new ZipFile(sourceZipFile().toFile());
+  }
 
   @Override
   public InputStream newFileInput(String fileName) throws IOException {
-    return new BufferedInputStream(
-        Files.newInputStream(sourceDirectory().resolve(fileName)), inputBufferSize());
+    @SuppressWarnings("resource")
+    ZipFile zip = zipFile();
+    ZipEntry entry = zip.getEntry(fileName);
+    return new BufferedInputStream(zip.getInputStream(entry));
   }
 
   @Override

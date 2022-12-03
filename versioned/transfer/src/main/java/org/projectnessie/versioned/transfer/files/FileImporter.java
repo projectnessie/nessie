@@ -13,42 +13,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.transfer;
+package org.projectnessie.versioned.transfer.files;
+
+import static org.projectnessie.versioned.transfer.ExportImportConstants.DEFAULT_BUFFER_SIZE;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 import org.immutables.value.Value;
+import org.projectnessie.versioned.transfer.ExportImportConstants;
 
-/** Nessie importer using data from a ZIP file. */
+/** Nessie importer using data from directory. */
 @Value.Immutable
-public abstract class ZipArchiveImporter implements ImportFileSupplier {
+public abstract class FileImporter implements ImportFileSupplier {
   public static Builder builder() {
-    return ImmutableZipArchiveImporter.builder();
+    return ImmutableFileImporter.builder();
   }
 
   public interface Builder {
-    Builder sourceZipFile(Path sourceZipFile);
+    Builder sourceDirectory(Path sourceDirectory);
 
-    ZipArchiveImporter build();
+    /**
+     * Optional, specify a different buffer size than the default value of {@value
+     * ExportImportConstants#DEFAULT_BUFFER_SIZE}.
+     */
+    Builder inputBufferSize(int inputBufferSize);
+
+    FileImporter build();
   }
 
-  abstract Path sourceZipFile();
-
-  @Value.Lazy
-  ZipFile zipFile() throws IOException {
-    return new ZipFile(sourceZipFile().toFile());
+  @Value.Default
+  int inputBufferSize() {
+    return DEFAULT_BUFFER_SIZE;
   }
+
+  abstract Path sourceDirectory();
 
   @Override
   public InputStream newFileInput(String fileName) throws IOException {
-    @SuppressWarnings("resource")
-    ZipFile zip = zipFile();
-    ZipEntry entry = zip.getEntry(fileName);
-    return new BufferedInputStream(zip.getInputStream(entry));
+    return new BufferedInputStream(
+        Files.newInputStream(sourceDirectory().resolve(fileName)), inputBufferSize());
   }
 
   @Override

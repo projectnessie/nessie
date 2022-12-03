@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.transfer;
+package org.projectnessie.versioned.transfer.files;
 
 import com.google.common.base.Preconditions;
 import java.io.IOException;

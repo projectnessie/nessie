@@ -48,6 +48,8 @@ import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.tests.extension.DatabaseAdapterExtension;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
 import org.projectnessie.versioned.store.DefaultStoreWorker;
+import org.projectnessie.versioned.transfer.files.ZipArchiveExporter;
+import org.projectnessie.versioned.transfer.files.ZipArchiveImporter;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.HeadsAndForks;
 
