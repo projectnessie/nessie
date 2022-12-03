@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.function.Consumer;
 import java.util.function.LongConsumer;
+import org.projectnessie.versioned.transfer.files.ExportFileSupplier;
 
 final class SizeLimitedOutput {
 

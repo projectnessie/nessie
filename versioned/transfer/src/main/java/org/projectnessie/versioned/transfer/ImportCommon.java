@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.transfer;
 
 import java.io.IOException;
+import org.projectnessie.versioned.transfer.files.ImportFileSupplier;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.HeadsAndForks;
 
