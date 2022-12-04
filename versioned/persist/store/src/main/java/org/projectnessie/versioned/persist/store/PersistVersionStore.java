@@ -366,7 +366,11 @@ public class PersistVersionStore implements VersionStore {
               ImmutableCommit.Builder commit =
                   Commit.builder()
                       .hash(e.getHash())
+                      .addAllAdditionalParents(e.getAdditionalParents())
                       .commitMeta(deserializeMetadata(e.getMetadata()));
+              if (!e.getParents().isEmpty()) {
+                commit.parentHash(e.getParents().get(0));
+              }
               enhancer.accept(commit, e);
               return commit.build();
             });
@@ -379,12 +383,7 @@ public class PersistVersionStore implements VersionStore {
   private BiConsumer<ImmutableCommit.Builder, CommitLogEntry> enhancerForCommitLog(
       boolean fetchAdditionalInfo) {
     if (!fetchAdditionalInfo) {
-      return (commitBuilder, logEntry) -> {
-        if (!logEntry.getParents().isEmpty()) {
-          commitBuilder.parentHash(logEntry.getParents().get(0));
-        }
-        logEntry.getAdditionalParents().forEach(commitBuilder::addAdditionalParents);
-      };
+      return (commitBuilder, logEntry) -> {};
     }
 
     // Memoize already retrieved global-content
@@ -400,9 +399,6 @@ public class PersistVersionStore implements VersionStore {
                         .orElse(null));
 
     return (commitBuilder, logEntry) -> {
-      if (!logEntry.getParents().isEmpty()) {
-        commitBuilder.parentHash(logEntry.getParents().get(0));
-      }
       logEntry.getDeletes().forEach(delete -> commitBuilder.addOperations(Delete.of(delete)));
       logEntry
           .getPuts()
