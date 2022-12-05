@@ -21,6 +21,7 @@ import static java.util.Objects.requireNonNull;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Optional;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.versioned.BranchName;
@@ -30,10 +31,12 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
+import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentId;
+import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Commit;
@@ -51,6 +54,18 @@ final class ImportDatabaseAdapter extends ImportCommon {
         "This Nessie-version version does not support importing a %s (%s) export",
         exportMeta.getVersion().name(),
         exportMeta.getVersionValue());
+  }
+
+  @Override
+  void prepareRepository() {
+    DatabaseAdapter databaseAdapter = requireNonNull(importer.databaseAdapter());
+    databaseAdapter.eraseRepo();
+    databaseAdapter.initializeRepo("main");
+    try {
+      databaseAdapter.delete(BranchName.of("main"), Optional.empty());
+    } catch (ReferenceNotFoundException | ReferenceConflictException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
