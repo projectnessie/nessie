@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.persist.adapter;
 
+import static org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter.NO_ANCESTOR;
+
 import com.google.common.annotations.Beta;
 import com.google.protobuf.ByteString;
 import java.util.Iterator;
@@ -23,6 +25,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.agrona.collections.Hashing;
+import org.agrona.collections.Object2IntHashMap;
 import org.agrona.collections.Object2ObjectHashMap;
 import org.agrona.collections.ObjectHashSet;
 import org.projectnessie.versioned.GetNamedRefsParams;
@@ -30,7 +33,6 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
 
 @Beta
 public final class ReferencesUtil {
@@ -48,8 +50,9 @@ public final class ReferencesUtil {
     return new Object2ObjectHashMap<>(16, Hashing.DEFAULT_LOAD_FACTOR, false);
   }
 
-  private static <T> Set<T> newOpenAddressingHashSet(int initialCapacity) {
-    return new ObjectHashSet<>(initialCapacity, Hashing.DEFAULT_LOAD_FACTOR, false);
+  private static <T> Set<T> newOpenAddressingHashSet() {
+    return new ObjectHashSet<>(
+        ObjectHashSet.DEFAULT_INITIAL_CAPACITY, Hashing.DEFAULT_LOAD_FACTOR, false);
   }
 
   private static <T> Set<T> newOpenAddressingHashSet(Set<T> source) {
@@ -62,8 +65,72 @@ public final class ReferencesUtil {
     return copy;
   }
 
-  private static <T> Set<T> newOpenAddressingHashSet() {
-    return newOpenAddressingHashSet(ObjectHashSet.DEFAULT_INITIAL_CAPACITY);
+  public static class IdentifyHeadsAndForkPoints {
+    // Map contains both the commit-IDs and parent-
+    private final Object2IntHashMap<Hash> commits;
+    private final Set<Hash> heads;
+    private final Set<Hash> forkPoints;
+    private final long scanStartedAtInMicros;
+
+    private static final int MASK_COMMIT_SEEN = 1;
+    private static final int MASK_PARENT_SEEN = 2;
+
+    public IdentifyHeadsAndForkPoints(int expectedCommitCount, long scanStartedAtInMicros) {
+      // Using open-addressing implementation here, because it's much more space-efficient than
+      // java.util.HashSet.
+      this.commits =
+          new Object2IntHashMap<>(expectedCommitCount * 2, Hashing.DEFAULT_LOAD_FACTOR, 0, true);
+      this.heads = newOpenAddressingHashSet();
+      this.forkPoints = newOpenAddressingHashSet();
+      this.scanStartedAtInMicros = scanStartedAtInMicros;
+    }
+
+    public boolean handleCommit(CommitLogEntry entry) {
+      return handleCommit(entry.getHash(), entry.getParents().get(0));
+    }
+
+    public boolean handleCommit(Hash commitId, Hash parent) {
+
+      int cv = commits.getValue(commitId);
+      boolean commitNew = (cv & MASK_COMMIT_SEEN) == 0;
+      if (commitNew) {
+        commits.put(commitId, cv | MASK_COMMIT_SEEN);
+      }
+      boolean commitNotSeenAsParent = (cv & MASK_PARENT_SEEN) == 0;
+      if (commitNotSeenAsParent) {
+        // If the commit-ID has not been seen as a parent, it must be a HEAD
+        heads.add(commitId);
+      }
+
+      // Only process the parent-ID when the commit has not been seen before.
+      if (!commitNew) {
+        return false;
+      }
+
+      // Do not handle 'no ancestor' as a "legit parent".
+      if (NO_ANCESTOR.equals(parent)) {
+        return true;
+      }
+
+      int pv = commits.getValue(parent);
+      boolean parentNew = (pv & MASK_PARENT_SEEN) == 0;
+
+      if (!parentNew) {
+        // If "parent" has already been seen, then it must be a fork point.
+        forkPoints.add(parent);
+      } else {
+        commits.put(parent, pv | MASK_PARENT_SEEN);
+        // Commits in "parents" that are also contained in "heads" cannot be HEADs.
+        // This can happen because the commits are scanned in "random order".
+        heads.remove(parent);
+      }
+
+      return true;
+    }
+
+    public HeadsAndForkPoints finish() {
+      return HeadsAndForkPoints.of(heads, forkPoints, scanStartedAtInMicros);
+    }
   }
 
   /**
@@ -81,11 +148,6 @@ public final class ReferencesUtil {
    */
   public HeadsAndForkPoints identifyAllHeadsAndForkPoints(
       int expectedCommitCount, Consumer<CommitLogEntry> commitHandler) {
-    // Using open-addressing implementation here, because it's much more space-efficient than
-    // java.util.HashSet.
-    Set<Hash> parents = newOpenAddressingHashSet(expectedCommitCount);
-    Set<Hash> heads = newOpenAddressingHashSet();
-    Set<Hash> forkPoints = newOpenAddressingHashSet();
 
     // Need to remember the time when the identification started, so that a follow-up
     // identifyReferencedAndUnreferencedHeads() knows when it can stop scanning a named-reference's
@@ -98,41 +160,16 @@ public final class ReferencesUtil {
     // "unreferenced".
     long scanStartedAtInMicros = databaseAdapter.getConfig().currentTimeInMicros();
 
+    IdentifyHeadsAndForkPoints identify =
+        new IdentifyHeadsAndForkPoints(expectedCommitCount, scanStartedAtInMicros);
+
     // scanAllCommitLogEntries() returns all commits in no specific order, parents may be scanned
     // before or after their children.
     try (Stream<CommitLogEntry> scan = databaseAdapter.scanAllCommitLogEntries()) {
-      scan.peek(commitHandler)
-          .forEach(
-              entry -> {
-                Hash parent = entry.getParents().get(0);
-                if (!parents.add(parent)) {
-                  // If "parent" has already been added to the set of parents, then it must be a
-                  // fork point.
-                  if (!AbstractDatabaseAdapter.NO_ANCESTOR.equals(parent)) {
-                    forkPoints.add(parent);
-                  }
-                } else {
-                  // Commits in "parents" that are also contained in "heads" cannot be HEADs.
-                  // This can happen because the commits are scanned in "random order".
-                  // Should do this here to prevent the "heads" set from becoming unnecessarily big.
-                  heads.remove(parent);
-                }
-
-                Hash commitId = entry.getHash();
-                if (!parents.contains(commitId)) {
-                  // If the commit-ID is not present in "parents", it must be a HEAD
-                  heads.add(commitId);
-                }
-              });
+      scan.peek(commitHandler).forEach(identify::handleCommit);
     }
 
-    // Commits in "parents" that are also contained in "heads" cannot be HEADs.
-    // This can happen because the commits are scanned in "random order".
-    // TODO this 'removeIf' should not actually remove anything, because it should already be
-    //  properly handled above.
-    heads.removeIf(parents::contains);
-
-    return HeadsAndForkPoints.of(heads, forkPoints, scanStartedAtInMicros);
+    return identify.finish();
   }
 
   /**
