@@ -181,7 +181,7 @@ public class DatabaseAdapterExtension
               .orElseThrow(IllegalStateException::new);
 
       Object assign =
-          resolve(nessieDbAdapter, field, field.getType(), context, null, false, newAdapter);
+          resolve(nessieDbAdapter, field, field.getType(), context, null, field, false, newAdapter);
 
       makeAccessible(field).set(context.getTestInstance().orElse(null), assign);
     } catch (Throwable t) {
@@ -204,6 +204,7 @@ public class DatabaseAdapterExtension
         parameter.getType(),
         context,
         parameterContext,
+        null,
         true,
         adapter -> {});
   }
@@ -214,11 +215,12 @@ public class DatabaseAdapterExtension
       Class<?> type,
       ExtensionContext context,
       ParameterContext parameterContext,
+      Field field,
       boolean canReinit,
       Consumer<DatabaseAdapter> newAdapter) {
 
     DatabaseAdapter databaseAdapter =
-        createAdapterResource(nessieDbAdapter, context, parameterContext);
+        createAdapterResource(nessieDbAdapter, context, parameterContext, field);
 
     if (nessieDbAdapter.withTracing()) {
       databaseAdapter = new TracingDatabaseAdapter(databaseAdapter);
@@ -252,12 +254,21 @@ public class DatabaseAdapterExtension
   }
 
   static <A extends Annotation> Optional<A> findAnnotation(
-      ExtensionContext context, ParameterContext parameterContext, Class<A> annotation) {
+      ExtensionContext context,
+      Field field,
+      ParameterContext parameterContext,
+      Class<A> annotation) {
     Optional<A> opt;
     if (parameterContext != null) {
       opt = parameterContext.findAnnotation(annotation);
       if (opt.isPresent()) {
         return opt;
+      }
+    }
+    if (field != null) {
+      A fieldAnnotation = field.getAnnotation(annotation);
+      if (fieldAnnotation != null) {
+        return Optional.of(fieldAnnotation);
       }
     }
     opt = context.getTestMethod().flatMap(m -> AnnotationUtils.findAnnotation(m, annotation));
@@ -271,14 +282,15 @@ public class DatabaseAdapterExtension
   static DatabaseAdapter createAdapterResource(
       NessieDbAdapter adapterAnnotation,
       ExtensionContext context,
-      ParameterContext parameterContext) {
+      ParameterContext parameterContext,
+      Field field) {
     DatabaseAdapterFactory<
             DatabaseAdapter,
             DatabaseAdapterConfig,
             AdjustableDatabaseAdapterConfig,
             DatabaseConnectionProvider<?>>
         factory =
-            findAnnotation(context, parameterContext, NessieDbAdapterName.class)
+            findAnnotation(context, field, parameterContext, NessieDbAdapterName.class)
                 .map(NessieDbAdapterName::value)
                 .map(
                     DatabaseAdapterFactory
@@ -329,6 +341,9 @@ public class DatabaseAdapterExtension
                           m ->
                               configs.addAll(
                                   findRepeatableAnnotations(m, NessieDbAdapterConfigItem.class));
+                      if (field != null) {
+                        collector.accept(field);
+                      }
                       context.getTestMethod().ifPresent(collector);
                       context
                           .getTestClass()
