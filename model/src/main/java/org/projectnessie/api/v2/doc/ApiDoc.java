@@ -60,6 +60,13 @@ public interface ApiDoc {
 
   String REF_NAME_DESCRIPTION = "A reference name.\n\n" + REF_NAME_MESSAGE + "\n";
 
+  String REF_GET_PARAMETER_DESCRIPTION =
+      "Specifies a reference to a particular commit history branch or tag.\n"
+          + "\n"
+          + "This reference can be specification in these forms:\n"
+          + "- \\- (literal minus character) - identifies the default branch.\n"
+          + "- name - Identifies the named branch or tag.\n";
+
   String REF_PARAMETER_DESCRIPTION =
       "A reference to a particular version of the contents tree (a point in history).\n"
           + "\n"
