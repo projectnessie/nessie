@@ -32,6 +32,7 @@ import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.projectnessie.api.NessieVersion;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.quarkus.cli.ExportRepository.Format;
@@ -175,6 +176,9 @@ public class ITExportImport {
         launcher.launch("import", ERASE_BEFORE_IMPORT, ImportRepository.PATH, zipFile.toString());
     soft.assertThat(result.exitCode()).isEqualTo(0);
     soft.assertThat(result.getOutput())
+        .contains("Export was created by Nessie version " + NessieVersion.NESSIE_VERSION + " on ")
+        .containsPattern(
+            "containing [0-9]+ named references \\(in [0-9]+ files\\) and [0-9]+ commits \\(in [0-9]+ files\\)")
         .contains("Imported Nessie repository, 2 commits, 2 named references.")
         .contains("Finished commit log optimization.");
   }
@@ -206,6 +210,9 @@ public class ITExportImport {
         launcher.launch("import", ERASE_BEFORE_IMPORT, ImportRepository.PATH, tempDir.toString());
     soft.assertThat(result.exitCode()).isEqualTo(0);
     soft.assertThat(result.getOutput())
+        .contains("Export was created by Nessie version " + NessieVersion.NESSIE_VERSION + " on ")
+        .containsPattern(
+            "containing [0-9]+ named references \\(in [0-9]+ files\\) and [0-9]+ commits \\(in [0-9]+ files\\)")
         .contains("Imported Nessie repository, 2 commits, 2 named references.")
         .contains("Finished commit log optimization.");
   }

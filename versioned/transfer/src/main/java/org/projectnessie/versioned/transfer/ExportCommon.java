@@ -20,6 +20,7 @@ import static org.projectnessie.versioned.transfer.ExportImportConstants.HEADS_A
 
 import java.io.IOException;
 import java.io.OutputStream;
+import org.projectnessie.api.NessieVersion;
 import org.projectnessie.versioned.transfer.files.ExportFileSupplier;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportVersion;
@@ -72,6 +73,7 @@ abstract class ExportCommon {
         exportFiles,
         exporter,
         ExportMeta.newBuilder()
+            .setNessieVersion(NessieVersion.NESSIE_VERSION)
             .setCreatedMillisEpoch(currentTimestampMillis())
             .setVersion(exportVersion));
   }
