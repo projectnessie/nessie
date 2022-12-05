@@ -59,61 +59,61 @@ public abstract class AbstractITCommitLogOptimization {
 
   static Stream<Arguments> multipleBranches() {
     return Stream.of(
-        arguments(5, 19, 19, 19, 19),
+        arguments(5, 19, 19, 19, 19, true),
         // TODO ^^ to 46
-        arguments(0, 0, 1, 0, 0),
-        arguments(0, 0, 19, 0, 0),
-        arguments(0, 0, 20, 0, 0),
-        arguments(0, 0, 21, 0, 0),
+        arguments(0, 0, 1, 0, 0, false),
+        arguments(0, 0, 19, 0, 0, false),
+        arguments(0, 0, 20, 0, 0, false),
+        arguments(0, 0, 21, 0, 0, false),
         // 5
-        arguments(1, 1, 1, 1, 1),
-        arguments(1, 1, 1, 1, 0),
-        arguments(1, 1, 0, 1, 1),
-        arguments(1, 1, 0, 1, 0),
-        arguments(1, 1, 0, 0, 0),
+        arguments(1, 1, 1, 1, 1, false),
+        arguments(1, 1, 1, 1, 0, true),
+        arguments(1, 1, 0, 1, 1, false),
+        arguments(1, 1, 0, 1, 0, true),
+        arguments(1, 1, 0, 0, 0, false),
         // 10
-        arguments(3, 5, 5, 5, 5),
-        arguments(3, 5, 5, 1, 5),
-        arguments(3, 5, 5, 0, 5),
-        arguments(3, 5, 0, 5, 5),
-        arguments(3, 5, 1, 5, 5),
-        arguments(3, 5, 5, 5, 0),
-        arguments(3, 5, 5, 5, 1),
-        arguments(3, 5, 0, 0, 0),
-        arguments(3, 5, 1, 1, 1),
+        arguments(3, 5, 5, 5, 5, true),
+        arguments(3, 5, 5, 1, 5, false),
+        arguments(3, 5, 5, 0, 5, true),
+        arguments(3, 5, 0, 5, 5, false),
+        arguments(3, 5, 1, 5, 5, true),
+        arguments(3, 5, 5, 5, 0, false),
+        arguments(3, 5, 5, 5, 1, true),
+        arguments(3, 5, 0, 0, 0, false),
+        arguments(3, 5, 1, 1, 1, true),
         // 19
-        arguments(3, 19, 19, 19, 19),
-        arguments(3, 19, 19, 1, 19),
-        arguments(3, 19, 19, 0, 19),
-        arguments(3, 19, 0, 19, 19),
-        arguments(3, 19, 1, 19, 19),
-        arguments(3, 19, 19, 19, 0),
-        arguments(3, 19, 19, 19, 1),
-        arguments(3, 19, 0, 0, 0),
-        arguments(3, 19, 1, 1, 1),
+        arguments(3, 19, 19, 19, 19, true),
+        arguments(3, 19, 19, 1, 19, false),
+        arguments(3, 19, 19, 0, 19, true),
+        arguments(3, 19, 0, 19, 19, false),
+        arguments(3, 19, 1, 19, 19, true),
+        arguments(3, 19, 19, 19, 0, false),
+        arguments(3, 19, 19, 19, 1, true),
+        arguments(3, 19, 0, 0, 0, false),
+        arguments(3, 19, 1, 1, 1, true),
         // 28
-        arguments(3, 20, 20, 20, 20),
-        arguments(3, 20, 20, 1, 20),
-        arguments(3, 20, 20, 0, 20),
-        arguments(3, 20, 0, 20, 20),
-        arguments(3, 20, 1, 20, 20),
-        arguments(3, 20, 20, 20, 0),
-        arguments(3, 20, 20, 20, 1),
-        arguments(3, 20, 0, 0, 0),
-        arguments(3, 20, 1, 1, 1),
+        arguments(3, 20, 20, 20, 20, false),
+        arguments(3, 20, 20, 1, 20, true),
+        arguments(3, 20, 20, 0, 20, false),
+        arguments(3, 20, 0, 20, 20, true),
+        arguments(3, 20, 1, 20, 20, false),
+        arguments(3, 20, 20, 20, 0, true),
+        arguments(3, 20, 20, 20, 1, false),
+        arguments(3, 20, 0, 0, 0, true),
+        arguments(3, 20, 1, 1, 1, false),
         // 37
-        arguments(3, 21, 21, 21, 21),
-        arguments(3, 21, 21, 1, 21),
-        arguments(3, 21, 21, 0, 21),
-        arguments(3, 21, 0, 21, 21),
-        arguments(3, 21, 1, 21, 21),
-        arguments(3, 21, 21, 21, 0),
-        arguments(3, 21, 21, 21, 1),
-        arguments(3, 21, 0, 0, 0),
-        arguments(3, 21, 1, 1, 1),
+        arguments(3, 21, 21, 21, 21, true),
+        arguments(3, 21, 21, 1, 21, false),
+        arguments(3, 21, 21, 0, 21, true),
+        arguments(3, 21, 0, 21, 21, false),
+        arguments(3, 21, 1, 21, 21, true),
+        arguments(3, 21, 21, 21, 0, false),
+        arguments(3, 21, 21, 21, 1, true),
+        arguments(3, 21, 0, 0, 0, false),
+        arguments(3, 21, 1, 1, 1, true),
         // 46
-        arguments(5, 20, 20, 20, 20),
-        arguments(5, 21, 21, 21, 21));
+        arguments(5, 20, 20, 20, 20, false),
+        arguments(5, 21, 21, 21, 21, true));
   }
 
   @ParameterizedTest
@@ -124,6 +124,7 @@ public abstract class AbstractITCommitLogOptimization {
       int commitsAtBeginningOfTime,
       int commitsBetweenBranches,
       int commitsAtHead,
+      boolean fullScan,
       @TempDir Path tempDir)
       throws Exception {
     long totalCommits = 0L;
@@ -159,6 +160,7 @@ public abstract class AbstractITCommitLogOptimization {
           NessieExporter.builder()
               .exportFileSupplier(zipExporter)
               .databaseAdapter(databaseAdapter)
+              .fullScan(fullScan)
               .build()
               .exportNessieRepository();
     }

@@ -20,6 +20,7 @@ import static java.util.Objects.requireNonNull;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.errorprone.annotations.MustBeClosed;
 import com.google.protobuf.ByteString;
+import java.util.Iterator;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.projectnessie.model.Content;
@@ -27,13 +28,16 @@ import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
+import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
+import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.HeadsAndForkPoints;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.ReferencesUtil;
+import org.projectnessie.versioned.persist.adapter.ReferencesUtil.IdentifyHeadsAndForkPoints;
 import org.projectnessie.versioned.transfer.files.ExportFileSupplier;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Commit;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportVersion;
@@ -69,9 +73,9 @@ final class ExportDatabaseAdapter extends ExportCommon {
           exportContext.writeCommit(commit);
           exporter.progressListener().progress(ProgressEvent.COMMIT_WRITTEN);
         };
+
     HeadsAndForkPoints headsAndForkPoints =
-        ReferencesUtil.forDatabaseAdapter(exporter.databaseAdapter())
-            .identifyAllHeadsAndForkPoints(exporter.expectedCommitCount(), commitHandler);
+        exporter.fullScan() ? scanDatabase(commitHandler) : scanAllReferences(commitHandler);
 
     HeadsAndForks.Builder hf =
         HeadsAndForks.newBuilder()
@@ -79,6 +83,44 @@ final class ExportDatabaseAdapter extends ExportCommon {
     headsAndForkPoints.getHeads().forEach(h -> hf.addHeads(h.asBytes()));
     headsAndForkPoints.getForkPoints().forEach(h -> hf.addForkPoints(h.asBytes()));
     return hf.build();
+  }
+
+  private HeadsAndForkPoints scanDatabase(Consumer<CommitLogEntry> commitHandler) {
+    return ReferencesUtil.forDatabaseAdapter(exporter.databaseAdapter())
+        .identifyAllHeadsAndForkPoints(exporter.expectedCommitCount(), commitHandler);
+  }
+
+  private HeadsAndForkPoints scanAllReferences(Consumer<CommitLogEntry> commitHandler) {
+    DatabaseAdapter databaseAdapter = requireNonNull(exporter.databaseAdapter());
+    IdentifyHeadsAndForkPoints identify =
+        new IdentifyHeadsAndForkPoints(
+            exporter.expectedCommitCount(), databaseAdapter.getConfig().currentTimeInMicros());
+
+    try (Stream<ReferenceInfo<ByteString>> namedRefs =
+        databaseAdapter.namedRefs(GetNamedRefsParams.DEFAULT)) {
+      namedRefs
+          .map(ReferenceInfo::getHash)
+          .forEach(
+              head -> {
+                try (Stream<CommitLogEntry> commits = databaseAdapter.commitLog(head)) {
+                  for (Iterator<CommitLogEntry> commitIter = commits.iterator();
+                      commitIter.hasNext(); ) {
+                    CommitLogEntry commit = commitIter.next();
+                    if (!identify.handleCommit(commit)) {
+                      break;
+                    }
+                    commitHandler.accept(commit);
+                  }
+                } catch (ReferenceNotFoundException e) {
+                  throw new RuntimeException(e);
+                }
+              });
+
+    } catch (ReferenceNotFoundException e) {
+      throw new RuntimeException(e);
+    }
+
+    return identify.finish();
   }
 
   @Override

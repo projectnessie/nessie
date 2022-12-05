@@ -86,6 +86,14 @@ public class ExportRepository extends BaseCommand {
           "Output buffer size, defaults to " + ExportImportConstants.DEFAULT_BUFFER_SIZE + ".")
   private Integer outputBufferSize;
 
+  @CommandLine.Option(
+      names = {"--full-scan"},
+      description = {
+        "Export all commits, including those that are no longer reachable any named reference."
+            + "Using this option is _not_ recommended."
+      })
+  private boolean fullScan;
+
   @Override
   protected Integer callWithDatabaseAdapter() throws Exception {
     warnOnInMemory();
@@ -94,7 +102,8 @@ public class ExportRepository extends BaseCommand {
       NessieExporter.Builder builder =
           NessieExporter.builder()
               .exportFileSupplier(exportFileSupplier)
-              .databaseAdapter(databaseAdapter);
+              .databaseAdapter(databaseAdapter)
+              .fullScan(fullScan);
       if (maxFileSize != null) {
         builder.maxFileSize(maxFileSize);
       }

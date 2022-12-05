@@ -75,6 +75,7 @@ public abstract class AbstractExportImport {
       NessieExporter.builder()
           .exportFileSupplier(exportFileSupplier)
           .databaseAdapter(databaseAdapter)
+          .fullScan(true)
           .build()
           .exportNessieRepository();
     }
@@ -121,6 +122,7 @@ public abstract class AbstractExportImport {
           .exportFileSupplier(exportFileSupplier)
           .databaseAdapter(exportDatabaseAdapter)
           .maxFileSize(128 * 1024)
+          .fullScan(true)
           .build()
           .exportNessieRepository();
     }

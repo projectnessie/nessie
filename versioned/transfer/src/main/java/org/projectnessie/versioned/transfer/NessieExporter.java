@@ -69,10 +69,22 @@ public abstract class NessieExporter {
 
     Builder exportFileSupplier(ExportFileSupplier exportFileSupplier);
 
+    Builder fullScan(boolean fullScan);
+
     NessieExporter build();
   }
 
   abstract DatabaseAdapter databaseAdapter();
+
+  /**
+   * Flag whether to do an expensive scan the database for all commits, when set to {@code true},
+   * compared to the default behavior to scan only named references via commit-log retrieval (if
+   * {@code false}).
+   */
+  @Value.Default
+  boolean fullScan() {
+    return false;
+  }
 
   @Value.Default
   ObjectMapper objectMapper() {
