@@ -50,12 +50,18 @@ dependencies {
   testImplementation(libs.bundles.junit.testing)
   testRuntimeOnly(libs.junit.jupiter.engine)
 
-  compileOnly(libs.opentracing.util)
+  compileOnly(platform(libs.opentelemetry.bom))
+  compileOnly(libs.opentelemetry.api)
+  compileOnly(libs.opentelemetry.semconv)
+
   compileOnly(platform(libs.awssdk.bom))
   compileOnly(libs.awssdk.auth)
 
-  testImplementation(libs.opentracing.util)
-  testImplementation(libs.jaeger.core)
+  testImplementation(platform(libs.opentelemetry.bom))
+  testImplementation(libs.opentelemetry.api)
+  testImplementation(libs.opentelemetry.sdk)
+  testImplementation(libs.opentelemetry.semconv)
+  testImplementation(libs.opentelemetry.exporter.otlp)
   testImplementation(platform(libs.awssdk.bom))
   testImplementation(libs.awssdk.auth)
   testImplementation(libs.undertow.core)

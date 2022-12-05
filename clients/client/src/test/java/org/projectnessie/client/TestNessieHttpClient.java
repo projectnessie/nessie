@@ -20,8 +20,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.opentracing.Scope;
-import io.opentracing.util.GlobalTracer;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.context.Scope;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -39,6 +41,9 @@ import org.projectnessie.client.util.JaegerTestTracer;
 import org.projectnessie.model.Branch;
 
 class TestNessieHttpClient {
+
+  static final String W3C_PROPAGATION_HEADER_NAME = "traceparent";
+
   @BeforeAll
   static void setupTracer() {
     JaegerTestTracer.register();
@@ -95,15 +100,15 @@ class TestNessieHttpClient {
     AtomicReference<String> traceId = new AtomicReference<>();
 
     try (HttpTestServer server =
-            new HttpTestServer(handlerForHeaderTest("Uber-trace-id", traceId));
+            new HttpTestServer(handlerForHeaderTest(W3C_PROPAGATION_HEADER_NAME, traceId));
         NessieApiV1 api =
             HttpClientBuilder.builder()
                 .withUri(server.getUri())
                 .withTracing(true)
                 .build(NessieApiV1.class)) {
-      try (Scope ignore =
-          GlobalTracer.get()
-              .activateSpan(GlobalTracer.get().buildSpan("testOpenTracing").start())) {
+      OpenTelemetry otel = GlobalOpenTelemetry.get();
+      Span span = otel.getTracer("nessie-client").spanBuilder("testOpenTracing").startSpan();
+      try (Scope scope = span.makeCurrent()) {
         api.getConfig();
       }
     }
@@ -119,15 +124,15 @@ class TestNessieHttpClient {
     AtomicReference<String> traceId = new AtomicReference<>();
 
     try (HttpTestServer server =
-            new HttpTestServer(handlerForHeaderTest("Uber-trace-id", traceId));
+            new HttpTestServer(handlerForHeaderTest(W3C_PROPAGATION_HEADER_NAME, traceId));
         NessieApiV1 api =
             HttpClientBuilder.builder()
                 .withUri(server.getUri())
                 .withTracing(false)
                 .build(NessieApiV1.class)) {
-      try (Scope ignore =
-          GlobalTracer.get()
-              .activateSpan(GlobalTracer.get().buildSpan("testOpenTracing").start())) {
+      OpenTelemetry otel = GlobalOpenTelemetry.get();
+      Span span = otel.getTracer("nessie-client").spanBuilder("testOpenTracing").startSpan();
+      try (Scope scope = span.makeCurrent()) {
         api.getConfig();
       }
     }
