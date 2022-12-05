@@ -81,8 +81,18 @@ public abstract class AbstractRestSecurityContext extends AbstractRestAccessChec
   @Test
   public void committerAndAuthorMerge(@NessieSecurityContext Consumer<SecurityContext> secContext)
       throws Exception {
-    Branch main = makeCommits(createBranch("committerAndAuthorMerge_main"), secContext);
-    Branch merge = createBranch("committerAndAuthorMerge_target");
+    Branch root = createBranch("root");
+
+    root =
+        getApi()
+            .commitMultipleOperations()
+            .branch(root)
+            .commitMeta(CommitMeta.fromMessage("root"))
+            .operation(Put.of(ContentKey.of("other"), IcebergTable.of("/dev/null", 42, 42, 42, 42)))
+            .commit();
+
+    Branch main = makeCommits(createBranch("committerAndAuthorMerge_main", root), secContext);
+    Branch merge = createBranch("committerAndAuthorMerge_target", root);
 
     secContext.accept(PrincipalSecurityContext.forName("NessieHerself"));
 
@@ -106,8 +116,19 @@ public abstract class AbstractRestSecurityContext extends AbstractRestAccessChec
   @NessieApiVersions(versions = NessieApiVersion.V1)
   public void committerAndAuthorMergeUnsquashed(
       @NessieSecurityContext Consumer<SecurityContext> secContext) throws Exception {
-    Branch main = makeCommits(createBranch("committerAndAuthorMergeUnsquashed_main"), secContext);
-    Branch merge = createBranch("committerAndAuthorMergeUnsquashed_target");
+    Branch root = createBranch("root");
+
+    root =
+        getApi()
+            .commitMultipleOperations()
+            .branch(root)
+            .commitMeta(CommitMeta.fromMessage("root"))
+            .operation(Put.of(ContentKey.of("other"), IcebergTable.of("/dev/null", 42, 42, 42, 42)))
+            .commit();
+
+    Branch main =
+        makeCommits(createBranch("committerAndAuthorMergeUnsquashed_main", root), secContext);
+    Branch merge = createBranch("committerAndAuthorMergeUnsquashed_target", root);
 
     secContext.accept(PrincipalSecurityContext.forName("NessieHerself"));
 

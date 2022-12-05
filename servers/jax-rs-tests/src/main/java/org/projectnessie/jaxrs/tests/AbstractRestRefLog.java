@@ -15,15 +15,9 @@
  */
 package org.projectnessie.jaxrs.tests;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
@@ -35,15 +29,11 @@ import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieRefLogNotFoundException;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.IcebergTable;
-import org.projectnessie.model.Operation;
 import org.projectnessie.model.RefLogResponse;
-import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 
 /** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
+@SuppressWarnings("deprecation")
 public abstract class AbstractRestRefLog extends AbstractRestReferences {
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V1)
@@ -55,93 +45,43 @@ public abstract class AbstractRestRefLog extends AbstractRestReferences {
     String branch3 = "branch3_test_reflog";
     String root = "ref_name_test_reflog";
 
-    List<Tuple> expectedEntries = new ArrayList<>(10);
+    List<Tuple> expectedEntries = new ArrayList<>();
 
     // reflog 1: creating the default branch0
     Branch branch0 = createBranch(root);
     expectedEntries.add(Tuple.tuple(root, "CREATE_REFERENCE"));
 
     // reflog 2: create tag1
-    Reference createdTag =
-        getApi()
-            .createReference()
-            .sourceRefName(branch0.getName())
-            .reference(Tag.of(tagName, branch0.getHash()))
-            .create();
+    getApi()
+        .createReference()
+        .sourceRefName(branch0.getName())
+        .reference(Tag.of(tagName, branch0.getHash()))
+        .create();
     expectedEntries.add(Tuple.tuple(tagName, "CREATE_REFERENCE"));
 
     // reflog 3: create branch1
-    Reference createdBranch1 =
-        getApi()
-            .createReference()
-            .sourceRefName(branch0.getName())
-            .reference(Branch.of(branch1, branch0.getHash()))
-            .create();
+    getApi()
+        .createReference()
+        .sourceRefName(branch0.getName())
+        .reference(Branch.of(branch1, branch0.getHash()))
+        .create();
     expectedEntries.add(Tuple.tuple(branch1, "CREATE_REFERENCE"));
 
     // reflog 4: create branch2
-    Reference createdBranch2 =
-        getApi()
-            .createReference()
-            .sourceRefName(branch0.getName())
-            .reference(Branch.of(branch2, branch0.getHash()))
-            .create();
+    getApi()
+        .createReference()
+        .sourceRefName(branch0.getName())
+        .reference(Branch.of(branch2, branch0.getHash()))
+        .create();
     expectedEntries.add(Tuple.tuple(branch2, "CREATE_REFERENCE"));
 
     // reflog 5: create branch2
-    Branch createdBranch3 =
-        (Branch)
-            getApi()
-                .createReference()
-                .sourceRefName(branch0.getName())
-                .reference(Branch.of(branch3, branch0.getHash()))
-                .create();
+    getApi()
+        .createReference()
+        .sourceRefName(branch0.getName())
+        .reference(Branch.of(branch3, branch0.getHash()))
+        .create();
     expectedEntries.add(Tuple.tuple(branch3, "CREATE_REFERENCE"));
-
-    // reflog 6: commit on default branch0
-    IcebergTable meta = IcebergTable.of("meep", 42, 42, 42, 42);
-    branch0 =
-        getApi()
-            .commitMultipleOperations()
-            .branchName(branch0.getName())
-            .hash(branch0.getHash())
-            .commitMeta(
-                CommitMeta.builder()
-                    .message("dummy commit log")
-                    .properties(ImmutableMap.of("prop1", "val1", "prop2", "val2"))
-                    .build())
-            .operation(Operation.Put.of(ContentKey.of("meep"), meta))
-            .commit();
-
-    // reflog 7: assign tag
-    getApi().assignTag().tagName(tagName).hash(createdTag.getHash()).assignTo(branch0).assign();
-    expectedEntries.add(Tuple.tuple(tagName, "ASSIGN_REFERENCE"));
-
-    // reflog 8: assign ref
-    getApi()
-        .assignBranch()
-        .branchName(branch1)
-        .hash(createdBranch1.getHash())
-        .assignTo(branch0)
-        .assign();
-    expectedEntries.add(Tuple.tuple(branch1, "ASSIGN_REFERENCE"));
-
-    // reflog 9: merge
-    getApi()
-        .mergeRefIntoBranch()
-        .branchName(branch2)
-        .hash(createdBranch2.getHash())
-        .fromRefName(branch1)
-        .fromHash(branch0.getHash())
-        .merge();
-
-    // reflog 10: transplant
-    getApi()
-        .transplantCommitsIntoBranch()
-        .hashesToTransplant(ImmutableList.of(Objects.requireNonNull(branch0.getHash())))
-        .fromRefName(branch1)
-        .branch(createdBranch3)
-        .transplant();
 
     // reflog 11: delete branch
     getApi().deleteBranch().branchName(branch1).hash(branch0.getHash()).delete();
@@ -156,42 +96,42 @@ public abstract class AbstractRestRefLog extends AbstractRestReferences {
 
     RefLogResponse refLogResponse = getApi().getRefLog().get();
     // verify reflog entries
-    assertThat(refLogResponse.getLogEntries().subList(0, 9))
+    soft.assertThat(refLogResponse.getLogEntries().subList(0, 7))
         .extracting(
             RefLogResponse.RefLogResponseEntry::getRefName,
             RefLogResponse.RefLogResponseEntry::getOperation)
         .isEqualTo(expectedEntries);
     // verify pagination (limit and token)
     RefLogResponse refLogResponse1 = getApi().getRefLog().maxRecords(2).get();
-    assertThat(refLogResponse1.getLogEntries())
+    soft.assertThat(refLogResponse1.getLogEntries())
         .isEqualTo(refLogResponse.getLogEntries().subList(0, 2));
-    assertThat(refLogResponse1.isHasMore()).isTrue();
+    soft.assertThat(refLogResponse1.isHasMore()).isTrue();
     RefLogResponse refLogResponse2 =
         getApi().getRefLog().pageToken(refLogResponse1.getToken()).get();
     // should start from the token.
-    assertThat(refLogResponse2.getLogEntries().get(0).getRefLogId())
+    soft.assertThat(refLogResponse2.getLogEntries().get(0).getRefLogId())
         .isEqualTo(refLogResponse1.getToken());
-    assertThat(refLogResponse2.getLogEntries().subList(0, 8))
-        .isEqualTo(refLogResponse.getLogEntries().subList(2, 10));
+    soft.assertThat(refLogResponse2.getLogEntries().subList(0, 5))
+        .isEqualTo(refLogResponse.getLogEntries().subList(2, 7));
     // verify startHash and endHash
     RefLogResponse refLogResponse3 =
-        getApi().getRefLog().fromHash(refLogResponse.getLogEntries().get(7).getRefLogId()).get();
-    assertThat(refLogResponse3.getLogEntries().subList(0, 2))
-        .isEqualTo(refLogResponse.getLogEntries().subList(7, 9));
+        getApi().getRefLog().fromHash(refLogResponse.getLogEntries().get(4).getRefLogId()).get();
+    soft.assertThat(refLogResponse3.getLogEntries().subList(0, 2))
+        .isEqualTo(refLogResponse.getLogEntries().subList(4, 6));
     RefLogResponse refLogResponse4 =
         getApi()
             .getRefLog()
             .fromHash(refLogResponse.getLogEntries().get(3).getRefLogId())
             .untilHash(refLogResponse.getLogEntries().get(5).getRefLogId())
             .get();
-    assertThat(refLogResponse4.getLogEntries())
+    soft.assertThat(refLogResponse4.getLogEntries())
         .isEqualTo(refLogResponse.getLogEntries().subList(3, 6));
 
     // use invalid reflog id f1234d75178d892a133a410355a5a990cf75d2f33eba25d575943d4df632f3a4
     // computed using Hash.of(
     //    UnsafeByteOperations.unsafeWrap(newHasher().putString("invalid",
     // StandardCharsets.UTF_8).hash().asBytes()));
-    assertThatThrownBy(
+    soft.assertThatThrownBy(
             () ->
                 getApi()
                     .getRefLog()
@@ -200,26 +140,23 @@ public abstract class AbstractRestRefLog extends AbstractRestReferences {
         .isInstanceOf(NessieRefLogNotFoundException.class)
         .hasMessageContaining(
             "RefLog entry for 'f1234d75178d892a133a410355a5a990cf75d2f33eba25d575943d4df632f3a4' does not exist");
-    // verify source hashes for assign reference
-    assertThat(refLogResponse.getLogEntries().get(3).getSourceHashes())
-        .isEqualTo(Collections.singletonList(createdBranch1.getHash()));
     // test filter with stream
     List<RefLogResponse.RefLogResponseEntry> filteredResult =
         StreamingUtil.getReflogStream(
                 getApi(),
                 builder ->
                     builder.filter(
-                        "reflog.operation == 'ASSIGN_REFERENCE' "
+                        "reflog.operation == 'CREATE_REFERENCE' "
                             + "&& reflog.refName == '"
                             + tagName
                             + "'"),
                 OptionalInt.empty())
             .collect(Collectors.toList());
-    assertThat(filteredResult.size()).isEqualTo(1);
-    assertThat(filteredResult.get(0))
+    soft.assertThat(filteredResult.size()).isEqualTo(1);
+    soft.assertThat(filteredResult.get(0))
         .extracting(
             RefLogResponse.RefLogResponseEntry::getRefName,
             RefLogResponse.RefLogResponseEntry::getOperation)
-        .isEqualTo(expectedEntries.get(3).toList());
+        .isEqualTo(expectedEntries.get(5).toList());
   }
 }

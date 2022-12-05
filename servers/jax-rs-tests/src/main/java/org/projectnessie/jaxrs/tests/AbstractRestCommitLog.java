@@ -31,7 +31,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.OptionalInt;
-import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -40,12 +39,14 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.StreamingUtil;
+import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.ext.NessieApiVersion;
 import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
@@ -407,17 +408,36 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
 
     String currentHash = branch.getHash();
     List<String> allMessages = new ArrayList<>();
+    ContentKey key = ContentKey.of("table");
     for (int i = 0; i < commits; i++) {
       String msg = "message-for-" + i;
       allMessages.add(msg);
-      IcebergTable tableMeta = IcebergTable.of("some-file-" + i, 42, 42, 42, 42);
+
+      Content existing =
+          getApi()
+              .getContent()
+              .refName(branch.getName())
+              .hashOnRef(currentHash)
+              .key(key)
+              .get()
+              .get(key);
+
+      Put op;
+      if (existing != null) {
+        op =
+            Put.of(
+                key, IcebergTable.of("some-file-" + i, 42, 42, 42, 42, existing.getId()), existing);
+      } else {
+        op = Put.of(key, IcebergTable.of("some-file-" + i, 42, 42, 42, 42));
+      }
+
       String nextHash =
           getApi()
               .commitMultipleOperations()
               .branchName(branch.getName())
               .hash(currentHash)
               .commitMeta(CommitMeta.fromMessage(msg))
-              .operation(Put.of(ContentKey.of("table"), tableMeta))
+              .operation(op)
               .commit()
               .getHash();
       soft.assertThat(nextHash).isNotEqualTo(currentHash);
@@ -443,7 +463,7 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
   @EnumSource(ReferenceMode.class)
   public void commitLogExtended(ReferenceMode refMode) throws Exception {
     String branch = "commitLogExtended";
-    String firstParent =
+    String root =
         getApi()
             .createReference()
             .sourceRefName("main")
@@ -453,9 +473,24 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
 
     int numCommits = 10;
 
-    // Hack for tests running via Quarkus :(
-    IntFunction<String> c1 = i -> refMode.name() + "-c1-" + i;
-    IntFunction<String> c2 = i -> refMode.name() + "-c2-" + i;
+    CommitMultipleOperationsBuilder initialCommit = getApi().commitMultipleOperations();
+    IntStream.rangeClosed(1, numCommits)
+        .forEach(
+            i ->
+                initialCommit
+                    .operation(
+                        Put.of(
+                            ContentKey.of("delete" + i),
+                            IcebergTable.of("delete-" + i, i, i, i, i)))
+                    .operation(
+                        Put.of(
+                            ContentKey.of("unchanged" + i),
+                            IcebergTable.of("unchanged-" + i, i, i, i, i))));
+    initialCommit
+        .commitMeta(CommitMeta.fromMessage("Initial commit"))
+        .branchName(branch)
+        .hash(root);
+    String initialHash = initialCommit.commit().getHash();
 
     List<String> hashes =
         IntStream.rangeClosed(1, numCommits)
@@ -466,13 +501,10 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
                     return getApi()
                         .commitMultipleOperations()
                         .operation(
-                            Put.of(
-                                ContentKey.of("k" + i),
-                                IcebergTable.of("m" + i, i, i, i, i, c1.apply(i))))
+                            Put.of(ContentKey.of("k" + i), IcebergTable.of("m" + i, i, i, i, i)))
                         .operation(
                             Put.of(
-                                ContentKey.of("key" + i),
-                                IcebergTable.of("meta" + i, i, i, i, i, c2.apply(i))))
+                                ContentKey.of("key" + i), IcebergTable.of("meta" + i, i, i, i, i)))
                         .operation(Delete.of(ContentKey.of("delete" + i)))
                         .operation(Unchanged.of(ContentKey.of("unchanged" + i)))
                         .commitMeta(CommitMeta.fromMessage("Commit #" + i))
@@ -486,7 +518,7 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
                 })
             .collect(Collectors.toList());
     List<String> parentHashes =
-        Stream.concat(Stream.of(firstParent), hashes.subList(0, 9).stream())
+        Stream.concat(Stream.of(initialHash), hashes.subList(0, 9).stream())
             .collect(Collectors.toList());
 
     Reference branchRef = getApi().getReference().refName(branch).get();
@@ -495,7 +527,7 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
             Lists.reverse(
                 getApi()
                     .getCommitLog()
-                    .untilHash(firstParent)
+                    .untilHash(hashes.get(0))
                     .reference(refMode.transform(branchRef))
                     .stream()
                     .collect(Collectors.toList())))
@@ -515,7 +547,7 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
                 .getCommitLog()
                 .fetch(FetchOption.ALL)
                 .reference(refMode.transform(branchRef))
-                .untilHash(firstParent)
+                .untilHash(hashes.get(0))
                 .stream()
                 .collect(Collectors.toList()));
     soft.assertThat(IntStream.rangeClosed(1, numCommits))
@@ -527,19 +559,16 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
                       e -> e.getCommitMeta().getMessage(),
                       e -> e.getCommitMeta().getHash(),
                       LogEntry::getParentCommitHash,
-                      LogEntry::getOperations)
+                      e -> operationsWithoutContentId(e.getOperations()))
                   .containsExactly(
                       "Commit #" + i,
                       hashes.get(i - 1),
                       parentHashes.get(i - 1),
                       Arrays.asList(
                           Delete.of(ContentKey.of("delete" + i)),
+                          Put.of(ContentKey.of("k" + i), IcebergTable.of("m" + i, i, i, i, i)),
                           Put.of(
-                              ContentKey.of("k" + i),
-                              IcebergTable.of("m" + i, i, i, i, i, c1.apply(i))),
-                          Put.of(
-                              ContentKey.of("key" + i),
-                              IcebergTable.of("meta" + i, i, i, i, i, c2.apply(i)))));
+                              ContentKey.of("key" + i), IcebergTable.of("meta" + i, i, i, i, i))));
             });
   }
 
