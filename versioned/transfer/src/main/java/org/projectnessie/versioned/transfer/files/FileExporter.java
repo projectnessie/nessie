@@ -15,12 +15,20 @@
  */
 package org.projectnessie.versioned.transfer.files;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+import static java.nio.file.Files.createDirectories;
+import static java.nio.file.Files.exists;
+import static java.nio.file.Files.isDirectory;
+import static java.nio.file.Files.newOutputStream;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 import org.immutables.value.Value;
 
 /** Nessie exporter that writes to individual files into an empty target directory. */
@@ -40,22 +48,36 @@ public abstract class FileExporter implements ExportFileSupplier {
   abstract Path targetDirectory();
 
   @Override
+  @Nonnull
+  public Path getTargetPath() {
+    return targetDirectory();
+  }
+
+  @Override
   public void preValidate() throws IOException {
-    if (Files.isDirectory(targetDirectory())) {
+    if (isDirectory(targetDirectory())) {
       try (Stream<Path> listing = Files.list(targetDirectory())) {
-        Preconditions.checkState(
+        checkState(
             !listing.findAny().isPresent(),
             "Target directory %s must be empty, but is not",
             targetDirectory());
       }
     } else {
-      Files.createDirectories(targetDirectory());
+      createDirectories(targetDirectory());
     }
   }
 
   @Override
-  public OutputStream newFileOutput(String fileName) throws IOException {
-    return Files.newOutputStream(targetDirectory().resolve(fileName));
+  @Nonnull
+  public OutputStream newFileOutput(@Nonnull String fileName) throws IOException {
+    checkArgument(
+        fileName.indexOf('/') == -1 && fileName.indexOf('\\') == -1, "Directories not supported");
+    Path f = Paths.get(fileName);
+    checkArgument(!fileName.isEmpty(), "Invalid file name argument");
+
+    f = targetDirectory().resolve(f);
+    checkState(!exists(f), "File %s already exists", fileName);
+    return newOutputStream(f);
   }
 
   @Override
