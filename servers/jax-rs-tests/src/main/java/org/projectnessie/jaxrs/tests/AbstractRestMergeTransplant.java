@@ -366,13 +366,27 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalid {
   public void mergeWithNamespaces(ReferenceMode refMode) throws BaseNessieClientServerException {
     Branch root = createBranch("root");
 
-    Namespace ns = Namespace.parse("a.b.c");
-    // create the same namespace on both branches
-    getApi().createNamespace().namespace(ns).refName(root.getName()).create();
-    root = (Branch) getApi().getReference().refName(root.getName()).get();
+    // common ancestor commit
+    ContentKey something = ContentKey.of("something");
+    root =
+        getApi()
+            .commitMultipleOperations()
+            .branchName(root.getName())
+            .hash(root.getHash())
+            .commitMeta(CommitMeta.fromMessage("test-branch1"))
+            .operation(Put.of(something, IcebergTable.of("something", 42, 43, 44, 45)))
+            .commit();
 
     Branch base = createBranch("merge-base", root);
     Branch branch = createBranch("merge-branch", root);
+
+    // create the same namespace on both branches
+    Namespace ns = Namespace.parse("a.b.c");
+    getApi().createNamespace().namespace(ns).refName(base.getName()).create();
+    getApi().createNamespace().namespace(ns).refName(branch.getName()).create();
+
+    base = (Branch) getApi().getReference().refName(base.getName()).get();
+    branch = (Branch) getApi().getReference().refName(branch.getName()).get();
 
     IcebergTable table1 = IcebergTable.of("table1", 42, 42, 42, 42);
     IcebergTable table2 = IcebergTable.of("table2", 43, 43, 43, 43);
@@ -438,7 +452,7 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalid {
     soft.assertThat(
             getApi().getEntries().refName(base.getName()).get().getEntries().stream()
                 .map(Entry::getName))
-        .containsExactlyInAnyOrder(key1, key2, ContentKey.of(ns.getElements()));
+        .containsExactlyInAnyOrder(something, key1, key2, ContentKey.of(ns.getElements()));
 
     soft.assertThat(getApi().getNamespace().refName(base.getName()).namespace(ns).get())
         .isNotNull();
