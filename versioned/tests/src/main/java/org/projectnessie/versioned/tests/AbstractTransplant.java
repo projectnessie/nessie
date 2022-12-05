@@ -32,6 +32,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Content;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
@@ -100,9 +101,11 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     firstCommit =
         commit("Initial Commit").put(T_1, V_1_1).put(T_2, V_2_1).put(T_3, V_3_1).toBranch(branch);
 
+    Content t1 = store().getValue(branch, Key.of("t1"));
+
     secondCommit =
         commit("Second Commit")
-            .put(T_1, V_1_2)
+            .put("t1", V_1_2.withId(t1), t1)
             .delete(T_2)
             .delete(T_3)
             .put(T_4, V_4_1)
@@ -317,7 +320,8 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     final BranchName newBranch = BranchName.of("bar_7");
     store().create(newBranch, Optional.empty());
     commit("Another commit").put(T_5, V_5_1).toBranch(newBranch);
-    commit("Another commit").put(T_5, V_1_4).toBranch(newBranch);
+    Content t5 = store().getValue(newBranch, Key.of(T_5));
+    commit("Another commit").put(T_5, V_1_4.withId(t5), t5).toBranch(newBranch);
 
     store()
         .transplant(

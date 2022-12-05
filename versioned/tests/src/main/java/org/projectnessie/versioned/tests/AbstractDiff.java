@@ -26,6 +26,7 @@ import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.projectnessie.model.Content;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.Hash;
@@ -56,8 +57,13 @@ public abstract class AbstractDiff extends AbstractNestedVersionStore {
     Hash initial = store().hashOnReference(branch, Optional.empty());
 
     Hash firstCommit = commit("First Commit").put("k1", V_1).put("k2", V_2).toBranch(branch);
+    Content k2 = store().getValue(branch, Key.of("k2"));
     Hash secondCommit =
-        commit("Second Commit").put("k2", V_2_A).put("k3", V_3).put("k1a", V_1_A).toBranch(branch);
+        commit("Second Commit")
+            .put("k2", V_2_A.withId(k2), k2)
+            .put("k3", V_3)
+            .put("k1a", V_1_A)
+            .toBranch(branch);
 
     List<Diff> startToSecond = diffAsList(initial, secondCommit);
     soft.assertThat(diffsWithoutContentId(startToSecond))

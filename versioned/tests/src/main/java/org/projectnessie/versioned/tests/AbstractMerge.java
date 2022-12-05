@@ -36,6 +36,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Content;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.GetNamedRefsParams;
@@ -94,12 +95,16 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
     firstCommit =
         commit("First Commit").put("t1", V_1_1).put("t2", V_2_1).put("t3", V_3_1).toBranch(branch);
+
+    Content t1 = store().getValue(branch, Key.of("t1"));
+
     commit("Second Commit")
-        .put("t1", V_1_2)
+        .put("t1", V_1_2.withId(t1), t1)
         .delete("t2")
         .delete("t3")
         .put("t4", V_4_1)
         .toBranch(branch);
+
     thirdCommit = commit("Third Commit").put("t2", V_2_2).unchanged("t4").toBranch(branch);
 
     commits = commitsList(branch, false).subList(0, 3);
@@ -443,6 +448,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 Optional.empty(),
                 CommitMeta.fromMessage("commit 1"),
                 singletonList(Put.of(key, VALUE_1)));
+    Content v = store().getValue(etl, key);
     MergeResult<Commit> mergeResult1 =
         store()
             .merge(
@@ -463,7 +469,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 etl,
                 Optional.empty(),
                 CommitMeta.fromMessage("commit 2"),
-                singletonList(Put.of(key, VALUE_2)));
+                singletonList(Put.of(key, VALUE_2.withId(v), v)));
     MergeResult<Commit> mergeResult2 =
         store()
             .merge(
