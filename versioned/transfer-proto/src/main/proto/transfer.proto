@@ -27,6 +27,7 @@ message ExportMeta {
   int64 commit_count = 4;
   repeated string named_references_files = 5;
   repeated string commits_files = 6;
+  optional string nessie_version = 7;
 }
 
 enum ExportVersion {

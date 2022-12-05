@@ -19,6 +19,7 @@ import com.google.protobuf.ByteString;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
@@ -215,6 +216,19 @@ public class ImportRepository extends BaseCommand {
       switch (progress) {
         case END_META:
           this.exportMeta = meta;
+          String nessieVersion = meta.getNessieVersion();
+          if (nessieVersion == null || nessieVersion.isEmpty()) {
+            nessieVersion = "(unknown, before 0.46)";
+          }
+          out.printf(
+              "Export was created by Nessie version %s on %s, "
+                  + "containing %d named references (in %d files) and %d commits (in %d files).%n",
+              nessieVersion,
+              Instant.ofEpochMilli(meta.getCreatedMillisEpoch()),
+              meta.getNamedReferencesCount(),
+              meta.getNamedReferencesFilesCount(),
+              meta.getCommitCount(),
+              meta.getCommitsFilesCount());
           break;
         case START_COMMITS:
           out.printf("Importing %d commits...%n", exportMeta.getCommitCount());
