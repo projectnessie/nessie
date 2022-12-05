@@ -80,7 +80,6 @@ public interface ApiDoc {
       "Specifies a named branch or tag reference.\n"
           + "\n"
           + "A named reference can be specification in these forms:\n"
-          + "- \\- (literal minus character) - Identifies the default branch.\n"
           + "- name - Identifies a branch or tag without a concrete HEAD 'hash' value.\n"
           + "- name@hash - Identifies the 'hash' commit on a branch or tag.\n"
           + "\n"

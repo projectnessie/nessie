@@ -357,7 +357,6 @@ public interface HttpTreeApi extends TreeApi {
               examples = {
                 @ExampleObject(ref = "ref"),
                 @ExampleObject(ref = "refWithHash"),
-                @ExampleObject(ref = "refDefault"),
               })
           @PathParam("ref")
           String ref,
@@ -405,7 +404,6 @@ public interface HttpTreeApi extends TreeApi {
               examples = {
                 @ExampleObject(ref = "ref"),
                 @ExampleObject(ref = "refWithHash"),
-                @ExampleObject(ref = "refDefault"),
               })
           @PathParam("ref")
           String ref)

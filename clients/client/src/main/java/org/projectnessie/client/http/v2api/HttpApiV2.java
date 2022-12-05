@@ -69,7 +69,7 @@ public class HttpApiV2 implements NessieApiV2 {
     return (Branch)
         client
             .newRequest()
-            .path("trees/main") // TODO: use trees/-
+            .path("trees/-")
             .unwrap(NessieNotFoundException.class)
             .get()
             .readEntity(SingleReferenceResponse.class)
