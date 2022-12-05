@@ -15,15 +15,12 @@
  */
 package org.projectnessie.versioned.transfer;
 
-import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import org.projectnessie.versioned.ContentAttachment;
-import org.projectnessie.versioned.ContentAttachmentKey;
-import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 
@@ -31,13 +28,12 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
  * Buffers a configurable amount of objects and passes those as batches to a consumer, should be
  * used in a <em>try-with-resource</em>.
  */
-final class BatchWriter<K, T> implements AutoCloseable {
-  private final Map<K, T> buffer;
+final class BatchWriter<T> implements AutoCloseable {
+  private final Set<T> buffer;
   private final int capacity;
   private final Consumer<List<T>> flush;
-  private final Function<T, K> keyExtractor;
 
-  static BatchWriter<Hash, CommitLogEntry> commitBatchWriter(
+  static BatchWriter<CommitLogEntry> commitBatchWriter(
       int batchSize, DatabaseAdapter databaseAdapter) {
     return new BatchWriter<>(
         batchSize,
@@ -49,45 +45,31 @@ final class BatchWriter<K, T> implements AutoCloseable {
           } catch (Exception e) {
             throw new RuntimeException(e);
           }
-        },
-        CommitLogEntry::getHash);
+        });
   }
 
-  static BatchWriter<ContentAttachmentKey, ContentAttachment> attachmentsBatchWriter(
+  static BatchWriter<ContentAttachment> attachmentsBatchWriter(
       int batchSize, DatabaseAdapter databaseAdapter) {
     return new BatchWriter<>(
-        batchSize,
-        attachments -> databaseAdapter.putAttachments(attachments.stream()),
-        ContentAttachment::getKey);
+        batchSize, attachments -> databaseAdapter.putAttachments(attachments.stream()));
   }
 
-  BatchWriter(int capacity, Consumer<List<T>> flush, Function<T, K> keyExtractor) {
+  BatchWriter(int capacity, Consumer<List<T>> flush) {
     this.capacity = capacity;
     this.flush = flush;
-    this.keyExtractor = keyExtractor;
-    this.buffer = Maps.newHashMapWithExpectedSize(capacity);
+    this.buffer = Sets.newLinkedHashSetWithExpectedSize(capacity);
   }
 
   void add(T entity) {
-    K key = keyExtractor.apply(entity);
-    buffer.put(key, entity);
+    buffer.add(entity);
     if (buffer.size() == capacity) {
       flush();
     }
   }
 
-  T useBuffered(T other) {
-    K key = keyExtractor.apply(other);
-    return buffer.getOrDefault(key, other);
-  }
-
-  T get(K key) {
-    return buffer.get(key);
-  }
-
   private void flush() {
     if (!buffer.isEmpty()) {
-      ArrayList<T> list = new ArrayList<>(buffer.values());
+      ArrayList<T> list = new ArrayList<>(buffer);
       buffer.clear();
       flush.accept(list);
     }

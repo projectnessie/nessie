@@ -26,7 +26,6 @@ import org.projectnessie.model.Content;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.CommitMetaSerializer;
 import org.projectnessie.versioned.ContentAttachment;
-import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
@@ -98,9 +97,9 @@ final class ImportDatabaseAdapter extends ImportCommon {
     int keyListDistance =
         requireNonNull(importer.databaseAdapter()).getConfig().getKeyListDistance();
 
-    try (BatchWriter<Hash, CommitLogEntry> commitBatchWriter =
+    try (BatchWriter<CommitLogEntry> commitBatchWriter =
             BatchWriter.commitBatchWriter(importer.commitBatchSize(), importer.databaseAdapter());
-        BatchWriter<ContentAttachmentKey, ContentAttachment> attachmentsBatchWriter =
+        BatchWriter<ContentAttachment> attachmentsBatchWriter =
             BatchWriter.attachmentsBatchWriter(
                 importer.attachmentBatchSize(), importer.databaseAdapter())) {
 
