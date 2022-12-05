@@ -58,6 +58,7 @@ smallryeOpenApi {
 
 val processResources =
   tasks.named<ProcessResources>("processResources") {
+    inputs.property("projectVersion", project.version)
     filter(ReplaceTokens::class, mapOf("tokens" to mapOf("projectVersion" to project.version)))
   }
 
