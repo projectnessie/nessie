@@ -30,6 +30,7 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
 
 @Beta
 public final class ReferencesUtil {
@@ -107,7 +108,9 @@ public final class ReferencesUtil {
                 if (!parents.add(parent)) {
                   // If "parent" has already been added to the set of parents, then it must be a
                   // fork point.
-                  forkPoints.add(parent);
+                  if (!AbstractDatabaseAdapter.NO_ANCESTOR.equals(parent)) {
+                    forkPoints.add(parent);
+                  }
                 } else {
                   // Commits in "parents" that are also contained in "heads" cannot be HEADs.
                   // This can happen because the commits are scanned in "random order".
