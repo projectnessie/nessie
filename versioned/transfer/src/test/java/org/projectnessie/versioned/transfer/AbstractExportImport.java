@@ -181,6 +181,10 @@ public abstract class AbstractExportImport {
                 new Class[] {DatabaseAdapter.class},
                 (proxy, method, args) -> {
                   switch (method.getName()) {
+                    case "eraseRepo":
+                    case "initializeRepo":
+                    case "delete":
+                      return null;
                     case "getConfig":
                       return config;
                     case "writeMultipleCommits":

@@ -20,16 +20,12 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
-import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
-import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.HeadsAndForkPoints;
 import org.projectnessie.versioned.persist.adapter.ImmutableHeadsAndForkPoints;
@@ -137,17 +133,6 @@ public class ImportRepository extends BaseCommand {
         }
       }
 
-      // Perform erase + initialize to reset any non-obvious contents (global log, global
-      // state, ref-log, repository description, etc).
-      out.println("Erasing potentially existing repository...");
-      databaseAdapter.eraseRepo();
-      databaseAdapter.initializeRepo("main");
-      try {
-        databaseAdapter.delete(BranchName.of("main"), Optional.empty());
-      } catch (ReferenceNotFoundException | ReferenceConflictException e) {
-        throw new RuntimeException(e);
-      }
-
       ImportResult importResult =
           builder
               .progressListener(new ImportProgressListener(out))
@@ -214,10 +199,16 @@ public class ImportRepository extends BaseCommand {
     @Override
     public void progress(@Nonnull ProgressEvent progress, ExportMeta meta) {
       switch (progress) {
+        case START_PREPARE:
+          out.printf("Preparing repository...%n");
+          dot = false;
+          break;
+        case END_PREPARE:
+          break;
         case END_META:
           this.exportMeta = meta;
           String nessieVersion = meta.getNessieVersion();
-          if (nessieVersion == null || nessieVersion.isEmpty()) {
+          if (nessieVersion.isEmpty()) {
             nessieVersion = "(unknown, before 0.46)";
           }
           out.printf(

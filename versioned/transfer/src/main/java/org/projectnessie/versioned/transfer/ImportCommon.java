@@ -35,6 +35,10 @@ abstract class ImportCommon {
   ImportResult importRepo() throws IOException {
     HeadsAndForks headsAndForks = importer.loadHeadsAndForks();
 
+    importer.progressListener().progress(ProgressEvent.START_PREPARE);
+    prepareRepository();
+    importer.progressListener().progress(ProgressEvent.END_PREPARE);
+
     importer.progressListener().progress(ProgressEvent.START_COMMITS);
     long commitCount = importCommits();
     importer.progressListener().progress(ProgressEvent.END_COMMITS);
@@ -52,6 +56,8 @@ abstract class ImportCommon {
         .importedReferenceCount(namedReferenceCount)
         .build();
   }
+
+  abstract void prepareRepository() throws IOException;
 
   abstract long importNamedReferences() throws IOException;
 

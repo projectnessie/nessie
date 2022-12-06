@@ -17,6 +17,8 @@ package org.projectnessie.versioned.transfer;
 
 public enum ProgressEvent {
   FINISHED,
+  START_PREPARE,
+  END_PREPARE,
   START_NAMED_REFERENCES,
   NAMED_REFERENCE_WRITTEN,
   END_NAMED_REFERENCES,
