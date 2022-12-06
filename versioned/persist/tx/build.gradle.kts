@@ -52,8 +52,6 @@ dependencies {
   testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
-tasks.named<Test>("test") { maxParallelForks = Runtime.getRuntime().availableProcessors() }
-
 tasks.named<Test>("intTest") {
   systemProperty("it.nessie.dbs", System.getProperty("it.nessie.dbs", "postgres"))
   systemProperty(

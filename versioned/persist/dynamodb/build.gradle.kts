@@ -49,5 +49,3 @@ dependencies {
   testImplementation(libs.bundles.junit.testing)
   testRuntimeOnly(libs.junit.jupiter.engine)
 }
-
-tasks.named<Test>("test") { maxParallelForks = Runtime.getRuntime().availableProcessors() }
