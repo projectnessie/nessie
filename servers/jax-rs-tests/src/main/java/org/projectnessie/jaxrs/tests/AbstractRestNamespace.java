@@ -108,6 +108,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
     Namespace four = createNamespace.apply("one.two");
     for (Namespace namespace : Arrays.asList(one, two, three, four)) {
       soft.assertThat(namespace).isNotNull();
+      soft.assertThat(namespace.getId()).isNotNull();
     }
 
     soft.assertThat(
@@ -543,6 +544,8 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
             .reference(branch)
             .create();
     soft.assertThat(ns.getProperties()).isEqualTo(properties);
+    soft.assertThat(ns.getId()).isNotNull();
+    String nsId = ns.getId();
 
     soft.assertThatThrownBy(
             () ->
@@ -583,6 +586,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
     Branch updated = (Branch) getApi().getReference().refName(branch.getName()).get();
     ns = getApi().getNamespace().reference(updated).namespace(namespace).get();
     soft.assertThat(ns.getProperties()).isEqualTo(properties);
+    soft.assertThat(ns.getId()).isEqualTo(nsId);
 
     getApi()
         .updateProperties()
@@ -600,5 +604,6 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
     updated = (Branch) getApi().getReference().refName(branch.getName()).get();
     ns = getApi().getNamespace().reference(updated).namespace(namespace).get();
     soft.assertThat(ns.getProperties()).isEqualTo(ImmutableMap.of("key1", "xyz", "key3", "val3"));
+    soft.assertThat(ns.getId()).isEqualTo(nsId);
   }
 }
