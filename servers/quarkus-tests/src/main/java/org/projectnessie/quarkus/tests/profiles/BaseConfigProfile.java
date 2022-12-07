@@ -24,7 +24,7 @@ public class BaseConfigProfile implements QuarkusTestProfile {
   public static final String TEST_REPO_ID = "nessie-test";
 
   public static final Map<String, String> CONFIG_OVERRIDES =
-      ImmutableMap.<String, String>builder().put("quarkus.jaeger.sampler-type", "const").build();
+      ImmutableMap.<String, String>builder().build();
 
   public static final Map<String, String> VERSION_STORE_CONFIG;
 
