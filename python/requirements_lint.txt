@@ -28,3 +28,4 @@ mypy==1.3.0
 pytest-mypy==0.10.3
 pylint==2.17.4
 pylintfileheader==0.3.2
+ruff==0.0.267

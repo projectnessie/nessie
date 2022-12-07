@@ -1,3 +1,40 @@
+[tool.ruff]
+exclude = ['docs']
+ignore = [
+    'ANN101',
+    'ANN401',
+    'S101',
+    'I001',  # ruff does not support flake8 "import-order-style = smarkets" yet
+]
+line-length = 140
+select = [
+    'ANN',
+    'B',
+    'C',
+    'E',
+    'F',
+    'I',
+    'S',
+    'W',
+]
+# equivalent to flake8 "--docstring-convention=google"
+extend-select = ["D"]
+extend-ignore = [
+    "D203",
+    "D204",
+    "D213",
+    "D215",
+    "D400",
+    "D401",  # new: imperative mood
+    "D404",
+    "D406",
+    "D407",
+    "D408",
+    "D409",
+    "D412",
+    "D413",
+]
+
 [tool.black]
 line-length = 140
 include = '\.pyi?$'
