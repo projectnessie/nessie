@@ -59,8 +59,6 @@ public abstract class AbstractITCommitLogOptimization {
 
   static Stream<Arguments> multipleBranches() {
     return Stream.of(
-        arguments(5, 19, 19, 19, 19, true),
-        // TODO ^^ to 46
         arguments(0, 0, 1, 0, 0, false),
         arguments(0, 0, 19, 0, 0, false),
         arguments(0, 0, 20, 0, 0, false),
@@ -112,6 +110,7 @@ public abstract class AbstractITCommitLogOptimization {
         arguments(3, 21, 0, 0, 0, false),
         arguments(3, 21, 1, 1, 1, true),
         // 46
+        arguments(5, 19, 19, 19, 19, true),
         arguments(5, 20, 20, 20, 20, false),
         arguments(5, 21, 21, 21, 21, true));
   }
