@@ -24,7 +24,8 @@ import org.projectnessie.model.Reference;
  *
  * @since {@link NessieApiV1}
  */
-public interface GetDiffBuilder {
+public interface GetDiffBuilder
+    extends PagingBuilder<GetDiffBuilder, DiffResponse, DiffResponse.DiffEntry> {
 
   GetDiffBuilder fromRefName(String fromRefName);
 
@@ -50,5 +51,6 @@ public interface GetDiffBuilder {
     return r;
   }
 
+  @Override
   DiffResponse get() throws NessieNotFoundException;
 }

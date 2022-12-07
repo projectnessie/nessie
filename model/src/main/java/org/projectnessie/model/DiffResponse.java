@@ -27,7 +27,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableDiffResponse.class)
 @JsonDeserialize(as = ImmutableDiffResponse.class)
-public interface DiffResponse {
+public interface DiffResponse extends PaginatedResponse {
 
   List<DiffEntry> getDiffs();
 

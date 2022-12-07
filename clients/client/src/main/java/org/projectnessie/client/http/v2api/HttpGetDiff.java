@@ -15,26 +15,39 @@
  */
 package org.projectnessie.client.http.v2api;
 
+import org.projectnessie.api.v2.params.DiffParams;
 import org.projectnessie.client.builder.BaseGetDiffBuilder;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.DiffResponse;
 import org.projectnessie.model.Reference;
 
-final class HttpGetDiff extends BaseGetDiffBuilder {
+final class HttpGetDiff extends BaseGetDiffBuilder<DiffParams> {
   private final HttpClient client;
 
   HttpGetDiff(HttpClient client) {
+    super(DiffParams::forNextPage);
     this.client = client;
   }
 
   @Override
-  public DiffResponse get() throws NessieNotFoundException {
+  protected DiffParams params() {
+    return DiffParams.builder()
+        .fromRef(Reference.toPathString(fromRefName, fromHashOnRef))
+        .toRef(Reference.toPathString(toRefName, toHashOnRef))
+        .maxRecords(maxRecords)
+        .build();
+  }
+
+  @Override
+  public DiffResponse get(DiffParams params) throws NessieNotFoundException {
     return client
         .newRequest()
         .path("trees/{from}/diff/{to}")
-        .resolveTemplate("from", Reference.toPathString(fromRefName, fromHashOnRef))
-        .resolveTemplate("to", Reference.toPathString(toRefName, toHashOnRef))
+        .resolveTemplate("from", params.getFromRef())
+        .resolveTemplate("to", params.getToRef())
+        .queryParam("max-records", params.maxRecords())
+        .queryParam("page-token", params.pageToken())
         .unwrap(NessieNotFoundException.class)
         .get()
         .readEntity(DiffResponse.class);

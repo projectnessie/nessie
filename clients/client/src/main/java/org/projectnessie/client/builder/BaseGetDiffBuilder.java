@@ -15,14 +15,27 @@
  */
 package org.projectnessie.client.builder;
 
+import java.util.function.BiFunction;
+import java.util.stream.Stream;
+import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.api.GetDiffBuilder;
+import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.DiffResponse;
 
-public abstract class BaseGetDiffBuilder implements GetDiffBuilder {
+public abstract class BaseGetDiffBuilder<PARAMS> implements GetDiffBuilder {
 
+  private final BiFunction<PARAMS, String, PARAMS> paramsForPage;
+  private String pageToken;
+
+  protected Integer maxRecords;
   protected String fromRefName;
   protected String fromHashOnRef;
   protected String toRefName;
   protected String toHashOnRef;
+
+  protected BaseGetDiffBuilder(BiFunction<PARAMS, String, PARAMS> paramsForPage) {
+    this.paramsForPage = paramsForPage;
+  }
 
   @Override
   public GetDiffBuilder fromRefName(String fromRefName) {
@@ -46,5 +59,33 @@ public abstract class BaseGetDiffBuilder implements GetDiffBuilder {
   public GetDiffBuilder toHashOnRef(String toHashOnRef) {
     this.toHashOnRef = toHashOnRef;
     return this;
+  }
+
+  @Override
+  public GetDiffBuilder maxRecords(int maxRecords) {
+    this.maxRecords = maxRecords;
+    return this;
+  }
+
+  @Override
+  public GetDiffBuilder pageToken(String pageToken) {
+    this.pageToken = pageToken;
+    return this;
+  }
+
+  @Override
+  public DiffResponse get() throws NessieNotFoundException {
+    return get(paramsForPage.apply(params(), pageToken));
+  }
+
+  protected abstract PARAMS params();
+
+  protected abstract DiffResponse get(PARAMS p) throws NessieNotFoundException;
+
+  @Override
+  public Stream<DiffResponse.DiffEntry> stream() throws NessieNotFoundException {
+    PARAMS p = params();
+    return StreamingUtil.generateStream(
+        DiffResponse::getDiffs, pageToken -> get(paramsForPage.apply(p, pageToken)));
   }
 }
