@@ -34,7 +34,6 @@ dependencies {
   annotationProcessor(libs.immutables.value.processor)
   implementation(libs.findbugs.jsr305)
   implementation(libs.rocksdb.jni)
-  compileOnly(libs.graalvm.nativeimage.svm)
 
   testImplementation(project(":nessie-versioned-tests"))
   testImplementation(project(":nessie-versioned-persist-testextension"))
