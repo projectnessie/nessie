@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.gc.repository.NessieRepositoryConnector;
 import org.projectnessie.gc.repository.RepositoryConnector;
@@ -70,7 +71,7 @@ public class NessieOptions {
           .withUri(nessieUri)
           .fromSystemProperties()
           .fromConfig(nessieOptions::get)
-          .build(NessieApiV1.class);
+          .build(NessieApiV2.class);
     } catch (ClassNotFoundException
         | IllegalAccessException
         | InvocationTargetException
