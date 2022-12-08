@@ -69,7 +69,11 @@ public abstract class AbstractTestEntries extends BaseTestServiceImpl {
               "666f6f",
               false,
               new UnlimitedListResponseHandler<>(),
-              h -> {});
+              h -> {},
+              null,
+              null,
+              null,
+              null);
     } catch (IllegalArgumentException e) {
       if (!e.getMessage().contains("Paging not supported")) {
         throw e;

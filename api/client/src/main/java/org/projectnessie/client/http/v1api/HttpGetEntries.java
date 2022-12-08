@@ -15,10 +15,13 @@
  */
 package org.projectnessie.client.http.v1api;
 
+import java.util.Collection;
 import org.projectnessie.api.v1.params.EntriesParams;
+import org.projectnessie.client.api.GetEntriesBuilder;
 import org.projectnessie.client.builder.BaseGetEntriesBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse;
 
 final class HttpGetEntries extends BaseGetEntriesBuilder<EntriesParams> {
@@ -38,6 +41,33 @@ final class HttpGetEntries extends BaseGetEntriesBuilder<EntriesParams> {
         .maxRecords(maxRecords)
         .hashOnRef(hashOnRef)
         .build();
+  }
+
+  @Override
+  public HttpGetEntries key(ContentKey key) {
+    throw new UnsupportedOperationException(
+        "Requesting individual keys is not supported in API v1.");
+  }
+
+  @Override
+  public HttpGetEntries keys(Collection<ContentKey> keys) {
+    throw new UnsupportedOperationException(
+        "Requesting individual keys is not supported in API v1.");
+  }
+
+  @Override
+  public HttpGetEntries minKey(ContentKey minKey) {
+    throw new UnsupportedOperationException("Requesting key ranges is not supported in API v1.");
+  }
+
+  @Override
+  public HttpGetEntries maxKey(ContentKey maxKey) {
+    throw new UnsupportedOperationException("Requesting key ranges is not supported in API v1.");
+  }
+
+  @Override
+  public GetEntriesBuilder prefixKey(ContentKey prefixKey) {
+    throw new UnsupportedOperationException("Requesting key ranges is not supported in API v1.");
   }
 
   @Override

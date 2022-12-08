@@ -29,13 +29,13 @@ import static java.time.temporal.ChronoField.YEAR;
 import static java.util.Collections.emptyList;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.newCommitHeaders;
 
-import com.google.common.base.Splitter;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.format.SignStyle;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,9 +62,6 @@ public final class TypeMapping {
   public static final String SIGNED_OFF_BY = "signed-off-by";
   public static final String COMMITTER = "committer";
   public static final String AUTHOR = "author";
-
-  private static final Splitter SPLITTER_ZERO = Splitter.on('\u0000');
-  private static final Splitter SPLITTER_ONE = Splitter.on('\u0001');
 
   private TypeMapping() {}
 
@@ -94,24 +91,35 @@ public final class TypeMapping {
   @Nullable
   @jakarta.annotation.Nullable
   public static ContentKey storeKeyToKey(@Nonnull @jakarta.annotation.Nonnull StoreKey storeKey) {
-    List<String> universeKeyVariant = SPLITTER_ZERO.splitToList(storeKey.rawString());
     String universe;
     List<String> keyElements;
     String variant;
-    switch (universeKeyVariant.size()) {
-      case 3:
-        universe = universeKeyVariant.get(0);
-        keyElements = SPLITTER_ONE.splitToList(universeKeyVariant.get(1));
-        variant = universeKeyVariant.get(2);
-        break;
-      case 2:
-        universe = universeKeyVariant.get(0);
-        keyElements = emptyList();
-        variant = universeKeyVariant.get(1);
-        break;
-      default:
-        throw new IllegalArgumentException("Unsupported StoreKey '" + storeKey + "'");
+
+    String raw = storeKey.rawString();
+    int idx1 = raw.indexOf((char) 0);
+    if (idx1 == -1) {
+      throw new IllegalArgumentException("Unsupported StoreKey '" + storeKey + "'");
     }
+    universe = raw.substring(0, idx1);
+    int idx2 = raw.indexOf((char) 0, idx1 + 1);
+    if (idx2 == -1) {
+      keyElements = emptyList();
+      variant = raw.substring(idx1 + 1);
+    } else {
+
+      keyElements = new ArrayList<>();
+      int off = idx1 + 1;
+      for (int i = off; i < idx2; i++) {
+        char c = raw.charAt(i);
+        if (c == (char) 1) {
+          keyElements.add(raw.substring(off, i));
+          off = i + 1;
+        }
+      }
+      keyElements.add(raw.substring(off, idx2));
+      variant = raw.substring(idx2 + 1);
+    }
+
     if (!universe.equals(MAIN_UNIVERSE) || !CONTENT_DISCRIMINATOR.equals(variant)) {
       return null;
     }
@@ -125,6 +133,45 @@ public final class TypeMapping {
   @Nonnull
   @jakarta.annotation.Nonnull
   public static StoreKey keyToStoreKey(@Nonnull @jakarta.annotation.Nonnull ContentKey key) {
+    return keyToStoreKeyVariant(key, CONTENT_DISCRIMINATOR);
+  }
+
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  public static StoreKey keyToStoreKeyNoVariant(
+      @Nonnull @jakarta.annotation.Nonnull ContentKey key) {
+    return StoreKey.keyFromString(keyToStoreKeyPrepare(key).toString());
+  }
+
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  public static StoreKey keyToStoreKeyVariant(
+      @Nonnull @jakarta.annotation.Nonnull ContentKey key, String discriminator) {
+    StringBuilder sb = keyToStoreKeyPrepare(key);
+    sb.append((char) 0).append(discriminator);
+    return StoreKey.keyFromString(sb.toString());
+  }
+
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  public static StoreKey keyToStoreKeyMin(@Nonnull @jakarta.annotation.Nonnull ContentKey key) {
+    StringBuilder sb = keyToStoreKeyPrepare(key);
+    return StoreKey.keyFromString(sb.toString());
+  }
+
+  /** Computes the max-key. */
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  public static StoreKey keyToStoreKeyMax(@Nonnull @jakarta.annotation.Nonnull ContentKey key) {
+    StringBuilder sb = keyToStoreKeyPrepare(key);
+    sb.append((char) 0).append((char) 255);
+    return StoreKey.keyFromString(sb.toString());
+  }
+
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  private static StringBuilder keyToStoreKeyPrepare(
+      @Nonnull @jakarta.annotation.Nonnull ContentKey key) {
     // Note: the relative values of outer and inner (key elements) separators affect the correctness
     // of StoreKey comparisons WRT to ContentKey comparisons. The inner separator must be greater
     // than the outer separator because longer ContentKeys are greater than shorter ContentKeys.
@@ -141,8 +188,7 @@ public final class TypeMapping {
         sb.append(elements.get(i));
       }
     }
-    sb.append((char) 0).append(CONTENT_DISCRIMINATOR);
-    return StoreKey.keyFromString(sb.toString());
+    return sb;
   }
 
   @Nonnull

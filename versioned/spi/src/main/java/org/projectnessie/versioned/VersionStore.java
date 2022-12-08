@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
@@ -293,10 +294,21 @@ public interface VersionStore {
    * @param ref The ref to get keys for.
    * @param pagingToken paging token to start at
    * @param withContent whether to populate {@link KeyEntry#getContent()}
+   * @param minKey optional, if not {@code null}: the minimum key to return
+   * @param maxKey optional, if not {@code null}: the maximum key to return
+   * @param prefixKey optional, if not {@code null}: the prefix of the keys to return
+   * @param contentKeyPredicate filter predicate, can be {@code null}
    * @return The stream of keys available for this ref.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  PaginationIterator<KeyEntry> getKeys(Ref ref, String pagingToken, boolean withContent)
+  PaginationIterator<KeyEntry> getKeys(
+      Ref ref,
+      String pagingToken,
+      boolean withContent,
+      ContentKey minKey,
+      ContentKey maxKey,
+      ContentKey prefixKey,
+      Predicate<ContentKey> contentKeyPredicate)
       throws ReferenceNotFoundException;
 
   /**
@@ -326,9 +338,20 @@ public interface VersionStore {
    * @param from The from part of the diff.
    * @param to The to part of the diff.
    * @param pagingToken paging token to start at
+   * @param minKey optional, if not {@code null}: the minimum key to return
+   * @param maxKey optional, if not {@code null}: the maximum key to return
+   * @param prefixKey optional, if not {@code null}: the prefix of the keys to return
+   * @param contentKeyPredicate filter predicate, can be {@code null}
    * @return A stream of values that are different.
    */
-  PaginationIterator<Diff> getDiffs(Ref from, Ref to, String pagingToken)
+  PaginationIterator<Diff> getDiffs(
+      Ref from,
+      Ref to,
+      String pagingToken,
+      ContentKey minKey,
+      ContentKey maxKey,
+      ContentKey prefixKey,
+      Predicate<ContentKey> contentKeyPredicate)
       throws ReferenceNotFoundException;
 
   /**

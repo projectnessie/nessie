@@ -242,7 +242,7 @@ class TestMetricsVersionStore {
                 refNotFoundThrows),
             new VersionStoreInvocation<>(
                 "getkeys",
-                vs -> vs.getKeys(Hash.of("cafe4242"), null, false),
+                vs -> vs.getKeys(Hash.of("cafe4242"), null, false, null, null, null, null),
                 () -> PaginationIterator.of(ContentKey.of("hello", "world")),
                 refNotFoundThrows),
             new VersionStoreInvocation<>(
@@ -274,7 +274,15 @@ class TestMetricsVersionStore {
                 refNotFoundThrows),
             new VersionStoreInvocation<>(
                 "getdiffs",
-                vs -> vs.getDiffs(BranchName.of("mock-branch"), BranchName.of("foo-branch"), null),
+                vs ->
+                    vs.getDiffs(
+                        BranchName.of("mock-branch"),
+                        BranchName.of("foo-branch"),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null),
                 PaginationIterator::empty,
                 refNotFoundThrows));
 

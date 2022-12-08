@@ -25,6 +25,7 @@ import org.projectnessie.model.EntriesResponse;
  */
 public interface GetEntriesBuilder
     extends QueryBuilder<GetEntriesBuilder>,
+        KeyRangeBuilder<GetEntriesBuilder>,
         PagingBuilder<GetEntriesBuilder, EntriesResponse, EntriesResponse.Entry>,
         OnReferenceBuilder<GetEntriesBuilder> {
 

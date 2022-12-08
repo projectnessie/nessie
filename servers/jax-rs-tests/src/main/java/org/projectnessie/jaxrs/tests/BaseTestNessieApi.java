@@ -672,11 +672,15 @@ public abstract class BaseTestNessieApi {
     Branch branch1 = createReference(Branch.of("b1", main.getHash()), main.getName());
     Branch branch2 = createReference(Branch.of("b2", main.getHash()), main.getName());
 
+    ContentKey key1 = ContentKey.of("1");
+    ContentKey key3 = ContentKey.of("3");
+    ContentKey key4 = ContentKey.of("4");
+
     branch1 =
         prepCommit(
                 branch1,
                 "c1",
-                Put.of(ContentKey.of("1"), Namespace.of("1")),
+                Put.of(key1, Namespace.of("1")),
                 dummyPut("1", "1"),
                 dummyPut("1", "2"),
                 dummyPut("1", "3"))
@@ -685,9 +689,9 @@ public abstract class BaseTestNessieApi {
         prepCommit(
                 branch2,
                 "c2",
-                Put.of(ContentKey.of("1"), Namespace.of("1")),
-                Put.of(ContentKey.of("3"), Namespace.of("3")),
-                Put.of(ContentKey.of("4"), Namespace.of("4")),
+                Put.of(key1, Namespace.of("1")),
+                Put.of(key3, Namespace.of("3")),
+                Put.of(key4, Namespace.of("4")),
                 dummyPut("1", "1"),
                 dummyPut("3", "1"),
                 dummyPut("4", "1"))
@@ -727,6 +731,53 @@ public abstract class BaseTestNessieApi {
     if (isV2()) {
       soft.assertThat(diff1response.getEffectiveFromReference()).isEqualTo(branch1);
       soft.assertThat(diff1response.getEffectiveToReference()).isEqualTo(branch2);
+
+      // Key filtering
+      if (fullPagingSupport()) {
+        soft.assertThat(
+                api()
+                    .getDiff()
+                    .fromRef(branch1)
+                    .toRef(branch2)
+                    .minKey(key12)
+                    .maxKey(key31)
+                    .get()
+                    .getDiffs())
+            .extracting(DiffEntry::getKey)
+            .containsExactlyInAnyOrder(key12, key13, key3, key31);
+        soft.assertThat(
+                api().getDiff().fromRef(branch1).toRef(branch2).minKey(key31).get().getDiffs())
+            .extracting(DiffEntry::getKey)
+            .containsExactlyInAnyOrder(key31, key4, key41);
+        soft.assertThat(
+                api().getDiff().fromRef(branch1).toRef(branch2).maxKey(key12).get().getDiffs())
+            .extracting(DiffEntry::getKey)
+            .containsExactlyInAnyOrder(key1, key11, key12);
+      }
+      soft.assertThat(api().getDiff().fromRef(branch1).toRef(branch2).key(key12).get().getDiffs())
+          .extracting(DiffEntry::getKey)
+          .containsExactlyInAnyOrder(key12);
+      soft.assertThat(
+              api()
+                  .getDiff()
+                  .fromRef(branch1)
+                  .toRef(branch2)
+                  .key(key31)
+                  .key(key12)
+                  .get()
+                  .getDiffs())
+          .extracting(DiffEntry::getKey)
+          .containsExactlyInAnyOrder(key12, key31);
+      soft.assertThat(
+              api()
+                  .getDiff()
+                  .fromRef(branch1)
+                  .toRef(branch2)
+                  .filter("key.namespace=='1'")
+                  .get()
+                  .getDiffs())
+          .extracting(DiffEntry::getKey)
+          .containsExactlyInAnyOrder(key11, key12, key13);
     }
     soft.assertThat(diff1)
         .containsExactlyInAnyOrder(
@@ -959,15 +1010,56 @@ public abstract class BaseTestNessieApi {
             .commit();
 
     EntriesResponse response = api().getEntries().reference(main).withContent(isV2()).get();
+    List<Entry> notPaged = response.getEntries();
+    soft.assertThat(notPaged).hasSize(10);
     if (isV2()) {
       soft.assertThat(response.getEffectiveReference()).isEqualTo(main);
       soft.assertThat(response.getEntries())
           .extracting(Entry::getContent)
           .doesNotContainNull()
           .isNotEmpty();
+
+      if (fullPagingSupport()) {
+        soft.assertThat(
+                api()
+                    .getEntries()
+                    .reference(main)
+                    .minKey(ContentKey.of("c", "2"))
+                    .maxKey(ContentKey.of("c", "4"))
+                    .get()
+                    .getEntries())
+            .extracting(Entry::getName)
+            .containsExactlyInAnyOrder(
+                ContentKey.of("c", "2"), ContentKey.of("c", "3"), ContentKey.of("c", "4"));
+        soft.assertThat(
+                api().getEntries().reference(main).prefixKey(ContentKey.of("c")).get().getEntries())
+            .extracting(Entry::getName)
+            .contains(ContentKey.of("c"))
+            .containsAll(
+                IntStream.range(0, 9)
+                    .mapToObj(i -> ContentKey.of("c", Integer.toString(i)))
+                    .collect(Collectors.toList()));
+        soft.assertThat(
+                api()
+                    .getEntries()
+                    .reference(main)
+                    .key(ContentKey.of("c", "2"))
+                    .key(ContentKey.of("c", "4"))
+                    .get()
+                    .getEntries())
+            .extracting(Entry::getName)
+            .containsExactlyInAnyOrder(ContentKey.of("c", "2"), ContentKey.of("c", "4"));
+        soft.assertThat(
+                api()
+                    .getEntries()
+                    .reference(main)
+                    .prefixKey(ContentKey.of("c", "5"))
+                    .get()
+                    .getEntries())
+            .extracting(Entry::getName)
+            .containsExactlyInAnyOrder(ContentKey.of("c", "5"));
+      }
     }
-    List<Entry> notPaged = response.getEntries();
-    soft.assertThat(notPaged).hasSize(10);
 
     if (pagingSupported(api().getEntries())) {
       List<Entry> all = new ArrayList<>();

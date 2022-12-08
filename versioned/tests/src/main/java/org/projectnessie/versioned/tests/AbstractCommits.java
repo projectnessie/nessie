@@ -154,6 +154,11 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
   public void commitSomeOperations() throws Exception {
     BranchName branch = BranchName.of("foo");
 
+    ContentKey keyT1 = ContentKey.of("t1");
+    ContentKey keyT2 = ContentKey.of("t2");
+    ContentKey keyT3 = ContentKey.of("t3");
+    ContentKey keyT4 = ContentKey.of("t4");
+
     Hash base = store().create(branch, Optional.empty()).getHash();
 
     Hash initialCommit =
@@ -162,7 +167,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             .put("t2", V_2_1)
             .put("t3", V_3_1)
             .toBranch(branch);
-    Content t1 = store().getValue(branch, ContentKey.of("t1"));
+    Content t1 = store().getValue(branch, keyT1);
 
     Hash secondCommit =
         commit("Second Commit")
@@ -180,72 +185,51 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             commit(secondCommit, "Second Commit", initialCommit),
             commit(initialCommit, "Initial Commit", base));
 
-    try (PaginationIterator<KeyEntry> keys = store().getKeys(branch, null, false)) {
+    try (PaginationIterator<KeyEntry> keys =
+        store().getKeys(branch, null, false, null, null, null, null)) {
       soft.assertThat(stream(keys).map(KeyEntry::getKey))
-          .containsExactlyInAnyOrder(ContentKey.of("t1"), ContentKey.of("t2"), ContentKey.of("t4"));
+          .containsExactlyInAnyOrder(keyT1, keyT2, keyT4);
     }
 
-    try (PaginationIterator<KeyEntry> keys = store().getKeys(secondCommit, null, false)) {
-      soft.assertThat(stream(keys).map(KeyEntry::getKey))
-          .containsExactlyInAnyOrder(ContentKey.of("t1"), ContentKey.of("t4"));
+    try (PaginationIterator<KeyEntry> keys =
+        store().getKeys(secondCommit, null, false, null, null, null, null)) {
+      soft.assertThat(stream(keys).map(KeyEntry::getKey)).containsExactlyInAnyOrder(keyT1, keyT4);
     }
 
-    try (PaginationIterator<KeyEntry> keys = store().getKeys(initialCommit, null, false)) {
+    try (PaginationIterator<KeyEntry> keys =
+        store().getKeys(initialCommit, null, false, null, null, null, null)) {
       soft.assertThat(stream(keys).map(KeyEntry::getKey))
-          .containsExactlyInAnyOrder(ContentKey.of("t1"), ContentKey.of("t2"), ContentKey.of("t3"));
+          .containsExactlyInAnyOrder(keyT1, keyT2, keyT3);
     }
 
     soft.assertThat(
             contentsWithoutId(
-                store()
-                    .getValues(
-                        secondCommit,
-                        Arrays.asList(
-                            ContentKey.of("t1"),
-                            ContentKey.of("t2"),
-                            ContentKey.of("t3"),
-                            ContentKey.of("t4")))))
-        .containsExactlyInAnyOrderEntriesOf(
-            ImmutableMap.of(ContentKey.of("t1"), V_1_2, ContentKey.of("t4"), V_4_1));
+                store().getValues(secondCommit, Arrays.asList(keyT1, keyT2, keyT3, keyT4))))
+        .containsExactlyInAnyOrderEntriesOf(ImmutableMap.of(keyT1, V_1_2, keyT4, V_4_1));
 
     soft.assertThat(
             contentsWithoutId(
-                store()
-                    .getValues(
-                        initialCommit,
-                        Arrays.asList(
-                            ContentKey.of("t1"),
-                            ContentKey.of("t2"),
-                            ContentKey.of("t3"),
-                            ContentKey.of("t4")))))
+                store().getValues(initialCommit, Arrays.asList(keyT1, keyT2, keyT3, keyT4))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                ContentKey.of("t1"), V_1_1,
-                ContentKey.of("t2"), V_2_1,
-                ContentKey.of("t3"), V_3_1));
+                keyT1, V_1_1,
+                keyT2, V_2_1,
+                keyT3, V_3_1));
 
-    soft.assertThat(contentWithoutId(store().getValue(branch, ContentKey.of("t1"))))
-        .isEqualTo(V_1_2);
-    soft.assertThat(contentWithoutId(store().getValue(branch, ContentKey.of("t2"))))
-        .isEqualTo(V_2_2);
-    soft.assertThat(store().getValue(branch, ContentKey.of("t3"))).isNull();
-    soft.assertThat(contentWithoutId(store().getValue(branch, ContentKey.of("t4"))))
-        .isEqualTo(V_4_1);
+    soft.assertThat(contentWithoutId(store().getValue(branch, keyT1))).isEqualTo(V_1_2);
+    soft.assertThat(contentWithoutId(store().getValue(branch, keyT2))).isEqualTo(V_2_2);
+    soft.assertThat(store().getValue(branch, keyT3)).isNull();
+    soft.assertThat(contentWithoutId(store().getValue(branch, keyT4))).isEqualTo(V_4_1);
 
-    soft.assertThat(contentWithoutId(store().getValue(secondCommit, ContentKey.of("t1"))))
-        .isEqualTo(V_1_2);
-    soft.assertThat(store().getValue(secondCommit, ContentKey.of("t2"))).isNull();
-    soft.assertThat(store().getValue(secondCommit, ContentKey.of("t3"))).isNull();
-    soft.assertThat(contentWithoutId(store().getValue(secondCommit, ContentKey.of("t4"))))
-        .isEqualTo(V_4_1);
+    soft.assertThat(contentWithoutId(store().getValue(secondCommit, keyT1))).isEqualTo(V_1_2);
+    soft.assertThat(store().getValue(secondCommit, keyT2)).isNull();
+    soft.assertThat(store().getValue(secondCommit, keyT3)).isNull();
+    soft.assertThat(contentWithoutId(store().getValue(secondCommit, keyT4))).isEqualTo(V_4_1);
 
-    soft.assertThat(contentWithoutId(store().getValue(initialCommit, ContentKey.of("t1"))))
-        .isEqualTo(V_1_1);
-    soft.assertThat(contentWithoutId(store().getValue(initialCommit, ContentKey.of("t2"))))
-        .isEqualTo(V_2_1);
-    soft.assertThat(contentWithoutId(store().getValue(initialCommit, ContentKey.of("t3"))))
-        .isEqualTo(V_3_1);
-    soft.assertThat(store().getValue(initialCommit, ContentKey.of("t4"))).isNull();
+    soft.assertThat(contentWithoutId(store().getValue(initialCommit, keyT1))).isEqualTo(V_1_1);
+    soft.assertThat(contentWithoutId(store().getValue(initialCommit, keyT2))).isEqualTo(V_2_1);
+    soft.assertThat(contentWithoutId(store().getValue(initialCommit, keyT3))).isEqualTo(V_3_1);
+    soft.assertThat(store().getValue(initialCommit, keyT4)).isNull();
   }
 
   /*
@@ -302,7 +286,8 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             commit(t1Commit, "T1 Commit", initialCommit),
             commit(initialCommit, "Initial Commit", base));
 
-    try (PaginationIterator<KeyEntry> keys = store().getKeys(branch, null, false)) {
+    try (PaginationIterator<KeyEntry> keys =
+        store().getKeys(branch, null, false, null, null, null, null)) {
       soft.assertThat(stream(keys).map(KeyEntry::getKey))
           .containsExactlyInAnyOrder(ContentKey.of("t1"), ContentKey.of("t2"), ContentKey.of("t3"));
     }
@@ -839,7 +824,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                       try {
                         assertThat(store().getValue(branch, key)).isNull();
                         try (PaginationIterator<KeyEntry> ignore =
-                            store().getKeys(branch, null, false)) {}
+                            store().getKeys(branch, null, false, null, null, null, null)) {}
                       } catch (ReferenceNotFoundException e) {
                         throw new RuntimeException(e);
                       }

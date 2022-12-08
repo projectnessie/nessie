@@ -40,7 +40,7 @@ public abstract class AbstractParams<IMPL extends AbstractParams<IMPL>> {
 
   protected AbstractParams() {}
 
-  protected AbstractParams(Integer maxRecords, String pageToken) {
+  protected AbstractParams(@Nullable Integer maxRecords, @Nullable String pageToken) {
     this.maxRecords = maxRecords;
     this.pageToken = pageToken;
   }

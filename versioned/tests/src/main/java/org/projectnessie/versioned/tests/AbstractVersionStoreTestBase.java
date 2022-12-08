@@ -83,6 +83,13 @@ public abstract class AbstractVersionStoreTestBase {
   }
 
   @Nested
+  protected class Entries extends AbstractEntries {
+    public Entries() {
+      super(AbstractVersionStoreTestBase.this.store());
+    }
+  }
+
+  @Nested
   public class ReferenceNotFound extends AbstractReferenceNotFound {
     public ReferenceNotFound() {
       super(AbstractVersionStoreTestBase.this.store());

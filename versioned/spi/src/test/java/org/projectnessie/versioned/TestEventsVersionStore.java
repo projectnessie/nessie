@@ -586,9 +586,11 @@ class TestEventsVersionStore {
 
   @Test
   void testGetKeys() throws Exception {
-    when(delegate.getKeys(branch1, "token1", false)).thenReturn(iteratorKeyEntries);
+    when(delegate.getKeys(branch1, "token1", false, null, null, null, null))
+        .thenReturn(iteratorKeyEntries);
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
-    PaginationIterator<KeyEntry> result = versionStore.getKeys(branch1, "token1", false);
+    PaginationIterator<KeyEntry> result =
+        versionStore.getKeys(branch1, "token1", false, null, null, null, null);
     assertThat(result).isSameAs(iteratorKeyEntries);
     verifyNoMoreInteractions(delegate);
     verifyNoInteractions(sink);
@@ -617,9 +619,11 @@ class TestEventsVersionStore {
 
   @Test
   void testGetDiffs() throws Exception {
-    when(delegate.getDiffs(hash1, hash2, "token1")).thenReturn(iteratorDiffs);
+    when(delegate.getDiffs(hash1, hash2, "token1", null, null, null, null))
+        .thenReturn(iteratorDiffs);
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
-    PaginationIterator<Diff> result = versionStore.getDiffs(hash1, hash2, "token1");
+    PaginationIterator<Diff> result =
+        versionStore.getDiffs(hash1, hash2, "token1", null, null, null, null);
     assertThat(result).isSameAs(iteratorDiffs);
     verifyNoMoreInteractions(delegate);
     verifyNoInteractions(sink);

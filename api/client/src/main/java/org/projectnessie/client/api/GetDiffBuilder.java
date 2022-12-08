@@ -25,7 +25,9 @@ import org.projectnessie.model.Reference;
  * @since {@link NessieApiV1}
  */
 public interface GetDiffBuilder
-    extends PagingBuilder<GetDiffBuilder, DiffResponse, DiffResponse.DiffEntry> {
+    extends PagingBuilder<GetDiffBuilder, DiffResponse, DiffResponse.DiffEntry>,
+        QueryBuilder<GetDiffBuilder>,
+        KeyRangeBuilder<GetDiffBuilder> {
 
   GetDiffBuilder fromRefName(String fromRefName);
 

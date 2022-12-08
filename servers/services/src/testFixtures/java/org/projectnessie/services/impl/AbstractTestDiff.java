@@ -71,7 +71,12 @@ public abstract class AbstractTestDiff extends BaseTestServiceImpl {
               "666f6f",
               new UnlimitedListResponseHandler<>(),
               h -> {},
-              h -> {});
+              h -> {},
+              null,
+              null,
+              null,
+              null,
+              null);
     } catch (IllegalArgumentException e) {
       if (!e.getMessage().contains("Paging not supported")) {
         throw e;

@@ -154,7 +154,11 @@ public class RestTreeResource implements HttpTreeApi {
                 builder.isHasMore(true).token(pagingToken);
               }
             },
-            h -> builder.effectiveReference(toReference(h)));
+            h -> builder.effectiveReference(toReference(h)),
+            null,
+            null,
+            null,
+            null);
   }
 
   @JsonView(Views.V1.class)

@@ -259,7 +259,11 @@ public abstract class BaseTestServiceImpl {
             null,
             withContent,
             new UnlimitedListResponseHandler<>(),
-            h -> {});
+            h -> {},
+            null,
+            null,
+            null,
+            null);
   }
 
   protected List<DiffEntry> diff(Reference fromRef, Reference toRef)
@@ -278,7 +282,12 @@ public abstract class BaseTestServiceImpl {
             null,
             new UnlimitedListResponseHandler<>(),
             h -> {},
-            h -> {});
+            h -> {},
+            null,
+            null,
+            null,
+            null,
+            null);
   }
 
   protected List<LogEntry> pagedCommitLog(
@@ -360,7 +369,11 @@ public abstract class BaseTestServiceImpl {
                   token,
                   withContent,
                   new DirectPagedCountingResponseHandler<>(pageSize, nextToken::set),
-                  h -> effectiveReference.accept(toReference(h)));
+                  h -> effectiveReference.accept(toReference(h)),
+                  null,
+                  null,
+                  null,
+                  null);
       completeLog.addAll(page);
       if (nextToken.get() == null) {
         break;
@@ -396,7 +409,12 @@ public abstract class BaseTestServiceImpl {
                   token,
                   new DirectPagedCountingResponseHandler<>(pageSize, nextToken::set),
                   h -> effectiveFrom.accept(toReference(h)),
-                  h -> effectiveTo.accept(toReference(h)));
+                  h -> effectiveTo.accept(toReference(h)),
+                  null,
+                  null,
+                  null,
+                  null,
+                  null);
       completeLog.addAll(page);
       if (nextToken.get() == null) {
         break;

@@ -149,7 +149,7 @@ public class TestStoreIndexImpl {
     Function<StoreIndex<ObjId>, StoreIndex<ObjId>> reSerialize =
         seg -> deserializeStoreIndex(seg.serialize(), OBJ_ID_SERIALIZER);
 
-    soft.assertThat(asHex(segment.serialize())).isEqualTo("01");
+    soft.assertThat(asHex(segment.serialize())).isEqualTo(serializationFormatVersion);
     soft.assertThat(reSerialize.apply(segment)).isEqualTo(segment);
     soft.assertThat(segment.asKeyList()).isEmpty();
     soft.assertThat(segment.elementCount()).isEqualTo(0);

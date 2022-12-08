@@ -45,6 +45,7 @@ public final class CELUtil {
   public static final String VAR_REF_TYPE = "refType";
   public static final String VAR_REF_META = "refMeta";
   public static final String VAR_COMMIT = "commit";
+  public static final String VAR_KEY = "key";
   public static final String VAR_ENTRY = "entry";
   public static final String VAR_PATH = "path";
   public static final String VAR_ROLE = "role";
@@ -66,6 +67,10 @@ public final class CELUtil {
               VAR_OPERATIONS,
               Decls.newListType(Decls.newObjectType(OperationForCel.class.getName()))));
 
+  public static final List<Decl> CONTENT_KEY_DECLARATIONS =
+      ImmutableList.of(
+          Decls.newVar(VAR_KEY, Decls.newObjectType(KeyedEntityForCel.class.getName())));
+
   public static final List<Decl> ENTRIES_DECLARATIONS =
       ImmutableList.of(
           Decls.newVar(VAR_ENTRY, Decls.newObjectType(KeyEntryForCel.class.getName())));
@@ -79,6 +84,8 @@ public final class CELUtil {
 
   public static final List<Object> COMMIT_LOG_TYPES =
       ImmutableList.of(CommitMeta.class, OperationForCel.class, ContentKey.class, Namespace.class);
+
+  public static final List<Object> CONTENT_KEY_TYPES = ImmutableList.of(KeyedEntityForCel.class);
 
   @SuppressWarnings("deprecation")
   public static final List<Object> REFLOG_TYPES =
@@ -159,77 +166,114 @@ public final class CELUtil {
    */
   public static Object forCel(Object model) {
     if (model instanceof Content) {
-      Content c = (Content) model;
-      return new ContentForCel() {
-        @Override
-        public String getType() {
-          return c.getType().name();
-        }
-
-        @Override
-        public String getId() {
-          return c.getId();
-        }
-      };
+      return new ContentEntity((Content) model);
     }
     if (model instanceof Operation) {
-      Operation op = (Operation) model;
-      class OperationForCelImpl extends AbstractKeyedEntity implements OperationForCel {
-        @Override
-        protected ContentKey key() {
-          return op.getKey();
-        }
-
-        @Override
-        public String getType() {
-          if (op instanceof Put) {
-            return "PUT";
-          }
-          if (op instanceof Delete) {
-            return "DELETE";
-          }
-          return "OPERATION";
-        }
-
-        @Override
-        public ContentForCel getContent() {
-          if (op instanceof Put) {
-            return (ContentForCel) forCel(((Put) op).getContent());
-          }
-          return null;
-        }
-
-        @Override
-        public String toString() {
-          return op.toString();
-        }
-      }
-
-      return new OperationForCelImpl();
+      return new OperationForCelImpl((Operation) model);
     }
     if (model instanceof KeyEntry) {
-      KeyEntry entry = (KeyEntry) model;
-      ContentKey key = ContentKey.of(entry.getKey().getElements());
-      class KeyEntryForCelImpl extends AbstractKeyedEntity implements KeyEntryForCel {
-        @Override
-        protected ContentKey key() {
-          return key;
-        }
-
-        @Override
-        public String getContentType() {
-          return entry.getType().name();
-        }
-
-        @Override
-        public String toString() {
-          return entry.toString();
-        }
-      }
-
-      return new KeyEntryForCelImpl();
+      return new KeyEntryForCelImpl((KeyEntry) model);
+    }
+    if (model instanceof ContentKey) {
+      return new KeyForCelImpl((ContentKey) model);
     }
     return model;
+  }
+
+  private static class KeyForCelImpl extends AbstractKeyedEntity {
+    private final ContentKey contentKey;
+
+    KeyForCelImpl(ContentKey k) {
+      this.contentKey = k;
+    }
+
+    @Override
+    protected ContentKey key() {
+      return contentKey;
+    }
+
+    @Override
+    public String toString() {
+      return contentKey.toString();
+    }
+  }
+
+  private static class KeyEntryForCelImpl extends AbstractKeyedEntity implements KeyEntryForCel {
+    private final KeyEntry entry;
+
+    private KeyEntryForCelImpl(KeyEntry entry) {
+      this.entry = entry;
+    }
+
+    @Override
+    protected ContentKey key() {
+      return entry.getKey();
+    }
+
+    @Override
+    public String getContentType() {
+      return entry.getType().name();
+    }
+
+    @Override
+    public String toString() {
+      return entry.toString();
+    }
+  }
+
+  private static class ContentEntity implements ContentForCel {
+    private final Content content;
+
+    private ContentEntity(Content content) {
+      this.content = content;
+    }
+
+    @Override
+    public String getType() {
+      return content.getType().name();
+    }
+
+    @Override
+    public String getId() {
+      return content.getId();
+    }
+  }
+
+  private static class OperationForCelImpl extends AbstractKeyedEntity implements OperationForCel {
+    private final Operation op;
+
+    OperationForCelImpl(Operation op) {
+      this.op = op;
+    }
+
+    @Override
+    protected ContentKey key() {
+      return op.getKey();
+    }
+
+    @Override
+    public String getType() {
+      if (op instanceof Put) {
+        return "PUT";
+      }
+      if (op instanceof Delete) {
+        return "DELETE";
+      }
+      return "OPERATION";
+    }
+
+    @Override
+    public ContentForCel getContent() {
+      if (op instanceof Put) {
+        return (ContentForCel) forCel(((Put) op).getContent());
+      }
+      return null;
+    }
+
+    @Override
+    public String toString() {
+      return op.toString();
+    }
   }
 
   private abstract static class AbstractKeyedEntity implements KeyedEntityForCel {
