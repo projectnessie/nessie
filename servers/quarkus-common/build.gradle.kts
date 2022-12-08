@@ -51,6 +51,8 @@ dependencies {
   implementation(libs.jakarta.validation.api)
   implementation(libs.protobuf.java)
 
+  compileOnly(libs.graalvm.nativeimage.svm)
+
   compileOnly(platform(libs.jackson.bom))
   compileOnly(libs.jackson.annotations)
 
