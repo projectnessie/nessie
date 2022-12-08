@@ -17,6 +17,7 @@ package org.projectnessie.api.v2.params;
 
 import static org.projectnessie.api.v2.doc.ApiDoc.REF_PARAMETER_DESCRIPTION;
 
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.ws.rs.PathParam;
@@ -32,7 +33,7 @@ import org.projectnessie.model.Validation;
  * intention is to allow clients to request a diff on a sub-set of keys (e.g. in one particular
  * namespace) or just for one particular key.
  */
-public class DiffParams {
+public class DiffParams extends AbstractParams<DiffParams> {
 
   @NotNull
   @Pattern(regexp = Validation.REF_NAME_PATH_REGEX, message = Validation.REF_NAME_PATH_MESSAGE)
@@ -58,7 +59,12 @@ public class DiffParams {
   public DiffParams() {}
 
   @Constructor
-  DiffParams(@NotNull String fromRef, @NotNull String toRef) {
+  DiffParams(
+      @NotNull String fromRef,
+      @NotNull String toRef,
+      @Nullable Integer maxRecords,
+      @Nullable String pageToken) {
+    super(maxRecords, pageToken);
     this.fromRef = fromRef;
     this.toRef = toRef;
   }
@@ -73,5 +79,10 @@ public class DiffParams {
 
   public static DiffParamsBuilder builder() {
     return new DiffParamsBuilder();
+  }
+
+  @Override
+  public DiffParams forNextPage(String pageToken) {
+    return new DiffParams(fromRef, toRef, maxRecords(), pageToken);
   }
 }

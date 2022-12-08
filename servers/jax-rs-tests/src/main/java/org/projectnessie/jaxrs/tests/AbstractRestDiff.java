@@ -34,6 +34,7 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.DiffResponse;
 import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Operation.Delete;
@@ -217,6 +218,40 @@ public abstract class AbstractRestDiff extends AbstractRestContents {
               assertThat(diff.getKey()).isNotNull();
               assertThat(diff.getFrom()).isNotNull();
               assertThat(diff.getTo()).isNull();
+            });
+  }
+
+  @Test
+  public void testDiffFullPage() throws BaseNessieClientServerException {
+    Reference fromRef = getApi().createReference().reference(Branch.of("diffFrom", null)).create();
+    Reference toRef = getApi().createReference().reference(Branch.of("difTo", null)).create();
+    String toRefHash = createCommits(toRef, 1, 1, toRef.getHash());
+    toRef = Branch.of(toRef.getName(), toRefHash);
+
+    DiffResponse response = getApi().getDiff().fromRef(fromRef).toRef(toRef).get();
+
+    assertThat(response.getDiffs()).hasSize(1);
+    assertThat(response.isHasMore()).isFalse();
+    assertThat(response.getToken()).isNull();
+  }
+
+  @Test
+  public void testDiffStream() throws BaseNessieClientServerException {
+    Reference fromRef = getApi().createReference().reference(Branch.of("diffFrom", null)).create();
+    Reference toRef = getApi().createReference().reference(Branch.of("difTo", null)).create();
+    String toRefHash = createCommits(toRef, 1, 4, toRef.getHash());
+    toRef = Branch.of(toRef.getName(), toRefHash);
+
+    getApi().getDiff().fromRef(fromRef).toRef(toRef).stream();
+
+    // Note: streaming works in v1 too, however all results are always returned in one page.
+    assertThat(getApi().getDiff().fromRef(fromRef).toRef(toRef).stream())
+        .hasSize(4)
+        .allSatisfy(
+            diff -> {
+              assertThat(diff.getKey()).isNotNull();
+              assertThat(diff.getFrom()).isNull();
+              assertThat(diff.getTo()).isNotNull();
             });
   }
 }

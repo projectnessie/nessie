@@ -17,27 +17,53 @@ package org.projectnessie.client.http.v1api;
 
 import org.projectnessie.api.v1.params.DiffParams;
 import org.projectnessie.api.v1.params.DiffParamsBuilder;
+import org.projectnessie.client.api.GetDiffBuilder;
 import org.projectnessie.client.builder.BaseGetDiffBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.DiffResponse;
 
-final class HttpGetDiff extends BaseGetDiffBuilder {
+final class HttpGetDiff extends BaseGetDiffBuilder<DiffParams> {
+
+  private static final String PAGINATION_ERROR_MESSAGE =
+      "Diff pagination is not supported in API v1.";
 
   private final NessieApiClient client;
 
   HttpGetDiff(NessieApiClient client) {
+    // Note: the token is ignored, its is not supported by Diff API v1
+    super((params, pageToken) -> params);
     this.client = client;
   }
 
   @Override
-  public DiffResponse get() throws NessieNotFoundException {
+  public GetDiffBuilder pageToken(String pageToken) {
+    throw new UnsupportedOperationException(PAGINATION_ERROR_MESSAGE);
+  }
+
+  @Override
+  public GetDiffBuilder maxRecords(int maxRecords) {
+    throw new UnsupportedOperationException(PAGINATION_ERROR_MESSAGE);
+  }
+
+  @Override
+  protected DiffParams params() {
+    return DiffParams.builder()
+        .fromRef(fromRefName)
+        .fromHashOnRef(fromHashOnRef)
+        .toRef(toRefName)
+        .toHashOnRef(toHashOnRef)
+        .build();
+  }
+
+  @Override
+  public DiffResponse get(DiffParams params) throws NessieNotFoundException {
     DiffParamsBuilder builder =
         DiffParams.builder()
-            .fromRef(fromRefName)
-            .fromHashOnRef(fromHashOnRef)
-            .toRef(toRefName)
-            .toHashOnRef(toHashOnRef);
+            .fromRef(params.getFromRef())
+            .fromHashOnRef(params.getFromHashOnRef())
+            .toRef(params.getToRef())
+            .toHashOnRef(params.getToHashOnRef());
     return client.getDiffApi().getDiff(builder.build());
   }
 }
