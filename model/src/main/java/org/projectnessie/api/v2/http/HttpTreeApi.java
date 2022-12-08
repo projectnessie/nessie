@@ -18,6 +18,8 @@ package org.projectnessie.api.v2.http;
 import static org.projectnessie.api.v2.doc.ApiDoc.BRANCH_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.CHECKED_REF_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.CHECKED_REF_INFO;
+import static org.projectnessie.api.v2.doc.ApiDoc.KEY_MAX_PARAMETER_DESCRIPTION;
+import static org.projectnessie.api.v2.doc.ApiDoc.KEY_MIN_PARAMETER_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.KEY_PARAMETER_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.PAGING_INFO;
 import static org.projectnessie.api.v2.doc.ApiDoc.REF_NAME_DESCRIPTION;
@@ -54,6 +56,7 @@ import org.projectnessie.api.v2.params.Merge;
 import org.projectnessie.api.v2.params.ReferencesParams;
 import org.projectnessie.api.v2.params.Transplant;
 import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.ContentKey;
@@ -452,6 +455,57 @@ public interface HttpTreeApi extends TreeApi {
           String ref)
       throws NessieNotFoundException;
 
+  @Override
+  @GET
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/contents/{min-key}/{max-key}")
+  @Operation(
+      summary = "[Future] Get multiple content objects having their keys in the given key range.",
+      description =
+          "Similar to 'GET /trees/{ref}/content/{key}', but takes a range of keys (min/max) as path parameters and "
+              + "returns zero or more content values in the same JSON structure as the 'POST /trees/{ref}/content' "
+              + "endpoint.\n")
+  @APIResponses({
+    @APIResponse(
+        responseCode = "200",
+        description = "Retrieved successfully.",
+        content =
+            @Content(
+                mediaType = MediaType.APPLICATION_JSON,
+                examples = @ExampleObject(ref = "multiGetResponse"),
+                schema = @Schema(implementation = GetMultipleContentsResponse.class))),
+    @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
+    @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
+    @APIResponse(
+        responseCode = "403",
+        description = "Not allowed to view the given reference or read object content for a key"),
+    @APIResponse(responseCode = "404", description = "Provided ref doesn't exists")
+  })
+  default GetMultipleContentsResponse getRangeOfContents(
+      @Parameter(
+              description = REF_PARAMETER_DESCRIPTION,
+              examples = {
+                @ExampleObject(ref = "ref"),
+                @ExampleObject(ref = "refWithHash"),
+                @ExampleObject(ref = "refDefault"),
+                @ExampleObject(ref = "refDetached"),
+              })
+          @PathParam("ref")
+          String ref,
+      @Parameter(
+              description = KEY_MIN_PARAMETER_DESCRIPTION,
+              examples = @ExampleObject(ref = "ContentKeyGet"))
+          @PathParam("min-key")
+          ContentKey minKey,
+      @Parameter(
+              description = KEY_MAX_PARAMETER_DESCRIPTION,
+              examples = @ExampleObject(ref = "ContentKeyGet"))
+          @PathParam("max-key")
+          ContentKey maxKey)
+      throws NessieNotFoundException {
+    throw new NessieContentNotFoundException("Content lookup by key range is not supported yet.");
+  }
+
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/contents")
@@ -482,8 +536,13 @@ public interface HttpTreeApi extends TreeApi {
   })
   default GetMultipleContentsResponse getSeveralContents(
       @Parameter(
-              description = "Reference to use.",
-              examples = {@ExampleObject(ref = "ref")})
+              description = REF_PARAMETER_DESCRIPTION,
+              examples = {
+                @ExampleObject(ref = "ref"),
+                @ExampleObject(ref = "refWithHash"),
+                @ExampleObject(ref = "refDefault"),
+                @ExampleObject(ref = "refDetached"),
+              })
           @PathParam("ref")
           String ref,
       @Parameter(description = KEY_PARAMETER_DESCRIPTION) @QueryParam("key") List<String> keys)

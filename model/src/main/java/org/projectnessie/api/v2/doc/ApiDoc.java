@@ -103,11 +103,19 @@ public interface ApiDoc {
           + "'type' parameter may be used to ensure the operation is performed on the same object that the user "
           + "expects.\n";
 
-  String KEY_PARAMETER_DESCRIPTION =
-      "The key to a content object.\n"
-          + "\n"
-          + "Key components (namespaces) are separated by the dot ('.') character. Dot ('.') characters that are not "
+  String KEY_ELEMENTS_DESCRIPTION =
+      "Key components (namespaces) are separated by the dot ('.') character. Dot ('.') characters that are not "
           + "Nessie namespace separators must be encoded as the 'group separator' ASCII character (0x1D).\n";
+
+  String KEY_PARAMETER_DESCRIPTION = "The key to a content object.\n\n" + KEY_ELEMENTS_DESCRIPTION;
+
+  String KEY_MIN_PARAMETER_DESCRIPTION =
+      "[Future] The lower bound of the content key range to retrieve (inclusive).\n\n"
+          + KEY_ELEMENTS_DESCRIPTION;
+
+  String KEY_MAX_PARAMETER_DESCRIPTION =
+      "[Future] The upper bound of the content key range to retrieve (exclusive).\n\n"
+          + KEY_ELEMENTS_DESCRIPTION;
 
   String DEFAULT_KEY_MERGE_MODE_DESCRIPTION =
       "The default merge mode. If not set, `NORMAL` is assumed.\n"

@@ -37,6 +37,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.client.ext.NessieApiVersion;
 import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.client.ext.NessieClientUri;
+import org.projectnessie.error.NessieError;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.CommitResponse;
@@ -159,6 +160,28 @@ public abstract class AbstractResteasyV2Test {
                         ((IcebergTable) content.getContent()).getMetadataLocation()));
 
     assertThat(entries).containsExactlyInAnyOrder(entry(key1, "loc1"), entry(key2, "loc2"));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"rangeSimple", "range/With/slash"})
+  void testGetRangeOfContents(String branchName) {
+    Branch branch = createBranch(branchName);
+    ContentKey key1 = ContentKey.of("test.with.dot.and/slash", "Key");
+    ContentKey key2 = ContentKey.of("test/slash", "Key");
+
+    assertThat(
+            rest()
+                .get(
+                    "trees/{ref}/contents/{min}/{max}",
+                    branch.toPathString(),
+                    key1.toPathString(),
+                    key2.toPathString())
+                .then()
+                .statusCode(404) // Not implemented yet
+                .extract()
+                .as(NessieError.class)
+                .getMessage())
+        .isEqualTo("Content lookup by key range is not supported yet.");
   }
 
   /** Dedicated test for human-readable references in URL paths. */

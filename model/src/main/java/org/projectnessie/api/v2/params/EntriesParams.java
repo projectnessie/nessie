@@ -20,6 +20,7 @@ import javax.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.immutables.builder.Builder.Constructor;
+import org.projectnessie.model.ContentKey;
 
 /**
  * The purpose of this class is to include optional parameters that can be passed to {@code
@@ -28,7 +29,7 @@ import org.immutables.builder.Builder.Constructor;
  * <p>For easier usage of this class, there is {@link EntriesParams#builder()}, which allows
  * configuring/setting the different parameters.
  */
-public class EntriesParams extends AbstractParams<EntriesParams> {
+public class EntriesParams extends KeyRangeParams<EntriesParams> {
 
   @Nullable
   @Parameter(
@@ -46,8 +47,13 @@ public class EntriesParams extends AbstractParams<EntriesParams> {
   public EntriesParams() {}
 
   @Constructor
-  EntriesParams(@Nullable Integer maxRecords, @Nullable String pageToken, @Nullable String filter) {
-    super(maxRecords, pageToken);
+  EntriesParams(
+      @Nullable Integer maxRecords,
+      @Nullable String pageToken,
+      @Nullable ContentKey minKey,
+      @Nullable ContentKey maxKey,
+      @Nullable String filter) {
+    super(maxRecords, pageToken, minKey, maxKey);
     this.filter = filter;
   }
 
@@ -66,6 +72,6 @@ public class EntriesParams extends AbstractParams<EntriesParams> {
 
   @Override
   public EntriesParams forNextPage(String pageToken) {
-    return new EntriesParams(maxRecords(), pageToken, filter);
+    return new EntriesParams(maxRecords(), pageToken, minKey(), maxKey(), filter);
   }
 }

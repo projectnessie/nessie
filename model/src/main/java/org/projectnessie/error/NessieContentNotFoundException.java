@@ -24,6 +24,10 @@ public class NessieContentNotFoundException extends NessieNotFoundException {
     super(String.format("Could not find content for key '%s' in reference '%s'.", key, ref));
   }
 
+  public NessieContentNotFoundException(String message) {
+    super(message);
+  }
+
   public NessieContentNotFoundException(NessieError error) {
     super(error);
   }

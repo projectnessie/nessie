@@ -24,6 +24,7 @@ import javax.ws.rs.PathParam;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.immutables.builder.Builder.Constructor;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Validation;
 
 /**
@@ -33,7 +34,7 @@ import org.projectnessie.model.Validation;
  * intention is to allow clients to request a diff on a sub-set of keys (e.g. in one particular
  * namespace) or just for one particular key.
  */
-public class DiffParams extends AbstractParams<DiffParams> {
+public class DiffParams extends KeyRangeParams<DiffParams> {
 
   @NotNull
   @Pattern(regexp = Validation.REF_NAME_PATH_REGEX, message = Validation.REF_NAME_PATH_MESSAGE)
@@ -63,8 +64,10 @@ public class DiffParams extends AbstractParams<DiffParams> {
       @NotNull String fromRef,
       @NotNull String toRef,
       @Nullable Integer maxRecords,
-      @Nullable String pageToken) {
-    super(maxRecords, pageToken);
+      @Nullable String pageToken,
+      @Nullable ContentKey minKey,
+      @Nullable ContentKey maxKey) {
+    super(maxRecords, pageToken, minKey, maxKey);
     this.fromRef = fromRef;
     this.toRef = toRef;
   }
@@ -83,6 +86,6 @@ public class DiffParams extends AbstractParams<DiffParams> {
 
   @Override
   public DiffParams forNextPage(String pageToken) {
-    return new DiffParams(fromRef, toRef, maxRecords(), pageToken);
+    return new DiffParams(fromRef, toRef, maxRecords(), pageToken, minKey(), maxKey());
   }
 }

@@ -256,6 +256,27 @@ public interface TreeApi {
       throws NessieNotFoundException;
 
   /**
+   * Similar to {@link #getContent(ContentKey, String)}, but takes min and max {@link ContentKey}s
+   * and returns the {@link Content} objects having their keys in that range in a named-reference (a
+   * {@link org.projectnessie.model.Branch} or {@link org.projectnessie.model.Tag}).
+   *
+   * @param ref named-reference to retrieve the content for
+   * @param minKey the lower bound of the content key range to retrieve (inclusive).
+   * @param maxKey the upper bound of the content key range to retrieve (exclusive).
+   * @return list of {@link GetMultipleContentsResponse.ContentWithKey}s
+   * @throws NessieNotFoundException if {@code ref} or {@code hashOnRef} does not exist
+   */
+  GetMultipleContentsResponse getRangeOfContents(
+      @Valid
+          @Pattern(
+              regexp = Validation.REF_NAME_PATH_REGEX,
+              message = Validation.REF_NAME_PATH_MESSAGE)
+          String ref,
+      @Valid ContentKey minKey,
+      @Valid ContentKey maxKey)
+      throws NessieNotFoundException;
+
+  /**
    * Similar to {@link #getContent(ContentKey, String)}, but takes multiple {@link ContentKey}s and
    * returns the {@link Content} for the one or more {@link ContentKey}s in a named-reference (a
    * {@link org.projectnessie.model.Branch} or {@link org.projectnessie.model.Tag}).
