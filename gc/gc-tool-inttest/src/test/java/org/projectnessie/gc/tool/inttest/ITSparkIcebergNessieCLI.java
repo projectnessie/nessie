@@ -17,6 +17,7 @@ package org.projectnessie.gc.tool.inttest;
 
 import static java.lang.String.format;
 
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -129,11 +130,13 @@ public class ITSparkIcebergNessieCLI extends SparkSqlTestBase {
 
     args.add(command);
 
+    URI nessieUriV2 = new URI(url).resolve("v2");
+
     switch (command) {
       case "identify":
       case "mark-live":
         args.add("--uri");
-        args.add(url);
+        args.add(nessieUriV2.toASCIIString());
         break;
       case "sweep":
       case "expire":
