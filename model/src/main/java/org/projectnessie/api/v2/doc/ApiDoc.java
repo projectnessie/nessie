@@ -44,7 +44,7 @@ public interface ApiDoc {
 
   String BRANCH_DESCRIPTION =
       "A reference to a particular version of the contents tree (a point in history) on a branch.\n"
-          + "This reference can be specification in these forms:\n"
+          + "This reference can be specified in these forms:\n"
           + "- \\- (literal minus character) - Identifies the HEAD of the default branch \n"
           + "- name - Identifies the HEAD commit on the named branch\n"
           + "- name@hash - Identifies the 'hash' commit on the named branch.\n"
@@ -57,6 +57,15 @@ public interface ApiDoc {
           + "generally discouraged.\n"
           + "\n"
           + FULL_REF_INFO;
+
+  String CHECKED_BRANCH_DESCRIPTION =
+      "A reference to a specific version of the contents tree (a point in history) on a branch.\n"
+          + "This reference is specified in this form:\n"
+          + "- name@hash - Identifies the 'hash' commit on the named branch.\n"
+          + "\n"
+          + "The 'hash' commit must be reachable from the current HEAD of the branch.\n"
+          + "In this case 'hash' indicates the state of contents that should be used for validating incoming changes\n"
+          + "(commits / merges / transplants).\n";
 
   String REF_NAME_DESCRIPTION = "A reference name.\n\n" + REF_NAME_MESSAGE + "\n";
 
@@ -84,19 +93,14 @@ public interface ApiDoc {
           + FULL_REF_INFO;
 
   String CHECKED_REF_DESCRIPTION =
-      "Specifies a named branch or tag reference.\n"
+      "Specifies a named branch or tag reference with its expected HEAD 'hash' value.\n"
           + "\n"
-          + "A named reference can be specification in these forms:\n"
-          + "- name - Identifies a branch or tag without a concrete HEAD 'hash' value.\n"
+          + "For example:\n"
           + "- name@hash - Identifies the 'hash' commit on a branch or tag.\n"
           + "\n"
-          + "If both 'name' and 'hash' are given, 'hash' must be the current HEAD of the branch or tag. It will be "
-          + "used to validate that at execution time the reference points to the same hash that the caller expected "
-          + "when the operation arguments were constructed.\n"
-          + "\n"
-          + "Not specifying the 'hash' value relaxes server-side checks and can lead to unexpected side effects if "
-          + "multiple changes to the same reference are executed concurrently. It is recommended to always specify the "
-          + "'hash' value when assigning or deleting a reference.\n";
+          + "The specified 'hash' must be the current HEAD of the branch or tag. It will be used to validate that "
+          + "at execution time the reference points to the same hash that the caller expected "
+          + "when the operation arguments were constructed.\n";
 
   String CHECKED_REF_INFO =
       "The 'ref' parameter may contain a hash qualifier. That hash as well as the optional "

@@ -302,6 +302,7 @@ public interface HttpTreeApi extends TreeApi {
           String referenceName,
       @Parameter(
               description = "Expected previous hash of reference",
+              required = true,
               examples = {@ExampleObject(ref = "hash")})
           @QueryParam("expectedHash")
           String expectedHash,
@@ -341,6 +342,7 @@ public interface HttpTreeApi extends TreeApi {
           String referenceName,
       @Parameter(
               description = "Expected hash of tag",
+              required = true,
               examples = {@ExampleObject(ref = "hash")})
           @QueryParam("expectedHash")
           String expectedHash)
@@ -388,6 +390,7 @@ public interface HttpTreeApi extends TreeApi {
           String branchName,
       @Parameter(
               description = "Expected hash of tag.",
+              required = true,
               examples = {@ExampleObject(ref = "hash")})
           @QueryParam("expectedHash")
           String expectedHash,
@@ -448,6 +451,7 @@ public interface HttpTreeApi extends TreeApi {
           String branchName,
       @Parameter(
               description = "Expected current HEAD of 'branchName'",
+              required = true,
               examples = {@ExampleObject(ref = "hash")})
           @QueryParam("expectedHash")
           String expectedHash,

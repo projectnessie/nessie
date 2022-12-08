@@ -16,6 +16,7 @@
 package org.projectnessie.api.v2.http;
 
 import static org.projectnessie.api.v2.doc.ApiDoc.BRANCH_DESCRIPTION;
+import static org.projectnessie.api.v2.doc.ApiDoc.CHECKED_BRANCH_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.CHECKED_REF_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.CHECKED_REF_INFO;
 import static org.projectnessie.api.v2.doc.ApiDoc.KEY_PARAMETER_DESCRIPTION;
@@ -354,10 +355,7 @@ public interface HttpTreeApi extends TreeApi {
       @Parameter(
               schema = @Schema(pattern = REF_NAME_PATH_ELEMENT_REGEX),
               description = CHECKED_REF_DESCRIPTION,
-              examples = {
-                @ExampleObject(ref = "ref"),
-                @ExampleObject(ref = "refWithHash"),
-              })
+              examples = @ExampleObject(ref = "refWithHash"))
           @PathParam("ref")
           String ref,
       @RequestBody(
@@ -401,10 +399,7 @@ public interface HttpTreeApi extends TreeApi {
       @Parameter(
               schema = @Schema(pattern = REF_NAME_PATH_ELEMENT_REGEX),
               description = CHECKED_REF_DESCRIPTION,
-              examples = {
-                @ExampleObject(ref = "ref"),
-                @ExampleObject(ref = "refWithHash"),
-              })
+              examples = @ExampleObject(ref = "refWithHash"))
           @PathParam("ref")
           String ref)
       throws NessieConflictException, NessieNotFoundException;
@@ -584,12 +579,8 @@ public interface HttpTreeApi extends TreeApi {
   MergeResponse transplantCommitsIntoBranch(
       @Parameter(
               schema = @Schema(pattern = REF_NAME_PATH_ELEMENT_REGEX),
-              description = BRANCH_DESCRIPTION,
-              examples = {
-                @ExampleObject(ref = "ref"),
-                @ExampleObject(ref = "refWithHash"),
-                @ExampleObject(ref = "refDefault"),
-              })
+              description = CHECKED_BRANCH_DESCRIPTION,
+              examples = @ExampleObject(ref = "refWithHash"))
           @PathParam("branch")
           String branch,
       @RequestBody(
@@ -646,12 +637,8 @@ public interface HttpTreeApi extends TreeApi {
   MergeResponse mergeRefIntoBranch(
       @Parameter(
               schema = @Schema(pattern = REF_NAME_PATH_ELEMENT_REGEX),
-              description = BRANCH_DESCRIPTION,
-              examples = {
-                @ExampleObject(ref = "ref"),
-                @ExampleObject(ref = "refWithHash"),
-                @ExampleObject(ref = "refDefault"),
-              })
+              description = CHECKED_BRANCH_DESCRIPTION,
+              examples = @ExampleObject(ref = "refWithHash"))
           @PathParam("branch")
           String branch,
       @RequestBody(
