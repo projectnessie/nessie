@@ -21,6 +21,8 @@ import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.SingleReferenceResponse;
+import org.projectnessie.model.Tag;
 
 final class HttpDeleteTag extends BaseOnTagBuilder<DeleteTagBuilder> implements DeleteTagBuilder {
   private final HttpClient client;
@@ -31,12 +33,20 @@ final class HttpDeleteTag extends BaseOnTagBuilder<DeleteTagBuilder> implements 
 
   @Override
   public void delete() throws NessieConflictException, NessieNotFoundException {
-    client
-        .newRequest()
-        .path("trees/{ref}")
-        .resolveTemplate("ref", Reference.toPathString(tagName, hash))
-        .queryParam("type", Reference.ReferenceType.TAG.name())
-        .unwrap(NessieConflictException.class, NessieNotFoundException.class)
-        .delete();
+    getAndDelete();
+  }
+
+  @Override
+  public Tag getAndDelete() throws NessieNotFoundException, NessieConflictException {
+    return (Tag)
+        client
+            .newRequest()
+            .path("trees/{ref}")
+            .resolveTemplate("ref", Reference.toPathString(tagName, hash))
+            .queryParam("type", Reference.ReferenceType.TAG.name())
+            .unwrap(NessieConflictException.class, NessieNotFoundException.class)
+            .delete()
+            .readEntity(SingleReferenceResponse.class)
+            .getReference();
   }
 }

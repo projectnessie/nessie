@@ -111,14 +111,14 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
   }
 
   @Override
-  protected void assignReference(NamedRef ref, String expectedHash, Reference assignTo)
+  protected Reference assignReference(NamedRef ref, String expectedHash, Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
     startAccessCheck()
         .canViewReference(
             namedRefWithHashOrThrow(assignTo.getName(), assignTo.getHash()).getValue())
         .canAssignRefToHash(ref)
         .checkAndThrow();
-    super.assignReference(ref, expectedHash, assignTo);
+    return super.assignReference(ref, expectedHash, assignTo);
   }
 
   @Override

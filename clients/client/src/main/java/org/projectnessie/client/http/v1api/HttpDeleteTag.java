@@ -21,6 +21,7 @@ import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.Tag;
 
 final class HttpDeleteTag extends BaseOnTagBuilder<DeleteTagBuilder> implements DeleteTagBuilder {
 
@@ -33,5 +34,11 @@ final class HttpDeleteTag extends BaseOnTagBuilder<DeleteTagBuilder> implements 
   @Override
   public void delete() throws NessieConflictException, NessieNotFoundException {
     client.getTreeApi().deleteReference(Reference.ReferenceType.TAG, tagName, hash);
+  }
+
+  @Override
+  public Tag getAndDelete() {
+    throw new UnsupportedOperationException(
+        "The getAndDelete operation is not supported for tags in API v1");
   }
 }

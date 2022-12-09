@@ -17,6 +17,8 @@ package org.projectnessie.jaxrs.tests;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.projectnessie.client.ext.NessieApiVersion;
+import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.Reference;
@@ -77,15 +79,31 @@ public abstract class AbstractRestAssign extends AbstractRest {
 
   @ParameterizedTest
   @EnumSource(ReferenceMode.class)
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void testAssignAndGetBranch(ReferenceMode refMode) throws BaseNessieClientServerException {
+    Reference main = createBranch("test-main2");
+    Branch branch = createBranch("test-branch2");
+
+    // make a commit in main
+    createCommits(main, 1, 1, main.getHash());
+    main = getApi().getReference().refName(main.getName()).get();
+
+    soft.assertThat(branch.getHash()).isNotEqualTo(main.getHash());
+
+    // Assign the test branch to main
+    Branch assignedBranch =
+        getApi().assignBranch().branch(branch).assignTo(refMode.transform(main)).assignAndGet();
+    soft.assertThat(assignedBranch.getHash()).isEqualTo(main.getHash());
+
+    Reference currentBranch = getApi().getReference().refName(branch.getName()).get();
+    soft.assertThat(assignedBranch).isEqualTo(currentBranch);
+  }
+
+  @ParameterizedTest
+  @EnumSource(ReferenceMode.class)
   public void testAssignTag(ReferenceMode refMode) throws BaseNessieClientServerException {
     Reference main = createBranch("test-main");
-
-    Reference tag =
-        getApi()
-            .createReference()
-            .sourceRefName(main.getName())
-            .reference(Tag.of("testTag", main.getHash()))
-            .create();
+    Reference tag = createTag("testTag", main);
 
     // make a commit in main
     createCommits(main, 1, 1, main.getHash());
@@ -102,5 +120,32 @@ public abstract class AbstractRestAssign extends AbstractRest {
         .assign();
     Reference assignedTag = getApi().getReference().refName(tag.getName()).get();
     soft.assertThat(assignedTag.getHash()).isEqualTo(main.getHash());
+  }
+
+  @ParameterizedTest
+  @EnumSource(ReferenceMode.class)
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void testAssignAndGetTag(ReferenceMode refMode) throws BaseNessieClientServerException {
+    Reference main = createBranch("test-main2");
+    Reference tag = createTag("testTag2", main);
+
+    // make a commit in main
+    createCommits(main, 1, 1, main.getHash());
+    main = getApi().getReference().refName(main.getName()).get();
+
+    soft.assertThat(tag.getHash()).isNotEqualTo(main.getHash());
+
+    // Assign the test tag to main
+    Tag assignedTag =
+        getApi()
+            .assignTag()
+            .tagName(tag.getName())
+            .hash(tag.getHash())
+            .assignTo(refMode.transform(main))
+            .assignAndGet();
+    soft.assertThat(assignedTag.getHash()).isEqualTo(main.getHash());
+
+    Reference currentTag = getApi().getReference().refName(tag.getName()).get();
+    soft.assertThat(assignedTag).isEqualTo(currentTag);
   }
 }

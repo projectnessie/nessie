@@ -17,6 +17,7 @@ package org.projectnessie.client.api;
 
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.Tag;
 
 /**
  * Request builder for "delete tag".
@@ -24,5 +25,13 @@ import org.projectnessie.error.NessieNotFoundException;
  * @since {@link NessieApiV1}
  */
 public interface DeleteTagBuilder extends OnTagBuilder<DeleteTagBuilder> {
+
   void delete() throws NessieConflictException, NessieNotFoundException;
+
+  /**
+   * Deletes the tag and returns its information as it was just before deletion.
+   *
+   * @since {@link NessieApiV2}
+   */
+  Tag getAndDelete() throws NessieNotFoundException, NessieConflictException;
 }

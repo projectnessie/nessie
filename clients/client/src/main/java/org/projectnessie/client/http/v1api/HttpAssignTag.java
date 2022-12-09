@@ -20,6 +20,7 @@ import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.Tag;
 
 final class HttpAssignTag extends BaseAssignTagBuilder {
 
@@ -32,5 +33,11 @@ final class HttpAssignTag extends BaseAssignTagBuilder {
   @Override
   public void assign() throws NessieNotFoundException, NessieConflictException {
     client.getTreeApi().assignReference(Reference.ReferenceType.TAG, tagName, hash, assignTo);
+  }
+
+  @Override
+  public Tag assignAndGet() {
+    throw new UnsupportedOperationException(
+        "The assignAndGet operation is not supported for tags in API v1");
   }
 }

@@ -19,7 +19,9 @@ import org.projectnessie.client.builder.BaseAssignBranchBuilder;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.Branch;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.SingleReferenceResponse;
 
 final class HttpAssignBranch extends BaseAssignBranchBuilder {
   private final HttpClient client;
@@ -30,12 +32,20 @@ final class HttpAssignBranch extends BaseAssignBranchBuilder {
 
   @Override
   public void assign() throws NessieNotFoundException, NessieConflictException {
-    client
-        .newRequest()
-        .path("trees/{ref}")
-        .resolveTemplate("ref", Reference.toPathString(branchName, hash))
-        .queryParam("type", Reference.ReferenceType.BRANCH.name())
-        .unwrap(NessieNotFoundException.class, NessieConflictException.class)
-        .put(assignTo);
+    assignAndGet();
+  }
+
+  @Override
+  public Branch assignAndGet() throws NessieNotFoundException, NessieConflictException {
+    return (Branch)
+        client
+            .newRequest()
+            .path("trees/{ref}")
+            .resolveTemplate("ref", Reference.toPathString(branchName, hash))
+            .queryParam("type", Reference.ReferenceType.BRANCH.name())
+            .unwrap(NessieNotFoundException.class, NessieConflictException.class)
+            .put(assignTo)
+            .readEntity(SingleReferenceResponse.class)
+            .getReference();
   }
 }

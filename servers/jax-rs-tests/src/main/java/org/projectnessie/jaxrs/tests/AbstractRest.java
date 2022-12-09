@@ -167,25 +167,19 @@ public abstract class AbstractRest {
     return expectedBranch;
   }
 
+  protected Tag createTag(String name, Reference from) throws BaseNessieClientServerException {
+    Reference created =
+        getApi()
+            .createReference()
+            .sourceRefName(from.getName())
+            .reference(Tag.of(name, from.getHash()))
+            .create();
+    assertThat(created).isInstanceOf(Tag.class);
+    return (Tag) created;
+  }
+
   protected Branch createBranch(String name) throws BaseNessieClientServerException {
     return createBranch(name, null);
-  }
-
-  protected static void getOrCreateEmptyBranch(NessieApiV1 api, String gcBranchName) {
-    try {
-      api.getReference().refName(gcBranchName).get();
-    } catch (NessieNotFoundException e) {
-      // create a reference pointing to NO_ANCESTOR hash.
-      try {
-        api.createReference().reference(Branch.of(gcBranchName, null)).create();
-      } catch (NessieNotFoundException | NessieConflictException ex) {
-        throw new RuntimeException(ex);
-      }
-    }
-  }
-
-  protected void deleteBranch(String name, String hash) throws BaseNessieClientServerException {
-    getApi().deleteBranch().branchName(name).hash(hash).delete();
   }
 
   /**

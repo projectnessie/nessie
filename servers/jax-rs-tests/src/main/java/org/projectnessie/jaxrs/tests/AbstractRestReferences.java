@@ -28,6 +28,8 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.projectnessie.client.ext.NessieApiVersion;
+import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieBadRequestException;
 import org.projectnessie.error.NessieConflictException;
@@ -177,6 +179,20 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
             .reference(Branch.of(branchName2, mainHash))
             .create();
     soft.assertThat(refBranch2).isEqualTo(Branch.of(branchName2, mainHash));
+  }
+
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void getAndDeleteBranch() throws Exception {
+    Branch branch = createBranch("testBranch");
+    assertThat(getApi().deleteBranch().branch(branch).getAndDelete()).isEqualTo(branch);
+  }
+
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void getAndDeleteTag() throws Exception {
+    Tag tag = createTag("testTag", getApi().getDefaultBranch());
+    assertThat(getApi().deleteTag().tag(tag).getAndDelete()).isEqualTo(tag);
   }
 
   @ParameterizedTest

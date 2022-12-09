@@ -177,8 +177,9 @@ public class RestV2TreeResource implements HttpTreeApi {
       Reference.ReferenceType type, String ref, Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
     Reference reference = resolveRef(ref, type);
-    tree().assignReference(type, reference.getName(), reference.getHash(), assignTo);
-    return SingleReferenceResponse.builder().reference(reference).build();
+    Reference updated =
+        tree().assignReference(type, reference.getName(), reference.getHash(), assignTo);
+    return SingleReferenceResponse.builder().reference(updated).build();
   }
 
   @Override

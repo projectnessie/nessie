@@ -19,6 +19,7 @@ import org.projectnessie.client.builder.BaseAssignBranchBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.Branch;
 import org.projectnessie.model.Reference;
 
 final class HttpAssignBranch extends BaseAssignBranchBuilder {
@@ -32,5 +33,11 @@ final class HttpAssignBranch extends BaseAssignBranchBuilder {
   @Override
   public void assign() throws NessieNotFoundException, NessieConflictException {
     client.getTreeApi().assignReference(Reference.ReferenceType.BRANCH, branchName, hash, assignTo);
+  }
+
+  @Override
+  public Branch assignAndGet() {
+    throw new UnsupportedOperationException(
+        "The assignAndGet operation is not supported for branches in API v1");
   }
 }
