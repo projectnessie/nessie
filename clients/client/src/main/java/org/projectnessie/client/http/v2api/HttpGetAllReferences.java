@@ -15,10 +15,10 @@
  */
 package org.projectnessie.client.http.v2api;
 
-import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.api.v2.params.ReferencesParams;
 import org.projectnessie.client.builder.BaseGetAllReferencesBuilder;
 import org.projectnessie.client.http.HttpClient;
+import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.ReferencesResponse;
 
 final class HttpGetAllReferences extends BaseGetAllReferencesBuilder<ReferencesParams> {

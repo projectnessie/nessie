@@ -17,8 +17,8 @@ package org.projectnessie.client.api;
 
 import javax.annotation.Nullable;
 import javax.validation.constraints.Pattern;
-import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Validation;
 
@@ -39,6 +39,12 @@ public interface GetCommitLogBuilder
    * @param fetchOption The option indicating how much info to fetch
    */
   GetCommitLogBuilder fetch(FetchOption fetchOption);
+
+  /** Legacy API method for backward compatibility. Use {@link #fetch(FetchOption)} instead. */
+  @Deprecated
+  default GetCommitLogBuilder fetch(org.projectnessie.api.params.FetchOption fetchOption) {
+    return fetch(fetchOption.toModel());
+  }
 
   GetCommitLogBuilder untilHash(
       @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)

@@ -17,10 +17,10 @@ package org.projectnessie.tools.contentgenerator.cli;
 
 import java.util.List;
 import java.util.Objects;
-import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.Operation;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Model.CommandSpec;

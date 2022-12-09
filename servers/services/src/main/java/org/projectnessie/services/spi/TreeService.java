@@ -17,11 +17,11 @@ package org.projectnessie.services.spi;
 
 import java.util.Collection;
 import java.util.List;
-import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.EntriesResponse;
+import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
