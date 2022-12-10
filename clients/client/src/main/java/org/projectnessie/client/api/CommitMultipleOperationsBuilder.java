@@ -20,6 +20,7 @@ import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.Operation;
 
 /**
@@ -37,4 +38,11 @@ public interface CommitMultipleOperationsBuilder
   CommitMultipleOperationsBuilder operation(Operation operation);
 
   Branch commit() throws NessieNotFoundException, NessieConflictException;
+
+  /**
+   * Commit operations returning extended results.
+   *
+   * @since {@link NessieApiV2}
+   */
+  CommitResponse commitWithResponse() throws NessieNotFoundException, NessieConflictException;
 }

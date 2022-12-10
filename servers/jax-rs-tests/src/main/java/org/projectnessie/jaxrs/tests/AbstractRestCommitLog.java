@@ -46,6 +46,7 @@ import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
@@ -59,6 +60,22 @@ import org.projectnessie.model.Reference;
 
 /** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestCommitLog extends AbstractRestAssign {
+
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void commitResponse() throws BaseNessieClientServerException {
+    Branch branch = createBranch("commitResponse");
+    CommitResponse response =
+        getApi()
+            .commitMultipleOperations()
+            .commitMeta(CommitMeta.fromMessage("test"))
+            .operation(Put.of(ContentKey.of("test"), IcebergTable.of("loc", 1, 2, 3, 4)))
+            .branch(branch)
+            .commitWithResponse();
+    soft.assertThat(response).isNotNull();
+    soft.assertThat(response.getTargetBranch())
+        .isEqualTo(getApi().getReference().refName(branch.getName()).get());
+  }
 
   @Test
   public void filterCommitLogOperations() throws BaseNessieClientServerException {
@@ -622,7 +639,6 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
       if (null != filterByAuthor) {
         filter = String.format("commit.author=='%s'", filterByAuthor);
       }
-      @SuppressWarnings("deprecation")
       LogResponse response =
           getApi()
               .getCommitLog()

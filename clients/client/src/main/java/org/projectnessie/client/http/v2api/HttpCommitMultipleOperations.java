@@ -32,13 +32,19 @@ final class HttpCommitMultipleOperations extends BaseCommitMultipleOperationsBui
 
   @Override
   public Branch commit() throws NessieNotFoundException, NessieConflictException {
+    return commitWithResponse().getTargetBranch();
+  }
+
+  @Override
+  public CommitResponse commitWithResponse()
+      throws NessieNotFoundException, NessieConflictException {
+
     return client
         .newRequest()
         .path("trees/{ref}/history/commit")
         .resolveTemplate("ref", Reference.toPathString(branchName, hash))
         .unwrap(NessieNotFoundException.class, NessieConflictException.class)
         .post(operations.build())
-        .readEntity(CommitResponse.class)
-        .getTargetBranch();
+        .readEntity(CommitResponse.class);
   }
 }

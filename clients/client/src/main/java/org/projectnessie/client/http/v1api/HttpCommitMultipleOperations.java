@@ -20,6 +20,7 @@ import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.CommitResponse;
 
 final class HttpCommitMultipleOperations extends BaseCommitMultipleOperationsBuilder {
 
@@ -32,5 +33,11 @@ final class HttpCommitMultipleOperations extends BaseCommitMultipleOperationsBui
   @Override
   public Branch commit() throws NessieNotFoundException, NessieConflictException {
     return client.getTreeApi().commitMultipleOperations(branchName, hash, operations.build());
+  }
+
+  @Override
+  public CommitResponse commitWithResponse() {
+    throw new UnsupportedOperationException(
+        "Extended commit response data is not available in API v1");
   }
 }
