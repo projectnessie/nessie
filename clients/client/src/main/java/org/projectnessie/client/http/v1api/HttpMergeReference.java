@@ -40,6 +40,15 @@ final class HttpMergeReference extends BaseMergeReferenceBuilder {
             .isReturnConflictAsResult(returnConflictAsResult)
             .isFetchAdditionalInfo(fetchAdditionalInfo)
             .keepIndividualCommits(keepIndividualCommits);
+
+    if (defaultMergeMode != null) {
+      merge.defaultKeyMergeMode(defaultMergeMode);
+    }
+
+    if (mergeModes != null) {
+      merge.keyMergeModes(mergeModes.values());
+    }
+
     return client.getTreeApi().mergeRefIntoBranch(branchName, hash, merge.build());
   }
 }
