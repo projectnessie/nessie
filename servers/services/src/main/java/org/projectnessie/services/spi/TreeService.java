@@ -17,6 +17,7 @@ package org.projectnessie.services.spi;
 
 import java.util.Collection;
 import java.util.List;
+import javax.annotation.Nullable;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -90,6 +91,7 @@ public interface TreeService {
       String fromRefName,
       String fromHash,
       Boolean keepIndividualCommits,
+      @Nullable String message,
       Collection<MergeKeyBehavior> keyMergeTypes,
       MergeBehavior defaultMergeType,
       Boolean dryRun,

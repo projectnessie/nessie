@@ -425,13 +425,19 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
         transplants = s.collect(Collectors.toList());
       }
 
+      if (Boolean.TRUE.equals(keepIndividualCommits) && transplants.size() > 1) {
+        // Message overrides are not meaningful when transplanting more than one commit.
+        // This matches old behaviour where `message` was ignored in all cases.
+        message = null;
+      }
+
       MergeResult<Commit> result =
           getStore()
               .transplant(
                   BranchName.of(branchName),
                   toHash(expectedHash, true),
                   transplants,
-                  commitMetaUpdate(),
+                  commitMetaUpdate(message),
                   Boolean.TRUE.equals(keepIndividualCommits),
                   keyMergeTypes(keyMergeTypes),
                   defaultMergeType(defaultMergeType),
@@ -459,6 +465,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       String fromRefName,
       String fromHash,
       Boolean keepIndividualCommits,
+      @Nullable String message,
       Collection<MergeKeyBehavior> keyMergeTypes,
       MergeBehavior defaultMergeType,
       Boolean dryRun,
@@ -472,7 +479,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                   toHash(fromRefName, fromHash),
                   BranchName.of(branchName),
                   toHash(expectedHash, true),
-                  commitMetaUpdate(),
+                  commitMetaUpdate(message),
                   Boolean.TRUE.equals(keepIndividualCommits),
                   keyMergeTypes(keyMergeTypes),
                   defaultMergeType(defaultMergeType),
@@ -659,7 +666,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
               .commit(
                   BranchName.of(Optional.ofNullable(branch).orElse(getConfig().getDefaultBranch())),
                   Optional.ofNullable(expectedHash).map(Hash::of),
-                  commitMetaUpdate().rewriteSingle(commitMeta),
+                  commitMetaUpdate(null).rewriteSingle(commitMeta),
                   ops);
 
       return Branch.of(branch, newHash.asString());

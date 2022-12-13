@@ -168,6 +168,7 @@ public class RestTreeResource implements HttpTreeApi {
             merge.getFromRefName(),
             merge.getFromHash(),
             merge.keepIndividualCommits(),
+            null,
             merge.getKeyMergeModes(),
             merge.getDefaultKeyMergeMode(),
             merge.isDryRun(),

@@ -22,6 +22,7 @@ import static org.assertj.core.api.InstanceOfAssertFactories.map;
 import static org.assertj.core.data.MapEntry.entry;
 
 import com.google.common.collect.ImmutableList;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import org.assertj.core.api.InstanceOfAssertFactories;
@@ -362,6 +363,126 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalid {
         .extracting(LogEntry::getCommitMeta)
         .extracting(CommitMeta::getMessage)
         .containsAnyOf("test-branch2", "test-branch1", "test-main");
+  }
+
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2) // Merge message is not settable in V1
+  public void mergeMessage() throws BaseNessieClientServerException {
+    testMergeTransplantMessage(
+        (target, source, committed1, committed2, returnConflictAsResult) ->
+            getApi()
+                .mergeRefIntoBranch()
+                .message("test-message-override-123")
+                .branch(target)
+                .fromRef(source)
+                .returnConflictAsResult(returnConflictAsResult)
+                .merge(),
+        ImmutableList.of("test-message-override-123"));
+  }
+
+  @Test
+  public void mergeMessageDefault() throws BaseNessieClientServerException {
+    testMergeTransplantMessage(
+        (target, source, committed1, committed2, returnConflictAsResult) ->
+            getApi()
+                .mergeRefIntoBranch()
+                .branch(target)
+                .fromRef(source)
+                .returnConflictAsResult(returnConflictAsResult)
+                .merge(),
+        ImmutableList.of(
+            "test-commit-1\n---------------------------------------------\ntest-commit-2"));
+  }
+
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V1) // V2 does not allow squashed transplants
+  public void transplantMessageSquashed() throws BaseNessieClientServerException {
+    testMergeTransplantMessage(
+        (target, source, committed1, committed2, returnConflictAsResult) ->
+            getApi()
+                .transplantCommitsIntoBranch()
+                .message("test-message-override-123")
+                .branch(target)
+                .fromRefName(source.getName())
+                .keepIndividualCommits(false)
+                .hashesToTransplant(
+                    ImmutableList.of(
+                        Objects.requireNonNull(committed1.getHash()),
+                        Objects.requireNonNull(committed2.getHash())))
+                .returnConflictAsResult(returnConflictAsResult)
+                .transplant(),
+        ImmutableList.of("test-message-override-123"));
+  }
+
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V1) // V2 does not allow squashed transplants
+  public void transplantMessageSingle() throws BaseNessieClientServerException {
+    testMergeTransplantMessage(
+        (target, source, committed1, committed2, returnConflictAsResult) ->
+            getApi()
+                .transplantCommitsIntoBranch()
+                .message("test-message-override-123")
+                .branch(target)
+                .fromRefName(source.getName())
+                .hashesToTransplant(ImmutableList.of(Objects.requireNonNull(committed1.getHash())))
+                .returnConflictAsResult(returnConflictAsResult)
+                .transplant(),
+        ImmutableList.of("test-message-override-123"));
+  }
+
+  @Test
+  public void transplantMessageOverrideMultiple() throws BaseNessieClientServerException {
+    testMergeTransplantMessage(
+        (target, source, committed1, committed2, returnConflictAsResult) ->
+            getApi()
+                .transplantCommitsIntoBranch()
+                .message("ignored-message-override")
+                .keepIndividualCommits(true)
+                .branch(target)
+                .fromRefName(source.getName())
+                .hashesToTransplant(
+                    ImmutableList.of(
+                        Objects.requireNonNull(committed1.getHash()),
+                        Objects.requireNonNull(committed2.getHash())))
+                .returnConflictAsResult(returnConflictAsResult)
+                .transplant(),
+        // Note: the expected messages are given in the commit log order (newest to oldest)
+        ImmutableList.of("test-commit-2", "test-commit-1"));
+  }
+
+  private void testMergeTransplantMessage(
+      MergeTransplantActor actor, Collection<String> expectedMessages)
+      throws BaseNessieClientServerException {
+    Branch target = createBranch("merge-transplant-msg-target");
+    Branch source = createBranch("merge-transplant-msg-source");
+
+    ContentKey key1 = ContentKey.of("test-key1");
+    ContentKey key2 = ContentKey.of("test-key2");
+
+    source =
+        getApi()
+            .commitMultipleOperations()
+            .branch(source)
+            .commitMeta(CommitMeta.fromMessage("test-commit-1"))
+            .operation(Put.of(key1, IcebergTable.of("table1", 42, 43, 44, 45)))
+            .commit();
+
+    Branch firstCommitOnSource = source;
+
+    source =
+        getApi()
+            .commitMultipleOperations()
+            .branch(source)
+            .commitMeta(CommitMeta.fromMessage("test-commit-2"))
+            .operation(Put.of(key2, IcebergTable.of("table2", 42, 43, 44, 45)))
+            .commit();
+
+    actor.act(target, source, firstCommitOnSource, source, false);
+
+    soft.assertThat(getApi().getCommitLog().refName(target.getName()).stream())
+        .isNotEmpty()
+        .extracting(e -> e.getCommitMeta().getMessage())
+        .containsExactlyElementsOf(expectedMessages);
   }
 
   @ParameterizedTest

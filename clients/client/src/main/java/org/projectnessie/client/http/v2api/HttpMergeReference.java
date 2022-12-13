@@ -41,11 +41,11 @@ final class HttpMergeReference extends BaseMergeReferenceBuilder {
 
   @Override
   public MergeResponse merge() throws NessieNotFoundException, NessieConflictException {
-    // TODO: message
     ImmutableMerge.Builder merge =
         ImmutableMerge.builder()
             .fromHash(fromHash)
             .fromRefName(fromRefName)
+            .message(message)
             .isDryRun(dryRun)
             .isFetchAdditionalInfo(fetchAdditionalInfo)
             .isReturnConflictAsResult(returnConflictAsResult);

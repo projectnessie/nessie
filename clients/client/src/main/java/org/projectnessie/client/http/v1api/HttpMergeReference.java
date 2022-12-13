@@ -16,6 +16,7 @@
 package org.projectnessie.client.http.v1api;
 
 import org.projectnessie.api.v1.params.ImmutableMerge;
+import org.projectnessie.client.api.MergeReferenceBuilder;
 import org.projectnessie.client.builder.BaseMergeReferenceBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
@@ -28,6 +29,11 @@ final class HttpMergeReference extends BaseMergeReferenceBuilder {
 
   HttpMergeReference(NessieApiClient client) {
     this.client = client;
+  }
+
+  @Override
+  public MergeReferenceBuilder message(String message) {
+    throw new UnsupportedOperationException("Merge message overrides are not supported in API v1.");
   }
 
   @Override

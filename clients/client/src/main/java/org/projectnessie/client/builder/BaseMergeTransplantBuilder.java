@@ -32,6 +32,12 @@ public abstract class BaseMergeTransplantBuilder<B extends OnBranchBuilder<B>>
   protected Boolean fetchAdditionalInfo;
   protected MergeBehavior defaultMergeMode;
   protected Map<ContentKey, MergeKeyBehavior> mergeModes;
+  protected String message;
+
+  public B message(String message) {
+    this.message = message;
+    return (B) this;
+  }
 
   public B fromRefName(String fromRefName) {
     this.fromRefName = fromRefName;

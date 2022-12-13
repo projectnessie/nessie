@@ -13,20 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.builder;
+package org.projectnessie.client.http.v1api;
 
-import java.util.List;
-import org.projectnessie.client.api.TransplantCommitsBuilder;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public abstract class BaseTransplantCommitsBuilder
-    extends BaseMergeTransplantBuilder<TransplantCommitsBuilder>
-    implements TransplantCommitsBuilder {
+import org.junit.jupiter.api.Test;
 
-  protected List<String> hashesToTransplant;
+class TestHttpMergeReference {
 
-  @Override
-  public TransplantCommitsBuilder hashesToTransplant(List<String> hashesToTransplant) {
-    this.hashesToTransplant = hashesToTransplant;
-    return this;
+  @Test
+  public void testMessageOverrideDenied() {
+    assertThatThrownBy(() -> new HttpMergeReference(null).message("test"))
+        .isInstanceOf(UnsupportedOperationException.class)
+        .hasMessage("Merge message overrides are not supported in API v1.");
   }
 }

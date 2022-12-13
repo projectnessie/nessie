@@ -124,7 +124,7 @@ abstract class BaseApiImpl {
     return ServerAccessContext.of(UUID.randomUUID().toString(), getPrincipal());
   }
 
-  protected MetadataRewriter<CommitMeta> commitMetaUpdate() {
+  protected MetadataRewriter<CommitMeta> commitMetaUpdate(@Nullable String messageOverride) {
     return new MetadataRewriter<CommitMeta>() {
       // Used for setting contextual commit properties during new and merge/transplant commits.
       // WARNING: ONLY SET PROPERTIES, WHICH APPLY COMMONLY TO ALL COMMIT TYPES.
@@ -134,12 +134,18 @@ abstract class BaseApiImpl {
 
       @Override
       public CommitMeta rewriteSingle(CommitMeta metadata) {
-        return metadata.toBuilder()
-            .committer(committer)
-            .commitTime(now)
-            .author(metadata.getAuthor() == null ? committer : metadata.getAuthor())
-            .authorTime(metadata.getAuthorTime() == null ? now : metadata.getAuthorTime())
-            .build();
+        ImmutableCommitMeta.Builder builder =
+            metadata.toBuilder()
+                .committer(committer)
+                .commitTime(now)
+                .author(metadata.getAuthor() == null ? committer : metadata.getAuthor())
+                .authorTime(metadata.getAuthorTime() == null ? now : metadata.getAuthorTime());
+
+        if (messageOverride != null) {
+          builder.message(messageOverride);
+        }
+
+        return builder.build();
       }
 
       @Override
@@ -155,13 +161,21 @@ abstract class BaseApiImpl {
                 .author(committer)
                 .authorTime(now);
         StringBuilder newMessage = new StringBuilder();
+
+        if (messageOverride != null) {
+          newMessage.append(messageOverride);
+        }
+
         Map<String, String> newProperties = new HashMap<>();
         for (CommitMeta commitMeta : metadata) {
           newProperties.putAll(commitMeta.getProperties());
-          if (newMessage.length() > 0) {
-            newMessage.append("\n---------------------------------------------\n");
+
+          if (messageOverride == null) {
+            if (newMessage.length() > 0) {
+              newMessage.append("\n---------------------------------------------\n");
+            }
+            newMessage.append(commitMeta.getMessage());
           }
-          newMessage.append(commitMeta.getMessage());
         }
         return newMeta.putAllProperties(newProperties).message(newMessage.toString()).build();
       }
