@@ -32,6 +32,44 @@ pluginManagement {
   }
 }
 
+plugins { id("com.gradle.enterprise") version ("3.12") }
+
+gradleEnterprise {
+  if (System.getenv("CI") != null) {
+    buildScan {
+      termsOfServiceUrl = "https://gradle.com/terms-of-service"
+      termsOfServiceAgree = "yes"
+      // Add some potentially interesting information from the environment
+      listOf(
+          "GITHUB_ACTION_REPOSITORY",
+          "GITHUB_ACTOR",
+          "GITHUB_BASE_REF",
+          "GITHUB_HEAD_REF",
+          "GITHUB_JOB",
+          "GITHUB_REF",
+          "GITHUB_REPOSITORY",
+          "GITHUB_RUN_ID",
+          "GITHUB_RUN_NUMBER",
+          "GITHUB_SHA",
+          "GITHUB_WORKFLOW"
+        )
+        .forEach { e ->
+          val v = System.getenv(e)
+          if (v != null) {
+            value(e, v)
+          }
+        }
+      val ghUrl = System.getenv("GITHUB_SERVER_URL")
+      if (ghUrl != null) {
+        val ghRepo = System.getenv("GITHUB_REPOSITORY")
+        val ghRunId = System.getenv("GITHUB_RUN_ID")
+        link("Summary", "$ghUrl/$ghRepo/actions/runs/$ghRunId")
+        link("PRs", "$ghUrl/$ghRepo/pulls")
+      }
+    }
+  }
+}
+
 gradle.beforeProject {
   version = baseVersion
   group = "org.projectnessie"
