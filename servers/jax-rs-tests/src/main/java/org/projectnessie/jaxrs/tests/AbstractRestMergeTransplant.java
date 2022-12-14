@@ -22,13 +22,19 @@ import static org.assertj.core.api.InstanceOfAssertFactories.map;
 import static org.assertj.core.data.MapEntry.entry;
 
 import com.google.common.collect.ImmutableList;
+import java.util.Map;
+import java.util.Objects;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.projectnessie.client.api.MergeReferenceBuilder;
+import org.projectnessie.client.api.MergeTransplantBuilder;
 import org.projectnessie.client.api.NessieApiV2;
+import org.projectnessie.client.api.TransplantCommitsBuilder;
 import org.projectnessie.client.ext.NessieApiVersion;
 import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.error.BaseNessieClientServerException;
@@ -456,5 +462,106 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalid {
 
     soft.assertThat(getApi().getNamespace().refName(base.getName()).namespace(ns).get())
         .isNotNull();
+  }
+
+  @Test
+  public void mergeWithCustomModes() throws BaseNessieClientServerException {
+    MergeReferenceBuilder merge = getApi().mergeRefIntoBranch();
+    testMergeTransplantWithCustomModes(
+        merge,
+        (target, source, committed1, committed2, returnConflictAsResult) ->
+            merge
+                .branch(target)
+                .fromRef(source)
+                .returnConflictAsResult(returnConflictAsResult)
+                .merge());
+  }
+
+  @Test
+  public void transplantWithCustomModes() throws BaseNessieClientServerException {
+    TransplantCommitsBuilder transplant = getApi().transplantCommitsIntoBranch();
+    testMergeTransplantWithCustomModes(
+        transplant,
+        (target, source, committed1, committed2, returnConflictAsResult) ->
+            transplant
+                .branch(target)
+                .fromRefName(source.getName())
+                .hashesToTransplant(
+                    ImmutableList.of(
+                        Objects.requireNonNull(committed1.getHash()),
+                        Objects.requireNonNull(committed2.getHash())))
+                .returnConflictAsResult(returnConflictAsResult)
+                .transplant());
+  }
+
+  private <B extends MergeTransplantBuilder<B>> void testMergeTransplantWithCustomModes(
+      B opBuilder, MergeTransplantActor actor) throws BaseNessieClientServerException {
+    Branch target = createBranch("target");
+    Branch branch = createBranch("test-branch", target);
+
+    ContentKey key1 = ContentKey.of("both-added1");
+    ContentKey key2 = ContentKey.of("both-added2");
+    ContentKey key3 = ContentKey.of("branch-added");
+    target =
+        getApi()
+            .commitMultipleOperations()
+            .branch(target)
+            .commitMeta(CommitMeta.fromMessage("test-main"))
+            .operation(Put.of(key1, IcebergTable.of("main-table1", 42, 43, 44, 45)))
+            .operation(Put.of(key2, IcebergTable.of("main-table1", 42, 43, 44, 45)))
+            .commit();
+
+    branch =
+        getApi()
+            .commitMultipleOperations()
+            .branch(branch)
+            .commitMeta(CommitMeta.fromMessage("test-fork"))
+            .operation(Put.of(key1, IcebergTable.of("branch-table1", 42, 43, 44, 45)))
+            .operation(Put.of(key2, IcebergTable.of("branch-table2", 42, 43, 44, 45)))
+            .commit();
+
+    Branch firstCommitOnBranch = branch;
+
+    branch =
+        getApi()
+            .commitMultipleOperations()
+            .branch(branch)
+            .commitMeta(CommitMeta.fromMessage("test-fork"))
+            .operation(Put.of(key3, IcebergTable.of("branch-no-conflict", 42, 43, 44, 45)))
+            .commit();
+
+    opBuilder
+        .defaultMergeMode(MergeBehavior.FORCE)
+        .mergeMode(key1, MergeBehavior.DROP)
+        .mergeMode(key3, MergeBehavior.NORMAL);
+
+    MergeResponse response = actor.act(target, branch, firstCommitOnBranch, branch, false);
+
+    soft.assertThat(response.getDetails())
+        .asInstanceOf(list(ContentKeyDetails.class))
+        .extracting(
+            ContentKeyDetails::getKey,
+            ContentKeyDetails::getConflictType,
+            ContentKeyDetails::getMergeBehavior)
+        .containsExactlyInAnyOrder(
+            tuple(key1, ContentKeyConflict.NONE, MergeBehavior.DROP),
+            tuple(key2, ContentKeyConflict.NONE, MergeBehavior.FORCE),
+            tuple(key3, ContentKeyConflict.NONE, MergeBehavior.NORMAL));
+
+    soft.assertThat(
+            getApi()
+                .getContent()
+                .refName(target.getName())
+                .hashOnRef(response.getResultantTargetHash())
+                .key(key1)
+                .key(key2)
+                .key(key3)
+                .get()
+                .entrySet())
+        .extracting(Map.Entry::getKey, e -> ((IcebergTable) e.getValue()).getMetadataLocation())
+        .containsExactlyInAnyOrder(
+            tuple(key1, "main-table1"),
+            tuple(key2, "branch-table2"),
+            tuple(key3, "branch-no-conflict"));
   }
 }

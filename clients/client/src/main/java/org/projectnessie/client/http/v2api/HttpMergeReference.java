@@ -41,20 +41,29 @@ final class HttpMergeReference extends BaseMergeReferenceBuilder {
 
   @Override
   public MergeResponse merge() throws NessieNotFoundException, NessieConflictException {
-    ImmutableMerge merge =
+    // TODO: message
+    ImmutableMerge.Builder merge =
         ImmutableMerge.builder()
             .fromHash(fromHash)
             .fromRefName(fromRefName)
             .isDryRun(dryRun)
             .isFetchAdditionalInfo(fetchAdditionalInfo)
-            .isReturnConflictAsResult(returnConflictAsResult)
-            .build(); // TODO: message
+            .isReturnConflictAsResult(returnConflictAsResult);
+
+    if (defaultMergeMode != null) {
+      merge.defaultKeyMergeMode(defaultMergeMode);
+    }
+
+    if (mergeModes != null) {
+      merge.keyMergeModes(mergeModes.values());
+    }
+
     return client
         .newRequest()
         .path("trees/{ref}/history/merge")
         .resolveTemplate("ref", Reference.toPathString(branchName, hash))
         .unwrap(NessieNotFoundException.class, NessieConflictException.class)
-        .post(merge)
+        .post(merge.build())
         .readEntity(MergeResponse.class);
   }
 }

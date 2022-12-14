@@ -15,7 +15,12 @@
  */
 package org.projectnessie.client.builder;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.projectnessie.client.api.OnBranchBuilder;
+import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.MergeBehavior;
+import org.projectnessie.model.MergeKeyBehavior;
 
 public abstract class BaseMergeTransplantBuilder<B extends OnBranchBuilder<B>>
     extends BaseOnBranchBuilder<B> {
@@ -25,6 +30,8 @@ public abstract class BaseMergeTransplantBuilder<B extends OnBranchBuilder<B>>
   protected Boolean dryRun;
   protected Boolean returnConflictAsResult;
   protected Boolean fetchAdditionalInfo;
+  protected MergeBehavior defaultMergeMode;
+  protected Map<ContentKey, MergeKeyBehavior> mergeModes;
 
   public B fromRefName(String fromRefName) {
     this.fromRefName = fromRefName;
@@ -48,6 +55,20 @@ public abstract class BaseMergeTransplantBuilder<B extends OnBranchBuilder<B>>
 
   public B returnConflictAsResult(boolean returnConflictAsResult) {
     this.returnConflictAsResult = returnConflictAsResult;
+    return (B) this;
+  }
+
+  public B defaultMergeMode(MergeBehavior mergeBehavior) {
+    defaultMergeMode = mergeBehavior;
+    return (B) this;
+  }
+
+  public B mergeMode(ContentKey key, MergeBehavior mergeBehavior) {
+    if (mergeModes == null) {
+      mergeModes = new HashMap<>();
+    }
+
+    mergeModes.put(key, MergeKeyBehavior.of(key, mergeBehavior));
     return (B) this;
   }
 }

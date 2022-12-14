@@ -15,8 +15,11 @@
  */
 package org.projectnessie.tools.compatibility.tests;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.tools.compatibility.api.Version;
+import org.projectnessie.tools.compatibility.api.VersionCondition;
 import org.projectnessie.tools.compatibility.internal.OlderNessieClientsExtension;
 
 @ExtendWith(OlderNessieClientsExtension.class)
@@ -24,5 +27,13 @@ public class ITOlderClients extends AbstractCompatibilityTests {
   @Override
   Version getClientVersion() {
     return version;
+  }
+
+  // MergeBehavior is supported by the java client since the release following 0.45.0
+  @VersionCondition(minVersion = "0.45.1")
+  @Override
+  @Test
+  public void mergeBehavior() throws BaseNessieClientServerException {
+    super.mergeBehavior();
   }
 }

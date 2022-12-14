@@ -17,6 +17,7 @@ package org.projectnessie.tools.compatibility.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -29,15 +30,18 @@ import org.junit.jupiter.api.Test;
 import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.api.GetCommitLogBuilder;
 import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
+import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.NessieConfiguration;
@@ -254,5 +258,53 @@ public abstract class AbstractCompatibilityTests {
 
   boolean nessieWithMergeResponse() {
     return version.isGreaterThan(Version.parseVersion(NESSIE_0_30_0));
+  }
+
+  public void mergeBehavior() throws BaseNessieClientServerException {
+    Branch defaultBranch = api.getDefaultBranch();
+    Branch src = Branch.of("merge-behavior-src", defaultBranch.getHash());
+    Branch dest = Branch.of("merge-behavior-dest", defaultBranch.getHash());
+
+    api.createReference().sourceRefName(defaultBranch.getName()).reference(src).create();
+    api.createReference().sourceRefName(defaultBranch.getName()).reference(dest).create();
+
+    ContentKey key1 = ContentKey.of("table1");
+    ContentKey key2 = ContentKey.of("table2");
+    String commitMessage = "hello world";
+    Branch committed =
+        api.commitMultipleOperations()
+            .commitMeta(CommitMeta.fromMessage(commitMessage))
+            .branch(src)
+            .operation(Put.of(key1, IcebergTable.of("loc1", 1, 2, 3, 4)))
+            .operation(Put.of(key2, IcebergTable.of("loc2", 1, 2, 3, 4)))
+            .commit();
+
+    MergeResponse response =
+        api.mergeRefIntoBranch()
+            .fromRef(committed)
+            .branch(dest)
+            .defaultMergeMode(MergeBehavior.DROP)
+            .mergeMode(key2, MergeBehavior.NORMAL)
+            .merge();
+
+    if (nessieWithMergeResponse()) {
+      assertThat(response).isNotNull();
+      assertThat(response.getDetails())
+          .extracting(
+              MergeResponse.ContentKeyDetails::getKey,
+              MergeResponse.ContentKeyDetails::getMergeBehavior,
+              MergeResponse.ContentKeyDetails::getConflictType)
+          .containsExactlyInAnyOrder(
+              tuple(key1, MergeBehavior.DROP, MergeResponse.ContentKeyConflict.NONE),
+              tuple(key2, MergeBehavior.NORMAL, MergeResponse.ContentKeyConflict.NONE));
+    } else {
+      assertThat(response).isNull();
+    }
+
+    Map<ContentKey, Content> contents =
+        api.getContent().key(key1).key(key2).refName(dest.getName()).get();
+    assertThat(contents.entrySet())
+        .extracting(Map.Entry::getKey, e -> ((IcebergTable) e.getValue()).getMetadataLocation())
+        .containsExactly(tuple(key2, "loc2"));
   }
 }

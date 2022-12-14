@@ -40,6 +40,15 @@ final class HttpTransplantCommits extends BaseTransplantCommitsBuilder {
             .isReturnConflictAsResult(returnConflictAsResult)
             .isFetchAdditionalInfo(fetchAdditionalInfo)
             .keepIndividualCommits(keepIndividualCommits);
+
+    if (defaultMergeMode != null) {
+      transplant.defaultKeyMergeMode(defaultMergeMode);
+    }
+
+    if (mergeModes != null) {
+      transplant.keyMergeModes(mergeModes.values());
+    }
+
     return client
         .getTreeApi()
         .transplantCommitsIntoBranch(branchName, hash, message, transplant.build());

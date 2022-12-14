@@ -16,6 +16,8 @@
 package org.projectnessie.client.api;
 
 import javax.validation.constraints.Pattern;
+import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.Validation;
 
 public interface MergeTransplantBuilder<R extends MergeTransplantBuilder<R>>
@@ -31,4 +33,8 @@ public interface MergeTransplantBuilder<R extends MergeTransplantBuilder<R>>
   R fetchAdditionalInfo(boolean fetchAdditionalInfo);
 
   R returnConflictAsResult(boolean returnConflictAsResult);
+
+  R defaultMergeMode(MergeBehavior mergeBehavior);
+
+  R mergeMode(ContentKey key, MergeBehavior mergeBehavior);
 }

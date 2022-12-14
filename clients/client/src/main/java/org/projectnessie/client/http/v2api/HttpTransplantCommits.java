@@ -50,6 +50,15 @@ final class HttpTransplantCommits extends BaseTransplantCommitsBuilder {
             .isDryRun(dryRun)
             .isReturnConflictAsResult(returnConflictAsResult)
             .isFetchAdditionalInfo(fetchAdditionalInfo);
+
+    if (defaultMergeMode != null) {
+      transplant.defaultKeyMergeMode(defaultMergeMode);
+    }
+
+    if (mergeModes != null) {
+      transplant.keyMergeModes(mergeModes.values());
+    }
+
     return client
         .newRequest()
         .path("trees/{ref}/history/transplant")
