@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
@@ -454,6 +455,19 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalid {
       MergeTransplantActor actor, Collection<String> expectedMessages)
       throws BaseNessieClientServerException {
     Branch target = createBranch("merge-transplant-msg-target");
+
+    // Common ancestor
+    target =
+        getApi()
+            .commitMultipleOperations()
+            .branch(target)
+            .commitMeta(CommitMeta.fromMessage("test-root"))
+            .operation(
+                Put.of(
+                    ContentKey.of("irrelevant-to-this-test"),
+                    IcebergTable.of("something", 42, 43, 44, 45)))
+            .commit();
+
     Branch source = createBranch("merge-transplant-msg-source");
 
     ContentKey key1 = ContentKey.of("test-key1");
@@ -479,7 +493,8 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalid {
 
     actor.act(target, source, firstCommitOnSource, source, false);
 
-    soft.assertThat(getApi().getCommitLog().refName(target.getName()).stream())
+    Stream<LogEntry> logStream = getApi().getCommitLog().refName(target.getName()).stream();
+    soft.assertThat(logStream.limit(expectedMessages.size()))
         .isNotEmpty()
         .extracting(e -> e.getCommitMeta().getMessage())
         .containsExactlyElementsOf(expectedMessages);
