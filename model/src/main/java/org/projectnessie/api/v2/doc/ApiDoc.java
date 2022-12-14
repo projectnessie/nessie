@@ -64,7 +64,7 @@ public interface ApiDoc {
           + "- name@hash - Identifies the 'hash' commit on the named branch.\n"
           + "\n"
           + "The 'hash' commit must be reachable from the current HEAD of the branch.\n"
-          + "In this case 'hash' indicates the state of contents that should be used for validating incoming changes\n"
+          + "In this case 'hash' indicates the state of contents used for validating incoming changes\n"
           + "(commits / merges / transplants).\n";
 
   String REF_NAME_DESCRIPTION = "A reference name.\n\n" + REF_NAME_MESSAGE + "\n";
