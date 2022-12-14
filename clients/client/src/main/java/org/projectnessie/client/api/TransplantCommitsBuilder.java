@@ -28,6 +28,16 @@ import org.projectnessie.model.MergeResponse;
  * @since {@link NessieApiV1}
  */
 public interface TransplantCommitsBuilder extends MergeTransplantBuilder<TransplantCommitsBuilder> {
+
+  /**
+   * Sets an override for the transplanted commit message. If an override is not set, messages from
+   * the original commits are reused during transplanting.
+   *
+   * <p>Note: The message override is ignored when {@link #keepIndividualCommits(boolean) more than
+   * one commit} is transplanted without squashing. In other words, the message override is
+   * effective only when exactly one commit is produced on the target branch.
+   */
+  @Override
   TransplantCommitsBuilder message(String message);
 
   TransplantCommitsBuilder hashesToTransplant(

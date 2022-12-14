@@ -27,6 +27,18 @@ import org.projectnessie.model.Reference;
  * @since {@link NessieApiV1}
  */
 public interface MergeReferenceBuilder extends MergeTransplantBuilder<MergeReferenceBuilder> {
+
+  /**
+   * Sets a custom merge commit message. The message is auto-generated if not set.
+   *
+   * <p>How the auto-generated message is constructed is not specified, but in general it will be
+   * based on the individual messages of the merged commits.
+   *
+   * @since {@link NessieApiV2}
+   */
+  @Override
+  MergeReferenceBuilder message(String message);
+
   MergeReferenceBuilder fromHash(@NotBlank String fromHash);
 
   /**

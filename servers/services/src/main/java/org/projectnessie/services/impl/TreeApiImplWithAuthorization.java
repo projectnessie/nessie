@@ -25,6 +25,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.annotation.Nullable;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -272,6 +273,7 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
       String fromRefName,
       String fromHash,
       Boolean keepIndividualCommits,
+      @Nullable String message,
       Collection<MergeKeyBehavior> keyMergeTypes,
       MergeBehavior defaultMergeType,
       Boolean dryRun,
@@ -288,6 +290,7 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
         fromRefName,
         fromHash,
         keepIndividualCommits,
+        message,
         keyMergeTypes,
         defaultMergeType,
         dryRun,

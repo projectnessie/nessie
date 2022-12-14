@@ -22,6 +22,10 @@ import org.projectnessie.model.Validation;
 
 public interface MergeTransplantBuilder<R extends MergeTransplantBuilder<R>>
     extends OnBranchBuilder<R> {
+
+  /** See javadoc on overriding methods for details. */
+  R message(String message);
+
   R fromRefName(
       @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           String fromRefName);
