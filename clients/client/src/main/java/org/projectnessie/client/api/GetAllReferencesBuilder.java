@@ -15,7 +15,7 @@
  */
 package org.projectnessie.client.api;
 
-import org.projectnessie.api.params.FetchOption;
+import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
 
@@ -37,6 +37,12 @@ public interface GetAllReferencesBuilder
    * @param fetchOption The option indicating how much info to fetch
    */
   GetAllReferencesBuilder fetch(FetchOption fetchOption);
+
+  /** Legacy API method for backward compatibility. Use {@link #fetch(FetchOption)} instead. */
+  @Deprecated
+  default GetAllReferencesBuilder fetch(org.projectnessie.api.params.FetchOption fetchOption) {
+    return fetch(fetchOption.toModel());
+  }
 
   // Mandatory override (must maintain function signature w/ previous versions)
   @Override

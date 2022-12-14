@@ -15,10 +15,10 @@
  */
 package org.projectnessie.client.http.v2api;
 
-import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.builder.BaseGetReferenceBuilder;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.SingleReferenceResponse;
 

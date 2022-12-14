@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.api.params;
+package org.projectnessie.model;
 
 import javax.annotation.Nullable;
 
-/** Legacy {@code FetchOption} enum. Use {@link org.projectnessie.model.FetchOption} instead. */
-@Deprecated
+/**
+ * This enum defines the levels of details that may be represented by model objects. For example,
+ * {@link Reference} objects may or may not include metadata. The exact meaning of each enum value
+ * depends on the usage context.
+ */
 public enum FetchOption {
   MINIMAL,
   ALL;
@@ -45,9 +48,5 @@ public enum FetchOption {
    */
   public static String getFetchOptionName(@Nullable FetchOption fetchOption) {
     return null == fetchOption ? FetchOption.MINIMAL.name() : fetchOption.name();
-  }
-
-  public org.projectnessie.model.FetchOption toModel() {
-    return org.projectnessie.model.FetchOption.valueOf(name());
   }
 }

@@ -21,7 +21,7 @@ import javax.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.immutables.builder.Builder.Constructor;
-import org.projectnessie.api.params.FetchOption;
+import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.Validation;
 
 /**

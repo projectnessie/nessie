@@ -16,12 +16,12 @@
 package org.projectnessie.client.http.v2api;
 
 import java.util.stream.Stream;
-import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.api.v2.params.CommitLogParams;
 import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.builder.BaseGetCommitLogBuilder;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Reference;
 

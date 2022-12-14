@@ -15,8 +15,8 @@
  */
 package org.projectnessie.client.builder;
 
-import org.projectnessie.api.params.FetchOption;
 import org.projectnessie.client.api.GetReferenceBuilder;
+import org.projectnessie.model.FetchOption;
 
 public abstract class BaseGetReferenceBuilder implements GetReferenceBuilder {
 

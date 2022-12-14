@@ -21,7 +21,7 @@ import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
-import org.projectnessie.api.params.FetchOption;
+import org.projectnessie.model.FetchOption;
 
 @Execution(ExecutionMode.CONCURRENT)
 public class CommitLogParamsTest {

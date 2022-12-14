@@ -22,7 +22,7 @@ import javax.validation.constraints.Pattern;
 import javax.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
-import org.projectnessie.api.params.FetchOption;
+import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.Validation;
 
 /**
