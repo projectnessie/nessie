@@ -98,7 +98,7 @@ public interface ApiDoc {
           + "For example:\n"
           + "- name@hash - Identifies the 'hash' commit on a branch or tag.\n"
           + "\n"
-          + "The specified 'hash' must be the current HEAD of the branch or tag. It will be used to validate that "
+          + "The specified 'hash' must be the value of the current HEAD of the branch or tag known by the client. It will be used to validate that "
           + "at execution time the reference points to the same hash that the caller expected "
           + "when the operation arguments were constructed.\n";
 
