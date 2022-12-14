@@ -20,6 +20,7 @@ import org.projectnessie.client.builder.BaseOnBranchBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.Branch;
 import org.projectnessie.model.Reference;
 
 final class HttpDeleteBranch extends BaseOnBranchBuilder<DeleteBranchBuilder>
@@ -33,5 +34,11 @@ final class HttpDeleteBranch extends BaseOnBranchBuilder<DeleteBranchBuilder>
   @Override
   public void delete() throws NessieConflictException, NessieNotFoundException {
     client.getTreeApi().deleteReference(Reference.ReferenceType.BRANCH, branchName, hash);
+  }
+
+  @Override
+  public Branch getAndDelete() {
+    throw new UnsupportedOperationException(
+        "The getAndDelete operation is not supported for branches in API v1");
   }
 }

@@ -17,6 +17,7 @@ package org.projectnessie.client.api;
 
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.Branch;
 
 /**
  * Request builder for "delete branch".
@@ -24,5 +25,13 @@ import org.projectnessie.error.NessieNotFoundException;
  * @since {@link NessieApiV1}
  */
 public interface DeleteBranchBuilder extends OnBranchBuilder<DeleteBranchBuilder> {
+
   void delete() throws NessieConflictException, NessieNotFoundException;
+
+  /**
+   * Deletes the branch and returns its information as it was just before deletion.
+   *
+   * @since {@link NessieApiV2}
+   */
+  Branch getAndDelete() throws NessieNotFoundException, NessieConflictException;
 }

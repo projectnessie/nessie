@@ -241,13 +241,13 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   }
 
   @Override
-  public void assignReference(
+  public Reference assignReference(
       Reference.ReferenceType referenceType,
       String referenceName,
       String expectedHash,
       Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
-    assignReference(toNamedRef(referenceType, referenceName), expectedHash, assignTo);
+    return assignReference(toNamedRef(referenceType, referenceName), expectedHash, assignTo);
   }
 
   @Override
@@ -703,17 +703,15 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     }
   }
 
-  protected void assignReference(NamedRef ref, String expectedHash, Reference assignTo)
+  protected Reference assignReference(NamedRef ref, String expectedHash, Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
     try {
       ReferenceInfo<CommitMeta> resolved =
           getStore().getNamedRef(ref.getName(), GetNamedRefsParams.DEFAULT);
 
-      getStore()
-          .assign(
-              resolved.getNamedRef(),
-              toHash(expectedHash, true),
-              toHash(assignTo.getName(), assignTo.getHash()));
+      Hash targetHash = toHash(assignTo.getName(), assignTo.getHash());
+      getStore().assign(resolved.getNamedRef(), toHash(expectedHash, true), targetHash);
+      return RefUtil.toReference(ref, targetHash);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {

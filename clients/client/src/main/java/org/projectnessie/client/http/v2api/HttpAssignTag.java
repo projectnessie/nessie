@@ -20,6 +20,8 @@ import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.SingleReferenceResponse;
+import org.projectnessie.model.Tag;
 
 final class HttpAssignTag extends BaseAssignTagBuilder {
   private final HttpClient client;
@@ -30,12 +32,20 @@ final class HttpAssignTag extends BaseAssignTagBuilder {
 
   @Override
   public void assign() throws NessieNotFoundException, NessieConflictException {
-    client
-        .newRequest()
-        .path("trees/{ref}")
-        .resolveTemplate("ref", Reference.toPathString(tagName, hash))
-        .queryParam("type", Reference.ReferenceType.TAG.name())
-        .unwrap(NessieNotFoundException.class, NessieConflictException.class)
-        .put(assignTo);
+    assignAndGet();
+  }
+
+  @Override
+  public Tag assignAndGet() throws NessieNotFoundException, NessieConflictException {
+    return (Tag)
+        client
+            .newRequest()
+            .path("trees/{ref}")
+            .resolveTemplate("ref", Reference.toPathString(tagName, hash))
+            .queryParam("type", Reference.ReferenceType.TAG.name())
+            .unwrap(NessieNotFoundException.class, NessieConflictException.class)
+            .put(assignTo)
+            .readEntity(SingleReferenceResponse.class)
+            .getReference();
   }
 }

@@ -19,6 +19,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.Branch;
 import org.projectnessie.model.Reference;
 
 /**
@@ -30,4 +31,11 @@ public interface AssignBranchBuilder extends OnBranchBuilder<AssignBranchBuilder
   AssignBranchBuilder assignTo(@Valid @NotNull Reference assignTo);
 
   void assign() throws NessieNotFoundException, NessieConflictException;
+
+  /**
+   * Assigns the branch to the specified hash and returns its updated information.
+   *
+   * @since {@link NessieApiV2}
+   */
+  Branch assignAndGet() throws NessieNotFoundException, NessieConflictException;
 }

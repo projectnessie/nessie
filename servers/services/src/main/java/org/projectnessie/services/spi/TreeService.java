@@ -49,7 +49,7 @@ public interface TreeService {
       String refName, Reference.ReferenceType type, String hash, String sourceRefName)
       throws NessieNotFoundException, NessieConflictException;
 
-  void assignReference(
+  Reference assignReference(
       Reference.ReferenceType referenceType,
       String referenceName,
       String expectedHash,
