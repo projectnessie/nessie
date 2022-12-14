@@ -51,7 +51,6 @@ import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operations;
-import org.projectnessie.model.RefLogResponse;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Tag;
@@ -156,7 +155,10 @@ public abstract class AbstractResteasyV1Test {
     updates[10] =
         ImmutablePut.builder()
             .key(ContentKey.of("xxx", "test"))
-            .content(IcebergTable.of("/the/directory/over/there/has/been/moved", 42, 42, 42, 42))
+            .content(
+                IcebergTable.of(
+                    "/the/directory/over/there/has/been/moved", 42, 42, 42, 42, table.getId()))
+            .expectedContent(table)
             .build();
 
     Reference branch = rest().get("trees/tree/test").as(Reference.class);
@@ -179,7 +181,8 @@ public abstract class AbstractResteasyV1Test {
 
     Response res =
         rest().queryParam("ref", "test").get("contents/xxx.test").then().extract().response();
-    Assertions.assertEquals(updates[10].getContent(), withoutId(res.body().as(Content.class)));
+    Assertions.assertEquals(
+        withoutId(updates[10].getContent()), withoutId(res.body().as(Content.class)));
 
     IcebergTable currentTable = table;
     table =
@@ -285,6 +288,19 @@ public abstract class AbstractResteasyV1Test {
     return commit(contentId, branch, contentKey, metadataUrl, "nessieAuthor", null);
   }
 
+  private String fetchContentId(String branchName, String hash, String contentKey) {
+    Content content =
+        rest()
+            .param("ref", branchName)
+            .param("hashOnRef", hash)
+            .get("contents/{contentKey}", ContentKey.of(contentKey).toPathString())
+            .then()
+            .statusCode(200)
+            .extract()
+            .as(Content.class);
+    return content.getId();
+  }
+
   private Branch commit(
       String contentId,
       Branch branch,
@@ -301,8 +317,7 @@ public abstract class AbstractResteasyV1Test {
                         IcebergTable.of(metadataUrl, 42, 42, 42, 42, contentId),
                         IcebergTable.of(expectedMetadataUrl, 42, 42, 42, 42, contentId))
                     : Put.of(
-                        ContentKey.of(contentKey),
-                        IcebergTable.of(metadataUrl, 42, 42, 42, 42, contentId)))
+                        ContentKey.of(contentKey), IcebergTable.of(metadataUrl, 42, 42, 42, 42)))
             .commitMeta(CommitMeta.builder().author(author).message("").build())
             .build();
     return rest()
@@ -342,30 +357,32 @@ public abstract class AbstractResteasyV1Test {
 
   @Test
   public void testOptimisticLocking() {
-    makeBranch("test3");
-    Branch b1 = getBranch("test3");
-    String contentId = "cid-test-opt-lock";
-    String newHash = commit(contentId, b1, "xxx.test", "/the/directory/over/there").getHash();
+    String branchName = "test3";
+    makeBranch(branchName);
+    Branch b1 = getBranch(branchName);
+    String contentkey = "xxx.test";
+    String newHash = commit(null, b1, contentkey, "/the/directory/over/there").getHash();
     Assertions.assertNotEquals(b1.getHash(), newHash);
+    String contentId = fetchContentId(branchName, newHash, contentkey);
 
-    Branch b2 = getBranch("test3");
+    Branch b2 = getBranch(branchName);
     newHash =
         commit(
                 contentId,
                 b2,
-                "xxx.test",
+                contentkey,
                 "/the/directory/over/there/has/been/moved",
                 "i",
                 "/the/directory/over/there")
             .getHash();
     Assertions.assertNotEquals(b2.getHash(), newHash);
 
-    Branch b3 = getBranch("test3");
+    Branch b3 = getBranch(branchName);
     newHash =
         commit(
                 contentId,
                 b3,
-                "xxx.test",
+                contentkey,
                 "/the/directory/over/there/has/been/moved/again",
                 "me",
                 "/the/directory/over/there/has/been/moved")
@@ -379,7 +396,7 @@ public abstract class AbstractResteasyV1Test {
     makeBranch(branchName);
     Branch branch = getBranch(branchName);
     int numCommits = 3;
-    String contentId = "cid-test-log-filtering";
+    String contentId = null;
     for (int i = 0; i < numCommits; i++) {
       String newHash =
           commit(
@@ -390,6 +407,9 @@ public abstract class AbstractResteasyV1Test {
                   "author-" + i,
                   i > 0 ? "/the/directory/over/there" : null)
               .getHash();
+      if (i == 0) {
+        contentId = fetchContentId(branch.getName(), newHash, "xxx.test");
+      }
       assertThat(newHash).isNotEqualTo(branch.getHash());
       branch = getBranch(branchName);
     }
@@ -522,32 +542,6 @@ public abstract class AbstractResteasyV1Test {
   }
 
   @Test
-  public void testGetRefLog() {
-    Branch branch = makeBranch("branch-temp");
-    IcebergTable table = IcebergTable.of("content-table", 42, 42, 42, 42);
-
-    ContentKey contentKey = ContentKey.of("key1");
-    commit(contentKey, table, branch, "code");
-
-    RefLogResponse refLogResponse =
-        rest().get("reflogs").then().statusCode(200).extract().as(RefLogResponse.class);
-
-    assertThat(refLogResponse.getLogEntries().get(0).getOperation()).isEqualTo("CREATE_REFERENCE");
-    assertThat(refLogResponse.getLogEntries().get(0).getRefName()).isEqualTo("branch-temp");
-
-    RefLogResponse refLogResponse1 =
-        rest()
-            .queryParam("endHash", refLogResponse.getLogEntries().get(0).getRefLogId())
-            .get("reflogs")
-            .then()
-            .statusCode(200)
-            .extract()
-            .as(RefLogResponse.class);
-    assertThat(refLogResponse1.getLogEntries().get(0).getRefLogId())
-        .isEqualTo(refLogResponse.getLogEntries().get(0).getRefLogId());
-  }
-
-  @Test
   public void testGetUnknownContentType() {
     String nsName = "foo";
     String branchName = "unknown-content-type";
@@ -667,7 +661,7 @@ public abstract class AbstractResteasyV1Test {
   @Test
   public void testCommitMetaAttributes() {
     Branch branch = makeBranch("testCommitMetaAttributes");
-    commit("testCommitMetaAttributes", branch, "test-key", "meta", "test-author-123", "meta");
+    commit("testCommitMetaAttributes", branch, "test-key", "meta", "test-author-123", null);
 
     String response =
         rest()
