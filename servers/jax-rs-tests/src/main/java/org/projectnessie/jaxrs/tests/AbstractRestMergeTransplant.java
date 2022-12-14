@@ -497,6 +497,19 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalid {
   private <B extends MergeTransplantBuilder<B>> void testMergeTransplantWithCustomModes(
       B opBuilder, MergeTransplantActor actor) throws BaseNessieClientServerException {
     Branch target = createBranch("target");
+
+    // Common ancestor
+    target =
+        getApi()
+            .commitMultipleOperations()
+            .branch(target)
+            .commitMeta(CommitMeta.fromMessage("test-root"))
+            .operation(
+                Put.of(
+                    ContentKey.of("irrelevant-to-this-test"),
+                    IcebergTable.of("something", 42, 43, 44, 45)))
+            .commit();
+
     Branch branch = createBranch("test-branch", target);
 
     ContentKey key1 = ContentKey.of("both-added1");
