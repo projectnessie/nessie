@@ -26,7 +26,8 @@ extra["maven.name"] = "Nessie - Minio testcontainer"
 description = "JUnit extension providing a Minio instance."
 
 dependencies {
-  implementation(libs.testcontainers.testcontainers)
+  compileOnly(libs.testcontainers.testcontainers)
+  runtimeOnly(libs.testcontainers.testcontainers) { exclude("junit", "junit") }
 
   implementation(platform(libs.awssdk.bom))
   implementation(libs.awssdk.s3)
@@ -41,6 +42,7 @@ dependencies {
 
   compileOnly(libs.errorprone.annotations)
 
+  testCompileOnly(libs.testcontainers.testcontainers)
   testImplementation(libs.bundles.junit.testing)
   testImplementation(libs.junit.jupiter.engine)
   testImplementation(libs.hadoop.common) { withSparkExcludes() }

@@ -34,6 +34,7 @@ dependencies {
   implementation(platform(libs.awssdk.bom))
   implementation(libs.awssdk.dynamodb) { exclude("software.amazon.awssdk", "apache-client") }
 
-  implementation(libs.testcontainers.testcontainers)
+  compileOnly(libs.testcontainers.testcontainers)
+  runtimeOnly(libs.testcontainers.testcontainers) { exclude("junit", "junit") }
   implementation(libs.docker.java.api)
 }

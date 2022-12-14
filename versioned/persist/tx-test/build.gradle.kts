@@ -41,7 +41,9 @@ dependencies {
   compileOnly(libs.h2)
   compileOnly(libs.postgresql)
 
-  implementation(libs.testcontainers.postgresql)
-  implementation(libs.testcontainers.cockroachdb)
+  compileOnly(libs.testcontainers.postgresql)
+  compileOnly(libs.testcontainers.cockroachdb)
+  runtimeOnly(libs.testcontainers.postgresql) { exclude("junit", "junit") }
+  runtimeOnly(libs.testcontainers.cockroachdb) { exclude("junit", "junit") }
   implementation(libs.docker.java.api)
 }

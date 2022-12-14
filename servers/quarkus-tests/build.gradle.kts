@@ -38,9 +38,12 @@ dependencies {
   implementation(enforcedPlatform(libs.quarkus.bom))
   implementation("io.quarkus:quarkus-junit5")
 
-  implementation(libs.testcontainers.testcontainers)
-  implementation(libs.testcontainers.postgresql)
-  implementation(libs.testcontainers.mongodb)
+  compileOnly(libs.testcontainers.testcontainers)
+  compileOnly(libs.testcontainers.postgresql)
+  compileOnly(libs.testcontainers.mongodb)
+  runtimeOnly(libs.testcontainers.testcontainers) { exclude("junit", "junit") }
+  runtimeOnly(libs.testcontainers.postgresql) { exclude("junit", "junit") }
+  runtimeOnly(libs.testcontainers.mongodb) { exclude("junit", "junit") }
   implementation(libs.docker.java.api)
 
   implementation(platform(libs.awssdk.bom))
