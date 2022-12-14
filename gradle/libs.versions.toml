@@ -165,7 +165,7 @@ maven-resolver-transport-file = { module = "org.apache.maven.resolver:maven-reso
 maven-resolver-transport-http = { module = "org.apache.maven.resolver:maven-resolver-transport-http", version.ref = "mavenResolver" }
 micrometer-core = { module = "io.micrometer:micrometer-core", version.ref = "micrometer" }
 microprofile-openapi = { module = "org.eclipse.microprofile.openapi:microprofile-openapi-api", version = "3.1" }
-mockito-core = { module = "org.mockito:mockito-core", version = "4.9.0" }
+mockito-core = { module = "org.mockito:mockito-core", version = "4.10.0" }
 mongodb-driver-sync = { module = "org.mongodb:mongodb-driver-sync", version = "4.8.1" }
 opentelemetry-api = { module = "io.opentelemetry:opentelemetry-api" }
 opentelemetry-bom = { module = "io.opentelemetry:opentelemetry-bom", version.ref = "opentelemetry" }
