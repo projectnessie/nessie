@@ -32,26 +32,31 @@ import org.projectnessie.tools.contentgenerator.keygen.KeyGenerator;
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestKeyGenerator {
 
-  private static final int MAX_RETRY = 10;
   @InjectSoftAssertions protected SoftAssertions soft;
+
+  static final long RANDOM_SEED = 4655654497629354508L;
+
+  private static KeyGenerator keyGen(String pattern) {
+    return KeyGenerator.newKeyGenerator(RANDOM_SEED, pattern);
+  }
 
   @Test
   public void constantStrings() {
-    KeyGenerator gen = KeyGenerator.newKeyGenerator("hello world");
+    KeyGenerator gen = keyGen("hello world");
     List<String> values = Stream.generate(gen::generate).limit(20).collect(Collectors.toList());
     soft.assertThat(values).hasSize(20).allMatch("hello world"::equals);
   }
 
   @Test
   public void constantStringWithDollar() {
-    KeyGenerator gen = KeyGenerator.newKeyGenerator("hello $$world");
+    KeyGenerator gen = keyGen("hello $$world");
     List<String> values = Stream.generate(gen::generate).limit(20).collect(Collectors.toList());
     soft.assertThat(values).hasSize(20).allMatch("hello $world"::equals);
   }
 
   @Test
   public void intFunc() {
-    KeyGenerator gen = KeyGenerator.newKeyGenerator("hello world ${int,100} foo");
+    KeyGenerator gen = keyGen("hello world ${int,100} foo");
     List<String> values = Stream.generate(gen::generate).limit(20).collect(Collectors.toList());
     soft.assertThat(values)
         .hasSize(20)
@@ -60,7 +65,7 @@ public class TestKeyGenerator {
 
   @Test
   public void seqFunc() {
-    KeyGenerator gen = KeyGenerator.newKeyGenerator("hello world ${seq,20} foo");
+    KeyGenerator gen = keyGen("hello world ${seq,20} foo");
     List<String> values = Stream.generate(gen::generate).limit(20).collect(Collectors.toList());
     soft.assertThat(values)
         .hasSize(20)
@@ -73,7 +78,7 @@ public class TestKeyGenerator {
 
   @Test
   public void everySeqFunc() {
-    KeyGenerator gen = KeyGenerator.newKeyGenerator("hello world ${every,5,seq,20} foo");
+    KeyGenerator gen = keyGen("hello world ${every,5,seq,20} foo");
     List<String> values = Stream.generate(gen::generate).limit(20).collect(Collectors.toList());
     soft.assertThat(values)
         .hasSize(20)
@@ -87,108 +92,55 @@ public class TestKeyGenerator {
 
   @Test
   public void everyIntFunc() {
-    for (int retry = 0; ; retry++) {
-      KeyGenerator gen = KeyGenerator.newKeyGenerator("hello world ${every,5,int,100} foo");
-      List<String> values = Stream.generate(gen::generate).limit(20).collect(Collectors.toList());
-      soft.assertThat(values)
-          .hasSize(20)
-          .allSatisfy(s -> assertThat(s).matches("hello world [0-9]+ foo"));
+    KeyGenerator gen = keyGen("hello world ${every,5,int,100} foo");
+    List<String> values = Stream.generate(gen::generate).limit(20).collect(Collectors.toList());
+    soft.assertThat(values)
+        .hasSize(20)
+        .allSatisfy(s -> assertThat(s).matches("hello world [0-9]+ foo"));
 
-      soft.assertThat(values.subList(0, 5)).allMatch(values.get(0)::equals);
-      soft.assertThat(values.subList(5, 20)).noneMatch(values.get(0)::equals);
+    soft.assertThat(values.subList(0, 5)).allMatch(values.get(0)::equals);
+    soft.assertThat(values.subList(5, 20)).noneMatch(values.get(0)::equals);
 
-      soft.assertThat(values.subList(5, 10)).allMatch(values.get(5)::equals);
-      soft.assertThat(values.subList(0, 5)).noneMatch(values.get(5)::equals);
-      soft.assertThat(values.subList(10, 20)).noneMatch(values.get(5)::equals);
+    soft.assertThat(values.subList(5, 10)).allMatch(values.get(5)::equals);
+    soft.assertThat(values.subList(0, 5)).noneMatch(values.get(5)::equals);
+    soft.assertThat(values.subList(10, 20)).noneMatch(values.get(5)::equals);
 
-      soft.assertThat(values.subList(10, 15)).allMatch(values.get(10)::equals);
-      soft.assertThat(values.subList(0, 10)).noneMatch(values.get(10)::equals);
-      soft.assertThat(values.subList(15, 20)).noneMatch(values.get(10)::equals);
+    soft.assertThat(values.subList(10, 15)).allMatch(values.get(10)::equals);
+    soft.assertThat(values.subList(0, 10)).noneMatch(values.get(10)::equals);
+    soft.assertThat(values.subList(15, 20)).noneMatch(values.get(10)::equals);
 
-      soft.assertThat(values.subList(15, 20)).allMatch(values.get(15)::equals);
-      soft.assertThat(values.subList(0, 15)).noneMatch(values.get(15)::equals);
-
-      // The generator pattern uses random values, it's unlikely, but possible to have the same
-      // value in the generated values.
-      try {
-        soft.assertAll();
-        break;
-      } catch (AssertionError e) {
-        if (retry == MAX_RETRY) {
-          throw e;
-        }
-      }
-    }
+    soft.assertThat(values.subList(15, 20)).allMatch(values.get(15)::equals);
+    soft.assertThat(values.subList(0, 15)).noneMatch(values.get(15)::equals);
   }
 
   @Test
   public void stringFunc() {
-    for (int retry = 0; ; retry++) {
-      KeyGenerator gen = KeyGenerator.newKeyGenerator("hello world ${string,5} foo");
-      List<String> values = Stream.generate(gen::generate).limit(20).collect(Collectors.toList());
-      soft.assertThat(values)
-          .hasSize(20)
-          .allSatisfy(s -> assertThat(s).matches("hello world [A-Za-z0-9 _.-]{5} foo"));
+    KeyGenerator gen = keyGen("hello world ${string,5} foo");
+    List<String> values = Stream.generate(gen::generate).limit(20).collect(Collectors.toList());
+    soft.assertThat(values)
+        .hasSize(20)
+        .allSatisfy(s -> assertThat(s).matches("hello world [A-Za-z0-9 _.-]{5} foo"));
 
-      soft.assertThat(new HashSet<>(values)).hasSizeGreaterThan(15);
-
-      // The generator pattern uses random values, it's unlikely, but possible to have the same
-      // value in the generated values.
-      try {
-        soft.assertAll();
-        break;
-      } catch (AssertionError e) {
-        if (retry == MAX_RETRY) {
-          throw e;
-        }
-      }
-    }
+    soft.assertThat(new HashSet<>(values)).hasSizeGreaterThan(15);
   }
 
   @Test
   public void probUuidFunc() {
-    for (int retry = 0; ; retry++) {
-      KeyGenerator gen = KeyGenerator.newKeyGenerator("hello world ${prob,.5,uuid} foo");
-      List<String> values = Stream.generate(gen::generate).limit(20).collect(Collectors.toList());
-      soft.assertThat(values)
-          .hasSize(20)
-          .allSatisfy(s -> assertThat(s).matches("hello world [0-9a-f-]+ foo"));
+    KeyGenerator gen = keyGen("hello world ${prob,.5,uuid} foo");
+    List<String> values = Stream.generate(gen::generate).limit(20).collect(Collectors.toList());
+    soft.assertThat(values)
+        .hasSize(20)
+        .allSatisfy(s -> assertThat(s).matches("hello world [0-9a-f-]+ foo"));
 
-      soft.assertThat(new HashSet<>(values)).hasSizeGreaterThan(1).hasSizeLessThan(20);
-
-      // The generator pattern uses random values, it's unlikely, but possible to have the same
-      // value in the generated values.
-      try {
-        soft.assertAll();
-        break;
-      } catch (AssertionError e) {
-        if (retry == MAX_RETRY) {
-          throw e;
-        }
-      }
-    }
+    soft.assertThat(new HashSet<>(values)).hasSizeGreaterThan(1).hasSizeLessThan(20);
   }
 
   @Test
   public void longKeysScenario() {
-    for (int retry = 0; ; retry++) {
-      KeyGenerator gen =
-          KeyGenerator.newKeyGenerator(
-              "stuff-folders./stuff-${every,10,uuid}/foolish-key/${every,5,uuid}/${uuid}_0");
-      List<String> values = Stream.generate(gen::generate).limit(20).collect(Collectors.toList());
-      soft.assertThat(values).hasSize(20);
-      soft.assertThat(new HashSet<>(values)).hasSize(20);
-
-      // The generator pattern uses random values, it's unlikely, but possible to have the same
-      // value in the generated values.
-      try {
-        soft.assertAll();
-        break;
-      } catch (AssertionError e) {
-        if (retry == MAX_RETRY) {
-          throw e;
-        }
-      }
-    }
+    KeyGenerator gen =
+        keyGen("stuff-folders./stuff-${every,10,uuid}/foolish-key/${every,5,uuid}/${uuid}_0");
+    List<String> values = Stream.generate(gen::generate).limit(20).collect(Collectors.toList());
+    soft.assertThat(values).hasSize(20);
+    soft.assertThat(new HashSet<>(values)).hasSize(20);
   }
 }
