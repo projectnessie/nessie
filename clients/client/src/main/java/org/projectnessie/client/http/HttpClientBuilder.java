@@ -37,6 +37,8 @@ import java.util.stream.Collectors;
 import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
+import org.projectnessie.api.v1.ApiAttributesV1;
+import org.projectnessie.api.v2.ApiAttributesV2;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.NessieConfigConstants;
 import org.projectnessie.client.api.NessieApi;
@@ -285,11 +287,13 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
     Objects.requireNonNull(apiVersion, "API version class must be non-null");
 
     if (apiVersion.isAssignableFrom(HttpApiV1.class)) {
+      builder.setJsonView(ApiAttributesV1.class);
       NessieHttpClient client = new NessieHttpClient(authentication, tracing, builder);
       return (API) new HttpApiV1(client);
     }
 
     if (apiVersion.isAssignableFrom(HttpApiV2.class)) {
+      builder.setJsonView(ApiAttributesV2.class);
       HttpClient httpClient = NessieHttpClient.buildClient(authentication, tracing, builder);
       return (API) new HttpApiV2(httpClient);
     }

@@ -15,6 +15,9 @@
  */
 package org.projectnessie.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -26,6 +29,7 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotBlank;
@@ -34,6 +38,9 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty;
 import org.immutables.value.Value;
+import org.projectnessie.api.v1.ApiAttributesV1;
+import org.projectnessie.api.v2.ApiAttributesV2;
+import org.projectnessie.model.ser.CommitMetaDeserializer;
 
 @Value.Immutable
 @Schema(
@@ -42,7 +49,7 @@ import org.immutables.value.Value;
     // Smallrye does neither support JsonFormat nor javax.validation.constraints.Pattern :(
     properties = {@SchemaProperty(name = "hash", pattern = Validation.HASH_REGEX)})
 @JsonSerialize(as = ImmutableCommitMeta.class)
-@JsonDeserialize(as = ImmutableCommitMeta.class)
+@JsonDeserialize(using = CommitMetaDeserializer.class)
 public abstract class CommitMeta {
 
   /**
@@ -70,15 +77,25 @@ public abstract class CommitMeta {
    * will return an error if this is populated by the client side.
    *
    * <p>The committer should follow the git spec for names eg Committer Name
-   * &lt;committer.name@example.com&gt; but this is not enforced. See
-   * https://git-scm.com/docs/git-commit#Documentation/git-commit.txt---authorltauthorgt
+   * &lt;committer.name@example.com&gt; but this is not enforced. See <a
+   * href="https://git-scm.com/docs/git-commit#Documentation/git-commit.txt---authorltauthorgt">git-commit
+   * docs</a>.
    */
   @Nullable
   public abstract String getCommitter();
 
   /** The author of a commit. This is the original committer. */
   @Nullable
-  public abstract String getAuthor();
+  @Value.Derived
+  @JsonView(ApiAttributesV1.class)
+  public String getAuthor() {
+    return getAllAuthors().isEmpty() ? null : getAllAuthors().get(0);
+  }
+
+  @NotNull
+  @JsonView(ApiAttributesV2.class)
+  @JsonProperty("authors")
+  public abstract List<String> getAllAuthors();
 
   /**
    * Authorizer of this action.
@@ -87,7 +104,15 @@ public abstract class CommitMeta {
    * by the person who started the job.
    */
   @Nullable
-  public abstract String getSignedOffBy();
+  @Value.Derived
+  @JsonView(ApiAttributesV1.class)
+  public String getSignedOffBy() {
+    return getAllSignedOffBy().isEmpty() ? null : getAllSignedOffBy().get(0);
+  }
+
+  @NotNull
+  @JsonView(ApiAttributesV2.class)
+  public abstract List<String> getAllSignedOffBy();
 
   /**
    * Message describing this commit. Should conform to Git style.
@@ -118,6 +143,16 @@ public abstract class CommitMeta {
   @NotNull
   public abstract Map<String, String> getProperties();
 
+  @NotNull
+  @JsonView(ApiAttributesV2.class)
+  @JsonInclude(JsonInclude.Include.NON_EMPTY)
+  public abstract Map<String, List<String>> getListProperties();
+
+  @NotNull
+  @JsonView(ApiAttributesV2.class)
+  @JsonInclude(JsonInclude.Include.NON_EMPTY)
+  public abstract List<String> getParentCommitHashes();
+
   public ImmutableCommitMeta.Builder toBuilder() {
     return ImmutableCommitMeta.builder().from(this);
   }
@@ -128,6 +163,28 @@ public abstract class CommitMeta {
 
   public static CommitMeta fromMessage(String message) {
     return ImmutableCommitMeta.builder().message(message).build();
+  }
+
+  public interface Builder {
+    default ImmutableCommitMeta.Builder author(String author) {
+      if (author != null) {
+        return addAllAuthors(author);
+      }
+
+      return (ImmutableCommitMeta.Builder) this;
+    }
+
+    ImmutableCommitMeta.Builder addAllAuthors(String author);
+
+    default ImmutableCommitMeta.Builder signedOffBy(String author) {
+      if (author != null) {
+        return addAllSignedOffBy(author);
+      }
+
+      return (ImmutableCommitMeta.Builder) this;
+    }
+
+    ImmutableCommitMeta.Builder addAllSignedOffBy(String author);
   }
 
   /**

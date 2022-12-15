@@ -25,6 +25,7 @@ import static org.projectnessie.api.v2.doc.ApiDoc.REF_NAME_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.REF_PARAMETER_DESCRIPTION;
 import static org.projectnessie.model.Validation.REF_NAME_PATH_ELEMENT_REGEX;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import java.util.List;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
@@ -46,6 +47,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.projectnessie.api.v2.ApiAttributesV2;
 import org.projectnessie.api.v2.TreeApi;
 import org.projectnessie.api.v2.params.CommitLogParams;
 import org.projectnessie.api.v2.params.DiffParams;
@@ -63,7 +65,6 @@ import org.projectnessie.model.DiffResponse;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.GetMultipleContentsRequest;
 import org.projectnessie.model.GetMultipleContentsResponse;
-import org.projectnessie.model.ImmutableGetMultipleContentsRequest;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Operations;
@@ -96,6 +97,7 @@ public interface HttpTreeApi extends TreeApi {
                 schema = @Schema(implementation = ReferencesResponse.class))),
     @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
   })
+  @JsonView(ApiAttributesV2.class)
   ReferencesResponse getAllReferences(@BeanParam ReferencesParams params);
 
   @Override
@@ -129,6 +131,7 @@ public interface HttpTreeApi extends TreeApi {
         responseCode = "409",
         description = "Another reference with the same name already exists"),
   })
+  @JsonView(ApiAttributesV2.class)
   SingleReferenceResponse createReference(
       @Parameter(required = true, description = REF_NAME_DESCRIPTION) @QueryParam("name")
           String name,
@@ -169,6 +172,7 @@ public interface HttpTreeApi extends TreeApi {
     @APIResponse(responseCode = "403", description = "Not allowed to view the given reference"),
     @APIResponse(responseCode = "404", description = "Ref not found")
   })
+  @JsonView(ApiAttributesV2.class)
   SingleReferenceResponse getReferenceByName(@BeanParam GetReferenceParams params)
       throws NessieNotFoundException;
 
@@ -209,6 +213,7 @@ public interface HttpTreeApi extends TreeApi {
         description = "Not allowed to view the given reference or fetch entries for it"),
     @APIResponse(responseCode = "404", description = "Ref not found")
   })
+  @JsonView(ApiAttributesV2.class)
   EntriesResponse getEntries(
       @Parameter(
               schema = @Schema(pattern = REF_NAME_PATH_ELEMENT_REGEX),
@@ -265,6 +270,7 @@ public interface HttpTreeApi extends TreeApi {
         description = "Not allowed to view the given reference or get commit log for it"),
     @APIResponse(responseCode = "404", description = "Ref doesn't exists")
   })
+  @JsonView(ApiAttributesV2.class)
   LogResponse getCommitLog(
       @Parameter(
               schema = @Schema(pattern = REF_NAME_PATH_ELEMENT_REGEX),
@@ -319,6 +325,7 @@ public interface HttpTreeApi extends TreeApi {
     @APIResponse(responseCode = "403", description = "Not allowed to view the given fromRef/toRef"),
     @APIResponse(responseCode = "404", description = "fromRef/toRef not found"),
   })
+  @JsonView(ApiAttributesV2.class)
   DiffResponse getDiff(@BeanParam DiffParams params) throws NessieNotFoundException;
 
   @Override
@@ -346,6 +353,7 @@ public interface HttpTreeApi extends TreeApi {
         responseCode = "409",
         description = "Update conflict or expected hash / type mismatch")
   })
+  @JsonView(ApiAttributesV2.class)
   SingleReferenceResponse assignReference(
       @Parameter(
               description = "Optional expected type of the reference being reassigned",
@@ -390,6 +398,7 @@ public interface HttpTreeApi extends TreeApi {
     @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
     @APIResponse(responseCode = "409", description = "update conflict"),
   })
+  @JsonView(ApiAttributesV2.class)
   SingleReferenceResponse deleteReference(
       @Parameter(
               description = "Optional expected type of the reference being deleted",
@@ -432,6 +441,7 @@ public interface HttpTreeApi extends TreeApi {
         responseCode = "404",
         description = "Table not found on 'ref' or non-existent reference")
   })
+  @JsonView(ApiAttributesV2.class)
   ContentResponse getContent(
       @Parameter(description = KEY_PARAMETER_DESCRIPTION) @PathParam("key") ContentKey key,
       @Parameter(
@@ -475,18 +485,15 @@ public interface HttpTreeApi extends TreeApi {
         description = "Not allowed to view the given reference or read object content for a key"),
     @APIResponse(responseCode = "404", description = "Provided ref doesn't exists")
   })
-  default GetMultipleContentsResponse getSeveralContents(
+  @JsonView(ApiAttributesV2.class)
+  GetMultipleContentsResponse getSeveralContents(
       @Parameter(
               description = "Reference to use.",
               examples = {@ExampleObject(ref = "ref")})
           @PathParam("ref")
           String ref,
       @Parameter(description = KEY_PARAMETER_DESCRIPTION) @QueryParam("key") List<String> keys)
-      throws NessieNotFoundException {
-    ImmutableGetMultipleContentsRequest.Builder request = GetMultipleContentsRequest.builder();
-    keys.forEach(k -> request.addRequestedKeys(ContentKey.fromPathString(k)));
-    return getMultipleContents(ref, request.build());
-  }
+      throws NessieNotFoundException;
 
   @Override
   @POST
@@ -519,6 +526,7 @@ public interface HttpTreeApi extends TreeApi {
         description = "Not allowed to view the given reference or read object content for a key"),
     @APIResponse(responseCode = "404", description = "Provided ref doesn't exists")
   })
+  @JsonView(ApiAttributesV2.class)
   GetMultipleContentsResponse getMultipleContents(
       @Parameter(
               schema = @Schema(pattern = REF_NAME_PATH_ELEMENT_REGEX),
@@ -576,6 +584,7 @@ public interface HttpTreeApi extends TreeApi {
     @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
     @APIResponse(responseCode = "409", description = "update conflict")
   })
+  @JsonView(ApiAttributesV2.class)
   MergeResponse transplantCommitsIntoBranch(
       @Parameter(
               schema = @Schema(pattern = REF_NAME_PATH_ELEMENT_REGEX),
@@ -634,6 +643,7 @@ public interface HttpTreeApi extends TreeApi {
     @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
     @APIResponse(responseCode = "409", description = "update conflict")
   })
+  @JsonView(ApiAttributesV2.class)
   MergeResponse mergeRefIntoBranch(
       @Parameter(
               schema = @Schema(pattern = REF_NAME_PATH_ELEMENT_REGEX),
@@ -685,6 +695,7 @@ public interface HttpTreeApi extends TreeApi {
     @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
     @APIResponse(responseCode = "409", description = "Update conflict")
   })
+  @JsonView(ApiAttributesV2.class)
   CommitResponse commitMultipleOperations(
       @Parameter(
               schema = @Schema(pattern = REF_NAME_PATH_ELEMENT_REGEX),

@@ -663,4 +663,25 @@ public abstract class AbstractResteasyV1Test {
                 .contains(
                     "Could not resolve type id 'FOOBAR' as a subtype of `org.projectnessie.model.Reference`"));
   }
+
+  @Test
+  public void testCommitMetaAttributes() {
+    Branch branch = makeBranch("testCommitMetaAttributes");
+    commit("testCommitMetaAttributes", branch, "test-key", "meta", "test-author-123", "meta");
+
+    String response =
+        rest()
+            .get("trees/tree/{ref}/log", branch.getName())
+            .then()
+            .statusCode(200)
+            .extract()
+            .asString();
+    assertThat(response)
+        .contains("\"author\"")
+        .contains("test-author-123")
+        .doesNotContain("authors") // only for API v2
+        .doesNotContain("allSignedOffBy") // only for API v2
+        .doesNotContain("parentCommitHashes") // only for API v2
+    ;
+  }
 }

@@ -15,10 +15,13 @@
  */
 package org.projectnessie.services.rest;
 
+import com.fasterxml.jackson.annotation.JsonView;
+import java.util.List;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
+import org.projectnessie.api.v2.ApiAttributesV2;
 import org.projectnessie.api.v2.http.HttpTreeApi;
 import org.projectnessie.api.v2.params.CommitLogParams;
 import org.projectnessie.api.v2.params.DiffParams;
@@ -38,6 +41,7 @@ import org.projectnessie.model.DiffResponse;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.GetMultipleContentsRequest;
 import org.projectnessie.model.GetMultipleContentsResponse;
+import org.projectnessie.model.ImmutableGetMultipleContentsRequest;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Operations;
@@ -114,11 +118,13 @@ public class RestV2TreeResource implements HttpTreeApi {
         securityContext == null ? null : securityContext.getUserPrincipal());
   }
 
+  @JsonView(ApiAttributesV2.class)
   @Override
   public ReferencesResponse getAllReferences(ReferencesParams params) {
     return tree().getAllReferences(params.fetchOption(), params.filter());
   }
 
+  @JsonView(ApiAttributesV2.class)
   @Override
   public SingleReferenceResponse createReference(
       String name, Reference.ReferenceType type, Reference reference)
@@ -134,6 +140,7 @@ public class RestV2TreeResource implements HttpTreeApi {
     return SingleReferenceResponse.builder().reference(created).build();
   }
 
+  @JsonView(ApiAttributesV2.class)
   @Override
   public SingleReferenceResponse getReferenceByName(GetReferenceParams params)
       throws NessieNotFoundException {
@@ -143,6 +150,7 @@ public class RestV2TreeResource implements HttpTreeApi {
         .build();
   }
 
+  @JsonView(ApiAttributesV2.class)
   @Override
   public EntriesResponse getEntries(String ref, EntriesParams params)
       throws NessieNotFoundException {
@@ -150,6 +158,7 @@ public class RestV2TreeResource implements HttpTreeApi {
     return tree().getEntries(reference.getName(), reference.getHash(), null, params.filter());
   }
 
+  @JsonView(ApiAttributesV2.class)
   @Override
   public LogResponse getCommitLog(String ref, CommitLogParams params)
       throws NessieNotFoundException {
@@ -165,6 +174,7 @@ public class RestV2TreeResource implements HttpTreeApi {
             params.pageToken());
   }
 
+  @JsonView(ApiAttributesV2.class)
   @Override
   public DiffResponse getDiff(DiffParams params) throws NessieNotFoundException {
     Reference from = resolveRef(params.getFromRef());
@@ -172,6 +182,7 @@ public class RestV2TreeResource implements HttpTreeApi {
     return diff().getDiff(from.getName(), from.getHash(), to.getName(), to.getHash());
   }
 
+  @JsonView(ApiAttributesV2.class)
   @Override
   public SingleReferenceResponse assignReference(
       Reference.ReferenceType type, String ref, Reference assignTo)
@@ -182,6 +193,7 @@ public class RestV2TreeResource implements HttpTreeApi {
     return SingleReferenceResponse.builder().reference(updated).build();
   }
 
+  @JsonView(ApiAttributesV2.class)
   @Override
   public SingleReferenceResponse deleteReference(Reference.ReferenceType type, String ref)
       throws NessieConflictException, NessieNotFoundException {
@@ -190,6 +202,7 @@ public class RestV2TreeResource implements HttpTreeApi {
     return SingleReferenceResponse.builder().reference(reference).build();
   }
 
+  @JsonView(ApiAttributesV2.class)
   @Override
   public ContentResponse getContent(ContentKey key, String ref) throws NessieNotFoundException {
     Reference reference = resolveRef(ref);
@@ -197,6 +210,16 @@ public class RestV2TreeResource implements HttpTreeApi {
     return ContentResponse.builder().content(content).build();
   }
 
+  @JsonView(ApiAttributesV2.class)
+  @Override
+  public GetMultipleContentsResponse getSeveralContents(String ref, List<String> keys)
+      throws NessieNotFoundException {
+    ImmutableGetMultipleContentsRequest.Builder request = GetMultipleContentsRequest.builder();
+    keys.forEach(k -> request.addRequestedKeys(ContentKey.fromPathString(k)));
+    return getMultipleContents(ref, request.build());
+  }
+
+  @JsonView(ApiAttributesV2.class)
   @Override
   public GetMultipleContentsResponse getMultipleContents(
       String ref, GetMultipleContentsRequest request) throws NessieNotFoundException {
@@ -205,6 +228,7 @@ public class RestV2TreeResource implements HttpTreeApi {
         .getMultipleContents(reference.getName(), reference.getHash(), request.getRequestedKeys());
   }
 
+  @JsonView(ApiAttributesV2.class)
   @Override
   public MergeResponse transplantCommitsIntoBranch(String branch, Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
@@ -224,6 +248,7 @@ public class RestV2TreeResource implements HttpTreeApi {
             transplant.isReturnConflictAsResult());
   }
 
+  @JsonView(ApiAttributesV2.class)
   @Override
   public MergeResponse mergeRefIntoBranch(String branch, Merge merge)
       throws NessieNotFoundException, NessieConflictException {
@@ -243,6 +268,7 @@ public class RestV2TreeResource implements HttpTreeApi {
             merge.isReturnConflictAsResult());
   }
 
+  @JsonView(ApiAttributesV2.class)
   @Override
   public CommitResponse commitMultipleOperations(String branch, Operations operations)
       throws NessieNotFoundException, NessieConflictException {

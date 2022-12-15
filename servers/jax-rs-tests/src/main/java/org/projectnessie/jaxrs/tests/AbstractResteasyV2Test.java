@@ -231,4 +231,23 @@ public abstract class AbstractResteasyV2Test {
                 .getDiffs())
         .isEmpty();
   }
+
+  @Test
+  public void testCommitMetaAttributes() {
+    Branch branch = createBranch("testCommitMetaAttributes");
+    commit(branch, ContentKey.of("test-key"), IcebergTable.of("meta", 1, 2, 3, 4));
+
+    String response =
+        rest()
+            .get("trees/{ref}/history", branch.getName())
+            .then()
+            .statusCode(200)
+            .extract()
+            .asString();
+    assertThat(response)
+        .doesNotContain("\"author\"") // only for API v1
+        .contains("\"authors\"")
+        .doesNotContain("\"signedOffBy\"") // only for API v1
+        .contains("allSignedOffBy");
+  }
 }

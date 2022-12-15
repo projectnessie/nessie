@@ -24,6 +24,7 @@ import static org.projectnessie.client.http.impl.HttpUtils.HEADER_CONTENT_TYPE;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
@@ -86,7 +87,11 @@ public abstract class BaseHttpRequest extends HttpRequest {
       throws IOException {
     Class<?> bodyType = body.getClass();
     if (bodyType != String.class) {
-      config.getMapper().writerFor(bodyType).writeValue(out, body);
+      ObjectWriter writer = config.getMapper().writer();
+      if (config.getJsonView() != null) {
+        writer = writer.withView(config.getJsonView());
+      }
+      writer.forType(bodyType).writeValue(out, body);
     } else {
       // This is mostly used for testing bad/broken JSON
       out.write(((String) body).getBytes(StandardCharsets.UTF_8));
