@@ -26,5 +26,5 @@ runs:
       shell: bash
       run: |
         mkdir -p ~/.gradle
-        echo "org.gradle.jvmargs=-Xmx1024m -XX:MaxMetaspaceSize=768m -Dfile.encoding=UTF-8" >> ~/.gradle/gradle.properties
+        echo "org.gradle.jvmargs=-Xmx1280m -XX:MaxMetaspaceSize=768m -Dfile.encoding=UTF-8" >> ~/.gradle/gradle.properties
         echo "org.gradle.vfs.watch=false" >> ~/.gradle/gradle.properties

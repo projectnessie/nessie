@@ -142,6 +142,73 @@ to work. These options are harmless when using Java 11.
 Apache Spark does **only** work with Java 11 (or 8), so all tests using Spark use the Gradle toolchain mechanism
 to force Java 11 for the execution of those tests.
 
+### Development environments
+
+Nessie's primary development environment is Linux. The code base can be built on macOS and Windows.
+All tests, unit and integration tests, must run and successfully complete on Linux. Some tests
+do not work on macOS and/or Windows. Primary reason is that Docker is not natively available on
+those platforms and some integration tests run into issues. Another reason are obvious and
+non-obvious platform differences.
+
+TL;DR It is fine to build code on macOS and Windows, but the reference platform is Linux.
+
+#### Running tests on macOS
+
+In our CI we use Podman for macOS, initialized using the following sequence of commands,
+which can be used locally as well.
+
+```bash
+# Install podman using Homebrew
+brew install podman
+# Initialize the default instance
+podman machine init
+# Start the podman machine
+podman machine start
+# Symlink `docker` to `podman` (rather a convenience)
+ln -s /usr/local/bin/podman /usr/local/bin/docker
+# Export the DOCKER_HOST with the location of the Unix socket
+export DOCKER_HOST="unix://${HOME}/.local/share/containers/podman/machine/podman-machine-default/podman.sock"
+```
+
+The "Docker machine" is actually a virtual machine running Linux and therefore
+CPU and memory are constrained. If you encounter issues when running integration tests
+that use Docker, consider limiting the number of concurrent integration tests by setting /
+using the system property `nessie.intTestParallelism` to a low value (1 or 2), the actual
+value depends on your machine.
+
+Testcontainers via Podman regularly fails to fetch information about the requested Docker
+image. Unfortunately, there is no workaround, because the issue happens even if the images
+are present locally. The error during integration tests looks like this:
+```
+caused by ... ContainerFetchException: Can't get Docker image: RemoteDockerImage...
+caused by ... NoHttpResponseException: localhost:2375 failed to respond
+```
+
+#### Running tests on Windows & WSL2
+
+Developing Nessie on Windows (not in WSL) is possible, but not supported. Since
+testcontainers does not support Windows (not WSL), running a lot of important integration
+tests that use Docker is not possible. Running those tests inside WSL2 _should_ work, but
+has not been verified.
+
+##### Windows line ending issue in `nessie-ui` module
+
+Windows uses a different line ending (CR LF) than Linux and macOS (LF). The _prettier_ tool
+that we use in the `ui/` module for linting however expects LF even on Windows. This is an
+inconvenience at the moment, meaning that you cannot run tests and checks on the Nessie UI
+module.
+
+It would be possible to work around the limitation by setting the following Git configuration
+options and re-checkout Nessie. But this is neither tested nor supported. We use the approach
+in CI though.
+
+```bash
+git chckout ca95c806f43f470b9f17e4cc9305c1cc0910e55d
+git config core.autocrlf false
+git config core.eol lf
+git checkout main
+```
+
 ### Style guide
 
 Changes must adhere to the style guide and this will be verified by the continuous integration build.
