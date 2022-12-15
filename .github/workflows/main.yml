@@ -42,18 +42,18 @@ jobs:
     - name: Gradle / compile
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: checkstyleMain checkstyleTest jar testClasses
+        arguments: checkstyleMain checkstyleTest jar testClasses --scan
 
     - name: Gradle / unit test
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: test
+        arguments: test --scan
 
     - name: Gradle / check incl. integ-test
       uses: gradle/gradle-build-action@v2
       with:
         # '-x spotlessCheck': workaround until https://github.com/diffplug/spotless/issues/1215 is fixed
-        arguments: check -x spotlessCheck
+        arguments: check -x spotlessCheck --scan
 
     - name: Gradle / Gatling simulations
       uses: gradle/gradle-build-action@v2
@@ -68,6 +68,7 @@ jobs:
           codeCoverageReport -x test -x intTest
           publishToMavenLocal
           -Puber-jar
+          --scan
 
     - name: Gradle / build tools integration tests
       uses: gradle/gradle-build-action@v2
@@ -109,6 +110,7 @@ jobs:
             :nessie-quarkus:intTest
             -Pnative
             -Pdocker
+            --scan
 
       - name: Capture Test Reports
         uses: actions/upload-artifact@v3

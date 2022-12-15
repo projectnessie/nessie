@@ -89,22 +89,22 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           cache-read-only: true
-          arguments: :iceberg:iceberg-nessie:test
+          arguments: :iceberg:iceberg-nessie:test --scan
 
       - name: Nessie Spark 3.1 Extensions test
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: :nessie-iceberg:nessie-spark-extensions-3.1_2.12:test :nessie-iceberg:nessie-spark-extensions-3.1_2.12:intTest
+          arguments: :nessie-iceberg:nessie-spark-extensions-3.1_2.12:test :nessie-iceberg:nessie-spark-extensions-3.1_2.12:intTest --scan
 
       - name: Nessie Spark 3.2 / 2.12 Extensions test
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: :nessie-iceberg:nessie-spark-extensions-3.2_2.12:test :nessie-iceberg:nessie-spark-extensions-3.2_2.12:intTest
+          arguments: :nessie-iceberg:nessie-spark-extensions-3.2_2.12:test :nessie-iceberg:nessie-spark-extensions-3.2_2.12:intTest --scan
 
       - name: Nessie Spark 3.3 / 2.12 Extensions test
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: :nessie-iceberg:nessie-spark-extensions-3.3_2.12:test :nessie-iceberg:nessie-spark-extensions-3.3_2.12:intTest
+          arguments: :nessie-iceberg:nessie-spark-extensions-3.3_2.12:test :nessie-iceberg:nessie-spark-extensions-3.3_2.12:intTest --scan
 
       - name: Stop Gradle daemon
         uses: gradle/gradle-build-action@v2
@@ -114,7 +114,7 @@ jobs:
       - name: Publish Nessie + Iceberg to local Maven repo
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: publishLocal
+          arguments: publishLocal --scan
 
       - name: Gather locally published versions
         run: |

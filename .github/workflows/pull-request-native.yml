@@ -49,6 +49,7 @@ jobs:
           :nessie-quarkus:intTest
           -Pnative
           -Pdocker
+          --scan
 
     - name: Capture Test Reports
       uses: actions/upload-artifact@v3
