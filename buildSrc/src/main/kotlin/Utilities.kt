@@ -219,44 +219,11 @@ fun Project.addRelocateTo(toArtifact: String) {
 fun Project.getSparkScalaVersionsForProject(): SparkScalaVersions {
   val sparkScala = project.name.split("-").last().split("_")
 
-  var sparkMajorVersion: String
-  var scalaMajorVersion: String
+  val sparkMajorVersion = if (sparkScala[0][0].isDigit()) sparkScala[0] else "3.2"
+  val scalaMajorVersion = sparkScala[1]
 
-  when (name) {
-    "nessie-spark-extensions-base" -> {
-      sparkMajorVersion = "3.1"
-      scalaMajorVersion = "2.12"
-      addRelocateTo("nessie-spark-extensions-base_$scalaMajorVersion")
+  useBuildSubDirectory(scalaMajorVersion)
 
-      tasks.withType<Test>().configureEach { enabled = false }
-
-      useBuildSubDirectory("legacy")
-    }
-    "nessie-spark-extensions" -> {
-      sparkMajorVersion = "3.1"
-      scalaMajorVersion = "2.12"
-      addRelocateTo("nessie-spark-extensions-${sparkMajorVersion}_$scalaMajorVersion")
-
-      tasks.withType<Test>().configureEach { enabled = false }
-
-      useBuildSubDirectory("legacy")
-    }
-    "nessie-spark-3.2-extensions" -> {
-      sparkMajorVersion = "3.2"
-      scalaMajorVersion = "2.12"
-      addRelocateTo("nessie-spark-extensions-${sparkMajorVersion}_$scalaMajorVersion")
-
-      tasks.withType<Test>().configureEach { enabled = false }
-
-      useBuildSubDirectory("legacy")
-    }
-    else -> {
-      sparkMajorVersion = if (sparkScala[0][0].isDigit()) sparkScala[0] else "3.2"
-      scalaMajorVersion = sparkScala[1]
-
-      useBuildSubDirectory(scalaMajorVersion)
-    }
-  }
   return useSparkScalaVersionsForProject(sparkMajorVersion, scalaMajorVersion)
 }
 

@@ -98,12 +98,4 @@ for (scalaVersion in allScalaVersions) {
   }
 }
 
-if (!ideSyncActive) {
-  nessieProject("nessie-spark-extensions", file("../clients/spark-extensions/v3.1")).buildFileName =
-    "../build.gradle.kts"
-  nessieProject("nessie-spark-3.2-extensions", file("../clients/spark-extensions/v3.2"))
-    .buildFileName = "../build.gradle.kts"
-  nessieProject("nessie-spark-extensions-base", file("../clients/spark-extensions-base"))
-}
-
 rootProject.name = "nessie-iceberg"
