@@ -54,7 +54,8 @@ jobs:
     - name: Gradle / spotless
       uses: gradle/gradle-build-action@v2
       with:
-        # 'spotlessCheck' separate: workaround until https://github.com/diffplug/spotless/issues/1215 is fixed
+        # 'spotlessCheck' separate: workaround until
+        # https://github.com/diffplug/spotless/issues/1215 is fixed - should be merged w/ next step
         arguments: spotlessCheck --scan
 
     - name: Gradle / compile
@@ -72,8 +73,7 @@ jobs:
     - name: Gradle / check incl. integ-test
       uses: gradle/gradle-build-action@v2
       with:
-        # '-x spotlessCheck': workaround until https://github.com/diffplug/spotless/issues/1215 is fixed
-        arguments: check -x spotlessCheck --scan
+        arguments: check -x spotlessCheck -x checkstyleMain -x checkstyleTest --scan
 
     - name: Gradle / Gatling simulations
       uses: gradle/gradle-build-action@v2
