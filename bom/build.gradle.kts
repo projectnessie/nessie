@@ -105,12 +105,6 @@ dependencies {
           break
         }
       }
-      if (!ideSyncActive) {
-        // Relocated projects, to be removed in a future Nessie version
-        api(project(":nessie-spark-extensions-base"))
-        api(project(":nessie-spark-extensions"))
-        api(project(":nessie-spark-3.2-extensions"))
-      }
     }
   }
 }
