@@ -56,7 +56,10 @@ public class LocalMongo {
       LOGGER.info("Starting Mongo test container (network-id: {})", containerNetworkId);
     }
 
-    container = new MongoDBContainer("mongo:" + version).withLogConsumer(outputFrame -> {});
+    container =
+        new MongoDBContainer("mongo:" + version)
+            .withLogConsumer(outputFrame -> {})
+            .withStartupAttempts(5);
     containerNetworkId.ifPresent(container::withNetworkMode);
     try {
       container.start();
