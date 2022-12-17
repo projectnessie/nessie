@@ -246,13 +246,14 @@ public abstract class AbstractExportImport {
                   }
                 });
 
-    ImportFileSupplier importFileSupplier = prepareImporter(targetDir);
-    NessieImporter importer =
-        NessieImporter.builder()
-            .importFileSupplier(importFileSupplier)
-            .databaseAdapter(importDatabaseAdapter)
-            .build();
-    importer.importNessieRepository();
+    try (ImportFileSupplier importFileSupplier = prepareImporter(targetDir)) {
+      NessieImporter importer =
+          NessieImporter.builder()
+              .importFileSupplier(importFileSupplier)
+              .databaseAdapter(importDatabaseAdapter)
+              .build();
+      importer.importNessieRepository();
+    }
 
     assertThat(createdReferences.cardinality()).isEqualTo(numNamedRefs);
     assertThat(createdCommits.cardinality()).isEqualTo(numCommits);
