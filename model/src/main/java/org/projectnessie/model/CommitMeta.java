@@ -29,6 +29,8 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -141,12 +143,23 @@ public abstract class CommitMeta {
    * hostnames etc.
    */
   @NotNull
-  public abstract Map<String, String> getProperties();
+  @Value.Derived
+  @JsonView(ApiAttributesV1.class)
+  public Map<String, String> getProperties() {
+    HashMap<String, String> firstElements = new HashMap<>();
+    for (Map.Entry<String, List<String>> entry : getAllProperties().entrySet()) {
+      List<String> list = entry.getValue();
+      if (!list.isEmpty()) {
+        firstElements.put(entry.getKey(), list.get(0));
+      }
+    }
+    return firstElements;
+  }
 
   @NotNull
   @JsonView(ApiAttributesV2.class)
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
-  public abstract Map<String, List<String>> getListProperties();
+  public abstract Map<String, List<String>> getAllProperties();
 
   @NotNull
   @JsonView(ApiAttributesV2.class)
@@ -185,6 +198,30 @@ public abstract class CommitMeta {
     }
 
     ImmutableCommitMeta.Builder addAllSignedOffBy(String author);
+
+    default ImmutableCommitMeta.Builder properties(Map<String, ? extends String> entries) {
+      allProperties(Collections.emptyMap()); // clear all properties
+      return putAllProperties(entries);
+    }
+
+    default ImmutableCommitMeta.Builder putAllProperties(Map<String, ? extends String> entries) {
+      for (Map.Entry<String, ? extends String> entry : entries.entrySet()) {
+        putProperties(entry.getKey(), entry.getValue());
+      }
+      return (ImmutableCommitMeta.Builder) this;
+    }
+
+    default ImmutableCommitMeta.Builder putProperties(Map.Entry<String, ? extends String> entry) {
+      return putProperties(entry.getKey(), entry.getValue());
+    }
+
+    default ImmutableCommitMeta.Builder putProperties(String key, String value) {
+      return putAllProperties(key, Collections.singletonList(value));
+    }
+
+    ImmutableCommitMeta.Builder putAllProperties(String key, List<String> value);
+
+    ImmutableCommitMeta.Builder allProperties(Map<String, ? extends List<String>> entries);
   }
 
   /**

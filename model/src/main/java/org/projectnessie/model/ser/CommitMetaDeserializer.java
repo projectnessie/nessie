@@ -23,6 +23,8 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.Map;
 import org.projectnessie.model.CommitMeta;
 
 public class CommitMetaDeserializer extends StdDeserializer<CommitMeta> {
@@ -45,6 +47,20 @@ public class CommitMetaDeserializer extends StdDeserializer<CommitMeta> {
     node.remove(singleAttr);
   }
 
+  private void toMapOfLists(ObjectNode node, String singleAttr, String arrayAttr) {
+    if (!node.has(arrayAttr)) {
+      ObjectNode mapOfLists = node.putObject(arrayAttr);
+      if (node.has(singleAttr) && node.get(singleAttr).isObject()) {
+        ObjectNode map = (ObjectNode) node.get(singleAttr);
+        for (Iterator<Map.Entry<String, JsonNode>> it = map.fields(); it.hasNext(); ) {
+          Map.Entry<String, JsonNode> entry = it.next();
+          mapOfLists.putArray(entry.getKey()).add(entry.getValue());
+        }
+      }
+    }
+    node.remove(singleAttr);
+  }
+
   @Override
   public CommitMeta deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
     // First parse the serialized data as a generic object
@@ -52,6 +68,7 @@ public class CommitMetaDeserializer extends StdDeserializer<CommitMeta> {
     // Convert old properties to new, array-based variants
     toArray(node, "author", "authors");
     toArray(node, "signedOffBy", "allSignedOffBy");
+    toMapOfLists(node, "properties", "allProperties");
 
     // Parse again using the standard a Bean deserializer to avoid infinite recursion.
     // This adds a bit extra runtime work, but keeps the code simpler.
