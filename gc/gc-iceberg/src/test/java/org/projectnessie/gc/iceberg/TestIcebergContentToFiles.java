@@ -178,8 +178,8 @@ public class TestIcebergContentToFiles {
         .isThrownBy(
             () ->
                 IcebergContentToFiles.checkUri("meep", URI.create("foo/bar/baz"), contentReference))
-        .withMessageStartingWith(
-            "Iceberg content reference points to the relative meep URI '%s' as",
+        .withMessage(
+            "Iceberg content reference points to the meep URI '%s' as content-key foo on commit b without a scheme and with a relative path, which is not supported.",
             URI.create("foo/bar/baz"));
 
     // Note: the following is a completely valid file-scheme URI, pointing to the root directory
@@ -198,14 +198,16 @@ public class TestIcebergContentToFiles {
     soft.assertThatIllegalArgumentException()
         .isThrownBy(
             () -> IcebergContentToFiles.checkUri("meep", URI.create("location"), contentReference))
-        .withMessageContaining("points to the relative meep URI ");
+        .withMessageContaining("points to the meep URI ")
+        .withMessageContaining("without a scheme and with a relative path, which is not supported");
 
     soft.assertThatIllegalArgumentException()
         .isThrownBy(
             () ->
                 IcebergContentToFiles.checkUri(
                     "meep", URI.create("file:location"), contentReference))
-        .withMessageContaining("points to the relative meep URI ");
+        .withMessageContaining("points to the meep URI ")
+        .withMessageContaining("with a non-absolute scheme-specific-part location");
   }
 
   @Test
