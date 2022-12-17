@@ -15,12 +15,18 @@
  */
 package org.projectnessie.minio;
 
+import static java.lang.String.format;
+import static org.junit.jupiter.api.extension.ConditionEvaluationResult.disabled;
+import static org.junit.jupiter.api.extension.ConditionEvaluationResult.enabled;
 import static org.junit.platform.commons.util.AnnotationUtils.findAnnotatedFields;
 import static org.junit.platform.commons.util.ReflectionUtils.makeAccessible;
 
 import java.lang.reflect.Field;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ConditionEvaluationResult;
+import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
@@ -35,9 +41,21 @@ import org.junit.platform.commons.util.ReflectionUtils;
  * <p>Provides instances of {@link MinioAccess} via instance or static fields or parameters
  * annotated with {@link Minio}.
  */
-public class MinioExtension implements BeforeAllCallback, BeforeEachCallback, ParameterResolver {
+public class MinioExtension
+    implements BeforeAllCallback, BeforeEachCallback, ParameterResolver, ExecutionCondition {
   private static final ExtensionContext.Namespace NAMESPACE =
       ExtensionContext.Namespace.create(MinioExtension.class);
+
+  @Override
+  public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
+    if (OS.current() == OS.LINUX) {
+      return enabled("Running on Linux");
+    }
+    return disabled(
+        format(
+            "Disabled on %s, because neither macOS nor Windows support wildcard localhost FQDNs.",
+            OS.current().name()));
+  }
 
   @Override
   public void beforeAll(ExtensionContext context) {
