@@ -20,11 +20,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.common.collect.ImmutableMap;
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Paths;
+import java.net.URI;
+import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -109,7 +108,7 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
     assertThat(icebergView).isNotNull();
     assertThat(icebergView.currentVersion().versionId()).isEqualTo(1);
     assertThat(icebergView.currentVersion().viewDefinition()).isEqualTo(viewDefinition);
-    assertThat(Paths.get(metadataLocationViews(viewIdentifier.name()))).exists();
+    assertThat(metadataLocationViews(viewIdentifier.name())).exists();
     assertThat(metadataFilesForViews(viewIdentifier.name())).isNotNull().hasSize(1);
 
     verifyCommitMetadata();
@@ -137,7 +136,7 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
     assertThat(icebergView.currentVersion().parentId()).isEqualTo(1);
     assertThat(icebergView.currentVersion().viewDefinition()).isEqualTo(updatedView);
     assertThat(icebergView.properties()).isEmpty();
-    assertThat(Paths.get(metadataLocationViews(VIEW_IDENTIFIER.name()))).exists();
+    assertThat(metadataLocationViews(VIEW_IDENTIFIER.name())).exists();
     assertThat(metadataFilesForViews(VIEW_IDENTIFIER.name())).isNotNull().hasSize(2);
     verifyViewInNessie(VIEW_IDENTIFIER, icebergView, BRANCH);
 
@@ -151,7 +150,7 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
     assertThat(icebergView.currentVersion().parentId()).isEqualTo(2);
     assertThat(icebergView.currentVersion().viewDefinition()).isEqualTo(updatedSql);
     assertThat(icebergView.properties()).isEmpty();
-    assertThat(Paths.get(metadataLocationViews(VIEW_IDENTIFIER.name()))).exists();
+    assertThat(metadataLocationViews(VIEW_IDENTIFIER.name())).exists();
     assertThat(metadataFilesForViews(VIEW_IDENTIFIER.name())).isNotNull().hasSize(3);
     verifyViewInNessie(VIEW_IDENTIFIER, icebergView, BRANCH);
 
@@ -169,7 +168,7 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
     assertThat(icebergView.currentVersion().parentId()).isEqualTo(3);
     assertThat(icebergView.currentVersion().viewDefinition()).isEqualTo(updatedSql);
     assertThat(icebergView.properties()).isEqualTo(properties);
-    assertThat(Paths.get(metadataLocationViews(VIEW_IDENTIFIER.name()))).exists();
+    assertThat(metadataLocationViews(VIEW_IDENTIFIER.name())).exists();
     assertThat(metadataFilesForViews(VIEW_IDENTIFIER.name())).isNotNull().hasSize(4);
 
     verifyCommitMetadata();
@@ -197,7 +196,7 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
     assertThat(icebergView.currentVersion().versionId()).isEqualTo(2);
     assertThat(icebergView.currentVersion().parentId()).isEqualTo(1);
     assertThat(icebergView.properties()).isEmpty();
-    assertThat(Paths.get(metadataLocationViews(VIEW_IDENTIFIER.name()))).exists();
+    assertThat(metadataLocationViews(VIEW_IDENTIFIER.name())).exists();
     assertThat(metadataFilesForViews(VIEW_IDENTIFIER.name())).isNotNull().hasSize(2);
 
     verifyCommitMetadata();
@@ -240,7 +239,7 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
     assertThat(icebergView).isNotNull();
     assertThat(icebergView.currentVersion().versionId()).isEqualTo(1);
     assertThat(icebergView.currentVersion().viewDefinition()).isEqualTo(viewDefinition);
-    assertThat(Paths.get(metadataLocationViews(VIEW_IDENTIFIER.name()))).exists();
+    assertThat(metadataLocationViews(VIEW_IDENTIFIER.name())).exists();
     assertThat(metadataFilesForViews(VIEW_IDENTIFIER.name())).isNotNull().hasSize(1);
     verifyViewInNessie(VIEW_IDENTIFIER, icebergView, BRANCH);
 
@@ -324,26 +323,28 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
     return view;
   }
 
-  private String getViewBasePath(String viewName) {
-    return Paths.get(temp.toString() + "/" + CATALOG_NAME + "." + DB_NAME, viewName)
-        .toAbsolutePath()
-        .toString();
+  private java.nio.file.Path metadataLocationViews(String viewName) {
+    return temp.resolve(CATALOG_NAME + "." + DB_NAME)
+        .resolve(viewName)
+        .resolve("metadata")
+        .toAbsolutePath();
   }
 
-  private String metadataLocationViews(String viewName) {
-    return Paths.get(getViewBasePath(viewName), "metadata").toString();
-  }
-
-  private List<String> metadataFilesForViews(String viewName) {
-    return Arrays.stream(new File(metadataLocationViews(viewName)).listFiles())
-        .map(File::getAbsolutePath)
-        .filter(f -> f.endsWith(".metadata.json"))
-        .collect(Collectors.toList());
+  private List<URI> metadataFilesForViews(String viewName) {
+    java.nio.file.Path metadataLocation = metadataLocationViews(viewName);
+    try (Stream<java.nio.file.Path> files = Files.list(metadataLocation)) {
+      return files
+          .filter(p -> p.getFileName().toString().endsWith(".metadata.json"))
+          .map(java.nio.file.Path::toUri)
+          .collect(Collectors.toList());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private List<String> metadataFilesForViewsPath(String viewName) {
     return metadataFilesForViews(viewName).stream()
-        .map(x -> String.format("file://%s", x))
+        .map(Object::toString)
         .collect(Collectors.toList());
   }
 }
