@@ -24,8 +24,9 @@ public final class LocalMongoResource implements ExtensionContext.Store.Closeabl
 
   private synchronized LocalMongo mongo() {
     if (localMongo == null) {
-      localMongo = new LocalMongo();
-      localMongo.startMongo(Optional.empty(), true);
+      LocalMongo mongo = new LocalMongo();
+      mongo.startMongo(Optional.empty(), true);
+      localMongo = mongo;
     }
     return localMongo;
   }
