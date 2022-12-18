@@ -55,6 +55,8 @@ tasks.withType<Test>().configureEach {
 
 // Compatibility tests fail on macOS with the following message: `libc++abi: terminating
 // with uncaught exception of type std::__1::system_error: mutex lock failed: Invalid argument`
-if (Os.isFamily(Os.FAMILY_MAC)) {
+//
+// Compatibility tests fail, because Windows not supported by testcontainers (logged message)
+if (Os.isFamily(Os.FAMILY_MAC) || Os.isFamily(Os.FAMILY_WINDOWS)) {
   tasks.withType<Test>().configureEach { this.enabled = false }
 }

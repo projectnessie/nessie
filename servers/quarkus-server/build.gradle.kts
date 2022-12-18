@@ -15,6 +15,7 @@
  */
 
 import io.quarkus.gradle.tasks.QuarkusBuild
+import org.apache.tools.ant.taskdefs.condition.Os
 
 plugins {
   `java-library`
@@ -196,4 +197,9 @@ listOf("javadoc", "sourcesJar").forEach { name ->
 
 listOf("checkstyleTest", "compileTestJava").forEach { name ->
   tasks.named(name) { dependsOn(tasks.named("compileQuarkusTestGeneratedSourcesJava")) }
+}
+
+// Testcontainers is not supported on Windows :(
+if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+  tasks.withType<Test>().configureEach { this.enabled = false }
 }
