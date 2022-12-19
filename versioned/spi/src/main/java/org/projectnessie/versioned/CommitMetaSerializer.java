@@ -33,8 +33,8 @@ public class CommitMetaSerializer implements Serializer<CommitMeta> {
   @Override
   public ByteString toBytes(CommitMeta value) {
     try (Output out = ByteString.newOutput()) {
-      // Store commit metadata using v2 format. This is mostly to avoid duplicate data from v1
-      // attributes in the serialized form.
+      // Store commit metadata using v1 format. This is to allow rolling upgrades to server
+      // versions with v2 support.
       MAPPER.writerWithView(ApiAttributesV1.class).writeValue(out, value);
       return out.toByteString();
     } catch (IOException e) {

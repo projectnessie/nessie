@@ -35,7 +35,6 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
   static List<Case> goodCases() {
     final String branchName = "testBranch";
 
-    // TODO: add test for CommitMeta v1
     return Arrays.asList(
         new Case(
             ImmutableTransplant.builder()
