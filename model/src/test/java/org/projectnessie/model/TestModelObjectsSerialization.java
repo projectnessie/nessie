@@ -29,6 +29,7 @@ import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.api.v1.ApiAttributesV1;
 import org.projectnessie.model.LogResponse.LogEntry;
 
 /**
@@ -45,8 +46,8 @@ public class TestModelObjectsSerialization {
   @ParameterizedTest
   @MethodSource("goodCases")
   void testGoodSerDeCases(Case goodCase) throws IOException {
-    String json = MAPPER.writeValueAsString(goodCase.obj);
-    JsonNode j = MAPPER.readValue(json, JsonNode.class);
+    String json = MAPPER.writerWithView(ApiAttributesV1.class).writeValueAsString(goodCase.obj);
+    JsonNode j = MAPPER.readerWithView(ApiAttributesV1.class).readValue(json, JsonNode.class);
     JsonNode d = MAPPER.readValue(goodCase.deserializedJson, JsonNode.class);
     Assertions.assertThat(j).isEqualTo(d);
     Object deserialized = MAPPER.readValue(json, goodCase.deserializeAs);

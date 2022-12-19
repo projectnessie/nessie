@@ -47,6 +47,9 @@ public interface HttpRuntimeConfig {
 
   ObjectMapper getMapper();
 
+  @Nullable
+  Class<?> getJsonView();
+
   int getReadTimeoutMillis();
 
   int getConnectionTimeoutMillis();

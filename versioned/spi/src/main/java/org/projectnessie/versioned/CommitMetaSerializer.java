@@ -20,6 +20,7 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.ByteString.Output;
 import java.io.IOException;
 import java.io.InputStream;
+import org.projectnessie.api.v1.ApiAttributesV1;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ImmutableCommitMeta;
 
@@ -32,7 +33,9 @@ public class CommitMetaSerializer implements Serializer<CommitMeta> {
   @Override
   public ByteString toBytes(CommitMeta value) {
     try (Output out = ByteString.newOutput()) {
-      MAPPER.writeValue(out, value);
+      // Store commit metadata using v1 format. This is to allow rolling upgrades to server
+      // versions with v2 support.
+      MAPPER.writerWithView(ApiAttributesV1.class).writeValue(out, value);
       return out.toByteString();
     } catch (IOException e) {
       throw new RuntimeException(String.format("Couldn't serialize commit meta %s", value), e);

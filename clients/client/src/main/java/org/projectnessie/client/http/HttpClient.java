@@ -54,6 +54,7 @@ public interface HttpClient {
   class Builder {
     private URI baseUri;
     private ObjectMapper mapper;
+    private Class<?> jsonView;
     private SSLContext sslContext;
     private SSLParameters sslParameters;
     private int readTimeoutMillis =
@@ -85,6 +86,11 @@ public interface HttpClient {
 
     public Builder setObjectMapper(ObjectMapper mapper) {
       this.mapper = mapper;
+      return this;
+    }
+
+    public Builder setJsonView(Class<?> jsonView) {
+      this.jsonView = jsonView;
       return this;
     }
 
@@ -160,6 +166,7 @@ public interface HttpClient {
           HttpRuntimeConfig.builder()
               .baseUri(baseUri)
               .mapper(mapper)
+              .jsonView(jsonView)
               .readTimeoutMillis(readTimeoutMillis)
               .connectionTimeoutMillis(connectionTimeoutMillis)
               .isDisableCompression(disableCompression)

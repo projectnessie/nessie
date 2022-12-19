@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.api.v1.ApiAttributesV1;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ImmutableCommitMeta;
 
@@ -40,7 +41,10 @@ public class TestCommitMetaSerializer {
             .build();
 
     ByteString expectedBytes =
-        ByteString.copyFrom(new ObjectMapper().writeValueAsBytes(expectedCommit));
+        ByteString.copyFrom(
+            new ObjectMapper()
+                .writerWithView(ApiAttributesV1.class)
+                .writeValueAsBytes(expectedCommit));
     CommitMeta actualCommit = CommitMetaSerializer.METADATA_SERIALIZER.fromBytes(expectedBytes);
     assertThat(actualCommit).isEqualTo(expectedCommit);
     ByteString actualBytes = CommitMetaSerializer.METADATA_SERIALIZER.toBytes(expectedCommit);

@@ -15,6 +15,7 @@
  */
 package org.projectnessie.api.v1.http;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -35,6 +36,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.projectnessie.api.v1.ApiAttributesV1;
 import org.projectnessie.api.v1.TreeApi;
 import org.projectnessie.api.v1.params.CommitLogParams;
 import org.projectnessie.api.v1.params.EntriesParams;
@@ -75,6 +77,7 @@ public interface HttpTreeApi extends TreeApi {
                 schema = @Schema(implementation = ReferencesResponse.class))),
     @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
   })
+  @JsonView(ApiAttributesV1.class)
   ReferencesResponse getAllReferences(@BeanParam ReferencesParams params);
 
   @Override
@@ -94,6 +97,7 @@ public interface HttpTreeApi extends TreeApi {
     @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
     @APIResponse(responseCode = "404", description = "Default branch not found.")
   })
+  @JsonView(ApiAttributesV1.class)
   Branch getDefaultBranch() throws NessieNotFoundException;
 
   @Override
@@ -127,6 +131,7 @@ public interface HttpTreeApi extends TreeApi {
     @APIResponse(responseCode = "403", description = "Not allowed to create reference"),
     @APIResponse(responseCode = "409", description = "Reference already exists"),
   })
+  @JsonView(ApiAttributesV1.class)
   Reference createReference(
       @Parameter(description = "Source named reference") @QueryParam("sourceRefName")
           String sourceRefName,
@@ -160,6 +165,7 @@ public interface HttpTreeApi extends TreeApi {
     @APIResponse(responseCode = "403", description = "Not allowed to view the given reference"),
     @APIResponse(responseCode = "404", description = "Ref not found")
   })
+  @JsonView(ApiAttributesV1.class)
   Reference getReferenceByName(@BeanParam GetReferenceParams params) throws NessieNotFoundException;
 
   @Override
@@ -209,6 +215,7 @@ public interface HttpTreeApi extends TreeApi {
         description = "Not allowed to view the given reference or fetch entries for it"),
     @APIResponse(responseCode = "404", description = "Ref not found")
   })
+  @JsonView(ApiAttributesV1.class)
   EntriesResponse getEntries(
       @Parameter(
               description = "name of ref to fetch from",
@@ -264,6 +271,7 @@ public interface HttpTreeApi extends TreeApi {
         description = "Not allowed to view the given reference or get commit log for it"),
     @APIResponse(responseCode = "404", description = "Ref doesn't exists")
   })
+  @JsonView(ApiAttributesV1.class)
   LogResponse getCommitLog(
       @Parameter(
               description = "ref to show log from",
@@ -289,6 +297,7 @@ public interface HttpTreeApi extends TreeApi {
     @APIResponse(responseCode = "404", description = "One or more references don't exist"),
     @APIResponse(responseCode = "409", description = "Update conflict")
   })
+  @JsonView(ApiAttributesV1.class)
   void assignReference(
       @Parameter(
               description = "Reference type to reassign",
@@ -329,6 +338,7 @@ public interface HttpTreeApi extends TreeApi {
     @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
     @APIResponse(responseCode = "409", description = "update conflict"),
   })
+  @JsonView(ApiAttributesV1.class)
   void deleteReference(
       @Parameter(
               description = "Reference type to delete",
@@ -382,6 +392,7 @@ public interface HttpTreeApi extends TreeApi {
     @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
     @APIResponse(responseCode = "409", description = "update conflict")
   })
+  @JsonView(ApiAttributesV1.class)
   MergeResponse transplantCommitsIntoBranch(
       @Parameter(
               description = "Branch to transplant into",
@@ -443,6 +454,7 @@ public interface HttpTreeApi extends TreeApi {
     @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
     @APIResponse(responseCode = "409", description = "update conflict")
   })
+  @JsonView(ApiAttributesV1.class)
   MergeResponse mergeRefIntoBranch(
       @Parameter(
               description = "Branch to merge into",
@@ -494,6 +506,7 @@ public interface HttpTreeApi extends TreeApi {
     @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
     @APIResponse(responseCode = "409", description = "Update conflict")
   })
+  @JsonView(ApiAttributesV1.class)
   Branch commitMultipleOperations(
       @Parameter(
               description = "Branch to change, defaults to default branch.",

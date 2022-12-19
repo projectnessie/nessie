@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.projectnessie.api.v1.ApiAttributesV1;
 import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.error.ErrorCode;
 import org.projectnessie.error.ImmutableNessieError;
@@ -259,6 +260,23 @@ final class TranslatingVersionNessieApi implements AutoCloseable {
       Thread.currentThread().setContextClassLoader(classLoader);
 
       Object objectMapper = jacksonObjectMapper(classLoader);
+
+      // Currently compatibility tests always use API v1. So, use the v1 JSON view for
+      // serialization.
+      try {
+        // Must use the view class from the client, whose version may be different from the test's
+        // version.
+        Class<?> jsonViewV1 = classLoader.loadClass(ApiAttributesV1.class.getName());
+        objectMapper =
+            objectMapper
+                .getClass()
+                .getMethod("writerWithView", Class.class)
+                .invoke(objectMapper, jsonViewV1);
+      } catch (ClassNotFoundException ignore) {
+        // No need to set view if the view class is not available in the client's version.
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
 
       return (String)
           objectMapper
