@@ -30,6 +30,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.api.v1.ApiAttributesV1;
+import org.projectnessie.api.v2.ApiAttributesV2;
 import org.projectnessie.model.LogResponse.LogEntry;
 
 /**
@@ -46,8 +47,9 @@ public class TestModelObjectsSerialization {
   @ParameterizedTest
   @MethodSource("goodCases")
   void testGoodSerDeCases(Case goodCase) throws IOException {
-    String json = MAPPER.writerWithView(ApiAttributesV1.class).writeValueAsString(goodCase.obj);
-    JsonNode j = MAPPER.readerWithView(ApiAttributesV1.class).readValue(json, JsonNode.class);
+    String json =
+        MAPPER.writerWithView(goodCase.serializationView).writeValueAsString(goodCase.obj);
+    JsonNode j = MAPPER.readValue(json, JsonNode.class);
     JsonNode d = MAPPER.readValue(goodCase.deserializedJson, JsonNode.class);
     Assertions.assertThat(j).isEqualTo(d);
     Object deserialized = MAPPER.readValue(json, goodCase.deserializeAs);
@@ -96,6 +98,34 @@ public class TestModelObjectsSerialization {
                     Json.from("type", "ICEBERG_TABLE")
                         .addNoQuotes("name", Json.arr("elements", "/tmp/testpath")))
                 .addNoQuotes("hasMore", true)),
+        new Case(
+            CommitMeta.builder()
+                .message("msg")
+                .hash(HASH)
+                .author("a1")
+                .author("a2")
+                .signedOffBy("s1")
+                .signedOffBy("s2")
+                .addParentCommitHashes("p1")
+                .addParentCommitHashes("p2")
+                .committer("c1")
+                .putAllProperties("p1", Arrays.asList("v1a", "v1b"))
+                .putProperties("p2", "v2")
+                .authorTime(Instant.ofEpochSecond(1))
+                .commitTime(Instant.ofEpochSecond(2))
+                .build(),
+            ApiAttributesV2.class,
+            CommitMeta.class,
+            Json.from("hash", HASH)
+                .add("committer", "c1")
+                .addArr("authors", "a1", "a2")
+                .addArr("allSignedOffBy", "s1", "s2")
+                .add("message", "msg")
+                .add("commitTime", "1970-01-01T00:00:02Z")
+                .add("authorTime", "1970-01-01T00:00:01Z")
+                .addNoQuotes(
+                    "allProperties", Json.arr("p1", "v1a", "v1b").addArr("p2", "v2").toString())
+                .addArr("parentCommitHashes", "p1", "p2")),
         new Case(
             LogResponse.builder()
                 .token(HASH)
@@ -156,6 +186,7 @@ public class TestModelObjectsSerialization {
   protected static class Case {
 
     final Object obj;
+    final Class<?> serializationView;
     final Class<?> deserializeAs;
     final String deserializedJson;
 
@@ -164,7 +195,13 @@ public class TestModelObjectsSerialization {
     }
 
     public Case(Object obj, Class<?> deserializeAs, Json deserializedJson) {
+      this(obj, ApiAttributesV1.class, deserializeAs, deserializedJson);
+    }
+
+    public Case(
+        Object obj, Class<?> serializationView, Class<?> deserializeAs, Json deserializedJson) {
       this.obj = obj;
+      this.serializationView = serializationView;
       this.deserializeAs = deserializeAs;
       this.deserializedJson = deserializedJson.toString();
     }
