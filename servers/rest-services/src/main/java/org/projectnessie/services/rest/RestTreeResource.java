@@ -21,7 +21,6 @@ import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
-import org.projectnessie.api.v1.ApiAttributesV1;
 import org.projectnessie.api.v1.http.HttpTreeApi;
 import org.projectnessie.api.v1.params.CommitLogParams;
 import org.projectnessie.api.v1.params.EntriesParams;
@@ -38,6 +37,7 @@ import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
+import org.projectnessie.model.ser.Views;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.impl.TreeApiImplWithAuthorization;
@@ -78,20 +78,20 @@ public class RestTreeResource implements HttpTreeApi {
         securityContext == null ? null : securityContext.getUserPrincipal());
   }
 
-  @JsonView(ApiAttributesV1.class)
+  @JsonView(Views.V1.class)
   @Override
   public ReferencesResponse getAllReferences(ReferencesParams params) {
     Preconditions.checkArgument(params.pageToken() == null, "Paging not supported");
     return resource().getAllReferences(params.fetchOption(), params.filter());
   }
 
-  @JsonView(ApiAttributesV1.class)
+  @JsonView(Views.V1.class)
   @Override
   public Branch getDefaultBranch() throws NessieNotFoundException {
     return resource().getDefaultBranch();
   }
 
-  @JsonView(ApiAttributesV1.class)
+  @JsonView(Views.V1.class)
   @Override
   public Reference createReference(String sourceRefName, Reference reference)
       throws NessieNotFoundException, NessieConflictException {
@@ -100,13 +100,13 @@ public class RestTreeResource implements HttpTreeApi {
             reference.getName(), reference.getType(), reference.getHash(), sourceRefName);
   }
 
-  @JsonView(ApiAttributesV1.class)
+  @JsonView(Views.V1.class)
   @Override
   public Reference getReferenceByName(GetReferenceParams params) throws NessieNotFoundException {
     return resource().getReferenceByName(params.getRefName(), params.fetchOption());
   }
 
-  @JsonView(ApiAttributesV1.class)
+  @JsonView(Views.V1.class)
   @Override
   public EntriesResponse getEntries(String refName, EntriesParams params)
       throws NessieNotFoundException {
@@ -115,7 +115,7 @@ public class RestTreeResource implements HttpTreeApi {
         .getEntries(refName, params.hashOnRef(), params.namespaceDepth(), params.filter());
   }
 
-  @JsonView(ApiAttributesV1.class)
+  @JsonView(Views.V1.class)
   @Override
   public LogResponse getCommitLog(String ref, CommitLogParams params)
       throws NessieNotFoundException {
@@ -130,7 +130,7 @@ public class RestTreeResource implements HttpTreeApi {
             params.pageToken());
   }
 
-  @JsonView(ApiAttributesV1.class)
+  @JsonView(Views.V1.class)
   @Override
   public void assignReference(
       Reference.ReferenceType referenceType,
@@ -141,7 +141,7 @@ public class RestTreeResource implements HttpTreeApi {
     resource().assignReference(referenceType, referenceName, expectedHash, assignTo);
   }
 
-  @JsonView(ApiAttributesV1.class)
+  @JsonView(Views.V1.class)
   @Override
   public void deleteReference(
       Reference.ReferenceType referenceType, String referenceName, String expectedHash)
@@ -149,7 +149,7 @@ public class RestTreeResource implements HttpTreeApi {
     resource().deleteReference(referenceType, referenceName, expectedHash);
   }
 
-  @JsonView(ApiAttributesV1.class)
+  @JsonView(Views.V1.class)
   @Override
   public MergeResponse transplantCommitsIntoBranch(
       String branchName, String expectedHash, String message, Transplant transplant)
@@ -169,7 +169,7 @@ public class RestTreeResource implements HttpTreeApi {
             transplant.isReturnConflictAsResult());
   }
 
-  @JsonView(ApiAttributesV1.class)
+  @JsonView(Views.V1.class)
   @Override
   public MergeResponse mergeRefIntoBranch(String branchName, String expectedHash, Merge merge)
       throws NessieNotFoundException, NessieConflictException {
@@ -188,7 +188,7 @@ public class RestTreeResource implements HttpTreeApi {
             merge.isReturnConflictAsResult());
   }
 
-  @JsonView(ApiAttributesV1.class)
+  @JsonView(Views.V1.class)
   @Override
   public Branch commitMultipleOperations(
       String branchName, String expectedHash, Operations operations)

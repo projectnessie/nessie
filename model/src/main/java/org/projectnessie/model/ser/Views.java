@@ -13,7 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.api.v2;
+package org.projectnessie.model.ser;
 
-/** This class is used to define JSON views for REST API v2 parameters and payload objects. */
-public final class ApiAttributesV2 {}
+public abstract class Views {
+
+  /** This class defines the JSON view for REST API v1 parameters and payload objects. */
+  public static final class V1 {}
+
+  /** This class defines the JSON view for REST API v2 parameters and payload objects. */
+  public static final class V2 {}
+}

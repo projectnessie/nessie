@@ -40,9 +40,8 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty;
 import org.immutables.value.Value;
-import org.projectnessie.api.v1.ApiAttributesV1;
-import org.projectnessie.api.v2.ApiAttributesV2;
 import org.projectnessie.model.ser.CommitMetaDeserializer;
+import org.projectnessie.model.ser.Views;
 
 @Value.Immutable
 @Schema(
@@ -89,13 +88,13 @@ public abstract class CommitMeta {
   /** The author of a commit. This is the original committer. */
   @Nullable
   @Value.Derived
-  @JsonView(ApiAttributesV1.class)
+  @JsonView(Views.V1.class)
   public String getAuthor() {
     return getAllAuthors().isEmpty() ? null : getAllAuthors().get(0);
   }
 
   @NotNull
-  @JsonView(ApiAttributesV2.class)
+  @JsonView(Views.V2.class)
   @JsonProperty("authors")
   public abstract List<String> getAllAuthors();
 
@@ -107,13 +106,13 @@ public abstract class CommitMeta {
    */
   @Nullable
   @Value.Derived
-  @JsonView(ApiAttributesV1.class)
+  @JsonView(Views.V1.class)
   public String getSignedOffBy() {
     return getAllSignedOffBy().isEmpty() ? null : getAllSignedOffBy().get(0);
   }
 
   @NotNull
-  @JsonView(ApiAttributesV2.class)
+  @JsonView(Views.V2.class)
   public abstract List<String> getAllSignedOffBy();
 
   /**
@@ -144,7 +143,7 @@ public abstract class CommitMeta {
    */
   @NotNull
   @Value.Derived
-  @JsonView(ApiAttributesV1.class)
+  @JsonView(Views.V1.class)
   public Map<String, String> getProperties() {
     HashMap<String, String> firstElements = new HashMap<>();
     for (Map.Entry<String, List<String>> entry : getAllProperties().entrySet()) {
@@ -157,12 +156,12 @@ public abstract class CommitMeta {
   }
 
   @NotNull
-  @JsonView(ApiAttributesV2.class)
+  @JsonView(Views.V2.class)
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
   public abstract Map<String, List<String>> getAllProperties();
 
   @NotNull
-  @JsonView(ApiAttributesV2.class)
+  @JsonView(Views.V2.class)
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
   public abstract List<String> getParentCommitHashes();
 

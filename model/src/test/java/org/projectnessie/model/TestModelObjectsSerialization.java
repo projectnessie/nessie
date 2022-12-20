@@ -29,9 +29,8 @@ import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.projectnessie.api.v1.ApiAttributesV1;
-import org.projectnessie.api.v2.ApiAttributesV2;
 import org.projectnessie.model.LogResponse.LogEntry;
+import org.projectnessie.model.ser.Views;
 
 /**
  * This test merely checks the JSON serialization/deserialization of the model classes, with an
@@ -114,7 +113,7 @@ public class TestModelObjectsSerialization {
                 .authorTime(Instant.ofEpochSecond(1))
                 .commitTime(Instant.ofEpochSecond(2))
                 .build(),
-            ApiAttributesV2.class,
+            Views.V2.class,
             CommitMeta.class,
             Json.from("hash", HASH)
                 .add("committer", "c1")
@@ -195,7 +194,7 @@ public class TestModelObjectsSerialization {
     }
 
     public Case(Object obj, Class<?> deserializeAs, Json deserializedJson) {
-      this(obj, ApiAttributesV1.class, deserializeAs, deserializedJson);
+      this(obj, Views.V1.class, deserializeAs, deserializedJson);
     }
 
     public Case(

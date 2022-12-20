@@ -23,8 +23,8 @@ import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.projectnessie.api.v1.ApiAttributesV1;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.ser.Views;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 
@@ -41,7 +41,7 @@ final class ExportImportTestUtil {
     try {
       return ByteString.copyFromUtf8(
           MAPPER
-              .writerWithView(ApiAttributesV1.class)
+              .writerWithView(Views.V1.class)
               .writeValueAsString(CommitMeta.fromMessage("commit # " + i)));
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);

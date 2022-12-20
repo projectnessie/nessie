@@ -25,8 +25,6 @@ import java.util.Collections;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.projectnessie.api.v1.ApiAttributesV1;
-import org.projectnessie.api.v2.ApiAttributesV2;
 import org.projectnessie.model.CommitMeta;
 
 class TestCommitMetaDeserializer {
@@ -42,7 +40,7 @@ class TestCommitMetaDeserializer {
   }
 
   @ParameterizedTest
-  @ValueSource(classes = {Object.class, ApiAttributesV1.class, ApiAttributesV2.class})
+  @ValueSource(classes = {Object.class, Views.V1.class, Views.V2.class})
   void testAuthor(Class<?> view) throws JsonProcessingException {
     CommitMeta meta =
         deser(view, CommitMeta.builder().message("m").author("t1").author("t2").build());
@@ -50,7 +48,7 @@ class TestCommitMetaDeserializer {
   }
 
   @ParameterizedTest
-  @ValueSource(classes = {Object.class, ApiAttributesV2.class})
+  @ValueSource(classes = {Object.class, Views.V2.class})
   void testAllAuthors(Class<?> view) throws JsonProcessingException {
     CommitMeta meta =
         deser(
@@ -61,14 +59,12 @@ class TestCommitMetaDeserializer {
   @Test
   void testAllAuthorsTruncated() throws JsonProcessingException {
     CommitMeta meta =
-        deser(
-            ApiAttributesV1.class,
-            CommitMeta.builder().message("m").author("t1").author("t2").build());
+        deser(Views.V1.class, CommitMeta.builder().message("m").author("t1").author("t2").build());
     assertThat(meta.getAllAuthors()).containsExactly("t1");
   }
 
   @ParameterizedTest
-  @ValueSource(classes = {Object.class, ApiAttributesV1.class, ApiAttributesV2.class})
+  @ValueSource(classes = {Object.class, Views.V1.class, Views.V2.class})
   void testSignedOffBy(Class<?> view) throws JsonProcessingException {
     CommitMeta meta =
         deser(
@@ -83,7 +79,7 @@ class TestCommitMetaDeserializer {
   }
 
   @ParameterizedTest
-  @ValueSource(classes = {Object.class, ApiAttributesV2.class})
+  @ValueSource(classes = {Object.class, Views.V2.class})
   void testAllSignedOffBy(Class<?> view) throws JsonProcessingException {
     CommitMeta meta =
         deser(view, CommitMeta.builder().message("m").signedOffBy("s1").signedOffBy("s2").build());
@@ -91,7 +87,7 @@ class TestCommitMetaDeserializer {
   }
 
   @ParameterizedTest
-  @ValueSource(classes = {Object.class, ApiAttributesV1.class, ApiAttributesV2.class})
+  @ValueSource(classes = {Object.class, Views.V1.class, Views.V2.class})
   void testSimpleProperties(Class<?> view) throws JsonProcessingException {
     CommitMeta meta =
         deser(
@@ -107,7 +103,7 @@ class TestCommitMetaDeserializer {
   }
 
   @ParameterizedTest
-  @ValueSource(classes = {Object.class, ApiAttributesV2.class})
+  @ValueSource(classes = {Object.class, Views.V2.class})
   void testListProperties(Class<?> view) throws JsonProcessingException {
     CommitMeta meta =
         deser(
@@ -137,7 +133,7 @@ class TestCommitMetaDeserializer {
   void testListPropertiesTruncated() throws JsonProcessingException {
     CommitMeta meta =
         deser(
-            ApiAttributesV1.class,
+            Views.V1.class,
             CommitMeta.builder()
                 .message("m")
                 .putAllProperties("k1", Arrays.asList("v1a", "v1b"))

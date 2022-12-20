@@ -37,8 +37,6 @@ import java.util.stream.Collectors;
 import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
-import org.projectnessie.api.v1.ApiAttributesV1;
-import org.projectnessie.api.v2.ApiAttributesV2;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.NessieConfigConstants;
 import org.projectnessie.client.api.NessieApi;
@@ -46,6 +44,7 @@ import org.projectnessie.client.auth.NessieAuthentication;
 import org.projectnessie.client.auth.NessieAuthenticationProvider;
 import org.projectnessie.client.http.v1api.HttpApiV1;
 import org.projectnessie.client.http.v2api.HttpApiV2;
+import org.projectnessie.model.ser.Views;
 
 /**
  * A builder class that creates a {@link NessieHttpClient} via {@link HttpClientBuilder#builder()}.
@@ -287,13 +286,13 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
     Objects.requireNonNull(apiVersion, "API version class must be non-null");
 
     if (apiVersion.isAssignableFrom(HttpApiV1.class)) {
-      builder.setJsonView(ApiAttributesV1.class);
+      builder.setJsonView(Views.V1.class);
       NessieHttpClient client = new NessieHttpClient(authentication, tracing, builder);
       return (API) new HttpApiV1(client);
     }
 
     if (apiVersion.isAssignableFrom(HttpApiV2.class)) {
-      builder.setJsonView(ApiAttributesV2.class);
+      builder.setJsonView(Views.V2.class);
       HttpClient httpClient = NessieHttpClient.buildClient(authentication, tracing, builder);
       return (API) new HttpApiV2(httpClient);
     }
