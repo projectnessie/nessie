@@ -23,7 +23,7 @@ from pynessie.conf import build_config
 
 __author__ = """Project Nessie"""
 __email__ = "nessie-release-builder@dremio.com"
-__version__ = "0.45.1"
+__version__ = "0.46.0"
 
 
 def get_config(config_dir: Optional[str] = None, args: Optional[dict] = None) -> confuse.Configuration:

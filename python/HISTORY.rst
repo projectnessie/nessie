@@ -2,6 +2,12 @@
 History
 =======
 
+0.46.0 (2022-12-20)
+-------------------
+
+* See release notes and changelog on GitHub: https://github.com/projectnessie/nessie/releases/tag/nessie-0.46.0
+* python: upgrade safety to 2.3.4 (#5658)
+
 0.45.0 (2022-11-29)
 -------------------
 
