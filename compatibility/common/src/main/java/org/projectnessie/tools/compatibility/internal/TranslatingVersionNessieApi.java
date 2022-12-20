@@ -27,11 +27,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.projectnessie.api.v1.ApiAttributesV1;
 import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.error.ErrorCode;
 import org.projectnessie.error.ImmutableNessieError;
 import org.projectnessie.error.NessieError;
+import org.projectnessie.model.ser.Views;
 
 /**
  * Translates between the current and old Nessie version API and model.
@@ -266,7 +266,7 @@ final class TranslatingVersionNessieApi implements AutoCloseable {
       try {
         // Must use the view class from the client, whose version may be different from the test's
         // version.
-        Class<?> jsonViewV1 = classLoader.loadClass(ApiAttributesV1.class.getName());
+        Class<?> jsonViewV1 = classLoader.loadClass(Views.V1.class.getName());
         objectMapper =
             objectMapper
                 .getClass()
