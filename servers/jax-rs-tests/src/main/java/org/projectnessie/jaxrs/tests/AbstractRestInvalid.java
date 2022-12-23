@@ -224,13 +224,13 @@ public abstract class AbstractRestInvalid extends AbstractRestInvalidRefs {
     soft.assertThatThrownBy(() -> getApi().getContent().refName(invalidHash).get())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("Bad Request (HTTP/400):")
-        .hasMessageContaining(".request.requestedKeys: size must be between 1 and 2147483647")
+        .hasMessageContaining("size must be between 1 and 2147483647")
         .hasMessageContaining(REF_NAME_MESSAGE);
     soft.assertThatThrownBy(
             () -> getApi().getContent().refName(validBranchName).hashOnRef(invalidHash).get())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("Bad Request (HTTP/400):")
-        .hasMessageContaining(".request.requestedKeys: size must be between 1 and 2147483647")
+        .hasMessageContaining("size must be between 1 and 2147483647")
         .hasMessageContaining(HASH_RULE);
     soft.assertThatThrownBy(
             () ->

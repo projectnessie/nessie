@@ -15,8 +15,14 @@
  */
 package org.projectnessie.services.spi;
 
+import static org.projectnessie.api.v1.params.DiffParams.HASH_OPTIONAL_REGEX;
+
+import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.DiffResponse;
+import org.projectnessie.model.Validation;
 
 /**
  * Server-side interface to services providing content differences.
@@ -25,6 +31,14 @@ import org.projectnessie.model.DiffResponse;
  * the meaning of various methods and their parameters.
  */
 public interface DiffService {
-  DiffResponse getDiff(String fromRef, String fromHash, String toRef, String toHash)
+  DiffResponse getDiff(
+      @NotNull @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          String fromRef,
+      @Nullable @Pattern(regexp = HASH_OPTIONAL_REGEX, message = Validation.HASH_MESSAGE)
+          String fromHash,
+      @NotNull @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          String toRef,
+      @Nullable @Pattern(regexp = HASH_OPTIONAL_REGEX, message = Validation.HASH_MESSAGE)
+          String toHash)
       throws NessieNotFoundException;
 }

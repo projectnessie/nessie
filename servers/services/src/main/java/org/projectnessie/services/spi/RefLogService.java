@@ -15,8 +15,11 @@
  */
 package org.projectnessie.services.spi;
 
+import javax.annotation.Nullable;
+import javax.validation.constraints.Pattern;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.RefLogResponse;
+import org.projectnessie.model.Validation;
 
 /**
  * Server-side interface to services managing the reflog.
@@ -26,6 +29,12 @@ import org.projectnessie.model.RefLogResponse;
  */
 public interface RefLogService {
   RefLogResponse getRefLog(
-      String startHash, String endHash, String filter, Integer maxRecords, String pageToken)
+      @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          String startHash,
+      @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          String endHash,
+      @Nullable String filter,
+      @Nullable Integer maxRecords,
+      @Nullable String pageToken)
       throws NessieNotFoundException;
 }
