@@ -18,6 +18,10 @@ package org.projectnessie.services.spi;
 import java.util.Collection;
 import java.util.List;
 import javax.annotation.Nullable;
+import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -30,6 +34,7 @@ import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
+import org.projectnessie.model.Validation;
 
 /**
  * Server-side interface to services managing the content trees.
@@ -41,68 +46,126 @@ public interface TreeService {
 
   Branch getDefaultBranch() throws NessieNotFoundException;
 
-  ReferencesResponse getAllReferences(FetchOption fetchOption, String filter);
+  ReferencesResponse getAllReferences(FetchOption fetchOption, @Nullable String filter);
 
-  Reference getReferenceByName(String refName, FetchOption fetchOption)
+  Reference getReferenceByName(
+      @Valid
+          @NotNull
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          String refName,
+      FetchOption fetchOption)
       throws NessieNotFoundException;
 
   Reference createReference(
-      String refName, Reference.ReferenceType type, String hash, String sourceRefName)
+      @Valid
+          @NotNull
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          String refName,
+      Reference.ReferenceType type,
+      @Valid @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          String hash,
+      @Valid @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          String sourceRefName)
       throws NessieNotFoundException, NessieConflictException;
 
   Reference assignReference(
       Reference.ReferenceType referenceType,
-      String referenceName,
-      String expectedHash,
-      Reference assignTo)
+      @Valid
+          @NotNull
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          String referenceName,
+      @Valid @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          String expectedHash,
+      @Valid Reference assignTo)
       throws NessieNotFoundException, NessieConflictException;
 
   void deleteReference(
-      Reference.ReferenceType referenceType, String referenceName, String expectedHash)
+      Reference.ReferenceType referenceType,
+      @Valid
+          @NotNull
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          String referenceName,
+      @Valid @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          String expectedHash)
       throws NessieConflictException, NessieNotFoundException;
 
   LogResponse getCommitLog(
-      String namedRef,
+      @Valid
+          @NotNull
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          String namedRef,
       FetchOption fetchOption,
-      String oldestHashLimit,
-      String youngestHash,
-      String filter,
-      Integer maxRecords,
-      String pageToken)
+      @Valid @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          String oldestHashLimit,
+      @Valid @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          String youngestHash,
+      @Nullable String filter,
+      @Nullable Integer maxRecords,
+      @Nullable String pageToken)
       throws NessieNotFoundException;
 
   MergeResponse transplantCommitsIntoBranch(
-      String branchName,
-      String expectedHash,
+      @Valid
+          @NotNull
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          String branchName,
+      @Valid @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          String expectedHash,
       String message,
       List<String> hashesToTransplant,
-      String fromRefName,
+      @Valid
+          @NotBlank
+          @NotNull
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          String fromRefName,
       Boolean keepIndividualCommits,
       Collection<MergeKeyBehavior> keyMergeTypes,
       MergeBehavior defaultMergeType,
-      Boolean dryRun,
-      Boolean fetchAdditionalInfo,
-      Boolean returnConflictAsResult)
+      @Nullable Boolean dryRun,
+      @Nullable Boolean fetchAdditionalInfo,
+      @Nullable Boolean returnConflictAsResult)
       throws NessieNotFoundException, NessieConflictException;
 
   MergeResponse mergeRefIntoBranch(
-      String branchName,
-      String expectedHash,
-      String fromRefName,
-      String fromHash,
-      Boolean keepIndividualCommits,
+      @Valid
+          @NotNull
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          String branchName,
+      @Valid @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          String expectedHash,
+      @Valid
+          @NotBlank
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          String fromRefName,
+      @Valid @NotBlank @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          String fromHash,
+      @Nullable Boolean keepIndividualCommits,
       @Nullable String message,
       Collection<MergeKeyBehavior> keyMergeTypes,
       MergeBehavior defaultMergeType,
-      Boolean dryRun,
-      Boolean fetchAdditionalInfo,
-      Boolean returnConflictAsResult)
+      @Nullable Boolean dryRun,
+      @Nullable Boolean fetchAdditionalInfo,
+      @Nullable Boolean returnConflictAsResult)
       throws NessieNotFoundException, NessieConflictException;
 
   EntriesResponse getEntries(
-      String namedRef, String hashOnRef, Integer namespaceDepth, String filter)
+      @Valid
+          @NotNull
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          String namedRef,
+      @Valid @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          String hashOnRef,
+      @Nullable Integer namespaceDepth,
+      @Nullable String filter)
       throws NessieNotFoundException;
 
-  Branch commitMultipleOperations(String branch, String expectedHash, Operations operations)
+  Branch commitMultipleOperations(
+      @Valid
+          @NotNull
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          String branch,
+      @Valid @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          String expectedHash,
+      @Valid Operations operations)
       throws NessieNotFoundException, NessieConflictException;
 }
