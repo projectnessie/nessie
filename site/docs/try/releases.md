@@ -2,6 +2,13 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.46.2 Release (December 28, 2022)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.46.2).
+
+* Add validation annotations to backend service interfaces (#5740)
+* Docs: Update README.md for 0.46.0 release (#5734)
+
 ## 0.46.0 Release (December 20, 2022)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.46.0).

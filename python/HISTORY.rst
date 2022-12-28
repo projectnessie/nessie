@@ -2,6 +2,12 @@
 History
 =======
 
+0.46.2 (2022-12-28)
+-------------------
+
+* See release notes and changelog on GitHub: https://github.com/projectnessie/nessie/releases/tag/nessie-0.46.2
+* Python: Fix CI build failure because of tox error (#5749)
+
 0.46.0 (2022-12-20)
 -------------------
 
