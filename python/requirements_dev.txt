@@ -16,5 +16,5 @@
 
 # Common dev dependencies, compatible with Python 3.8+
 -r requirements_basedev.txt
-Sphinx==5.3.0
+Sphinx==6.0.0
 sphinx-autodoc-typehints==1.19.5
