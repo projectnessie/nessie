@@ -34,7 +34,6 @@ final class HttpGetCommitLog extends BaseGetCommitLogBuilder<CommitLogParams> {
   protected CommitLogParams params() {
     return CommitLogParams.builder()
         .filter(filter)
-        .startHash(untilHash)
         .maxRecords(maxRecords)
         .fetchOption(fetchOption)
         .startHash(untilHash)
