@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -31,6 +32,7 @@ import org.projectnessie.junit.engine.MultiEnvTestFilter;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.tools.compatibility.api.NessieAPI;
+import org.projectnessie.tools.compatibility.api.NessieBaseUri;
 import org.projectnessie.tools.compatibility.api.NessieVersion;
 import org.projectnessie.tools.compatibility.api.Version;
 import org.projectnessie.tools.compatibility.api.VersionCondition;
@@ -93,6 +95,9 @@ class TestNessieCompatibilityExtensions {
     assertThat(OldServersSample.minVersionHigh).containsExactly(Version.CURRENT);
     assertThat(OldServersSample.maxVersionHigh).containsExactly(Version.parseVersion("0.18.0"));
     assertThat(OldServersSample.never).isEmpty();
+
+    // Base URI should not include the API version suffix
+    assertThat(OldServersSample.uris).allSatisfy(uri -> assertThat(uri.getPath()).isEqualTo("/"));
   }
 
   @Test
@@ -155,6 +160,8 @@ class TestNessieCompatibilityExtensions {
   static class OldServersSample {
     @NessieAPI NessieApiV1 api;
     @NessieAPI static NessieApiV1 apiStatic;
+    @NessieBaseUri URI uri;
+    @NessieBaseUri static URI uriStatic;
     @NessieVersion Version version;
     @NessieVersion static Version versionStatic;
 
@@ -162,12 +169,15 @@ class TestNessieCompatibilityExtensions {
     static final List<Version> minVersionHigh = new ArrayList<>();
     static final List<Version> maxVersionHigh = new ArrayList<>();
     static final List<Version> never = new ArrayList<>();
+    static final List<URI> uris = new ArrayList<>();
 
     @Test
     void testSome() throws Exception {
       assertThat(api).isNotNull().isSameAs(apiStatic);
+      assertThat(uri).isNotNull().isEqualTo(uriStatic);
       assertThat(version).isNotNull().isEqualTo(versionStatic);
       allVersions.add(version);
+      uris.add(uri);
 
       assertThat(api.getConfig())
           .extracting(NessieConfiguration::getDefaultBranch)
