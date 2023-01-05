@@ -16,15 +16,18 @@
 package org.projectnessie.tools.compatibility.internal;
 
 import static org.projectnessie.tools.compatibility.internal.AbstractNessieApiHolder.apiInstanceForField;
+import static org.projectnessie.tools.compatibility.internal.AnnotatedFields.populateAnnotatedFields;
 import static org.projectnessie.tools.compatibility.internal.AnnotatedFields.populateNessieApiFields;
 import static org.projectnessie.tools.compatibility.internal.NessieServer.nessieServer;
 import static org.projectnessie.tools.compatibility.internal.Util.classContext;
 
 import java.lang.reflect.Field;
+import java.net.URI;
 import java.util.Collections;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.projectnessie.tools.compatibility.api.NessieBaseUri;
 import org.projectnessie.tools.compatibility.api.TargetVersion;
 import org.projectnessie.tools.compatibility.api.Version;
 
@@ -60,5 +63,9 @@ public class OlderNessieServersExtension extends AbstractMultiVersionExtension {
             apiInstanceForField(classContext(context), field, Version.CURRENT, ctx -> nessieServer);
 
     populateNessieApiFields(context, instance, TargetVersion.TESTED, fieldValue);
+
+    URI serverUri = nessieServer.getUri();
+    URI baseUri = serverUri.resolve("/"); // remove possible API version suffixes
+    populateAnnotatedFields(context, instance, NessieBaseUri.class, a -> true, f -> baseUri);
   }
 }
