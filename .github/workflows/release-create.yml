@@ -177,7 +177,7 @@ jobs:
         
         git log --perl-regexp --author '^(?!.*dependabot(-preview)?|.*renovate|.*nessie-release-workflow).*$'\
           --format='format:* %s' ${LAST_TAG}..HEAD python/ |\
-          grep -v '^\* \[release\] .*$' >> /tmp/HISTORY.rst
+          >> /tmp/HISTORY.rst
         
         tail +4 python/HISTORY.rst >> /tmp/HISTORY.rst
         
