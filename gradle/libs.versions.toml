@@ -79,7 +79,7 @@ agroal-pool = { module = "io.agroal:agroal-pool", version = "2.0" }
 agrona = { module = "org.agrona:agrona", version = "1.17.1" }
 antlr-antlr4 = { module = "org.antlr:antlr4", version.ref = "antlr4" }
 antlr-antlr4-runtime = { module = "org.antlr:antlr4-runtime", version.ref = "antlr4" }
-assertj-core = { module = "org.assertj:assertj-core", version = "3.24.0" }
+assertj-core = { module = "org.assertj:assertj-core", version = "3.24.1" }
 avro = { module = "org.apache.avro:avro", version = "1.11.1" }
 awssdk-apache-client = { module = "software.amazon.awssdk:apache-client" }
 awssdk-auth = { module = "software.amazon.awssdk:auth" }
