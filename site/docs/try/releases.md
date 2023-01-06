@@ -2,6 +2,15 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.46.3 Release (January 06, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.46.3).
+
+* Remove grep -v from the HISTORY.rst generation script (#5778)
+* Fix MultiEnvTestFilter to pass inner test classes (#5775)
+* Make OlderNessieServersExtension inject Nessie URIs (#5770)
+* Remove duplicate startHash call in `HttpGetCommitLog` (#5756)
+
 ## 0.46.2 Release (December 28, 2022)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.46.2).
