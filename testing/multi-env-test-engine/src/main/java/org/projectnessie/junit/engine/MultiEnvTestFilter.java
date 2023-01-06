@@ -53,20 +53,19 @@ public class MultiEnvTestFilter implements PostDiscoveryFilter {
     MultiEnvExtensionRegistry registry = registry();
 
     if (id.getEngineId().map("junit-jupiter"::equals).orElse(false)) {
-      if (registry.stream(testClass).anyMatch(ext -> ext.accepts(testClass))) {
+      if (registry.stream(testClass).findAny().isPresent()) {
         return FilterResult.excluded("Excluding multi-env test from Jupiter Engine: " + id);
       } else {
         return FilterResult.included(null);
       }
     } else {
-      // check acceptance only for extensions that own the test
+      // check whether any of the extensions declared by the test recognize the version segment
       boolean matched =
           registry.stream(testClass)
-              .filter(
+              .anyMatch(
                   ext ->
                       id.getSegments().stream()
-                          .anyMatch(s -> ext.segmentType().equals(s.getType())))
-              .anyMatch(ext -> ext.accepts(testClass));
+                          .anyMatch(s -> ext.segmentType().equals(s.getType())));
 
       if (matched) {
         return FilterResult.included(null);

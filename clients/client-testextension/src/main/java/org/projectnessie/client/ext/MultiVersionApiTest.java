@@ -46,11 +46,6 @@ public class MultiVersionApiTest implements MultiEnvTestExtension, ExecutionCond
     return Arrays.stream(NessieApiVersion.values()).map(Enum::name).collect(Collectors.toList());
   }
 
-  @Override
-  public boolean accepts(Class<?> testClass) {
-    return AnnotationUtils.findAnnotation(testClass, NessieApiVersions.class).isPresent();
-  }
-
   static NessieApiVersion apiVersion(ExtensionContext context) {
     return UniqueId.parse(context.getUniqueId()).getSegments().stream()
         .filter(s -> API_VERSION_SEGMENT_TYPE.equals(s.getType()))

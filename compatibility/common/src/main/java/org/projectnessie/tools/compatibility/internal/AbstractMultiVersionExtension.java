@@ -73,8 +73,7 @@ abstract class AbstractMultiVersionExtension
     }
   }
 
-  @Override
-  public boolean accepts(Class<?> testClass) {
+  private void checkExtensions(Class<?> testClass) {
     long count = multiVersionExtensionsForTestClass(Stream.of(testClass)).count();
     if (count > 1) {
       // Sanity check, it's illegal to have multiple nessie-compatibility extensions on one test
@@ -84,8 +83,6 @@ abstract class AbstractMultiVersionExtension
               "Test class %s contains more than one Nessie multi-version extension",
               testClass.getName()));
     }
-
-    return count == 1;
   }
 
   @Override
@@ -158,6 +155,8 @@ abstract class AbstractMultiVersionExtension
   }
 
   Version populateNessieVersionAnnotatedFields(ExtensionContext context, Object instance) {
+    checkExtensions(context.getRequiredTestClass());
+
     Optional<Version> nessieVersion = nessieVersionFromContext(context);
     if (!nessieVersion.isPresent()) {
       return null;

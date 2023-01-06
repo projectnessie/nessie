@@ -37,10 +37,4 @@ public interface MultiEnvTestExtension extends Extension {
    * invocations of this method to ensure a stable test case creation order.
    */
   List<String> allEnvironmentIds(ConfigurationParameters configuration);
-
-  /**
-   * Checks whether this extension recognizes the given test class as a multi-environment test
-   * class.
-   */
-  boolean accepts(Class<?> testClass);
 }

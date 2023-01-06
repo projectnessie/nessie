@@ -16,15 +16,17 @@
 package org.projectnessie.tools.compatibility.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
 
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.platform.testkit.engine.EngineExecutionResults;
 import org.junit.platform.testkit.engine.EngineTestKit;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.junit.engine.MultiEnvTestEngine;
@@ -58,17 +60,26 @@ class TestNessieCompatibilityExtensions {
                 TooManyExtensions3.class,
                 TooManyExtensions4.class))
         .allSatisfy(
-            c ->
-                assertThatThrownBy(
-                        () ->
-                            EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
-                                .configurationParameter("nessie.versions", "0.18.0,0.19.0")
-                                .selectors(selectClass(c))
-                                .filters(new MultiEnvTestFilter())
-                                .execute())
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessageEndingWith(
-                        " contains more than one Nessie multi-version extension"));
+            c -> {
+              EngineExecutionResults result =
+                  EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
+                      .configurationParameter("nessie.versions", "0.18.0,0.19.0")
+                      .selectors(selectClass(c))
+                      .filters(new MultiEnvTestFilter())
+                      .execute();
+              assertThat(
+                      result.allEvents().executions().failed().stream()
+                          .map(e -> e.getTerminationInfo().getExecutionResult().getThrowable())
+                          .filter(Optional::isPresent)
+                          .map(Optional::get))
+                  .isNotEmpty()
+                  .allSatisfy(
+                      e ->
+                          assertThat(e)
+                              .isInstanceOf(IllegalStateException.class)
+                              .hasMessageEndingWith(
+                                  " contains more than one Nessie multi-version extension"));
+            });
   }
 
   @Test
@@ -98,6 +109,19 @@ class TestNessieCompatibilityExtensions {
 
     // Base URI should not include the API version suffix
     assertThat(OldServersSample.uris).allSatisfy(uri -> assertThat(uri.getPath()).isEqualTo("/"));
+  }
+
+  @Test
+  void nestedTests() {
+    EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
+        .configurationParameter("nessie.versions", "0.18.0,current")
+        .selectors(selectClass(OuterSample.class))
+        .selectors(selectClass(OuterSample.Inner.class))
+        .filters(new MultiEnvTestFilter())
+        .execute();
+    assertThat(OuterSample.outerVersions)
+        .containsExactly(Version.parseVersion("0.18.0"), Version.CURRENT);
+    assertThat(OuterSample.innerVersions).containsExactlyElementsOf(OuterSample.outerVersions);
   }
 
   @Test
@@ -201,6 +225,29 @@ class TestNessieCompatibilityExtensions {
     @Test
     void never() {
       never.add(version);
+    }
+  }
+
+  @ExtendWith(OlderNessieServersExtension.class)
+  static class OuterSample {
+    static final List<Version> outerVersions = new ArrayList<>();
+    static final List<Version> innerVersions = new ArrayList<>();
+
+    @NessieVersion Version outerVersion;
+
+    @Test
+    void outer() {
+      outerVersions.add(outerVersion);
+    }
+
+    @Nested
+    class Inner {
+      @NessieVersion Version innerVersion;
+
+      @Test
+      void inner() {
+        innerVersions.add(innerVersion);
+      }
     }
   }
 

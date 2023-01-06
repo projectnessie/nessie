@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.engine.descriptor.JupiterEngineDescriptor;
@@ -66,6 +67,7 @@ class TestMultiEnvTestEngine {
     Set<UniqueId> ids =
         EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
             .selectors(selectClass(MultiEnvAcceptedTest.class))
+            .selectors(selectClass(MultiEnvAcceptedTest.Inner.class))
             .filters(new MultiEnvTestFilter())
             .execute()
             .testEvents()
@@ -73,7 +75,7 @@ class TestMultiEnvTestEngine {
             .stream()
             .map(e -> e.getTestDescriptor().getUniqueId())
             .collect(Collectors.toSet());
-    assertThat(ids).hasSize(2);
+    assertThat(ids).hasSize(4); // 2 from the outer class, 2 from the inner
     assertThat(ids)
         .allSatisfy(id -> assertThat(id.getEngineId()).hasValue(MultiEnvTestEngine.ENGINE_ID));
     assertThat(
@@ -83,25 +85,21 @@ class TestMultiEnvTestEngine {
                         id.getSegments().stream()
                             .filter(s -> "test-segment".equals(s.getType()))
                             .map(UniqueId.Segment::getValue)))
-        .containsExactlyInAnyOrder("TE1", "TE2");
-  }
-
-  @Test
-  void multiEnvUnmatched() {
-    assertThat(
-            EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
-                .selectors(selectClass(MultiEnvFakeTest.class))
-                .filters(new MultiEnvTestFilter())
-                .execute()
-                .testEvents()
-                .list())
-        .isEmpty(); // annotated, but unmatched tests are excluded
+        .containsExactlyInAnyOrder("TE1", "TE2", "TE1", "TE2");
   }
 
   public static class PlainTest {
     @Test
     void test() {
       // nop
+    }
+
+    @Nested
+    class Inner {
+      @Test
+      void test() {
+        // nop
+      }
     }
   }
 
@@ -111,13 +109,13 @@ class TestMultiEnvTestEngine {
     void test() {
       // nop
     }
-  }
 
-  @ExtendWith(TestExtension.class)
-  public static class MultiEnvFakeTest {
-    @Test
-    void test() {
-      // nop
+    @Nested
+    class Inner {
+      @Test
+      void test() {
+        // nop
+      }
     }
   }
 
@@ -130,11 +128,6 @@ class TestMultiEnvTestEngine {
     @Override
     public List<String> allEnvironmentIds(ConfigurationParameters configuration) {
       return Arrays.asList("TE1", "TE2");
-    }
-
-    @Override
-    public boolean accepts(Class<?> testClass) {
-      return MultiEnvAcceptedTest.class.equals(testClass);
     }
   }
 }
