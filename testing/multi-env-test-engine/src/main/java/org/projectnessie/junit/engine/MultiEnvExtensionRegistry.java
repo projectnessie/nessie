@@ -16,6 +16,8 @@
 package org.projectnessie.junit.engine;
 
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.engine.config.DefaultJupiterConfiguration;
@@ -49,9 +51,15 @@ public class MultiEnvExtensionRegistry {
   }
 
   public Stream<? extends MultiEnvTestExtension> stream(Class<?> testClass) {
+    Set<ExtendWith> annotations = new HashSet<>();
+    // Find annotations following the class nesting chain
+    for (Class<?> cl = testClass; cl != null; cl = cl.getDeclaringClass()) {
+      annotations.addAll(AnnotationUtils.findRepeatableAnnotations(cl, ExtendWith.class));
+    }
+
     //noinspection unchecked
     return (Stream<? extends MultiEnvTestExtension>)
-        AnnotationUtils.findRepeatableAnnotations(testClass, ExtendWith.class).stream()
+        annotations.stream()
             .flatMap(e -> Arrays.stream(e.value()))
             .filter(MultiEnvTestExtension.class::isAssignableFrom)
             .flatMap(registry::stream);
