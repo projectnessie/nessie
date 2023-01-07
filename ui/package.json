@@ -90,7 +90,7 @@
     "@typescript-eslint/eslint-plugin": "^5.38.0",
     "@typescript-eslint/parser": "^5.38.0",
     "babel-jest": "^29.0.3",
-    "babel-loader": "9.1.0",
+    "babel-loader": "9.1.2",
     "babel-plugin-named-asset-import": "^0.3.8",
     "babel-preset-react-app": "^10.0.0",
     "case-sensitive-paths-webpack-plugin": "2.4.0",
