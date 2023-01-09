@@ -31,6 +31,8 @@ import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.gc.contents.LiveContentSet;
@@ -45,6 +47,9 @@ import org.projectnessie.spark.extensions.NessieSparkSessionExtensions;
 import org.projectnessie.spark.extensions.SparkSqlTestBase;
 
 @ExtendWith(SoftAssertionsExtension.class)
+@DisabledOnOs(
+    value = OS.WINDOWS,
+    disabledReason = "a schemaless warehouse URI cannot be used on Windows")
 public class ITSparkIcebergNessieLocalNoSchema extends SparkSqlTestBase {
 
   @InjectSoftAssertions private SoftAssertions soft;
