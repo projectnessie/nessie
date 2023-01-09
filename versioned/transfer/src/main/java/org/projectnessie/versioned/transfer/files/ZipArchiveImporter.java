@@ -61,5 +61,7 @@ public abstract class ZipArchiveImporter implements ImportFileSupplier {
   }
 
   @Override
-  public void close() {}
+  public void close() throws IOException {
+    zipFile().close();
+  }
 }

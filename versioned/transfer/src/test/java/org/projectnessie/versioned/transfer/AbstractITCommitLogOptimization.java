@@ -48,6 +48,7 @@ import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.tests.extension.DatabaseAdapterExtension;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
 import org.projectnessie.versioned.store.DefaultStoreWorker;
+import org.projectnessie.versioned.transfer.files.ImportFileSupplier;
 import org.projectnessie.versioned.transfer.files.ZipArchiveExporter;
 import org.projectnessie.versioned.transfer.files.ZipArchiveImporter;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
@@ -174,12 +175,16 @@ public abstract class AbstractITCommitLogOptimization {
     assertThat(allRefs()).isEmpty();
     assertThat(allCommits()).isEmpty();
 
-    ImportResult importResult =
-        NessieImporter.builder()
-            .importFileSupplier(ZipArchiveImporter.builder().sourceZipFile(file).build())
-            .databaseAdapter(databaseAdapter)
-            .build()
-            .importNessieRepository();
+    ImportResult importResult;
+    try (ImportFileSupplier importFileSupplier =
+        ZipArchiveImporter.builder().sourceZipFile(file).build()) {
+      importResult =
+          NessieImporter.builder()
+              .importFileSupplier(importFileSupplier)
+              .databaseAdapter(databaseAdapter)
+              .build()
+              .importNessieRepository();
+    }
 
     assertThat(importResult)
         .extracting(
