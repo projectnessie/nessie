@@ -20,7 +20,6 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -177,8 +176,8 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
     if (scheme == null) {
       String path = uri.getPath();
       Preconditions.checkArgument(
-          Paths.get(path).isAbsolute(),
-          "Iceberg content reference points to the relative %s URI '%s' as content-key %s on commit %s without a scheme, which is not supported.",
+          path.startsWith("/"),
+          "Iceberg content reference points to the %s URI '%s' as content-key %s on commit %s without a scheme and with a relative path, which is not supported.",
           type,
           uri,
           contentReference.contentKey(),
@@ -189,11 +188,12 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
       String schemeSpecific = uri.getSchemeSpecificPart();
       Preconditions.checkArgument(
           schemeSpecific.startsWith("/"),
-          "Iceberg content reference points to the relative %s URI '%s' as content-key %s on commit %s without a scheme, which is not supported.",
+          "Iceberg content reference points to the %s URI '%s' as content-key %s on commit %s with a non-absolute scheme-specific-part %s, which is not supported.",
           type,
           uri,
           contentReference.contentKey(),
-          contentReference.commitId());
+          contentReference.commitId(),
+          schemeSpecific);
       Preconditions.checkArgument(
           uri.getHost() == null,
           "Iceberg content reference points to the host-specific %s URI '%s' as content-key %s on commit %s without a scheme, which is not supported.",
