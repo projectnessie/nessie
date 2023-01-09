@@ -108,8 +108,15 @@ jobs:
     - name: Upload reports
       if: env.COMMIT_STATUS == 'OK'
       run: |
-        gh api -X PUT repos/${CI_REPORTS_REPO}/contents/${WEB_DIR}/report.html -f message="${EVENT} ${BRANCH} ${SHA} Gatling report html" -f content=$(base64 -w0 ${REPORT_DIR}/report.html)
-        gh api -X PUT repos/${CI_REPORTS_REPO}/contents/${WEB_DIR}/report.yaml -f message="${EVENT} ${BRANCH} ${SHA} Gatling report yaml" -f content=$(base64 -w0 ${REPORT_DIR}/report.yaml)
+        echo -n "{\"message\":\"${EVENT} ${BRANCH} ${SHA} Gatling report html\", \"content\":\"" > content
+        base64 -w0 ${REPORT_DIR}/report.html >> content
+        echo -n "\"}" >> content
+        gh api -X PUT repos/${CI_REPORTS_REPO}/contents/${WEB_DIR}/report.html --input content
+
+        echo -n "{\"message\":\"${EVENT} ${BRANCH} ${SHA} Gatling report yaml\", \"content\":\"" > content
+        base64 -w0 ${REPORT_DIR}/report.yaml >> content
+        echo -n "\"}" >> content
+        gh api -X PUT repos/${CI_REPORTS_REPO}/contents/${WEB_DIR}/report.yaml --input content
 
     - name: GH Auth
       if: env.COMMIT_STATUS == 'OK'
