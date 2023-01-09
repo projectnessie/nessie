@@ -95,6 +95,7 @@ class TestMultiEnvTestEngine {
     }
 
     @Nested
+    @SuppressWarnings("ClassCanBeStatic")
     class Inner {
       @Test
       void test() {
@@ -111,6 +112,7 @@ class TestMultiEnvTestEngine {
     }
 
     @Nested
+    @SuppressWarnings("ClassCanBeStatic")
     class Inner {
       @Test
       void test() {
