@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -140,15 +141,21 @@ public abstract class BaseRepositoryCommand extends BaseCommand {
       CommandSpec commandSpec) {
 
     // Sanity check, whether that file can be written
-    if (markOptions.getLiveSetIdFile() != null) {
+    Path liveSetIdFile = markOptions.getLiveSetIdFile();
+    if (liveSetIdFile != null) {
       try {
-        Files.createDirectories(markOptions.getLiveSetIdFile().getParent());
-        Files.write(markOptions.getLiveSetIdFile(), new byte[0]);
+        Files.createDirectories(liveSetIdFile.getParent());
       } catch (IOException e) {
         throw new ExecutionException(
             commandSpec.commandLine(),
-            "Cannot write live-set-id to to " + markOptions.getLiveSetIdFile(),
+            "Cannot create parent directory for live-set-id file " + liveSetIdFile,
             e);
+      }
+      try {
+        Files.write(liveSetIdFile, new byte[0]);
+      } catch (IOException e) {
+        throw new ExecutionException(
+            commandSpec.commandLine(), "Cannot write live-set-id to " + liveSetIdFile, e);
       }
     }
 
@@ -183,16 +190,12 @@ public abstract class BaseRepositoryCommand extends BaseCommand {
             Duration.between(liveContentSet.created(), liveContentSet.identifyCompleted()),
             liveContentSetId);
 
-    if (markOptions.getLiveSetIdFile() != null) {
+    if (liveSetIdFile != null) {
       try {
-        Files.write(
-            markOptions.getLiveSetIdFile(),
-            liveContentSetId.toString().getBytes(StandardCharsets.UTF_8));
+        Files.write(liveSetIdFile, liveContentSetId.toString().getBytes(StandardCharsets.UTF_8));
       } catch (IOException e) {
         throw new ExecutionException(
-            commandSpec.commandLine(),
-            "Failed to write live-set-id to " + markOptions.getLiveSetIdFile(),
-            e);
+            commandSpec.commandLine(), "Failed to write live-set-id to " + liveSetIdFile, e);
       }
     }
 

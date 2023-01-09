@@ -187,8 +187,11 @@ public class TestCLI {
             liveSetIdFile.toString());
     soft.assertThat(run.getExitCode()).as(run::getErr).isEqualTo(1);
     soft.assertThat(run.getErr())
-        .contains("java.nio.file.FileSystemException")
-        .contains("Not a directory");
+        .containsAnyOf(
+            // Linux
+            "java.nio.file.FileSystemException",
+            // Windows
+            "java.nio.file.NoSuchFileException");
   }
 
   @Test
