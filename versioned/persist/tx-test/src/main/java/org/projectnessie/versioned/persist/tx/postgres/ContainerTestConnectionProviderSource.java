@@ -34,7 +34,8 @@ abstract class ContainerTestConnectionProviderSource
       throw new IllegalStateException("Already started");
     }
 
-    container = createContainer().withLogConsumer(new Slf4jLogConsumer(LOGGER));
+    container =
+        createContainer().withLogConsumer(new Slf4jLogConsumer(LOGGER)).withStartupAttempts(5);
     container.start();
 
     configureConnectionProviderConfigFromDefaults(

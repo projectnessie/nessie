@@ -87,7 +87,8 @@ public class LocalDynamoTestConnectionProviderSource extends DynamoTestConnectio
         new GenericContainer<>(imageName)
             .withLogConsumer(quiet ? outputFrame -> {} : new Slf4jLogConsumer(LOGGER))
             .withExposedPorts(DYNAMODB_PORT)
-            .withCommand("-jar", "DynamoDBLocal.jar", "-inMemory", "-sharedDb");
+            .withCommand("-jar", "DynamoDBLocal.jar", "-inMemory", "-sharedDb")
+            .withStartupAttempts(5);
     containerNetworkId.ifPresent(container::withNetworkMode);
     container.start();
 

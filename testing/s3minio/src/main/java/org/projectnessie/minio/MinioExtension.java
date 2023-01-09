@@ -102,7 +102,8 @@ public class MinioExtension implements BeforeAllCallback, BeforeEachCallback, Pa
     String accessKey = nonDefault(minio.accessKey());
     String secretKey = nonDefault(minio.secretKey());
     String bucket = nonDefault(minio.bucket());
-    MinioContainer container = new MinioContainer(null, accessKey, secretKey, bucket);
+    MinioContainer container =
+        new MinioContainer(null, accessKey, secretKey, bucket).withStartupAttempts(5);
     container.start();
     return container;
   }

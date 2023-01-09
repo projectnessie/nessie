@@ -44,7 +44,10 @@ public class PostgresTestResourceLifecycleManager
           "postgres container version is not specified. Please configure it using the system property it.nessie.container.postgres.tag");
     }
 
-    container = new PostgreSQLContainer<>("postgres:" + version).withLogConsumer(outputFrame -> {});
+    container =
+        new PostgreSQLContainer<>("postgres:" + version)
+            .withLogConsumer(outputFrame -> {})
+            .withStartupAttempts(5);
     containerNetworkId.ifPresent(container::withNetworkMode);
     try {
       // Only start the Docker container (local Dynamo-compatible). The DynamoDatabaseClient will
