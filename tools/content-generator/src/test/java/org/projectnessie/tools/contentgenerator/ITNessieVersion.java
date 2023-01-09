@@ -29,6 +29,7 @@ class ITNessieVersion extends AbstractContentGeneratorTest {
     List<String> output = proc.getStdOutLines();
     assertThat(output)
         .hasSize(1)
-        .anySatisfy(s -> assertThat(s).isEqualTo(System.getProperty("expectedNessieVersion")));
+        .anySatisfy(
+            s -> assertThat(s.trim()).isEqualTo(System.getProperty("expectedNessieVersion")));
   }
 }
