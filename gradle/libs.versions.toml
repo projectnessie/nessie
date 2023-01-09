@@ -206,7 +206,7 @@ weld-se-core = { module = "org.jboss.weld.se:weld-se-core", version = "3.1.9.Fin
 
 [plugins]
 errorprone = { id = "net.ltgt.errorprone", version = "3.0.1" }
-gatling = { id = "io.gatling.gradle", version = "3.9.0.1" }
+gatling = { id = "io.gatling.gradle", version = "3.9.0.2" }
 idea-ext = { id = "org.jetbrains.gradle.plugin.idea-ext", version = "1.1.7" }
 jandex = { id = "com.github.vlsi.jandex", version.ref = "jandexPlugin" }
 jmh = { id = "me.champeau.jmh", version = "0.6.8" }
