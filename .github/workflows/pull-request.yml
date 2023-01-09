@@ -173,10 +173,7 @@ jobs:
       - name: Run chart-testing (list-changed)
         id: list-changed
         run: |
-          changed=$(ct list-changed --target-branch ${{ github.event.repository.default_branch }})
-          if [[ -n "$changed" ]]; then
-            echo "::set-output name=changed::true"
-          fi
+          ct list-changed --target-branch ${{ github.event.repository.default_branch }}
 
       - name: Run chart-testing (lint)
         run: ct lint --debug --charts ./helm/nessie
