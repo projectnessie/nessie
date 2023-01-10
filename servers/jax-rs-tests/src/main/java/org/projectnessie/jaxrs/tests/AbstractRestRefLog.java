@@ -23,6 +23,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.ext.NessieApiVersion;
 import org.projectnessie.client.ext.NessieApiVersions;
@@ -37,6 +39,7 @@ import org.projectnessie.model.Tag;
 public abstract class AbstractRestRefLog extends AbstractRestReferences {
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V1)
+  @DisabledOnOs(OS.WINDOWS) // missing req'd time accuracy
   public void testReflog() throws BaseNessieClientServerException {
 
     String tagName = "tag1_test_reflog_" + ThreadLocalRandom.current().nextInt();

@@ -35,6 +35,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.projectnessie.client.StreamingUtil;
@@ -226,6 +228,7 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
   }
 
   @Test
+  @DisabledOnOs(OS.WINDOWS) // missing req'd time accuracy
   public void filterCommitLogByTimeRange() throws BaseNessieClientServerException {
     Branch branch = createBranch("filterCommitLogByTimeRange");
 
