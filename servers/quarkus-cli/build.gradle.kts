@@ -67,7 +67,9 @@ dependencies {
   testImplementation(project(":nessie-quarkus-tests"))
   testImplementation(project(":nessie-versioned-persist-mongodb-test"))
   testImplementation(project(":nessie-versioned-tests"))
-  testImplementation("io.quarkus:quarkus-jacoco")
+  // TODO re-add quarkus-jacoco once https://github.com/quarkusio/quarkus/issues/30264
+  //  has been fixed.
+  //  testImplementation("io.quarkus:quarkus-jacoco")
   testImplementation("io.quarkus:quarkus-junit5")
   testCompileOnly(libs.microprofile.openapi)
 
