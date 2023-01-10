@@ -181,6 +181,9 @@ val npmTest =
     doFirst { delete(testCoverageDir) }
     npmCommand.add("test")
     args.addAll("--", "--coverage")
+    usesService(
+      gradle.sharedServices.registrations.named("testParallelismConstraint").get().service
+    )
   }
 
 val npmLint =
