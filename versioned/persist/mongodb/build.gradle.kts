@@ -40,6 +40,7 @@ dependencies {
   testImplementation(project(":nessie-versioned-persist-tests"))
   testImplementation(project(":nessie-versioned-persist-non-transactional-test"))
   testImplementation(project(":nessie-versioned-persist-mongodb-test"))
+  testImplementation(libs.logback.classic)
 
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
