@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import org.apache.tools.ant.taskdefs.condition.Os
+
 plugins {
   `java-library`
   jacoco
@@ -49,4 +51,11 @@ dependencies {
 tasks.withType<Test>().configureEach {
   systemProperty("rocksdb.version", libs.versions.rocksdb.get())
   systemProperty("junit.jupiter.extensions.autodetection.enabled", "true")
+}
+
+// Compatibility tests fail on macOS with the following message: `libc++abi: terminating
+// with uncaught exception of type std::__1::system_error: mutex lock failed: Invalid argument`
+if (Os.isFamily(Os.FAMILY_MAC)) {
+  // Disable all Quarkus tests on Windows
+  tasks.withType<Test>().configureEach { this.enabled = false }
 }
