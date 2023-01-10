@@ -17,17 +17,11 @@ package org.projectnessie.services.rest;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.SecurityContext;
 import org.projectnessie.api.v1.http.HttpDiffApi;
 import org.projectnessie.api.v1.params.DiffParams;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.DiffResponse;
-import org.projectnessie.services.authz.Authorizer;
-import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.services.impl.DiffApiImplWithAuthorization;
 import org.projectnessie.services.spi.DiffService;
-import org.projectnessie.versioned.VersionStore;
 
 /** REST endpoint for the diff-API. */
 @RequestScoped
@@ -37,30 +31,20 @@ public class RestDiffResource implements HttpDiffApi {
   // to various symptoms: complaints about varying validation-constraints in HttpTreeApi + TreeAPi,
   // empty resources (no REST methods defined) and potentially other.
 
-  private final ServerConfig config;
-  private final VersionStore store;
-  private final Authorizer authorizer;
-
-  @Context SecurityContext securityContext;
+  private final DiffService diffService;
 
   // Mandated by CDI 2.0
   public RestDiffResource() {
-    this(null, null, null);
+    this(null);
   }
 
   @Inject
-  public RestDiffResource(ServerConfig config, VersionStore store, Authorizer authorizer) {
-    this.config = config;
-    this.store = store;
-    this.authorizer = authorizer;
+  public RestDiffResource(DiffService diffService) {
+    this.diffService = diffService;
   }
 
   private DiffService resource() {
-    return new DiffApiImplWithAuthorization(
-        config,
-        store,
-        authorizer,
-        securityContext == null ? null : securityContext.getUserPrincipal());
+    return diffService;
   }
 
   @Override

@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import org.projectnessie.api.v1.NamespaceApi;
@@ -61,7 +62,10 @@ import org.projectnessie.versioned.WithHash;
 public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
 
   public NamespaceApiImpl(
-      ServerConfig config, VersionStore store, Authorizer authorizer, Principal principal) {
+      ServerConfig config,
+      VersionStore store,
+      Authorizer authorizer,
+      Supplier<Principal> principal) {
     super(config, store, authorizer, principal);
   }
 

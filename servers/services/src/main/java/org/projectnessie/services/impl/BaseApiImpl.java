@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.CommitMeta;
@@ -41,14 +42,17 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 
-abstract class BaseApiImpl {
+public abstract class BaseApiImpl {
   private final ServerConfig config;
   private final VersionStore store;
   private final Authorizer authorizer;
-  private final Principal principal;
+  private final Supplier<Principal> principal;
 
   protected BaseApiImpl(
-      ServerConfig config, VersionStore store, Authorizer authorizer, Principal principal) {
+      ServerConfig config,
+      VersionStore store,
+      Authorizer authorizer,
+      Supplier<Principal> principal) {
     this.config = config;
     this.store = store;
     this.authorizer = authorizer;
@@ -109,7 +113,7 @@ abstract class BaseApiImpl {
   }
 
   protected Principal getPrincipal() {
-    return principal;
+    return principal.get();
   }
 
   protected Authorizer getAuthorizer() {

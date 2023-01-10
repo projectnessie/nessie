@@ -19,8 +19,6 @@ import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.base.Preconditions;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.SecurityContext;
 import org.projectnessie.api.v1.http.HttpTreeApi;
 import org.projectnessie.api.v1.params.CommitLogParams;
 import org.projectnessie.api.v1.params.EntriesParams;
@@ -38,11 +36,7 @@ import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.ser.Views;
-import org.projectnessie.services.authz.Authorizer;
-import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.services.impl.TreeApiImplWithAuthorization;
 import org.projectnessie.services.spi.TreeService;
-import org.projectnessie.versioned.VersionStore;
 
 /** REST endpoint for the tree-API. */
 @RequestScoped
@@ -52,30 +46,20 @@ public class RestTreeResource implements HttpTreeApi {
   // to various symptoms: complaints about varying validation-constraints in HttpTreeApi + TreeAPi,
   // empty resources (no REST methods defined) and potentially other.
 
-  private final ServerConfig config;
-  private final VersionStore store;
-  private final Authorizer authorizer;
-
-  @Context SecurityContext securityContext;
+  private final TreeService treeService;
 
   // Mandated by CDI 2.0
   public RestTreeResource() {
-    this(null, null, null);
+    this(null);
   }
 
   @Inject
-  public RestTreeResource(ServerConfig config, VersionStore store, Authorizer authorizer) {
-    this.config = config;
-    this.store = store;
-    this.authorizer = authorizer;
+  public RestTreeResource(TreeService treeService) {
+    this.treeService = treeService;
   }
 
   private TreeService resource() {
-    return new TreeApiImplWithAuthorization(
-        config,
-        store,
-        authorizer,
-        securityContext == null ? null : securityContext.getUserPrincipal());
+    return treeService;
   }
 
   @JsonView(Views.V1.class)

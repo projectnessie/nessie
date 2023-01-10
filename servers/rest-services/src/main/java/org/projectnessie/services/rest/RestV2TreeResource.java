@@ -19,8 +19,6 @@ import com.fasterxml.jackson.annotation.JsonView;
 import java.util.List;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.SecurityContext;
 import org.projectnessie.api.v2.http.HttpTreeApi;
 import org.projectnessie.api.v2.params.CommitLogParams;
 import org.projectnessie.api.v2.params.DiffParams;
@@ -48,15 +46,10 @@ import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.SingleReferenceResponse;
 import org.projectnessie.model.ser.Views;
-import org.projectnessie.services.authz.Authorizer;
-import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.services.impl.ContentApiImplWithAuthorization;
-import org.projectnessie.services.impl.DiffApiImplWithAuthorization;
-import org.projectnessie.services.impl.TreeApiImplWithAuthorization;
+import org.projectnessie.services.spi.ConfigService;
 import org.projectnessie.services.spi.ContentService;
 import org.projectnessie.services.spi.DiffService;
 import org.projectnessie.services.spi.TreeService;
-import org.projectnessie.versioned.VersionStore;
 
 /** REST endpoint for the tree-API. */
 @RequestScoped
@@ -64,27 +57,31 @@ public class RestV2TreeResource implements HttpTreeApi {
 
   private static final String DEFAULT_REF_IN_PATH = "-";
 
-  private final ServerConfig config;
-  private final VersionStore store;
-  private final Authorizer authorizer;
-
-  @Context SecurityContext securityContext;
+  private final ConfigService configService;
+  private final TreeService treeService;
+  private final ContentService contentService;
+  private final DiffService diffService;
 
   // Mandated by CDI 2.0
   public RestV2TreeResource() {
-    this(null, null, null);
+    this(null, null, null, null);
   }
 
   @Inject
-  public RestV2TreeResource(ServerConfig config, VersionStore store, Authorizer authorizer) {
-    this.config = config;
-    this.store = store;
-    this.authorizer = authorizer;
+  public RestV2TreeResource(
+      ConfigService configService,
+      TreeService treeService,
+      ContentService contentService,
+      DiffService diffService) {
+    this.configService = configService;
+    this.treeService = treeService;
+    this.contentService = contentService;
+    this.diffService = diffService;
   }
 
   private Reference resolveRef(String refPathString) {
     if (DEFAULT_REF_IN_PATH.equals(refPathString)) {
-      return Branch.of(config.getDefaultBranch(), null);
+      return Branch.of(configService.getConfig().getDefaultBranch(), null);
     }
 
     return resolveRef(refPathString, Reference.ReferenceType.BRANCH);
@@ -95,27 +92,15 @@ public class RestV2TreeResource implements HttpTreeApi {
   }
 
   private TreeService tree() {
-    return new TreeApiImplWithAuthorization(
-        config,
-        store,
-        authorizer,
-        securityContext == null ? null : securityContext.getUserPrincipal());
+    return treeService;
   }
 
   private DiffService diff() {
-    return new DiffApiImplWithAuthorization(
-        config,
-        store,
-        authorizer,
-        securityContext == null ? null : securityContext.getUserPrincipal());
+    return diffService;
   }
 
   private ContentService content() {
-    return new ContentApiImplWithAuthorization(
-        config,
-        store,
-        authorizer,
-        securityContext == null ? null : securityContext.getUserPrincipal());
+    return contentService;
   }
 
   @JsonView(Views.V2.class)

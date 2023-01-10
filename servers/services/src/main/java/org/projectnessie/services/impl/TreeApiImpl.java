@@ -44,6 +44,7 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -114,7 +115,10 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   private static final int MAX_COMMIT_LOG_ENTRIES = 250;
 
   public TreeApiImpl(
-      ServerConfig config, VersionStore store, Authorizer authorizer, Principal principal) {
+      ServerConfig config,
+      VersionStore store,
+      Authorizer authorizer,
+      Supplier<Principal> principal) {
     super(config, store, authorizer, principal);
   }
 

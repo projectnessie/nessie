@@ -16,6 +16,7 @@
 package org.projectnessie.services.impl;
 
 import java.security.Principal;
+import java.util.function.Supplier;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.RefLogResponse;
 import org.projectnessie.services.authz.Authorizer;
@@ -26,7 +27,10 @@ import org.projectnessie.versioned.VersionStore;
 public class RefLogApiImplWithAuthorization extends RefLogApiImpl {
 
   public RefLogApiImplWithAuthorization(
-      ServerConfig config, VersionStore store, Authorizer authorizer, Principal principal) {
+      ServerConfig config,
+      VersionStore store,
+      Authorizer authorizer,
+      Supplier<Principal> principal) {
     super(config, store, authorizer, principal);
   }
 

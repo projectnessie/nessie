@@ -203,6 +203,7 @@ testcontainers-testcontainers = { module = "org.testcontainers:testcontainers", 
 undertow-core = { module = "io.undertow:undertow-core", version.ref = "undertow" }
 undertow-servlet = { module = "io.undertow:undertow-servlet", version.ref = "undertow" }
 weld-se-core = { module = "org.jboss.weld.se:weld-se-core", version = "3.1.9.Final" }
+hibernate-validator-cdi = { module = "org.hibernate:hibernate-validator-cdi", version = "6.2.4.Final" }
 
 [plugins]
 errorprone = { id = "net.ltgt.errorprone", version = "3.0.1" }

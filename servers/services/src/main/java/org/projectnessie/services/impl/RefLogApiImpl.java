@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableMap;
 import java.security.Principal;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -49,7 +50,10 @@ public class RefLogApiImpl extends BaseApiImpl implements RefLogService {
   private static final int MAX_REF_LOG_ENTRIES = 250;
 
   public RefLogApiImpl(
-      ServerConfig config, VersionStore store, Authorizer authorizer, Principal principal) {
+      ServerConfig config,
+      VersionStore store,
+      Authorizer authorizer,
+      Supplier<Principal> principal) {
     super(config, store, authorizer, principal);
   }
 

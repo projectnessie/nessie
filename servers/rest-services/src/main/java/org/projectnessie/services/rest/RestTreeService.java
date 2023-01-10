@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,28 +17,24 @@ package org.projectnessie.services.rest;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
-import org.projectnessie.api.v1.http.HttpConfigApi;
-import org.projectnessie.model.NessieConfiguration;
-import org.projectnessie.services.spi.ConfigService;
+import javax.validation.executable.ExecutableType;
+import javax.validation.executable.ValidateOnExecution;
+import org.projectnessie.services.authz.Authorizer;
+import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.services.impl.TreeApiImplWithAuthorization;
+import org.projectnessie.versioned.VersionStore;
 
-/** REST endpoint to retrieve server settings. */
 @RequestScoped
-public class RestConfigResource implements HttpConfigApi {
-
-  private final ConfigService configService;
-
+@ValidateOnExecution(type = ExecutableType.ALL)
+public class RestTreeService extends TreeApiImplWithAuthorization {
   // Mandated by CDI 2.0
-  public RestConfigResource() {
-    this(null);
+  public RestTreeService() {
+    this(null, null, null, null);
   }
 
   @Inject
-  public RestConfigResource(ConfigService configService) {
-    this.configService = configService;
-  }
-
-  @Override
-  public NessieConfiguration getConfig() {
-    return configService.getConfig();
+  public RestTreeService(
+      ServerConfig config, VersionStore store, Authorizer authorizer, PrincipalSupplier principal) {
+    super(config, store, authorizer, principal);
   }
 }

@@ -55,7 +55,12 @@ public class ConstraintViolationExceptionMapper
         }
       }
     }
+
+    // Construct the user-level message the same way for all validator implementations.
+    ConstraintViolationException canonical =
+        new ConstraintViolationException(exception.getConstraintViolations());
+
     return buildExceptionResponse(
-        errorCode, exception.getMessage(), exception, false, header -> {});
+        errorCode, canonical.getMessage(), exception, false, header -> {});
   }
 }

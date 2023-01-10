@@ -81,6 +81,7 @@ dependencies {
   api("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-jetty")
 
   api("org.jboss.weld.se:weld-se-core")
+  api(libs.hibernate.validator.cdi)
 
   compileOnly(libs.microprofile.openapi)
   compileOnly(libs.jakarta.validation.api)

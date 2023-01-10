@@ -18,8 +18,6 @@ package org.projectnessie.services.rest;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.SecurityContext;
 import org.projectnessie.api.v1.http.HttpNamespaceApi;
 import org.projectnessie.api.v1.params.MultipleNamespacesParams;
 import org.projectnessie.api.v1.params.NamespaceParams;
@@ -30,11 +28,7 @@ import org.projectnessie.error.NessieNamespaceNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.GetNamespacesResponse;
 import org.projectnessie.model.Namespace;
-import org.projectnessie.services.authz.Authorizer;
-import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.services.impl.NamespaceApiImplWithAuthorization;
 import org.projectnessie.services.spi.NamespaceService;
-import org.projectnessie.versioned.VersionStore;
 
 /** REST endpoint for the namespace-API. */
 @RequestScoped
@@ -44,30 +38,20 @@ public class RestNamespaceResource implements HttpNamespaceApi {
   // to various symptoms: complaints about varying validation-constraints in HttpNamespaceApi +
   // NamespaceApi, empty resources (no REST methods defined) and potentially other.
 
-  private final ServerConfig config;
-  private final VersionStore store;
-  private final Authorizer authorizer;
-
-  @Context SecurityContext securityContext;
+  private final NamespaceService namespaceService;
 
   // Mandated by CDI 2.0
   public RestNamespaceResource() {
-    this(null, null, null);
+    this(null);
   }
 
   @Inject
-  public RestNamespaceResource(ServerConfig config, VersionStore store, Authorizer authorizer) {
-    this.config = config;
-    this.store = store;
-    this.authorizer = authorizer;
+  public RestNamespaceResource(NamespaceService namespaceService) {
+    this.namespaceService = namespaceService;
   }
 
   private NamespaceService resource() {
-    return new NamespaceApiImplWithAuthorization(
-        config,
-        store,
-        authorizer,
-        securityContext == null ? null : securityContext.getUserPrincipal());
+    return namespaceService;
   }
 
   @Override

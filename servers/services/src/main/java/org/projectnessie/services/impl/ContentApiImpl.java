@@ -18,6 +18,7 @@ package org.projectnessie.services.impl;
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -39,7 +40,10 @@ import org.projectnessie.versioned.WithHash;
 public class ContentApiImpl extends BaseApiImpl implements ContentService {
 
   public ContentApiImpl(
-      ServerConfig config, VersionStore store, Authorizer authorizer, Principal principal) {
+      ServerConfig config,
+      VersionStore store,
+      Authorizer authorizer,
+      Supplier<Principal> principal) {
     super(config, store, authorizer, principal);
   }
 

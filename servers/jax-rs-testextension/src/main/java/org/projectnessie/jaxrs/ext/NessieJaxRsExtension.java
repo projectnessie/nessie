@@ -216,6 +216,7 @@ public class NessieJaxRsExtension extends NessieClientResolver
     public EnvHolder(Extension versionStoreExtension) throws Exception {
       weld = new Weld();
       // Let Weld scan all the resources to discover injection points and dependencies
+      weld.addPackages(true, RestConfigResource.class);
       weld.addPackages(true, TreeApiImpl.class);
       // Inject external beans
       weld.addExtension(new ServerConfigExtension());

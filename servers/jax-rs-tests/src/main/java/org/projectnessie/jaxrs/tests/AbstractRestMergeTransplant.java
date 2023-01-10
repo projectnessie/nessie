@@ -524,8 +524,8 @@ public abstract class AbstractRestMergeTransplant extends AbstractRestInvalid {
 
     // create the same namespace on both branches
     Namespace ns = Namespace.parse("a.b.c");
-    getApi().createNamespace().namespace(ns).refName(base.getName()).create();
-    getApi().createNamespace().namespace(ns).refName(branch.getName()).create();
+    getApi().createNamespace().namespace(ns).reference(base).create();
+    getApi().createNamespace().namespace(ns).reference(branch).create();
 
     base = (Branch) getApi().getReference().refName(base.getName()).get();
     branch = (Branch) getApi().getReference().refName(branch.getName()).get();
