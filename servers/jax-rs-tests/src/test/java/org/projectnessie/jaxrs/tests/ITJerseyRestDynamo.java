@@ -15,6 +15,8 @@
  */
 package org.projectnessie.jaxrs.tests;
 
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.projectnessie.versioned.persist.dynamodb.DynamoDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.dynamodb.LocalDynamoTestConnectionProviderSource;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
@@ -22,4 +24,5 @@ import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabas
 
 @NessieDbAdapterName(DynamoDatabaseAdapterFactory.NAME)
 @NessieExternalDatabase(LocalDynamoTestConnectionProviderSource.class)
+@DisabledOnOs(OS.WINDOWS) // testcontainers does not support Windows
 class ITJerseyRestDynamo extends AbstractTestDatabaseAdapterRest {}

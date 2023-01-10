@@ -15,6 +15,8 @@
  */
 package org.projectnessie.jaxrs.tests;
 
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.projectnessie.versioned.persist.mongodb.LocalMongoTestConnectionProviderSource;
 import org.projectnessie.versioned.persist.mongodb.MongoDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
@@ -22,4 +24,5 @@ import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabas
 
 @NessieDbAdapterName(MongoDatabaseAdapterFactory.NAME)
 @NessieExternalDatabase(LocalMongoTestConnectionProviderSource.class)
+@DisabledOnOs(OS.WINDOWS) // testcontainers does not support Windows
 class ITJerseyRestMongo extends AbstractTestDatabaseAdapterRest {}

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import org.apache.tools.ant.taskdefs.condition.Os
+
 plugins {
   `java-library`
   jacoco
@@ -59,4 +61,9 @@ tasks.named<Test>("intTest") {
     "it.nessie.container.postgres.tag",
     System.getProperty("it.nessie.container.postgres.tag", libs.versions.postgresContainerTag.get())
   )
+}
+
+// Testcontainers is not supported on Windows :(
+if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+  tasks.withType<Test>().configureEach { this.enabled = false }
 }

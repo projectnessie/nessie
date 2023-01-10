@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import org.apache.tools.ant.taskdefs.condition.Os
+
 plugins {
   `java-library`
   jacoco
@@ -45,4 +47,9 @@ dependencies {
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
   testRuntimeOnly(libs.junit.jupiter.engine)
+}
+
+// Testcontainers is not supported on Windows :(
+if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+  tasks.withType<Test>().configureEach { this.enabled = false }
 }
