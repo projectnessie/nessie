@@ -44,6 +44,7 @@ dependencies {
   testImplementation(project(":nessie-versioned-persist-testextension"))
   testImplementation(project(":nessie-versioned-persist-tests"))
   testImplementation(project(":nessie-versioned-persist-transactional-test"))
+  testRuntimeOnly(libs.logback.classic)
   testRuntimeOnly(libs.h2)
   testRuntimeOnly(libs.postgresql)
 
