@@ -41,12 +41,12 @@ class TestNessieError {
             .serverStackTrace("foo.bar.InternalServerError\n" + "\tat some.other.Class")
             .build();
     assertThat(e.getFullMessage())
-        .isEqualTo(
+        .matches(
             Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase()
-                + " (HTTP/"
+                + " [(]HTTP/"
                 + Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()
-                + "): message\n"
-                + "foo.bar.InternalServerError\n"
+                + "[)]: message\\R"
+                + "foo.bar.InternalServerError\\R"
                 + "\tat some.other.Class");
 
     e =
@@ -62,10 +62,10 @@ class TestNessieError {
                 Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase()
                     + " [(]HTTP/"
                     + Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()
-                    + "[)]: message\n"
-                    + "foo.bar.InternalServerError\n"
-                    + "\tat some.other.Class\n"
-                    + "java.lang.Exception: processingException\n"
+                    + "[)]: message\\R"
+                    + "foo.bar.InternalServerError\\R"
+                    + "\tat some.other.Class\\R"
+                    + "java.lang.Exception: processingException\\R"
                     + "\tat (all//)?org.projectnessie.error.TestNessieError.fullMessage[(]TestNessieError.java:"
                     + ".*",
                 Pattern.DOTALL));
