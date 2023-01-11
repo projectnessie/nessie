@@ -22,7 +22,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
 
 @RequestScoped
-public class PrincipalSupplier implements Supplier<Principal> {
+public class ContextPrincipalSupplier implements Supplier<Principal> {
 
   @Context SecurityContext securityContext;
 

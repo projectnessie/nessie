@@ -15,18 +15,20 @@
  */
 package org.projectnessie.server.authn;
 
-import io.quarkus.security.identity.SecurityIdentity;
 import java.security.Principal;
+import java.util.function.Supplier;
+
 import javax.annotation.Priority;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.Alternative;
 import javax.inject.Inject;
-import org.projectnessie.services.rest.PrincipalSupplier;
+
+import io.quarkus.security.identity.SecurityIdentity;
 
 @RequestScoped
 @Alternative
 @Priority(1)
-public class QuarkusPrincipalSupplier extends PrincipalSupplier {
+public class QuarkusPrincipalSupplier implements Supplier<Principal> {
   private final SecurityIdentity identity;
 
   @Inject
