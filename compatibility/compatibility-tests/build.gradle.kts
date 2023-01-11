@@ -18,7 +18,6 @@ import org.apache.tools.ant.taskdefs.condition.Os
 
 plugins {
   `java-library`
-  jacoco
   `maven-publish`
   signing
   `nessie-conventions`
