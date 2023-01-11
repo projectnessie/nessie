@@ -53,7 +53,7 @@ public class AbstractContentGeneratorTest {
   void emptyRepo() throws Exception {
     try (NessieApiV1 api = buildNessieApi()) {
       Branch defaultBranch = api.getDefaultBranch();
-      api.assignBranch().branch(defaultBranch).assignTo(Detached.of(NO_ANCESTOR));
+      api.assignBranch().branch(defaultBranch).assignTo(Detached.of(NO_ANCESTOR)).assign();
       api.getAllReferences().stream()
           .forEach(
               ref -> {
