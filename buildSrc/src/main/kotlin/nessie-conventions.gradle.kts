@@ -55,6 +55,24 @@ configureScala()
 
 testTasks()
 
+gradle.sharedServices.registerIfAbsent("intTestParallelismConstraint", DockerIntTest::class.java) {
+  val intTestParallelism =
+    Integer.getInteger(
+      "nessie.intTestParallelism",
+      Math.max(Runtime.getRuntime().availableProcessors() / 4, 1)
+    )
+  maxParallelUsages.set(intTestParallelism)
+}
+
+gradle.sharedServices.registerIfAbsent("testParallelismConstraint", DockerIntTest::class.java) {
+  val intTestParallelism =
+    Integer.getInteger(
+      "nessie.testParallelism",
+      Math.max(Runtime.getRuntime().availableProcessors(), 1)
+    )
+  maxParallelUsages.set(intTestParallelism)
+}
+
 fun Project.configureScala() {
   plugins.withType<ScalaPlugin>().configureEach {
     tasks.withType<ScalaCompile>().configureEach {
@@ -122,6 +140,10 @@ fun Project.testTasks() {
       }
       if (name != "test") {
         mustRunAfter(tasks.named<Test>("test"))
+      } else {
+        usesService(
+          gradle.sharedServices.registrations.named("testParallelismConstraint").get().service
+        )
       }
 
       if (plugins.hasPlugin("io.quarkus")) {
@@ -141,6 +163,10 @@ fun Project.testTasks() {
       tasks.register<Test>("intTest") {
         group = "verification"
         description = "Runs the integration tests."
+
+        usesService(
+          gradle.sharedServices.registrations.named("intTestParallelismConstraint").get().service
+        )
 
         if (plugins.hasPlugin("io.quarkus")) {
           dependsOn(tasks.named("quarkusBuild"))
