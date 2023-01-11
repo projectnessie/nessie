@@ -17,7 +17,6 @@ package org.projectnessie.services.rest;
 
 import java.security.Principal;
 import java.util.function.Supplier;
-
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.validation.executable.ExecutableType;
@@ -37,7 +36,10 @@ public class RestTreeService extends TreeApiImplWithAuthorization {
 
   @Inject
   public RestTreeService(
-      ServerConfig config, VersionStore store, Authorizer authorizer, Supplier<Principal> principal) {
+      ServerConfig config,
+      VersionStore store,
+      Authorizer authorizer,
+      Supplier<Principal> principal) {
     super(config, store, authorizer, principal);
   }
 }

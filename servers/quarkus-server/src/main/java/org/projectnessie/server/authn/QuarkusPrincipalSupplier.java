@@ -15,15 +15,13 @@
  */
 package org.projectnessie.server.authn;
 
+import io.quarkus.security.identity.SecurityIdentity;
 import java.security.Principal;
 import java.util.function.Supplier;
-
 import javax.annotation.Priority;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.Alternative;
 import javax.inject.Inject;
-
-import io.quarkus.security.identity.SecurityIdentity;
 
 @RequestScoped
 @Alternative
