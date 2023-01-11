@@ -18,6 +18,8 @@ package org.projectnessie.versioned.persist.mongodb;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.ContainerFetchException;
+import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.MongoDBContainer;
 
 public class LocalMongo {
@@ -56,15 +58,25 @@ public class LocalMongo {
       LOGGER.info("Starting Mongo test container (network-id: {})", containerNetworkId);
     }
 
-    container =
-        new MongoDBContainer("mongo:" + version)
-            .withLogConsumer(outputFrame -> {})
-            .withStartupAttempts(5);
-    containerNetworkId.ifPresent(container::withNetworkMode);
-    try {
-      container.start();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
+    for (int retry = 0; ; retry++) {
+      container =
+          new MongoDBContainer("mongo:" + version)
+              .withLogConsumer(outputFrame -> {})
+              .withStartupAttempts(5);
+      containerNetworkId.ifPresent(container::withNetworkMode);
+      try {
+        container.start();
+        break;
+      } catch (ContainerLaunchException e) {
+        container.close();
+        if (e.getCause() != null && e.getCause() instanceof ContainerFetchException && retry < 3) {
+          LOGGER.warn(
+              "Launch of container {} failed, will retry...", container.getContainerId(), e);
+          continue;
+        }
+        LOGGER.error("Launch of container {} failed", container.getContainerId(), e);
+        throw new RuntimeException(e);
+      }
     }
 
     connectionString = container.getReplicaSetUrl(MONGO_DB_NAME);
