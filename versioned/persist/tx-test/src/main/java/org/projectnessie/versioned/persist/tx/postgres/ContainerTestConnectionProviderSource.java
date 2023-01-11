@@ -18,6 +18,8 @@ package org.projectnessie.versioned.persist.tx.postgres;
 import org.projectnessie.versioned.persist.tx.local.GenericJdbcTestConnectionProviderSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.ContainerFetchException;
+import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 
@@ -34,9 +36,23 @@ abstract class ContainerTestConnectionProviderSource
       throw new IllegalStateException("Already started");
     }
 
-    container =
-        createContainer().withLogConsumer(new Slf4jLogConsumer(LOGGER)).withStartupAttempts(5);
-    container.start();
+    for (int retry = 0; ; retry++) {
+      container =
+          createContainer().withLogConsumer(new Slf4jLogConsumer(LOGGER)).withStartupAttempts(5);
+      try {
+        container.start();
+        break;
+      } catch (ContainerLaunchException e) {
+        container.close();
+        if (e.getCause() != null && e.getCause() instanceof ContainerFetchException && retry < 3) {
+          LOGGER.warn(
+              "Launch of container {} failed, will retry...", container.getContainerId(), e);
+          continue;
+        }
+        LOGGER.error("Launch of container {} failed", container.getContainerId(), e);
+        throw new RuntimeException(e);
+      }
+    }
 
     configureConnectionProviderConfigFromDefaults(
         c ->
