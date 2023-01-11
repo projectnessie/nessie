@@ -1,0 +1,129 @@
+# Copyright (C) 2022 Dremio
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+# Projectnessie GitHub Pull-Request / macOS CI
+
+name: Windows Build Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  schedule:
+    # Run daily on week days
+    - cron:  '0 4 * * 1-5'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  java:
+    name: Java/Gradle Windows
+    runs-on: windows-2022
+    if: github.event.workflow_run.event != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'pr-macos-win')
+    env:
+      SPARK_LOCAL_IP: localhost
+
+    steps:
+    - name: Git line ending config
+      # This is a workaround to pass the ui/ project's prettier configuration, which has the strict
+      # rule to allow only LF as the line ending.
+      run: |
+        git config --global core.autocrlf false
+        git config --global core.eol lf
+
+    - uses: actions/checkout@v3.3.0
+      with:
+        repository: cdarlint/winutils
+        path: hadoop-winutils
+        ref: d018bd9c919dee1448b95519351cc591a6338a00
+
+    - name: Setup Hadoop
+      # A local Hadoop setup is required on Windows, very sad...
+      timeout-minutes: 30
+      run: |
+        cd $HOME
+        Invoke-WebRequest -Uri https://archive.apache.org/dist/hadoop/common/hadoop-3.3.2/hadoop-3.3.2.tar.gz -OutFile hadoop-3.3.2.tar.gz
+
+        echo "::group::Extract hadoop-3.3.2.tar.gz"
+        mkdir hadoop-3.3.2
+        cd hadoop-3.3.2
+        7z e ..\hadoop-3.3.2.tar.gz
+        echo "::endgroup::"
+
+        echo "HADOOP_HOME=$HOME\hadoop-3.3.2" >> $env:GITHUB_ENV
+    - name: Add Hadoop winutils
+      run: |
+        cd hadoop-winutils\hadoop-3.2.2\bin
+        copy *.dll $HADOOP_HOME\bin
+        copy *.exp $HADOOP_HOME\bin
+        copy *.lib $HADOOP_HOME\bin
+        copy *.pdb $HADOOP_HOME\bin
+        copy *.exe $HADOOP_HOME\bin
+        copy *.dll C:\windows\system32
+        cd ..\..\..
+        rm -r -fo hadoop-winutils
+
+    - uses: actions/checkout@v3.3.0
+    - name: Setup Java, Gradle
+      uses: ./.github/actions/dev-tool-java
+
+    - name: Gradle / compile
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: checkstyleMain checkstyleTest jar testClasses --scan
+
+    - name: Gradle / unit test
+      uses: gradle/gradle-build-action@v2
+      env:
+        SPARK_LOCAL_IP: localhost
+      with:
+        arguments: test --scan
+
+    - name: Gradle / check incl. integ-test
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: check -x spotlessCheck -x checkstyleMain -x checkstyleTest --scan
+
+    - name: Capture Test Reports
+      uses: actions/upload-artifact@v3
+      if: ${{ failure() }}
+      with:
+        name: test-results
+        path: |
+          **/build/reports/*
+          **/build/test-results/*
+
+  python:
+    name: Python
+    runs-on: windows-2022
+    if: github.event.workflow_run.event != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'pr-macos-win')
+    env:
+      working-directory: ./python
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: ['3.7', '3.8', '3.9', '3.10']
+
+    steps:
+    - uses: actions/checkout@v3.3.0
+    - name: Setup Python
+      uses: ./.github/actions/dev-tool-python
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Test with tox
+      run: tox
+      working-directory: ${{env.working-directory}}
