@@ -115,6 +115,14 @@ tasks.named<Test>("intTest") {
   setForkEvery(2)
 }
 
+tasks.withType<Test>().configureEach {
+  doFirst {
+    // Must delete the Jacoco data file before running tests, because
+    // quarkus.jacoco.reuse-data-file=true in application.properties.
+    file("${project.buildDir}/jacoco-quarkus.exec").delete()
+  }
+}
+
 if (withUberJar()) {
   afterEvaluate {
     publishing {
