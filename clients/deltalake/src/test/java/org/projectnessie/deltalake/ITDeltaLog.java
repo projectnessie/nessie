@@ -31,17 +31,17 @@ import org.apache.spark.sql.functions;
 import org.apache.spark.util.Utils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.Reference;
 import scala.Tuple2;
 
-@DisabledOnOs(
-    value = OS.MAC,
+@EnabledOnOs(
+    value = {OS.LINUX},
     disabledReason =
-        "tests fail on macOS with 'java.lang.IllegalArgumentException: Can not create a Path from an empty string' via 'org.apache.spark.sql.delta.DeltaLog.ensureLogDirectoryExist()'")
+        "tests fail on macOS + Windows with 'java.lang.IllegalArgumentException: Can not create a Path from an empty string' via 'org.apache.spark.sql.delta.DeltaLog.ensureLogDirectoryExist()'")
 class ITDeltaLog extends AbstractDeltaTest {
 
   @TempDir File tempPath;
