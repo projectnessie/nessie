@@ -111,6 +111,7 @@ h2 = { module = "com.h2database:h2", version = "2.1.214" }
 hadoop-aws = { module = "org.apache.hadoop:hadoop-aws", version.ref = "hadoop" }
 hadoop-client = { module = "org.apache.hadoop:hadoop-client", version.ref = "hadoop" }
 hadoop-common = { module = "org.apache.hadoop:hadoop-common", version.ref = "hadoop" }
+hibernate-validator-cdi = { module = "org.hibernate:hibernate-validator-cdi", version = "6.2.4.Final" }
 iceberg-api = { module = "org.apache.iceberg:iceberg-api", version.ref = "iceberg" }
 iceberg-aws = { module = "org.apache.iceberg:iceberg-aws", version.ref = "iceberg" }
 iceberg-bundled-guava = { module = "org.apache.iceberg:iceberg-bundled-guava", version.ref = "iceberg" }
@@ -203,7 +204,6 @@ testcontainers-testcontainers = { module = "org.testcontainers:testcontainers", 
 undertow-core = { module = "io.undertow:undertow-core", version.ref = "undertow" }
 undertow-servlet = { module = "io.undertow:undertow-servlet", version.ref = "undertow" }
 weld-se-core = { module = "org.jboss.weld.se:weld-se-core", version = "3.1.9.Final" }
-hibernate-validator-cdi = { module = "org.hibernate:hibernate-validator-cdi", version = "6.2.4.Final" }
 
 [plugins]
 errorprone = { id = "net.ltgt.errorprone", version = "3.0.1" }
