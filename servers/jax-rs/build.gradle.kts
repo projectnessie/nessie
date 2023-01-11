@@ -54,6 +54,7 @@ dependencies {
   api(libs.jakarta.enterprise.cdi.api)
   api(libs.jakarta.annotation.api)
   api(libs.jakarta.validation.api)
+  api(libs.hibernate.validator.cdi)
 
   api(platform(libs.jackson.bom))
   api(libs.jackson.databind)

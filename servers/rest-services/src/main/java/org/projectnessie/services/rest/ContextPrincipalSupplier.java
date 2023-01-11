@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,30 +15,19 @@
  */
 package org.projectnessie.services.rest;
 
+import java.security.Principal;
+import java.util.function.Supplier;
 import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
-import org.projectnessie.api.v1.http.HttpConfigApi;
-import org.projectnessie.model.NessieConfiguration;
-import org.projectnessie.services.spi.ConfigService;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.SecurityContext;
 
-/** REST endpoint to retrieve server settings. */
 @RequestScoped
-public class RestConfigResource implements HttpConfigApi {
+public class ContextPrincipalSupplier implements Supplier<Principal> {
 
-  private final ConfigService configService;
-
-  // Mandated by CDI 2.0
-  public RestConfigResource() {
-    this(null);
-  }
-
-  @Inject
-  public RestConfigResource(ConfigService configService) {
-    this.configService = configService;
-  }
+  @Context SecurityContext securityContext;
 
   @Override
-  public NessieConfiguration getConfig() {
-    return configService.getConfig();
+  public Principal get() {
+    return securityContext == null ? null : securityContext.getUserPrincipal();
   }
 }

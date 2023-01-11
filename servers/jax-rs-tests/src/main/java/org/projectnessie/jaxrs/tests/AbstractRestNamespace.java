@@ -30,6 +30,7 @@ import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieNamespaceNotEmptyException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
+import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceConflictException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -40,17 +41,21 @@ import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation.Put;
+import org.projectnessie.model.Reference;
 
 /** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestNamespace extends AbstractRestRefLog {
+
+  private Reference current(Reference ref) throws NessieNotFoundException {
+    return getApi().getReference().refName(ref.getName()).get();
+  }
 
   @ParameterizedTest
   @ValueSource(strings = {"a.b.c", "a.b\u001Dc.d", "a.b.c.d", "a.b\u0000c.d"})
   public void testNamespaces(String namespaceName) throws BaseNessieClientServerException {
     Branch branch = createBranch("testNamespaces");
     Namespace ns = Namespace.parse(namespaceName);
-    Namespace namespace =
-        getApi().createNamespace().refName(branch.getName()).namespace(ns).create();
+    Namespace namespace = getApi().createNamespace().reference(branch).namespace(ns).create();
 
     soft.assertThat(namespace)
         .isNotNull()
@@ -64,13 +69,13 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
     String namespaceInErrorMsg = namespaceName.replace("\u0000", "\u001D");
 
     soft.assertThatThrownBy(
-            () -> getApi().createNamespace().refName(branch.getName()).namespace(ns).create())
+            () -> getApi().createNamespace().reference(current(branch)).namespace(ns).create())
         .isInstanceOf(NessieNamespaceAlreadyExistsException.class)
         .hasMessage(String.format("Namespace '%s' already exists", namespaceInErrorMsg));
 
-    getApi().deleteNamespace().refName(branch.getName()).namespace(ns).delete();
+    getApi().deleteNamespace().reference(current(branch)).namespace(ns).delete();
     soft.assertThatThrownBy(
-            () -> getApi().deleteNamespace().refName(branch.getName()).namespace(ns).delete())
+            () -> getApi().deleteNamespace().reference(current(branch)).namespace(ns).delete())
         .isInstanceOf(NessieNamespaceNotFoundException.class)
         .hasMessage(String.format("Namespace '%s' does not exist", namespaceInErrorMsg));
 
@@ -83,7 +88,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
             () ->
                 getApi()
                     .deleteNamespace()
-                    .refName(branch.getName())
+                    .reference(branch)
                     .namespace(Namespace.parse("nonexisting"))
                     .delete())
         .isInstanceOf(NessieNamespaceNotFoundException.class)
@@ -98,7 +103,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
         identifier ->
             getApi()
                 .createNamespace()
-                .refName(branch.getName())
+                .reference(branch)
                 .namespace(Namespace.parse(identifier))
                 .create();
 
@@ -266,7 +271,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
     Branch branch = createBranch("merge-branch", base);
     Namespace ns = Namespace.parse("a.b.c");
     // create the same namespace on both branches
-    getApi().createNamespace().namespace(ns).refName(branch.getName()).create();
+    getApi().createNamespace().namespace(ns).reference(branch).create();
 
     base = (Branch) getApi().getReference().refName(base.getName()).get();
     branch = (Branch) getApi().getReference().refName(branch.getName()).get();
@@ -302,7 +307,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
     Branch branch = createBranch("merge-branch", base);
     Namespace ns = Namespace.parse("a.b.c");
     // create a namespace on the base branch
-    getApi().createNamespace().namespace(ns).refName(base.getName()).create();
+    getApi().createNamespace().namespace(ns).reference(base).create();
     base = (Branch) getApi().getReference().refName(base.getName()).get();
 
     // create a table with the same name on the other branch
@@ -378,7 +383,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
           Namespace namespace = Namespace.parse(identifier);
 
           Namespace created =
-              getApi().createNamespace().refName(branch.getName()).namespace(namespace).create();
+              getApi().createNamespace().reference(branch).namespace(namespace).create();
           soft.assertThat(created)
               .isNotNull()
               .extracting(Namespace::getElements, Namespace::toPathString)
@@ -459,13 +464,13 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
 
     // deletion
     for (Namespace namespace : namespaces) {
-      getApi().deleteNamespace().refName(branch.getName()).namespace(namespace).delete();
+      getApi().deleteNamespace().reference(current(branch)).namespace(namespace).delete();
 
       soft.assertThatThrownBy(
               () ->
                   getApi()
                       .deleteNamespace()
-                      .refName(branch.getName())
+                      .reference(current(branch))
                       .namespace(namespace)
                       .delete())
           .isInstanceOf(NessieNamespaceNotFoundException.class)
@@ -573,7 +578,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
 
     getApi()
         .updateProperties()
-        .refName(branch.getName())
+        .reference(current(branch))
         .namespace(namespace)
         .updateProperties(properties)
         .update();
@@ -583,7 +588,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
             () -> getApi().getNamespace().reference(branch).namespace(namespace).get())
         .isInstanceOf(NessieNamespaceNotFoundException.class);
 
-    Branch updated = (Branch) getApi().getReference().refName(branch.getName()).get();
+    Reference updated = current(branch);
     ns = getApi().getNamespace().reference(updated).namespace(namespace).get();
     soft.assertThat(ns.getProperties()).isEqualTo(properties);
     soft.assertThat(ns.getId()).isEqualTo(nsId);
@@ -601,7 +606,7 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
             getApi().getNamespace().reference(updated).namespace(namespace).get().getProperties())
         .isEqualTo(properties);
 
-    updated = (Branch) getApi().getReference().refName(branch.getName()).get();
+    updated = current(branch);
     ns = getApi().getNamespace().reference(updated).namespace(namespace).get();
     soft.assertThat(ns.getProperties()).isEqualTo(ImmutableMap.of("key1", "xyz", "key3", "val3"));
     soft.assertThat(ns.getId()).isEqualTo(nsId);

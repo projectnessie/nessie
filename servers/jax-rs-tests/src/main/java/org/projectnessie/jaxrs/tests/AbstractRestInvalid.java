@@ -19,11 +19,13 @@ import static java.util.Collections.singletonList;
 import static org.projectnessie.model.Validation.HASH_RULE;
 import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.projectnessie.error.NessieBadRequestException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.Operation;
 import org.projectnessie.model.Tag;
 
 /** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
@@ -258,6 +260,21 @@ public abstract class AbstractRestInvalid extends AbstractRestInvalidRefs {
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("Bad Request (HTTP/400):")
         .hasMessageContaining(HASH_RULE);
+  }
+
+  @Test
+  public void missingExpectedHash() {
+    soft.assertThatThrownBy(
+            () ->
+                getApi()
+                    .commitMultipleOperations()
+                    .branchName("test") // note: missing expected hash
+                    .commitMeta(CommitMeta.fromMessage(""))
+                    .operation(Operation.Unchanged.of(ContentKey.of("test1")))
+                    .commit())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Bad Request (HTTP/400):")
+        .hasMessageContaining("expectedHash: must not be null");
   }
 
   @ParameterizedTest

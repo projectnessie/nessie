@@ -17,46 +17,30 @@ package org.projectnessie.services.rest;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.SecurityContext;
 import org.projectnessie.api.v1.http.HttpRefLogApi;
 import org.projectnessie.api.v1.params.RefLogParams;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.RefLogResponse;
-import org.projectnessie.services.authz.Authorizer;
-import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.services.impl.RefLogApiImplWithAuthorization;
 import org.projectnessie.services.spi.RefLogService;
-import org.projectnessie.versioned.VersionStore;
 
 /** REST endpoint for the reflog-API. */
 @RequestScoped
 public class RestRefLogResource implements HttpRefLogApi {
 
-  private final ServerConfig config;
-  private final VersionStore store;
-  private final Authorizer authorizer;
-
-  @Context SecurityContext securityContext;
+  private final RefLogService refLogService;
 
   // Mandated by CDI 2.0
   public RestRefLogResource() {
-    this(null, null, null);
+    this(null);
   }
 
   @Inject
-  public RestRefLogResource(ServerConfig config, VersionStore store, Authorizer authorizer) {
-    this.config = config;
-    this.store = store;
-    this.authorizer = authorizer;
+  public RestRefLogResource(RefLogService refLogService) {
+    this.refLogService = refLogService;
   }
 
   private RefLogService resource() {
-    return new RefLogApiImplWithAuthorization(
-        config,
-        store,
-        authorizer,
-        securityContext == null ? null : securityContext.getUserPrincipal());
+    return refLogService;
   }
 
   @Override

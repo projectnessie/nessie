@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,32 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.rest;
+package org.projectnessie.server.authn;
 
+import io.quarkus.security.identity.SecurityIdentity;
+import java.security.Principal;
+import java.util.function.Supplier;
+import javax.annotation.Priority;
 import javax.enterprise.context.RequestScoped;
+import javax.enterprise.inject.Alternative;
 import javax.inject.Inject;
-import org.projectnessie.api.v1.http.HttpConfigApi;
-import org.projectnessie.model.NessieConfiguration;
-import org.projectnessie.services.spi.ConfigService;
 
-/** REST endpoint to retrieve server settings. */
 @RequestScoped
-public class RestConfigResource implements HttpConfigApi {
-
-  private final ConfigService configService;
-
-  // Mandated by CDI 2.0
-  public RestConfigResource() {
-    this(null);
-  }
+@Alternative
+@Priority(1)
+public class QuarkusPrincipalSupplier implements Supplier<Principal> {
+  private final SecurityIdentity identity;
 
   @Inject
-  public RestConfigResource(ConfigService configService) {
-    this.configService = configService;
+  public QuarkusPrincipalSupplier(SecurityIdentity identity) {
+    this.identity = identity;
   }
 
   @Override
-  public NessieConfiguration getConfig() {
-    return configService.getConfig();
+  public Principal get() {
+    return identity.getPrincipal();
   }
 }

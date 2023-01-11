@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,38 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.impl;
+package org.projectnessie.services.rest;
 
 import java.security.Principal;
 import java.util.function.Supplier;
-import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.DiffResponse;
+import javax.enterprise.context.RequestScoped;
+import javax.inject.Inject;
+import javax.validation.executable.ExecutableType;
+import javax.validation.executable.ValidateOnExecution;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.versioned.NamedRef;
+import org.projectnessie.services.impl.RefLogApiImplWithAuthorization;
 import org.projectnessie.versioned.VersionStore;
-import org.projectnessie.versioned.WithHash;
 
-/** Does authorization checks (if enabled) on the {@link DiffApiImpl}. */
-public class DiffApiImplWithAuthorization extends DiffApiImpl {
+@RequestScoped
+@ValidateOnExecution(type = ExecutableType.ALL)
+public class RestRefLogService extends RefLogApiImplWithAuthorization {
+  // Mandated by CDI 2.0
+  public RestRefLogService() {
+    this(null, null, null, null);
+  }
 
-  public DiffApiImplWithAuthorization(
+  @Inject
+  public RestRefLogService(
       ServerConfig config,
       VersionStore store,
       Authorizer authorizer,
       Supplier<Principal> principal) {
     super(config, store, authorizer, principal);
-  }
-
-  @Override
-  public DiffResponse getDiff(String fromRef, String fromHash, String toRef, String toHash)
-      throws NessieNotFoundException {
-    WithHash<NamedRef> from = namedRefWithHashOrThrow(fromRef, fromHash);
-    WithHash<NamedRef> to = namedRefWithHashOrThrow(toRef, toHash);
-    startAccessCheck()
-        .canViewReference(from.getValue())
-        .canViewReference(to.getValue())
-        .checkAndThrow();
-    return getDiff(from.getHash(), to.getHash());
   }
 }

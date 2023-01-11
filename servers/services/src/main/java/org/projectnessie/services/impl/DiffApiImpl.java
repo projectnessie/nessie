@@ -16,6 +16,7 @@
 package org.projectnessie.services.impl;
 
 import java.security.Principal;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
@@ -36,7 +37,10 @@ import org.projectnessie.versioned.WithHash;
 public class DiffApiImpl extends BaseApiImpl implements DiffService {
 
   public DiffApiImpl(
-      ServerConfig config, VersionStore store, Authorizer authorizer, Principal principal) {
+      ServerConfig config,
+      VersionStore store,
+      Authorizer authorizer,
+      Supplier<Principal> principal) {
     super(config, store, authorizer, principal);
   }
 
