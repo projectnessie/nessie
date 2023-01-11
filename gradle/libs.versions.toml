@@ -111,7 +111,7 @@ h2 = { module = "com.h2database:h2", version = "2.1.214" }
 hadoop-aws = { module = "org.apache.hadoop:hadoop-aws", version.ref = "hadoop" }
 hadoop-client = { module = "org.apache.hadoop:hadoop-client", version.ref = "hadoop" }
 hadoop-common = { module = "org.apache.hadoop:hadoop-common", version.ref = "hadoop" }
-hibernate-validator-cdi = { module = "org.hibernate:hibernate-validator-cdi", version = "6.2.4.Final" }
+hibernate-validator-cdi = { module = "org.hibernate:hibernate-validator-cdi", version = "6.2.5.Final" }
 iceberg-api = { module = "org.apache.iceberg:iceberg-api", version.ref = "iceberg" }
 iceberg-aws = { module = "org.apache.iceberg:iceberg-aws", version.ref = "iceberg" }
 iceberg-bundled-guava = { module = "org.apache.iceberg:iceberg-bundled-guava", version.ref = "iceberg" }
