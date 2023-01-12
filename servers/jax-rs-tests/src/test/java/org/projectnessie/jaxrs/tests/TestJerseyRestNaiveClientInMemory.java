@@ -20,6 +20,7 @@ import static org.projectnessie.client.http.impl.HttpUtils.HEADER_ACCEPT;
 
 import org.junit.jupiter.api.AfterEach;
 import org.projectnessie.client.NessieClientBuilder;
+import org.projectnessie.client.ext.NessieApiVersion;
 import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.client.ext.NessieClientCustomizer;
 import org.projectnessie.client.http.HttpAuthentication;
@@ -52,7 +53,8 @@ class TestJerseyRestNaiveClientInMemory extends AbstractTestDatabaseAdapterRest
   private boolean headersProcessed;
 
   @Override
-  public NessieClientBuilder<?> configure(NessieClientBuilder<?> builder) {
+  public NessieClientBuilder<?> configure(
+      NessieClientBuilder<?> builder, NessieApiVersion apiVersion) {
     // Intentionally remove the `Accept` header from requests.
     // Service endpoints should declare the content type for their return values,
     // which should allow the Web Container to properly format output even in the absence

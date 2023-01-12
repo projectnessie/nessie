@@ -81,7 +81,9 @@ public abstract class NessieClientResolver implements ParameterResolver {
         @Nonnull
         @Override // Note: this object is not serializable
         public NessieApiV1 make(NessieClientCustomizer customizer) {
-          return super.make(builder -> customizer.configure(testCustomizer.configure(builder)));
+          return super.make(
+              (builder, version) ->
+                  customizer.configure(testCustomizer.configure(builder, version), version));
         }
       };
     }
@@ -105,7 +107,7 @@ public abstract class NessieClientResolver implements ParameterResolver {
     public NessieApiV1 make(NessieClientCustomizer customizer) {
       URI uri = apiVersion.resolve(baseUri);
       NessieClientBuilder<?> builder =
-          customizer.configure(HttpClientBuilder.builder().withUri(uri));
+          customizer.configure(HttpClientBuilder.builder().withUri(uri), apiVersion);
       return apiVersion.build(builder);
     }
   }

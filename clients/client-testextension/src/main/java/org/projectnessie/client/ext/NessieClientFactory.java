@@ -29,7 +29,7 @@ public interface NessieClientFactory {
 
   @Nonnull
   default NessieApiV1 make() {
-    return make(builder -> builder);
+    return make((builder, version) -> builder);
   }
 
   @Nonnull

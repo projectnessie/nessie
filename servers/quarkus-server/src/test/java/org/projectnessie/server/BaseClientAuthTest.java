@@ -57,7 +57,7 @@ public abstract class BaseClientAuthTest {
 
     api =
         apiProvider.make(
-            builder -> {
+            (builder, version) -> {
               if (customizer != null) {
                 customizer.accept(builder);
               }
