@@ -2,6 +2,12 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.46.7 Release (January 12, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.46.7).
+
+* Expose Nessie API version to custom client builders in tests (#5839)
+
 ## 0.46.5 Release (January 12, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.46.5).
