@@ -33,8 +33,12 @@ public enum NessieApiVersion {
     this.clientApiClass = clientApiClass;
   }
 
+  public String getPathElement() {
+    return uriPathElement;
+  }
+
   public URI resolve(URI base) {
-    return base.resolve(uriPathElement);
+    return base.resolve(getPathElement());
   }
 
   public NessieApiV1 build(NessieClientBuilder<?> builder) {
