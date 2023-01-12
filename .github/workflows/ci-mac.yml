@@ -19,7 +19,7 @@ name: macOS Build Check
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [labeled, opened, synchronize, reopened]
   schedule:
     # Run daily on week days
     - cron:  '0 4 * * 1-5'
@@ -33,7 +33,7 @@ jobs:
   java:
     name: Java/Gradle macOS
     runs-on: macos-12
-    if: github.event.workflow_run.event != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'pr-macos-win')
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'pr-macos-win')
     env:
       SPARK_LOCAL_IP: localhost
 
@@ -100,7 +100,7 @@ jobs:
   python:
     name: Python
     runs-on: macos-12
-    if: github.event.workflow_run.event != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'pr-macos-win')
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'pr-macos-win')
     env:
       working-directory: ./python
     strategy:
