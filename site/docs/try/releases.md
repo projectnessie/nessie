@@ -2,6 +2,42 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.46.5 Release (January 12, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.46.5).
+
+* CI: Fix jobs.if condition for mac+win workflows (#5840)
+* nessie-quarkus-cli/jacoco: use a fresh jacoco data file (#5833)
+* CI: cross-check macOS + Windows (#5705)
+* Validate runtime parameters in service implementations. (#5828)
+* Testcontainers: retry container launch (#5831)
+* Test/CI: Introduce test parallelism constraints for test tasks (#5824)
+* Actually assign `main` in AbstractContentGeneratorTest (#5830)
+* Exclude compatibility tests from code-coverage (#5826)
+* Disable Deltalog integration tests on Windows (#5825)
+* Disable Deltalog integration tests on macOS (#5822)
+* Disable tests on projects using testcontainers on Windows (#5817)
+* Disable quarkus-jacoco on `:nessie-quarkus-cli` (#5820)
+* Fix newline when testing under Windows (#5814)
+* model/test: Platform independent line separator (#5815)
+* Testing: add logging for projects using testcontainers (#5813)
+* Testing: allow `test.log.level` in compatibility tests (#5812)
+* Nit: compatibility-tests: remove wrong comment (#5816)
+* Disable tests on Windows that have strict time requirements (#5807)
+* Disable compatibility tests on Mac (#5805)
+* GC/Tests: Ignore schema-less base-uri-test on Windows (#5804)
+* Prevent using the Minio Extension on non-Linux OS (#5803)
+* Proper Path handling in GC tool CLI (#5799)
+* Make LocalMongoResource a bit more resilient (#5802)
+* Testcontainers: increase number of start attempts from 1 to 5 (#5801)
+* Disable Quarkus dev services for tests (#5800)
+* Proper Path handling in IcebergContentToFiles (#5798)
+* Proper Path handling in TestNessieIcebergViews (#5797)
+* Fix ZIP importer handle leak (#5796)
+* CI: Fix results-upload for PRs (#5795)
+* CI: Remove deprecated `::set-output` (#5794)
+* Nit: Suppress ClassCanBeStatic warnings (#5793)
+
 ## 0.46.3 Release (January 06, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.46.3).
