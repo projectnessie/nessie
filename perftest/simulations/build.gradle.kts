@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import com.google.common.collect.Maps
 import io.gatling.gradle.GatlingRunTask
 
 plugins {
@@ -43,20 +44,37 @@ dependencies {
 }
 
 nessieQuarkusApp {
-  includeTasks(tasks.withType<GatlingRunTask>()) {
-    jvmArgs = listOf("-Dsim.users=10", "-Dnessie.uri=${extra["quarkus.http.test-url"]}/api/v2")
-  }
-  environmentNonInput.put("HTTP_ACCESS_LOG_LEVEL", testLogLevel())
-  jvmArgumentsNonInput.add("-XX:SelfDestructTimer=30")
-  System.getProperties()
-    .filter { e ->
-      e.key.toString().startsWith("nessie.") || e.key.toString().startsWith("quarkus.")
+  if (!System.getProperties().containsKey("nessie.uri")) {
+    includeTasks(tasks.withType<GatlingRunTask>()) {
+      jvmArgs = listOf("-Dsim.users=10", "-Dnessie.uri=${extra["quarkus.http.test-url"]}/api/v2")
     }
-    .forEach { e -> systemProperties.put(e.key.toString(), e.value.toString()) }
+    environmentNonInput.put("HTTP_ACCESS_LOG_LEVEL", testLogLevel())
+    jvmArgumentsNonInput.add("-XX:SelfDestructTimer=30")
+    System.getProperties()
+      .map { e -> Maps.immutableEntry(e.key.toString(), e.value.toString()) }
+      .filter { e -> e.key.startsWith("nessie.") || e.key.startsWith("quarkus.") }
+      .forEach { e -> systemProperties.put(e.key, e.value) }
+  }
 }
 
 gatling {
   gatlingVersion = libs.versions.gatling.get()
   // Null is OK (io.gatling.gradle.LogbackConfigTask checks for it)
   logLevel = System.getProperty("gatling.logLevel")
+
+  jvmArgs =
+    System.getProperties()
+      .map { e -> Maps.immutableEntry(e.key.toString(), e.value.toString()) }
+      .filter { e -> e.key.startsWith("nessie.") || e.key.startsWith("gatling.") }
+      .map { e ->
+        if (e.key.startsWith("nessie.")) {
+          "-D${e.key}=${e.value}"
+        } else if (e.key.startsWith("gatling.jvmArg")) {
+          e.value
+        } else if (e.key.startsWith("gatling.")) {
+          "-D${e.key.substring("gatling.".length)}=${e.value}"
+        } else {
+          throw IllegalStateException("Unexpected: ${e.key}")
+        }
+      }
 }

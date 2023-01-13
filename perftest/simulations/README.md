@@ -101,7 +101,7 @@ Gatling's Gradle plugin recognizes tasks in the form `gatlingRun-<fqcn>`, where 
 
 The simluations in this package take most configuration as JVM system properties passed to the `gradlew` wrapper command.  An example follows.  The `sim.` prefix on properties is pure convention.  Simulations could define properties with arbitrary names.
 
-```
+```bash
 ./gradlew :nessie-perftest-simulations:gatlingRun-org.projectnessie.perftest.gatling.KeyListSpillingSimulation \
 	-Dsim.putsPerBaseCommit=1000 \
 	-Dsim.duration.seconds=60 \
@@ -110,17 +110,39 @@ The simluations in this package take most configuration as JVM system properties
 
 This works for other system properties related to client configuration.  For instance, to point the Gatling simulation's Nessie client at a different backend than the Quarkus instance started by the task's dependencies, pass `-Dnessie.uri=...`, e.g.:
 
-```
+```bash
 ./gradlew :nessie-perftest-simulations:gatlingRun-org.projectnessie.perftest.gatling.KeyListSpillingSimulation \
 	-Dnessie.uri=http://127.0.0.1:19120/api/v1
 ```
 
 The system property `gatling.logLevel` is also specifically checked in build.gradle.kts.  When `-Dgatling.logLevel=...` is passed to the `gradlew` wrapper command, its value will be configured as the logLevel parameter on Gatling's Gradle plugin, changing what Gatling and the simulation logs.  This has no effect on the Nessie/server side.  This check is unique to `gatling.logLevel`; the plugin has other parameters that can't be configured this way, as of the time of writing.
 
-```
+```bash
 ./gradlew :nessie-perftest-simulations:gatlingRun-org.projectnessie.perftest.gatling.KeyListSpillingSimulation \
 	-Dgatling.logLevel=DEBUG
 ```
+
+## Running a simulation against an external Nessie server
+
+A local Nessie server is started and used for Gatling runs, when running a `gatlingRun` Gradle task.
+To use an external Nessie server, pass the system property `nessie.uri` to Gradle, for example like
+this:
+
+```bash
+./gradlew \
+  -Dnessie.uri=http://127.0.0.1:19120/api/v2 \
+  :nessie-perftest-simulations:gatlingRun-org.projectnessie.perftest.gatling.CommitToBranchSimulation
+```
+
+System properties handling when using an external Nessie server:
+* System properties starting with `nessie.` will be passed to the Gatling simulation(s) as is. This
+  allows configuration of the Nessie client and to set additional Nessie client options.
+* System properties starting with `gatling.` will be passed to the Gatling simulation, removing
+  `gatling.` from the key. For example: using `./gradlew -Dgatling.foo.bar=baz ...` will pass the
+  system property `foo.bar=baz` to the Gatling simulation(s).
+* The values of system properties starting with `gatling.jvmArg` are passed to the Gatling
+  simulations. For example: using `./gradlew -Dgatling.jvmArg.x=-Xmx4g ...` will pass the JVM arg
+  `-Xmx4g` to the Gatling simulation(s).
 
 ## Gatling links
 
