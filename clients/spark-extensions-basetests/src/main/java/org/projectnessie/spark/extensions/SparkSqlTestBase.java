@@ -15,7 +15,9 @@
  */
 package org.projectnessie.spark.extensions;
 
+import static java.lang.String.format;
 import static java.util.Collections.emptyMap;
+import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableList;
@@ -53,12 +55,16 @@ import org.projectnessie.model.Tag;
 
 public abstract class SparkSqlTestBase {
 
-  protected static final int NESSIE_PORT = Integer.getInteger("quarkus.http.test-port", 19121);
   protected static final String NON_NESSIE_CATALOG = "invalid_hive";
   protected static SparkConf conf = new SparkConf();
 
   protected static SparkSession spark;
-  protected static String url = String.format("http://localhost:%d/api/v1", NESSIE_PORT);
+  protected static String url =
+      format(
+          "%s/api/v1",
+          requireNonNull(
+              System.getProperty("quarkus.http.test-url"),
+              "Required system property quarkus.http.test-url is not set"));
 
   protected Branch initialDefaultBranch;
 
@@ -85,13 +91,13 @@ public abstract class SparkSqlTestBase {
 
     initialDefaultBranch = api.getDefaultBranch();
 
-    sparkHadoop().forEach((k, v) -> conf.set(String.format("spark.hadoop.%s", k), v));
+    sparkHadoop().forEach((k, v) -> conf.set(format("spark.hadoop.%s", k), v));
 
     nessieParams()
         .forEach(
             (k, v) -> {
-              conf.set(String.format("spark.sql.catalog.nessie.%s", k), v);
-              conf.set(String.format("spark.sql.catalog.spark_catalog.%s", k), v);
+              conf.set(format("spark.sql.catalog.nessie.%s", k), v);
+              conf.set(format("spark.sql.catalog.spark_catalog.%s", k), v);
             });
 
     conf.set(SQLConf.PARTITION_OVERWRITE_MODE().key(), "dynamic")
@@ -103,10 +109,10 @@ public abstract class SparkSqlTestBase {
 
     // the following catalog is only added to test a check in the nessie spark extensions
     conf.set(
-            String.format("spark.sql.catalog.%s", NON_NESSIE_CATALOG),
+            format("spark.sql.catalog.%s", NON_NESSIE_CATALOG),
             "org.apache.iceberg.spark.SparkCatalog")
         .set(
-            String.format("spark.sql.catalog.%s.catalog-impl", NON_NESSIE_CATALOG),
+            format("spark.sql.catalog.%s.catalog-impl", NON_NESSIE_CATALOG),
             "org.apache.iceberg.hive.HiveCatalog");
 
     spark = SparkSession.builder().master("local[2]").config(conf).getOrCreate();
@@ -120,8 +126,8 @@ public abstract class SparkSqlTestBase {
       SparkSession.active()
           .sparkContext()
           .conf()
-          .set(String.format("spark.sql.catalog.%s.ref", "nessie"), defaultBranch())
-          .remove(String.format("spark.sql.catalog.%s.ref.hash", "nessie"));
+          .set(format("spark.sql.catalog.%s.ref", "nessie"), defaultBranch())
+          .remove(format("spark.sql.catalog.%s.ref.hash", "nessie"));
     } catch (IllegalStateException e) {
       // Ignore potential java.lang.IllegalStateException: No active or default Spark session found
     }
@@ -160,7 +166,7 @@ public abstract class SparkSqlTestBase {
 
   @FormatMethod
   protected static List<Object[]> sql(String query, Object... args) {
-    List<Row> rows = spark.sql(String.format(query, args)).collectAsList();
+    List<Row> rows = spark.sql(format(query, args)).collectAsList();
     if (rows.size() < 1) {
       return ImmutableList.of();
     }
@@ -171,7 +177,7 @@ public abstract class SparkSqlTestBase {
   @FormatMethod
   protected static List<Object[]> sqlWithEmptyCache(String query, Object... args) {
     try (SparkSession sparkWithEmptyCache = spark.cloneSession()) {
-      List<Row> rows = sparkWithEmptyCache.sql(String.format(query, args)).collectAsList();
+      List<Row> rows = sparkWithEmptyCache.sql(format(query, args)).collectAsList();
       return rows.stream().map(SparkSqlTestBase::toJava).collect(Collectors.toList());
     }
   }

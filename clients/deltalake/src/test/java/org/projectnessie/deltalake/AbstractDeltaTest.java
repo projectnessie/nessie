@@ -15,6 +15,8 @@
  */
 package org.projectnessie.deltalake;
 
+import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableList;
@@ -49,11 +51,15 @@ public class AbstractDeltaTest {
 
   NessieApiV1 api;
 
-  private static final int NESSIE_PORT = Integer.getInteger("quarkus.http.test-port", 19121);
   protected static SparkConf conf = new SparkConf();
 
   protected static SparkSession spark;
-  protected static String url = String.format("http://localhost:%d/api/v1", NESSIE_PORT);
+  protected static String url =
+      format(
+          "%s/api/v1",
+          requireNonNull(
+              System.getProperty("quarkus.http.test-url"),
+              "Required system property quarkus.http.test-url is not set"));
   private final String branch;
 
   public AbstractDeltaTest(String branch) {
