@@ -19,6 +19,7 @@ import io.gatling.core.Predef.Session
 import org.projectnessie.model.IcebergTable
 
 import java.lang
+import java.lang.Integer.getInteger
 import java.util.concurrent.ThreadLocalRandom
 
 /** Parameters for the [[CommitToBranchSimulation]].
@@ -127,10 +128,10 @@ object CommitToBranchParams {
       "sim.tablePrefix",
       s"someTable${System.currentTimeMillis()}"
     )
-    val numTables: Int = Integer.getInteger("sim.tables", 250)
-    val numberOfCommits: Int = Integer.getInteger("sim.commits", 100).toInt
+    val numTables: Int = getInteger("sim.tables", 250)
     val durationSeconds: Int =
-      Integer.getInteger("sim.duration.seconds", 0).toInt
+      getInteger("sim.duration.seconds", 0).toInt
+    val numberOfCommits: Int = getInteger("sim.commits", if (durationSeconds > 0) 0 else 100).toInt
     val base = BaseParams.fromSystemProperties()
 
     CommitToBranchParams(
