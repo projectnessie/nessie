@@ -3,6 +3,8 @@
 [![Build Status](https://github.com/projectnessie/nessie/workflows/Main%20CI/badge.svg)](https://github.com/projectnessie/nessie/actions/workflows/main.yml)
 [![Query Engine Integrations](https://github.com/projectnessie/query-engine-integration-tests/actions/workflows/main.yml/badge.svg)](https://github.com/projectnessie/query-engine-integration-tests/actions/workflows/main.yml)
 [![Java 17+18](https://github.com/projectnessie/nessie/actions/workflows/newer-java.yml/badge.svg)](https://github.com/projectnessie/nessie/actions/workflows/newer-java.yml)
+[![Windows Build Check](https://github.com/projectnessie/nessie/actions/workflows/ci-win.yml/badge.svg)](https://github.com/projectnessie/nessie/actions/workflows/ci-win.yml)
+[![macOS Build Check](https://github.com/projectnessie/nessie/actions/workflows/ci-mac.yml/badge.svg)](https://github.com/projectnessie/nessie/actions/workflows/ci-mac.yml)
 [![codecov](https://codecov.io/gh/projectnessie/nessie/branch/main/graph/badge.svg?token=W9J9ZUYO1Y)](https://codecov.io/gh/projectnessie/nessie)
 [![Maven Central](https://img.shields.io/maven-central/v/org.projectnessie/nessie)](https://search.maven.org/artifact/org.projectnessie/nessie)
 [![PyPI](https://img.shields.io/pypi/v/pynessie.svg)](https://pypi.python.org/pypi/pynessie)
