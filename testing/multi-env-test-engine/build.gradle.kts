@@ -29,8 +29,9 @@ dependencies {
 
   implementation(platform(libs.junit.bom))
   api(libs.junit.jupiter.api)
-  implementation(libs.junit.jupiter.engine)
+  compileOnly(libs.junit.jupiter.engine)
   implementation(libs.junit.platform.launcher)
 
   testImplementation(libs.junit.platform.testkit)
+  testImplementation(libs.junit.jupiter.engine)
 }

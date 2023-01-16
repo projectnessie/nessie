@@ -47,8 +47,7 @@ dependencies {
 
   implementation(platform(libs.junit.bom))
   api(libs.junit.jupiter.api)
-  implementation(libs.junit.jupiter.engine)
-  implementation(libs.junit.platform.launcher)
+  compileOnly(libs.junit.jupiter.engine)
 
   testImplementation(libs.mockito.core)
   testImplementation(libs.guava)
@@ -61,6 +60,8 @@ dependencies {
 
   testImplementation(libs.junit.platform.testkit)
   testImplementation(libs.junit.jupiter.params)
+  testImplementation(libs.junit.jupiter.engine)
+  testImplementation(libs.junit.platform.launcher)
 }
 
 tasks.withType<Test>().configureEach {

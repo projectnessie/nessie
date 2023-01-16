@@ -70,7 +70,7 @@ dependencies {
 
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
-  testImplementation(libs.junit.jupiter.engine)
+  testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
 tasks.withType(Test::class.java).configureEach { systemProperty("aws.region", "us-east-1") }
