@@ -28,7 +28,10 @@ public abstract class AbstractTestConnectionProviderSource<
   @Override
   public void configureConnectionProviderConfigFromDefaults(
       Function<CONN_CONFIG, CONN_CONFIG> configurer) {
-    CONN_CONFIG config = createDefaultConnectionProviderConfig();
+    CONN_CONFIG config = getConnectionProviderConfig();
+    if (config == null) {
+      config = createDefaultConnectionProviderConfig();
+    }
     config = configurer.apply(config);
     setConnectionProviderConfig(config);
   }

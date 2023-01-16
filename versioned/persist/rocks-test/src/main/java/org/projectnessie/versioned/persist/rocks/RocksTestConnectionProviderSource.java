@@ -61,8 +61,18 @@ public class RocksTestConnectionProviderSource
 
   @Override
   public void start() throws Exception {
-    rocksDir = Files.createTempDirectory("junit-rocks");
-    configureConnectionProviderConfigFromDefaults(c -> c.withDbPath(rocksDir.toString()));
+    configureConnectionProviderConfigFromDefaults(
+        c -> {
+          if (c.getDbPath() == null) {
+            try {
+              rocksDir = Files.createTempDirectory("junit-rocks");
+            } catch (IOException e) {
+              throw new RuntimeException(e);
+            }
+            c = c.withDbPath(rocksDir.toString());
+          }
+          return c;
+        });
     super.start();
   }
 
