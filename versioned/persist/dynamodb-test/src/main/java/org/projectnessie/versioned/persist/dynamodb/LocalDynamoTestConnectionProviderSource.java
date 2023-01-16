@@ -18,7 +18,6 @@ package org.projectnessie.versioned.persist.dynamodb;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.ContainerFetchException;
 import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
@@ -86,24 +85,24 @@ public class LocalDynamoTestConnectionProviderSource extends DynamoTestConnectio
     }
 
     for (int retry = 0; ; retry++) {
-      container =
+      GenericContainer<?> c =
           new GenericContainer<>(imageName)
               .withLogConsumer(quiet ? outputFrame -> {} : new Slf4jLogConsumer(LOGGER))
               .withExposedPorts(DYNAMODB_PORT)
               .withCommand("-jar", "DynamoDBLocal.jar", "-inMemory", "-sharedDb")
               .withStartupAttempts(5);
-      containerNetworkId.ifPresent(container::withNetworkMode);
+      containerNetworkId.ifPresent(c::withNetworkMode);
       try {
-        container.start();
+        c.start();
+        container = c;
         break;
       } catch (ContainerLaunchException e) {
-        container.close();
-        if (e.getCause() != null && e.getCause() instanceof ContainerFetchException && retry < 3) {
-          LOGGER.warn(
-              "Launch of container {} failed, will retry...", container.getContainerId(), e);
+        c.close();
+        if (e.getCause() != null && retry < 3) {
+          LOGGER.warn("Launch of container {} failed, will retry...", c.getDockerImageName(), e);
           continue;
         }
-        LOGGER.error("Launch of container {} failed", container.getContainerId(), e);
+        LOGGER.error("Launch of container {} failed", c.getDockerImageName(), e);
         throw new RuntimeException(e);
       }
     }
