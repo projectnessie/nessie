@@ -74,7 +74,7 @@ jobs:
     - name: Gradle / compile
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: checkstyleMain checkstyleTest jar testClasses --scan
+        arguments: jar testClasses --scan
 
     - name: Gradle / unit test
       uses: gradle/gradle-build-action@v2
