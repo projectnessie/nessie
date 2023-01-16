@@ -44,11 +44,7 @@ dependencies {
 
 nessieQuarkusApp {
   includeTasks(tasks.withType<GatlingRunTask>()) {
-    jvmArgs =
-      listOf(
-        "-Dsim.users=10",
-        "-Dnessie.uri=http://127.0.0.1:${extra["quarkus.http.test-port"]}/api/v1"
-      )
+    jvmArgs = listOf("-Dsim.users=10", "-Dnessie.uri=${extra["quarkus.http.test-url"]}/api/v1")
   }
   environmentNonInput.put("HTTP_ACCESS_LOG_LEVEL", testLogLevel())
   jvmArgumentsNonInput.add("-XX:SelfDestructTimer=30")

@@ -15,6 +15,9 @@
  */
 package org.projectnessie.tools.contentgenerator;
 
+import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Arrays;
@@ -41,10 +44,12 @@ public class AbstractContentGeneratorTest {
   public static final String NO_ANCESTOR =
       "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d";
 
-  static final Integer NESSIE_HTTP_PORT = Integer.getInteger("quarkus.http.test-port");
-
   static final String NESSIE_API_URI =
-      String.format("http://localhost:%d/api/v1", NESSIE_HTTP_PORT);
+      format(
+          "%s/api/v1",
+          requireNonNull(
+              System.getProperty("quarkus.http.test-url"),
+              "Required system property quarkus.http.test-url is not set"));
 
   protected static final String COMMIT_MSG = "testMessage";
   protected static final ContentKey CONTENT_KEY = ContentKey.of("first", "second");
