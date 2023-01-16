@@ -42,7 +42,7 @@ dependencies {
   compileOnly(libs.errorprone.annotations)
 
   testImplementation(libs.bundles.junit.testing)
-  testImplementation(libs.junit.jupiter.engine)
+  testRuntimeOnly(libs.junit.jupiter.engine)
   testImplementation(libs.hadoop.common) { withSparkExcludes() }
 
   testRuntimeOnly(libs.logback.classic)

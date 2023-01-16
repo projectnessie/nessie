@@ -30,6 +30,6 @@ dependencies {
 
   implementation(project(":nessie-client"))
   implementation(project(":nessie-multi-env-test-engine"))
-  implementation(libs.junit.jupiter.engine)
+  compileOnly(libs.junit.jupiter.engine)
   implementation(libs.findbugs.jsr305)
 }
