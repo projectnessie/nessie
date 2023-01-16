@@ -29,17 +29,10 @@ jobs:
       with:
         java-version: ${{ matrix.java-version }}
 
-    - name: Gradle / spotless
-      uses: gradle/gradle-build-action@v2
-      with:
-        cache-read-only: true
-        # 'spotlessCheck' separate: workaround until https://github.com/diffplug/spotless/issues/1215 is fixed
-        arguments: spotlessCheck
-
     - name: Gradle / compile
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: checkstyleMain checkstyleTest jar testClasses --scan
+        arguments: spotlessCheck checkstyleMain checkstyleTest jar testClasses --scan
 
     - name: Gradle / unit test
       uses: gradle/gradle-build-action@v2
@@ -49,8 +42,7 @@ jobs:
     - name: Gradle / check incl. integ-test
       uses: gradle/gradle-build-action@v2
       with:
-        # '-x spotlessCheck': workaround until https://github.com/diffplug/spotless/issues/1215 is fixed
-        arguments: check -x spotlessCheck --scan
+        arguments: check --scan
 
     - name: Gradle / Gatling simulations
       uses: gradle/gradle-build-action@v2
