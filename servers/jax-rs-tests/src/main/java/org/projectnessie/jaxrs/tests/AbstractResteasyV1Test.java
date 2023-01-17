@@ -43,6 +43,7 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.DiffResponse;
 import org.projectnessie.model.DiffResponse.DiffEntry;
+import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableOperations;
@@ -120,6 +121,17 @@ public abstract class AbstractResteasyV1Test {
             .extract()
             .as(Branch.class);
     Assertions.assertNotEquals(newReference.getHash(), commitResponse.getHash());
+
+    EntriesResponse entries =
+        rest()
+            .get("trees/tree/{branch}/entries", newReference.getName())
+            .then()
+            .statusCode(200)
+            .extract()
+            .as(EntriesResponse.class);
+    assertThat(entries.getEntries())
+        .hasSize(1)
+        .allSatisfy(e -> assertThat(e.getContentId()).isNull());
 
     // fetch the content
     IcebergTable table =

@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 import static org.projectnessie.gc.repository.NessieRepositoryConnector.CONTENT_BATCH_SIZE;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -76,7 +77,9 @@ public class TestNessieRepositoryConnectorBatching {
 
     IntFunction<ContentKey> key = i -> ContentKey.of("key-" + i);
     IntFunction<EntriesResponse.Entry> keyEntry =
-        i -> EntriesResponse.Entry.entry(key.apply(i), Content.Type.ICEBERG_TABLE);
+        i ->
+            EntriesResponse.Entry.entry(
+                key.apply(i), Content.Type.ICEBERG_TABLE, UUID.randomUUID().toString());
 
     GetEntriesBuilder getEntries = mock(GetEntriesBuilder.class);
     when(getEntries.reference(ref)).thenReturn(getEntries);
@@ -107,7 +110,9 @@ public class TestNessieRepositoryConnectorBatching {
     IntFunction<ContentKey> key = i -> ContentKey.of("key-" + i);
     IntFunction<Content> content = i -> IcebergTable.of("meta-" + i, 42, 43, 44, 45, "cid-" + i);
     IntFunction<EntriesResponse.Entry> keyEntry =
-        i -> EntriesResponse.Entry.entry(key.apply(i), Content.Type.ICEBERG_TABLE);
+        i ->
+            EntriesResponse.Entry.entry(
+                key.apply(i), Content.Type.ICEBERG_TABLE, UUID.randomUUID().toString());
 
     GetEntriesBuilder getEntries = mock(GetEntriesBuilder.class);
     when(getEntries.reference(ref)).thenReturn(getEntries);
@@ -142,7 +147,9 @@ public class TestNessieRepositoryConnectorBatching {
     IntFunction<ContentKey> key = i -> ContentKey.of("key-" + i);
     IntFunction<Content> content = i -> IcebergTable.of("meta-" + i, 42, 43, 44, 45, "cid-" + i);
     IntFunction<EntriesResponse.Entry> keyEntry =
-        i -> EntriesResponse.Entry.entry(key.apply(i), Content.Type.ICEBERG_TABLE);
+        i ->
+            EntriesResponse.Entry.entry(
+                key.apply(i), Content.Type.ICEBERG_TABLE, UUID.randomUUID().toString());
 
     GetEntriesBuilder getEntries = mock(GetEntriesBuilder.class);
     when(getEntries.reference(ref)).thenReturn(getEntries);
@@ -180,7 +187,9 @@ public class TestNessieRepositoryConnectorBatching {
     IntFunction<ContentKey> key = i -> ContentKey.of("key-" + i);
     IntFunction<Content> content = i -> IcebergTable.of("meta-" + i, 42, 43, 44, 45, "cid-" + i);
     IntFunction<EntriesResponse.Entry> keyEntry =
-        i -> EntriesResponse.Entry.entry(key.apply(i), Content.Type.ICEBERG_TABLE);
+        i ->
+            EntriesResponse.Entry.entry(
+                key.apply(i), Content.Type.ICEBERG_TABLE, UUID.randomUUID().toString());
 
     GetEntriesBuilder getEntries = mock(GetEntriesBuilder.class);
     when(getEntries.reference(ref)).thenReturn(getEntries);
@@ -231,7 +240,9 @@ public class TestNessieRepositoryConnectorBatching {
     IntFunction<ContentKey> key = i -> ContentKey.of("key-" + i);
     IntFunction<Content> content = i -> IcebergTable.of("meta-" + i, 42, 43, 44, 45, "cid-" + i);
     IntFunction<EntriesResponse.Entry> keyEntry =
-        i -> EntriesResponse.Entry.entry(key.apply(i), Content.Type.ICEBERG_TABLE);
+        i ->
+            EntriesResponse.Entry.entry(
+                key.apply(i), Content.Type.ICEBERG_TABLE, UUID.randomUUID().toString());
 
     GetEntriesBuilder getEntries = mock(GetEntriesBuilder.class);
     when(getEntries.reference(ref)).thenReturn(getEntries);

@@ -15,11 +15,13 @@
  */
 package org.projectnessie.jaxrs.tests;
 
-import static java.util.Arrays.asList;
+import static com.google.common.collect.Maps.immutableEntry;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -68,10 +70,11 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .commit();
     List<Entry> entries =
         getApi().getEntries().reference(refMode.transform(branch)).get().getEntries();
-    List<Entry> expected =
-        asList(
-            Entry.entry(a, Content.Type.ICEBERG_TABLE), Entry.entry(b, Content.Type.ICEBERG_VIEW));
-    soft.assertThat(entries).containsExactlyInAnyOrderElementsOf(expected);
+    Map<ContentKey, Content.Type> expect =
+        ImmutableMap.of(a, Content.Type.ICEBERG_TABLE, b, Content.Type.ICEBERG_VIEW);
+    soft.assertThat(entries)
+        .map(e -> immutableEntry(e.getName(), e.getType()))
+        .containsExactlyInAnyOrderElementsOf(expect.entrySet());
 
     entries =
         getApi()
@@ -80,7 +83,9 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .filter("entry.contentType=='ICEBERG_TABLE'")
             .get()
             .getEntries();
-    soft.assertThat(entries).containsExactly(expected.get(0));
+    soft.assertThat(entries)
+        .map(e -> immutableEntry(e.getName(), e.getType()))
+        .containsExactly(immutableEntry(a, Content.Type.ICEBERG_TABLE));
 
     entries =
         getApi()
@@ -89,7 +94,9 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .filter("entry.contentType=='ICEBERG_VIEW'")
             .get()
             .getEntries();
-    soft.assertThat(entries).containsExactly(expected.get(1));
+    soft.assertThat(entries)
+        .map(e -> immutableEntry(e.getName(), e.getType()))
+        .containsExactly(immutableEntry(b, Content.Type.ICEBERG_VIEW));
 
     entries =
         getApi()
@@ -98,7 +105,9 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .filter("entry.contentType in ['ICEBERG_TABLE', 'ICEBERG_VIEW']")
             .get()
             .getEntries();
-    soft.assertThat(entries).containsExactlyInAnyOrderElementsOf(expected);
+    soft.assertThat(entries)
+        .map(e -> immutableEntry(e.getName(), e.getType()))
+        .containsExactlyInAnyOrderElementsOf(expect.entrySet());
   }
 
   @ParameterizedTest
@@ -321,7 +330,8 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .getEntries();
     soft.assertThat(entries)
         .hasSize(1)
-        .containsExactly(Entry.entry(ContentKey.of("a"), Content.Type.NAMESPACE));
+        .map(e -> immutableEntry(e.getName(), e.getType()))
+        .containsExactly(immutableEntry(ContentKey.of("a"), Content.Type.NAMESPACE));
 
     entries =
         getApi()
@@ -333,10 +343,11 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .getEntries();
     soft.assertThat(entries)
         .hasSize(3)
+        .map(e -> immutableEntry(e.getName(), e.getType()))
         .containsExactlyInAnyOrder(
-            Entry.entry(ContentKey.of("a", "boo"), Content.Type.NAMESPACE),
-            Entry.entry(ContentKey.of("a", "b"), Content.Type.NAMESPACE),
-            Entry.entry(ContentKey.of("a", "thirdTable"), Content.Type.ICEBERG_TABLE));
+            immutableEntry(ContentKey.of("a", "boo"), Content.Type.NAMESPACE),
+            immutableEntry(ContentKey.of("a", "b"), Content.Type.NAMESPACE),
+            immutableEntry(ContentKey.of("a", "thirdTable"), Content.Type.ICEBERG_TABLE));
 
     entries =
         getApi()
@@ -348,9 +359,10 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .getEntries();
     soft.assertThat(entries)
         .hasSize(2)
+        .map(e -> immutableEntry(e.getName(), e.getType()))
         .containsExactlyInAnyOrder(
-            Entry.entry(ContentKey.of("a", "b", "fourthTable"), Content.Type.ICEBERG_TABLE),
-            Entry.entry(ContentKey.of("a", "b", "c"), Content.Type.NAMESPACE));
+            immutableEntry(ContentKey.of("a", "b", "fourthTable"), Content.Type.ICEBERG_TABLE),
+            immutableEntry(ContentKey.of("a", "b", "c"), Content.Type.NAMESPACE));
 
     entries =
         getApi()
@@ -362,9 +374,10 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .getEntries();
     soft.assertThat(entries)
         .hasSize(2)
+        .map(e -> immutableEntry(e.getName(), e.getType()))
         .containsExactlyInAnyOrder(
-            Entry.entry(ContentKey.of("a", "b", "c", "secondTable"), Content.Type.ICEBERG_TABLE),
-            Entry.entry(ContentKey.of("a", "b", "c", "firstTable"), Content.Type.ICEBERG_TABLE));
+            immutableEntry(ContentKey.of("a", "b", "c", "secondTable"), Content.Type.ICEBERG_TABLE),
+            immutableEntry(ContentKey.of("a", "b", "c", "firstTable"), Content.Type.ICEBERG_TABLE));
 
     entries =
         getApi()
@@ -386,10 +399,11 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .getEntries();
     soft.assertThat(entries)
         .hasSize(3)
+        .map(e -> immutableEntry(e.getName(), e.getType()))
         .containsExactlyInAnyOrder(
-            Entry.entry(ContentKey.of("a", "boo", "fifthTable"), Content.Type.ICEBERG_TABLE),
-            Entry.entry(ContentKey.of("a", "b", "fourthTable"), Content.Type.ICEBERG_TABLE),
-            Entry.entry(ContentKey.of("a", "b", "c"), Content.Type.NAMESPACE));
+            immutableEntry(ContentKey.of("a", "boo", "fifthTable"), Content.Type.ICEBERG_TABLE),
+            immutableEntry(ContentKey.of("a", "b", "fourthTable"), Content.Type.ICEBERG_TABLE),
+            immutableEntry(ContentKey.of("a", "b", "c"), Content.Type.NAMESPACE));
 
     if (ReferenceMode.DETACHED != refMode) {
       // check that implicit namespaces are properly detected
@@ -418,10 +432,10 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
             .commit();
     List<Entry> entries = getApi().getEntries().hashOnRef(branch.getHash()).get().getEntries();
     soft.assertThat(entries)
-        .containsExactlyInAnyOrderElementsOf(
-            Arrays.<Entry>asList(
-                Entry.entry(a, Content.Type.ICEBERG_TABLE),
-                Entry.entry(b, Content.Type.ICEBERG_VIEW)));
+        .map(e -> immutableEntry(e.getName(), e.getType()))
+        .containsExactlyInAnyOrder(
+            immutableEntry(a, Content.Type.ICEBERG_TABLE),
+            immutableEntry(b, Content.Type.ICEBERG_VIEW));
   }
 
   private void checkNamespaces(

@@ -177,17 +177,18 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
 
     List<Entry> entries =
         getApi().getEntries().refName(branch.getName()).stream().collect(Collectors.toList());
-    List<Entry> expect =
+    Map<ContentKey, Content.Type> expect =
         contentAndOps.stream()
             .filter(c -> c.operation instanceof Put)
-            .map(c -> Entry.entry(c.operation.getKey(), c.type))
-            .collect(Collectors.toList());
-    List<Entry> notExpect =
+            .collect(Collectors.toMap(c -> c.operation.getKey(), c -> c.type));
+    Map<ContentKey, Content.Type> notExpect =
         contentAndOps.stream()
             .filter(c -> c.operation instanceof Delete)
-            .map(c -> Entry.entry(c.operation.getKey(), c.type))
-            .collect(Collectors.toList());
-    soft.assertThat(entries).containsAll(expect).doesNotContainAnyElementsOf(notExpect);
+            .collect(Collectors.toMap(c -> c.operation.getKey(), c -> c.type));
+    soft.assertThat(entries)
+        .map(e -> Maps.immutableEntry(e.getName(), e.getType()))
+        .containsAll(expect.entrySet())
+        .doesNotContainAnyElementsOf(notExpect.entrySet());
 
     // Diff against of committed HEAD and previous commit must yield the content in the
     // Put operations
@@ -277,7 +278,9 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
       List<Entry> entries =
           getApi().getEntries().refName(branch.getName()).stream().collect(Collectors.toList());
       soft.assertThat(entries)
-          .containsExactly(Entry.entry(fixedContentKey, contentAndOperationType.type));
+          .hasSize(1)
+          .extracting(Entry::getName, Entry::getType)
+          .containsExactly(tuple(fixedContentKey, contentAndOperationType.type));
 
       // Diff against of committed HEAD and previous commit must yield the content in the
       // Put operation
@@ -334,7 +337,8 @@ public abstract class AbstractRestContents extends AbstractRestCommitLog {
       List<Entry> entries =
           getApi().getEntries().refName(branch.getName()).stream().collect(Collectors.toList());
       soft.assertThat(entries)
-          .containsExactly(Entry.entry(fixedContentKey, contentAndOperationType.type));
+          .extracting(Entry::getName, Entry::getType)
+          .containsExactly(tuple(fixedContentKey, contentAndOperationType.type));
 
       // Diff against of committed HEAD and previous commit must yield the content in the
       // Put operations

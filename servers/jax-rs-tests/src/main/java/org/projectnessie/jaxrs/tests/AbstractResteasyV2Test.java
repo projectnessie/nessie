@@ -44,6 +44,7 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.DiffResponse;
+import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableOperations;
@@ -142,7 +143,18 @@ public abstract class AbstractResteasyV2Test {
     branch = commit(branch, key1, table1);
     branch = commit(branch, key2, table2);
 
-    Stream<MapEntry<ContentKey, String>> entries =
+    EntriesResponse entries =
+        rest()
+            .get("trees/{ref}/entries", branch.toPathString())
+            .then()
+            .statusCode(200)
+            .extract()
+            .as(EntriesResponse.class);
+    assertThat(entries.getEntries())
+        .hasSize(2)
+        .allSatisfy(e -> assertThat(e.getContentId()).isNotNull());
+
+    Stream<MapEntry<ContentKey, String>> contents =
         rest()
             .queryParam("key", key1.toPathString(), key2.toPathString())
             .get("trees/{ref}/contents", branch.toPathString())
@@ -158,7 +170,7 @@ public abstract class AbstractResteasyV2Test {
                         content.getKey(),
                         ((IcebergTable) content.getContent()).getMetadataLocation()));
 
-    assertThat(entries).containsExactlyInAnyOrder(entry(key1, "loc1"), entry(key2, "loc2"));
+    assertThat(contents).containsExactlyInAnyOrder(entry(key1, "loc1"), entry(key2, "loc2"));
   }
 
   /** Dedicated test for human-readable references in URL paths. */
