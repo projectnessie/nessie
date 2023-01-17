@@ -51,6 +51,11 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
   @TempDir File tempFile;
 
   @Override
+  protected boolean requiresCommonAncestor() {
+    return true;
+  }
+
+  @Override
   protected String warehouseURI() {
     return tempFile.toURI().toString();
   }
@@ -475,6 +480,7 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
     assertThat(
             sql("SHOW LOG %s IN nessie", defaultBranch()).stream()
                 .map(SparkCommitLogEntry::fromShowLog)
+                .filter(e -> !e.getMessage().startsWith("INFRA: "))
                 .map(SparkCommitLogEntry::withoutHashAndTime)
                 .map(SparkCommitLogEntry::relevantFromMerge)
                 .collect(Collectors.toList()))
@@ -490,6 +496,7 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
     assertThat(
             sql("SHOW LOG %s IN nessie", refName).stream()
                 .map(SparkCommitLogEntry::fromShowLog)
+                .filter(e -> !e.getMessage().startsWith("INFRA: "))
                 .collect(Collectors.toList()))
         .containsExactlyElementsOf(resultList);
 
@@ -497,6 +504,7 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
     assertThat(
             sql("SHOW LOG IN nessie").stream()
                 .map(SparkCommitLogEntry::fromShowLog)
+                .filter(e -> !e.getMessage().startsWith("INFRA: "))
                 .collect(Collectors.toList()))
         .containsExactlyElementsOf(resultList);
   }
@@ -508,6 +516,7 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
     assertThat(
             sql("SHOW LOG %s IN nessie", refName).stream()
                 .map(SparkCommitLogEntry::fromShowLog)
+                .filter(e -> !e.getMessage().startsWith("INFRA: "))
                 .collect(Collectors.toList()))
         .containsExactlyElementsOf(resultList);
 
@@ -546,6 +555,7 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
     assertThat(
             sql("SHOW LOG %s IN nessie", refName).stream()
                 .map(SparkCommitLogEntry::fromShowLog)
+                .filter(e -> !e.getMessage().startsWith("INFRA: "))
                 .collect(Collectors.toList()))
         .containsExactlyElementsOf(resultList);
   }

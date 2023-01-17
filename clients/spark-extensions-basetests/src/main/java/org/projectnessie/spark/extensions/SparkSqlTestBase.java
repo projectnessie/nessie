@@ -44,11 +44,14 @@ import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.Operation;
+import org.projectnessie.model.Operation.Delete;
+import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
@@ -66,6 +69,8 @@ public abstract class SparkSqlTestBase {
               System.getProperty("quarkus.http.test-url"),
               "Required system property quarkus.http.test-url is not set"));
 
+  protected boolean first = true;
+
   protected Branch initialDefaultBranch;
 
   protected String refName;
@@ -82,14 +87,35 @@ public abstract class SparkSqlTestBase {
     return ImmutableMap.of("ref", defaultBranch(), "uri", url, "warehouse", warehouseURI());
   }
 
+  protected boolean requiresCommonAncestor() {
+    return false;
+  }
+
   @BeforeEach
-  protected void setupSparkAndApi(TestInfo testInfo) throws NessieNotFoundException {
+  protected void setupSparkAndApi(TestInfo testInfo)
+      throws NessieNotFoundException, NessieConflictException {
     api = HttpClientBuilder.builder().withUri(url).build(NessieApiV1.class);
 
     refName = testInfo.getTestMethod().map(Method::getName).get();
     additionalRefName = refName + "_other";
 
     initialDefaultBranch = api.getDefaultBranch();
+
+    if (first && requiresCommonAncestor()) {
+      initialDefaultBranch =
+          api.commitMultipleOperations()
+              .branch(initialDefaultBranch)
+              .commitMeta(CommitMeta.fromMessage("INFRA: initial commit"))
+              .operation(Put.of(ContentKey.of("dummy"), IcebergTable.of("foo", 1, 2, 3, 4)))
+              .commit();
+      initialDefaultBranch =
+          api.commitMultipleOperations()
+              .branch(initialDefaultBranch)
+              .commitMeta(CommitMeta.fromMessage("INFRA: common ancestor"))
+              .operation(Delete.of(ContentKey.of("dummy")))
+              .commit();
+      first = false;
+    }
 
     sparkHadoop().forEach((k, v) -> conf.set(format("spark.hadoop.%s", k), v));
 
@@ -219,14 +245,15 @@ public abstract class SparkSqlTestBase {
   }
 
   protected void createBranchForTest(String branchName) throws NessieNotFoundException {
-    assertThat(sql("CREATE BRANCH %s IN nessie", branchName))
+    assertThat(
+            sql("CREATE BRANCH %s IN nessie FROM %s", branchName, initialDefaultBranch.getName()))
         .containsExactly(row("Branch", branchName, defaultHash()));
     assertThat(api.getReference().refName(branchName).get())
         .isEqualTo(Branch.of(branchName, defaultHash()));
   }
 
   protected void createTagForTest(String tagName) throws NessieNotFoundException {
-    assertThat(sql("CREATE TAG %s IN nessie", tagName))
+    assertThat(sql("CREATE TAG %s IN nessie FROM %s", tagName, initialDefaultBranch.getName()))
         .containsExactly(row("Tag", tagName, defaultHash()));
     assertThat(api.getReference().refName(tagName).get()).isEqualTo(Tag.of(tagName, defaultHash()));
   }
@@ -237,7 +264,7 @@ public abstract class SparkSqlTestBase {
     return commitAndReturnLog(refName, defaultHash());
   }
 
-  protected List<SparkCommitLogEntry> commitAndReturnLog(String branch, String initalHashOrBranch)
+  protected List<SparkCommitLogEntry> commitAndReturnLog(String branch, String initialHashOrBranch)
       throws NessieNotFoundException, NessieConflictException {
     ContentKey key = ContentKey.of("table", "name");
     CommitMeta cm1 =
@@ -263,29 +290,41 @@ public abstract class SparkSqlTestBase {
             .message("3")
             .putProperties("test", "123")
             .build();
+
+    Content content =
+        api.getContent().refName(branch).hashOnRef(initialHashOrBranch).key(key).get().get(key);
+
     Operations ops =
-        ImmutableOperations.builder()
-            .addOperations(Operation.Put.of(key, IcebergTable.of("foo", 42, 42, 42, 42)))
-            .commitMeta(cm1)
-            .build();
-    Operations ops2 =
-        ImmutableOperations.builder()
-            .addOperations(Operation.Put.of(key, IcebergTable.of("bar", 42, 42, 42, 42)))
-            .commitMeta(cm2)
-            .build();
-    Operations ops3 =
-        ImmutableOperations.builder()
-            .addOperations(Operation.Put.of(key, IcebergTable.of("baz", 42, 42, 42, 42)))
-            .commitMeta(cm3)
-            .build();
+        content != null
+            ? ImmutableOperations.builder()
+                .addOperations(
+                    Operation.Put.of(
+                        key, IcebergTable.of("foo", 42, 42, 42, 42, content.getId()), content))
+                .commitMeta(cm1)
+                .build()
+            : ImmutableOperations.builder()
+                .addOperations(Operation.Put.of(key, IcebergTable.of("foo", 42, 42, 42, 42)))
+                .commitMeta(cm1)
+                .build();
 
     Branch ref1 =
         api.commitMultipleOperations()
             .branchName(branch)
-            .hash(initalHashOrBranch)
+            .hash(initialHashOrBranch)
             .operations(ops.getOperations())
             .commitMeta(ops.getCommitMeta())
             .commit();
+
+    content = api.getContent().reference(ref1).key(key).get().get(key);
+
+    Operations ops2 =
+        ImmutableOperations.builder()
+            .addOperations(
+                Operation.Put.of(
+                    key, IcebergTable.of("bar", 42, 42, 42, 42, content.getId()), content))
+            .commitMeta(cm2)
+            .build();
+
     Branch ref2 =
         api.commitMultipleOperations()
             .branchName(branch)
@@ -293,6 +332,17 @@ public abstract class SparkSqlTestBase {
             .operations(ops2.getOperations())
             .commitMeta(ops2.getCommitMeta())
             .commit();
+
+    content = api.getContent().reference(ref2).key(key).get().get(key);
+
+    Operations ops3 =
+        ImmutableOperations.builder()
+            .addOperations(
+                Operation.Put.of(
+                    key, IcebergTable.of("baz", 42, 42, 42, 42, content.getId()), content))
+            .commitMeta(cm3)
+            .build();
+
     Branch ref3 =
         api.commitMultipleOperations()
             .branchName(branch)
