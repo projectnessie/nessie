@@ -18,7 +18,6 @@ package org.projectnessie.tools.contentgenerator;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,13 +30,12 @@ import org.projectnessie.model.LogResponse.LogEntry;
 
 class ITReadCommits extends AbstractContentGeneratorTest {
 
-  private final String contentId = "testContentId-" + UUID.randomUUID();
   private Branch branch;
 
   @BeforeEach
   void setup() throws NessieConflictException, NessieNotFoundException {
     try (NessieApiV1 api = buildNessieApi()) {
-      branch = makeCommit(api, contentId);
+      branch = makeCommit(api);
     }
   }
 
@@ -71,7 +69,6 @@ class ITReadCommits extends AbstractContentGeneratorTest {
         .anySatisfy(s -> assertThat(s).contains("key[0]: " + CONTENT_KEY.getElements().get(0)));
     assertThat(output)
         .anySatisfy(s -> assertThat(s).contains("key[1]: " + CONTENT_KEY.getElements().get(1)));
-    assertThat(output).anySatisfy(s -> assertThat(s).contains(contentId));
 
     try (NessieApiV1 api = buildNessieApi()) {
       List<LogEntry> logEntries =

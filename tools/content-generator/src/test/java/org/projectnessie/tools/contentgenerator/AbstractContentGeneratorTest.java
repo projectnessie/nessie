@@ -75,7 +75,7 @@ public class AbstractContentGeneratorTest {
     }
   }
 
-  protected Branch makeCommit(NessieApiV1 api, String contentId)
+  protected Branch makeCommit(NessieApiV1 api)
       throws NessieConflictException, NessieNotFoundException {
     String branchName = "test-" + UUID.randomUUID();
     Branch main = api.getDefaultBranch();
@@ -89,9 +89,7 @@ public class AbstractContentGeneratorTest {
         .branchName(branch.getName())
         .hash(branch.getHash())
         .commitMeta(CommitMeta.fromMessage(COMMIT_MSG))
-        .operation(
-            Operation.Put.of(
-                CONTENT_KEY, IcebergTable.of("testMeta", 123, 456, 789, 321, contentId)))
+        .operation(Operation.Put.of(CONTENT_KEY, IcebergTable.of("testMeta", 123, 456, 789, 321)))
         .commit();
   }
 
