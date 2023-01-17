@@ -121,7 +121,8 @@ class TestTracingVersionStore {
                             Optional.empty(),
                             CommitMeta.fromMessage("metadata"),
                             Collections.emptyList(),
-                            () -> null),
+                            () -> null,
+                            (k, c) -> {}),
                     () -> Hash.of("deadbeefcafebabe")),
             new TestedTraceingStoreInvocation<VersionStore>(
                     "Transplant", refNotFoundAndRefConflictThrows)

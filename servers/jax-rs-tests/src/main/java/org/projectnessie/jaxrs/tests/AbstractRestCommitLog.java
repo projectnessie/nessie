@@ -15,6 +15,7 @@
  */
 package org.projectnessie.jaxrs.tests;
 
+import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -30,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -48,6 +50,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.CommitResponse;
+import org.projectnessie.model.CommitResponse.AddedContent;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.FetchOption;
@@ -67,16 +70,54 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
   @NessieApiVersions(versions = NessieApiVersion.V2)
   public void commitResponse() throws BaseNessieClientServerException {
     Branch branch = createBranch("commitResponse");
+    ContentKey key1 = ContentKey.of("test");
+    ContentKey key2 = ContentKey.of("testFoo");
     CommitResponse response =
         getApi()
             .commitMultipleOperations()
             .commitMeta(CommitMeta.fromMessage("test"))
-            .operation(Put.of(ContentKey.of("test"), IcebergTable.of("loc", 1, 2, 3, 4)))
+            .operation(Put.of(key1, IcebergTable.of("loc", 1, 2, 3, 4)))
+            .operation(Put.of(key2, IcebergTable.of("blah", 1, 2, 3, 4)))
             .branch(branch)
             .commitWithResponse();
     soft.assertThat(response).isNotNull();
+    soft.assertThat(response.getAddedContents())
+        .isNotNull()
+        .hasSize(2)
+        .allSatisfy(ac -> assertThat(ac.contentId()).isNotNull())
+        .extracting(AddedContent::getKey)
+        .containsExactlyInAnyOrder(key1, key2);
     soft.assertThat(response.getTargetBranch())
         .isEqualTo(getApi().getReference().refName(branch.getName()).get());
+
+    Map<ContentKey, String> contentIds =
+        requireNonNull(response.getAddedContents()).stream()
+            .collect(Collectors.toMap(AddedContent::getKey, AddedContent::contentId));
+
+    Map<ContentKey, Content> contents =
+        getApi().getContent().reference(response.getTargetBranch()).key(key1).key(key2).get();
+
+    soft.assertThat(contentIds.keySet()).isEqualTo(contents.keySet());
+    soft.assertThat(contentIds.get(key1)).isEqualTo(contents.get(key1).getId());
+    soft.assertThat(contentIds.get(key2)).isEqualTo(contents.get(key2).getId());
+
+    response =
+        getApi()
+            .commitMultipleOperations()
+            .commitMeta(CommitMeta.fromMessage("test"))
+            .operation(
+                Put.of(
+                    key1,
+                    IcebergTable.of("loc", 1, 2, 3, 4, contentIds.get(key1)),
+                    contents.get(key1)))
+            .operation(
+                Put.of(
+                    key2,
+                    IcebergTable.of("blah", 1, 2, 3, 4, contentIds.get(key2)),
+                    contents.get(key2)))
+            .branch(response.getTargetBranch())
+            .commitWithResponse();
+    soft.assertThat(response.getAddedContents()).isNull();
   }
 
   @Test

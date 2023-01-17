@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -93,7 +94,8 @@ public class TracingVersionStore implements VersionStore {
       @Nonnull Optional<Hash> referenceHash,
       @Nonnull CommitMeta metadata,
       @Nonnull List<Operation> operations,
-      @Nonnull Callable<Void> validator)
+      @Nonnull Callable<Void> validator,
+      @Nonnull BiConsumer<Key, String> addedContents)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return TracingVersionStore
         .<Hash, ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
@@ -102,7 +104,9 @@ public class TracingVersionStore implements VersionStore {
                 b.withTag(TAG_BRANCH, safeRefName(branch))
                     .withTag(TAG_HASH, safeToString(referenceHash))
                     .withTag(TAG_NUM_OPS, safeSize(operations)),
-            () -> delegate.commit(branch, referenceHash, metadata, operations, validator));
+            () ->
+                delegate.commit(
+                    branch, referenceHash, metadata, operations, validator, addedContents));
   }
 
   @Override

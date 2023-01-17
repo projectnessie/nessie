@@ -25,6 +25,7 @@ import javax.validation.constraints.Pattern;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.LogResponse;
@@ -159,7 +160,7 @@ public interface TreeService {
       @Nullable String filter)
       throws NessieNotFoundException;
 
-  Branch commitMultipleOperations(
+  CommitResponse commitMultipleOperations(
       @Valid
           @NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)

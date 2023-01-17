@@ -108,7 +108,8 @@ public class PersistVersionStore implements VersionStore {
       @Nonnull Optional<Hash> expectedHead,
       @Nonnull CommitMeta metadata,
       @Nonnull List<Operation> operations,
-      @Nonnull Callable<Void> validator)
+      @Nonnull Callable<Void> validator,
+      BiConsumer<Key, String> addedContents)
       throws ReferenceNotFoundException, ReferenceConflictException {
 
     ImmutableCommitParams.Builder commitAttempt =
@@ -135,7 +136,9 @@ public class PersistVersionStore implements VersionStore {
               op.getKey());
 
           // assign content-ID
-          content = STORE_WORKER.applyId(content, UUID.randomUUID().toString());
+          String cid = UUID.randomUUID().toString();
+          content = STORE_WORKER.applyId(content, cid);
+          addedContents.accept(op.getKey(), cid);
         }
 
         ContentId contentId = ContentId.of(content.getId());

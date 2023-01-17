@@ -29,7 +29,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.Branch;
+import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.ImmutableLogEntry;
@@ -303,7 +303,8 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
   }
 
   @Override
-  public Branch commitMultipleOperations(String branch, String expectedHash, Operations operations)
+  public CommitResponse commitMultipleOperations(
+      String branch, String expectedHash, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
     BranchName branchName = BranchName.of(branch);
     BatchAccessChecker check = startAccessCheck().canCommitChangeAgainstReference(branchName);

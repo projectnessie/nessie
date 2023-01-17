@@ -577,14 +577,12 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
     BranchName branch = BranchName.of("main");
     Key key = Key.of("my", "table0");
     Hash branchHead = store().getNamedRef(branch.getName(), GetNamedRefsParams.DEFAULT).getHash();
-    String cid = "cid-0";
 
     RuntimeException exception = new ArithmeticException("Whatever");
     soft.assertThatThrownBy(
             () ->
                 doCommitWithValidation(
                     branch,
-                    cid,
                     key,
                     () -> {
                       // do some operations here
@@ -605,7 +603,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
     soft.assertThat(store().getValue(branch, key)).isNull();
   }
 
-  void doCommitWithValidation(BranchName branch, String cid, Key key, Callable<Void> validator)
+  void doCommitWithValidation(BranchName branch, Key key, Callable<Void> validator)
       throws Exception {
     store()
         .commit(
@@ -613,7 +611,8 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             Optional.empty(),
             CommitMeta.fromMessage("initial commit meta"),
             Collections.singletonList(Put.of(key, newOnRef("some value"))),
-            validator);
+            validator,
+            (k, c) -> {});
   }
 
   @Test

@@ -177,6 +177,8 @@ public class RestTreeResource implements HttpTreeApi {
   public Branch commitMultipleOperations(
       String branchName, String expectedHash, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
-    return resource().commitMultipleOperations(branchName, expectedHash, operations);
+    return resource()
+        .commitMultipleOperations(branchName, expectedHash, operations)
+        .getTargetBranch();
   }
 }
