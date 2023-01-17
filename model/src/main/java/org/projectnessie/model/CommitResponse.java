@@ -15,12 +15,16 @@
  */
 package org.projectnessie.model;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.util.List;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
+import org.projectnessie.model.ser.Views;
 
 @Schema(type = SchemaType.OBJECT, title = "Commit Response")
 @Value.Immutable
@@ -39,4 +43,25 @@ public interface CommitResponse {
    */
   @NotNull
   Branch getTargetBranch();
+
+  @JsonView(Views.V2.class)
+  @Nullable // for V1 backwards compatibility
+  List<AddedContent> getAddedContents();
+
+  @Value.Immutable
+  @JsonSerialize(as = ImmutableAddedContent.class)
+  @JsonDeserialize(as = ImmutableAddedContent.class)
+  interface AddedContent {
+    @NotNull
+    @Value.Parameter(order = 1)
+    ContentKey getKey();
+
+    @NotNull
+    @Value.Parameter(order = 2)
+    String contentId();
+
+    static AddedContent addedContent(ContentKey key, String contentId) {
+      return ImmutableAddedContent.of(key, contentId);
+    }
+  }
 }

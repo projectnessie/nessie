@@ -258,7 +258,6 @@ public class RestV2TreeResource implements HttpTreeApi {
   public CommitResponse commitMultipleOperations(String branch, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
     Reference ref = resolveRef(branch);
-    Branch head = tree().commitMultipleOperations(ref.getName(), ref.getHash(), operations);
-    return CommitResponse.builder().targetBranch(head).build();
+    return tree().commitMultipleOperations(ref.getName(), ref.getHash(), operations);
   }
 }

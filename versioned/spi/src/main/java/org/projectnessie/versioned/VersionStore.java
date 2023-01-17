@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.ThreadSafe;
@@ -75,6 +76,7 @@ public interface VersionStore {
    * @param operations The set of operations to apply.
    * @param validator Gets called during the atomic commit operations, callers can implement
    *     validation logic.
+   * @param addedContents callback that receives the content-ID of _new_ content per content-key
    * @throws ReferenceConflictException if {@code referenceHash} values do not match the stored
    *     values for {@code branch}
    * @throws ReferenceNotFoundException if {@code branch} is not present in the store
@@ -85,7 +87,8 @@ public interface VersionStore {
       @Nonnull Optional<Hash> referenceHash,
       @Nonnull CommitMeta metadata,
       @Nonnull List<Operation> operations,
-      @Nonnull Callable<Void> validator)
+      @Nonnull Callable<Void> validator,
+      @Nonnull BiConsumer<Key, String> addedContents)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   default Hash commit(
@@ -94,7 +97,7 @@ public interface VersionStore {
       @Nonnull CommitMeta metadata,
       @Nonnull List<Operation> operations)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    return commit(branch, referenceHash, metadata, operations, () -> null);
+    return commit(branch, referenceHash, metadata, operations, () -> null, (k, c) -> {});
   }
 
   /**

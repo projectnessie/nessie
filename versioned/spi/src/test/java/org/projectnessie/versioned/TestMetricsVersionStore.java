@@ -132,7 +132,8 @@ class TestMetricsVersionStore {
                         Optional.empty(),
                         CommitMeta.fromMessage("metadata"),
                         Collections.emptyList(),
-                        () -> null),
+                        () -> null,
+                        (k, c) -> {}),
                 () -> Hash.of("cafebabedeadbeef"),
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(

@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
@@ -77,10 +78,13 @@ public final class MetricsVersionStore implements VersionStore {
       @Nonnull Optional<Hash> referenceHash,
       @Nonnull CommitMeta metadata,
       @Nonnull List<Operation> operations,
-      @Nonnull Callable<Void> validator)
+      @Nonnull Callable<Void> validator,
+      @Nonnull BiConsumer<Key, String> addedContents)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return this.<Hash, ReferenceNotFoundException, ReferenceConflictException>delegate2ExR(
-        "commit", () -> delegate.commit(branch, referenceHash, metadata, operations, validator));
+        "commit",
+        () ->
+            delegate.commit(branch, referenceHash, metadata, operations, validator, addedContents));
   }
 
   @Override

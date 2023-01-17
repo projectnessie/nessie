@@ -15,6 +15,7 @@
  */
 package org.projectnessie.services.impl;
 
+import static org.projectnessie.model.CommitResponse.AddedContent.addedContent;
 import static org.projectnessie.services.cel.CELUtil.COMMIT_LOG_DECLARATIONS;
 import static org.projectnessie.services.cel.CELUtil.COMMIT_LOG_TYPES;
 import static org.projectnessie.services.cel.CELUtil.CONTAINER;
@@ -58,6 +59,7 @@ import org.projectnessie.error.NessieReferenceConflictException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Detached;
@@ -65,6 +67,7 @@ import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableCommitMeta;
+import org.projectnessie.model.ImmutableCommitResponse;
 import org.projectnessie.model.ImmutableContentKeyDetails;
 import org.projectnessie.model.ImmutableEntriesResponse;
 import org.projectnessie.model.ImmutableLogEntry;
@@ -654,7 +657,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   }
 
   @Override
-  public Branch commitMultipleOperations(String branch, String expectedHash, Operations operations)
+  public CommitResponse commitMultipleOperations(
+      String branch, String expectedHash, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
     List<org.projectnessie.versioned.Operation> ops =
         operations.getOperations().stream()
@@ -668,15 +672,22 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     }
 
     try {
+      ImmutableCommitResponse.Builder commitResponse = ImmutableCommitResponse.builder();
+
       Hash newHash =
           getStore()
               .commit(
                   BranchName.of(Optional.ofNullable(branch).orElse(getConfig().getDefaultBranch())),
                   Optional.ofNullable(expectedHash).map(Hash::of),
                   commitMetaUpdate(null).rewriteSingle(commitMeta),
-                  ops);
+                  ops,
+                  () -> null,
+                  (key, cid) -> {
+                    commitResponse.addAddedContents(
+                        addedContent(ContentKey.of(key.getElements()), cid));
+                  });
 
-      return Branch.of(branch, newHash.asString());
+      return commitResponse.targetBranch(Branch.of(branch, newHash.asString())).build();
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
