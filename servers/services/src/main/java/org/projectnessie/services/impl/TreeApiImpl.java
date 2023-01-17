@@ -613,7 +613,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     Content.Type type =
         entry.getName().getElements().size() > depth ? Content.Type.NAMESPACE : entry.getType();
     ContentKey key = ContentKey.of(entry.getName().getElements().subList(0, depth));
-    return EntriesResponse.Entry.entry(key, type, entry.getContentId());
+    return EntriesResponse.Entry.entry(key, type, null);
   }
 
   /**

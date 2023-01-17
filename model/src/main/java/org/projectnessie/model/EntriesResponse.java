@@ -58,6 +58,10 @@ public interface EntriesResponse extends PaginatedResponse {
     @Nullable // for V1 backwards compatibility
     String getContentId();
 
+    static Entry entry(ContentKey name, Content.Type type) {
+      return entry(name, type, null);
+    }
+
     static Entry entry(ContentKey name, Content.Type type, String contentId) {
       return ImmutableEntry.of(name, type, contentId);
     }
