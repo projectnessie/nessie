@@ -35,7 +35,7 @@ class ContentKeyParamType(click.ParamType):
         try:
             return ContentKey.from_path_string(str(value))
         except (TypeError, ValueError) as e:
-            self.fail(f"{value!r} is not a valid content key due to: '{e}'", param, ctx)
+            self.fail(f"{value!r} is not a valid content key due to: '{e!r}'", param, ctx)
 
 
 CONTENT_KEY = ContentKeyParamType()
