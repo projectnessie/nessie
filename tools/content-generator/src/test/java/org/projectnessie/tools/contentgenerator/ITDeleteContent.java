@@ -18,7 +18,6 @@ package org.projectnessie.tools.contentgenerator;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.api.params.FetchOption;
@@ -31,13 +30,12 @@ import org.projectnessie.model.Reference;
 
 class ITDeleteContent extends AbstractContentGeneratorTest {
 
-  private final String contentId = "testContentId-" + UUID.randomUUID();
   private Branch branch;
 
   @BeforeEach
   void setup() throws NessieConflictException, NessieNotFoundException {
     try (NessieApiV1 api = buildNessieApi()) {
-      branch = makeCommit(api, contentId);
+      branch = makeCommit(api);
     }
   }
 

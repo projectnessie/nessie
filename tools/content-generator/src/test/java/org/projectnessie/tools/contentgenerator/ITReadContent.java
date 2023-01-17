@@ -18,7 +18,6 @@ package org.projectnessie.tools.contentgenerator;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.api.NessieApiV1;
@@ -28,13 +27,12 @@ import org.projectnessie.model.Branch;
 
 class ITReadContent extends AbstractContentGeneratorTest {
 
-  private final String contentId = "testContentId-" + UUID.randomUUID();
   private Branch branch;
 
   @BeforeEach
   void setup() throws NessieConflictException, NessieNotFoundException {
     try (NessieApiV1 api = buildNessieApi()) {
-      branch = makeCommit(api, contentId);
+      branch = makeCommit(api);
     }
   }
 
@@ -55,7 +53,6 @@ class ITReadContent extends AbstractContentGeneratorTest {
     assertThat(proc.getExitCode()).isEqualTo(0);
     List<String> output = proc.getStdOutLines();
 
-    assertThat(output).anySatisfy(s -> assertThat(s).contains(contentId));
     assertThat(output).anySatisfy(s -> assertThat(s).contains(CONTENT_KEY.toString()));
   }
 
@@ -76,7 +73,6 @@ class ITReadContent extends AbstractContentGeneratorTest {
     assertThat(proc.getExitCode()).isEqualTo(0);
     List<String> output = proc.getStdOutLines();
 
-    assertThat(output).anySatisfy(s -> assertThat(s).contains(contentId));
     assertThat(output).anySatisfy(s -> assertThat(s).contains(CONTENT_KEY.toString()));
     assertThat(output)
         .anySatisfy(s -> assertThat(s).contains("key[0]: " + CONTENT_KEY.getElements().get(0)));

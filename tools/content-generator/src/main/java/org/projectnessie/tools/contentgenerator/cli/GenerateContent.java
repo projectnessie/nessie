@@ -43,6 +43,7 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.DeltaLakeTable;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
@@ -217,8 +218,14 @@ public class GenerateContent extends AbstractCommand {
                         .build());
         for (ContentKey key : keys) {
           Content existingContent = existing.get(key);
-          Content newContents = createContents(existingContent, random);
-          if (existingContent instanceof IcebergTable || existingContent instanceof IcebergView) {
+          Content newContents =
+              createContents(
+                  existingContent,
+                  random,
+                  existingContent != null ? existingContent.getId() : null);
+          if (existingContent instanceof IcebergTable
+              || existingContent instanceof IcebergView
+              || existingContent instanceof DeltaLakeTable) {
             commit.operation(Put.of(key, newContents, existingContent));
           } else {
             commit.operation(Put.of(key, newContents));
@@ -275,7 +282,8 @@ public class GenerateContent extends AbstractCommand {
     return IntStream.range(0, numTables).mapToObj(mapper).collect(toList());
   }
 
-  private Content createContents(Content currentContents, ThreadLocalRandom random) {
+  private Content createContents(
+      Content currentContents, ThreadLocalRandom random, String contentId) {
     if (contentType.equals(Content.Type.ICEBERG_TABLE)) {
       ImmutableIcebergTable.Builder icebergBuilder =
           ImmutableIcebergTable.builder()
@@ -286,6 +294,9 @@ public class GenerateContent extends AbstractCommand {
               .metadataLocation("metadata " + random.nextLong());
       if (currentContents != null) {
         icebergBuilder.id(currentContents.getId());
+      }
+      if (contentId != null) {
+        icebergBuilder.id(contentId);
       }
       return icebergBuilder.build();
     }
@@ -302,6 +313,9 @@ public class GenerateContent extends AbstractCommand {
       if (currentContents != null) {
         deltaBuilder.id(currentContents.getId());
       }
+      if (contentId != null) {
+        deltaBuilder.id(contentId);
+      }
       return deltaBuilder.build();
     }
     if (contentType.equals(Content.Type.ICEBERG_VIEW)) {
@@ -314,6 +328,9 @@ public class GenerateContent extends AbstractCommand {
               .sqlText("SELECT blah FROM meh;");
       if (currentContents != null) {
         viewBuilder.id(currentContents.getId());
+      }
+      if (contentId != null) {
+        viewBuilder.id(contentId);
       }
       return viewBuilder.build();
     }
