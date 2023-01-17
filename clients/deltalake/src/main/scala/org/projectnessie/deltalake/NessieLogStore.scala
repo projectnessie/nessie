@@ -194,11 +194,11 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
   }
 
   private def updateDeltaTable(
+      currentTable: Option[DeltaLakeTable],
       path: Path,
       targetRef: String,
       lastCheckpoint: String = null
   ): DeltaLakeTable = {
-    val currentTable = getTable(path.getParent, targetRef)
     val table = currentTable
       .map(ImmutableDeltaLakeTable.copyOf)
       .getOrElse(ImmutableDeltaLakeTable.builder().build())
@@ -284,9 +284,20 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
       val targetRef = if (ref == null) configuredRef().getName else ref
       val targetHash =
         if (hash == null) referenceByName(targetRef).getHash else hash
-      val table = updateDeltaTable(path, targetRef, lastCheckpoint)
-      val put =
-        Put.of(DeltaContentKeyUtil.fromHadoopPath(path.getParent), table)
+      val currentTable = getTable(path.getParent, targetRef)
+      val table =
+        updateDeltaTable(currentTable, path, targetRef, lastCheckpoint)
+      val put = currentTable
+        .map(
+          Put.of(
+            DeltaContentKeyUtil.fromHadoopPath(path.getParent),
+            table,
+            _
+          )
+        )
+        .getOrElse(
+          Put.of(DeltaContentKeyUtil.fromHadoopPath(path.getParent), table)
+        )
       val meta = CommitMeta
         .builder()
         .message(message)
