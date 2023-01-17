@@ -214,10 +214,10 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
     contentAndOps.stream().map(c -> c.operation).forEach(commit::operation);
     commit.commit();
 
-    List<Entry> entries =
+    List<ContentKey> entries =
         contentAndOps.stream()
             .filter(c -> c.operation instanceof Put)
-            .map(c -> Entry.entry(c.operation.getKey(), c.type))
+            .map(c -> c.operation.getKey())
             .collect(Collectors.toList());
 
     CommitMultipleOperationsBuilder commit2 =
@@ -226,16 +226,13 @@ public abstract class AbstractRestNamespace extends AbstractRestRefLog {
             .branch(branch)
             .commitMeta(CommitMeta.fromMessage("create namespaces"));
     entries.stream()
-        .map(e -> e.getName().getNamespace())
+        .map(ContentKey::getNamespace)
         .distinct()
-        .forEach(
-            ns -> {
-              commit2.operation(Put.of(ContentKey.of(ns.getElements()), ns));
-            });
+        .forEach(ns -> commit2.operation(Put.of(ContentKey.of(ns.getElements()), ns)));
     commit2.commit();
 
-    for (Entry e : entries) {
-      Namespace namespace = e.getName().getNamespace();
+    for (ContentKey contentKey : entries) {
+      Namespace namespace = contentKey.getNamespace();
       soft.assertThat(
               getApi()
                   .getNamespace()

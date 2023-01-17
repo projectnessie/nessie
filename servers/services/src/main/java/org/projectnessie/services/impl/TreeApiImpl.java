@@ -587,7 +587,10 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       try (Stream<KeyEntry> entryStream = getStore().getKeys(refWithHash.getHash())) {
         Stream<EntriesResponse.Entry> entriesStream =
             filterEntries(refWithHash, entryStream, filter)
-                .map(key -> EntriesResponse.Entry.entry(fromKey(key.getKey()), key.getType()));
+                .map(
+                    key ->
+                        EntriesResponse.Entry.entry(
+                            fromKey(key.getKey()), key.getType(), key.getContentId()));
         if (namespaceDepth != null && namespaceDepth > 0) {
           entriesStream =
               entriesStream
@@ -610,7 +613,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     Content.Type type =
         entry.getName().getElements().size() > depth ? Content.Type.NAMESPACE : entry.getType();
     ContentKey key = ContentKey.of(entry.getName().getElements().subList(0, depth));
-    return EntriesResponse.Entry.entry(key, type);
+    return EntriesResponse.Entry.entry(key, type, null);
   }
 
   /**

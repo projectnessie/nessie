@@ -60,7 +60,6 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Detached;
-import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Operation.Put;
@@ -232,14 +231,11 @@ public class TestMarkAndSweep {
                     // 1L is the very first, commit - the first non-live commit
                     // 2L is the oldest live-commit - need to fetch the visible keys from that one
                     soft.assertThat(l).isEqualTo(2L);
-                    Stream<EntriesResponse.Entry> keysStream =
+                    List<ContentKey> keys =
                         IntStream.range(0, markAndSweep.numKeysAtCutOff)
                             .mapToObj(
                                 i -> markAndSweep.numToContentKey(markAndSweep.numCommits + i))
-                            .map(ck -> EntriesResponse.Entry.entry(ck, ICEBERG_TABLE));
-
-                    List<ContentKey> keys =
-                        keysStream.map(EntriesResponse.Entry::getName).collect(Collectors.toList());
+                            .collect(Collectors.toList());
                     soft.assertThat(keys).hasSize(markAndSweep.numKeysAtCutOff);
                     return keys.stream()
                         .map(

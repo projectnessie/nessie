@@ -15,11 +15,14 @@
  */
 package org.projectnessie.model;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
+import org.projectnessie.model.ser.Views;
 
 @Value.Immutable
 @JsonSerialize(as = ImmutableEntriesResponse.class)
@@ -50,8 +53,17 @@ public interface EntriesResponse extends PaginatedResponse {
     @Value.Parameter(order = 1)
     ContentKey getName();
 
+    @JsonView(Views.V2.class)
+    @Value.Parameter(order = 3)
+    @Nullable // for V1 backwards compatibility
+    String getContentId();
+
     static Entry entry(ContentKey name, Content.Type type) {
-      return ImmutableEntry.of(name, type);
+      return entry(name, type, null);
+    }
+
+    static Entry entry(ContentKey name, Content.Type type, String contentId) {
+      return ImmutableEntry.of(name, type, contentId);
     }
   }
 }
