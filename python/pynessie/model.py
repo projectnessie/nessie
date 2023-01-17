@@ -169,7 +169,7 @@ class ContentKey:
         """Convert this key to friendly CLI string."""
         # false positives in pylint
         # pylint: disable=E1133
-        return ".".join(f'"{i}"' if "." in i else i for i in self.elements)
+        return ".".join(f'"{i!s}"' if "." in i else i for i in self.elements)  # noqa: B028
 
     def to_path_string(self) -> str:
         """Convert this key to a url encoded path string."""
