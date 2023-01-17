@@ -22,7 +22,6 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.security.TestSecurity;
 import java.util.Collections;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
@@ -283,9 +282,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
 
     addContent(
         targetBranch,
-        Put.of(
-            ContentKey.of("allowed", "x"),
-            IcebergTable.of("foo", 42, 42, 42, 42, UUID.randomUUID().toString())));
+        Put.of(ContentKey.of("allowed", "x"), IcebergTable.of("foo", 42, 42, 42, 42)));
     targetBranch = retrieveBranch(targetBranchName);
 
     api().assignBranch().branch(branch).assignTo(targetBranch).assign();
@@ -296,19 +293,23 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   @Test
   @TestSecurity(user = "admin_user")
   void testCanReadTargetBranchDuringMerge() throws BaseNessieClientServerException {
+
+    Branch main = retrieveBranch("main");
+    addContent(
+        main,
+        Put.of(ContentKey.of("unrelated", "key"), IcebergTable.of("unrelated", 11, 12, 13, 14)));
+    main = retrieveBranch("main");
+
     String branchName = "adminCanReadWhenMerging";
     String targetBranchName = "targetBranchForMerge";
-    createBranch(Branch.of(branchName, null));
+    createBranch(Branch.of(branchName, main.getHash()));
     Branch branch = retrieveBranch(branchName);
 
-    createBranch(Branch.of(targetBranchName, null));
+    createBranch(Branch.of(targetBranchName, main.getHash()));
     Branch targetBranch = retrieveBranch(targetBranchName);
 
     addContent(
-        branch,
-        Put.of(
-            ContentKey.of("allowed", "x"),
-            IcebergTable.of("foo", 42, 42, 42, 42, UUID.randomUUID().toString())));
+        branch, Put.of(ContentKey.of("allowed", "x"), IcebergTable.of("foo", 42, 42, 42, 42)));
     branch = retrieveBranch(branchName);
 
     api().mergeRefIntoBranch().fromRef(branch).branch(targetBranch).merge();
@@ -330,10 +331,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
     Branch targetBranch = retrieveBranch(targetBranchName);
 
     addContent(
-        branch,
-        Put.of(
-            ContentKey.of("allowed", "x"),
-            IcebergTable.of("foo", 42, 42, 42, 42, UUID.randomUUID().toString())));
+        branch, Put.of(ContentKey.of("allowed", "x"), IcebergTable.of("foo", 42, 42, 42, 42)));
     branch = retrieveBranch(branchName);
 
     api()
