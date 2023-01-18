@@ -40,7 +40,7 @@ shadowPlugin = "7.1.2"
 slf4j = "1.7.36"
 spotlessPlugin = "6.13.0"
 testcontainers = "1.17.6"
-undertow = "2.2.19.Final"
+undertow = "2.3.3.Final"
 
 [bundles]
 # Bundles serve two purposes:
