@@ -15,8 +15,9 @@
  */
 package org.projectnessie.services.rest;
 
+import static org.projectnessie.services.spi.TreeService.MAX_COMMIT_LOG_ENTRIES;
+
 import com.fasterxml.jackson.annotation.JsonView;
-import com.google.common.base.Preconditions;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import org.projectnessie.api.v1.http.HttpTreeApi;
@@ -30,12 +31,17 @@ import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.EntriesResponse;
+import org.projectnessie.model.ImmutableEntriesResponse;
+import org.projectnessie.model.ImmutableLogResponse;
+import org.projectnessie.model.ImmutableReferencesResponse;
 import org.projectnessie.model.LogResponse;
+import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.ser.Views;
+import org.projectnessie.services.spi.PagedResponseHandler;
 import org.projectnessie.services.spi.TreeService;
 
 /** REST endpoint for the tree-API. */
@@ -65,8 +71,41 @@ public class RestTreeResource implements HttpTreeApi {
   @JsonView(Views.V1.class)
   @Override
   public ReferencesResponse getAllReferences(ReferencesParams params) {
-    Preconditions.checkArgument(params.pageToken() == null, "Paging not supported");
-    return resource().getAllReferences(params.fetchOption(), params.filter());
+    Integer maxRecords = params.maxRecords();
+    return resource()
+        .getAllReferences(
+            params.fetchOption(),
+            params.filter(),
+            null,
+            new PagedResponseHandler<
+                ImmutableReferencesResponse.Builder, ReferencesResponse, Reference>() {
+              final int max = maxRecords != null ? Math.max(maxRecords, 0) : 0;
+
+              @Override
+              public ImmutableReferencesResponse.Builder newBuilder() {
+                return ReferencesResponse.builder();
+              }
+
+              @Override
+              public ReferencesResponse build(ImmutableReferencesResponse.Builder builder) {
+                return builder.build();
+              }
+
+              @Override
+              public boolean addEntry(
+                  ImmutableReferencesResponse.Builder builder, int cnt, Reference entry) {
+                if (max > 0 && cnt > max) {
+                  return false;
+                }
+                builder.addReferences(entry);
+                return true;
+              }
+
+              @Override
+              public void hasMore(ImmutableReferencesResponse.Builder builder, String pagingToken) {
+                builder.isHasMore(true).token(pagingToken);
+              }
+            });
   }
 
   @JsonView(Views.V1.class)
@@ -94,15 +133,50 @@ public class RestTreeResource implements HttpTreeApi {
   @Override
   public EntriesResponse getEntries(String refName, EntriesParams params)
       throws NessieNotFoundException {
-    Preconditions.checkArgument(params.pageToken() == null, "Paging not supported");
+    Integer maxRecords = params.maxRecords();
     return resource()
-        .getEntries(refName, params.hashOnRef(), params.namespaceDepth(), params.filter());
+        .getEntries(
+            refName,
+            params.hashOnRef(),
+            params.namespaceDepth(),
+            params.filter(),
+            params.pageToken(),
+            new PagedResponseHandler<
+                ImmutableEntriesResponse.Builder, EntriesResponse, EntriesResponse.Entry>() {
+              final int max = maxRecords != null ? maxRecords : Integer.MAX_VALUE;
+
+              @Override
+              public ImmutableEntriesResponse.Builder newBuilder() {
+                return ImmutableEntriesResponse.builder();
+              }
+
+              @Override
+              public EntriesResponse build(ImmutableEntriesResponse.Builder builder) {
+                return builder.build();
+              }
+
+              @Override
+              public boolean addEntry(
+                  ImmutableEntriesResponse.Builder builder, int cnt, EntriesResponse.Entry entry) {
+                if (max > 0 && cnt > max) {
+                  return false;
+                }
+                builder.addEntries(entry);
+                return true;
+              }
+
+              @Override
+              public void hasMore(ImmutableEntriesResponse.Builder builder, String pagingToken) {
+                builder.isHasMore(true).token(pagingToken);
+              }
+            });
   }
 
   @JsonView(Views.V1.class)
   @Override
   public LogResponse getCommitLog(String ref, CommitLogParams params)
       throws NessieNotFoundException {
+    Integer maxRecords = params.maxRecords();
     return resource()
         .getCommitLog(
             ref,
@@ -110,8 +184,38 @@ public class RestTreeResource implements HttpTreeApi {
             params.startHash(),
             params.endHash(),
             params.filter(),
-            params.maxRecords(),
-            params.pageToken());
+            params.pageToken(),
+            new PagedResponseHandler<ImmutableLogResponse.Builder, LogResponse, LogEntry>() {
+              final int max =
+                  Math.min(
+                      maxRecords != null ? Math.max(maxRecords, 0) : MAX_COMMIT_LOG_ENTRIES,
+                      MAX_COMMIT_LOG_ENTRIES);
+
+              @Override
+              public ImmutableLogResponse.Builder newBuilder() {
+                return ImmutableLogResponse.builder();
+              }
+
+              @Override
+              public LogResponse build(ImmutableLogResponse.Builder builder) {
+                return builder.build();
+              }
+
+              @Override
+              public boolean addEntry(
+                  ImmutableLogResponse.Builder builder, int cnt, LogEntry entry) {
+                if (max > 0 && cnt > max) {
+                  return false;
+                }
+                builder.addLogEntries(entry);
+                return true;
+              }
+
+              @Override
+              public void hasMore(ImmutableLogResponse.Builder builder, String pagingToken) {
+                builder.isHasMore(true).token(pagingToken);
+              }
+            });
   }
 
   @JsonView(Views.V1.class)

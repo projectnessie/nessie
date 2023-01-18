@@ -218,24 +218,28 @@ public class TracingVersionStore implements VersionStore {
   }
 
   @Override
-  public Stream<ReferenceInfo<CommitMeta>> getNamedRefs(GetNamedRefsParams params)
-      throws ReferenceNotFoundException {
-    return callStreamWithOneException("GetNamedRefs", b -> {}, () -> delegate.getNamedRefs(params));
+  public PaginationIterator<ReferenceInfo<CommitMeta>> getNamedRefs(
+      GetNamedRefsParams params, String pagingToken) throws ReferenceNotFoundException {
+    return callPaginationIterator(
+        "GetNamedRefs", b -> {}, () -> delegate.getNamedRefs(params, pagingToken));
   }
 
   @Override
-  public Stream<Commit> getCommits(Ref ref, boolean fetchAdditionalInfo)
+  public PaginationIterator<Commit> getCommits(Ref ref, boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException {
-    return callStreamWithOneException(
+    return callPaginationIterator(
         "GetCommits",
         b -> b.withTag(TAG_REF, safeToString(ref)),
         () -> delegate.getCommits(ref, fetchAdditionalInfo));
   }
 
   @Override
-  public Stream<KeyEntry> getKeys(Ref ref) throws ReferenceNotFoundException {
-    return callStreamWithOneException(
-        "GetKeys", b -> b.withTag(TAG_REF, safeToString(ref)), () -> delegate.getKeys(ref));
+  public PaginationIterator<KeyEntry> getKeys(Ref ref, String pagingToken)
+      throws ReferenceNotFoundException {
+    return callPaginationIterator(
+        "GetKeys",
+        b -> b.withTag(TAG_REF, safeToString(ref)),
+        () -> delegate.getKeys(ref, pagingToken));
   }
 
   @Override
@@ -256,11 +260,12 @@ public class TracingVersionStore implements VersionStore {
   }
 
   @Override
-  public Stream<Diff> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
-    return callStreamWithOneException(
+  public PaginationIterator<Diff> getDiffs(Ref from, Ref to, String pagingToken)
+      throws ReferenceNotFoundException {
+    return callPaginationIterator(
         "GetDiffs",
         b -> b.withTag(TAG_FROM, safeToString(from)).withTag(TAG_TO, safeToString(to)),
-        () -> delegate.getDiffs(from, to));
+        () -> delegate.getDiffs(from, to, pagingToken));
   }
 
   @Override
@@ -287,10 +292,10 @@ public class TracingVersionStore implements VersionStore {
     return "VersionStore." + Character.toLowerCase(name.charAt(0)) + name.substring(1);
   }
 
-  private static <R, E1 extends VersionStoreException> Stream<R> callStreamWithOneException(
+  private static <R, E1 extends VersionStoreException> PaginationIterator<R> callPaginationIterator(
       String spanName,
       Consumer<SpanBuilder> spanBuilder,
-      InvokerWithOneException<Stream<R>, E1> invoker)
+      InvokerWithOneException<PaginationIterator<R>, E1> invoker)
       throws E1 {
     try (SpanHolder span = createSpan(spanName + ".stream", spanBuilder);
         Scope ignore = activeScope(span.get())) {

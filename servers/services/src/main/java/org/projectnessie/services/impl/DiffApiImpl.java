@@ -17,19 +17,18 @@ package org.projectnessie.services.impl;
 
 import java.security.Principal;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.DiffResponse;
 import org.projectnessie.model.DiffResponse.DiffEntry;
-import org.projectnessie.model.ImmutableDiffResponse;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.spi.DiffService;
+import org.projectnessie.services.spi.PagedResponseHandler;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
+import org.projectnessie.versioned.PaginationIterator;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
@@ -45,30 +44,47 @@ public class DiffApiImpl extends BaseApiImpl implements DiffService {
   }
 
   @Override
-  public DiffResponse getDiff(String fromRef, String fromHash, String toRef, String toHash)
+  public <B, R> R getDiff(
+      String fromRef,
+      String fromHash,
+      String toRef,
+      String toHash,
+      String pagingToken,
+      PagedResponseHandler<B, R, DiffEntry> pagedResponseHandler)
       throws NessieNotFoundException {
     WithHash<NamedRef> from = namedRefWithHashOrThrow(fromRef, fromHash);
     WithHash<NamedRef> to = namedRefWithHashOrThrow(toRef, toHash);
-    return getDiff(from.getHash(), to.getHash());
+    return getDiff(from.getHash(), to.getHash(), pagingToken, pagedResponseHandler);
   }
 
-  protected DiffResponse getDiff(Hash from, Hash to) throws NessieNotFoundException {
-    ImmutableDiffResponse.Builder builder = ImmutableDiffResponse.builder();
+  protected <B, R> R getDiff(
+      Hash from,
+      Hash to,
+      String pagingToken,
+      PagedResponseHandler<B, R, DiffEntry> pagedResponseHandler)
+      throws NessieNotFoundException {
+    B builder = pagedResponseHandler.newBuilder();
     try {
-      try (Stream<Diff> diffs = getStore().getDiffs(from, to)) {
-        diffs
-            .map(
-                diff ->
-                    DiffEntry.diffEntry(
-                        ContentKey.of(diff.getKey().getElements()),
-                        diff.getFromValue().orElse(null),
-                        diff.getToValue().orElse(null)))
-            .forEach(builder::addDiffs);
+      try (PaginationIterator<Diff> diffs = getStore().getDiffs(from, to, pagingToken)) {
+        int cnt = 0;
+        while (diffs.hasNext()) {
+          Diff diff = diffs.next();
+          if (!pagedResponseHandler.addEntry(
+              builder,
+              ++cnt,
+              DiffEntry.diffEntry(
+                  ContentKey.of(diff.getKey().getElements()),
+                  diff.getFromValue().orElse(null),
+                  diff.getToValue().orElse(null)))) {
+            pagedResponseHandler.hasMore(builder, diffs.tokenForCurrent());
+            break;
+          }
+        }
       }
 
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
-    return builder.build();
+    return pagedResponseHandler.build(builder);
   }
 }

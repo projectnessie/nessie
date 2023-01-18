@@ -171,20 +171,23 @@ public final class MetricsVersionStore implements VersionStore {
   }
 
   @Override
-  public Stream<ReferenceInfo<CommitMeta>> getNamedRefs(GetNamedRefsParams params)
-      throws ReferenceNotFoundException {
-    return delegateStream1Ex("getnamedrefs", () -> delegate.getNamedRefs(params));
+  public PaginationIterator<ReferenceInfo<CommitMeta>> getNamedRefs(
+      GetNamedRefsParams params, String pagingToken) throws ReferenceNotFoundException {
+    return delegatePaginationIterator(
+        "getnamedrefs", () -> delegate.getNamedRefs(params, pagingToken));
   }
 
   @Override
-  public Stream<Commit> getCommits(Ref ref, boolean fetchAdditionalInfo)
+  public PaginationIterator<Commit> getCommits(Ref ref, boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException {
-    return delegateStream1Ex("getcommits", () -> delegate.getCommits(ref, fetchAdditionalInfo));
+    return delegatePaginationIterator(
+        "getcommits", () -> delegate.getCommits(ref, fetchAdditionalInfo));
   }
 
   @Override
-  public Stream<KeyEntry> getKeys(Ref ref) throws ReferenceNotFoundException {
-    return delegateStream1Ex("getkeys", () -> delegate.getKeys(ref));
+  public PaginationIterator<KeyEntry> getKeys(Ref ref, String pagingToken)
+      throws ReferenceNotFoundException {
+    return delegatePaginationIterator("getkeys", () -> delegate.getKeys(ref, pagingToken));
   }
 
   @Override
@@ -199,8 +202,9 @@ public final class MetricsVersionStore implements VersionStore {
   }
 
   @Override
-  public Stream<Diff> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
-    return delegateStream1Ex("getdiffs", () -> delegate.getDiffs(from, to));
+  public PaginationIterator<Diff> getDiffs(Ref from, Ref to, String pagingToken)
+      throws ReferenceNotFoundException {
+    return delegatePaginationIterator("getdiffs", () -> delegate.getDiffs(from, to, pagingToken));
   }
 
   @Override
@@ -217,6 +221,47 @@ public final class MetricsVersionStore implements VersionStore {
             .publishPercentileHistogram()
             .register(registry);
     sample.stop(timer);
+  }
+
+  private <R, E extends VersionStoreException> PaginationIterator<R> delegatePaginationIterator(
+      String requestName, DelegateWith1<PaginationIterator<R>, E> delegate) throws E {
+    Sample sample = Timer.start(clock);
+    try {
+      @SuppressWarnings("resource")
+      PaginationIterator<R> r = delegate.handle();
+      return new PaginationIterator<R>() {
+        @Override
+        public String tokenForCurrent() {
+          return r.tokenForCurrent();
+        }
+
+        @Override
+        public void close() {
+          try {
+            r.close();
+          } finally {
+            measure(requestName, sample, null);
+          }
+        }
+
+        @Override
+        public boolean hasNext() {
+          return r.hasNext();
+        }
+
+        @Override
+        public R next() {
+          return r.next();
+        }
+      };
+    } catch (IllegalArgumentException | VersionStoreException e) {
+      // IllegalArgumentException indicates a user-error, not a server error
+      measure(requestName, sample, null);
+      throw e;
+    } catch (RuntimeException e) {
+      measure(requestName, sample, e);
+      throw e;
+    }
   }
 
   private <R, E extends VersionStoreException> Stream<R> delegateStream1Ex(

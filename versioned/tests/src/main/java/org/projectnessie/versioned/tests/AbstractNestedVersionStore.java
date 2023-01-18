@@ -15,12 +15,14 @@
  */
 package org.projectnessie.versioned.tests;
 
+import static com.google.common.collect.Lists.newArrayList;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
@@ -31,6 +33,7 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableCommit;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.MetadataRewriter;
+import org.projectnessie.versioned.PaginationIterator;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceInfo;
@@ -52,14 +55,19 @@ public abstract class AbstractNestedVersionStore {
 
   protected List<Commit> commitsList(Ref ref, boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException {
-    return commitsList(ref, Function.identity(), fetchAdditionalInfo);
+    try (PaginationIterator<Commit> s = store().getCommits(ref, fetchAdditionalInfo)) {
+      return newArrayList(s);
+    }
   }
 
-  protected <T> List<T> commitsList(
-      Ref ref, Function<Stream<Commit>, Stream<T>> streamFunction, boolean fetchAdditionalInfo)
+  protected <T> List<T> commitsListMap(Ref ref, int limit, Function<Commit, T> mapper)
       throws ReferenceNotFoundException {
-    try (Stream<Commit> s = store().getCommits(ref, fetchAdditionalInfo)) {
-      return streamFunction.apply(s).collect(Collectors.toList());
+    try (PaginationIterator<Commit> s = store().getCommits(ref, false)) {
+      List<T> r = new ArrayList<>();
+      while (r.size() < limit && s.hasNext()) {
+        r.add(mapper.apply(s.next()));
+      }
+      return r;
     }
   }
 

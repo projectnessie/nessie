@@ -15,15 +15,21 @@
  */
 package org.projectnessie.jaxrs.tests;
 
+import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assumptions.abort;
 
 import com.google.common.collect.ImmutableMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -48,11 +54,75 @@ import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferenceMetadata;
+import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Validation;
 
 /** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestReferences extends AbstractRestMisc {
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  @ParameterizedTest
+  @ValueSource(ints = {0, 20, 22})
+  public void referencesPaging(int numRefs) throws BaseNessieClientServerException {
+    try {
+      getApi().getAllReferences().pageToken("Zm9v").maxRecords(20).get();
+    } catch (NessieBadRequestException e) {
+      if (!e.getMessage().contains("Paging not supported")) {
+        throw e;
+      }
+      abort("DatabaseAdapter implementations / PersistVersionStore do not support paging");
+    }
+
+    Branch defaultBranch = getApi().getDefaultBranch();
+    int pageSize = 5;
+
+    IntFunction<Branch> branch =
+        i -> i == 0 ? defaultBranch : Branch.of("branch-" + i, defaultBranch.getHash());
+
+    for (int i = 1; i < numRefs; i++) {
+      getApi()
+          .createReference()
+          .sourceRefName(defaultBranch.getName())
+          .reference(branch.apply(i))
+          .create();
+    }
+
+    if (numRefs == 0) {
+      // The main branch's always there
+      numRefs = 1;
+    }
+
+    Set<Reference> references = new HashSet<>();
+    String token = null;
+    for (int i = 0; ; i += pageSize) {
+      ReferencesResponse response =
+          getApi().getAllReferences().maxRecords(pageSize).pageToken(token).get();
+
+      for (Reference ref : response.getReferences()) {
+        soft.assertThat(references.add(ref))
+            .describedAs("offset: %d , reference: %s", i, ref)
+            .isTrue();
+      }
+      soft.assertThat(references).hasSize(Math.min(i + pageSize, numRefs));
+      if (i + pageSize < numRefs) {
+        soft.assertThat(response.getToken())
+            .describedAs("offset: %d", i)
+            .isNotEmpty()
+            .isNotEqualTo(token);
+        soft.assertThat(response.isHasMore()).describedAs("offset: %d", i).isTrue();
+        token = response.getToken();
+      } else {
+        soft.assertThat(response.getToken()).describedAs("offset: %d", i).isNull();
+        soft.assertThat(response.isHasMore()).describedAs("offset: %d", i).isFalse();
+        break;
+      }
+    }
+
+    soft.assertThat(references)
+        .containsExactlyInAnyOrderElementsOf(
+            IntStream.range(0, numRefs).mapToObj(branch).collect(toSet()));
+  }
+
   @Test
   public void defaultBranchProtection() throws BaseNessieClientServerException {
     Branch defaultBranch = getApi().getDefaultBranch();

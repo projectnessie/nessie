@@ -21,7 +21,10 @@ import org.projectnessie.api.v1.http.HttpDiffApi;
 import org.projectnessie.api.v1.params.DiffParams;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.DiffResponse;
+import org.projectnessie.model.DiffResponse.DiffEntry;
+import org.projectnessie.model.ImmutableDiffResponse;
 import org.projectnessie.services.spi.DiffService;
+import org.projectnessie.services.spi.PagedResponseHandler;
 
 /** REST endpoint for the diff-API. */
 @RequestScoped
@@ -54,6 +57,30 @@ public class RestDiffResource implements HttpDiffApi {
             params.getFromRef(),
             params.getFromHashOnRef(),
             params.getToRef(),
-            params.getToHashOnRef());
+            params.getToHashOnRef(),
+            null,
+            new PagedResponseHandler<ImmutableDiffResponse.Builder, DiffResponse, DiffEntry>() {
+              @Override
+              public ImmutableDiffResponse.Builder newBuilder() {
+                return ImmutableDiffResponse.builder();
+              }
+
+              @Override
+              public DiffResponse build(ImmutableDiffResponse.Builder builder) {
+                return builder.build();
+              }
+
+              @Override
+              public boolean addEntry(
+                  ImmutableDiffResponse.Builder builder, int cnt, DiffEntry entry) {
+                builder.addDiffs(entry);
+                return true;
+              }
+
+              @Override
+              public void hasMore(ImmutableDiffResponse.Builder builder, String pagingToken) {
+                builder.isHasMore(true).token(pagingToken);
+              }
+            });
   }
 }

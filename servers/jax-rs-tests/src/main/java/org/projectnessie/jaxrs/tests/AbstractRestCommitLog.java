@@ -18,10 +18,6 @@ package org.projectnessie.jaxrs.tests;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -32,7 +28,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -41,7 +36,6 @@ import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.ext.NessieApiVersion;
 import org.projectnessie.client.ext.NessieApiVersions;
@@ -450,10 +444,12 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
             .map(CommitMeta::getMessage)
             .collect(Collectors.toList());
     List<CommitMeta> completeLog =
-        StreamingUtil.getCommitLogStream(
-                getApi(),
-                c -> c.refName(branch.getName()).fetch(FetchOption.MINIMAL),
-                OptionalInt.of(pageSizeHint))
+        getApi()
+            .getCommitLog()
+            .refName(branch.getName())
+            .fetch(FetchOption.MINIMAL)
+            .maxRecords(pageSizeHint)
+            .stream()
             .map(LogEntry::getCommitMeta)
             .collect(Collectors.toList());
     soft.assertThat(completeLog.stream().map(CommitMeta::getMessage))
@@ -510,10 +506,12 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
     verifyPaging(branch.getName(), commits, pageSizeHint, allMessages, null);
 
     List<CommitMeta> completeLog =
-        StreamingUtil.getCommitLogStream(
-                getApi(),
-                c -> c.refName(branch.getName()).fetch(FetchOption.MINIMAL),
-                OptionalInt.of(pageSizeHint))
+        getApi()
+            .getCommitLog()
+            .refName(branch.getName())
+            .fetch(FetchOption.MINIMAL)
+            .maxRecords(pageSizeHint)
+            .stream()
             .map(LogEntry::getCommitMeta)
             .collect(Collectors.toList());
     assertEquals(
@@ -692,24 +690,28 @@ public abstract class AbstractRestCommitLog extends AbstractRestAssign {
               .filter(filter)
               .get();
       if (pos + pageSizeHint <= commits) {
-        assertTrue(response.isHasMore());
-        assertNotNull(response.getToken());
-        assertEquals(
-            commitMessages.subList(pos, pos + pageSizeHint),
-            response.getLogEntries().stream()
-                .map(LogEntry::getCommitMeta)
-                .map(CommitMeta::getMessage)
-                .collect(Collectors.toList()));
+        soft.assertThat(response.isHasMore()).describedAs("pos=%d", pos).isTrue();
+        soft.assertThat(response.getToken()).describedAs("pos=%d", pos).isNotNull();
+        soft.assertThat(
+                response.getLogEntries().stream()
+                    .map(LogEntry::getCommitMeta)
+                    .map(CommitMeta::getMessage)
+                    .collect(Collectors.toList()))
+            .describedAs("pos=%d", pos)
+            .isEqualTo(commitMessages.subList(pos, pos + pageSizeHint));
         pageToken = response.getToken();
+        soft.assertAll();
       } else {
-        assertFalse(response.isHasMore());
-        assertNull(response.getToken());
-        assertEquals(
-            commitMessages.subList(pos, commitMessages.size()),
-            response.getLogEntries().stream()
-                .map(LogEntry::getCommitMeta)
-                .map(CommitMeta::getMessage)
-                .collect(Collectors.toList()));
+        soft.assertThat(response.isHasMore()).describedAs("pos=%d (last)", pos).isFalse();
+        soft.assertThat(response.getToken()).describedAs("pos=%d (last)", pos).isNull();
+        soft.assertThat(
+                response.getLogEntries().stream()
+                    .map(LogEntry::getCommitMeta)
+                    .map(CommitMeta::getMessage)
+                    .collect(Collectors.toList()))
+            .describedAs("pos=%d (last)", pos)
+            .isEqualTo(commitMessages.subList(pos, commitMessages.size()));
+        soft.assertAll();
         break;
       }
     }

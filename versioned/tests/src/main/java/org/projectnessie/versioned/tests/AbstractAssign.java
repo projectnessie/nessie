@@ -15,8 +15,9 @@
  */
 package org.projectnessie.versioned.tests;
 
+import static org.assertj.core.util.Lists.newArrayList;
+
 import java.util.Optional;
-import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -27,6 +28,7 @@ import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.PaginationIterator;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
@@ -101,12 +103,12 @@ public abstract class AbstractAssign extends AbstractNestedVersionStore {
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException,
           ReferenceConflictException {
     ReferenceInfo<CommitMeta> main = store.getNamedRef("main", GetNamedRefsParams.DEFAULT);
-    try (Stream<Commit> commits = store().getCommits(main.getHash(), false)) {
-      soft.assertThat(commits).isEmpty();
+    try (PaginationIterator<Commit> commits = store().getCommits(main.getHash(), false)) {
+      soft.assertThat(commits).isExhausted();
     }
-    try (Stream<ReferenceInfo<CommitMeta>> refs =
-        store().getNamedRefs(GetNamedRefsParams.DEFAULT)) {
-      soft.assertThat(refs)
+    try (PaginationIterator<ReferenceInfo<CommitMeta>> refs =
+        store().getNamedRefs(GetNamedRefsParams.DEFAULT, null)) {
+      soft.assertThat(newArrayList(refs))
           .extracting(r -> r.getNamedRef().getName())
           .containsExactly(main.getNamedRef().getName());
     }

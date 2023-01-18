@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.tests;
 
+import static com.google.common.collect.Streams.stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
@@ -24,7 +25,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -38,6 +38,7 @@ import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.KeyEntry;
+import org.projectnessie.versioned.PaginationIterator;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -113,9 +114,9 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
     store().delete(branch, Optional.of(anotherCommitHash));
     soft.assertThatThrownBy(() -> store().hashOnReference(branch, Optional.empty()))
         .isInstanceOf(ReferenceNotFoundException.class);
-    try (Stream<ReferenceInfo<CommitMeta>> str =
-        store().getNamedRefs(GetNamedRefsParams.DEFAULT).filter(this::filterMainBranch)) {
-      soft.assertThat(str).isEmpty();
+    try (PaginationIterator<ReferenceInfo<CommitMeta>> str =
+        store().getNamedRefs(GetNamedRefsParams.DEFAULT, null)) {
+      soft.assertThat(stream(str).filter(this::filterMainBranch)).isEmpty();
     }
     soft.assertThatThrownBy(() -> store().delete(branch, Optional.of(commitHash)))
         .isInstanceOf(ReferenceNotFoundException.class);
@@ -129,6 +130,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
    * - Check keys for each commit hash
    * - Check values for each commit hash
    */
+  @SuppressWarnings("UnstableApiUsage")
   @Test
   public void commitSomeOperations() throws Exception {
     BranchName branch = BranchName.of("foo");
@@ -159,16 +161,19 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             commit(secondCommit, "Second Commit", initialCommit),
             commit(initialCommit, "Initial Commit", base));
 
-    try (Stream<Key> keys = store().getKeys(branch).map(KeyEntry::getKey)) {
-      soft.assertThat(keys).containsExactlyInAnyOrder(Key.of("t1"), Key.of("t2"), Key.of("t4"));
+    try (PaginationIterator<KeyEntry> keys = store().getKeys(branch, null)) {
+      soft.assertThat(stream(keys).map(KeyEntry::getKey))
+          .containsExactlyInAnyOrder(Key.of("t1"), Key.of("t2"), Key.of("t4"));
     }
 
-    try (Stream<Key> keys = store().getKeys(secondCommit).map(KeyEntry::getKey)) {
-      soft.assertThat(keys).containsExactlyInAnyOrder(Key.of("t1"), Key.of("t4"));
+    try (PaginationIterator<KeyEntry> keys = store().getKeys(secondCommit, null)) {
+      soft.assertThat(stream(keys).map(KeyEntry::getKey))
+          .containsExactlyInAnyOrder(Key.of("t1"), Key.of("t4"));
     }
 
-    try (Stream<Key> keys = store().getKeys(initialCommit).map(KeyEntry::getKey)) {
-      soft.assertThat(keys).containsExactlyInAnyOrder(Key.of("t1"), Key.of("t2"), Key.of("t3"));
+    try (PaginationIterator<KeyEntry> keys = store().getKeys(initialCommit, null)) {
+      soft.assertThat(stream(keys).map(KeyEntry::getKey))
+          .containsExactlyInAnyOrder(Key.of("t1"), Key.of("t2"), Key.of("t3"));
     }
 
     soft.assertThat(
@@ -267,8 +272,9 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             commit(t1Commit, "T1 Commit", initialCommit),
             commit(initialCommit, "Initial Commit", base));
 
-    try (Stream<Key> keys = store().getKeys(branch).map(KeyEntry::getKey)) {
-      soft.assertThat(keys).containsExactlyInAnyOrder(Key.of("t1"), Key.of("t2"), Key.of("t3"));
+    try (PaginationIterator<KeyEntry> keys = store().getKeys(branch, null)) {
+      soft.assertThat(stream(keys).map(KeyEntry::getKey))
+          .containsExactlyInAnyOrder(Key.of("t1"), Key.of("t2"), Key.of("t3"));
     }
 
     soft.assertThat(
@@ -588,7 +594,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                       // do some operations here
                       try {
                         assertThat(store().getValue(branch, key)).isNull();
-                        try (Stream<KeyEntry> ignore = store().getKeys(branch)) {}
+                        try (PaginationIterator<KeyEntry> ignore = store().getKeys(branch, null)) {}
                       } catch (ReferenceNotFoundException e) {
                         throw new RuntimeException(e);
                       }

@@ -15,6 +15,8 @@
  */
 package org.projectnessie.services.rest;
 
+import static org.projectnessie.services.spi.TreeService.MAX_COMMIT_LOG_ENTRIES;
+
 import com.fasterxml.jackson.annotation.JsonView;
 import java.util.List;
 import javax.enterprise.context.RequestScoped;
@@ -35,11 +37,17 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.DiffResponse;
+import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.GetMultipleContentsRequest;
 import org.projectnessie.model.GetMultipleContentsResponse;
+import org.projectnessie.model.ImmutableDiffResponse;
+import org.projectnessie.model.ImmutableEntriesResponse;
 import org.projectnessie.model.ImmutableGetMultipleContentsRequest;
+import org.projectnessie.model.ImmutableLogResponse;
+import org.projectnessie.model.ImmutableReferencesResponse;
 import org.projectnessie.model.LogResponse;
+import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
@@ -50,6 +58,7 @@ import org.projectnessie.model.ser.Views;
 import org.projectnessie.services.spi.ConfigService;
 import org.projectnessie.services.spi.ContentService;
 import org.projectnessie.services.spi.DiffService;
+import org.projectnessie.services.spi.PagedResponseHandler;
 import org.projectnessie.services.spi.TreeService;
 
 /** REST endpoint for the tree-API. */
@@ -107,7 +116,41 @@ public class RestV2TreeResource implements HttpTreeApi {
   @JsonView(Views.V2.class)
   @Override
   public ReferencesResponse getAllReferences(ReferencesParams params) {
-    return tree().getAllReferences(params.fetchOption(), params.filter());
+    Integer maxRecords = params.maxRecords();
+    return tree()
+        .getAllReferences(
+            params.fetchOption(),
+            params.filter(),
+            params.pageToken(),
+            new PagedResponseHandler<
+                ImmutableReferencesResponse.Builder, ReferencesResponse, Reference>() {
+              final int max = maxRecords != null ? Math.max(maxRecords, 0) : 0;
+
+              @Override
+              public ImmutableReferencesResponse.Builder newBuilder() {
+                return ReferencesResponse.builder();
+              }
+
+              @Override
+              public ReferencesResponse build(ImmutableReferencesResponse.Builder builder) {
+                return builder.build();
+              }
+
+              @Override
+              public boolean addEntry(
+                  ImmutableReferencesResponse.Builder builder, int cnt, Reference entry) {
+                if (max > 0 && cnt > max) {
+                  return false;
+                }
+                builder.addReferences(entry);
+                return true;
+              }
+
+              @Override
+              public void hasMore(ImmutableReferencesResponse.Builder builder, String pagingToken) {
+                builder.isHasMore(true).token(pagingToken);
+              }
+            });
   }
 
   @JsonView(Views.V2.class)
@@ -141,7 +184,43 @@ public class RestV2TreeResource implements HttpTreeApi {
   public EntriesResponse getEntries(String ref, EntriesParams params)
       throws NessieNotFoundException {
     Reference reference = resolveRef(ref);
-    return tree().getEntries(reference.getName(), reference.getHash(), null, params.filter());
+    Integer maxRecords = params.maxRecords();
+    return tree()
+        .getEntries(
+            reference.getName(),
+            reference.getHash(),
+            null,
+            params.filter(),
+            params.pageToken(),
+            new PagedResponseHandler<
+                ImmutableEntriesResponse.Builder, EntriesResponse, EntriesResponse.Entry>() {
+              final int max = maxRecords != null ? maxRecords : Integer.MAX_VALUE;
+
+              @Override
+              public ImmutableEntriesResponse.Builder newBuilder() {
+                return ImmutableEntriesResponse.builder();
+              }
+
+              @Override
+              public EntriesResponse build(ImmutableEntriesResponse.Builder builder) {
+                return builder.build();
+              }
+
+              @Override
+              public boolean addEntry(
+                  ImmutableEntriesResponse.Builder builder, int cnt, EntriesResponse.Entry entry) {
+                if (max > 0 && cnt > max) {
+                  return false;
+                }
+                builder.addEntries(entry);
+                return true;
+              }
+
+              @Override
+              public void hasMore(ImmutableEntriesResponse.Builder builder, String pagingToken) {
+                builder.isHasMore(true).token(pagingToken);
+              }
+            });
   }
 
   @JsonView(Views.V2.class)
@@ -149,6 +228,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   public LogResponse getCommitLog(String ref, CommitLogParams params)
       throws NessieNotFoundException {
     Reference reference = resolveRef(ref);
+    Integer maxRecords = params.maxRecords();
     return tree()
         .getCommitLog(
             reference.getName(),
@@ -156,16 +236,81 @@ public class RestV2TreeResource implements HttpTreeApi {
             params.startHash(),
             reference.getHash(),
             params.filter(),
-            params.maxRecords(),
-            params.pageToken());
+            params.pageToken(),
+            new PagedResponseHandler<ImmutableLogResponse.Builder, LogResponse, LogEntry>() {
+              final int max =
+                  Math.min(
+                      maxRecords != null ? Math.max(maxRecords, 0) : MAX_COMMIT_LOG_ENTRIES,
+                      MAX_COMMIT_LOG_ENTRIES);
+
+              @Override
+              public ImmutableLogResponse.Builder newBuilder() {
+                return ImmutableLogResponse.builder();
+              }
+
+              @Override
+              public LogResponse build(ImmutableLogResponse.Builder builder) {
+                return builder.build();
+              }
+
+              @Override
+              public boolean addEntry(
+                  ImmutableLogResponse.Builder builder, int cnt, LogEntry entry) {
+                if (max > 0 && cnt > max) {
+                  return false;
+                }
+                builder.addLogEntries(entry);
+                return true;
+              }
+
+              @Override
+              public void hasMore(ImmutableLogResponse.Builder builder, String pagingToken) {
+                builder.isHasMore(true).token(pagingToken);
+              }
+            });
   }
 
   @JsonView(Views.V2.class)
   @Override
   public DiffResponse getDiff(DiffParams params) throws NessieNotFoundException {
+    Integer maxRecords = params.maxRecords();
     Reference from = resolveRef(params.getFromRef());
     Reference to = resolveRef(params.getToRef());
-    return diff().getDiff(from.getName(), from.getHash(), to.getName(), to.getHash());
+    return diff()
+        .getDiff(
+            from.getName(),
+            from.getHash(),
+            to.getName(),
+            to.getHash(),
+            params.pageToken(),
+            new PagedResponseHandler<ImmutableDiffResponse.Builder, DiffResponse, DiffEntry>() {
+              final int max = maxRecords != null ? maxRecords : Integer.MAX_VALUE;
+
+              @Override
+              public ImmutableDiffResponse.Builder newBuilder() {
+                return ImmutableDiffResponse.builder();
+              }
+
+              @Override
+              public DiffResponse build(ImmutableDiffResponse.Builder builder) {
+                return builder.build();
+              }
+
+              @Override
+              public boolean addEntry(
+                  ImmutableDiffResponse.Builder builder, int cnt, DiffEntry entry) {
+                if (max > 0 && cnt > max) {
+                  return false;
+                }
+                builder.addDiffs(entry);
+                return true;
+              }
+
+              @Override
+              public void hasMore(ImmutableDiffResponse.Builder builder, String pagingToken) {
+                builder.isHasMore(true).token(pagingToken);
+              }
+            });
   }
 
   @JsonView(Views.V2.class)

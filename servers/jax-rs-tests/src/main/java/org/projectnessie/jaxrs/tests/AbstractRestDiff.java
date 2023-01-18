@@ -15,21 +15,29 @@
  */
 package org.projectnessie.jaxrs.tests;
 
+import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assumptions.abort;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.ext.NessieApiVersion;
 import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.error.BaseNessieClientServerException;
+import org.projectnessie.error.NessieBadRequestException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
@@ -38,6 +46,7 @@ import org.projectnessie.model.DiffResponse;
 import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Operation.Delete;
+import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
 
 /** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
@@ -49,6 +58,74 @@ public abstract class AbstractRestDiff extends AbstractRestContents {
             refModeFrom ->
                 Arrays.stream(ReferenceMode.values())
                     .map(refModeTo -> new Object[] {refModeFrom, refModeTo}));
+  }
+
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  @ParameterizedTest
+  @ValueSource(ints = {0, 20, 22})
+  public void diffPaging(int numKeys) throws BaseNessieClientServerException {
+    Branch defaultBranch = getApi().getDefaultBranch();
+    Branch branch = createBranch("entriesPaging");
+    try {
+      getApi().getDiff().pageToken("Zm9v").fromRef(branch).toRef(defaultBranch).get();
+    } catch (NessieBadRequestException e) {
+      if (!e.getMessage().contains("Paging not supported")) {
+        throw e;
+      }
+      abort("DatabaseAdapter implementations / PersistVersionStore do not support paging");
+    }
+
+    IntFunction<ContentKey> contentKey = i -> ContentKey.of("key", Integer.toString(i));
+    IntFunction<IcebergTable> table = i -> IcebergTable.of("meta" + i, 1, 2, 3, 4);
+    int pageSize = 5;
+
+    if (numKeys > 0) {
+      CommitMultipleOperationsBuilder commit =
+          getApi()
+              .commitMultipleOperations()
+              .branch(branch)
+              .commitMeta(CommitMeta.fromMessage("commit"));
+      for (int i = 0; i < numKeys; i++) {
+        commit.operation(Put.of(contentKey.apply(i), table.apply(i)));
+      }
+      branch = commit.commit();
+    }
+
+    Set<ContentKey> contents = new HashSet<>();
+    String token = null;
+    for (int i = 0; ; i += pageSize) {
+      DiffResponse response =
+          getApi()
+              .getDiff()
+              .fromRef(branch)
+              .toRef(defaultBranch)
+              .maxRecords(pageSize)
+              .pageToken(token)
+              .get();
+
+      for (DiffResponse.DiffEntry entry : response.getDiffs()) {
+        soft.assertThat(contents.add(entry.getKey()))
+            .describedAs("offset: %d , entry: %s", i, entry)
+            .isTrue();
+      }
+      soft.assertThat(contents).hasSize(Math.min(i + pageSize, numKeys));
+      if (i + pageSize < numKeys) {
+        soft.assertThat(response.getToken())
+            .describedAs("offset: %d", i)
+            .isNotEmpty()
+            .isNotEqualTo(token);
+        soft.assertThat(response.isHasMore()).describedAs("offset: %d", i).isTrue();
+        token = response.getToken();
+      } else {
+        soft.assertThat(response.getToken()).describedAs("offset: %d", i).isNull();
+        soft.assertThat(response.isHasMore()).describedAs("offset: %d", i).isFalse();
+        break;
+      }
+    }
+
+    soft.assertThat(contents)
+        .containsExactlyInAnyOrderElementsOf(
+            IntStream.range(0, numKeys).mapToObj(contentKey).collect(toSet()));
   }
 
   @ParameterizedTest

@@ -15,7 +15,6 @@
  */
 package org.projectnessie.server.error;
 
-import java.util.stream.Stream;
 import javax.enterprise.context.RequestScoped;
 import javax.validation.ConstraintDeclarationException;
 import javax.validation.ConstraintDefinitionException;
@@ -39,6 +38,7 @@ import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.versioned.BackendLimitExceededException;
 import org.projectnessie.versioned.GetNamedRefsParams;
+import org.projectnessie.versioned.PaginationIterator;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
@@ -148,8 +148,9 @@ public class ErrorTestService {
     Mockito.when(databaseAdapter.namedRefs(Mockito.any())).thenThrow(ex);
 
     PersistVersionStore tvs = new PersistVersionStore(databaseAdapter);
-    try (Stream<ReferenceInfo<CommitMeta>> refs = tvs.getNamedRefs(GetNamedRefsParams.DEFAULT)) {
-      refs.forEach(ref -> {});
+    try (PaginationIterator<ReferenceInfo<CommitMeta>> refs =
+        tvs.getNamedRefs(GetNamedRefsParams.DEFAULT, null)) {
+      refs.forEachRemaining(ref -> {});
     }
     return "we should not get here";
   }
