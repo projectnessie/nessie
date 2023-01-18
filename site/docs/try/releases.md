@@ -2,6 +2,27 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.47.0 Release (January 18, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.47.0).
+
+* Use custom CDI extension for injecting Principals (#5883)
+* Update V2 commit-response to include generated content-IDs (#5880)
+* Add content-ID to REST API v2 entries endpoint (#5879)
+* Gatling: properly prefer `sim.duration.seconds` over `sim.commits` (#5847)
+* Spark extensions tests - no CID for new content & common-ancestor (#5877)
+* Content generator: no CID for new content, properly use expectedContent+CID for existing (#5876)
+* Deltalake: no CID for new content, properly use expectedContent+CID for existing (#5875)
+* Quarkus & JAX-RS tests - no CID for new content & common-ancestor (#5874)
+* Do not expose junit-jupiter-engine via test artifacts (#5870)
+* Gatling: allow running the Gatling simulations against an external Nessie (#5848)
+* Testing: unify container start retry mechanism (#5844)
+* Testing/benchmarking: fix configuration for persist-bench via system properties (#5843)
+* Add macOS + Windows build check badges to README.md (#5849)
+* Use REST API v2 in Gatling simulations (#5846)
+* Testing: use full Quarkus listen-URL instead of just the port (#5845)
+* GH WF: simplify some steps (#5869)
+
 ## 0.46.7 Release (January 12, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.46.7).
