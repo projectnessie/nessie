@@ -203,7 +203,7 @@ testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.
 testcontainers-testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
 undertow-core = { module = "io.undertow:undertow-core", version.ref = "undertow" }
 undertow-servlet = { module = "io.undertow:undertow-servlet", version.ref = "undertow" }
-weld-se-core = { module = "org.jboss.weld.se:weld-se-core", version = "3.1.9.Final" }
+weld-se-core = { module = "org.jboss.weld.se:weld-se-core", version = "5.1.0.Final" }
 
 [plugins]
 errorprone = { id = "net.ltgt.errorprone", version = "3.0.1" }
