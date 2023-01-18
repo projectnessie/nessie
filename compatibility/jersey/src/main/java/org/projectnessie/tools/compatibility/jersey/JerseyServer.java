@@ -62,6 +62,7 @@ public class JerseyServer implements AutoCloseable {
     weld.addPackages(true, RestConfigResource.class);
     weld.addPackages(true, TreeApiImpl.class);
     // Inject external beans
+    weld.addExtension(new PrincipalExtension());
     weld.addExtension(new ServerConfigExtension());
     weld.addExtension(PersistVersionStoreExtension.forDatabaseAdapter(databaseAdapterSupplier));
     weld.addExtension(authzExtension());

@@ -22,7 +22,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.enterprise.inject.spi.Extension;
-import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.SecurityContext;
 import org.glassfish.jersey.message.DeflateEncoder;
@@ -219,6 +218,7 @@ public class NessieJaxRsExtension extends NessieClientResolver
       weld.addPackages(true, RestConfigResource.class);
       weld.addPackages(true, TreeApiImpl.class);
       // Inject external beans
+      weld.addExtension(new ContextPrincipalExtension(() -> securityContext));
       weld.addExtension(new ServerConfigExtension());
       weld.addExtension(versionStoreExtension);
       weld.addExtension(new AuthorizerExtension().setAccessCheckerSupplier(this::createNewChecker));
@@ -250,13 +250,6 @@ public class NessieJaxRsExtension extends NessieClientResolver
               config.register(EncodingFilter.class);
               config.register(GZipEncoder.class);
               config.register(DeflateEncoder.class);
-              config.register(
-                  (ContainerRequestFilter)
-                      requestContext -> {
-                        if (securityContext != null) {
-                          requestContext.setSecurityContext(securityContext);
-                        }
-                      });
 
               // Use a dynamically allocated port, not a static default (80/443) or statically
               // configured port.
