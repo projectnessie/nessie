@@ -84,6 +84,7 @@ import org.projectnessie.model.MergeResponse.ContentKeyConflict;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.Reference.ReferenceType;
 import org.projectnessie.model.ReferenceMetadata;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Validation;
@@ -258,10 +259,10 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   }
 
   @Override
-  public void deleteReference(
-      Reference.ReferenceType referenceType, String referenceName, String expectedHash)
+  public String deleteReference(
+      ReferenceType referenceType, String referenceName, String expectedHash)
       throws NessieConflictException, NessieNotFoundException {
-    deleteReference(toNamedRef(referenceType, referenceName), expectedHash);
+    return deleteReference(toNamedRef(referenceType, referenceName), expectedHash).asString();
   }
 
   @Override
@@ -717,10 +718,10 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     return Optional.of(Hash.of(hash));
   }
 
-  protected void deleteReference(NamedRef ref, String expectedHash)
+  protected Hash deleteReference(NamedRef ref, String expectedHash)
       throws NessieConflictException, NessieNotFoundException {
     try {
-      getStore().delete(ref, toHash(expectedHash, true));
+      return getStore().delete(ref, toHash(expectedHash, true));
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {

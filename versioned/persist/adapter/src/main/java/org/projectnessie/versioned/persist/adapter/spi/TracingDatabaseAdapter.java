@@ -186,10 +186,10 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
   }
 
   @Override
-  public void delete(NamedRef reference, Optional<Hash> expectedHead)
+  public Hash delete(NamedRef reference, Optional<Hash> expectedHead)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try (Traced ignore = trace("delete").tag(TAG_REF, reference.getName())) {
-      delegate.delete(reference, expectedHead);
+      return delegate.delete(reference, expectedHead);
     }
   }
 

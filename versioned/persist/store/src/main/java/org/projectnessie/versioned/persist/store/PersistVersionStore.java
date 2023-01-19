@@ -319,9 +319,9 @@ public class PersistVersionStore implements VersionStore {
   }
 
   @Override
-  public void delete(NamedRef ref, Optional<Hash> hash)
+  public Hash delete(NamedRef ref, Optional<Hash> hash)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    databaseAdapter.delete(ref, hash);
+    return databaseAdapter.delete(ref, hash);
   }
 
   @Nonnull

@@ -201,10 +201,10 @@ public class TracingVersionStore implements VersionStore {
   }
 
   @Override
-  public void delete(NamedRef ref, Optional<Hash> hash)
+  public Hash delete(NamedRef ref, Optional<Hash> hash)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    TracingVersionStore
-        .<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
+    return TracingVersionStore
+        .<Hash, ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
             "Delete",
             b -> b.withTag(TAG_REF, safeToString(ref)).withTag(TAG_HASH, safeToString(hash)),
             () -> delegate.delete(ref, hash));

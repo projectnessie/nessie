@@ -441,10 +441,10 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  public void delete(NamedRef reference, Optional<Hash> expectedHead)
+  public Hash delete(NamedRef reference, Optional<Hash> expectedHead)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
-      opLoop(
+      return opLoop(
           "deleteRef",
           reference,
           false,

@@ -158,9 +158,9 @@ public final class MetricsVersionStore implements VersionStore {
   }
 
   @Override
-  public void delete(NamedRef ref, Optional<Hash> hash)
+  public Hash delete(NamedRef ref, Optional<Hash> hash)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex(
+    return this.<Hash, ReferenceNotFoundException, ReferenceConflictException>delegate2ExR(
         "delete", () -> delegate.delete(ref, hash));
   }
 

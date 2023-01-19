@@ -45,6 +45,7 @@ import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.SingleReferenceResponse;
+import org.projectnessie.model.Tag;
 import org.projectnessie.model.ser.Views;
 import org.projectnessie.services.spi.ConfigService;
 import org.projectnessie.services.spi.ContentService;
@@ -183,7 +184,13 @@ public class RestV2TreeResource implements HttpTreeApi {
   public SingleReferenceResponse deleteReference(Reference.ReferenceType type, String ref)
       throws NessieConflictException, NessieNotFoundException {
     Reference reference = resolveRef(ref, type);
-    tree().deleteReference(type, reference.getName(), reference.getHash());
+    String hash = tree().deleteReference(type, reference.getName(), reference.getHash());
+    if (reference instanceof Branch) {
+      reference = Branch.of(reference.getName(), hash);
+    }
+    if (reference instanceof Tag) {
+      reference = Tag.of(reference.getName(), hash);
+    }
     return SingleReferenceResponse.builder().reference(reference).build();
   }
 

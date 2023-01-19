@@ -179,6 +179,7 @@ class TestMetricsVersionStore {
             new VersionStoreInvocation<>(
                 "delete",
                 vs -> vs.delete(BranchName.of("mock-branch"), Optional.of(Hash.of("cafebabe"))),
+                () -> Hash.of("cafebabedeadbeef"),
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "getcommits",

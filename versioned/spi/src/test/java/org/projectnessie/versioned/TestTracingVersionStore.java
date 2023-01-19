@@ -180,9 +180,9 @@ class TestTracingVersionStore {
                     "Delete", refNotFoundAndRefConflictThrows)
                 .tag("nessie.version-store.ref", "BranchName{name=mock-branch}")
                 .tag("nessie.version-store.hash", "Optional[Hash cafebabe]")
-                .method(
-                    vs ->
-                        vs.delete(BranchName.of("mock-branch"), Optional.of(Hash.of("cafebabe")))),
+                .function(
+                    vs -> vs.delete(BranchName.of("mock-branch"), Optional.of(Hash.of("cafebabe"))),
+                    () -> Hash.of("deadbeefcafebabe")),
             new TestedTraceingStoreInvocation<VersionStore>("GetCommits.stream", refNotFoundThrows)
                 .tag("nessie.version-store.ref", "BranchName{name=mock-branch}")
                 .function(

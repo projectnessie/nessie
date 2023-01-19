@@ -115,7 +115,7 @@ public abstract class AbstractReferences {
     assertThatThrownBy(() -> databaseAdapter.delete(opposite, Optional.of(createHash)))
         .isInstanceOf(ReferenceNotFoundException.class);
 
-    databaseAdapter.delete(create, Optional.of(createHash));
+    assertThat(databaseAdapter.delete(create, Optional.of(createHash))).isEqualTo(createHash);
 
     assertThatThrownBy(() -> databaseAdapter.hashOnReference(create, Optional.empty()))
         .isInstanceOf(ReferenceNotFoundException.class);
@@ -252,13 +252,43 @@ public abstract class AbstractReferences {
 
     BranchName main = BranchName.of("main");
     Hash mainHead = databaseAdapter.hashOnReference(main, Optional.empty());
-    databaseAdapter.delete(main, Optional.of(mainHead));
+    assertThat(databaseAdapter.delete(main, Optional.of(mainHead))).isEqualTo(mainHead);
 
     assertThatThrownBy(() -> databaseAdapter.hashOnReference(main, Optional.empty()))
         .isInstanceOf(ReferenceNotFoundException.class);
 
     databaseAdapter.create(main, null);
     databaseAdapter.hashOnReference(main, Optional.empty());
+  }
+
+  @Test
+  void deleteReferences() throws Exception {
+    BranchName main = BranchName.of("main");
+    Hash mainHead = databaseAdapter.hashOnReference(main, Optional.empty());
+
+    BranchName delete1 = BranchName.of("delete1");
+    TagName delete2 = TagName.of("delete2");
+    BranchName delete3 = BranchName.of("delete3");
+    TagName delete4 = TagName.of("delete4");
+
+    databaseAdapter.create(delete1, mainHead);
+    databaseAdapter.create(delete2, mainHead);
+    databaseAdapter.create(delete3, mainHead);
+    databaseAdapter.create(delete4, mainHead);
+
+    assertThat(databaseAdapter.delete(delete1, Optional.of(mainHead))).isEqualTo(mainHead);
+    assertThat(databaseAdapter.delete(delete2, Optional.of(mainHead))).isEqualTo(mainHead);
+    assertThat(databaseAdapter.delete(delete3, Optional.empty())).isEqualTo(mainHead);
+    assertThat(databaseAdapter.delete(delete4, Optional.empty())).isEqualTo(mainHead);
+
+    assertThatThrownBy(() -> databaseAdapter.hashOnReference(delete1, Optional.empty()))
+        .isInstanceOf(ReferenceNotFoundException.class);
+    assertThatThrownBy(() -> databaseAdapter.hashOnReference(delete2, Optional.empty()))
+        .isInstanceOf(ReferenceNotFoundException.class);
+    assertThatThrownBy(() -> databaseAdapter.hashOnReference(delete3, Optional.empty()))
+        .isInstanceOf(ReferenceNotFoundException.class);
+    assertThatThrownBy(() -> databaseAdapter.hashOnReference(delete4, Optional.empty()))
+        .isInstanceOf(ReferenceNotFoundException.class);
   }
 
   /** Validates that multiple reference-name segments work. */

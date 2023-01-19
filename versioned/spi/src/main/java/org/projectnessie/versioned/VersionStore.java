@@ -224,11 +224,12 @@ public interface VersionStore {
    * @param ref The NamedRef to be deleted.
    * @param hash An optional hash. If provided, this operation will only succeed if the branch is
    *     pointing at the provided
+   * @return head of deleted reference
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    * @throws ReferenceConflictException if {@code hash} doesn't match the stored hash for {@code
    *     ref}
    */
-  void delete(NamedRef ref, Optional<Hash> hash)
+  Hash delete(NamedRef ref, Optional<Hash> hash)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
