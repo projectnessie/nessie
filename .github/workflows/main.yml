@@ -46,7 +46,7 @@ jobs:
     - name: Gradle / check incl. integ-test
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: check --scan
+        arguments: check codeCoverageReport -x test --scan
 
     - name: Gradle / Gatling simulations
       uses: gradle/gradle-build-action@v2
@@ -58,7 +58,6 @@ jobs:
       with:
         arguments: |
           assemble
-          codeCoverageReport -x test -x intTest
           publishToMavenLocal
           -Puber-jar
           --scan

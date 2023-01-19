@@ -141,6 +141,8 @@ jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind" }
 jackson-dataformat-xml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml" }
 jackson-jaxrs-json-provider = { module = "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider" }
 jackson-jaxrs-xml-provider = { module = "com.fasterxml.jackson.jaxrs:jackson-jaxrs-xml-provider" }
+jacoco-ant = { module = "org.jacoco:org.jacoco.ant", version.ref = "jacoco" }
+jacoco-report = { module = "org.jacoco:org.jacoco.report", version.ref = "jacoco" }
 jacoco-maven-plugin = { module = "org.jacoco:jacoco-maven-plugin", version.ref = "jacoco" }
 jakarta-annotation-api = { module = "jakarta.annotation:jakarta.annotation-api", version = "1.3.5" }
 jakarta-enterprise-cdi-api = { module = "jakarta.enterprise:jakarta.enterprise.cdi-api", version = "2.0.2" }

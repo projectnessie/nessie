@@ -27,6 +27,8 @@ plugins {
 
 extra["maven.name"] = "Nessie - Quarkus CLI"
 
+val jacocoRuntime by configurations.creating { description = "Jacoco task runtime" }
+
 dependencies {
   implementation(project(":nessie-quarkus-common"))
   implementation(project(":nessie-services"))
@@ -68,15 +70,16 @@ dependencies {
   testImplementation(project(":nessie-quarkus-tests"))
   testImplementation(project(":nessie-versioned-persist-mongodb-test"))
   testImplementation(project(":nessie-versioned-tests"))
-  // TODO re-add quarkus-jacoco once https://github.com/quarkusio/quarkus/issues/30264
-  //  has been fixed.
-  //  testImplementation("io.quarkus:quarkus-jacoco")
+  testImplementation("io.quarkus:quarkus-jacoco")
   testImplementation("io.quarkus:quarkus-junit5")
   testCompileOnly(libs.microprofile.openapi)
 
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
   testRuntimeOnly(libs.junit.jupiter.engine)
+
+  jacocoRuntime(libs.jacoco.report)
+  jacocoRuntime(libs.jacoco.ant)
 }
 
 preferJava11()
@@ -107,20 +110,47 @@ tasks.withType<QuarkusBuild>().configureEach {
   }
 }
 
+val prepareJacocoReport by
+  tasks.registering {
+    doFirst {
+      // Must delete the Jacoco data file before running tests, because
+      // quarkus.jacoco.reuse-data-file=true in application.properties.
+      file("${project.buildDir}/jacoco-quarkus.exec").delete()
+      var reportDir = file("${project.buildDir}/jacoco-report")
+      delete { delete(reportDir) }
+      reportDir.mkdirs()
+    }
+  }
+
+val jacocoReport by
+  tasks.registering(JacocoReport::class) {
+    executionData.from(file("${project.buildDir}/jacoco-quarkus.exec"))
+    jacocoClasspath = jacocoRuntime
+    classDirectories.from(layout.buildDirectory.dir("classes"))
+    sourceDirectories
+      .from(layout.projectDirectory.dir("src/main/java"))
+      .from(layout.projectDirectory.dir("src/test/java"))
+    reports {
+      xml.required.set(true)
+      xml.outputLocation.set(layout.buildDirectory.file("jacoco-report/jacoco.xml"))
+      csv.required.set(true)
+      csv.outputLocation.set(layout.buildDirectory.file("jacoco-report/jacoco.csv"))
+      html.required.set(true)
+      html.outputLocation.set(layout.buildDirectory.dir("jacoco-report"))
+    }
+  }
+
+tasks.withType<Test>().configureEach {
+  dependsOn(prepareJacocoReport)
+  finalizedBy(jacocoReport)
+}
+
 tasks.named<Test>("intTest") {
   // Quarkus accumulates stuff in QuarkusClassLoader.transformedClasses throughout CLI
   // re-invocations during testing. Therefore, we restart the test JVM after running 2 test
   // classes. The number is rather arbitrary since the real factor seems to be the number
   // of CLI launches performed in the same JVM.
   setForkEvery(2)
-}
-
-tasks.withType<Test>().configureEach {
-  doFirst {
-    // Must delete the Jacoco data file before running tests, because
-    // quarkus.jacoco.reuse-data-file=true in application.properties.
-    file("${project.buildDir}/jacoco-quarkus.exec").delete()
-  }
 }
 
 if (withUberJar()) {

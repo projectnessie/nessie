@@ -35,6 +35,8 @@ val quarkusRunner by
 val openapiSource by
   configurations.creating { description = "Used to reference OpenAPI spec files" }
 
+val jacocoRuntime by configurations.creating { description = "Jacoco task runtime" }
+
 dependencies {
   implementation(project(":nessie-model"))
   implementation(project(":nessie-services"))
@@ -98,6 +100,9 @@ dependencies {
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
   testRuntimeOnly(libs.junit.jupiter.engine)
+
+  jacocoRuntime(libs.jacoco.report)
+  jacocoRuntime(libs.jacoco.ant)
 }
 
 preferJava11()
@@ -147,7 +152,40 @@ val quarkusBuild =
     }
   }
 
+val prepareJacocoReport by
+  tasks.registering {
+    doFirst {
+      // Must delete the Jacoco data file before running tests, because
+      // quarkus.jacoco.reuse-data-file=true in application.properties.
+      file("${project.buildDir}/jacoco-quarkus.exec").delete()
+      var reportDir = file("${project.buildDir}/jacoco-report")
+      delete { delete(reportDir) }
+      reportDir.mkdirs()
+    }
+  }
+
+val jacocoReport by
+  tasks.registering(JacocoReport::class) {
+    executionData.from(file("${project.buildDir}/jacoco-quarkus.exec"))
+    jacocoClasspath = jacocoRuntime
+    classDirectories.from(layout.buildDirectory.dir("classes"))
+    sourceDirectories
+      .from(layout.projectDirectory.dir("src/main/java"))
+      .from(layout.projectDirectory.dir("src/test/java"))
+    reports {
+      xml.required.set(true)
+      xml.outputLocation.set(layout.buildDirectory.file("jacoco-report/jacoco.xml"))
+      csv.required.set(true)
+      csv.outputLocation.set(layout.buildDirectory.file("jacoco-report/jacoco.csv"))
+      html.required.set(true)
+      html.outputLocation.set(layout.buildDirectory.dir("jacoco-report"))
+    }
+  }
+
 tasks.withType<Test>().configureEach {
+  dependsOn(prepareJacocoReport)
+  finalizedBy(jacocoReport)
+
   if (project.hasProperty("native")) {
     systemProperty("native.image.path", quarkusBuild.get().nativeRunner)
   }
