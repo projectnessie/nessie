@@ -38,13 +38,13 @@ public class DiffApiImplWithAuthorization extends DiffApiImpl {
   }
 
   @Override
-  public <B, R> R getDiff(
+  public <R> R getDiff(
       String fromRef,
       String fromHash,
       String toRef,
       String toHash,
       String pagingToken,
-      PagedResponseHandler<B, R, DiffEntry> pagedResponseHandler)
+      PagedResponseHandler<R, DiffEntry> pagedResponseHandler)
       throws NessieNotFoundException {
     WithHash<NamedRef> from = namedRefWithHashOrThrow(fromRef, fromHash);
     WithHash<NamedRef> to = namedRefWithHashOrThrow(toRef, toHash);

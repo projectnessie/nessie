@@ -44,39 +44,35 @@ public class DiffApiImpl extends BaseApiImpl implements DiffService {
   }
 
   @Override
-  public <B, R> R getDiff(
+  public <R> R getDiff(
       String fromRef,
       String fromHash,
       String toRef,
       String toHash,
       String pagingToken,
-      PagedResponseHandler<B, R, DiffEntry> pagedResponseHandler)
+      PagedResponseHandler<R, DiffEntry> pagedResponseHandler)
       throws NessieNotFoundException {
     WithHash<NamedRef> from = namedRefWithHashOrThrow(fromRef, fromHash);
     WithHash<NamedRef> to = namedRefWithHashOrThrow(toRef, toHash);
     return getDiff(from.getHash(), to.getHash(), pagingToken, pagedResponseHandler);
   }
 
-  protected <B, R> R getDiff(
+  protected <R> R getDiff(
       Hash from,
       Hash to,
       String pagingToken,
-      PagedResponseHandler<B, R, DiffEntry> pagedResponseHandler)
+      PagedResponseHandler<R, DiffEntry> pagedResponseHandler)
       throws NessieNotFoundException {
-    B builder = pagedResponseHandler.newBuilder();
     try {
       try (PaginationIterator<Diff> diffs = getStore().getDiffs(from, to, pagingToken)) {
-        int cnt = 0;
         while (diffs.hasNext()) {
           Diff diff = diffs.next();
           if (!pagedResponseHandler.addEntry(
-              builder,
-              ++cnt,
               DiffEntry.diffEntry(
                   ContentKey.of(diff.getKey().getElements()),
                   diff.getFromValue().orElse(null),
                   diff.getToValue().orElse(null)))) {
-            pagedResponseHandler.hasMore(builder, diffs.tokenForCurrent());
+            pagedResponseHandler.hasMore(diffs.tokenForCurrent());
             break;
           }
         }
@@ -85,6 +81,6 @@ public class DiffApiImpl extends BaseApiImpl implements DiffService {
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
-    return pagedResponseHandler.build(builder);
+    return pagedResponseHandler.build();
   }
 }

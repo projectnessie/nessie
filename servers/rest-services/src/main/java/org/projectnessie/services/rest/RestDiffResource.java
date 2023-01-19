@@ -59,26 +59,22 @@ public class RestDiffResource implements HttpDiffApi {
             params.getToRef(),
             params.getToHashOnRef(),
             null,
-            new PagedResponseHandler<ImmutableDiffResponse.Builder, DiffResponse, DiffEntry>() {
-              @Override
-              public ImmutableDiffResponse.Builder newBuilder() {
-                return ImmutableDiffResponse.builder();
-              }
+            new PagedResponseHandler<DiffResponse, DiffEntry>() {
+              final ImmutableDiffResponse.Builder builder = ImmutableDiffResponse.builder();
 
               @Override
-              public DiffResponse build(ImmutableDiffResponse.Builder builder) {
+              public DiffResponse build() {
                 return builder.build();
               }
 
               @Override
-              public boolean addEntry(
-                  ImmutableDiffResponse.Builder builder, int cnt, DiffEntry entry) {
+              public boolean addEntry(DiffEntry entry) {
                 builder.addDiffs(entry);
                 return true;
               }
 
               @Override
-              public void hasMore(ImmutableDiffResponse.Builder builder, String pagingToken) {
+              public void hasMore(String pagingToken) {
                 builder.isHasMore(true).token(pagingToken);
               }
             });

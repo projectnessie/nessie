@@ -31,7 +31,7 @@ import org.projectnessie.model.Validation;
  * the meaning of various methods and their parameters.
  */
 public interface DiffService {
-  <B, R> R getDiff(
+  <R> R getDiff(
       @NotNull @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           String fromRef,
       @Nullable @Pattern(regexp = HASH_OPTIONAL_REGEX, message = Validation.HASH_MESSAGE)
@@ -41,6 +41,6 @@ public interface DiffService {
       @Nullable @Pattern(regexp = HASH_OPTIONAL_REGEX, message = Validation.HASH_MESSAGE)
           String toHash,
       @Nullable String pagingToken,
-      PagedResponseHandler<B, R, DiffEntry> pagedResponseHandler)
+      PagedResponseHandler<R, DiffEntry> pagedResponseHandler)
       throws NessieNotFoundException;
 }

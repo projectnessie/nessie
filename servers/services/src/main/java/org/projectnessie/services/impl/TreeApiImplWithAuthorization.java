@@ -62,37 +62,32 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
   }
 
   @Override
-  public <B, R> R getAllReferences(
+  public <R> R getAllReferences(
       FetchOption fetchOption,
       String filter,
       String pagingToken,
-      PagedResponseHandler<B, R, Reference> pagedResponseHandler) {
+      PagedResponseHandler<R, Reference> pagedResponseHandler) {
     return super.getAllReferences(
         fetchOption,
         filter,
         pagingToken,
-        new PagedResponseHandler<B, R, Reference>() {
+        new PagedResponseHandler<R, Reference>() {
           @Override
-          public B newBuilder() {
-            return pagedResponseHandler.newBuilder();
-          }
-
-          @Override
-          public R build(B builder) {
-            return pagedResponseHandler.build(builder);
-          }
-
-          @Override
-          public boolean addEntry(B builder, int cnt, Reference entry) {
+          public boolean addEntry(Reference entry) {
             if (startAccessCheck().canViewReference(RefUtil.toNamedRef(entry)).check().isEmpty()) {
-              return pagedResponseHandler.addEntry(builder, cnt, entry);
+              return pagedResponseHandler.addEntry(entry);
             }
             return true;
           }
 
           @Override
-          public void hasMore(B builder, String pagingToken) {
-            pagedResponseHandler.hasMore(builder, pagingToken);
+          public void hasMore(String pagingToken) {
+            pagedResponseHandler.hasMore(pagingToken);
+          }
+
+          @Override
+          public R build() {
+            return pagedResponseHandler.build();
           }
         });
   }
@@ -165,12 +160,12 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
   }
 
   @Override
-  protected <B, R> R getCommitLog(
+  protected <R> R getCommitLog(
       FetchOption fetchOption,
       String filter,
       WithHash<NamedRef> endRef,
       String startHash,
-      PagedResponseHandler<B, R, LogEntry> pagedResponseHandler)
+      PagedResponseHandler<R, LogEntry> pagedResponseHandler)
       throws NessieNotFoundException {
     NamedRef ref = endRef.getValue();
     startAccessCheck().canListCommitLog(ref).checkAndThrow();
@@ -179,19 +174,15 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
         filter,
         endRef,
         startHash,
-        new PagedResponseHandler<B, R, LogEntry>() {
+        new PagedResponseHandler<R, LogEntry>() {
+
           @Override
-          public B newBuilder() {
-            return pagedResponseHandler.newBuilder();
+          public R build() {
+            return pagedResponseHandler.build();
           }
 
           @Override
-          public R build(B builder) {
-            return pagedResponseHandler.build(builder);
-          }
-
-          @Override
-          public boolean addEntry(B builder, int cnt, LogEntry entry) {
+          public boolean addEntry(LogEntry entry) {
             if (entry.getOperations() != null) {
               BatchAccessChecker responseCheck = startAccessCheck();
               entry
@@ -223,12 +214,12 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
                       .build();
             }
 
-            return pagedResponseHandler.addEntry(builder, cnt, entry);
+            return pagedResponseHandler.addEntry(entry);
           }
 
           @Override
-          public void hasMore(B builder, String pagingToken) {
-            pagedResponseHandler.hasMore(builder, pagingToken);
+          public void hasMore(String pagingToken) {
+            pagedResponseHandler.hasMore(pagingToken);
           }
         });
   }

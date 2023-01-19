@@ -49,11 +49,11 @@ public interface TreeService {
 
   Branch getDefaultBranch() throws NessieNotFoundException;
 
-  <B, R> R getAllReferences(
+  <R> R getAllReferences(
       FetchOption fetchOption,
       @Nullable String filter,
       String pagingToken,
-      PagedResponseHandler<B, R, Reference> pagedResponseHandler);
+      PagedResponseHandler<R, Reference> pagedResponseHandler);
 
   Reference getReferenceByName(
       @Valid
@@ -96,7 +96,7 @@ public interface TreeService {
           String expectedHash)
       throws NessieConflictException, NessieNotFoundException;
 
-  <B, R> R getCommitLog(
+  <R> R getCommitLog(
       @Valid
           @NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
@@ -108,7 +108,7 @@ public interface TreeService {
           String youngestHash,
       @Nullable String filter,
       @Nullable String pageToken,
-      @NotNull PagedResponseHandler<B, R, LogEntry> pagedResponseHandler)
+      @NotNull PagedResponseHandler<R, LogEntry> pagedResponseHandler)
       throws NessieNotFoundException;
 
   MergeResponse transplantCommitsIntoBranch(
@@ -155,7 +155,7 @@ public interface TreeService {
       @Nullable Boolean returnConflictAsResult)
       throws NessieNotFoundException, NessieConflictException;
 
-  <B, R> R getEntries(
+  <R> R getEntries(
       @Valid
           @NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
@@ -165,7 +165,7 @@ public interface TreeService {
       @Nullable Integer namespaceDepth,
       @Nullable String filter,
       @Nullable String pagingToken,
-      PagedResponseHandler<B, R, EntriesResponse.Entry> pagedResponseHandler)
+      PagedResponseHandler<R, EntriesResponse.Entry> pagedResponseHandler)
       throws NessieNotFoundException;
 
   CommitResponse commitMultipleOperations(

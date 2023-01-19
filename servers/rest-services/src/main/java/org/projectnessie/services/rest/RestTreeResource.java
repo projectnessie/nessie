@@ -77,32 +77,28 @@ public class RestTreeResource implements HttpTreeApi {
             params.fetchOption(),
             params.filter(),
             null,
-            new PagedResponseHandler<
-                ImmutableReferencesResponse.Builder, ReferencesResponse, Reference>() {
+            new PagedResponseHandler<ReferencesResponse, Reference>() {
+              final ImmutableReferencesResponse.Builder builder = ReferencesResponse.builder();
               final int max = maxRecords != null ? Math.max(maxRecords, 0) : 0;
+              int cnt;
 
               @Override
-              public ImmutableReferencesResponse.Builder newBuilder() {
-                return ReferencesResponse.builder();
-              }
-
-              @Override
-              public ReferencesResponse build(ImmutableReferencesResponse.Builder builder) {
+              public ReferencesResponse build() {
                 return builder.build();
               }
 
               @Override
-              public boolean addEntry(
-                  ImmutableReferencesResponse.Builder builder, int cnt, Reference entry) {
-                if (max > 0 && cnt > max) {
+              public boolean addEntry(Reference entry) {
+                if (max > 0 && cnt >= max) {
                   return false;
                 }
                 builder.addReferences(entry);
+                cnt++;
                 return true;
               }
 
               @Override
-              public void hasMore(ImmutableReferencesResponse.Builder builder, String pagingToken) {
+              public void hasMore(String pagingToken) {
                 builder.isHasMore(true).token(pagingToken);
               }
             });
@@ -141,32 +137,28 @@ public class RestTreeResource implements HttpTreeApi {
             params.namespaceDepth(),
             params.filter(),
             params.pageToken(),
-            new PagedResponseHandler<
-                ImmutableEntriesResponse.Builder, EntriesResponse, EntriesResponse.Entry>() {
+            new PagedResponseHandler<EntriesResponse, EntriesResponse.Entry>() {
+              final ImmutableEntriesResponse.Builder builder = ImmutableEntriesResponse.builder();
               final int max = maxRecords != null ? maxRecords : Integer.MAX_VALUE;
+              int cnt;
 
               @Override
-              public ImmutableEntriesResponse.Builder newBuilder() {
-                return ImmutableEntriesResponse.builder();
-              }
-
-              @Override
-              public EntriesResponse build(ImmutableEntriesResponse.Builder builder) {
+              public EntriesResponse build() {
                 return builder.build();
               }
 
               @Override
-              public boolean addEntry(
-                  ImmutableEntriesResponse.Builder builder, int cnt, EntriesResponse.Entry entry) {
-                if (max > 0 && cnt > max) {
+              public boolean addEntry(EntriesResponse.Entry entry) {
+                if (max > 0 && cnt >= max) {
                   return false;
                 }
                 builder.addEntries(entry);
+                cnt++;
                 return true;
               }
 
               @Override
-              public void hasMore(ImmutableEntriesResponse.Builder builder, String pagingToken) {
+              public void hasMore(String pagingToken) {
                 builder.isHasMore(true).token(pagingToken);
               }
             });
@@ -185,34 +177,31 @@ public class RestTreeResource implements HttpTreeApi {
             params.endHash(),
             params.filter(),
             params.pageToken(),
-            new PagedResponseHandler<ImmutableLogResponse.Builder, LogResponse, LogEntry>() {
+            new PagedResponseHandler<LogResponse, LogEntry>() {
+              final ImmutableLogResponse.Builder builder = ImmutableLogResponse.builder();
               final int max =
                   Math.min(
                       maxRecords != null ? Math.max(maxRecords, 0) : MAX_COMMIT_LOG_ENTRIES,
                       MAX_COMMIT_LOG_ENTRIES);
+              int cnt;
 
               @Override
-              public ImmutableLogResponse.Builder newBuilder() {
-                return ImmutableLogResponse.builder();
-              }
-
-              @Override
-              public LogResponse build(ImmutableLogResponse.Builder builder) {
+              public LogResponse build() {
                 return builder.build();
               }
 
               @Override
-              public boolean addEntry(
-                  ImmutableLogResponse.Builder builder, int cnt, LogEntry entry) {
-                if (max > 0 && cnt > max) {
+              public boolean addEntry(LogEntry entry) {
+                if (max > 0 && cnt >= max) {
                   return false;
                 }
                 builder.addLogEntries(entry);
+                cnt++;
                 return true;
               }
 
               @Override
-              public void hasMore(ImmutableLogResponse.Builder builder, String pagingToken) {
+              public void hasMore(String pagingToken) {
                 builder.isHasMore(true).token(pagingToken);
               }
             });

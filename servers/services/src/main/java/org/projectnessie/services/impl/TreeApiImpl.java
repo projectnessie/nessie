@@ -125,25 +125,23 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   }
 
   @Override
-  public <B, R> R getAllReferences(
+  public <R> R getAllReferences(
       FetchOption fetchOption,
       String filter,
       String pagingToken,
-      PagedResponseHandler<B, R, Reference> pagedResponseHandler) {
-    B resp = pagedResponseHandler.newBuilder();
+      PagedResponseHandler<R, Reference> pagedResponseHandler) {
     boolean fetchAll = FetchOption.isFetchAll(fetchOption);
     try (PaginationIterator<ReferenceInfo<CommitMeta>> references =
         getStore().getNamedRefs(getGetNamedRefsParams(fetchAll), pagingToken)) {
       Predicate<Reference> filterPredicate = filterReferences(filter);
-      int cnt = 0;
       while (references.hasNext()) {
         ReferenceInfo<CommitMeta> refInfo = references.next();
         Reference ref = TreeApiImpl.makeReference(refInfo, fetchAll);
         if (!filterPredicate.test(ref)) {
           continue;
         }
-        if (!pagedResponseHandler.addEntry(resp, ++cnt, ref)) {
-          pagedResponseHandler.hasMore(resp, references.tokenForCurrent());
+        if (!pagedResponseHandler.addEntry(ref)) {
+          pagedResponseHandler.hasMore(references.tokenForCurrent());
           break;
         }
       }
@@ -152,7 +150,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
           String.format(
               "Could not find default branch '%s'.", this.getConfig().getDefaultBranch()));
     }
-    return pagedResponseHandler.build(resp);
+    return pagedResponseHandler.build();
   }
 
   private GetNamedRefsParams getGetNamedRefsParams(boolean fetchMetadata) {
@@ -274,14 +272,14 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   }
 
   @Override
-  public <B, R> R getCommitLog(
+  public <R> R getCommitLog(
       String namedRef,
       FetchOption fetchOption,
       String oldestHashLimit,
       String youngestHash,
       String filter,
       String pageToken,
-      PagedResponseHandler<B, R, LogEntry> pagedResponseHandler)
+      PagedResponseHandler<R, LogEntry> pagedResponseHandler)
       throws NessieNotFoundException {
     // we should only allow named references when no paging is defined
     WithHash<NamedRef> endRef =
@@ -290,19 +288,17 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     return getCommitLog(fetchOption, filter, endRef, oldestHashLimit, pagedResponseHandler);
   }
 
-  protected <B, R> R getCommitLog(
+  protected <R> R getCommitLog(
       FetchOption fetchOption,
       String filter,
       WithHash<NamedRef> endRef,
       String startHash,
-      PagedResponseHandler<B, R, LogEntry> pagedResponseHandler)
+      PagedResponseHandler<R, LogEntry> pagedResponseHandler)
       throws NessieNotFoundException {
     boolean fetchAll = FetchOption.isFetchAll(fetchOption);
     try (PaginationIterator<Commit> commits = getStore().getCommits(endRef.getHash(), fetchAll)) {
 
-      B logResponse = pagedResponseHandler.newBuilder();
       Predicate<LogEntry> predicate = filterCommitLog(filter);
-      int cnt = 0;
       while (commits.hasNext()) {
         Commit commit = commits.next();
 
@@ -315,9 +311,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
         }
 
         boolean stop = Objects.equals(hash, startHash);
-        if (!pagedResponseHandler.addEntry(logResponse, ++cnt, logEntry)) {
+        if (!pagedResponseHandler.addEntry(logEntry)) {
           if (!stop) {
-            pagedResponseHandler.hasMore(logResponse, hash);
+            pagedResponseHandler.hasMore(hash);
           }
           break;
         }
@@ -327,7 +323,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
         }
       }
 
-      return pagedResponseHandler.build(logResponse);
+      return pagedResponseHandler.build();
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
@@ -584,13 +580,13 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   }
 
   @Override
-  public <B, R> R getEntries(
+  public <R> R getEntries(
       String namedRef,
       String hashOnRef,
       Integer namespaceDepth,
       String filter,
       String pagingToken,
-      PagedResponseHandler<B, R, EntriesResponse.Entry> pagedResponseHandler)
+      PagedResponseHandler<R, EntriesResponse.Entry> pagedResponseHandler)
       throws NessieNotFoundException {
     WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(namedRef, hashOnRef);
     // TODO Implement paging. At the moment, we do not expect that many keys/entries to be returned.
@@ -602,12 +598,10 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     // to the store though
     //  all existing VersionStore implementations have to read all keys anyways so we don't get much
     try {
-      B response = pagedResponseHandler.newBuilder();
       Predicate<KeyEntry> filterPredicate = filterEntries(refWithHash, filter);
 
       try (PaginationIterator<KeyEntry> entries =
           getStore().getKeys(refWithHash.getHash(), pagingToken)) {
-        int cnt = 0;
         if (namespaceDepth != null && namespaceDepth > 0) {
           int depth = namespaceDepth;
           filterPredicate = filterPredicate.and(e -> e.getKey().getElements().size() >= depth);
@@ -626,8 +620,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
             entry = namespaceDepthMapping(entry, depth);
 
             if (seen.add(entry.getName())) {
-              if (!pagedResponseHandler.addEntry(response, ++cnt, entry)) {
-                pagedResponseHandler.hasMore(response, entries.tokenForCurrent());
+              if (!pagedResponseHandler.addEntry(entry)) {
+                pagedResponseHandler.hasMore(entries.tokenForCurrent());
                 break;
               }
             }
@@ -644,14 +638,14 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                 EntriesResponse.Entry.entry(
                     fromKey(key.getKey()), key.getType(), key.getContentId());
 
-            if (!pagedResponseHandler.addEntry(response, ++cnt, entry)) {
-              pagedResponseHandler.hasMore(response, entries.tokenForCurrent());
+            if (!pagedResponseHandler.addEntry(entry)) {
+              pagedResponseHandler.hasMore(entries.tokenForCurrent());
               break;
             }
           }
         }
       }
-      return pagedResponseHandler.build(response);
+      return pagedResponseHandler.build();
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }

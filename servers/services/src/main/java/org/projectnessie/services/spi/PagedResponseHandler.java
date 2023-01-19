@@ -24,34 +24,26 @@ package org.projectnessie.services.spi;
  * the {@link #addEntry(Object, int, Object)} method.
  *
  * @param <R> Final response object type.
- * @param <B> Response object builder type.
  * @param <E> Entry type.
  */
-public interface PagedResponseHandler<B, R, E> {
-
-  /** Create a new response page builder instance. */
-  B newBuilder();
+public interface PagedResponseHandler<R, E> {
 
   /** Produce the response page from a response page builder instance. */
-  R build(B builder);
+  R build();
 
   /**
    * Add an entry to the response page builder.
    *
-   * @param builder builder to add {@code entry} to
-   * @param cnt number of elements, including this one, so this value is {@code 1} for first
-   *     element.
    * @param entry the entry to add
    * @return {@code true} if {@code entry} could be added to the response page or {@code false} if
    *     not
    */
-  boolean addEntry(B builder, int cnt, E entry);
+  boolean addEntry(E entry);
 
   /**
    * Called to indicate that there are more entries to retrieve using the given paging token.
    *
-   * @param builder response page builder instance
    * @param pagingToken paging token to be used to access the next page
    */
-  void hasMore(B builder, String pagingToken);
+  void hasMore(String pagingToken);
 }
