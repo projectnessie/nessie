@@ -428,10 +428,10 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   @Override
-  public void delete(NamedRef reference, Optional<Hash> expectedHead)
+  public Hash delete(NamedRef reference, Optional<Hash> expectedHead)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
-      casOpLoop(
+      return casOpLoop(
           "deleteRef",
           reference,
           CasOpVariant.DELETE_REF,
@@ -441,7 +441,7 @@ public abstract class NonTransactionalDatabaseAdapter<
 
             return casOpResult(
                 refHead,
-                null,
+                currentHead,
                 refLog ->
                     refLog
                         .setRefName(ByteString.copyFromUtf8(reference.getName()))

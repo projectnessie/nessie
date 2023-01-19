@@ -34,6 +34,7 @@ import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.Reference.ReferenceType;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Validation;
 
@@ -80,8 +81,8 @@ public interface TreeService {
       @Valid Reference assignTo)
       throws NessieNotFoundException, NessieConflictException;
 
-  void deleteReference(
-      Reference.ReferenceType referenceType,
+  String deleteReference(
+      ReferenceType referenceType,
       @Valid
           @NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)

@@ -49,6 +49,7 @@ import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.authz.Check;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.KeyEntry;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.VersionStore;
@@ -127,14 +128,14 @@ public class TreeApiImplWithAuthorization extends TreeApiImpl {
   }
 
   @Override
-  protected void deleteReference(NamedRef ref, String expectedHash)
+  protected Hash deleteReference(NamedRef ref, String expectedHash)
       throws NessieConflictException, NessieNotFoundException {
     if (ref instanceof BranchName && getConfig().getDefaultBranch().equals(ref.getName())) {
       throw new IllegalArgumentException(
           "Default branch '" + ref.getName() + "' cannot be deleted.");
     }
     startAccessCheck().canDeleteReference(ref).checkAndThrow();
-    super.deleteReference(ref, expectedHash);
+    return super.deleteReference(ref, expectedHash);
   }
 
   @Override

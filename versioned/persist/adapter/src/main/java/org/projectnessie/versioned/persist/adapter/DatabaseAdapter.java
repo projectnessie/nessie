@@ -232,11 +232,12 @@ public interface DatabaseAdapter {
    * @param reference named-reference to delete. If a value for the hash is specified, it must be
    *     equal to the current HEAD.
    * @param expectedHead if present, {@code reference}'s current HEAD must be equal to this value
+   * @return head of deleted reference
    * @throws ReferenceNotFoundException if the named reference in {@code reference} does not exist.
    * @throws ReferenceConflictException if the named reference's HEAD is not equal to the expected
    *     HEAD
    */
-  void delete(NamedRef reference, Optional<Hash> expectedHead)
+  Hash delete(NamedRef reference, Optional<Hash> expectedHead)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
