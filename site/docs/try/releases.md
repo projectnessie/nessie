@@ -2,6 +2,14 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.47.1 Release (January 20, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.47.1).
+
+* Fix Jacoco reporting in Nessie Quarkus projects (#5902)
+* Return latest state of deleted reference (#5905)
+* Disable JVM monitoring in native images (#5903)
+
 ## 0.47.0 Release (January 18, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.47.0).
