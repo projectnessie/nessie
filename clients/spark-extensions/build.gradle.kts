@@ -40,6 +40,10 @@ dependencies {
   compileOnly("org.apache.spark:spark-hive_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
   implementation(nessieClientForIceberg())
 
+  if (sparkScala.sparkMajorVersion == "3.3") {
+    implementation(platform(libs.jackson.bom))
+  }
+
   testImplementation(project(":nessie-spark-extensions-basetests_${sparkScala.scalaMajorVersion}"))
 
   val versionIceberg = dependencyVersion("versionIceberg")

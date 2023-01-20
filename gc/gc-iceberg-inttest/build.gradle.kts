@@ -42,6 +42,8 @@ dependencies {
   implementation(nessieProject("nessie-s3mock"))
   implementation(nessieProject("nessie-s3minio"))
 
+  implementation(platform(libs.jackson.bom))
+
   implementation(libs.slf4j.api)
 
   implementation(libs.agrona)
