@@ -21,7 +21,7 @@ package org.projectnessie.services.spi;
  *
  * <p>Protocol specific implementations "tell" the backend (Nessie service implementations) whether
  * a response entry fits in the current response page sent to the client or not via the result of
- * the {@link #addEntry(Object, int, Object)} method.
+ * the {@link #addEntry(Object)} method.
  *
  * @param <R> Final response object type.
  * @param <E> Entry type.
