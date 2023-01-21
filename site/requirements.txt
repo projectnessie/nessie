@@ -2,6 +2,6 @@ mkdocs==1.4.2
 mkdocs-material==9.0.6
 mkdocs-minify-plugin==0.6.2
 mkdocs-redirects==1.2.0
-pymdown-extensions==9.9.1
+pymdown-extensions==9.9.2
 mkdocs-awesome-pages-plugin==2.8.0
 mkdocs-macros-plugin==0.7.0
