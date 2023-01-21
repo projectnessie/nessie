@@ -23,12 +23,12 @@ import javax.validation.executable.ExecutableType;
 import javax.validation.executable.ValidateOnExecution;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.services.impl.DiffApiImplWithAuthorization;
+import org.projectnessie.services.impl.DiffApiImpl;
 import org.projectnessie.versioned.VersionStore;
 
 @RequestScoped
 @ValidateOnExecution(type = ExecutableType.ALL)
-public class RestDiffService extends DiffApiImplWithAuthorization {
+public class RestDiffService extends DiffApiImpl {
   // Mandated by CDI 2.0
   public RestDiffService() {
     this(null, null, null, null);

@@ -65,6 +65,8 @@ public class RefLogApiImpl extends BaseApiImpl implements RefLogService {
       Integer maxRecords,
       String pageToken)
       throws NessieNotFoundException {
+    startAccessCheck().canViewRefLog().checkAndThrow();
+
     int max = Math.min(maxRecords != null ? maxRecords : MAX_REF_LOG_ENTRIES, MAX_REF_LOG_ENTRIES);
 
     Hash endHash = null;

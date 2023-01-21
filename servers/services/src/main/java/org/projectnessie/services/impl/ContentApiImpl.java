@@ -16,6 +16,7 @@
 package org.projectnessie.services.impl;
 
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -29,6 +30,7 @@ import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.GetMultipleContentsResponse.ContentWithKey;
 import org.projectnessie.model.ImmutableGetMultipleContentsResponse;
 import org.projectnessie.services.authz.Authorizer;
+import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.spi.ContentService;
 import org.projectnessie.versioned.Key;
@@ -51,6 +53,7 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
   public Content getContent(ContentKey key, String namedRef, String hashOnRef)
       throws NessieNotFoundException {
     WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
+    startAccessCheck().canReadEntityValue(ref.getValue(), key, null).checkAndThrow();
     try {
       Content obj = getStore().getValue(ref.getHash(), toKey(key));
       if (obj != null) {
@@ -68,8 +71,15 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
       throws NessieNotFoundException {
     try {
       WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
-      List<Key> internalKeys =
-          externalKeys.stream().map(ContentApiImpl::toKey).collect(Collectors.toList());
+
+      BatchAccessChecker check = startAccessCheck();
+      List<Key> internalKeys = new ArrayList<>(externalKeys.size());
+      for (ContentKey externalKey : externalKeys) {
+        check.canReadEntityValue(ref.getValue(), externalKey, null);
+        internalKeys.add(toKey(externalKey));
+      }
+      check.checkAndThrow();
+
       Map<Key, Content> values = getStore().getValues(ref.getHash(), internalKeys);
       List<ContentWithKey> output =
           values.entrySet().stream()

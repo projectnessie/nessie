@@ -23,12 +23,12 @@ import javax.validation.executable.ExecutableType;
 import javax.validation.executable.ValidateOnExecution;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.services.impl.RefLogApiImplWithAuthorization;
+import org.projectnessie.services.impl.RefLogApiImpl;
 import org.projectnessie.versioned.VersionStore;
 
 @RequestScoped
 @ValidateOnExecution(type = ExecutableType.ALL)
-public class RestRefLogService extends RefLogApiImplWithAuthorization {
+public class RestRefLogService extends RefLogApiImpl {
   // Mandated by CDI 2.0
   public RestRefLogService() {
     this(null, null, null, null);

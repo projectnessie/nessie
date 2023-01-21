@@ -23,12 +23,12 @@ import javax.validation.executable.ExecutableType;
 import javax.validation.executable.ValidateOnExecution;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.services.impl.ContentApiImplWithAuthorization;
+import org.projectnessie.services.impl.ContentApiImpl;
 import org.projectnessie.versioned.VersionStore;
 
 @RequestScoped
 @ValidateOnExecution(type = ExecutableType.ALL)
-public class RestContentService extends ContentApiImplWithAuthorization {
+public class RestContentService extends ContentApiImpl {
   // Mandated by CDI 2.0
   public RestContentService() {
     this(null, null, null, null);
