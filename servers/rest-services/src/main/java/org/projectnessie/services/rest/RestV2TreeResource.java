@@ -58,7 +58,7 @@ import org.projectnessie.model.ser.Views;
 import org.projectnessie.services.spi.ConfigService;
 import org.projectnessie.services.spi.ContentService;
 import org.projectnessie.services.spi.DiffService;
-import org.projectnessie.services.spi.PagedResponseHandler;
+import org.projectnessie.services.spi.PagedCountingResponseHandler;
 import org.projectnessie.services.spi.TreeService;
 
 /** REST endpoint for the tree-API. */
@@ -122,10 +122,8 @@ public class RestV2TreeResource implements HttpTreeApi {
             params.fetchOption(),
             params.filter(),
             params.pageToken(),
-            new PagedResponseHandler<ReferencesResponse, Reference>() {
+            new PagedCountingResponseHandler<ReferencesResponse, Reference>(maxRecords) {
               final ImmutableReferencesResponse.Builder builder = ReferencesResponse.builder();
-              final int max = maxRecords != null ? Math.max(maxRecords, 0) : 0;
-              int cnt;
 
               @Override
               public ReferencesResponse build() {
@@ -133,12 +131,8 @@ public class RestV2TreeResource implements HttpTreeApi {
               }
 
               @Override
-              public boolean addEntry(Reference entry) {
-                if (max > 0 && cnt >= max) {
-                  return false;
-                }
+              protected boolean doAddEntry(Reference entry) {
                 builder.addReferences(entry);
-                cnt++;
                 return true;
               }
 
@@ -188,10 +182,8 @@ public class RestV2TreeResource implements HttpTreeApi {
             null,
             params.filter(),
             params.pageToken(),
-            new PagedResponseHandler<EntriesResponse, EntriesResponse.Entry>() {
+            new PagedCountingResponseHandler<EntriesResponse, EntriesResponse.Entry>(maxRecords) {
               final ImmutableEntriesResponse.Builder builder = ImmutableEntriesResponse.builder();
-              final int max = maxRecords != null ? maxRecords : Integer.MAX_VALUE;
-              int cnt;
 
               @Override
               public EntriesResponse build() {
@@ -199,12 +191,8 @@ public class RestV2TreeResource implements HttpTreeApi {
               }
 
               @Override
-              public boolean addEntry(EntriesResponse.Entry entry) {
-                if (max > 0 && cnt >= max) {
-                  return false;
-                }
+              protected boolean doAddEntry(EntriesResponse.Entry entry) {
                 builder.addEntries(entry);
-                cnt++;
                 return true;
               }
 
@@ -229,13 +217,9 @@ public class RestV2TreeResource implements HttpTreeApi {
             reference.getHash(),
             params.filter(),
             params.pageToken(),
-            new PagedResponseHandler<LogResponse, LogEntry>() {
+            new PagedCountingResponseHandler<LogResponse, LogEntry>(
+                maxRecords, MAX_COMMIT_LOG_ENTRIES) {
               final ImmutableLogResponse.Builder builder = ImmutableLogResponse.builder();
-              final int max =
-                  Math.min(
-                      maxRecords != null ? Math.max(maxRecords, 0) : MAX_COMMIT_LOG_ENTRIES,
-                      MAX_COMMIT_LOG_ENTRIES);
-              int cnt;
 
               @Override
               public LogResponse build() {
@@ -243,12 +227,8 @@ public class RestV2TreeResource implements HttpTreeApi {
               }
 
               @Override
-              public boolean addEntry(LogEntry entry) {
-                if (max > 0 && cnt >= max) {
-                  return false;
-                }
+              protected boolean doAddEntry(LogEntry entry) {
                 builder.addLogEntries(entry);
-                cnt++;
                 return true;
               }
 
@@ -272,10 +252,8 @@ public class RestV2TreeResource implements HttpTreeApi {
             to.getName(),
             to.getHash(),
             params.pageToken(),
-            new PagedResponseHandler<DiffResponse, DiffEntry>() {
+            new PagedCountingResponseHandler<DiffResponse, DiffEntry>(maxRecords) {
               final ImmutableDiffResponse.Builder builder = ImmutableDiffResponse.builder();
-              final int max = maxRecords != null ? maxRecords : Integer.MAX_VALUE;
-              int cnt;
 
               @Override
               public DiffResponse build() {
@@ -283,12 +261,8 @@ public class RestV2TreeResource implements HttpTreeApi {
               }
 
               @Override
-              public boolean addEntry(DiffEntry entry) {
-                if (max > 0 && cnt >= max) {
-                  return false;
-                }
+              protected boolean doAddEntry(DiffEntry entry) {
                 builder.addDiffs(entry);
-                cnt++;
                 return true;
               }
 
