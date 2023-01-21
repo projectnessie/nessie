@@ -93,7 +93,7 @@ awssdk-sts = { module = "software.amazon.awssdk:sts" }
 awssdk-url-connection-client = { module = "software.amazon.awssdk:url-connection-client" }
 bouncycastle-bcpkix = { module = "org.bouncycastle:bcpkix-jdk15on", version.ref = "bouncycastle" }
 bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk15on", version.ref = "bouncycastle" }
-cel-bom = { module = "org.projectnessie.cel:cel-bom", version = "0.3.11" }
+cel-bom = { module = "org.projectnessie.cel:cel-bom", version = "0.3.12" }
 cel-jackson = { module = "org.projectnessie.cel:cel-jackson" }
 cel-tools = { module = "org.projectnessie.cel:cel-tools" }
 checkstyle = { module = "com.puppycrawl.tools:checkstyle", version.ref = "checkstyle" }
