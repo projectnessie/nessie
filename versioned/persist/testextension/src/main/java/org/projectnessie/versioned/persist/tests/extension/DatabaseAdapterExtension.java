@@ -275,8 +275,22 @@ public class DatabaseAdapterExtension
     if (opt.isPresent()) {
       return opt;
     }
-    opt = context.getTestClass().flatMap(m -> AnnotationUtils.findAnnotation(m, annotation));
-    return opt;
+
+    while (true) {
+      Optional<Class<?>> clazz = context.getTestClass();
+      if (clazz.isPresent()) {
+        Optional<A> ann = AnnotationUtils.findAnnotation(clazz.get(), annotation);
+        if (ann.isPresent()) {
+          return ann;
+        }
+      }
+
+      Optional<ExtensionContext> p = context.getParent();
+      if (!p.isPresent()) {
+        return Optional.empty();
+      }
+      context = p.get();
+    }
   }
 
   static DatabaseAdapter createAdapterResource(
