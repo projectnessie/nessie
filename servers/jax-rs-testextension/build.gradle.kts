@@ -39,6 +39,8 @@ dependencies {
   compileOnly(libs.microprofile.openapi)
 
   testCompileOnly(libs.microprofile.openapi)
+  testImplementation(project(":nessie-versioned-persist-in-memory"))
+  testImplementation(project(":nessie-versioned-persist-in-memory-test"))
 
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)

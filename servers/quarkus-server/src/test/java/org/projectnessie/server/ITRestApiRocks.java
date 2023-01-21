@@ -21,4 +21,4 @@ import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileRocks;
 
 @QuarkusIntegrationTest
 @TestProfile(QuarkusTestProfileRocks.class)
-class ITRestApiRocks extends AbstractTestQuarkusRest {}
+class ITRestApiRocks extends AbstractQuarkusSmoke {}

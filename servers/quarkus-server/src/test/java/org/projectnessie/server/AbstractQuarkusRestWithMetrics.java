@@ -19,10 +19,13 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 import io.restassured.RestAssured;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.client.ext.NessieApiVersion;
 import org.projectnessie.client.ext.NessieApiVersions;
+import org.projectnessie.jaxrs.tests.BaseTestNessieRest;
 
-public abstract class AbstractQuarkusRestWithMetrics extends AbstractTestQuarkusRest {
+@ExtendWith(QuarkusNessieClientResolver.class)
+public abstract class AbstractQuarkusRestWithMetrics extends BaseTestNessieRest {
   // We need to extend the base class because all Nessie metrics are created lazily.
   // They will appear in the `/q/metrics` endpoint only when some REST actions are executed.
 
@@ -31,7 +34,9 @@ public abstract class AbstractQuarkusRestWithMetrics extends AbstractTestQuarkus
   private String getMetrics() {
     return RestAssured.given()
         .when()
+        .baseUri(clientURI.resolve("/").toString())
         .basePath("/q/metrics")
+        .accept("*/*")
         .get()
         .then()
         .statusCode(200)

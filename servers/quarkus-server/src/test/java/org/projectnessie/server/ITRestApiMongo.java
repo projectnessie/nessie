@@ -21,4 +21,4 @@ import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileMongo;
 
 @QuarkusIntegrationTest
 @TestProfile(QuarkusTestProfileMongo.class)
-class ITRestApiMongo extends AbstractTestQuarkusRest {}
+class ITRestApiMongo extends AbstractQuarkusSmoke {}

@@ -21,4 +21,4 @@ import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileDynamo;
 
 @QuarkusIntegrationTest
 @TestProfile(QuarkusTestProfileDynamo.class)
-class ITRestApiDynamo extends AbstractTestQuarkusRest {}
+class ITRestApiDynamo extends AbstractQuarkusSmoke {}

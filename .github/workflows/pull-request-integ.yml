@@ -35,8 +35,9 @@ jobs:
       ICEBERG_DIR: included-builds/iceberg
       ICEBERG_MAIN_REPOSITORY: apache/iceberg
       ICEBERG_MAIN_BRANCH: master
-      ICEBERG_PATCH_REPOSITORY: ''
-      ICEBERG_PATCH_BRANCH: ''
+      # TODO revert the change in the following two lines once https://github.com/apache/iceberg/pull/6649 has been merged
+      ICEBERG_PATCH_REPOSITORY: snazy/iceberg
+      ICEBERG_PATCH_BRANCH: nessie-dep-nit
       SPARK_LOCAL_IP: localhost
 
     steps:

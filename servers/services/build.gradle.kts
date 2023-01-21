@@ -45,6 +45,32 @@ dependencies {
   compileOnly(libs.microprofile.openapi)
   compileOnly(libs.jakarta.validation.api)
 
+  testRuntimeOnly(project(":nessie-server-store"))
+
+  testImplementation(project(":nessie-versioned-persist-store"))
+  testImplementation(project(":nessie-versioned-persist-adapter"))
+  testImplementation(project(":nessie-versioned-persist-serialize"))
+  testImplementation(project(":nessie-versioned-persist-testextension"))
+  testImplementation(project(":nessie-versioned-persist-in-memory"))
+  testImplementation(project(":nessie-versioned-persist-in-memory-test"))
+  testImplementation(project(":nessie-versioned-persist-rocks"))
+  testImplementation(project(":nessie-versioned-persist-rocks-test"))
+  testImplementation(project(":nessie-versioned-persist-dynamodb"))
+  testImplementation(project(":nessie-versioned-persist-dynamodb-test"))
+  testImplementation(project(":nessie-versioned-persist-mongodb"))
+  testImplementation(project(":nessie-versioned-persist-mongodb-test"))
+  testImplementation(project(":nessie-versioned-persist-transactional"))
+  testImplementation(project(":nessie-versioned-persist-transactional-test"))
+
+  testRuntimeOnly(libs.testcontainers.testcontainers)
+  testRuntimeOnly(libs.testcontainers.mongodb)
+  testRuntimeOnly(libs.docker.java.api)
+  testRuntimeOnly(libs.agroal.pool)
+  testRuntimeOnly(libs.h2)
+  testRuntimeOnly(libs.postgresql)
+  testRuntimeOnly(libs.testcontainers.postgresql)
+  testRuntimeOnly(libs.testcontainers.cockroachdb)
+
   testCompileOnly(libs.microprofile.openapi)
 
   testCompileOnly(platform(libs.jackson.bom))
