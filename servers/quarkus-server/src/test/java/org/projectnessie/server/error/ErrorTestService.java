@@ -38,9 +38,9 @@ import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.versioned.BackendLimitExceededException;
 import org.projectnessie.versioned.GetNamedRefsParams;
-import org.projectnessie.versioned.PaginationIterator;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.paging.PaginationIterator;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
 

@@ -28,10 +28,10 @@ import org.projectnessie.services.spi.PagedResponseHandler;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
-import org.projectnessie.versioned.PaginationIterator;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
+import org.projectnessie.versioned.paging.PaginationIterator;
 
 public class DiffApiImpl extends BaseApiImpl implements DiffService {
 

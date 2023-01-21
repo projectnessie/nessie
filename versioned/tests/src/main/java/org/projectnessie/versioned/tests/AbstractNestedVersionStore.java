@@ -33,13 +33,13 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableCommit;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.MetadataRewriter;
-import org.projectnessie.versioned.PaginationIterator;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.paging.PaginationIterator;
 import org.projectnessie.versioned.store.DefaultStoreWorker;
 
 public abstract class AbstractNestedVersionStore {

@@ -103,7 +103,6 @@ import org.projectnessie.versioned.MergeConflictException;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.NamedRef;
-import org.projectnessie.versioned.PaginationIterator;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -113,6 +112,7 @@ import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
+import org.projectnessie.versioned.paging.PaginationIterator;
 
 public class TreeApiImpl extends BaseApiImpl implements TreeService {
 

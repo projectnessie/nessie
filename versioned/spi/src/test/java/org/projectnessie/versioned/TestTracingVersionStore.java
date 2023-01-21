@@ -45,6 +45,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.stubbing.Stubber;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.versioned.paging.PaginationIterator;
 import org.projectnessie.versioned.test.tracing.TestTracer;
 import org.projectnessie.versioned.test.tracing.TestedTraceingStoreInvocation;
 

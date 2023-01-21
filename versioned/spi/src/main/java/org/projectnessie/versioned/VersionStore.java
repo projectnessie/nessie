@@ -27,6 +27,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.concurrent.ThreadSafe;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.versioned.paging.PaginationIterator;
 
 /**
  * A storage interface that maintains multiple versions of the VALUE type with each commit having an

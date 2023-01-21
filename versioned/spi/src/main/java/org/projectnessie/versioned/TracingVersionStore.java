@@ -37,6 +37,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.versioned.paging.PaginationIterator;
 
 /**
  * A {@link VersionStore} wrapper that publishes tracing information via OpenTracing/OpenTelemetry.

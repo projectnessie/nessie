@@ -13,14 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned;
+package org.projectnessie.versioned.paging;
 
-import com.google.common.collect.AbstractIterator;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import javax.annotation.CheckForNull;
 
 public interface PaginationIterator<T> extends Iterator<T>, AutoCloseable {
 
@@ -74,61 +70,5 @@ public interface PaginationIterator<T> extends Iterator<T>, AutoCloseable {
         throw new NoSuchElementException();
       }
     };
-  }
-
-  abstract class FilteringPaginationIterator<S, T> extends AbstractIterator<T>
-      implements PaginationIterator<T> {
-    private final Iterator<S> base;
-
-    private final Function<S, T> mapper;
-
-    private final Predicate<S> sourcePredicate;
-    private S current;
-
-    public FilteringPaginationIterator(Iterator<S> base, Function<S, T> mapper) {
-      this(base, mapper, x -> true);
-    }
-
-    public FilteringPaginationIterator(
-        Iterator<S> base, Function<S, T> mapper, Predicate<S> sourcePredicate) {
-      this.base = base;
-      this.mapper = mapper;
-      this.sourcePredicate = sourcePredicate;
-    }
-
-    @CheckForNull
-    @Override
-    protected T computeNext() {
-      current = null;
-      while (true) {
-        if (!base.hasNext()) {
-          endOfData();
-          return null;
-        }
-        S source = base.next();
-        if (!sourcePredicate.test(source)) {
-          continue;
-        }
-        current = source;
-        return mapper.apply(source);
-      }
-    }
-
-    protected S current() {
-      return current;
-    }
-
-    @Override
-    public final String tokenForCurrent() {
-      if (current != null) {
-        return computeTokenForCurrent();
-      }
-      return null;
-    }
-
-    protected abstract String computeTokenForCurrent();
-
-    @Override
-    public void close() {}
   }
 }

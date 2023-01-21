@@ -57,11 +57,11 @@ import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.KeyEntry;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Operation;
-import org.projectnessie.versioned.PaginationIterator;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
+import org.projectnessie.versioned.paging.PaginationIterator;
 
 public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
 
