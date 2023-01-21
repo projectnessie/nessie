@@ -313,7 +313,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
         boolean stop = Objects.equals(hash, startHash);
         if (!pagedResponseHandler.addEntry(logEntry)) {
           if (!stop) {
-            pagedResponseHandler.hasMore(hash);
+            pagedResponseHandler.hasMore(commits.tokenForCurrent());
           }
           break;
         }

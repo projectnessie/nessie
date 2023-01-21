@@ -67,7 +67,7 @@ public abstract class AbstractRestDiff extends AbstractRestContents {
     Branch defaultBranch = getApi().getDefaultBranch();
     Branch branch = createBranch("entriesPaging");
     try {
-      getApi().getDiff().pageToken("Zm9v").fromRef(branch).toRef(defaultBranch).get();
+      getApi().getDiff().pageToken("666f6f").fromRef(branch).toRef(defaultBranch).get();
     } catch (NessieBadRequestException e) {
       if (!e.getMessage().contains("Paging not supported")) {
         throw e;

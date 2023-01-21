@@ -398,7 +398,7 @@ public class PersistVersionStore implements VersionStore {
         }) {
       @Override
       protected String computeTokenForCurrent() {
-        return null;
+        return current() != null ? current().getHash().asString() : null;
       }
 
       @Override

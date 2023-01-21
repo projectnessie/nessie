@@ -65,7 +65,7 @@ public abstract class AbstractRestReferences extends AbstractRestMisc {
   @ValueSource(ints = {0, 20, 22})
   public void referencesPaging(int numRefs) throws BaseNessieClientServerException {
     try {
-      getApi().getAllReferences().pageToken("Zm9v").maxRecords(20).get();
+      getApi().getAllReferences().pageToken("666f6f").maxRecords(20).get();
     } catch (NessieBadRequestException e) {
       if (!e.getMessage().contains("Paging not supported")) {
         throw e;

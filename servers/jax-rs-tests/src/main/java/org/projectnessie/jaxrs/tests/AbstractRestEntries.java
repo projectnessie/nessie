@@ -63,7 +63,7 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
   public void entriesPaging(int numKeys) throws BaseNessieClientServerException {
     Branch branch = createBranch("entriesPaging");
     try {
-      getApi().getEntries().pageToken("Zm9v").reference(branch).get();
+      getApi().getEntries().pageToken("666f6f").reference(branch).get();
     } catch (NessieBadRequestException e) {
       if (!e.getMessage().contains("Paging not supported")) {
         throw e;
