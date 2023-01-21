@@ -40,7 +40,7 @@ import org.projectnessie.versioned.DetachedRef;
 import org.projectnessie.versioned.TagName;
 
 @Execution(ExecutionMode.CONCURRENT)
-public class BatchAccessCheckerTest {
+public class TestBatchAccessChecker {
 
   @Test
   public void emptyDoesNotThrow() {

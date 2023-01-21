@@ -35,7 +35,7 @@ import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.TagName;
 
 @Execution(ExecutionMode.CONCURRENT)
-class RefUtilTest {
+class TestRefUtil {
 
   public static final String HASH_VALUE = "deadbeeffeedcafe";
   public static final String REF_NAME = "foo";
@@ -82,7 +82,7 @@ class RefUtilTest {
                     }))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageStartingWith(
-            "Unsupported reference 'org.projectnessie.services.impl.RefUtilTest");
+            "Unsupported reference 'org.projectnessie.services.impl.TestRefUtil");
   }
 
   @Test
@@ -149,11 +149,11 @@ class RefUtilTest {
                     HASH_VALUE))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageStartingWith(
-            "Unsupported named reference 'org.projectnessie.services.impl.RefUtilTest");
+            "Unsupported named reference 'org.projectnessie.services.impl.TestRefUtil");
     assertThatThrownBy(() -> toReference(() -> REF_NAME, HASH_VALUE))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageStartingWith(
-            "Unsupported named reference 'org.projectnessie.services.impl.RefUtilTest");
+            "Unsupported named reference 'org.projectnessie.services.impl.TestRefUtil");
     assertThatThrownBy(() -> toReference(DetachedRef.INSTANCE, (String) null))
         .isInstanceOf(NullPointerException.class)
         .hasMessage("hash must not be null for detached references");
@@ -180,11 +180,11 @@ class RefUtilTest {
                     Hash.of(HASH_VALUE)))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageStartingWith(
-            "Unsupported named reference 'org.projectnessie.services.impl.RefUtilTest");
+            "Unsupported named reference 'org.projectnessie.services.impl.TestRefUtil");
     assertThatThrownBy(() -> toReference(() -> REF_NAME, Hash.of(HASH_VALUE)))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageStartingWith(
-            "Unsupported named reference 'org.projectnessie.services.impl.RefUtilTest");
+            "Unsupported named reference 'org.projectnessie.services.impl.TestRefUtil");
     assertThatThrownBy(() -> toReference(DetachedRef.INSTANCE, (Hash) null))
         .isInstanceOf(NullPointerException.class)
         .hasMessage("hash must not be null for detached references");
