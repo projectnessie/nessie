@@ -76,7 +76,7 @@ public class RestTreeResource implements HttpTreeApi {
         .getAllReferences(
             params.fetchOption(),
             params.filter(),
-            null,
+            params.pageToken(),
             new PagedCountingResponseHandler<ReferencesResponse, Reference>(maxRecords) {
               final ImmutableReferencesResponse.Builder builder = ReferencesResponse.builder();
 
