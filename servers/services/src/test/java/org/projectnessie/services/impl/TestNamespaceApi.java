@@ -23,7 +23,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.projectnessie.model.Namespace;
 
 @Execution(ExecutionMode.CONCURRENT)
-public class NamespaceApiTest {
+public class TestNamespaceApi {
 
   @Test
   public void emptyNamespaceCreation() {
