@@ -55,9 +55,14 @@ public final class ClientSideUpdateNamespace extends BaseUpdateNamespaceBuilder 
         ImmutableNamespace.builder().from(oldNamespace).properties(newProperties);
 
     try {
+      String expectedHash = hashOnRef;
+      if (expectedHash == null) {
+        expectedHash = api.getReference().refName(refName).get().getHash();
+      }
+
       api.commitMultipleOperations()
           .branchName(refName)
-          .hash(hashOnRef)
+          .hash(expectedHash)
           .commitMeta(CommitMeta.fromMessage("update namespace " + key))
           .operation(Operation.Put.of(key, builder.build(), oldNamespace))
           .commit();

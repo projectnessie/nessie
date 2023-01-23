@@ -79,9 +79,14 @@ public final class ClientSideDeleteNamespace extends BaseDeleteNamespaceBuilder 
     }
 
     try {
+      String expectedHash = hashOnRef;
+      if (expectedHash == null) {
+        expectedHash = api.getReference().refName(refName).get().getHash();
+      }
+
       api.commitMultipleOperations()
           .branchName(refName)
-          .hash(hashOnRef)
+          .hash(expectedHash)
           .commitMeta(CommitMeta.fromMessage("delete namespace " + key))
           .operation(Operation.Delete.of(key))
           .commit();
