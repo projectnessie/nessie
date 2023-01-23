@@ -74,11 +74,16 @@ public final class ClientSideCreateNamespace extends BaseCreateNamespaceBuilder 
     }
 
     try {
+      String expectedHash = hashOnRef;
+      if (expectedHash == null) {
+        expectedHash = api.getReference().refName(refName).get().getHash();
+      }
+
       Branch branch =
           api.commitMultipleOperations()
               .commitMeta(CommitMeta.fromMessage("create namespace " + namespace.name()))
               .branchName(refName)
-              .hash(hashOnRef)
+              .hash(expectedHash)
               .operation(Operation.Put.of(key, content))
               .commit();
 
