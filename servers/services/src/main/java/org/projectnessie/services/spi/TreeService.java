@@ -28,14 +28,13 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.FetchOption;
-import org.projectnessie.model.LogResponse;
+import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Reference.ReferenceType;
-import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Validation;
 
 /**
@@ -46,9 +45,15 @@ import org.projectnessie.model.Validation;
  */
 public interface TreeService {
 
+  int MAX_COMMIT_LOG_ENTRIES = 250;
+
   Branch getDefaultBranch() throws NessieNotFoundException;
 
-  ReferencesResponse getAllReferences(FetchOption fetchOption, @Nullable String filter);
+  <R> R getAllReferences(
+      FetchOption fetchOption,
+      @Nullable String filter,
+      String pagingToken,
+      PagedResponseHandler<R, Reference> pagedResponseHandler);
 
   Reference getReferenceByName(
       @Valid
@@ -91,7 +96,7 @@ public interface TreeService {
           String expectedHash)
       throws NessieConflictException, NessieNotFoundException;
 
-  LogResponse getCommitLog(
+  <R> R getCommitLog(
       @Valid
           @NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
@@ -102,8 +107,8 @@ public interface TreeService {
       @Valid @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String youngestHash,
       @Nullable String filter,
-      @Nullable Integer maxRecords,
-      @Nullable String pageToken)
+      @Nullable String pageToken,
+      @NotNull PagedResponseHandler<R, LogEntry> pagedResponseHandler)
       throws NessieNotFoundException;
 
   MergeResponse transplantCommitsIntoBranch(
@@ -150,7 +155,7 @@ public interface TreeService {
       @Nullable Boolean returnConflictAsResult)
       throws NessieNotFoundException, NessieConflictException;
 
-  EntriesResponse getEntries(
+  <R> R getEntries(
       @Valid
           @NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
@@ -158,7 +163,9 @@ public interface TreeService {
       @Valid @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String hashOnRef,
       @Nullable Integer namespaceDepth,
-      @Nullable String filter)
+      @Nullable String filter,
+      @Nullable String pagingToken,
+      PagedResponseHandler<R, EntriesResponse.Entry> pagedResponseHandler)
       throws NessieNotFoundException;
 
   CommitResponse commitMultipleOperations(

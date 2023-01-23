@@ -17,10 +17,9 @@ package org.projectnessie.versioned.tests;
 
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -34,6 +33,7 @@ import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
+import org.projectnessie.versioned.paging.PaginationIterator;
 import org.projectnessie.versioned.testworker.OnRefOnly;
 
 @ExtendWith(SoftAssertionsExtension.class)
@@ -100,8 +100,10 @@ public abstract class AbstractDiff extends AbstractNestedVersionStore {
   }
 
   private List<Diff> diffAsList(Hash initial, Hash secondCommit) throws ReferenceNotFoundException {
-    try (Stream<Diff> diffStream = store().getDiffs(initial, secondCommit)) {
-      return diffStream.collect(Collectors.toList());
+    try (PaginationIterator<Diff> diffStream = store().getDiffs(initial, secondCommit, null)) {
+      List<Diff> r = new ArrayList<>();
+      diffStream.forEachRemaining(r::add);
+      return r;
     }
   }
 }

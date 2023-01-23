@@ -45,6 +45,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.stubbing.Stubber;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.versioned.paging.PaginationIterator;
 import org.projectnessie.versioned.test.tracing.TestTracer;
 import org.projectnessie.versioned.test.tracing.TestedTraceingStoreInvocation;
 
@@ -188,7 +189,7 @@ class TestTracingVersionStore {
                 .function(
                     vs -> vs.getCommits(BranchName.of("mock-branch"), false),
                     () ->
-                        Stream.of(
+                        PaginationIterator.of(
                             Commit.builder()
                                 .hash(Hash.of("cafebabe"))
                                 .commitMeta(CommitMeta.fromMessage("log#1"))
@@ -200,14 +201,15 @@ class TestTracingVersionStore {
             new TestedTraceingStoreInvocation<VersionStore>("GetKeys.stream", refNotFoundThrows)
                 .tag("nessie.version-store.ref", "Hash cafe4242")
                 .function(
-                    vs -> vs.getKeys(Hash.of("cafe4242")),
-                    () -> Stream.of(Key.of("hello", "world"))),
+                    vs -> vs.getKeys(Hash.of("cafe4242"), null),
+                    () -> PaginationIterator.of(Key.of("hello", "world"))),
             new TestedTraceingStoreInvocation<VersionStore>("GetNamedRefs.stream", runtimeThrows)
                 .function(
                     stringStringDummyEnumVersionStore ->
-                        stringStringDummyEnumVersionStore.getNamedRefs(GetNamedRefsParams.DEFAULT),
+                        stringStringDummyEnumVersionStore.getNamedRefs(
+                            GetNamedRefsParams.DEFAULT, null),
                     () ->
-                        Stream.of(
+                        PaginationIterator.of(
                             WithHash.of(Hash.of("cafebabe"), BranchName.of("foo")),
                             WithHash.of(Hash.of("deadbeef"), BranchName.of("cow")))),
             new TestedTraceingStoreInvocation<VersionStore>("GetValue", refNotFoundThrows)
@@ -229,8 +231,10 @@ class TestTracingVersionStore {
                 .tag("nessie.version-store.from", "BranchName{name=mock-branch}")
                 .tag("nessie.version-store.to", "BranchName{name=foo-branch}")
                 .function(
-                    vs -> vs.getDiffs(BranchName.of("mock-branch"), BranchName.of("foo-branch")),
-                    Stream::empty));
+                    vs ->
+                        vs.getDiffs(
+                            BranchName.of("mock-branch"), BranchName.of("foo-branch"), null),
+                    PaginationIterator::empty));
 
     return TestedTraceingStoreInvocation.toArguments(versionStoreFunctions);
   }
@@ -288,6 +292,12 @@ class TestTracingVersionStore {
             Stream<?> stream = (Stream<?>) r;
             stream.forEach(ignore -> {});
             stream.close();
+          }
+          if (result instanceof PaginationIterator) {
+            // Stream-results shall be closed to indicate the "end" of an invocation
+            PaginationIterator<?> iter = (PaginationIterator<?>) r;
+            iter.forEachRemaining(ignore -> {});
+            iter.close();
           }
         };
 

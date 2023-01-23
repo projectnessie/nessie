@@ -15,6 +15,9 @@
  */
 package org.projectnessie.services.impl;
 
+import static java.util.Spliterators.spliteratorUnknownSize;
+import static java.util.stream.StreamSupport.stream;
+
 import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.security.Principal;
@@ -58,6 +61,7 @@ import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
+import org.projectnessie.versioned.paging.PaginationIterator;
 
 public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
 
@@ -127,12 +131,14 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
 
       Callable<Void> validator =
           () -> {
-            try (Stream<KeyEntry> keys = getStore().getKeys(refWithHash.getHash())) {
-              if (keys.anyMatch(
-                  k ->
-                      Namespace.of(k.getKey().getElements()).isSameOrSubElementOf(namespaceToDelete)
-                          && !k.getType().equals(Content.Type.NAMESPACE))) {
-                throw namespaceNotEmptyException(namespaceToDelete);
+            try (PaginationIterator<KeyEntry> keys =
+                getStore().getKeys(refWithHash.getHash(), null)) {
+              while (keys.hasNext()) {
+                KeyEntry k = keys.next();
+                if (Namespace.of(k.getKey().getElements()).isSameOrSubElementOf(namespaceToDelete)
+                    && !k.getType().equals(Content.Type.NAMESPACE)) {
+                  throw namespaceNotEmptyException(namespaceToDelete);
+                }
               }
             }
             return null;
@@ -274,8 +280,9 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
   private Stream<KeyEntry> getNamespacesKeyStream(
       @Nullable Namespace namespace, Hash hash, Predicate<KeyEntry> earlyFilterPredicate)
       throws ReferenceNotFoundException {
-    return getStore()
-        .getKeys(hash)
+    PaginationIterator<KeyEntry> iter = getStore().getKeys(hash, null);
+    return stream(spliteratorUnknownSize(iter, 0), false)
+        .onClose(iter::close)
         .filter(earlyFilterPredicate)
         .filter(k -> null == namespace || namespaceFromType(k).isSameOrSubElementOf(namespace));
   }

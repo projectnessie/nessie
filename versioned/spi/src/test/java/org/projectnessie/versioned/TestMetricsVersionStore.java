@@ -62,6 +62,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.stubbing.Stubber;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.versioned.paging.PaginationIterator;
 
 class TestMetricsVersionStore {
 
@@ -185,7 +186,7 @@ class TestMetricsVersionStore {
                 "getcommits",
                 vs -> vs.getCommits(BranchName.of("mock-branch"), false),
                 () ->
-                    Stream.of(
+                    PaginationIterator.of(
                         Commit.builder()
                             .hash(Hash.of("cafebabe"))
                             .commitMeta(CommitMeta.fromMessage("log#1"))
@@ -197,15 +198,16 @@ class TestMetricsVersionStore {
                 refNotFoundThrows),
             new VersionStoreInvocation<>(
                 "getkeys",
-                vs -> vs.getKeys(Hash.of("cafe4242")),
-                () -> Stream.of(Key.of("hello", "world")),
+                vs -> vs.getKeys(Hash.of("cafe4242"), null),
+                () -> PaginationIterator.of(Key.of("hello", "world")),
                 refNotFoundThrows),
             new VersionStoreInvocation<>(
                 "getnamedrefs",
                 stringStringDummyEnumVersionStore ->
-                    stringStringDummyEnumVersionStore.getNamedRefs(GetNamedRefsParams.DEFAULT),
+                    stringStringDummyEnumVersionStore.getNamedRefs(
+                        GetNamedRefsParams.DEFAULT, null),
                 () ->
-                    Stream.of(
+                    PaginationIterator.of(
                         WithHash.of(Hash.of("cafebabe"), BranchName.of("foo")),
                         WithHash.of(Hash.of("deadbeef"), BranchName.of("cow"))),
                 runtimeThrows),
@@ -224,8 +226,8 @@ class TestMetricsVersionStore {
                 refNotFoundThrows),
             new VersionStoreInvocation<>(
                 "getdiffs",
-                vs -> vs.getDiffs(BranchName.of("mock-branch"), BranchName.of("foo-branch")),
-                Stream::empty,
+                vs -> vs.getDiffs(BranchName.of("mock-branch"), BranchName.of("foo-branch"), null),
+                PaginationIterator::empty,
                 refNotFoundThrows));
 
     // flatten all "normal executions" + "throws XYZ"
@@ -289,6 +291,13 @@ class TestMetricsVersionStore {
             assertNull(registry.timers.get(timerId), "Timer " + timerId + " registered too early");
             stream.forEach(ignore -> {});
             stream.close();
+          }
+          if (result instanceof PaginationIterator) {
+            // Stream-results shall be closed to indicate the "end" of an invocation
+            PaginationIterator<?> iter = (PaginationIterator<?>) r;
+            assertNull(registry.timers.get(timerId), "Timer " + timerId + " registered too early");
+            iter.forEachRemaining(ignore -> {});
+            iter.close();
           }
         };
 

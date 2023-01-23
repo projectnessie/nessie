@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
@@ -87,11 +88,9 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
     }
     Collections.reverse(messages);
 
-    List<CommitMeta> justTwo =
-        commitsList(branch, s -> s.limit(2).map(Commit::getCommitMeta), false);
+    List<CommitMeta> justTwo = commitsListMap(branch, 2, Commit::getCommitMeta);
     soft.assertThat(justTwo).isEqualTo(messages.subList(0, 2));
-    List<CommitMeta> justTen =
-        commitsList(branch, s -> s.limit(10).map(Commit::getCommitMeta), false);
+    List<CommitMeta> justTen = commitsListMap(branch, 10, Commit::getCommitMeta);
     soft.assertThat(justTen).isEqualTo(messages.subList(0, 10));
 
     int pageSize = 10;
@@ -102,7 +101,7 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
     Hash lastHash = null;
     for (int offset = 0; ; ) {
       List<Commit> logPage =
-          commitsList(lastHash == null ? branch : lastHash, s -> s.limit(pageSize), false);
+          commitsListMap(lastHash == null ? branch : lastHash, pageSize, Function.identity());
 
       soft.assertThat(logPage.stream().map(Commit::getCommitMeta).collect(Collectors.toList()))
           .isEqualTo(messages.subList(offset, Math.min(offset + pageSize, commits)));
@@ -113,7 +112,7 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
       if (offset >= commits) {
         // The "next after last page" should always return just a single commit, that's basically
         // the "end of commit-log"-condition.
-        logPage = commitsList(lastHash, s -> s.limit(pageSize), false);
+        logPage = commitsListMap(lastHash, pageSize, Function.identity());
         soft.assertThat(logPage.stream().map(Commit::getCommitMeta).collect(Collectors.toList()))
             .isEqualTo(Collections.singletonList(messages.get(commits - 1)));
         break;

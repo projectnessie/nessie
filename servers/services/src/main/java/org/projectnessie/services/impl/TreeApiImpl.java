@@ -38,17 +38,19 @@ import com.google.common.collect.ImmutableMap;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
 import org.projectnessie.cel.tools.Script;
 import org.projectnessie.cel.tools.ScriptException;
@@ -69,13 +71,10 @@ import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableCommitResponse;
 import org.projectnessie.model.ImmutableContentKeyDetails;
-import org.projectnessie.model.ImmutableEntriesResponse;
 import org.projectnessie.model.ImmutableLogEntry;
 import org.projectnessie.model.ImmutableMergeResponse;
 import org.projectnessie.model.ImmutableReferenceMetadata;
-import org.projectnessie.model.ImmutableReferencesResponse;
 import org.projectnessie.model.ImmutableTag;
-import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
@@ -86,11 +85,11 @@ import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Reference.ReferenceType;
 import org.projectnessie.model.ReferenceMetadata;
-import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Validation;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.cel.CELUtil;
 import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.services.spi.PagedResponseHandler;
 import org.projectnessie.services.spi.TreeService;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
@@ -113,10 +112,9 @@ import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
+import org.projectnessie.versioned.paging.PaginationIterator;
 
 public class TreeApiImpl extends BaseApiImpl implements TreeService {
-
-  private static final int MAX_COMMIT_LOG_ENTRIES = 250;
 
   public TreeApiImpl(
       ServerConfig config,
@@ -127,21 +125,32 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   }
 
   @Override
-  public ReferencesResponse getAllReferences(FetchOption fetchOption, String filter) {
-    ImmutableReferencesResponse.Builder resp = ReferencesResponse.builder();
+  public <R> R getAllReferences(
+      FetchOption fetchOption,
+      String filter,
+      String pagingToken,
+      PagedResponseHandler<R, Reference> pagedResponseHandler) {
     boolean fetchAll = FetchOption.isFetchAll(fetchOption);
-    try (Stream<ReferenceInfo<CommitMeta>> str =
-        getStore().getNamedRefs(getGetNamedRefsParams(fetchAll))) {
-      Stream<Reference> unfiltered =
-          str.map(refInfo -> TreeApiImpl.makeReference(refInfo, fetchAll));
-      Stream<Reference> filtered = filterReferences(unfiltered, filter);
-      filtered.forEach(resp::addReferences);
+    try (PaginationIterator<ReferenceInfo<CommitMeta>> references =
+        getStore().getNamedRefs(getGetNamedRefsParams(fetchAll), pagingToken)) {
+      Predicate<Reference> filterPredicate = filterReferences(filter);
+      while (references.hasNext()) {
+        ReferenceInfo<CommitMeta> refInfo = references.next();
+        Reference ref = TreeApiImpl.makeReference(refInfo, fetchAll);
+        if (!filterPredicate.test(ref)) {
+          continue;
+        }
+        if (!pagedResponseHandler.addEntry(ref)) {
+          pagedResponseHandler.hasMore(references.tokenForCurrent());
+          break;
+        }
+      }
     } catch (ReferenceNotFoundException e) {
       throw new IllegalArgumentException(
           String.format(
               "Could not find default branch '%s'.", this.getConfig().getDefaultBranch()));
     }
-    return resp.build();
+    return pagedResponseHandler.build();
   }
 
   private GetNamedRefsParams getGetNamedRefsParams(boolean fetchMetadata) {
@@ -155,15 +164,13 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   }
 
   /**
-   * Applies different filters to the {@link Stream} of references on the filter.
+   * Produces the filter predicate for reference-filtering.
    *
-   * @param references The references that different filters will be applied to
    * @param filter The filter to filter by
-   * @return A potentially filtered {@link Stream} of commits based on the filter
    */
-  private static Stream<Reference> filterReferences(Stream<Reference> references, String filter) {
+  private static Predicate<Reference> filterReferences(String filter) {
     if (Strings.isNullOrEmpty(filter)) {
-      return references;
+      return r -> true;
     }
 
     final Script script;
@@ -178,32 +185,31 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     } catch (ScriptException e) {
       throw new IllegalArgumentException(e);
     }
-    return references.filter(
-        reference -> {
-          try {
-            ReferenceMetadata refMeta = reference.getMetadata();
-            if (refMeta == null) {
-              refMeta = CELUtil.EMPTY_REFERENCE_METADATA;
-            }
-            CommitMeta commit = refMeta.getCommitMetaOfHEAD();
-            if (commit == null) {
-              commit = CELUtil.EMPTY_COMMIT_META;
-            }
-            return script.execute(
-                Boolean.class,
-                ImmutableMap.of(
-                    VAR_REF,
-                    reference,
-                    VAR_REF_TYPE,
-                    reference.getType().name(),
-                    VAR_COMMIT,
-                    commit,
-                    VAR_REF_META,
-                    refMeta));
-          } catch (ScriptException e) {
-            throw new RuntimeException(e);
-          }
-        });
+    return reference -> {
+      try {
+        ReferenceMetadata refMeta = reference.getMetadata();
+        if (refMeta == null) {
+          refMeta = CELUtil.EMPTY_REFERENCE_METADATA;
+        }
+        CommitMeta commit = refMeta.getCommitMetaOfHEAD();
+        if (commit == null) {
+          commit = CELUtil.EMPTY_COMMIT_META;
+        }
+        return script.execute(
+            Boolean.class,
+            ImmutableMap.of(
+                VAR_REF,
+                reference,
+                VAR_REF_TYPE,
+                reference.getType().name(),
+                VAR_COMMIT,
+                commit,
+                VAR_REF_META,
+                refMeta));
+      } catch (ScriptException e) {
+        throw new RuntimeException(e);
+      }
+    };
   }
 
   @Override
@@ -266,55 +272,58 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   }
 
   @Override
-  public LogResponse getCommitLog(
+  public <R> R getCommitLog(
       String namedRef,
       FetchOption fetchOption,
       String oldestHashLimit,
       String youngestHash,
       String filter,
-      Integer maxRecords,
-      String pageToken)
+      String pageToken,
+      PagedResponseHandler<R, LogEntry> pagedResponseHandler)
       throws NessieNotFoundException {
-
     // we should only allow named references when no paging is defined
     WithHash<NamedRef> endRef =
         namedRefWithHashOrThrow(namedRef, null == pageToken ? youngestHash : pageToken);
 
-    return getCommitLog(maxRecords, fetchOption, filter, endRef, oldestHashLimit);
+    return getCommitLog(fetchOption, filter, endRef, oldestHashLimit, pagedResponseHandler);
   }
 
-  protected LogResponse getCommitLog(
-      Integer maxRecords,
+  protected <R> R getCommitLog(
       FetchOption fetchOption,
       String filter,
       WithHash<NamedRef> endRef,
-      String startHash)
+      String startHash,
+      PagedResponseHandler<R, LogEntry> pagedResponseHandler)
       throws NessieNotFoundException {
-    int max =
-        Math.min(maxRecords != null ? maxRecords : MAX_COMMIT_LOG_ENTRIES, MAX_COMMIT_LOG_ENTRIES);
-
     boolean fetchAll = FetchOption.isFetchAll(fetchOption);
-    try (Stream<Commit> commits = getStore().getCommits(endRef.getHash(), fetchAll)) {
-      Stream<LogEntry> logEntries = commits.map(commit -> commitToLogEntry(fetchAll, commit));
+    try (PaginationIterator<Commit> commits = getStore().getCommits(endRef.getHash(), fetchAll)) {
 
-      logEntries =
-          StreamSupport.stream(
-              StreamUtil.takeUntilIncl(
-                  logEntries.spliterator(),
-                  x -> Objects.equals(x.getCommitMeta().getHash(), startHash)),
-              false);
+      Predicate<LogEntry> predicate = filterCommitLog(filter);
+      while (commits.hasNext()) {
+        Commit commit = commits.next();
 
-      List<LogEntry> items =
-          filterCommitLog(logEntries, filter).limit(max + 1).collect(Collectors.toList());
+        LogEntry logEntry = commitToLogEntry(fetchAll, commit);
 
-      if (items.size() == max + 1) {
-        return LogResponse.builder()
-            .addAllLogEntries(items.subList(0, max))
-            .isHasMore(true)
-            .token(items.get(max).getCommitMeta().getHash())
-            .build();
+        String hash = logEntry.getCommitMeta().getHash();
+
+        if (!predicate.test(logEntry)) {
+          continue;
+        }
+
+        boolean stop = Objects.equals(hash, startHash);
+        if (!pagedResponseHandler.addEntry(logEntry)) {
+          if (!stop) {
+            pagedResponseHandler.hasMore(commits.tokenForCurrent());
+          }
+          break;
+        }
+
+        if (stop) {
+          break;
+        }
       }
-      return LogResponse.builder().addAllLogEntries(items).build();
+
+      return pagedResponseHandler.build();
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
@@ -370,15 +379,13 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   }
 
   /**
-   * Applies different filters to the {@link Stream} of commits based on the filter.
+   * Produces the filter predicate for commit-log filtering.
    *
-   * @param logEntries The commit log that different filters will be applied to
    * @param filter The filter to filter by
-   * @return A potentially filtered {@link Stream} of commits based on the filter
    */
-  private static Stream<LogEntry> filterCommitLog(Stream<LogEntry> logEntries, String filter) {
+  private static Predicate<LogEntry> filterCommitLog(String filter) {
     if (Strings.isNullOrEmpty(filter)) {
-      return logEntries;
+      return x -> true;
     }
 
     final Script script;
@@ -393,24 +400,23 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     } catch (ScriptException e) {
       throw new IllegalArgumentException(e);
     }
-    return logEntries.filter(
-        logEntry -> {
-          try {
-            List<Operation> operations = logEntry.getOperations();
-            if (operations == null) {
-              operations = Collections.emptyList();
-            }
-            // ContentKey has some @JsonIgnore attributes, which would otherwise not be accessible.
-            List<Object> operationsForCel =
-                operations.stream().map(CELUtil::forCel).collect(Collectors.toList());
-            return script.execute(
-                Boolean.class,
-                ImmutableMap.of(
-                    VAR_COMMIT, logEntry.getCommitMeta(), VAR_OPERATIONS, operationsForCel));
-          } catch (ScriptException e) {
-            throw new RuntimeException(e);
-          }
-        });
+    return logEntry -> {
+      try {
+        List<Operation> operations = logEntry.getOperations();
+        if (operations == null) {
+          operations = Collections.emptyList();
+        }
+        // ContentKey has some @JsonIgnore attributes, which would otherwise not be accessible.
+        List<Object> operationsForCel =
+            operations.stream().map(CELUtil::forCel).collect(Collectors.toList());
+        return script.execute(
+            Boolean.class,
+            ImmutableMap.of(
+                VAR_COMMIT, logEntry.getCommitMeta(), VAR_OPERATIONS, operationsForCel));
+      } catch (ScriptException e) {
+        throw new RuntimeException(e);
+      }
+    };
   }
 
   @Override
@@ -574,8 +580,13 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   }
 
   @Override
-  public EntriesResponse getEntries(
-      String namedRef, String hashOnRef, Integer namespaceDepth, String filter)
+  public <R> R getEntries(
+      String namedRef,
+      String hashOnRef,
+      Integer namespaceDepth,
+      String filter,
+      String pagingToken,
+      PagedResponseHandler<R, EntriesResponse.Entry> pagedResponseHandler)
       throws NessieNotFoundException {
     WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(namedRef, hashOnRef);
     // TODO Implement paging. At the moment, we do not expect that many keys/entries to be returned.
@@ -587,33 +598,61 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     // to the store though
     //  all existing VersionStore implementations have to read all keys anyways so we don't get much
     try {
-      ImmutableEntriesResponse.Builder response = EntriesResponse.builder();
-      try (Stream<KeyEntry> entryStream = getStore().getKeys(refWithHash.getHash())) {
-        Stream<EntriesResponse.Entry> entriesStream =
-            filterEntries(refWithHash, entryStream, filter)
-                .map(
-                    key ->
-                        EntriesResponse.Entry.entry(
-                            fromKey(key.getKey()), key.getType(), key.getContentId()));
+      Predicate<KeyEntry> filterPredicate = filterEntries(refWithHash, filter);
+
+      try (PaginationIterator<KeyEntry> entries =
+          getStore().getKeys(refWithHash.getHash(), pagingToken)) {
         if (namespaceDepth != null && namespaceDepth > 0) {
-          entriesStream =
-              entriesStream
-                  .filter(e -> e.getName().getElements().size() >= namespaceDepth)
-                  .map(e -> truncate(e, namespaceDepth))
-                  .distinct();
+          int depth = namespaceDepth;
+          filterPredicate = filterPredicate.and(e -> e.getKey().getElements().size() >= depth);
+          Set<ContentKey> seen = new HashSet<>();
+          while (entries.hasNext()) {
+            KeyEntry key = entries.next();
+
+            if (!filterPredicate.test(key)) {
+              continue;
+            }
+
+            EntriesResponse.Entry entry =
+                EntriesResponse.Entry.entry(
+                    fromKey(key.getKey()), key.getType(), key.getContentId());
+
+            entry = namespaceDepthMapping(entry, depth);
+
+            if (seen.add(entry.getName())) {
+              if (!pagedResponseHandler.addEntry(entry)) {
+                pagedResponseHandler.hasMore(entries.tokenForCurrent());
+                break;
+              }
+            }
+          }
+        } else {
+          while (entries.hasNext()) {
+            KeyEntry key = entries.next();
+
+            if (!filterPredicate.test(key)) {
+              continue;
+            }
+
+            EntriesResponse.Entry entry =
+                EntriesResponse.Entry.entry(
+                    fromKey(key.getKey()), key.getType(), key.getContentId());
+
+            if (!pagedResponseHandler.addEntry(entry)) {
+              pagedResponseHandler.hasMore(entries.tokenForCurrent());
+              break;
+            }
+          }
         }
-        entriesStream.forEach(response::addEntries);
       }
-      return response.build();
+      return pagedResponseHandler.build();
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
   }
 
-  private static EntriesResponse.Entry truncate(EntriesResponse.Entry entry, Integer depth) {
-    if (depth == null || depth < 1) {
-      return entry;
-    }
+  private static EntriesResponse.Entry namespaceDepthMapping(
+      EntriesResponse.Entry entry, int depth) {
     Content.Type type =
         entry.getName().getElements().size() > depth ? Content.Type.NAMESPACE : entry.getType();
     ContentKey key = ContentKey.of(entry.getName().getElements().subList(0, depth));
@@ -621,16 +660,13 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   }
 
   /**
-   * Applies different filters to the {@link Stream} of entries based on the filter.
+   * Produces the predicate for key-entry filtering.
    *
-   * @param entries The entries that different filters will be applied to
    * @param filter The filter to filter by
-   * @return A potentially filtered {@link Stream} of entries based on the filter
    */
-  protected Stream<KeyEntry> filterEntries(
-      WithHash<NamedRef> refWithHash, Stream<KeyEntry> entries, String filter) {
+  protected Predicate<KeyEntry> filterEntries(WithHash<NamedRef> refWithHash, String filter) {
     if (Strings.isNullOrEmpty(filter)) {
-      return entries;
+      return x -> true;
     }
 
     final Script script;
@@ -645,16 +681,15 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     } catch (ScriptException e) {
       throw new IllegalArgumentException(e);
     }
-    return entries.filter(
-        entry -> {
-          Map<String, Object> arguments = ImmutableMap.of(VAR_ENTRY, CELUtil.forCel(entry));
+    return entry -> {
+      Map<String, Object> arguments = ImmutableMap.of(VAR_ENTRY, CELUtil.forCel(entry));
 
-          try {
-            return script.execute(Boolean.class, arguments);
-          } catch (ScriptException e) {
-            throw new RuntimeException(e);
-          }
-        });
+      try {
+        return script.execute(Boolean.class, arguments);
+      } catch (ScriptException e) {
+        throw new RuntimeException(e);
+      }
+    };
   }
 
   @Override

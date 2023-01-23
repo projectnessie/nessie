@@ -132,7 +132,7 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
 
     // Verify that all commits are there and that the order of the commits is correct
     List<CommitMeta> committedValues =
-        commitsList(branch, s -> s.map(Commit::getCommitMeta), false);
+        commitsListMap(branch, Integer.MAX_VALUE, Commit::getCommitMeta);
     Collections.reverse(expectedValues);
     assertEquals(expectedValues, committedValues);
   }

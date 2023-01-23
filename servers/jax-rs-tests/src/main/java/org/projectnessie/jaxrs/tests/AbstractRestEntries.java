@@ -16,19 +16,28 @@
 package org.projectnessie.jaxrs.tests;
 
 import static com.google.common.collect.Maps.immutableEntry;
+import static java.util.stream.Collectors.toSet;
+import static org.junit.jupiter.api.Assumptions.abort;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.ext.NessieApiVersion;
 import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.error.BaseNessieClientServerException;
+import org.projectnessie.error.NessieBadRequestException;
 import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieNamespaceNotEmptyException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
@@ -37,6 +46,7 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
@@ -47,6 +57,67 @@ import org.projectnessie.model.Reference;
 /** See {@link AbstractTestRest} for details about and reason for the inheritance model. */
 public abstract class AbstractRestEntries extends AbstractRestDiff {
 
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  @ParameterizedTest
+  @ValueSource(ints = {0, 20, 22})
+  public void entriesPaging(int numKeys) throws BaseNessieClientServerException {
+    Branch branch = createBranch("entriesPaging");
+    try {
+      getApi().getEntries().pageToken("666f6f").reference(branch).get();
+    } catch (NessieBadRequestException e) {
+      if (!e.getMessage().contains("Paging not supported")) {
+        throw e;
+      }
+      abort("DatabaseAdapter implementations / PersistVersionStore do not support paging");
+    }
+
+    IntFunction<ContentKey> contentKey = i -> ContentKey.of("key", Integer.toString(i));
+    IntFunction<IcebergTable> table = i -> IcebergTable.of("meta" + i, 1, 2, 3, 4);
+    int pageSize = 5;
+
+    if (numKeys > 0) {
+      CommitMultipleOperationsBuilder commit =
+          getApi()
+              .commitMultipleOperations()
+              .branch(branch)
+              .commitMeta(CommitMeta.fromMessage("commit"));
+      for (int i = 0; i < numKeys; i++) {
+        commit.operation(Put.of(contentKey.apply(i), table.apply(i)));
+      }
+      branch = commit.commit();
+    }
+
+    Set<ContentKey> contents = new HashSet<>();
+    String token = null;
+    for (int i = 0; ; i += pageSize) {
+      EntriesResponse response =
+          getApi().getEntries().reference(branch).maxRecords(pageSize).pageToken(token).get();
+
+      for (EntriesResponse.Entry entry : response.getEntries()) {
+        soft.assertThat(contents.add(entry.getName()))
+            .describedAs("offset: %d , entry: %s", i, entry)
+            .isTrue();
+      }
+      soft.assertThat(contents).hasSize(Math.min(i + pageSize, numKeys));
+      if (i + pageSize < numKeys) {
+        soft.assertThat(response.getToken())
+            .describedAs("offset: %d", i)
+            .isNotEmpty()
+            .isNotEqualTo(token);
+        soft.assertThat(response.isHasMore()).describedAs("offset: %d", i).isTrue();
+        token = response.getToken();
+      } else {
+        soft.assertThat(response.getToken()).describedAs("offset: %d", i).isNull();
+        soft.assertThat(response.isHasMore()).describedAs("offset: %d", i).isFalse();
+        break;
+      }
+    }
+
+    soft.assertThat(contents)
+        .containsExactlyInAnyOrderElementsOf(
+            IntStream.range(0, numKeys).mapToObj(contentKey).collect(toSet()));
+  }
+
   @ParameterizedTest
   @EnumSource(ReferenceMode.class)
   public void filterEntriesByType(ReferenceMode refMode) throws BaseNessieClientServerException {
@@ -55,18 +126,13 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     ContentKey b = ContentKey.of("b");
     IcebergTable tam = IcebergTable.of("path1", 42, 42, 42, 42);
     IcebergView tb = IcebergView.of("pathx", 1, 1, "select * from table", "Dremio");
-    getApi()
-        .commitMultipleOperations()
-        .branch(branch)
-        .operation(Put.of(a, tam))
-        .commitMeta(CommitMeta.fromMessage("commit 1"))
-        .commit();
     branch =
         getApi()
             .commitMultipleOperations()
             .branch(branch)
+            .operation(Put.of(a, tam))
             .operation(Put.of(b, tb))
-            .commitMeta(CommitMeta.fromMessage("commit 2"))
+            .commitMeta(CommitMeta.fromMessage("commit"))
             .commit();
     List<Entry> entries =
         getApi().getEntries().reference(refMode.transform(branch)).get().getEntries();
@@ -200,30 +266,15 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     ContentKey second = ContentKey.of("a", "b", "c", "secondTable");
     ContentKey third = ContentKey.of("a", "thirdTable");
     ContentKey fourth = ContentKey.of("a", "fourthTable");
-    getApi()
-        .commitMultipleOperations()
-        .branch(branch)
-        .operation(Put.of(first, IcebergTable.of("path1", 42, 42, 42, 42)))
-        .commitMeta(CommitMeta.fromMessage("commit 1"))
-        .commit();
-    getApi()
-        .commitMultipleOperations()
-        .branch(branch)
-        .operation(Put.of(second, IcebergTable.of("path2", 42, 42, 42, 42)))
-        .commitMeta(CommitMeta.fromMessage("commit 2"))
-        .commit();
-    getApi()
-        .commitMultipleOperations()
-        .branch(branch)
-        .operation(Put.of(third, IcebergTable.of("path3", 42, 42, 42, 42)))
-        .commitMeta(CommitMeta.fromMessage("commit 3"))
-        .commit();
     branch =
         getApi()
             .commitMultipleOperations()
             .branch(branch)
+            .operation(Put.of(first, IcebergTable.of("path1", 42, 42, 42, 42)))
+            .operation(Put.of(second, IcebergTable.of("path2", 42, 42, 42, 42)))
+            .operation(Put.of(third, IcebergTable.of("path3", 42, 42, 42, 42)))
             .operation(Put.of(fourth, IcebergTable.of("path4", 42, 42, 42, 42)))
-            .commitMeta(CommitMeta.fromMessage("commit 4"))
+            .commitMeta(CommitMeta.fromMessage("commit"))
             .commit();
 
     List<Entry> entries =
@@ -295,14 +346,11 @@ public abstract class AbstractRestEntries extends AbstractRestDiff {
     ContentKey fifth = ContentKey.of("a", "boo", "fifthTable");
     ContentKey withoutNamespace = ContentKey.of("withoutNamespace");
     List<ContentKey> keys = ImmutableList.of(first, second, third, fourth, fifth, withoutNamespace);
+    CommitMultipleOperationsBuilder commit = getApi().commitMultipleOperations().branch(branch);
     for (int i = 0; i < keys.size(); i++) {
-      getApi()
-          .commitMultipleOperations()
-          .branch(branch)
-          .operation(Put.of(keys.get(i), IcebergTable.of("path" + i, 42, 42, 42, 42)))
-          .commitMeta(CommitMeta.fromMessage("commit " + i))
-          .commit();
+      commit.operation(Put.of(keys.get(i), IcebergTable.of("path" + i, 42, 42, 42, 42)));
     }
+    commit.commitMeta(CommitMeta.fromMessage("commit")).commit();
     branch = (Branch) getApi().getReference().refName(branch.getName()).get();
 
     Reference reference = refMode.transform(branch);

@@ -15,10 +15,11 @@
  */
 package org.projectnessie.versioned.tests;
 
+import static org.assertj.core.util.Streams.stream;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -34,6 +35,7 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
+import org.projectnessie.versioned.paging.PaginationIterator;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public abstract class AbstractReferences extends AbstractNestedVersionStore {
@@ -69,9 +71,9 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
     soft.assertThat(otherCreateHash).isEqualTo(commitHash);
 
     List<ReferenceInfo<CommitMeta>> namedRefs;
-    try (Stream<ReferenceInfo<CommitMeta>> str =
-        store().getNamedRefs(GetNamedRefsParams.DEFAULT).filter(this::filterMainBranch)) {
-      namedRefs = str.collect(Collectors.toList());
+    try (PaginationIterator<ReferenceInfo<CommitMeta>> str =
+        store().getNamedRefs(GetNamedRefsParams.DEFAULT, null)) {
+      namedRefs = stream(str).filter(this::filterMainBranch).collect(Collectors.toList());
     }
     soft.assertThat(namedRefs)
         .containsExactlyInAnyOrder(
@@ -93,9 +95,9 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
     store().delete(branch, Optional.of(hash));
     soft.assertThatThrownBy(() -> store().hashOnReference(branch, Optional.empty()))
         .isInstanceOf(ReferenceNotFoundException.class);
-    try (Stream<ReferenceInfo<CommitMeta>> str =
-        store().getNamedRefs(GetNamedRefsParams.DEFAULT).filter(this::filterMainBranch)) {
-      soft.assertThat(str).hasSize(2); // bar + baz
+    try (PaginationIterator<ReferenceInfo<CommitMeta>> str =
+        store().getNamedRefs(GetNamedRefsParams.DEFAULT, null)) {
+      soft.assertThat(stream(str).filter(this::filterMainBranch)).hasSize(2); // bar + baz
     }
     soft.assertThatThrownBy(() -> store().delete(branch, Optional.of(hash)))
         .isInstanceOf(ReferenceNotFoundException.class);
@@ -134,9 +136,9 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
     soft.assertThat(store().hashOnReference(anotherTag, Optional.empty())).isEqualTo(commitHash);
 
     List<ReferenceInfo<CommitMeta>> namedRefs;
-    try (Stream<ReferenceInfo<CommitMeta>> str =
-        store().getNamedRefs(GetNamedRefsParams.DEFAULT).filter(this::filterMainBranch)) {
-      namedRefs = str.collect(Collectors.toList());
+    try (PaginationIterator<ReferenceInfo<CommitMeta>> str =
+        store().getNamedRefs(GetNamedRefsParams.DEFAULT, null)) {
+      namedRefs = stream(str).filter(this::filterMainBranch).collect(Collectors.toList());
     }
     soft.assertThat(namedRefs)
         .containsExactlyInAnyOrder(
@@ -153,9 +155,9 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
     store().delete(tag, Optional.of(initialHash));
     soft.assertThatThrownBy(() -> store().hashOnReference(tag, Optional.empty()))
         .isInstanceOf(ReferenceNotFoundException.class);
-    try (Stream<ReferenceInfo<CommitMeta>> str =
-        store().getNamedRefs(GetNamedRefsParams.DEFAULT).filter(this::filterMainBranch)) {
-      soft.assertThat(str).hasSize(2); // foo + another-tag
+    try (PaginationIterator<ReferenceInfo<CommitMeta>> str =
+        store().getNamedRefs(GetNamedRefsParams.DEFAULT, null)) {
+      soft.assertThat(stream(str).filter(this::filterMainBranch)).hasSize(2); // foo + another-tag
     }
     soft.assertThatThrownBy(() -> store().delete(tag, Optional.of(initialHash)))
         .isInstanceOf(ReferenceNotFoundException.class);

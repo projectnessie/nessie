@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.transfer;
 
+import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.emptyMap;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
@@ -23,6 +24,7 @@ import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -56,6 +58,7 @@ import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.paging.PaginationIterator;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportVersion;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.HeadsAndForks;
@@ -344,34 +347,34 @@ public abstract class BaseExportImport {
   }
 
   List<KeyEntry> keys(VersionStore versionStore, Hash hash) {
-    try (Stream<KeyEntry> keys = versionStore.getKeys(hash)) {
-      return keys.collect(Collectors.toList());
+    try (PaginationIterator<KeyEntry> keys = versionStore.getKeys(hash, null)) {
+      return newArrayList(keys);
     } catch (ReferenceNotFoundException e) {
       throw new RuntimeException(e);
     }
   }
 
   List<Commit> commits(VersionStore versionStore, Hash hash) throws ReferenceNotFoundException {
-    try (Stream<Commit> commits = versionStore.getCommits(hash, true)) {
-      return commits
-          .map(
-              c ->
-                  // Persist's VersionStoreImpl does always add the commit ID to CommitMeta,
-                  // the current one does not, but that's not critical (and not incorrect), so
-                  // just tweak this check.
-                  Commit.builder()
-                      .from(c)
-                      .commitMeta(
-                          c.getCommitMeta().toBuilder().hash(c.getHash().asString()).build())
-                      .build())
-          .collect(Collectors.toList());
+    try (PaginationIterator<Commit> commits = versionStore.getCommits(hash, true)) {
+      List<Commit> r = new ArrayList<>();
+      while (commits.hasNext()) {
+        Commit c = commits.next();
+        r.add( // Persist's VersionStoreImpl does always add the commit ID to CommitMeta,
+            // the current one does not, but that's not critical (and not incorrect), so
+            // just tweak this check.
+            Commit.builder()
+                .from(c)
+                .commitMeta(c.getCommitMeta().toBuilder().hash(c.getHash().asString()).build())
+                .build());
+      }
+      return r;
     }
   }
 
   List<ReferenceInfo<CommitMeta>> namedRefs(VersionStore versionStore) {
-    try (Stream<ReferenceInfo<CommitMeta>> refs =
-        versionStore.getNamedRefs(GetNamedRefsParams.DEFAULT)) {
-      return refs.collect(Collectors.toList());
+    try (PaginationIterator<ReferenceInfo<CommitMeta>> refs =
+        versionStore.getNamedRefs(GetNamedRefsParams.DEFAULT, null)) {
+      return newArrayList(refs);
     } catch (ReferenceNotFoundException e) {
       throw new RuntimeException(e);
     }

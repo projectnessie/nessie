@@ -18,9 +18,10 @@ package org.projectnessie.services.impl;
 import java.security.Principal;
 import java.util.function.Supplier;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.DiffResponse;
+import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.services.spi.PagedResponseHandler;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
@@ -37,7 +38,13 @@ public class DiffApiImplWithAuthorization extends DiffApiImpl {
   }
 
   @Override
-  public DiffResponse getDiff(String fromRef, String fromHash, String toRef, String toHash)
+  public <R> R getDiff(
+      String fromRef,
+      String fromHash,
+      String toRef,
+      String toHash,
+      String pagingToken,
+      PagedResponseHandler<R, DiffEntry> pagedResponseHandler)
       throws NessieNotFoundException {
     WithHash<NamedRef> from = namedRefWithHashOrThrow(fromRef, fromHash);
     WithHash<NamedRef> to = namedRefWithHashOrThrow(toRef, toHash);
@@ -45,6 +52,6 @@ public class DiffApiImplWithAuthorization extends DiffApiImpl {
         .canViewReference(from.getValue())
         .canViewReference(to.getValue())
         .checkAndThrow();
-    return getDiff(from.getHash(), to.getHash());
+    return getDiff(from.getHash(), to.getHash(), pagingToken, pagedResponseHandler);
   }
 }

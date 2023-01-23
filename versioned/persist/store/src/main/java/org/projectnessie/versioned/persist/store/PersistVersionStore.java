@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.persist.store;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
 import com.google.common.base.Preconditions;
@@ -64,13 +65,17 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.paging.FilteringPaginationIterator;
+import org.projectnessie.versioned.paging.PaginationIterator;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.persist.adapter.Difference;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
+import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.MergeParams;
 import org.projectnessie.versioned.persist.adapter.TransplantParams;
@@ -128,7 +133,7 @@ public class PersistVersionStore implements VersionStore {
         if (content.getId() == null) {
           // No content-ID --> New content
 
-          Preconditions.checkArgument(
+          checkArgument(
               expected == null,
               "Expected content must not be set when creating new content. "
                   + "The put operation's content has no content ID and is considered as new. "
@@ -151,12 +156,12 @@ public class PersistVersionStore implements VersionStore {
 
         if (expected != null) {
           String expectedId = expected.getId();
-          Preconditions.checkArgument(
+          checkArgument(
               expectedId != null,
               "Content id for expected content must not be null, key '%s'",
               op.getKey());
           ContentId expectedContentId = ContentId.of(expectedId);
-          Preconditions.checkArgument(
+          checkArgument(
               contentId.equals(expectedContentId),
               "Content ids for new ('%s') and expected ('%s') content differ for key '%s'",
               contentId,
@@ -333,14 +338,27 @@ public class PersistVersionStore implements VersionStore {
   }
 
   @Override
-  @MustBeClosed
-  public Stream<ReferenceInfo<CommitMeta>> getNamedRefs(GetNamedRefsParams params)
-      throws ReferenceNotFoundException {
-    return databaseAdapter
-        .namedRefs(params)
-        .map(
-            namedRef ->
-                namedRef.withUpdatedCommitMeta(deserializeMetadata(namedRef.getHeadCommitMeta())));
+  public PaginationIterator<ReferenceInfo<CommitMeta>> getNamedRefs(
+      GetNamedRefsParams params, String pagingToken) throws ReferenceNotFoundException {
+    checkArgument(pagingToken == null, "Paging not supported");
+
+    @SuppressWarnings("MustBeClosedChecker")
+    Stream<ReferenceInfo<ByteString>> source = databaseAdapter.namedRefs(params);
+
+    return new FilteringPaginationIterator<ReferenceInfo<ByteString>, ReferenceInfo<CommitMeta>>(
+        source.iterator(),
+        namedRef ->
+            namedRef.withUpdatedCommitMeta(deserializeMetadata(namedRef.getHeadCommitMeta()))) {
+      @Override
+      protected String computeTokenForCurrent() {
+        return null;
+      }
+
+      @Override
+      public void close() {
+        source.close();
+      }
+    };
   }
 
   private ByteString serializeMetadata(CommitMeta metadata) {
@@ -354,29 +372,40 @@ public class PersistVersionStore implements VersionStore {
   }
 
   @Override
-  @MustBeClosed
-  public Stream<Commit> getCommits(Ref ref, boolean fetchAdditionalInfo)
+  public PaginationIterator<Commit> getCommits(Ref ref, boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException {
     Hash hash = refToHash(ref);
 
     BiConsumer<ImmutableCommit.Builder, CommitLogEntry> enhancer =
         enhancerForCommitLog(fetchAdditionalInfo);
 
-    return databaseAdapter
-        .commitLog(hash)
-        .map(
-            e -> {
-              ImmutableCommit.Builder commit =
-                  Commit.builder()
-                      .hash(e.getHash())
-                      .addAllAdditionalParents(e.getAdditionalParents())
-                      .commitMeta(deserializeMetadata(e.getMetadata()));
-              if (!e.getParents().isEmpty()) {
-                commit.parentHash(e.getParents().get(0));
-              }
-              enhancer.accept(commit, e);
-              return commit.build();
-            });
+    @SuppressWarnings("MustBeClosedChecker")
+    Stream<CommitLogEntry> source = databaseAdapter.commitLog(hash);
+
+    return new FilteringPaginationIterator<CommitLogEntry, Commit>(
+        source.iterator(),
+        e -> {
+          ImmutableCommit.Builder commit =
+              Commit.builder()
+                  .hash(e.getHash())
+                  .addAllAdditionalParents(e.getAdditionalParents())
+                  .commitMeta(deserializeMetadata(e.getMetadata()));
+          if (!e.getParents().isEmpty()) {
+            commit.parentHash(e.getParents().get(0));
+          }
+          enhancer.accept(commit, e);
+          return commit.build();
+        }) {
+      @Override
+      protected String computeTokenForCurrent() {
+        return current() != null ? current().getHash().asString() : null;
+      }
+
+      @Override
+      public void close() {
+        source.close();
+      }
+    };
   }
 
   /**
@@ -419,17 +448,31 @@ public class PersistVersionStore implements VersionStore {
   }
 
   @Override
-  @MustBeClosed
-  public Stream<KeyEntry> getKeys(Ref ref) throws ReferenceNotFoundException {
+  public PaginationIterator<KeyEntry> getKeys(Ref ref, String pagingToken)
+      throws ReferenceNotFoundException {
+    checkArgument(pagingToken == null, "Paging not supported");
     Hash hash = refToHash(ref);
-    return databaseAdapter
-        .keys(hash, KeyFilterPredicate.ALLOW_ALL)
-        .map(
-            entry ->
-                KeyEntry.of(
-                    DefaultStoreWorker.contentTypeForPayload(entry.getPayload()),
-                    entry.getKey(),
-                    entry.getContentId().getId()));
+
+    @SuppressWarnings("MustBeClosedChecker")
+    Stream<KeyListEntry> source = databaseAdapter.keys(hash, KeyFilterPredicate.ALLOW_ALL);
+
+    return new FilteringPaginationIterator<KeyListEntry, KeyEntry>(
+        source.iterator(),
+        entry ->
+            KeyEntry.of(
+                DefaultStoreWorker.contentTypeForPayload(entry.getPayload()),
+                entry.getKey(),
+                entry.getContentId().getId())) {
+      @Override
+      protected String computeTokenForCurrent() {
+        return null;
+      }
+
+      @Override
+      public void close() {
+        source.close();
+      }
+    };
   }
 
   @Override
@@ -451,32 +494,47 @@ public class PersistVersionStore implements VersionStore {
   }
 
   @Override
-  @MustBeClosed
-  public Stream<Diff> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
+  public PaginationIterator<Diff> getDiffs(Ref from, Ref to, String pagingToken)
+      throws ReferenceNotFoundException {
+    checkArgument(pagingToken == null, "Paging not supported");
     Hash fromHash = refToHash(from);
     Hash toHash = refToHash(to);
-    return databaseAdapter
-        .diff(fromHash, toHash, KeyFilterPredicate.ALLOW_ALL)
-        .map(
-            d ->
-                Diff.of(
-                    d.getKey(),
-                    d.getFromValue()
-                        .map(
-                            v ->
-                                STORE_WORKER.valueFromStore(
-                                    d.getPayload(),
-                                    v,
-                                    () -> d.getGlobal().orElse(null),
-                                    databaseAdapter::mapToAttachment)),
-                    d.getToValue()
-                        .map(
-                            v ->
-                                STORE_WORKER.valueFromStore(
-                                    d.getPayload(),
-                                    v,
-                                    () -> d.getGlobal().orElse(null),
-                                    databaseAdapter::mapToAttachment))));
+
+    @SuppressWarnings("MustBeClosedChecker")
+    Stream<Difference> source =
+        databaseAdapter.diff(fromHash, toHash, KeyFilterPredicate.ALLOW_ALL);
+
+    return new FilteringPaginationIterator<Difference, Diff>(
+        source.iterator(),
+        d ->
+            Diff.of(
+                d.getKey(),
+                d.getFromValue()
+                    .map(
+                        v ->
+                            STORE_WORKER.valueFromStore(
+                                d.getPayload(),
+                                v,
+                                () -> d.getGlobal().orElse(null),
+                                databaseAdapter::mapToAttachment)),
+                d.getToValue()
+                    .map(
+                        v ->
+                            STORE_WORKER.valueFromStore(
+                                d.getPayload(),
+                                v,
+                                () -> d.getGlobal().orElse(null),
+                                databaseAdapter::mapToAttachment)))) {
+      @Override
+      protected String computeTokenForCurrent() {
+        return null;
+      }
+
+      @Override
+      public void close() {
+        source.close();
+      }
+    };
   }
 
   private Hash refToHash(Ref ref) throws ReferenceNotFoundException {

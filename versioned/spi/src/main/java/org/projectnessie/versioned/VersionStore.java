@@ -27,6 +27,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.concurrent.ThreadSafe;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.versioned.paging.PaginationIterator;
 
 /**
  * A storage interface that maintains multiple versions of the VALUE type with each commit having an
@@ -256,11 +257,11 @@ public interface VersionStore {
    *
    * @param params options that control which information shall be returned in each {@link
    *     ReferenceInfo}, see {@link ReferenceInfo} for details.
+   * @param pagingToken paging token to start at
    * @return All refs and their associated hashes.
    */
-  @MustBeClosed
-  Stream<ReferenceInfo<CommitMeta>> getNamedRefs(GetNamedRefsParams params)
-      throws ReferenceNotFoundException;
+  PaginationIterator<ReferenceInfo<CommitMeta>> getNamedRefs(
+      GetNamedRefsParams params, String pagingToken) throws ReferenceNotFoundException;
 
   /**
    * Get a stream of all ancestor commits to a provided ref.
@@ -270,18 +271,19 @@ public interface VersionStore {
    * @return A stream of commits.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  @MustBeClosed
-  Stream<Commit> getCommits(Ref ref, boolean fetchAdditionalInfo) throws ReferenceNotFoundException;
+  PaginationIterator<Commit> getCommits(Ref ref, boolean fetchAdditionalInfo)
+      throws ReferenceNotFoundException;
 
   /**
    * Get a stream of all available keys for the given ref.
    *
    * @param ref The ref to get keys for.
+   * @param pagingToken paging token to start at
    * @return The stream of keys available for this ref.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  @MustBeClosed
-  Stream<KeyEntry> getKeys(Ref ref) throws ReferenceNotFoundException;
+  PaginationIterator<KeyEntry> getKeys(Ref ref, String pagingToken)
+      throws ReferenceNotFoundException;
 
   /**
    * Get the value for a provided ref.
@@ -308,10 +310,11 @@ public interface VersionStore {
    *
    * @param from The from part of the diff.
    * @param to The to part of the diff.
+   * @param pagingToken paging token to start at
    * @return A stream of values that are different.
    */
-  @MustBeClosed
-  Stream<Diff> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException;
+  PaginationIterator<Diff> getDiffs(Ref from, Ref to, String pagingToken)
+      throws ReferenceNotFoundException;
 
   /**
    * Get a stream of all reflog entries from the initial refLogId.

@@ -134,13 +134,14 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
         // getKeys()
         new ReferenceNotFoundFunction("getKeys/branch")
             .msg("Named reference 'this-one-should-not-exist' not found")
-            .function(s -> s.getKeys(BranchName.of("this-one-should-not-exist"))),
+            .function(s -> s.getKeys(BranchName.of("this-one-should-not-exist"), null)),
         new ReferenceNotFoundFunction("getKeys/tag")
             .msg("Named reference 'this-one-should-not-exist' not found")
-            .function(s -> s.getKeys(TagName.of("this-one-should-not-exist"))),
+            .function(s -> s.getKeys(TagName.of("this-one-should-not-exist"), null)),
         new ReferenceNotFoundFunction("getKeys/hash")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")
-            .function(s -> s.getKeys(Hash.of("12341234123412341234123412341234123412341234"))),
+            .function(
+                s -> s.getKeys(Hash.of("12341234123412341234123412341234123412341234"), null)),
         // assign()
         new ReferenceNotFoundFunction("assign/branch/ok")
             .msg("Named reference 'this-one-should-not-exist' not found")
@@ -244,22 +245,28 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                 s ->
                     s.getDiffs(
                         Hash.of("12341234123412341234123412341234123412341234"),
-                        BranchName.of("main"))),
+                        BranchName.of("main"),
+                        null)),
         new ReferenceNotFoundFunction("diff/to-branch")
             .msg("Named reference 'this-one-should-not-exist' not found")
             .function(
-                s -> s.getDiffs(BranchName.of("main"), BranchName.of("this-one-should-not-exist"))),
+                s ->
+                    s.getDiffs(
+                        BranchName.of("main"), BranchName.of("this-one-should-not-exist"), null)),
         new ReferenceNotFoundFunction("diff/from-hash")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")
             .function(
                 s ->
                     s.getDiffs(
                         Hash.of("12341234123412341234123412341234123412341234"),
-                        BranchName.of("main"))),
+                        BranchName.of("main"),
+                        null)),
         new ReferenceNotFoundFunction("diff/from-branch")
             .msg("Named reference 'this-one-should-not-exist' not found")
             .function(
-                s -> s.getDiffs(BranchName.of("this-one-should-not-exist"), BranchName.of("main"))),
+                s ->
+                    s.getDiffs(
+                        BranchName.of("this-one-should-not-exist"), BranchName.of("main"), null)),
         // merge()
         new ReferenceNotFoundFunction("merge/hash/empty")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")
