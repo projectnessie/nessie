@@ -26,6 +26,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.ErrorCode;
+import org.projectnessie.services.authz.AccessCheckException;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BackendLimitExceededException;
 import org.slf4j.Logger;
@@ -74,7 +75,8 @@ public class NessieExceptionMapper extends BaseExceptionMapper<Exception> {
       LOGGER.warn("Backend throttled/refused the request: {}", exception.toString());
       errorCode = ErrorCode.TOO_MANY_REQUESTS;
       message = "Backend store refused to process the request: " + exception;
-    } else if (exception instanceof AccessControlException) {
+    } else if (exception instanceof AccessControlException
+        || exception instanceof AccessCheckException) {
       errorCode = ErrorCode.FORBIDDEN;
       message = exception.getMessage();
     } else if (exception instanceof NotSupportedException) {

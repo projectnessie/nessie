@@ -24,19 +24,49 @@ import org.projectnessie.versioned.NamedRef;
 /** Describes a check operation. */
 @Value.Immutable
 public interface Check {
+  @Value.Parameter(order = 1)
   CheckType type();
 
   @Nullable
+  @Value.Parameter(order = 2)
   NamedRef ref();
 
   @Nullable
+  @Value.Parameter(order = 3)
   ContentKey key();
 
   @Nullable
+  @Value.Parameter(order = 4)
   String contentId();
 
   @Nullable
+  @Value.Parameter(order = 5)
   Content.Type contentType();
+
+  static Check check(CheckType type) {
+    return check(type, null);
+  }
+
+  static Check check(CheckType type, @Nullable NamedRef ref) {
+    return check(type, ref, null, null);
+  }
+
+  static Check check(
+      CheckType type,
+      @Nullable NamedRef ref,
+      @Nullable ContentKey key,
+      @Nullable String contentId) {
+    return check(type, ref, key, contentId, null);
+  }
+
+  static Check check(
+      CheckType type,
+      @Nullable NamedRef ref,
+      @Nullable ContentKey key,
+      @Nullable String contentId,
+      @Nullable Content.Type contentType) {
+    return ImmutableCheck.of(type, ref, key, contentId, contentType);
+  }
 
   static ImmutableCheck.Builder builder(CheckType type) {
     return ImmutableCheck.builder().type(type);
@@ -85,5 +115,54 @@ public interface Check {
     public boolean isContent() {
       return content;
     }
+  }
+
+  static Check canViewReference(NamedRef ref) {
+    return check(CheckType.VIEW_REFERENCE, ref);
+  }
+
+  static Check canCreateReference(NamedRef ref) {
+    return check(CheckType.CREATE_REFERENCE, ref);
+  }
+
+  static Check canAssignRefToHash(NamedRef ref) {
+    return check(CheckType.ASSIGN_REFERENCE_TO_HASH, ref);
+  }
+
+  static Check canDeleteReference(NamedRef ref) {
+    return check(CheckType.DELETE_REFERENCE, ref);
+  }
+
+  static Check canReadEntries(NamedRef ref) {
+    return check(CheckType.READ_ENTRIES, ref);
+  }
+
+  static Check canReadContentKey(NamedRef ref, ContentKey key, String contentId) {
+    return check(CheckType.READ_CONTENT_KEY, ref, key, contentId);
+  }
+
+  static Check canListCommitLog(NamedRef ref) {
+    return check(CheckType.LIST_COMMIT_LOG, ref);
+  }
+
+  static Check canCommitChangeAgainstReference(NamedRef ref) {
+    return check(CheckType.COMMIT_CHANGE_AGAINST_REFERENCE, ref);
+  }
+
+  static Check canReadEntityValue(NamedRef ref, ContentKey key, String contentId) {
+    return check(CheckType.READ_ENTITY_VALUE, ref, key, contentId);
+  }
+
+  static Check canUpdateEntity(
+      NamedRef ref, ContentKey key, String contentId, Content.Type contentType) {
+    return check(CheckType.UPDATE_ENTITY, ref, key, contentId, contentType);
+  }
+
+  static Check canDeleteEntity(NamedRef ref, ContentKey key, String contentId) {
+    return check(CheckType.DELETE_ENTITY, ref, key, contentId);
+  }
+
+  static Check canViewRefLog() {
+    return check(CheckType.VIEW_REFLOG);
   }
 }

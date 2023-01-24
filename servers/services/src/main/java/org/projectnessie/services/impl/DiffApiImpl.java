@@ -15,7 +15,13 @@
  */
 package org.projectnessie.services.impl;
 
+import static java.util.Collections.singleton;
+import static org.projectnessie.services.authz.Check.canReadContentKey;
+import static org.projectnessie.services.authz.Check.canViewReference;
+
+import com.google.common.collect.ImmutableSet;
 import java.security.Principal;
+import java.util.Set;
 import java.util.function.Supplier;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
@@ -23,7 +29,8 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.services.authz.Authorizer;
-import org.projectnessie.services.authz.BatchAccessChecker;
+import org.projectnessie.services.authz.AuthzPaginationIterator;
+import org.projectnessie.services.authz.Check;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.spi.DiffService;
 import org.projectnessie.services.spi.PagedResponseHandler;
@@ -63,45 +70,55 @@ public class DiffApiImpl extends BaseApiImpl implements DiffService {
     try {
       try (PaginationIterator<Diff> diffs =
           getStore().getDiffs(from.getHash(), to.getHash(), pagingToken)) {
-        while (diffs.hasNext()) {
-          Diff diff = diffs.next();
+
+        AuthzPaginationIterator<Diff> authz =
+            new AuthzPaginationIterator<Diff>(
+                diffs, super::startAccessCheck, ACCESS_CHECK_BATCH_SIZE) {
+              @Override
+              protected Set<Check> checksForEntry(Diff entry) {
+                ContentKey key = ContentKey.of(entry.getKey().getElements());
+                String fromContent = entry.getFromValue().map(Content::getId).orElse(null);
+                String toContent = entry.getToValue().map(Content::getId).orElse(null);
+                if (fromNamedRef.equals(toNamedRef)
+                    && fromContent != null
+                    && fromContent.equals(toContent)) {
+                  return singleton(canReadContentKey(fromNamedRef, key, fromContent));
+                } else {
+                  if (fromContent != null && toContent != null) {
+                    return ImmutableSet.of(
+                        canReadContentKey(fromNamedRef, key, fromContent),
+                        canReadContentKey(toNamedRef, key, toContent));
+                  }
+                  if (fromContent != null) {
+                    return singleton(canReadContentKey(fromNamedRef, key, fromContent));
+                  }
+                  if (toContent != null) {
+                    return singleton(canReadContentKey(toNamedRef, key, toContent));
+                  }
+                }
+                return singleton(canReadContentKey(toNamedRef, key, null));
+              }
+            }.initialCheck(canViewReference(fromNamedRef))
+                .initialCheck(canViewReference(toNamedRef));
+
+        while (authz.hasNext()) {
+          Diff diff = authz.next();
           ContentKey key = ContentKey.of(diff.getKey().getElements());
           DiffEntry entry =
               DiffEntry.diffEntry(
                   key, diff.getFromValue().orElse(null), diff.getToValue().orElse(null));
 
-          BatchAccessChecker check = startAccessCheck();
-          Content fromContent = entry.getFrom();
-          Content toContent = entry.getTo();
-          if (fromNamedRef.equals(toNamedRef)
-              && fromContent != null
-              && toContent != null
-              && fromContent.getId() != null
-              && fromContent.getId().equals(toContent.getId())) {
-            startAccessCheck().canReadContentKey(fromNamedRef, key, fromContent.getId());
-          } else {
-            if (fromContent != null) {
-              startAccessCheck().canReadContentKey(fromNamedRef, key, fromContent.getId());
-            }
-            if (toContent != null) {
-              startAccessCheck().canReadContentKey(toNamedRef, key, toContent.getId());
-            }
-          }
-
-          if (!check.check().isEmpty()) {
-            continue;
-          }
-
           if (!pagedResponseHandler.addEntry(entry)) {
-            pagedResponseHandler.hasMore(diffs.tokenForCurrent());
+            pagedResponseHandler.hasMore(authz.tokenForCurrent());
             break;
           }
         }
+
+        return pagedResponseHandler.build();
       }
 
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
-    return pagedResponseHandler.build();
   }
 }

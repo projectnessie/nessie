@@ -355,6 +355,11 @@ public class PersistVersionStore implements VersionStore {
       }
 
       @Override
+      public String tokenForEntry(ReferenceInfo<CommitMeta> entry) {
+        return null;
+      }
+
+      @Override
       public void close() {
         source.close();
       }
@@ -399,6 +404,11 @@ public class PersistVersionStore implements VersionStore {
       @Override
       protected String computeTokenForCurrent() {
         return current() != null ? current().getHash().asString() : null;
+      }
+
+      @Override
+      public String tokenForEntry(Commit entry) {
+        return entry != null ? entry.getHash().asString() : null;
       }
 
       @Override
@@ -469,6 +479,11 @@ public class PersistVersionStore implements VersionStore {
       }
 
       @Override
+      public String tokenForEntry(KeyEntry entry) {
+        return null;
+      }
+
+      @Override
       public void close() {
         source.close();
       }
@@ -527,6 +542,11 @@ public class PersistVersionStore implements VersionStore {
                                 databaseAdapter::mapToAttachment)))) {
       @Override
       protected String computeTokenForCurrent() {
+        return null;
+      }
+
+      @Override
+      public String tokenForEntry(Diff entry) {
         return null;
       }
 
