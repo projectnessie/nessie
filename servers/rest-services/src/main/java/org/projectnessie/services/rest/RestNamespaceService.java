@@ -23,12 +23,12 @@ import javax.validation.executable.ExecutableType;
 import javax.validation.executable.ValidateOnExecution;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.services.impl.NamespaceApiImplWithAuthorization;
+import org.projectnessie.services.impl.NamespaceApiImpl;
 import org.projectnessie.versioned.VersionStore;
 
 @RequestScoped
 @ValidateOnExecution(type = ExecutableType.ALL)
-public class RestNamespaceService extends NamespaceApiImplWithAuthorization {
+public class RestNamespaceService extends NamespaceApiImpl {
   // Mandated by CDI 2.0
   public RestNamespaceService() {
     this(null, null, null, null);

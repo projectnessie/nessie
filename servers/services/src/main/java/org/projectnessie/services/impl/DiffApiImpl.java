@@ -19,14 +19,15 @@ import java.security.Principal;
 import java.util.function.Supplier;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
+import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.services.authz.Authorizer;
+import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.spi.DiffService;
 import org.projectnessie.services.spi.PagedResponseHandler;
 import org.projectnessie.versioned.Diff;
-import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
@@ -54,24 +55,44 @@ public class DiffApiImpl extends BaseApiImpl implements DiffService {
       throws NessieNotFoundException {
     WithHash<NamedRef> from = namedRefWithHashOrThrow(fromRef, fromHash);
     WithHash<NamedRef> to = namedRefWithHashOrThrow(toRef, toHash);
-    return getDiff(from.getHash(), to.getHash(), pagingToken, pagedResponseHandler);
-  }
+    NamedRef fromNamedRef = from.getValue();
+    NamedRef toNamedRef = to.getValue();
 
-  protected <R> R getDiff(
-      Hash from,
-      Hash to,
-      String pagingToken,
-      PagedResponseHandler<R, DiffEntry> pagedResponseHandler)
-      throws NessieNotFoundException {
+    startAccessCheck().canViewReference(fromNamedRef).canViewReference(toNamedRef).checkAndThrow();
+
     try {
-      try (PaginationIterator<Diff> diffs = getStore().getDiffs(from, to, pagingToken)) {
+      try (PaginationIterator<Diff> diffs =
+          getStore().getDiffs(from.getHash(), to.getHash(), pagingToken)) {
         while (diffs.hasNext()) {
           Diff diff = diffs.next();
-          if (!pagedResponseHandler.addEntry(
+          ContentKey key = ContentKey.of(diff.getKey().getElements());
+          DiffEntry entry =
               DiffEntry.diffEntry(
-                  ContentKey.of(diff.getKey().getElements()),
-                  diff.getFromValue().orElse(null),
-                  diff.getToValue().orElse(null)))) {
+                  key, diff.getFromValue().orElse(null), diff.getToValue().orElse(null));
+
+          BatchAccessChecker check = startAccessCheck();
+          Content fromContent = entry.getFrom();
+          Content toContent = entry.getTo();
+          if (fromNamedRef.equals(toNamedRef)
+              && fromContent != null
+              && toContent != null
+              && fromContent.getId() != null
+              && fromContent.getId().equals(toContent.getId())) {
+            startAccessCheck().canReadContentKey(fromNamedRef, key, fromContent.getId());
+          } else {
+            if (fromContent != null) {
+              startAccessCheck().canReadContentKey(fromNamedRef, key, fromContent.getId());
+            }
+            if (toContent != null) {
+              startAccessCheck().canReadContentKey(toNamedRef, key, toContent.getId());
+            }
+          }
+
+          if (!check.check().isEmpty()) {
+            continue;
+          }
+
+          if (!pagedResponseHandler.addEntry(entry)) {
             pagedResponseHandler.hasMore(diffs.tokenForCurrent());
             break;
           }

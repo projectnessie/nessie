@@ -23,12 +23,12 @@ import javax.validation.executable.ExecutableType;
 import javax.validation.executable.ValidateOnExecution;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.services.impl.TreeApiImplWithAuthorization;
+import org.projectnessie.services.impl.TreeApiImpl;
 import org.projectnessie.versioned.VersionStore;
 
 @RequestScoped
 @ValidateOnExecution(type = ExecutableType.ALL)
-public class RestTreeService extends TreeApiImplWithAuthorization {
+public class RestTreeService extends TreeApiImpl {
   // Mandated by CDI 2.0
   public RestTreeService() {
     this(null, null, null, null);

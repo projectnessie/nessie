@@ -87,6 +87,8 @@ import org.projectnessie.model.Reference.ReferenceType;
 import org.projectnessie.model.ReferenceMetadata;
 import org.projectnessie.model.Validation;
 import org.projectnessie.services.authz.Authorizer;
+import org.projectnessie.services.authz.BatchAccessChecker;
+import org.projectnessie.services.authz.Check;
 import org.projectnessie.services.cel.CELUtil;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.spi.PagedResponseHandler;
@@ -138,6 +140,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
         ReferenceInfo<CommitMeta> refInfo = references.next();
         Reference ref = TreeApiImpl.makeReference(refInfo, fetchAll);
         if (!filterPredicate.test(ref)) {
+          continue;
+        }
+        if (!startAccessCheck().canViewReference(refInfo.getNamedRef()).check().isEmpty()) {
           continue;
         }
         if (!pagedResponseHandler.addEntry(ref)) {
@@ -217,8 +222,10 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       throws NessieNotFoundException {
     try {
       boolean fetchAll = FetchOption.isFetchAll(fetchOption);
-      return makeReference(
-          getStore().getNamedRef(refName, getGetNamedRefsParams(fetchAll)), fetchAll);
+      Reference ref =
+          makeReference(getStore().getNamedRef(refName, getGetNamedRefsParams(fetchAll)), fetchAll);
+      startAccessCheck().canViewReference(RefUtil.toNamedRef(ref)).checkAndThrow();
+      return ref;
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
@@ -228,6 +235,22 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   public Reference createReference(
       String refName, Reference.ReferenceType type, String targetHash, String sourceRefName)
       throws NessieNotFoundException, NessieConflictException {
+    BatchAccessChecker check =
+        startAccessCheck().canCreateReference(RefUtil.toNamedRef(type, refName));
+    try {
+      check.canViewReference(namedRefWithHashOrThrow(sourceRefName, targetHash).getValue());
+    } catch (NessieNotFoundException e) {
+      // If the default-branch does not exist and hashOnRef points to the "beginning of time",
+      // then do not throw a NessieNotFoundException, but re-create the default branch. In all
+      // cases, re-throw the exception.
+      if (!(Reference.ReferenceType.BRANCH.equals(type)
+          && refName.equals(getConfig().getDefaultBranch())
+          && (null == targetHash || getStore().noAncestorHash().asString().equals(targetHash)))) {
+        throw e;
+      }
+    }
+    check.checkAndThrow();
+
     Validation.validateForbiddenReferenceName(refName);
     NamedRef namedReference = toNamedRef(type, refName);
     if (type == Reference.ReferenceType.TAG && targetHash == null) {
@@ -261,14 +284,47 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       String expectedHash,
       Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
-    return assignReference(toNamedRef(referenceType, referenceName), expectedHash, assignTo);
+    try {
+      NamedRef ref = toNamedRef(referenceType, referenceName);
+
+      startAccessCheck()
+          .canViewReference(
+              namedRefWithHashOrThrow(assignTo.getName(), assignTo.getHash()).getValue())
+          .canAssignRefToHash(ref)
+          .checkAndThrow();
+
+      ReferenceInfo<CommitMeta> resolved =
+          getStore().getNamedRef(ref.getName(), GetNamedRefsParams.DEFAULT);
+
+      Hash targetHash = toHash(assignTo.getName(), assignTo.getHash());
+      getStore().assign(resolved.getNamedRef(), toHash(expectedHash, true), targetHash);
+      return RefUtil.toReference(ref, targetHash);
+    } catch (ReferenceNotFoundException e) {
+      throw new NessieReferenceNotFoundException(e.getMessage(), e);
+    } catch (ReferenceConflictException e) {
+      throw new NessieReferenceConflictException(e.getMessage(), e);
+    }
   }
 
   @Override
   public String deleteReference(
       ReferenceType referenceType, String referenceName, String expectedHash)
       throws NessieConflictException, NessieNotFoundException {
-    return deleteReference(toNamedRef(referenceType, referenceName), expectedHash).asString();
+    try {
+      NamedRef ref = toNamedRef(referenceType, referenceName);
+
+      if (ref instanceof BranchName && getConfig().getDefaultBranch().equals(ref.getName())) {
+        throw new IllegalArgumentException(
+            "Default branch '" + ref.getName() + "' cannot be deleted.");
+      }
+      startAccessCheck().canDeleteReference(ref).checkAndThrow();
+
+      return getStore().delete(ref, toHash(expectedHash, true)).asString();
+    } catch (ReferenceNotFoundException e) {
+      throw new NessieReferenceNotFoundException(e.getMessage(), e);
+    } catch (ReferenceConflictException e) {
+      throw new NessieReferenceConflictException(e.getMessage(), e);
+    }
   }
 
   @Override
@@ -284,17 +340,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     // we should only allow named references when no paging is defined
     WithHash<NamedRef> endRef =
         namedRefWithHashOrThrow(namedRef, null == pageToken ? youngestHash : pageToken);
+    startAccessCheck().canListCommitLog(endRef.getValue()).checkAndThrow();
 
-    return getCommitLog(fetchOption, filter, endRef, oldestHashLimit, pagedResponseHandler);
-  }
-
-  protected <R> R getCommitLog(
-      FetchOption fetchOption,
-      String filter,
-      WithHash<NamedRef> endRef,
-      String startHash,
-      PagedResponseHandler<R, LogEntry> pagedResponseHandler)
-      throws NessieNotFoundException {
     boolean fetchAll = FetchOption.isFetchAll(fetchOption);
     try (PaginationIterator<Commit> commits = getStore().getCommits(endRef.getHash(), fetchAll)) {
 
@@ -310,7 +357,37 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
           continue;
         }
 
-        boolean stop = Objects.equals(hash, startHash);
+        boolean stop = Objects.equals(hash, oldestHashLimit);
+
+        if (logEntry.getOperations() != null) {
+          BatchAccessChecker responseCheck = startAccessCheck();
+          logEntry
+              .getOperations()
+              .forEach(
+                  op -> {
+                    if (op instanceof Operation.Put) {
+                      Operation.Put put = (Operation.Put) op;
+                      responseCheck.canReadContentKey(
+                          endRef.getValue(), put.getKey(), put.getContent().getId());
+                    } else if (op instanceof Operation.Delete) {
+                      Operation.Delete delete = (Operation.Delete) op;
+                      responseCheck.canReadContentKey(endRef.getValue(), delete.getKey(), null);
+                    }
+                  });
+
+          Set<ContentKey> notAllowed =
+              responseCheck.check().keySet().stream().map(Check::key).collect(Collectors.toSet());
+
+          logEntry =
+              ImmutableLogEntry.builder()
+                  .from(logEntry)
+                  .operations(
+                      logEntry.getOperations().stream()
+                          .filter(op -> !notAllowed.contains(op.getKey()))
+                          .collect(Collectors.toList()))
+                  .build();
+        }
+
         if (!pagedResponseHandler.addEntry(logEntry)) {
           if (!stop) {
             pagedResponseHandler.hasMore(commits.tokenForCurrent());
@@ -434,6 +511,19 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       Boolean returnConflictAsResult)
       throws NessieNotFoundException, NessieConflictException {
     try {
+      if (hashesToTransplant.isEmpty()) {
+        throw new IllegalArgumentException("No hashes given to transplant.");
+      }
+
+      BranchName targetBranch = BranchName.of(branchName);
+      startAccessCheck()
+          .canViewReference(
+              namedRefWithHashOrThrow(
+                      fromRefName, hashesToTransplant.get(hashesToTransplant.size() - 1))
+                  .getValue())
+          .canCommitChangeAgainstReference(targetBranch)
+          .checkAndThrow();
+
       List<Hash> transplants;
       try (Stream<Hash> s = hashesToTransplant.stream().map(Hash::of)) {
         transplants = s.collect(Collectors.toList());
@@ -448,7 +538,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       MergeResult<Commit> result =
           getStore()
               .transplant(
-                  BranchName.of(branchName),
+                  targetBranch,
                   toHash(expectedHash, true),
                   transplants,
                   commitMetaUpdate(message),
@@ -487,11 +577,17 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       Boolean returnConflictAsResult)
       throws NessieNotFoundException, NessieConflictException {
     try {
+      BranchName targetBranch = BranchName.of(branchName);
+      startAccessCheck()
+          .canViewReference(namedRefWithHashOrThrow(fromRefName, fromHash).getValue())
+          .canCommitChangeAgainstReference(targetBranch)
+          .checkAndThrow();
+
       MergeResult<Commit> result =
           getStore()
               .merge(
                   toHash(fromRefName, fromHash),
-                  BranchName.of(branchName),
+                  targetBranch,
                   toHash(expectedHash, true),
                   commitMetaUpdate(message),
                   Boolean.TRUE.equals(keepIndividualCommits),
@@ -589,6 +685,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       PagedResponseHandler<R, EntriesResponse.Entry> pagedResponseHandler)
       throws NessieNotFoundException {
     WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(namedRef, hashOnRef);
+    startAccessCheck().canReadEntries(refWithHash.getValue()).checkAndThrow();
+
     // TODO Implement paging. At the moment, we do not expect that many keys/entries to be returned.
     //  So the size of the whole result is probably reasonable and unlikely to "kill" either the
     //  server or client. We have to figure out _how_ to implement paging for keys/entries, i.e.
@@ -598,7 +696,15 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     // to the store though
     //  all existing VersionStore implementations have to read all keys anyways so we don't get much
     try {
-      Predicate<KeyEntry> filterPredicate = filterEntries(refWithHash, filter);
+      Predicate<KeyEntry> filterPredicate =
+          filterEntries(refWithHash, filter)
+              .and(
+                  entry ->
+                      startAccessCheck()
+                          .canReadContentKey(
+                              refWithHash.getValue(), fromKey(entry.getKey()), entry.getContentId())
+                          .check()
+                          .isEmpty());
 
       try (PaginationIterator<KeyEntry> entries =
           getStore().getKeys(refWithHash.getHash(), pagingToken)) {
@@ -696,6 +802,25 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   public CommitResponse commitMultipleOperations(
       String branch, String expectedHash, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
+    BranchName branchName = BranchName.of(branch);
+    BatchAccessChecker check = startAccessCheck().canCommitChangeAgainstReference(branchName);
+    operations
+        .getOperations()
+        .forEach(
+            op -> {
+              if (op instanceof Operation.Delete) {
+                check.canDeleteEntity(branchName, op.getKey(), null);
+              } else if (op instanceof Operation.Put) {
+                Operation.Put putOp = (Operation.Put) op;
+                check.canUpdateEntity(
+                    branchName,
+                    op.getKey(),
+                    putOp.getContent().getId(),
+                    putOp.getContent().getType());
+              }
+            });
+    check.checkAndThrow();
+
     List<org.projectnessie.versioned.Operation> ops =
         operations.getOperations().stream()
             .map(TreeApiImpl::toOp)
@@ -751,33 +876,6 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       return Optional.empty();
     }
     return Optional.of(Hash.of(hash));
-  }
-
-  protected Hash deleteReference(NamedRef ref, String expectedHash)
-      throws NessieConflictException, NessieNotFoundException {
-    try {
-      return getStore().delete(ref, toHash(expectedHash, true));
-    } catch (ReferenceNotFoundException e) {
-      throw new NessieReferenceNotFoundException(e.getMessage(), e);
-    } catch (ReferenceConflictException e) {
-      throw new NessieReferenceConflictException(e.getMessage(), e);
-    }
-  }
-
-  protected Reference assignReference(NamedRef ref, String expectedHash, Reference assignTo)
-      throws NessieNotFoundException, NessieConflictException {
-    try {
-      ReferenceInfo<CommitMeta> resolved =
-          getStore().getNamedRef(ref.getName(), GetNamedRefsParams.DEFAULT);
-
-      Hash targetHash = toHash(assignTo.getName(), assignTo.getHash());
-      getStore().assign(resolved.getNamedRef(), toHash(expectedHash, true), targetHash);
-      return RefUtil.toReference(ref, targetHash);
-    } catch (ReferenceNotFoundException e) {
-      throw new NessieReferenceNotFoundException(e.getMessage(), e);
-    } catch (ReferenceConflictException e) {
-      throw new NessieReferenceConflictException(e.getMessage(), e);
-    }
   }
 
   protected static ContentKey fromKey(Key key) {

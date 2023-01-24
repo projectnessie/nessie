@@ -17,8 +17,6 @@ package org.projectnessie.jaxrs.tests;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
@@ -28,7 +26,6 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.assertj.core.api.ThrowingConsumer;
 import org.junit.jupiter.api.Test;
@@ -47,6 +44,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operation.Put;
+import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 import org.projectnessie.services.authz.AbstractBatchAccessChecker;
 import org.projectnessie.services.authz.AccessContext;
@@ -191,58 +189,43 @@ public abstract class AbstractRestAccessChecks extends AbstractTestRest {
     Tag detachedAsTag = Tag.of(Detached.REF_NAME, mainCommit.getHash());
     Detached detached = Detached.of(mainCommit.getHash());
 
-    assertThat(Stream.of(detached, detachedAsBranch, detachedAsTag))
-        .allSatisfy(
-            ref ->
-                assertAll(
-                    () ->
-                        assertThatThrownBy(() -> getApi().getCommitLog().reference(ref).get())
-                            .describedAs("ref='%s', getCommitLog", ref)
-                            .isInstanceOf(NessieForbiddenException.class)
-                            .hasMessageContaining(COMMITS_MSG),
-                    () ->
-                        assertThatThrownBy(
-                                () ->
-                                    getApi()
-                                        .mergeRefIntoBranch()
-                                        .fromRef(ref)
-                                        .branch(merge)
-                                        .merge())
-                            .describedAs("ref='%s', mergeRefIntoBranch", ref)
-                            .isInstanceOf(NessieForbiddenException.class)
-                            .hasMessageContaining(VIEW_MSG),
-                    () ->
-                        assertThatThrownBy(
-                                () ->
-                                    getApi()
-                                        .transplantCommitsIntoBranch()
-                                        .fromRefName(ref.getName())
-                                        .hashesToTransplant(singletonList(ref.getHash()))
-                                        .branch(transplant)
-                                        .transplant())
-                            .describedAs("ref='%s', transplantCommitsIntoBranch", ref)
-                            .isInstanceOf(NessieForbiddenException.class)
-                            .hasMessageContaining(VIEW_MSG),
-                    () ->
-                        assertThatThrownBy(() -> getApi().getEntries().reference(ref).get())
-                            .describedAs("ref='%s', getEntries", ref)
-                            .isInstanceOf(NessieForbiddenException.class)
-                            .hasMessageContaining(READ_MSG),
-                    () ->
-                        assertThatThrownBy(
-                                () -> getApi().getContent().reference(ref).key(key).get())
-                            .describedAs("ref='%s', getContent", ref)
-                            .isInstanceOf(NessieForbiddenException.class)
-                            .hasMessageContaining(ENTITIES_MSG),
-                    () ->
-                        assertThatThrownBy(() -> getApi().getDiff().fromRef(ref).toRef(main).get())
-                            .describedAs("ref='%s', getDiff1", ref)
-                            .isInstanceOf(NessieForbiddenException.class)
-                            .hasMessageContaining(VIEW_MSG),
-                    () ->
-                        assertThatThrownBy(() -> getApi().getDiff().fromRef(main).toRef(ref).get())
-                            .describedAs("ref='%s', getDiff2", ref)
-                            .isInstanceOf(NessieForbiddenException.class)
-                            .hasMessageContaining(VIEW_MSG)));
+    for (Reference ref : Arrays.asList(detached, detachedAsBranch, detachedAsTag)) {
+      soft.assertThatThrownBy(() -> getApi().getCommitLog().reference(ref).get())
+          .describedAs("ref='%s', getCommitLog", ref)
+          .isInstanceOf(NessieForbiddenException.class)
+          .hasMessageContaining(COMMITS_MSG);
+      soft.assertThatThrownBy(
+              () -> getApi().mergeRefIntoBranch().fromRef(ref).branch(merge).merge())
+          .describedAs("ref='%s', mergeRefIntoBranch", ref)
+          .isInstanceOf(NessieForbiddenException.class)
+          .hasMessageContaining(VIEW_MSG);
+      soft.assertThatThrownBy(
+              () ->
+                  getApi()
+                      .transplantCommitsIntoBranch()
+                      .fromRefName(ref.getName())
+                      .hashesToTransplant(singletonList(ref.getHash()))
+                      .branch(transplant)
+                      .transplant())
+          .describedAs("ref='%s', transplantCommitsIntoBranch", ref)
+          .isInstanceOf(NessieForbiddenException.class)
+          .hasMessageContaining(VIEW_MSG);
+      soft.assertThatThrownBy(() -> getApi().getEntries().reference(ref).get())
+          .describedAs("ref='%s', getEntries", ref)
+          .isInstanceOf(NessieForbiddenException.class)
+          .hasMessageContaining(READ_MSG);
+      soft.assertThatThrownBy(() -> getApi().getContent().reference(ref).key(key).get())
+          .describedAs("ref='%s', getContent", ref)
+          .isInstanceOf(NessieForbiddenException.class)
+          .hasMessageContaining(ENTITIES_MSG);
+      soft.assertThatThrownBy(() -> getApi().getDiff().fromRef(ref).toRef(main).get())
+          .describedAs("ref='%s', getDiff1", ref)
+          .isInstanceOf(NessieForbiddenException.class)
+          .hasMessageContaining(VIEW_MSG);
+      soft.assertThatThrownBy(() -> getApi().getDiff().fromRef(main).toRef(ref).get())
+          .describedAs("ref='%s', getDiff2", ref)
+          .isInstanceOf(NessieForbiddenException.class)
+          .hasMessageContaining(VIEW_MSG);
+    }
   }
 }
