@@ -93,6 +93,8 @@ dependencies {
       api(project(":nessie-gc-iceberg-files"))
       api(project(":nessie-gc-iceberg-mock"))
       api(project(":nessie-gc-tool"))
+      api(project(":nessie-rest-catalog-server"))
+      api(project(":nessie-rest-catalog-service"))
 
       val ideSyncActive =
         System.getProperty("idea.sync.active").toBoolean() ||
