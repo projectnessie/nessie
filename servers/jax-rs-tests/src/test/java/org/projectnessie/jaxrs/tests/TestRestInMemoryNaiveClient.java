@@ -15,15 +15,24 @@
  */
 package org.projectnessie.jaxrs.tests;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.client.http.impl.HttpUtils.HEADER_ACCEPT;
+import static org.projectnessie.jaxrs.ext.NessieJaxRsExtension.jaxRsExtensionForDatabaseAdapter;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.ext.NessieApiVersion;
 import org.projectnessie.client.ext.NessieClientCustomizer;
 import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.RequestFilter;
+import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
+import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.inmem.InmemoryTestConnectionProviderSource;
+import org.projectnessie.versioned.persist.tests.extension.DatabaseAdapterExtension;
+import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
 import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
 
@@ -41,9 +50,17 @@ import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabas
  * <p>It is not necessary to run this test for all backends as it tests only the surface area of
  * HTTP endpoints. Running with the in-memory database adapter is sufficient.
  */
+@ExtendWith(DatabaseAdapterExtension.class)
 @NessieDbAdapterName(InmemoryDatabaseAdapterFactory.NAME)
 @NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
-class TestRestInMemoryNaiveClient extends AbstractTestRestApi implements NessieClientCustomizer {
+class TestRestInMemoryNaiveClient extends BaseTestNessieApi implements NessieClientCustomizer {
+
+  @NessieDbAdapter static DatabaseAdapter databaseAdapter;
+
+  @RegisterExtension
+  static NessieJaxRsExtension server = jaxRsExtensionForDatabaseAdapter(() -> databaseAdapter);
+
+  private boolean headersProcessed;
 
   @Override
   public NessieClientBuilder<?> configure(
@@ -52,13 +69,20 @@ class TestRestInMemoryNaiveClient extends AbstractTestRestApi implements NessieC
     // Service endpoints should declare the content type for their return values,
     // which should allow the Web Container to properly format output even in the absence
     // of `Accept` HTTP headers.
+    headersProcessed = false;
     RequestFilter noAcceptFilter =
         context -> {
+          headersProcessed = true;
           context.removeHeader(HEADER_ACCEPT);
         };
 
     // Abuse the authentication callback a bit to inject the noAcceptFilter into the java client.
     return builder.withAuthentication(
         (HttpAuthentication) client -> client.addRequestFilter(noAcceptFilter));
+  }
+
+  @AfterEach
+  void ensureHeadersProcessed() {
+    assertThat(headersProcessed).isTrue();
   }
 }

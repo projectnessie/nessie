@@ -15,9 +15,11 @@
  */
 package org.projectnessie.jaxrs.tests;
 
+import static com.google.common.collect.Maps.immutableEntry;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.FetchOption.ALL;
 
@@ -26,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.validation.constraints.NotNull;
 import org.assertj.core.api.SoftAssertions;
@@ -36,6 +39,7 @@ import org.junit.jupiter.api.Test;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.api.NessieApiV2;
+import org.projectnessie.client.ext.NessieApiVersion;
 import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.client.ext.NessieClientFactory;
 import org.projectnessie.error.BaseNessieClientServerException;
@@ -54,7 +58,9 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.DiffResponse;
 import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.model.EntriesResponse;
+import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableReferenceMetadata;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
@@ -754,5 +760,91 @@ public abstract class BaseTestNessieApi {
                 .get()
                 .getNamespaces())
         .containsExactlyInAnyOrder(namespace1WithId, namespace2update2);
+  }
+
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void commitLogForNamelessReference() throws BaseNessieClientServerException {
+    Branch main = api().getDefaultBranch();
+    Branch branch =
+        createReference(Branch.of("commitLogForNamelessReference", main.getHash()), main.getName());
+    for (int i = 0; i < 5; i++) {
+      branch = prepCommit(branch, "c-" + i, dummyPut("c", Integer.toString(i))).commit();
+    }
+    List<LogResponse.LogEntry> log =
+        api().getCommitLog().hashOnRef(branch.getHash()).stream().collect(Collectors.toList());
+    // Verifying size is sufficient to make sure the right log was retrieved
+    assertThat(log).hasSize(5);
+  }
+
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void testDiffByNamelessReference() throws BaseNessieClientServerException {
+    Branch main = api().getDefaultBranch();
+    Branch fromRef = createReference(Branch.of("testFrom", main.getHash()), main.getName());
+    Branch toRef = createReference(Branch.of("testTo", main.getHash()), main.getName());
+    toRef = prepCommit(toRef, "commit", dummyPut("c")).commit();
+
+    soft.assertThat(api().getDiff().fromRef(fromRef).toHashOnRef(toRef.getHash()).get().getDiffs())
+        .hasSize(1)
+        .allSatisfy(
+            diff -> {
+              assertThat(diff.getKey()).isNotNull();
+              assertThat(diff.getFrom()).isNull();
+              assertThat(diff.getTo()).isNotNull();
+            });
+
+    // both nameless references
+    soft.assertThat(
+            api()
+                .getDiff()
+                .fromHashOnRef(fromRef.getHash())
+                .toHashOnRef(toRef.getHash())
+                .get()
+                .getDiffs())
+        .hasSize(1)
+        .allSatisfy(
+            diff -> {
+              assertThat(diff.getKey()).isNotNull();
+              assertThat(diff.getFrom()).isNull();
+              assertThat(diff.getTo()).isNotNull();
+            });
+
+    // reverse to/from
+    soft.assertThat(api().getDiff().fromHashOnRef(toRef.getHash()).toRef(fromRef).get().getDiffs())
+        .hasSize(1)
+        .allSatisfy(
+            diff -> {
+              assertThat(diff.getKey()).isNotNull();
+              assertThat(diff.getFrom()).isNotNull();
+              assertThat(diff.getTo()).isNull();
+            });
+  }
+
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void fetchEntriesByNamelessReference() throws BaseNessieClientServerException {
+    Branch main = api().getDefaultBranch();
+    Branch branch =
+        createReference(
+            Branch.of("fetchEntriesByNamelessReference", main.getHash()), main.getName());
+    ContentKey a = ContentKey.of("a");
+    ContentKey b = ContentKey.of("b");
+    IcebergTable ta = IcebergTable.of("path1", 42, 42, 42, 42);
+    IcebergView tb = IcebergView.of("pathx", 1, 1, "select * from table", "Dremio");
+    branch =
+        api()
+            .commitMultipleOperations()
+            .branch(branch)
+            .operation(Put.of(a, ta))
+            .operation(Put.of(b, tb))
+            .commitMeta(CommitMeta.fromMessage("commit 1"))
+            .commit();
+    List<Entry> entries = api().getEntries().hashOnRef(branch.getHash()).get().getEntries();
+    soft.assertThat(entries)
+        .map(e -> immutableEntry(e.getName(), e.getType()))
+        .containsExactlyInAnyOrder(
+            immutableEntry(a, Content.Type.ICEBERG_TABLE),
+            immutableEntry(b, Content.Type.ICEBERG_VIEW));
   }
 }

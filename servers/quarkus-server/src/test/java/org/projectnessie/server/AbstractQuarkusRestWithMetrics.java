@@ -34,7 +34,7 @@ public abstract class AbstractQuarkusRestWithMetrics extends BaseTestNessieRest 
   private String getMetrics() {
     return RestAssured.given()
         .when()
-        .baseUri(clientURI.resolve("/").toString())
+        .baseUri(clientUri.resolve("/").toString())
         .basePath("/q/metrics")
         .accept("*/*")
         .get()

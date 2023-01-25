@@ -66,7 +66,7 @@ import org.projectnessie.model.SingleReferenceResponse;
 /** REST specific tests. */
 public abstract class BaseTestNessieRest extends BaseTestNessieApi {
 
-  protected URI clientURI;
+  protected URI clientUri;
 
   @BeforeEach
   public void enableLogging() {
@@ -76,7 +76,7 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
   @SuppressWarnings("JUnitMalformedDeclaration")
   @BeforeEach
   void setupRestUri(@NessieClientUri URI uri) {
-    clientURI = uri;
+    clientUri = uri;
     RestAssured.baseURI = uri.toString();
     RestAssured.port = uri.getPort();
   }

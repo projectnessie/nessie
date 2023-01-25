@@ -190,7 +190,7 @@ public abstract class BaseTestServiceImpl {
             youngestHash,
             filter,
             null,
-            new ListPagedResponseHandler<>());
+            new UnlimitedListResponseHandler<>());
   }
 
   protected List<Reference> allReferences() {
@@ -198,7 +198,8 @@ public abstract class BaseTestServiceImpl {
   }
 
   protected List<Reference> allReferences(FetchOption fetchOption, String filter) {
-    return treeApi().getAllReferences(fetchOption, filter, null, new ListPagedResponseHandler<>());
+    return treeApi()
+        .getAllReferences(fetchOption, filter, null, new UnlimitedListResponseHandler<>());
   }
 
   protected List<EntriesResponse.Entry> entries(Reference reference)
@@ -221,7 +222,7 @@ public abstract class BaseTestServiceImpl {
       throws NessieNotFoundException {
     return treeApi()
         .getEntries(
-            refName, hashOnRef, namespaceDepth, filter, null, new ListPagedResponseHandler<>());
+            refName, hashOnRef, namespaceDepth, filter, null, new UnlimitedListResponseHandler<>());
   }
 
   protected List<DiffEntry> diff(Reference fromRef, Reference toRef)
@@ -232,7 +233,7 @@ public abstract class BaseTestServiceImpl {
   protected List<DiffEntry> diff(String fromRef, String fromHash, String toRef, String toHash)
       throws NessieNotFoundException {
     return diffApi()
-        .getDiff(fromRef, fromHash, toRef, toHash, null, new ListPagedResponseHandler<>());
+        .getDiff(fromRef, fromHash, toRef, toHash, null, new UnlimitedListResponseHandler<>());
   }
 
   protected List<LogEntry> pagedCommitLog(
@@ -434,7 +435,7 @@ public abstract class BaseTestServiceImpl {
     return currentHash;
   }
 
-  protected static final class ListPagedResponseHandler<E>
+  protected static final class UnlimitedListResponseHandler<E>
       implements PagedResponseHandler<List<E>, E> {
 
     final List<E> result = new ArrayList<>();

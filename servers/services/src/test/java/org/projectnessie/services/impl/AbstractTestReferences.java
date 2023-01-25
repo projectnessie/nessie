@@ -61,7 +61,7 @@ public abstract class AbstractTestReferences extends BaseTestServiceImpl {
   @ValueSource(ints = {0, 20, 22})
   public void referencesPaging(int numRefs) throws BaseNessieClientServerException {
     try {
-      treeApi().getAllReferences(MINIMAL, null, "666f6f", new ListPagedResponseHandler<>());
+      treeApi().getAllReferences(MINIMAL, null, "666f6f", new UnlimitedListResponseHandler<>());
     } catch (IllegalArgumentException e) {
       if (!e.getMessage().contains("Paging not supported")) {
         throw e;

@@ -300,7 +300,7 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
                 endHash,
                 null,
                 null,
-                new ListPagedResponseHandler<>());
+                new UnlimitedListResponseHandler<>());
     soft.assertThat(log).hasSize(numCommits / 2 + 1);
 
     for (int i = 0, j = numCommits - 1; i < j; i++, j--) {
@@ -315,7 +315,7 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
                   endHash,
                   null,
                   null,
-                  new ListPagedResponseHandler<>());
+                  new UnlimitedListResponseHandler<>());
       soft.assertThat(log).hasSize(numCommits - (i * 2));
       soft.assertThat(ImmutableList.copyOf(entireLog).subList(i, j + 1))
           .containsExactlyElementsOf(log);

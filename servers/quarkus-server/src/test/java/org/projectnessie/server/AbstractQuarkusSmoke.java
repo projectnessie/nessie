@@ -27,7 +27,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.ext.NessieApiVersion;
 import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.client.ext.NessieClientFactory;
@@ -74,10 +73,6 @@ public abstract class AbstractQuarkusSmoke {
     return api;
   }
 
-  public boolean isV2() {
-    return api instanceof NessieApiV2;
-  }
-
   @AfterEach
   public void tearDown() throws Exception {
     try {
@@ -85,26 +80,26 @@ public abstract class AbstractQuarkusSmoke {
       // of Quarkus class loading issues. See https://github.com/quarkusio/quarkus/issues/19814
       soft.assertAll();
     } finally {
-      Branch defaultBranch = api.getDefaultBranch();
+      Branch defaultBranch = api().getDefaultBranch();
       api()
           .assignBranch()
           .branch(defaultBranch)
           .assignTo(Branch.of(defaultBranch.getName(), EMPTY))
           .assign();
-      api.getAllReferences().stream()
+      api().getAllReferences().stream()
           .forEach(
               ref -> {
                 try {
                   if (ref instanceof Branch && !ref.getName().equals(defaultBranch.getName())) {
-                    api.deleteBranch().branch((Branch) ref).delete();
+                    api().deleteBranch().branch((Branch) ref).delete();
                   } else if (ref instanceof Tag) {
-                    api.deleteTag().tag((Tag) ref).delete();
+                    api().deleteTag().tag((Tag) ref).delete();
                   }
                 } catch (NessieConflictException | NessieNotFoundException e) {
                   throw new RuntimeException(e);
                 }
               });
-      api.close();
+      api().close();
     }
   }
 
