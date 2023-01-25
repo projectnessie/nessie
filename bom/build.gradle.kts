@@ -33,6 +33,8 @@ dependencies {
     api(project(":nessie-gc-base"))
     api(project(":nessie-gc-repository-jdbc"))
     api(project(":nessie-model"))
+    api(project(":nessie-rest-catalog-server"))
+    api(project(":nessie-rest-catalog-service"))
     api(project(":nessie-jaxrs"))
     api(project(":nessie-jaxrs-testextension"))
     api(project(":nessie-jaxrs-tests"))
