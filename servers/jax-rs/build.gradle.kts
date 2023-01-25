@@ -48,29 +48,6 @@ dependencies {
   api(libs.jackson.databind)
   compileOnly(libs.jackson.annotations)
 
-  api(platform(libs.jersey.bom))
-  api("org.glassfish.jersey.core:jersey-server")
-  api("org.glassfish.jersey.inject:jersey-hk2")
-  api("org.glassfish.jersey.media:jersey-media-json-jackson")
-  api("org.glassfish.jersey.ext:jersey-bean-validation")
-  api("org.glassfish.jersey.ext.cdi:jersey-cdi1x")
-  api("org.glassfish.jersey.ext.cdi:jersey-cdi-rs-inject")
-  api("org.glassfish.jersey.ext.cdi:jersey-weld2-se")
-
-  api(
-    platform("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-bundle")
-  )
-  api("org.glassfish.jersey.test-framework:jersey-test-framework-core")
-  api("org.glassfish.jersey.test-framework:jersey-test-framework-util")
-  api("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2")
-  api("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-inmemory")
-  api("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-external")
-  api("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-jdk-http")
-  api("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-simple")
-  api("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-jetty")
-
-  api("org.jboss.weld.se:weld-se-core")
-
   compileOnly(libs.microprofile.openapi)
   compileOnly(libs.jakarta.validation.api)
 }
