@@ -115,6 +115,7 @@ jmh-generator-annprocess = { module = "org.openjdk.jmh:jmh-generator-annprocess"
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
 junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params" }
+junit4 = { module = "junit:junit", version = "4.13.2" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.2.12" }
 keycloak-admin-client = { module = "org.keycloak:keycloak-admin-client", version.ref = "keycloak" }
 maven-core = { module = "org.apache.maven:maven-resolver-provider", version.ref = "maven" }
@@ -129,6 +130,7 @@ mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.
 mongodb-driver-sync = { module = "org.mongodb:mongodb-driver-sync", version = "4.10.2" }
 nessie-ui = { module = "org.projectnessie.nessie.ui:nessie-ui", version = "0.63.3" }
 openapi-generator-cli = { module = "org.openapitools:openapi-generator-cli", version = "6.6.0" }
+openapi-jackson-databind = { module = "org.openapitools:jackson-databind-nullable", version = "0.2.6" }
 opentelemetry-bom = { module = "io.opentelemetry:opentelemetry-bom", version.ref = "opentelemetry" }
 opentelemetry-bom-alpha = { module = "io.opentelemetry:opentelemetry-bom-alpha", version.ref = "opentelemetryAlpha" }
 opentelemetry-instrumentation-bom-alpha = { module = "io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom-alpha", version.ref = "opentelemetryAlpha" }
