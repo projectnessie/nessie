@@ -44,6 +44,13 @@ dependencies {
   implementation(libs.jackson.databind)
   compileOnly(libs.jackson.annotations)
 
+  testImplementation(project(":nessie-versioned-persist-in-memory"))
+  testImplementation(project(":nessie-versioned-persist-in-memory-test"))
+  testImplementation(project(":nessie-versioned-persist-non-transactional"))
+  testImplementation(project(":nessie-versioned-persist-non-transactional-test"))
+  testImplementation(project(":nessie-versioned-persist-transactional"))
+  testImplementation(project(":nessie-versioned-persist-transactional-test"))
+
   testImplementation(project(":nessie-jaxrs-testextension"))
   testImplementation(libs.slf4j.jcl.over.slf4j)
   testRuntimeOnly(libs.h2)

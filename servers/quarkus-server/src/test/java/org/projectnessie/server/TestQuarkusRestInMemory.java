@@ -15,10 +15,10 @@
  */
 package org.projectnessie.server;
 
-import io.quarkus.test.junit.QuarkusIntegrationTest;
+import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
-import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfilePostgres;
+import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
 
-@QuarkusIntegrationTest
-@TestProfile(QuarkusTestProfilePostgres.class)
-class ITRestApiPostgres extends AbstractQuarkusSmoke {}
+@QuarkusTest
+@TestProfile(QuarkusTestProfileInmemory.class)
+class TestQuarkusRestInMemory extends AbstractQuarkusRestWithMetrics {}

@@ -46,6 +46,7 @@ dependencies {
 
   testImplementation(nessieProject("nessie-versioned-persist-testextension"))
   testImplementation(nessieProject("nessie-versioned-persist-in-memory"))
+  testImplementation(nessieProject("nessie-versioned-persist-in-memory-test"))
   testImplementation(nessieProject("nessie-jaxrs-testextension"))
   testImplementation(libs.slf4j.log4j.over.slf4j)
   testCompileOnly(libs.microprofile.openapi)

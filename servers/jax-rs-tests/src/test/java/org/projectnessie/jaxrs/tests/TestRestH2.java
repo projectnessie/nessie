@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server;
+package org.projectnessie.jaxrs.tests;
 
-import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.quarkus.test.junit.TestProfile;
-import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfilePostgres;
+import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
+import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
+import org.projectnessie.versioned.persist.tx.h2.H2DatabaseAdapterFactory;
+import org.projectnessie.versioned.persist.tx.h2.H2TestConnectionProviderSource;
 
-@QuarkusIntegrationTest
-@TestProfile(QuarkusTestProfilePostgres.class)
-class ITRestApiPostgres extends AbstractQuarkusSmoke {}
+@NessieDbAdapterName(H2DatabaseAdapterFactory.NAME)
+@NessieExternalDatabase(H2TestConnectionProviderSource.class)
+class TestRestH2 extends AbstractTestRestApi {}
