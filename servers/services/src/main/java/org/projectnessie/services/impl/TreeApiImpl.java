@@ -446,12 +446,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       if (failures.containsKey(check)) {
         failedChecks.add(check);
       } else if (!failedChecks.contains(check)) {
-        if (successfulChecks.contains(check)) {
-          newLogEntry.addOperations(op);
-        } else {
-          newLogEntry.addOperations(op);
-          successfulChecks.add(check);
-        }
+        newLogEntry.addOperations(op);
+        successfulChecks.add(check);
       }
     }
     return newLogEntry.build();
