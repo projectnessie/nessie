@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,13 @@
  * limitations under the License.
  */
 
-dependencyResolutionManagement {
-  versionCatalogs { create("baselibs") { from(files("../gradle/baselibs.versions.toml")) } }
+import org.gradle.api.Plugin
+import org.gradle.api.Project
+import org.gradle.kotlin.dsl.apply
+import org.projectnessie.buildtools.smallryeopenapi.SmallryeOpenApiPlugin
+
+/** Makes the generated sources available to IDEs, disables Checkstyle on generated code. */
+@Suppress("unused")
+class OpenApiPlugin : Plugin<Project> {
+  override fun apply(project: Project): Unit = project.run { apply<SmallryeOpenApiPlugin>() }
 }
