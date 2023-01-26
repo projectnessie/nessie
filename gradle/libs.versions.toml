@@ -1,3 +1,5 @@
+# Nessie dependencies, without the dependencies needed by buildSrc/
+
 [versions]
 agrone = "1.17.1"
 antlr4 = "4.11.1"
@@ -14,14 +16,12 @@ iceberg = "1.1.0"
 immutables = "2.9.3"
 jacoco = "0.8.8"
 jandex = "3.0.5"
-jandexPlugin = "1.86"
 jmh = "1.36"
 junit = "5.9.2"
 logback = "1.2.11"
 maven = "3.8.7"
 mavenResolver = "1.7.3"
 micrometer = "1.10.3"
-nessieBuildPlugins = "0.2.15"
 nessieClientVersion = "0.44.0"
 opentelemetry = "1.22.0"
 opentelemetryAlpha = "1.20.1-alpha"
@@ -30,15 +30,12 @@ parquet = "1.12.3"
 picocli = "4.7.0"
 postgresContainerTag = "14"
 protobuf = "3.21.12"
-protobufPlugin = "0.9.2"
 quarkus = "2.15.3.Final"
 quarkusAmazon = "2.16.0.Final"
 quarkusLoggingSentry = "1.2.1"
 quarkusBuilderImage = "quay.io/quarkus/ubi-quarkus-mandrel-builder-image:22.3-java17"
 rocksdb = "7.9.2"
-shadowPlugin = "7.1.2"
 slf4j = "1.7.36"
-spotlessPlugin = "6.13.0"
 testcontainers = "1.17.6"
 undertow = "2.2.19.Final"
 
@@ -211,22 +208,8 @@ weld-se-core = { module = "org.jboss.weld.se:weld-se-core", version = "3.1.9.Fin
 errorprone = { id = "net.ltgt.errorprone", version = "3.0.1" }
 gatling = { id = "io.gatling.gradle", version = "3.9.0.2" }
 idea-ext = { id = "org.jetbrains.gradle.plugin.idea-ext", version = "1.1.7" }
-jandex = { id = "com.github.vlsi.jandex", version.ref = "jandexPlugin" }
 jmh = { id = "me.champeau.jmh", version = "0.6.8" }
-nessie-build-checkstyle = { id = "org.projectnessie.buildsupport.checkstyle", version.ref = "nessieBuildPlugins" }
-nessie-build-errorprone = { id = "org.projectnessie.buildsupport.errorprone", version.ref = "nessieBuildPlugins" }
-nessie-build-ide-integration = { id = "org.projectnessie.buildsupport.ide-integration", version.ref = "nessieBuildPlugins" }
-nessie-build-jacoco = { id = "org.projectnessie.buildsupport.jacoco", version.ref = "nessieBuildPlugins" }
-nessie-build-jacoco-aggregator = { id = "org.projectnessie.buildsupport.jacoco-aggregator", version.ref = "nessieBuildPlugins" }
-nessie-build-jandex = { id = "org.projectnessie.buildsupport.jandex", version.ref = "nessieBuildPlugins" }
-nessie-build-publishing = { id = "org.projectnessie.buildsupport.publishing", version.ref = "nessieBuildPlugins" }
-nessie-build-reflectionconfig = { id = "org.projectnessie.buildsupport.reflectionconfig", version.ref = "nessieBuildPlugins" }
-nessie-build-smallrye-open-api = { id = "org.projectnessie.smallrye-open-api", version.ref = "nessieBuildPlugins" }
-nessie-build-spotless = { id = "org.projectnessie.buildsupport.spotless", version.ref = "nessieBuildPlugins" }
 nessie-run = { id = "org.projectnessie", version = "0.28.1" }
 nexus-publish-plugin = { id = "io.github.gradle-nexus.publish-plugin", version = "1.1.0" }
 node-gradle = { id = "com.github.node-gradle.node", version = "3.5.1" }
-protobuf = { id = "com.google.protobuf", version.ref = "protobufPlugin" }
 quarkus = { id = "io.quarkus", version.ref = "quarkus" }
-shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadowPlugin" }
-spotless = { id = "com.diffplug.spotless", version.ref = "spotlessPlugin" }

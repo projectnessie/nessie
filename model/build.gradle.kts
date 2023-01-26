@@ -15,6 +15,7 @@
  */
 
 import org.apache.tools.ant.filters.ReplaceTokens
+import org.projectnessie.buildtools.smallryeopenapi.SmallryeOpenApiExtension
 import org.projectnessie.buildtools.smallryeopenapi.SmallryeOpenApiTask
 
 plugins {
@@ -22,9 +23,10 @@ plugins {
   jacoco
   `maven-publish`
   signing
-  alias(libs.plugins.nessie.build.smallrye.open.api)
   `nessie-conventions`
 }
+
+apply<OpenApiPlugin>()
 
 dependencies {
   implementation(platform(libs.jackson.bom))
@@ -47,7 +49,7 @@ dependencies {
   testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
-smallryeOpenApi {
+extensions.configure<SmallryeOpenApiExtension> {
   infoVersion.set(project.version.toString())
   schemaFilename.set("META-INF/openapi/openapi")
   operationIdStrategy.set("METHOD")
