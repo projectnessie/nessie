@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
+import io.smallrye.openapi.api.OpenApiConfig.OperationIdStrategy
+import io.smallrye.openapi.gradleplugin.SmallryeOpenApiExtension
+import io.smallrye.openapi.gradleplugin.SmallryeOpenApiPlugin
+import io.smallrye.openapi.gradleplugin.SmallryeOpenApiTask
 import org.apache.tools.ant.filters.ReplaceTokens
-import org.projectnessie.buildtools.smallryeopenapi.SmallryeOpenApiExtension
-import org.projectnessie.buildtools.smallryeopenapi.SmallryeOpenApiTask
+
+buildscript { dependencies { classpath(libs.smallrye.openapi.plugin) } }
 
 plugins {
   `java-library`
@@ -26,7 +30,7 @@ plugins {
   `nessie-conventions`
 }
 
-apply<OpenApiPlugin>()
+apply<SmallryeOpenApiPlugin>()
 
 dependencies {
   implementation(platform(libs.jackson.bom))
@@ -50,9 +54,10 @@ dependencies {
 }
 
 extensions.configure<SmallryeOpenApiExtension> {
+  scanDependenciesDisable.set(false)
   infoVersion.set(project.version.toString())
   schemaFilename.set("META-INF/openapi/openapi")
-  operationIdStrategy.set("METHOD")
+  operationIdStrategy.set(OperationIdStrategy.METHOD)
   scanPackages.set(
     listOf("org.projectnessie.api", "org.projectnessie.api.http", "org.projectnessie.model")
   )
@@ -62,13 +67,6 @@ val processResources =
   tasks.named<ProcessResources>("processResources") {
     inputs.property("projectVersion", project.version)
     filter(ReplaceTokens::class, mapOf("tokens" to mapOf("projectVersion" to project.version)))
-  }
-
-val openapi by
-  configurations.creating {
-    isCanBeConsumed = true
-    isCanBeResolved = false
-    description = "Generated OpenAPI spec files"
   }
 
 val openapiSource by
@@ -83,7 +81,4 @@ val generateOpenApiSpec =
     inputs.files("src/main").withPathSensitivity(PathSensitivity.RELATIVE)
   }
 
-artifacts {
-  add(openapi.name, generateOpenApiSpec.get().outputDirectory) { builtBy(generateOpenApiSpec) }
-  add(openapiSource.name, file("src/main/resources/META-INF"))
-}
+artifacts { add(openapiSource.name, file("src/main/resources/META-INF")) }
