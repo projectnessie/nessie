@@ -22,6 +22,8 @@ public interface PaginationIterator<T> extends Iterator<T>, AutoCloseable {
 
   String tokenForCurrent();
 
+  String tokenForEntry(T entry);
+
   @Override
   void close();
 
@@ -32,6 +34,11 @@ public interface PaginationIterator<T> extends Iterator<T>, AutoCloseable {
 
       @Override
       public String tokenForCurrent() {
+        return null;
+      }
+
+      @Override
+      public String tokenForEntry(T entry) {
         return null;
       }
 
@@ -54,6 +61,11 @@ public interface PaginationIterator<T> extends Iterator<T>, AutoCloseable {
     return new PaginationIterator<T>() {
       @Override
       public String tokenForCurrent() {
+        return null;
+      }
+
+      @Override
+      public String tokenForEntry(T entry) {
         return null;
       }
 

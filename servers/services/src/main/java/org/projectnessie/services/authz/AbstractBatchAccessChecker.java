@@ -15,8 +15,9 @@
  */
 package org.projectnessie.services.authz;
 
+import static java.util.Collections.emptyMap;
+
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import org.projectnessie.model.Content;
@@ -29,19 +30,29 @@ public abstract class AbstractBatchAccessChecker implements BatchAccessChecker {
       new AbstractBatchAccessChecker() {
         @Override
         public Map<Check, String> check() {
-          return Collections.emptyMap();
+          return emptyMap();
+        }
+
+        @Override
+        public BatchAccessChecker can(Check check) {
+          return this;
         }
       };
 
   private final Collection<Check> checks = new LinkedHashSet<>();
 
   private BatchAccessChecker add(ImmutableCheck.Builder builder) {
-    checks.add(builder.build());
-    return this;
+    return can(builder.build());
   }
 
   protected Collection<Check> getChecks() {
     return checks;
+  }
+
+  @Override
+  public BatchAccessChecker can(Check check) {
+    checks.add(check);
+    return this;
   }
 
   @Override

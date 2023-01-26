@@ -237,6 +237,11 @@ public final class MetricsVersionStore implements VersionStore {
         }
 
         @Override
+        public String tokenForEntry(R entry) {
+          return r.tokenForEntry(entry);
+        }
+
+        @Override
         public void close() {
           try {
             r.close();

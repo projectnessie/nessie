@@ -21,7 +21,6 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.common.collect.ImmutableMap;
-import java.security.AccessControlException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -90,7 +89,7 @@ public class TestBatchAccessChecker {
             immutableEntry(checkListTagCommits, msgListTagCommits));
 
     assertThatThrownBy(checker::checkAndThrow)
-        .isInstanceOf(AccessControlException.class)
+        .isInstanceOf(AccessCheckException.class)
         .hasMessage("%s, %s", msgRefLog, msgListTagCommits);
   }
 
@@ -123,7 +122,7 @@ public class TestBatchAccessChecker {
             .map(c -> String.format("no no %s", c.type().name()))
             .collect(Collectors.joining(", "));
     assertThatThrownBy(checker::checkAndThrow)
-        .isInstanceOf(AccessControlException.class)
+        .isInstanceOf(AccessCheckException.class)
         .hasMessage(expectedMsg);
   }
 

@@ -24,7 +24,6 @@ import static org.projectnessie.model.FetchOption.MINIMAL;
 import static org.projectnessie.model.MergeBehavior.NORMAL;
 
 import com.google.common.collect.ImmutableMap;
-import java.security.AccessControlException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -49,6 +48,7 @@ import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 import org.projectnessie.services.authz.AbstractBatchAccessChecker;
+import org.projectnessie.services.authz.AccessCheckException;
 import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.authz.Check;
 import org.projectnessie.services.authz.Check.CheckType;
@@ -175,7 +175,7 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
     for (Reference ref : Arrays.asList(detached, detachedAsBranch, detachedAsTag)) {
       soft.assertThatThrownBy(() -> commitLog(ref.getName(), MINIMAL, null, ref.getHash(), null))
           .describedAs("ref='%s', getCommitLog", ref)
-          .isInstanceOf(AccessControlException.class)
+          .isInstanceOf(AccessCheckException.class)
           .hasMessageContaining(COMMITS_MSG);
       soft.assertThatThrownBy(
               () ->
@@ -193,7 +193,7 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
                           false,
                           false))
           .describedAs("ref='%s', mergeRefIntoBranch", ref)
-          .isInstanceOf(AccessControlException.class)
+          .isInstanceOf(AccessCheckException.class)
           .hasMessageContaining(VIEW_MSG);
       soft.assertThatThrownBy(
               () ->
@@ -211,23 +211,23 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
                           false,
                           false))
           .describedAs("ref='%s', transplantCommitsIntoBranch", ref)
-          .isInstanceOf(AccessControlException.class)
+          .isInstanceOf(AccessCheckException.class)
           .hasMessageContaining(VIEW_MSG);
       soft.assertThatThrownBy(() -> entries(ref))
           .describedAs("ref='%s', getEntries", ref)
-          .isInstanceOf(AccessControlException.class)
+          .isInstanceOf(AccessCheckException.class)
           .hasMessageContaining(READ_MSG);
       soft.assertThatThrownBy(() -> contentApi().getContent(key, ref.getName(), ref.getHash()))
           .describedAs("ref='%s', getContent", ref)
-          .isInstanceOf(AccessControlException.class)
+          .isInstanceOf(AccessCheckException.class)
           .hasMessageContaining(ENTITIES_MSG);
       soft.assertThatThrownBy(() -> diff(ref, main))
           .describedAs("ref='%s', getDiff1", ref)
-          .isInstanceOf(AccessControlException.class)
+          .isInstanceOf(AccessCheckException.class)
           .hasMessageContaining(VIEW_MSG);
       soft.assertThatThrownBy(() -> diff(main, ref))
           .describedAs("ref='%s', getDiff2", ref)
-          .isInstanceOf(AccessControlException.class)
+          .isInstanceOf(AccessCheckException.class)
           .hasMessageContaining(VIEW_MSG);
     }
   }

@@ -15,7 +15,6 @@
  */
 package org.projectnessie.services.authz;
 
-import java.security.AccessControlException;
 import java.util.Map;
 import javax.annotation.Nullable;
 import org.projectnessie.model.Branch;
@@ -54,15 +53,20 @@ public interface BatchAccessChecker {
   Map<Check, String> check();
 
   /**
-   * Convenience methods that throws an {@link AccessControlException}, if {@link #check()} returns
-   * a non-empty map.
+   * Convenience methods that throws an {@link AccessCheckException}, if {@link #check()} returns a
+   * non-empty map.
    */
-  default void checkAndThrow() throws AccessControlException {
-    Map<Check, String> failedChecks = check();
+  default void checkAndThrow() throws AccessCheckException {
+    throwForFailedChecks(check());
+  }
+
+  static void throwForFailedChecks(Map<Check, String> failedChecks) throws AccessCheckException {
     if (!failedChecks.isEmpty()) {
-      throw new AccessControlException(String.join(", ", failedChecks.values()));
+      throw new AccessCheckException(String.join(", ", failedChecks.values()));
     }
   }
+
+  BatchAccessChecker can(Check check);
 
   /**
    * Checks whether the given role/principal is allowed to view/list the given {@link Branch}/{@link
