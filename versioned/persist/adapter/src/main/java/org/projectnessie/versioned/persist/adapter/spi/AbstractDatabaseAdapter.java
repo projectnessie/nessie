@@ -382,10 +382,13 @@ public abstract class AbstractDatabaseAdapter<
       // Nothing to merge, shortcut
       throw new IllegalArgumentException(
           String.format(
-              "No hashes to merge from '%s' onto '%s' @ '%s'.",
+              "No hashes to merge from '%s' onto '%s' @ '%s' using common ancestor '%s',"
+                  + " expected commit ID from request was '%s'.",
               mergeParams.getMergeFromHash().asString(),
               mergeParams.getToBranch().getName(),
-              toHead));
+              toHead,
+              commonAncestor.asString(),
+              mergeParams.getExpectedHead().map(Hash::asString).orElse("(not specified)")));
     }
 
     commitsToMergeChronological.forEach(mergeResult::addSourceCommits);
@@ -1820,8 +1823,8 @@ public abstract class AbstractDatabaseAdapter<
     if (commonAncestorHash == null) {
       throw new ReferenceConflictException(
           String.format(
-              "No common ancestor found for merge of '%s' into branch '%s'",
-              from, toBranch.getName()));
+              "No common ancestor found for merge of '%s' into branch '%s' @ '%s'",
+              from, toBranch.getName(), toHead.asString()));
     }
     return commonAncestorHash;
   }
