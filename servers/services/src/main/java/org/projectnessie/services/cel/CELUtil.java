@@ -109,6 +109,8 @@ public final class CELUtil {
 
     String getKey();
 
+    String getEncodedKey();
+
     List<String> getNamespaceElements();
 
     String getName();
@@ -239,6 +241,11 @@ public final class CELUtil {
     @Override
     public String getKey() {
       return key().toString();
+    }
+
+    @Override
+    public String getEncodedKey() {
+      return key().toPathString();
     }
 
     @Override

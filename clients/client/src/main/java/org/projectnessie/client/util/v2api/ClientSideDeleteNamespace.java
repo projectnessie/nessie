@@ -67,7 +67,7 @@ public final class ClientSideDeleteNamespace extends BaseDeleteNamespaceBuilder 
           .getEntries()
           .refName(refName)
           .hashOnRef(hashOnRef)
-          .filter(String.format("entry.namespace.startsWith('%s')", key))
+          .filter(String.format("entry.encodedKey.startsWith('%s.')", namespace.name()))
           .stream()
           .findAny()
           .isPresent()) {
