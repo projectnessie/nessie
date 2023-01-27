@@ -15,17 +15,14 @@
  */
 package org.apache.spark.sql.execution.datasources.v2
 
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.util.{ArrayBasedMapData, MapData}
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.unsafe.types.UTF8String
-import org.projectnessie.client.StreamingUtil
 import org.projectnessie.client.api.NessieApiV1
-
-import java.time.Instant
-import java.time.temporal.ChronoUnit
-import java.util.OptionalInt
 import scala.collection.JavaConverters._
 
 abstract class BaseShowLogExec(
@@ -41,11 +38,7 @@ abstract class BaseShowLogExec(
     val refName = branch.getOrElse(
       NessieUtils.getCurrentRef(api, currentCatalog, catalog).getName
     )
-    val stream = StreamingUtil.getCommitLogStream(
-      api,
-      builder => builder.refName(refName),
-      OptionalInt.empty
-    )
+    val stream = api.getCommitLog.refName(refName).stream()
 
     stream.iterator.asScala
       .map(entry =>

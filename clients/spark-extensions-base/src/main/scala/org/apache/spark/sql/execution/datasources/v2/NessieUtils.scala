@@ -87,15 +87,10 @@ object NessieUtils {
       api: NessieApiV1
   ) = {
     val commit = Option(
-      StreamingUtil
-        .getCommitLogStream(
-          api,
-          builder =>
-            builder
-              .refName(branch)
-              .hashOnRef(Validation.validateHash(requestedHash)),
-          OptionalInt.empty
-        )
+      api.getCommitLog
+        .refName(branch)
+        .hashOnRef(Validation.validateHash(requestedHash))
+        .stream()
         .findFirst()
         .orElse(null)
     ).map(x => x.getCommitMeta.getHash)
@@ -122,20 +117,15 @@ object NessieUtils {
       timestamp: Instant
   ) = {
     val commit = Option(
-      StreamingUtil
-        .getCommitLogStream(
-          api,
-          builder =>
-            builder
-              .refName(branch)
-              .filter(
-                String.format(
-                  "timestamp(commit.commitTime) <= timestamp('%s')",
-                  timestamp
-                )
-              ),
-          OptionalInt.empty
+      api.getCommitLog
+        .refName(branch)
+        .filter(
+          String.format(
+            "timestamp(commit.commitTime) <= timestamp('%s')",
+            timestamp
+          )
         )
+        .stream()
         .findFirst()
         .orElse(null)
     ).map(x => x.getCommitMeta.getHash)
