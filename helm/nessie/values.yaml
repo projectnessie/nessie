@@ -14,7 +14,8 @@ versionStoreType: INMEMORY
 
 # this is needed when selecting ROCKS
 rocksdb:
-  dbPath: /tmp/rocks-nessie
+  storageSize: 1Gi
+  dbPath: /rocks-nessie
 
 # this is needed when selecting DYNAMO
 dynamodb:
