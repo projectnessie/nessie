@@ -136,14 +136,18 @@ public abstract class AbstractTestEntries extends BaseTestServiceImpl {
   @EnumSource(ReferenceMode.class)
   public void filterEntriesByName(ReferenceMode refMode) throws BaseNessieClientServerException {
     Branch branch = createBranch("filterEntriesByName");
-    ContentKey first = ContentKey.of("a", "b", "c", "firstTable");
-    ContentKey second = ContentKey.of("a", "b", "c", "secondTable");
+    ContentKey first = ContentKey.of("a", "b.b", "c", "firstTable");
+    ContentKey second = ContentKey.of("a", "b.b", "c", "secondTable");
+    ContentKey third = ContentKey.of("a", "b.bbb");
+    ContentKey fourth = ContentKey.of("a", "b.bbb", "Foo");
     branch =
         commit(
                 branch,
                 fromMessage("commit 1"),
                 Put.of(first, IcebergTable.of("path1", 42, 42, 42, 42)),
-                Put.of(second, IcebergTable.of("path2", 42, 42, 42, 42)))
+                Put.of(second, IcebergTable.of("path2", 42, 42, 42, 42)),
+                Put.of(third, IcebergTable.of("path3", 42, 42, 42, 42)),
+                Put.of(fourth, IcebergTable.of("path4", 42, 42, 42, 42)))
             .getTargetBranch();
 
     List<EntriesResponse.Entry> entries =
@@ -153,6 +157,35 @@ public abstract class AbstractTestEntries extends BaseTestServiceImpl {
     entries = entries(refMode.transform(branch), null, "entry.name.endsWith('Table')");
     soft.assertThat(entries.stream().map(EntriesResponse.Entry::getName))
         .containsExactlyInAnyOrder(first, second);
+
+    entries = entries(refMode.transform(branch), null, "entry.namespace.startsWith('a')");
+    soft.assertThat(entries.stream().map(EntriesResponse.Entry::getName))
+        .containsExactlyInAnyOrder(first, second, third, fourth);
+
+    entries = entries(refMode.transform(branch), null, "entry.namespace.startsWith('a.b\u001db.')");
+    soft.assertThat(entries.stream().map(EntriesResponse.Entry::getName))
+        .containsExactlyInAnyOrder(first, second);
+
+    entries =
+        entries(refMode.transform(branch), null, "entry.encodedKey.startsWith('a.b\u001dbbb.')");
+    soft.assertThat(entries.stream().map(EntriesResponse.Entry::getName))
+        .containsExactlyInAnyOrder(fourth);
+
+    entries =
+        entries(refMode.transform(branch), null, "entry.namespace.startsWith('a.b\u001dbbb.')");
+    soft.assertThat(entries.stream().map(EntriesResponse.Entry::getName)).isEmpty();
+
+    entries = entries(refMode.transform(branch), null, "entry.namespace.startsWith('a.b\u001db.')");
+    soft.assertThat(entries.stream().map(EntriesResponse.Entry::getName))
+        .containsExactlyInAnyOrder(first, second);
+
+    entries =
+        entries(
+            refMode.transform(branch),
+            null,
+            "entry.encodedKey == 'a.b\u001dbbb' || entry.encodedKey.startsWith('a.b\u001dbbb.')");
+    soft.assertThat(entries.stream().map(EntriesResponse.Entry::getName))
+        .containsExactlyInAnyOrder(third, fourth);
   }
 
   @ParameterizedTest

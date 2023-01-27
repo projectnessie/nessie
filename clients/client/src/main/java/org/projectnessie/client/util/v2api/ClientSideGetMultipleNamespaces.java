@@ -51,9 +51,11 @@ public final class ClientSideGetMultipleNamespaces extends BaseGetMultipleNamesp
     try {
       GetEntriesBuilder getEntries = api.getEntries().refName(refName).hashOnRef(hashOnRef);
 
-      if (namespace != null) {
+      if (namespace != null && !namespace.isEmpty()) {
+        String nsName = namespace.name();
         getEntries.filter(
-            String.format("entry.key.startsWith('%s')", ContentKey.of(namespace.getElements())));
+            String.format(
+                "entry.encodedKey == '%s' || entry.encodedKey.startsWith('%s.')", nsName, nsName));
       }
 
       entries =
