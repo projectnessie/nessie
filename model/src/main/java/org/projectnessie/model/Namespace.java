@@ -67,7 +67,7 @@ public abstract class Namespace extends Content {
   @JsonIgnore
   @Value.Redacted
   public boolean isEmpty() {
-    return name().isEmpty();
+    return getElements().isEmpty();
   }
 
   @NotNull
