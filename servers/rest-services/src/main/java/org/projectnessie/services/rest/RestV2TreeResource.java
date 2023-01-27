@@ -33,7 +33,6 @@ import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitResponse;
-import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.DiffResponse;
@@ -303,8 +302,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   @Override
   public ContentResponse getContent(ContentKey key, String ref) throws NessieNotFoundException {
     Reference reference = resolveRef(ref);
-    Content content = content().getContent(key, reference.getName(), reference.getHash());
-    return ContentResponse.builder().content(content).build();
+    return content().getContent(key, reference.getName(), reference.getHash());
   }
 
   @JsonView(Views.V2.class)

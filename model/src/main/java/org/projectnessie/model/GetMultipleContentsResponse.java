@@ -15,13 +15,18 @@
  */
 package org.projectnessie.model;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
+import org.projectnessie.model.ser.Views;
 
 @Schema(type = SchemaType.OBJECT, title = "GetMultipleContentsResponse")
 @Value.Immutable
@@ -30,10 +35,26 @@ import org.immutables.value.Value;
 public interface GetMultipleContentsResponse {
 
   @NotNull
+  @Value.Parameter(order = 1)
   List<ContentWithKey> getContents();
 
-  static GetMultipleContentsResponse of(List<ContentWithKey> items) {
-    return ImmutableGetMultipleContentsResponse.builder().addAllContents(items).build();
+  /**
+   * The effective reference (for example a branch or tag) including the commit ID from which the
+   * entries were fetched.
+   */
+  @Nullable
+  @Value.Parameter(order = 2)
+  @JsonView(Views.V2.class)
+  Reference getEffectiveReference();
+
+  @Value.NonAttribute
+  default Map<ContentKey, Content> toContentsMap() {
+    return getContents().stream()
+        .collect(Collectors.toMap(ContentWithKey::getKey, ContentWithKey::getContent));
+  }
+
+  static GetMultipleContentsResponse of(List<ContentWithKey> items, Reference effectiveReference) {
+    return ImmutableGetMultipleContentsResponse.of(items, effectiveReference);
   }
 
   @Value.Immutable

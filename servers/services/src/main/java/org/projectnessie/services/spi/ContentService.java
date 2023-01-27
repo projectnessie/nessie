@@ -21,8 +21,8 @@ import javax.validation.Valid;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.Validation;
 
@@ -34,7 +34,7 @@ import org.projectnessie.model.Validation;
  */
 public interface ContentService {
 
-  Content getContent(
+  ContentResponse getContent(
       @Valid ContentKey key,
       @Valid @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           String namedRef,

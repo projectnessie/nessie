@@ -15,20 +15,22 @@
  */
 package org.projectnessie.client.util.v2api;
 
-import java.util.Map;
-import java.util.Optional;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.builder.BaseDeleteNamespaceBuilder;
 import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieNamespaceNotEmptyException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
+import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation;
+import org.projectnessie.model.Reference;
 
 /**
  * Supports previous "delete namespace" functionality of the java client over Nessie API v2.
@@ -48,16 +50,25 @@ public final class ClientSideDeleteNamespace extends BaseDeleteNamespaceBuilder 
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException,
           NessieNamespaceNotEmptyException {
     ContentKey key = ContentKey.of(namespace.getElements());
-    Map<ContentKey, Content> contentMap;
+    Content existing;
+    Reference ref;
     try {
-      contentMap = api.getContent().refName(refName).hashOnRef(hashOnRef).key(key).get();
+      ContentResponse contentResponse =
+          api.getContent().refName(refName).hashOnRef(hashOnRef).getSingle(key);
+      ref = contentResponse.getEffectiveReference();
+      if (!(ref instanceof Branch)) {
+        throw new NessieReferenceNotFoundException(
+            "Must only commit against a branch, but got " + ref);
+      }
+      existing = contentResponse.getContent();
+    } catch (NessieContentNotFoundException e) {
+      existing = null;
+      ref = null;
     } catch (NessieNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
 
-    if (!Optional.ofNullable(contentMap.get(key))
-        .flatMap(c -> c.unwrap(Namespace.class)) // Converts non-Namespace entries to `empty`
-        .isPresent()) {
+    if (!(existing instanceof Namespace)) {
       throw new NessieNamespaceNotFoundException(
           String.format("Namespace '%s' does not exist", key.toPathString()));
     }
@@ -65,8 +76,7 @@ public final class ClientSideDeleteNamespace extends BaseDeleteNamespaceBuilder 
     try {
       if (api
           .getEntries()
-          .refName(refName)
-          .hashOnRef(hashOnRef)
+          .reference(ref)
           .filter(String.format("entry.encodedKey.startsWith('%s.')", namespace.name()))
           .stream()
           .findAny()
@@ -79,14 +89,8 @@ public final class ClientSideDeleteNamespace extends BaseDeleteNamespaceBuilder 
     }
 
     try {
-      String expectedHash = hashOnRef;
-      if (expectedHash == null) {
-        expectedHash = api.getReference().refName(refName).get().getHash();
-      }
-
       api.commitMultipleOperations()
-          .branchName(refName)
-          .hash(expectedHash)
+          .branch((Branch) ref)
           .commitMeta(CommitMeta.fromMessage("delete namespace " + key))
           .operation(Operation.Delete.of(key))
           .commit();
