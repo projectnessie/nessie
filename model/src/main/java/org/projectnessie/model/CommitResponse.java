@@ -19,6 +19,8 @@ import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -47,6 +49,15 @@ public interface CommitResponse {
   @JsonView(Views.V2.class)
   @Nullable // for V1 backwards compatibility
   List<AddedContent> getAddedContents();
+
+  @Value.NonAttribute
+  default Map<ContentKey, String> toAddedContentsMap() {
+    List<AddedContent> added = getAddedContents();
+    if (added == null) {
+      throw new UnsupportedOperationException("toAddedContentsMap is not available in API v1");
+    }
+    return added.stream().collect(Collectors.toMap(AddedContent::getKey, AddedContent::contentId));
+  }
 
   @Value.Immutable
   @JsonSerialize(as = ImmutableAddedContent.class)
