@@ -32,8 +32,8 @@ abstract class BaseListReferenceExec(
       api: NessieApiV1
   ): Seq[InternalRow] = {
     api.getAllReferences
-      .get()
-      .getReferences
+      .stream()
+      .iterator()
       .asScala
       .map(ref => rowForRef(ref))
       .toSeq // required for Scala 2.13
