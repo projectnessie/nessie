@@ -39,7 +39,6 @@ dependencies {
   implementation("org.projectnessie.buildsupport:jandex:$nessieVer")
   implementation("org.projectnessie.buildsupport:publishing:$nessieVer")
   implementation("org.projectnessie.buildsupport:reflection-config:$nessieVer")
-  implementation("org.projectnessie.buildsupport:smallrye-openapi:$nessieVer")
   implementation("org.projectnessie.buildsupport:spotless:$nessieVer")
 
   testImplementation(platform(baselibs.junit.bom))
