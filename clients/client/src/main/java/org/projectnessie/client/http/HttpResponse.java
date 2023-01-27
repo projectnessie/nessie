@@ -53,7 +53,7 @@ public final class HttpResponse {
         return reader.readValue(is);
       }
     } catch (IOException e) {
-      throw new HttpClientException("Cannot parse request.", e);
+      throw new HttpClientException("Cannot parse response.", e);
     }
   }
 
