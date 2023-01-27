@@ -15,10 +15,12 @@
  */
 package org.projectnessie.services.rest;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import org.projectnessie.api.v1.http.HttpConfigApi;
 import org.projectnessie.model.NessieConfiguration;
+import org.projectnessie.model.ser.Views;
 import org.projectnessie.services.spi.ConfigService;
 
 /** REST endpoint to retrieve server settings. */
@@ -38,6 +40,7 @@ public class RestConfigResource implements HttpConfigApi {
   }
 
   @Override
+  @JsonView(Views.V1.class)
   public NessieConfiguration getConfig() {
     return configService.getConfig();
   }

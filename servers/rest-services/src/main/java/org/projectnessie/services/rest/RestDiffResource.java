@@ -15,6 +15,7 @@
  */
 package org.projectnessie.services.rest;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import org.projectnessie.api.v1.http.HttpDiffApi;
@@ -23,6 +24,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.DiffResponse;
 import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.model.ImmutableDiffResponse;
+import org.projectnessie.model.ser.Views;
 import org.projectnessie.services.spi.DiffService;
 import org.projectnessie.services.spi.PagedResponseHandler;
 
@@ -51,6 +53,7 @@ public class RestDiffResource implements HttpDiffApi {
   }
 
   @Override
+  @JsonView(Views.V1.class)
   public DiffResponse getDiff(DiffParams params) throws NessieNotFoundException {
     return resource()
         .getDiff(
