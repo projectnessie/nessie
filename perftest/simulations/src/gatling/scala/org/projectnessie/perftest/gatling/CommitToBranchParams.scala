@@ -131,7 +131,8 @@ object CommitToBranchParams {
     val numTables: Int = getInteger("sim.tables", 250)
     val durationSeconds: Int =
       getInteger("sim.duration.seconds", 0).toInt
-    val numberOfCommits: Int = getInteger("sim.commits", if (durationSeconds > 0) 0 else 100).toInt
+    val numberOfCommits: Int =
+      getInteger("sim.commits", if (durationSeconds > 0) 0 else 100).toInt
     val base = BaseParams.fromSystemProperties()
 
     CommitToBranchParams(
