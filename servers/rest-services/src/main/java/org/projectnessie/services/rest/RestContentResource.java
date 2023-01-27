@@ -15,6 +15,7 @@
  */
 package org.projectnessie.services.rest;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import org.projectnessie.api.v1.http.HttpContentApi;
@@ -23,6 +24,7 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.GetMultipleContentsRequest;
 import org.projectnessie.model.GetMultipleContentsResponse;
+import org.projectnessie.model.ser.Views;
 import org.projectnessie.services.spi.ContentService;
 
 /** REST endpoint for the content-API. */
@@ -50,12 +52,14 @@ public class RestContentResource implements HttpContentApi {
   }
 
   @Override
+  @JsonView(Views.V1.class)
   public Content getContent(ContentKey key, String ref, String hashOnRef)
       throws NessieNotFoundException {
     return resource().getContent(key, ref, hashOnRef);
   }
 
   @Override
+  @JsonView(Views.V1.class)
   public GetMultipleContentsResponse getMultipleContents(
       String ref, String hashOnRef, GetMultipleContentsRequest request)
       throws NessieNotFoundException {

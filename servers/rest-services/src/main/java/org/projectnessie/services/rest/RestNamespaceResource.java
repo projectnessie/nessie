@@ -15,6 +15,7 @@
  */
 package org.projectnessie.services.rest;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.validation.constraints.NotNull;
@@ -28,6 +29,7 @@ import org.projectnessie.error.NessieNamespaceNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.GetNamespacesResponse;
 import org.projectnessie.model.Namespace;
+import org.projectnessie.model.ser.Views;
 import org.projectnessie.services.spi.NamespaceService;
 
 /** REST endpoint for the namespace-API. */
@@ -55,12 +57,14 @@ public class RestNamespaceResource implements HttpNamespaceApi {
   }
 
   @Override
+  @JsonView(Views.V1.class)
   public Namespace createNamespace(NamespaceParams params, Namespace namespace)
       throws NessieNamespaceAlreadyExistsException, NessieReferenceNotFoundException {
     return resource().createNamespace(params.getRefName(), namespace);
   }
 
   @Override
+  @JsonView(Views.V1.class)
   public void deleteNamespace(@NotNull NamespaceParams params)
       throws NessieReferenceNotFoundException, NessieNamespaceNotEmptyException,
           NessieNamespaceNotFoundException {
@@ -68,6 +72,7 @@ public class RestNamespaceResource implements HttpNamespaceApi {
   }
 
   @Override
+  @JsonView(Views.V1.class)
   public Namespace getNamespace(@NotNull NamespaceParams params)
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException {
     return resource()
@@ -75,6 +80,7 @@ public class RestNamespaceResource implements HttpNamespaceApi {
   }
 
   @Override
+  @JsonView(Views.V1.class)
   public GetNamespacesResponse getNamespaces(@NotNull MultipleNamespacesParams params)
       throws NessieReferenceNotFoundException {
     return resource()
@@ -82,6 +88,7 @@ public class RestNamespaceResource implements HttpNamespaceApi {
   }
 
   @Override
+  @JsonView(Views.V1.class)
   public void updateProperties(NamespaceParams params, NamespaceUpdate namespaceUpdate)
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException {
     resource()
