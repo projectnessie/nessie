@@ -75,14 +75,12 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Detached;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.FetchOption;
-import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableCommitResponse;
 import org.projectnessie.model.ImmutableContentKeyDetails;
 import org.projectnessie.model.ImmutableLogEntry;
 import org.projectnessie.model.ImmutableMergeResponse;
 import org.projectnessie.model.ImmutableReferenceMetadata;
-import org.projectnessie.model.ImmutableTag;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
@@ -93,6 +91,7 @@ import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Reference.ReferenceType;
 import org.projectnessie.model.ReferenceMetadata;
+import org.projectnessie.model.Tag;
 import org.projectnessie.model.Validation;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.AuthzPaginationIterator;
@@ -940,19 +939,15 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       ReferenceInfo<CommitMeta> refWithHash, boolean fetchMetadata) {
     NamedRef ref = refWithHash.getNamedRef();
     if (ref instanceof TagName) {
-      ImmutableTag.Builder builder =
-          ImmutableTag.builder().name(ref.getName()).hash(refWithHash.getHash().asString());
-      if (fetchMetadata) {
-        builder.metadata(extractReferenceMetadata(refWithHash));
-      }
-      return builder.build();
+      return Tag.of(
+          ref.getName(),
+          refWithHash.getHash().asString(),
+          fetchMetadata ? extractReferenceMetadata(refWithHash) : null);
     } else if (ref instanceof BranchName) {
-      ImmutableBranch.Builder builder =
-          ImmutableBranch.builder().name(ref.getName()).hash(refWithHash.getHash().asString());
-      if (fetchMetadata) {
-        builder.metadata(extractReferenceMetadata(refWithHash));
-      }
-      return builder.build();
+      return Branch.of(
+          ref.getName(),
+          refWithHash.getHash().asString(),
+          fetchMetadata ? extractReferenceMetadata(refWithHash) : null);
     } else {
       throw new UnsupportedOperationException("only converting tags or branches"); // todo
     }
