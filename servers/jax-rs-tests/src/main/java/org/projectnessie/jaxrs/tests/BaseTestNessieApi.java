@@ -219,38 +219,32 @@ public abstract class BaseTestNessieApi {
     // Get references / FULL
 
     Branch mainFull =
-        Branch.builder()
-            .name(main.getName())
-            .hash(main1.getHash())
-            .metadata(
-                ImmutableReferenceMetadata.builder()
-                    .numTotalCommits(1L)
-                    .commitMetaOfHEAD(commitMetaMain)
-                    .build())
-            .build();
+        Branch.of(
+            main.getName(),
+            main1.getHash(),
+            ImmutableReferenceMetadata.builder()
+                .numTotalCommits(1L)
+                .commitMetaOfHEAD(commitMetaMain)
+                .build());
     Branch branchFull =
-        Branch.builder()
-            .name(branch.getName())
-            .hash(branch1.getHash())
-            .metadata(
-                ImmutableReferenceMetadata.builder()
-                    .numTotalCommits(2L)
-                    .numCommitsAhead(1)
-                    .numCommitsBehind(0)
-                    .commonAncestorHash(main1.getHash())
-                    .commitMetaOfHEAD(commitMetaBranch)
-                    .build())
-            .build();
+        Branch.of(
+            branch.getName(),
+            branch1.getHash(),
+            ImmutableReferenceMetadata.builder()
+                .numTotalCommits(2L)
+                .numCommitsAhead(1)
+                .numCommitsBehind(0)
+                .commonAncestorHash(main1.getHash())
+                .commitMetaOfHEAD(commitMetaBranch)
+                .build());
     Tag tagFull =
-        Tag.builder()
-            .name(tag.getName())
-            .hash(tag.getHash())
-            .metadata(
-                ImmutableReferenceMetadata.builder()
-                    .numTotalCommits(1L)
-                    .commitMetaOfHEAD(commitMetaMain)
-                    .build())
-            .build();
+        Tag.of(
+            tag.getName(),
+            tag.getHash(),
+            ImmutableReferenceMetadata.builder()
+                .numTotalCommits(1L)
+                .commitMetaOfHEAD(commitMetaMain)
+                .build());
     soft.assertThat(api().getAllReferences().fetch(ALL).get().getReferences())
         .containsExactlyInAnyOrder(mainFull, branchFull, tagFull);
     soft.assertThat(api().getReference().refName(main.getName()).fetch(ALL).get())

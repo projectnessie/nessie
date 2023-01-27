@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotEmpty;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -49,7 +50,13 @@ public interface Detached extends Reference {
 
   @Override
   @NotEmpty
+  @Value.Parameter(order = 1)
   String getHash();
+
+  @Nullable
+  @Override
+  @Value.Parameter(order = 2)
+  ReferenceMetadata getMetadata();
 
   /** Validation rule using {@link Validation#validateReferenceName(String)}. */
   @Value.Check
@@ -68,6 +75,6 @@ public interface Detached extends Reference {
   }
 
   static Detached of(String hash) {
-    return builder().hash(hash).build();
+    return ImmutableDetached.of(hash, null);
   }
 }

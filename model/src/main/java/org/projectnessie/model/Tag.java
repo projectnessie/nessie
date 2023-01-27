@@ -34,7 +34,17 @@ import org.immutables.value.Value;
 public interface Tag extends Reference {
 
   @Override
+  @Value.Parameter(order = 1)
+  String getName();
+
   @Nullable
+  @Override
+  @Value.Parameter(order = 3)
+  ReferenceMetadata getMetadata();
+
+  @Override
+  @Nullable
+  @Value.Parameter(order = 2)
   String getHash();
 
   /**
@@ -55,6 +65,10 @@ public interface Tag extends Reference {
   }
 
   static Tag of(String name, String hash) {
-    return builder().name(name).hash(hash).build();
+    return ImmutableTag.of(name, hash, null);
+  }
+
+  static Tag of(String name, String hash, ReferenceMetadata metadata) {
+    return ImmutableTag.of(name, hash, metadata);
   }
 }

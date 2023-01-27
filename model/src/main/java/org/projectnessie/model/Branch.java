@@ -34,7 +34,17 @@ import org.immutables.value.Value;
 public interface Branch extends Reference {
 
   @Override
+  @Value.Parameter(order = 1)
+  String getName();
+
   @Nullable
+  @Override
+  @Value.Parameter(order = 3)
+  ReferenceMetadata getMetadata();
+
+  @Override
+  @Nullable
+  @Value.Parameter(order = 2)
   String getHash();
 
   /**
@@ -55,6 +65,10 @@ public interface Branch extends Reference {
   }
 
   static Branch of(String name, @Nullable String hash) {
-    return builder().name(name).hash(hash).build();
+    return ImmutableBranch.of(name, hash, null);
+  }
+
+  static Branch of(String name, @Nullable String hash, ReferenceMetadata metadata) {
+    return ImmutableBranch.of(name, hash, metadata);
   }
 }
