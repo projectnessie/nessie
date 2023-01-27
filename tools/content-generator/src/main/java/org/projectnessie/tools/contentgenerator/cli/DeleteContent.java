@@ -16,7 +16,7 @@
 package org.projectnessie.tools.contentgenerator.cli;
 
 import java.util.List;
-import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -53,7 +53,7 @@ public class DeleteContent extends AbstractCommand {
 
   @Override
   public void execute() throws NessieNotFoundException, NessieConflictException {
-    try (NessieApiV1 api = createNessieApiInstance()) {
+    try (NessieApiV2 api = createNessieApiInstance()) {
       ContentKey contentKey = ContentKey.of(key);
 
       Reference refInfo = api.getReference().refName(ref).get();

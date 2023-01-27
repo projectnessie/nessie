@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.api.GetContentBuilder;
-import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -95,7 +95,7 @@ public class RefreshContent extends AbstractCommand {
 
   @Override
   public void execute() throws BaseNessieClientServerException {
-    try (NessieApiV1 api = createNessieApiInstance()) {
+    try (NessieApiV2 api = createNessieApiInstance()) {
       if (input == null) {
         Reference reference = api.getReference().refName(ref).get();
         refresh(api, reference, Collections.singletonList(ContentKey.of(keyElements)));
@@ -109,7 +109,7 @@ public class RefreshContent extends AbstractCommand {
     }
   }
 
-  private void refresh(NessieApiV1 api, InputStream input) throws IOException {
+  private void refresh(NessieApiV2 api, InputStream input) throws IOException {
     ObjectMapper mapper = new ObjectMapper();
     JsonParser parser = mapper.createParser(input);
 
@@ -133,7 +133,7 @@ public class RefreshContent extends AbstractCommand {
     }
   }
 
-  private void refresh(NessieApiV1 api, List<JsonNode> batch)
+  private void refresh(NessieApiV2 api, List<JsonNode> batch)
       throws BaseNessieClientServerException {
     Map<String, List<ContentKey>> perRef = new HashMap<>();
     for (JsonNode node : batch) {
@@ -160,7 +160,7 @@ public class RefreshContent extends AbstractCommand {
     }
   }
 
-  private void refresh(NessieApiV1 api, Reference ref, List<ContentKey> keys)
+  private void refresh(NessieApiV2 api, Reference ref, List<ContentKey> keys)
       throws BaseNessieClientServerException {
     if (!(ref instanceof Branch)) {
       if (skipTags) {
@@ -182,7 +182,7 @@ public class RefreshContent extends AbstractCommand {
   }
 
   private void commitSameContent(
-      NessieApiV1 api, Branch branch, Map<ContentKey, Content> contentMap)
+      NessieApiV2 api, Branch branch, Map<ContentKey, Content> contentMap)
       throws BaseNessieClientServerException {
 
     if (contentMap.isEmpty()) {

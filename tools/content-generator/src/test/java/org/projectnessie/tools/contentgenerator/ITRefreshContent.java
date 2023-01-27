@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -56,7 +56,7 @@ public class ITRefreshContent extends AbstractContentGeneratorTest {
   private static final IcebergTable table2 = IcebergTable.of("meta_222", 1, 2, 3, 4);
   private static final IcebergTable table3 = IcebergTable.of("meta_333", 1, 2, 3, 4);
 
-  private NessieApiV1 api;
+  private NessieApiV2 api;
 
   @BeforeEach
   void setUp() {

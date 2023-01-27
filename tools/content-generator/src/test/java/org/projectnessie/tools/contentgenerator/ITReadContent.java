@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -31,7 +31,7 @@ class ITReadContent extends AbstractContentGeneratorTest {
 
   @BeforeEach
   void setup() throws NessieConflictException, NessieNotFoundException {
-    try (NessieApiV1 api = buildNessieApi()) {
+    try (NessieApiV2 api = buildNessieApi()) {
       branch = makeCommit(api);
     }
   }

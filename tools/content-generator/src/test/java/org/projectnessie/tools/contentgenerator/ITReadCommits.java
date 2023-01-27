@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -34,7 +34,7 @@ class ITReadCommits extends AbstractContentGeneratorTest {
 
   @BeforeEach
   void setup() throws NessieConflictException, NessieNotFoundException {
-    try (NessieApiV1 api = buildNessieApi()) {
+    try (NessieApiV2 api = buildNessieApi()) {
       branch = makeCommit(api);
     }
   }
@@ -50,7 +50,7 @@ class ITReadCommits extends AbstractContentGeneratorTest {
     assertThat(output).anySatisfy(s -> assertThat(s).contains(COMMIT_MSG));
     assertThat(output).noneSatisfy(s -> assertThat(s).contains(CONTENT_KEY.toString()));
 
-    try (NessieApiV1 api = buildNessieApi()) {
+    try (NessieApiV2 api = buildNessieApi()) {
       assertThat(api.getCommitLog().refName(branch.getName()).stream()).hasSize(1);
     }
   }
@@ -70,7 +70,7 @@ class ITReadCommits extends AbstractContentGeneratorTest {
     assertThat(output)
         .anySatisfy(s -> assertThat(s).contains("key[1]: " + CONTENT_KEY.getElements().get(1)));
 
-    try (NessieApiV1 api = buildNessieApi()) {
+    try (NessieApiV2 api = buildNessieApi()) {
       List<LogEntry> logEntries =
           api.getCommitLog().refName(branch.getName()).fetch(FetchOption.ALL).stream()
               .collect(Collectors.toList());

@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -46,7 +46,7 @@ public class AbstractContentGeneratorTest {
 
   static final String NESSIE_API_URI =
       format(
-          "%s/api/v1",
+          "%s/api/v2",
           requireNonNull(
               System.getProperty("quarkus.http.test-url"),
               "Required system property quarkus.http.test-url is not set"));
@@ -56,7 +56,7 @@ public class AbstractContentGeneratorTest {
 
   @BeforeEach
   void emptyRepo() throws Exception {
-    try (NessieApiV1 api = buildNessieApi()) {
+    try (NessieApiV2 api = buildNessieApi()) {
       Branch defaultBranch = api.getDefaultBranch();
       api.assignBranch().branch(defaultBranch).assignTo(Detached.of(NO_ANCESTOR)).assign();
       api.getAllReferences().stream()
@@ -75,7 +75,7 @@ public class AbstractContentGeneratorTest {
     }
   }
 
-  protected Branch makeCommit(NessieApiV1 api)
+  protected Branch makeCommit(NessieApiV2 api)
       throws NessieConflictException, NessieNotFoundException {
     String branchName = "test-" + UUID.randomUUID();
     Branch main = api.getDefaultBranch();
@@ -93,11 +93,11 @@ public class AbstractContentGeneratorTest {
         .commit();
   }
 
-  protected NessieApiV1 buildNessieApi() {
+  protected NessieApiV2 buildNessieApi() {
     return HttpClientBuilder.builder()
         .fromSystemProperties()
         .withUri(NESSIE_API_URI)
-        .build(NessieApiV1.class);
+        .build(NessieApiV2.class);
   }
 
   protected static final class ProcessResult {

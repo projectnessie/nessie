@@ -15,7 +15,7 @@
  */
 package org.projectnessie.tools.contentgenerator.cli;
 
-import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.NessieApiV2;
 import picocli.CommandLine;
 
 @CommandLine.Command(
@@ -31,7 +31,7 @@ import picocli.CommandLine;
       DeleteContent.class,
       CommandLine.HelpCommand.class
     })
-public abstract class ContentGenerator<API extends NessieApiV1> {
+public abstract class ContentGenerator<API extends NessieApiV2> {
 
   public abstract API createNessieApiInstance();
 }

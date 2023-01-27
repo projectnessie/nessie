@@ -16,14 +16,14 @@
 package org.projectnessie.tools.contentgenerator.cli;
 
 import java.util.concurrent.Callable;
-import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.BaseNessieClientServerException;
 import picocli.CommandLine;
 import picocli.CommandLine.Option;
 
 public abstract class AbstractCommand implements Callable<Integer> {
 
-  @CommandLine.ParentCommand private ContentGenerator<NessieApiV1> parent;
+  @CommandLine.ParentCommand private ContentGenerator<NessieApiV2> parent;
 
   @Option(
       names = {"-v", "--verbose"},
@@ -34,7 +34,7 @@ public abstract class AbstractCommand implements Callable<Integer> {
     return verbose;
   }
 
-  public NessieApiV1 createNessieApiInstance() {
+  public NessieApiV2 createNessieApiInstance() {
     return parent.createNessieApiInstance();
   }
 

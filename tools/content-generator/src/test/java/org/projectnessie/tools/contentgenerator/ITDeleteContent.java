@@ -21,7 +21,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.api.params.FetchOption;
-import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -34,7 +34,7 @@ class ITDeleteContent extends AbstractContentGeneratorTest {
 
   @BeforeEach
   void setup() throws NessieConflictException, NessieNotFoundException {
-    try (NessieApiV1 api = buildNessieApi()) {
+    try (NessieApiV2 api = buildNessieApi()) {
       branch = makeCommit(api);
     }
   }
@@ -57,7 +57,7 @@ class ITDeleteContent extends AbstractContentGeneratorTest {
     List<String> output = proc.getStdOutLines();
 
     Reference head;
-    try (NessieApiV1 api = buildNessieApi()) {
+    try (NessieApiV2 api = buildNessieApi()) {
       head = api.getReference().refName(branch.getName()).fetch(FetchOption.ALL).get();
 
       CommitMeta commitMeta =
@@ -86,7 +86,7 @@ class ITDeleteContent extends AbstractContentGeneratorTest {
             CONTENT_KEY.getElements().get(1));
     assertThat(proc.getExitCode()).isEqualTo(0);
 
-    try (NessieApiV1 api = buildNessieApi()) {
+    try (NessieApiV2 api = buildNessieApi()) {
       CommitMeta commitMeta =
           api.getCommitLog().refName(branch.getName()).get().getLogEntries().get(0).getCommitMeta();
       assertThat(commitMeta.getMessage()).contains("test-message-123");
