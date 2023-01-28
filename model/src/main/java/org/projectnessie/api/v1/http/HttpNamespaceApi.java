@@ -15,6 +15,7 @@
  */
 package org.projectnessie.api.v1.http;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
@@ -43,6 +44,7 @@ import org.projectnessie.error.NessieNamespaceNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.GetNamespacesResponse;
 import org.projectnessie.model.Namespace;
+import org.projectnessie.model.ser.Views;
 
 @Tag(name = "v1")
 @Path("v1/namespaces")
@@ -70,6 +72,7 @@ public interface HttpNamespaceApi extends NamespaceApi {
     @APIResponse(responseCode = "404", description = "Reference not found"),
     @APIResponse(responseCode = "409", description = "Namespace already exists"),
   })
+  @JsonView(Views.V1.class)
   Namespace createNamespace(
       @BeanParam @NotNull NamespaceParams params, @NotNull @RequestBody Namespace namespace)
       throws NessieNamespaceAlreadyExistsException, NessieReferenceNotFoundException;
@@ -86,6 +89,7 @@ public interface HttpNamespaceApi extends NamespaceApi {
     @APIResponse(responseCode = "404", description = "Reference or Namespace not found"),
     @APIResponse(responseCode = "409", description = "Namespace not empty"),
   })
+  @JsonView(Views.V1.class)
   void deleteNamespace(@BeanParam @NotNull NamespaceParams params)
       throws NessieReferenceNotFoundException, NessieNamespaceNotEmptyException,
           NessieNamespaceNotFoundException;
@@ -110,6 +114,7 @@ public interface HttpNamespaceApi extends NamespaceApi {
     @APIResponse(responseCode = "403", description = "Not allowed to retrieve namespace"),
     @APIResponse(responseCode = "404", description = "Reference or Namespace not found"),
   })
+  @JsonView(Views.V1.class)
   Namespace getNamespace(@BeanParam @NotNull NamespaceParams params)
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException;
 
@@ -132,6 +137,7 @@ public interface HttpNamespaceApi extends NamespaceApi {
     @APIResponse(responseCode = "403", description = "Not allowed to retrieve namespaces"),
     @APIResponse(responseCode = "404", description = "Reference not found"),
   })
+  @JsonView(Views.V1.class)
   GetNamespacesResponse getNamespaces(@BeanParam @NotNull MultipleNamespacesParams params)
       throws NessieReferenceNotFoundException;
 
@@ -147,6 +153,7 @@ public interface HttpNamespaceApi extends NamespaceApi {
     @APIResponse(responseCode = "403", description = "Not allowed to update namespace properties"),
     @APIResponse(responseCode = "404", description = "Reference or Namespace not found"),
   })
+  @JsonView(Views.V1.class)
   void updateProperties(
       @BeanParam @NotNull NamespaceParams params,
       @RequestBody(

@@ -15,6 +15,7 @@
  */
 package org.projectnessie.api.v1.http;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -32,6 +33,7 @@ import org.projectnessie.api.v1.DiffApi;
 import org.projectnessie.api.v1.params.DiffParams;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.DiffResponse;
+import org.projectnessie.model.ser.Views;
 
 @Tag(name = "v1")
 @Consumes(value = MediaType.APPLICATION_JSON)
@@ -69,6 +71,7 @@ public interface HttpDiffApi extends DiffApi {
     @APIResponse(responseCode = "403", description = "Not allowed to view the given fromRef/toRef"),
     @APIResponse(responseCode = "404", description = "fromRef/toRef not found"),
   })
+  @JsonView(Views.V1.class)
   @Override
   DiffResponse getDiff(@BeanParam DiffParams params) throws NessieNotFoundException;
 }
