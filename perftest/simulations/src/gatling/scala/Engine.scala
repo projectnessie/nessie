@@ -21,9 +21,16 @@ import io.gatling.core.config.GatlingPropertiesBuilder
 object Engine extends App {
 
   val props = new GatlingPropertiesBuilder()
-    .resourcesDirectory(IDEPathHelper.mavenResourcesDirectory.toString)
+    .resourcesDirectory(IDEPathHelper.gradleResourcesDirectory.toString)
     .resultsDirectory(IDEPathHelper.resultsDirectory.toString)
-    .binariesDirectory(IDEPathHelper.mavenBinariesDirectory.toString)
+    .binariesDirectory(IDEPathHelper.gradleBinariesDirectory.toString)
+    .simulationClass(
+      "org.projectnessie.perftest.gatling.MixedWorkloadsSimulation"
+    )
+
+  if (System.getProperty("nessie.uri") == null) {
+    System.setProperty("nessie.uri", "http://127.0.0.1:19120/api/v2")
+  }
 
   Gatling.fromMap(props.build)
 }
