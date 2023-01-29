@@ -158,7 +158,7 @@ val prepareJacocoReport by
       // Must delete the Jacoco data file before running tests, because
       // quarkus.jacoco.reuse-data-file=true in application.properties.
       file("${project.buildDir}/jacoco-quarkus.exec").delete()
-      var reportDir = file("${project.buildDir}/jacoco-report")
+      val reportDir = file("${project.buildDir}/jacoco-report")
       delete { delete(reportDir) }
       reportDir.mkdirs()
     }
