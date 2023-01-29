@@ -109,6 +109,7 @@ tasks.withType<QuarkusBuild>().configureEach {
     // THIS IS A WORKAROUND! the nativeArgs{} thing above doesn't really work
     System.setProperty("quarkus.native.builder-image", quarkusBuilderImage)
   }
+  outputs.cacheIf { !withUberJar() && !project.hasProperty("native") }
 }
 
 tasks.withType<QuarkusGenerateCode>().configureEach { outputs.cacheIf { true } }
