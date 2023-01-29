@@ -24,6 +24,7 @@ import io.gatling.core.stats.StatsEngine
 import io.gatling.core.structure.ScenarioContext
 import io.gatling.core.util.NameGen
 import org.projectnessie.client.api.NessieApiV2
+import org.projectnessie.perftest.gatling.NessieActionBuilder.defaultExceptionHandler
 
 /** Builder created via [[NessieDsl.nessie]] for Nessie-Gatling-Actions.
   *
@@ -45,7 +46,7 @@ case class NessieActionBuilder(
     ignoreExceptions: Boolean = false,
     dontLogResponse: Boolean = false,
     exceptionHandler: (Exception, NessieApiV2, Session) => Session =
-      (_, _, session) => session
+      defaultExceptionHandler
 ) extends ActionBuilder
     with NameGen {
 
@@ -123,6 +124,29 @@ case class NessieActionBuilder(
       exceptionHandler
     )
   }
+}
+
+object NessieActionBuilder {
+  def defaultExceptionHandler: (Exception, NessieApiV2, Session) => Session =
+    (ex, _, session) => {
+      throw ex
+      session
+    }
+
+  def briefExceptionHandler: (Exception, NessieApiV2, Session) => Session =
+    (ex, _, session) => {
+      System.err.println(ex)
+      session
+    }
+
+  def fullExceptionHandler: (Exception, NessieApiV2, Session) => Session =
+    (ex, _, session) => {
+      ex.printStackTrace()
+      session
+    }
+
+  def ignoringExceptionHandler: (Exception, NessieApiV2, Session) => Session =
+    (_, _, session) => session
 }
 
 /** Use the [[NessieActionBuilder]] to create an instance of this class! */
