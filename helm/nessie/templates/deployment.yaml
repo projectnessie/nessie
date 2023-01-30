@@ -33,6 +33,11 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.Version }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if eq .Values.versionStoreType "ROCKS" }}
+          volumeMounts:
+            - name: rocks-storage
+              mountPath: {{ .Values.rocksdb.dbPath }}
+          {{- end }}
           env:
             - name: NESSIE_VERSION_STORE_TYPE
               value: {{ .Values.versionStoreType }}
@@ -185,6 +190,12 @@ spec:
             timeoutSeconds: 10
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+      {{- if eq .Values.versionStoreType "ROCKS" }}
+      volumes:
+        - name: rocks-storage
+          persistentVolumeClaim:
+            claimName: {{ include "nessie.fullname" . }}
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
