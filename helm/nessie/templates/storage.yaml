@@ -9,6 +9,7 @@ spec:
   accessModes:
     - ReadWriteOnce
   volumeMode: Filesystem
+  storageClassName: {{ .Values.rocksdb.storageClassName }}
   resources:
     requests:
       storage: {{ .Values.rocksdb.storageSize }}
