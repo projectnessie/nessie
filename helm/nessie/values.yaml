@@ -14,6 +14,7 @@ versionStoreType: INMEMORY
 
 # this is needed when selecting ROCKS
 rocksdb:
+  storageClassName: standard
   storageSize: 1Gi
   dbPath: /rocks-nessie
 
