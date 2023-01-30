@@ -1022,7 +1022,11 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   protected final int refLogStripeForName(String refName) {
-    return Math.abs(refName.hashCode()) % config.getRefLogStripes();
+    int h = refName.hashCode();
+    if (h == Integer.MIN_VALUE) {
+      h++;
+    }
+    return Math.abs(h) % config.getRefLogStripes();
   }
 
   protected abstract RefLogParents doFetchRefLogParents(
