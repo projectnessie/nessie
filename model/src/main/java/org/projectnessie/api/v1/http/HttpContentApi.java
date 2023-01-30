@@ -15,6 +15,7 @@
  */
 package org.projectnessie.api.v1.http;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -38,6 +39,7 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.GetMultipleContentsRequest;
 import org.projectnessie.model.GetMultipleContentsResponse;
+import org.projectnessie.model.ser.Views;
 
 @Tag(name = "v1")
 @Consumes(value = MediaType.APPLICATION_JSON)
@@ -74,6 +76,7 @@ public interface HttpContentApi extends ContentApi {
         description = "Not allowed to view the given reference or read object content for a key"),
     @APIResponse(responseCode = "404", description = "Table not found on ref")
   })
+  @JsonView(Views.V1.class)
   Content getContent(
       @Parameter(
               description = "object name to search for",
@@ -125,6 +128,7 @@ public interface HttpContentApi extends ContentApi {
         description = "Not allowed to view the given reference or read object content for a key"),
     @APIResponse(responseCode = "404", description = "Provided ref doesn't exists")
   })
+  @JsonView(Views.V1.class)
   GetMultipleContentsResponse getMultipleContents(
       @Parameter(
               description = "Reference to use. Defaults to default branch if not provided.",
