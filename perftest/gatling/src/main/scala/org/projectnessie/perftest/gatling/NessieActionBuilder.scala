@@ -23,7 +23,7 @@ import io.gatling.core.session.Session
 import io.gatling.core.stats.StatsEngine
 import io.gatling.core.structure.ScenarioContext
 import io.gatling.core.util.NameGen
-import org.projectnessie.client.api.NessieApiV1
+import org.projectnessie.client.api.NessieApiV2
 
 /** Builder created via [[NessieDsl.nessie]] for Nessie-Gatling-Actions.
   *
@@ -41,10 +41,10 @@ import org.projectnessie.client.api.NessieApiV1
   */
 case class NessieActionBuilder(
     tag: String,
-    nessieExec: Option[(NessieApiV1, Session) => Session] = None,
+    nessieExec: Option[(NessieApiV2, Session) => Session] = None,
     ignoreExceptions: Boolean = false,
     dontLogResponse: Boolean = false,
-    exceptionHandler: (Exception, NessieApiV1, Session) => Session =
+    exceptionHandler: (Exception, NessieApiV2, Session) => Session =
       (_, _, session) => session
 ) extends ActionBuilder
     with NameGen {
@@ -65,7 +65,7 @@ case class NessieActionBuilder(
     * [[ignoreException()]].
     */
   def onException(
-      handler: (Exception, NessieApiV1, Session) => Session
+      handler: (Exception, NessieApiV2, Session) => Session
   ): NessieActionBuilder =
     NessieActionBuilder(
       tag,
@@ -88,7 +88,7 @@ case class NessieActionBuilder(
 
   /** Execute code with the current [[NessieApiV1]] and Gatling [[Session]]. */
   def execute(
-      nessieExec: (NessieApiV1, Session) => Session
+      nessieExec: (NessieApiV2, Session) => Session
   ): NessieActionBuilder =
     NessieActionBuilder(
       tag,
@@ -101,7 +101,7 @@ case class NessieActionBuilder(
   /** Execute code with the current [[NessieApiV1]], this is a convenience
     * implementation if you do not need the Gatling session in the action code.
     */
-  def execute(nessieExec: NessieApiV1 => Unit): NessieActionBuilder =
+  def execute(nessieExec: NessieApiV2 => Unit): NessieActionBuilder =
     execute((client, session) => {
       nessieExec.apply(client)
       session
@@ -130,10 +130,10 @@ private case class NessieAction(
     name: String,
     next: Action,
     nessieComponents: NessieComponents,
-    nessieExec: (NessieApiV1, Session) => Session,
+    nessieExec: (NessieApiV2, Session) => Session,
     ignoreExceptions: Boolean,
     dontLogResponse: Boolean,
-    exceptionHandler: (Exception, NessieApiV1, Session) => Session
+    exceptionHandler: (Exception, NessieApiV2, Session) => Session
 ) extends ExitableAction {
   override def clock: Clock = nessieComponents.coreComponents.clock
 
