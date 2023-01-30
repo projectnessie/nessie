@@ -151,6 +151,7 @@ val quarkusBuild =
         System.setProperty("quarkus.container-image.build", "true")
       }
     }
+    outputs.cacheIf { !withUberJar() && !project.hasProperty("native") }
   }
 
 tasks.withType<QuarkusGenerateCode>().configureEach { outputs.cacheIf { true } }
