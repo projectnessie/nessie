@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -67,7 +68,9 @@ public abstract class AbstractTestDiff extends BaseTestServiceImpl {
               defaultBranch.getName(),
               defaultBranch.getHash(),
               "666f6f",
-              new UnlimitedListResponseHandler<>());
+              new UnlimitedListResponseHandler<>(),
+              h -> {},
+              h -> {});
     } catch (IllegalArgumentException e) {
       if (!e.getMessage().contains("Paging not supported")) {
         throw e;
@@ -90,10 +93,17 @@ public abstract class AbstractTestDiff extends BaseTestServiceImpl {
               .getTargetBranch();
     }
 
+    AtomicReference<Reference> effectiveFrom = new AtomicReference<>();
+    AtomicReference<Reference> effectiveTo = new AtomicReference<>();
+
     Set<ContentKey> contents =
-        pagedDiff(branch, defaultBranch, pageSize, numKeys).stream()
+        pagedDiff(branch, defaultBranch, pageSize, numKeys, effectiveFrom::set, effectiveTo::set)
+            .stream()
             .map(DiffEntry::getKey)
             .collect(toSet());
+
+    soft.assertThat(effectiveFrom).hasValue(branch);
+    soft.assertThat(effectiveTo).hasValue(defaultBranch);
 
     soft.assertThat(contents)
         .containsExactlyInAnyOrderElementsOf(

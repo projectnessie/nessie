@@ -17,6 +17,7 @@ package org.projectnessie.services.impl;
 
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.StreamSupport.stream;
+import static org.projectnessie.services.impl.RefUtil.toReference;
 
 import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.MustBeClosed;
@@ -218,7 +219,9 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
             });
       }
 
-      ImmutableGetNamespacesResponse.Builder response = ImmutableGetNamespacesResponse.builder();
+      ImmutableGetNamespacesResponse.Builder response =
+          GetNamespacesResponse.builder()
+              .effectiveReference(toReference(refWithHash.getValue(), refWithHash.getHash()));
 
       // Next step: fetch the content-objects (of type `Namespace`) for all collected explicit
       // namespaces, add those to the response and the implicitly created `Namespace` for the

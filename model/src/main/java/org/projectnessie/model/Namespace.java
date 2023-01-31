@@ -49,8 +49,11 @@ public abstract class Namespace extends Content {
   static final String ERROR_MSG_TEMPLATE =
       "'%s' is not a valid namespace identifier (should not end with '.')";
 
-  public static final Namespace EMPTY =
-      ImmutableNamespace.builder().elements(Collections.emptyList()).build();
+  public static final Namespace EMPTY = builder().elements(Collections.emptyList()).build();
+
+  public static ImmutableNamespace.Builder builder() {
+    return ImmutableNamespace.builder();
+  }
 
   @Override
   public Type getType() {

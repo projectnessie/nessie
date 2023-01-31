@@ -22,6 +22,7 @@ import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNamespaceNotEmptyException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
+import org.projectnessie.model.DeleteNamespaceResponse;
 
 final class HttpDeleteNamespace extends BaseDeleteNamespaceBuilder {
 
@@ -38,5 +39,11 @@ final class HttpDeleteNamespace extends BaseDeleteNamespaceBuilder {
     NamespaceParamsBuilder builder =
         NamespaceParams.builder().namespace(namespace).hashOnRef(hashOnRef).refName(refName);
     client.getNamespaceApi().deleteNamespace(builder.build());
+  }
+
+  @Override
+  public DeleteNamespaceResponse deleteWithResponse() {
+    throw new UnsupportedOperationException(
+        "Extended commit response data is not available in API v1");
   }
 }

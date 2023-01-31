@@ -20,7 +20,7 @@ import org.projectnessie.client.builder.BaseCreateNamespaceBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
-import org.projectnessie.model.ImmutableNamespace;
+import org.projectnessie.model.CreateNamespaceResponse;
 import org.projectnessie.model.Namespace;
 
 final class HttpCreateNamespace extends BaseCreateNamespaceBuilder {
@@ -43,6 +43,12 @@ final class HttpCreateNamespace extends BaseCreateNamespaceBuilder {
     return client
         .getNamespaceApi()
         .createNamespace(
-            params, ImmutableNamespace.builder().from(namespace).properties(properties).build());
+            params, Namespace.builder().from(namespace).properties(properties).build());
+  }
+
+  @Override
+  public CreateNamespaceResponse createWithResponse() {
+    throw new UnsupportedOperationException(
+        "Extended commit response data is not available in API v1");
   }
 }

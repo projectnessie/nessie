@@ -15,6 +15,8 @@
  */
 package org.projectnessie.services.rest;
 
+import static org.projectnessie.services.impl.RefUtil.toReference;
+
 import com.fasterxml.jackson.annotation.JsonView;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
@@ -55,6 +57,7 @@ public class RestDiffResource implements HttpDiffApi {
   @Override
   @JsonView(Views.V1.class)
   public DiffResponse getDiff(DiffParams params) throws NessieNotFoundException {
+    ImmutableDiffResponse.Builder builder = DiffResponse.builder();
     return resource()
         .getDiff(
             params.getFromRef(),
@@ -63,7 +66,6 @@ public class RestDiffResource implements HttpDiffApi {
             params.getToHashOnRef(),
             null,
             new PagedResponseHandler<DiffResponse, DiffEntry>() {
-              final ImmutableDiffResponse.Builder builder = ImmutableDiffResponse.builder();
 
               @Override
               public DiffResponse build() {
@@ -80,6 +82,8 @@ public class RestDiffResource implements HttpDiffApi {
               public void hasMore(String pagingToken) {
                 builder.isHasMore(true).token(pagingToken);
               }
-            });
+            },
+            h -> builder.effectiveFromReference(toReference(h)),
+            h -> builder.effectiveToReference(toReference(h)));
   }
 }

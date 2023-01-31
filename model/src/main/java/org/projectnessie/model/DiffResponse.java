@@ -15,6 +15,7 @@
  */
 package org.projectnessie.model;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
@@ -22,6 +23,7 @@ import javax.annotation.Nullable;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
+import org.projectnessie.model.ser.Views;
 
 @Schema(type = SchemaType.OBJECT, title = "DiffResponse")
 @Value.Immutable
@@ -29,7 +31,19 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableDiffResponse.class)
 public interface DiffResponse extends PaginatedResponse {
 
+  static ImmutableDiffResponse.Builder builder() {
+    return ImmutableDiffResponse.builder();
+  }
+
   List<DiffEntry> getDiffs();
+
+  @Nullable
+  @JsonView(Views.V2.class)
+  Reference getEffectiveFromReference();
+
+  @Nullable
+  @JsonView(Views.V2.class)
+  Reference getEffectiveToReference();
 
   @Value.Immutable
   @JsonSerialize(as = ImmutableDiffEntry.class)

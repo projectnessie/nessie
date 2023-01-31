@@ -15,6 +15,7 @@
  */
 package org.projectnessie.services.rest;
 
+import static org.projectnessie.services.impl.RefUtil.toReference;
 import static org.projectnessie.services.spi.TreeService.MAX_COMMIT_LOG_ENTRIES;
 
 import com.fasterxml.jackson.annotation.JsonView;
@@ -174,6 +175,7 @@ public class RestV2TreeResource implements HttpTreeApi {
       throws NessieNotFoundException {
     Reference reference = resolveRef(ref);
     Integer maxRecords = params.maxRecords();
+    ImmutableEntriesResponse.Builder builder = EntriesResponse.builder();
     return tree()
         .getEntries(
             reference.getName(),
@@ -182,8 +184,6 @@ public class RestV2TreeResource implements HttpTreeApi {
             params.filter(),
             params.pageToken(),
             new PagedCountingResponseHandler<EntriesResponse, EntriesResponse.Entry>(maxRecords) {
-              final ImmutableEntriesResponse.Builder builder = ImmutableEntriesResponse.builder();
-
               @Override
               public EntriesResponse build() {
                 return builder.build();
@@ -199,7 +199,8 @@ public class RestV2TreeResource implements HttpTreeApi {
               public void hasMore(String pagingToken) {
                 builder.isHasMore(true).token(pagingToken);
               }
-            });
+            },
+            h -> builder.effectiveReference(toReference(h)));
   }
 
   @JsonView(Views.V2.class)
@@ -244,6 +245,7 @@ public class RestV2TreeResource implements HttpTreeApi {
     Integer maxRecords = params.maxRecords();
     Reference from = resolveRef(params.getFromRef());
     Reference to = resolveRef(params.getToRef());
+    ImmutableDiffResponse.Builder builder = DiffResponse.builder();
     return diff()
         .getDiff(
             from.getName(),
@@ -252,8 +254,6 @@ public class RestV2TreeResource implements HttpTreeApi {
             to.getHash(),
             params.pageToken(),
             new PagedCountingResponseHandler<DiffResponse, DiffEntry>(maxRecords) {
-              final ImmutableDiffResponse.Builder builder = ImmutableDiffResponse.builder();
-
               @Override
               public DiffResponse build() {
                 return builder.build();
@@ -269,7 +269,9 @@ public class RestV2TreeResource implements HttpTreeApi {
               public void hasMore(String pagingToken) {
                 builder.isHasMore(true).token(pagingToken);
               }
-            });
+            },
+            h -> builder.effectiveFromReference(toReference(h)),
+            h -> builder.effectiveToReference(toReference(h)));
   }
 
   @JsonView(Views.V2.class)

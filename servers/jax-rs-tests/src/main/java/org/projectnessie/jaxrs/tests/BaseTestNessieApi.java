@@ -56,11 +56,14 @@ import org.projectnessie.model.CommitResponse.AddedContent;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
+import org.projectnessie.model.CreateNamespaceResponse;
+import org.projectnessie.model.DeleteNamespaceResponse;
 import org.projectnessie.model.DiffResponse;
 import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.GetMultipleContentsResponse;
+import org.projectnessie.model.GetNamespacesResponse;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableReferenceMetadata;
@@ -74,6 +77,7 @@ import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Tag;
+import org.projectnessie.model.UpdateNamespaceResponse;
 
 /** Nessie-API tests. */
 @NessieApiVersions // all versions
@@ -468,8 +472,13 @@ public abstract class BaseTestNessieApi {
     Map<ContentKey, Content> contents2 =
         api().getContent().reference(branch2).key(key11).key(key31).key(key41).get();
 
-    List<DiffEntry> diff1 = api().getDiff().fromRef(branch1).toRef(branch2).get().getDiffs();
+    DiffResponse diff1response = api().getDiff().fromRef(branch1).toRef(branch2).get();
+    List<DiffEntry> diff1 = diff1response.getDiffs();
 
+    if (isV2()) {
+      soft.assertThat(diff1response.getEffectiveFromReference()).isEqualTo(branch1);
+      soft.assertThat(diff1response.getEffectiveToReference()).isEqualTo(branch2);
+    }
     soft.assertThat(diff1)
         .containsExactlyInAnyOrder(
             DiffEntry.diffEntry(key11, contents1.get(key11), contents2.get(key11)),
@@ -630,7 +639,11 @@ public abstract class BaseTestNessieApi {
                     .toArray(Operation[]::new))
             .commit();
 
-    List<EntriesResponse.Entry> notPaged = api().getEntries().reference(main).get().getEntries();
+    EntriesResponse response = api().getEntries().reference(main).get();
+    if (isV2()) {
+      soft.assertThat(response.getEffectiveReference()).isEqualTo(main);
+    }
+    List<EntriesResponse.Entry> notPaged = response.getEntries();
     soft.assertThat(notPaged).hasSize(10);
 
     if (pagingSupported(() -> api().getEntries().reference(main0).pageToken("666f6f").get())) {
@@ -660,6 +673,7 @@ public abstract class BaseTestNessieApi {
   @Test
   public void namespaces() throws Exception {
     Branch main = api().getDefaultBranch();
+    String mainName = main.getName();
 
     soft.assertThat(
             api()
@@ -674,28 +688,56 @@ public abstract class BaseTestNessieApi {
     Namespace namespace2 = Namespace.of("a", "b.b");
     Namespace namespace3 = Namespace.of("a", "b.bbbb");
     Namespace namespace4 = Namespace.of("a", "b.b", "c");
-    Namespace namespace1WithId =
-        api().createNamespace().refName(main.getName()).namespace(namespace1).create();
-    Namespace namespace2WithId =
-        api().createNamespace().refName(main.getName()).namespace(namespace2).create();
-    Namespace namespace3WithId =
-        api().createNamespace().refName(main.getName()).namespace(namespace3).create();
-    Namespace namespace4WithId =
-        api().createNamespace().refName(main.getName()).namespace(namespace4).create();
+    Namespace namespace1WithId;
+    Namespace namespace2WithId;
+    Namespace namespace3WithId;
+    Namespace namespace4WithId;
+    if (isV2()) {
+      CreateNamespaceResponse resp1 =
+          api().createNamespace().refName(mainName).namespace(namespace1).createWithResponse();
+      soft.assertThat(resp1.getEffectiveBranch()).isNotNull().isNotEqualTo(main);
+      CreateNamespaceResponse resp2 =
+          api().createNamespace().refName(mainName).namespace(namespace2).createWithResponse();
+      soft.assertThat(resp2.getEffectiveBranch())
+          .isNotNull()
+          .isNotEqualTo(main)
+          .isNotEqualTo(resp1.getEffectiveBranch());
+      CreateNamespaceResponse resp3 =
+          api().createNamespace().refName(mainName).namespace(namespace3).createWithResponse();
+      soft.assertThat(resp3.getEffectiveBranch())
+          .isNotNull()
+          .isNotEqualTo(resp1.getEffectiveBranch())
+          .isNotEqualTo(resp2.getEffectiveBranch());
+      CreateNamespaceResponse resp4 =
+          api().createNamespace().refName(mainName).namespace(namespace4).createWithResponse();
+      soft.assertThat(resp4.getEffectiveBranch())
+          .isNotNull()
+          .isNotEqualTo(resp2.getEffectiveBranch())
+          .isNotEqualTo(resp3.getEffectiveBranch());
+      namespace1WithId = resp1.getNamespace();
+      namespace2WithId = resp2.getNamespace();
+      namespace3WithId = resp3.getNamespace();
+      namespace4WithId = resp4.getNamespace();
+    } else {
+      namespace1WithId = api().createNamespace().refName(mainName).namespace(namespace1).create();
+      namespace2WithId = api().createNamespace().refName(mainName).namespace(namespace2).create();
+      namespace3WithId = api().createNamespace().refName(mainName).namespace(namespace3).create();
+      namespace4WithId = api().createNamespace().refName(mainName).namespace(namespace4).create();
+    }
 
-    soft.assertThat(
-            api()
-                .getMultipleNamespaces()
-                .refName(main.getName())
-                .namespace(Namespace.EMPTY)
-                .get()
-                .getNamespaces())
+    GetNamespacesResponse getMultiple =
+        api().getMultipleNamespaces().refName(mainName).namespace(Namespace.EMPTY).get();
+    if (isV2()) {
+      main = (Branch) api().getReference().refName(mainName).get();
+      soft.assertThat(getMultiple.getEffectiveReference()).isEqualTo(main);
+    }
+    soft.assertThat(getMultiple.getNamespaces())
         .containsExactlyInAnyOrder(
             namespace1WithId, namespace2WithId, namespace3WithId, namespace4WithId);
     soft.assertThat(
             api()
                 .getMultipleNamespaces()
-                .refName(main.getName())
+                .refName(mainName)
                 .namespace(namespace1)
                 .get()
                 .getNamespaces())
@@ -704,7 +746,7 @@ public abstract class BaseTestNessieApi {
     soft.assertThat(
             api()
                 .getMultipleNamespaces()
-                .refName(main.getName())
+                .refName(mainName)
                 .namespace(namespace2)
                 .get()
                 .getNamespaces())
@@ -713,7 +755,7 @@ public abstract class BaseTestNessieApi {
     soft.assertThat(
             api()
                 .getContent()
-                .refName(main.getName())
+                .refName(mainName)
                 .key(ContentKey.of(namespace1.getElements()))
                 .key(ContentKey.of(namespace2.getElements()))
                 .key(ContentKey.of(namespace3.getElements()))
@@ -724,64 +766,89 @@ public abstract class BaseTestNessieApi {
         .containsEntry(ContentKey.of(namespace3.getElements()), namespace3WithId)
         .containsEntry(ContentKey.of(namespace4.getElements()), namespace4WithId);
 
-    soft.assertThat(api().getNamespace().refName(main.getName()).namespace(namespace1).get())
+    soft.assertThat(api().getNamespace().refName(mainName).namespace(namespace1).get())
         .isEqualTo(namespace1WithId);
-    soft.assertThat(api().getNamespace().refName(main.getName()).namespace(namespace2).get())
+    soft.assertThat(api().getNamespace().refName(mainName).namespace(namespace2).get())
         .isEqualTo(namespace2WithId);
-    soft.assertThat(api().getNamespace().refName(main.getName()).namespace(namespace3).get())
+    soft.assertThat(api().getNamespace().refName(mainName).namespace(namespace3).get())
         .isEqualTo(namespace3WithId);
-    soft.assertThat(api().getNamespace().refName(main.getName()).namespace(namespace4).get())
+    soft.assertThat(api().getNamespace().refName(mainName).namespace(namespace4).get())
         .isEqualTo(namespace4WithId);
 
-    api()
-        .updateProperties()
-        .refName(main.getName())
-        .namespace(namespace2)
-        .updateProperty("foo", "bar")
-        .updateProperty("bar", "baz")
-        .update();
+    if (isV2()) {
+      main = (Branch) api().getReference().refName(mainName).get();
+      UpdateNamespaceResponse update =
+          api()
+              .updateProperties()
+              .refName(mainName)
+              .namespace(namespace2)
+              .updateProperty("foo", "bar")
+              .updateProperty("bar", "baz")
+              .updateWithResponse();
+      soft.assertThat(update.getEffectiveBranch()).isNotNull().isNotEqualTo(main);
+    } else {
+      api()
+          .updateProperties()
+          .refName(mainName)
+          .namespace(namespace2)
+          .updateProperty("foo", "bar")
+          .updateProperty("bar", "baz")
+          .update();
+    }
     Namespace namespace2update =
         (Namespace)
             api()
                 .getContent()
-                .refName(main.getName())
+                .refName(mainName)
                 .key(ContentKey.of("a", "b.b"))
                 .get()
                 .get(ContentKey.of("a", "b.b"));
-    soft.assertThat(api().getNamespace().refName(main.getName()).namespace(namespace2).get())
+    soft.assertThat(api().getNamespace().refName(mainName).namespace(namespace2).get())
         .isEqualTo(namespace2update);
 
     soft.assertThat(
             api()
                 .getMultipleNamespaces()
-                .refName(main.getName())
+                .refName(mainName)
                 .namespace(Namespace.EMPTY)
                 .get()
                 .getNamespaces())
         .containsExactlyInAnyOrder(
             namespace1WithId, namespace2update, namespace3WithId, namespace4WithId);
 
-    api()
-        .updateProperties()
-        .refName(main.getName())
-        .namespace(namespace2)
-        .removeProperty("foo")
-        .update();
+    if (isV2()) {
+      UpdateNamespaceResponse updateResponse =
+          api()
+              .updateProperties()
+              .refName(mainName)
+              .namespace(namespace2)
+              .removeProperty("foo")
+              .updateWithResponse();
+      soft.assertThat(updateResponse.getEffectiveBranch()).isNotEqualTo(main);
+      main = updateResponse.getEffectiveBranch();
+    } else {
+      api()
+          .updateProperties()
+          .refName(mainName)
+          .namespace(namespace2)
+          .removeProperty("foo")
+          .update();
+    }
     Namespace namespace2update2 =
         (Namespace)
             api()
                 .getContent()
-                .refName(main.getName())
+                .refName(mainName)
                 .key(ContentKey.of("a", "b.b"))
                 .get()
                 .get(ContentKey.of("a", "b.b"));
-    soft.assertThat(api().getNamespace().refName(main.getName()).namespace(namespace2).get())
+    soft.assertThat(api().getNamespace().refName(mainName).namespace(namespace2).get())
         .isEqualTo(namespace2update2);
 
     soft.assertThat(
             api()
                 .getMultipleNamespaces()
-                .refName(main.getName())
+                .refName(mainName)
                 .namespace(Namespace.EMPTY)
                 .get()
                 .getNamespaces())
@@ -790,28 +857,34 @@ public abstract class BaseTestNessieApi {
 
     if (isV2()) {
       soft.assertThatThrownBy(
-              () -> api().deleteNamespace().refName(main.getName()).namespace(namespace2).delete())
+              () -> api().deleteNamespace().refName(mainName).namespace(namespace2).delete())
           .isInstanceOf(NessieNamespaceNotEmptyException.class);
     }
 
-    api().deleteNamespace().refName(main.getName()).namespace(namespace4).delete();
+    if (isV2()) {
+      main = (Branch) api().getReference().refName(mainName).get();
+      DeleteNamespaceResponse response =
+          api().deleteNamespace().refName(mainName).namespace(namespace4).deleteWithResponse();
+      soft.assertThat(response.getEffectiveBranch()).isNotNull().isNotEqualTo(main);
+    } else {
+      api().deleteNamespace().refName(mainName).namespace(namespace4).delete();
+    }
 
-    soft.assertThat(
-            api().getContent().refName(main.getName()).key(ContentKey.of("a", "b.b", "c")).get())
+    soft.assertThat(api().getContent().refName(mainName).key(ContentKey.of("a", "b.b", "c")).get())
         .isEmpty();
 
     soft.assertThatThrownBy(
-            () -> api().getNamespace().refName(main.getName()).namespace(namespace4).get())
+            () -> api().getNamespace().refName(mainName).namespace(namespace4).get())
         .isInstanceOf(NessieNamespaceNotFoundException.class);
 
     soft.assertThatThrownBy(
-            () -> api().deleteNamespace().refName(main.getName()).namespace(namespace4).delete())
+            () -> api().deleteNamespace().refName(mainName).namespace(namespace4).delete())
         .isInstanceOf(NessieNamespaceNotFoundException.class);
 
     soft.assertThat(
             api()
                 .getMultipleNamespaces()
-                .refName(main.getName())
+                .refName(mainName)
                 .namespace(Namespace.EMPTY)
                 .get()
                 .getNamespaces())
@@ -820,7 +893,7 @@ public abstract class BaseTestNessieApi {
     // This one fails, if the namespace-path 'startswith' filter (REST v2) to check for child
     // content is incorrectly implemented.
     soft.assertThatCode(
-            () -> api().deleteNamespace().refName(main.getName()).namespace(namespace2).delete())
+            () -> api().deleteNamespace().refName(mainName).namespace(namespace2).delete())
         .doesNotThrowAnyException();
   }
 

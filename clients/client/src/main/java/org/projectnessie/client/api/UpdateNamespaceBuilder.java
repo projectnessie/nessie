@@ -20,6 +20,7 @@ import java.util.Set;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Namespace;
+import org.projectnessie.model.UpdateNamespaceResponse;
 
 /**
  * Request builder for updating properties of a {@link Namespace}.
@@ -37,4 +38,7 @@ public interface UpdateNamespaceBuilder extends OnNamespaceBuilder<UpdateNamespa
   UpdateNamespaceBuilder removeProperties(Set<String> propertyRemovals);
 
   void update() throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException;
+
+  UpdateNamespaceResponse updateWithResponse()
+      throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException;
 }

@@ -17,6 +17,7 @@ package org.projectnessie.services.spi;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
@@ -26,7 +27,7 @@ import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitResponse;
-import org.projectnessie.model.EntriesResponse;
+import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.MergeBehavior;
@@ -36,6 +37,8 @@ import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Reference.ReferenceType;
 import org.projectnessie.model.Validation;
+import org.projectnessie.versioned.NamedRef;
+import org.projectnessie.versioned.WithHash;
 
 /**
  * Server-side interface to services managing the content trees.
@@ -165,7 +168,8 @@ public interface TreeService {
       @Nullable Integer namespaceDepth,
       @Nullable String filter,
       @Nullable String pagingToken,
-      PagedResponseHandler<R, EntriesResponse.Entry> pagedResponseHandler)
+      PagedResponseHandler<R, Entry> pagedResponseHandler,
+      Consumer<WithHash<NamedRef>> effectiveReference)
       throws NessieNotFoundException;
 
   CommitResponse commitMultipleOperations(

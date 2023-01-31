@@ -38,7 +38,6 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
-import org.projectnessie.model.ImmutableNamespace;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.server.store.proto.ObjectTypes;
 import org.projectnessie.server.store.proto.ObjectTypes.IcebergMetadataPointer;
@@ -398,6 +397,6 @@ class TestStoreWorker {
   }
 
   private static Namespace withId(Namespace namespace) {
-    return ImmutableNamespace.builder().from(namespace).id(CID).build();
+    return Namespace.builder().from(namespace).id(CID).build();
   }
 }

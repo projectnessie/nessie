@@ -17,6 +17,7 @@ package org.projectnessie.client.api;
 
 import org.projectnessie.error.NessieNamespaceNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
+import org.projectnessie.model.GetNamespaceResponse;
 import org.projectnessie.model.Namespace;
 
 /**
@@ -27,4 +28,7 @@ import org.projectnessie.model.Namespace;
 public interface GetNamespaceBuilder extends OnNamespaceBuilder<GetNamespaceBuilder> {
 
   Namespace get() throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException;
+
+  GetNamespaceResponse getWithResponse()
+      throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException;
 }

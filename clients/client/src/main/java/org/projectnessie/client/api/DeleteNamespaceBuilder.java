@@ -18,6 +18,7 @@ package org.projectnessie.client.api;
 import org.projectnessie.error.NessieNamespaceNotEmptyException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
+import org.projectnessie.model.DeleteNamespaceResponse;
 import org.projectnessie.model.Namespace;
 
 /**
@@ -28,6 +29,10 @@ import org.projectnessie.model.Namespace;
 public interface DeleteNamespaceBuilder extends OnNamespaceBuilder<DeleteNamespaceBuilder> {
 
   void delete()
+      throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException,
+          NessieNamespaceNotEmptyException;
+
+  DeleteNamespaceResponse deleteWithResponse()
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException,
           NessieNamespaceNotEmptyException;
 }

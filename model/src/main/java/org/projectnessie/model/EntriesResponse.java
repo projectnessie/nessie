@@ -36,6 +36,14 @@ public interface EntriesResponse extends PaginatedResponse {
   @NotNull
   List<Entry> getEntries();
 
+  /**
+   * The effective reference (for example a branch or tag) including the commit ID from which the
+   * entries were fetched.
+   */
+  @Nullable
+  @JsonView(Views.V2.class)
+  Reference getEffectiveReference();
+
   @Value.Immutable
   @JsonSerialize(as = ImmutableEntry.class)
   @JsonDeserialize(as = ImmutableEntry.class)

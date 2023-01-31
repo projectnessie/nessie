@@ -27,6 +27,7 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.CreateNamespaceResponse;
 import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.ImmutableNamespace;
 import org.projectnessie.model.Namespace;
@@ -48,12 +49,17 @@ public final class ClientSideCreateNamespace extends BaseCreateNamespaceBuilder 
   @Override
   public Namespace create()
       throws NessieReferenceNotFoundException, NessieNamespaceAlreadyExistsException {
+    return createWithResponse().getNamespace();
+  }
+
+  @Override
+  public CreateNamespaceResponse createWithResponse()
+      throws NessieReferenceNotFoundException, NessieNamespaceAlreadyExistsException {
     if (namespace.isEmpty()) {
       throw new IllegalArgumentException("Creating empty namespaces is not supported");
     }
 
-    ImmutableNamespace content =
-        ImmutableNamespace.builder().from(namespace).properties(properties).build();
+    ImmutableNamespace content = Namespace.builder().from(namespace).properties(properties).build();
     ContentKey key = ContentKey.of(namespace.getElements());
 
     GetMultipleContentsResponse contentsResponse;
@@ -87,7 +93,8 @@ public final class ClientSideCreateNamespace extends BaseCreateNamespaceBuilder 
               .operation(Put.of(key, content))
               .commitWithResponse();
 
-      return content.withId(committed.toAddedContentsMap().get(key));
+      Namespace created = content.withId(committed.toAddedContentsMap().get(key));
+      return CreateNamespaceResponse.of(created, committed.getTargetBranch());
     } catch (NessieNotFoundException | NessieConflictException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
