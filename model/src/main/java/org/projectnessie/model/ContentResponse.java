@@ -26,6 +26,7 @@ import org.projectnessie.model.ser.Views;
 @Value.Immutable
 @JsonSerialize(as = ImmutableContentResponse.class)
 @JsonDeserialize(as = ImmutableContentResponse.class)
+@JsonView(Views.V2.class)
 public interface ContentResponse {
 
   static ImmutableContentResponse.Builder builder() {
@@ -42,7 +43,6 @@ public interface ContentResponse {
    */
   @Nullable
   @Value.Parameter(order = 2)
-  @JsonView(Views.V2.class)
   Reference getEffectiveReference();
 
   static ContentResponse of(Content content, Reference effectiveReference) {
