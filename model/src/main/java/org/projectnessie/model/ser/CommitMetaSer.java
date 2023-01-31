@@ -26,4 +26,5 @@ import org.projectnessie.model.CommitMeta;
 @Value.Immutable
 @Value.Style(builder = "builderSer")
 @JsonDeserialize(as = ImmutableCommitMetaSer.class)
+@SuppressWarnings("immutables:subtype")
 public abstract class CommitMetaSer extends CommitMeta {}
