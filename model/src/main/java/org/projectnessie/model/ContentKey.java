@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import javax.validation.constraints.NotNull;
@@ -43,7 +44,14 @@ public abstract class ContentKey {
 
   @NotNull
   @Size(min = 1)
+  @Value.Parameter(order = 1)
   public abstract List<String> getElements();
+
+  @JsonIgnore
+  @Value.Redacted
+  public String[] getElementsArray() {
+    return getElements().toArray(new String[0]);
+  }
 
   /**
    * Returns the namespace that is always consisting of the first <b>N-1</b> elements from {@link
@@ -74,13 +82,13 @@ public abstract class ContentKey {
 
   public static ContentKey of(String... elements) {
     Objects.requireNonNull(elements, "Elements array must not be null");
-    return ImmutableContentKey.builder().addElements(elements).build();
+    return ImmutableContentKey.of(Arrays.asList(elements));
   }
 
   @JsonCreator
   public static ContentKey of(@JsonProperty("elements") List<String> elements) {
     Objects.requireNonNull(elements);
-    return ImmutableContentKey.builder().elements(elements).build();
+    return ImmutableContentKey.of(elements);
   }
 
   @Value.Check

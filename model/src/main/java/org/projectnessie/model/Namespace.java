@@ -73,6 +73,12 @@ public abstract class Namespace extends Content {
   @NotNull
   public abstract List<String> getElements();
 
+  @JsonIgnore
+  @Value.Redacted
+  public String[] getElementsArray() {
+    return getElements().toArray(new String[0]);
+  }
+
   @NotNull
   @JsonInclude(Include.NON_EMPTY)
   public abstract Map<String, String> getProperties();
