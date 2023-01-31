@@ -24,15 +24,17 @@ object IDEPathHelper {
     .getParent
     .getParent
     .getParent
-  private val mavenTargetDirectory = projectRootDir.resolve("target")
-  private val mavenSrcTestDirectory =
-    projectRootDir.resolve("src").resolve("test")
+    .getParent
+  private val gradleBuildDirectory = projectRootDir.resolve("build")
+  private val gatlingSrcDirectory =
+    projectRootDir.resolve("src").resolve("gatling")
 
-  val mavenSourcesDirectory: Path = mavenSrcTestDirectory.resolve("scala")
-  val mavenResourcesDirectory: Path = mavenSrcTestDirectory.resolve("resources")
-  val mavenBinariesDirectory: Path =
-    mavenTargetDirectory.resolve("test-classes")
-  val resultsDirectory: Path = mavenTargetDirectory.resolve("gatling")
+  val gradleSourcesDirectory: Path = gatlingSrcDirectory.resolve("scala")
+  val gradleResourcesDirectory: Path = gatlingSrcDirectory.resolve("resources")
+  val gradleBinariesDirectory: Path =
+    gradleBuildDirectory.resolve("classes").resolve("scala").resolve("gatling")
+  val resultsDirectory: Path =
+    gradleBuildDirectory.resolve("reports").resolve("gatling")
   val recorderConfigFile: Path =
-    mavenResourcesDirectory.resolve("recorder.conf")
+    gradleResourcesDirectory.resolve("recorder.conf")
 }

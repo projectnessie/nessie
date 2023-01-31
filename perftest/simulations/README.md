@@ -144,6 +144,13 @@ System properties handling when using an external Nessie server:
   simulations. For example: using `./gradlew -Dgatling.jvmArg.x=-Xmx4g ...` will pass the JVM arg
   `-Xmx4g` to the Gatling simulation(s).
 
+## Debugging a simulation in IntelliJ
+
+1. Update the simulation class in `Engine` to point to the simulation to debug,
+2. Create a run configuration for `Engine` (in `src/gatling/scala` of `:nessie-perftest-simulations`)
+3. Update the run configuration with the necessary system properties to pass to the simulation,
+   for example add `-Dnessie.uri=http://127.0.0.1:19120/api/v2` for a locally running Nessie.
+
 ## Gatling links
 
 * [Intro to Gatling](https://www.baeldung.com/introduction-to-gatling)
