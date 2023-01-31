@@ -383,7 +383,7 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
 
       Put op;
       try {
-        Content existing = contentApi().getContent(key, branch.getName(), currentHash);
+        Content existing = contentApi().getContent(key, branch.getName(), currentHash).getContent();
         op =
             Put.of(
                 key, IcebergTable.of("some-file-" + i, 42, 42, 42, 42, existing.getId()), existing);

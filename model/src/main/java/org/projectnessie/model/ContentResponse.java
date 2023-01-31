@@ -17,6 +17,7 @@ package org.projectnessie.model;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
 
@@ -30,5 +31,18 @@ public interface ContentResponse {
   }
 
   @NotNull
+  @Value.Parameter(order = 1)
   Content getContent();
+
+  /**
+   * The effective reference (for example a branch or tag) including the commit ID from which the
+   * entries were fetched.
+   */
+  @Nullable
+  @Value.Parameter(order = 2)
+  Reference getEffectiveReference();
+
+  static ContentResponse of(Content content, Reference effectiveReference) {
+    return ImmutableContentResponse.of(content, effectiveReference);
+  }
 }

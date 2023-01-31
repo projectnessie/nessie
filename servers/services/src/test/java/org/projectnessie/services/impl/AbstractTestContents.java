@@ -35,6 +35,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.IcebergTable;
@@ -281,6 +282,7 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
       // Compare content on HEAD commit with the committed content
       soft.assertThat(
               contentApi().getContent(fixedContentKey, committed.getName(), committed.getHash()))
+          .extracting(ContentResponse::getContent)
           .extracting(this::clearIdOnContent)
           .isEqualTo(put.getContent());
 
@@ -327,6 +329,7 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
       // Compare content on HEAD commit with the committed content
       soft.assertThat(
               contentApi().getContent(fixedContentKey, committed.getName(), committed.getHash()))
+          .extracting(ContentResponse::getContent)
           .extracting(this::clearIdOnContent)
           .isEqualTo(contentAndOperationType.prepare.getContent());
 

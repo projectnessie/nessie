@@ -24,18 +24,25 @@ import java.util.stream.Collectors;
 import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
+import org.projectnessie.model.Branch;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.ContentResponse;
+import org.projectnessie.model.Detached;
 import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.GetMultipleContentsResponse.ContentWithKey;
-import org.projectnessie.model.ImmutableGetMultipleContentsResponse;
+import org.projectnessie.model.Reference;
+import org.projectnessie.model.Tag;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.spi.ContentService;
+import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.DetachedRef;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 
@@ -50,14 +57,14 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
   }
 
   @Override
-  public Content getContent(ContentKey key, String namedRef, String hashOnRef)
+  public ContentResponse getContent(ContentKey key, String namedRef, String hashOnRef)
       throws NessieNotFoundException {
     WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
     startAccessCheck().canReadEntityValue(ref.getValue(), key, null).checkAndThrow();
     try {
       Content obj = getStore().getValue(ref.getHash(), toKey(key));
       if (obj != null) {
-        return obj;
+        return ContentResponse.of(obj, makeReference(ref));
       }
       throw new NessieContentNotFoundException(key, namedRef);
     } catch (ReferenceNotFoundException e) {
@@ -86,9 +93,22 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
               .map(e -> ContentWithKey.of(toContentKey(e.getKey()), e.getValue()))
               .collect(Collectors.toList());
 
-      return ImmutableGetMultipleContentsResponse.builder().contents(output).build();
+      return GetMultipleContentsResponse.of(output, makeReference(ref));
     } catch (ReferenceNotFoundException ex) {
       throw new NessieReferenceNotFoundException(ex.getMessage(), ex);
+    }
+  }
+
+  private static Reference makeReference(WithHash<NamedRef> refWithHash) {
+    NamedRef ref = refWithHash.getValue();
+    if (ref instanceof TagName) {
+      return Tag.of(ref.getName(), refWithHash.getHash().asString());
+    } else if (ref instanceof BranchName) {
+      return Branch.of(ref.getName(), refWithHash.getHash().asString());
+    } else if (ref instanceof DetachedRef) {
+      return Detached.of(refWithHash.getHash().asString());
+    } else {
+      throw new UnsupportedOperationException("only converting tags or branches"); // todo
     }
   }
 

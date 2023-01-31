@@ -55,10 +55,12 @@ import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.CommitResponse.AddedContent;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.DiffResponse;
 import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.EntriesResponse.Entry;
+import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableReferenceMetadata;
@@ -574,6 +576,45 @@ public abstract class BaseTestNessieApi {
       soft.assertThat(api().getAllReferences().maxRecords(1).stream())
           .containsExactlyInAnyOrderElementsOf(all);
     }
+  }
+
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void contents() throws Exception {
+    Branch main = api().getDefaultBranch();
+    CommitResponse committed =
+        prepCommit(
+                main,
+                "commit",
+                IntStream.range(0, 10)
+                    .mapToObj(i -> dummyPut("b.b", "c", Integer.toString(i)))
+                    .toArray(Operation[]::new))
+            .commitWithResponse();
+    main = committed.getTargetBranch();
+
+    List<ContentKey> allKeys =
+        IntStream.range(0, 10)
+            .mapToObj(i -> ContentKey.of("b.b", "c", Integer.toString(i)))
+            .collect(Collectors.toList());
+
+    GetMultipleContentsResponse resp =
+        api().getContent().refName(main.getName()).keys(allKeys).getWithResponse();
+
+    ContentKey singleKey = ContentKey.of("b.b", "c", "3");
+    soft.assertThat(api().getContent().refName(main.getName()).getSingle(singleKey))
+        .extracting(ContentResponse::getEffectiveReference, ContentResponse::getContent)
+        .containsExactly(
+            main,
+            IcebergTable.of("foo", 1, 2, 3, 4, committed.toAddedContentsMap().get(singleKey)));
+
+    soft.assertThat(resp.getEffectiveReference()).isEqualTo(main);
+    soft.assertThat(resp.toContentsMap()).containsOnlyKeys(allKeys).hasSize(allKeys.size());
+
+    ContentKey key = ContentKey.of("b.b", "c", "1");
+    soft.assertThat(api().getContent().refName(main.getName()).getSingle(key))
+        .isEqualTo(
+            ContentResponse.of(
+                IcebergTable.of("foo", 1, 2, 3, 4, committed.toAddedContentsMap().get(key)), main));
   }
 
   @Test

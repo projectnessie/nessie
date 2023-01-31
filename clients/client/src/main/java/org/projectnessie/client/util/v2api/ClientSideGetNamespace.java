@@ -15,15 +15,15 @@
  */
 package org.projectnessie.client.util.v2api;
 
-import java.util.Map;
-import java.util.Optional;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.builder.BaseGetNamespaceBuilder;
+import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.Namespace;
 
 /**
@@ -42,19 +42,20 @@ public final class ClientSideGetNamespace extends BaseGetNamespaceBuilder {
   @Override
   public Namespace get() throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException {
     ContentKey key = ContentKey.of(namespace.getElements());
-    Map<ContentKey, Content> contentMap;
     try {
-      contentMap = api.getContent().refName(refName).hashOnRef(hashOnRef).key(key).get();
-
+      ContentResponse contentResponse =
+          api.getContent().refName(refName).hashOnRef(hashOnRef).getSingle(key);
+      Content c = contentResponse.getContent();
+      if (!(c instanceof Namespace)) {
+        throw new NessieNamespaceNotFoundException(
+            String.format("Namespace '%s' does not exist", key.toPathString()));
+      }
+      return (Namespace) c;
+    } catch (NessieContentNotFoundException e) {
+      throw new NessieNamespaceNotFoundException(
+          String.format("Namespace '%s' does not exist", key.toPathString()));
     } catch (NessieNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
-
-    return Optional.ofNullable(contentMap.get(key))
-        .flatMap(c -> c.unwrap(Namespace.class)) // Converts non-Namespace entries to `empty`
-        .orElseThrow(
-            () ->
-                new NessieNamespaceNotFoundException(
-                    String.format("Namespace '%s' does not exist", key.toPathString())));
   }
 }

@@ -405,7 +405,8 @@ public abstract class BaseTestServiceImpl {
 
         Put op;
         try {
-          Content existing = contentApi().getContent(key, branch.getName(), currentHash);
+          Content existing =
+              contentApi().getContent(key, branch.getName(), currentHash).getContent();
           op =
               Put.of(
                   key,

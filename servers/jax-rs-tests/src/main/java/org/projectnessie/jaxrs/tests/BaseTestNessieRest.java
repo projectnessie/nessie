@@ -52,6 +52,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.DiffResponse;
 import org.projectnessie.model.EntriesResponse;
+import org.projectnessie.model.GetMultipleContentsRequest;
 import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableBranch;
@@ -146,8 +147,20 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
             .statusCode(200)
             .extract()
             .as(Content.class);
+    soft.assertThat(withoutId(content)).isEqualTo(table);
 
-    assertThat(withoutId(content)).isEqualTo(table);
+    GetMultipleContentsResponse multi =
+        rest()
+            .queryParam("ref", branch.getName())
+            .queryParam("hashOnRef", branch.getHash())
+            .body(GetMultipleContentsRequest.of(key))
+            .post("contents")
+            .then()
+            .statusCode(200)
+            .extract()
+            .as(GetMultipleContentsResponse.class);
+    soft.assertThat(withoutId(multi.toContentsMap().get(key))).isEqualTo(table);
+    soft.assertThat(multi.getEffectiveReference()).isNull();
   }
 
   @Test

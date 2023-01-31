@@ -171,7 +171,8 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
     soft.assertThat(committed1.getHash()).isNotNull();
 
     table1 =
-        (IcebergTable) contentApi().getContent(key1, committed1.getName(), committed1.getHash());
+        (IcebergTable)
+            contentApi().getContent(key1, committed1.getName(), committed1.getHash()).getContent();
 
     Branch committed2 =
         commit(
@@ -528,7 +529,8 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
     soft.assertThat(committed1.getHash()).isNotNull();
 
     table1 =
-        (IcebergTable) contentApi().getContent(key1, committed1.getName(), committed1.getHash());
+        (IcebergTable)
+            contentApi().getContent(key1, committed1.getName(), committed1.getHash()).getContent();
 
     Branch committed2 =
         commit(committed1, fromMessage("test-branch2"), Put.of(key1, table1, table1))

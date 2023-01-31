@@ -55,7 +55,7 @@ public class RestContentResource implements HttpContentApi {
   @JsonView(Views.V1.class)
   public Content getContent(ContentKey key, String ref, String hashOnRef)
       throws NessieNotFoundException {
-    return resource().getContent(key, ref, hashOnRef);
+    return resource().getContent(key, ref, hashOnRef).getContent();
   }
 
   @Override

@@ -16,7 +16,6 @@
 package org.projectnessie.client.util.v2api;
 
 import java.util.Map;
-import java.util.Optional;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.builder.BaseCreateNamespaceBuilder;
 import org.projectnessie.error.NessieConflictException;
@@ -25,11 +24,13 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.ImmutableNamespace;
 import org.projectnessie.model.Namespace;
-import org.projectnessie.model.Operation;
+import org.projectnessie.model.Operation.Put;
 
 /**
  * Supports previous "create namespace" functionality of the java client over Nessie API v2.
@@ -55,15 +56,18 @@ public final class ClientSideCreateNamespace extends BaseCreateNamespaceBuilder 
         ImmutableNamespace.builder().from(namespace).properties(properties).build();
     ContentKey key = ContentKey.of(namespace.getElements());
 
-    Map<ContentKey, Content> contentMap;
+    GetMultipleContentsResponse contentsResponse;
     try {
-      contentMap = api.getContent().refName(refName).hashOnRef(hashOnRef).key(key).get();
+      contentsResponse =
+          api.getContent().refName(refName).hashOnRef(hashOnRef).key(key).getWithResponse();
     } catch (NessieNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
 
-    if (contentMap.containsKey(key)) {
-      if (contentMap.get(key) instanceof Namespace) {
+    Map<ContentKey, Content> contentMap = contentsResponse.toContentsMap();
+    Content existing = contentMap.get(key);
+    if (existing != null) {
+      if (existing instanceof Namespace) {
         throw new NessieNamespaceAlreadyExistsException(
             String.format("Namespace '%s' already exists", key.toPathString()));
       } else {
@@ -74,30 +78,18 @@ public final class ClientSideCreateNamespace extends BaseCreateNamespaceBuilder 
     }
 
     try {
-      String expectedHash = hashOnRef;
-      if (expectedHash == null) {
-        expectedHash = api.getReference().refName(refName).get().getHash();
-      }
+      Branch branch = (Branch) contentsResponse.getEffectiveReference();
 
-      Branch branch =
+      CommitResponse committed =
           api.commitMultipleOperations()
               .commitMeta(CommitMeta.fromMessage("create namespace " + namespace.name()))
-              .branchName(refName)
-              .hash(expectedHash)
-              .operation(Operation.Put.of(key, content))
-              .commit();
+              .branch(branch)
+              .operation(Put.of(key, content))
+              .commitWithResponse();
 
-      contentMap = api.getContent().reference(branch).key(key).get();
+      return content.withId(committed.toAddedContentsMap().get(key));
     } catch (NessieNotFoundException | NessieConflictException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
-
-    Optional<Content> result = Optional.ofNullable(contentMap.get(key));
-    return result
-        .flatMap(r -> r.unwrap(Namespace.class))
-        .orElseThrow(
-            () ->
-                new NessieReferenceNotFoundException(
-                    String.format("Namespace '%s' not found", key)));
   }
 }

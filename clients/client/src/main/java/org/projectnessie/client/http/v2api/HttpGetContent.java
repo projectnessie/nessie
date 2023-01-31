@@ -16,14 +16,13 @@
 package org.projectnessie.client.http.v2api;
 
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.projectnessie.client.builder.BaseGetContentBuilder;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.GetMultipleContentsResponse;
-import org.projectnessie.model.GetMultipleContentsResponse.ContentWithKey;
 import org.projectnessie.model.Reference;
 
 final class HttpGetContent extends BaseGetContentBuilder {
@@ -35,15 +34,33 @@ final class HttpGetContent extends BaseGetContentBuilder {
 
   @Override
   public Map<ContentKey, Content> get() throws NessieNotFoundException {
-    GetMultipleContentsResponse response =
-        client
-            .newRequest()
-            .path("trees/{ref}/contents")
-            .resolveTemplate("ref", Reference.toPathString(refName, hashOnRef))
-            .unwrap(NessieNotFoundException.class)
-            .post(request.build())
-            .readEntity(GetMultipleContentsResponse.class);
-    return response.getContents().stream()
-        .collect(Collectors.toMap(ContentWithKey::getKey, ContentWithKey::getContent));
+    return getWithResponse().toContentsMap();
+  }
+
+  @Override
+  public ContentResponse getSingle(ContentKey key) throws NessieNotFoundException {
+    if (!request.build().getRequestedKeys().isEmpty()) {
+      throw new IllegalStateException(
+          "Must not use getSingle() with key() or keys(), pass the single key to getSingle()");
+    }
+    return client
+        .newRequest()
+        .path("trees/{ref}/contents/{key}")
+        .resolveTemplate("ref", Reference.toPathString(refName, hashOnRef))
+        .resolveTemplate("key", key.toPathString())
+        .unwrap(NessieNotFoundException.class)
+        .get()
+        .readEntity(ContentResponse.class);
+  }
+
+  @Override
+  public GetMultipleContentsResponse getWithResponse() throws NessieNotFoundException {
+    return client
+        .newRequest()
+        .path("trees/{ref}/contents")
+        .resolveTemplate("ref", Reference.toPathString(refName, hashOnRef))
+        .unwrap(NessieNotFoundException.class)
+        .post(request.build())
+        .readEntity(GetMultipleContentsResponse.class);
   }
 }
