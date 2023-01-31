@@ -79,7 +79,7 @@ public abstract class AbstractTestMisc extends BaseTestServiceImpl {
   public void checkCelScriptFailureReporting() {
     String defaultBranch = config().getDefaultBranch();
 
-    soft.assertThatThrownBy(() -> entries(defaultBranch, null, null, "invalid_script"))
+    soft.assertThatThrownBy(() -> entries(defaultBranch, null, null, "invalid_script", false))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("undeclared reference to 'invalid_script'");
 

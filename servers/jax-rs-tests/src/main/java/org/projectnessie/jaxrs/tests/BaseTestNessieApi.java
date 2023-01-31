@@ -639,19 +639,30 @@ public abstract class BaseTestNessieApi {
                     .toArray(Operation[]::new))
             .commit();
 
-    EntriesResponse response = api().getEntries().reference(main).get();
+    EntriesResponse response = api().getEntries().reference(main).withContent(isV2()).get();
     if (isV2()) {
       soft.assertThat(response.getEffectiveReference()).isEqualTo(main);
+      soft.assertThat(response.getEntries())
+          .extracting(EntriesResponse.Entry::getContent)
+          .doesNotContainNull()
+          .isNotEmpty();
     }
     List<EntriesResponse.Entry> notPaged = response.getEntries();
     soft.assertThat(notPaged).hasSize(10);
 
-    if (pagingSupported(() -> api().getEntries().reference(main0).pageToken("666f6f").get())) {
+    if (pagingSupported(
+        () -> api().getEntries().reference(main0).withContent(isV2()).pageToken("666f6f").get())) {
       List<EntriesResponse.Entry> all = new ArrayList<>();
       String token = null;
       for (int i = 0; i < 10; i++) {
         EntriesResponse resp =
-            api().getEntries().reference(main).maxRecords(1).pageToken(token).get();
+            api()
+                .getEntries()
+                .withContent(isV2())
+                .reference(main)
+                .maxRecords(1)
+                .pageToken(token)
+                .get();
         all.addAll(resp.getEntries());
         token = resp.getToken();
         if (i == 9) {
@@ -665,7 +676,7 @@ public abstract class BaseTestNessieApi {
 
       soft.assertAll();
 
-      soft.assertThat(api().getEntries().reference(main).maxRecords(1).stream())
+      soft.assertThat(api().getEntries().withContent(isV2()).reference(main).maxRecords(1).stream())
           .containsExactlyInAnyOrderElementsOf(all);
     }
   }

@@ -66,12 +66,21 @@ public interface EntriesResponse extends PaginatedResponse {
     @Nullable // for V1 backwards compatibility
     String getContentId();
 
+    @JsonView(Views.V2.class)
+    @Value.Parameter(order = 4)
+    @Nullable // for V1 backwards compatibility
+    Content getContent();
+
     static Entry entry(ContentKey name, Content.Type type) {
-      return entry(name, type, null);
+      return entry(name, type, (String) null);
     }
 
     static Entry entry(ContentKey name, Content.Type type, String contentId) {
-      return ImmutableEntry.of(name, type, contentId);
+      return ImmutableEntry.of(name, type, contentId, null);
+    }
+
+    static Entry entry(ContentKey name, Content.Type type, Content content) {
+      return ImmutableEntry.of(name, type, content.getId(), content);
     }
   }
 }

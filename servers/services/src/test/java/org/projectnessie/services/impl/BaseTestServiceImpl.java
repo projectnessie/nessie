@@ -206,21 +206,21 @@ public abstract class BaseTestServiceImpl {
 
   protected List<EntriesResponse.Entry> entries(Reference reference)
       throws NessieNotFoundException {
-    return entries(reference.getName(), reference.getHash(), null, null);
+    return entries(reference.getName(), reference.getHash(), null, null, false);
   }
 
   protected List<EntriesResponse.Entry> entries(String refName, String hashOnRef)
       throws NessieNotFoundException {
-    return entries(refName, hashOnRef, null, null);
+    return entries(refName, hashOnRef, null, null, false);
   }
 
   protected List<EntriesResponse.Entry> entries(
       Reference reference, Integer namespaceDepth, String filter) throws NessieNotFoundException {
-    return entries(reference.getName(), reference.getHash(), namespaceDepth, filter);
+    return entries(reference.getName(), reference.getHash(), namespaceDepth, filter, false);
   }
 
   protected List<EntriesResponse.Entry> entries(
-      String refName, String hashOnRef, Integer namespaceDepth, String filter)
+      String refName, String hashOnRef, Integer namespaceDepth, String filter, boolean withContent)
       throws NessieNotFoundException {
     return treeApi()
         .getEntries(
@@ -229,6 +229,7 @@ public abstract class BaseTestServiceImpl {
             namespaceDepth,
             filter,
             null,
+            withContent,
             new UnlimitedListResponseHandler<>(),
             h -> {});
   }
@@ -313,7 +314,8 @@ public abstract class BaseTestServiceImpl {
       String filter,
       int pageSize,
       int totalEntries,
-      Consumer<Reference> effectiveReference)
+      Consumer<Reference> effectiveReference,
+      boolean withContent)
       throws NessieNotFoundException {
 
     List<EntriesResponse.Entry> completeLog = new ArrayList<>();
@@ -328,6 +330,7 @@ public abstract class BaseTestServiceImpl {
                   null,
                   filter,
                   token,
+                  withContent,
                   new DirectPagedCountingResponseHandler<>(pageSize, nextToken::set),
                   h -> effectiveReference.accept(toReference(h)));
       completeLog.addAll(page);

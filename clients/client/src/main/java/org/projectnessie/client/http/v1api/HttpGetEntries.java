@@ -42,6 +42,9 @@ final class HttpGetEntries extends BaseGetEntriesBuilder<EntriesParams> {
 
   @Override
   protected EntriesResponse get(EntriesParams p) throws NessieNotFoundException {
+    if (withContent) {
+      throw new IllegalArgumentException("'withContent' is not available with REST API v1");
+    }
     return client.getTreeApi().getEntries(refName, p);
   }
 }

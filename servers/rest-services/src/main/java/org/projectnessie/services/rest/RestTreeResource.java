@@ -133,6 +133,7 @@ public class RestTreeResource implements HttpTreeApi {
             params.namespaceDepth(),
             params.filter(),
             params.pageToken(),
+            false,
             new PagedCountingResponseHandler<EntriesResponse, EntriesResponse.Entry>(maxRecords) {
               @Override
               public EntriesResponse build() {

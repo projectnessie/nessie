@@ -201,7 +201,7 @@ class TestTracingVersionStore {
             new TestedTraceingStoreInvocation<VersionStore>("GetKeys.stream", refNotFoundThrows)
                 .tag("nessie.version-store.ref", "Hash cafe4242")
                 .function(
-                    vs -> vs.getKeys(Hash.of("cafe4242"), null),
+                    vs -> vs.getKeys(Hash.of("cafe4242"), null, false),
                     () -> PaginationIterator.of(Key.of("hello", "world"))),
             new TestedTraceingStoreInvocation<VersionStore>("GetNamedRefs.stream", runtimeThrows)
                 .function(

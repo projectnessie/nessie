@@ -32,6 +32,7 @@ public abstract class BaseGetEntriesBuilder<PARAMS>
   protected Integer maxRecords;
   protected String filter;
   protected Integer namespaceDepth;
+  protected boolean withContent;
 
   protected BaseGetEntriesBuilder(BiFunction<PARAMS, String, PARAMS> paramsForPage) {
     this.paramsForPage = paramsForPage;
@@ -58,6 +59,12 @@ public abstract class BaseGetEntriesBuilder<PARAMS>
   @Override
   public GetEntriesBuilder namespaceDepth(Integer namespaceDepth) {
     this.namespaceDepth = namespaceDepth;
+    return this;
+  }
+
+  @Override
+  public GetEntriesBuilder withContent(boolean withContent) {
+    this.withContent = withContent;
     return this;
   }
 

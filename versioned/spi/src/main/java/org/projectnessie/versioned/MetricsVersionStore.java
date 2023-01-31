@@ -186,9 +186,10 @@ public final class MetricsVersionStore implements VersionStore {
   }
 
   @Override
-  public PaginationIterator<KeyEntry> getKeys(Ref ref, String pagingToken)
+  public PaginationIterator<KeyEntry> getKeys(Ref ref, String pagingToken, boolean withContent)
       throws ReferenceNotFoundException {
-    return delegatePaginationIterator("getkeys", () -> delegate.getKeys(ref, pagingToken));
+    return delegatePaginationIterator(
+        "getkeys", () -> delegate.getKeys(ref, pagingToken, withContent));
   }
 
   @Override

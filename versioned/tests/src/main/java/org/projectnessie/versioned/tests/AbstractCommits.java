@@ -161,17 +161,17 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             commit(secondCommit, "Second Commit", initialCommit),
             commit(initialCommit, "Initial Commit", base));
 
-    try (PaginationIterator<KeyEntry> keys = store().getKeys(branch, null)) {
+    try (PaginationIterator<KeyEntry> keys = store().getKeys(branch, null, false)) {
       soft.assertThat(stream(keys).map(KeyEntry::getKey))
           .containsExactlyInAnyOrder(Key.of("t1"), Key.of("t2"), Key.of("t4"));
     }
 
-    try (PaginationIterator<KeyEntry> keys = store().getKeys(secondCommit, null)) {
+    try (PaginationIterator<KeyEntry> keys = store().getKeys(secondCommit, null, false)) {
       soft.assertThat(stream(keys).map(KeyEntry::getKey))
           .containsExactlyInAnyOrder(Key.of("t1"), Key.of("t4"));
     }
 
-    try (PaginationIterator<KeyEntry> keys = store().getKeys(initialCommit, null)) {
+    try (PaginationIterator<KeyEntry> keys = store().getKeys(initialCommit, null, false)) {
       soft.assertThat(stream(keys).map(KeyEntry::getKey))
           .containsExactlyInAnyOrder(Key.of("t1"), Key.of("t2"), Key.of("t3"));
     }
@@ -272,7 +272,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             commit(t1Commit, "T1 Commit", initialCommit),
             commit(initialCommit, "Initial Commit", base));
 
-    try (PaginationIterator<KeyEntry> keys = store().getKeys(branch, null)) {
+    try (PaginationIterator<KeyEntry> keys = store().getKeys(branch, null, false)) {
       soft.assertThat(stream(keys).map(KeyEntry::getKey))
           .containsExactlyInAnyOrder(Key.of("t1"), Key.of("t2"), Key.of("t3"));
     }
@@ -594,7 +594,8 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                       // do some operations here
                       try {
                         assertThat(store().getValue(branch, key)).isNull();
-                        try (PaginationIterator<KeyEntry> ignore = store().getKeys(branch, null)) {}
+                        try (PaginationIterator<KeyEntry> ignore =
+                            store().getKeys(branch, null, false)) {}
                       } catch (ReferenceNotFoundException e) {
                         throw new RuntimeException(e);
                       }

@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned;
 
+import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
 import org.projectnessie.model.Content;
 
@@ -28,11 +30,18 @@ public interface KeyEntry {
 
   String getContentId();
 
+  @Nullable
+  Content getContent();
+
   static ImmutableKeyEntry.Builder builder() {
     return ImmutableKeyEntry.builder();
   }
 
-  static KeyEntry of(Content.Type type, Key key, String contentId) {
+  static KeyEntry of(Content.Type type, Key key, @NotNull String contentId) {
     return builder().type(type).key(key).contentId(contentId).build();
+  }
+
+  static KeyEntry of(Content.Type type, Key key, @NotNull Content content) {
+    return builder().type(type).key(key).contentId(content.getId()).content(content).build();
   }
 }
