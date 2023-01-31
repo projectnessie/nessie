@@ -3,7 +3,7 @@
 [versions]
 agrone = "1.17.1"
 antlr4 = "4.11.1"
-awssdk = "2.19.26"
+awssdk = "2.19.27"
 bouncycastle = "1.70"
 checkstyle = "10.6.0"
 errorprone = "2.18.0"
