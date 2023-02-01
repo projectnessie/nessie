@@ -59,7 +59,7 @@ public interface HttpClient {
     private SSLContext sslContext;
     private SSLParameters sslParameters;
     private int readTimeoutMillis =
-        Integer.parseInt(
+        Integer.getInteger(
             "sun.net.client.defaultReadTimeout", NessieConfigConstants.DEFAULT_READ_TIMEOUT_MILLIS);
     private int connectionTimeoutMillis =
         Integer.getInteger(
