@@ -128,6 +128,11 @@ val prepareJacocoReport by
 
 val jacocoReport by
   tasks.registering(JacocoReport::class) {
+    dependsOn(
+      tasks.named("compileIntegrationTestJava"),
+      tasks.named("compileNativeTestJava"),
+      tasks.named("compileQuarkusGeneratedSourcesJava")
+    )
     executionData.from(file("${project.buildDir}/jacoco-quarkus.exec"))
     jacocoClasspath = jacocoRuntime
     classDirectories.from(layout.buildDirectory.dir("classes"))
