@@ -670,6 +670,16 @@ public abstract class BaseTestNessieApi {
     }
   }
 
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  @Test
+  public void entryContentId() throws Exception {
+    Branch main = prepCommit(api().getDefaultBranch(), "commit", dummyPut("test-table")).commit();
+
+    soft.assertThat(api().getEntries().reference(main).stream())
+        .isNotEmpty()
+        .allSatisfy(e -> assertThat(e.getContentId()).isNotNull());
+  }
+
   @Test
   public void namespaces() throws Exception {
     Branch main = api().getDefaultBranch();
