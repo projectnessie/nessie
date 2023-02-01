@@ -17,11 +17,11 @@ package org.projectnessie.client.http.v1api;
 
 import org.projectnessie.api.v1.params.NamespaceParams;
 import org.projectnessie.api.v1.params.NamespaceParamsBuilder;
+import org.projectnessie.client.api.GetNamespaceResult;
 import org.projectnessie.client.builder.BaseGetNamespaceBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
-import org.projectnessie.model.GetNamespaceResponse;
 import org.projectnessie.model.Namespace;
 
 final class HttpGetNamespace extends BaseGetNamespaceBuilder {
@@ -40,7 +40,7 @@ final class HttpGetNamespace extends BaseGetNamespaceBuilder {
   }
 
   @Override
-  public GetNamespaceResponse getWithResponse() {
+  public GetNamespaceResult getWithResponse() {
     throw new UnsupportedOperationException(
         "Extended commit response data is not available in API v1");
   }

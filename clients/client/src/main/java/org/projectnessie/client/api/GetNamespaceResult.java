@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.model;
+package org.projectnessie.client.api;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
+import org.projectnessie.model.Namespace;
+import org.projectnessie.model.Reference;
 
 @Value.Immutable
-@JsonSerialize(as = ImmutableGetNamespaceResponse.class)
-@JsonDeserialize(as = ImmutableGetNamespaceResponse.class)
-public interface GetNamespaceResponse {
+public interface GetNamespaceResult {
   @NotNull
   @Value.Parameter(order = 1)
   Namespace getNamespace();
@@ -33,7 +31,7 @@ public interface GetNamespaceResponse {
   @Value.Parameter(order = 2)
   Reference getEffectiveReference();
 
-  static GetNamespaceResponse of(Namespace namespace, Reference effectiveReference) {
-    return ImmutableGetNamespaceResponse.of(namespace, effectiveReference);
+  static GetNamespaceResult of(Namespace namespace, Reference effectiveReference) {
+    return ImmutableGetNamespaceResult.of(namespace, effectiveReference);
   }
 }

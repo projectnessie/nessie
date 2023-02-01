@@ -13,23 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.model;
+package org.projectnessie.client.api;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
+import org.projectnessie.model.Branch;
+import org.projectnessie.model.Namespace;
 
 @Value.Immutable
-@JsonSerialize(as = ImmutableDeleteNamespaceResponse.class)
-@JsonDeserialize(as = ImmutableDeleteNamespaceResponse.class)
-public interface DeleteNamespaceResponse {
+public interface CreateNamespaceResult {
   @Value.Parameter(order = 1)
   Namespace getNamespace();
 
   @Value.Parameter(order = 2)
   Branch getEffectiveBranch();
 
-  static DeleteNamespaceResponse of(Namespace namespace, Branch effectiveBranch) {
-    return ImmutableDeleteNamespaceResponse.of(namespace, effectiveBranch);
+  static CreateNamespaceResult of(Namespace namespace, Branch effectiveBranch) {
+    return ImmutableCreateNamespaceResult.of(namespace, effectiveBranch);
   }
 }

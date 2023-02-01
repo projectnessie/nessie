@@ -37,8 +37,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
+import org.projectnessie.client.api.CreateNamespaceResult;
+import org.projectnessie.client.api.DeleteNamespaceResult;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.api.NessieApiV2;
+import org.projectnessie.client.api.UpdateNamespaceResult;
 import org.projectnessie.client.ext.NessieApiVersion;
 import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.client.ext.NessieClientFactory;
@@ -56,8 +59,6 @@ import org.projectnessie.model.CommitResponse.AddedContent;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
-import org.projectnessie.model.CreateNamespaceResponse;
-import org.projectnessie.model.DeleteNamespaceResponse;
 import org.projectnessie.model.DiffResponse;
 import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.model.EntriesResponse;
@@ -77,7 +78,6 @@ import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Tag;
-import org.projectnessie.model.UpdateNamespaceResponse;
 
 /** Nessie-API tests. */
 @NessieApiVersions // all versions
@@ -693,22 +693,22 @@ public abstract class BaseTestNessieApi {
     Namespace namespace3WithId;
     Namespace namespace4WithId;
     if (isV2()) {
-      CreateNamespaceResponse resp1 =
+      CreateNamespaceResult resp1 =
           api().createNamespace().refName(mainName).namespace(namespace1).createWithResponse();
       soft.assertThat(resp1.getEffectiveBranch()).isNotNull().isNotEqualTo(main);
-      CreateNamespaceResponse resp2 =
+      CreateNamespaceResult resp2 =
           api().createNamespace().refName(mainName).namespace(namespace2).createWithResponse();
       soft.assertThat(resp2.getEffectiveBranch())
           .isNotNull()
           .isNotEqualTo(main)
           .isNotEqualTo(resp1.getEffectiveBranch());
-      CreateNamespaceResponse resp3 =
+      CreateNamespaceResult resp3 =
           api().createNamespace().refName(mainName).namespace(namespace3).createWithResponse();
       soft.assertThat(resp3.getEffectiveBranch())
           .isNotNull()
           .isNotEqualTo(resp1.getEffectiveBranch())
           .isNotEqualTo(resp2.getEffectiveBranch());
-      CreateNamespaceResponse resp4 =
+      CreateNamespaceResult resp4 =
           api().createNamespace().refName(mainName).namespace(namespace4).createWithResponse();
       soft.assertThat(resp4.getEffectiveBranch())
           .isNotNull()
@@ -777,7 +777,7 @@ public abstract class BaseTestNessieApi {
 
     if (isV2()) {
       main = (Branch) api().getReference().refName(mainName).get();
-      UpdateNamespaceResponse update =
+      UpdateNamespaceResult update =
           api()
               .updateProperties()
               .refName(mainName)
@@ -817,7 +817,7 @@ public abstract class BaseTestNessieApi {
             namespace1WithId, namespace2update, namespace3WithId, namespace4WithId);
 
     if (isV2()) {
-      UpdateNamespaceResponse updateResponse =
+      UpdateNamespaceResult updateResponse =
           api()
               .updateProperties()
               .refName(mainName)
@@ -863,7 +863,7 @@ public abstract class BaseTestNessieApi {
 
     if (isV2()) {
       main = (Branch) api().getReference().refName(mainName).get();
-      DeleteNamespaceResponse response =
+      DeleteNamespaceResult response =
           api().deleteNamespace().refName(mainName).namespace(namespace4).deleteWithResponse();
       soft.assertThat(response.getEffectiveBranch()).isNotNull().isNotEqualTo(main);
     } else {

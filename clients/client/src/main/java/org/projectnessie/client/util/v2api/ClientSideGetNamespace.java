@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.util.v2api;
 
+import org.projectnessie.client.api.GetNamespaceResult;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.builder.BaseGetNamespaceBuilder;
 import org.projectnessie.error.NessieContentNotFoundException;
@@ -24,7 +25,6 @@ import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
-import org.projectnessie.model.GetNamespaceResponse;
 import org.projectnessie.model.Namespace;
 
 /**
@@ -46,7 +46,7 @@ public final class ClientSideGetNamespace extends BaseGetNamespaceBuilder {
   }
 
   @Override
-  public GetNamespaceResponse getWithResponse()
+  public GetNamespaceResult getWithResponse()
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException {
     ContentKey key = ContentKey.of(namespace.getElements());
     try {
@@ -57,7 +57,7 @@ public final class ClientSideGetNamespace extends BaseGetNamespaceBuilder {
         throw new NessieNamespaceNotFoundException(
             String.format("Namespace '%s' does not exist", key.toPathString()));
       }
-      return GetNamespaceResponse.of((Namespace) c, contentResponse.getEffectiveReference());
+      return GetNamespaceResult.of((Namespace) c, contentResponse.getEffectiveReference());
     } catch (NessieContentNotFoundException e) {
       throw new NessieNamespaceNotFoundException(
           String.format("Namespace '%s' does not exist", key.toPathString()));
