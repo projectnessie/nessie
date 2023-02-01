@@ -74,6 +74,7 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Detached;
 import org.projectnessie.model.EntriesResponse;
+import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableCommitResponse;
@@ -728,9 +729,12 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       Integer namespaceDepth,
       String filter,
       String pagingToken,
-      PagedResponseHandler<R, EntriesResponse.Entry> pagedResponseHandler)
+      PagedResponseHandler<R, Entry> pagedResponseHandler,
+      Consumer<WithHash<NamedRef>> effectiveReference)
       throws NessieNotFoundException {
     WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(namedRef, hashOnRef);
+
+    effectiveReference.accept(refWithHash);
 
     // TODO Implement paging. At the moment, we do not expect that many keys/entries to be returned.
     //  So the size of the whole result is probably reasonable and unlikely to "kill" either the

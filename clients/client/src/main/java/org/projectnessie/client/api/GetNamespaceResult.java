@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,19 +15,23 @@
  */
 package org.projectnessie.client.api;
 
-import org.projectnessie.error.NessieNamespaceNotFoundException;
-import org.projectnessie.error.NessieReferenceNotFoundException;
+import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
+import org.immutables.value.Value;
 import org.projectnessie.model.Namespace;
+import org.projectnessie.model.Reference;
 
-/**
- * Request builder for retrieving a single {@link Namespace}.
- *
- * @since {@link NessieApiV1}
- */
-public interface GetNamespaceBuilder extends OnNamespaceBuilder<GetNamespaceBuilder> {
+@Value.Immutable
+public interface GetNamespaceResult {
+  @NotNull
+  @Value.Parameter(order = 1)
+  Namespace getNamespace();
 
-  Namespace get() throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException;
+  @Nullable
+  @Value.Parameter(order = 2)
+  Reference getEffectiveReference();
 
-  GetNamespaceResult getWithResponse()
-      throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException;
+  static GetNamespaceResult of(Namespace namespace, Reference effectiveReference) {
+    return ImmutableGetNamespaceResult.of(namespace, effectiveReference);
+  }
 }

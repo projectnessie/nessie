@@ -22,6 +22,7 @@ import static org.projectnessie.services.authz.Check.canViewReference;
 import com.google.common.collect.ImmutableSet;
 import java.security.Principal;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
@@ -58,12 +59,16 @@ public class DiffApiImpl extends BaseApiImpl implements DiffService {
       String toRef,
       String toHash,
       String pagingToken,
-      PagedResponseHandler<R, DiffEntry> pagedResponseHandler)
+      PagedResponseHandler<R, DiffEntry> pagedResponseHandler,
+      Consumer<WithHash<NamedRef>> fromReference,
+      Consumer<WithHash<NamedRef>> toReference)
       throws NessieNotFoundException {
     WithHash<NamedRef> from = namedRefWithHashOrThrow(fromRef, fromHash);
     WithHash<NamedRef> to = namedRefWithHashOrThrow(toRef, toHash);
     NamedRef fromNamedRef = from.getValue();
     NamedRef toNamedRef = to.getValue();
+    fromReference.accept(from);
+    toReference.accept(to);
 
     startAccessCheck().canViewReference(fromNamedRef).canViewReference(toNamedRef).checkAndThrow();
 

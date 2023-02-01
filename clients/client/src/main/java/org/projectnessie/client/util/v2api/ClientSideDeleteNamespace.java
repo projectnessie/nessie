@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.util.v2api;
 
+import org.projectnessie.client.api.DeleteNamespaceResult;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.builder.BaseDeleteNamespaceBuilder;
 import org.projectnessie.error.NessieConflictException;
@@ -25,11 +26,12 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.Namespace;
-import org.projectnessie.model.Operation;
+import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Reference;
 
 /**
@@ -47,6 +49,13 @@ public final class ClientSideDeleteNamespace extends BaseDeleteNamespaceBuilder 
 
   @Override
   public void delete()
+      throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException,
+          NessieNamespaceNotEmptyException {
+    deleteWithResponse();
+  }
+
+  @Override
+  public DeleteNamespaceResult deleteWithResponse()
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException,
           NessieNamespaceNotEmptyException {
     ContentKey key = ContentKey.of(namespace.getElements());
@@ -89,11 +98,14 @@ public final class ClientSideDeleteNamespace extends BaseDeleteNamespaceBuilder 
     }
 
     try {
-      api.commitMultipleOperations()
-          .branch((Branch) ref)
-          .commitMeta(CommitMeta.fromMessage("delete namespace " + key))
-          .operation(Operation.Delete.of(key))
-          .commit();
+      CommitResponse commit =
+          api.commitMultipleOperations()
+              .branch((Branch) ref)
+              .commitMeta(CommitMeta.fromMessage("delete namespace " + key))
+              .operation(Delete.of(key))
+              .commitWithResponse();
+
+      return DeleteNamespaceResult.of(namespace, commit.getTargetBranch());
     } catch (NessieNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (NessieConflictException e) {

@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -65,7 +66,8 @@ public abstract class AbstractTestEntries extends BaseTestServiceImpl {
               null,
               null,
               "666f6f",
-              new UnlimitedListResponseHandler<>());
+              new UnlimitedListResponseHandler<>(),
+              h -> {});
     } catch (IllegalArgumentException e) {
       if (!e.getMessage().contains("Paging not supported")) {
         throw e;
@@ -88,8 +90,13 @@ public abstract class AbstractTestEntries extends BaseTestServiceImpl {
               .getTargetBranch();
     }
 
+    AtomicReference<Reference> effectiveReference = new AtomicReference<>();
     Set<ContentKey> contents =
-        pagedEntries(branch, null, pageSize, numKeys).stream().map(Entry::getName).collect(toSet());
+        pagedEntries(branch, null, pageSize, numKeys, effectiveReference::set).stream()
+            .map(Entry::getName)
+            .collect(toSet());
+
+    soft.assertThat(effectiveReference).hasValue(branch);
 
     soft.assertThat(contents)
         .containsExactlyInAnyOrderElementsOf(

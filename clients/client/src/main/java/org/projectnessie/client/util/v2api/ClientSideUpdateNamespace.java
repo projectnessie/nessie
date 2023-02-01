@@ -17,16 +17,18 @@ package org.projectnessie.client.util.v2api;
 
 import java.util.HashMap;
 import org.projectnessie.client.api.NessieApiV2;
+import org.projectnessie.client.api.UpdateNamespaceResult;
 import org.projectnessie.client.builder.BaseUpdateNamespaceBuilder;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ImmutableNamespace;
 import org.projectnessie.model.Namespace;
-import org.projectnessie.model.Operation;
+import org.projectnessie.model.Operation.Put;
 
 /**
  * Supports previous "update namespace" functionality of the java client over Nessie API v2.
@@ -43,6 +45,12 @@ public final class ClientSideUpdateNamespace extends BaseUpdateNamespaceBuilder 
 
   @Override
   public void update() throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException {
+    updateWithResponse();
+  }
+
+  @Override
+  public UpdateNamespaceResult updateWithResponse()
+      throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException {
     ContentKey key = ContentKey.of(namespace.getElements());
     Namespace oldNamespace =
         api.getNamespace().refName(refName).hashOnRef(hashOnRef).namespace(namespace).get();
@@ -52,7 +60,7 @@ public final class ClientSideUpdateNamespace extends BaseUpdateNamespaceBuilder 
     newProperties.putAll(propertyUpdates);
 
     ImmutableNamespace.Builder builder =
-        ImmutableNamespace.builder().from(oldNamespace).properties(newProperties);
+        Namespace.builder().from(oldNamespace).properties(newProperties);
 
     try {
       String expectedHash = hashOnRef;
@@ -60,12 +68,16 @@ public final class ClientSideUpdateNamespace extends BaseUpdateNamespaceBuilder 
         expectedHash = api.getReference().refName(refName).get().getHash();
       }
 
-      api.commitMultipleOperations()
-          .branchName(refName)
-          .hash(expectedHash)
-          .commitMeta(CommitMeta.fromMessage("update namespace " + key))
-          .operation(Operation.Put.of(key, builder.build(), oldNamespace))
-          .commit();
+      Namespace updatedNamespace = builder.build();
+      CommitResponse commit =
+          api.commitMultipleOperations()
+              .branchName(refName)
+              .hash(expectedHash)
+              .commitMeta(CommitMeta.fromMessage("update namespace " + key))
+              .operation(Put.of(key, updatedNamespace, oldNamespace))
+              .commitWithResponse();
+
+      return UpdateNamespaceResult.of(updatedNamespace, oldNamespace, commit.getTargetBranch());
     } catch (NessieNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (NessieConflictException e) {

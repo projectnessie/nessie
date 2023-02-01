@@ -37,4 +37,7 @@ public interface UpdateNamespaceBuilder extends OnNamespaceBuilder<UpdateNamespa
   UpdateNamespaceBuilder removeProperties(Set<String> propertyRemovals);
 
   void update() throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException;
+
+  UpdateNamespaceResult updateWithResponse()
+      throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException;
 }

@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.model.FetchOption.MINIMAL;
 import static org.projectnessie.model.Reference.ReferenceType.BRANCH;
 import static org.projectnessie.model.Reference.ReferenceType.TAG;
+import static org.projectnessie.services.impl.RefUtil.toReference;
 
 import com.google.common.collect.ImmutableMap;
 import java.security.Principal;
@@ -27,6 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.assertj.core.api.SoftAssertions;
@@ -222,7 +224,13 @@ public abstract class BaseTestServiceImpl {
       throws NessieNotFoundException {
     return treeApi()
         .getEntries(
-            refName, hashOnRef, namespaceDepth, filter, null, new UnlimitedListResponseHandler<>());
+            refName,
+            hashOnRef,
+            namespaceDepth,
+            filter,
+            null,
+            new UnlimitedListResponseHandler<>(),
+            h -> {});
   }
 
   protected List<DiffEntry> diff(Reference fromRef, Reference toRef)
@@ -233,7 +241,15 @@ public abstract class BaseTestServiceImpl {
   protected List<DiffEntry> diff(String fromRef, String fromHash, String toRef, String toHash)
       throws NessieNotFoundException {
     return diffApi()
-        .getDiff(fromRef, fromHash, toRef, toHash, null, new UnlimitedListResponseHandler<>());
+        .getDiff(
+            fromRef,
+            fromHash,
+            toRef,
+            toHash,
+            null,
+            new UnlimitedListResponseHandler<>(),
+            h -> {},
+            h -> {});
   }
 
   protected List<LogEntry> pagedCommitLog(
@@ -293,7 +309,12 @@ public abstract class BaseTestServiceImpl {
   }
 
   protected List<EntriesResponse.Entry> pagedEntries(
-      Reference ref, String filter, int pageSize, int totalEntries) throws NessieNotFoundException {
+      Reference ref,
+      String filter,
+      int pageSize,
+      int totalEntries,
+      Consumer<Reference> effectiveReference)
+      throws NessieNotFoundException {
 
     List<EntriesResponse.Entry> completeLog = new ArrayList<>();
     String token = null;
@@ -307,7 +328,8 @@ public abstract class BaseTestServiceImpl {
                   null,
                   filter,
                   token,
-                  new DirectPagedCountingResponseHandler<>(pageSize, nextToken::set));
+                  new DirectPagedCountingResponseHandler<>(pageSize, nextToken::set),
+                  h -> effectiveReference.accept(toReference(h)));
       completeLog.addAll(page);
       if (nextToken.get() == null) {
         break;
@@ -321,7 +343,12 @@ public abstract class BaseTestServiceImpl {
   }
 
   protected List<DiffEntry> pagedDiff(
-      Reference fromRef, Reference toRef, int pageSize, int totalEntries)
+      Reference fromRef,
+      Reference toRef,
+      int pageSize,
+      int totalEntries,
+      Consumer<Reference> effectiveFrom,
+      Consumer<Reference> effectiveTo)
       throws NessieNotFoundException {
 
     List<DiffEntry> completeLog = new ArrayList<>();
@@ -336,7 +363,9 @@ public abstract class BaseTestServiceImpl {
                   toRef.getName(),
                   toRef.getHash(),
                   token,
-                  new DirectPagedCountingResponseHandler<>(pageSize, nextToken::set));
+                  new DirectPagedCountingResponseHandler<>(pageSize, nextToken::set),
+                  h -> effectiveFrom.accept(toReference(h)),
+                  h -> effectiveTo.accept(toReference(h)));
       completeLog.addAll(page);
       if (nextToken.get() == null) {
         break;

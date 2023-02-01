@@ -15,6 +15,7 @@
  */
 package org.projectnessie.services.rest;
 
+import static org.projectnessie.services.impl.RefUtil.toReference;
 import static org.projectnessie.services.spi.TreeService.MAX_COMMIT_LOG_ENTRIES;
 
 import com.fasterxml.jackson.annotation.JsonView;
@@ -124,6 +125,7 @@ public class RestTreeResource implements HttpTreeApi {
   public EntriesResponse getEntries(String refName, EntriesParams params)
       throws NessieNotFoundException {
     Integer maxRecords = params.maxRecords();
+    ImmutableEntriesResponse.Builder builder = EntriesResponse.builder();
     return resource()
         .getEntries(
             refName,
@@ -132,8 +134,6 @@ public class RestTreeResource implements HttpTreeApi {
             params.filter(),
             params.pageToken(),
             new PagedCountingResponseHandler<EntriesResponse, EntriesResponse.Entry>(maxRecords) {
-              final ImmutableEntriesResponse.Builder builder = ImmutableEntriesResponse.builder();
-
               @Override
               public EntriesResponse build() {
                 return builder.build();
@@ -149,7 +149,8 @@ public class RestTreeResource implements HttpTreeApi {
               public void hasMore(String pagingToken) {
                 builder.isHasMore(true).token(pagingToken);
               }
-            });
+            },
+            h -> builder.effectiveReference(toReference(h)));
   }
 
   @JsonView(Views.V1.class)

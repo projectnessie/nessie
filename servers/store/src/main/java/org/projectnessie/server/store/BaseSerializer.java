@@ -28,6 +28,7 @@ import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.model.ImmutableIcebergView;
 import org.projectnessie.model.ImmutableNamespace;
+import org.projectnessie.model.Namespace;
 import org.projectnessie.server.store.proto.ObjectTypes;
 import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.ContentAttachmentKey;
@@ -75,7 +76,7 @@ abstract class BaseSerializer<C extends Content> implements ContentSerializer<C>
 
   static ImmutableNamespace valueFromStoreNamespace(ObjectTypes.Content content) {
     ObjectTypes.Namespace namespace = content.getNamespace();
-    return ImmutableNamespace.builder()
+    return Namespace.builder()
         .id(content.getId())
         .elements(namespace.getElementsList())
         .putAllProperties(namespace.getPropertiesMap())

@@ -16,6 +16,7 @@
 package org.projectnessie.client.util.v2api;
 
 import java.util.Map;
+import org.projectnessie.client.api.CreateNamespaceResult;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.builder.BaseCreateNamespaceBuilder;
 import org.projectnessie.error.NessieConflictException;
@@ -48,12 +49,17 @@ public final class ClientSideCreateNamespace extends BaseCreateNamespaceBuilder 
   @Override
   public Namespace create()
       throws NessieReferenceNotFoundException, NessieNamespaceAlreadyExistsException {
+    return createWithResponse().getNamespace();
+  }
+
+  @Override
+  public CreateNamespaceResult createWithResponse()
+      throws NessieReferenceNotFoundException, NessieNamespaceAlreadyExistsException {
     if (namespace.isEmpty()) {
       throw new IllegalArgumentException("Creating empty namespaces is not supported");
     }
 
-    ImmutableNamespace content =
-        ImmutableNamespace.builder().from(namespace).properties(properties).build();
+    ImmutableNamespace content = Namespace.builder().from(namespace).properties(properties).build();
     ContentKey key = ContentKey.of(namespace.getElements());
 
     GetMultipleContentsResponse contentsResponse;
@@ -87,7 +93,8 @@ public final class ClientSideCreateNamespace extends BaseCreateNamespaceBuilder 
               .operation(Put.of(key, content))
               .commitWithResponse();
 
-      return content.withId(committed.toAddedContentsMap().get(key));
+      Namespace created = content.withId(committed.toAddedContentsMap().get(key));
+      return CreateNamespaceResult.of(created, committed.getTargetBranch());
     } catch (NessieNotFoundException | NessieConflictException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }

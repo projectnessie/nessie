@@ -30,4 +30,8 @@ public interface DeleteNamespaceBuilder extends OnNamespaceBuilder<DeleteNamespa
   void delete()
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException,
           NessieNamespaceNotEmptyException;
+
+  DeleteNamespaceResult deleteWithResponse()
+      throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException,
+          NessieNamespaceNotEmptyException;
 }

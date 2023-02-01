@@ -17,12 +17,15 @@ package org.projectnessie.services.spi;
 
 import static org.projectnessie.api.v1.params.DiffParams.HASH_OPTIONAL_REGEX;
 
+import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.model.Validation;
+import org.projectnessie.versioned.NamedRef;
+import org.projectnessie.versioned.WithHash;
 
 /**
  * Server-side interface to services providing content differences.
@@ -41,6 +44,8 @@ public interface DiffService {
       @Nullable @Pattern(regexp = HASH_OPTIONAL_REGEX, message = Validation.HASH_MESSAGE)
           String toHash,
       @Nullable String pagingToken,
-      PagedResponseHandler<R, DiffEntry> pagedResponseHandler)
+      PagedResponseHandler<R, DiffEntry> pagedResponseHandler,
+      Consumer<WithHash<NamedRef>> fromReference,
+      Consumer<WithHash<NamedRef>> toReference)
       throws NessieNotFoundException;
 }

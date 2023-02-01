@@ -25,6 +25,7 @@ import org.projectnessie.versioned.DetachedRef;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.TagName;
+import org.projectnessie.versioned.WithHash;
 
 public final class RefUtil {
   private RefUtil() {}
@@ -74,5 +75,9 @@ public final class RefUtil {
           Objects.requireNonNull(hash, "hash must not be null for detached references"));
     }
     throw new IllegalArgumentException(String.format("Unsupported named reference '%s'", namedRef));
+  }
+
+  public static Reference toReference(WithHash<NamedRef> hashWitRef) {
+    return toReference(hashWitRef.getValue(), hashWitRef.getHash());
   }
 }

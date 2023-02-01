@@ -32,4 +32,7 @@ public interface CreateNamespaceBuilder extends OnNamespaceBuilder<CreateNamespa
   CreateNamespaceBuilder property(String key, String value);
 
   Namespace create() throws NessieNamespaceAlreadyExistsException, NessieReferenceNotFoundException;
+
+  CreateNamespaceResult createWithResponse()
+      throws NessieNamespaceAlreadyExistsException, NessieReferenceNotFoundException;
 }

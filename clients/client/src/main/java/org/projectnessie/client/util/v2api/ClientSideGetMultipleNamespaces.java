@@ -16,7 +16,6 @@
 package org.projectnessie.client.util.v2api;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.projectnessie.client.api.GetContentBuilder;
@@ -28,6 +27,7 @@ import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse;
+import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.GetNamespacesResponse;
 import org.projectnessie.model.ImmutableGetNamespacesResponse;
 import org.projectnessie.model.Namespace;
@@ -72,20 +72,21 @@ public final class ClientSideGetMultipleNamespaces extends BaseGetMultipleNamesp
     }
 
     if (entries.isEmpty()) {
-      return ImmutableGetNamespacesResponse.builder().build();
+      return GetNamespacesResponse.builder().build();
     }
 
-    Map<ContentKey, Content> contentMap;
+    GetMultipleContentsResponse content;
     try {
       GetContentBuilder getContent = api.getContent().refName(refName).hashOnRef(hashOnRef);
       entries.forEach(getContent::key);
-      contentMap = getContent.get();
+      content = getContent.getWithResponse();
     } catch (NessieNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
 
-    ImmutableGetNamespacesResponse.Builder builder = ImmutableGetNamespacesResponse.builder();
-    contentMap.values().stream()
+    ImmutableGetNamespacesResponse.Builder builder =
+        GetNamespacesResponse.builder().effectiveReference(content.getEffectiveReference());
+    content.toContentsMap().values().stream()
         .map(v -> v.unwrap(Namespace.class))
         .filter(Optional::isPresent)
         .map(Optional::get)

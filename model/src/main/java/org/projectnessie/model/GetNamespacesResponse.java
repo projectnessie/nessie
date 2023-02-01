@@ -15,16 +15,27 @@
  */
 package org.projectnessie.model;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
-import org.immutables.value.Value.Immutable;
+import org.immutables.value.Value;
+import org.projectnessie.model.ser.Views;
 
-@Immutable
+@Value.Immutable
 @JsonSerialize(as = ImmutableGetNamespacesResponse.class)
 @JsonDeserialize(as = ImmutableGetNamespacesResponse.class)
 public interface GetNamespacesResponse {
   @NotNull
   List<Namespace> getNamespaces();
+
+  @JsonView(Views.V2.class)
+  @Nullable
+  Reference getEffectiveReference();
+
+  static ImmutableGetNamespacesResponse.Builder builder() {
+    return ImmutableGetNamespacesResponse.builder();
+  }
 }
