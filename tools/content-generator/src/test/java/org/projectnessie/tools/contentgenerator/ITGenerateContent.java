@@ -22,7 +22,7 @@ import java.util.List;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.types.ContentTypes;
 
@@ -40,7 +40,7 @@ class ITGenerateContent extends AbstractContentGeneratorTest {
 
     int numCommits = 20;
 
-    try (NessieApiV1 api = buildNessieApi()) {
+    try (NessieApiV2 api = buildNessieApi()) {
 
       String testCaseBranch = "type_" + contentType.name();
 

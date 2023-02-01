@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.validation.constraints.Min;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
-import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
@@ -44,6 +44,7 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.DeltaLakeTable;
+import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
@@ -143,7 +144,7 @@ public class GenerateContent extends AbstractCommand {
 
     List<ContentKey> tableNames = generateTableNames(runStartTime);
 
-    try (NessieApiV1 api = createNessieApiInstance()) {
+    try (NessieApiV2 api = createNessieApiInstance()) {
       Branch defaultBranch;
       if (defaultBranchName == null) {
         // Use the server's default branch.
@@ -187,15 +188,16 @@ public class GenerateContent extends AbstractCommand {
         // Choose a random branch to commit to
         String branchName = branches.get(random.nextInt(branches.size()));
 
-        Branch commitToBranch = (Branch) api.getReference().refName(branchName).get();
-
         List<ContentKey> keys =
             IntStream.range(0, putsPerCommit)
                 .mapToObj(i -> tableNames.get(random.nextInt(tableNames.size())))
                 .distinct()
                 .collect(toList());
 
-        Map<ContentKey, Content> existing = api.getContent().refName(branchName).keys(keys).get();
+        GetMultipleContentsResponse contents =
+            api.getContent().refName(branchName).keys(keys).getWithResponse();
+        Map<ContentKey, Content> existing = contents.toContentsMap();
+        Branch commitToBranch = (Branch) contents.getEffectiveReference();
 
         spec.commandLine()
             .getOut()

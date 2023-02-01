@@ -17,7 +17,7 @@ package org.projectnessie.tools.contentgenerator.cli;
 
 import java.util.List;
 import java.util.Objects;
-import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.FetchOption;
@@ -40,7 +40,7 @@ public class ReadCommits extends AbstractCommand {
 
   @Override
   public void execute() throws NessieNotFoundException {
-    try (NessieApiV1 api = createNessieApiInstance()) {
+    try (NessieApiV2 api = createNessieApiInstance()) {
       spec.commandLine().getOut().printf("Reading commits for ref '%s'\n\n", ref);
       FetchOption fetchOption = isVerbose() ? FetchOption.ALL : FetchOption.MINIMAL;
       api.getCommitLog().refName(ref).fetch(fetchOption).stream()

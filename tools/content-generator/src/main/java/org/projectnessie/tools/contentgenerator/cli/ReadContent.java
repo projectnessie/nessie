@@ -17,10 +17,11 @@ package org.projectnessie.tools.contentgenerator.cli;
 
 import java.util.List;
 import java.util.Map;
-import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.GetMultipleContentsResponse;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
@@ -45,10 +46,13 @@ public class ReadContent extends AbstractCommand {
 
   @Override
   public void execute() throws NessieNotFoundException {
-    try (NessieApiV1 api = createNessieApiInstance()) {
+    try (NessieApiV2 api = createNessieApiInstance()) {
       ContentKey contentKey = ContentKey.of(key);
       spec.commandLine().getOut().printf("Reading content for key '%s'\n\n", contentKey);
-      Map<ContentKey, Content> contentMap = api.getContent().refName(ref).key(contentKey).get();
+      GetMultipleContentsResponse contents =
+          api.getContent().refName(ref).key(contentKey).getWithResponse();
+      Map<ContentKey, Content> contentMap = contents.toContentsMap();
+      spec.commandLine().getOut().printf("Content at '%s'\n", contents.getEffectiveReference());
       for (Map.Entry<ContentKey, Content> entry : contentMap.entrySet()) {
         spec.commandLine().getOut().printf("Key: %s\n", entry.getKey());
         if (isVerbose()) {
