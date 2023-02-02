@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.projectnessie.client.http.v1api.HttpApiV1;
 import org.projectnessie.tools.compatibility.api.NessieBaseUri;
 import org.projectnessie.tools.compatibility.api.TargetVersion;
 import org.projectnessie.tools.compatibility.api.Version;
@@ -64,7 +65,7 @@ public class OlderNessieServersExtension extends AbstractMultiVersionExtension {
 
     populateNessieApiFields(context, instance, TargetVersion.TESTED, fieldValue);
 
-    URI serverUri = nessieServer.getUri();
+    URI serverUri = nessieServer.getUri(HttpApiV1.class);
     URI baseUri = serverUri.resolve("/"); // remove possible API version suffixes
     populateAnnotatedFields(context, instance, NessieBaseUri.class, a -> true, f -> baseUri);
   }

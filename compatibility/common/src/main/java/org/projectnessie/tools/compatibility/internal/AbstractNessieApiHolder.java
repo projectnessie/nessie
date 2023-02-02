@@ -16,6 +16,7 @@
 package org.projectnessie.tools.compatibility.internal;
 
 import static org.junit.platform.commons.support.AnnotationSupport.findRepeatableAnnotations;
+import static org.projectnessie.tools.compatibility.internal.TranslatingVersionNessieApi.unsupportedApiInterfaceProxy;
 import static org.projectnessie.tools.compatibility.internal.Util.extensionStore;
 import static org.projectnessie.tools.compatibility.internal.Util.throwUnchecked;
 
@@ -67,13 +68,13 @@ abstract class AbstractNessieApiHolder implements CloseableResource {
       Field field,
       Version version,
       Function<ExtensionContext, NessieServer> nessieServerSupplier) {
-    Map<String, String> configs = buildApiBuilderConfig(context, field, nessieServerSupplier);
-
     // This method is only called for fields that are annotated with NessieAPI.
     NessieAPI nessieAPI = field.getAnnotation(NessieAPI.class);
 
     @SuppressWarnings("unchecked")
     Class<? extends NessieApi> apiType = (Class<? extends NessieApi>) field.getType();
+    Map<String, String> configs =
+        buildApiBuilderConfig(context, field, apiType, nessieServerSupplier);
     ClientKey clientKey = new ClientKey(version, nessieAPI.builderClassName(), apiType, configs);
     return clientKey;
   }
@@ -81,12 +82,13 @@ abstract class AbstractNessieApiHolder implements CloseableResource {
   private static Map<String, String> buildApiBuilderConfig(
       ExtensionContext context,
       Field field,
+      Class<? extends NessieApi> apiType,
       Function<ExtensionContext, NessieServer> nessieServerSupplier) {
     Map<String, String> configs = new HashMap<>();
     findRepeatableAnnotations(field, NessieApiBuilderProperty.class)
         .forEach(prop -> configs.put(prop.name(), prop.value()));
     NessieServer nessieServer = nessieServerSupplier.apply(context);
-    URI uri = nessieServer.getUri();
+    URI uri = nessieServer.getUri(apiType);
     if (uri != null) {
       configs.put("nessie.uri", uri.toString());
     }
@@ -129,7 +131,13 @@ abstract class AbstractNessieApiHolder implements CloseableResource {
           };
       builderInstance = fromConfigMethod.invoke(builderInstance, getCfg);
 
-      Class<?> targetClass = classLoader.loadClass(clientKey.getType().getName());
+      Class<?> targetClass;
+      try {
+        targetClass = classLoader.loadClass(clientKey.getType().getName());
+      } catch (ClassNotFoundException e) {
+        Class<? extends NessieApi> declaredType = clientKey.getType();
+        return unsupportedApiInterfaceProxy(declaredType, clientKey.getVersion());
+      }
 
       Method buildMethod = builderInstance.getClass().getMethod("build", Class.class);
       Object apiInstance = buildMethod.invoke(builderInstance, targetClass);

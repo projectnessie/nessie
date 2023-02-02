@@ -33,6 +33,7 @@ dependencies {
   implementation(libs.jackson.annotations)
   implementation(libs.microprofile.openapi)
   compileOnly(libs.jakarta.validation.api)
+  implementation(libs.slf4j.api)
   implementation(libs.javax.ws.rs)
   implementation(libs.findbugs.jsr305)
   compileOnly(libs.errorprone.annotations)

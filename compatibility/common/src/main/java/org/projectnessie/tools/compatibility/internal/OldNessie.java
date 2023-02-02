@@ -50,8 +50,8 @@ final class OldNessie {
 
     Consumer<CollectRequest> collect = r -> r.setRoot(mainDependency);
 
-    if (Version.parseVersion("0.40.0").isLessThanOrEqual(version)
-        && Version.parseVersion("0.41.0").isGreaterThanOrEqual(version)) {
+    if (Version.OPENTRACING_VERSION_MISMATCH_LOW.isLessThanOrEqual(version)
+        && Version.OPENTRACING_VERSION_MISMATCH_HIGH.isGreaterThanOrEqual(version)) {
       // Need to align the io.opentracing dependencies to the correct version.
       // Nessie versions 0.40.0 up to 0.41.0 used _different_ versions for
       // opentracing-noop (0.30.0) + opentracing-api (0.33.0), which are unfortunately
@@ -85,6 +85,19 @@ final class OldNessie {
                                 new DefaultArtifact(
                                     "io.opentracing", artifactId, "jar", opentracingVersion),
                                 "runtime")));
+          };
+    } else if (Version.CLIENT_LOG4J_UNDECLARED_LOW.isLessThanOrEqual(version)
+        && Version.CLIENT_LOG4J_UNDECLARED_HIGH.isGreaterThanOrEqual(version)) {
+
+      collect =
+          r -> {
+            r.setRoot(mainDependency);
+
+            // Nessie clients in versions 0.46.0 - 0.47.1 use slf4j (through transitive compile-only
+            // dependencies), but do not declare an explicit runtime dependency on it.
+            r.addDependency(
+                new Dependency(
+                    new DefaultArtifact("org.slf4j", "slf4j-api", "jar", "1.7.36"), "runtime"));
           };
     }
 

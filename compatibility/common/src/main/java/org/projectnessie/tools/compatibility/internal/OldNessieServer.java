@@ -15,6 +15,7 @@
  */
 package org.projectnessie.tools.compatibility.internal;
 
+import static org.projectnessie.tools.compatibility.api.Version.VERSIONED_REST_URI_START;
 import static org.projectnessie.tools.compatibility.internal.DependencyResolver.resolve;
 import static org.projectnessie.tools.compatibility.internal.DependencyResolver.toClassLoader;
 import static org.projectnessie.tools.compatibility.internal.OldNessie.oldNessieClassLoader;
@@ -31,6 +32,7 @@ import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.resolution.DependencyResolutionException;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
+import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.tools.compatibility.api.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -151,11 +153,16 @@ final class OldNessieServer implements NessieServer {
   }
 
   @Override
-  public URI getUri() {
+  public URI getUri(Class<? extends NessieApi> apiType) {
     if (uri == null) {
       tryStart();
     }
-    return uri;
+
+    if (serverKey.getVersion().isLessThan(VERSIONED_REST_URI_START)) {
+      return uri;
+    }
+
+    return Util.resolveNessieUri(uri, apiType);
   }
 
   private void tryStart() {

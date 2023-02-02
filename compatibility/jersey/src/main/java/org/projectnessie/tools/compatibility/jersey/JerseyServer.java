@@ -73,6 +73,8 @@ public class JerseyServer implements AutoCloseable {
           @Override
           protected Application configure() {
             ResourceConfig config = new ResourceConfig();
+            withClass("org.projectnessie.services.rest.RestV2ConfigResource", config::register);
+            withClass("org.projectnessie.services.rest.RestV2TreeResource", config::register);
             config.register(RestConfigResource.class);
             config.register(RestTreeResource.class);
             config.register(RestContentResource.class);

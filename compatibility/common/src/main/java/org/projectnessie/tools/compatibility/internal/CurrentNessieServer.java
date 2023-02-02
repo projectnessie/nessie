@@ -24,6 +24,7 @@ import static org.projectnessie.tools.compatibility.jersey.ServerConfigExtension
 import java.net.URI;
 import java.util.function.BooleanSupplier;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.tools.compatibility.jersey.JerseyServer;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionConfig;
@@ -53,8 +54,8 @@ final class CurrentNessieServer implements NessieServer {
   }
 
   @Override
-  public URI getUri() {
-    return jersey.getUri().resolve("v1");
+  public URI getUri(Class<? extends NessieApi> apiType) {
+    return Util.resolveNessieUri(jersey.getUri(), apiType);
   }
 
   @Override

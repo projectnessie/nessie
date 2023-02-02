@@ -30,6 +30,7 @@ import org.junit.jupiter.engine.execution.ExtensionValuesStore;
 import org.junit.jupiter.engine.execution.NamespaceAwareStore;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.tools.compatibility.api.Version;
 
 class TestNessieServer {
@@ -53,7 +54,7 @@ class TestNessieServer {
       server = NessieServer.nessieServer(ctx, key, () -> true);
       assertThat(server)
           .isInstanceOf(CurrentNessieServer.class)
-          .extracting(NessieServer::getUri)
+          .extracting(s -> s.getUri(NessieApiV1.class))
           .isNotNull();
 
       when(ctx.getStore(any(Namespace.class))).thenReturn(store);
@@ -93,7 +94,7 @@ class TestNessieServer {
       server = NessieServer.nessieServer(ctx, key, () -> true);
       assertThat(server)
           .isInstanceOf(OldNessieServer.class)
-          .extracting(NessieServer::getUri)
+          .extracting(s -> s.getUri(NessieApiV1.class))
           .isNotNull();
 
       when(ctx.getStore(any(Namespace.class))).thenReturn(store);

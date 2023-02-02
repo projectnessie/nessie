@@ -21,6 +21,8 @@ import com.google.common.annotations.VisibleForTesting;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +34,7 @@ import org.projectnessie.error.ErrorCode;
 import org.projectnessie.error.ImmutableNessieError;
 import org.projectnessie.error.NessieError;
 import org.projectnessie.model.ser.Views;
+import org.projectnessie.tools.compatibility.api.Version;
 
 /**
  * Translates between the current and old Nessie version API and model.
@@ -225,12 +228,24 @@ final class TranslatingVersionNessieApi implements AutoCloseable {
           o,
           classLoader,
           reverseClassLoader,
-          translateTypes(classLoader, o.getClass().getInterfaces()));
+          translateTypes(classLoader, getAllInterfaces(o.getClass())));
     }
     if (requiresReserialization(o)) {
       return reserialize(o);
     }
     return o;
+  }
+
+  private static Class<?>[] getAllInterfaces(Class<?> clazz) {
+    Set<Class<?>> interfaces = new HashSet<>();
+    Collections.addAll(interfaces, clazz.getInterfaces());
+
+    Class<?> superclass = clazz.getSuperclass();
+    if (superclass != null && !superclass.equals(Object.class)) {
+      Collections.addAll(interfaces, getAllInterfaces(superclass));
+    }
+
+    return interfaces.toArray(new Class<?>[0]);
   }
 
   @VisibleForTesting
@@ -384,6 +399,10 @@ final class TranslatingVersionNessieApi implements AutoCloseable {
   @SuppressWarnings("TypeParameterUnusedInFormals")
   private <T> T createProxy(
       Object o, ClassLoader classLoader, ClassLoader reverseClassLoader, Class<?>... interfaces) {
+    if (o == null) {
+      return null;
+    }
+
     Object proxy =
         Proxy.newProxyInstance(
             Thread.currentThread().getContextClassLoader(),
@@ -406,5 +425,25 @@ final class TranslatingVersionNessieApi implements AutoCloseable {
     @SuppressWarnings("unchecked")
     T target = (T) proxy;
     return target;
+  }
+
+  static <T extends NessieApi> T unsupportedApiInterfaceProxy(
+      Class<T> declaredType, Version runtimeVersion) {
+    //noinspection unchecked
+    return (T)
+        Proxy.newProxyInstance(
+            declaredType.getClassLoader(),
+            getAllInterfaces(declaredType),
+            (proxyInstance, method, args) -> {
+              // Ignore close() calls - they are made by the test framework (normally)
+              if ("close".equals(method.getName())) {
+                return null;
+              }
+
+              throw new UnsupportedOperationException(
+                  String.format(
+                      "Nessie API %s is not supported in version %s",
+                      declaredType.getSimpleName(), runtimeVersion));
+            });
   }
 }
