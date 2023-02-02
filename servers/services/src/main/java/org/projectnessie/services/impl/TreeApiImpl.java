@@ -729,6 +729,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       Integer namespaceDepth,
       String filter,
       String pagingToken,
+      boolean withContent,
       PagedResponseHandler<R, Entry> pagedResponseHandler,
       Consumer<WithHash<NamedRef>> effectiveReference)
       throws NessieNotFoundException {
@@ -748,7 +749,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       Predicate<KeyEntry> filterPredicate = filterEntries(filter);
 
       try (PaginationIterator<KeyEntry> entries =
-          getStore().getKeys(refWithHash.getHash(), pagingToken)) {
+          getStore().getKeys(refWithHash.getHash(), pagingToken, withContent)) {
 
         AuthzPaginationIterator<KeyEntry> authz =
             new AuthzPaginationIterator<KeyEntry>(
@@ -793,9 +794,12 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
               continue;
             }
 
+            Content c = key.getContent();
             EntriesResponse.Entry entry =
-                EntriesResponse.Entry.entry(
-                    fromKey(key.getKey()), key.getType(), key.getContentId());
+                c != null
+                    ? EntriesResponse.Entry.entry(fromKey(key.getKey()), key.getType(), c)
+                    : EntriesResponse.Entry.entry(
+                        fromKey(key.getKey()), key.getType(), key.getContentId());
 
             if (!pagedResponseHandler.addEntry(entry)) {
               pagedResponseHandler.hasMore(authz.tokenForCurrent());
@@ -815,7 +819,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     Content.Type type =
         entry.getName().getElements().size() > depth ? Content.Type.NAMESPACE : entry.getType();
     ContentKey key = ContentKey.of(entry.getName().getElements().subList(0, depth));
-    return EntriesResponse.Entry.entry(key, type, null);
+    return EntriesResponse.Entry.entry(key, type);
   }
 
   /**

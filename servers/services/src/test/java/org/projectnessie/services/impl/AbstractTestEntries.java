@@ -17,6 +17,7 @@ package org.projectnessie.services.impl;
 
 import static com.google.common.collect.Maps.immutableEntry;
 import static java.util.stream.Collectors.toSet;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.api.Assumptions.abort;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 
@@ -25,7 +26,6 @@ import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
@@ -44,7 +44,6 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Detached;
 import org.projectnessie.model.EntriesResponse;
-import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.Namespace;
@@ -66,6 +65,7 @@ public abstract class AbstractTestEntries extends BaseTestServiceImpl {
               null,
               null,
               "666f6f",
+              false,
               new UnlimitedListResponseHandler<>(),
               h -> {});
     } catch (IllegalArgumentException e) {
@@ -91,16 +91,19 @@ public abstract class AbstractTestEntries extends BaseTestServiceImpl {
     }
 
     AtomicReference<Reference> effectiveReference = new AtomicReference<>();
-    Set<ContentKey> contents =
-        pagedEntries(branch, null, pageSize, numKeys, effectiveReference::set).stream()
-            .map(Entry::getName)
-            .collect(toSet());
+    List<EntriesResponse.Entry> contents =
+        pagedEntries(branch, null, pageSize, numKeys, effectiveReference::set, true);
 
     soft.assertThat(effectiveReference).hasValue(branch);
 
     soft.assertThat(contents)
+        .extracting(
+            EntriesResponse.Entry::getName,
+            e -> IcebergTable.builder().from(e.getContent()).id(null).build())
         .containsExactlyInAnyOrderElementsOf(
-            IntStream.range(0, numKeys).mapToObj(contentKey).collect(toSet()));
+            IntStream.range(0, numKeys)
+                .mapToObj(i -> tuple(contentKey.apply(i), table.apply(i)))
+                .collect(toSet()));
   }
 
   @ParameterizedTest

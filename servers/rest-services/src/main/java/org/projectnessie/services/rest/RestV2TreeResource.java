@@ -183,6 +183,7 @@ public class RestV2TreeResource implements HttpTreeApi {
             null,
             params.filter(),
             params.pageToken(),
+            params.withContent(),
             new PagedCountingResponseHandler<EntriesResponse, EntriesResponse.Entry>(maxRecords) {
               @Override
               public EntriesResponse build() {

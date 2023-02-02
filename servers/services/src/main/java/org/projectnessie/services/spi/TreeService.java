@@ -168,6 +168,7 @@ public interface TreeService {
       @Nullable Integer namespaceDepth,
       @Nullable String filter,
       @Nullable String pagingToken,
+      boolean withContent,
       PagedResponseHandler<R, Entry> pagedResponseHandler,
       Consumer<WithHash<NamedRef>> effectiveReference)
       throws NessieNotFoundException;

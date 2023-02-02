@@ -198,7 +198,7 @@ class TestMetricsVersionStore {
                 refNotFoundThrows),
             new VersionStoreInvocation<>(
                 "getkeys",
-                vs -> vs.getKeys(Hash.of("cafe4242"), null),
+                vs -> vs.getKeys(Hash.of("cafe4242"), null, false),
                 () -> PaginationIterator.of(Key.of("hello", "world")),
                 refNotFoundThrows),
             new VersionStoreInvocation<>(

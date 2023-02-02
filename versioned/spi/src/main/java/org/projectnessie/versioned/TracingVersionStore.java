@@ -235,12 +235,12 @@ public class TracingVersionStore implements VersionStore {
   }
 
   @Override
-  public PaginationIterator<KeyEntry> getKeys(Ref ref, String pagingToken)
+  public PaginationIterator<KeyEntry> getKeys(Ref ref, String pagingToken, boolean withContent)
       throws ReferenceNotFoundException {
     return callPaginationIterator(
         "GetKeys",
         b -> b.withTag(TAG_REF, safeToString(ref)),
-        () -> delegate.getKeys(ref, pagingToken));
+        () -> delegate.getKeys(ref, pagingToken, withContent));
   }
 
   @Override

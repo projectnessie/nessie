@@ -36,6 +36,7 @@ final class HttpGetEntries extends BaseGetEntriesBuilder<EntriesParams> {
     return EntriesParams.builder() // TODO: namespace, derive prefix
         .filter(filter)
         .maxRecords(maxRecords)
+        .withContent(withContent)
         .build();
   }
 
@@ -46,6 +47,7 @@ final class HttpGetEntries extends BaseGetEntriesBuilder<EntriesParams> {
         .path("trees/{ref}/entries")
         .resolveTemplate("ref", Reference.toPathString(refName, hashOnRef))
         .queryParam("filter", p.filter())
+        .queryParam("content", p.withContent() ? "true" : null)
         .queryParam("page-token", p.pageToken())
         .queryParam("max-records", p.maxRecords())
         .unwrap(NessieNotFoundException.class)

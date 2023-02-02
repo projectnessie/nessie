@@ -30,6 +30,8 @@ public interface GetEntriesBuilder
 
   GetEntriesBuilder namespaceDepth(Integer namespaceDepth);
 
+  GetEntriesBuilder withContent(boolean withContent);
+
   @Override // kept for byte-code compatibility
   EntriesResponse get() throws NessieNotFoundException;
 }

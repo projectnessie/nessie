@@ -43,12 +43,22 @@ public class EntriesParams extends AbstractParams<EntriesParams> {
   @QueryParam("filter")
   private String filter;
 
+  @Nullable
+  @Parameter(description = "Optionally request to return 'Content' objects for the returned keys.")
+  @QueryParam("content")
+  private Boolean withContent;
+
   public EntriesParams() {}
 
   @Constructor
-  EntriesParams(@Nullable Integer maxRecords, @Nullable String pageToken, @Nullable String filter) {
+  EntriesParams(
+      @Nullable Integer maxRecords,
+      @Nullable String pageToken,
+      @Nullable String filter,
+      @Nullable Boolean withContent) {
     super(maxRecords, pageToken);
     this.filter = filter;
+    this.withContent = withContent;
   }
 
   public static EntriesParamsBuilder builder() {
@@ -64,8 +74,12 @@ public class EntriesParams extends AbstractParams<EntriesParams> {
     return filter;
   }
 
+  public boolean withContent() {
+    return withContent != null && withContent;
+  }
+
   @Override
   public EntriesParams forNextPage(String pageToken) {
-    return new EntriesParams(maxRecords(), pageToken, filter);
+    return new EntriesParams(maxRecords(), pageToken, filter, withContent);
   }
 }

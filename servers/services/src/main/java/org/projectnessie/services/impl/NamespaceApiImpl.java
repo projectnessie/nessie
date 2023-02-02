@@ -133,7 +133,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
       Callable<Void> validator =
           () -> {
             try (PaginationIterator<KeyEntry> keys =
-                getStore().getKeys(refWithHash.getHash(), null)) {
+                getStore().getKeys(refWithHash.getHash(), null, false)) {
               while (keys.hasNext()) {
                 KeyEntry k = keys.next();
                 if (Namespace.of(k.getKey().getElements()).isSameOrSubElementOf(namespaceToDelete)
@@ -283,7 +283,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
   private Stream<KeyEntry> getNamespacesKeyStream(
       @Nullable Namespace namespace, Hash hash, Predicate<KeyEntry> earlyFilterPredicate)
       throws ReferenceNotFoundException {
-    PaginationIterator<KeyEntry> iter = getStore().getKeys(hash, null);
+    PaginationIterator<KeyEntry> iter = getStore().getKeys(hash, null, false);
     return stream(spliteratorUnknownSize(iter, 0), false)
         .onClose(iter::close)
         .filter(earlyFilterPredicate)

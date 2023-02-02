@@ -458,7 +458,7 @@ public class PersistVersionStore implements VersionStore {
   }
 
   @Override
-  public PaginationIterator<KeyEntry> getKeys(Ref ref, String pagingToken)
+  public PaginationIterator<KeyEntry> getKeys(Ref ref, String pagingToken, boolean withContent)
       throws ReferenceNotFoundException {
     checkArgument(pagingToken == null, "Paging not supported");
     Hash hash = refToHash(ref);
@@ -468,11 +468,30 @@ public class PersistVersionStore implements VersionStore {
 
     return new FilteringPaginationIterator<KeyListEntry, KeyEntry>(
         source.iterator(),
-        entry ->
-            KeyEntry.of(
-                DefaultStoreWorker.contentTypeForPayload(entry.getPayload()),
-                entry.getKey(),
-                entry.getContentId().getId())) {
+        entry -> {
+          if (withContent) {
+            try {
+              ContentAndState cs =
+                  databaseAdapter
+                      .values(
+                          hash, Collections.singleton(entry.getKey()), KeyFilterPredicate.ALLOW_ALL)
+                      .get(entry.getKey());
+              if (cs != null) {
+                Content content = mapContentAndState(cs);
+                return KeyEntry.of(
+                    DefaultStoreWorker.contentTypeForPayload(entry.getPayload()),
+                    entry.getKey(),
+                    content);
+              }
+            } catch (ReferenceNotFoundException e) {
+              throw new IllegalStateException("Reference no longer exists", e);
+            }
+          }
+          return KeyEntry.of(
+              DefaultStoreWorker.contentTypeForPayload(entry.getPayload()),
+              entry.getKey(),
+              entry.getContentId().getId());
+        }) {
       @Override
       protected String computeTokenForCurrent() {
         return null;

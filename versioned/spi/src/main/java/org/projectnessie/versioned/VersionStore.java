@@ -279,10 +279,11 @@ public interface VersionStore {
    *
    * @param ref The ref to get keys for.
    * @param pagingToken paging token to start at
+   * @param withContent whether to populate {@link KeyEntry#getContent()}
    * @return The stream of keys available for this ref.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  PaginationIterator<KeyEntry> getKeys(Ref ref, String pagingToken)
+  PaginationIterator<KeyEntry> getKeys(Ref ref, String pagingToken, boolean withContent)
       throws ReferenceNotFoundException;
 
   /**

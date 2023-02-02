@@ -347,7 +347,7 @@ public abstract class BaseExportImport {
   }
 
   List<KeyEntry> keys(VersionStore versionStore, Hash hash) {
-    try (PaginationIterator<KeyEntry> keys = versionStore.getKeys(hash, null)) {
+    try (PaginationIterator<KeyEntry> keys = versionStore.getKeys(hash, null, false)) {
       return newArrayList(keys);
     } catch (ReferenceNotFoundException e) {
       throw new RuntimeException(e);
