@@ -28,5 +28,7 @@ import org.projectnessie.model.Namespace;
 public interface GetMultipleNamespacesBuilder
     extends OnNamespaceBuilder<GetMultipleNamespacesBuilder> {
 
+  GetMultipleNamespacesBuilder onlyDirectChildren(boolean onlyDirectChildren);
+
   GetNamespacesResponse get() throws NessieReferenceNotFoundException;
 }
