@@ -65,7 +65,7 @@ final class Util {
     }
   }
 
-  static URI resolve(URI base, Class<? extends NessieApi> apiType) {
+  static URI resolveNessieUri(URI base, Class<? extends NessieApi> apiType) {
     String suffix = NessieApiV2.class.isAssignableFrom(apiType) ? "v2" : "v1";
     return base.resolve(suffix);
   }
