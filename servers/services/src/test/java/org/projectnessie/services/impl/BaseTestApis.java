@@ -25,6 +25,10 @@ public abstract class BaseTestApis {
 
   @Nested
   @SuppressWarnings("ClassCanBeStatic")
+  public class CommitsTests extends AbstractTestCommits {}
+
+  @Nested
+  @SuppressWarnings("ClassCanBeStatic")
   public class CommitLogTests extends AbstractTestCommitLog {}
 
   @Nested
