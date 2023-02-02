@@ -142,7 +142,7 @@ public abstract class CommitMeta {
    * hostnames etc.
    */
   @NotNull
-  @Value.Derived
+  @Value.NonAttribute
   @JsonView(Views.V1.class)
   public Map<String, String> getProperties() {
     HashMap<String, String> firstElements = new HashMap<>();
