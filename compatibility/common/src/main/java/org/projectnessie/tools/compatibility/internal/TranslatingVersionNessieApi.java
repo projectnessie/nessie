@@ -34,6 +34,7 @@ import org.projectnessie.error.ErrorCode;
 import org.projectnessie.error.ImmutableNessieError;
 import org.projectnessie.error.NessieError;
 import org.projectnessie.model.ser.Views;
+import org.projectnessie.tools.compatibility.api.Version;
 
 /**
  * Translates between the current and old Nessie version API and model.
@@ -235,12 +236,12 @@ final class TranslatingVersionNessieApi implements AutoCloseable {
     return o;
   }
 
-  private Class<?>[] getAllInterfaces(Class<?> clazz) {
+  private static Class<?>[] getAllInterfaces(Class<?> clazz) {
     Set<Class<?>> interfaces = new HashSet<>();
     Collections.addAll(interfaces, clazz.getInterfaces());
 
     Class<?> superclass = clazz.getSuperclass();
-    if (!superclass.equals(Object.class)) {
+    if (superclass != null && !superclass.equals(Object.class)) {
       Collections.addAll(interfaces, getAllInterfaces(superclass));
     }
 
@@ -424,5 +425,25 @@ final class TranslatingVersionNessieApi implements AutoCloseable {
     @SuppressWarnings("unchecked")
     T target = (T) proxy;
     return target;
+  }
+
+  static <T extends NessieApi> T unsupportedApiInterfaceProxy(
+      Class<T> declaredType, Version runtimeVersion) {
+    //noinspection unchecked
+    return (T)
+        Proxy.newProxyInstance(
+            declaredType.getClassLoader(),
+            getAllInterfaces(declaredType),
+            (proxyInstance, method, args) -> {
+              // Ignore close() calls - they are made by the test framework (normally)
+              if ("close".equals(method.getName())) {
+                return null;
+              }
+
+              throw new UnsupportedOperationException(
+                  String.format(
+                      "Nessie API %s is not supported in version %s",
+                      declaredType.getSimpleName(), runtimeVersion));
+            });
   }
 }

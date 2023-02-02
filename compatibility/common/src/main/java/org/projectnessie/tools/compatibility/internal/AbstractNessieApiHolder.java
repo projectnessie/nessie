@@ -16,6 +16,7 @@
 package org.projectnessie.tools.compatibility.internal;
 
 import static org.junit.platform.commons.support.AnnotationSupport.findRepeatableAnnotations;
+import static org.projectnessie.tools.compatibility.internal.TranslatingVersionNessieApi.unsupportedApiInterfaceProxy;
 import static org.projectnessie.tools.compatibility.internal.Util.extensionStore;
 import static org.projectnessie.tools.compatibility.internal.Util.throwUnchecked;
 
@@ -101,10 +102,7 @@ abstract class AbstractNessieApiHolder implements CloseableResource {
   @Override
   public void close() {
     LOGGER.info("Closing Nessie client for version {}", clientKey.getVersion());
-    NessieApi apiInstance = getApiInstance();
-    if (apiInstance != null) {
-      apiInstance.close();
-    }
+    getApiInstance().close();
   }
 
   public abstract NessieApi getApiInstance();
@@ -137,7 +135,8 @@ abstract class AbstractNessieApiHolder implements CloseableResource {
       try {
         targetClass = classLoader.loadClass(clientKey.getType().getName());
       } catch (ClassNotFoundException e) {
-        return null;
+        Class<? extends NessieApi> declaredType = clientKey.getType();
+        return unsupportedApiInterfaceProxy(declaredType, clientKey.getVersion());
       }
 
       Method buildMethod = builderInstance.getClass().getMethod("build", Class.class);
