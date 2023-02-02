@@ -233,14 +233,13 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
           .first()
           .extracting(LogEntry::getAdditionalParents)
           .asInstanceOf(list(String.class))
-          // When we can assume that all relevant Nessie clients are aware of the
-          // org.projectnessie.model.LogResponse.LogEntry.getAdditionalParents field,
-          // the following code can be uncommented. See also
-          // TreeApiImpl.commitToLogEntry().
-          // .hasSize(1)
-          // .first()
-          // .isEqualTo(committed2.getHash()),
           .isEmpty();
+      soft.assertThat(logOfMerged)
+          .first()
+          .extracting(LogEntry::getCommitMeta)
+          .extracting(CommitMeta::getParentCommitHashes)
+          .asInstanceOf(list(String.class))
+          .containsExactly(committed2.getHash());
       soft.assertThat(logOfMerged)
           .first()
           .extracting(LogEntry::getCommitMeta)
