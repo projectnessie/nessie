@@ -51,10 +51,7 @@ const CommitDetails = (props: {
       Object.keys(properties)
         .map((data) => [data, properties[data]])
         .map(([k, v]) => `${k}: ${v}`)
-        .join(";");
-    const propertiesArr = additionalProperties
-      ? additionalProperties.split(";")
-      : [];
+        .sort((s1, s2) => s1.localeCompare(s2));
     const authorHoursDiff = moment().diff(moment(authorTime), "hours");
     const commitHoursDiff = moment().diff(moment(commitTime), "hours");
 
@@ -93,11 +90,11 @@ const CommitDetails = (props: {
               <span className={"ml-2"}>{commitTimeAgo}</span>
             </Card.Text>
           )}
-          {propertiesArr?.length > 0 && (
+          {additionalProperties?.length > 0 && (
             <div className={"ml-3"}>
               <span className={"ml-2"}>Properties: </span>
               <ul>
-                {propertiesArr.map((add, index) => {
+                {additionalProperties.map((add, index) => {
                   return (
                     <li className={"ml-4"} key={index}>
                       {add}
