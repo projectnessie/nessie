@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.function.Function;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
+import org.projectnessie.client.NessieConfigConstants;
 import org.projectnessie.client.http.impl.HttpRuntimeConfig;
 import org.projectnessie.client.http.impl.HttpUtils;
 import org.projectnessie.client.http.impl.jdk11.JavaHttpClient;
@@ -58,9 +59,12 @@ public interface HttpClient {
     private SSLContext sslContext;
     private SSLParameters sslParameters;
     private int readTimeoutMillis =
-        Integer.parseInt(System.getProperty("sun.net.client.defaultReadTimeout", "25000"));
+        Integer.getInteger(
+            "sun.net.client.defaultReadTimeout", NessieConfigConstants.DEFAULT_READ_TIMEOUT_MILLIS);
     private int connectionTimeoutMillis =
-        Integer.parseInt(System.getProperty("sun.net.client.defaultConnectionTimeout", "5000"));
+        Integer.getInteger(
+            "sun.net.client.defaultConnectionTimeout",
+            NessieConfigConstants.DEFAULT_CONNECT_TIMEOUT_MILLIS);
     private boolean disableCompression;
     private final List<RequestFilter> requestFilters = new ArrayList<>();
     private final List<ResponseFilter> responseFilters = new ArrayList<>();
