@@ -43,7 +43,7 @@ jobs:
         with:
           python-version: '3.8'
       - name: Set up chart-testing
-        uses: helm/chart-testing-action@main
+        uses: helm/chart-testing-action@v2.3.1
 
       - name: Run chart-testing (list-changed)
         id: list-changed
@@ -54,7 +54,9 @@ jobs:
         run: ct lint --debug --charts ./helm/nessie
 
       - name: Set up & Start Minikube
-        uses: medyagh/setup-minikube@master
+        uses: medyagh/setup-minikube@v0.0.11
+        with:
+          cache: false
 
       - name: Show pods
         run: kubectl get pods -A
