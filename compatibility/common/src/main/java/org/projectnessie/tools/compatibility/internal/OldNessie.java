@@ -86,6 +86,19 @@ final class OldNessie {
                                     "io.opentracing", artifactId, "jar", opentracingVersion),
                                 "runtime")));
           };
+    } else if (Version.parseVersion("0.46.0").isLessThanOrEqual(version)
+        && Version.parseVersion("0.47.1").isGreaterThanOrEqual(version)) {
+
+      collect =
+          r -> {
+            r.setRoot(mainDependency);
+
+            // Nessie clients in versions 0.46.0 - 0.47.1 use slf4j (through transitive compile-only
+            // dependencies), but do not declare an explicit runtime dependency on it.
+            r.addDependency(
+                new Dependency(
+                    new DefaultArtifact("org.slf4j", "slf4j-api", "jar", "1.7.36"), "runtime"));
+          };
     }
 
     Stream<Artifact> resolvedArtifacts = resolve(collect);

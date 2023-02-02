@@ -21,6 +21,8 @@ import com.google.common.annotations.VisibleForTesting;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -225,12 +227,24 @@ final class TranslatingVersionNessieApi implements AutoCloseable {
           o,
           classLoader,
           reverseClassLoader,
-          translateTypes(classLoader, o.getClass().getInterfaces()));
+          translateTypes(classLoader, getAllInterfaces(o.getClass())));
     }
     if (requiresReserialization(o)) {
       return reserialize(o);
     }
     return o;
+  }
+
+  private Class<?>[] getAllInterfaces(Class<?> clazz) {
+    Set<Class<?>> interfaces = new HashSet<>();
+    Collections.addAll(interfaces, clazz.getInterfaces());
+
+    Class<?> superclass = clazz.getSuperclass();
+    if (!superclass.equals(Object.class)) {
+      Collections.addAll(interfaces, getAllInterfaces(superclass));
+    }
+
+    return interfaces.toArray(new Class<?>[0]);
   }
 
   @VisibleForTesting
@@ -384,6 +398,10 @@ final class TranslatingVersionNessieApi implements AutoCloseable {
   @SuppressWarnings("TypeParameterUnusedInFormals")
   private <T> T createProxy(
       Object o, ClassLoader classLoader, ClassLoader reverseClassLoader, Class<?>... interfaces) {
+    if (o == null) {
+      return null;
+    }
+
     Object proxy =
         Proxy.newProxyInstance(
             Thread.currentThread().getContextClassLoader(),

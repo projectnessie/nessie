@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.function.BooleanSupplier;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
+import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.tools.compatibility.api.Version;
 
 interface NessieServer extends CloseableResource {
@@ -42,5 +43,5 @@ interface NessieServer extends CloseableResource {
     }
   }
 
-  URI getUri();
+  URI getUri(Class<? extends NessieApi> apiType);
 }

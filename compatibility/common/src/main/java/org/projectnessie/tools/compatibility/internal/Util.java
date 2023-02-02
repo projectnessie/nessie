@@ -16,12 +16,15 @@
 package org.projectnessie.tools.compatibility.internal;
 
 import com.google.common.base.Throwables;
+import java.net.URI;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
 import org.junit.platform.engine.UniqueId;
+import org.projectnessie.client.api.NessieApi;
+import org.projectnessie.client.api.NessieApiV2;
 
 final class Util {
 
@@ -60,5 +63,10 @@ final class Util {
     } finally {
       Thread.currentThread().setContextClassLoader(appClassLoader);
     }
+  }
+
+  static URI resolve(URI base, Class<? extends NessieApi> apiType) {
+    String suffix = NessieApiV2.class.isAssignableFrom(apiType) ? "v2" : "v1";
+    return base.resolve(suffix);
   }
 }

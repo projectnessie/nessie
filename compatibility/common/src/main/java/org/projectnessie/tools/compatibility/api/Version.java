@@ -24,6 +24,9 @@ import java.util.Objects;
  */
 public class Version implements Comparable<Version> {
 
+  public static final Version VERSIONED_REST_URI_START = Version.parseVersion("0.46.0");
+  public static final Version REFLOG_FOR_COMMIT_REMOVED = Version.parseVersion("0.44.0");
+
   public static final String CURRENT_STRING = "current";
   public static final String NOT_CURRENT_STRING = "not-current";
   private final int[] tuple;

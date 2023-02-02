@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.api.GetCommitLogBuilder;
 import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
@@ -57,6 +58,7 @@ public abstract class AbstractCompatibilityTests {
 
   public static final String NESSIE_0_30_0 = "0.30.0";
   @NessieAPI protected NessieApiV1 api;
+  @NessieAPI protected NessieApiV2 apiV2;
   @NessieVersion Version version;
 
   abstract Version getClientVersion();
@@ -87,6 +89,14 @@ public abstract class AbstractCompatibilityTests {
     assertThat(defaultBranch).extracting(Branch::getName).isEqualTo("main");
 
     assertThat(allReferences()).contains(defaultBranch);
+  }
+
+  @Test
+  @VersionCondition(minVersion = "0.47.0")
+  void getDefaultBranchV2() throws Exception {
+    Branch defaultBranch = apiV2.getDefaultBranch();
+    assertThat(defaultBranch).extracting(Branch::getName).isEqualTo("main");
+    assertThat(apiV2.getAllReferences().stream()).contains(defaultBranch);
   }
 
   @Test

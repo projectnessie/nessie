@@ -243,7 +243,7 @@ public class ITUpgradePath {
 
   private void expectedRefLogEntry(String op) {
     if (version.isGreaterThanOrEqual(Version.parseVersion("0.18.0"))) {
-      if (version.isGreaterThanOrEqual(Version.CURRENT)) {
+      if (version.isGreaterThanOrEqual(Version.REFLOG_FOR_COMMIT_REMOVED)) {
         switch (op) {
           case "CREATE_REFERENCE":
           case "DROP_REFERENCE":
