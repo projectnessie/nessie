@@ -28,6 +28,7 @@ import org.projectnessie.api.v2.params.DiffParams;
 import org.projectnessie.api.v2.params.EntriesParams;
 import org.projectnessie.api.v2.params.GetReferenceParams;
 import org.projectnessie.api.v2.params.Merge;
+import org.projectnessie.api.v2.params.ReferenceResolver;
 import org.projectnessie.api.v2.params.ReferencesParams;
 import org.projectnessie.api.v2.params.Transplant;
 import org.projectnessie.error.NessieConflictException;
@@ -65,8 +66,6 @@ import org.projectnessie.services.spi.TreeService;
 @RequestScoped
 public class RestV2TreeResource implements HttpTreeApi {
 
-  private static final String DEFAULT_REF_IN_PATH = "-";
-
   private final ConfigService configService;
   private final TreeService treeService;
   private final ContentService contentService;
@@ -90,15 +89,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   }
 
   private Reference resolveRef(String refPathString) {
-    if (DEFAULT_REF_IN_PATH.equals(refPathString)) {
-      return Branch.of(configService.getConfig().getDefaultBranch(), null);
-    }
-
-    return resolveRef(refPathString, Reference.ReferenceType.BRANCH);
-  }
-
-  private Reference resolveRef(String refPathString, Reference.ReferenceType type) {
-    return Reference.fromPathString(refPathString, type);
+    return ReferenceResolver.toReference(refPathString, configService::getConfig);
   }
 
   private TreeService tree() {
@@ -280,7 +271,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   public SingleReferenceResponse assignReference(
       Reference.ReferenceType type, String ref, Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
-    Reference reference = resolveRef(ref, type);
+    Reference reference = ReferenceResolver.toReference(ref, type);
     Reference updated =
         tree().assignReference(type, reference.getName(), reference.getHash(), assignTo);
     return SingleReferenceResponse.builder().reference(updated).build();
@@ -290,7 +281,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   @Override
   public SingleReferenceResponse deleteReference(Reference.ReferenceType type, String ref)
       throws NessieConflictException, NessieNotFoundException {
-    Reference reference = resolveRef(ref, type);
+    Reference reference = ReferenceResolver.toReference(ref, type);
     String hash = tree().deleteReference(type, reference.getName(), reference.getHash());
     if (reference instanceof Branch) {
       reference = Branch.of(reference.getName(), hash);
