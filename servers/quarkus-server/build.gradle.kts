@@ -117,9 +117,6 @@ project.extra["quarkus.smallrye-openapi.additional-docs-directory"] = "$openApiS
 project.extra["quarkus.package.type"] =
   if (withUberJar()) "uber-jar" else if (project.hasProperty("native")) "native" else "fast-jar"
 
-// TODO remove the whole block
-quarkus { setFinalName("${project.name}-${project.version}") }
-
 val useDocker = project.hasProperty("docker")
 
 val pullOpenApiSpec by

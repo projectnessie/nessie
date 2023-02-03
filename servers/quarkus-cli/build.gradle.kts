@@ -95,9 +95,6 @@ tasks.withType<ProcessResources>().configureEach {
 project.extra["quarkus.package.type"] =
   if (withUberJar() || project.hasProperty("native")) "uber-jar" else "fast-jar"
 
-// TODO remove the whole block
-quarkus { setFinalName("${project.name}-${project.version}") }
-
 tasks.withType<QuarkusBuild>().configureEach {
   outputs.cacheIf { false }
   inputs.property("quarkus.package.type", project.extra["quarkus.package.type"])
