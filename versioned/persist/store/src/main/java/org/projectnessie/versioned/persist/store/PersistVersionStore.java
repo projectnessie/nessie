@@ -352,12 +352,12 @@ public class PersistVersionStore implements VersionStore {
         namedRef -> namedRef.withUpdatedCommitMeta(commitMetaFromReference(namedRef))) {
       @Override
       protected String computeTokenForCurrent() {
-        return null;
+        throw new IllegalArgumentException("Paging not supported");
       }
 
       @Override
       public String tokenForEntry(ReferenceInfo<CommitMeta> entry) {
-        return null;
+        throw new IllegalArgumentException("Paging not supported");
       }
 
       @Override
@@ -512,12 +512,12 @@ public class PersistVersionStore implements VersionStore {
         }) {
       @Override
       protected String computeTokenForCurrent() {
-        return null;
+        throw new IllegalArgumentException("Paging not supported");
       }
 
       @Override
       public String tokenForEntry(KeyEntry entry) {
-        return null;
+        throw new IllegalArgumentException("Paging not supported");
       }
 
       @Override
@@ -579,12 +579,12 @@ public class PersistVersionStore implements VersionStore {
                                 databaseAdapter::mapToAttachment)))) {
       @Override
       protected String computeTokenForCurrent() {
-        return null;
+        throw new IllegalArgumentException("Paging not supported");
       }
 
       @Override
       public String tokenForEntry(Diff entry) {
-        return null;
+        throw new IllegalArgumentException("Paging not supported");
       }
 
       @Override

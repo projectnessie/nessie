@@ -21,6 +21,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.FetchOption.ALL;
 
@@ -382,6 +383,14 @@ public abstract class BaseTestNessieApi {
   }
 
   @Test
+  public void referencesWithLimitInFirstPage() throws Exception {
+    api().createReference().reference(Branch.of("branch", null)).create();
+    assertThatThrownBy(() -> api().getAllReferences().maxRecords(1).get())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Paging not supported");
+  }
+
+  @Test
   public void commitMergeTransplant() throws Exception {
     Branch main = api().getDefaultBranch();
 
@@ -520,6 +529,21 @@ public abstract class BaseTestNessieApi {
       soft.assertThat(api().getDiff().fromRef(branch1).toRef(branch2).maxRecords(1).stream())
           .containsExactlyInAnyOrderElementsOf(diff1);
     }
+  }
+
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2) // v1 throws on getDiff().maxRecords(1)
+  public void diffWithLimitInFirstPage() throws Exception {
+    Branch main = api().getDefaultBranch();
+    Branch branch1 = createReference(Branch.of("b1", main.getHash()), main.getName());
+    Branch branch2 = createReference(Branch.of("b2", main.getHash()), main.getName());
+
+    Branch from = prepCommit(branch1, "c1", dummyPut("1", "1")).commit();
+    Branch to = prepCommit(branch2, "c2", dummyPut("2", "2")).commit();
+
+    assertThatThrownBy(() -> api().getDiff().maxRecords(1).fromRef(from).toRef(to).get())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Paging not supported");
   }
 
   @Test
@@ -692,6 +716,15 @@ public abstract class BaseTestNessieApi {
     soft.assertThat(api().getEntries().reference(main).stream())
         .isNotEmpty()
         .allSatisfy(e -> assertThat(e.getContentId()).isNotNull());
+  }
+
+  @Test
+  public void entriesWithLimitInFirstPage() throws Exception {
+    Branch main =
+        prepCommit(api().getDefaultBranch(), "commit", dummyPut("t1"), dummyPut("t2")).commit();
+    assertThatThrownBy(() -> api().getEntries().maxRecords(1).reference(main).get())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageContaining("Paging not supported");
   }
 
   @Test
