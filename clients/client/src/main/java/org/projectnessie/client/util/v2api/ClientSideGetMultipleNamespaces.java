@@ -15,11 +15,14 @@
  */
 package org.projectnessie.client.util.v2api;
 
+import static java.lang.String.format;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.projectnessie.client.api.GetContentBuilder;
 import org.projectnessie.client.api.GetEntriesBuilder;
+import org.projectnessie.client.api.GetMultipleNamespacesBuilder;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.builder.BaseGetMultipleNamespacesBuilder;
 import org.projectnessie.error.NessieNotFoundException;
@@ -40,9 +43,16 @@ import org.projectnessie.model.Namespace;
  */
 public final class ClientSideGetMultipleNamespaces extends BaseGetMultipleNamespacesBuilder {
   private final NessieApiV2 api;
+  private boolean onlyDirectChildren;
 
   public ClientSideGetMultipleNamespaces(NessieApiV2 api) {
     this.api = api;
+  }
+
+  @Override
+  public GetMultipleNamespacesBuilder onlyDirectChildren(boolean onlyDirectChildren) {
+    this.onlyDirectChildren = onlyDirectChildren;
+    return this;
   }
 
   @Override
@@ -51,11 +61,22 @@ public final class ClientSideGetMultipleNamespaces extends BaseGetMultipleNamesp
     try {
       GetEntriesBuilder getEntries = api.getEntries().refName(refName).hashOnRef(hashOnRef);
 
+      String filter = null;
       if (namespace != null && !namespace.isEmpty()) {
         String nsName = namespace.name();
-        getEntries.filter(
-            String.format(
-                "entry.encodedKey == '%s' || entry.encodedKey.startsWith('%s.')", nsName, nsName));
+        filter =
+            onlyDirectChildren
+                ? format(
+                    "size(entry.keyElements) == %d && entry.encodedKey.startsWith('%s.')",
+                    namespace.getElements().size() + 1, nsName)
+                : format(
+                    "entry.encodedKey == '%s' || entry.encodedKey.startsWith('%s.')",
+                    nsName, nsName);
+      } else if (onlyDirectChildren) {
+        filter = "size(entry.keyElements) == 1";
+      }
+      if (filter != null) {
+        getEntries.filter(filter);
       }
 
       entries =

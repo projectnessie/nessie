@@ -18,11 +18,13 @@ package org.projectnessie.jaxrs.tests;
 import static com.google.common.collect.Maps.immutableEntry;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.FetchOption.ALL;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hashing;
 import java.util.ArrayList;
 import java.util.List;
@@ -739,11 +741,60 @@ public abstract class BaseTestNessieApi {
       namespace2WithId = resp2.getNamespace();
       namespace3WithId = resp3.getNamespace();
       namespace4WithId = resp4.getNamespace();
+
+      for (Map.Entry<Namespace, List<Namespace>> c :
+          ImmutableMap.<Namespace, List<Namespace>>of(
+                  Namespace.EMPTY,
+                  singletonList(namespace1WithId),
+                  namespace1,
+                  asList(namespace2WithId, namespace3WithId),
+                  namespace2,
+                  singletonList(namespace4WithId),
+                  namespace3,
+                  emptyList(),
+                  namespace4,
+                  emptyList())
+              .entrySet()) {
+        soft.assertThat(
+                api()
+                    .getMultipleNamespaces()
+                    .refName(mainName)
+                    .namespace(c.getKey())
+                    .onlyDirectChildren(true)
+                    .get()
+                    .getNamespaces())
+            .describedAs("for namespace %s", c.getKey())
+            .containsExactlyInAnyOrderElementsOf(c.getValue());
+      }
     } else {
       namespace1WithId = api().createNamespace().refName(mainName).namespace(namespace1).create();
       namespace2WithId = api().createNamespace().refName(mainName).namespace(namespace2).create();
       namespace3WithId = api().createNamespace().refName(mainName).namespace(namespace3).create();
       namespace4WithId = api().createNamespace().refName(mainName).namespace(namespace4).create();
+    }
+
+    for (Map.Entry<Namespace, List<Namespace>> c :
+        ImmutableMap.of(
+                Namespace.EMPTY,
+                asList(namespace1WithId, namespace2WithId, namespace3WithId, namespace4WithId),
+                namespace1,
+                asList(namespace1WithId, namespace2WithId, namespace3WithId, namespace4WithId),
+                namespace2,
+                asList(namespace2WithId, namespace4WithId),
+                namespace3,
+                singletonList(namespace3WithId),
+                namespace4,
+                singletonList(namespace4WithId))
+            .entrySet()) {
+      soft.assertThat(
+              api()
+                  .getMultipleNamespaces()
+                  .refName(mainName)
+                  .namespace(c.getKey())
+                  .get()
+                  .getNamespaces())
+          .describedAs("for namespace %s", c.getKey())
+          .containsExactlyInAnyOrderElementsOf(c.getValue());
     }
 
     GetNamespacesResponse getMultiple =

@@ -16,6 +16,7 @@
 package org.projectnessie.client.http.v1api;
 
 import org.projectnessie.api.v1.params.MultipleNamespacesParams;
+import org.projectnessie.client.api.GetMultipleNamespacesBuilder;
 import org.projectnessie.client.builder.BaseGetMultipleNamespacesBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieReferenceNotFoundException;
@@ -27,6 +28,14 @@ final class HttpGetMultipleNamespaces extends BaseGetMultipleNamespacesBuilder {
 
   HttpGetMultipleNamespaces(NessieApiClient client) {
     this.client = client;
+  }
+
+  @Override
+  public GetMultipleNamespacesBuilder onlyDirectChildren(boolean onlyDirectChildren) {
+    if (onlyDirectChildren) {
+      throw new IllegalArgumentException("'onlyDirectChildren' is not available with REST API v1");
+    }
+    return this;
   }
 
   @Override
