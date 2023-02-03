@@ -161,12 +161,3 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
     return ops;
   }
 }
-
-//   [CommitMeta{hash=89ed3813d41d9b3f15ee1b62ea6a41d81743be8a7372e7c047159065c8db4406,
-// committer=null, author=null, allAuthors=[], signedOffBy=null, allSignedOffBy=[], message=user
-// 002/commit 019, commitTime=null, authorTime=null, allProperties={},
-// parentCommitHashes=[35fdf4b429911fd5b24bf45222703600c9fc63f93cae16118cf2d60769428792]},
-//   [CommitMeta{hash=89ed3813d41d9b3f15ee1b62ea6a41d81743be8a7372e7c047159065c8db4406,
-// committer=null, author=null, allAuthors=[], signedOffBy=null, allSignedOffBy=[], message=user
-// 002/commit 019, commitTime=null, authorTime=null, allProperties={},
-// parentCommitHashes=[ec2e96fe02635ef44d101f72df75f1082eb1880cc7eb0f19ef3b0c86709e8460]},

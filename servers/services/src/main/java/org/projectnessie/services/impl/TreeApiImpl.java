@@ -484,9 +484,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   private static CommitMeta enhanceCommitMeta(Hash hash, CommitMeta commitMeta) {
     if (commitMeta.getParentCommitHashes().size() > 1) {
       ImmutableCommitMeta.Builder updatedCommitMeta = commitMeta.toBuilder().hash(hash.asString());
-      // Only add the 1st commit ID to the legacy MERGE_PARENT_PROPERTY. It was introduced for
-      // compatibility with older clients. There is currently only one use case for the
-      // property: exposing the commit ID of the merged commit.
+      // Only add the 1st commit ID (merge parent) to the legacy MERGE_PARENT_PROPERTY. It was
+      // introduced for compatibility with older clients. There is currently only one use case for
+      // the property: exposing the commit ID of the merged commit.
       updatedCommitMeta.putProperties(
           CommitMeta.MERGE_PARENT_PROPERTY, commitMeta.getParentCommitHashes().get(1));
       return updatedCommitMeta.build();
