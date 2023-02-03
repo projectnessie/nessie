@@ -27,6 +27,8 @@ import org.projectnessie.client.api.NessieApiV1;
  */
 public interface NessieClientFactory {
 
+  NessieApiVersion apiVersion();
+
   @Nonnull
   default NessieApiV1 make() {
     return make((builder, version) -> builder);

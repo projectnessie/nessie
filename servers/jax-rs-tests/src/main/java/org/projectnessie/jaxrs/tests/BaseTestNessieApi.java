@@ -42,7 +42,6 @@ import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.api.CreateNamespaceResult;
 import org.projectnessie.client.api.DeleteNamespaceResult;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.api.UpdateNamespaceResult;
 import org.projectnessie.client.ext.NessieApiVersion;
 import org.projectnessie.client.ext.NessieApiVersions;
@@ -89,6 +88,7 @@ public abstract class BaseTestNessieApi {
   public static final String EMPTY = Hashing.sha256().hashString("empty", UTF_8).toString();
 
   private NessieApiV1 api;
+  private NessieApiVersion apiVersion;
 
   // Cannot use @ExtendWith(SoftAssertionsExtension.class) + @InjectSoftAssertions here, because
   // of Quarkus class loading issues. See https://github.com/quarkusio/quarkus/issues/19814
@@ -107,6 +107,7 @@ public abstract class BaseTestNessieApi {
   @BeforeEach
   void initApi(NessieClientFactory clientFactory) {
     this.api = clientFactory.make();
+    this.apiVersion = clientFactory.apiVersion();
   }
 
   @NotNull
@@ -115,7 +116,7 @@ public abstract class BaseTestNessieApi {
   }
 
   public boolean isV2() {
-    return api instanceof NessieApiV2;
+    return NessieApiVersion.V2.equals(apiVersion);
   }
 
   @AfterEach
