@@ -15,6 +15,7 @@
  */
 package org.projectnessie.services.rest;
 
+import static org.projectnessie.api.v2.params.ReferenceResolver.resolveReferencePathElement;
 import static org.projectnessie.services.impl.RefUtil.toReference;
 import static org.projectnessie.services.spi.TreeService.MAX_COMMIT_LOG_ENTRIES;
 
@@ -65,8 +66,6 @@ import org.projectnessie.services.spi.TreeService;
 @RequestScoped
 public class RestV2TreeResource implements HttpTreeApi {
 
-  private static final String DEFAULT_REF_IN_PATH = "-";
-
   private final ConfigService configService;
   private final TreeService treeService;
   private final ContentService contentService;
@@ -90,15 +89,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   }
 
   private Reference resolveRef(String refPathString) {
-    if (DEFAULT_REF_IN_PATH.equals(refPathString)) {
-      return Branch.of(configService.getConfig().getDefaultBranch(), null);
-    }
-
-    return resolveRef(refPathString, Reference.ReferenceType.BRANCH);
-  }
-
-  private Reference resolveRef(String refPathString, Reference.ReferenceType type) {
-    return Reference.fromPathString(refPathString, type);
+    return resolveReferencePathElement(refPathString, configService::getConfig);
   }
 
   private TreeService tree() {
@@ -280,7 +271,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   public SingleReferenceResponse assignReference(
       Reference.ReferenceType type, String ref, Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
-    Reference reference = resolveRef(ref, type);
+    Reference reference = resolveReferencePathElement(ref, type);
     Reference updated =
         tree().assignReference(type, reference.getName(), reference.getHash(), assignTo);
     return SingleReferenceResponse.builder().reference(updated).build();
@@ -290,7 +281,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   @Override
   public SingleReferenceResponse deleteReference(Reference.ReferenceType type, String ref)
       throws NessieConflictException, NessieNotFoundException {
-    Reference reference = resolveRef(ref, type);
+    Reference reference = resolveReferencePathElement(ref, type);
     String hash = tree().deleteReference(type, reference.getName(), reference.getHash());
     if (reference instanceof Branch) {
       reference = Branch.of(reference.getName(), hash);
