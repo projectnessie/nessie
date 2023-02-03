@@ -65,14 +65,13 @@ public final class ClientSideGetMultipleNamespaces extends BaseGetMultipleNamesp
       if (namespace != null && !namespace.isEmpty()) {
         String nsName = namespace.name();
         filter =
-            format(
-                "entry.encodedKey == '%s' || entry.encodedKey.startsWith('%s.')", nsName, nsName);
-        if (onlyDirectChildren) {
-          filter =
-              format(
-                  "size(entry.keyElements) == %d && (%s)",
-                  namespace.getElements().size() + 1, filter);
-        }
+            onlyDirectChildren
+                ? format(
+                    "size(entry.keyElements) == %d && entry.encodedKey.startsWith('%s.')",
+                    namespace.getElements().size() + 1, nsName)
+                : format(
+                    "entry.encodedKey == '%s' || entry.encodedKey.startsWith('%s.')",
+                    nsName, nsName);
       } else if (onlyDirectChildren) {
         filter = "size(entry.keyElements) == 1";
       }
