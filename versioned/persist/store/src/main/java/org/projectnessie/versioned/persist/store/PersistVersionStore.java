@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.persist.store;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
 import com.google.common.base.Preconditions;
@@ -36,6 +37,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.CommitMetaSerializer;
@@ -273,7 +275,7 @@ public class PersistVersionStore implements VersionStore {
     Function<CommitLogEntry, Commit> mapper =
         logEntry -> {
           ImmutableCommit.Builder commit = Commit.builder();
-          commit.hash(logEntry.getHash()).commitMeta(deserializeMetadata(logEntry.getMetadata()));
+          commit.hash(logEntry.getHash()).commitMeta(commitMetaFromLogEntry(logEntry));
           enhancer.accept(commit, logEntry);
           return commit.build();
         };
@@ -334,7 +336,7 @@ public class PersistVersionStore implements VersionStore {
   public ReferenceInfo<CommitMeta> getNamedRef(@Nonnull String ref, GetNamedRefsParams params)
       throws ReferenceNotFoundException {
     ReferenceInfo<ByteString> namedRef = databaseAdapter.namedRef(ref, params);
-    return namedRef.withUpdatedCommitMeta(deserializeMetadata(namedRef.getHeadCommitMeta()));
+    return namedRef.withUpdatedCommitMeta(commitMetaFromReference(namedRef));
   }
 
   @Override
@@ -347,8 +349,7 @@ public class PersistVersionStore implements VersionStore {
 
     return new FilteringPaginationIterator<ReferenceInfo<ByteString>, ReferenceInfo<CommitMeta>>(
         source.iterator(),
-        namedRef ->
-            namedRef.withUpdatedCommitMeta(deserializeMetadata(namedRef.getHeadCommitMeta()))) {
+        namedRef -> namedRef.withUpdatedCommitMeta(commitMetaFromReference(namedRef))) {
       @Override
       protected String computeTokenForCurrent() {
         return null;
@@ -368,6 +369,26 @@ public class PersistVersionStore implements VersionStore {
 
   private ByteString serializeMetadata(CommitMeta metadata) {
     return metadata != null ? CommitMetaSerializer.METADATA_SERIALIZER.toBytes(metadata) : null;
+  }
+
+  private CommitMeta commitMetaFromReference(ReferenceInfo<ByteString> referenceInfo) {
+    ByteString meta = referenceInfo.getHeadCommitMeta();
+    if (meta == null) {
+      return null;
+    }
+    ImmutableCommitMeta.Builder commitMeta = CommitMeta.builder().from(deserializeMetadata(meta));
+    referenceInfo.getParentHashes().forEach(p -> commitMeta.addParentCommitHashes(p.asString()));
+    return commitMeta.hash(referenceInfo.getHash().asString()).build();
+  }
+
+  private CommitMeta commitMetaFromLogEntry(CommitLogEntry logEntry) {
+    ImmutableCommitMeta.Builder commitMeta = CommitMeta.builder();
+    commitMeta.from(deserializeMetadata(requireNonNull(logEntry.getMetadata())));
+    commitMeta
+        .hash(logEntry.getHash().asString())
+        .addParentCommitHashes(logEntry.getParents().get(0).asString());
+    logEntry.getAdditionalParents().forEach(p -> commitMeta.addParentCommitHashes(p.asString()));
+    return commitMeta.build();
   }
 
   private CommitMeta deserializeMetadata(ByteString commitMeta) {
@@ -391,10 +412,7 @@ public class PersistVersionStore implements VersionStore {
         source.iterator(),
         e -> {
           ImmutableCommit.Builder commit =
-              Commit.builder()
-                  .hash(e.getHash())
-                  .addAllAdditionalParents(e.getAdditionalParents())
-                  .commitMeta(deserializeMetadata(e.getMetadata()));
+              Commit.builder().hash(e.getHash()).commitMeta(commitMetaFromLogEntry(e));
           if (!e.getParents().isEmpty()) {
             commit.parentHash(e.getParents().get(0));
           }

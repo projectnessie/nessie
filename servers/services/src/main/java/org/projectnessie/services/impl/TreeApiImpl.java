@@ -454,20 +454,12 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   }
 
   private ImmutableLogEntry commitToLogEntry(boolean fetchAll, Commit commit) {
-    CommitMeta commitMetaWithHash =
-        enhanceCommitMeta(commit.getHash(), commit.getCommitMeta(), commit.getAdditionalParents());
+    CommitMeta commitMetaWithHash = enhanceCommitMeta(commit.getHash(), commit.getCommitMeta());
     ImmutableLogEntry.Builder logEntry = LogEntry.builder();
     logEntry.commitMeta(commitMetaWithHash);
     if (commit.getParentHash() != null) {
       logEntry.parentCommitHash(commit.getParentHash().asString());
     }
-
-    // When we can assume that all relevant Nessie clients are aware of the
-    // org.projectnessie.model.LogResponse.LogEntry.getAdditionalParents field, the following code
-    // can be uncommented.
-    // if (commit.getAdditionalParents() != null) {
-    //   commit.getAdditionalParents().forEach(h -> logEntry.addAdditionalParents(h.asString()));
-    // }
 
     if (fetchAll) {
       if (commit.getOperations() != null) {
@@ -489,17 +481,17 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     return logEntry.build();
   }
 
-  private static CommitMeta enhanceCommitMeta(
-      Hash hash, CommitMeta commitMeta, List<Hash> additionalParents) {
-    ImmutableCommitMeta.Builder updatedCommitMeta = commitMeta.toBuilder().hash(hash.asString());
-    if (additionalParents != null && additionalParents.size() == 1) {
-      // Only add the 1st commit ID. The MERGE_PARENT_PROPERTY was introduced for compatibility
-      // with older clients. There is currently only one use case for the property: exposing the
-      // commit ID of the merged commit.
+  private static CommitMeta enhanceCommitMeta(Hash hash, CommitMeta commitMeta) {
+    if (commitMeta.getParentCommitHashes().size() > 1) {
+      ImmutableCommitMeta.Builder updatedCommitMeta = commitMeta.toBuilder().hash(hash.asString());
+      // Only add the 1st commit ID (merge parent) to the legacy MERGE_PARENT_PROPERTY. It was
+      // introduced for compatibility with older clients. There is currently only one use case for
+      // the property: exposing the commit ID of the merged commit.
       updatedCommitMeta.putProperties(
-          CommitMeta.MERGE_PARENT_PROPERTY, additionalParents.get(0).asString());
+          CommitMeta.MERGE_PARENT_PROPERTY, commitMeta.getParentCommitHashes().get(1));
+      return updatedCommitMeta.build();
     }
-    return updatedCommitMeta.build();
+    return commitMeta;
   }
 
   /**
@@ -973,7 +965,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     if (null != refWithHash.getHeadCommitMeta()) {
       found = true;
       builder.commitMetaOfHEAD(
-          enhanceCommitMeta(refWithHash.getHash(), refWithHash.getHeadCommitMeta(), null));
+          enhanceCommitMeta(refWithHash.getHash(), refWithHash.getHeadCommitMeta()));
     }
     if (0L != refWithHash.getCommitSeq()) {
       found = true;

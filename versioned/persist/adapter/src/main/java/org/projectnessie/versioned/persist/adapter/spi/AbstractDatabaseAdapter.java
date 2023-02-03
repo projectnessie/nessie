@@ -774,6 +774,8 @@ public abstract class AbstractDatabaseAdapter<
               .from(ref)
               .headCommitMeta(logEntry.getMetadata())
               .commitSeq(logEntry.getCommitSeq())
+              .addParentHashes(logEntry.getParents().get(0))
+              .addAllParentHashes(logEntry.getAdditionalParents())
               .build();
         });
   }

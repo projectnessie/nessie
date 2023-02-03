@@ -18,6 +18,7 @@ package org.projectnessie.versioned.tests;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
 import com.google.common.collect.ImmutableMap;
@@ -27,7 +28,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import org.assertj.core.api.InstanceOfAssertFactories;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -314,9 +314,10 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
     // fast-forward merge, additional parents not necessary (and not set)
     soft.assertThat(mergedCommit.get(0))
-        .extracting(Commit::getAdditionalParents)
-        .asInstanceOf(InstanceOfAssertFactories.list(Hash.class))
-        .isEmpty();
+        .extracting(Commit::getCommitMeta)
+        .extracting(CommitMeta::getParentCommitHashes)
+        .asInstanceOf(list(Hash.class))
+        .hasSize(1);
   }
 
   @ParameterizedTest
@@ -350,8 +351,11 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
       soft.assertThat(mergedCommits)
           .first()
-          .extracting(Commit::getAdditionalParents)
-          .isEqualTo(singletonList(commits.get(0).getHash()));
+          .extracting(Commit::getCommitMeta)
+          .extracting(CommitMeta::getParentCommitHashes)
+          .asInstanceOf(list(String.class))
+          .containsExactly(
+              mergedCommits.get(1).getHash().asString(), commits.get(0).getHash().asString());
     }
   }
 
@@ -406,15 +410,18 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
               c0 ->
                   assertThat(c0)
                       .extracting(Commit::getCommitMeta)
-                      .isEqualTo(CommitMeta.fromMessage("Third Commit")),
+                      .extracting(CommitMeta::getMessage)
+                      .isEqualTo("Third Commit"),
               c1 ->
                   assertThat(c1)
                       .extracting(Commit::getCommitMeta)
-                      .isEqualTo(CommitMeta.fromMessage("Second Commit")),
+                      .extracting(CommitMeta::getMessage)
+                      .isEqualTo("Second Commit"),
               c2 ->
                   assertThat(c2)
                       .extracting(Commit::getCommitMeta)
-                      .isEqualTo(CommitMeta.fromMessage("First Commit")),
+                      .extracting(CommitMeta::getMessage)
+                      .isEqualTo("First Commit"),
               c3 -> assertThat(c3).extracting(Commit::getHash).isEqualTo(newCommit),
               c4 -> assertThat(c4).extracting(Commit::getHash).isEqualTo(initialHash));
     } else {
@@ -545,8 +552,10 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
       soft.assertThat(commits)
           .first()
-          .extracting(Commit::getAdditionalParents)
-          .isEqualTo(singletonList(thirdCommit));
+          .extracting(Commit::getCommitMeta)
+          .extracting(CommitMeta::getParentCommitHashes)
+          .asInstanceOf(list(String.class))
+          .containsExactly(newCommit.asString(), thirdCommit.asString());
     }
   }
 

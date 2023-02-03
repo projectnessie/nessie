@@ -17,6 +17,7 @@ package org.projectnessie.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
@@ -25,6 +26,7 @@ import javax.validation.constraints.NotNull;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
+import org.projectnessie.model.ser.Views;
 
 @Value.Immutable
 @Schema(type = SchemaType.OBJECT, title = "LogResponse")
@@ -51,7 +53,8 @@ public interface LogResponse extends PaginatedResponse {
     @NotNull
     CommitMeta getCommitMeta();
 
-    /** Currently always empty or null, reserved for future use. */
+    @JsonView(Views.V1.class)
+    @Deprecated // for removal - duplicated in CommitMeta
     @JsonInclude(Include.NON_EMPTY)
     List<String> getAdditionalParents();
 

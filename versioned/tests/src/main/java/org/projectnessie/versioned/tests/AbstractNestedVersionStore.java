@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.tests;
 
 import static com.google.common.collect.Lists.newArrayList;
+import static java.util.Collections.emptyList;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -71,12 +72,15 @@ public abstract class AbstractNestedVersionStore {
     }
   }
 
-  protected static Commit commit(Hash hash, String commitMeta) {
-    return commit(hash, commitMeta, null);
-  }
-
   protected static Commit commit(Hash hash, String commitMeta, Hash parentHash) {
-    return commit(hash, CommitMeta.fromMessage(commitMeta), parentHash);
+    return commit(
+        hash,
+        CommitMeta.builder()
+            .message(commitMeta)
+            .hash(hash.asString())
+            .addParentCommitHashes(parentHash.asString())
+            .build(),
+        parentHash);
   }
 
   protected static Commit commit(Hash hash, CommitMeta commitMessage) {
@@ -123,6 +127,10 @@ public abstract class AbstractNestedVersionStore {
       MetadataRewriter<CommitMeta> commitMetaModifier) {
     soft.assertThat(current)
         .map(Commit::getCommitMeta)
+        .map(
+            m ->
+                (CommitMeta)
+                    CommitMeta.builder().from(m).hash(null).parentCommitHashes(emptyList()).build())
         .containsExactlyElementsOf(
             expected.stream()
                 .map(Commit::getCommitMeta)

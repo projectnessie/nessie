@@ -61,6 +61,7 @@ public abstract class CommitMeta {
    * the key {@value #MERGE_PARENT_PROPERTY}, if the merge was performed with a Nessie server
    * version, after 0.30.0, that persists the merged reference.
    */
+  @Deprecated // for removal
   public static final String MERGE_PARENT_PROPERTY = "_merge_parent";
 
   /**
