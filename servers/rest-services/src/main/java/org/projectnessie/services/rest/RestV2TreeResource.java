@@ -15,6 +15,7 @@
  */
 package org.projectnessie.services.rest;
 
+import static org.projectnessie.api.v2.params.ReferenceResolver.resolveReferencePathElement;
 import static org.projectnessie.services.impl.RefUtil.toReference;
 import static org.projectnessie.services.spi.TreeService.MAX_COMMIT_LOG_ENTRIES;
 
@@ -89,7 +90,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   }
 
   private Reference resolveRef(String refPathString) {
-    return ReferenceResolver.toReference(refPathString, configService::getConfig);
+    return resolveReferencePathElement(refPathString, configService::getConfig);
   }
 
   private TreeService tree() {
@@ -271,7 +272,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   public SingleReferenceResponse assignReference(
       Reference.ReferenceType type, String ref, Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
-    Reference reference = ReferenceResolver.toReference(ref, type);
+    Reference reference = resolveReferencePathElement(ref, type);
     Reference updated =
         tree().assignReference(type, reference.getName(), reference.getHash(), assignTo);
     return SingleReferenceResponse.builder().reference(updated).build();
@@ -281,7 +282,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   @Override
   public SingleReferenceResponse deleteReference(Reference.ReferenceType type, String ref)
       throws NessieConflictException, NessieNotFoundException {
-    Reference reference = ReferenceResolver.toReference(ref, type);
+    Reference reference = resolveReferencePathElement(ref, type);
     String hash = tree().deleteReference(type, reference.getName(), reference.getHash());
     if (reference instanceof Branch) {
       reference = Branch.of(reference.getName(), hash);

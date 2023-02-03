@@ -20,19 +20,23 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.model.Reference;
 
-public class ReferenceResolver {
+public final class ReferenceResolver {
 
   public static final String DEFAULT_REF_IN_PATH = "-";
 
-  public static Reference toReference(String refPathString, Supplier<NessieConfiguration> config) {
+  private ReferenceResolver() {}
+
+  public static Reference resolveReferencePathElement(
+      String refPathString, Supplier<NessieConfiguration> config) {
     if (DEFAULT_REF_IN_PATH.equals(refPathString)) {
       return Branch.of(config.get().getDefaultBranch(), null);
     }
 
-    return toReference(refPathString, Reference.ReferenceType.BRANCH);
+    return resolveReferencePathElement(refPathString, Reference.ReferenceType.BRANCH);
   }
 
-  public static Reference toReference(String refPathString, Reference.ReferenceType type) {
+  public static Reference resolveReferencePathElement(
+      String refPathString, Reference.ReferenceType type) {
     return Reference.fromPathString(refPathString, type);
   }
 }
