@@ -15,7 +15,6 @@
  */
 
 import io.quarkus.gradle.tasks.QuarkusBuild
-import io.quarkus.gradle.tasks.QuarkusGenerateCode
 import org.apache.tools.ant.taskdefs.condition.Os
 
 plugins {
@@ -100,6 +99,7 @@ project.extra["quarkus.package.type"] =
 quarkus { setFinalName("${project.name}-${project.version}") }
 
 tasks.withType<QuarkusBuild>().configureEach {
+  outputs.cacheIf { false }
   inputs.property("quarkus.package.type", project.extra["quarkus.package.type"])
   inputs.property("final.name", quarkus.finalName())
   val quarkusBuilderImage = libs.versions.quarkusBuilderImage.get()
@@ -110,8 +110,6 @@ tasks.withType<QuarkusBuild>().configureEach {
     System.setProperty("quarkus.native.builder-image", quarkusBuilderImage)
   }
 }
-
-tasks.withType<QuarkusGenerateCode>().configureEach { outputs.cacheIf { true } }
 
 val prepareJacocoReport by
   tasks.registering {

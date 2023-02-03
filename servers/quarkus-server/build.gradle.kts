@@ -15,7 +15,6 @@
  */
 
 import io.quarkus.gradle.tasks.QuarkusBuild
-import io.quarkus.gradle.tasks.QuarkusGenerateCode
 import org.apache.tools.ant.taskdefs.condition.Os
 
 plugins {
@@ -131,6 +130,7 @@ val pullOpenApiSpec by
 
 val quarkusBuild =
   tasks.named<QuarkusBuild>("quarkusBuild") {
+    outputs.cacheIf { false }
     dependsOn(pullOpenApiSpec)
     inputs.property("quarkus.package.type", project.extra["quarkus.package.type"])
     inputs.property("final.name", quarkus.finalName())
@@ -152,8 +152,6 @@ val quarkusBuild =
       }
     }
   }
-
-tasks.withType<QuarkusGenerateCode>().configureEach { outputs.cacheIf { true } }
 
 val prepareJacocoReport by
   tasks.registering {
