@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned;
 
+import java.util.List;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
@@ -43,6 +44,8 @@ public interface ReferenceInfo<METADATA> {
   METADATA getHeadCommitMeta();
 
   ReferenceInfo<METADATA> withHeadCommitMeta(@Nullable METADATA value);
+
+  List<Hash> getParentHashes();
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   default <UPDATED_METADATA> ReferenceInfo<UPDATED_METADATA> withUpdatedCommitMeta(

@@ -454,8 +454,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   }
 
   private ImmutableLogEntry commitToLogEntry(boolean fetchAll, Commit commit) {
-    CommitMeta commitMetaWithHash =
-        enhanceCommitMeta(commit.getHash(), commit.getCommitMeta(), commit.getAdditionalParents());
+    CommitMeta commitMetaWithHash = enhanceCommitMeta(commit.getHash(), commit.getCommitMeta());
     ImmutableLogEntry.Builder logEntry = LogEntry.builder();
     logEntry.commitMeta(commitMetaWithHash);
     if (commit.getParentHash() != null) {
@@ -482,20 +481,17 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     return logEntry.build();
   }
 
-  private static CommitMeta enhanceCommitMeta(
-      Hash hash, CommitMeta commitMeta, List<Hash> additionalParents) {
-    ImmutableCommitMeta.Builder updatedCommitMeta = commitMeta.toBuilder().hash(hash.asString());
-    if (additionalParents != null && !additionalParents.isEmpty()) {
-      additionalParents.forEach(p -> updatedCommitMeta.addParentCommitHashes(p.asString()));
-      if (additionalParents.size() == 1) {
-        // Only add the 1st commit ID. The MERGE_PARENT_PROPERTY was introduced for compatibility
-        // with older clients. There is currently only one use case for the property: exposing the
-        // commit ID of the merged commit.
-        updatedCommitMeta.putProperties(
-            CommitMeta.MERGE_PARENT_PROPERTY, additionalParents.get(0).asString());
-      }
+  private static CommitMeta enhanceCommitMeta(Hash hash, CommitMeta commitMeta) {
+    if (commitMeta.getParentCommitHashes().size() > 1) {
+      ImmutableCommitMeta.Builder updatedCommitMeta = commitMeta.toBuilder().hash(hash.asString());
+      // Only add the 1st commit ID to the legacy MERGE_PARENT_PROPERTY. It was introduced for
+      // compatibility with older clients. There is currently only one use case for the
+      // property: exposing the commit ID of the merged commit.
+      updatedCommitMeta.putProperties(
+          CommitMeta.MERGE_PARENT_PROPERTY, commitMeta.getParentCommitHashes().get(1));
+      return updatedCommitMeta.build();
     }
-    return updatedCommitMeta.build();
+    return commitMeta;
   }
 
   /**
@@ -969,7 +965,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     if (null != refWithHash.getHeadCommitMeta()) {
       found = true;
       builder.commitMetaOfHEAD(
-          enhanceCommitMeta(refWithHash.getHash(), refWithHash.getHeadCommitMeta(), null));
+          enhanceCommitMeta(refWithHash.getHash(), refWithHash.getHeadCommitMeta()));
     }
     if (0L != refWithHash.getCommitSeq()) {
       found = true;

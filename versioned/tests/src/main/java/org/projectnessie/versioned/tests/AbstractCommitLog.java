@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Delete;
@@ -62,29 +63,21 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
     List<CommitMeta> messages = new ArrayList<>(commits);
     for (int i = 0; i < commits; i++) {
       String str = String.format("commit#%05d", i);
-      CommitMeta msg = CommitMeta.fromMessage(str);
-      messages.add(msg);
+      ImmutableCommitMeta.Builder msg = CommitMeta.builder().message(str);
 
       Key key = Key.of("table");
-      Content value =
-          store()
-              .getValue(
-                  store()
-                      .hashOnReference(
-                          branch, Optional.of(i == 0 ? createHash : commitHashes[i - 1])),
-                  key);
+      Hash parent = i == 0 ? createHash : commitHashes[i - 1];
+      Content value = store().getValue(store().hashOnReference(branch, Optional.of(parent)), key);
       Put op =
           value != null
               ? Put.of(key, onRef(str, value.getId()), value)
               : Put.of(key, newOnRef(str));
 
       commitHashes[i] =
-          store()
-              .commit(
-                  branch,
-                  Optional.of(i == 0 ? createHash : commitHashes[i - 1]),
-                  msg,
-                  ImmutableList.of(op));
+          store().commit(branch, Optional.of(parent), msg.build(), ImmutableList.of(op));
+
+      messages.add(
+          msg.hash(commitHashes[i].asString()).addParentCommitHashes(parent.asString()).build());
     }
     Collections.reverse(messages);
 
@@ -153,7 +146,6 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
             c -> {
               assertThat(c.getOperations()).isNull();
               assertThat(c.getParentHash()).isNotNull();
-              assertThat(c.getAdditionalParents()).isNotNull();
             })
         .extracting(Commit::getHash)
         .containsExactlyElementsOf(hashes);

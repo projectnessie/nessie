@@ -28,8 +28,6 @@ public interface Commit {
 
   Hash getHash();
 
-  List<Hash> getAdditionalParents();
-
   CommitMeta getCommitMeta();
 
   @Nullable

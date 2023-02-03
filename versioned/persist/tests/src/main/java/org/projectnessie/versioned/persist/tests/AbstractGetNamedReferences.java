@@ -15,10 +15,6 @@
  */
 package org.projectnessie.versioned.persist.tests;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertAll;
-
 import com.google.protobuf.ByteString;
 import java.util.Arrays;
 import java.util.List;
@@ -26,7 +22,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
@@ -43,6 +43,7 @@ import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 
+@ExtendWith(SoftAssertionsExtension.class)
 public abstract class AbstractGetNamedReferences {
 
   public static final String MAIN_BRANCH = "main";
@@ -57,6 +58,8 @@ public abstract class AbstractGetNamedReferences {
   static RetrieveOptions COMPUTE_ALL =
       RetrieveOptions.builder().isComputeAheadBehind(true).isComputeCommonAncestor(true).build();
 
+  @InjectSoftAssertions protected SoftAssertions soft;
+
   protected AbstractGetNamedReferences(DatabaseAdapter databaseAdapter) {
     this.databaseAdapter = databaseAdapter;
   }
@@ -69,84 +72,73 @@ public abstract class AbstractGetNamedReferences {
 
     Hash hash = databaseAdapter.noAncestorHash();
 
-    assertThat(databaseAdapter.hashOnReference(main, Optional.empty())).isEqualTo(hash);
+    soft.assertThat(databaseAdapter.hashOnReference(main, Optional.empty())).isEqualTo(hash);
 
     databaseAdapter.create(parameterValidation, hash);
     databaseAdapter.create(parameterValidationTag, hash);
 
-    assertAll(
-        () ->
-            assertThatThrownBy(() -> databaseAdapter.namedRefs(null))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("Parameter for GetNamedRefsParams must not be null."),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        databaseAdapter.namedRefs(
-                            GetNamedRefsParams.builder()
-                                .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
-                                .build()))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("Base reference name missing."),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        databaseAdapter.namedRefs(
-                            GetNamedRefsParams.builder()
-                                .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
-                                .build()))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("Base reference name missing."),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        databaseAdapter.namedRefs(
-                            GetNamedRefsParams.builder()
-                                .branchRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
-                                .build()))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("Base reference name missing."),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        databaseAdapter.namedRefs(
-                            GetNamedRefsParams.builder()
-                                .tagRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
-                                .build()))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("Base reference name missing."),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        databaseAdapter.namedRefs(
-                            GetNamedRefsParams.builder()
-                                .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
-                                .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
-                                .baseReference(BranchName.of("no-no-no"))
-                                .build()))
-                .isInstanceOf(ReferenceNotFoundException.class)
-                .hasMessage("Named reference 'no-no-no' not found"),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        databaseAdapter.namedRefs(
-                            GetNamedRefsParams.builder()
-                                .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
-                                .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
-                                .baseReference(TagName.of("blah-no"))
-                                .build()))
-                .isInstanceOf(ReferenceNotFoundException.class)
-                .hasMessage("Named reference 'blah-no' not found"),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        databaseAdapter.namedRefs(
-                            GetNamedRefsParams.builder()
-                                .branchRetrieveOptions(RetrieveOptions.OMIT)
-                                .tagRetrieveOptions(RetrieveOptions.OMIT)
-                                .build()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Must retrieve branches or tags or both."));
+    soft.assertThatThrownBy(() -> databaseAdapter.namedRefs(null))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("Parameter for GetNamedRefsParams must not be null.");
+    soft.assertThatThrownBy(
+            () ->
+                databaseAdapter.namedRefs(
+                    GetNamedRefsParams.builder()
+                        .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                        .build()))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("Base reference name missing.");
+    soft.assertThatThrownBy(
+            () ->
+                databaseAdapter.namedRefs(
+                    GetNamedRefsParams.builder().tagRetrieveOptions(COMPUTE_AHEAD_BEHIND).build()))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("Base reference name missing.");
+    soft.assertThatThrownBy(
+            () ->
+                databaseAdapter.namedRefs(
+                    GetNamedRefsParams.builder()
+                        .branchRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
+                        .build()))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("Base reference name missing.");
+    soft.assertThatThrownBy(
+            () ->
+                databaseAdapter.namedRefs(
+                    GetNamedRefsParams.builder()
+                        .tagRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
+                        .build()))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("Base reference name missing.");
+    soft.assertThatThrownBy(
+            () ->
+                databaseAdapter.namedRefs(
+                    GetNamedRefsParams.builder()
+                        .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                        .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                        .baseReference(BranchName.of("no-no-no"))
+                        .build()))
+        .isInstanceOf(ReferenceNotFoundException.class)
+        .hasMessage("Named reference 'no-no-no' not found");
+    soft.assertThatThrownBy(
+            () ->
+                databaseAdapter.namedRefs(
+                    GetNamedRefsParams.builder()
+                        .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                        .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                        .baseReference(TagName.of("blah-no"))
+                        .build()))
+        .isInstanceOf(ReferenceNotFoundException.class)
+        .hasMessage("Named reference 'blah-no' not found");
+    soft.assertThatThrownBy(
+            () ->
+                databaseAdapter.namedRefs(
+                    GetNamedRefsParams.builder()
+                        .branchRetrieveOptions(RetrieveOptions.OMIT)
+                        .tagRetrieveOptions(RetrieveOptions.OMIT)
+                        .build()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Must retrieve branches or tags or both.");
   }
 
   @Test
@@ -157,91 +149,77 @@ public abstract class AbstractGetNamedReferences {
 
     Hash hash = databaseAdapter.noAncestorHash();
 
-    assertThat(databaseAdapter.hashOnReference(main, Optional.empty())).isEqualTo(hash);
+    soft.assertThat(databaseAdapter.hashOnReference(main, Optional.empty())).isEqualTo(hash);
 
     databaseAdapter.create(parameterValidation, hash);
     databaseAdapter.create(parameterValidationTag, hash);
 
-    assertAll(
-        () ->
-            assertThatThrownBy(() -> databaseAdapter.namedRef(main.getName(), null))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("Parameter for GetNamedRefsParams must not be null"),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        databaseAdapter.namedRef(
-                            parameterValidation.getName(),
-                            GetNamedRefsParams.builder()
-                                .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
-                                .build()))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("Base reference name missing."),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        databaseAdapter.namedRef(
-                            parameterValidation.getName(),
-                            GetNamedRefsParams.builder()
-                                .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
-                                .build()))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("Base reference name missing."),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        databaseAdapter.namedRef(
-                            parameterValidation.getName(),
-                            GetNamedRefsParams.builder()
-                                .branchRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
-                                .build()))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("Base reference name missing."),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        databaseAdapter.namedRef(
-                            parameterValidation.getName(),
-                            GetNamedRefsParams.builder()
-                                .tagRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
-                                .build()))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("Base reference name missing."),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        databaseAdapter.namedRef(
-                            parameterValidation.getName(),
-                            GetNamedRefsParams.builder()
-                                .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
-                                .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
-                                .baseReference(BranchName.of("no-no-no"))
-                                .build()))
-                .isInstanceOf(ReferenceNotFoundException.class)
-                .hasMessage("Named reference 'no-no-no' not found"),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        databaseAdapter.namedRef(
-                            parameterValidation.getName(),
-                            GetNamedRefsParams.builder()
-                                .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
-                                .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
-                                .baseReference(TagName.of("blah-no"))
-                                .build()))
-                .isInstanceOf(ReferenceNotFoundException.class)
-                .hasMessage("Named reference 'blah-no' not found"),
-        () ->
-            assertThatThrownBy(
-                    () ->
-                        databaseAdapter.namedRef(
-                            parameterValidationTag.getName(),
-                            GetNamedRefsParams.builder()
-                                .tagRetrieveOptions(RetrieveOptions.OMIT)
-                                .build()))
-                .isInstanceOf(ReferenceNotFoundException.class)
-                .hasMessage(
-                    "Named reference '" + parameterValidationTag.getName() + "' not found"));
+    soft.assertThatThrownBy(() -> databaseAdapter.namedRef(main.getName(), null))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("Parameter for GetNamedRefsParams must not be null");
+    soft.assertThatThrownBy(
+            () ->
+                databaseAdapter.namedRef(
+                    parameterValidation.getName(),
+                    GetNamedRefsParams.builder()
+                        .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                        .build()))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("Base reference name missing.");
+    soft.assertThatThrownBy(
+            () ->
+                databaseAdapter.namedRef(
+                    parameterValidation.getName(),
+                    GetNamedRefsParams.builder().tagRetrieveOptions(COMPUTE_AHEAD_BEHIND).build()))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("Base reference name missing.");
+    soft.assertThatThrownBy(
+            () ->
+                databaseAdapter.namedRef(
+                    parameterValidation.getName(),
+                    GetNamedRefsParams.builder()
+                        .branchRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
+                        .build()))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("Base reference name missing.");
+    soft.assertThatThrownBy(
+            () ->
+                databaseAdapter.namedRef(
+                    parameterValidation.getName(),
+                    GetNamedRefsParams.builder()
+                        .tagRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
+                        .build()))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("Base reference name missing.");
+    soft.assertThatThrownBy(
+            () ->
+                databaseAdapter.namedRef(
+                    parameterValidation.getName(),
+                    GetNamedRefsParams.builder()
+                        .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                        .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                        .baseReference(BranchName.of("no-no-no"))
+                        .build()))
+        .isInstanceOf(ReferenceNotFoundException.class)
+        .hasMessage("Named reference 'no-no-no' not found");
+    soft.assertThatThrownBy(
+            () ->
+                databaseAdapter.namedRef(
+                    parameterValidation.getName(),
+                    GetNamedRefsParams.builder()
+                        .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                        .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+                        .baseReference(TagName.of("blah-no"))
+                        .build()))
+        .isInstanceOf(ReferenceNotFoundException.class)
+        .hasMessage("Named reference 'blah-no' not found");
+    soft.assertThatThrownBy(
+            () ->
+                databaseAdapter.namedRef(
+                    parameterValidationTag.getName(),
+                    GetNamedRefsParams.builder().tagRetrieveOptions(RetrieveOptions.OMIT).build()))
+        .isInstanceOf(ReferenceNotFoundException.class)
+        .hasMessage("Named reference '" + parameterValidationTag.getName() + "' not found");
   }
 
   @Test
@@ -256,9 +234,12 @@ public abstract class AbstractGetNamedReferences {
 
     Hash hash = databaseAdapter.noAncestorHash();
     Hash mainHash = hash;
+    Hash mainParent = null;
     Hash branchHash = hash;
+    Hash branchParent = null;
+    Hash tagParent = null;
 
-    assertThat(databaseAdapter.hashOnReference(main, Optional.empty())).isEqualTo(hash);
+    soft.assertThat(databaseAdapter.hashOnReference(main, Optional.empty())).isEqualTo(hash);
 
     // Have 'main' + a branch + a tag
     //  all point to the "no ancestor" hash (aka "beginning of time")
@@ -267,55 +248,67 @@ public abstract class AbstractGetNamedReferences {
     databaseAdapter.create(tag, hash);
 
     verifyReferences(
-        new ExpectedNamedReference(main, 0L, mainHash, 0, 0, hash, null),
-        new ExpectedNamedReference(branch, 0L, branchHash, 0, 0, hash, null),
-        new ExpectedNamedReference(tag, 0L, hash, 0, 0, hash, null));
+        new ExpectedNamedReference(main, 0L, mainHash, mainParent, 0, 0, hash, null),
+        new ExpectedNamedReference(branch, 0L, branchHash, branchParent, 0, 0, hash, null),
+        new ExpectedNamedReference(tag, 0L, hash, tagParent, 0, 0, hash, null));
 
     // Add 10 commits to 'main'
 
     for (int i = 0; i < 10; i++) {
+      mainParent = mainHash;
       mainHash = dummyCommit(main, mainHash, i + 1);
     }
 
     // Expect a commit-metadata for 'main', branch+tag are then 100 commits behind.
 
     verifyReferences(
-        new ExpectedNamedReference(main, 10, mainHash, 0, 0, hash, commitMetaFor(main, 10)),
-        new ExpectedNamedReference(branch, 0, branchHash, 0, 10, hash, null),
-        new ExpectedNamedReference(tag, 0, hash, 0, 10, hash, null));
+        new ExpectedNamedReference(
+            main, 10, mainHash, mainParent, 0, 0, hash, commitMetaFor(main, 10)),
+        new ExpectedNamedReference(branch, 0, branchHash, branchParent, 0, 10, hash, null),
+        new ExpectedNamedReference(tag, 0, hash, tagParent, 0, 10, hash, null));
 
     // Add 4 commits to branch
 
     for (int i = 0; i < 4; i++) {
+      branchParent = branchHash;
       branchHash = dummyCommit(branch, branchHash, i + 1);
     }
 
     // same expectations as above, but branch is now also 42 commits ahead
 
     verifyReferences(
-        new ExpectedNamedReference(main, 10, mainHash, 0, 0, hash, commitMetaFor(main, 10)),
-        new ExpectedNamedReference(branch, 4, branchHash, 4, 10, hash, commitMetaFor(branch, 4)),
-        new ExpectedNamedReference(tag, 0, hash, 0, 10, hash, null));
+        new ExpectedNamedReference(
+            main, 10, mainHash, mainParent, 0, 0, hash, commitMetaFor(main, 10)),
+        new ExpectedNamedReference(
+            branch, 4, branchHash, branchParent, 4, 10, hash, commitMetaFor(branch, 4)),
+        new ExpectedNamedReference(tag, 0, hash, tagParent, 0, 10, hash, null));
 
     // create a branch2 + tag2 from 'main'
 
     Hash main10 = mainHash;
+    Hash branch2Parent = mainParent;
     Hash branch2Hash = databaseAdapter.create(branch2, main10);
+    Hash tag2Parent = mainParent;
     Hash tag2Hash = databaseAdapter.create(tag2, main10);
 
     // same expectations as above, but include branch2 + tag2
     // - common ancestor of branch2 + tag2 is the 100th commit on 'main'
 
     verifyReferences(
-        new ExpectedNamedReference(main, 10, mainHash, 0, 0, hash, commitMetaFor(main, 10)),
-        new ExpectedNamedReference(branch, 4, branchHash, 4, 10, hash, commitMetaFor(branch, 4)),
-        new ExpectedNamedReference(tag, 0, hash, 0, 10, hash, null),
-        new ExpectedNamedReference(branch2, 10, branch2Hash, 0, 0, main10, commitMetaFor(main, 10)),
-        new ExpectedNamedReference(tag2, 10, tag2Hash, 0, 0, main10, commitMetaFor(main, 10)));
+        new ExpectedNamedReference(
+            main, 10, mainHash, mainParent, 0, 0, hash, commitMetaFor(main, 10)),
+        new ExpectedNamedReference(
+            branch, 4, branchHash, branchParent, 4, 10, hash, commitMetaFor(branch, 4)),
+        new ExpectedNamedReference(tag, 0, hash, tagParent, 0, 10, hash, null),
+        new ExpectedNamedReference(
+            branch2, 10, branch2Hash, branch2Parent, 0, 0, main10, commitMetaFor(main, 10)),
+        new ExpectedNamedReference(
+            tag2, 10, tag2Hash, tag2Parent, 0, 0, main10, commitMetaFor(main, 10)));
 
     // add 10 more commits to 'main'
 
     for (int i = 10; i < 20; i++) {
+      mainParent = mainHash;
       mainHash = dummyCommit(main, mainHash, i + 1);
     }
 
@@ -323,16 +316,20 @@ public abstract class AbstractGetNamedReferences {
     // - branch + tag are now 100+900 = 1000 commits behind
 
     verifyReferences(
-        new ExpectedNamedReference(main, 20, mainHash, 0, 0, hash, commitMetaFor(main, 20)),
-        new ExpectedNamedReference(branch, 4, branchHash, 4, 20, hash, commitMetaFor(branch, 4)),
-        new ExpectedNamedReference(tag, 0, hash, 0, 20, hash, null),
         new ExpectedNamedReference(
-            branch2, 10, branch2Hash, 0, 10, main10, commitMetaFor(main, 10)),
-        new ExpectedNamedReference(tag2, 10, tag2Hash, 0, 10, main10, commitMetaFor(main, 10)));
+            main, 20, mainHash, mainParent, 0, 0, hash, commitMetaFor(main, 20)),
+        new ExpectedNamedReference(
+            branch, 4, branchHash, branchParent, 4, 20, hash, commitMetaFor(branch, 4)),
+        new ExpectedNamedReference(tag, 0, hash, tagParent, 0, 20, hash, null),
+        new ExpectedNamedReference(
+            branch2, 10, branch2Hash, branch2Parent, 0, 10, main10, commitMetaFor(main, 10)),
+        new ExpectedNamedReference(
+            tag2, 10, tag2Hash, tag2Parent, 0, 10, main10, commitMetaFor(main, 10)));
 
     // add 4 commits to branch2
 
     for (int i = 0; i < 4; i++) {
+      branch2Parent = branch2Hash;
       branch2Hash = dummyCommit(branch2, branch2Hash, i + 1);
     }
 
@@ -340,22 +337,28 @@ public abstract class AbstractGetNamedReferences {
     // - branch2 is now also 42 commits ahead
 
     verifyReferences(
-        new ExpectedNamedReference(main, 20, mainHash, 0, 0, hash, commitMetaFor(main, 20)),
-        new ExpectedNamedReference(branch, 4, branchHash, 4, 20, hash, commitMetaFor(branch, 4)),
-        new ExpectedNamedReference(tag, 0, hash, 0, 20, hash, null),
         new ExpectedNamedReference(
-            branch2, 14, branch2Hash, 4, 10, main10, commitMetaFor(branch2, 4)),
-        new ExpectedNamedReference(tag2, 10, tag2Hash, 0, 10, main10, commitMetaFor(main, 10)));
+            main, 20, mainHash, mainParent, 0, 0, hash, commitMetaFor(main, 20)),
+        new ExpectedNamedReference(
+            branch, 4, branchHash, branchParent, 4, 20, hash, commitMetaFor(branch, 4)),
+        new ExpectedNamedReference(tag, 0, hash, tagParent, 0, 20, hash, null),
+        new ExpectedNamedReference(
+            branch2, 14, branch2Hash, branch2Parent, 4, 10, main10, commitMetaFor(branch2, 4)),
+        new ExpectedNamedReference(
+            tag2, 10, tag2Hash, tag2Parent, 0, 10, main10, commitMetaFor(main, 10)));
 
     // Create branch2+tag3 at branch2
 
     Hash branch2plus42 = branch2Hash;
     Hash branch3Hash = databaseAdapter.create(branch3, branch2plus42);
+    Hash branch3Parent = branch2Parent;
     Hash tag3Hash = databaseAdapter.create(tag3, branch2plus42);
+    Hash tag3Parent = branch2Parent;
 
     // Add 42 commits to branch3
 
     for (int i = 0; i < 4; i++) {
+      branch3Parent = branch3Hash;
       branch3Hash = dummyCommit(branch3, branch3Hash, i + 1);
     }
 
@@ -364,15 +367,19 @@ public abstract class AbstractGetNamedReferences {
     // - branch3 is 84 commits ahead
 
     verifyReferences(
-        new ExpectedNamedReference(main, 20, mainHash, 0, 0, hash, commitMetaFor(main, 20)),
-        new ExpectedNamedReference(branch, 4, branchHash, 4, 20, hash, commitMetaFor(branch, 4)),
-        new ExpectedNamedReference(tag, 0, hash, 0, 20, hash, null),
         new ExpectedNamedReference(
-            branch2, 14, branch2Hash, 4, 10, main10, commitMetaFor(branch2, 4)),
-        new ExpectedNamedReference(tag2, 10, tag2Hash, 0, 10, main10, commitMetaFor(main, 10)),
+            main, 20, mainHash, mainParent, 0, 0, hash, commitMetaFor(main, 20)),
         new ExpectedNamedReference(
-            branch3, 18, branch3Hash, 8, 10, main10, commitMetaFor(branch3, 4)),
-        new ExpectedNamedReference(tag3, 14, tag3Hash, 4, 10, main10, commitMetaFor(branch2, 4)));
+            branch, 4, branchHash, branchParent, 4, 20, hash, commitMetaFor(branch, 4)),
+        new ExpectedNamedReference(tag, 0, hash, tagParent, 0, 20, hash, null),
+        new ExpectedNamedReference(
+            branch2, 14, branch2Hash, branch2Parent, 4, 10, main10, commitMetaFor(branch2, 4)),
+        new ExpectedNamedReference(
+            tag2, 10, tag2Hash, tag2Parent, 0, 10, main10, commitMetaFor(main, 10)),
+        new ExpectedNamedReference(
+            branch3, 18, branch3Hash, branch3Parent, 8, 10, main10, commitMetaFor(branch3, 4)),
+        new ExpectedNamedReference(
+            tag3, 14, tag3Hash, tag3Parent, 4, 10, main10, commitMetaFor(branch2, 4)));
   }
 
   private ByteString commitMetaFor(NamedRef ref, int num) {
@@ -394,102 +401,83 @@ public abstract class AbstractGetNamedReferences {
             .build());
   }
 
-  private void verifyReferences(ExpectedNamedReference... references) {
-    assertAll(
-        () -> verifyReferences(GetNamedRefsParams.builder().build(), references),
-        () ->
-            verifyReferences(
-                GetNamedRefsParams.builder()
-                    .branchRetrieveOptions(RetrieveOptions.COMMIT_META)
-                    .tagRetrieveOptions(RetrieveOptions.COMMIT_META)
-                    .build(),
-                references),
-        () ->
-            verifyReferences(
-                GetNamedRefsParams.builder()
-                    .branchRetrieveOptions(RetrieveOptions.COMMIT_META)
-                    .build(),
-                references),
-        () ->
-            verifyReferences(
-                GetNamedRefsParams.builder()
-                    .tagRetrieveOptions(RetrieveOptions.COMMIT_META)
-                    .build(),
-                references),
-        () ->
-            verifyReferences(
-                GetNamedRefsParams.builder()
-                    .baseReference(BranchName.of(MAIN_BRANCH))
-                    .branchRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
-                    .tagRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
-                    .build(),
-                references),
-        () ->
-            verifyReferences(
-                GetNamedRefsParams.builder()
-                    .baseReference(BranchName.of(MAIN_BRANCH))
-                    .branchRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
-                    .build(),
-                references),
-        () ->
-            verifyReferences(
-                GetNamedRefsParams.builder()
-                    .baseReference(BranchName.of(MAIN_BRANCH))
-                    .tagRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
-                    .build(),
-                references),
-        () ->
-            verifyReferences(
-                GetNamedRefsParams.builder()
-                    .baseReference(BranchName.of(MAIN_BRANCH))
-                    .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
-                    .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
-                    .build(),
-                references),
-        () ->
-            verifyReferences(
-                GetNamedRefsParams.builder()
-                    .baseReference(BranchName.of(MAIN_BRANCH))
-                    .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
-                    .build(),
-                references),
-        () ->
-            verifyReferences(
-                GetNamedRefsParams.builder()
-                    .baseReference(BranchName.of(MAIN_BRANCH))
-                    .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
-                    .build(),
-                references),
-        () ->
-            verifyReferences(
-                GetNamedRefsParams.builder()
-                    .baseReference(BranchName.of(MAIN_BRANCH))
-                    .branchRetrieveOptions(COMPUTE_ALL)
-                    .tagRetrieveOptions(COMPUTE_ALL)
-                    .build(),
-                references),
-        () ->
-            verifyReferences(
-                GetNamedRefsParams.builder()
-                    .baseReference(BranchName.of(MAIN_BRANCH))
-                    .tagRetrieveOptions(COMPUTE_ALL)
-                    .build(),
-                references),
-        () ->
-            verifyReferences(
-                GetNamedRefsParams.builder()
-                    .baseReference(BranchName.of(MAIN_BRANCH))
-                    .branchRetrieveOptions(COMPUTE_ALL)
-                    .build(),
-                references),
-        () ->
-            verifyReferences(
-                GetNamedRefsParams.builder().branchRetrieveOptions(RetrieveOptions.OMIT).build(),
-                references),
-        () ->
-            verifyReferences(
-                GetNamedRefsParams.builder().tagRetrieveOptions(RetrieveOptions.OMIT).build(),
-                references));
+  private void verifyReferences(ExpectedNamedReference... references)
+      throws ReferenceNotFoundException {
+    verifyReferences(GetNamedRefsParams.builder().build(), references);
+    verifyReferences(
+        GetNamedRefsParams.builder()
+            .branchRetrieveOptions(RetrieveOptions.COMMIT_META)
+            .tagRetrieveOptions(RetrieveOptions.COMMIT_META)
+            .build(),
+        references);
+    verifyReferences(
+        GetNamedRefsParams.builder().branchRetrieveOptions(RetrieveOptions.COMMIT_META).build(),
+        references);
+    verifyReferences(
+        GetNamedRefsParams.builder().tagRetrieveOptions(RetrieveOptions.COMMIT_META).build(),
+        references);
+    verifyReferences(
+        GetNamedRefsParams.builder()
+            .baseReference(BranchName.of(MAIN_BRANCH))
+            .branchRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
+            .tagRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
+            .build(),
+        references);
+    verifyReferences(
+        GetNamedRefsParams.builder()
+            .baseReference(BranchName.of(MAIN_BRANCH))
+            .branchRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
+            .build(),
+        references);
+    verifyReferences(
+        GetNamedRefsParams.builder()
+            .baseReference(BranchName.of(MAIN_BRANCH))
+            .tagRetrieveOptions(COMPUTE_COMMON_ANCESTOR)
+            .build(),
+        references);
+    verifyReferences(
+        GetNamedRefsParams.builder()
+            .baseReference(BranchName.of(MAIN_BRANCH))
+            .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+            .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+            .build(),
+        references);
+    verifyReferences(
+        GetNamedRefsParams.builder()
+            .baseReference(BranchName.of(MAIN_BRANCH))
+            .branchRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+            .build(),
+        references);
+    verifyReferences(
+        GetNamedRefsParams.builder()
+            .baseReference(BranchName.of(MAIN_BRANCH))
+            .tagRetrieveOptions(COMPUTE_AHEAD_BEHIND)
+            .build(),
+        references);
+    verifyReferences(
+        GetNamedRefsParams.builder()
+            .baseReference(BranchName.of(MAIN_BRANCH))
+            .branchRetrieveOptions(COMPUTE_ALL)
+            .tagRetrieveOptions(COMPUTE_ALL)
+            .build(),
+        references);
+    verifyReferences(
+        GetNamedRefsParams.builder()
+            .baseReference(BranchName.of(MAIN_BRANCH))
+            .tagRetrieveOptions(COMPUTE_ALL)
+            .build(),
+        references);
+    verifyReferences(
+        GetNamedRefsParams.builder()
+            .baseReference(BranchName.of(MAIN_BRANCH))
+            .branchRetrieveOptions(COMPUTE_ALL)
+            .build(),
+        references);
+    verifyReferences(
+        GetNamedRefsParams.builder().branchRetrieveOptions(RetrieveOptions.OMIT).build(),
+        references);
+    verifyReferences(
+        GetNamedRefsParams.builder().tagRetrieveOptions(RetrieveOptions.OMIT).build(), references);
   }
 
   private void verifyReferences(GetNamedRefsParams params, ExpectedNamedReference... references)
@@ -501,13 +489,14 @@ public abstract class AbstractGetNamedReferences {
             .collect(Collectors.toList());
 
     try (Stream<ReferenceInfo<ByteString>> refs = databaseAdapter.namedRefs(params)) {
-      assertThat(refs)
+      soft.assertThat(refs)
           .describedAs("GetNamedRefsParams=%s - references=%s", params, references)
           .containsExactlyInAnyOrderElementsOf(expectedRefs);
     }
 
     for (ReferenceInfo<ByteString> expected : expectedRefs) {
-      assertThat(databaseAdapter.namedRef(expected.getNamedRef().getName(), params))
+      soft.assertThat(databaseAdapter.namedRef(expected.getNamedRef().getName(), params))
+          .describedAs("GetNamedRefsParams=%s - references=%s", params, references)
           .isEqualTo(expected);
     }
 
@@ -525,14 +514,18 @@ public abstract class AbstractGetNamedReferences {
             .collect(Collectors.toList());
 
     for (NamedRef ref : failureRefs) {
-      assertThatThrownBy(() -> databaseAdapter.namedRef(ref.getName(), params));
+      soft.assertThatThrownBy(() -> databaseAdapter.namedRef(ref.getName(), params))
+          .describedAs("GetNamedRefsParams=%s - references=%s", params, references);
     }
+
+    soft.assertAll();
   }
 
   static class ExpectedNamedReference {
     final NamedRef ref;
     final long commitSeq;
     final Hash hash;
+    final Hash parentHash;
     final CommitsAheadBehind aheadBehind;
     final Hash commonAncestor;
     final ByteString commitMeta;
@@ -541,6 +534,7 @@ public abstract class AbstractGetNamedReferences {
         NamedRef ref,
         long commitSeq,
         Hash hash,
+        Hash parentHash,
         int ahead,
         int behind,
         Hash commonAncestor,
@@ -548,6 +542,7 @@ public abstract class AbstractGetNamedReferences {
       this.ref = ref;
       this.commitSeq = commitSeq;
       this.hash = hash;
+      this.parentHash = parentHash;
       this.aheadBehind = CommitsAheadBehind.of(ahead, behind);
       this.commonAncestor = commonAncestor;
       this.commitMeta = commitMeta;
@@ -579,6 +574,9 @@ public abstract class AbstractGetNamedReferences {
       }
       if (opts.isRetrieveCommitMetaForHead()) {
         builder.headCommitMeta(commitMeta).commitSeq(commitSeq);
+        if (parentHash != null) {
+          builder.addParentHashes(parentHash);
+        }
       }
       return builder.build();
     }

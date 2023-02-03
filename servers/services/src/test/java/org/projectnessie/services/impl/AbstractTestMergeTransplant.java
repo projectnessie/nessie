@@ -239,7 +239,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
           .extracting(LogEntry::getCommitMeta)
           .extracting(CommitMeta::getParentCommitHashes)
           .asInstanceOf(list(String.class))
-          .containsExactly(committed2.getHash());
+          .containsExactly(baseHead.getHash(), committed2.getHash());
       soft.assertThat(logOfMerged)
           .first()
           .extracting(LogEntry::getCommitMeta)

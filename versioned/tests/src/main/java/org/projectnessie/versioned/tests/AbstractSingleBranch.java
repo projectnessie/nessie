@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.tests;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
@@ -31,6 +31,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
@@ -99,13 +100,15 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
     Arrays.fill(hashesKnownByUser, createHash);
 
     List<CommitMeta> expectedValues = new ArrayList<>();
+    Hash parent = createHash;
     for (int commitNum = 0; commitNum < numCommits; commitNum++) {
       for (int user = 0; user < numUsers; user++) {
         Hash hashKnownByUser = hashesKnownByUser[user];
 
-        CommitMeta msg =
-            CommitMeta.fromMessage(String.format("user %03d/commit %03d", user, commitNum));
-        expectedValues.add(msg);
+        ImmutableCommitMeta.Builder msg =
+            CommitMeta.builder()
+                .message(String.format("user %03d/commit %03d", user, commitNum))
+                .addParentCommitHashes(parent.asString());
 
         Key key = Key.of(param.tableNameGen.apply(user));
         List<Operation> ops =
@@ -113,16 +116,20 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
 
         Hash commitHash;
         try {
-          commitHash = store().commit(branch, Optional.of(hashKnownByUser), msg, ops);
+          commitHash = store().commit(branch, Optional.of(hashKnownByUser), msg.build(), ops);
         } catch (ReferenceConflictException inconsistentValueException) {
           if (param.allowInconsistentValueException) {
             hashKnownByUser = store().hashOnReference(branch, Optional.empty());
             ops = singleBranchManyUsersOps(branch, commitNum, user, hashKnownByUser, key);
-            commitHash = store().commit(branch, Optional.of(hashKnownByUser), msg, ops);
+            commitHash = store().commit(branch, Optional.of(hashKnownByUser), msg.build(), ops);
           } else {
             throw inconsistentValueException;
           }
         }
+
+        parent = commitHash;
+
+        expectedValues.add(msg.hash(commitHash.asString()).build());
 
         assertNotEquals(hashKnownByUser, commitHash);
 
@@ -134,7 +141,7 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
     List<CommitMeta> committedValues =
         commitsListMap(branch, Integer.MAX_VALUE, Commit::getCommitMeta);
     Collections.reverse(expectedValues);
-    assertEquals(expectedValues, committedValues);
+    assertThat(committedValues).containsExactlyElementsOf(expectedValues);
   }
 
   private List<Operation> singleBranchManyUsersOps(
@@ -154,3 +161,12 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
     return ops;
   }
 }
+
+//   [CommitMeta{hash=89ed3813d41d9b3f15ee1b62ea6a41d81743be8a7372e7c047159065c8db4406,
+// committer=null, author=null, allAuthors=[], signedOffBy=null, allSignedOffBy=[], message=user
+// 002/commit 019, commitTime=null, authorTime=null, allProperties={},
+// parentCommitHashes=[35fdf4b429911fd5b24bf45222703600c9fc63f93cae16118cf2d60769428792]},
+//   [CommitMeta{hash=89ed3813d41d9b3f15ee1b62ea6a41d81743be8a7372e7c047159065c8db4406,
+// committer=null, author=null, allAuthors=[], signedOffBy=null, allSignedOffBy=[], message=user
+// 002/commit 019, commitTime=null, authorTime=null, allProperties={},
+// parentCommitHashes=[ec2e96fe02635ef44d101f72df75f1082eb1880cc7eb0f19ef3b0c86709e8460]},

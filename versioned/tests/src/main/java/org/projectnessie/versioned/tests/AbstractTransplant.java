@@ -78,7 +78,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     return new MetadataRewriter<CommitMeta>() {
       @Override
       public CommitMeta rewriteSingle(CommitMeta metadata) {
-        return metadata;
+        return CommitMeta.fromMessage(metadata.getMessage());
       }
 
       @Override
