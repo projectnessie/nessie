@@ -92,7 +92,7 @@ tasks.withType<ProcessResources>().configureEach {
 }
 
 // nessie-quarkus-cli module needs to be adopted before we can generate a native runner
-val packageType = if (withUberJar() || project.hasProperty("native")) "uber-jar" else "fast-jar"
+val packageType = quarkusNonNativePackageType()
 val quarkusBuilderImage = libs.versions.quarkusBuilderImage.get()
 
 quarkus { quarkusBuildProperties.put("quarkus.package.type", packageType) }
@@ -151,7 +151,7 @@ tasks.named<Test>("intTest") {
   setForkEvery(2)
 }
 
-if (withUberJar()) {
+if (quarkusFatJar()) {
   afterEvaluate {
     publishing {
       publications {

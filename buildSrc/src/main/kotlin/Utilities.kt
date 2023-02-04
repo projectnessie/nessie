@@ -35,7 +35,6 @@ import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.kotlin.dsl.DependencyHandlerScope
-import org.gradle.kotlin.dsl.add
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.exclude
 import org.gradle.kotlin.dsl.extra
@@ -152,7 +151,13 @@ fun DependencyHandlerScope.nessieProject(
 }
 
 /** Utility method to check whether a Quarkus build shall produce the uber-jar. */
-fun Project.withUberJar(): Boolean = hasProperty("uber-jar") || isIntegrationsTestingEnabled()
+fun Project.quarkusFatJar(): Boolean = hasProperty("uber-jar") || isIntegrationsTestingEnabled()
+
+fun Project.quarkusPackageType(): String =
+  if (quarkusFatJar()) "uber-jar" else if (hasProperty("native")) "native" else "fast-jar"
+
+fun Project.quarkusNonNativePackageType(): String =
+  if (quarkusFatJar() || hasProperty("native")) "uber-jar" else "fast-jar"
 
 fun Project.applyShadowJar() {
   plugins.apply(ShadowPlugin::class.java)

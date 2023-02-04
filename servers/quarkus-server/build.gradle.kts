@@ -115,12 +115,16 @@ val pullOpenApiSpec by
 
 val openApiSpecDir = buildDir.resolve("openapi-extra")
 val useDocker = project.hasProperty("docker")
-val packageType =
-  if (withUberJar()) "uber-jar" else if (project.hasProperty("native")) "native" else "fast-jar"
+val packageType = quarkusPackageType()
 val quarkusBuilderImage = libs.versions.quarkusBuilderImage.get()
 
 quarkus {
   quarkusBuildProperties.put("quarkus.package.type", packageType)
+  quarkusBuildProperties.put("quarkus.native.builder-image", quarkusBuilderImage)
+  if (useDocker) {
+    quarkusBuildProperties.put("quarkus.native.container-build", "true")
+    quarkusBuildProperties.put("quarkus.container-image.build", "true")
+  }
   quarkusBuildProperties.put(
     "quarkus.smallrye-openapi.store-schema-directory",
     buildDir.resolve("openapi").toString()
@@ -129,11 +133,6 @@ quarkus {
     "quarkus.smallrye-openapi.additional-docs-directory",
     openApiSpecDir.toString()
   )
-  quarkusBuildProperties.put("quarkus.native.builder-image", quarkusBuilderImage)
-  if (useDocker) {
-    quarkusBuildProperties.put("quarkus.native.container-build", "true")
-    quarkusBuildProperties.put("quarkus.container-image.build", "true")
-  }
 }
 
 val quarkusBuild =
@@ -144,12 +143,6 @@ val quarkusBuild =
     inputs.property("final.name", quarkus.finalName())
     inputs.property("container-build", useDocker)
     inputs.property("builder-image", quarkusBuilderImage)
-    if (useDocker) {
-      // Use the "docker" profile to just build the Docker container image when the native image's
-      // been built
-      nativeArgs { "container-build" to true }
-    }
-    nativeArgs { "builder-image" to quarkusBuilderImage }
   }
 
 val prepareJacocoReport by
@@ -210,7 +203,7 @@ artifacts {
   add(
     quarkusRunner.name,
     provider {
-      if (withUberJar()) quarkusBuild.get().runnerJar
+      if (quarkusFatJar()) quarkusBuild.get().runnerJar
       else quarkusBuild.get().fastJar.resolve("quarkus-run.jar")
     }
   ) {
@@ -219,7 +212,7 @@ artifacts {
 }
 
 // Add the uber-jar, if built, to the Maven publication
-if (withUberJar()) {
+if (quarkusFatJar()) {
   afterEvaluate {
     publishing {
       publications {
