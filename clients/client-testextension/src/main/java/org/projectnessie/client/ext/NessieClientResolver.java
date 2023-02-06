@@ -102,6 +102,11 @@ public abstract class NessieClientResolver implements ParameterResolver {
       this.apiVersion = apiVersion;
     }
 
+    @Override
+    public NessieApiVersion apiVersion() {
+      return apiVersion;
+    }
+
     @Nonnull
     @Override
     public NessieApiV1 make(NessieClientCustomizer customizer) {
