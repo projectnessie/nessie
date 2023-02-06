@@ -92,20 +92,15 @@ tasks.withType<ProcessResources>().configureEach {
 }
 
 // nessie-quarkus-cli module needs to be adopted before we can generate a native runner
-project.extra["quarkus.package.type"] =
-  if (withUberJar() || project.hasProperty("native")) "uber-jar" else "fast-jar"
+val packageType = quarkusNonNativePackageType()
+val quarkusBuilderImage = libs.versions.quarkusBuilderImage.get()
+
+quarkus { quarkusBuildProperties.put("quarkus.package.type", packageType) }
 
 tasks.withType<QuarkusBuild>().configureEach {
-  outputs.cacheIf { false }
-  inputs.property("quarkus.package.type", project.extra["quarkus.package.type"])
+  outputs.doNotCacheIf("Do not add huge cache artifacts to build cache") { true }
+  inputs.property("quarkus.package.type", packageType)
   inputs.property("final.name", quarkus.finalName())
-  val quarkusBuilderImage = libs.versions.quarkusBuilderImage.get()
-  inputs.property("builder-image", quarkusBuilderImage)
-  nativeArgs { "builder-image" to quarkusBuilderImage }
-  doFirst {
-    // THIS IS A WORKAROUND! the nativeArgs{} thing above doesn't really work
-    System.setProperty("quarkus.native.builder-image", quarkusBuilderImage)
-  }
 }
 
 val prepareJacocoReport by
@@ -156,7 +151,7 @@ tasks.named<Test>("intTest") {
   setForkEvery(2)
 }
 
-if (withUberJar()) {
+if (quarkusFatJar()) {
   afterEvaluate {
     publishing {
       publications {

@@ -107,47 +107,42 @@ dependencies {
 
 preferJava11()
 
-val openApiSpecDir = project.buildDir.resolve("openapi-extra").relativeTo(project.projectDir)
-
-project.extra["quarkus.smallrye-openapi.store-schema-directory"] =
-  "${project.buildDir.relativeTo(project.projectDir)}/openapi"
-
-project.extra["quarkus.smallrye-openapi.additional-docs-directory"] = "$openApiSpecDir"
-
-project.extra["quarkus.package.type"] =
-  if (withUberJar()) "uber-jar" else if (project.hasProperty("native")) "native" else "fast-jar"
-
-val useDocker = project.hasProperty("docker")
-
 val pullOpenApiSpec by
   tasks.registering(Sync::class) {
     destinationDir = openApiSpecDir
     from(project.objects.property(Configuration::class).value(openapiSource))
   }
 
+val openApiSpecDir = buildDir.resolve("openapi-extra")
+val useDocker = project.hasProperty("docker")
+val packageType = quarkusPackageType()
+val quarkusBuilderImage = libs.versions.quarkusBuilderImage.get()
+
+quarkus {
+  quarkusBuildProperties.put("quarkus.package.type", packageType)
+  quarkusBuildProperties.put("quarkus.native.builder-image", quarkusBuilderImage)
+  if (useDocker) {
+    quarkusBuildProperties.put("quarkus.native.container-build", "true")
+    quarkusBuildProperties.put("quarkus.container-image.build", "true")
+  }
+  quarkusBuildProperties.put(
+    "quarkus.smallrye-openapi.store-schema-directory",
+    buildDir.resolve("openapi").toString()
+  )
+  quarkusBuildProperties.put(
+    "quarkus.smallrye-openapi.additional-docs-directory",
+    openApiSpecDir.toString()
+  )
+}
+
 val quarkusBuild =
   tasks.named<QuarkusBuild>("quarkusBuild") {
-    outputs.cacheIf { false }
+    outputs.doNotCacheIf("Do not add huge cache artifacts to build cache") { true }
     dependsOn(pullOpenApiSpec)
-    inputs.property("quarkus.package.type", project.extra["quarkus.package.type"])
+    inputs.property("quarkus.package.type", packageType)
     inputs.property("final.name", quarkus.finalName())
     inputs.property("container-build", useDocker)
-    val quarkusBuilderImage = libs.versions.quarkusBuilderImage.get()
     inputs.property("builder-image", quarkusBuilderImage)
-    if (useDocker) {
-      // Use the "docker" profile to just build the Docker container image when the native image's
-      // been built
-      nativeArgs { "container-build" to true }
-    }
-    nativeArgs { "builder-image" to quarkusBuilderImage }
-    doFirst {
-      // THIS IS A WORKAROUND! the nativeArgs{} thing above doesn't really work
-      System.setProperty("quarkus.native.builder-image", quarkusBuilderImage)
-      if (useDocker) {
-        System.setProperty("quarkus.native.container-build", "true")
-        System.setProperty("quarkus.container-image.build", "true")
-      }
-    }
   }
 
 val prepareJacocoReport by
@@ -208,7 +203,7 @@ artifacts {
   add(
     quarkusRunner.name,
     provider {
-      if (withUberJar()) quarkusBuild.get().runnerJar
+      if (quarkusFatJar()) quarkusBuild.get().runnerJar
       else quarkusBuild.get().fastJar.resolve("quarkus-run.jar")
     }
   ) {
@@ -217,7 +212,7 @@ artifacts {
 }
 
 // Add the uber-jar, if built, to the Maven publication
-if (withUberJar()) {
+if (quarkusFatJar()) {
   afterEvaluate {
     publishing {
       publications {

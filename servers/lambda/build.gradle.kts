@@ -54,34 +54,26 @@ dependencies {
 
 preferJava11()
 
-project.extra["quarkus.package.type"] =
-  if (withUberJar()) "uber-jar" else if (project.hasProperty("native")) "native" else "fast-jar"
-
-// TODO remove the whole block
-quarkus { setFinalName("${project.name}-${project.version}") }
-
 val useDocker = project.hasProperty("docker")
+val packageType = quarkusPackageType()
+val quarkusBuilderImage = libs.versions.quarkusBuilderImage.get()
+
+quarkus {
+  quarkusBuildProperties.put("quarkus.package.type", packageType)
+  quarkusBuildProperties.put("quarkus.native.builder-image", quarkusBuilderImage)
+  if (useDocker) {
+    quarkusBuildProperties.put("quarkus.native.container-build", "true")
+    quarkusBuildProperties.put("quarkus.container-image.build", "true")
+  }
+}
 
 val quarkusBuild by
   tasks.getting(QuarkusBuild::class) {
-    inputs.property("quarkus.package.type", project.extra["quarkus.package.type"])
+    outputs.doNotCacheIf("Do not add huge cache artifacts to build cache") { true }
+    inputs.property("quarkus.package.type", packageType)
     inputs.property("final.name", quarkus.finalName())
     inputs.property("container-build", useDocker)
-    val quarkusBuilderImage = libs.versions.quarkusBuilderImage.get()
     inputs.property("builder-image", quarkusBuilderImage)
-    if (useDocker) {
-      // Use the "docker" profile to just build the Docker container image when the native image's
-      // been built
-      nativeArgs { "container-build" to true }
-    }
-    nativeArgs { "builder-image" to quarkusBuilderImage }
-    doFirst {
-      // THIS IS A WORKAROUND! the nativeArgs{} thing above doesn't really work
-      System.setProperty("quarkus.native.builder-image", quarkusBuilderImage)
-      if (useDocker) {
-        System.setProperty("quarkus.native.container-build", "true")
-      }
-    }
   }
 
 tasks.withType<Test>().configureEach {
@@ -103,7 +95,7 @@ tasks.withType<Test>().configureEach {
 artifacts {
   add(
     quarkusRunner.name,
-    if (withUberJar()) quarkusBuild.runnerJar else quarkusBuild.fastJar.resolve("quarkus-run.jar")
+    if (quarkusFatJar()) quarkusBuild.runnerJar else quarkusBuild.fastJar.resolve("quarkus-run.jar")
   ) {
     builtBy(quarkusBuild)
   }
