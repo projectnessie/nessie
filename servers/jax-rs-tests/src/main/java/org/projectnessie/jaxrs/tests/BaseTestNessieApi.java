@@ -116,7 +116,7 @@ public abstract class BaseTestNessieApi {
   }
 
   public boolean isV2() {
-    return NessieApiVersion.V2.equals(apiVersion);
+    return NessieApiVersion.V2 == apiVersion;
   }
 
   @AfterEach
