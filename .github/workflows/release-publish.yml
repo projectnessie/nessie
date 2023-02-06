@@ -129,7 +129,7 @@ jobs:
         echo "::endgroup::"
 
         # Add version to the openapi file name
-        cp model/build/resources/main/META-INF/openapi/openapi.yaml model/build/nessie-openapi-${RELEASE_VERSION}.yaml
+        cp model/build/generated/openapi/META-INF/openapi/openapi.yaml model/build/nessie-openapi-${RELEASE_VERSION}.yaml
 
         echo "QUARKUS_NATIVE_BINARY=servers/quarkus-server/build/nessie-quarkus-${RELEASE_VERSION}-runner" >> ${GITHUB_ENV}
         echo "QUARKUS_UBER_JAR=servers/quarkus-server/build/nessie-quarkus-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
