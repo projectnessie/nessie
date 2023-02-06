@@ -22,6 +22,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.FetchOption.ALL;
 
@@ -35,14 +36,17 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.validation.constraints.NotNull;
 import org.assertj.core.api.SoftAssertions;
-import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.api.CreateNamespaceResult;
 import org.projectnessie.client.api.DeleteNamespaceResult;
+import org.projectnessie.client.api.GetAllReferencesBuilder;
+import org.projectnessie.client.api.GetDiffBuilder;
+import org.projectnessie.client.api.GetEntriesBuilder;
 import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.PagingBuilder;
 import org.projectnessie.client.api.UpdateNamespaceResult;
 import org.projectnessie.client.ext.NessieApiVersion;
 import org.projectnessie.client.ext.NessieApiVersions;
@@ -169,21 +173,12 @@ public abstract class BaseTestNessieApi {
     return Put.of(ContentKey.of(elements), IcebergTable.of("foo", 1, 2, 3, 4));
   }
 
-  protected static boolean pagingSupported(ThrowingCallable o)
-      throws BaseNessieClientServerException {
-    try {
-      o.call();
-      return true;
-    } catch (UnsupportedOperationException | NessieBadRequestException e) {
-      if (e.getMessage().contains("not supported")) {
-        return false;
-      }
-      throw e;
-    } catch (BaseNessieClientServerException e) {
-      throw e;
-    } catch (Throwable e) {
-      throw new RuntimeException(e);
-    }
+  protected static boolean pagingSupported(PagingBuilder<?, ?, ?> apiRequestBuilder) {
+    // Note: paging API is provided for diff, entries and references API, but the server does not
+    // support that yet.
+    return !(apiRequestBuilder instanceof GetDiffBuilder)
+        && !(apiRequestBuilder instanceof GetAllReferencesBuilder)
+        && !(apiRequestBuilder instanceof GetEntriesBuilder);
   }
 
   @Test
@@ -384,6 +379,8 @@ public abstract class BaseTestNessieApi {
 
   @Test
   public void referencesWithLimitInFirstPage() throws Exception {
+    assumeThat(pagingSupported(api().getAllReferences())).isFalse();
+    // Verify that result limiting produces expected errors when paging is not supported
     api().createReference().reference(Branch.of("branch", null)).create();
     assertThatThrownBy(() -> api().getAllReferences().maxRecords(1).get())
         .isInstanceOf(NessieBadRequestException.class)
@@ -505,8 +502,7 @@ public abstract class BaseTestNessieApi {
         api().getDiff().fromRef(branch1).toRefName(branch2.getName()).get().getDiffs();
     soft.assertThat(diff1).isEqualTo(diff2).isEqualTo(diff3);
 
-    if (pagingSupported(
-        () -> api().getDiff().fromRef(main).toRef(main).pageToken("666f6f").get())) {
+    if (pagingSupported(api().getDiff())) {
 
       // Paging
 
@@ -535,6 +531,8 @@ public abstract class BaseTestNessieApi {
   @NessieApiVersions(versions = NessieApiVersion.V2) // v1 throws on getDiff().maxRecords(1)
   public void diffWithLimitInFirstPage() throws Exception {
     Branch main = api().getDefaultBranch();
+    assumeThat(pagingSupported(api().getDiff())).isFalse();
+    // Verify that result limiting produces expected errors when paging is not supported
     Branch branch1 = createReference(Branch.of("b1", main.getHash()), main.getName());
     Branch branch2 = createReference(Branch.of("b2", main.getHash()), main.getName());
 
@@ -591,7 +589,7 @@ public abstract class BaseTestNessieApi {
     List<Reference> notPaged = api().getAllReferences().get().getReferences();
     soft.assertThat(notPaged).containsExactlyInAnyOrderElementsOf(expect);
 
-    if (pagingSupported(() -> api().getAllReferences().pageToken("666f6f").get())) {
+    if (pagingSupported(api().getAllReferences())) {
       List<Reference> all = new ArrayList<>();
       String token = null;
       for (int i = 0; i < 11; i++) {
@@ -677,8 +675,7 @@ public abstract class BaseTestNessieApi {
     List<EntriesResponse.Entry> notPaged = response.getEntries();
     soft.assertThat(notPaged).hasSize(10);
 
-    if (pagingSupported(
-        () -> api().getEntries().reference(main0).withContent(isV2()).pageToken("666f6f").get())) {
+    if (pagingSupported(api().getEntries())) {
       List<EntriesResponse.Entry> all = new ArrayList<>();
       String token = null;
       for (int i = 0; i < 10; i++) {
@@ -720,6 +717,8 @@ public abstract class BaseTestNessieApi {
 
   @Test
   public void entriesWithLimitInFirstPage() throws Exception {
+    assumeThat(pagingSupported(api().getEntries())).isFalse();
+    // Verify that result limiting produces expected errors when paging is not supported
     Branch main =
         prepCommit(api().getDefaultBranch(), "commit", dummyPut("t1"), dummyPut("t2")).commit();
     assertThatThrownBy(() -> api().getEntries().maxRecords(1).reference(main).get())
