@@ -2,6 +2,12 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.48.1 Release (February 06, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.48.1).
+
+* Release-WF: Fix openapi yaml attachment (#6040)
+
 ## 0.48.0 Release (February 06, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.48.0).
