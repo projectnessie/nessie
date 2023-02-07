@@ -49,7 +49,17 @@ public class InmemoryStore implements DatabaseConnectionProvider<InmemoryConfig>
   public void initialize() {}
 
   @Override
-  public void close() {}
+  public void close() {
+    globalStateLog.clear();
+    commitLog.clear();
+    keyLists.clear();
+    refLog.clear();
+    refHeads.clear();
+    refNames.clear();
+    refLogHeads.clear();
+    attachments.clear();
+    attachmentKeys.clear();
+  }
 
   void reinitializeRepo(ByteString keyPrefix) {
     Stream.of(
