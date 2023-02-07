@@ -37,6 +37,7 @@ from pynessie.client._endpoints import (
     list_tables,
     merge,
 )
+from pynessie.error import NessieInvalidUsageException
 from pynessie.model import (
     DETACHED_REFERENCE_NAME,
     Branch,
@@ -169,7 +170,9 @@ class NessieClient:
         ref_name, ref_hash = split_into_reference_and_hash(ref)
         if hash_on_ref:
             if ref_hash and ref_hash != hash_on_ref:
-                raise Exception("Must not specify hash-on-ref using 'name@hash' and explicit hash-on-ref argument, use only one of those")
+                raise NessieInvalidUsageException(
+                    "Must not specify hash-on-ref using 'name@hash' and explicit hash-on-ref argument, use only one of those"
+                )
         else:
             hash_on_ref = ref_hash
 
@@ -188,7 +191,9 @@ class NessieClient:
         ref_name, ref_hash = split_into_reference_and_hash(ref)
         if hash_on_ref:
             if ref_hash and ref_hash != hash_on_ref:
-                raise Exception("Must not specify hash-on-ref using 'name@hash' and explicit hash-on-ref argument, use only one of those")
+                raise NessieInvalidUsageException(
+                    "Must not specify hash-on-ref using 'name@hash' and explicit hash-on-ref argument, use only one of those"
+                )
         else:
             hash_on_ref = ref_hash
 
@@ -207,7 +212,7 @@ class NessieClient:
         ref_name, ref_hash = split_into_reference_and_hash(to_ref)
 
         if ref_hash and to_ref_hash and ref_hash != to_ref_hash:
-            raise Exception(
+            raise NessieInvalidUsageException(
                 "Must not specify hash on to-ref using 'name@hash' and via explicit to-ref-hash argument, use only one of those"
             )
 
@@ -253,7 +258,9 @@ class NessieClient:
             old_hash = old_hash_ref if old_hash_ref else self.get_reference(onto_branch).hash_
         elif old_hash_ref:
             if old_hash_ref and old_hash_ref != old_hash:
-                raise Exception("Must not specify hash on from-ref using 'name@hash' and via explicit hash argument, use only one of those")
+                raise NessieInvalidUsageException(
+                    "Must not specify hash on from-ref using 'name@hash' and via explicit hash argument, use only one of those"
+                )
             old_hash = old_hash_ref
         assert old_hash is not None
 
@@ -262,7 +269,9 @@ class NessieClient:
             from_hash = from_hash_ref if from_hash_ref else self.get_reference(from_ref).hash_
         elif from_hash_ref:
             if from_hash_ref and from_hash_ref != from_hash:
-                raise Exception("Must not specify hash on from-ref using 'name@hash' and via explicit hash argument, use only one of those")
+                raise NessieInvalidUsageException(
+                    "Must not specify hash on from-ref using 'name@hash' and via explicit hash argument, use only one of those"
+                )
             from_hash = from_hash_ref
 
         merge_json = MergeSchema().dump(Merge(from_ref, str(from_hash)))

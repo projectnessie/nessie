@@ -64,17 +64,24 @@ def test_raise_exception_missing_payload() -> None:
 
 
 def _test_error_code(error_code: str, exception: type) -> None:
-    ex = _create_exception(dict(message="msg123", status=499, errorCode=error_code), 498, "reason123", "url123")
+    error_dict = {
+        "message": "msg123",
+        "status": 499,
+        "errorCode": error_code,
+    }
+    ex = _create_exception(error_dict, 498, "reason123", "url123")
     assert isinstance(ex, exception)
-    assert "Client Error" in str(ex)
-    assert "msg123" in str(ex)
-    assert "reason123" in str(ex)
-    assert "Client Error" in str(ex.json())
-    assert "499" in str(ex.json())
-    assert "498" in str(ex.json())
-    assert "msg123" in str(ex.json())
-    assert "reason123" in str(ex.json())
-    assert "url123" in str(ex.json())
+    ex_str = str(ex)
+    assert "Client Error" in ex_str
+    assert "msg123" in ex_str
+    assert "reason123" in ex_str
+    ex_str_json = str(ex.json())
+    assert "Client Error" in ex_str_json
+    assert "499" in ex_str_json
+    assert "498" in ex_str_json
+    assert "msg123" in ex_str_json
+    assert "reason123" in ex_str_json
+    assert "url123" in ex_str_json
 
 
 def test_raise_ref_not_found() -> None:

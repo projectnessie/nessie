@@ -18,6 +18,14 @@ from typing import Optional
 import simplejson as json
 
 
+class NessieInvalidUsageException(Exception):
+    """Exception for invalid usage."""
+
+    def __init__(self, msg: Optional[str] = None) -> None:
+        """Construct NessieInvalidUsageException."""
+        super().__init__(msg)
+
+
 class NessieException(Exception):
     """Base Nessie exception."""
 
@@ -54,15 +62,15 @@ class NessieException(Exception):
     def json(self) -> str:
         """Dump this exception as a json object."""
         return json.dumps(
-            dict(
-                server_message=self.server_message,
-                error_code=self.error_code,
-                server_status=self.server_status,
-                server_stack_trace=self.server_stack_trace,
-                status_code=self.status_code,
-                url=self.url,
-                msg=" ".join(self.args),
-            )
+            {
+                "server_message": self.server_message,
+                "error_code": self.error_code,
+                "server_status": self.server_status,
+                "server_stack_trace": self.server_stack_trace,
+                "status_code": self.status_code,
+                "url": self.url,
+                "msg": " ".join(self.args),
+            }
         )
 
 
@@ -146,7 +154,12 @@ class NessieCliError(Exception):
 
     def json(self) -> str:
         """Dump this error as a json object."""
-        return json.dumps(dict(title=self.title, message=self.msg))
+        return json.dumps(
+            {
+                "title": self.title,
+                "message": self.msg,
+            }
+        )
 
 
 def _create_nessie_exception(error: dict, status: int, reason: str, url: str) -> Optional[NessieException]:
