@@ -105,7 +105,7 @@ dependencies {
   jacocoRuntime(libs.jacoco.ant)
 }
 
-preferJava11()
+buildForJava11()
 
 val pullOpenApiSpec by
   tasks.registering(Sync::class) {

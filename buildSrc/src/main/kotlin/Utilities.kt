@@ -50,7 +50,7 @@ import org.gradle.kotlin.dsl.withType
  * Configures the `JavaPluginExtension` to use Java 11, or a newer Java version explicitly
  * configured for testing.
  */
-fun Project.preferJava11() {
+fun Project.buildForJava11() {
   extensions.findByType<JavaPluginExtension>()!!.run {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
