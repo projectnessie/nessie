@@ -47,7 +47,9 @@ public abstract class AbstractQuarkusRestWithMetrics extends BaseTestNessieRest 
   @Test
   void smokeTestMetrics() {
     String body = getMetrics();
-    assertThat(body).contains("jvm_threads_live_threads");
+    // Do not query JVM metrics in tests, see
+    // https://github.com/quarkusio/quarkus/issues/24210#issuecomment-1064833013
+    assertThat(body).contains("process_cpu_usage");
     assertThat(body).contains("nessie_versionstore_request_seconds_max");
     assertThat(body).contains("nessie_versionstore_request_seconds_bucket");
     assertThat(body).contains("nessie_versionstore_request_seconds_count");
