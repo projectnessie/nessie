@@ -82,7 +82,7 @@ dependencies {
   jacocoRuntime(libs.jacoco.ant)
 }
 
-preferJava11()
+buildForJava11()
 
 tasks.withType<ProcessResources>().configureEach {
   from("src/main/resources") {

@@ -52,7 +52,7 @@ dependencies {
   testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
-preferJava11()
+buildForJava11()
 
 val useDocker = project.hasProperty("docker")
 val packageType = quarkusPackageType()

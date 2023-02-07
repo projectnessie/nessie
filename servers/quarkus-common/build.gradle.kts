@@ -59,4 +59,4 @@ dependencies {
   compileOnly(libs.microprofile.openapi)
 }
 
-preferJava11()
+buildForJava11()

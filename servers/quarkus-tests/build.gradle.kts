@@ -50,4 +50,4 @@ dependencies {
   implementation("io.quarkiverse.amazonservices:quarkus-amazon-dynamodb")
 }
 
-preferJava11()
+buildForJava11()
