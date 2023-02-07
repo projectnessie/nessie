@@ -30,12 +30,14 @@ import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter
 public class InmemoryDatabaseAdapterBuilder implements DatabaseAdapterBuilder {
   @Inject NonTransactionalDatabaseAdapterConfig config;
 
+  @Inject InmemoryStore store;
+
   @Override
   public DatabaseAdapter newDatabaseAdapter() {
     return new InmemoryDatabaseAdapterFactory()
         .newBuilder()
         .withConfig(config)
-        .withConnector(new InmemoryStore())
+        .withConnector(store)
         .build();
   }
 }
