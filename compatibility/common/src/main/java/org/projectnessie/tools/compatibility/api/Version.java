@@ -34,6 +34,9 @@ public class Version implements Comparable<Version> {
   // declaring an explicit dependency in its POM.
   public static final Version CLIENT_LOG4J_UNDECLARED_LOW = Version.parseVersion("0.46.0");
   public static final Version CLIENT_LOG4J_UNDECLARED_HIGH = Version.parseVersion("0.47.1");
+  // COMPAT_COMMON_DEPENDENCIES_START is the version where dependency declarations for
+  // "compatibility" tests moved to :nessie-compatibility-common
+  public static final Version COMPAT_COMMON_DEPENDENCIES_START = Version.parseVersion("0.48.2");
 
   public static final String CURRENT_STRING = "current";
   public static final String NOT_CURRENT_STRING = "not-current";
