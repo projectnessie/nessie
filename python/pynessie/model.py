@@ -156,7 +156,7 @@ class ContentSchema(OneOfSchema):
         if isinstance(obj, IcebergView):
             return "ICEBERG_VIEW"
 
-        raise Exception("Unknown object type: {}".format(obj.__class__.__name__))
+        raise ValueError("Unknown object type: {}".format(obj.__class__.__name__))
 
 
 @attr.dataclass
@@ -272,7 +272,7 @@ class OperationsSchema(OneOfSchema):
         if isinstance(obj, Delete):
             return "DELETE"
 
-        raise Exception("Unknown object type: {}".format(obj.__class__.__name__))
+        raise ValueError("Unknown object type: {}".format(obj.__class__.__name__))
 
 
 @attr.dataclass
@@ -365,7 +365,7 @@ class ReferenceSchema(OneOfSchema):
         if isinstance(obj, Detached):
             return "DETACHED"
 
-        raise Exception("Unknown object type: {}".format(obj.__class__.__name__))
+        raise ValueError("Unknown object type: {}".format(obj.__class__.__name__))
 
 
 @attr.dataclass
