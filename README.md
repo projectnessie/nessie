@@ -1,15 +1,20 @@
 # Project Nessie
 
+[![Website](https://img.shields.io/badge/Website-projectnessie.org-blue.svg)](https://projectnessiecyclonedx.org/)
+[![Group Discussion](https://img.shields.io/badge/Discussion-groups.google.com-blue.svg)](https://groups.google.com/g/projectnessie)
+[![Twitter](https://img.shields.io/twitter/url/http/shields.io.svg?style=social&label=Follow)](https://twitter.com/projectnessie)
+
+[![Maven Central](https://img.shields.io/maven-central/v/org.projectnessie/nessie)](https://search.maven.org/artifact/org.projectnessie/nessie)
+[![PyPI](https://img.shields.io/pypi/v/pynessie.svg)](https://pypi.python.org/pypi/pynessie)
+[![Docker](https://img.shields.io/docker/v/projectnessie/nessie/latest?label=Docker)](https://hub.docker.com/r/projectnessie/nessie)
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/nessie)](https://artifacthub.io/packages/search?repo=nessie)
+
 [![Build Status](https://github.com/projectnessie/nessie/workflows/Main%20CI/badge.svg)](https://github.com/projectnessie/nessie/actions/workflows/main.yml)
 [![Query Engine Integrations](https://github.com/projectnessie/query-engine-integration-tests/actions/workflows/main.yml/badge.svg)](https://github.com/projectnessie/query-engine-integration-tests/actions/workflows/main.yml)
 [![Java 17+18](https://github.com/projectnessie/nessie/actions/workflows/newer-java.yml/badge.svg)](https://github.com/projectnessie/nessie/actions/workflows/newer-java.yml)
 [![Windows Build Check](https://github.com/projectnessie/nessie/actions/workflows/ci-win.yml/badge.svg)](https://github.com/projectnessie/nessie/actions/workflows/ci-win.yml)
 [![macOS Build Check](https://github.com/projectnessie/nessie/actions/workflows/ci-mac.yml/badge.svg)](https://github.com/projectnessie/nessie/actions/workflows/ci-mac.yml)
 [![codecov](https://codecov.io/gh/projectnessie/nessie/branch/main/graph/badge.svg?token=W9J9ZUYO1Y)](https://codecov.io/gh/projectnessie/nessie)
-[![Maven Central](https://img.shields.io/maven-central/v/org.projectnessie/nessie)](https://search.maven.org/artifact/org.projectnessie/nessie)
-[![PyPI](https://img.shields.io/pypi/v/pynessie.svg)](https://pypi.python.org/pypi/pynessie)
-[![Docker](https://img.shields.io/docker/v/projectnessie/nessie/latest?label=docker)](https://hub.docker.com/r/projectnessie/nessie)
-[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/nessie)](https://artifacthub.io/packages/search?repo=nessie)
 
 Project Nessie is a Transactional Catalog for Data Lakes with Git-like semantics.
 
