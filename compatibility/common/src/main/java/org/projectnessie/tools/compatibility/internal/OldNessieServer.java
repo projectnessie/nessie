@@ -15,6 +15,7 @@
  */
 package org.projectnessie.tools.compatibility.internal;
 
+import static org.projectnessie.tools.compatibility.api.Version.COMPAT_COMMON_DEPENDENCIES_START;
 import static org.projectnessie.tools.compatibility.api.Version.VERSIONED_REST_URI_START;
 import static org.projectnessie.tools.compatibility.internal.DependencyResolver.resolve;
 import static org.projectnessie.tools.compatibility.internal.DependencyResolver.toClassLoader;
@@ -131,10 +132,16 @@ final class OldNessieServer implements NessieServer {
   }
 
   static ClassLoader createClassLoader(Version version, ClassLoader sharedClassLoader) {
-    // Use 'nessie-jaxrs' because it has all the necessary dependencies to the DatabaseAdapter
-    // implementations, REST services, Version store implementation, etc.
+    // The 'nessie-jaxrs' has all the necessary dependencies to the DatabaseAdapter
+    // implementations, REST services, Version store implementation, etc. in older versions.
+    // Newer versions declare what is required as runtime dependencies of
+    // `nessie-compatibility-common`
+    String artifactId =
+        version.isGreaterThanOrEqual(COMPAT_COMMON_DEPENDENCIES_START)
+            ? "nessie-compatibility-common"
+            : "nessie-jaxrs";
     try {
-      return oldNessieClassLoader(version, "nessie-jaxrs");
+      return oldNessieClassLoader(version, artifactId);
     } catch (DependencyResolutionException e) {
       throw new RuntimeException(
           "Failed to resolve dependencies for Nessie server version " + version, e);
