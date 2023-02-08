@@ -2,6 +2,19 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.48.2 Release (February 08, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.48.2).
+
+* Fix dependencies in :nessie-compatibility-common (#6055)
+* fix website link in README (#6056)
+* Nit: rename build utility function to `buildForJava11` (#6053)
+* Reenable JVM monitoring in native images (#6052)
+* Cleanup InmemoryStore after tests (#6048)
+* Cleanup README.md badges (#6051)
+* CI: Prevent OOM/GCLocker-issue in tests / disable Micrometer JVM-Metrics for tests (#6050)
+* Clear in-memory database-adapter between REST-tests in Quarkus (#6049)
+
 ## 0.48.1 Release (February 06, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.48.1).
