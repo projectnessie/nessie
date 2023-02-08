@@ -1,6 +1,6 @@
 # Project Nessie
 
-[![Website](https://img.shields.io/badge/Website-projectnessie.org-blue.svg)](https://projectnessiecyclonedx.org/)
+[![Website](https://img.shields.io/badge/Website-projectnessie.org-blue.svg)](https://projectnessie.org/)
 [![Group Discussion](https://img.shields.io/badge/Discussion-groups.google.com-blue.svg)](https://groups.google.com/g/projectnessie)
 [![Twitter](https://img.shields.io/twitter/url/http/shields.io.svg?style=social&label=Follow)](https://twitter.com/projectnessie)
 
