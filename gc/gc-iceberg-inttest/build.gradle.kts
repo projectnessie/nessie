@@ -92,6 +92,11 @@ dependencies {
   testAnnotationProcessor(libs.immutables.value.processor)
 
   testRuntimeOnly(libs.logback.classic)
+
+  // javax/jakarta
+  testCompileOnly(libs.jakarta.validation.api)
+  testCompileOnly(libs.jakarta.annotation.api)
+
   testCompileOnly(libs.microprofile.openapi)
 
   testImplementation(platform(libs.junit.bom))

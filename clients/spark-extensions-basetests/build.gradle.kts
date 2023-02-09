@@ -27,6 +27,10 @@ dependencies {
   // picks the right dependencies for scala compilation
   forScala(sparkScala.scalaVersion)
 
+  // javax/jakarta
+  compileOnly(libs.jakarta.annotation.api)
+  compileOnly(libs.findbugs.jsr305)
+
   implementation(nessieProject("nessie-spark-extensions-grammar"))
   compileOnly("org.apache.spark:spark-hive_${sparkScala.scalaMajorVersion}") {
     forSpark(sparkScala.sparkVersion)

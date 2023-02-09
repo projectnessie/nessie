@@ -35,7 +35,10 @@ dependencies {
   compileOnly(libs.jackson.annotations)
 
   compileOnly(libs.microprofile.openapi)
+
+  // javax/jakarta
   compileOnly(libs.jakarta.validation.api)
+  compileOnly(libs.javax.validation.api)
 
   testImplementation(libs.guava)
   testCompileOnly(libs.microprofile.openapi)

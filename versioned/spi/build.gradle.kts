@@ -32,13 +32,17 @@ dependencies {
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
   compileOnly(libs.microprofile.openapi)
-  compileOnly(libs.jakarta.validation.api)
 
   implementation(platform(libs.jackson.bom))
   compileOnly(libs.jackson.annotations)
 
   implementation(libs.guava)
-  implementation(libs.findbugs.jsr305)
+
+  // javax/jakarta
+  compileOnly(libs.jakarta.validation.api)
+  compileOnly(libs.javax.validation.api)
+  compileOnly(libs.jakarta.annotation.api)
+  compileOnly(libs.findbugs.jsr305)
 
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)

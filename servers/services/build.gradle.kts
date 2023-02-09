@@ -37,13 +37,17 @@ dependencies {
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
   implementation(libs.guava)
-  implementation(libs.findbugs.jsr305)
+
+  // javax/jakarta
+  compileOnly(libs.jakarta.validation.api)
+  compileOnly(libs.javax.validation.api)
+  compileOnly(libs.jakarta.annotation.api)
+  compileOnly(libs.findbugs.jsr305)
 
   compileOnly(platform(libs.jackson.bom))
   compileOnly(libs.jackson.annotations)
 
   compileOnly(libs.microprofile.openapi)
-  compileOnly(libs.jakarta.validation.api)
 
   testRuntimeOnly(project(":nessie-server-store"))
 
@@ -70,6 +74,9 @@ dependencies {
   testRuntimeOnly(libs.postgresql)
   testRuntimeOnly(libs.testcontainers.postgresql)
   testRuntimeOnly(libs.testcontainers.cockroachdb)
+
+  // javax/jakarta
+  testCompileOnly(libs.jakarta.annotation.api)
 
   testCompileOnly(libs.microprofile.openapi)
 

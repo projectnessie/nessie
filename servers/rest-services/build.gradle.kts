@@ -29,18 +29,31 @@ dependencies {
   implementation(project(":nessie-services"))
   implementation(project(":nessie-versioned-spi"))
   implementation(libs.slf4j.api)
-  implementation(libs.jakarta.enterprise.cdi.api)
-  implementation(libs.jakarta.annotation.api)
-  implementation(libs.jakarta.validation.api)
-  implementation(libs.javax.ws.rs21)
-  implementation(libs.javax.servlet)
   implementation(libs.guava)
-  compileOnly(libs.microprofile.openapi)
+
+  // javax/jakarta
+  compileOnly(libs.jakarta.enterprise.cdi.api)
+  compileOnly(libs.javax.enterprise.cdi.api)
+  compileOnly(libs.jakarta.annotation.api)
+  compileOnly(libs.findbugs.jsr305)
   compileOnly(libs.jakarta.validation.api)
+  compileOnly(libs.javax.validation.api)
+  compileOnly(libs.jakarta.ws.rs.api)
+  compileOnly(libs.javax.ws.rs21)
+  compileOnly(libs.jakarta.servlet.api)
+  compileOnly(libs.javax.servlet)
+
+  compileOnly(libs.microprofile.openapi)
 
   implementation(platform(libs.jackson.bom))
   implementation(libs.jackson.databind)
   compileOnly(libs.jackson.annotations)
+
+  // javax/jakarta
+  testImplementation(libs.jakarta.validation.api)
+  testImplementation(libs.javax.validation.api)
+  testImplementation(libs.jakarta.ws.rs.api)
+  testImplementation(libs.javax.ws.rs21)
 
   testCompileOnly(libs.microprofile.openapi)
 

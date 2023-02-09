@@ -31,5 +31,8 @@ dependencies {
   implementation(project(":nessie-client"))
   implementation(project(":nessie-multi-env-test-engine"))
   compileOnly(libs.junit.jupiter.engine)
-  implementation(libs.findbugs.jsr305)
+
+  // javax/jakarta
+  compileOnly(libs.jakarta.annotation.api)
+  compileOnly(libs.findbugs.jsr305)
 }

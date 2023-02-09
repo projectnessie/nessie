@@ -37,10 +37,15 @@ dependencies {
   implementation(libs.jackson.databind)
   implementation(libs.jackson.annotations)
 
-  implementation(libs.javax.ws.rs)
-  compileOnly(libs.microprofile.openapi)
+  // javax/jakarta
+  compileOnly(libs.jakarta.ws.rs.api)
+  compileOnly(libs.javax.ws.rs)
   compileOnly(libs.jakarta.validation.api)
-  implementation(libs.findbugs.jsr305)
+  compileOnly(libs.javax.validation.api)
+  compileOnly(libs.jakarta.annotation.api)
+  compileOnly(libs.findbugs.jsr305)
+
+  compileOnly(libs.microprofile.openapi)
 
   compileOnly(libs.immutables.builder)
   compileOnly(libs.immutables.value.annotations)

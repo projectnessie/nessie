@@ -26,8 +26,18 @@ extra["maven.name"] = "Nessie - GC - S3 mock"
 description = "Rudimentary S3 endpoint delegating to functions to serve content."
 
 dependencies {
-  implementation(libs.javax.ws.rs21)
-  implementation(libs.javax.ws.rs)
+
+  // javax/jakarta
+  compileOnly(libs.jakarta.ws.rs.api)
+  compileOnly(libs.javax.ws.rs21)
+  compileOnly(libs.javax.ws.rs)
+  compileOnly(libs.jakarta.validation.api)
+  compileOnly(libs.javax.validation.api)
+  compileOnly(libs.jakarta.annotation.api)
+  compileOnly(libs.findbugs.jsr305)
+  compileOnly(libs.jakarta.inject.api)
+
+  compileOnly(libs.microprofile.openapi)
 
   implementation(platform(libs.jersey.bom))
   implementation("org.glassfish.jersey.core:jersey-server")
@@ -52,10 +62,6 @@ dependencies {
   compileOnly(libs.avro)
 
   implementation(libs.slf4j.api)
-
-  compileOnly(libs.microprofile.openapi)
-  compileOnly(libs.jakarta.validation.api)
-  compileOnly(libs.findbugs.jsr305)
 
   testRuntimeOnly(libs.logback.classic)
 

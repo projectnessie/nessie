@@ -34,8 +34,11 @@ dependencies {
   compileOnly(libs.immutables.value.fixture)
   annotationProcessor(libs.immutables.value.processor)
 
+  // javax/jakarta
+  compileOnly(libs.jakarta.annotation.api)
+  compileOnly(libs.findbugs.jsr305)
+
   implementation(libs.protobuf.java)
-  implementation(libs.findbugs.jsr305)
   implementation(libs.guava)
   implementation(libs.slf4j.api)
   implementation(libs.agrona)

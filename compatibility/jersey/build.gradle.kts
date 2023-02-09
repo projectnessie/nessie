@@ -33,11 +33,17 @@ dependencies {
   implementation(project(":nessie-versioned-persist-store"))
   implementation(project(":nessie-versioned-persist-testextension"))
   implementation(project(":nessie-versioned-spi"))
-  implementation(libs.javax.ws.rs21)
-  implementation(libs.jakarta.enterprise.cdi.api)
-  implementation(libs.jakarta.annotation.api)
-  implementation(libs.jakarta.validation.api)
-  implementation(libs.javax.ws.rs)
+
+  // javax/jakarta
+  compileOnly(libs.jakarta.ws.rs.api)
+  compileOnly(libs.javax.ws.rs)
+  compileOnly(libs.javax.ws.rs21)
+  compileOnly(libs.jakarta.enterprise.cdi.api)
+  compileOnly(libs.javax.enterprise.cdi.api)
+  compileOnly(libs.jakarta.annotation.api)
+  compileOnly(libs.findbugs.jsr305)
+  compileOnly(libs.jakarta.validation.api)
+  compileOnly(libs.javax.validation.api)
 
   implementation(platform(libs.jackson.bom))
   implementation(libs.jackson.databind)

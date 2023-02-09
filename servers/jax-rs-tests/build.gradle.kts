@@ -30,15 +30,19 @@ dependencies {
   implementation(project(":nessie-client-testextension"))
   implementation(libs.guava)
   api(libs.rest.assured)
-  implementation(libs.findbugs.jsr305)
+
+  // javax/jakarta
+  compileOnly(libs.jakarta.validation.api)
+  compileOnly(libs.javax.validation.api)
+  compileOnly(libs.jakarta.annotation.api)
+  compileOnly(libs.findbugs.jsr305)
+
+  compileOnly(libs.microprofile.openapi)
 
   api(libs.assertj.core)
   api(platform(libs.junit.bom))
   api(libs.junit.jupiter.api)
   api(libs.junit.jupiter.params)
-
-  compileOnly(libs.microprofile.openapi)
-  compileOnly(libs.jakarta.validation.api)
 
   implementation(platform(libs.jackson.bom))
   implementation(libs.jackson.databind)

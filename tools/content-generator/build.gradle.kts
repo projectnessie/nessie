@@ -30,12 +30,17 @@ applyShadowJar()
 dependencies {
   implementation(project(":nessie-client"))
 
-  implementation(libs.jakarta.validation.api)
   implementation(libs.picocli)
   // TODO help picocli to make their annotation-processor incremental
   annotationProcessor(libs.picocli.codegen)
   implementation(libs.guava)
+
+  // javax/jakarta
+  compileOnly(libs.jakarta.validation.api)
+  compileOnly(libs.javax.validation.api)
+  compileOnly(libs.jakarta.annotation.api)
   compileOnly(libs.findbugs.jsr305)
+
   compileOnly(libs.microprofile.openapi)
   runtimeOnly(libs.slf4j.api)
 

@@ -32,8 +32,11 @@ dependencies {
   implementation(libs.guava)
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
-  implementation(libs.findbugs.jsr305)
   implementation(libs.rocksdb.jni)
+
+  // javax/jakarta
+  compileOnly(libs.jakarta.annotation.api)
+  compileOnly(libs.findbugs.jsr305)
 
   testImplementation(project(":nessie-versioned-tests"))
   testImplementation(project(":nessie-versioned-persist-testextension"))

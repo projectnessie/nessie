@@ -39,8 +39,12 @@ dependencies {
   implementation(libs.slf4j.api)
 
   compileOnly(libs.microprofile.openapi)
-  compileOnly(libs.jakarta.validation.api)
   compileOnly(libs.jackson.annotations)
+
+  // javax/jakarta
+  compileOnly(libs.jakarta.validation.api)
+  compileOnly(libs.javax.validation.api)
+  compileOnly(libs.jakarta.annotation.api)
   compileOnly(libs.findbugs.jsr305)
 
   testRuntimeOnly(libs.logback.classic)
