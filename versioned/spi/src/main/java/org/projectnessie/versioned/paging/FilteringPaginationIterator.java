@@ -19,7 +19,6 @@ import com.google.common.collect.AbstractIterator;
 import java.util.Iterator;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import javax.annotation.CheckForNull;
 
 public abstract class FilteringPaginationIterator<S, T> extends AbstractIterator<T>
     implements PaginationIterator<T> {
@@ -42,7 +41,6 @@ public abstract class FilteringPaginationIterator<S, T> extends AbstractIterator
     this.sourcePredicate = sourcePredicate;
   }
 
-  @CheckForNull
   @Override
   protected T computeNext() {
     current = null;
