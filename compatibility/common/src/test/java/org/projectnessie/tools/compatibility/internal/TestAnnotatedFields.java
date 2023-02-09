@@ -15,7 +15,6 @@
  */
 package org.projectnessie.tools.compatibility.internal;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -23,15 +22,22 @@ import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
 import java.util.function.Function;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.projectnessie.tools.compatibility.api.NessieAPI;
 import org.projectnessie.tools.compatibility.api.NessieVersion;
 import org.projectnessie.tools.compatibility.api.TargetVersion;
 
 @SuppressWarnings({"unchecked", "rawtypes", "Convert2Lambda"})
+@ExtendWith(SoftAssertionsExtension.class)
 class TestAnnotatedFields {
+  @InjectSoftAssertions protected SoftAssertions soft;
+
   @BeforeEach
   void clear() {
     AnnotatedFieldsTarget.nessieApiAnnotatedStatic = null;
@@ -55,8 +61,8 @@ class TestAnnotatedFields {
     AnnotatedFields.populateNessieApiFields(
         extensionContext, null, TargetVersion.TESTED, fieldToObject);
 
-    assertThat(AnnotatedFieldsTarget.nessieApiAnnotatedStatic).isEqualTo("hello");
-    assertThat(AnnotatedFieldsTarget.nessieVersionAnnotatedStatic).isNull();
+    soft.assertThat(AnnotatedFieldsTarget.nessieApiAnnotatedStatic).isEqualTo("hello");
+    soft.assertThat(AnnotatedFieldsTarget.nessieVersionAnnotatedStatic).isNull();
     verify(fieldToObject)
         .apply(AnnotatedFieldsTarget.class.getDeclaredField("nessieApiAnnotatedStatic"));
   }
@@ -78,8 +84,8 @@ class TestAnnotatedFields {
     AnnotatedFields.populateAnnotatedFields(
         extensionContext, null, NessieVersion.class, a -> true, fieldToObject);
 
-    assertThat(AnnotatedFieldsTarget.nessieVersionAnnotatedStatic).isEqualTo("hello");
-    assertThat(AnnotatedFieldsTarget.nessieApiAnnotatedStatic).isNull();
+    soft.assertThat(AnnotatedFieldsTarget.nessieVersionAnnotatedStatic).isEqualTo("hello");
+    soft.assertThat(AnnotatedFieldsTarget.nessieApiAnnotatedStatic).isNull();
     verify(fieldToObject)
         .apply(AnnotatedFieldsTarget.class.getDeclaredField("nessieVersionAnnotatedStatic"));
   }
@@ -103,10 +109,10 @@ class TestAnnotatedFields {
     AnnotatedFields.populateNessieApiFields(
         extensionContext, instance, TargetVersion.TESTED, fieldToObject);
 
-    assertThat(instance.nessieApiAnnotatedInstance).isEqualTo("hello");
-    assertThat(instance.nessieVersionAnnotatedInstance).isNull();
-    assertThat(AnnotatedFieldsTarget.nessieApiAnnotatedStatic).isNull();
-    assertThat(AnnotatedFieldsTarget.nessieVersionAnnotatedStatic).isNull();
+    soft.assertThat(instance.nessieApiAnnotatedInstance).isEqualTo("hello");
+    soft.assertThat(instance.nessieVersionAnnotatedInstance).isNull();
+    soft.assertThat(AnnotatedFieldsTarget.nessieApiAnnotatedStatic).isNull();
+    soft.assertThat(AnnotatedFieldsTarget.nessieVersionAnnotatedStatic).isNull();
     verify(fieldToObject)
         .apply(AnnotatedFieldsTarget.class.getDeclaredField("nessieApiAnnotatedInstance"));
   }
@@ -130,10 +136,10 @@ class TestAnnotatedFields {
     AnnotatedFields.populateAnnotatedFields(
         extensionContext, instance, NessieVersion.class, a -> true, fieldToObject);
 
-    assertThat(instance.nessieApiAnnotatedInstance).isNull();
-    assertThat(instance.nessieVersionAnnotatedInstance).isEqualTo("hello");
-    assertThat(AnnotatedFieldsTarget.nessieApiAnnotatedStatic).isNull();
-    assertThat(AnnotatedFieldsTarget.nessieVersionAnnotatedStatic).isNull();
+    soft.assertThat(instance.nessieApiAnnotatedInstance).isNull();
+    soft.assertThat(instance.nessieVersionAnnotatedInstance).isEqualTo("hello");
+    soft.assertThat(AnnotatedFieldsTarget.nessieApiAnnotatedStatic).isNull();
+    soft.assertThat(AnnotatedFieldsTarget.nessieVersionAnnotatedStatic).isNull();
     verify(fieldToObject)
         .apply(AnnotatedFieldsTarget.class.getDeclaredField("nessieVersionAnnotatedInstance"));
   }

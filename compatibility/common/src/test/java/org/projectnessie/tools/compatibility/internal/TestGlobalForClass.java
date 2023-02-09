@@ -15,7 +15,6 @@
  */
 package org.projectnessie.tools.compatibility.internal;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -26,7 +25,11 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
@@ -34,7 +37,10 @@ import org.junit.jupiter.engine.execution.ExtensionValuesStore;
 import org.junit.jupiter.engine.execution.NamespaceAwareStore;
 
 @SuppressWarnings({"Convert2Lambda", "unchecked", "rawtypes"})
+@ExtendWith(SoftAssertionsExtension.class)
 class TestGlobalForClass {
+  @InjectSoftAssertions protected SoftAssertions soft;
+
   @Test
   void globalForClass() {
     Store store = new NamespaceAwareStore(new ExtensionValuesStore(null), Util.NAMESPACE);
@@ -55,7 +61,7 @@ class TestGlobalForClass {
               }
             });
 
-    assertThat(first.getOrCompute("my-key", listCreator, List.class)).isInstanceOf(List.class);
+    soft.assertThat(first.getOrCompute("my-key", listCreator, List.class)).isInstanceOf(List.class);
     verify(listCreator).apply("my-key");
 
     when(ctx.getRoot()).thenReturn(ctx);
@@ -64,7 +70,7 @@ class TestGlobalForClass {
 
     GlobalForClass second = GlobalForClass.globalForClass(ctx);
 
-    assertThat(second).isSameAs(first);
+    soft.assertThat(second).isSameAs(first);
 
     listCreator =
         spy(
@@ -74,7 +80,8 @@ class TestGlobalForClass {
                 return new ArrayList<>();
               }
             });
-    assertThat(second.getOrCompute("my-key", listCreator, List.class)).isInstanceOf(List.class);
+    soft.assertThat(second.getOrCompute("my-key", listCreator, List.class))
+        .isInstanceOf(List.class);
     verifyNoInteractions(listCreator);
 
     when(ctx.getRoot()).thenReturn(ctx);
@@ -83,6 +90,6 @@ class TestGlobalForClass {
 
     GlobalForClass forOtherClass = GlobalForClass.globalForClass(ctx);
 
-    assertThat(forOtherClass).isNotSameAs(first);
+    soft.assertThat(forOtherClass).isNotSameAs(first);
   }
 }

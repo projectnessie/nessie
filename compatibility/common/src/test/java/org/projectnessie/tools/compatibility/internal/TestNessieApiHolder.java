@@ -22,7 +22,11 @@ import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Proxy;
 import java.util.Collections;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
@@ -31,7 +35,10 @@ import org.junit.jupiter.engine.execution.NamespaceAwareStore;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.tools.compatibility.api.Version;
 
+@ExtendWith(SoftAssertionsExtension.class)
 class TestNessieApiHolder {
+  @InjectSoftAssertions protected SoftAssertions soft;
+
   @Test
   void currentVersionServer() throws Throwable {
     ExtensionValuesStore valuesStore = new ExtensionValuesStore(null);
@@ -50,7 +57,7 @@ class TestNessieApiHolder {
                   NessieApiV1.class,
                   Collections.singletonMap("nessie.uri", "http://127.42.42.42:19120")));
       try {
-        assertThat(apiHolder)
+        soft.assertThat(apiHolder)
             .extracting(AbstractNessieApiHolder::getApiInstance)
             .extracting(Object::getClass)
             .extracting(Class::getClassLoader)
@@ -82,7 +89,7 @@ class TestNessieApiHolder {
                   NessieApiV1.class,
                   Collections.singletonMap("nessie.uri", "http://127.42.42.42:19120")));
       try {
-        assertThat(apiHolder)
+        soft.assertThat(apiHolder)
             .satisfies(
                 api -> assertThat(api.getApiInstance().getClass()).matches(Proxy::isProxyClass))
             .extracting(OldNessieApiHolder::getTranslatingApiInstance)

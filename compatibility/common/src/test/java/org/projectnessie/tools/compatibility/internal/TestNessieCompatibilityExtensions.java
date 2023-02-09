@@ -15,7 +15,6 @@
  */
 package org.projectnessie.tools.compatibility.internal;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
 
 import java.net.URI;
@@ -23,6 +22,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,10 +41,13 @@ import org.projectnessie.tools.compatibility.api.NessieVersion;
 import org.projectnessie.tools.compatibility.api.Version;
 import org.projectnessie.tools.compatibility.api.VersionCondition;
 
+@ExtendWith(SoftAssertionsExtension.class)
 class TestNessieCompatibilityExtensions {
+  @InjectSoftAssertions protected SoftAssertions soft;
+
   @Test
   void noVersions() {
-    assertThat(
+    soft.assertThat(
             EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
                 .selectors(selectClass(OldClientsSample.class))
                 .execute()
@@ -53,7 +58,7 @@ class TestNessieCompatibilityExtensions {
 
   @Test
   void tooManyExtensions() {
-    assertThat(
+    soft.assertThat(
             Stream.of(
                 TooManyExtensions1.class,
                 TooManyExtensions2.class,
@@ -67,7 +72,7 @@ class TestNessieCompatibilityExtensions {
                       .selectors(selectClass(c))
                       .filters(new MultiEnvTestFilter())
                       .execute();
-              assertThat(
+              soft.assertThat(
                       result.allEvents().executions().failed().stream()
                           .map(e -> e.getTerminationInfo().getExecutionResult().getThrowable())
                           .filter(Optional::isPresent)
@@ -75,7 +80,7 @@ class TestNessieCompatibilityExtensions {
                   .isNotEmpty()
                   .allSatisfy(
                       e ->
-                          assertThat(e)
+                          soft.assertThat(e)
                               .isInstanceOf(IllegalStateException.class)
                               .hasMessageEndingWith(
                                   " contains more than one Nessie multi-version extension"));
@@ -88,11 +93,12 @@ class TestNessieCompatibilityExtensions {
         .configurationParameter("nessie.versions", "0.18.0,current")
         .selectors(selectClass(OldClientsSample.class))
         .execute();
-    assertThat(OldClientsSample.allVersions)
+    soft.assertThat(OldClientsSample.allVersions)
         .containsExactly(Version.parseVersion("0.18.0"), Version.CURRENT);
-    assertThat(OldClientsSample.minVersionHigh).containsExactly(Version.CURRENT);
-    assertThat(OldClientsSample.maxVersionHigh).containsExactly(Version.parseVersion("0.18.0"));
-    assertThat(OldClientsSample.never).isEmpty();
+    soft.assertThat(OldClientsSample.minVersionHigh).containsExactly(Version.CURRENT);
+    soft.assertThat(OldClientsSample.maxVersionHigh)
+        .containsExactly(Version.parseVersion("0.18.0"));
+    soft.assertThat(OldClientsSample.never).isEmpty();
   }
 
   @Test
@@ -101,14 +107,15 @@ class TestNessieCompatibilityExtensions {
         .configurationParameter("nessie.versions", "0.18.0,current")
         .selectors(selectClass(OldServersSample.class))
         .execute();
-    assertThat(OldServersSample.allVersions)
+    soft.assertThat(OldServersSample.allVersions)
         .containsExactly(Version.parseVersion("0.18.0"), Version.CURRENT);
-    assertThat(OldServersSample.minVersionHigh).containsExactly(Version.CURRENT);
-    assertThat(OldServersSample.maxVersionHigh).containsExactly(Version.parseVersion("0.18.0"));
-    assertThat(OldServersSample.never).isEmpty();
+    soft.assertThat(OldServersSample.minVersionHigh).containsExactly(Version.CURRENT);
+    soft.assertThat(OldServersSample.maxVersionHigh)
+        .containsExactly(Version.parseVersion("0.18.0"));
+    soft.assertThat(OldServersSample.never).isEmpty();
 
     // Base URI should not include the API version suffix
-    assertThat(OldServersSample.uris).allSatisfy(uri -> assertThat(uri.getPath()).isEqualTo("/"));
+    soft.assertThat(OldServersSample.uris).allMatch(uri -> uri.getPath().equals("/"));
   }
 
   @Test
@@ -119,9 +126,9 @@ class TestNessieCompatibilityExtensions {
         .selectors(selectClass(OuterSample.Inner.class))
         .filters(new MultiEnvTestFilter())
         .execute();
-    assertThat(OuterSample.outerVersions)
+    soft.assertThat(OuterSample.outerVersions)
         .containsExactly(Version.parseVersion("0.18.0"), Version.CURRENT);
-    assertThat(OuterSample.innerVersions).containsExactlyElementsOf(OuterSample.outerVersions);
+    soft.assertThat(OuterSample.innerVersions).containsExactlyElementsOf(OuterSample.outerVersions);
   }
 
   @Test
@@ -130,15 +137,17 @@ class TestNessieCompatibilityExtensions {
         .configurationParameter("nessie.versions", "0.18.0,current")
         .selectors(selectClass(UpgradeSample.class))
         .execute();
-    assertThat(UpgradeSample.allVersions)
+    soft.assertThat(UpgradeSample.allVersions)
         .containsExactly(Version.parseVersion("0.18.0"), Version.CURRENT);
-    assertThat(UpgradeSample.minVersionHigh).containsExactly(Version.CURRENT);
-    assertThat(UpgradeSample.maxVersionHigh).containsExactly(Version.parseVersion("0.18.0"));
-    assertThat(UpgradeSample.never).isEmpty();
+    soft.assertThat(UpgradeSample.minVersionHigh).containsExactly(Version.CURRENT);
+    soft.assertThat(UpgradeSample.maxVersionHigh).containsExactly(Version.parseVersion("0.18.0"));
+    soft.assertThat(UpgradeSample.never).isEmpty();
   }
 
-  @ExtendWith(OlderNessieClientsExtension.class)
+  @ExtendWith({OlderNessieClientsExtension.class, SoftAssertionsExtension.class})
   static class OldClientsSample {
+    @InjectSoftAssertions protected SoftAssertions soft;
+
     @NessieAPI NessieApiV1 api;
     @NessieAPI static NessieApiV1 apiStatic;
     @NessieVersion Version version;
@@ -151,14 +160,14 @@ class TestNessieCompatibilityExtensions {
 
     @Test
     void testSome() throws Exception {
-      assertThat(api).isNotNull().isSameAs(apiStatic);
-      assertThat(version).isNotNull().isEqualTo(versionStatic);
+      soft.assertThat(api).isNotNull().isSameAs(apiStatic);
+      soft.assertThat(version).isNotNull().isEqualTo(versionStatic);
       allVersions.add(version);
 
-      assertThat(api.getConfig())
+      soft.assertThat(api.getConfig())
           .extracting(NessieConfiguration::getDefaultBranch)
           .isEqualTo("main");
-      assertThat(api.getDefaultBranch()).extracting(Branch::getName).isEqualTo("main");
+      soft.assertThat(api.getDefaultBranch()).extracting(Branch::getName).isEqualTo("main");
     }
 
     @VersionCondition(minVersion = "99999")
@@ -180,8 +189,10 @@ class TestNessieCompatibilityExtensions {
     }
   }
 
-  @ExtendWith(OlderNessieServersExtension.class)
+  @ExtendWith({OlderNessieServersExtension.class, SoftAssertionsExtension.class})
   static class OldServersSample {
+    @InjectSoftAssertions protected SoftAssertions soft;
+
     @NessieAPI NessieApiV1 api;
     @NessieAPI static NessieApiV1 apiStatic;
     @NessieBaseUri URI uri;
@@ -197,16 +208,16 @@ class TestNessieCompatibilityExtensions {
 
     @Test
     void testSome() throws Exception {
-      assertThat(api).isNotNull().isSameAs(apiStatic);
-      assertThat(uri).isNotNull().isEqualTo(uriStatic);
-      assertThat(version).isNotNull().isEqualTo(versionStatic);
+      soft.assertThat(api).isNotNull().isSameAs(apiStatic);
+      soft.assertThat(uri).isNotNull().isEqualTo(uriStatic);
+      soft.assertThat(version).isNotNull().isEqualTo(versionStatic);
       allVersions.add(version);
       uris.add(uri);
 
-      assertThat(api.getConfig())
+      soft.assertThat(api.getConfig())
           .extracting(NessieConfiguration::getDefaultBranch)
           .isEqualTo("main");
-      assertThat(api.getDefaultBranch()).extracting(Branch::getName).isEqualTo("main");
+      soft.assertThat(api.getDefaultBranch()).extracting(Branch::getName).isEqualTo("main");
     }
 
     @VersionCondition(minVersion = "99999")
@@ -252,8 +263,10 @@ class TestNessieCompatibilityExtensions {
     }
   }
 
-  @ExtendWith(NessieUpgradesExtension.class)
+  @ExtendWith({NessieUpgradesExtension.class, SoftAssertionsExtension.class})
   static class UpgradeSample {
+    @InjectSoftAssertions protected SoftAssertions soft;
+
     @NessieAPI NessieApiV1 api;
     @NessieAPI static NessieApiV1 apiStatic;
     @NessieVersion Version version;
@@ -266,14 +279,14 @@ class TestNessieCompatibilityExtensions {
 
     @Test
     void testSome() throws Exception {
-      assertThat(api).isNotNull().isSameAs(apiStatic);
-      assertThat(version).isNotNull().isEqualTo(versionStatic);
+      soft.assertThat(api).isNotNull().isSameAs(apiStatic);
+      soft.assertThat(version).isNotNull().isEqualTo(versionStatic);
       allVersions.add(version);
 
-      assertThat(api.getConfig())
+      soft.assertThat(api.getConfig())
           .extracting(NessieConfiguration::getDefaultBranch)
           .isEqualTo("main");
-      assertThat(api.getDefaultBranch()).extracting(Branch::getName).isEqualTo("main");
+      soft.assertThat(api.getDefaultBranch()).extracting(Branch::getName).isEqualTo("main");
     }
 
     @VersionCondition(minVersion = "99999")

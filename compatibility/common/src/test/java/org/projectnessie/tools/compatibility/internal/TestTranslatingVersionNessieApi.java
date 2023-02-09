@@ -22,8 +22,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.stream.Stream;
 import org.assertj.core.api.InstanceOfAssertFactories;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -50,7 +54,9 @@ import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.tools.compatibility.api.Version;
 
+@ExtendWith(SoftAssertionsExtension.class)
 class TestTranslatingVersionNessieApi {
+  @InjectSoftAssertions protected SoftAssertions soft;
 
   static ClassLoader oldVersionClassLoader;
 
@@ -62,17 +68,19 @@ class TestTranslatingVersionNessieApi {
 
   @Test
   void requiresProxyOrReserialization() {
-    assertThat(TranslatingVersionNessieApi.requiresProxy(null)).isFalse();
-    assertThat(TranslatingVersionNessieApi.requiresProxy(new ArrayList<>())).isFalse();
-    assertThat(TranslatingVersionNessieApi.requiresProxy(42)).isFalse();
-    assertThat(TranslatingVersionNessieApi.requiresProxy(new HttpApiV1(null))).isTrue();
-    assertThat(TranslatingVersionNessieApi.requiresProxy(Branch.of("foo", null))).isFalse();
+    soft.assertThat(TranslatingVersionNessieApi.requiresProxy(null)).isFalse();
+    soft.assertThat(TranslatingVersionNessieApi.requiresProxy(new ArrayList<>())).isFalse();
+    soft.assertThat(TranslatingVersionNessieApi.requiresProxy(42)).isFalse();
+    soft.assertThat(TranslatingVersionNessieApi.requiresProxy(new HttpApiV1(null))).isTrue();
+    soft.assertThat(TranslatingVersionNessieApi.requiresProxy(Branch.of("foo", null))).isFalse();
 
-    assertThat(TranslatingVersionNessieApi.requiresReserialization(null)).isFalse();
-    assertThat(TranslatingVersionNessieApi.requiresReserialization(new ArrayList<>())).isFalse();
-    assertThat(TranslatingVersionNessieApi.requiresReserialization(42)).isFalse();
-    assertThat(TranslatingVersionNessieApi.requiresReserialization(new HttpApiV1(null))).isFalse();
-    assertThat(TranslatingVersionNessieApi.requiresReserialization(Branch.of("foo", null)))
+    soft.assertThat(TranslatingVersionNessieApi.requiresReserialization(null)).isFalse();
+    soft.assertThat(TranslatingVersionNessieApi.requiresReserialization(new ArrayList<>()))
+        .isFalse();
+    soft.assertThat(TranslatingVersionNessieApi.requiresReserialization(42)).isFalse();
+    soft.assertThat(TranslatingVersionNessieApi.requiresReserialization(new HttpApiV1(null)))
+        .isFalse();
+    soft.assertThat(TranslatingVersionNessieApi.requiresReserialization(Branch.of("foo", null)))
         .isTrue();
   }
 
@@ -93,11 +101,11 @@ class TestTranslatingVersionNessieApi {
         new TranslatingVersionNessieApi(
             createOldVersionNessieAPi(), NessieApiV1.class, oldVersionClassLoader)) {
 
-      assertThat(translating.translateObject(null, oldVersionClassLoader, contextClassLoader))
+      soft.assertThat(translating.translateObject(null, oldVersionClassLoader, contextClassLoader))
           .isNull();
-      assertThat(translating.translateArgs(null, oldVersionClassLoader, contextClassLoader))
+      soft.assertThat(translating.translateArgs(null, oldVersionClassLoader, contextClassLoader))
           .isNull();
-      assertThat(
+      soft.assertThat(
               translating.translateArgs(
                   new Object[] {null, null}, oldVersionClassLoader, contextClassLoader))
           .containsExactly(null, null);
@@ -105,7 +113,7 @@ class TestTranslatingVersionNessieApi {
       Object translatedObject =
           translating.translateObject(modelObj, oldVersionClassLoader, contextClassLoader);
 
-      assertThat(translatedObject)
+      soft.assertThat(translatedObject)
           .extracting(Object::getClass)
           .matches(c -> c.getName().equals(expectedClassName))
           .matches(c -> c.getClassLoader() == oldVersionClassLoader);
@@ -121,21 +129,21 @@ class TestTranslatingVersionNessieApi {
               },
               oldVersionClassLoader,
               contextClassLoader);
-      assertThat(translatedArgs).hasSize(5);
-      assertThat(translatedArgs[0]).isNull();
-      assertThat(translatedArgs[1])
+      soft.assertThat(translatedArgs).hasSize(5);
+      soft.assertThat(translatedArgs[0]).isNull();
+      soft.assertThat(translatedArgs[1])
           .extracting(Object::getClass)
           .matches(c -> c.getName().equals(expectedClassName))
           .matches(c -> c.getClassLoader() == oldVersionClassLoader);
-      assertThat(translatedArgs[2])
+      soft.assertThat(translatedArgs[2])
           .asInstanceOf(InstanceOfAssertFactories.list(Object.class))
           .hasSize(1)
           .allMatch(o -> o.getClass().getClassLoader() == oldVersionClassLoader);
-      assertThat(translatedArgs[3])
+      soft.assertThat(translatedArgs[3])
           .asInstanceOf(InstanceOfAssertFactories.collection(Object.class))
           .hasSize(1)
           .allMatch(o -> o.getClass().getClassLoader() == oldVersionClassLoader);
-      assertThat(translatedArgs[4])
+      soft.assertThat(translatedArgs[4])
           .asInstanceOf(InstanceOfAssertFactories.map(String.class, Object.class))
           .hasSize(1)
           .containsKey("key")
@@ -168,21 +176,22 @@ class TestTranslatingVersionNessieApi {
       Object translatedObject =
           translating.translateObject(modelObj, oldVersionClassLoader, contextClassLoader);
 
-      assertThat(translating.serializeWith(contextClassLoader, modelObj))
+      soft.assertThat(translating.serializeWith(contextClassLoader, modelObj))
           .isEqualTo(translating.serializeWith(oldVersionClassLoader, translatedObject))
           .isEqualTo(modelJson);
 
-      assertThat(translating.deserializeWith(contextClassLoader, modelJson, modelClass.getName()))
+      soft.assertThat(
+              translating.deserializeWith(contextClassLoader, modelJson, modelClass.getName()))
           .isEqualTo(modelObj);
-      assertThat(
+      soft.assertThat(
               translating.deserializeWith(oldVersionClassLoader, modelJson, modelClass.getName()))
           .isEqualTo(translatedObject);
 
-      assertThat(translating.reserialize(modelObj))
+      soft.assertThat(translating.reserialize(modelObj))
           .isEqualTo(translatedObject)
           .extracting(b -> b.getClass().getClassLoader())
           .isSameAs(oldVersionClassLoader);
-      assertThat(translating.reserialize(translatedObject))
+      soft.assertThat(translating.reserialize(translatedObject))
           .isEqualTo(modelObj)
           .extracting(b -> b.getClass().getClassLoader())
           .isSameAs(contextClassLoader);
@@ -202,11 +211,11 @@ class TestTranslatingVersionNessieApi {
 
       Class<?>[] translated =
           translating.translateTypes(oldVersionClassLoader, new Class[] {contextClass});
-      assertThat(translated)
+      soft.assertThat(translated)
           .allSatisfy(c -> assertThat(c.getClassLoader()).isSameAs(oldVersionClassLoader));
-      assertThat(translating.translateTypes(oldVersionClassLoader, translated))
+      soft.assertThat(translating.translateTypes(oldVersionClassLoader, translated))
           .allSatisfy(c -> assertThat(c.getClassLoader()).isSameAs(oldVersionClassLoader));
-      assertThat(translating.translateTypes(contextClassLoader, translated))
+      soft.assertThat(translating.translateTypes(contextClassLoader, translated))
           .allSatisfy(c -> assertThat(c.getClassLoader()).isSameAs(contextClassLoader));
     }
   }
@@ -229,7 +238,7 @@ class TestTranslatingVersionNessieApi {
         translateException(
             oldVersionType, errorCode.httpStatus(), nessieErrorMessage, reason, serverStackTrace);
 
-    assertThat(translated)
+    soft.assertThat(translated)
         .isInstanceOf(expectedType)
         .asInstanceOf(InstanceOfAssertFactories.type(NessieInternalServerException.class))
         .extracting(Throwable::getMessage, NessieInternalServerException::getError)
@@ -286,7 +295,7 @@ class TestTranslatingVersionNessieApi {
     Throwable translated =
         translateException(
             oldVersionType, statusCode, nessieErrorMessage, reason, serverStackTrace);
-    assertThat(translated)
+    soft.assertThat(translated)
         .isInstanceOf(expectedType)
         .asInstanceOf(InstanceOfAssertFactories.type(NessieRuntimeException.class))
         .extracting(
@@ -341,7 +350,7 @@ class TestTranslatingVersionNessieApi {
     Throwable translated =
         translateException(
             oldVersionType, errorCode.httpStatus(), message, reason, serverStackTrace);
-    assertThat(translated)
+    soft.assertThat(translated)
         .isInstanceOf(expectedType)
         .asInstanceOf(InstanceOfAssertFactories.type(BaseNessieClientServerException.class))
         .extracting(

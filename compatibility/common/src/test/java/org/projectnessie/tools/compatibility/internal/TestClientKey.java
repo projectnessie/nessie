@@ -17,26 +17,32 @@ package org.projectnessie.tools.compatibility.internal;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.common.collect.ImmutableSortedMap;
 import java.util.function.Supplier;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.tools.compatibility.api.Version;
 
+@ExtendWith(SoftAssertionsExtension.class)
 class TestClientKey {
+  @InjectSoftAssertions protected SoftAssertions soft;
+
   @Test
   void nulls() {
-    assertThatThrownBy(() -> new ClientKey(null, "abc", NessieApiV1.class, emptyMap()))
+    soft.assertThatThrownBy(() -> new ClientKey(null, "abc", NessieApiV1.class, emptyMap()))
         .isInstanceOf(NullPointerException.class);
-    assertThatThrownBy(() -> new ClientKey(Version.CURRENT, null, NessieApiV1.class, emptyMap()))
+    soft.assertThatThrownBy(
+            () -> new ClientKey(Version.CURRENT, null, NessieApiV1.class, emptyMap()))
         .isInstanceOf(NullPointerException.class);
-    assertThatThrownBy(() -> new ClientKey(Version.CURRENT, "abc", null, emptyMap()))
+    soft.assertThatThrownBy(() -> new ClientKey(Version.CURRENT, "abc", null, emptyMap()))
         .isInstanceOf(NullPointerException.class);
-    assertThatThrownBy(() -> new ClientKey(Version.CURRENT, "abc", NessieApiV1.class, null))
+    soft.assertThatThrownBy(() -> new ClientKey(Version.CURRENT, "abc", NessieApiV1.class, null))
         .isInstanceOf(NullPointerException.class);
   }
 
@@ -46,7 +52,7 @@ class TestClientKey {
         () ->
             new ClientKey(Version.CURRENT, "foo", NessieApiV1.class, singletonMap("key", "value"));
 
-    assertThat(factory.get())
+    soft.assertThat(factory.get())
         .isEqualTo(factory.get())
         .isNotEqualTo(new ClientKey(Version.CURRENT, "foo", NessieApiV1.class, emptyMap()))
         .isNotEqualTo(
@@ -61,7 +67,7 @@ class TestClientKey {
 
   @Test
   void properties() {
-    assertThat(
+    soft.assertThat(
             new ClientKey(
                 Version.CURRENT,
                 "foo",
