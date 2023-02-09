@@ -35,7 +35,9 @@ public interface HttpConfigApi extends ConfigApi {
 
   @Override
   @GET
+  @jakarta.ws.rs.GET
   @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Returns repository and server settings relevant to clients.",
       operationId = "getConfigV2")

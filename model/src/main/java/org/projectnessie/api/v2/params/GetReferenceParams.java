@@ -34,6 +34,7 @@ public class GetReferenceParams {
       description = REF_GET_PARAMETER_DESCRIPTION,
       examples = {@ExampleObject(ref = "ref"), @ExampleObject(ref = "refDefault")})
   @PathParam("ref")
+  @jakarta.ws.rs.PathParam("ref")
   @NotNull
   @jakarta.validation.constraints.NotNull
   @Pattern(regexp = Validation.REF_NAME_PATH_REGEX, message = Validation.REF_NAME_MESSAGE)
@@ -54,6 +55,7 @@ public class GetReferenceParams {
               + "A returned Tag instance will only contain the 'commitMetaOfHEAD' and 'numTotalCommits' fields.\n\n"
               + "Note that computing & fetching additional metadata might be computationally expensive on the server-side, so this flag should be used with care.")
   @QueryParam("fetch")
+  @jakarta.ws.rs.QueryParam("fetch")
   @Nullable
   @jakarta.annotation.Nullable
   private FetchOption fetchOption;

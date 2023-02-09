@@ -50,6 +50,7 @@ public class DiffParams extends AbstractParams<DiffParams> {
         @ExampleObject(ref = "refDetached"),
       })
   @PathParam("from-ref")
+  @jakarta.ws.rs.PathParam("from-ref")
   private String fromRef;
 
   @NotNull
@@ -62,6 +63,7 @@ public class DiffParams extends AbstractParams<DiffParams> {
       description =
           "Same reference spec as in the 'from-ref' parameter but identifying the other tree for comparison.")
   @PathParam("to-ref")
+  @jakarta.ws.rs.PathParam("to-ref")
   private String toRef;
 
   public DiffParams() {}

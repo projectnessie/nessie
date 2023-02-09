@@ -42,12 +42,14 @@ public class EntriesParams extends AbstractParams<EntriesParams> {
         @ExampleObject(ref = "expr_by_namespace_and_contentType")
       })
   @QueryParam("filter")
+  @jakarta.ws.rs.QueryParam("filter")
   private String filter;
 
   @Nullable
   @jakarta.annotation.Nullable
   @Parameter(description = "Optionally request to return 'Content' objects for the returned keys.")
   @QueryParam("content")
+  @jakarta.ws.rs.QueryParam("content")
   private Boolean withContent;
 
   public EntriesParams() {}

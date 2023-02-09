@@ -45,6 +45,7 @@ public class ReferencesParams extends AbstractParams<ReferencesParams> {
               + "A returned Tag instance will only contain the 'commitMetaOfHEAD' and 'numTotalCommits' fields.\n\n"
               + "Note that computing & fetching additional metadata might be computationally expensive on the server-side, so this flag should be used with care.")
   @QueryParam("fetch")
+  @jakarta.ws.rs.QueryParam("fetch")
   @Nullable
   @jakarta.annotation.Nullable
   private FetchOption fetchOption;
@@ -64,6 +65,7 @@ public class ReferencesParams extends AbstractParams<ReferencesParams> {
         @ExampleObject(ref = "expr_by_ref_commit")
       })
   @QueryParam("filter")
+  @jakarta.ws.rs.QueryParam("filter")
   @Nullable
   @jakarta.annotation.Nullable
   private String filter;

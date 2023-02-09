@@ -80,6 +80,7 @@ public class DiffParams {
       description = "The 'from' reference (and optional hash) to start the diff from",
       examples = {@ExampleObject(ref = "ref"), @ExampleObject(ref = "refForDiffWithHash")})
   @PathParam("fromRefWithHash")
+  @jakarta.ws.rs.PathParam("fromRefWithHash")
   public void setFromRefWithHash(String value) {
     this.fromRef = parseRefName(value);
     this.fromHashOnRef = parseHash(value);
@@ -89,6 +90,7 @@ public class DiffParams {
       description = "The 'to' reference (and optional hash) to end the diff at.",
       examples = {@ExampleObject(ref = "ref"), @ExampleObject(ref = "refForDiffWithHash")})
   @PathParam("toRefWithHash")
+  @jakarta.ws.rs.PathParam("toRefWithHash")
   public void setToRefWithHash(String value) {
     this.toRef = parseRefName(value);
     this.toHashOnRef = parseHash(value);

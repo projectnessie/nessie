@@ -43,6 +43,7 @@ public class EntriesParams extends AbstractParams<EntriesParams> {
       description = "a particular hash on the given ref",
       examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})
   @QueryParam("hashOnRef")
+  @jakarta.ws.rs.QueryParam("hashOnRef")
   private String hashOnRef;
 
   @Nullable
@@ -52,6 +53,7 @@ public class EntriesParams extends AbstractParams<EntriesParams> {
           "If set > 0 will filter the results to only return namespaces/tables to the depth of namespaceDepth. If not set or <=0 has no effect\n"
               + "Setting this parameter > 0 will turn off paging.")
   @QueryParam("namespaceDepth")
+  @jakarta.ws.rs.QueryParam("namespaceDepth")
   private Integer namespaceDepth;
 
   @Nullable
@@ -66,6 +68,7 @@ public class EntriesParams extends AbstractParams<EntriesParams> {
         @ExampleObject(ref = "expr_by_namespace_and_contentType")
       })
   @QueryParam("filter")
+  @jakarta.ws.rs.QueryParam("filter")
   private String filter;
 
   public EntriesParams() {}

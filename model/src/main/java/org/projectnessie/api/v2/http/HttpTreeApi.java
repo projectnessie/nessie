@@ -72,14 +72,17 @@ import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.SingleReferenceResponse;
 import org.projectnessie.model.ser.Views;
 
-@Consumes(value = MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+@jakarta.ws.rs.Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
 @Path("v2/trees")
 @Tag(name = "v2-beta")
 public interface HttpTreeApi extends TreeApi {
 
   @Override
   @GET
+  @jakarta.ws.rs.GET
   @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Get information about all branches and tags",
       operationId = "getAllReferencesV2")
@@ -98,11 +101,13 @@ public interface HttpTreeApi extends TreeApi {
     @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
   })
   @JsonView(Views.V2.class)
-  ReferencesResponse getAllReferences(@BeanParam ReferencesParams params);
+  ReferencesResponse getAllReferences(@BeanParam @jakarta.ws.rs.BeanParam ReferencesParams params);
 
   @Override
   @POST
+  @jakarta.ws.rs.POST
   @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Create a new branch or tag",
       description =
@@ -133,13 +138,16 @@ public interface HttpTreeApi extends TreeApi {
   })
   @JsonView(Views.V2.class)
   SingleReferenceResponse createReference(
-      @Parameter(required = true, description = REF_NAME_DESCRIPTION) @QueryParam("name")
+      @Parameter(required = true, description = REF_NAME_DESCRIPTION)
+          @QueryParam("name")
+          @jakarta.ws.rs.QueryParam("name")
           String name,
       @Parameter(
               required = true,
               description = "Type of the reference to be created",
               examples = {@ExampleObject(ref = "referenceType")})
           @QueryParam("type")
+          @jakarta.ws.rs.QueryParam("type")
           Reference.ReferenceType type,
       @RequestBody(
               required = true,
@@ -154,7 +162,9 @@ public interface HttpTreeApi extends TreeApi {
 
   @Override
   @GET
+  @jakarta.ws.rs.GET
   @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}")
   @Operation(summary = "Fetch details of a reference", operationId = "getReferenceByNameV2")
   @APIResponses({
@@ -173,12 +183,14 @@ public interface HttpTreeApi extends TreeApi {
     @APIResponse(responseCode = "404", description = "Ref not found")
   })
   @JsonView(Views.V2.class)
-  SingleReferenceResponse getReferenceByName(@BeanParam GetReferenceParams params)
-      throws NessieNotFoundException;
+  SingleReferenceResponse getReferenceByName(
+      @BeanParam @jakarta.ws.rs.BeanParam GetReferenceParams params) throws NessieNotFoundException;
 
   @Override
   @GET
+  @jakarta.ws.rs.GET
   @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/entries")
   @Operation(
       summary = "Fetch all entries for a given reference",
@@ -225,13 +237,16 @@ public interface HttpTreeApi extends TreeApi {
                 @ExampleObject(ref = "refDetached"),
               })
           @PathParam("ref")
+          @jakarta.ws.rs.PathParam("ref")
           String ref,
-      @BeanParam EntriesParams params)
+      @BeanParam @jakarta.ws.rs.BeanParam EntriesParams params)
       throws NessieNotFoundException;
 
   @Override
   @GET
+  @jakarta.ws.rs.GET
   @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("{ref}/history")
   @Operation(
       summary = "Get commit log for a particular reference",
@@ -282,13 +297,16 @@ public interface HttpTreeApi extends TreeApi {
                 @ExampleObject(ref = "refDetached"),
               })
           @PathParam("ref")
+          @jakarta.ws.rs.PathParam("ref")
           String ref,
-      @BeanParam CommitLogParams params)
+      @BeanParam @jakarta.ws.rs.BeanParam CommitLogParams params)
       throws NessieNotFoundException;
 
   @Override
   @GET
+  @jakarta.ws.rs.GET
   @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path(
       "{from-ref:"
           + REF_NAME_PATH_ELEMENT_REGEX
@@ -326,11 +344,14 @@ public interface HttpTreeApi extends TreeApi {
     @APIResponse(responseCode = "404", description = "fromRef/toRef not found"),
   })
   @JsonView(Views.V2.class)
-  DiffResponse getDiff(@BeanParam DiffParams params) throws NessieNotFoundException;
+  DiffResponse getDiff(@BeanParam @jakarta.ws.rs.BeanParam DiffParams params)
+      throws NessieNotFoundException;
 
   @Override
   @PUT
+  @jakarta.ws.rs.PUT
   @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}")
   @Operation(
       summary = "Set a named reference to a specific hash via another reference.",
@@ -359,12 +380,14 @@ public interface HttpTreeApi extends TreeApi {
               description = "Optional expected type of the reference being reassigned",
               examples = {@ExampleObject(ref = "referenceType")})
           @QueryParam("type")
+          @jakarta.ws.rs.QueryParam("type")
           Reference.ReferenceType type,
       @Parameter(
               schema = @Schema(pattern = REF_NAME_PATH_ELEMENT_REGEX),
               description = CHECKED_REF_DESCRIPTION,
               examples = @ExampleObject(ref = "refWithHash"))
           @PathParam("ref")
+          @jakarta.ws.rs.PathParam("ref")
           String ref,
       @RequestBody(
               required = true,
@@ -380,7 +403,9 @@ public interface HttpTreeApi extends TreeApi {
 
   @Override
   @DELETE
+  @jakarta.ws.rs.DELETE
   @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}")
   @Operation(
       summary = "Delete a reference",
@@ -404,18 +429,22 @@ public interface HttpTreeApi extends TreeApi {
               description = "Optional expected type of the reference being deleted",
               examples = {@ExampleObject(ref = "referenceType")})
           @QueryParam("type")
+          @jakarta.ws.rs.QueryParam("type")
           Reference.ReferenceType type,
       @Parameter(
               schema = @Schema(pattern = REF_NAME_PATH_ELEMENT_REGEX),
               description = CHECKED_REF_DESCRIPTION,
               examples = @ExampleObject(ref = "refWithHash"))
           @PathParam("ref")
+          @jakarta.ws.rs.PathParam("ref")
           String ref)
       throws NessieConflictException, NessieNotFoundException;
 
   @Override
   @GET
+  @jakarta.ws.rs.GET
   @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/contents/{key}")
   @Operation(
       summary = "Get the content object associated with a key.",
@@ -443,7 +472,10 @@ public interface HttpTreeApi extends TreeApi {
   })
   @JsonView(Views.V2.class)
   ContentResponse getContent(
-      @Parameter(description = KEY_PARAMETER_DESCRIPTION) @PathParam("key") ContentKey key,
+      @Parameter(description = KEY_PARAMETER_DESCRIPTION)
+          @PathParam("key")
+          @jakarta.ws.rs.PathParam("key")
+          ContentKey key,
       @Parameter(
               schema = @Schema(pattern = REF_NAME_PATH_ELEMENT_REGEX),
               description = REF_PARAMETER_DESCRIPTION,
@@ -454,11 +486,14 @@ public interface HttpTreeApi extends TreeApi {
                 @ExampleObject(ref = "refDetached"),
               })
           @PathParam("ref")
+          @jakarta.ws.rs.PathParam("ref")
           String ref)
       throws NessieNotFoundException;
 
   @GET
+  @jakarta.ws.rs.GET
   @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/contents")
   @Operation(
       summary = "Get multiple content objects.",
@@ -491,14 +526,21 @@ public interface HttpTreeApi extends TreeApi {
               description = "Reference to use.",
               examples = {@ExampleObject(ref = "ref")})
           @PathParam("ref")
+          @jakarta.ws.rs.PathParam("ref")
           String ref,
-      @Parameter(description = KEY_PARAMETER_DESCRIPTION) @QueryParam("key") List<String> keys)
+      @Parameter(description = KEY_PARAMETER_DESCRIPTION)
+          @QueryParam("key")
+          @jakarta.ws.rs.QueryParam("key")
+          List<String> keys)
       throws NessieNotFoundException;
 
   @Override
   @POST
+  @jakarta.ws.rs.POST
   @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/contents")
   @Operation(
       summary = "Get multiple content objects.",
@@ -538,6 +580,7 @@ public interface HttpTreeApi extends TreeApi {
                 @ExampleObject(ref = "refDetached"),
               })
           @PathParam("ref")
+          @jakarta.ws.rs.PathParam("ref")
           String ref,
       @RequestBody(
               description = "Keys to retrieve.",
@@ -547,7 +590,9 @@ public interface HttpTreeApi extends TreeApi {
 
   @Override
   @POST
+  @jakarta.ws.rs.POST
   @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("{branch}/history/transplant")
   @Operation(
       summary =
@@ -591,6 +636,7 @@ public interface HttpTreeApi extends TreeApi {
               description = CHECKED_BRANCH_DESCRIPTION,
               examples = @ExampleObject(ref = "refWithHash"))
           @PathParam("branch")
+          @jakarta.ws.rs.PathParam("branch")
           String branch,
       @RequestBody(
               required = true,
@@ -604,7 +650,9 @@ public interface HttpTreeApi extends TreeApi {
 
   @Override
   @POST
+  @jakarta.ws.rs.POST
   @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("{branch}/history/merge")
   @Operation(
       summary = "Merge commits from another reference onto 'branch'.",
@@ -650,6 +698,7 @@ public interface HttpTreeApi extends TreeApi {
               description = CHECKED_BRANCH_DESCRIPTION,
               examples = @ExampleObject(ref = "refWithHash"))
           @PathParam("branch")
+          @jakarta.ws.rs.PathParam("branch")
           String branch,
       @RequestBody(
               required = true,
@@ -665,9 +714,12 @@ public interface HttpTreeApi extends TreeApi {
 
   @Override
   @POST
+  @jakarta.ws.rs.POST
   @Path("{branch}/history/commit")
   @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Commit one or more operations against the given 'branch'.",
       description =
@@ -706,6 +758,7 @@ public interface HttpTreeApi extends TreeApi {
                 @ExampleObject(ref = "refDefault"),
               })
           @PathParam("branch")
+          @jakarta.ws.rs.PathParam("branch")
           String branch,
       @RequestBody(
               required = true,

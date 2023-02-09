@@ -48,13 +48,16 @@ import org.projectnessie.model.ser.Views;
 
 @Tag(name = "v1")
 @Path("v1/namespaces")
-@Consumes(value = MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+@jakarta.ws.rs.Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
 public interface HttpNamespaceApi extends NamespaceApi {
 
   @Override
   @PUT
+  @jakarta.ws.rs.PUT
   @Path("/namespace/{ref}/{name}")
   @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Operation(summary = "Creates a Namespace")
   @APIResponses({
     @APIResponse(
@@ -74,14 +77,17 @@ public interface HttpNamespaceApi extends NamespaceApi {
   })
   @JsonView(Views.V1.class)
   Namespace createNamespace(
-      @BeanParam @NotNull @jakarta.validation.constraints.NotNull NamespaceParams params,
+      @BeanParam @jakarta.ws.rs.BeanParam @NotNull @jakarta.validation.constraints.NotNull
+          NamespaceParams params,
       @NotNull @jakarta.validation.constraints.NotNull @RequestBody Namespace namespace)
       throws NessieNamespaceAlreadyExistsException, NessieReferenceNotFoundException;
 
   @Override
   @DELETE
+  @jakarta.ws.rs.DELETE
   @Path("/namespace/{ref}/{name}")
   @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Operation(summary = "Deletes a Namespace")
   @APIResponses({
     @APIResponse(responseCode = "200", description = "Namespace successfully deleted."),
@@ -92,14 +98,17 @@ public interface HttpNamespaceApi extends NamespaceApi {
   })
   @JsonView(Views.V1.class)
   void deleteNamespace(
-      @BeanParam @NotNull @jakarta.validation.constraints.NotNull NamespaceParams params)
+      @BeanParam @jakarta.ws.rs.BeanParam @NotNull @jakarta.validation.constraints.NotNull
+          NamespaceParams params)
       throws NessieReferenceNotFoundException, NessieNamespaceNotEmptyException,
           NessieNamespaceNotFoundException;
 
   @Override
   @GET
+  @jakarta.ws.rs.GET
   @Path("/namespace/{ref}/{name}")
   @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Operation(summary = "Retrieves a Namespace")
   @APIResponses({
     @APIResponse(
@@ -118,13 +127,16 @@ public interface HttpNamespaceApi extends NamespaceApi {
   })
   @JsonView(Views.V1.class)
   Namespace getNamespace(
-      @BeanParam @NotNull @jakarta.validation.constraints.NotNull NamespaceParams params)
+      @BeanParam @jakarta.ws.rs.BeanParam @NotNull @jakarta.validation.constraints.NotNull
+          NamespaceParams params)
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException;
 
   @Override
   @GET
+  @jakarta.ws.rs.GET
   @Path("/{ref}")
   @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @APIResponses({
     @APIResponse(
         responseCode = "200",
@@ -142,13 +154,16 @@ public interface HttpNamespaceApi extends NamespaceApi {
   })
   @JsonView(Views.V1.class)
   GetNamespacesResponse getNamespaces(
-      @BeanParam @NotNull @jakarta.validation.constraints.NotNull MultipleNamespacesParams params)
+      @BeanParam @jakarta.ws.rs.BeanParam @NotNull @jakarta.validation.constraints.NotNull
+          MultipleNamespacesParams params)
       throws NessieReferenceNotFoundException;
 
   @Override
   @POST
+  @jakarta.ws.rs.POST
   @Path("/namespace/{ref}/{name}")
   @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @APIResponses({
     @APIResponse(
         responseCode = "200",
@@ -159,7 +174,8 @@ public interface HttpNamespaceApi extends NamespaceApi {
   })
   @JsonView(Views.V1.class)
   void updateProperties(
-      @BeanParam @NotNull @jakarta.validation.constraints.NotNull NamespaceParams params,
+      @BeanParam @jakarta.ws.rs.BeanParam @NotNull @jakarta.validation.constraints.NotNull
+          NamespaceParams params,
       @RequestBody(
               description = "Namespace properties to update/delete.",
               content = {

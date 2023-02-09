@@ -44,6 +44,7 @@ public class RefLogParams extends AbstractParams<RefLogParams> {
               + "returned "
               + "'late' in the result.")
   @QueryParam("startHash")
+  @jakarta.ws.rs.QueryParam("startHash")
   private String startHash;
 
   @Nullable
@@ -58,6 +59,7 @@ public class RefLogParams extends AbstractParams<RefLogParams> {
               + "'early' "
               + "in the result.")
   @QueryParam("endHash")
+  @jakarta.ws.rs.QueryParam("endHash")
   private String endHash;
 
   @Nullable
@@ -72,6 +74,7 @@ public class RefLogParams extends AbstractParams<RefLogParams> {
               + "checking whether 'ReflogResponseEntry.parentRefLogId' is different from the hash of the previous "
               + "reflog in the log response.")
   @QueryParam("filter")
+  @jakarta.ws.rs.QueryParam("filter")
   private String filter;
 
   public RefLogParams() {}

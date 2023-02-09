@@ -23,6 +23,7 @@ public abstract class AbstractParams<IMPL extends AbstractParams<IMPL>> {
 
   @Parameter(description = "maximum number of entries to return, just a hint for the server")
   @QueryParam("maxRecords")
+  @jakarta.ws.rs.QueryParam("maxRecords")
   @Nullable
   @jakarta.annotation.Nullable
   private Integer maxRecords;
@@ -32,6 +33,7 @@ public abstract class AbstractParams<IMPL extends AbstractParams<IMPL>> {
           "paging continuation token, as returned in the previous value of the field 'token' in "
               + "the corresponding 'EntriesResponse' or 'LogResponse' or 'ReferencesResponse' or 'RefLogResponse'.")
   @QueryParam("pageToken")
+  @jakarta.ws.rs.QueryParam("pageToken")
   @Nullable
   @jakarta.annotation.Nullable
   private String pageToken;
