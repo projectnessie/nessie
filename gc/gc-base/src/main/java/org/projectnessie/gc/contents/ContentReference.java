@@ -64,10 +64,10 @@ public interface ContentReference {
   Long snapshotId();
 
   static ContentReference icebergTable(
-      @NotNull String contentId,
-      @NotNull String commitId,
-      @NotNull ContentKey contentKey,
-      @NotNull String metadataLocation,
+      @NotNull @jakarta.validation.constraints.NotNull String contentId,
+      @NotNull @jakarta.validation.constraints.NotNull String commitId,
+      @NotNull @jakarta.validation.constraints.NotNull ContentKey contentKey,
+      @NotNull @jakarta.validation.constraints.NotNull String metadataLocation,
       long snapshotId) {
     return ImmutableContentReference.of(
         contentId, commitId, contentKey, Content.Type.ICEBERG_TABLE, metadataLocation, snapshotId);

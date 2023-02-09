@@ -35,6 +35,9 @@ public class RefLogParams extends AbstractParams<RefLogParams> {
   @Nullable
   @jakarta.annotation.Nullable
   @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+  @jakarta.validation.constraints.Pattern(
+      regexp = Validation.HASH_REGEX,
+      message = Validation.HASH_MESSAGE)
   @Parameter(
       description =
           "Hash of the reflog (inclusive) to start from (in chronological sense), the 'far' end of the reflog, "
@@ -46,6 +49,9 @@ public class RefLogParams extends AbstractParams<RefLogParams> {
   @Nullable
   @jakarta.annotation.Nullable
   @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+  @jakarta.validation.constraints.Pattern(
+      regexp = Validation.HASH_REGEX,
+      message = Validation.HASH_MESSAGE)
   @Parameter(
       description =
           "Hash of the reflog (inclusive) to end at (in chronological sense), the 'near' end of the reflog, returned "

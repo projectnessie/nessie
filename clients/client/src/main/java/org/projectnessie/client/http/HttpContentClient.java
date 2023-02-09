@@ -32,7 +32,8 @@ class HttpContentClient implements HttpContentApi {
   }
 
   @Override
-  public Content getContent(@NotNull ContentKey key, String ref, String hashOnRef)
+  public Content getContent(
+      @NotNull @jakarta.validation.constraints.NotNull ContentKey key, String ref, String hashOnRef)
       throws NessieNotFoundException {
     return client
         .newRequest()
@@ -46,7 +47,9 @@ class HttpContentClient implements HttpContentApi {
 
   @Override
   public GetMultipleContentsResponse getMultipleContents(
-      @NotNull String ref, String hashOnRef, @NotNull GetMultipleContentsRequest request)
+      @NotNull @jakarta.validation.constraints.NotNull String ref,
+      String hashOnRef,
+      @NotNull @jakarta.validation.constraints.NotNull GetMultipleContentsRequest request)
       throws NessieNotFoundException {
     return client
         .newRequest()

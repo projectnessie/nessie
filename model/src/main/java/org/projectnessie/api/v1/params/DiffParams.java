@@ -31,30 +31,44 @@ public class DiffParams {
   private static final char HASH_SEPARATOR = '*';
 
   @NotNull
+  @jakarta.validation.constraints.NotNull
   @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+  @jakarta.validation.constraints.Pattern(
+      regexp = Validation.REF_NAME_REGEX,
+      message = Validation.REF_NAME_MESSAGE)
   private String fromRef;
 
   @Nullable
   @jakarta.annotation.Nullable
   @Pattern(regexp = HASH_OPTIONAL_REGEX, message = Validation.HASH_MESSAGE)
+  @jakarta.validation.constraints.Pattern(
+      regexp = HASH_OPTIONAL_REGEX,
+      message = Validation.HASH_MESSAGE)
   private String fromHashOnRef;
 
   @NotNull
+  @jakarta.validation.constraints.NotNull
   @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+  @jakarta.validation.constraints.Pattern(
+      regexp = Validation.REF_NAME_REGEX,
+      message = Validation.REF_NAME_MESSAGE)
   private String toRef;
 
   @Nullable
   @jakarta.annotation.Nullable
   @Pattern(regexp = HASH_OPTIONAL_REGEX, message = Validation.HASH_MESSAGE)
+  @jakarta.validation.constraints.Pattern(
+      regexp = HASH_OPTIONAL_REGEX,
+      message = Validation.HASH_MESSAGE)
   private String toHashOnRef;
 
   public DiffParams() {}
 
   @org.immutables.builder.Builder.Constructor
   DiffParams(
-      @NotNull String fromRef,
+      @NotNull @jakarta.validation.constraints.NotNull String fromRef,
       @Nullable @jakarta.annotation.Nullable String fromHashOnRef,
-      @NotNull String toRef,
+      @NotNull @jakarta.validation.constraints.NotNull String toRef,
       @Nullable @jakarta.annotation.Nullable String toHashOnRef) {
     this.fromRef = fromRef;
     this.fromHashOnRef = fromHashOnRef;

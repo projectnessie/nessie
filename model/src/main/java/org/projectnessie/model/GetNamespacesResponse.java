@@ -29,6 +29,7 @@ import org.projectnessie.model.ser.Views;
 @JsonDeserialize(as = ImmutableGetNamespacesResponse.class)
 public interface GetNamespacesResponse {
   @NotNull
+  @jakarta.validation.constraints.NotNull
   List<Namespace> getNamespaces();
 
   @JsonView(Views.V2.class)

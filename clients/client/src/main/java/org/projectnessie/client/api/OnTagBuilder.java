@@ -23,11 +23,21 @@ import org.projectnessie.model.Validation;
 /** Base interface for requests against a tag. */
 public interface OnTagBuilder<R extends OnTagBuilder<R>> {
   R tagName(
-      @NotNull @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+      @NotNull
+          @jakarta.validation.constraints.NotNull
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.REF_NAME_REGEX,
+              message = Validation.REF_NAME_MESSAGE)
           String tagName);
 
   R hash(
-      @NotNull @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+      @NotNull
+          @jakarta.validation.constraints.NotNull
+          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.HASH_REGEX,
+              message = Validation.HASH_MESSAGE)
           String hash);
 
   /**

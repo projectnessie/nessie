@@ -36,6 +36,9 @@ public class CommitLogParams extends AbstractParams<CommitLogParams> {
   @Nullable
   @jakarta.annotation.Nullable
   @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+  @jakarta.validation.constraints.Pattern(
+      regexp = Validation.HASH_REGEX,
+      message = Validation.HASH_MESSAGE)
   @Parameter(
       description =
           "Hash on the given ref to identify the commit where the operation of fetching the log "

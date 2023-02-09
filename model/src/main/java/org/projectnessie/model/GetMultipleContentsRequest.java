@@ -31,7 +31,9 @@ import org.immutables.value.Value;
 public interface GetMultipleContentsRequest {
 
   @NotNull
-  @Size(min = 1)
+  @jakarta.validation.constraints.NotNull
+  @Size
+  @jakarta.validation.constraints.Size(min = 1)
   List<ContentKey> getRequestedKeys();
 
   static ImmutableGetMultipleContentsRequest.Builder builder() {

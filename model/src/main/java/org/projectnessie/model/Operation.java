@@ -46,6 +46,7 @@ import org.immutables.value.Value;
 public interface Operation {
 
   @NotNull
+  @jakarta.validation.constraints.NotNull
   ContentKey getKey();
 
   @Schema(
@@ -61,6 +62,7 @@ public interface Operation {
   @JsonTypeName("PUT")
   interface Put extends Operation {
     @NotNull
+    @jakarta.validation.constraints.NotNull
     Content getContent();
 
     @Nullable

@@ -34,6 +34,7 @@ public interface EntriesResponse extends PaginatedResponse {
   }
 
   @NotNull
+  @jakarta.validation.constraints.NotNull
   List<Entry> getEntries();
 
   /**
@@ -55,10 +56,12 @@ public interface EntriesResponse extends PaginatedResponse {
     }
 
     @NotNull
+    @jakarta.validation.constraints.NotNull
     @Value.Parameter(order = 2)
     Content.Type getType();
 
     @NotNull
+    @jakarta.validation.constraints.NotNull
     @Value.Parameter(order = 1)
     ContentKey getName();
 

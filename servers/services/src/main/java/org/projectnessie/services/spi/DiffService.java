@@ -35,17 +35,33 @@ import org.projectnessie.versioned.WithHash;
  */
 public interface DiffService {
   <R> R getDiff(
-      @NotNull @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+      @NotNull
+          @jakarta.validation.constraints.NotNull
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.REF_NAME_REGEX,
+              message = Validation.REF_NAME_MESSAGE)
           String fromRef,
       @Nullable
           @jakarta.annotation.Nullable
           @Pattern(regexp = HASH_OPTIONAL_REGEX, message = Validation.HASH_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = HASH_OPTIONAL_REGEX,
+              message = Validation.HASH_MESSAGE)
           String fromHash,
-      @NotNull @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+      @NotNull
+          @jakarta.validation.constraints.NotNull
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.REF_NAME_REGEX,
+              message = Validation.REF_NAME_MESSAGE)
           String toRef,
       @Nullable
           @jakarta.annotation.Nullable
           @Pattern(regexp = HASH_OPTIONAL_REGEX, message = Validation.HASH_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = HASH_OPTIONAL_REGEX,
+              message = Validation.HASH_MESSAGE)
           String toHash,
       @Nullable @jakarta.annotation.Nullable String pagingToken,
       PagedResponseHandler<R, DiffEntry> pagedResponseHandler,

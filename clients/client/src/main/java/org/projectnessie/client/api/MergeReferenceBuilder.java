@@ -39,7 +39,8 @@ public interface MergeReferenceBuilder extends MergeTransplantBuilder<MergeRefer
   @Override
   MergeReferenceBuilder message(String message);
 
-  MergeReferenceBuilder fromHash(@NotBlank String fromHash);
+  MergeReferenceBuilder fromHash(
+      @NotBlank @jakarta.validation.constraints.NotBlank String fromHash);
 
   /**
    * Convenience for {@link #fromRefName(String) fromRefName(fromRef.getName())}{@code .}{@link

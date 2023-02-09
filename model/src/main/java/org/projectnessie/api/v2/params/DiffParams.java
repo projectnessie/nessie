@@ -36,7 +36,11 @@ import org.projectnessie.model.Validation;
 public class DiffParams extends AbstractParams<DiffParams> {
 
   @NotNull
+  @jakarta.validation.constraints.NotNull
   @Pattern(regexp = Validation.REF_NAME_PATH_REGEX, message = Validation.REF_NAME_PATH_MESSAGE)
+  @jakarta.validation.constraints.Pattern(
+      regexp = Validation.REF_NAME_PATH_REGEX,
+      message = Validation.REF_NAME_PATH_MESSAGE)
   @Parameter(
       description = REF_PARAMETER_DESCRIPTION,
       examples = {
@@ -49,7 +53,11 @@ public class DiffParams extends AbstractParams<DiffParams> {
   private String fromRef;
 
   @NotNull
+  @jakarta.validation.constraints.NotNull
   @Pattern(regexp = Validation.REF_NAME_PATH_REGEX, message = Validation.REF_NAME_PATH_MESSAGE)
+  @jakarta.validation.constraints.Pattern(
+      regexp = Validation.REF_NAME_PATH_REGEX,
+      message = Validation.REF_NAME_PATH_MESSAGE)
   @Parameter(
       description =
           "Same reference spec as in the 'from-ref' parameter but identifying the other tree for comparison.")
@@ -60,8 +68,8 @@ public class DiffParams extends AbstractParams<DiffParams> {
 
   @Constructor
   DiffParams(
-      @NotNull String fromRef,
-      @NotNull String toRef,
+      @NotNull @jakarta.validation.constraints.NotNull String fromRef,
+      @NotNull @jakarta.validation.constraints.NotNull String toRef,
       @Nullable @jakarta.annotation.Nullable Integer maxRecords,
       @Nullable @jakarta.annotation.Nullable String pageToken) {
     super(maxRecords, pageToken);

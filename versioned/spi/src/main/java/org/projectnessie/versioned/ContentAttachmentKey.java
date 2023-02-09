@@ -25,14 +25,17 @@ public interface ContentAttachmentKey {
 
   /** Content ID to which the binary object identified by this key belongs to. */
   @NotBlank
+  @jakarta.validation.constraints.NotBlank
   String getContentId();
 
   /** The object type, for example {@code snapshot} or {@code schema}. */
   @NotBlank
+  @jakarta.validation.constraints.NotBlank
   String getAttachmentType();
 
   /** The object ID, for example the snapshot-ID or schema-ID. */
   @NotBlank
+  @jakarta.validation.constraints.NotBlank
   String getAttachmentId();
 
   @Value.Check

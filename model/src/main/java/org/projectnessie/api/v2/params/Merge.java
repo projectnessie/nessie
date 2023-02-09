@@ -71,11 +71,16 @@ public interface Merge extends BaseMergeTransplant {
   @Override
   @Nullable
   @jakarta.annotation.Nullable
-  @Size(min = 1)
+  @Size
+  @jakarta.validation.constraints.Size(min = 1)
   String getMessage();
 
   @NotBlank
+  @jakarta.validation.constraints.NotBlank
   @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+  @jakarta.validation.constraints.Pattern(
+      regexp = Validation.HASH_REGEX,
+      message = Validation.HASH_MESSAGE)
   String getFromHash();
 
   /**

@@ -98,6 +98,7 @@ public abstract class CommitMeta {
   }
 
   @NotNull
+  @jakarta.validation.constraints.NotNull
   @JsonView(Views.V2.class)
   @JsonProperty("authors")
   public abstract List<String> getAllAuthors();
@@ -117,6 +118,7 @@ public abstract class CommitMeta {
   }
 
   @NotNull
+  @jakarta.validation.constraints.NotNull
   @JsonView(Views.V2.class)
   public abstract List<String> getAllSignedOffBy();
 
@@ -126,6 +128,7 @@ public abstract class CommitMeta {
    * <p>Like github if this message is in markdown it may be displayed cleanly in the UI.
    */
   @NotBlank
+  @jakarta.validation.constraints.NotBlank
   public abstract String getMessage();
 
   /** Commit time in UTC. Set by the server. */
@@ -149,6 +152,7 @@ public abstract class CommitMeta {
    * hostnames etc.
    */
   @NotNull
+  @jakarta.validation.constraints.NotNull
   @Value.NonAttribute
   @JsonView(Views.V1.class)
   public Map<String, String> getProperties() {
@@ -163,11 +167,13 @@ public abstract class CommitMeta {
   }
 
   @NotNull
+  @jakarta.validation.constraints.NotNull
   @JsonView(Views.V2.class)
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
   public abstract Map<String, List<String>> getAllProperties();
 
   @NotNull
+  @jakarta.validation.constraints.NotNull
   @JsonView(Views.V2.class)
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
   public abstract List<String> getParentCommitHashes();

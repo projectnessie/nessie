@@ -41,7 +41,11 @@ public interface TransplantCommitsBuilder extends MergeTransplantBuilder<Transpl
   TransplantCommitsBuilder message(String message);
 
   TransplantCommitsBuilder hashesToTransplant(
-      @NotNull @Size(min = 1) List<String> hashesToTransplant);
+      @NotNull
+          @jakarta.validation.constraints.NotNull
+          @Size
+          @jakarta.validation.constraints.Size(min = 1)
+          List<String> hashesToTransplant);
 
   MergeResponse transplant() throws NessieNotFoundException, NessieConflictException;
 }

@@ -83,15 +83,23 @@ public interface TreeApi {
    */
   SingleReferenceResponse createReference(
       @Valid
+          @jakarta.validation.Valid
           @NotNull
+          @jakarta.validation.constraints.NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.REF_NAME_REGEX,
+              message = Validation.REF_NAME_MESSAGE)
           String name,
-      @Valid @NotNull Reference.ReferenceType type,
-      @Valid @Nullable @jakarta.annotation.Nullable Reference sourceRef)
+      @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
+          Reference.ReferenceType type,
+      @Valid @jakarta.validation.Valid @Nullable @jakarta.annotation.Nullable Reference sourceRef)
       throws NessieNotFoundException, NessieConflictException;
 
   /** Get details of a particular ref, if it exists. */
-  SingleReferenceResponse getReferenceByName(@Valid @NotNull GetReferenceParams params)
+  SingleReferenceResponse getReferenceByName(
+      @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
+          GetReferenceParams params)
       throws NessieNotFoundException;
 
   /**
@@ -114,12 +122,18 @@ public interface TreeApi {
    */
   EntriesResponse getEntries(
       @Valid
+          @jakarta.validation.Valid
           @NotNull
+          @jakarta.validation.constraints.NotNull
           @Pattern(
               regexp = Validation.REF_NAME_PATH_REGEX,
               message = Validation.REF_NAME_PATH_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.REF_NAME_PATH_REGEX,
+              message = Validation.REF_NAME_PATH_MESSAGE)
           String refName,
-      @Valid @NotNull EntriesParams params)
+      @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
+          EntriesParams params)
       throws NessieNotFoundException;
 
   /**
@@ -141,12 +155,18 @@ public interface TreeApi {
    */
   LogResponse getCommitLog(
       @Valid
+          @jakarta.validation.Valid
           @NotNull
+          @jakarta.validation.constraints.NotNull
           @Pattern(
               regexp = Validation.REF_NAME_PATH_REGEX,
               message = Validation.REF_NAME_PATH_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.REF_NAME_PATH_REGEX,
+              message = Validation.REF_NAME_PATH_MESSAGE)
           String ref,
-      @Valid @NotNull CommitLogParams params)
+      @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
+          CommitLogParams params)
       throws NessieNotFoundException;
 
   /**
@@ -155,7 +175,10 @@ public interface TreeApi {
    * @param params The {@link DiffParams} that includes the parameters for this API call.
    * @return A set of diff values that show the difference between two given references.
    */
-  DiffResponse getDiff(@Valid @NotNull DiffParams params) throws NessieNotFoundException;
+  DiffResponse getDiff(
+      @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
+          DiffParams params)
+      throws NessieNotFoundException;
 
   /**
    * Update a reference's HEAD to point to a different commit.
@@ -163,14 +186,20 @@ public interface TreeApi {
    * @param type Optional expected type of reference being assigned. Will be validated if present.
    */
   SingleReferenceResponse assignReference(
-      @Valid Reference.ReferenceType type,
+      @Valid @jakarta.validation.Valid Reference.ReferenceType type,
       @Valid
+          @jakarta.validation.Valid
           @NotNull
+          @jakarta.validation.constraints.NotNull
           @Pattern(
               regexp = Validation.REF_NAME_PATH_REGEX,
               message = Validation.REF_NAME_PATH_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.REF_NAME_PATH_REGEX,
+              message = Validation.REF_NAME_PATH_MESSAGE)
           String reference,
-      @Valid @NotNull Reference assignTo)
+      @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
+          Reference assignTo)
       throws NessieNotFoundException, NessieConflictException;
 
   /**
@@ -179,10 +208,15 @@ public interface TreeApi {
    * @param type Optional expected type of reference being deleted. Will be validated if present.
    */
   SingleReferenceResponse deleteReference(
-      @Valid Reference.ReferenceType type,
+      @Valid @jakarta.validation.Valid Reference.ReferenceType type,
       @Valid
+          @jakarta.validation.Valid
           @NotNull
+          @jakarta.validation.constraints.NotNull
           @Pattern(
+              regexp = Validation.REF_NAME_PATH_REGEX,
+              message = Validation.REF_NAME_PATH_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
               regexp = Validation.REF_NAME_PATH_REGEX,
               message = Validation.REF_NAME_PATH_MESSAGE)
           String reference)
@@ -191,23 +225,33 @@ public interface TreeApi {
   /** Cherry-pick a set of commits into a branch. */
   MergeResponse transplantCommitsIntoBranch(
       @Valid
+          @jakarta.validation.Valid
           @NotNull
+          @jakarta.validation.constraints.NotNull
           @Pattern(
               regexp = Validation.REF_NAME_PATH_REGEX,
               message = Validation.REF_NAME_PATH_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.REF_NAME_PATH_REGEX,
+              message = Validation.REF_NAME_PATH_MESSAGE)
           String branch,
-      @Valid Transplant transplant)
+      @Valid @jakarta.validation.Valid Transplant transplant)
       throws NessieNotFoundException, NessieConflictException;
 
   /** Merge commits from any reference onto a branch. */
   MergeResponse mergeRefIntoBranch(
       @Valid
+          @jakarta.validation.Valid
           @NotNull
+          @jakarta.validation.constraints.NotNull
           @Pattern(
               regexp = Validation.REF_NAME_PATH_REGEX,
               message = Validation.REF_NAME_PATH_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.REF_NAME_PATH_REGEX,
+              message = Validation.REF_NAME_PATH_MESSAGE)
           String branch,
-      @Valid @NotNull Merge merge)
+      @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull Merge merge)
       throws NessieNotFoundException, NessieConflictException;
 
   /**
@@ -224,12 +268,18 @@ public interface TreeApi {
    */
   CommitResponse commitMultipleOperations(
       @Valid
+          @jakarta.validation.Valid
           @NotNull
+          @jakarta.validation.constraints.NotNull
           @Pattern(
               regexp = Validation.REF_NAME_PATH_REGEX,
               message = Validation.REF_NAME_PATH_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.REF_NAME_PATH_REGEX,
+              message = Validation.REF_NAME_PATH_MESSAGE)
           String branch,
-      @Valid @NotNull Operations operations)
+      @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
+          Operations operations)
       throws NessieNotFoundException, NessieConflictException;
 
   /**
@@ -247,9 +297,13 @@ public interface TreeApi {
    * @throws NessieNotFoundException if {@code ref} or {@code hashOnRef} does not exist
    */
   ContentResponse getContent(
-      @Valid ContentKey key,
+      @Valid @jakarta.validation.Valid ContentKey key,
       @Valid
+          @jakarta.validation.Valid
           @Pattern(
+              regexp = Validation.REF_NAME_PATH_REGEX,
+              message = Validation.REF_NAME_PATH_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
               regexp = Validation.REF_NAME_PATH_REGEX,
               message = Validation.REF_NAME_PATH_MESSAGE)
           String ref)
@@ -272,10 +326,15 @@ public interface TreeApi {
    */
   GetMultipleContentsResponse getMultipleContents(
       @Valid
+          @jakarta.validation.Valid
           @Pattern(
               regexp = Validation.REF_NAME_PATH_REGEX,
               message = Validation.REF_NAME_PATH_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.REF_NAME_PATH_REGEX,
+              message = Validation.REF_NAME_PATH_MESSAGE)
           String ref,
-      @Valid @NotNull GetMultipleContentsRequest request)
+      @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
+          GetMultipleContentsRequest request)
       throws NessieNotFoundException;
 }

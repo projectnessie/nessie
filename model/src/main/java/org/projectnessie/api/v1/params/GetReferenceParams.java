@@ -35,7 +35,11 @@ public class GetReferenceParams {
       examples = {@ExampleObject(ref = "ref")})
   @PathParam("ref")
   @NotNull
+  @jakarta.validation.constraints.NotNull
   @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+  @jakarta.validation.constraints.Pattern(
+      regexp = Validation.REF_NAME_REGEX,
+      message = Validation.REF_NAME_MESSAGE)
   private String refName;
 
   @Parameter(
@@ -58,7 +62,8 @@ public class GetReferenceParams {
 
   @Builder.Constructor
   GetReferenceParams(
-      @NotNull String refName, @Nullable @jakarta.annotation.Nullable FetchOption fetchOption) {
+      @NotNull @jakarta.validation.constraints.NotNull String refName,
+      @Nullable @jakarta.annotation.Nullable FetchOption fetchOption) {
     this.refName = refName;
     this.fetchOption = fetchOption;
   }

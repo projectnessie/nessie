@@ -31,6 +31,7 @@ public interface ContentResponse {
   }
 
   @NotNull
+  @jakarta.validation.constraints.NotNull
   @Value.Parameter(order = 1)
   Content getContent();
 

@@ -29,7 +29,12 @@ import org.projectnessie.model.Validation;
  */
 public interface GetReferenceBuilder {
   GetReferenceBuilder refName(
-      @NotNull @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+      @NotNull
+          @jakarta.validation.constraints.NotNull
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.REF_NAME_REGEX,
+              message = Validation.REF_NAME_MESSAGE)
           String refName);
 
   /**

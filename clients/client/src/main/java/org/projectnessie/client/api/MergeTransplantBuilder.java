@@ -28,6 +28,9 @@ public interface MergeTransplantBuilder<R extends MergeTransplantBuilder<R>>
 
   R fromRefName(
       @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.REF_NAME_REGEX,
+              message = Validation.REF_NAME_MESSAGE)
           String fromRefName);
 
   R keepIndividualCommits(boolean keepIndividualCommits);

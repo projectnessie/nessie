@@ -29,7 +29,11 @@ import org.projectnessie.model.Validation;
 public interface BaseMergeTransplant {
 
   @NotBlank
+  @jakarta.validation.constraints.NotBlank
   @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+  @jakarta.validation.constraints.Pattern(
+      regexp = Validation.REF_NAME_REGEX,
+      message = Validation.REF_NAME_MESSAGE)
   String getFromRefName();
 
   @Nullable

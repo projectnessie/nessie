@@ -31,12 +31,17 @@ import org.projectnessie.model.Validation;
 
 public interface BaseMergeTransplant {
 
-  @Size(min = 1)
+  @Size
+  @jakarta.validation.constraints.Size(min = 1)
   @JsonInclude(NON_NULL)
   String getMessage();
 
   @NotBlank
+  @jakarta.validation.constraints.NotBlank
   @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+  @jakarta.validation.constraints.Pattern(
+      regexp = Validation.REF_NAME_REGEX,
+      message = Validation.REF_NAME_MESSAGE)
   String getFromRefName();
 
   @Nullable

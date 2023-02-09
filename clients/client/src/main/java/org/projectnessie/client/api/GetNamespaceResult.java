@@ -24,6 +24,7 @@ import org.projectnessie.model.Reference;
 @Value.Immutable
 public interface GetNamespaceResult {
   @NotNull
+  @jakarta.validation.constraints.NotNull
   @Value.Parameter(order = 1)
   Namespace getNamespace();
 

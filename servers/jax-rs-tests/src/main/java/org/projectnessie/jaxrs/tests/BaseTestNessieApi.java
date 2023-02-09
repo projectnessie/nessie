@@ -117,6 +117,7 @@ public abstract class BaseTestNessieApi {
   }
 
   @NotNull
+  @jakarta.validation.constraints.NotNull
   public NessieApiV1 api() {
     return api;
   }

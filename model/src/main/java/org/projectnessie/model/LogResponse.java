@@ -35,6 +35,7 @@ import org.projectnessie.model.ser.Views;
 public interface LogResponse extends PaginatedResponse {
 
   @NotNull
+  @jakarta.validation.constraints.NotNull
   List<LogEntry> getLogEntries();
 
   static ImmutableLogResponse.Builder builder() {
@@ -51,6 +52,7 @@ public interface LogResponse extends PaginatedResponse {
     }
 
     @NotNull
+    @jakarta.validation.constraints.NotNull
     CommitMeta getCommitMeta();
 
     @JsonView(Views.V1.class)

@@ -41,7 +41,11 @@ import org.projectnessie.model.Validation;
 public interface Merge extends BaseMergeTransplant {
 
   @NotBlank
+  @jakarta.validation.constraints.NotBlank
   @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+  @jakarta.validation.constraints.Pattern(
+      regexp = Validation.HASH_REGEX,
+      message = Validation.HASH_MESSAGE)
   String getFromHash();
 
   /**

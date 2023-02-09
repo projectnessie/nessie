@@ -88,6 +88,9 @@ public interface CreateReferenceBuilder {
    */
   CreateReferenceBuilder sourceRefName(
       @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.REF_NAME_REGEX,
+              message = Validation.REF_NAME_MESSAGE)
           String sourceRefName);
 
   /**
@@ -103,7 +106,9 @@ public interface CreateReferenceBuilder {
    * @param reference is {@link Branch} or {@link Tag} defining the name and hash for the new
    *     reference-to-be-created.
    */
-  CreateReferenceBuilder reference(@Valid @NotNull Reference reference);
+  CreateReferenceBuilder reference(
+      @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
+          Reference reference);
 
   Reference create() throws NessieNotFoundException, NessieConflictException;
 }

@@ -32,10 +32,16 @@ public interface RefLogService {
       @Nullable
           @jakarta.annotation.Nullable
           @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.HASH_REGEX,
+              message = Validation.HASH_MESSAGE)
           String startHash,
       @Nullable
           @jakarta.annotation.Nullable
           @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.HASH_REGEX,
+              message = Validation.HASH_MESSAGE)
           String endHash,
       @Nullable @jakarta.annotation.Nullable String filter,
       @Nullable @jakarta.annotation.Nullable Integer maxRecords,

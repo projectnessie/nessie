@@ -43,7 +43,9 @@ import org.immutables.value.Value;
 public abstract class ContentKey {
 
   @NotNull
-  @Size(min = 1)
+  @jakarta.validation.constraints.NotNull
+  @Size
+  @jakarta.validation.constraints.Size(min = 1)
   @Value.Parameter(order = 1)
   public abstract List<String> getElements();
 

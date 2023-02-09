@@ -35,6 +35,7 @@ import org.projectnessie.model.ser.Views;
 public interface GetMultipleContentsResponse {
 
   @NotNull
+  @jakarta.validation.constraints.NotNull
   @Value.Parameter(order = 1)
   List<ContentWithKey> getContents();
 
@@ -64,9 +65,11 @@ public interface GetMultipleContentsResponse {
   interface ContentWithKey {
 
     @NotNull
+    @jakarta.validation.constraints.NotNull
     ContentKey getKey();
 
     @NotNull
+    @jakarta.validation.constraints.NotNull
     Content getContent();
 
     static ContentWithKey of(ContentKey key, Content content) {

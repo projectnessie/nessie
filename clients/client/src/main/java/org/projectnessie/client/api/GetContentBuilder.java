@@ -30,11 +30,12 @@ import org.projectnessie.model.GetMultipleContentsResponse;
  * @since {@link NessieApiV1}
  */
 public interface GetContentBuilder extends OnReferenceBuilder<GetContentBuilder> {
-  GetContentBuilder key(@Valid ContentKey key);
+  GetContentBuilder key(@Valid @jakarta.validation.Valid ContentKey key);
 
   GetContentBuilder keys(List<ContentKey> keys);
 
-  ContentResponse getSingle(@Valid ContentKey key) throws NessieNotFoundException;
+  ContentResponse getSingle(@Valid @jakarta.validation.Valid ContentKey key)
+      throws NessieNotFoundException;
 
   Map<ContentKey, Content> get() throws NessieNotFoundException;
 

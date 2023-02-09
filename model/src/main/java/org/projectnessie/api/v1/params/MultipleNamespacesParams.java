@@ -35,7 +35,11 @@ public class MultipleNamespacesParams {
       examples = {@ExampleObject(ref = "ref")})
   @PathParam("ref")
   @NotNull
+  @jakarta.validation.constraints.NotNull
   @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+  @jakarta.validation.constraints.Pattern(
+      regexp = Validation.REF_NAME_REGEX,
+      message = Validation.REF_NAME_MESSAGE)
   private String refName;
 
   @Parameter(
@@ -61,7 +65,7 @@ public class MultipleNamespacesParams {
 
   @Builder.Constructor
   MultipleNamespacesParams(
-      @NotNull String refName,
+      @NotNull @jakarta.validation.constraints.NotNull String refName,
       @Nullable @jakarta.annotation.Nullable Namespace namespace,
       @Nullable @jakarta.annotation.Nullable String hashOnRef) {
     this.refName = refName;

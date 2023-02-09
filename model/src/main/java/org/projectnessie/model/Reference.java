@@ -56,11 +56,18 @@ import org.immutables.value.Value;
 public interface Reference extends Base {
   /** Human-readable reference name. */
   @NotBlank
+  @jakarta.validation.constraints.NotBlank
   @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+  @jakarta.validation.constraints.Pattern(
+      regexp = Validation.REF_NAME_REGEX,
+      message = Validation.REF_NAME_MESSAGE)
   String getName();
 
   /** backend system id. Usually the 32-byte hash of the commit this reference points to. */
   @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+  @jakarta.validation.constraints.Pattern(
+      regexp = Validation.HASH_REGEX,
+      message = Validation.HASH_MESSAGE)
   String getHash();
 
   /** Validation rule using {@link org.projectnessie.model.Validation#validateHash(String)}. */

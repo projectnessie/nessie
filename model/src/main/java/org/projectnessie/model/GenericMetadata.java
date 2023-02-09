@@ -29,6 +29,7 @@ import org.immutables.value.Value;
 public interface GenericMetadata {
 
   @NotEmpty
+  @jakarta.validation.constraints.NotEmpty
   String getVariant();
 
   @Schema(type = SchemaType.OBJECT)

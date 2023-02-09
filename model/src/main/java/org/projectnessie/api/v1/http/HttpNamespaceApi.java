@@ -74,7 +74,8 @@ public interface HttpNamespaceApi extends NamespaceApi {
   })
   @JsonView(Views.V1.class)
   Namespace createNamespace(
-      @BeanParam @NotNull NamespaceParams params, @NotNull @RequestBody Namespace namespace)
+      @BeanParam @NotNull @jakarta.validation.constraints.NotNull NamespaceParams params,
+      @NotNull @jakarta.validation.constraints.NotNull @RequestBody Namespace namespace)
       throws NessieNamespaceAlreadyExistsException, NessieReferenceNotFoundException;
 
   @Override
@@ -90,7 +91,8 @@ public interface HttpNamespaceApi extends NamespaceApi {
     @APIResponse(responseCode = "409", description = "Namespace not empty"),
   })
   @JsonView(Views.V1.class)
-  void deleteNamespace(@BeanParam @NotNull NamespaceParams params)
+  void deleteNamespace(
+      @BeanParam @NotNull @jakarta.validation.constraints.NotNull NamespaceParams params)
       throws NessieReferenceNotFoundException, NessieNamespaceNotEmptyException,
           NessieNamespaceNotFoundException;
 
@@ -115,7 +117,8 @@ public interface HttpNamespaceApi extends NamespaceApi {
     @APIResponse(responseCode = "404", description = "Reference or Namespace not found"),
   })
   @JsonView(Views.V1.class)
-  Namespace getNamespace(@BeanParam @NotNull NamespaceParams params)
+  Namespace getNamespace(
+      @BeanParam @NotNull @jakarta.validation.constraints.NotNull NamespaceParams params)
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException;
 
   @Override
@@ -138,7 +141,8 @@ public interface HttpNamespaceApi extends NamespaceApi {
     @APIResponse(responseCode = "404", description = "Reference not found"),
   })
   @JsonView(Views.V1.class)
-  GetNamespacesResponse getNamespaces(@BeanParam @NotNull MultipleNamespacesParams params)
+  GetNamespacesResponse getNamespaces(
+      @BeanParam @NotNull @jakarta.validation.constraints.NotNull MultipleNamespacesParams params)
       throws NessieReferenceNotFoundException;
 
   @Override
@@ -155,7 +159,7 @@ public interface HttpNamespaceApi extends NamespaceApi {
   })
   @JsonView(Views.V1.class)
   void updateProperties(
-      @BeanParam @NotNull NamespaceParams params,
+      @BeanParam @NotNull @jakarta.validation.constraints.NotNull NamespaceParams params,
       @RequestBody(
               description = "Namespace properties to update/delete.",
               content = {
@@ -164,6 +168,7 @@ public interface HttpNamespaceApi extends NamespaceApi {
                     examples = {@ExampleObject(ref = "namespaceUpdate")})
               })
           @NotNull
+          @jakarta.validation.constraints.NotNull
           NamespaceUpdate namespaceUpdate)
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException;
 }

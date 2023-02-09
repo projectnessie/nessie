@@ -31,5 +31,6 @@ public interface ReferencesResponse extends PaginatedResponse {
   }
 
   @NotNull
+  @jakarta.validation.constraints.NotNull
   List<Reference> getReferences();
 }
