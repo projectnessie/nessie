@@ -37,13 +37,17 @@ public interface DiffService {
   <R> R getDiff(
       @NotNull @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           String fromRef,
-      @Nullable @Pattern(regexp = HASH_OPTIONAL_REGEX, message = Validation.HASH_MESSAGE)
+      @Nullable
+          @jakarta.annotation.Nullable
+          @Pattern(regexp = HASH_OPTIONAL_REGEX, message = Validation.HASH_MESSAGE)
           String fromHash,
       @NotNull @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           String toRef,
-      @Nullable @Pattern(regexp = HASH_OPTIONAL_REGEX, message = Validation.HASH_MESSAGE)
+      @Nullable
+          @jakarta.annotation.Nullable
+          @Pattern(regexp = HASH_OPTIONAL_REGEX, message = Validation.HASH_MESSAGE)
           String toHash,
-      @Nullable String pagingToken,
+      @Nullable @jakarta.annotation.Nullable String pagingToken,
       PagedResponseHandler<R, DiffEntry> pagedResponseHandler,
       Consumer<WithHash<NamedRef>> fromReference,
       Consumer<WithHash<NamedRef>> toReference)

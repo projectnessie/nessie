@@ -32,6 +32,7 @@ public interface Put extends Operation {
   Content getValue();
 
   @Nullable
+  @jakarta.annotation.Nullable
   Content getExpectedValue();
 
   /**

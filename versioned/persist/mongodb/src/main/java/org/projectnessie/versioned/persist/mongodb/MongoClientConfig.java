@@ -28,16 +28,19 @@ public interface MongoClientConfig extends DatabaseConnectionConfig {
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   String getConnectionString();
 
   MongoClientConfig withConnectionString(String connectionString);
 
   @Nullable
+  @jakarta.annotation.Nullable
   String getDatabaseName();
 
   MongoClientConfig withDatabaseName(String databaseName);
 
   @Nullable
+  @jakarta.annotation.Nullable
   MongoClient getClient();
 
   MongoClientConfig withClient(MongoClient client);

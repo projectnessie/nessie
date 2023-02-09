@@ -28,6 +28,7 @@ public interface GetNamespaceResult {
   Namespace getNamespace();
 
   @Nullable
+  @jakarta.annotation.Nullable
   @Value.Parameter(order = 2)
   Reference getEffectiveReference();
 

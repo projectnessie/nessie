@@ -38,10 +38,12 @@ public interface DiffResponse extends PaginatedResponse {
   List<DiffEntry> getDiffs();
 
   @Nullable
+  @jakarta.annotation.Nullable
   @JsonView(Views.V2.class)
   Reference getEffectiveFromReference();
 
   @Nullable
+  @jakarta.annotation.Nullable
   @JsonView(Views.V2.class)
   Reference getEffectiveToReference();
 
@@ -53,11 +55,13 @@ public interface DiffResponse extends PaginatedResponse {
     ContentKey getKey();
 
     @Nullable
+    @jakarta.annotation.Nullable
     @Value.Parameter(order = 2)
     @SuppressWarnings("immutables:from")
     Content getFrom();
 
     @Nullable
+    @jakarta.annotation.Nullable
     @Value.Parameter(order = 3)
     Content getTo();
 

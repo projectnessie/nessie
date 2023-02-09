@@ -608,7 +608,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       String fromRefName,
       String fromHash,
       Boolean keepIndividualCommits,
-      @Nullable String message,
+      @Nullable @jakarta.annotation.Nullable String message,
       Collection<MergeKeyBehavior> keyMergeTypes,
       MergeBehavior defaultMergeType,
       Boolean dryRun,
@@ -954,6 +954,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   private static ReferenceMetadata extractReferenceMetadata(ReferenceInfo<CommitMeta> refWithHash) {
     ImmutableReferenceMetadata.Builder builder = ImmutableReferenceMetadata.builder();
     boolean found = false;

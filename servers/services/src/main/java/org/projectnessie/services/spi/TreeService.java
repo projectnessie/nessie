@@ -54,7 +54,7 @@ public interface TreeService {
 
   <R> R getAllReferences(
       FetchOption fetchOption,
-      @Nullable String filter,
+      @Nullable @jakarta.annotation.Nullable String filter,
       String pagingToken,
       PagedResponseHandler<R, Reference> pagedResponseHandler);
 
@@ -109,8 +109,8 @@ public interface TreeService {
           String oldestHashLimit,
       @Valid @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String youngestHash,
-      @Nullable String filter,
-      @Nullable String pageToken,
+      @Nullable @jakarta.annotation.Nullable String filter,
+      @Nullable @jakarta.annotation.Nullable String pageToken,
       @NotNull PagedResponseHandler<R, LogEntry> pagedResponseHandler)
       throws NessieNotFoundException;
 
@@ -131,9 +131,9 @@ public interface TreeService {
       Boolean keepIndividualCommits,
       Collection<MergeKeyBehavior> keyMergeTypes,
       MergeBehavior defaultMergeType,
-      @Nullable Boolean dryRun,
-      @Nullable Boolean fetchAdditionalInfo,
-      @Nullable Boolean returnConflictAsResult)
+      @Nullable @jakarta.annotation.Nullable Boolean dryRun,
+      @Nullable @jakarta.annotation.Nullable Boolean fetchAdditionalInfo,
+      @Nullable @jakarta.annotation.Nullable Boolean returnConflictAsResult)
       throws NessieNotFoundException, NessieConflictException;
 
   MergeResponse mergeRefIntoBranch(
@@ -149,13 +149,13 @@ public interface TreeService {
           String fromRefName,
       @Valid @NotBlank @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String fromHash,
-      @Nullable Boolean keepIndividualCommits,
-      @Nullable String message,
+      @Nullable @jakarta.annotation.Nullable Boolean keepIndividualCommits,
+      @Nullable @jakarta.annotation.Nullable String message,
       Collection<MergeKeyBehavior> keyMergeTypes,
       MergeBehavior defaultMergeType,
-      @Nullable Boolean dryRun,
-      @Nullable Boolean fetchAdditionalInfo,
-      @Nullable Boolean returnConflictAsResult)
+      @Nullable @jakarta.annotation.Nullable Boolean dryRun,
+      @Nullable @jakarta.annotation.Nullable Boolean fetchAdditionalInfo,
+      @Nullable @jakarta.annotation.Nullable Boolean returnConflictAsResult)
       throws NessieNotFoundException, NessieConflictException;
 
   <R> R getEntries(
@@ -163,11 +163,14 @@ public interface TreeService {
           @NotNull
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           String namedRef,
-      @Valid @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+      @Valid
+          @Nullable
+          @jakarta.annotation.Nullable
+          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String hashOnRef,
-      @Nullable Integer namespaceDepth,
-      @Nullable String filter,
-      @Nullable String pagingToken,
+      @Nullable @jakarta.annotation.Nullable Integer namespaceDepth,
+      @Nullable @jakarta.annotation.Nullable String filter,
+      @Nullable @jakarta.annotation.Nullable String pagingToken,
       boolean withContent,
       PagedResponseHandler<R, Entry> pagedResponseHandler,
       Consumer<WithHash<NamedRef>> effectiveReference)

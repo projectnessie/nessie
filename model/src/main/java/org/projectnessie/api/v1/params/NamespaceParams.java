@@ -49,13 +49,16 @@ public class NamespaceParams {
       examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})
   @QueryParam("hashOnRef")
   @Nullable
+  @jakarta.annotation.Nullable
   private String hashOnRef;
 
   public NamespaceParams() {}
 
   @Builder.Constructor
   NamespaceParams(
-      @NotNull String refName, @NotNull Namespace namespace, @Nullable String hashOnRef) {
+      @NotNull String refName,
+      @NotNull Namespace namespace,
+      @Nullable @jakarta.annotation.Nullable String hashOnRef) {
     this.refName = refName;
     this.namespace = namespace;
     this.hashOnRef = hashOnRef;
@@ -70,6 +73,7 @@ public class NamespaceParams {
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   public String getHashOnRef() {
     return hashOnRef;
   }

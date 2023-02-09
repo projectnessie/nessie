@@ -31,8 +31,10 @@ public interface Commit {
   CommitMeta getCommitMeta();
 
   @Nullable
+  @jakarta.annotation.Nullable
   Hash getParentHash();
 
   @Nullable
+  @jakarta.annotation.Nullable
   List<Operation> getOperations();
 }

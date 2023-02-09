@@ -262,7 +262,7 @@ public class S3Resource {
   @Path("/{bucketName:[a-z0-9.-]+}")
   public Response batchDeleteObjects(
       @PathParam("bucketName") String bucketName,
-      @QueryParam("delete") @Nullable String deleteMarker,
+      @QueryParam("delete") @Nullable @jakarta.annotation.Nullable String deleteMarker,
       @RequestBody BatchDeleteRequest body) {
     return withBucket(
         bucketName,

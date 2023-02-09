@@ -54,6 +54,7 @@ public interface Detached extends Reference {
   String getHash();
 
   @Nullable
+  @jakarta.annotation.Nullable
   @Override
   @Value.Parameter(order = 2)
   ReferenceMetadata getMetadata();

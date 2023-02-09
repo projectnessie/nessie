@@ -31,6 +31,7 @@ public interface KeyEntry {
   String getContentId();
 
   @Nullable
+  @jakarta.annotation.Nullable
   Content getContent();
 
   static ImmutableKeyEntry.Builder builder() {

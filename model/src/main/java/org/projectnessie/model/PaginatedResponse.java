@@ -47,6 +47,7 @@ public interface PaginatedResponse {
    *     {@code false}.
    */
   @Nullable
+  @jakarta.annotation.Nullable
   @Size(min = 1)
   String getToken();
 }

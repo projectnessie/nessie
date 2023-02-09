@@ -38,12 +38,14 @@ public interface Tag extends Reference {
   String getName();
 
   @Nullable
+  @jakarta.annotation.Nullable
   @Override
   @Value.Parameter(order = 3)
   ReferenceMetadata getMetadata();
 
   @Override
   @Nullable
+  @jakarta.annotation.Nullable
   @Value.Parameter(order = 2)
   String getHash();
 

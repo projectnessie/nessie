@@ -27,7 +27,9 @@ public interface OnReferenceBuilder<R extends OnReferenceBuilder<R>> {
           String refName);
 
   R hashOnRef(
-      @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+      @Nullable
+          @jakarta.annotation.Nullable
+          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String hashOnRef);
 
   /**

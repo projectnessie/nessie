@@ -36,6 +36,7 @@ public abstract class DeltaLakeTable extends Content {
   public abstract List<String> getCheckpointLocationHistory();
 
   @Nullable
+  @jakarta.annotation.Nullable
   public abstract String getLastCheckpoint();
 
   @Override

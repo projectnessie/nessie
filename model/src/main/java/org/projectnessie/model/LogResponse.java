@@ -59,9 +59,11 @@ public interface LogResponse extends PaginatedResponse {
     List<String> getAdditionalParents();
 
     @Nullable
+    @jakarta.annotation.Nullable
     String getParentCommitHash();
 
     @Nullable
+    @jakarta.annotation.Nullable
     List<Operation> getOperations();
   }
 }

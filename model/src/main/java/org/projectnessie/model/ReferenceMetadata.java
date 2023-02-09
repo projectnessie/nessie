@@ -40,17 +40,22 @@ import org.immutables.value.Value;
 public interface ReferenceMetadata {
 
   @Nullable
+  @jakarta.annotation.Nullable
   Integer getNumCommitsAhead();
 
   @Nullable
+  @jakarta.annotation.Nullable
   Integer getNumCommitsBehind();
 
   @Nullable
+  @jakarta.annotation.Nullable
   CommitMeta getCommitMetaOfHEAD();
 
   @Nullable
+  @jakarta.annotation.Nullable
   String getCommonAncestorHash();
 
   @Nullable
+  @jakarta.annotation.Nullable
   Long getNumTotalCommits();
 }

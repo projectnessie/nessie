@@ -38,12 +38,14 @@ public interface Branch extends Reference {
   String getName();
 
   @Nullable
+  @jakarta.annotation.Nullable
   @Override
   @Value.Parameter(order = 3)
   ReferenceMetadata getMetadata();
 
   @Override
   @Nullable
+  @jakarta.annotation.Nullable
   @Value.Parameter(order = 2)
   String getHash();
 
@@ -64,11 +66,12 @@ public interface Branch extends Reference {
     return ImmutableBranch.builder();
   }
 
-  static Branch of(String name, @Nullable String hash) {
+  static Branch of(String name, @Nullable @jakarta.annotation.Nullable String hash) {
     return ImmutableBranch.of(name, hash, null);
   }
 
-  static Branch of(String name, @Nullable String hash, ReferenceMetadata metadata) {
+  static Branch of(
+      String name, @Nullable @jakarta.annotation.Nullable String hash, ReferenceMetadata metadata) {
     return ImmutableBranch.of(name, hash, metadata);
   }
 }

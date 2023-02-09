@@ -43,6 +43,7 @@ public interface GetMultipleContentsResponse {
    * entries were fetched.
    */
   @Nullable
+  @jakarta.annotation.Nullable
   @Value.Parameter(order = 2)
   @JsonView(Views.V2.class)
   Reference getEffectiveReference();

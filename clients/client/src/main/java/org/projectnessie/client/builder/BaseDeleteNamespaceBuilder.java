@@ -38,7 +38,7 @@ public abstract class BaseDeleteNamespaceBuilder implements DeleteNamespaceBuild
   }
 
   @Override
-  public DeleteNamespaceBuilder hashOnRef(@Nullable String hashOnRef) {
+  public DeleteNamespaceBuilder hashOnRef(@Nullable @jakarta.annotation.Nullable String hashOnRef) {
     this.hashOnRef = hashOnRef;
     return this;
   }

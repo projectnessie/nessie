@@ -83,6 +83,7 @@ public interface Reference extends Base {
    */
   @JsonInclude(Include.NON_NULL)
   @Nullable
+  @jakarta.annotation.Nullable
   ReferenceMetadata getMetadata();
 
   @JsonIgnore

@@ -30,10 +30,12 @@ public interface DeletedS3Object extends ObjectIdentifier {
 
   @JsonProperty("DeleteMarker")
   @Nullable
+  @jakarta.annotation.Nullable
   Boolean deleteMarker();
 
   @JsonProperty("DeleteMarkerVersionId")
   @Nullable
+  @jakarta.annotation.Nullable
   String deleteMarkerVersionId();
 
   static DeletedS3Object from(S3ObjectIdentifier s3ObjectIdentifier) {

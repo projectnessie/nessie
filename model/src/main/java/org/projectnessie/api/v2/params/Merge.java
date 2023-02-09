@@ -70,6 +70,7 @@ public interface Merge extends BaseMergeTransplant {
 
   @Override
   @Nullable
+  @jakarta.annotation.Nullable
   @Size(min = 1)
   String getMessage();
 

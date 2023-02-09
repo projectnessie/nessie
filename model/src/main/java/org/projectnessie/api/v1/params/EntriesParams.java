@@ -34,6 +34,7 @@ import org.projectnessie.model.Validation;
 public class EntriesParams extends AbstractParams<EntriesParams> {
 
   @Nullable
+  @jakarta.annotation.Nullable
   @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
   @Parameter(
       description = "a particular hash on the given ref",
@@ -42,6 +43,7 @@ public class EntriesParams extends AbstractParams<EntriesParams> {
   private String hashOnRef;
 
   @Nullable
+  @jakarta.annotation.Nullable
   @Parameter(
       description =
           "If set > 0 will filter the results to only return namespaces/tables to the depth of namespaceDepth. If not set or <=0 has no effect\n"
@@ -50,6 +52,7 @@ public class EntriesParams extends AbstractParams<EntriesParams> {
   private Integer namespaceDepth;
 
   @Nullable
+  @jakarta.annotation.Nullable
   @Parameter(
       description =
           "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
@@ -66,11 +69,11 @@ public class EntriesParams extends AbstractParams<EntriesParams> {
 
   @org.immutables.builder.Builder.Constructor
   EntriesParams(
-      @Nullable String hashOnRef,
-      @Nullable Integer maxRecords,
-      @Nullable String pageToken,
-      @Nullable Integer namespaceDepth,
-      @Nullable String filter) {
+      @Nullable @jakarta.annotation.Nullable String hashOnRef,
+      @Nullable @jakarta.annotation.Nullable Integer maxRecords,
+      @Nullable @jakarta.annotation.Nullable String pageToken,
+      @Nullable @jakarta.annotation.Nullable Integer namespaceDepth,
+      @Nullable @jakarta.annotation.Nullable String filter) {
     super(maxRecords, pageToken);
     this.hashOnRef = hashOnRef;
     this.namespaceDepth = namespaceDepth;
@@ -86,16 +89,19 @@ public class EntriesParams extends AbstractParams<EntriesParams> {
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   public String hashOnRef() {
     return hashOnRef;
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   public String filter() {
     return filter;
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   public Integer namespaceDepth() {
     return namespaceDepth;
   }

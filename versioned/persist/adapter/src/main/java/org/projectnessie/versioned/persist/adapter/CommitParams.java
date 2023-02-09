@@ -54,5 +54,6 @@ public interface CommitParams extends ToBranchParams {
   ByteString getCommitMetaSerialized();
 
   @Nullable
+  @jakarta.annotation.Nullable
   Callable<Void> getValidator();
 }

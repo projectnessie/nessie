@@ -100,7 +100,9 @@ public class InMemoryPersistenceSpi implements PersistenceSpi {
 
   @Override
   public void finishedIdentifyLiveContents(
-      @NotNull UUID liveSetId, @NotNull Instant finished, @Nullable Throwable failure) {
+      @NotNull UUID liveSetId,
+      @NotNull Instant finished,
+      @Nullable @jakarta.annotation.Nullable Throwable failure) {
     get(liveSetId)
         .liveContentSet
         .getAndUpdate(
@@ -133,7 +135,9 @@ public class InMemoryPersistenceSpi implements PersistenceSpi {
 
   @Override
   public LiveContentSet finishedExpireContents(
-      @NotNull UUID liveSetId, @NotNull Instant finished, @Nullable Throwable failure) {
+      @NotNull UUID liveSetId,
+      @NotNull Instant finished,
+      @Nullable @jakarta.annotation.Nullable Throwable failure) {
     return get(liveSetId)
         .liveContentSet
         .getAndUpdate(

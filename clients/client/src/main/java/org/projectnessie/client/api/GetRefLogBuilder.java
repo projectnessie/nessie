@@ -37,7 +37,9 @@ public interface GetRefLogBuilder
    * reflog.
    */
   GetRefLogBuilder untilHash(
-      @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+      @Nullable
+          @jakarta.annotation.Nullable
+          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String untilHash);
 
   /**
@@ -45,7 +47,9 @@ public interface GetRefLogBuilder
    * reflog.
    */
   GetRefLogBuilder fromHash(
-      @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+      @Nullable
+          @jakarta.annotation.Nullable
+          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String fromHash);
 
   @Override // kept for byte-code compatibility

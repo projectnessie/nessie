@@ -38,6 +38,7 @@ public interface ContentAndState {
 
   /** Global state for a content key. For example, the pointer to Iceberg's table-metadata. */
   @Nullable
+  @jakarta.annotation.Nullable
   @Value.Parameter(order = 3)
   ByteString getGlobalState();
 
@@ -46,7 +47,7 @@ public interface ContentAndState {
   static ContentAndState of(
       byte payload,
       @Nonnull @jakarta.annotation.Nonnull ByteString refState,
-      @Nullable ByteString globalState) {
+      @Nullable @jakarta.annotation.Nullable ByteString globalState) {
     return ImmutableContentAndState.of(payload, refState, globalState);
   }
 

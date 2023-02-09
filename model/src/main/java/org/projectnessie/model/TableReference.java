@@ -53,6 +53,7 @@ public abstract class TableReference {
   public abstract String getName();
 
   @Nullable
+  @jakarta.annotation.Nullable
   @NotEmpty
   public abstract String getReference();
 
@@ -62,6 +63,7 @@ public abstract class TableReference {
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   @NotEmpty
   public abstract String getTimestamp();
 
@@ -71,6 +73,7 @@ public abstract class TableReference {
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   @NotEmpty
   public abstract String getHash();
 

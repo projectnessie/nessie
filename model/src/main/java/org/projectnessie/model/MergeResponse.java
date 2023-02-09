@@ -43,10 +43,12 @@ public interface MergeResponse {
 
   /** Commit-ID of the target branch after the merge/transplant operation. */
   @Nullable
+  @jakarta.annotation.Nullable
   String getResultantTargetHash();
 
   /** Commit-ID of the identified common ancestor, only returned for a merge operation. */
   @Nullable
+  @jakarta.annotation.Nullable
   String getCommonAncestor();
 
   /** Name of the target branch. */
@@ -57,6 +59,7 @@ public interface MergeResponse {
 
   /** The expected commit-ID of the target branch, as specified by the caller. */
   @Nullable
+  @jakarta.annotation.Nullable
   String getExpectedHash();
 
   @Deprecated // for removal and replaced with something else
@@ -64,6 +67,7 @@ public interface MergeResponse {
   List<LogEntry> getSourceCommits();
 
   @Nullable
+  @jakarta.annotation.Nullable
   @Deprecated // for removal and replaced with something else
   @Schema(deprecated = true, hidden = true)
   List<LogEntry> getTargetCommits();

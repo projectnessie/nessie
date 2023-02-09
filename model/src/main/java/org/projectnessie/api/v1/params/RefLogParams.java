@@ -33,6 +33,7 @@ import org.projectnessie.model.Validation;
 public class RefLogParams extends AbstractParams<RefLogParams> {
 
   @Nullable
+  @jakarta.annotation.Nullable
   @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
   @Parameter(
       description =
@@ -43,6 +44,7 @@ public class RefLogParams extends AbstractParams<RefLogParams> {
   private String startHash;
 
   @Nullable
+  @jakarta.annotation.Nullable
   @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
   @Parameter(
       description =
@@ -53,6 +55,7 @@ public class RefLogParams extends AbstractParams<RefLogParams> {
   private String endHash;
 
   @Nullable
+  @jakarta.annotation.Nullable
   @Parameter(
       description =
           "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n\n"
@@ -69,11 +72,11 @@ public class RefLogParams extends AbstractParams<RefLogParams> {
 
   @org.immutables.builder.Builder.Constructor
   RefLogParams(
-      @Nullable String startHash,
-      @Nullable String endHash,
-      @Nullable Integer maxRecords,
-      @Nullable String pageToken,
-      @Nullable String filter) {
+      @Nullable @jakarta.annotation.Nullable String startHash,
+      @Nullable @jakarta.annotation.Nullable String endHash,
+      @Nullable @jakarta.annotation.Nullable Integer maxRecords,
+      @Nullable @jakarta.annotation.Nullable String pageToken,
+      @Nullable @jakarta.annotation.Nullable String filter) {
     super(maxRecords, pageToken);
     this.startHash = startHash;
     this.endHash = endHash;
@@ -81,16 +84,19 @@ public class RefLogParams extends AbstractParams<RefLogParams> {
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   public String startHash() {
     return startHash;
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   public String endHash() {
     return endHash;
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   public String filter() {
     return filter;
   }

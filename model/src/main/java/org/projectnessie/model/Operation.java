@@ -64,6 +64,7 @@ public interface Operation {
     Content getContent();
 
     @Nullable
+    @jakarta.annotation.Nullable
     Content getExpectedContent();
 
     static Put of(ContentKey key, Content content) {

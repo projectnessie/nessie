@@ -27,6 +27,7 @@ public abstract class ServerAccessContext implements AccessContext {
 
   @Override
   @Nullable
+  @jakarta.annotation.Nullable
   public abstract Principal user();
 
   public static ServerAccessContext of(String operationId, Principal principal) {

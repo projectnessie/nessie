@@ -24,21 +24,25 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 public interface DefaultDynamoClientConfig extends DynamoClientConfig {
 
   @Nullable
+  @jakarta.annotation.Nullable
   String getEndpointURI();
 
   DefaultDynamoClientConfig withEndpointURI(String endpointURI);
 
   @Nullable
+  @jakarta.annotation.Nullable
   String getRegion();
 
   DefaultDynamoClientConfig withRegion(String region);
 
   @Nullable
+  @jakarta.annotation.Nullable
   AwsCredentialsProvider getCredentialsProvider();
 
   DefaultDynamoClientConfig withCredentialsProvider(AwsCredentialsProvider credentialsProvider);
 
   @Nullable
+  @jakarta.annotation.Nullable
   DynamoDbClient getDynamoDbClient();
 
   DefaultDynamoClientConfig withDynamoDbClient(DynamoDbClient dynamoDbClient);

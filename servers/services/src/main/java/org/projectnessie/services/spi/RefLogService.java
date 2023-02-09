@@ -29,12 +29,16 @@ import org.projectnessie.model.Validation;
  */
 public interface RefLogService {
   RefLogResponse getRefLog(
-      @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+      @Nullable
+          @jakarta.annotation.Nullable
+          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String startHash,
-      @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+      @Nullable
+          @jakarta.annotation.Nullable
+          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String endHash,
-      @Nullable String filter,
-      @Nullable Integer maxRecords,
-      @Nullable String pageToken)
+      @Nullable @jakarta.annotation.Nullable String filter,
+      @Nullable @jakarta.annotation.Nullable Integer maxRecords,
+      @Nullable @jakarta.annotation.Nullable String pageToken)
       throws NessieNotFoundException;
 }

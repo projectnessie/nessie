@@ -39,6 +39,7 @@ public interface ContentResponse {
    * entries were fetched.
    */
   @Nullable
+  @jakarta.annotation.Nullable
   @Value.Parameter(order = 2)
   Reference getEffectiveReference();
 

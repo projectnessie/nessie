@@ -33,6 +33,7 @@ public interface GetNamespacesResponse {
 
   @JsonView(Views.V2.class)
   @Nullable
+  @jakarta.annotation.Nullable
   Reference getEffectiveReference();
 
   static ImmutableGetNamespacesResponse.Builder builder() {

@@ -47,7 +47,9 @@ public interface GetCommitLogBuilder
   }
 
   GetCommitLogBuilder untilHash(
-      @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+      @Nullable
+          @jakarta.annotation.Nullable
+          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String untilHash);
 
   @Override // kept for byte-code compatibility

@@ -45,9 +45,11 @@ public interface ListBucketResult extends ListBucketResultBase {
 
   @JsonProperty("Marker")
   @Nullable
+  @jakarta.annotation.Nullable
   String marker();
 
   @JsonProperty("NextMarker")
   @Nullable
+  @jakarta.annotation.Nullable
   String nextMarker();
 }

@@ -125,7 +125,8 @@ public interface BatchAccessChecker {
    * @param contentId content id to check, may be {@code null}, for example, for {@link
    *     Operation.Delete} from {@link Operation}s in the commit log.
    */
-  BatchAccessChecker canReadContentKey(NamedRef ref, ContentKey key, @Nullable String contentId);
+  BatchAccessChecker canReadContentKey(
+      NamedRef ref, ContentKey key, @Nullable @jakarta.annotation.Nullable String contentId);
 
   /**
    * Checks whether the given role/principal is allowed to list the commit log for the given {@link

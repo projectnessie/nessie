@@ -46,6 +46,7 @@ public class MultipleNamespacesParams {
       })
   @QueryParam("name")
   @Nullable
+  @jakarta.annotation.Nullable
   private Namespace namespace;
 
   @Parameter(
@@ -53,13 +54,16 @@ public class MultipleNamespacesParams {
       examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})
   @QueryParam("hashOnRef")
   @Nullable
+  @jakarta.annotation.Nullable
   private String hashOnRef;
 
   public MultipleNamespacesParams() {}
 
   @Builder.Constructor
   MultipleNamespacesParams(
-      @NotNull String refName, @Nullable Namespace namespace, @Nullable String hashOnRef) {
+      @NotNull String refName,
+      @Nullable @jakarta.annotation.Nullable Namespace namespace,
+      @Nullable @jakarta.annotation.Nullable String hashOnRef) {
     this.refName = refName;
     this.namespace = namespace;
     this.hashOnRef = hashOnRef;
@@ -70,11 +74,13 @@ public class MultipleNamespacesParams {
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   public Namespace getNamespace() {
     return namespace;
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   public String getHashOnRef() {
     return hashOnRef;
   }

@@ -44,7 +44,7 @@ public abstract class BaseUpdateNamespaceBuilder implements UpdateNamespaceBuild
   }
 
   @Override
-  public UpdateNamespaceBuilder hashOnRef(@Nullable String hashOnRef) {
+  public UpdateNamespaceBuilder hashOnRef(@Nullable @jakarta.annotation.Nullable String hashOnRef) {
     this.hashOnRef = hashOnRef;
     return this;
   }

@@ -109,7 +109,7 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
 
   @Override
   public void finishedIdentifyLiveContents(
-      UUID liveSetId, Instant finished, @Nullable Throwable failure) {
+      UUID liveSetId, Instant finished, @Nullable @jakarta.annotation.Nullable Throwable failure) {
     singleStatement(
         FINISH_IDENTIFY,
         (conn, stmt) -> {
@@ -146,7 +146,7 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
 
   @Override
   public LiveContentSet finishedExpireContents(
-      UUID liveSetId, Instant finished, @Nullable Throwable failure) {
+      UUID liveSetId, Instant finished, @Nullable @jakarta.annotation.Nullable Throwable failure) {
     return singleStatement(
         FINISH_EXPIRE,
         (conn, stmt) -> {

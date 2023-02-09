@@ -35,6 +35,7 @@ public class DiffParams {
   private String fromRef;
 
   @Nullable
+  @jakarta.annotation.Nullable
   @Pattern(regexp = HASH_OPTIONAL_REGEX, message = Validation.HASH_MESSAGE)
   private String fromHashOnRef;
 
@@ -43,6 +44,7 @@ public class DiffParams {
   private String toRef;
 
   @Nullable
+  @jakarta.annotation.Nullable
   @Pattern(regexp = HASH_OPTIONAL_REGEX, message = Validation.HASH_MESSAGE)
   private String toHashOnRef;
 
@@ -51,9 +53,9 @@ public class DiffParams {
   @org.immutables.builder.Builder.Constructor
   DiffParams(
       @NotNull String fromRef,
-      @Nullable String fromHashOnRef,
+      @Nullable @jakarta.annotation.Nullable String fromHashOnRef,
       @NotNull String toRef,
-      @Nullable String toHashOnRef) {
+      @Nullable @jakarta.annotation.Nullable String toHashOnRef) {
     this.fromRef = fromRef;
     this.fromHashOnRef = fromHashOnRef;
     this.toRef = toRef;
@@ -93,6 +95,7 @@ public class DiffParams {
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   public String getFromHashOnRef() {
     return emptyToNull(fromHashOnRef);
   }
@@ -102,6 +105,7 @@ public class DiffParams {
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   public String getToHashOnRef() {
     return emptyToNull(toHashOnRef);
   }

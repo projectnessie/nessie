@@ -49,6 +49,7 @@ public interface ListBucketResultV2 extends ListBucketResultBase {
 
   @JsonProperty("ContinuationToken")
   @Nullable
+  @jakarta.annotation.Nullable
   String continuationToken();
 
   @JsonProperty("KeyCount")
@@ -56,9 +57,11 @@ public interface ListBucketResultV2 extends ListBucketResultBase {
 
   @JsonProperty("NextContinuationToken")
   @Nullable
+  @jakarta.annotation.Nullable
   String nextContinuationToken();
 
   @JsonProperty("StartAfter")
   @Nullable
+  @jakarta.annotation.Nullable
   String startAfter();
 }

@@ -53,17 +53,21 @@ public abstract class LiveContentSet {
   public abstract Instant created();
 
   @Nullable
+  @jakarta.annotation.Nullable
   public abstract Instant identifyCompleted();
 
   @Nullable
+  @jakarta.annotation.Nullable
   public abstract Instant expiryStarted();
 
   @Nullable
+  @jakarta.annotation.Nullable
   public abstract Instant expiryCompleted();
 
   public abstract Status status();
 
   @Nullable
+  @jakarta.annotation.Nullable
   public abstract String errorMessage();
 
   public void delete() {
@@ -104,7 +108,7 @@ public abstract class LiveContentSet {
   }
 
   public LiveContentSet finishedExpireContents(
-      @NotNull Instant finished, @Nullable Throwable failure) {
+      @NotNull Instant finished, @Nullable @jakarta.annotation.Nullable Throwable failure) {
     return persistenceSpi().finishedExpireContents(id(), finished, failure);
   }
 

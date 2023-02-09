@@ -87,7 +87,7 @@ public interface TreeApi {
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           String name,
       @Valid @NotNull Reference.ReferenceType type,
-      @Valid @Nullable Reference sourceRef)
+      @Valid @Nullable @jakarta.annotation.Nullable Reference sourceRef)
       throws NessieNotFoundException, NessieConflictException;
 
   /** Get details of a particular ref, if it exists. */

@@ -54,11 +54,13 @@ public interface ContentReference {
   /** Value from {@link IcebergTable#getMetadataLocation()}. */
   @Value.Parameter(order = 5)
   @Nullable
+  @jakarta.annotation.Nullable
   String metadataLocation();
 
   /** Value from {@link IcebergTable#getSnapshotId()}. */
   @Value.Parameter(order = 6)
   @Nullable
+  @jakarta.annotation.Nullable
   Long snapshotId();
 
   static ContentReference icebergTable(

@@ -417,6 +417,7 @@ public abstract class IdentifyLiveContents {
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   abstract ReferenceComparator referenceComparator();
 
   @Value.Default

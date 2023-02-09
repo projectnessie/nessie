@@ -23,6 +23,7 @@ import org.projectnessie.versioned.persist.adapter.DatabaseConnectionConfig;
 public interface RocksDbConfig extends DatabaseConnectionConfig {
   /** Database path for Rocks-DB. */
   @Nullable
+  @jakarta.annotation.Nullable
   String getDbPath();
 
   RocksDbConfig withDbPath(String dbPath);
