@@ -47,6 +47,7 @@ import org.projectnessie.services.spi.TreeService;
 
 /** REST endpoint for the tree-API. */
 @RequestScoped
+@jakarta.enterprise.context.RequestScoped
 public class RestTreeResource implements HttpTreeApi {
   // Cannot extend the TreeApiImplWithAuthz class, because then CDI gets confused
   // about which interface to use - either HttpTreeApi or the plain TreeApi. This can lead

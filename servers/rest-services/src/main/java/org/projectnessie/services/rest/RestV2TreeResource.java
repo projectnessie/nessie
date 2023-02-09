@@ -64,6 +64,7 @@ import org.projectnessie.services.spi.TreeService;
 
 /** REST endpoint for the tree-API. */
 @RequestScoped
+@jakarta.enterprise.context.RequestScoped
 public class RestV2TreeResource implements HttpTreeApi {
 
   private final ConfigService configService;

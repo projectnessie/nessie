@@ -27,6 +27,7 @@ import org.projectnessie.services.impl.ContentApiImpl;
 import org.projectnessie.versioned.VersionStore;
 
 @RequestScoped
+@jakarta.enterprise.context.RequestScoped
 @ValidateOnExecution(type = ExecutableType.ALL)
 public class RestContentService extends ContentApiImpl {
   // Mandated by CDI 2.0

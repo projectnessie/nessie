@@ -34,6 +34,7 @@ import org.projectnessie.services.spi.NamespaceService;
 
 /** REST endpoint for the namespace-API. */
 @RequestScoped
+@jakarta.enterprise.context.RequestScoped
 public class RestNamespaceResource implements HttpNamespaceApi {
   // Cannot extend the NamespaceApiImplWithAuthz class, because then CDI gets confused
   // about which interface to use - either HttpNamespaceApi or the plain NamespaceApi. This can lead

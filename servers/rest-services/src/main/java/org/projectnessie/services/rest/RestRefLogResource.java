@@ -25,6 +25,7 @@ import org.projectnessie.services.spi.RefLogService;
 
 /** REST endpoint for the reflog-API. */
 @RequestScoped
+@jakarta.enterprise.context.RequestScoped
 public class RestRefLogResource implements HttpRefLogApi {
 
   private final RefLogService refLogService;

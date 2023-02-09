@@ -32,6 +32,7 @@ import org.projectnessie.services.spi.PagedResponseHandler;
 
 /** REST endpoint for the diff-API. */
 @RequestScoped
+@jakarta.enterprise.context.RequestScoped
 public class RestDiffResource implements HttpDiffApi {
   // Cannot extend the DiffApiImplWithAuthz class, because then CDI gets confused
   // about which interface to use - either HttpContentApi or the plain ContentApi. This can lead

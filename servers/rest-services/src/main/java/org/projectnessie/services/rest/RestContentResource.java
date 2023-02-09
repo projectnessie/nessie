@@ -29,6 +29,7 @@ import org.projectnessie.services.spi.ContentService;
 
 /** REST endpoint for the content-API. */
 @RequestScoped
+@jakarta.enterprise.context.RequestScoped
 public class RestContentResource implements HttpContentApi {
   // Cannot extend the ContentApiImplWithAuthz class, because then CDI gets confused
   // about which interface to use - either HttpContentApi or the plain ContentApi. This can lead
