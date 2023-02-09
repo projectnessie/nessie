@@ -20,10 +20,10 @@ import io.opentelemetry.opentracingshim.OpenTracingShim;
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
 import io.quarkus.runtime.Startup;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 @ApplicationScoped
 public class OpenTracingSupport {

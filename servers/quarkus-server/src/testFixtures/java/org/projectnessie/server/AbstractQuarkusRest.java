@@ -17,8 +17,8 @@ package org.projectnessie.server;
 
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.jaxrs.tests.BaseTestNessieRest;

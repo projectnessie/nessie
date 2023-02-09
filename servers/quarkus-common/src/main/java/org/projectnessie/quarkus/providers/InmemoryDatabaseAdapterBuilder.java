@@ -17,8 +17,8 @@ package org.projectnessie.quarkus.providers;
 
 import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.INMEMORY;
 
-import javax.enterprise.context.Dependent;
-import javax.inject.Inject;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
 import org.projectnessie.versioned.persist.inmem.InmemoryStore;

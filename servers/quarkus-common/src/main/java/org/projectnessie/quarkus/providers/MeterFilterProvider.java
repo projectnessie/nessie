@@ -17,8 +17,8 @@ package org.projectnessie.quarkus.providers;
 
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.config.MeterFilter;
-import javax.enterprise.inject.Produces;
-import javax.inject.Singleton;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Singleton;
 
 public class MeterFilterProvider {
 

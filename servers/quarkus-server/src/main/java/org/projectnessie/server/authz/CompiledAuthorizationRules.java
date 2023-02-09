@@ -19,10 +19,10 @@ import static org.projectnessie.services.authz.Check.CheckType.VIEW_REFERENCE;
 
 import com.google.common.collect.ImmutableMap;
 import io.quarkus.runtime.Startup;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.util.HashMap;
 import java.util.Map;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import org.projectnessie.cel.tools.Script;
 import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.server.config.QuarkusNessieAuthorizationConfig;

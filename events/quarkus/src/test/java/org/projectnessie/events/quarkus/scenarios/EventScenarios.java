@@ -15,12 +15,12 @@
  */
 package org.projectnessie.events.quarkus.scenarios;
 
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.versioned.BranchName;

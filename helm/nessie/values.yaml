@@ -134,8 +134,8 @@ tracing:
   # See https://quarkus.io/guides/opentelemetry for more information.
   endpoint: "http://otlp-collector:4317"
   # -- Which requests should be sampled. Valid values are: "all", "none", or a ratio between 0.0 and
-  # 1.0 (inclusive). E.g. 0.5 means that 50% of the requests will be sampled.
-  sample: all
+  # "1.0d" (inclusive). E.g. "0.5d" means that 50% of the requests will be sampled.
+  sample: "1.0d"
   # -- Resource attributes to identify the nessie service among other tracing sources.
   # See https://opentelemetry.io/docs/reference/specification/resource/semantic_conventions/#service.
   # If left empty, traces will be attached to a service named "Nessie"; to change this, provide a service.name attribute here.

@@ -16,9 +16,9 @@
 package org.projectnessie.events.quarkus.fixtures;
 
 import io.quarkus.test.Mock;
+import jakarta.inject.Singleton;
 import java.security.Principal;
 import java.util.function.Supplier;
-import javax.inject.Singleton;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @Mock

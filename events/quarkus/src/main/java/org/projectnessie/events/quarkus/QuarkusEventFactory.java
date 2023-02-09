@@ -15,8 +15,8 @@
  */
 package org.projectnessie.events.quarkus;
 
-import javax.enterprise.context.Dependent;
-import javax.inject.Inject;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
 import org.projectnessie.events.service.EventConfig;
 import org.projectnessie.events.service.EventFactory;
 

@@ -19,8 +19,8 @@ import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreTy
 
 import io.agroal.api.AgroalDataSource;
 import io.quarkus.datasource.common.runtime.DatabaseKind;
-import javax.enterprise.context.Dependent;
-import javax.inject.Inject;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.quarkus.config.QuarkusJdbcConfig;
 import org.projectnessie.versioned.storage.common.persist.Backend;

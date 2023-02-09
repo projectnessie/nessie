@@ -16,11 +16,11 @@
 package org.projectnessie.quarkus.providers;
 
 import io.agroal.api.AgroalDataSource;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.sql.Connection;
 import java.sql.SQLException;
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import org.projectnessie.quarkus.config.QuarkusVersionStoreAdvancedConfig;
 import org.projectnessie.versioned.persist.tx.ImmutableDefaultTxConnectionConfig;
 import org.projectnessie.versioned.persist.tx.TxConnectionConfig;

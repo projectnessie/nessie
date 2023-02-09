@@ -16,9 +16,9 @@
 package org.projectnessie.events.quarkus.fixtures;
 
 import io.quarkus.test.Mock;
-import javax.enterprise.inject.Produces;
-import javax.inject.Named;
-import javax.inject.Singleton;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 import org.projectnessie.events.quarkus.collector.QuarkusResultCollectorFactory;
 
 @Mock
