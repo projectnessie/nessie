@@ -49,7 +49,9 @@ public abstract class ZipArchiveImporter implements ImportFileSupplier {
 
   @Override
   @Nonnull
-  public InputStream newFileInput(@Nonnull String fileName) throws IOException {
+  @jakarta.annotation.Nonnull
+  public InputStream newFileInput(@Nonnull @jakarta.annotation.Nonnull String fileName)
+      throws IOException {
     @SuppressWarnings("resource")
     ZipFile zip = zipFile();
     ZipEntry entry = zip.getEntry(fileName);

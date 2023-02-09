@@ -47,7 +47,8 @@ public final class DefaultVisitedDeduplicator implements VisitedDeduplicator {
 
   @Override
   public synchronized boolean alreadyVisited(
-      @Nonnull Instant cutoffTimestamp, @Nonnull String commitId) {
+      @Nonnull @jakarta.annotation.Nonnull Instant cutoffTimestamp,
+      @Nonnull @jakarta.annotation.Nonnull String commitId) {
     if (cutoffTimestamp.equals(NO_TIMESTAMP)) {
       return false;
     }

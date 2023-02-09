@@ -29,7 +29,8 @@ public interface Delete extends Operation {
    * @return a delete operation for the key
    */
   @Nonnull
-  static Delete of(@Nonnull Key key) {
+  @jakarta.annotation.Nonnull
+  static Delete of(@Nonnull @jakarta.annotation.Nonnull Key key) {
     return ImmutableDelete.builder().key(key).build();
   }
 }

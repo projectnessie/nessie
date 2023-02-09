@@ -40,7 +40,9 @@ public class RefLogNotFoundException extends VersionStoreException {
    * @throws NullPointerException if {@code refLogId} is {@code null}.
    */
   @Nonnull
-  public static RefLogNotFoundException forRefLogId(@Nonnull String refLogId) {
+  @jakarta.annotation.Nonnull
+  public static RefLogNotFoundException forRefLogId(
+      @Nonnull @jakarta.annotation.Nonnull String refLogId) {
     requireNonNull(refLogId);
     return new RefLogNotFoundException(format("RefLog entry for '%s' does not exist", refLogId));
   }

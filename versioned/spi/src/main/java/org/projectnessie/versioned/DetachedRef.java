@@ -27,6 +27,7 @@ public interface DetachedRef extends NamedRef {
   DetachedRef INSTANCE = ImmutableDetachedRef.builder().build();
 
   @Nonnull
+  @jakarta.annotation.Nonnull
   @Override
   @Value.Redacted
   default String getName() {

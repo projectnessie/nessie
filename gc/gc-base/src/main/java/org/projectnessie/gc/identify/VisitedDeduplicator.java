@@ -22,5 +22,7 @@ import javax.annotation.Nonnull;
 public interface VisitedDeduplicator {
   VisitedDeduplicator NOOP = (cutOffTimestamp, commitId) -> false;
 
-  boolean alreadyVisited(@Nonnull Instant cutOffTimestamp, @Nonnull String commitId);
+  boolean alreadyVisited(
+      @Nonnull @jakarta.annotation.Nonnull Instant cutOffTimestamp,
+      @Nonnull @jakarta.annotation.Nonnull String commitId);
 }

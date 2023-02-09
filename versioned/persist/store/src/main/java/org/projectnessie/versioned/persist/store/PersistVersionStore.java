@@ -104,6 +104,7 @@ public class PersistVersionStore implements VersionStore {
   }
 
   @Nonnull
+  @jakarta.annotation.Nonnull
   @Override
   public Hash noAncestorHash() {
     return databaseAdapter.noAncestorHash();
@@ -111,11 +112,11 @@ public class PersistVersionStore implements VersionStore {
 
   @Override
   public Hash commit(
-      @Nonnull BranchName branch,
-      @Nonnull Optional<Hash> expectedHead,
-      @Nonnull CommitMeta metadata,
-      @Nonnull List<Operation> operations,
-      @Nonnull Callable<Void> validator,
+      @Nonnull @jakarta.annotation.Nonnull BranchName branch,
+      @Nonnull @jakarta.annotation.Nonnull Optional<Hash> expectedHead,
+      @Nonnull @jakarta.annotation.Nonnull CommitMeta metadata,
+      @Nonnull @jakarta.annotation.Nonnull List<Operation> operations,
+      @Nonnull @jakarta.annotation.Nonnull Callable<Void> validator,
       BiConsumer<Key, String> addedContents)
       throws ReferenceNotFoundException, ReferenceConflictException {
 
@@ -332,8 +333,10 @@ public class PersistVersionStore implements VersionStore {
   }
 
   @Nonnull
+  @jakarta.annotation.Nonnull
   @Override
-  public ReferenceInfo<CommitMeta> getNamedRef(@Nonnull String ref, GetNamedRefsParams params)
+  public ReferenceInfo<CommitMeta> getNamedRef(
+      @Nonnull @jakarta.annotation.Nonnull String ref, GetNamedRefsParams params)
       throws ReferenceNotFoundException {
     ReferenceInfo<ByteString> namedRef = databaseAdapter.namedRef(ref, params);
     return namedRef.withUpdatedCommitMeta(commitMetaFromReference(namedRef));

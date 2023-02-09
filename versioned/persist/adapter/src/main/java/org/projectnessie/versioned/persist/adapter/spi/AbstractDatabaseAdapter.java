@@ -210,7 +210,8 @@ public abstract class AbstractDatabaseAdapter<
 
   @Override
   public CommitLogEntry rebuildKeyList(
-      CommitLogEntry entry, @Nonnull Function<Hash, CommitLogEntry> inMemoryCommits)
+      CommitLogEntry entry,
+      @Nonnull @jakarta.annotation.Nonnull Function<Hash, CommitLogEntry> inMemoryCommits)
       throws ReferenceNotFoundException {
     try (OP_CONTEXT ctx = borrowConnection()) {
       return buildKeyList(ctx, entry, h -> {}, inMemoryCommits);
@@ -952,7 +953,9 @@ public abstract class AbstractDatabaseAdapter<
    * returned as {@code null}.
    */
   private List<CommitLogEntry> fetchMultipleFromCommitLog(
-      OP_CONTEXT ctx, List<Hash> hashes, @Nonnull Function<Hash, CommitLogEntry> inMemoryCommits) {
+      OP_CONTEXT ctx,
+      List<Hash> hashes,
+      @Nonnull @jakarta.annotation.Nonnull Function<Hash, CommitLogEntry> inMemoryCommits) {
     List<CommitLogEntry> result = new ArrayList<>(hashes.size());
     BitSet remainingHashes = null;
 
@@ -1015,14 +1018,18 @@ public abstract class AbstractDatabaseAdapter<
 
   @MustBeClosed
   protected Stream<CommitLogEntry> readCommitLogStream(
-      OP_CONTEXT ctx, Hash initialHash, @Nonnull Function<Hash, CommitLogEntry> inMemoryCommits)
+      OP_CONTEXT ctx,
+      Hash initialHash,
+      @Nonnull @jakarta.annotation.Nonnull Function<Hash, CommitLogEntry> inMemoryCommits)
       throws ReferenceNotFoundException {
     Spliterator<CommitLogEntry> split = readCommitLog(ctx, initialHash, inMemoryCommits);
     return StreamSupport.stream(split, false);
   }
 
   protected Spliterator<CommitLogEntry> readCommitLog(
-      OP_CONTEXT ctx, Hash initialHash, @Nonnull Function<Hash, CommitLogEntry> inMemoryCommits)
+      OP_CONTEXT ctx,
+      Hash initialHash,
+      @Nonnull @jakarta.annotation.Nonnull Function<Hash, CommitLogEntry> inMemoryCommits)
       throws ReferenceNotFoundException {
     Preconditions.checkNotNull(inMemoryCommits, "in-memory commits cannot be null");
 
@@ -1150,7 +1157,7 @@ public abstract class AbstractDatabaseAdapter<
       Iterable<Key> deletes,
       int currentKeyListDistance,
       Consumer<Hash> newKeyLists,
-      @Nonnull Function<Hash, CommitLogEntry> inMemoryCommits,
+      @Nonnull @jakarta.annotation.Nonnull Function<Hash, CommitLogEntry> inMemoryCommits,
       Iterable<Hash> additionalParents)
       throws ReferenceNotFoundException {
     Hash commitHash = individualCommitHash(parentHashes, commitMeta, puts, deletes);
@@ -1222,7 +1229,7 @@ public abstract class AbstractDatabaseAdapter<
       OP_CONTEXT ctx,
       CommitLogEntry unwrittenEntry,
       Consumer<Hash> newKeyLists,
-      @Nonnull Function<Hash, CommitLogEntry> inMemoryCommits)
+      @Nonnull @jakarta.annotation.Nonnull Function<Hash, CommitLogEntry> inMemoryCommits)
       throws ReferenceNotFoundException {
     // Read commit-log until the previous persisted key-list
 
@@ -1363,7 +1370,7 @@ public abstract class AbstractDatabaseAdapter<
       OP_CONTEXT ctx,
       Hash hash,
       KeyFilterPredicate keyFilter,
-      @Nonnull Function<Hash, CommitLogEntry> inMemoryCommits)
+      @Nonnull @jakarta.annotation.Nonnull Function<Hash, CommitLogEntry> inMemoryCommits)
       throws ReferenceNotFoundException {
     // walk the commit-logs in reverse order - starting with the last persisted key-list
 
@@ -2184,7 +2191,8 @@ public abstract class AbstractDatabaseAdapter<
   protected abstract Spliterator<RefLog> readRefLog(OP_CONTEXT ctx, Hash initialHash)
       throws RefLogNotFoundException;
 
-  protected void tryLoopStateCompletion(@Nonnull Boolean success, TryLoopState state) {
+  protected void tryLoopStateCompletion(
+      @Nonnull @jakarta.annotation.Nonnull Boolean success, TryLoopState state) {
     tryLoopFinished(
         success ? "success" : "fail", state.getRetries(), state.getDuration(NANOSECONDS));
   }

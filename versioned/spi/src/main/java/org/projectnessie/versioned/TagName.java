@@ -29,7 +29,8 @@ public interface TagName extends NamedRef {
    * @return an instance of {@code TagName} for the provided name
    */
   @Nonnull
-  static TagName of(@Nonnull String name) {
+  @jakarta.annotation.Nonnull
+  static TagName of(@Nonnull @jakarta.annotation.Nonnull String name) {
     return ImmutableTagName.builder().name(name).build();
   }
 }

@@ -29,7 +29,8 @@ public interface BranchName extends NamedRef {
    * @return an instance of {@code BranchName} for the provided name
    */
   @Nonnull
-  static BranchName of(@Nonnull String name) {
+  @jakarta.annotation.Nonnull
+  static BranchName of(@Nonnull @jakarta.annotation.Nonnull String name) {
     return ImmutableBranchName.builder().name(name).build();
   }
 }

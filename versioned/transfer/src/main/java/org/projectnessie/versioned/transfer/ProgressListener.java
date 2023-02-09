@@ -21,7 +21,7 @@ import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 
 @FunctionalInterface
 public interface ProgressListener {
-  default void progress(@Nonnull ProgressEvent type) {
+  default void progress(@Nonnull @jakarta.annotation.Nonnull ProgressEvent type) {
     progress(type, null);
   }
 
@@ -29,5 +29,6 @@ public interface ProgressListener {
    * Reports a progress event. The {@code exportMeta} parameter is only valid for {@link
    * ProgressEvent#END_META}.
    */
-  void progress(@Nonnull ProgressEvent type, @Nullable ExportMeta exportMeta);
+  void progress(
+      @Nonnull @jakarta.annotation.Nonnull ProgressEvent type, @Nullable ExportMeta exportMeta);
 }

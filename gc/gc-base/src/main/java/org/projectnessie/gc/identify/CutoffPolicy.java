@@ -37,9 +37,9 @@ public interface CutoffPolicy {
     return NO_TIMESTAMP;
   }
 
-  boolean isCutoff(@Nonnull Instant commitTime, int numCommits);
+  boolean isCutoff(@Nonnull @jakarta.annotation.Nonnull Instant commitTime, int numCommits);
 
-  static CutoffPolicy atTimestamp(@Nonnull Instant cutoffTimestamp) {
+  static CutoffPolicy atTimestamp(@Nonnull @jakarta.annotation.Nonnull Instant cutoffTimestamp) {
     return new TimestampCutoffPolicy(cutoffTimestamp);
   }
 

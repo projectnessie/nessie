@@ -57,6 +57,7 @@ public class TestSizeLimitedOutput {
     ExportFileSupplier exportFiles =
         new ExportFileSupplier() {
           @Nonnull
+          @jakarta.annotation.Nonnull
           @Override
           public Path getTargetPath() {
             throw new UnsupportedOperationException();
@@ -66,8 +67,9 @@ public class TestSizeLimitedOutput {
           public void preValidate() {}
 
           @Nonnull
+          @jakarta.annotation.Nonnull
           @Override
-          public OutputStream newFileOutput(@Nonnull String fileName) {
+          public OutputStream newFileOutput(@Nonnull @jakarta.annotation.Nonnull String fileName) {
             return outputSupplier.apply(fileName);
           }
 
