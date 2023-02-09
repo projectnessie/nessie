@@ -148,7 +148,7 @@ jakarta-servlet-api = { module = "jakarta.servlet:jakarta.servlet-api", version 
 jakarta-validation-api = { module = "jakarta.validation:jakarta.validation-api", version = "3.0.2" }
 jakarta-ws-rs-api = { module = "jakarta.ws.rs:jakarta.ws.rs-api", version = "3.1.0" }
 jandex = { module = "org.jboss:jandex", version.ref = "jandex" }
-javax-enterprise-cdi-api = { module = "javax.enterprise:cdi-api", version = "2.0.SP1" }
+javax-enterprise-cdi-api = { module = "javax.enterprise:cdi-api", version = "2.0" }
 javax-servlet = { module = "javax.servlet:javax.servlet-api", version = "4.0.1" }
 javax-validation-api = { module = "javax.validation:validation-api", version = "2.0.1.Final"}
 javax-ws-rs = { module = "javax.ws.rs:javax.ws.rs-api", version = "2.1.1" }
