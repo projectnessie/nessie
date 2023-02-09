@@ -20,15 +20,15 @@ import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 import io.quarkus.arc.properties.IfBuildProperty;
 import io.quarkus.test.Mock;
+import jakarta.annotation.Nullable;
+import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import javax.annotation.Nullable;
-import javax.inject.Singleton;
 
 @Mock
 @Singleton
-@IfBuildProperty(name = "quarkus.opentelemetry.enabled", stringValue = "true")
+@IfBuildProperty(name = "quarkus.otel.traces.sampler", stringValue = "always_on")
 public class MockSpanExporter implements SpanExporter {
 
   private List<SpanData> spans = new ArrayList<>();

@@ -15,10 +15,10 @@
  */
 package org.projectnessie.quarkus.providers;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
-import javax.inject.Named;
-import javax.inject.Singleton;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 import org.projectnessie.quarkus.config.QuarkusVersionStoreAdvancedConfig;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 

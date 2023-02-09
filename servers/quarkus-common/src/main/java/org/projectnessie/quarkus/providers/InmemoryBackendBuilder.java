@@ -17,7 +17,7 @@ package org.projectnessie.quarkus.providers;
 
 import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.IN_MEMORY;
 
-import javax.enterprise.context.Dependent;
+import jakarta.enterprise.context.Dependent;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.inmemory.InmemoryBackendConfig;
 import org.projectnessie.versioned.storage.inmemory.InmemoryBackendFactory;

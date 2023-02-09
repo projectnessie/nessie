@@ -54,5 +54,10 @@ dependencies {
 
   implementation(libs.testcontainers.keycloak) {
     exclude(group = "org.slf4j") // uses SLF4J 2.x, we are not ready yet
+    exclude(
+      group = "org.keycloak",
+      module = "keycloak-admin-client"
+    ) // Quarkus 3 / Jakarta EE required
   }
+  implementation("org.keycloak:keycloak-admin-client-jakarta")
 }

@@ -19,8 +19,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.hash.Hashing;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
+import jakarta.validation.constraints.NotNull;
 import java.util.Locale;
-import javax.validation.constraints.NotNull;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

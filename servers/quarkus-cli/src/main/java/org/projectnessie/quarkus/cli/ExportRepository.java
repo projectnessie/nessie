@@ -17,12 +17,12 @@ package org.projectnessie.quarkus.cli;
 
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
+import jakarta.annotation.Nonnull;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
 import java.util.function.Consumer;
-import javax.annotation.Nonnull;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
 import org.projectnessie.versioned.storage.versionstore.VersionStoreImpl;
 import org.projectnessie.versioned.transfer.ExportImportConstants;

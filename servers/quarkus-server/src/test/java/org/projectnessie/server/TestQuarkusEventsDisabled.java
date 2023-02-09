@@ -21,10 +21,10 @@ import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreTy
 import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
 import java.util.Map;
 import java.util.function.Consumer;
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.ext.NessieApiVersion;
 import org.projectnessie.client.ext.NessieApiVersions;

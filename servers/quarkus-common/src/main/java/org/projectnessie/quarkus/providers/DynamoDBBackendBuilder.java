@@ -17,8 +17,8 @@ package org.projectnessie.quarkus.providers;
 
 import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.DYNAMODB;
 
-import javax.enterprise.context.Dependent;
-import javax.inject.Inject;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.dynamodb.DynamoDBBackendConfig;
 import org.projectnessie.versioned.storage.dynamodb.DynamoDBBackendFactory;

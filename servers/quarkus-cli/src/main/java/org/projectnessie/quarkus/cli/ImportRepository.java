@@ -17,6 +17,7 @@ package org.projectnessie.quarkus.cli;
 
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
+import jakarta.annotation.Nonnull;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,7 +25,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;

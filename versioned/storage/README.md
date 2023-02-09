@@ -493,7 +493,7 @@ docker run -ti --rm\
 * Open browser at URL http://127.0.0.1:16686/
 * Run Quarkus with these options:
   ```
-  -Dquarkus.opentelemetry.tracer.exporter.otlp.endpoint=http://localhost:4317 \
-  -Dquarkus.opentelemetry.enabled=true
+  -Dquarkus.otel.exporter.otlp.endpoint=http://localhost:4317 \
+  -Dquarkus.otel.traces.sampler=always_on
   ```
 
