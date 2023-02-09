@@ -29,12 +29,16 @@ dependencies {
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-spi"))
   implementation(libs.protobuf.java)
-  implementation(libs.findbugs.jsr305)
   implementation(libs.guava)
+
+  // javax/jakarta
+  compileOnly(libs.jakarta.validation.api)
+  compileOnly(libs.javax.validation.api)
+  compileOnly(libs.jakarta.annotation.api)
+  compileOnly(libs.findbugs.jsr305)
 
   compileOnly(platform(libs.jackson.bom))
   compileOnly(libs.jackson.annotations)
 
   compileOnly(libs.microprofile.openapi)
-  compileOnly(libs.jakarta.validation.api)
 }

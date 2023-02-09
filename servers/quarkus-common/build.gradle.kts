@@ -48,7 +48,10 @@ dependencies {
   implementation("io.quarkus:quarkus-mongodb-client")
   implementation("org.jboss.slf4j:slf4j-jboss-logmanager")
 
-  implementation(libs.jakarta.validation.api)
+  // javax/jakarta
+  compileOnly(libs.jakarta.validation.api)
+  compileOnly(libs.javax.validation.api)
+
   implementation(libs.protobuf.java)
 
   compileOnly(libs.graalvm.nativeimage.svm)

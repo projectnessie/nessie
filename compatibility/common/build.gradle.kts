@@ -30,6 +30,7 @@ dependencies {
   api(project(":nessie-multi-env-test-engine"))
   implementation(project(":nessie-services"))
   implementation(project(":nessie-versioned-persist-adapter"))
+  compileOnly(project(":nessie-versioned-persist-mongodb-test"))
 
   implementation(platform(libs.jersey.bom))
   api(libs.slf4j.api)
@@ -39,8 +40,12 @@ dependencies {
   implementation(libs.maven.resolver.transport.file)
   implementation(libs.maven.resolver.transport.http)
   implementation(libs.guava)
-  implementation(libs.jakarta.enterprise.cdi.api)
-  implementation(libs.microprofile.openapi)
+
+  // javax/jakarta
+  compileOnly(libs.jakarta.enterprise.cdi.api)
+  compileOnly(libs.javax.enterprise.cdi.api)
+
+  compileOnly(libs.microprofile.openapi)
 
   implementation(platform(libs.jackson.bom))
   implementation(libs.jackson.annotations)
@@ -56,7 +61,8 @@ dependencies {
   implementation(project(":nessie-versioned-persist-in-memory-test"))
   implementation(project(":nessie-versioned-persist-rocks"))
   implementation(project(":nessie-versioned-persist-rocks-test"))
-  compileOnly(project(":nessie-versioned-persist-mongodb-test"))
+
+  testCompileOnly(libs.microprofile.openapi)
 
   testImplementation(libs.junit.platform.testkit)
   testImplementation(libs.junit.jupiter.params)

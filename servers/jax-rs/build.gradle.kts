@@ -38,16 +38,22 @@ dependencies {
   api(project(":nessie-versioned-persist-adapter"))
   api(project(":nessie-versioned-persist-serialize"))
   implementation(libs.slf4j.api)
-  implementation(libs.javax.ws.rs21)
-  api(libs.jakarta.enterprise.cdi.api)
-  api(libs.jakarta.annotation.api)
-  api(libs.jakarta.validation.api)
-  api(libs.hibernate.validator.cdi)
+
+  // javax/jakarta
+  compileOnly(libs.jakarta.ws.rs.api)
+  compileOnly(libs.javax.ws.rs21)
+  compileOnly(libs.jakarta.enterprise.cdi.api)
+  compileOnly(libs.javax.enterprise.cdi.api)
+  compileOnly(libs.jakarta.annotation.api)
+  compileOnly(libs.findbugs.jsr305)
+  compileOnly(libs.jakarta.validation.api)
+  compileOnly(libs.javax.validation.api)
+
+  compileOnly(libs.microprofile.openapi)
+
+  compileOnly(libs.hibernate.validator.cdi)
 
   api(platform(libs.jackson.bom))
   api(libs.jackson.databind)
   compileOnly(libs.jackson.annotations)
-
-  compileOnly(libs.microprofile.openapi)
-  compileOnly(libs.jakarta.validation.api)
 }

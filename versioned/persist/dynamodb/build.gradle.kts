@@ -33,8 +33,11 @@ dependencies {
   implementation(project(":nessie-versioned-spi"))
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
-  implementation(libs.findbugs.jsr305)
   implementation(libs.guava)
+
+  // javax/jakarta
+  compileOnly(libs.jakarta.annotation.api)
+  compileOnly(libs.findbugs.jsr305)
 
   implementation(platform(libs.awssdk.bom))
   implementation(libs.awssdk.dynamodb) { exclude("software.amazon.awssdk", "apache-client") }

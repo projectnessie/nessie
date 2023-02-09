@@ -32,10 +32,13 @@ dependencies {
   implementation(project(":nessie-versioned-tests"))
 
   implementation(libs.guava)
-  implementation(libs.findbugs.jsr305)
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
   implementation(libs.slf4j.api)
+
+  // javax/jakarta
+  compileOnly(libs.jakarta.annotation.api)
+  compileOnly(libs.findbugs.jsr305)
 
   implementation(libs.agroal.pool)
   compileOnly(libs.h2)

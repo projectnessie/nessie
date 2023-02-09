@@ -32,10 +32,16 @@ dependencies {
   implementation(libs.jackson.databind)
   implementation(libs.jackson.annotations)
   implementation(libs.microprofile.openapi)
+
+  // javax/jakarta
+  compileOnly(libs.jakarta.annotation.api)
+  compileOnly(libs.findbugs.jsr305)
   compileOnly(libs.jakarta.validation.api)
+  compileOnly(libs.javax.validation.api)
+  compileOnly(libs.jakarta.ws.rs.api)
+  compileOnly(libs.javax.ws.rs)
+
   implementation(libs.slf4j.api)
-  implementation(libs.javax.ws.rs)
-  implementation(libs.findbugs.jsr305)
   compileOnly(libs.errorprone.annotations)
 
   compileOnly(libs.immutables.builder)
@@ -57,6 +63,9 @@ dependencies {
 
   compileOnly(platform(libs.awssdk.bom))
   compileOnly(libs.awssdk.auth)
+
+  // javax/jakarta
+  testCompileOnly(libs.jakarta.annotation.api)
 
   testImplementation(platform(libs.opentelemetry.bom))
   testImplementation(libs.opentelemetry.api)

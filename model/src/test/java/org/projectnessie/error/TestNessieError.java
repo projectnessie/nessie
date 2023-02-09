@@ -20,7 +20,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.regex.Pattern;
-import javax.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
@@ -29,6 +28,8 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 class TestNessieError {
 
   private static final ObjectMapper mapper = new ObjectMapper();
+  public static final int HTTP_500_CODE = 500;
+  public static final String HTTP_500_MESSAGE = "Internal Server Error";
 
   @Test
   void fullMessage() {
@@ -36,15 +37,15 @@ class TestNessieError {
         ImmutableNessieError.builder()
             .message("message")
             .errorCode(ErrorCode.UNKNOWN)
-            .status(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode())
-            .reason(Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase())
+            .status(HTTP_500_CODE)
+            .reason(HTTP_500_MESSAGE)
             .serverStackTrace("foo.bar.InternalServerError\n" + "\tat some.other.Class")
             .build();
     assertThat(e.getFullMessage())
         .matches(
-            Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase()
+            HTTP_500_MESSAGE
                 + " [(]HTTP/"
-                + Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()
+                + HTTP_500_CODE
                 + "[)]: message\\R"
                 + "foo.bar.InternalServerError\\R"
                 + "\tat some.other.Class");
@@ -59,9 +60,9 @@ class TestNessieError {
             // Using a regex here, because the stack trace looks different with
             // junit-platform-maven-plugin
             Pattern.compile(
-                Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase()
+                HTTP_500_MESSAGE
                     + " [(]HTTP/"
-                    + Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()
+                    + HTTP_500_CODE
                     + "[)]: message\\R"
                     + "foo.bar.InternalServerError\\R"
                     + "\tat some.other.Class\\R"
@@ -77,8 +78,8 @@ class TestNessieError {
         ImmutableNessieError.builder()
             .message("message")
             .errorCode(ErrorCode.UNKNOWN)
-            .status(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode())
-            .reason(Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase())
+            .status(HTTP_500_CODE)
+            .reason(HTTP_500_MESSAGE)
             .serverStackTrace("foo.bar.InternalServerError\n" + "\tat some.other.Class")
             .clientProcessingException(new Exception("processingException"))
             .build();

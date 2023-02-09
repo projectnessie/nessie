@@ -37,10 +37,14 @@ dependencies {
   implementation(libs.jackson.annotations)
 
   compileOnly(libs.microprofile.openapi)
-  compileOnly(libs.jakarta.validation.api)
-  implementation(libs.findbugs.jsr305)
   compileOnly(libs.errorprone.annotations)
   implementation(libs.guava)
+
+  // javax/jakarta
+  compileOnly(libs.jakarta.validation.api)
+  compileOnly(libs.javax.validation.api)
+  compileOnly(libs.jakarta.annotation.api)
+  compileOnly(libs.findbugs.jsr305)
 
   compileOnly(libs.immutables.builder)
   compileOnly(libs.immutables.value.annotations)
@@ -62,6 +66,9 @@ dependencies {
   testImplementation(project(":nessie-versioned-persist-transactional-test"))
 
   testRuntimeOnly(libs.h2)
+
+  // javax/jakarta
+  testCompileOnly(libs.jakarta.annotation.api)
 
   testCompileOnly(libs.microprofile.openapi)
 
