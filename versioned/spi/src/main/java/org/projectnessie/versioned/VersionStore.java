@@ -24,7 +24,6 @@ import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
-import javax.annotation.concurrent.ThreadSafe;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.versioned.paging.PaginationIterator;
@@ -33,7 +32,6 @@ import org.projectnessie.versioned.paging.PaginationIterator;
  * A storage interface that maintains multiple versions of the VALUE type with each commit having an
  * associated CommitMeta value.
  */
-@ThreadSafe
 public interface VersionStore {
 
   /**
