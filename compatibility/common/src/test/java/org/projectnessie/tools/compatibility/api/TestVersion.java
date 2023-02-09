@@ -15,27 +15,32 @@
  */
 package org.projectnessie.tools.compatibility.api;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+@ExtendWith(SoftAssertionsExtension.class)
 class TestVersion {
+  @InjectSoftAssertions protected SoftAssertions soft;
+
   @Test
   void parseNPE() {
-    assertThatThrownBy(() -> Version.parseVersion(null)).isInstanceOf(NullPointerException.class);
+    soft.assertThatThrownBy(() -> Version.parseVersion(null))
+        .isInstanceOf(NullPointerException.class);
   }
 
   @Test
   void current() {
-    assertThat(Version.parseVersion(Version.CURRENT_STRING)).isSameAs(Version.CURRENT);
+    soft.assertThat(Version.parseVersion(Version.CURRENT_STRING)).isSameAs(Version.CURRENT);
   }
 
   @Test
   void notCurrent() {
-    assertThat(Version.parseVersion(Version.NOT_CURRENT_STRING)).isSameAs(Version.NOT_CURRENT);
+    soft.assertThat(Version.parseVersion(Version.NOT_CURRENT_STRING)).isSameAs(Version.NOT_CURRENT);
   }
 
   @ParameterizedTest
@@ -45,7 +50,7 @@ class TestVersion {
         "1 ", "1 .1", "1. 1"
       })
   void parseIllegal(String s) {
-    assertThatThrownBy(() -> Version.parseVersion(s))
+    soft.assertThatThrownBy(() -> Version.parseVersion(s))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageStartingWith("Invalid version number part");
   }
@@ -53,12 +58,12 @@ class TestVersion {
   @ParameterizedTest
   @ValueSource(strings = {"1", "1.2", "0.1"})
   void parseToString(String s) {
-    assertThat(Version.parseVersion(s)).extracting(Version::toString).isEqualTo(s);
+    soft.assertThat(Version.parseVersion(s)).extracting(Version::toString).isEqualTo(s);
   }
 
   @Test
   void compare() {
-    assertThat(Version.parseVersion("1.0.0"))
+    soft.assertThat(Version.parseVersion("1.0.0"))
         .isEqualTo(Version.parseVersion("1.0.0"))
         .isNotEqualTo(Version.parseVersion("1.0"))
         .isNotEqualTo(Version.parseVersion("1"))
@@ -79,30 +84,35 @@ class TestVersion {
 
   @Test
   public void isGreaterThan() {
-    assertThat(Version.parseVersion("1.0.0").isGreaterThanOrEqual(Version.parseVersion("1.0.0")))
+    soft.assertThat(
+            Version.parseVersion("1.0.0").isGreaterThanOrEqual(Version.parseVersion("1.0.0")))
         .isTrue();
-    assertThat(Version.parseVersion("1.0.0").isGreaterThan(Version.parseVersion("0.9.9"))).isTrue();
-    assertThat(Version.parseVersion("1.0.0").isGreaterThan(Version.parseVersion("0.9999")))
+    soft.assertThat(Version.parseVersion("1.0.0").isGreaterThan(Version.parseVersion("0.9.9")))
         .isTrue();
-    assertThat(Version.parseVersion("1.0.0").isGreaterThan(Version.parseVersion("1.0.0")))
+    soft.assertThat(Version.parseVersion("1.0.0").isGreaterThan(Version.parseVersion("0.9999")))
+        .isTrue();
+    soft.assertThat(Version.parseVersion("1.0.0").isGreaterThan(Version.parseVersion("1.0.0")))
         .isFalse();
   }
 
   @Test
   public void isLessThan() {
-    assertThat(Version.parseVersion("1.0.0").isLessThanOrEqual(Version.parseVersion("1.0.0")))
+    soft.assertThat(Version.parseVersion("1.0.0").isLessThanOrEqual(Version.parseVersion("1.0.0")))
         .isTrue();
-    assertThat(Version.parseVersion("1.0.0").isLessThan(Version.parseVersion("1.0.1"))).isTrue();
-    assertThat(Version.parseVersion("1.0.0").isLessThan(Version.parseVersion("1.1"))).isTrue();
-    assertThat(Version.parseVersion("1.0.0").isLessThan(Version.parseVersion("1.0.1"))).isTrue();
-    assertThat(Version.parseVersion("1.0.0").isLessThan(Version.parseVersion("1.0.0"))).isFalse();
+    soft.assertThat(Version.parseVersion("1.0.0").isLessThan(Version.parseVersion("1.0.1")))
+        .isTrue();
+    soft.assertThat(Version.parseVersion("1.0.0").isLessThan(Version.parseVersion("1.1"))).isTrue();
+    soft.assertThat(Version.parseVersion("1.0.0").isLessThan(Version.parseVersion("1.0.1")))
+        .isTrue();
+    soft.assertThat(Version.parseVersion("1.0.0").isLessThan(Version.parseVersion("1.0.0")))
+        .isFalse();
   }
 
   @Test
   public void isSame() {
-    assertThat(Version.parseVersion("1.0").isSame(Version.parseVersion("1.0.0"))).isTrue();
-    assertThat(Version.parseVersion("1.0.0").isSame(Version.parseVersion("1.0.0"))).isTrue();
-    assertThat(Version.parseVersion("1.0.0").isSame(Version.parseVersion("1.0.1"))).isFalse();
-    assertThat(Version.parseVersion("1.0.0").isSame(Version.parseVersion("0.9.9"))).isFalse();
+    soft.assertThat(Version.parseVersion("1.0").isSame(Version.parseVersion("1.0.0"))).isTrue();
+    soft.assertThat(Version.parseVersion("1.0.0").isSame(Version.parseVersion("1.0.0"))).isTrue();
+    soft.assertThat(Version.parseVersion("1.0.0").isSame(Version.parseVersion("1.0.1"))).isFalse();
+    soft.assertThat(Version.parseVersion("1.0.0").isSame(Version.parseVersion("0.9.9"))).isFalse();
   }
 }

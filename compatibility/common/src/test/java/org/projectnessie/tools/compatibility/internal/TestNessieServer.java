@@ -15,14 +15,16 @@
  */
 package org.projectnessie.tools.compatibility.internal;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
@@ -33,7 +35,10 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.tools.compatibility.api.Version;
 
+@ExtendWith(SoftAssertionsExtension.class)
 class TestNessieServer {
+  @InjectSoftAssertions protected SoftAssertions soft;
+
   @Test
   void currentVersionServer() {
     ExtensionValuesStore valuesStore = new ExtensionValuesStore(null);
@@ -47,23 +52,23 @@ class TestNessieServer {
       ServerKey key = new ServerKey(Version.CURRENT, "In-Memory", Collections.emptyMap());
 
       when(ctx.getStore(any(Namespace.class))).thenReturn(store);
-      assertThatThrownBy(() -> NessieServer.nessieServerExisting(ctx, key))
+      soft.assertThatThrownBy(() -> NessieServer.nessieServerExisting(ctx, key))
           .isInstanceOf(NullPointerException.class)
           .hasMessageStartingWith("No Nessie server for ");
 
       server = NessieServer.nessieServer(ctx, key, () -> true);
-      assertThat(server)
+      soft.assertThat(server)
           .isInstanceOf(CurrentNessieServer.class)
           .extracting(s -> s.getUri(NessieApiV1.class))
           .isNotNull();
 
       when(ctx.getStore(any(Namespace.class))).thenReturn(store);
-      assertThat(NessieServer.nessieServerExisting(ctx, key)).isSameAs(server);
+      soft.assertThat(NessieServer.nessieServerExisting(ctx, key)).isSameAs(server);
     } finally {
       valuesStore.closeAllStoredCloseableValues();
     }
 
-    assertThatThrownBy(server::close)
+    soft.assertThatThrownBy(server::close)
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("was already shut down");
   }
@@ -87,23 +92,23 @@ class TestNessieServer {
           new ServerKey(Version.parseVersion(nessieVersion), "In-Memory", Collections.emptyMap());
 
       when(ctx.getStore(any(Namespace.class))).thenReturn(store);
-      assertThatThrownBy(() -> NessieServer.nessieServerExisting(ctx, key))
+      soft.assertThatThrownBy(() -> NessieServer.nessieServerExisting(ctx, key))
           .isInstanceOf(NullPointerException.class)
           .hasMessageStartingWith("No Nessie server for ");
 
       server = NessieServer.nessieServer(ctx, key, () -> true);
-      assertThat(server)
+      soft.assertThat(server)
           .isInstanceOf(OldNessieServer.class)
           .extracting(s -> s.getUri(NessieApiV1.class))
           .isNotNull();
 
       when(ctx.getStore(any(Namespace.class))).thenReturn(store);
-      assertThat(NessieServer.nessieServerExisting(ctx, key)).isSameAs(server);
+      soft.assertThat(NessieServer.nessieServerExisting(ctx, key)).isSameAs(server);
     } finally {
       valuesStore.closeAllStoredCloseableValues();
     }
 
-    assertThatThrownBy(server::close)
+    soft.assertThatThrownBy(server::close)
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("was already shut down");
   }

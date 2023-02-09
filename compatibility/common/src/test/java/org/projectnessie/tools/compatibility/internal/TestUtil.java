@@ -15,8 +15,6 @@
  */
 package org.projectnessie.tools.compatibility.internal;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -25,19 +23,26 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Optional;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+@ExtendWith(SoftAssertionsExtension.class)
 class TestUtil {
+  @InjectSoftAssertions protected SoftAssertions soft;
+
   @Test
   void throwUnchecked() {
-    assertThatThrownBy(
+    soft.assertThatThrownBy(
             () -> {
               throw Util.throwUnchecked(new IllegalStateException("foo"));
             })
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("foo");
-    assertThatThrownBy(
+    soft.assertThatThrownBy(
             () -> {
               throw Util.throwUnchecked(new IOException("foo"));
             })
@@ -57,7 +62,7 @@ class TestUtil {
     when(ctxEngine.getUniqueId()).thenReturn("[engine:my-engine]");
     when(ctxEngine.getUniqueId()).thenReturn("[engine:my-engine]");
 
-    assertThatThrownBy(() -> Util.classContext(ctxEngine))
+    soft.assertThatThrownBy(() -> Util.classContext(ctxEngine))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("has no class part");
   }
@@ -81,7 +86,7 @@ class TestUtil {
     when(ctxMethod.getUniqueId())
         .thenReturn("[engine:my-engine]/[class:some.package.ClassName]/[test:fooBar]");
 
-    assertThat(Util.classContext(ctxMethod)).isSameAs(ctxClass);
+    soft.assertThat(Util.classContext(ctxMethod)).isSameAs(ctxClass);
   }
 
   @Test
@@ -90,7 +95,7 @@ class TestUtil {
         new URLClassLoader(new URL[] {new File("some-non-existing.jar").toURI().toURL()});
     ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
 
-    assertThatThrownBy(
+    soft.assertThatThrownBy(
             () ->
                 Util.withClassLoader(
                     classLoader,
@@ -99,7 +104,7 @@ class TestUtil {
                     }))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("blah");
-    assertThat(Thread.currentThread().getContextClassLoader()).isSameAs(contextClassLoader);
+    soft.assertThat(Thread.currentThread().getContextClassLoader()).isSameAs(contextClassLoader);
   }
 
   @Test
@@ -108,9 +113,9 @@ class TestUtil {
         new URLClassLoader(new URL[] {new File("some-non-existing.jar").toURI().toURL()});
     ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
 
-    assertThat(
+    soft.assertThat(
             Util.withClassLoader(classLoader, () -> Thread.currentThread().getContextClassLoader()))
         .isSameAs(classLoader);
-    assertThat(Thread.currentThread().getContextClassLoader()).isSameAs(contextClassLoader);
+    soft.assertThat(Thread.currentThread().getContextClassLoader()).isSameAs(contextClassLoader);
   }
 }

@@ -15,27 +15,31 @@
  */
 package org.projectnessie.tools.compatibility.internal;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.tools.compatibility.api.Version;
 
+@ExtendWith(SoftAssertionsExtension.class)
 class TestVersionsToExercise {
+  @InjectSoftAssertions protected SoftAssertions soft;
+
   @Test
   void noVersions() {
-    assertThatThrownBy(() -> VersionsToExercise.versionsFromValue(null))
+    soft.assertThatThrownBy(() -> VersionsToExercise.versionsFromValue(null))
         .isInstanceOf(IllegalArgumentException.class);
-    assertThatThrownBy(() -> VersionsToExercise.versionsFromValue(""))
+    soft.assertThatThrownBy(() -> VersionsToExercise.versionsFromValue(""))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"1,3,2.4,current,2.2", "3,2.4,1,2.2,current"})
   void sorting(String s) {
-    assertThat(VersionsToExercise.versionsFromValue(s))
+    soft.assertThat(VersionsToExercise.versionsFromValue(s))
         .containsExactly(
             Version.parseVersion("1"),
             Version.parseVersion("2.2"),
@@ -51,7 +55,7 @@ class TestVersionsToExercise {
         "1. 1"
       })
   void parseIllegal(String s) {
-    assertThatThrownBy(() -> VersionsToExercise.versionsFromValue(s))
+    soft.assertThatThrownBy(() -> VersionsToExercise.versionsFromValue(s))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageStartingWith("Invalid version number part");
   }

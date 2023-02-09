@@ -15,15 +15,20 @@
  */
 package org.projectnessie.tools.compatibility.internal;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.google.common.collect.ImmutableSet;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
+@ExtendWith(SoftAssertionsExtension.class)
 class TestTemporaryDirectory {
+  @InjectSoftAssertions protected SoftAssertions soft;
+
   @Test
   void tempDir() throws Throwable {
     TemporaryDirectory dir = new TemporaryDirectory();
@@ -32,13 +37,13 @@ class TestTemporaryDirectory {
       TemporaryDirectory dir2 = new TemporaryDirectory();
       try {
         tempDir = dir.getPath();
-        assertThat(tempDir).isDirectory().isNotEqualTo(dir2.getPath());
+        soft.assertThat(tempDir).isDirectory().isNotEqualTo(dir2.getPath());
 
-        assertThat(dir).isNotEqualTo(dir2);
+        soft.assertThat(dir).isNotEqualTo(dir2);
 
-        assertThat(ImmutableSet.of(dir, dir2)).contains(dir, dir2);
+        soft.assertThat(ImmutableSet.of(dir, dir2)).contains(dir, dir2);
 
-        assertThat(Stream.of(dir, dir2))
+        soft.assertThat(Stream.of(dir, dir2))
             .map(TemporaryDirectory::toString)
             .containsExactly(
                 "TemporaryDirectory{path=" + dir.getPath() + '}',
@@ -52,6 +57,6 @@ class TestTemporaryDirectory {
       dir.close();
     }
 
-    assertThat(tempDir).doesNotExist();
+    soft.assertThat(tempDir).doesNotExist();
   }
 }
