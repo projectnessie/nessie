@@ -35,6 +35,7 @@ public class RestRefLogService extends RefLogApiImpl {
   }
 
   @Inject
+  @jakarta.inject.Inject
   public RestRefLogService(
       ServerConfig config,
       VersionStore store,

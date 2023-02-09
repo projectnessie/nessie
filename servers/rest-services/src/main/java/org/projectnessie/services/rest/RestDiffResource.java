@@ -46,6 +46,7 @@ public class RestDiffResource implements HttpDiffApi {
   }
 
   @Inject
+  @jakarta.inject.Inject
   public RestDiffResource(DiffService diffService) {
     this.diffService = diffService;
   }

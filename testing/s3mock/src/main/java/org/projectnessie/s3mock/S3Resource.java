@@ -88,7 +88,7 @@ import org.projectnessie.s3mock.util.StartAfterSpliterator;
 @Produces(MediaType.APPLICATION_XML)
 @Consumes(MediaType.APPLICATION_XML)
 public class S3Resource {
-  @Inject IcebergS3Mock mockServer;
+  @Inject @jakarta.inject.Inject IcebergS3Mock mockServer;
 
   private static final Owner TEST_OWNER = Owner.of(42, "nessie-iceberg-s3-mock");
 

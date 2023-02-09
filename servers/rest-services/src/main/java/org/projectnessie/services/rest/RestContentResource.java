@@ -43,6 +43,7 @@ public class RestContentResource implements HttpContentApi {
   }
 
   @Inject
+  @jakarta.inject.Inject
   public RestContentResource(ContentService contentService) {
     this.contentService = contentService;
   }

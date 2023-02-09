@@ -35,6 +35,7 @@ public class RestTreeService extends TreeApiImpl {
   }
 
   @Inject
+  @jakarta.inject.Inject
   public RestTreeService(
       ServerConfig config,
       VersionStore store,

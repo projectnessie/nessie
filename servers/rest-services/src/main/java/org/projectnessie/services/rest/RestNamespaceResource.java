@@ -48,6 +48,7 @@ public class RestNamespaceResource implements HttpNamespaceApi {
   }
 
   @Inject
+  @jakarta.inject.Inject
   public RestNamespaceResource(NamespaceService namespaceService) {
     this.namespaceService = namespaceService;
   }

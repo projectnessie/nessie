@@ -36,6 +36,7 @@ public class RestV2ConfigResource implements HttpConfigApi {
   }
 
   @Inject
+  @jakarta.inject.Inject
   public RestV2ConfigResource(ServerConfig config) {
     this.config = new ConfigApiImpl(config);
   }
