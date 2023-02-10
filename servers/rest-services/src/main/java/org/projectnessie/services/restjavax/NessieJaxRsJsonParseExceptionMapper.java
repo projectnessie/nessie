@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,36 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.rest;
+package org.projectnessie.services.restjavax;
 
-import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.core.JsonParseException;
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 import org.projectnessie.services.config.ServerConfig;
 
 /**
- * "Special" implementation for exceptions that extend {@link JsonMappingException} that is needed
+ * "Special" implementation for exceptions that extend {@link JsonParseException} that is needed
  * when using Jackson-JaxRs, as those do not "go through" {@link NessieExceptionMapper}, because
- * Jackson-JaxRs provides its own mapper for {@link JsonMappingException}.
+ * Jackson-JaxRs provides its own mapper for {@link JsonParseException}.
  */
 @Provider
-public class NessieJaxRsJsonMappingExceptionMapper
-    extends BaseExceptionMapper<JsonMappingException> {
+public class NessieJaxRsJsonParseExceptionMapper extends BaseExceptionMapper<JsonParseException> {
 
   // Unused constructor
   // Required because of https://issues.jboss.org/browse/RESTEASY-1538
-  public NessieJaxRsJsonMappingExceptionMapper() {
+  public NessieJaxRsJsonParseExceptionMapper() {
     this(null);
   }
 
   @Inject
-  public NessieJaxRsJsonMappingExceptionMapper(ServerConfig config) {
+  public NessieJaxRsJsonParseExceptionMapper(ServerConfig config) {
     super(config);
   }
 
   @Override
-  public Response toResponse(JsonMappingException exception) {
+  public Response toResponse(JsonParseException exception) {
     return buildBadRequestResponse(exception);
   }
 }

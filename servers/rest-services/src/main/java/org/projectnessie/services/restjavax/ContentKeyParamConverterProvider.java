@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,35 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.rest;
+package org.projectnessie.services.restjavax;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import javax.ws.rs.ext.ParamConverter;
 import javax.ws.rs.ext.ParamConverterProvider;
 import javax.ws.rs.ext.Provider;
-import org.projectnessie.model.Namespace;
+import org.projectnessie.model.ContentKey;
 
 /**
- * JAX-RS parameter converter provider to transform {@code String} into {@code Namespace}, and
+ * JAX-RS parameter converter provider to transform {@code String} into {@code ContentKey}, and
  * vice-versa.
  */
 @Provider
-public class NamespaceParamConverterProvider implements ParamConverterProvider {
+public class ContentKeyParamConverterProvider implements ParamConverterProvider {
 
-  private static final class NamespaceParamConverter implements ParamConverter<Namespace> {
+  private static final class ContentKeyParamConverter implements ParamConverter<ContentKey> {
 
     @Override
-    public Namespace fromString(String value) {
+    public ContentKey fromString(String value) {
       if (value == null) {
         return null;
       }
 
-      return Namespace.fromPathString(value);
+      return ContentKey.fromPathString(value);
     }
 
     @Override
-    public String toString(Namespace value) {
+    public String toString(ContentKey value) {
       if (value == null) {
         return null;
       }
@@ -53,8 +53,8 @@ public class NamespaceParamConverterProvider implements ParamConverterProvider {
   @Override
   public <T> ParamConverter<T> getConverter(
       Class<T> rawType, Type genericType, Annotation[] annotations) {
-    if (rawType.equals(Namespace.class)) {
-      return (ParamConverter<T>) new NamespaceParamConverter();
+    if (rawType.equals(ContentKey.class)) {
+      return (ParamConverter<T>) new ContentKeyParamConverter();
     }
     return null;
   }

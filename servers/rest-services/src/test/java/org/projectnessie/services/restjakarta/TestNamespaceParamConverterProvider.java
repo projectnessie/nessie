@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.rest;
+package org.projectnessie.services.restjakarta;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.Instant;
-import javax.ws.rs.ext.ParamConverter;
-import org.assertj.core.api.Assertions;
+import jakarta.ws.rs.ext.ParamConverter;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.model.Namespace;
 
-public class TestInstantParamConverterProvider {
+public class TestNamespaceParamConverterProvider {
 
-  private final ParamConverter<Instant> converter =
-      new InstantParamConverterProvider().getConverter(Instant.class, null, null);
+  private final ParamConverter<Namespace> converter =
+      new NamespaceParamConverterProvider().getConverter(Namespace.class, null, null);
 
   @Test
   public void testNulls() {
@@ -34,16 +33,10 @@ public class TestInstantParamConverterProvider {
   }
 
   @Test
-  public void testInvalid() {
-    Assertions.assertThatThrownBy(() -> converter.fromString("invalid"))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("'invalid' could not be parsed to an Instant in ISO-8601 format");
-  }
-
-  @Test
   public void testValid() {
-    Instant now = Instant.now();
-    assertThat(converter.fromString(now.toString())).isEqualTo(now);
-    assertThat(converter.toString(now)).isEqualTo(now.toString());
+    Namespace namespace = Namespace.of("a.b.c");
+    String name = "a\u001Db\u001Dc";
+    assertThat(converter.fromString(name)).isEqualTo(namespace);
+    assertThat(converter.toString(namespace)).isEqualTo(name);
   }
 }

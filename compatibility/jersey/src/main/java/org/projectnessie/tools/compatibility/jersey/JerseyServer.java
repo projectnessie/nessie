@@ -33,15 +33,9 @@ import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.impl.ConfigApiImpl;
 import org.projectnessie.services.impl.TreeApiImpl;
-import org.projectnessie.services.rest.ContentKeyParamConverterProvider;
-import org.projectnessie.services.rest.InstantParamConverterProvider;
-import org.projectnessie.services.rest.NessieExceptionMapper;
-import org.projectnessie.services.rest.NessieJaxRsJsonMappingExceptionMapper;
-import org.projectnessie.services.rest.NessieJaxRsJsonParseExceptionMapper;
 import org.projectnessie.services.rest.RestConfigResource;
 import org.projectnessie.services.rest.RestContentResource;
 import org.projectnessie.services.rest.RestTreeResource;
-import org.projectnessie.services.rest.ValidationExceptionMapper;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 
 /**
@@ -73,30 +67,59 @@ public class JerseyServer implements AutoCloseable {
           @Override
           protected Application configure() {
             ResourceConfig config = new ResourceConfig();
-            withClass("org.projectnessie.services.rest.RestV2ConfigResource", config::register);
-            withClass("org.projectnessie.services.rest.RestV2TreeResource", config::register);
+            withClass(
+                "org.projectnessie.services.rest.RestV2ConfigResource", config::register, false);
+            withClass(
+                "org.projectnessie.services.rest.RestV2TreeResource", config::register, false);
             config.register(RestConfigResource.class);
             config.register(RestTreeResource.class);
             config.register(RestContentResource.class);
-            withClass("org.projectnessie.services.rest.RestDiffResource", config::register);
-            withClass("org.projectnessie.services.rest.RestRefLogResource", config::register);
-            withClass("org.projectnessie.services.rest.RestNamespaceResource", config::register);
+            withClass("org.projectnessie.services.rest.RestDiffResource", config::register, false);
+            withClass(
+                "org.projectnessie.services.rest.RestRefLogResource", config::register, false);
+            withClass(
+                "org.projectnessie.services.rest.RestNamespaceResource", config::register, false);
             config.register(ConfigApiImpl.class);
-            config.register(ContentKeyParamConverterProvider.class);
-            withClass(
-                "org.projectnessie.services.rest.ReferenceTypeParamConverterProvider",
-                config::register);
-            config.register(InstantParamConverterProvider.class);
-            config.register(ValidationExceptionMapper.class, 10);
-            withClass(
-                "org.projectnessie.services.rest.ConstraintViolationExceptionMapper",
-                c -> config.register(c, 10));
-            withClass(
-                "org.projectnessie.services.rest.NamespaceParamConverterProvider",
-                config::register);
-            config.register(NessieExceptionMapper.class);
-            config.register(NessieJaxRsJsonParseExceptionMapper.class, 10);
-            config.register(NessieJaxRsJsonMappingExceptionMapper.class, 10);
+            withJavaxClass(
+                "org.projectnessie.services.restjavax.ContentKeyParamConverterProvider",
+                config::register,
+                true);
+            withJavaxClass(
+                // Present since 0.19.0
+                "org.projectnessie.services.restjavax.ReferenceTypeParamConverterProvider",
+                config::register,
+                false);
+            withJavaxClass(
+                "org.projectnessie.services.restjavax.InstantParamConverterProvider",
+                config::register,
+                true);
+            withJavaxClass(
+                "org.projectnessie.services.restjavax.ValidationExceptionMapper",
+                c -> config.register(c, 10),
+                true);
+            withJavaxClass(
+                // Present since 0.46.5
+                "org.projectnessie.services.restjavax.ConstraintViolationExceptionMapper",
+                c -> config.register(c, 10),
+                false);
+            withJavaxClass(
+                // Present since 0.23.1
+                "org.projectnessie.services.restjavax.NamespaceParamConverterProvider",
+                config::register,
+                false);
+            withJavaxClass(
+                "org.projectnessie.services.restjavax.NessieExceptionMapper",
+                config::register,
+                true);
+            withJavaxClass(
+                "org.projectnessie.services.restjavax.NessieJaxRsJsonParseExceptionMapper",
+                c -> config.register(c, 10),
+                true);
+            withJavaxClass(
+                "org.projectnessie.services.restjavax.NessieJaxRsJsonMappingExceptionMapper",
+                c -> config.register(c, 10),
+                true);
+
             config.register(EncodingFilter.class);
             config.register(GZipEncoder.class);
             config.register(DeflateEncoder.class);
@@ -135,12 +158,36 @@ public class JerseyServer implements AutoCloseable {
     return jerseyTest.target().getUri();
   }
 
-  private static void withClass(String className, Consumer<Class<?>> whenClassExists) {
+  private static void withClass(
+      String className, Consumer<Class<?>> whenClassExists, boolean mandatory) {
     try {
       Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(className);
       whenClassExists.accept(clazz);
     } catch (ClassNotFoundException e) {
-      // ignore
+      if (mandatory) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
+  private static void withJavaxClass(
+      String javaxClassName, Consumer<Class<?>> whenClassExists, boolean mandatory) {
+    try {
+      Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(javaxClassName);
+      whenClassExists.accept(clazz);
+    } catch (NoClassDefFoundError | ClassNotFoundException e) {
+      try {
+        Class<?> clazz =
+            Thread.currentThread()
+                .getContextClassLoader()
+                .loadClass(javaxClassName.replace("restjavax.", "rest."));
+        whenClassExists.accept(clazz);
+      } catch (NoClassDefFoundError | ClassNotFoundException e2) {
+        e.addSuppressed(e2);
+        if (mandatory) {
+          throw new RuntimeException(e);
+        }
+      }
     }
   }
 

@@ -24,8 +24,8 @@ import org.jboss.resteasy.api.validation.ResteasyViolationException;
 import org.jboss.resteasy.api.validation.Validation;
 import org.projectnessie.error.ErrorCode;
 import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.services.rest.BaseExceptionMapper;
-import org.projectnessie.services.rest.NessieExceptionMapper;
+import org.projectnessie.services.restjavax.BaseExceptionMapper;
+import org.projectnessie.services.restjavax.NessieExceptionMapper;
 
 /**
  * "Special" implementation for exceptions that extend {@link ValidationException}, as those do not

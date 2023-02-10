@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.rest;
+package org.projectnessie.services.restjavax;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import javax.ws.rs.ext.ParamConverter;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.model.Namespace;
+import org.projectnessie.model.ContentKey;
 
-public class TestNamespaceParamConverterProvider {
+public class TestContentKeyParamConverterProvider {
 
-  private final ParamConverter<Namespace> converter =
-      new NamespaceParamConverterProvider().getConverter(Namespace.class, null, null);
+  private final ParamConverter<ContentKey> converter =
+      new ContentKeyParamConverterProvider().getConverter(ContentKey.class, null, null);
 
   @Test
   public void testNulls() {
@@ -34,9 +34,9 @@ public class TestNamespaceParamConverterProvider {
 
   @Test
   public void testValid() {
-    Namespace namespace = Namespace.of("a.b.c");
+    ContentKey key = ContentKey.of("a.b.c");
     String name = "a\u001Db\u001Dc";
-    assertThat(converter.fromString(name)).isEqualTo(namespace);
-    assertThat(converter.toString(namespace)).isEqualTo(name);
+    assertThat(converter.fromString(name)).isEqualTo(key);
+    assertThat(converter.toString(key)).isEqualTo(name);
   }
 }
