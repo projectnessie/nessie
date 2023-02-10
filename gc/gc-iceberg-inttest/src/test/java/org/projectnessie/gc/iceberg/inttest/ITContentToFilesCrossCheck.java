@@ -26,12 +26,12 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.hadoop.HadoopFileIO;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -168,7 +168,7 @@ public class ITContentToFilesCrossCheck extends SparkSqlTestBase {
             .collect(Collectors.toSet());
   }
 
-  @NotNull
+  @Nonnull
   private List<ContentReference> contentReferencesFromCommitLog() throws NessieNotFoundException {
     return api.getCommitLog().refName(defaultBranch()).fetch(FetchOption.ALL).stream()
         .map(LogEntry::getOperations)
