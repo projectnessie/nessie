@@ -65,9 +65,11 @@ gatling {
   jvmArgs =
     System.getProperties()
       .map { e -> Maps.immutableEntry(e.key.toString(), e.value.toString()) }
-      .filter { e -> e.key.startsWith("nessie.") || e.key.startsWith("gatling.") }
+      .filter { e ->
+        e.key.startsWith("nessie.") || e.key.startsWith("gatling.") || e.key.startsWith("sim.")
+      }
       .map { e ->
-        if (e.key.startsWith("nessie.")) {
+        if (e.key.startsWith("nessie.") || e.key.startsWith("sim.")) {
           "-D${e.key}=${e.value}"
         } else if (e.key.startsWith("gatling.jvmArg")) {
           e.value
