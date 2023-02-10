@@ -467,7 +467,8 @@ public abstract class BaseTestNessieApi {
     Branch initialCommit = prepCommit(main, "common ancestor", dummyPut("initial")).commit();
     main = prepCommit(main, "common ancestor", dummyPut("test1")).commit();
 
-    assertThat(api().getCommitLog().refName(main.getName()).maxRecords(1).get().getLogEntries())
+    soft.assertThat(
+            api().getCommitLog().refName(main.getName()).maxRecords(1).get().getLogEntries())
         .map(logEntry -> logEntry.getCommitMeta().getParentCommitHashes())
         .first()
         .asInstanceOf(list(String.class))
@@ -480,7 +481,8 @@ public abstract class BaseTestNessieApi {
 
     api().mergeRefIntoBranch().fromRef(branch).branch(main).merge();
 
-    assertThat(api().getCommitLog().refName(main.getName()).maxRecords(1).get().getLogEntries())
+    soft.assertThat(
+            api().getCommitLog().refName(main.getName()).maxRecords(1).get().getLogEntries())
         .map(logEntry -> logEntry.getCommitMeta().getParentCommitHashes())
         .first()
         .asInstanceOf(list(String.class))
