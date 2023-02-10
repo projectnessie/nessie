@@ -23,6 +23,7 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assumptions.assumeThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.FetchOption.ALL;
 
@@ -456,6 +457,37 @@ public abstract class BaseTestNessieApi {
                 .refName(main.getName())
                 .get())
         .containsKeys(ContentKey.of("a", "a"), ContentKey.of("b", "a"), ContentKey.of("b", "b"));
+  }
+
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void commitParents() throws Exception {
+    Branch main = api().getDefaultBranch();
+
+    Branch initialCommit = prepCommit(main, "common ancestor", dummyPut("initial")).commit();
+    main = prepCommit(main, "common ancestor", dummyPut("test1")).commit();
+
+    soft.assertThat(
+            api().getCommitLog().refName(main.getName()).maxRecords(1).get().getLogEntries())
+        .map(logEntry -> logEntry.getCommitMeta().getParentCommitHashes())
+        .first()
+        .asInstanceOf(list(String.class))
+        .containsExactly(initialCommit.getHash());
+
+    Branch branch = createReference(Branch.of("branch", main.getHash()), main.getName());
+
+    branch = prepCommit(branch, "one", dummyPut("a", "a")).commit();
+    Reference mainParent = api().getReference().refName(main.getName()).get();
+
+    api().mergeRefIntoBranch().fromRef(branch).branch(main).merge();
+
+    soft.assertThat(
+            api().getCommitLog().refName(main.getName()).maxRecords(1).get().getLogEntries())
+        .map(logEntry -> logEntry.getCommitMeta().getParentCommitHashes())
+        .first()
+        .asInstanceOf(list(String.class))
+        .containsExactly(
+            mainParent.getHash(), branch.getHash()); // branch lineage parent, then merge parent
   }
 
   @Test
