@@ -13,7 +13,9 @@ spec:
   resources:
     requests:
       storage: {{ .Values.rocksdb.storageSize }}
+{{- if .Values.rocksdb.selectorLabels }}
   selector:
     matchLabels:
-      app.projectnessie.org/file-storage-for: {{ include "nessie.fullname" . }}
+      {{- toYaml .Values.rocksdb.selectorLabels | nindent 6 }}
+{{- end }}
 {{- end }}

@@ -17,6 +17,11 @@ rocksdb:
   storageClassName: standard
   storageSize: 1Gi
   dbPath: /rocks-nessie
+  # Labels to add to the PVC spec selector; a PV with matching labels must exist.
+  # Leave empty if using dynamic provisioning.
+  selectorLabels: {}
+    # app.kubernetes.io/name: nessie
+    # app.kubernetes.io/instance: RELEASE-NAME
 
 # this is needed when selecting DYNAMO
 dynamodb:
