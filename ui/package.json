@@ -54,7 +54,7 @@
     "typescript-logging-log4ts-style": "^2.0.2",
     "url-loader": "4.1.1",
     "webpack": "^5.74.0",
-    "yup": "^0.32.11"
+    "yup": "^1.0.0"
   },
   "scripts": {
     "start": "node scripts/start.js",
