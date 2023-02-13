@@ -160,7 +160,9 @@ val npmBuild =
     inputs.dir(project.projectDir.resolve("scripts")).withPathSensitivity(PathSensitivity.RELATIVE)
     inputs.dir(project.projectDir.resolve("src")).withPathSensitivity(PathSensitivity.RELATIVE)
     inputs.dir(generatedOpenApiCode).withPathSensitivity(PathSensitivity.RELATIVE)
-    inputs.files("*.json", "*.js").withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs
+      .files(fileTree(".") { include("*.json", "*.js") })
+      .withPathSensitivity(PathSensitivity.RELATIVE)
     outputs.dir(npmBuildDir)
     doFirst {
       // Remove all previously generated output
@@ -192,7 +194,9 @@ val npmLint =
     description = "NPM lint"
     dependsOn(npmBuild)
     inputs.dir(project.projectDir.resolve("src")).withPathSensitivity(PathSensitivity.RELATIVE)
-    inputs.files("*.json", "*.js").withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs
+      .files(fileTree(".") { include("*.json", "*.js") })
+      .withPathSensitivity(PathSensitivity.RELATIVE)
     outputs.file(project.buildDir.resolve("npmLintRun"))
     doLast { project.buildDir.resolve("npmLintRun").writeText("linted") }
     args.set(listOf("run", "lint"))
