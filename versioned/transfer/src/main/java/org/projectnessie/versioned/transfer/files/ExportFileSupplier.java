@@ -23,10 +23,13 @@ import javax.annotation.Nonnull;
 public interface ExportFileSupplier extends AutoCloseable {
 
   @Nonnull
+  @jakarta.annotation.Nonnull
   Path getTargetPath();
 
   void preValidate() throws IOException;
 
   @Nonnull
-  OutputStream newFileOutput(@Nonnull String fileName) throws IOException;
+  @jakarta.annotation.Nonnull
+  OutputStream newFileOutput(@Nonnull @jakarta.annotation.Nonnull String fileName)
+      throws IOException;
 }

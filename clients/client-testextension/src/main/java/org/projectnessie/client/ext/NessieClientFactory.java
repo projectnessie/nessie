@@ -30,10 +30,12 @@ public interface NessieClientFactory {
   NessieApiVersion apiVersion();
 
   @Nonnull
+  @jakarta.annotation.Nonnull
   default NessieApiV1 make() {
     return make((builder, version) -> builder);
   }
 
   @Nonnull
+  @jakarta.annotation.Nonnull
   NessieApiV1 make(NessieClientCustomizer customizer);
 }

@@ -63,7 +63,7 @@ public abstract class Hash implements Ref {
    * @throws IllegalArgumentException if {@code hash} is not a valid representation of a hash
    * @throws NullPointerException if {@code hash} is {@code null}
    */
-  public static Hash of(@Nonnull String hash) {
+  public static Hash of(@Nonnull @jakarta.annotation.Nonnull String hash) {
     requireNonNull(hash);
     int len = hash.length();
     checkArgument(
@@ -84,7 +84,7 @@ public abstract class Hash implements Ref {
    * @return a {@code Hash} instance
    * @throws NullPointerException if {@code hash} is {@code null}
    */
-  public static Hash of(@Nonnull ByteString bytes) {
+  public static Hash of(@Nonnull @jakarta.annotation.Nonnull ByteString bytes) {
     switch (bytes.size()) {
       case 32:
         return new Hash256(bytes);

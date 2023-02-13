@@ -46,6 +46,7 @@ import org.immutables.value.Value;
 public abstract class MockManifestFile implements IndexedRecord {
 
   @Nonnull
+  @jakarta.annotation.Nonnull
   public abstract String path();
 
   @Value.Default

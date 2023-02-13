@@ -316,7 +316,8 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
 
   @Override
   public CommitLogEntry rebuildKeyList(
-      CommitLogEntry entry, @Nonnull Function<Hash, CommitLogEntry> inMemoryCommits)
+      CommitLogEntry entry,
+      @Nonnull @jakarta.annotation.Nonnull Function<Hash, CommitLogEntry> inMemoryCommits)
       throws ReferenceNotFoundException {
     try (Traced ignore = trace("rebuildKeyList").tag(TAG_HASH, entry.getHash().asString())) {
       return delegate.rebuildKeyList(entry, inMemoryCommits);

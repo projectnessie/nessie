@@ -131,6 +131,7 @@ public class DynamoDatabaseAdapter
 
   // TODO find a way to wrap those DynamoDB-exceptions everywhere - even when returning Stream's
   @Nonnull
+  @jakarta.annotation.Nonnull
   @VisibleForTesting
   static RuntimeException unhandledException(String operation, RuntimeException e) {
     if (e instanceof RequestLimitExceededException) {

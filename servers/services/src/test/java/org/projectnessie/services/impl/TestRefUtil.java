@@ -142,6 +142,7 @@ class TestRefUtil {
                     new NamedRef() {
                       @Override
                       @Nonnull
+                      @jakarta.annotation.Nonnull
                       public String getName() {
                         return REF_NAME;
                       }
@@ -173,6 +174,7 @@ class TestRefUtil {
                     new NamedRef() {
                       @Override
                       @Nonnull
+                      @jakarta.annotation.Nonnull
                       public String getName() {
                         return REF_NAME;
                       }

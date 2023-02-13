@@ -26,5 +26,6 @@ public interface NamedRef extends Ref {
    * @return the reference name
    */
   @Nonnull
+  @jakarta.annotation.Nonnull
   String getName();
 }

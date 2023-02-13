@@ -59,6 +59,7 @@ public interface VersionStore {
    * for different backends and even for different instances of the same backend.
    */
   @Nonnull
+  @jakarta.annotation.Nonnull
   Hash noAncestorHash();
 
   /**
@@ -82,19 +83,19 @@ public interface VersionStore {
    * @throws NullPointerException if one of the argument is {@code null}
    */
   Hash commit(
-      @Nonnull BranchName branch,
-      @Nonnull Optional<Hash> referenceHash,
-      @Nonnull CommitMeta metadata,
-      @Nonnull List<Operation> operations,
-      @Nonnull Callable<Void> validator,
-      @Nonnull BiConsumer<Key, String> addedContents)
+      @Nonnull @jakarta.annotation.Nonnull BranchName branch,
+      @Nonnull @jakarta.annotation.Nonnull Optional<Hash> referenceHash,
+      @Nonnull @jakarta.annotation.Nonnull CommitMeta metadata,
+      @Nonnull @jakarta.annotation.Nonnull List<Operation> operations,
+      @Nonnull @jakarta.annotation.Nonnull Callable<Void> validator,
+      @Nonnull @jakarta.annotation.Nonnull BiConsumer<Key, String> addedContents)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   default Hash commit(
-      @Nonnull BranchName branch,
-      @Nonnull Optional<Hash> referenceHash,
-      @Nonnull CommitMeta metadata,
-      @Nonnull List<Operation> operations)
+      @Nonnull @jakarta.annotation.Nonnull BranchName branch,
+      @Nonnull @jakarta.annotation.Nonnull Optional<Hash> referenceHash,
+      @Nonnull @jakarta.annotation.Nonnull CommitMeta metadata,
+      @Nonnull @jakarta.annotation.Nonnull List<Operation> operations)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return commit(branch, referenceHash, metadata, operations, () -> null, (k, c) -> {});
   }

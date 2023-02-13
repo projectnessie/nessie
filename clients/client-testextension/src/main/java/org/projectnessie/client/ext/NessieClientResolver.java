@@ -79,6 +79,7 @@ public abstract class NessieClientResolver implements ParameterResolver {
       NessieClientCustomizer testCustomizer = (NessieClientCustomizer) testInstance;
       return new ClientFactory(uri, apiVersion) {
         @Nonnull
+        @jakarta.annotation.Nonnull
         @Override // Note: this object is not serializable
         public NessieApiV1 make(NessieClientCustomizer customizer) {
           return super.make(
@@ -108,6 +109,7 @@ public abstract class NessieClientResolver implements ParameterResolver {
     }
 
     @Nonnull
+    @jakarta.annotation.Nonnull
     @Override
     public NessieApiV1 make(NessieClientCustomizer customizer) {
       URI uri = apiVersion.resolve(baseUri);

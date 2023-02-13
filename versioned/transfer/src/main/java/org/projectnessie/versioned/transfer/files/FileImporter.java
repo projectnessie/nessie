@@ -54,7 +54,9 @@ public abstract class FileImporter implements ImportFileSupplier {
 
   @Override
   @Nonnull
-  public InputStream newFileInput(@Nonnull String fileName) throws IOException {
+  @jakarta.annotation.Nonnull
+  public InputStream newFileInput(@Nonnull @jakarta.annotation.Nonnull String fileName)
+      throws IOException {
     return new BufferedInputStream(
         newInputStream(sourceDirectory().resolve(fileName)), inputBufferSize());
   }

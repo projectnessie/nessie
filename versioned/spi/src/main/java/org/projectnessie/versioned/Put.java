@@ -46,7 +46,10 @@ public interface Put extends Operation {
    * @return a put operation for the key and value
    */
   @Nonnull
-  static Put of(@Nonnull Key key, @Nonnull Content value) {
+  @jakarta.annotation.Nonnull
+  static Put of(
+      @Nonnull @jakarta.annotation.Nonnull Key key,
+      @Nonnull @jakarta.annotation.Nonnull Content value) {
     return ImmutablePut.builder().key(key).value(value).build();
   }
 
@@ -64,7 +67,11 @@ public interface Put extends Operation {
    * @return a put operation for the key and value
    */
   @Nonnull
-  static Put of(@Nonnull Key key, @Nonnull Content value, @Nonnull Content expectedValue) {
+  @jakarta.annotation.Nonnull
+  static Put of(
+      @Nonnull @jakarta.annotation.Nonnull Key key,
+      @Nonnull @jakarta.annotation.Nonnull Content value,
+      @Nonnull @jakarta.annotation.Nonnull Content expectedValue) {
     return ImmutablePut.builder().key(key).value(value).expectedValue(expectedValue).build();
   }
 }

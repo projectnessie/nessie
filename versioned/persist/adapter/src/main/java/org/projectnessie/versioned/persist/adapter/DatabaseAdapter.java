@@ -405,6 +405,7 @@ public interface DatabaseAdapter {
    *     not been persisted.
    */
   CommitLogEntry rebuildKeyList(
-      CommitLogEntry entry, @Nonnull Function<Hash, CommitLogEntry> inMemoryCommits)
+      CommitLogEntry entry,
+      @Nonnull @jakarta.annotation.Nonnull Function<Hash, CommitLogEntry> inMemoryCommits)
       throws ReferenceNotFoundException;
 }

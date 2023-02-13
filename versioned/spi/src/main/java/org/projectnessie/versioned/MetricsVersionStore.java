@@ -68,6 +68,7 @@ public final class MetricsVersionStore implements VersionStore {
   }
 
   @Nonnull
+  @jakarta.annotation.Nonnull
   @Override
   public Hash noAncestorHash() {
     return delegate.noAncestorHash();
@@ -75,12 +76,12 @@ public final class MetricsVersionStore implements VersionStore {
 
   @Override
   public Hash commit(
-      @Nonnull BranchName branch,
-      @Nonnull Optional<Hash> referenceHash,
-      @Nonnull CommitMeta metadata,
-      @Nonnull List<Operation> operations,
-      @Nonnull Callable<Void> validator,
-      @Nonnull BiConsumer<Key, String> addedContents)
+      @Nonnull @jakarta.annotation.Nonnull BranchName branch,
+      @Nonnull @jakarta.annotation.Nonnull Optional<Hash> referenceHash,
+      @Nonnull @jakarta.annotation.Nonnull CommitMeta metadata,
+      @Nonnull @jakarta.annotation.Nonnull List<Operation> operations,
+      @Nonnull @jakarta.annotation.Nonnull Callable<Void> validator,
+      @Nonnull @jakarta.annotation.Nonnull BiConsumer<Key, String> addedContents)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return this.<Hash, ReferenceNotFoundException, ReferenceConflictException>delegate2ExR(
         "commit",

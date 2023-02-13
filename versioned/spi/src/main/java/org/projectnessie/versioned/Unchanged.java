@@ -39,7 +39,8 @@ public interface Unchanged extends Operation {
    * @return a unchanged operation for the key
    */
   @Nonnull
-  static Unchanged of(@Nonnull Key key) {
+  @jakarta.annotation.Nonnull
+  static Unchanged of(@Nonnull @jakarta.annotation.Nonnull Key key) {
     return ImmutableUnchanged.builder().key(key).build();
   }
 }

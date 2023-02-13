@@ -26,25 +26,26 @@ public final class DatabaseAdapterMetrics {
 
   private DatabaseAdapterMetrics() {}
 
-  static void tryLoopFinished(@Nonnull String result, int retries, long durationNanos) {
+  static void tryLoopFinished(
+      @Nonnull @jakarta.annotation.Nonnull String result, int retries, long durationNanos) {
     tryLoopCounts(result).increment();
     tryLoopRetries(result).increment(retries);
     tryLoopDuration(result).record(durationNanos, NANOSECONDS);
   }
 
-  public static Timer tryLoopDuration(@Nonnull String result) {
+  public static Timer tryLoopDuration(@Nonnull @jakarta.annotation.Nonnull String result) {
     return Timer.builder("nessie.databaseadapter.tryloop.duration")
         .tag("result", result)
         .register(Metrics.globalRegistry);
   }
 
-  public static Counter tryLoopRetries(@Nonnull String result) {
+  public static Counter tryLoopRetries(@Nonnull @jakarta.annotation.Nonnull String result) {
     return Counter.builder("nessie.databaseadapter.tryloop.retries")
         .tag("result", result)
         .register(Metrics.globalRegistry);
   }
 
-  public static Counter tryLoopCounts(@Nonnull String result) {
+  public static Counter tryLoopCounts(@Nonnull @jakarta.annotation.Nonnull String result) {
     return Counter.builder("nessie.databaseadapter.tryloop.count")
         .tag("result", result)
         .register(Metrics.globalRegistry);

@@ -32,6 +32,7 @@ public interface ContentAndState {
    * partition-spec-ID, default-sort-order-ID.
    */
   @Nonnull
+  @jakarta.annotation.Nonnull
   @Value.Parameter(order = 2)
   ByteString getRefState();
 
@@ -41,13 +42,18 @@ public interface ContentAndState {
   ByteString getGlobalState();
 
   @Nonnull
+  @jakarta.annotation.Nonnull
   static ContentAndState of(
-      byte payload, @Nonnull ByteString refState, @Nullable ByteString globalState) {
+      byte payload,
+      @Nonnull @jakarta.annotation.Nonnull ByteString refState,
+      @Nullable ByteString globalState) {
     return ImmutableContentAndState.of(payload, refState, globalState);
   }
 
   @Nonnull
-  static ContentAndState of(byte payload, @Nonnull ByteString refState) {
+  @jakarta.annotation.Nonnull
+  static ContentAndState of(
+      byte payload, @Nonnull @jakarta.annotation.Nonnull ByteString refState) {
     return ImmutableContentAndState.of(payload, refState, null);
   }
 }

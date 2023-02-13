@@ -84,7 +84,8 @@ final class Util {
   }
 
   public static Reference fromPathStringRef(
-      @Nonnull String value, @Nonnull Reference.ReferenceType namedRefType) {
+      @Nonnull @jakarta.annotation.Nonnull String value,
+      @Nonnull @jakarta.annotation.Nonnull Reference.ReferenceType namedRefType) {
     String name = null;
     String hash = null;
     int hashIdx = value.indexOf(REF_HASH_SEPARATOR);

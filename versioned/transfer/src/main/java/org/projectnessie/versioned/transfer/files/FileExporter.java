@@ -49,6 +49,7 @@ public abstract class FileExporter implements ExportFileSupplier {
 
   @Override
   @Nonnull
+  @jakarta.annotation.Nonnull
   public Path getTargetPath() {
     return targetDirectory();
   }
@@ -69,7 +70,9 @@ public abstract class FileExporter implements ExportFileSupplier {
 
   @Override
   @Nonnull
-  public OutputStream newFileOutput(@Nonnull String fileName) throws IOException {
+  @jakarta.annotation.Nonnull
+  public OutputStream newFileOutput(@Nonnull @jakarta.annotation.Nonnull String fileName)
+      throws IOException {
     checkArgument(
         fileName.indexOf('/') == -1 && fileName.indexOf('\\') == -1, "Directories not supported");
     Path f = Paths.get(fileName);
