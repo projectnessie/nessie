@@ -15,7 +15,11 @@ keywords:
   - transactional catalog
   - git-like semantics
 maintainers:
-  - name: nastra
-  - name: snazy
-  - name: dimas-b
-  - name: adutra
+  - name: Eduard Tudenhöfner
+    url: https://github.com/nastra
+  - name: Robert Stupp
+    url: https://github.com/snazy
+  - name: Dmitri Bourlatchkov
+    url: https://github.com/dimas-b
+  - name: Alexandre Dutra
+    url: https://github.com/adutra

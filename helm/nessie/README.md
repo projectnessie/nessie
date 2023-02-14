@@ -18,10 +18,10 @@ A Helm chart for Nessie.
 
 | Name | Email | Url |
 | ---- | ------ | --- |
-| nastra |  |  |
-| snazy |  |  |
-| dimas-b |  |  |
-| adutra |  |  |
+| Eduard Tudenhöfner |  | <https://github.com/nastra> |
+| Robert Stupp |  | <https://github.com/snazy> |
+| Dmitri Bourlatchkov |  | <https://github.com/dimas-b> |
+| Alexandre Dutra |  | <https://github.com/adutra> |
 
 ## Source Code
 
