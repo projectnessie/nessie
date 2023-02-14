@@ -115,13 +115,14 @@ val pullOpenApiSpec by
 
 val openApiSpecDir = buildDir.resolve("openapi-extra")
 val useDocker = project.hasProperty("docker")
-val arch = if (project.hasProperty("arm64")) {
-  Arch.ARM64
-} else if (project.hasProperty("amd64")) {
-  Arch.AMD64
-} else {
-  Arch.AMD64
-}
+val arch =
+  if (project.hasProperty("arm64")) {
+    Arch.ARM64
+  } else if (project.hasProperty("amd64")) {
+    Arch.AMD64
+  } else {
+    Arch.AMD64
+  }
 val packageType = quarkusPackageType()
 val quarkusBuilderImage = libs.versions.quarkusBuilderImage.get()
 
