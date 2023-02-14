@@ -21,6 +21,7 @@ import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.impl.ConfigApiImpl;
 
 @ApplicationScoped
+@jakarta.enterprise.context.ApplicationScoped
 public class RestConfigService extends ConfigApiImpl {
   // Mandated by CDI 2.0
   public RestConfigService() {

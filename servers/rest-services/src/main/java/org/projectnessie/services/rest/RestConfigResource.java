@@ -25,6 +25,7 @@ import org.projectnessie.services.spi.ConfigService;
 
 /** REST endpoint to retrieve server settings. */
 @RequestScoped
+@jakarta.enterprise.context.RequestScoped
 public class RestConfigResource implements HttpConfigApi {
 
   private final ConfigService configService;

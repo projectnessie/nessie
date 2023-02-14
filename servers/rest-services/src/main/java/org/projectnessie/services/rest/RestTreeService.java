@@ -27,6 +27,7 @@ import org.projectnessie.services.impl.TreeApiImpl;
 import org.projectnessie.versioned.VersionStore;
 
 @RequestScoped
+@jakarta.enterprise.context.RequestScoped
 @ValidateOnExecution(type = ExecutableType.ALL)
 public class RestTreeService extends TreeApiImpl {
   // Mandated by CDI 2.0

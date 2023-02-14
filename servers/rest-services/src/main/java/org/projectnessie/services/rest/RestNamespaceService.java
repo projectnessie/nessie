@@ -27,6 +27,7 @@ import org.projectnessie.services.impl.NamespaceApiImpl;
 import org.projectnessie.versioned.VersionStore;
 
 @RequestScoped
+@jakarta.enterprise.context.RequestScoped
 @ValidateOnExecution(type = ExecutableType.ALL)
 public class RestNamespaceService extends NamespaceApiImpl {
   // Mandated by CDI 2.0

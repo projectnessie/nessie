@@ -27,6 +27,7 @@ import org.projectnessie.services.impl.DiffApiImpl;
 import org.projectnessie.versioned.VersionStore;
 
 @RequestScoped
+@jakarta.enterprise.context.RequestScoped
 @ValidateOnExecution(type = ExecutableType.ALL)
 public class RestDiffService extends DiffApiImpl {
   // Mandated by CDI 2.0
