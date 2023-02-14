@@ -36,12 +36,15 @@ import org.projectnessie.model.DiffResponse;
 import org.projectnessie.model.ser.Views;
 
 @Tag(name = "v1")
-@Consumes(value = MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+@jakarta.ws.rs.Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
 @Path("v1/diffs")
 public interface HttpDiffApi extends DiffApi {
 
   @GET
+  @jakarta.ws.rs.GET
   @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("{fromRefWithHash}...{toRefWithHash}")
   @Operation(
       summary = "Get a diff for two given references",
@@ -73,5 +76,6 @@ public interface HttpDiffApi extends DiffApi {
   })
   @JsonView(Views.V1.class)
   @Override
-  DiffResponse getDiff(@BeanParam DiffParams params) throws NessieNotFoundException;
+  DiffResponse getDiff(@BeanParam @jakarta.ws.rs.BeanParam DiffParams params)
+      throws NessieNotFoundException;
 }

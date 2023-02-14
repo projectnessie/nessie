@@ -94,7 +94,9 @@ public class S3Resource {
 
   @Path("ready")
   @GET
+  @jakarta.ws.rs.GET
   @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   public JsonNode ready() {
     ObjectNode node = new ObjectNode(JsonNodeFactory.instance);
     node.put("ready", true);
@@ -102,6 +104,7 @@ public class S3Resource {
   }
 
   @GET
+  @jakarta.ws.rs.GET
   public ListAllMyBucketsResult listBuckets() {
     ImmutableBuckets.Builder buckets = ImmutableBuckets.builder();
     mockServer
@@ -120,38 +123,59 @@ public class S3Resource {
   }
 
   @PUT
+  @jakarta.ws.rs.PUT
   @Path("/{bucketName:[a-z0-9.-]+}")
-  public Response createBucket(@PathParam("bucketName") String bucketName) {
+  public Response createBucket(
+      @PathParam("bucketName") @jakarta.ws.rs.PathParam("bucketName") String bucketName) {
     return notImplemented();
   }
 
   @HEAD
+  @jakarta.ws.rs.HEAD
   @Path("/{bucketName:[a-z0-9.-]+}")
-  public Response headBucket(@PathParam("bucketName") String bucketName) {
+  public Response headBucket(
+      @PathParam("bucketName") @jakarta.ws.rs.PathParam("bucketName") String bucketName) {
     return withBucket(bucketName, b -> Response.ok().build());
   }
 
   @DELETE
+  @jakarta.ws.rs.DELETE
   @Path("/{bucketName:[a-z0-9.-]+}")
-  public Response deleteBucket(@PathParam("bucketName") String bucketName) {
+  public Response deleteBucket(
+      @PathParam("bucketName") @jakarta.ws.rs.PathParam("bucketName") String bucketName) {
     return notImplemented();
   }
 
   @GET
+  @jakarta.ws.rs.GET
   @Path("/{bucketName:[a-z0-9.-]+}")
   // TODO IF   params =  !UPLOADS
   public Response listObjectsInsideBucket(
-      @PathParam("bucketName") String bucketName,
-      @QueryParam("prefix") String prefix,
-      @QueryParam("delimiter") @DefaultValue("/") String delimiter,
-      @QueryParam("marker") String marker,
-      @QueryParam(ENCODING_TYPE) String encodingType,
-      @QueryParam(MAX_KEYS) @DefaultValue("1000") int maxKeys,
+      @PathParam("bucketName") @jakarta.ws.rs.PathParam("bucketName") String bucketName,
+      @QueryParam("prefix") @jakarta.ws.rs.QueryParam("prefix") String prefix,
+      @QueryParam("delimiter")
+          @jakarta.ws.rs.QueryParam("delimiter")
+          @DefaultValue("/")
+          @jakarta.ws.rs.DefaultValue("/")
+          String delimiter,
+      @QueryParam("marker") @jakarta.ws.rs.QueryParam("marker") String marker,
+      @QueryParam(ENCODING_TYPE) @jakarta.ws.rs.QueryParam(ENCODING_TYPE) String encodingType,
+      @QueryParam(MAX_KEYS)
+          @jakarta.ws.rs.QueryParam(MAX_KEYS)
+          @DefaultValue("1000")
+          @jakarta.ws.rs.DefaultValue("1000")
+          int maxKeys,
       // V2 follows
-      @QueryParam(LIST_TYPE) @DefaultValue("1") int listType,
-      @QueryParam(CONTINUATION_TOKEN) String continuationToken,
-      @QueryParam(START_AFTER) String startAfter,
-      @HeaderParam(X_AMZ_REQUEST_ID) String requestId) {
+      @QueryParam(LIST_TYPE)
+          @jakarta.ws.rs.QueryParam(LIST_TYPE)
+          @DefaultValue("1")
+          @jakarta.ws.rs.DefaultValue("1")
+          int listType,
+      @QueryParam(CONTINUATION_TOKEN) @jakarta.ws.rs.QueryParam(CONTINUATION_TOKEN)
+          String continuationToken,
+      @QueryParam(START_AFTER) @jakarta.ws.rs.QueryParam(START_AFTER) String startAfter,
+      @HeaderParam(X_AMZ_REQUEST_ID) @jakarta.ws.rs.HeaderParam(X_AMZ_REQUEST_ID)
+          String requestId) {
     return withBucket(
         bucketName,
         b -> {
@@ -259,10 +283,15 @@ public class S3Resource {
   }
 
   @POST
+  @jakarta.ws.rs.POST
   @Path("/{bucketName:[a-z0-9.-]+}")
   public Response batchDeleteObjects(
-      @PathParam("bucketName") String bucketName,
-      @QueryParam("delete") @Nullable @jakarta.annotation.Nullable String deleteMarker,
+      @PathParam("bucketName") @jakarta.ws.rs.PathParam("bucketName") String bucketName,
+      @QueryParam("delete")
+          @jakarta.ws.rs.QueryParam("delete")
+          @Nullable
+          @jakarta.annotation.Nullable
+          String deleteMarker,
       @RequestBody BatchDeleteRequest body) {
     return withBucket(
         bucketName,
@@ -289,10 +318,12 @@ public class S3Resource {
   }
 
   @HEAD
+  @jakarta.ws.rs.HEAD
   @Path("/{bucketName:[a-z0-9.-]+}/{object:.+}")
   @SuppressWarnings("JavaUtilDate")
   public Response headObject(
-      @PathParam("bucketName") String bucketName, @PathParam("object") String objectName) {
+      @PathParam("bucketName") @jakarta.ws.rs.PathParam("bucketName") String bucketName,
+      @PathParam("object") @jakarta.ws.rs.PathParam("object") String objectName) {
     return withBucketObject(
         bucketName,
         objectName,
@@ -306,9 +337,11 @@ public class S3Resource {
   }
 
   @DELETE
+  @jakarta.ws.rs.DELETE
   @Path("/{bucketName:[a-z0-9.-]+}/{object:.+}")
   public Response deleteObject(
-      @PathParam("bucketName") String bucketName, @PathParam("object") String objectName) {
+      @PathParam("bucketName") @jakarta.ws.rs.PathParam("bucketName") String bucketName,
+      @PathParam("object") @jakarta.ws.rs.PathParam("object") String objectName) {
     return withBucket(
         bucketName,
         b -> {
@@ -318,6 +351,7 @@ public class S3Resource {
   }
 
   @GET
+  @jakarta.ws.rs.GET
   @Path("/{bucketName:[a-z0-9.-]+}/{object:.+}")
   @Produces(MediaType.WILDCARD)
   // TODO NOT_UPLOADS,
@@ -325,13 +359,15 @@ public class S3Resource {
   // TODO NOT_TAGGING
   @SuppressWarnings("JavaUtilDate")
   public Response getObject(
-      @PathParam("bucketName") String bucketName,
-      @PathParam("object") String objectName,
-      @HeaderParam(RANGE) Range range,
-      @HeaderParam(IF_MATCH) List<String> match,
-      @HeaderParam(IF_NONE_MATCH) List<String> noneMatch,
-      @HeaderParam(IF_MODIFIED_SINCE) Date modifiedSince,
-      @HeaderParam(IF_UNMODIFIED_SINCE) Date unmodifiedSince) {
+      @PathParam("bucketName") @jakarta.ws.rs.PathParam("bucketName") String bucketName,
+      @PathParam("object") @jakarta.ws.rs.PathParam("object") String objectName,
+      @HeaderParam(RANGE) @jakarta.ws.rs.HeaderParam(RANGE) Range range,
+      @HeaderParam(IF_MATCH) @jakarta.ws.rs.HeaderParam(IF_MATCH) List<String> match,
+      @HeaderParam(IF_NONE_MATCH) @jakarta.ws.rs.HeaderParam(IF_NONE_MATCH) List<String> noneMatch,
+      @HeaderParam(IF_MODIFIED_SINCE) @jakarta.ws.rs.HeaderParam(IF_MODIFIED_SINCE)
+          Date modifiedSince,
+      @HeaderParam(IF_UNMODIFIED_SINCE) @jakarta.ws.rs.HeaderParam(IF_UNMODIFIED_SINCE)
+          Date unmodifiedSince) {
     if (range != null) {
       // TODO Iceberg does this :(    return notImplemented();
     }

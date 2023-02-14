@@ -42,12 +42,15 @@ import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.ser.Views;
 
 @Tag(name = "v1")
-@Consumes(value = MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+@jakarta.ws.rs.Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
 @Path("v1/contents")
 public interface HttpContentApi extends ContentApi {
   @Override
   @GET
+  @jakarta.ws.rs.GET
   @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("{key}")
   @Operation(
       summary = "Get object content associated with a key.",
@@ -83,23 +86,29 @@ public interface HttpContentApi extends ContentApi {
               examples = {@ExampleObject(ref = "ContentKeyGet")},
               schema = @Schema(type = SchemaType.STRING))
           @PathParam("key")
+          @jakarta.ws.rs.PathParam("key")
           ContentKey key,
       @Parameter(
               description = "Reference to use. Defaults to default branch if not provided.",
               examples = {@ExampleObject(ref = "ref")})
           @QueryParam("ref")
+          @jakarta.ws.rs.QueryParam("ref")
           String ref,
       @Parameter(
               description = "a particular hash on the given ref",
               examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})
           @QueryParam("hashOnRef")
+          @jakarta.ws.rs.QueryParam("hashOnRef")
           String hashOnRef)
       throws NessieNotFoundException;
 
   @Override
   @POST
+  @jakarta.ws.rs.POST
   @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Get multiple objects' content.",
       description =
@@ -134,11 +143,13 @@ public interface HttpContentApi extends ContentApi {
               description = "Reference to use. Defaults to default branch if not provided.",
               examples = {@ExampleObject(ref = "ref")})
           @QueryParam("ref")
+          @jakarta.ws.rs.QueryParam("ref")
           String ref,
       @Parameter(
               description = "a particular hash on the given ref",
               examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})
           @QueryParam("hashOnRef")
+          @jakarta.ws.rs.QueryParam("hashOnRef")
           String hashOnRef,
       @RequestBody(
               description = "Keys to retrieve.",

@@ -45,6 +45,7 @@ public class CommitLogParams extends AbstractParams<CommitLogParams> {
           "Hash on the given ref to start from (in chronological sense), the 'far' end of the commit log, returned 'late' in the result.",
       examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})
   @QueryParam("startHash")
+  @jakarta.ws.rs.QueryParam("startHash")
   private String startHash;
 
   @Nullable
@@ -58,6 +59,7 @@ public class CommitLogParams extends AbstractParams<CommitLogParams> {
           "Hash on the given ref to end at (in chronological sense), the 'near' end of the commit log, returned 'early' in the result.",
       examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})
   @QueryParam("endHash")
+  @jakarta.ws.rs.QueryParam("endHash")
   private String endHash;
 
   @Nullable
@@ -78,12 +80,14 @@ public class CommitLogParams extends AbstractParams<CommitLogParams> {
         @ExampleObject(ref = "expr_by_commit_operations_type")
       })
   @QueryParam("filter")
+  @jakarta.ws.rs.QueryParam("filter")
   private String filter;
 
   @Parameter(
       description =
           "Specify how much information to be returned. Will fetch additional metadata such as parent commit hash and operations in a commit, for each commit if set to 'ALL'.")
   @QueryParam("fetch")
+  @jakarta.ws.rs.QueryParam("fetch")
   @Nullable
   @jakarta.annotation.Nullable
   private FetchOption fetchOption;

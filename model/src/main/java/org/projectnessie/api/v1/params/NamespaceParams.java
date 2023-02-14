@@ -34,6 +34,7 @@ public class NamespaceParams {
       description = "name of ref to fetch",
       examples = {@ExampleObject(ref = "ref")})
   @PathParam("ref")
+  @jakarta.ws.rs.PathParam("ref")
   @NotNull
   @jakarta.validation.constraints.NotNull
   @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
@@ -46,12 +47,14 @@ public class NamespaceParams {
       description = "the name of the namespace",
       examples = {@ExampleObject(ref = "namespaceName")})
   @PathParam("name")
+  @jakarta.ws.rs.PathParam("name")
   private Namespace namespace;
 
   @Parameter(
       description = "a particular hash on the given ref",
       examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})
   @QueryParam("hashOnRef")
+  @jakarta.ws.rs.QueryParam("hashOnRef")
   @Nullable
   @jakarta.annotation.Nullable
   private String hashOnRef;

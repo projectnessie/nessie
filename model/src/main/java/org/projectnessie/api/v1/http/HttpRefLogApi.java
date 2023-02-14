@@ -33,13 +33,16 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.RefLogResponse;
 
 @Tag(name = "v1")
-@Consumes(value = MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+@jakarta.ws.rs.Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
 @Path("v1/reflogs")
 public interface HttpRefLogApi extends RefLogApi {
 
   @Override
   @GET
+  @jakarta.ws.rs.GET
   @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Get reflog entries (DEPRECATED)",
       description =
@@ -75,5 +78,6 @@ public interface HttpRefLogApi extends RefLogApi {
     @APIResponse(responseCode = "400", description = "Unknown Error"),
     @APIResponse(responseCode = "404", description = "Reflog id doesn't exists")
   })
-  RefLogResponse getRefLog(@BeanParam RefLogParams params) throws NessieNotFoundException;
+  RefLogResponse getRefLog(@BeanParam @jakarta.ws.rs.BeanParam RefLogParams params)
+      throws NessieNotFoundException;
 }

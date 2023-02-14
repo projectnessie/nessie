@@ -34,6 +34,7 @@ public class MultipleNamespacesParams {
       description = "name of ref to fetch",
       examples = {@ExampleObject(ref = "ref")})
   @PathParam("ref")
+  @jakarta.ws.rs.PathParam("ref")
   @NotNull
   @jakarta.validation.constraints.NotNull
   @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
@@ -49,6 +50,7 @@ public class MultipleNamespacesParams {
         @ExampleObject(ref = "emptyNamespaceName")
       })
   @QueryParam("name")
+  @jakarta.ws.rs.QueryParam("name")
   @Nullable
   @jakarta.annotation.Nullable
   private Namespace namespace;
@@ -57,6 +59,7 @@ public class MultipleNamespacesParams {
       description = "a particular hash on the given ref",
       examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})
   @QueryParam("hashOnRef")
+  @jakarta.ws.rs.QueryParam("hashOnRef")
   @Nullable
   @jakarta.annotation.Nullable
   private String hashOnRef;
