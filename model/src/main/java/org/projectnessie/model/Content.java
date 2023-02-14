@@ -68,6 +68,7 @@ public abstract class Content {
    * renames. Two content objects with the same key will have different id.
    */
   @Nullable
+  @jakarta.annotation.Nullable
   public abstract String getId();
 
   /**

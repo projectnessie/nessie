@@ -30,6 +30,7 @@ public interface KeyListEntry {
   byte getPayload();
 
   @Nullable
+  @jakarta.annotation.Nullable
   Hash getCommitId();
 
   static KeyListEntry of(Key key, ContentId contentId, byte payload, Hash commitId) {

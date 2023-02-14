@@ -39,6 +39,7 @@ public interface GetNamedRefsParams {
    * @return name of the base reference. Can be {@code null}, if not needed.
    */
   @Nullable
+  @jakarta.annotation.Nullable
   NamedRef getBaseReference();
 
   /** Whether to retrieve branches, defaults to {@code true}. */

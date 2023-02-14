@@ -21,11 +21,13 @@ import org.projectnessie.versioned.persist.adapter.DatabaseConnectionConfig;
 public interface TxConnectionConfig extends DatabaseConnectionConfig {
 
   @Nullable
+  @jakarta.annotation.Nullable
   String getCatalog();
 
   TxConnectionConfig withCatalog(String catalog);
 
   @Nullable
+  @jakarta.annotation.Nullable
   String getSchema();
 
   TxConnectionConfig withSchema(String schema);

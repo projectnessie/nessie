@@ -28,18 +28,22 @@ public interface Check {
   CheckType type();
 
   @Nullable
+  @jakarta.annotation.Nullable
   @Value.Parameter(order = 2)
   NamedRef ref();
 
   @Nullable
+  @jakarta.annotation.Nullable
   @Value.Parameter(order = 3)
   ContentKey key();
 
   @Nullable
+  @jakarta.annotation.Nullable
   @Value.Parameter(order = 4)
   String contentId();
 
   @Nullable
+  @jakarta.annotation.Nullable
   @Value.Parameter(order = 5)
   Content.Type contentType();
 
@@ -47,24 +51,24 @@ public interface Check {
     return check(type, null);
   }
 
-  static Check check(CheckType type, @Nullable NamedRef ref) {
+  static Check check(CheckType type, @Nullable @jakarta.annotation.Nullable NamedRef ref) {
     return check(type, ref, null, null);
   }
 
   static Check check(
       CheckType type,
-      @Nullable NamedRef ref,
-      @Nullable ContentKey key,
-      @Nullable String contentId) {
+      @Nullable @jakarta.annotation.Nullable NamedRef ref,
+      @Nullable @jakarta.annotation.Nullable ContentKey key,
+      @Nullable @jakarta.annotation.Nullable String contentId) {
     return check(type, ref, key, contentId, null);
   }
 
   static Check check(
       CheckType type,
-      @Nullable NamedRef ref,
-      @Nullable ContentKey key,
-      @Nullable String contentId,
-      @Nullable Content.Type contentType) {
+      @Nullable @jakarta.annotation.Nullable NamedRef ref,
+      @Nullable @jakarta.annotation.Nullable ContentKey key,
+      @Nullable @jakarta.annotation.Nullable String contentId,
+      @Nullable @jakarta.annotation.Nullable Content.Type contentType) {
     return ImmutableCheck.of(type, ref, key, contentId, contentType);
   }
 

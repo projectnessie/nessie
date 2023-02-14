@@ -28,17 +28,21 @@ public interface ErrorObj {
 
   @JsonProperty("Code")
   @Nullable
+  @jakarta.annotation.Nullable
   String code();
 
   @JsonProperty("Key")
   @Nullable
+  @jakarta.annotation.Nullable
   String key();
 
   @JsonProperty("Message")
   @Nullable
+  @jakarta.annotation.Nullable
   String message();
 
   @JsonProperty("VersionId")
   @Nullable
+  @jakarta.annotation.Nullable
   String versionId();
 }

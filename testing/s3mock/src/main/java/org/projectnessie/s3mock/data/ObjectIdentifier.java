@@ -27,6 +27,7 @@ public interface ObjectIdentifier {
 
   @JsonProperty("VersionId")
   @Nullable
+  @jakarta.annotation.Nullable
   @Value.Parameter(order = 2)
   String versionId();
 }

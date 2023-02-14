@@ -26,6 +26,7 @@ public interface ContentAttachment {
   ContentAttachmentKey getKey();
 
   @Nullable
+  @jakarta.annotation.Nullable
   Long getObjectId();
 
   /** Format needed to serialize {@link #getData()}. */
@@ -41,6 +42,7 @@ public interface ContentAttachment {
    * Optimistic locking marker, filled and maintained by the "user" of this binary content object.
    */
   @Nullable
+  @jakarta.annotation.Nullable
   String getVersion();
 
   static ImmutableContentAttachment.Builder builder() {

@@ -69,6 +69,7 @@ public interface TreeApi {
   Reference createReference(
       @Valid
           @Nullable
+          @jakarta.annotation.Nullable
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           String sourceRefName,
       @Valid @NotNull Reference reference)

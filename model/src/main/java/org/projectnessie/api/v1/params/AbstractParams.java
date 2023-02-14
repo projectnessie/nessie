@@ -24,6 +24,7 @@ public abstract class AbstractParams<IMPL extends AbstractParams<IMPL>> {
   @Parameter(description = "maximum number of entries to return, just a hint for the server")
   @QueryParam("maxRecords")
   @Nullable
+  @jakarta.annotation.Nullable
   private Integer maxRecords;
 
   @Parameter(
@@ -32,6 +33,7 @@ public abstract class AbstractParams<IMPL extends AbstractParams<IMPL>> {
               + "the corresponding 'EntriesResponse' or 'LogResponse' or 'ReferencesResponse' or 'RefLogResponse'.")
   @QueryParam("pageToken")
   @Nullable
+  @jakarta.annotation.Nullable
   private String pageToken;
 
   protected AbstractParams() {}
@@ -42,11 +44,13 @@ public abstract class AbstractParams<IMPL extends AbstractParams<IMPL>> {
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   public Integer maxRecords() {
     return maxRecords;
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   public String pageToken() {
     return pageToken;
   }

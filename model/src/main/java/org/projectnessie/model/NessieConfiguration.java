@@ -32,6 +32,7 @@ public abstract class NessieConfiguration {
    * as an API call parameter.
    */
   @Nullable
+  @jakarta.annotation.Nullable
   @Size(min = 1)
   public abstract String getDefaultBranch();
 

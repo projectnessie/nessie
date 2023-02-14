@@ -180,6 +180,7 @@ class TestResultStreamPaginator {
     }
 
     @Nullable
+    @jakarta.annotation.Nullable
     @Override
     public String getToken() {
       return token;

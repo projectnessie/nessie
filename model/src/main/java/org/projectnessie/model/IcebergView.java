@@ -48,7 +48,8 @@ public abstract class IcebergView extends IcebergContent {
   @NotNull
   public abstract String getSqlText();
 
-  @Nullable // TODO this is currently undefined in Iceberg
+  @Nullable
+  @jakarta.annotation.Nullable // TODO this is currently undefined in Iceberg
   public abstract String getDialect();
 
   @Override
@@ -58,6 +59,7 @@ public abstract class IcebergView extends IcebergContent {
 
   @Deprecated
   @Nullable
+  @jakarta.annotation.Nullable
   @JsonInclude(Include.NON_NULL)
   public abstract GenericMetadata getMetadata();
 

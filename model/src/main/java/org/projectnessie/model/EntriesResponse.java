@@ -41,6 +41,7 @@ public interface EntriesResponse extends PaginatedResponse {
    * entries were fetched.
    */
   @Nullable
+  @jakarta.annotation.Nullable
   @JsonView(Views.V2.class)
   Reference getEffectiveReference();
 
@@ -63,12 +64,14 @@ public interface EntriesResponse extends PaginatedResponse {
 
     @JsonView(Views.V2.class)
     @Value.Parameter(order = 3)
-    @Nullable // for V1 backwards compatibility
+    @Nullable
+    @jakarta.annotation.Nullable // for V1 backwards compatibility
     String getContentId();
 
     @JsonView(Views.V2.class)
     @Value.Parameter(order = 4)
-    @Nullable // for V1 backwards compatibility
+    @Nullable
+    @jakarta.annotation.Nullable // for V1 backwards compatibility
     Content getContent();
 
     static Entry entry(ContentKey name, Content.Type type) {

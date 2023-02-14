@@ -50,6 +50,7 @@ public interface ListBucketResultBase {
 
   @JsonProperty("Prefix")
   @Nullable
+  @jakarta.annotation.Nullable
   String prefix();
 
   @JsonProperty("MaxKeys")
@@ -57,6 +58,7 @@ public interface ListBucketResultBase {
 
   @JsonProperty("EncodingType")
   @Nullable
+  @jakarta.annotation.Nullable
   String encodingType();
 
   @JsonProperty("IsTruncated")

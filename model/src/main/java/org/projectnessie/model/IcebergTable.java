@@ -82,6 +82,7 @@ public abstract class IcebergTable extends IcebergContent {
 
   @Deprecated
   @Nullable
+  @jakarta.annotation.Nullable
   @JsonInclude(Include.NON_NULL)
   public abstract GenericMetadata getMetadata();
 

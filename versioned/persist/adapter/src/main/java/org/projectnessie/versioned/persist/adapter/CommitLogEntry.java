@@ -61,6 +61,7 @@ public interface CommitLogEntry {
    * entry in {@link #getPuts()} and {@link #getDeletes()}.
    */
   @Nullable
+  @jakarta.annotation.Nullable
   KeyList getKeyList();
 
   /**
@@ -72,6 +73,7 @@ public interface CommitLogEntry {
 
   /** The indices of the first occupied bucket in each non-embedded segment of the key list. */
   @Nullable
+  @jakarta.annotation.Nullable
   List<Integer> getKeyListEntityOffsets();
 
   /**
@@ -82,6 +84,7 @@ public interface CommitLogEntry {
    * generally not a higher one.
    */
   @Nullable
+  @jakarta.annotation.Nullable
   Float getKeyListLoadFactor();
 
   /**
@@ -91,6 +94,7 @@ public interface CommitLogEntry {
    * the interval {@code [0, this value)}.
    */
   @Nullable
+  @jakarta.annotation.Nullable
   Integer getKeyListBucketCount();
 
   /** Number of commits since the last complete key-list. */

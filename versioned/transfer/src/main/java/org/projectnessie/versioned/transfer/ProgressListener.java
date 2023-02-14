@@ -30,5 +30,6 @@ public interface ProgressListener {
    * ProgressEvent#END_META}.
    */
   void progress(
-      @Nonnull @jakarta.annotation.Nonnull ProgressEvent type, @Nullable ExportMeta exportMeta);
+      @Nonnull @jakarta.annotation.Nonnull ProgressEvent type,
+      @Nullable @jakarta.annotation.Nullable ExportMeta exportMeta);
 }

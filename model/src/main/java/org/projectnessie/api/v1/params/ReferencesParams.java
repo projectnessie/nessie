@@ -46,6 +46,7 @@ public class ReferencesParams extends AbstractParams<ReferencesParams> {
               + "Note that computing & fetching additional metadata might be computationally expensive on the server-side, so this flag should be used with care.")
   @QueryParam("fetch")
   @Nullable
+  @jakarta.annotation.Nullable
   private FetchOption fetchOption;
 
   @Parameter(
@@ -64,27 +65,30 @@ public class ReferencesParams extends AbstractParams<ReferencesParams> {
       })
   @QueryParam("filter")
   @Nullable
+  @jakarta.annotation.Nullable
   private String filter;
 
   public ReferencesParams() {}
 
   @org.immutables.builder.Builder.Constructor
   ReferencesParams(
-      @Nullable Integer maxRecords,
-      @Nullable String pageToken,
-      @Nullable FetchOption fetchOption,
-      @Nullable String filter) {
+      @Nullable @jakarta.annotation.Nullable Integer maxRecords,
+      @Nullable @jakarta.annotation.Nullable String pageToken,
+      @Nullable @jakarta.annotation.Nullable FetchOption fetchOption,
+      @Nullable @jakarta.annotation.Nullable String filter) {
     super(maxRecords, pageToken);
     this.fetchOption = fetchOption;
     this.filter = filter;
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   public FetchOption fetchOption() {
     return fetchOption;
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   public String filter() {
     return filter;
   }

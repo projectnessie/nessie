@@ -153,6 +153,7 @@ public class ITSparkIcebergNessieS3 extends SparkSqlTestBase {
 
     @Value.Parameter(order = 1)
     @Nullable
+    @jakarta.annotation.Nullable
     String branch();
 
     @Value.Parameter(order = 2)

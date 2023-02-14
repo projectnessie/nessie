@@ -33,22 +33,27 @@ public interface BaseMergeTransplant {
   String getFromRefName();
 
   @Nullable
+  @jakarta.annotation.Nullable
   @JsonInclude(Include.NON_NULL)
   Boolean keepIndividualCommits();
 
   @Nullable
+  @jakarta.annotation.Nullable
   @JsonInclude(Include.NON_NULL)
   List<MergeKeyBehavior> getKeyMergeModes();
 
   @Nullable
+  @jakarta.annotation.Nullable
   @JsonInclude(Include.NON_NULL)
   MergeBehavior getDefaultKeyMergeMode();
 
   @Nullable
+  @jakarta.annotation.Nullable
   @JsonInclude(Include.NON_NULL)
   Boolean isDryRun();
 
   @Nullable
+  @jakarta.annotation.Nullable
   @JsonInclude(Include.NON_NULL)
   Boolean isFetchAdditionalInfo();
 
@@ -58,6 +63,7 @@ public interface BaseMergeTransplant {
    * throwing a {@link org.projectnessie.error.NessieReferenceConflictException}.
    */
   @Nullable
+  @jakarta.annotation.Nullable
   @JsonInclude(Include.NON_NULL)
   Boolean isReturnConflictAsResult();
 }

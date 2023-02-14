@@ -62,8 +62,8 @@ public class DiffParams extends AbstractParams<DiffParams> {
   DiffParams(
       @NotNull String fromRef,
       @NotNull String toRef,
-      @Nullable Integer maxRecords,
-      @Nullable String pageToken) {
+      @Nullable @jakarta.annotation.Nullable Integer maxRecords,
+      @Nullable @jakarta.annotation.Nullable String pageToken) {
     super(maxRecords, pageToken);
     this.fromRef = fromRef;
     this.toRef = toRef;

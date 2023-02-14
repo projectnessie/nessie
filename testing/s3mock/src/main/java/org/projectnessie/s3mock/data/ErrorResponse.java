@@ -38,11 +38,13 @@ public interface ErrorResponse {
 
   @JsonProperty("Resource")
   @Nullable
+  @jakarta.annotation.Nullable
   @Value.Parameter(order = 3)
   String resource();
 
   @JsonProperty("RequestId")
   @Nullable
+  @jakarta.annotation.Nullable
   @Value.Parameter(order = 4)
   String requestId();
 

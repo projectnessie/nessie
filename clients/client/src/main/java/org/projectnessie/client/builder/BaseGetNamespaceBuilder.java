@@ -38,7 +38,7 @@ public abstract class BaseGetNamespaceBuilder implements GetNamespaceBuilder {
   }
 
   @Override
-  public GetNamespaceBuilder hashOnRef(@Nullable String hashOnRef) {
+  public GetNamespaceBuilder hashOnRef(@Nullable @jakarta.annotation.Nullable String hashOnRef) {
     this.hashOnRef = hashOnRef;
     return this;
   }

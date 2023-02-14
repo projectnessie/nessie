@@ -70,6 +70,7 @@ public abstract class CommitMeta {
    * <p>This is not known at creation time and is only valid when reading the log.
    */
   @Nullable
+  @jakarta.annotation.Nullable
   public abstract String getHash();
 
   /**
@@ -84,10 +85,12 @@ public abstract class CommitMeta {
    * docs</a>.
    */
   @Nullable
+  @jakarta.annotation.Nullable
   public abstract String getCommitter();
 
   /** The author of a commit. This is the original committer. */
   @Nullable
+  @jakarta.annotation.Nullable
   @Value.Derived
   @JsonView(Views.V1.class)
   public String getAuthor() {
@@ -106,6 +109,7 @@ public abstract class CommitMeta {
    * by the person who started the job.
    */
   @Nullable
+  @jakarta.annotation.Nullable
   @Value.Derived
   @JsonView(Views.V1.class)
   public String getSignedOffBy() {
@@ -126,12 +130,14 @@ public abstract class CommitMeta {
 
   /** Commit time in UTC. Set by the server. */
   @Nullable
+  @jakarta.annotation.Nullable
   @JsonSerialize(using = InstantSerializer.class)
   @JsonDeserialize(using = InstantDeserializer.class)
   public abstract Instant getCommitTime();
 
   /** Original commit time in UTC. Set by the server. */
   @Nullable
+  @jakarta.annotation.Nullable
   @JsonSerialize(using = InstantSerializer.class)
   @JsonDeserialize(using = InstantDeserializer.class)
   public abstract Instant getAuthorTime();

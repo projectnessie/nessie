@@ -34,6 +34,7 @@ import org.projectnessie.model.Validation;
 public class CommitLogParams extends AbstractParams<CommitLogParams> {
 
   @Nullable
+  @jakarta.annotation.Nullable
   @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
   @Parameter(
       description =
@@ -44,6 +45,7 @@ public class CommitLogParams extends AbstractParams<CommitLogParams> {
   private String startHash;
 
   @Nullable
+  @jakarta.annotation.Nullable
   @Parameter(
       description =
           "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n\n"
@@ -67,17 +69,18 @@ public class CommitLogParams extends AbstractParams<CommitLogParams> {
           "Specify how much information to be returned. Will fetch additional metadata such as parent commit hash and operations in a commit, for each commit if set to 'ALL'.")
   @QueryParam("fetch")
   @Nullable
+  @jakarta.annotation.Nullable
   private FetchOption fetchOption;
 
   public CommitLogParams() {}
 
   @Constructor
   CommitLogParams(
-      @Nullable String startHash,
-      @Nullable Integer maxRecords,
-      @Nullable String pageToken,
-      @Nullable String filter,
-      @Nullable FetchOption fetchOption) {
+      @Nullable @jakarta.annotation.Nullable String startHash,
+      @Nullable @jakarta.annotation.Nullable Integer maxRecords,
+      @Nullable @jakarta.annotation.Nullable String pageToken,
+      @Nullable @jakarta.annotation.Nullable String filter,
+      @Nullable @jakarta.annotation.Nullable FetchOption fetchOption) {
     super(maxRecords, pageToken);
     this.startHash = startHash;
     this.filter = filter;
@@ -85,16 +88,19 @@ public class CommitLogParams extends AbstractParams<CommitLogParams> {
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   public String startHash() {
     return startHash;
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   public String filter() {
     return filter;
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   public FetchOption fetchOption() {
     return fetchOption;
   }

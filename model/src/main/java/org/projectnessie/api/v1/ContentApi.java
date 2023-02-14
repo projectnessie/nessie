@@ -53,7 +53,10 @@ public interface ContentApi {
       @Valid ContentKey key,
       @Valid @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           String ref,
-      @Valid @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+      @Valid
+          @Nullable
+          @jakarta.annotation.Nullable
+          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String hashOnRef)
       throws NessieNotFoundException;
 
@@ -78,7 +81,10 @@ public interface ContentApi {
   GetMultipleContentsResponse getMultipleContents(
       @Valid @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           String ref,
-      @Valid @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+      @Valid
+          @Nullable
+          @jakarta.annotation.Nullable
+          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String hashOnRef,
       @Valid @NotNull GetMultipleContentsRequest request)
       throws NessieNotFoundException;

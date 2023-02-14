@@ -47,12 +47,16 @@ public interface PersistenceSpi {
       @NotNull UUID liveSetId, @NotNull Stream<ContentReference> contentReference);
 
   void finishedIdentifyLiveContents(
-      @NotNull UUID liveSetId, @NotNull Instant finished, @Nullable Throwable failure);
+      @NotNull UUID liveSetId,
+      @NotNull Instant finished,
+      @Nullable @jakarta.annotation.Nullable Throwable failure);
 
   LiveContentSet startExpireContents(@NotNull UUID liveSetId, @NotNull Instant started);
 
   LiveContentSet finishedExpireContents(
-      @NotNull UUID liveSetId, @NotNull Instant finished, @Nullable Throwable failure);
+      @NotNull UUID liveSetId,
+      @NotNull Instant finished,
+      @Nullable @jakarta.annotation.Nullable Throwable failure);
 
   LiveContentSet getLiveContentSet(@NotNull UUID liveSetId) throws LiveContentSetNotFoundException;
 

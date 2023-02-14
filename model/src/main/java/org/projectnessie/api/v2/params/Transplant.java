@@ -65,6 +65,7 @@ public interface Transplant extends BaseMergeTransplant {
 
   @Override
   @Nullable
+  @jakarta.annotation.Nullable
   @Size(min = 1)
   String getMessage();
 

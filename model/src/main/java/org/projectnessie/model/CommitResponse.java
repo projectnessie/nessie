@@ -47,7 +47,8 @@ public interface CommitResponse {
   Branch getTargetBranch();
 
   @JsonView(Views.V2.class)
-  @Nullable // for V1 backwards compatibility
+  @Nullable
+  @jakarta.annotation.Nullable // for V1 backwards compatibility
   List<AddedContent> getAddedContents();
 
   @Value.NonAttribute

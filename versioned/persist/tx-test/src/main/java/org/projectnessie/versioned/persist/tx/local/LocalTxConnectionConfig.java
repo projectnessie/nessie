@@ -25,16 +25,19 @@ import org.projectnessie.versioned.persist.tx.TxConnectionConfig;
 public interface LocalTxConnectionConfig extends TxConnectionConfig {
 
   @Nullable
+  @jakarta.annotation.Nullable
   String getJdbcUrl();
 
   LocalTxConnectionConfig withJdbcUrl(String jdbcUrl);
 
   @Nullable
+  @jakarta.annotation.Nullable
   String getJdbcUser();
 
   LocalTxConnectionConfig withJdbcUser(String jdbcUser);
 
   @Nullable
+  @jakarta.annotation.Nullable
   String getJdbcPass();
 
   LocalTxConnectionConfig withJdbcPass(String jdbcPass);

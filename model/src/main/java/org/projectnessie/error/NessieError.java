@@ -49,6 +49,7 @@ public interface NessieError {
 
   /** Server-side exception stack trace related to this error (if available). */
   @Nullable
+  @jakarta.annotation.Nullable
   String getServerStackTrace();
 
   /**
@@ -60,6 +61,7 @@ public interface NessieError {
   @JsonIgnore
   @Value.Auxiliary
   @Nullable
+  @jakarta.annotation.Nullable
   Exception getClientProcessingException();
 
   /**

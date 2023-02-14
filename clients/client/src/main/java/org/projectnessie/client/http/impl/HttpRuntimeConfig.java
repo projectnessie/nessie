@@ -48,6 +48,7 @@ public interface HttpRuntimeConfig {
   ObjectMapper getMapper();
 
   @Nullable
+  @jakarta.annotation.Nullable
   Class<?> getJsonView();
 
   int getReadTimeoutMillis();
@@ -63,9 +64,11 @@ public interface HttpRuntimeConfig {
   List<ResponseFilter> getResponseFilters();
 
   @Nullable
+  @jakarta.annotation.Nullable
   String getFollowRedirects();
 
   @Nullable
+  @jakarta.annotation.Nullable
   SSLParameters getSslParameters();
 
   @Value.Default

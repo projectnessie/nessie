@@ -72,6 +72,7 @@ public abstract class CommitLogOptimization {
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   abstract HeadsAndForkPoints headsAndForks();
 
   public void optimize() {

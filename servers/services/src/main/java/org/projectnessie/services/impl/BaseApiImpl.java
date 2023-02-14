@@ -61,7 +61,9 @@ public abstract class BaseApiImpl {
     this.principal = principal;
   }
 
-  WithHash<NamedRef> namedRefWithHashOrThrow(@Nullable String namedRef, @Nullable String hashOnRef)
+  WithHash<NamedRef> namedRefWithHashOrThrow(
+      @Nullable @jakarta.annotation.Nullable String namedRef,
+      @Nullable @jakarta.annotation.Nullable String hashOnRef)
       throws NessieReferenceNotFoundException {
     if (null == namedRef) {
       namedRef = config.getDefaultBranch();
@@ -130,7 +132,8 @@ public abstract class BaseApiImpl {
     return ServerAccessContext.of(UUID.randomUUID().toString(), getPrincipal());
   }
 
-  protected MetadataRewriter<CommitMeta> commitMetaUpdate(@Nullable String messageOverride) {
+  protected MetadataRewriter<CommitMeta> commitMetaUpdate(
+      @Nullable @jakarta.annotation.Nullable String messageOverride) {
     return new MetadataRewriter<CommitMeta>() {
       // Used for setting contextual commit properties during new and merge/transplant commits.
       // WARNING: ONLY SET PROPERTIES, WHICH APPLY COMMONLY TO ALL COMMIT TYPES.

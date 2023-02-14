@@ -281,7 +281,9 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
 
   @MustBeClosed
   private Stream<KeyEntry> getNamespacesKeyStream(
-      @Nullable Namespace namespace, Hash hash, Predicate<KeyEntry> earlyFilterPredicate)
+      @Nullable @jakarta.annotation.Nullable Namespace namespace,
+      Hash hash,
+      Predicate<KeyEntry> earlyFilterPredicate)
       throws ReferenceNotFoundException {
     PaginationIterator<KeyEntry> iter = getStore().getKeys(hash, null, false);
     return stream(spliteratorUnknownSize(iter, 0), false)

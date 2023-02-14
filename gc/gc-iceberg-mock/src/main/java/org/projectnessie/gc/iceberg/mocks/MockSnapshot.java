@@ -44,6 +44,7 @@ public abstract class MockSnapshot {
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   public abstract String manifestListLocation();
 
   @Value.Default

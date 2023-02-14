@@ -31,19 +31,23 @@ public interface ReferenceInfo<METADATA> {
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   Hash getCommonAncestor();
 
-  ReferenceInfo<METADATA> withCommonAncestor(@Nullable Hash value);
+  ReferenceInfo<METADATA> withCommonAncestor(@Nullable @jakarta.annotation.Nullable Hash value);
 
   @Nullable
+  @jakarta.annotation.Nullable
   CommitsAheadBehind getAheadBehind();
 
-  ReferenceInfo<METADATA> withAheadBehind(@Nullable CommitsAheadBehind value);
+  ReferenceInfo<METADATA> withAheadBehind(
+      @Nullable @jakarta.annotation.Nullable CommitsAheadBehind value);
 
   @Nullable
+  @jakarta.annotation.Nullable
   METADATA getHeadCommitMeta();
 
-  ReferenceInfo<METADATA> withHeadCommitMeta(@Nullable METADATA value);
+  ReferenceInfo<METADATA> withHeadCommitMeta(@Nullable @jakarta.annotation.Nullable METADATA value);
 
   List<Hash> getParentHashes();
 

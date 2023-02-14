@@ -51,17 +51,20 @@ public class GetReferenceParams {
               + "Note that computing & fetching additional metadata might be computationally expensive on the server-side, so this flag should be used with care.")
   @QueryParam("fetch")
   @Nullable
+  @jakarta.annotation.Nullable
   private FetchOption fetchOption;
 
   public GetReferenceParams() {}
 
   @Constructor
-  GetReferenceParams(@NotNull String ref, @Nullable FetchOption fetchOption) {
+  GetReferenceParams(
+      @NotNull String ref, @Nullable @jakarta.annotation.Nullable FetchOption fetchOption) {
     this.ref = ref;
     this.fetchOption = fetchOption;
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   public FetchOption fetchOption() {
     return fetchOption;
   }

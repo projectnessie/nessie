@@ -38,14 +38,20 @@ public interface ContentService {
       @Valid ContentKey key,
       @Valid @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           String namedRef,
-      @Valid @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+      @Valid
+          @Nullable
+          @jakarta.annotation.Nullable
+          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String hashOnRef)
       throws NessieNotFoundException;
 
   GetMultipleContentsResponse getMultipleContents(
       @Valid @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           String namedRef,
-      @Valid @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+      @Valid
+          @Nullable
+          @jakarta.annotation.Nullable
+          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String hashOnRef,
       @Valid @Size(min = 1) List<ContentKey> keys)
       throws NessieNotFoundException;

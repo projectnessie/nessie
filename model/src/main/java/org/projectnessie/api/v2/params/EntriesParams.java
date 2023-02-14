@@ -31,6 +31,7 @@ import org.immutables.builder.Builder.Constructor;
 public class EntriesParams extends AbstractParams<EntriesParams> {
 
   @Nullable
+  @jakarta.annotation.Nullable
   @Parameter(
       description =
           "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
@@ -44,6 +45,7 @@ public class EntriesParams extends AbstractParams<EntriesParams> {
   private String filter;
 
   @Nullable
+  @jakarta.annotation.Nullable
   @Parameter(description = "Optionally request to return 'Content' objects for the returned keys.")
   @QueryParam("content")
   private Boolean withContent;
@@ -52,10 +54,10 @@ public class EntriesParams extends AbstractParams<EntriesParams> {
 
   @Constructor
   EntriesParams(
-      @Nullable Integer maxRecords,
-      @Nullable String pageToken,
-      @Nullable String filter,
-      @Nullable Boolean withContent) {
+      @Nullable @jakarta.annotation.Nullable Integer maxRecords,
+      @Nullable @jakarta.annotation.Nullable String pageToken,
+      @Nullable @jakarta.annotation.Nullable String filter,
+      @Nullable @jakarta.annotation.Nullable Boolean withContent) {
     super(maxRecords, pageToken);
     this.filter = filter;
     this.withContent = withContent;
@@ -70,6 +72,7 @@ public class EntriesParams extends AbstractParams<EntriesParams> {
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   public String filter() {
     return filter;
   }

@@ -42,9 +42,11 @@ public abstract class MockManifestEntry implements IndexedRecord {
   }
 
   @Nullable
+  @jakarta.annotation.Nullable
   public abstract Long snapshotId();
 
   @Nullable
+  @jakarta.annotation.Nullable
   public abstract Long sequenceNumber();
 
   public abstract String filePath();
