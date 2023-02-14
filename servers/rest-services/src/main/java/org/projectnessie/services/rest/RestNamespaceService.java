@@ -36,6 +36,7 @@ public class RestNamespaceService extends NamespaceApiImpl {
   }
 
   @Inject
+  @jakarta.inject.Inject
   public RestNamespaceService(
       ServerConfig config,
       VersionStore store,

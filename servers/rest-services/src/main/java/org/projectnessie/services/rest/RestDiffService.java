@@ -36,6 +36,7 @@ public class RestDiffService extends DiffApiImpl {
   }
 
   @Inject
+  @jakarta.inject.Inject
   public RestDiffService(
       ServerConfig config,
       VersionStore store,

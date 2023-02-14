@@ -36,6 +36,7 @@ public class RestConfigResource implements HttpConfigApi {
   }
 
   @Inject
+  @jakarta.inject.Inject
   public RestConfigResource(ConfigService configService) {
     this.configService = configService;
   }

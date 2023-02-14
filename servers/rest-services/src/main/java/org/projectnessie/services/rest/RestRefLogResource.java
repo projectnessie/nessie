@@ -36,6 +36,7 @@ public class RestRefLogResource implements HttpRefLogApi {
   }
 
   @Inject
+  @jakarta.inject.Inject
   public RestRefLogResource(RefLogService refLogService) {
     this.refLogService = refLogService;
   }

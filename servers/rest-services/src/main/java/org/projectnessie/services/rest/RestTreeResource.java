@@ -62,6 +62,7 @@ public class RestTreeResource implements HttpTreeApi {
   }
 
   @Inject
+  @jakarta.inject.Inject
   public RestTreeResource(TreeService treeService) {
     this.treeService = treeService;
   }

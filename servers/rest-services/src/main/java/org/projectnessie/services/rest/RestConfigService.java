@@ -29,6 +29,7 @@ public class RestConfigService extends ConfigApiImpl {
   }
 
   @Inject
+  @jakarta.inject.Inject
   public RestConfigService(ServerConfig config) {
     super(config);
   }

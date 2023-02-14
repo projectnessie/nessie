@@ -78,6 +78,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   }
 
   @Inject
+  @jakarta.inject.Inject
   public RestV2TreeResource(
       ConfigService configService,
       TreeService treeService,

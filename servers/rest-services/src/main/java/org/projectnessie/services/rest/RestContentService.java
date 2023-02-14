@@ -36,6 +36,7 @@ public class RestContentService extends ContentApiImpl {
   }
 
   @Inject
+  @jakarta.inject.Inject
   public RestContentService(
       ServerConfig config,
       VersionStore store,
