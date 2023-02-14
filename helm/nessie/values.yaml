@@ -1,112 +1,141 @@
+# -- The number of replicas to deploy (horizontal scaling).
+# Beware that replicas are stateless; don't set this number > 1 when using ROCKS version store type.
 replicaCount: 1
 
 image:
+  # -- The image repository to pull from.
   repository: projectnessie/nessie
+  # -- The image pull policy.
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart version.
+  # -- Overrides the image tag whose default is the chart version.
   tag: ""
 
-# The default logging level for the nessie server
+# -- The default logging level for the nessie server.
 logLevel: INFO
 
-# which type of version store to use: INMEMORY, ROCKS, DYNAMO, MONGO, TRANSACTIONAL
+# -- Which type of version store to use: INMEMORY, ROCKS, DYNAMO, MONGO, TRANSACTIONAL.
 versionStoreType: INMEMORY
 
-# this is needed when selecting ROCKS
+# RocksDB settings. Only required when using ROCKS version store type; ignored otherwise.
 rocksdb:
+  # -- The storage class name of the persistent volume claim to create.
   storageClassName: standard
+  # -- The size of the persistent volume claim to create.
   storageSize: 1Gi
+  # -- The path to the rocksdb database.
   dbPath: /rocks-nessie
-  # Labels to add to the PVC spec selector; a PV with matching labels must exist.
+  # -- Labels to add to the persistent volume claim spec selector; a persistent volume with matching labels must exist.
   # Leave empty if using dynamic provisioning.
-  selectorLabels: {}
+  selectorLabels:
+    {}
     # app.kubernetes.io/name: nessie
     # app.kubernetes.io/instance: RELEASE-NAME
 
-# this is needed when selecting DYNAMO
+# DynamoDB settings. Only required when using DYNAMO version store type; ignored otherwise.
 dynamodb:
+  # -- The AWS region to use.
   region: us-west-2
   secret:
+    # -- The secret name to pull AWS credentials from.
     name: awscreds
+    # -- The secret key storing the AWS secret key id.
     awsAccessKeyId: aws_access_key_id
+    # -- The secret key storing the AWS secret access key.
     awsSecretAccessKey: aws_secret_access_key
 
-# this is needed when selecting MONGO
+## Mongo DB settings. Only required when using MONGO version store type; ignored otherwise.
 mongodb:
+  # -- The MongoDB database name.
   name: nessie
+  # -- The MongoDB connection string.
   connectionString: mongodb://localhost:27017
   secret:
+    # -- The secret name to pull MongoDB credentials from.
     name: mongodb-creds
+    # -- The secret key storing the MongoDB username.
     username: mongodb_username
+    # -- The secret key storing the MongoDB password.
     password: mongodb_password
 
-# this is needed when selecting TRANSACTIONAL
+# Postgres settings. Only required when using TRANSACTIONAL version store type; ignored otherwise.
 postgres:
+  # -- The Postgres JDBC connection string.
   jdbcUrl: jdbc:postgresql://localhost:5432/my_database
   secret:
+    # -- The secret name to pull Postgres credentials from.
     name: postgres-creds
+    # -- The secret key storing the Postgres username.
     username: postgres_username
+    # -- The secret key storing the Postgres password.
     password: postgres_password
 
-# environment variables for advanced version store configuration
-# versionStoreAdvancedConfig:
-#   - key: QUARKUS_DATASOURCE_JDBC_POOLING_ENABLED
-#     value: true
+# -- Environment variables for advanced version store configuration.
+versionStoreAdvancedConfig:
+  {}
+  # - key: QUARKUS_DATASOURCE_JDBC_POOLING_ENABLED
+  #   value: true
 
-# configures authentication for the nessie server
 authentication:
+  # -- Specifies whether authentication for the nessie server should be enabled.
   enabled: false
-  # Sets the base URL of the OpenID Connect (OIDC) server. Needs to be overridden with authentication.enabled=true
+  # -- Sets the base URL of the OpenID Connect (OIDC) server. Needs to be overridden with authentication.enabled=true
   oidcAuthServerUrl: http://127.255.0.0:0/auth/realms/unset/
-  # Set the OIDC client ID when authentication.enabled=true. Each application has a client ID that is used to identify the application
+  # -- Set the OIDC client ID when authentication.enabled=true. Each application has a client ID that is used to identify the application
   oidcClientId: nessie
 
-# configures authorization for the nessie server
 authorization:
+  # -- Specifies whether authorization for the nessie server should be enabled.
   enabled: false
-  # the authorization rules when authorization.enabled=true. Example rules can be found at https://projectnessie.org/features/metadata_authorization/#authorization-rules
-  # rules:
-  #  allowViewingBranch: op=='VIEW_REFERENCE' && role.startsWith('test_user') && ref.startsWith('allowedBranch')
-  #  allowCommits: op=='COMMIT_CHANGE_AGAINST_REFERENCE' && role.startsWith('test_user') && ref.startsWith('allowedBranch')
+  # -- The authorization rules when authorization.enabled=true. Example rules can be found at https://projectnessie.org/features/metadata_authorization/#authorization-rules
+  rules:
+    {}
+    # allowViewingBranch: op=='VIEW_REFERENCE' && role.startsWith('test_user') && ref.startsWith('allowedBranch')
+    # allowCommits: op=='COMMIT_CHANGE_AGAINST_REFERENCE' && role.startsWith('test_user') && ref.startsWith('allowedBranch')
 
-# configure jaeger tracing for the nessie server
 jaegerTracing:
+  # -- Specifies whether jaeger tracing for the nessie server should be enabled.
   enabled: false
-  # The traces endpoint, in case the client should connect directly to the Collector, like http://jaeger-collector:14268/api/traces
-  # endpoint: http://localhost:14268/api/traces
-  # the Jaeger service name
+  # -- The traces endpoint, in case the client should connect directly to the Collector, e.g. http://jaeger-collector:14268/api/traces
+  endpoint: ""
+  # -- The Jaeger service name.
   serviceName: nessie
-  # whether or not metrics are published if tracing is enabled
+  # -- Whether metrics are published if tracing is enabled.
   publishMetrics: true
-  # the sampler type (const, probabilistic, ratelimiting or remote)
+  # -- The sampler type (const, probabilistic, ratelimiting or remote).
   samplerType: ratelimiting
-  # 1=Sample all requests. Set samplerParam to somewhere between 0 and 1, e.g. 0.50, if you do not wish to sample all requests
+  # -- The request sampling probability. 1=Sample all requests. Set samplerParam to somewhere between 0 and 1, e.g. 0.50, if you do not wish to sample all requests.
   samplerParam: 1
 
 serviceMonitor:
-  # Specifies whether ServiceMonitor for Prometheus operator should be created
+  # -- Specifies whether a ServiceMonitor for Prometheus operator should be created.
   enabled: true
-    # interval: 30s
-  # labels for the created ServiceMonitor so that Prometheus operator can properly pick it up
-  # labels:
+  # -- The scrape interval; leave empty to let Prometheus decide. Must be a valid duration, e.g. 1d, 1h30m, 5m, 10s.
+  interval: ""
+  # -- Labels for the created ServiceMonitor so that Prometheus operator can properly pick it up.
+  labels:
+    {}
     # release: prometheus
 
-
 serviceAccount:
-  # Specifies whether a service account should be created
+  # -- Specifies whether a service account should be created.
   create: true
-  # Annotations to add to the service account
+  # -- Annotations to add to the service account.
   annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
+  # -- The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template.
   name: ""
 
+# -- Annotations to apply to nessie pods.
 podAnnotations: {}
 
-podSecurityContext: {}
+# -- Security context for the nessie pod. See https://kubernetes.io/docs/tasks/configure-pod-container/security-context/.
+podSecurityContext:
+  {}
   # fsGroup: 2000
 
-securityContext: {}
+# -- Security context for the nessie container. See https://kubernetes.io/docs/tasks/configure-pod-container/security-context/.
+securityContext:
+  {}
   # capabilities:
   #   drop:
   #   - ALL
@@ -114,25 +143,39 @@ securityContext: {}
   # runAsNonRoot: true
   # runAsUser: 1000
 
+# Nessie service settings.
 service:
+  # -- The type of service to create.
   type: ClusterIP
+  # -- The port on which the service should listen.
   port: 19120
-  # Annotations to add to the service
+  # -- Annotations to add to the service.
   annotations: {}
 
 ingress:
+  # -- Specifies whether an ingress should be created.
   enabled: false
+  # -- Annotations to add to the ingress.
   annotations: {}
+  # -- A list of host paths used to configure the ingress.
   hosts:
     - host: chart-example.local
       paths: []
+  # -- A list of TLS certificates; each entry has a list of hosts in the certificate,
+  # along with the secret name used to terminate TLS traffic on port 443.
   tls: []
+#    - hosts:
+#        - chart-example1.local
+#        - chart-example2.local
+#      secretName: secret1
 
-resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+# -- Configures the resources requests and limits for nessie pods.
+# We usually recommend not to specify default resources and to leave this as a conscious
+# choice for the user. This also increases chances charts run on environments with little
+# resources, such as Minikube. If you do want to specify resources, uncomment the following
+# lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+resources:
+  {}
   # limits:
   #   cpu: 100m
   #   memory: 128Mi
@@ -141,14 +184,39 @@ resources: {}
   #   memory: 128Mi
 
 autoscaling:
+  # -- Specifies whether automatic horizontal scaling should be enabled.
+  # Do not enable this when using ROCKS version store type.
   enabled: false
+  # -- The minimum number of replicas to maintain.
   minReplicas: 1
+  # -- The maximum number of replicas to maintain.
   maxReplicas: 3
+  # -- Optional; set to zero or empty to disable.
   targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
+  # -- Optional; set to zero or empty to disable.
+  targetMemoryUtilizationPercentage:
 
-nodeSelector: {}
+# -- Node labels which must match for the nessie pod to be scheduled on that node. See https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector.
+nodeSelector:
+  {}
+  # kubernetes.io/os: linux
 
+# -- A list of tolerations to apply to nessie pods. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/.
 tolerations: []
+#  - key: "node-role.kubernetes.io/control-plane"
+#    operator: "Exists"
+#    effect: "NoSchedule"
 
+# -- Affinity and anti-affinity for nessie pods. See https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity.
 affinity: {}
+#  podAffinity:
+#    preferredDuringSchedulingIgnoredDuringExecution:
+#      - weight: 100
+#        podAffinityTerm:
+#          topologyKey: kubernetes.io/hostname
+#          labelSelector:
+#            matchExpressions:
+#              - key: app.kubernetes.io/name
+#                operator: In
+#                values:
+#                  - nessie

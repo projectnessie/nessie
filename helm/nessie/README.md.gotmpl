@@ -1,0 +1,133 @@
+<!---
+This README.md file was generated with:
+https://github.com/norwoodj/helm-docs
+Do not modify the README.md file directly, please modify README.md.gotmpl instead.
+To re-generate the README.md file, install helm-docs then run from the repo root:
+helm-docs --chart-search-root=helm
+-->
+
+# Nessie Helm chart
+
+{{ template "chart.deprecationWarning" . }}
+
+{{ template "chart.badgesSection" . }}
+
+{{ template "chart.description" . }}.
+
+{{ template "chart.homepageLine" . }}
+
+{{ template "chart.maintainersSection" . }}
+
+{{ template "chart.sourcesSection" . }}
+
+{{ template "chart.requirementsSection" . }}
+
+## Installation
+
+### From Helm repo
+```bash
+$ helm repo add nessie-helm https://charts.projectnessie.org
+$ helm repo update
+$ helm install --namespace nessie-ns nessie nessie-helm/nessie
+```
+
+### From local directory (for development purposes)
+
+From Nessie repo root:
+
+```bash
+$ helm install --namespace nessie-ns nessie helm/nessie
+```
+
+### Uninstalling the chart
+
+```bash
+$ helm uninstall --namespace nessie-ns nessie
+```
+
+{{ template "chart.valuesSection" . }}
+
+## Using secrets
+
+### Providing secrets for Dynamo Version Store
+
+* Make sure you have a Secret in the following form:
+```
+> cat $PWD/awscreds
+aws_access_key_id=YOURACCESSKEYDATA
+aws_secret_access_key=YOURSECRETKEYDATA
+```
+
+* Create the secret from the given file
+  `kubectl create secret generic awscreds --from-env-file="$PWD/awscreds"`
+
+* Now you can use `DYNAMO` as the version store when installing Nessie via `helm install -n nessie-ns nessie helm/nessie --set versionStoreType=DYNAMO`.
+
+### Providing secrets for MongoDB
+
+* Providing secrets for MongoDB is strongly recommended, but not enforced.
+* Make sure you have a Secret in the following form:
+```
+> cat $PWD/mongodb-creds
+mongodb_username=YOUR_USERNAME
+mongodb_password=YOUR_PASSWORD
+```
+
+* Create the secret from the given file
+  `kubectl create secret generic mongodb-creds --from-env-file="$PWD/mongodb-creds"`
+
+* The `mongodb-creds` secret will now be picked up when you use `MONGO` as the version store when installing Nessie via `helm install -n nessie-ns nessie helm/nessie --set versionStoreType=MONGO`.
+
+### Providing secrets for Transactional Version Store
+
+* Make sure you have a Secret in the following form:
+```
+> cat $PWD/postgres-creds
+postgres_username=YOUR_USERNAME
+postgres_password=YOUR_PASSWORD
+```
+
+* Create the secret from the given file
+  `kubectl create secret generic postgres-creds --from-env-file="$PWD/postgres-creds"`
+
+* Now you can use `TRANSACTIONAL` as the version store when installing Nessie via `helm install -n nessie-ns nessie helm/nessie --set versionStoreType=TRANSACTIONAL`.
+
+## Dev installation
+
+* Install Minikube as described in https://minikube.sigs.k8s.io/docs/start/
+* Install Helm as described in https://helm.sh/docs/intro/install/
+* Start Minikube cluster: `minikube start`
+* Create K8s Namespace: `kubectl create namespace nessie-ns`
+* Install Nessie Helm chart: `helm install nessie -n nessie-ns helm/nessie`
+
+### Ingress with Minikube
+
+This is broadly following the example from https://kubernetes.io/docs/tasks/access-application-cluster/ingress-minikube/
+
+* Start Minikube cluster: `minikube start`
+* Enable NGINX Ingress controller: `minikube addons enable ingress`
+* Verify Ingress controller is running: `kubectl get pods -n ingress-nginx`
+* Create K8s Namespace: `kubectl create namespace nessie-ns`
+* Install Nessie Helm chart with Ingress enabled:
+  ```bash
+  helm install nessie -n nessie-ns helm/nessie \
+    --set ingress.enabled=true \
+    --set ingress.hosts[0].host='chart-example.local' \
+    --set ingress.hosts[0].paths[0]='/'
+  ```
+
+* Verify that the IP address is set:
+  ```bash
+  kubectl get ingress -n nessie-ns
+  NAME     CLASS   HOSTS   ADDRESS        PORTS   AGE
+  nessie   nginx   *       192.168.49.2   80      4m35s
+  ```
+* Use the IP from the above output and add it to `/etc/hosts` via `echo "192.168.49.2 chart-example.local" | sudo tee /etc/hosts`
+* Verify that `curl chart-example.local` works
+
+### Stop/Uninstall everything in Dev
+
+```sh
+helm uninstall --namespace nessie-ns nessie
+minikube delete
+```
