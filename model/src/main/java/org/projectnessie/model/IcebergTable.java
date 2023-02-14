@@ -60,7 +60,9 @@ public abstract class IcebergTable extends IcebergContent {
    * (implementation of) Iceberg's {@code FileIO} configured for the particular Iceberg table.
    */
   @NotNull
+  @jakarta.validation.constraints.NotNull
   @NotBlank
+  @jakarta.validation.constraints.NotBlank
   public abstract String getMetadataLocation();
 
   /** Corresponds to Iceberg's {@code currentSnapshotId}. */

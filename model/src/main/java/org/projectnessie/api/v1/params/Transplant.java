@@ -42,7 +42,9 @@ import org.projectnessie.model.Validation;
 public interface Transplant extends BaseMergeTransplant {
 
   @NotNull
-  @Size(min = 1)
+  @jakarta.validation.constraints.NotNull
+  @Size
+  @jakarta.validation.constraints.Size(min = 1)
   List<String> getHashesToTransplant();
 
   /**

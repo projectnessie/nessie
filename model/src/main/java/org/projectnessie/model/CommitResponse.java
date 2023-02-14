@@ -44,6 +44,7 @@ public interface CommitResponse {
    * <p>Specifically, the hash of the {@link Branch} will be the hash of the applied commit.
    */
   @NotNull
+  @jakarta.validation.constraints.NotNull
   Branch getTargetBranch();
 
   @JsonView(Views.V2.class)
@@ -65,10 +66,12 @@ public interface CommitResponse {
   @JsonDeserialize(as = ImmutableAddedContent.class)
   interface AddedContent {
     @NotNull
+    @jakarta.validation.constraints.NotNull
     @Value.Parameter(order = 1)
     ContentKey getKey();
 
     @NotNull
+    @jakarta.validation.constraints.NotNull
     @Value.Parameter(order = 2)
     String contentId();
 

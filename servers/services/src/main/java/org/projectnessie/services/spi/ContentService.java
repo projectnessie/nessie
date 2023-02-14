@@ -35,24 +35,43 @@ import org.projectnessie.model.Validation;
 public interface ContentService {
 
   ContentResponse getContent(
-      @Valid ContentKey key,
-      @Valid @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+      @Valid @jakarta.validation.Valid ContentKey key,
+      @Valid
+          @jakarta.validation.Valid
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.REF_NAME_REGEX,
+              message = Validation.REF_NAME_MESSAGE)
           String namedRef,
       @Valid
+          @jakarta.validation.Valid
           @Nullable
           @jakarta.annotation.Nullable
           @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.HASH_REGEX,
+              message = Validation.HASH_MESSAGE)
           String hashOnRef)
       throws NessieNotFoundException;
 
   GetMultipleContentsResponse getMultipleContents(
-      @Valid @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+      @Valid
+          @jakarta.validation.Valid
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.REF_NAME_REGEX,
+              message = Validation.REF_NAME_MESSAGE)
           String namedRef,
       @Valid
+          @jakarta.validation.Valid
           @Nullable
           @jakarta.annotation.Nullable
           @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.HASH_REGEX,
+              message = Validation.HASH_MESSAGE)
           String hashOnRef,
-      @Valid @Size(min = 1) List<ContentKey> keys)
+      @Valid @jakarta.validation.Valid @Size @jakarta.validation.constraints.Size(min = 1)
+          List<ContentKey> keys)
       throws NessieNotFoundException;
 }

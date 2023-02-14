@@ -31,6 +31,7 @@ import org.immutables.value.Value;
 public interface RefLogResponse extends PaginatedResponse {
 
   @NotNull
+  @jakarta.validation.constraints.NotNull
   List<RefLogResponseEntry> getLogEntries();
 
   @Value.Immutable
@@ -58,30 +59,37 @@ public interface RefLogResponse extends PaginatedResponse {
 
     /** Reflog id of the current entry. */
     @NotNull
+    @jakarta.validation.constraints.NotNull
     String getRefLogId();
 
     /** Reference on which current operation is executed. */
     @NotNull
+    @jakarta.validation.constraints.NotNull
     String getRefName();
 
     /** Reference type can be 'Branch' or 'Tag'. */
     @NotNull
+    @jakarta.validation.constraints.NotNull
     String getRefType();
 
     /** Output commit hash of the operation. */
     @NotNull
+    @jakarta.validation.constraints.NotNull
     String getCommitHash();
 
     /** Parent reflog id of the current entry. */
     @NotNull
+    @jakarta.validation.constraints.NotNull
     String getParentRefLogId();
 
     /** Time in microseconds since epoch. */
     @NotNull
+    @jakarta.validation.constraints.NotNull
     long getOperationTime();
 
     /** Operation String mapped to ENUM in {@code RefLogEntry.Operation} of 'persist.proto' file. */
     @NotNull
+    @jakarta.validation.constraints.NotNull
     String getOperation();
 
     /**
@@ -89,6 +97,7 @@ public interface RefLogResponse extends PaginatedResponse {
      * for other operations.
      */
     @NotNull
+    @jakarta.validation.constraints.NotNull
     List<String> getSourceHashes();
   }
 }

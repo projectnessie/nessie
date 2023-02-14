@@ -35,7 +35,11 @@ public class NamespaceParams {
       examples = {@ExampleObject(ref = "ref")})
   @PathParam("ref")
   @NotNull
+  @jakarta.validation.constraints.NotNull
   @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+  @jakarta.validation.constraints.Pattern(
+      regexp = Validation.REF_NAME_REGEX,
+      message = Validation.REF_NAME_MESSAGE)
   private String refName;
 
   @Parameter(
@@ -56,8 +60,8 @@ public class NamespaceParams {
 
   @Builder.Constructor
   NamespaceParams(
-      @NotNull String refName,
-      @NotNull Namespace namespace,
+      @NotNull @jakarta.validation.constraints.NotNull String refName,
+      @NotNull @jakarta.validation.constraints.NotNull Namespace namespace,
       @Nullable @jakarta.annotation.Nullable String hashOnRef) {
     this.refName = refName;
     this.namespace = namespace;

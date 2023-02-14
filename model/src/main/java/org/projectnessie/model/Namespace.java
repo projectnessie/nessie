@@ -61,6 +61,7 @@ public abstract class Namespace extends Content {
   }
 
   @NotNull
+  @jakarta.validation.constraints.NotNull
   @Derived
   @JsonIgnore
   public String name() {
@@ -74,6 +75,7 @@ public abstract class Namespace extends Content {
   }
 
   @NotNull
+  @jakarta.validation.constraints.NotNull
   public abstract List<String> getElements();
 
   @JsonIgnore
@@ -83,6 +85,7 @@ public abstract class Namespace extends Content {
   }
 
   @NotNull
+  @jakarta.validation.constraints.NotNull
   @JsonInclude(Include.NON_EMPTY)
   public abstract Map<String, String> getProperties();
 

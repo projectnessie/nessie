@@ -38,11 +38,17 @@ public interface KeyEntry {
     return ImmutableKeyEntry.builder();
   }
 
-  static KeyEntry of(Content.Type type, Key key, @NotNull String contentId) {
+  static KeyEntry of(
+      Content.Type type,
+      Key key,
+      @NotNull @jakarta.validation.constraints.NotNull String contentId) {
     return builder().type(type).key(key).contentId(contentId).build();
   }
 
-  static KeyEntry of(Content.Type type, Key key, @NotNull Content content) {
+  static KeyEntry of(
+      Content.Type type,
+      Key key,
+      @NotNull @jakarta.validation.constraints.NotNull Content content) {
     return builder().type(type).key(key).contentId(content.getId()).content(content).build();
   }
 }

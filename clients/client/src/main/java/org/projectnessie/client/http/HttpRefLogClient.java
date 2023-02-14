@@ -30,7 +30,9 @@ class HttpRefLogClient implements HttpRefLogApi {
   }
 
   @Override
-  public RefLogResponse getRefLog(@NotNull RefLogParams params) throws NessieNotFoundException {
+  public RefLogResponse getRefLog(
+      @NotNull @jakarta.validation.constraints.NotNull RefLogParams params)
+      throws NessieNotFoundException {
     HttpRequest builder = client.newRequest().path("reflogs");
     return builder
         .queryParam("maxRecords", params.maxRecords())

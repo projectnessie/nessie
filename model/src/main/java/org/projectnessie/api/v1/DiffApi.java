@@ -29,5 +29,8 @@ public interface DiffApi {
    * @param params The {@link DiffParams} that includes the parameters for this API call.
    * @return A list of diff values that show the difference between two given references.
    */
-  DiffResponse getDiff(@Valid @NotNull DiffParams params) throws NessieNotFoundException;
+  DiffResponse getDiff(
+      @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
+          DiffParams params)
+      throws NessieNotFoundException;
 }

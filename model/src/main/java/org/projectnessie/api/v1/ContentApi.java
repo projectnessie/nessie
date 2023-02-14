@@ -50,13 +50,22 @@ public interface ContentApi {
    * @throws NessieNotFoundException if {@code ref} or {@code hashOnRef} does not exist
    */
   Content getContent(
-      @Valid ContentKey key,
-      @Valid @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+      @Valid @jakarta.validation.Valid ContentKey key,
+      @Valid
+          @jakarta.validation.Valid
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.REF_NAME_REGEX,
+              message = Validation.REF_NAME_MESSAGE)
           String ref,
       @Valid
+          @jakarta.validation.Valid
           @Nullable
           @jakarta.annotation.Nullable
           @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.HASH_REGEX,
+              message = Validation.HASH_MESSAGE)
           String hashOnRef)
       throws NessieNotFoundException;
 
@@ -79,13 +88,23 @@ public interface ContentApi {
    * @throws NessieNotFoundException if {@code ref} or {@code hashOnRef} does not exist
    */
   GetMultipleContentsResponse getMultipleContents(
-      @Valid @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+      @Valid
+          @jakarta.validation.Valid
+          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.REF_NAME_REGEX,
+              message = Validation.REF_NAME_MESSAGE)
           String ref,
       @Valid
+          @jakarta.validation.Valid
           @Nullable
           @jakarta.annotation.Nullable
           @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.HASH_REGEX,
+              message = Validation.HASH_MESSAGE)
           String hashOnRef,
-      @Valid @NotNull GetMultipleContentsRequest request)
+      @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
+          GetMultipleContentsRequest request)
       throws NessieNotFoundException;
 }

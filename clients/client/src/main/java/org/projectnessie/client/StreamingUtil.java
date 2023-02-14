@@ -65,9 +65,10 @@ public final class StreamingUtil {
    */
   @Deprecated
   public static Stream<Reference> getAllReferencesStream(
-      @NotNull NessieApiV1 api,
-      @NotNull Function<GetAllReferencesBuilder, GetAllReferencesBuilder> builderCustomizer,
-      @NotNull OptionalInt pageSizeHint)
+      @NotNull @jakarta.validation.constraints.NotNull NessieApiV1 api,
+      @NotNull @jakarta.validation.constraints.NotNull
+          Function<GetAllReferencesBuilder, GetAllReferencesBuilder> builderCustomizer,
+      @NotNull @jakarta.validation.constraints.NotNull OptionalInt pageSizeHint)
       throws NessieNotFoundException {
     GetAllReferencesBuilder builder = builderCustomizer.apply(api.getAllReferences());
     Integer pageSize = pageSizeHint.isPresent() ? pageSizeHint.getAsInt() : null;
@@ -96,9 +97,10 @@ public final class StreamingUtil {
    */
   @Deprecated
   public static Stream<Entry> getEntriesStream(
-      @NotNull NessieApiV1 api,
-      @NotNull Function<GetEntriesBuilder, GetEntriesBuilder> builderCustomizer,
-      @NotNull OptionalInt pageSizeHint)
+      @NotNull @jakarta.validation.constraints.NotNull NessieApiV1 api,
+      @NotNull @jakarta.validation.constraints.NotNull
+          Function<GetEntriesBuilder, GetEntriesBuilder> builderCustomizer,
+      @NotNull @jakarta.validation.constraints.NotNull OptionalInt pageSizeHint)
       throws NessieNotFoundException {
     GetEntriesBuilder builder = builderCustomizer.apply(api.getEntries());
     Integer pageSize = pageSizeHint.isPresent() ? pageSizeHint.getAsInt() : null;
@@ -127,9 +129,10 @@ public final class StreamingUtil {
    */
   @Deprecated
   public static Stream<LogEntry> getCommitLogStream(
-      @NotNull NessieApiV1 api,
-      @NotNull Function<GetCommitLogBuilder, GetCommitLogBuilder> builderCustomizer,
-      @NotNull OptionalInt pageSizeHint)
+      @NotNull @jakarta.validation.constraints.NotNull NessieApiV1 api,
+      @NotNull @jakarta.validation.constraints.NotNull
+          Function<GetCommitLogBuilder, GetCommitLogBuilder> builderCustomizer,
+      @NotNull @jakarta.validation.constraints.NotNull OptionalInt pageSizeHint)
       throws NessieNotFoundException {
     GetCommitLogBuilder builder = builderCustomizer.apply(api.getCommitLog());
     Integer pageSize = pageSizeHint.isPresent() ? pageSizeHint.getAsInt() : null;
@@ -157,9 +160,10 @@ public final class StreamingUtil {
    */
   @Deprecated
   public static Stream<RefLogResponse.RefLogResponseEntry> getReflogStream(
-      @NotNull NessieApiV1 api,
-      @NotNull Function<GetRefLogBuilder, GetRefLogBuilder> builderCustomizer,
-      @NotNull OptionalInt pageSizeHint)
+      @NotNull @jakarta.validation.constraints.NotNull NessieApiV1 api,
+      @NotNull @jakarta.validation.constraints.NotNull
+          Function<GetRefLogBuilder, GetRefLogBuilder> builderCustomizer,
+      @NotNull @jakarta.validation.constraints.NotNull OptionalInt pageSizeHint)
       throws NessieNotFoundException {
     GetRefLogBuilder builder = builderCustomizer.apply(api.getRefLog());
     Integer pageSize = pageSizeHint.isPresent() ? pageSizeHint.getAsInt() : null;

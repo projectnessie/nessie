@@ -84,7 +84,8 @@ public abstract class LiveContentSet {
   }
 
   @MustBeClosed
-  public Stream<ContentReference> fetchContentReferences(@NotNull String contentId) {
+  public Stream<ContentReference> fetchContentReferences(
+      @NotNull @jakarta.validation.constraints.NotNull String contentId) {
     return persistenceSpi().fetchContentReferences(id(), contentId);
   }
 
@@ -99,16 +100,19 @@ public abstract class LiveContentSet {
   }
 
   @MustBeClosed
-  public Stream<URI> fetchBaseLocations(@NotNull String contentId) {
+  public Stream<URI> fetchBaseLocations(
+      @NotNull @jakarta.validation.constraints.NotNull String contentId) {
     return persistenceSpi().fetchBaseLocations(id(), contentId);
   }
 
-  public LiveContentSet startExpireContents(@NotNull Instant started) {
+  public LiveContentSet startExpireContents(
+      @NotNull @jakarta.validation.constraints.NotNull Instant started) {
     return persistenceSpi().startExpireContents(id(), started);
   }
 
   public LiveContentSet finishedExpireContents(
-      @NotNull Instant finished, @Nullable @jakarta.annotation.Nullable Throwable failure) {
+      @NotNull @jakarta.validation.constraints.NotNull Instant finished,
+      @Nullable @jakarta.annotation.Nullable Throwable failure) {
     return persistenceSpi().finishedExpireContents(id(), finished, failure);
   }
 

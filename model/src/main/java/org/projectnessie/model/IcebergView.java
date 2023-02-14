@@ -36,7 +36,9 @@ public abstract class IcebergView extends IcebergContent {
    * (implementation of) Iceberg's {@code FileIO} configured for the particular Iceberg table.
    */
   @NotNull
+  @jakarta.validation.constraints.NotNull
   @NotBlank
+  @jakarta.validation.constraints.NotBlank
   public abstract String getMetadataLocation();
 
   /** Corresponds to Iceberg's {@code currentVersionId}. */
@@ -45,7 +47,9 @@ public abstract class IcebergView extends IcebergContent {
   public abstract int getSchemaId();
 
   @NotBlank
+  @jakarta.validation.constraints.NotBlank
   @NotNull
+  @jakarta.validation.constraints.NotNull
   public abstract String getSqlText();
 
   @Nullable

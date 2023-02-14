@@ -28,7 +28,9 @@ import org.projectnessie.model.Reference;
  * @since {@link NessieApiV1}
  */
 public interface AssignBranchBuilder extends OnBranchBuilder<AssignBranchBuilder> {
-  AssignBranchBuilder assignTo(@Valid @NotNull Reference assignTo);
+  AssignBranchBuilder assignTo(
+      @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
+          Reference assignTo);
 
   void assign() throws NessieNotFoundException, NessieConflictException;
 

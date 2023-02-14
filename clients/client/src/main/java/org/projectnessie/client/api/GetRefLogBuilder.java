@@ -40,6 +40,9 @@ public interface GetRefLogBuilder
       @Nullable
           @jakarta.annotation.Nullable
           @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.HASH_REGEX,
+              message = Validation.HASH_MESSAGE)
           String untilHash);
 
   /**
@@ -50,6 +53,9 @@ public interface GetRefLogBuilder
       @Nullable
           @jakarta.annotation.Nullable
           @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.HASH_REGEX,
+              message = Validation.HASH_MESSAGE)
           String fromHash);
 
   @Override // kept for byte-code compatibility

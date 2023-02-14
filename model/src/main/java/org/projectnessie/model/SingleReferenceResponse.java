@@ -30,5 +30,6 @@ public interface SingleReferenceResponse {
   }
 
   @NotNull
+  @jakarta.validation.constraints.NotNull
   Reference getReference();
 }

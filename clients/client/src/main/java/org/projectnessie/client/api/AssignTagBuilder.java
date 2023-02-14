@@ -28,7 +28,9 @@ import org.projectnessie.model.Tag;
  * @since {@link NessieApiV1}
  */
 public interface AssignTagBuilder extends OnTagBuilder<AssignTagBuilder> {
-  AssignTagBuilder assignTo(@Valid @NotNull Reference assignTo);
+  AssignTagBuilder assignTo(
+      @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
+          Reference assignTo);
 
   void assign() throws NessieNotFoundException, NessieConflictException;
 

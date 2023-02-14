@@ -50,5 +50,8 @@ public interface RefLogApi {
    * @return {@link RefLogResponse}
    */
   @Deprecated
-  RefLogResponse getRefLog(@Valid @NotNull RefLogParams params) throws NessieNotFoundException;
+  RefLogResponse getRefLog(
+      @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
+          RefLogParams params)
+      throws NessieNotFoundException;
 }

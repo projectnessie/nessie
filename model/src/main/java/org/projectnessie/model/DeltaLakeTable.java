@@ -30,9 +30,11 @@ import org.immutables.value.Value;
 public abstract class DeltaLakeTable extends Content {
 
   @NotNull
+  @jakarta.validation.constraints.NotNull
   public abstract List<String> getMetadataLocationHistory();
 
   @NotNull
+  @jakarta.validation.constraints.NotNull
   public abstract List<String> getCheckpointLocationHistory();
 
   @Nullable

@@ -20,9 +20,9 @@ import org.projectnessie.model.Namespace;
 
 public interface OnNamespaceBuilder<R extends OnNamespaceBuilder<R>> extends OnReferenceBuilder<R> {
 
-  R namespace(@NotNull Namespace namespace);
+  R namespace(@NotNull @jakarta.validation.constraints.NotNull Namespace namespace);
 
-  default R namespace(@NotNull String namespace) {
+  default R namespace(@NotNull @jakarta.validation.constraints.NotNull String namespace) {
     return namespace(Namespace.parse(namespace));
   }
 }

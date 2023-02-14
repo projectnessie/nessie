@@ -66,11 +66,14 @@ public interface Transplant extends BaseMergeTransplant {
   @Override
   @Nullable
   @jakarta.annotation.Nullable
-  @Size(min = 1)
+  @Size
+  @jakarta.validation.constraints.Size(min = 1)
   String getMessage();
 
   @NotNull
-  @Size(min = 1)
+  @jakarta.validation.constraints.NotNull
+  @Size
+  @jakarta.validation.constraints.Size(min = 1)
   List<String> getHashesToTransplant();
 
   /**

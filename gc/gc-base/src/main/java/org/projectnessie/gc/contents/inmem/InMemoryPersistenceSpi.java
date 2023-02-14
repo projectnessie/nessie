@@ -68,7 +68,8 @@ public class InMemoryPersistenceSpi implements PersistenceSpi {
 
   @Override
   public long addIdentifiedLiveContent(
-      @NotNull UUID liveSetId, @NotNull Stream<ContentReference> contentReference) {
+      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
+      @NotNull @jakarta.validation.constraints.NotNull Stream<ContentReference> contentReference) {
     return contentReference
         .mapToLong(
             ref ->
@@ -83,7 +84,9 @@ public class InMemoryPersistenceSpi implements PersistenceSpi {
   }
 
   @Override
-  public void startIdentifyLiveContents(@NotNull UUID liveSetId, @NotNull Instant created) {
+  public void startIdentifyLiveContents(
+      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
+      @NotNull @jakarta.validation.constraints.NotNull Instant created) {
     Preconditions.checkState(
         liveContentSets.putIfAbsent(
                 liveSetId,
@@ -100,8 +103,8 @@ public class InMemoryPersistenceSpi implements PersistenceSpi {
 
   @Override
   public void finishedIdentifyLiveContents(
-      @NotNull UUID liveSetId,
-      @NotNull Instant finished,
+      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
+      @NotNull @jakarta.validation.constraints.NotNull Instant finished,
       @Nullable @jakarta.annotation.Nullable Throwable failure) {
     get(liveSetId)
         .liveContentSet
@@ -121,7 +124,9 @@ public class InMemoryPersistenceSpi implements PersistenceSpi {
   }
 
   @Override
-  public LiveContentSet startExpireContents(@NotNull UUID liveSetId, @NotNull Instant started) {
+  public LiveContentSet startExpireContents(
+      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
+      @NotNull @jakarta.validation.constraints.NotNull Instant started) {
     return get(liveSetId)
         .liveContentSet
         .getAndUpdate(
@@ -135,8 +140,8 @@ public class InMemoryPersistenceSpi implements PersistenceSpi {
 
   @Override
   public LiveContentSet finishedExpireContents(
-      @NotNull UUID liveSetId,
-      @NotNull Instant finished,
+      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
+      @NotNull @jakarta.validation.constraints.NotNull Instant finished,
       @Nullable @jakarta.annotation.Nullable Throwable failure) {
     return get(liveSetId)
         .liveContentSet
@@ -156,7 +161,8 @@ public class InMemoryPersistenceSpi implements PersistenceSpi {
   }
 
   @Override
-  public LiveContentSet getLiveContentSet(@NotNull UUID liveSetId)
+  public LiveContentSet getLiveContentSet(
+      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId)
       throws LiveContentSetNotFoundException {
     try {
       return get(liveSetId).liveContentSet.get();
@@ -169,18 +175,21 @@ public class InMemoryPersistenceSpi implements PersistenceSpi {
   }
 
   @Override
-  public long fetchDistinctContentIdCount(@NotNull UUID liveSetId) {
+  public long fetchDistinctContentIdCount(
+      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId) {
     return getOptional(liveSetId).map(lcs -> (long) lcs.contents.size()).orElse(0L);
   }
 
   @Override
-  public Stream<String> fetchContentIds(@NotNull UUID liveSetId) {
+  public Stream<String> fetchContentIds(
+      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId) {
     return getOptional(liveSetId).map(lcs -> lcs.contents.keySet().stream()).orElse(Stream.empty());
   }
 
   @Override
   public Stream<ContentReference> fetchContentReferences(
-      @NotNull UUID liveSetId, @NotNull String contentId) {
+      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
+      @NotNull @jakarta.validation.constraints.NotNull String contentId) {
     return getOptional(liveSetId)
         .map(lcs -> lcs.contents.getOrDefault(contentId, emptySet()).stream())
         .orElse(Stream.empty());

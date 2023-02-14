@@ -50,6 +50,7 @@ public interface Detached extends Reference {
 
   @Override
   @NotEmpty
+  @jakarta.validation.constraints.NotEmpty
   @Value.Parameter(order = 1)
   String getHash();
 

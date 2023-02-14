@@ -49,12 +49,15 @@ public abstract class TableReference {
       Pattern.compile("^([^@#]+)(@([^@#]+))?(#([^@#]+))?$");
 
   @NotNull
+  @jakarta.validation.constraints.NotNull
   @NotEmpty
+  @jakarta.validation.constraints.NotEmpty
   public abstract String getName();
 
   @Nullable
   @jakarta.annotation.Nullable
   @NotEmpty
+  @jakarta.validation.constraints.NotEmpty
   public abstract String getReference();
 
   @Value.Redacted
@@ -65,6 +68,7 @@ public abstract class TableReference {
   @Nullable
   @jakarta.annotation.Nullable
   @NotEmpty
+  @jakarta.validation.constraints.NotEmpty
   public abstract String getTimestamp();
 
   @Value.Redacted
@@ -75,6 +79,7 @@ public abstract class TableReference {
   @Nullable
   @jakarta.annotation.Nullable
   @NotEmpty
+  @jakarta.validation.constraints.NotEmpty
   public abstract String getHash();
 
   @Value.Redacted

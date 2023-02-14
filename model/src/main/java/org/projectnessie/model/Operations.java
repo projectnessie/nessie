@@ -31,9 +31,12 @@ import org.immutables.value.Value;
 public interface Operations {
 
   @NotNull
+  @jakarta.validation.constraints.NotNull
   CommitMeta getCommitMeta();
 
   @NotNull
-  @Size(min = 1)
+  @jakarta.validation.constraints.NotNull
+  @Size
+  @jakarta.validation.constraints.Size(min = 1)
   List<Operation> getOperations();
 }

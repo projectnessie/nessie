@@ -30,7 +30,8 @@ class HttpDiffClient implements HttpDiffApi {
   }
 
   @Override
-  public DiffResponse getDiff(@NotNull DiffParams params) throws NessieNotFoundException {
+  public DiffResponse getDiff(@NotNull @jakarta.validation.constraints.NotNull DiffParams params)
+      throws NessieNotFoundException {
     return client
         .newRequest()
         .path("diffs/{fromRef}{fromHashOnRef}...{toRef}{toHashOnRef}")

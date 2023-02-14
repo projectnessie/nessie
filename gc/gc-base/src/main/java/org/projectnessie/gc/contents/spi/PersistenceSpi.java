@@ -41,41 +41,53 @@ public interface PersistenceSpi {
   @MustBeClosed
   Stream<LiveContentSet> getAllLiveContents();
 
-  void startIdentifyLiveContents(@NotNull UUID liveSetId, @NotNull Instant created);
+  void startIdentifyLiveContents(
+      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
+      @NotNull @jakarta.validation.constraints.NotNull Instant created);
 
   long addIdentifiedLiveContent(
-      @NotNull UUID liveSetId, @NotNull Stream<ContentReference> contentReference);
+      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
+      @NotNull @jakarta.validation.constraints.NotNull Stream<ContentReference> contentReference);
 
   void finishedIdentifyLiveContents(
-      @NotNull UUID liveSetId,
-      @NotNull Instant finished,
+      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
+      @NotNull @jakarta.validation.constraints.NotNull Instant finished,
       @Nullable @jakarta.annotation.Nullable Throwable failure);
 
-  LiveContentSet startExpireContents(@NotNull UUID liveSetId, @NotNull Instant started);
+  LiveContentSet startExpireContents(
+      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
+      @NotNull @jakarta.validation.constraints.NotNull Instant started);
 
   LiveContentSet finishedExpireContents(
-      @NotNull UUID liveSetId,
-      @NotNull Instant finished,
+      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
+      @NotNull @jakarta.validation.constraints.NotNull Instant finished,
       @Nullable @jakarta.annotation.Nullable Throwable failure);
 
-  LiveContentSet getLiveContentSet(@NotNull UUID liveSetId) throws LiveContentSetNotFoundException;
+  LiveContentSet getLiveContentSet(@NotNull @jakarta.validation.constraints.NotNull UUID liveSetId)
+      throws LiveContentSetNotFoundException;
 
-  long fetchDistinctContentIdCount(@NotNull UUID liveSetId);
+  long fetchDistinctContentIdCount(@NotNull @jakarta.validation.constraints.NotNull UUID liveSetId);
 
   @MustBeClosed
-  Stream<String> fetchContentIds(@NotNull UUID liveSetId);
+  Stream<String> fetchContentIds(@NotNull @jakarta.validation.constraints.NotNull UUID liveSetId);
 
   Stream<ContentReference> fetchContentReferences(
-      @NotNull UUID liveSetId, @NotNull String contentId);
+      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
+      @NotNull @jakarta.validation.constraints.NotNull String contentId);
 
   void associateBaseLocations(
-      @NotNull UUID liveSetId, @NotNull String contentId, @NotNull Collection<URI> baseLocations);
+      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
+      @NotNull @jakarta.validation.constraints.NotNull String contentId,
+      @NotNull @jakarta.validation.constraints.NotNull Collection<URI> baseLocations);
 
   @MustBeClosed
-  Stream<URI> fetchBaseLocations(@NotNull UUID liveSetId, @NotNull String contentId);
+  Stream<URI> fetchBaseLocations(
+      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
+      @NotNull @jakarta.validation.constraints.NotNull String contentId);
 
   @MustBeClosed
-  Stream<URI> fetchAllBaseLocations(@NotNull UUID liveSetId);
+  Stream<URI> fetchAllBaseLocations(
+      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId);
 
   /**
    * Records the given files to be later returned by {@link #fetchFileDeletions(UUID)}, ignores
@@ -83,12 +95,15 @@ public interface PersistenceSpi {
    *
    * @return the number of actually added files
    */
-  long addFileDeletions(@NotNull UUID liveSetId, @NotNull Stream<FileReference> files);
+  long addFileDeletions(
+      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId,
+      @NotNull @jakarta.validation.constraints.NotNull Stream<FileReference> files);
 
   /**
    * Returns the {@link #addFileDeletions(UUID, Stream)} recorded file deletions (aka deferred
    * deletes) grouped by base path.
    */
   @MustBeClosed
-  Stream<FileReference> fetchFileDeletions(@NotNull UUID liveSetId);
+  Stream<FileReference> fetchFileDeletions(
+      @NotNull @jakarta.validation.constraints.NotNull UUID liveSetId);
 }
