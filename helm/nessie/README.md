@@ -112,7 +112,7 @@ $ helm uninstall --namespace nessie-ns nessie
 | serviceMonitor.interval | string | `""` | The scrape interval; leave empty to let Prometheus decide. Must be a valid duration, e.g. 1d, 1h30m, 5m, 10s. |
 | serviceMonitor.labels | object | `{}` | Labels for the created ServiceMonitor so that Prometheus operator can properly pick it up. |
 | tolerations | list | `[]` | A list of tolerations to apply to nessie pods. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/. |
-| versionStoreAdvancedConfig | object | `{}` | Environment variables for advanced version store configuration. |
+| versionStoreAdvancedConfig | object | `{}` | Advanced version store configuration. The key-value pairs specified here will be passed to the Nessie server as environment variables. See https://projectnessie.org/try/configuration/#version-store-advanced-settings for available properties. Naming convention: to set the property nessie.version.store.advanced.repository-id, use the key: NESSIE_VERSION_STORE_ADVANCED_REPOSITORY_ID. |
 | versionStoreType | string | `"INMEMORY"` | Which type of version store to use: INMEMORY, ROCKS, DYNAMO, MONGO, TRANSACTIONAL. |
 
 ## Using secrets

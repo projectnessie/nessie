@@ -69,11 +69,15 @@ postgres:
     # -- The secret key storing the Postgres password.
     password: postgres_password
 
-# -- Environment variables for advanced version store configuration.
+# -- Advanced version store configuration.
+# The key-value pairs specified here will be passed to the Nessie server as environment variables.
+# See https://projectnessie.org/try/configuration/#version-store-advanced-settings for available properties.
+# Naming convention: to set the property nessie.version.store.advanced.repository-id,
+# use the key: NESSIE_VERSION_STORE_ADVANCED_REPOSITORY_ID.
 versionStoreAdvancedConfig:
   {}
-  # - key: QUARKUS_DATASOURCE_JDBC_POOLING_ENABLED
-  #   value: true
+  # - key: NESSIE_VERSION_STORE_ADVANCED_REPOSITORY_ID
+  #   value: my-tenant
 
 authentication:
   # -- Specifies whether authentication for the nessie server should be enabled.
