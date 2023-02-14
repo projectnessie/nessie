@@ -97,7 +97,6 @@ $ helm uninstall --namespace nessie-ns nessie
 | postgres.secret.username | string | `"postgres_username"` | The secret key storing the Postgres username. |
 | replicaCount | int | `1` | The number of replicas to deploy (horizontal scaling). Beware that replicas are stateless; don't set this number > 1 when using ROCKS version store type. |
 | resources | object | `{}` | Configures the resources requests and limits for nessie pods. We usually recommend not to specify default resources and to leave this as a conscious choice for the user. This also increases chances charts run on environments with little resources, such as Minikube. If you do want to specify resources, uncomment the following lines, adjust them as necessary, and remove the curly braces after 'resources:'. |
-| rocksdb.dbPath | string | `"/rocks-nessie"` | The path to the rocksdb database. |
 | rocksdb.selectorLabels | object | `{}` | Labels to add to the persistent volume claim spec selector; a persistent volume with matching labels must exist. Leave empty if using dynamic provisioning. |
 | rocksdb.storageClassName | string | `"standard"` | The storage class name of the persistent volume claim to create. |
 | rocksdb.storageSize | string | `"1Gi"` | The size of the persistent volume claim to create. |
