@@ -280,3 +280,8 @@ class SparkScalaVersions(
   val sparkVersion: String,
   val scalaVersion: String
 ) {}
+
+enum class Arch(val value: String) {
+  AMD64("amd64"),
+  ARM64("arm64")
+}

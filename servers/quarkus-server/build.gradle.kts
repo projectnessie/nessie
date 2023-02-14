@@ -115,6 +115,13 @@ val pullOpenApiSpec by
 
 val openApiSpecDir = buildDir.resolve("openapi-extra")
 val useDocker = project.hasProperty("docker")
+val arch = if (project.hasProperty("arm64")) {
+  Arch.ARM64
+} else if (project.hasProperty("amd64")) {
+  Arch.AMD64
+} else {
+  Arch.AMD64
+}
 val packageType = quarkusPackageType()
 val quarkusBuilderImage = libs.versions.quarkusBuilderImage.get()
 
@@ -122,6 +129,7 @@ quarkus {
   quarkusBuildProperties.put("quarkus.package.type", packageType)
   quarkusBuildProperties.put("quarkus.native.builder-image", quarkusBuilderImage)
   if (useDocker) {
+    quarkusBuildProperties.put("quarkus.jib.platforms", "linux/${arch.value}")
     quarkusBuildProperties.put("quarkus.native.container-build", "true")
     quarkusBuildProperties.put("quarkus.container-image.build", "true")
   }
