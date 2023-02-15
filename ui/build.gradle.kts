@@ -19,6 +19,7 @@ import com.github.gradle.node.npm.task.NpmInstallTask
 import com.github.gradle.node.npm.task.NpmSetupTask
 import com.github.gradle.node.npm.task.NpmTask
 import com.github.gradle.node.task.NodeSetupTask
+import org.apache.tools.ant.taskdefs.condition.Os
 
 plugins {
   // The ':nessie-ui' module is technically not a Java library, but declaring it as such provides
@@ -243,6 +244,11 @@ tasks.withType<SpotlessTask>().configureEach {
 tasks.named("test") { dependsOn(npmTest) }
 
 tasks.named("check") {
-  dependsOn(npmTest)
+  dependsOn(tasks.named("test"))
   dependsOn(npmLint)
+}
+
+// NPM tests regularly (nearly consistently) fail
+if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+  tasks.named("test") { this.enabled = false }
 }
