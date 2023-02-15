@@ -60,7 +60,6 @@ dependencies {
   implementation("io.quarkus:quarkus-micrometer")
   implementation("io.quarkus:quarkus-core-deployment")
   implementation(libs.quarkus.opentelemetry)
-  implementation("io.quarkus:quarkus-container-image-jib")
   implementation(libs.quarkus.logging.sentry)
   implementation("io.smallrye:smallrye-open-api-jaxrs")
   implementation("io.micrometer:micrometer-registry-prometheus")
@@ -114,19 +113,7 @@ val pullOpenApiSpec by
   }
 
 val openApiSpecDir = buildDir.resolve("openapi-extra")
-val useDocker = project.hasProperty("docker")
 val useNative = project.hasProperty("native")
-var jibPlatforms: String = System.getProperty("quarkus.jib.platforms", "linux/amd64")
-
-if (useNative && jibPlatforms.contains(',')) {
-  val single = jibPlatforms.substring(0, jibPlatforms.indexOf(','))
-  logger.warn(
-    "ONLY building for plaform '{}' instead of '{}', because native image build is enabled.",
-    single,
-    jibPlatforms
-  )
-  jibPlatforms = single
-}
 
 quarkus {
   quarkusBuildProperties.put("quarkus.package.type", quarkusPackageType())
@@ -134,14 +121,6 @@ quarkus {
     "quarkus.native.builder-image",
     libs.versions.quarkusNativeBuilderImage.get()
   )
-  quarkusBuildProperties.put("quarkus.native.container-build", useNative.toString())
-  quarkusBuildProperties.put("quarkus.container-image.build", useDocker.toString())
-  quarkusBuildProperties.put("quarkus.container-image.builder", "jib")
-  quarkusBuildProperties.put(
-    "quarkus.jib.base-jvm-image",
-    libs.versions.quarkusJibBaseJvmImage.get()
-  )
-  quarkusBuildProperties.put("quarkus.jib.platforms", jibPlatforms)
   quarkusBuildProperties.put(
     "quarkus.smallrye-openapi.store-schema-directory",
     buildDir.resolve("openapi").toString()
@@ -202,7 +181,6 @@ tasks.withType<Test>().configureEach {
   if (project.hasProperty("native")) {
     systemProperty("native.image.path", quarkusBuild.get().nativeRunner)
   }
-  systemProperty("quarkus.container-image.build", useDocker)
   systemProperty("quarkus.smallrye.jwt.enabled", "true")
   systemProperty(
     "it.nessie.container.postgres.tag",

@@ -118,22 +118,31 @@ jobs:
         MAVEN_USERNAME: ${{ secrets.OSSRH_ACCESS_ID }}
         MAVEN_OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
         MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+        ARTIFACTS: ../build-artifacts
       run: |
+        rm -rf "${ARTIFACTS}"
+        mkdir -p "${ARTIFACTS}"
+        
         echo "::group::Publish to Sonatype"
         ./gradlew --no-watch-fs --no-daemon publishToMavenLocal publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar
+        mv servers/quarkus-server/build/nessie-quarkus-${RELEASE_VERSION}-runner.jar "${ARTIFACTS}"
+        mv servers/quarkus-cli/build/nessie-quarkus-cli-${RELEASE_VERSION}-runner.jar "${ARTIFACTS}"
         echo "::endgroup::"
 
-        # Build the native-image, it's not released to Maven Central
-        echo "::group::Build native image"
-        ./gradlew --no-watch-fs --no-daemon :nessie-quarkus:quarkusBuild -Prelease -Pnative -Pdocker
-        echo "::endgroup::"
+        echo '${{ secrets.DOCKER_TOKEN }}' | docker login -u '${{ secrets.DOCKER_USERNAME }}' --password-stdin
+        tools/dockerbuild/build-push-images.sh \
+          -a "${ARTIFACTS}" \
+          -g ":nessie-quarkus" \
+          -p "servers/quarkus-server" \
+          -n \
+          projectnessie/nessie
 
         # Add version to the openapi file name
         cp model/build/generated/openapi/META-INF/openapi/openapi.yaml model/build/nessie-openapi-${RELEASE_VERSION}.yaml
 
-        echo "QUARKUS_NATIVE_BINARY=servers/quarkus-server/build/nessie-quarkus-${RELEASE_VERSION}-runner" >> ${GITHUB_ENV}
-        echo "QUARKUS_UBER_JAR=servers/quarkus-server/build/nessie-quarkus-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
-        echo "CLI_UBER_JAR=servers/quarkus-cli/build/nessie-quarkus-cli-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
+        echo "QUARKUS_UBER_JAR=${ARTIFACTS}/nessie-quarkus-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
+        echo "CLI_UBER_JAR=${ARTIFACTS}/nessie-quarkus-cli-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
+        echo "QUARKUS_NATIVE_BINARY=${ARTIFACTS}/nessie-quarkus-${RELEASE_VERSION}-runner" >> ${GITHUB_ENV}
         echo "GC_EXEC=gc/gc-shell/build/executable/nessie-gc" >> ${GITHUB_ENV}
         echo "NESSIE_OPENAPI=model/build/nessie-openapi-${RELEASE_VERSION}.yaml" >> ${GITHUB_ENV}
 
@@ -177,26 +186,6 @@ jobs:
     - name: pynessie info
       run: echo "## Successfully published pynessie ${RELEASE_VERSION}" >> $GITHUB_STEP_SUMMARY
 
-    # Deploys Docker images. Build and test steps were already ran in previous workflows
-    - name: Publish Docker image for release
-      run: |
-        echo "## Docker publish ${RELEASE_VERSION}" >> $GITHUB_STEP_SUMMARY
-
-        echo "::group::Tag Docker image"
-        docker tag projectnessie/nessie:${RELEASE_VERSION} projectnessie/nessie:latest
-        echo "Successfully tagged Docker image as \`projectnessie/nessie:${RELEASE_VERSION}\`" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "::endgroup::"
-
-        echo "::group::Docker Hub login"
-        echo '${{ secrets.DOCKER_TOKEN }}' | docker login -u '${{ secrets.DOCKER_USERNAME }}' --password-stdin
-        echo "::endgroup::"
-
-        echo "::group::Push Docker image"
-        docker push projectnessie/nessie:${RELEASE_VERSION} && docker push projectnessie/nessie:latest
-        echo "::endgroup::"
-        echo "Successfully pushed Docker image for ${RELEASE_VERSION}" >> $GITHUB_STEP_SUMMARY
-
     # Prepare Nessie release notes for GitHub
     #
     # The markdown file for the release is generated using some mostly simple shell script.
@@ -229,7 +218,10 @@ jobs:
 
         * ${NUM_COMMITS} commits since ${LAST_TAG#nessie-}
         * Maven Central: https://search.maven.org/search?q=g:org.projectnessie+v:${RELEASE_VERSION}
-        * Docker Hub: https://hub.docker.com/r/projectnessie/nessie \`docker pull projectnessie/nessie:${RELEASE_VERSION}\`
+        * Docker Hub: https://hub.docker.com/r/projectnessie/nessie
+          * Multiplatform Java image (amd64, arm64, ppc64le, s390x): `projectnessie/nessie:${RELEASE_VERSION}-java\`
+          * Image with native amd64 binary: `projectnessie/nessie:${RELEASE_VERSION}-native\`
+            (only recommended for short running Nessie instances, amd64 only)
         * PyPI: https://pypi.org/project/pynessie/${RELEASE_VERSION}/
         * Helm Chart repo: https://charts.projectnessie.org/
 

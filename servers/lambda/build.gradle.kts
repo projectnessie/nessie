@@ -54,19 +54,7 @@ dependencies {
 
 buildForJava11()
 
-val useDocker = project.hasProperty("docker")
 val useNative = project.hasProperty("native")
-var jibPlatforms: String = System.getProperty("quarkus.jib.platforms", "linux/amd64")
-
-if (useNative && jibPlatforms.contains(',')) {
-  val single = jibPlatforms.substring(0, jibPlatforms.indexOf(','))
-  logger.warn(
-    "ONLY building for plaform '{}' instead of '{}', because native image build is enabled.",
-    single,
-    jibPlatforms
-  )
-  jibPlatforms = single
-}
 
 quarkus {
   quarkusBuildProperties.put("quarkus.package.type", quarkusPackageType())
@@ -75,12 +63,6 @@ quarkus {
     libs.versions.quarkusNativeBuilderImage.get()
   )
   quarkusBuildProperties.put("quarkus.native.container-build", useNative.toString())
-  quarkusBuildProperties.put("quarkus.container-image.build", useDocker.toString())
-  quarkusBuildProperties.put(
-    "quarkus.jib.base-jvm-image",
-    libs.versions.quarkusJibBaseJvmImage.get()
-  )
-  quarkusBuildProperties.put("quarkus.jib.platforms", jibPlatforms)
 }
 
 val quarkusBuild by
@@ -98,7 +80,6 @@ tasks.withType<Test>().configureEach {
   systemProperty("quarkus.log.console.level", testLogLevel())
   systemProperty("http.access.log.level", testLogLevel())
   systemProperty("native.image.path", quarkusBuild.nativeRunner)
-  systemProperty("quarkus.container-image.build", useDocker)
   systemProperty("quarkus.smallrye.jwt.enabled", "true")
 
   val testHeapSize: String? by project

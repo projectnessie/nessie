@@ -26,6 +26,10 @@
       matchManagers: ["pip_requirements", "pip_setup"],
       "labels": ["dependencies", "python"],
     },
+    {
+      matchManagers: ["docker"],
+      "labels": ["dependencies", "docker"],
+    },
 
     // Check for updates, merge automatically
     {
@@ -58,7 +62,14 @@
         "org.glassfish.jersey:jersey-bom",
       ],
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
-    }
+    },
+
+    // Docker
+    {
+      matchManagers: ["docker"],
+      automerge: false,
+      platformAutomerge: false
+    },
   ],
 
   // Max 50 PRs in total, 10 per hour
