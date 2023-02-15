@@ -88,13 +88,15 @@ public class MultiEnvTestEngine implements TestEngine {
             }
           });
 
-      AtomicBoolean discovered = new AtomicBoolean();
+      List<String> extensions = new ArrayList<>();
+      AtomicBoolean envDiscovered = new AtomicBoolean();
       registry.stream()
           .forEach(
               ext -> {
+                extensions.add(ext.getClass().getSimpleName());
                 for (String envId :
                     ext.allEnvironmentIds(discoveryRequest.getConfigurationParameters())) {
-                  discovered.set(true);
+                  envDiscovered.set(true);
                   UniqueId segment = uniqueId.append(ext.segmentType(), envId);
 
                   MultiEnvTestDescriptor envRoot = new MultiEnvTestDescriptor(segment, envId);
@@ -111,17 +113,11 @@ public class MultiEnvTestEngine implements TestEngine {
                 }
               });
 
-      if (!discovered.get()) {
-        if (FAIL_ON_MISSING_ENVIRONMENTS) {
-          throw new IllegalStateException(
-              String.format(
-                  "%s was enabled, but did not discover any environment IDs",
-                  getClass().getSimpleName()));
-        } else {
-          LOGGER.warn(
-              "{} was enabled, but did not discover any environment IDs",
-              getClass().getSimpleName());
-        }
+      if (!extensions.isEmpty() && !envDiscovered.get() && FAIL_ON_MISSING_ENVIRONMENTS) {
+        throw new IllegalStateException(
+            String.format(
+                "%s was enabled, but test extensions did not discover any environment IDs: %s",
+                getClass().getSimpleName(), extensions));
       }
       return engineDescriptor;
     } catch (Exception e) {

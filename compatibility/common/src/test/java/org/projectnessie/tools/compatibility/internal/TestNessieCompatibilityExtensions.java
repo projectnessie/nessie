@@ -47,13 +47,16 @@ class TestNessieCompatibilityExtensions {
 
   @Test
   void noVersions() {
-    soft.assertThat(
-            EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
-                .selectors(selectClass(OldClientsSample.class))
-                .execute()
-                .testEvents()
-                .list())
-        .isEmpty();
+    soft.assertThatThrownBy(
+            () ->
+                EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
+                    .selectors(selectClass(OldClientsSample.class))
+                    .execute())
+        .hasMessageContaining("TestEngine with ID 'nessie-multi-env' failed to discover tests")
+        .cause()
+        .hasMessageContaining(
+            "MultiEnvTestEngine was enabled, but test extensions did not discover any environment IDs")
+        .hasMessageContaining("OlderNessieClientsExtension");
   }
 
   @Test
