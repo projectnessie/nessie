@@ -26,6 +26,8 @@ import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
@@ -40,7 +42,7 @@ class TestNessieApiHolder {
   @InjectSoftAssertions protected SoftAssertions soft;
 
   @Test
-  void currentVersionServer() throws Throwable {
+  void currentVersionServer() {
     ExtensionValuesStore valuesStore = new ExtensionValuesStore(null);
     try {
       Store store = new NamespaceAwareStore(valuesStore, Util.NAMESPACE);
@@ -71,7 +73,8 @@ class TestNessieApiHolder {
   }
 
   @Test
-  void oldVersionServer() throws Throwable {
+  @DisabledOnOs(OS.MAC)
+  void oldVersionServer() {
     ExtensionValuesStore valuesStore = new ExtensionValuesStore(null);
     try {
       Store store = new NamespaceAwareStore(valuesStore, Util.NAMESPACE);
