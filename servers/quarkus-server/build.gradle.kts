@@ -115,16 +115,33 @@ val pullOpenApiSpec by
 
 val openApiSpecDir = buildDir.resolve("openapi-extra")
 val useDocker = project.hasProperty("docker")
-val packageType = quarkusPackageType()
-val quarkusBuilderImage = libs.versions.quarkusBuilderImage.get()
+val useNative = project.hasProperty("native")
+var jibPlatforms: String = System.getProperty("quarkus.jib.platforms", "linux/amd64")
+
+if (useNative && jibPlatforms.contains(',')) {
+  val single = jibPlatforms.substring(0, jibPlatforms.indexOf(','))
+  logger.warn(
+    "ONLY building for plaform '{}' instead of '{}', because native image build is enabled.",
+    single,
+    jibPlatforms
+  )
+  jibPlatforms = single
+}
 
 quarkus {
-  quarkusBuildProperties.put("quarkus.package.type", packageType)
-  quarkusBuildProperties.put("quarkus.native.builder-image", quarkusBuilderImage)
-  if (useDocker) {
-    quarkusBuildProperties.put("quarkus.native.container-build", "true")
-    quarkusBuildProperties.put("quarkus.container-image.build", "true")
-  }
+  quarkusBuildProperties.put("quarkus.package.type", quarkusPackageType())
+  quarkusBuildProperties.put(
+    "quarkus.native.builder-image",
+    libs.versions.quarkusNativeBuilderImage.get()
+  )
+  quarkusBuildProperties.put("quarkus.native.container-build", useNative.toString())
+  quarkusBuildProperties.put("quarkus.container-image.build", useDocker.toString())
+  quarkusBuildProperties.put("quarkus.container-image.builder", "jib")
+  quarkusBuildProperties.put(
+    "quarkus.jib.base-jvm-image",
+    libs.versions.quarkusJibBaseJvmImage.get()
+  )
+  quarkusBuildProperties.put("quarkus.jib.platforms", jibPlatforms)
   quarkusBuildProperties.put(
     "quarkus.smallrye-openapi.store-schema-directory",
     buildDir.resolve("openapi").toString()
@@ -139,10 +156,8 @@ val quarkusBuild =
   tasks.named<QuarkusBuild>("quarkusBuild") {
     outputs.doNotCacheIf("Do not add huge cache artifacts to build cache") { true }
     dependsOn(pullOpenApiSpec)
-    inputs.property("quarkus.package.type", packageType)
     inputs.property("final.name", quarkus.finalName())
-    inputs.property("container-build", useDocker)
-    inputs.property("builder-image", quarkusBuilderImage)
+    inputs.properties(quarkus.quarkusBuildProperties.get())
   }
 
 val prepareJacocoReport by

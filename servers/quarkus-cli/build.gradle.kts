@@ -96,14 +96,13 @@ tasks.withType<ProcessResources>().configureEach {
 
 // nessie-quarkus-cli module needs to be adopted before we can generate a native runner
 val packageType = quarkusNonNativePackageType()
-val quarkusBuilderImage = libs.versions.quarkusBuilderImage.get()
 
 quarkus { quarkusBuildProperties.put("quarkus.package.type", packageType) }
 
 tasks.withType<QuarkusBuild>().configureEach {
   outputs.doNotCacheIf("Do not add huge cache artifacts to build cache") { true }
-  inputs.property("quarkus.package.type", packageType)
   inputs.property("final.name", quarkus.finalName())
+  inputs.properties(quarkus.quarkusBuildProperties.get())
 }
 
 val prepareJacocoReport by
