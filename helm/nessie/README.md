@@ -15,13 +15,10 @@ A Helm chart for Nessie.
 **Homepage:** <https://projectnessie.org/>
 
 ## Maintainers
-
-| Name | Email | Url |
-| ---- | ------ | --- |
-| Eduard Tudenhöfner |  | <https://github.com/nastra> |
-| Robert Stupp |  | <https://github.com/snazy> |
-| Dmitri Bourlatchkov |  | <https://github.com/dimas-b> |
-| Alexandre Dutra |  | <https://github.com/adutra> |
+* [nastra](https://github.com/nastra)
+* [snazy](https://github.com/snazy)
+* [dimas-b](https://github.com/dimas-b)
+* [adutra](https://github.com/adutra)
 
 ## Source Code
 
