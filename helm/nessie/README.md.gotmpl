@@ -16,7 +16,11 @@ helm-docs --chart-search-root=helm
 
 {{ template "chart.homepageLine" . }}
 
-{{ template "chart.maintainersSection" . }}
+{{ template "chart.maintainersHeader" . }}
+
+{{- range .Maintainers }}
+* [{{ .Name }}]({{ if .Url }}{{ .Url }}{{ else }}https://github.com/{{ .Name }}{{ end }})
+{{- end }}
 
 {{ template "chart.sourcesSection" . }}
 
