@@ -628,7 +628,8 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
       throws NessieNotFoundException {
     List<Object[]> result = executeCompaction(tableName);
     // re-written files count is 2 and the added files count is 1
-    assertThat(result).hasSize(1).containsExactly(row(2, 1));
+    assertThat(result.get(0)[0]).isEqualTo(2);
+    assertThat(result.get(0)[1]).isEqualTo(1);
 
     // check for compaction commit
     LogResponse.LogEntry logEntry =
