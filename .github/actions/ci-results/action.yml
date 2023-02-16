@@ -8,6 +8,7 @@ runs:
       with:
         name: gatling-logs
         path: perftest/simulations/build/reports/gatling/*/simulation.log
+        retention-days: 1
     - uses: codecov/codecov-action@v3
       if: github.repository_owner == 'projectnessie'
       continue-on-error: true
