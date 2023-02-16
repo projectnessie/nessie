@@ -106,6 +106,7 @@ jobs:
         path: |
           **/build/reports/*
           **/build/test-results/*
+        retention-days: 3
 
   python:
     name: Python

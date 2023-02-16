@@ -83,3 +83,4 @@ jobs:
         path: |
           **/build/reports/*
           **/build/test-results/*
+        retention-days: 7
