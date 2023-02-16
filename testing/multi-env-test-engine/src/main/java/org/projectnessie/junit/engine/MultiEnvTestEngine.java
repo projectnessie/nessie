@@ -18,6 +18,7 @@ package org.projectnessie.junit.engine;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.engine.JupiterTestEngine;
 import org.junit.jupiter.engine.config.CachingJupiterConfiguration;
 import org.junit.jupiter.engine.config.DefaultJupiterConfiguration;
@@ -42,6 +43,8 @@ import org.slf4j.LoggerFactory;
 public class MultiEnvTestEngine implements TestEngine {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MultiEnvTestEngine.class);
+  private static final boolean FAIL_ON_MISSING_ENVIRONMENTS =
+      !Boolean.getBoolean("org.projectnessie.junit.engine.ignore-empty-environments");
 
   public static final String ENGINE_ID = "nessie-multi-env";
 
@@ -85,11 +88,15 @@ public class MultiEnvTestEngine implements TestEngine {
             }
           });
 
+      List<String> extensions = new ArrayList<>();
+      AtomicBoolean envDiscovered = new AtomicBoolean();
       registry.stream()
           .forEach(
               ext -> {
+                extensions.add(ext.getClass().getSimpleName());
                 for (String envId :
                     ext.allEnvironmentIds(discoveryRequest.getConfigurationParameters())) {
+                  envDiscovered.set(true);
                   UniqueId segment = uniqueId.append(ext.segmentType(), envId);
 
                   MultiEnvTestDescriptor envRoot = new MultiEnvTestDescriptor(segment, envId);
@@ -106,6 +113,12 @@ public class MultiEnvTestEngine implements TestEngine {
                 }
               });
 
+      if (!extensions.isEmpty() && !envDiscovered.get() && FAIL_ON_MISSING_ENVIRONMENTS) {
+        throw new IllegalStateException(
+            String.format(
+                "%s was enabled, but test extensions did not discover any environment IDs: %s",
+                getClass().getSimpleName(), extensions));
+      }
       return engineDescriptor;
     } catch (Exception e) {
       LOGGER.error("Failed to discover tests", e);
