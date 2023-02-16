@@ -44,6 +44,7 @@ jobs:
   create-release:
     name: Bump version
     runs-on: ubuntu-20.04
+    if: github.repository_owner == 'projectnessie'
     env:
       BUMP_ON_BRANCH: ${{ github.event.inputs.bumpBranch }}
       BUMP_TYPE: ${{ github.event.inputs.bumpType }}

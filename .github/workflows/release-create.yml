@@ -49,6 +49,7 @@ jobs:
   create-release:
     name: Create release
     runs-on: ubuntu-20.04
+    if: github.repository_owner == 'projectnessie'
     env:
       RELEASE_FROM: ${{ github.event.inputs.releaseFromBranch }}
       BUMP_TYPE: ${{ github.event.inputs.bumpType }}
