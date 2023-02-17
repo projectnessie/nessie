@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-# Projectnessie GitHub Pull-Request / Default CI
+# Projectnessie GitHub Pull-Request / Helm
 
 name: PR Helm
 
@@ -29,37 +29,47 @@ jobs:
   helm-testing:
     name: Lint & Test Helm chart
     runs-on: ubuntu-20.04
-    if: contains(github.event.pull_request.labels.*.name, 'pr-helm')
+    env:
+      WF_EXEC: ${{ contains(github.event.pull_request.labels.*.name, 'pr-helm') }}
     steps:
       - name: Checkout
+        if: env.WF_EXEC == 'true'
         uses: actions/checkout@v3.3.0
         with:
           fetch-depth: 0
       - name: Set up Helm
+        if: env.WF_EXEC == 'true'
         uses: azure/setup-helm@v3
         with:
           version: v3.8.1
       - uses: actions/setup-python@v4
+        if: env.WF_EXEC == 'true'
         with:
           python-version: '3.8'
       - name: Set up chart-testing
+        if: env.WF_EXEC == 'true'
         uses: helm/chart-testing-action@v2.3.1
 
       - name: Run chart-testing (list-changed)
+        if: env.WF_EXEC == 'true'
         id: list-changed
         run: |
           ct list-changed --target-branch ${{ github.event.repository.default_branch }}
 
       - name: Run chart-testing (lint)
+        if: env.WF_EXEC == 'true'
         run: ct lint --debug --charts ./helm/nessie
 
       - name: Set up & Start Minikube
+        if: env.WF_EXEC == 'true'
         uses: medyagh/setup-minikube@v0.0.11
         with:
           cache: false
 
       - name: Show pods
+        if: env.WF_EXEC == 'true'
         run: kubectl get pods -A
 
       - name: Run chart-testing (install)
+        if: env.WF_EXEC == 'true'
         run: ct install --debug --charts ./helm/nessie

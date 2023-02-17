@@ -27,8 +27,8 @@ jobs:
   java:
     name: Integrations Tests
     runs-on: ubuntu-20.04
-    if: contains(github.event.pull_request.labels.*.name, 'pr-integrations')
     env:
+      WF_EXEC: ${{ contains(github.event.pull_request.labels.*.name, 'pr-integrations') }}
       NESSIE_DIR: included-builds/nessie
       NESSIE_PATCH_REPOSITORY: ''
       NESSIE_PATCH_BRANCH: ''
@@ -41,17 +41,20 @@ jobs:
 
     steps:
       - name: Prepare Git
+        if: env.WF_EXEC == 'true'
         run: |
           git config --global user.email "integrations-testing@projectnessie.org"
           git config --global user.name "Integrations Testing [Bot]"
 
       - name: Checkout nqeit repo
+        if: env.WF_EXEC == 'true'
         uses: actions/checkout@v3.3.0
         with:
           repository: projectnessie/query-engine-integration-tests
           ref: main
 
       - name: Checkout and patch Nessie PR
+        if: env.WF_EXEC == 'true'
         uses: ./.github/actions/patch-git
         with:
           name: Nessie
@@ -62,6 +65,7 @@ jobs:
           work-branch: nessie-integration-patched
 
       - name: Checkout and patch Iceberg
+        if: env.WF_EXEC == 'true'
         uses: ./.github/actions/patch-git
         with:
           name: Nessie
@@ -74,49 +78,58 @@ jobs:
 
       # Setup Gradle properties, heap requirements are for the "Integration test w/ Nessie".
       - name: Setup gradle.properties
+        if: env.WF_EXEC == 'true'
         run: |
           mkdir -p ~/.gradle
           echo "org.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=768m -Dfile.encoding=UTF-8" >> ~/.gradle/gradle.properties
           echo "org.gradle.vfs.watch=false" >> ~/.gradle/gradle.properties
 
       - name: Set up JDK ${{ matrix.java-version }}
+        if: env.WF_EXEC == 'true'
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: 11
 
       - name: Iceberg Nessie test
+        if: env.WF_EXEC == 'true'
         uses: gradle/gradle-build-action@v2
         with:
           cache-read-only: true
           arguments: :iceberg:iceberg-nessie:test --scan
 
       - name: Nessie Spark 3.1 Extensions test
+        if: env.WF_EXEC == 'true'
         uses: gradle/gradle-build-action@v2
         with:
           arguments: :nessie-iceberg:nessie-spark-extensions-3.1_2.12:test :nessie-iceberg:nessie-spark-extensions-3.1_2.12:intTest --scan
 
       - name: Nessie Spark 3.2 / 2.12 Extensions test
+        if: env.WF_EXEC == 'true'
         uses: gradle/gradle-build-action@v2
         with:
           arguments: :nessie-iceberg:nessie-spark-extensions-3.2_2.12:test :nessie-iceberg:nessie-spark-extensions-3.2_2.12:intTest --scan
 
       - name: Nessie Spark 3.3 / 2.12 Extensions test
+        if: env.WF_EXEC == 'true'
         uses: gradle/gradle-build-action@v2
         with:
           arguments: :nessie-iceberg:nessie-spark-extensions-3.3_2.12:test :nessie-iceberg:nessie-spark-extensions-3.3_2.12:intTest --scan
 
       - name: Stop Gradle daemon
+        if: env.WF_EXEC == 'true'
         uses: gradle/gradle-build-action@v2
         with:
           arguments: --stop
 
       - name: Publish Nessie + Iceberg to local Maven repo
+        if: env.WF_EXEC == 'true'
         uses: gradle/gradle-build-action@v2
         with:
           arguments: publishLocal --scan
 
       - name: Gather locally published versions
+        if: env.WF_EXEC == 'true'
         run: |
           NESSIE_VERSION="$(cat included-builds/nessie/version.txt)"
           ICEBERG_VERSION="$(cat included-builds/iceberg/build/iceberg-build.properties | grep '^git.build.version=' | cut -d= -f2)"
@@ -130,6 +143,7 @@ jobs:
           !
 
       - name: Tools & Integrations tests
+        if: env.WF_EXEC == 'true'
         uses: gradle/gradle-build-action@v2
         with:
           arguments: intTest

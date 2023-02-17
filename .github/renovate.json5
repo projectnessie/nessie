@@ -33,7 +33,7 @@
 
     // Check for updates, merge automatically
     {
-      matchManagers: ["maven", "gradle", "gradle-wrapper", "npm", "pip_requirements", "pip_setup"],
+      matchManagers: ["maven", "gradle", "gradle-wrapper", "npm", "pip_requirements", "pip_setup", "dockerfile"],
       matchUpdateTypes: ["minor", "patch"],
       automerge: true,
       platformAutomerge: true,
@@ -62,13 +62,6 @@
         "org.glassfish.jersey:jersey-bom",
       ],
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
-    },
-
-    // Docker
-    {
-      matchManagers: ["dockerfile"],
-      automerge: false,
-      platformAutomerge: false
     },
   ],
 

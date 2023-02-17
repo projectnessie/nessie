@@ -29,34 +29,39 @@ jobs:
   java:
     name: Java/Gradle Native
     runs-on: ubuntu-20.04
-    if: contains(github.event.pull_request.labels.*.name, 'pr-native')
+    env:
+      WF_EXEC: ${{ contains(github.event.pull_request.labels.*.name, 'pr-native') }}
     steps:
-    - uses: actions/checkout@v3.3.0
-    - name: Setup runner
-      uses: ./.github/actions/setup-runner
-      with:
-        more-memory: 'true'
-    - name: Setup Java, Gradle
-      uses: ./.github/actions/dev-tool-java
+      - uses: actions/checkout@v3.3.0
+        if: env.WF_EXEC == 'true'
+      - name: Setup runner
+        if: env.WF_EXEC == 'true'
+        uses: ./.github/actions/setup-runner
+        with:
+          more-memory: 'true'
+      - name: Setup Java, Gradle
+        if: env.WF_EXEC == 'true'
+        uses: ./.github/actions/dev-tool-java
 
-    - name: Gradle / integration test native
-      uses: gradle/gradle-build-action@v2
-      with:
-        cache-read-only: true
-        arguments: |
-          --no-watch-fs
-          :nessie-quarkus:quarkusBuild
-          :nessie-quarkus:intTest
-          -Pnative
-          -Pdocker
-          --scan
+      - name: Gradle / integration test native
+        if: env.WF_EXEC == 'true'
+        uses: gradle/gradle-build-action@v2
+        with:
+          cache-read-only: true
+          arguments: |
+            --no-watch-fs
+            :nessie-quarkus:quarkusBuild
+            :nessie-quarkus:intTest
+            -Pnative
+            -Pdocker
+            --scan
 
-    - name: Capture Test Reports
-      uses: actions/upload-artifact@v3
-      if: ${{ failure() }}
-      with:
-        name: test-results-native
-        path: |
-          **/build/reports/*
-          **/build/test-results/*
-        retention-days: 3
+      - name: Capture Test Reports
+        uses: actions/upload-artifact@v3
+        if: env.WF_EXEC == 'true' && failure()
+        with:
+          name: test-results-native
+          path: |
+            **/build/reports/*
+            **/build/test-results/*
+          retention-days: 3
