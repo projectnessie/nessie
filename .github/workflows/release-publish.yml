@@ -219,8 +219,8 @@ jobs:
         * ${NUM_COMMITS} commits since ${LAST_TAG#nessie-}
         * Maven Central: https://search.maven.org/search?q=g:org.projectnessie+v:${RELEASE_VERSION}
         * Docker Hub: https://hub.docker.com/r/projectnessie/nessie
-          * Multiplatform Java image (amd64, arm64, ppc64le, s390x): `projectnessie/nessie:${RELEASE_VERSION}-java\`
-          * Image with native amd64 binary: `projectnessie/nessie:${RELEASE_VERSION}-native\`
+          * Multiplatform Java image (amd64, arm64, ppc64le, s390x): \`docker pull projectnessie/nessie:${RELEASE_VERSION}-java\`
+          * Image with native amd64 binary: \`docker pull projectnessie/nessie:${RELEASE_VERSION}-native\`
             (only recommended for short running Nessie instances, amd64 only)
         * PyPI: https://pypi.org/project/pynessie/${RELEASE_VERSION}/
         * Helm Chart repo: https://charts.projectnessie.org/
