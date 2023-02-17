@@ -30,7 +30,7 @@ Hint: The images are pushed to the local registry, those will **not** show up in
 
 ## Updating your local Docker registry
 
-There's a `docker-regsitry` Debian/Ubuntu package. The registry configuration might need some tweaks
+There's a `docker-registry` Debian/Ubuntu package. The registry configuration might need some tweaks
 like this. You can also use
 the [official Docker registry](https://docs.docker.com/registry/deploying/).
 
