@@ -29,4 +29,5 @@ pr-native:
 pr-integrations:
 - 'gradle/wrapper/**'
 - 'clients/**'
+- 'model/**'
 - '.github/**'
