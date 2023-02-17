@@ -173,7 +173,7 @@ if [[ ${NATIVE} == 1 ]] ; then
     # Note: '--output type=registry' is needed to be able to push to a local registry (e.g. localhost:5000)
   gh_summary "## Native image tags, built for ${NATIVE_PLATFORM}"
   gh_summary "* \`docker pull ${IMAGE_NAME}:latest-native\`"
-  gh_summary "* \`docker pull ${IMAGE_NAME}:native\`"
+  gh_summary "* \`docker pull ${IMAGE_NAME}:${IMAGE_TAG_BASE}-native\`"
   gh_endgroup
 fi
 
