@@ -33,20 +33,25 @@ jobs:
   docker-testing:
     name: Docker build and publishing
     runs-on: ubuntu-22.04
-    if: (github.repository == 'projectnessie/nessie' && github.event_name != 'pull_request') || contains(github.event.pull_request.labels.*.name, 'pr-docker')
+    env:
+      WF_EXEC: ${{ (github.repository == 'projectnessie/nessie' && github.event_name != 'pull_request') || contains(github.event.pull_request.labels.*.name, 'pr-docker') }}
     steps:
       - name: Checkout
+        if: env.WF_EXEC == 'true'
         uses: actions/checkout@v3.3.0
         with:
           fetch-depth: 0
       - name: Setup runner
+        if: env.WF_EXEC == 'true'
         uses: ./.github/actions/setup-runner
         with:
           more-memory: 'true'
       - name: Setup Java, Gradle
+        if: env.WF_EXEC == 'true'
         uses: ./.github/actions/dev-tool-java
 
       - name: Setup docker-registry
+        if: env.WF_EXEC == 'true'
         run: |
           sudo apt-get install -y docker-registry apache2-utils 
           cat <<! > config.yml
@@ -88,6 +93,7 @@ jobs:
           echo "DOCKER_IMAGE=localhost:5000/nessie-testing" >> ${GITHUB_ENV}
 
       - name: Gradle / prepare
+        if: env.WF_EXEC == 'true'
         uses: gradle/gradle-build-action@v2
         with:
           cache-read-only: true
@@ -95,6 +101,7 @@ jobs:
           arguments: projects
 
       - name: Docker images publishing
+        if: env.WF_EXEC == 'true'
         env:
           ARTIFACTS: ../build-artifacts
         run: |
@@ -110,11 +117,13 @@ jobs:
           rm -rf "${ARTIFACTS}"
 
       - name: Cleanup buildx
+        if: env.WF_EXEC == 'true'
         run: |
           docker buildx use default
           docker buildx rm nessiebuild
 
       - name: Docker images exist test
+        if: env.WF_EXEC == 'true'
         run: |
           docker pull ${DOCKER_IMAGE}:latest
           docker pull ${DOCKER_IMAGE}:latest-java
@@ -131,6 +140,7 @@ jobs:
           !
 
       - name: Check if Docker native image works
+        if: env.WF_EXEC == 'true'
         run: |
           docker run --detach --name nessie ${DOCKER_IMAGE}:latest-native
           echo "Let native Nessie Docker image run for one minute (to make sure it starts up fine)..."
@@ -156,6 +166,7 @@ jobs:
           docker rm nessie
 
       - name: Check if Docker Java image works
+        if: env.WF_EXEC == 'true'
         run: |
           docker run --detach --name nessie ${DOCKER_IMAGE}:latest-java
           echo "Let Nessie Java Docker image run for one minute (to make sure it starts up fine)..."
