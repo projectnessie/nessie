@@ -27,7 +27,7 @@
       "labels": ["dependencies", "python"],
     },
     {
-      matchManagers: ["docker"],
+      matchManagers: ["dockerfile"],
       "labels": ["dependencies", "docker"],
     },
 
@@ -66,7 +66,7 @@
 
     // Docker
     {
-      matchManagers: ["docker"],
+      matchManagers: ["dockerfile"],
       automerge: false,
       platformAutomerge: false
     },
