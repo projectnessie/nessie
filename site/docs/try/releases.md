@@ -2,6 +2,37 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.49.0 Release (February 17, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.49.0).
+
+* Update GH WFs to publish Java images for many platforms (#6110)
+* GH uploaded artifacts retention (#6115)
+* Test: Update the validation to unblock query-engine-integration-tests (#6117)
+* GH workflows: prevent running a bunch of stuff on forks (#6116)
+* Revert changes to Chart.yaml maintainers section (#6113)
+* Fail test discovery in MultiEnvTestEngine if no environments are defined (#6108)
+* Disable :nessie-compatibility-common tests on macOS (#6106)
+* Disable NPM tests on Windows (#6107)
+* Simplify Quarkus build configuration (#6103)
+* Automatically generate Helm chart documentation (#6095)
+* Add Jakarta's ws-rs to `javax.ws.rs.*` (#6067)
+* Add Jakarta's validation constraints to `javax.validation.constraints.*` (#6096)
+* Add Jakarta's `@Inject` to `javax.Inject` (#6093)
+* Add Jakarta's `@RequestScoped` to `javax.enterprise.context.RequestScoped` (#6092)
+* Add Jakarta's `@Nullable` to `javax.annotation.Nullable` (#6088)
+* Add Jakarta's `@Nonnull` to `javax.annotation.Nonnull` (#6066)
+* Ability to configure PVC selector labels (#6074)
+* Gatling simulation for a mixed workload (#6068)
+* Split ws-rs-api implementors into javax and jakarta (#6065)
+* Add API v2 test for commit parents (#6073)
+* Nit: replace Jetbrains not-null annotation import (#6072)
+* CI: Fix PR integrations workflow (#6071)
+* Make Nessie build with `javax.*` and `jakarta.*` dependencies (#6064)
+* Remove `@ThreadSafe` annotation, no `jakarta.*` counterpart (#6063)
+* Remove `@CheckForNull` annotation, no `jakarta.*` counterpart (#6062)
+* Tests: let tests in nessie-compatibility-common use soft-assertions (#6061)
+
 ## 0.48.2 Release (February 08, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.48.2).
