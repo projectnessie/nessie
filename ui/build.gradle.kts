@@ -35,8 +35,8 @@ plugins {
 
 node {
   download.set(true)
-  version.set("16.14.2")
-  npmVersion.set("7.24.2")
+  version.set("18.14.1")
+  npmVersion.set("9.4.2")
 }
 
 val dotGradle = project.projectDir.resolve(".gradle")
