@@ -33,13 +33,18 @@ plugins {
   `nessie-conventions`
 }
 
+val dotGradle = rootProject.rootDir.resolve(".gradle")
+
 node {
   download.set(true)
   version.set("18.14.1")
   npmVersion.set("9.4.2")
+  workDir.set(dotGradle.resolve("nodejs"))
+  npmWorkDir.set(dotGradle.resolve("npm"))
+  yarnWorkDir.set(dotGradle.resolve("yarn"))
+  pnpmWorkDir.set(dotGradle.resolve("pnpm"))
 }
 
-val dotGradle = project.projectDir.resolve(".gradle")
 val npmBuildTarget = project.buildDir.resolve("npm")
 val npmBuildDir = npmBuildTarget.resolve("META-INF/resources")
 val openApiSpecDir = project.projectDir.resolve("src/openapi")
@@ -52,7 +57,6 @@ val shadowPackageJson = project.buildDir.resolve("packageJson")
 val clean =
   tasks.named("clean") {
     doFirst {
-      delete(dotGradle)
       delete(nodeModulesDir)
       delete(project.projectDir.resolve("tsconfig.tsbuildinfo"))
       delete(testCoverageDir)
@@ -60,17 +64,9 @@ val clean =
     }
   }
 
-val nodeSetup =
-  tasks.named<NodeSetupTask>("nodeSetup") {
-    mustRunAfter(clean)
-    doFirst { delete(dotGradle.resolve("nodejs")) }
-  }
+val nodeSetup = tasks.named<NodeSetupTask>("nodeSetup") { mustRunAfter(clean) }
 
-val npmSetup =
-  tasks.named<NpmSetupTask>("npmSetup") {
-    mustRunAfter(clean, nodeSetup)
-    doFirst { delete(dotGradle.resolve("npm")) }
-  }
+val npmSetup = tasks.named<NpmSetupTask>("npmSetup") { mustRunAfter(clean, nodeSetup) }
 
 val npmInstallReal =
   tasks.named<NpmInstallTask>("npmInstall") {
@@ -89,9 +85,12 @@ val npmInstall =
     mustRunAfter(clean)
     dependsOn(npmSetup)
     outputs.cacheIf {
-      project.buildDir
-        .resolve("npm/npm-v${node.npmVersion}/lib/node_modules/npm/node_modules")
-        .isDirectory()
+      // Do not let the UI module assume that npm is already setup (#4461)
+      //
+      // ... which can happen when using multiple Git worktrees, when one of those
+      // did the NPM-setup dance, letting the "other" Git worktree "think", that
+      // it did already the NPM-setup dance, too.
+      dotGradle.resolve("npm/npm-v${node.npmVersion}/lib/node_modules/npm/node_modules").isDirectory
     }
     // Need to add the fully qualified path here, so a "cached" npmInstallFacade run from another
     // directory with Nessie doesn't let "this" code-tree "think" that it has one.
@@ -114,6 +113,7 @@ val npmGenerateAPI =
   tasks.register<NpmTask>("npmGenerateApi") {
     description = "Generate from OpenAPI spec"
     dependsOn(npmInstall)
+    inputs.dir(shadowPackageJson).withPathSensitivity(PathSensitivity.RELATIVE)
     inputs.dir(openApiSpecDir).withPathSensitivity(PathSensitivity.RELATIVE)
     outputs.dir(generatedOpenApiCodeUnfixed)
     doFirst {
@@ -179,6 +179,11 @@ val npmTest =
   tasks.register<NpmTask>("npmTest") {
     description = "NPM test"
     dependsOn(npmBuild)
+    inputs.dir(project.projectDir.resolve("config")).withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.dir(project.projectDir.resolve("public")).withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.dir(project.projectDir.resolve("scripts")).withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.dir(project.projectDir.resolve("src")).withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.dir(generatedOpenApiCode).withPathSensitivity(PathSensitivity.RELATIVE)
     inputs.dir(npmBuildDir).withPathSensitivity(PathSensitivity.RELATIVE)
     outputs.dir(testCoverageDir)
     doFirst { delete(testCoverageDir) }
@@ -193,12 +198,15 @@ val npmLint =
   tasks.register<NpmTask>("npmLint") {
     description = "NPM lint"
     dependsOn(npmBuild)
+    inputs.dir(npmBuildDir).withPathSensitivity(PathSensitivity.RELATIVE)
     inputs.dir(project.projectDir.resolve("src")).withPathSensitivity(PathSensitivity.RELATIVE)
     inputs
       .files(fileTree(".") { include("*.json", "*.js") })
       .withPathSensitivity(PathSensitivity.RELATIVE)
-    outputs.file(project.buildDir.resolve("npmLintRun"))
-    doLast { project.buildDir.resolve("npmLintRun").writeText("linted") }
+    val lintedMarker = project.buildDir.resolve("npmLintRun")
+    outputs.file(lintedMarker)
+    doFirst { delete(lintedMarker) }
+    doLast { lintedMarker.writeText("linted") }
     args.set(listOf("run", "lint"))
   }
 
@@ -221,7 +229,13 @@ tasks.withType<NpmTask>().configureEach {
   )
 }
 
-tasks.named<Jar>("jar") { dependsOn(npmBuild) }
+tasks.named<Jar>("jar") {
+  outputs.cacheIf {
+    // The jar is small, the build time for it is high
+    true
+  }
+  from(npmBuild)
+}
 
 // This is a hack to let nessie-quarkus-server unit tests discover the static web resources.
 // Tests run via the `test` task use "reloadable" sources - aka source directories, not built jar -
@@ -235,7 +249,7 @@ tasks.named("processResources") { mustRunAfter(npmBuild, npmFixGeneratedClient) 
 
 tasks.named<Jar>("sourcesJar") {
   mustRunAfter(npmBuild)
-  dependsOn(npmFixGeneratedClient)
+  from(npmFixGeneratedClient)
   from("src")
 }
 
