@@ -109,7 +109,7 @@ jobs:
         retention-days: 3
 
   python:
-    name: Python
+    name: Python Windows
     runs-on: windows-2022
     if: (github.repository == 'projectnessie/nessie' && github.event_name != 'pull_request') || contains(github.event.pull_request.labels.*.name, 'pr-macos-win')
     env:
