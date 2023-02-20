@@ -36,7 +36,7 @@ spec:
           {{- if eq .Values.versionStoreType "ROCKS" }}
           volumeMounts:
             - name: rocks-storage
-              mountPath: {{ .Values.rocksdb.dbPath }}
+              mountPath: /rocks-nessie
           {{- end }}
           env:
             - name: NESSIE_VERSION_STORE_TYPE
@@ -69,10 +69,8 @@ spec:
             {{- end }}
 
             {{- if eq .Values.versionStoreType "ROCKS" }}
-            {{- if .Values.rocksdb.dbPath }}
             - name: NESSIE_VERSION_STORE_ROCKS_DB_PATH
-              value: {{ .Values.rocksdb.dbPath }}
-            {{- end }}
+              value: /rocks-nessie
             {{- end }}
 
             {{- if eq .Values.versionStoreType "MONGO" }}

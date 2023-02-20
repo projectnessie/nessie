@@ -38,7 +38,7 @@ When setting `nessie.version.store.type=TRANSACTIONAL` which enables transaction
 
 #### RocksDB Version Store Settings
 
-When setting `nessie.version.store.type=ROCKS` which enables RockDB as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
+When setting `nessie.version.store.type=ROCKS` which enables RocksDB as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
 
 | Property                             | Default values        | Type     | Description                                          |
 |--------------------------------------|-----------------------|----------|------------------------------------------------------|

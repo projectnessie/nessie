@@ -22,9 +22,6 @@ rocksdb:
   storageClassName: standard
   # -- The size of the persistent volume claim to create.
   storageSize: 1Gi
-  # Deprecated value; it will be removed in a future release.
-  # @ignore
-  dbPath: /rocks-nessie
   # -- Labels to add to the persistent volume claim spec selector; a persistent volume with matching labels must exist.
   # Leave empty if using dynamic provisioning.
   selectorLabels:
