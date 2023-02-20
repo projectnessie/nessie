@@ -32,7 +32,16 @@ pluginManagement {
   }
 }
 
-plugins { id("com.gradle.enterprise") version ("3.12") }
+plugins {
+  id("com.gradle.enterprise") version ("3.12")
+  if (System.getenv("CI") != null || System.getProperty("allow-java-download").toBoolean()) {
+    // Enable automatic Java toolchain download in CI or when explicitly requested by the user.
+    // If in doubt, install the required Java toolchain manually, preferably using a "proper"
+    // package manager. The downside of letting Gradle automatically download toolchains is that
+    // these will only get downloaded once, but not automatically updated.
+    id("org.gradle.toolchains.foojay-resolver-convention") version ("0.4.0")
+  }
+}
 
 gradleEnterprise {
   if (System.getenv("CI") != null) {

@@ -48,6 +48,11 @@ dependencies {
   testRuntimeOnly(baselibs.junit.jupiter.engine)
 }
 
+java {
+  sourceCompatibility = JavaVersion.VERSION_11
+  targetCompatibility = JavaVersion.VERSION_11
+}
+
 kotlinDslPluginOptions { jvmTarget.set(JavaVersion.VERSION_11.toString()) }
 
 tasks.withType<Test>().configureEach { useJUnitPlatform() }

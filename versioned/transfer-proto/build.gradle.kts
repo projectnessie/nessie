@@ -54,7 +54,9 @@ reflectionConfig {
 }
 
 // The protobuf-plugin should ideally do this
-tasks.named<Jar>("sourcesJar") { dependsOn(tasks.named("generateProto")) }
+tasks.named<Jar>("sourcesJar") {
+  dependsOn(tasks.named("generateProto"), tasks.named("generateReflectionConfig"))
+}
 
 tasks.withType(com.google.protobuf.gradle.ProtobufExtract::class).configureEach {
   if (name == "extractIncludeTestProto") {
