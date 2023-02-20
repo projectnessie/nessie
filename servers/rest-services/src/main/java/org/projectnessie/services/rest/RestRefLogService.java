@@ -29,6 +29,8 @@ import org.projectnessie.versioned.VersionStore;
 @RequestScoped
 @jakarta.enterprise.context.RequestScoped
 @ValidateOnExecution(type = ExecutableType.ALL)
+@jakarta.validation.executable.ValidateOnExecution(
+    type = jakarta.validation.executable.ExecutableType.ALL)
 public class RestRefLogService extends RefLogApiImpl {
   // Mandated by CDI 2.0
   public RestRefLogService() {

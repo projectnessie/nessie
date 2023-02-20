@@ -45,6 +45,7 @@ import org.projectnessie.model.ser.Views;
 @Consumes(MediaType.APPLICATION_JSON)
 @jakarta.ws.rs.Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
 @Path("v1/contents")
+@jakarta.ws.rs.Path("v1/contents")
 public interface HttpContentApi extends ContentApi {
   @Override
   @GET
@@ -52,6 +53,7 @@ public interface HttpContentApi extends ContentApi {
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("{key}")
+  @jakarta.ws.rs.Path("{key}")
   @Operation(
       summary = "Get object content associated with a key.",
       description =

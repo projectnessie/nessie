@@ -36,6 +36,7 @@ import org.projectnessie.model.RefLogResponse;
 @Consumes(MediaType.APPLICATION_JSON)
 @jakarta.ws.rs.Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
 @Path("v1/reflogs")
+@jakarta.ws.rs.Path("v1/reflogs")
 public interface HttpRefLogApi extends RefLogApi {
 
   @Override

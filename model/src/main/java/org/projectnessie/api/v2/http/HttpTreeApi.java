@@ -75,6 +75,7 @@ import org.projectnessie.model.ser.Views;
 @Consumes(MediaType.APPLICATION_JSON)
 @jakarta.ws.rs.Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
 @Path("v2/trees")
+@jakarta.ws.rs.Path("v2/trees")
 @Tag(name = "v2-beta")
 public interface HttpTreeApi extends TreeApi {
 
@@ -166,6 +167,7 @@ public interface HttpTreeApi extends TreeApi {
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}")
+  @jakarta.ws.rs.Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}")
   @Operation(summary = "Fetch details of a reference", operationId = "getReferenceByNameV2")
   @APIResponses({
     @APIResponse(
@@ -192,6 +194,7 @@ public interface HttpTreeApi extends TreeApi {
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/entries")
+  @jakarta.ws.rs.Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/entries")
   @Operation(
       summary = "Fetch all entries for a given reference",
       description =
@@ -248,6 +251,7 @@ public interface HttpTreeApi extends TreeApi {
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("{ref}/history")
+  @jakarta.ws.rs.Path("{ref}/history")
   @Operation(
       summary = "Get commit log for a particular reference",
       description =
@@ -313,6 +317,12 @@ public interface HttpTreeApi extends TreeApi {
           + "}/diff/{to-ref:"
           + REF_NAME_PATH_ELEMENT_REGEX
           + "}")
+  @jakarta.ws.rs.Path(
+      "{from-ref:"
+          + REF_NAME_PATH_ELEMENT_REGEX
+          + "}/diff/{to-ref:"
+          + REF_NAME_PATH_ELEMENT_REGEX
+          + "}")
   @Operation(
       summary = "Get contents that differ in the trees specified by the two given references",
       description =
@@ -353,6 +363,7 @@ public interface HttpTreeApi extends TreeApi {
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}")
+  @jakarta.ws.rs.Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}")
   @Operation(
       summary = "Set a named reference to a specific hash via another reference.",
       description =
@@ -407,6 +418,7 @@ public interface HttpTreeApi extends TreeApi {
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}")
+  @jakarta.ws.rs.Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}")
   @Operation(
       summary = "Delete a reference",
       description =
@@ -446,6 +458,7 @@ public interface HttpTreeApi extends TreeApi {
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/contents/{key}")
+  @jakarta.ws.rs.Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/contents/{key}")
   @Operation(
       summary = "Get the content object associated with a key.",
       description =
@@ -495,6 +508,7 @@ public interface HttpTreeApi extends TreeApi {
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/contents")
+  @jakarta.ws.rs.Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/contents")
   @Operation(
       summary = "Get multiple content objects.",
       description =
@@ -542,6 +556,7 @@ public interface HttpTreeApi extends TreeApi {
   @Consumes(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/contents")
+  @jakarta.ws.rs.Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/contents")
   @Operation(
       summary = "Get multiple content objects.",
       description =
@@ -594,6 +609,7 @@ public interface HttpTreeApi extends TreeApi {
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("{branch}/history/transplant")
+  @jakarta.ws.rs.Path("{branch}/history/transplant")
   @Operation(
       summary =
           "Transplant commits specified by the 'Transplant' payload object onto the given 'branch'",
@@ -654,6 +670,7 @@ public interface HttpTreeApi extends TreeApi {
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("{branch}/history/merge")
+  @jakarta.ws.rs.Path("{branch}/history/merge")
   @Operation(
       summary = "Merge commits from another reference onto 'branch'.",
       description =
@@ -716,6 +733,7 @@ public interface HttpTreeApi extends TreeApi {
   @POST
   @jakarta.ws.rs.POST
   @Path("{branch}/history/commit")
+  @jakarta.ws.rs.Path("{branch}/history/commit")
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)

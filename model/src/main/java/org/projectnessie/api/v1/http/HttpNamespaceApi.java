@@ -48,6 +48,7 @@ import org.projectnessie.model.ser.Views;
 
 @Tag(name = "v1")
 @Path("v1/namespaces")
+@jakarta.ws.rs.Path("v1/namespaces")
 @Consumes(MediaType.APPLICATION_JSON)
 @jakarta.ws.rs.Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
 public interface HttpNamespaceApi extends NamespaceApi {
@@ -56,6 +57,7 @@ public interface HttpNamespaceApi extends NamespaceApi {
   @PUT
   @jakarta.ws.rs.PUT
   @Path("/namespace/{ref}/{name}")
+  @jakarta.ws.rs.Path("/namespace/{ref}/{name}")
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Operation(summary = "Creates a Namespace")
@@ -86,6 +88,7 @@ public interface HttpNamespaceApi extends NamespaceApi {
   @DELETE
   @jakarta.ws.rs.DELETE
   @Path("/namespace/{ref}/{name}")
+  @jakarta.ws.rs.Path("/namespace/{ref}/{name}")
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Operation(summary = "Deletes a Namespace")
@@ -107,6 +110,7 @@ public interface HttpNamespaceApi extends NamespaceApi {
   @GET
   @jakarta.ws.rs.GET
   @Path("/namespace/{ref}/{name}")
+  @jakarta.ws.rs.Path("/namespace/{ref}/{name}")
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Operation(summary = "Retrieves a Namespace")
@@ -135,6 +139,7 @@ public interface HttpNamespaceApi extends NamespaceApi {
   @GET
   @jakarta.ws.rs.GET
   @Path("/{ref}")
+  @jakarta.ws.rs.Path("/{ref}")
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @APIResponses({
@@ -162,6 +167,7 @@ public interface HttpNamespaceApi extends NamespaceApi {
   @POST
   @jakarta.ws.rs.POST
   @Path("/namespace/{ref}/{name}")
+  @jakarta.ws.rs.Path("/namespace/{ref}/{name}")
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @APIResponses({
