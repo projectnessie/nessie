@@ -105,13 +105,9 @@ tracing:
   # The collector must talk the OpenTelemetry protocol (OTLP) and the port must be its gRPC port (by default 4317).
   # See https://quarkus.io/guides/opentelemetry for more information.
   endpoint: "http://otlp-collector:4317"
-  # -- The sampler to use for tracing. Valid values are: false (never sample); true (always sample);
-  # or the string "ratio" – in which case the actual ratio to use must be specified below. Defaults to true.
-  sampler: true
-  # -- The sampler ratio to use. Required when tracing.sampler=ratio, ignored otherwise.
-  # A value of 1 means: sample all requests. Set this to anything between 0 and 1, e.g. 0.50,
-  # if you do not wish to sample all requests.
-  ratio: 1
+  # -- Which requests should be sampled. Valid values are: "all", "none", or a ratio between 0.0 and
+  # 1.0 (inclusive). E.g. 0.5 means that 50% of the requests will be sampled.
+  sample: all
   # -- Resource attributes to identify the nessie service among other tracing sources.
   # See https://opentelemetry.io/docs/reference/specification/resource/semantic_conventions/#service.
   # If left empty, the following attribute will be automatically added: service.name=nessie.

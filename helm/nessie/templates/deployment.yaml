@@ -153,13 +153,19 @@ spec:
             {{- else }}
               value: "service.name={{ include "nessie.name" . }}"
             {{- end }}
-            {{- if .Values.tracing.sampler }}
+            {{- if .Values.tracing.sample }}
+            {{ if eq .Values.tracing.sample "all" }}
             - name: QUARKUS_OPENTELEMETRY_TRACER_SAMPLER
-              value: {{ .Values.tracing.sampler | toString | replace "true" "on" | replace "false" "off" | quote }}
-            {{- end }}
-            {{- if .Values.tracing.ratio }}
+              value: "on"
+            {{- else if eq .Values.tracing.sample "none" }}
+            - name: QUARKUS_OPENTELEMETRY_TRACER_SAMPLER
+              value: "off"
+            {{- else }}
+            - name: QUARKUS_OPENTELEMETRY_TRACER_SAMPLER
+              value: "ratio"
             - name: QUARKUS_OPENTELEMETRY_TRACER_SAMPLER_RATIO
-              value: {{ .Values.tracing.ratio | quote }}
+              value: {{ .Values.tracing.sample | quote }}
+            {{- end }}
             {{- end }}
             {{- end }}
 
