@@ -58,3 +58,14 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Convert a dict into a string formed by a comma-separated list of key-value pairs: key1=value1,key2=value2, ...
+*/}}
+{{- define "nessie.dictToString" -}}
+{{- $list := list -}}
+{{- range $k, $v := . -}}
+{{- $list = append $list (printf "%s=%s" $k $v) -}}
+{{- end -}}
+{{ join "," $list }}
+{{- end -}}

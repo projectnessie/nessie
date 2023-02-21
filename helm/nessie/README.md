@@ -73,12 +73,6 @@ $ helm uninstall --namespace nessie-ns nessie
 | ingress.enabled | bool | `false` | Specifies whether an ingress should be created. |
 | ingress.hosts | list | `[{"host":"chart-example.local","paths":[]}]` | A list of host paths used to configure the ingress. |
 | ingress.tls | list | `[]` | A list of TLS certificates; each entry has a list of hosts in the certificate, along with the secret name used to terminate TLS traffic on port 443. |
-| jaegerTracing.enabled | bool | `false` | Specifies whether jaeger tracing for the nessie server should be enabled. |
-| jaegerTracing.endpoint | string | `""` | The traces endpoint, in case the client should connect directly to the Collector, e.g. http://jaeger-collector:14268/api/traces |
-| jaegerTracing.publishMetrics | bool | `true` | Whether metrics are published if tracing is enabled. |
-| jaegerTracing.samplerParam | int | `1` | The request sampling probability. 1=Sample all requests. Set samplerParam to somewhere between 0 and 1, e.g. 0.50, if you do not wish to sample all requests. |
-| jaegerTracing.samplerType | string | `"ratelimiting"` | The sampler type (const, probabilistic, ratelimiting or remote). |
-| jaegerTracing.serviceName | string | `"nessie"` | The Jaeger service name. |
 | logLevel | string | `"INFO"` | The default logging level for the nessie server. |
 | mongodb.connectionString | string | `"mongodb://localhost:27017"` | The MongoDB connection string. |
 | mongodb.name | string | `"nessie"` | The MongoDB database name. |
@@ -92,7 +86,7 @@ $ helm uninstall --namespace nessie-ns nessie
 | postgres.secret.name | string | `"postgres-creds"` | The secret name to pull Postgres credentials from. |
 | postgres.secret.password | string | `"postgres_password"` | The secret key storing the Postgres password. |
 | postgres.secret.username | string | `"postgres_username"` | The secret key storing the Postgres username. |
-| replicaCount | int | `1` | The number of replicas to deploy (horizontal scaling). Beware that replicas are stateless; don't set this number > 1 when using ROCKS version store type. |
+| replicaCount | int | `1` | The number of replicas to deploy (horizontal scaling). Beware that replicas are stateless; don't set this number > 1 when using INMEMORY or ROCKS version store types. |
 | resources | object | `{}` | Configures the resources requests and limits for nessie pods. We usually recommend not to specify default resources and to leave this as a conscious choice for the user. This also increases chances charts run on environments with little resources, such as Minikube. If you do want to specify resources, uncomment the following lines, adjust them as necessary, and remove the curly braces after 'resources:'. |
 | rocksdb.selectorLabels | object | `{}` | Labels to add to the persistent volume claim spec selector; a persistent volume with matching labels must exist. Leave empty if using dynamic provisioning. |
 | rocksdb.storageClassName | string | `"standard"` | The storage class name of the persistent volume claim to create. |
@@ -108,6 +102,11 @@ $ helm uninstall --namespace nessie-ns nessie
 | serviceMonitor.interval | string | `""` | The scrape interval; leave empty to let Prometheus decide. Must be a valid duration, e.g. 1d, 1h30m, 5m, 10s. |
 | serviceMonitor.labels | object | `{}` | Labels for the created ServiceMonitor so that Prometheus operator can properly pick it up. |
 | tolerations | list | `[]` | A list of tolerations to apply to nessie pods. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/. |
+| tracing.attributes | object | `{}` | Resource attributes to identify the nessie service among other tracing sources. See https://opentelemetry.io/docs/reference/specification/resource/semantic_conventions/#service. If left empty, the following attribute will be automatically added: service.name=nessie. |
+| tracing.enabled | bool | `false` | Specifies whether tracing for the nessie server should be enabled. |
+| tracing.endpoint | string | `"http://otlp-collector:4317"` | The collector endpoint URL to connect to (required). The endpoint URL must have either the http:// or the https:// scheme. The collector must talk the OpenTelemetry protocol (OTLP) and the port must be its gRPC port (by default 4317). |
+| tracing.ratio | int | `1` | The sampler ratio to use. Required when tracing.sampler=ratio, ignored otherwise. A value of 1 means: sample all requests. Set this to anything between 0 and 1, e.g. 0.50, if you do not wish to sample all requests. |
+| tracing.sampler | string | `"on"` | The sampler to use for tracing. Valid values are: off (never sample); on (always sample); ratio (sample requests with the sampling ratio specified below). Defaults to on. |
 | versionStoreAdvancedConfig | object | `{}` | Advanced version store configuration. The key-value pairs specified here will be passed to the Nessie server as environment variables. See https://projectnessie.org/try/configuration/#version-store-advanced-settings for available properties. Naming convention: to set the property nessie.version.store.advanced.repository-id, use the key: NESSIE_VERSION_STORE_ADVANCED_REPOSITORY_ID. |
 | versionStoreType | string | `"INMEMORY"` | Which type of version store to use: INMEMORY, ROCKS, DYNAMO, MONGO, TRANSACTIONAL. |
 
@@ -188,6 +187,83 @@ This is broadly following the example from https://kubernetes.io/docs/tasks/acce
   ```
 * Use the IP from the above output and add it to `/etc/hosts` via `echo "192.168.49.2 chart-example.local" | sudo tee /etc/hosts`
 * Verify that `curl chart-example.local` works
+
+### OpenTelemetry Collector with Minikube
+
+* Start Minikube cluster: `minikube start`
+* Create K8s Namespace: `kubectl create namespace nessie-ns`
+* Install cert-manager:
+
+```bash
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.yaml
+```
+
+* Install Jaeger Operator:
+
+```bash
+kubectl create namespace observability
+kubectl apply -f https://github.com/jaegertracing/jaeger-operator/releases/download/v1.42.0/jaeger-operator.yaml -n observability
+```
+
+If the above command fails with "failed to call webhook [...] connection refused", then cert-manager
+was not yet ready. Wait a few seconds and try again.
+
+* Create a Jaeger instance in Nessie's namespace:
+
+```bash
+kubectl apply -n nessie-ns -f - <<EOF
+apiVersion: jaegertracing.io/v1
+kind: Jaeger
+metadata:
+  name: jaeger
+EOF
+```
+
+If the above command fails with "failed to call webhook [...] connection refused", then the Jaeger
+Operator was not yet ready. Wait a few seconds and try again.
+
+* Install Nessie Helm chart with OpenTelemetry Collector enabled:
+
+```bash
+helm install nessie -n nessie-ns helm/nessie \
+  --set tracing.enabled=true \
+  --set tracing.endpoint=http://jaeger-collector:4317
+```
+
+* Forward ports to Jaeger UI and Nessie UI:
+
+```bash
+kubectl port-forward -n nessie-ns service/nessie 19120:19120 &
+kubectl port-forward -n nessie-ns service/jaeger-query 16686:16686 &
+```
+
+* Open the following URLs in your browser:
+  * Nessie UI (to generate some traces): http://localhost:19120
+  * Jaeger UI (to retrieve the traces): http://localhost:16686/search
+
+To kill the port forwarding processes, run:
+
+```bash
+killall -9 kubectl
+```
+
+### Custom Docker images for Nessie with Minikube
+
+You can modify Nessie's code and deploy it to Minikube. Once you've made your changes, build the
+Docker image and deploy it as follows:
+
+```bash
+eval $(minikube docker-env)
+docker build -f ./tools/dockerbuild/docker/Dockerfile-jvm -t nessie-test:latest ./servers/quarkus-server
+```
+
+Then deploy Nessie with the custom Docker image:
+
+```bash
+helm install nessie -n nessie-ns helm/nessie \
+  --set image.repository=nessie-test \
+  --set image.tag=latest
+```
 
 ### Stop/Uninstall everything in Dev
 

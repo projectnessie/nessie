@@ -142,28 +142,27 @@ spec:
             {{- end }}
             {{- end }}
 
-            {{- if .Values.jaegerTracing.enabled }}
-            {{- if .Values.jaegerTracing.serviceName }}
-            - name: QUARKUS_JAEGER_SERVICE_NAME
-              value: {{ .Values.jaegerTracing.serviceName }}
+            {{- if .Values.tracing.enabled }}
+            - name: QUARKUS_OPENTELEMETRY_TRACER_ENABLED
+              value: "true"
+            - name: QUARKUS_OPENTELEMETRY_TRACER_EXPORTER_OTLP_ENDPOINT
+              value: {{ .Values.tracing.endpoint | quote }}
+            - name: QUARKUS_OPENTELEMETRY_TRACER_RESOURCE_ATTRIBUTES
+            {{- if .Values.tracing.attributes }}
+              value: "{{- include "nessie.dictToString" .Values.tracing.attributes }}"
+            {{- else }}
+              value: "service.name={{ include "nessie.name" . }}"
             {{- end }}
-            {{- if .Values.jaegerTracing.publishMetrics }}
-            - name: QUARKUS_JAEGER_METRICS_ENABLED
-              value: {{ .Values.jaegerTracing.publishMetrics | quote }}
+            {{- if .Values.tracing.sampler }}
+            - name: QUARKUS_OPENTELEMETRY_TRACER_SAMPLER
+              value: {{ .Values.tracing.sampler | toString | replace "true" "on" | replace "false" "off" | quote }}
             {{- end }}
-            {{- if .Values.jaegerTracing.samplerType }}
-            - name: QUARKUS_JAEGER_SAMPLER_TYPE
-              value: {{ .Values.jaegerTracing.samplerType }}
-            {{- end }}
-            {{- if .Values.jaegerTracing.samplerParam }}
-            - name: QUARKUS_JAEGER_SAMPLER_PARAM
-              value: {{ .Values.jaegerTracing.samplerParam | quote }}
-            {{- end }}
-            {{- if .Values.jaegerTracing.endpoint }}
-            - name: QUARKUS_JAEGER_ENDPOINT
-              value: {{ .Values.jaegerTracing.endpoint }}
+            {{- if .Values.tracing.ratio }}
+            - name: QUARKUS_OPENTELEMETRY_TRACER_SAMPLER_RATIO
+              value: {{ .Values.tracing.ratio | quote }}
             {{- end }}
             {{- end }}
+
           ports:
             - name: nessie-server
               containerPort: 19120
