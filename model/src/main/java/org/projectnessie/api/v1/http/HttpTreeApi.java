@@ -58,6 +58,7 @@ import org.projectnessie.model.ser.Views;
 @Consumes(MediaType.APPLICATION_JSON)
 @jakarta.ws.rs.Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
 @Path("v1/trees")
+@jakarta.ws.rs.Path("v1/trees")
 public interface HttpTreeApi extends TreeApi {
 
   @Override
@@ -89,6 +90,7 @@ public interface HttpTreeApi extends TreeApi {
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("tree")
+  @jakarta.ws.rs.Path("tree")
   @Operation(summary = "Get default branch for commits and reads")
   @APIResponses({
     @APIResponse(
@@ -111,6 +113,7 @@ public interface HttpTreeApi extends TreeApi {
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("tree")
+  @jakarta.ws.rs.Path("tree")
   @Operation(
       summary = "Create a new reference",
       description =
@@ -160,6 +163,7 @@ public interface HttpTreeApi extends TreeApi {
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("tree/{ref}")
+  @jakarta.ws.rs.Path("tree/{ref}")
   @Operation(summary = "Fetch details of a reference")
   @APIResponses({
     @APIResponse(
@@ -186,6 +190,7 @@ public interface HttpTreeApi extends TreeApi {
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("tree/{ref}/entries")
+  @jakarta.ws.rs.Path("tree/{ref}/entries")
   @Operation(
       summary = "Fetch all entries for a given reference",
       description =
@@ -246,6 +251,7 @@ public interface HttpTreeApi extends TreeApi {
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("tree/{ref}/log")
+  @jakarta.ws.rs.Path("tree/{ref}/log")
   @Operation(
       summary = "Get commit log for a reference",
       description =
@@ -303,6 +309,7 @@ public interface HttpTreeApi extends TreeApi {
   @PUT
   @jakarta.ws.rs.PUT
   @Path("{referenceType}/{referenceName}")
+  @jakarta.ws.rs.Path("{referenceType}/{referenceName}")
   @Operation(
       summary = "Set a named reference to a specific hash via a named-reference.",
       description =
@@ -352,6 +359,7 @@ public interface HttpTreeApi extends TreeApi {
   @DELETE
   @jakarta.ws.rs.DELETE
   @Path("{referenceType}/{referenceName}")
+  @jakarta.ws.rs.Path("{referenceType}/{referenceName}")
   @Operation(summary = "Delete a reference endpoint")
   @APIResponses({
     @APIResponse(responseCode = "204", description = "Deleted successfully."),
@@ -390,6 +398,7 @@ public interface HttpTreeApi extends TreeApi {
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("branch/{branchName}/transplant")
+  @jakarta.ws.rs.Path("branch/{branchName}/transplant")
   @Operation(
       summary = "Transplant commits from 'transplant' onto 'branchName'",
       description =
@@ -456,6 +465,7 @@ public interface HttpTreeApi extends TreeApi {
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("branch/{branchName}/merge")
+  @jakarta.ws.rs.Path("branch/{branchName}/merge")
   @Operation(
       summary = "Merge commits from 'mergeRef' onto 'branchName'.",
       description =
@@ -517,6 +527,7 @@ public interface HttpTreeApi extends TreeApi {
   @POST
   @jakarta.ws.rs.POST
   @Path("branch/{branchName}/commit")
+  @jakarta.ws.rs.Path("branch/{branchName}/commit")
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)

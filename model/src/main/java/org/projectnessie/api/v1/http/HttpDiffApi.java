@@ -39,6 +39,7 @@ import org.projectnessie.model.ser.Views;
 @Consumes(MediaType.APPLICATION_JSON)
 @jakarta.ws.rs.Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
 @Path("v1/diffs")
+@jakarta.ws.rs.Path("v1/diffs")
 public interface HttpDiffApi extends DiffApi {
 
   @GET
@@ -46,6 +47,7 @@ public interface HttpDiffApi extends DiffApi {
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("{fromRefWithHash}...{toRefWithHash}")
+  @jakarta.ws.rs.Path("{fromRefWithHash}...{toRefWithHash}")
   @Operation(
       summary = "Get a diff for two given references",
       description =

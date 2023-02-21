@@ -30,6 +30,7 @@ import org.projectnessie.api.v2.ConfigApi;
 import org.projectnessie.model.NessieConfiguration;
 
 @Path("v2/config")
+@jakarta.ws.rs.Path("v2/config")
 @Tag(name = "v2-beta")
 public interface HttpConfigApi extends ConfigApi {
 

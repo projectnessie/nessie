@@ -85,6 +85,7 @@ import org.projectnessie.s3mock.util.PrefixSpliterator;
 import org.projectnessie.s3mock.util.StartAfterSpliterator;
 
 @Path("/")
+@jakarta.ws.rs.Path("/")
 @Produces(MediaType.APPLICATION_XML)
 @Consumes(MediaType.APPLICATION_XML)
 public class S3Resource {
@@ -93,6 +94,7 @@ public class S3Resource {
   private static final Owner TEST_OWNER = Owner.of(42, "nessie-iceberg-s3-mock");
 
   @Path("ready")
+  @jakarta.ws.rs.Path("ready")
   @GET
   @jakarta.ws.rs.GET
   @Produces(MediaType.APPLICATION_JSON)
@@ -125,6 +127,7 @@ public class S3Resource {
   @PUT
   @jakarta.ws.rs.PUT
   @Path("/{bucketName:[a-z0-9.-]+}")
+  @jakarta.ws.rs.Path("/{bucketName:[a-z0-9.-]+}")
   public Response createBucket(
       @PathParam("bucketName") @jakarta.ws.rs.PathParam("bucketName") String bucketName) {
     return notImplemented();
@@ -133,6 +136,7 @@ public class S3Resource {
   @HEAD
   @jakarta.ws.rs.HEAD
   @Path("/{bucketName:[a-z0-9.-]+}")
+  @jakarta.ws.rs.Path("/{bucketName:[a-z0-9.-]+}")
   public Response headBucket(
       @PathParam("bucketName") @jakarta.ws.rs.PathParam("bucketName") String bucketName) {
     return withBucket(bucketName, b -> Response.ok().build());
@@ -141,6 +145,7 @@ public class S3Resource {
   @DELETE
   @jakarta.ws.rs.DELETE
   @Path("/{bucketName:[a-z0-9.-]+}")
+  @jakarta.ws.rs.Path("/{bucketName:[a-z0-9.-]+}")
   public Response deleteBucket(
       @PathParam("bucketName") @jakarta.ws.rs.PathParam("bucketName") String bucketName) {
     return notImplemented();
@@ -149,6 +154,7 @@ public class S3Resource {
   @GET
   @jakarta.ws.rs.GET
   @Path("/{bucketName:[a-z0-9.-]+}")
+  @jakarta.ws.rs.Path("/{bucketName:[a-z0-9.-]+}")
   // TODO IF   params =  !UPLOADS
   public Response listObjectsInsideBucket(
       @PathParam("bucketName") @jakarta.ws.rs.PathParam("bucketName") String bucketName,
@@ -285,6 +291,7 @@ public class S3Resource {
   @POST
   @jakarta.ws.rs.POST
   @Path("/{bucketName:[a-z0-9.-]+}")
+  @jakarta.ws.rs.Path("/{bucketName:[a-z0-9.-]+}")
   public Response batchDeleteObjects(
       @PathParam("bucketName") @jakarta.ws.rs.PathParam("bucketName") String bucketName,
       @QueryParam("delete")
@@ -320,6 +327,7 @@ public class S3Resource {
   @HEAD
   @jakarta.ws.rs.HEAD
   @Path("/{bucketName:[a-z0-9.-]+}/{object:.+}")
+  @jakarta.ws.rs.Path("/{bucketName:[a-z0-9.-]+}/{object:.+}")
   @SuppressWarnings("JavaUtilDate")
   public Response headObject(
       @PathParam("bucketName") @jakarta.ws.rs.PathParam("bucketName") String bucketName,
@@ -339,6 +347,7 @@ public class S3Resource {
   @DELETE
   @jakarta.ws.rs.DELETE
   @Path("/{bucketName:[a-z0-9.-]+}/{object:.+}")
+  @jakarta.ws.rs.Path("/{bucketName:[a-z0-9.-]+}/{object:.+}")
   public Response deleteObject(
       @PathParam("bucketName") @jakarta.ws.rs.PathParam("bucketName") String bucketName,
       @PathParam("object") @jakarta.ws.rs.PathParam("object") String objectName) {
@@ -353,6 +362,7 @@ public class S3Resource {
   @GET
   @jakarta.ws.rs.GET
   @Path("/{bucketName:[a-z0-9.-]+}/{object:.+}")
+  @jakarta.ws.rs.Path("/{bucketName:[a-z0-9.-]+}/{object:.+}")
   @Produces(MediaType.WILDCARD)
   // TODO NOT_UPLOADS,
   // TODO NOT_UPLOAD_ID,
