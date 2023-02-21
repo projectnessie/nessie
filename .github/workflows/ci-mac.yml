@@ -38,8 +38,16 @@ jobs:
       SPARK_LOCAL_IP: localhost
 
     steps:
-    - name: Setup Colima
-      timeout-minutes: 30
+    - name: Brew update & upgrade
+      run: |
+        echo "::group::Update Brew"
+        brew update
+        echo "::endgroup::"
+        echo "::group::Brew Upgrade"
+        brew upgrade
+        echo "::endgroup::"
+
+    - name: Prepare Podman
       run: |
         echo "::group::Install Podman"
         brew install podman
@@ -49,10 +57,23 @@ jobs:
         podman machine init
         echo "::endgroup::"
 
-        echo "::group::Starting Podman"
-        podman machine start
-        echo "::endgroup::"
+    - name: Start Podman
+      uses: nick-fields/retry@v2
+      with:
+        max_attempts: 10
+        timeout_minutes: 5
+        retry_wait_seconds: 3
+        command: |
+          echo "::group::Starting Podman"
+          podman machine start
+          echo "::endgroup::"
+        on_retry_command: |
+          echo "::group::Stopping Podman"
+          podman machine stop
+          echo "::endgroup::"
 
+    - name: Configure Podman
+      run: |
         echo "::group::Aliasing Podman"
         ln -s /usr/local/bin/podman /usr/local/bin/docker
         echo "::endgroup::"

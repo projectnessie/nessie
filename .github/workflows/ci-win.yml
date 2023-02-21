@@ -51,20 +51,23 @@ jobs:
         path: hadoop-winutils
         ref: d018bd9c919dee1448b95519351cc591a6338a00
 
-    - name: Setup Hadoop
+    - name: Pull Hadoop
       # A local Hadoop setup is required on Windows, very sad...
-      timeout-minutes: 30
       run: |
         cd $HOME
-        Invoke-WebRequest -Uri https://archive.apache.org/dist/hadoop/common/hadoop-3.3.2/hadoop-3.3.2.tar.gz -OutFile hadoop-3.3.2.tar.gz
+        Invoke-WebRequest -Uri https://dlcdn.apache.org/hadoop/common/hadoop-3.3.2/hadoop-3.3.2.tar.gz -TimeoutSec 60 -MaximumRetryCount 10 -OutFile hadoop-3.3.2.tar.gz
 
+    - name: Setup Hadoop
+      # A local Hadoop setup is required on Windows, very sad...
+      run: |
         echo "::group::Extract hadoop-3.3.2.tar.gz"
+        cd $HOME
         mkdir hadoop-3.3.2
         cd hadoop-3.3.2
         7z e ..\hadoop-3.3.2.tar.gz
         echo "::endgroup::"
-
         echo "HADOOP_HOME=$HOME\hadoop-3.3.2" >> $env:GITHUB_ENV
+
     - name: Add Hadoop winutils
       run: |
         cd hadoop-winutils\hadoop-3.2.2\bin
