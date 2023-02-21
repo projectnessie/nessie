@@ -216,7 +216,7 @@ errorprone = { id = "net.ltgt.errorprone", version = "3.0.1" }
 gatling = { id = "io.gatling.gradle", version = "3.9.1" }
 idea-ext = { id = "org.jetbrains.gradle.plugin.idea-ext", version = "1.1.7" }
 jmh = { id = "me.champeau.jmh", version = "0.6.8" }
-nessie-run = { id = "org.projectnessie", version = "0.28.1" }
+nessie-run = { id = "org.projectnessie", version = "0.29.0" }
 nexus-publish-plugin = { id = "io.github.gradle-nexus.publish-plugin", version = "1.1.0" }
 node-gradle = { id = "com.github.node-gradle.node", version = "3.5.1" }
 quarkus = { id = "io.quarkus", version.ref = "quarkus" }
