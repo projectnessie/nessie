@@ -105,9 +105,9 @@ tracing:
   # The collector must talk the OpenTelemetry protocol (OTLP) and the port must be its gRPC port (by default 4317).
   # See https://quarkus.io/guides/opentelemetry for more information.
   endpoint: "http://otlp-collector:4317"
-  # -- The sampler to use for tracing. Valid values are: off (never sample); on (always sample);
-  # ratio (sample requests with the sampling ratio specified below). Defaults to on.
-  sampler: on
+  # -- The sampler to use for tracing. Valid values are: false (never sample); true (always sample);
+  # or the string "ratio" – in which case the actual ratio to use must be specified below. Defaults to true.
+  sampler: true
   # -- The sampler ratio to use. Required when tracing.sampler=ratio, ignored otherwise.
   # A value of 1 means: sample all requests. Set this to anything between 0 and 1, e.g. 0.50,
   # if you do not wish to sample all requests.
