@@ -103,6 +103,7 @@ tracing:
   # -- The collector endpoint URL to connect to (required).
   # The endpoint URL must have either the http:// or the https:// scheme.
   # The collector must talk the OpenTelemetry protocol (OTLP) and the port must be its gRPC port (by default 4317).
+  # See https://quarkus.io/guides/opentelemetry for more information.
   endpoint: "http://otlp-collector:4317"
   # -- The sampler to use for tracing. Valid values are: off (never sample); on (always sample);
   # ratio (sample requests with the sampling ratio specified below). Defaults to on.
