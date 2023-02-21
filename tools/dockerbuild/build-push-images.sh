@@ -43,15 +43,15 @@ function usage() {
   cat << ! > /dev/stderr
   Usage: $0 [options] <docker-image-base-name>
 
-      -g | --gradle-project <project>   Gradle project name, for example
+      -g | --gradle-project <project>   Gradle project name, for example :nessie-quarkus
       -p | --project-dir <dir>          Directory of the Gradle project
       -gh | --github                    GitHub actions mode
-      -i | --images-file <file>         text file receiving the Docker image names to push
-      -a | --artifacts-dir <dir>        directory to place native binaries and uber-jars in
+      -n | --native                     Build the Docker native image
+      -a | --artifacts-dir <dir>        Directory to place native binaries and uber-jars in
 
-  GitHub mode is automatically enabled, when GITHUB_ENV is present. -i and -r are mandatory in GitHub mode.
+  GitHub mode is automatically enabled, when GITHUB_ENV is present. -a is mandatory in GitHub mode.
 
-  Example: $0 -g :nessie-server -p servers/quarkus-server nessie-unstable
+  Example: $0 -g :nessie-quarkus -p servers/quarkus-server nessie-unstable
 !
 }
 
@@ -119,6 +119,7 @@ cd "$BASE_DIR"
 
 if [[ -z ${ARTIFACTS} ]]; then
   mkdir -p "$BASE_DIR/build"
+  # WARNING: mktemp -p is not available on macOS: you must provide the --artifacts option
   ARTIFACTS="$(mktemp -p "$BASE_DIR/build" -d dockerbuild-artifacts-XXXXX)"
 fi
 
