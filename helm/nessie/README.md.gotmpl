@@ -190,8 +190,15 @@ killall -9 kubectl
 
 ### Custom Docker images for Nessie with Minikube
 
-You can modify Nessie's code and deploy it to Minikube. Once you've made your changes, build the
-Docker image and deploy it as follows:
+You can modify Nessie's code and deploy it to Minikube. 
+
+Once you've satisfied with your changes, build the project with:
+
+```bash
+./gradlew :nessie-quarkus:quarkusBuild
+```
+
+Then build the Docker image and deploy it as follows:
 
 ```bash
 eval $(minikube docker-env)

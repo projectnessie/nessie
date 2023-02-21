@@ -104,7 +104,7 @@ $ helm uninstall --namespace nessie-ns nessie
 | tolerations | list | `[]` | A list of tolerations to apply to nessie pods. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/. |
 | tracing.attributes | object | `{}` | Resource attributes to identify the nessie service among other tracing sources. See https://opentelemetry.io/docs/reference/specification/resource/semantic_conventions/#service. If left empty, the following attribute will be automatically added: service.name=nessie. |
 | tracing.enabled | bool | `false` | Specifies whether tracing for the nessie server should be enabled. |
-| tracing.endpoint | string | `"http://otlp-collector:4317"` | The collector endpoint URL to connect to (required). The endpoint URL must have either the http:// or the https:// scheme. The collector must talk the OpenTelemetry protocol (OTLP) and the port must be its gRPC port (by default 4317). |
+| tracing.endpoint | string | `"http://otlp-collector:4317"` | The collector endpoint URL to connect to (required). The endpoint URL must have either the http:// or the https:// scheme. The collector must talk the OpenTelemetry protocol (OTLP) and the port must be its gRPC port (by default 4317). See https://quarkus.io/guides/opentelemetry for more information. |
 | tracing.ratio | int | `1` | The sampler ratio to use. Required when tracing.sampler=ratio, ignored otherwise. A value of 1 means: sample all requests. Set this to anything between 0 and 1, e.g. 0.50, if you do not wish to sample all requests. |
 | tracing.sampler | string | `"on"` | The sampler to use for tracing. Valid values are: off (never sample); on (always sample); ratio (sample requests with the sampling ratio specified below). Defaults to on. |
 | versionStoreAdvancedConfig | object | `{}` | Advanced version store configuration. The key-value pairs specified here will be passed to the Nessie server as environment variables. See https://projectnessie.org/try/configuration/#version-store-advanced-settings for available properties. Naming convention: to set the property nessie.version.store.advanced.repository-id, use the key: NESSIE_VERSION_STORE_ADVANCED_REPOSITORY_ID. |
@@ -249,8 +249,15 @@ killall -9 kubectl
 
 ### Custom Docker images for Nessie with Minikube
 
-You can modify Nessie's code and deploy it to Minikube. Once you've made your changes, build the
-Docker image and deploy it as follows:
+You can modify Nessie's code and deploy it to Minikube.
+
+Once you've satisfied with your changes, build the project with:
+
+```bash
+./gradlew :nessie-quarkus:quarkusBuild
+```
+
+Then build the Docker image and deploy it as follows:
 
 ```bash
 eval $(minikube docker-env)
