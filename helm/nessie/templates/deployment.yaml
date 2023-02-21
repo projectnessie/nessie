@@ -45,10 +45,14 @@ spec:
             {{- if .Values.logLevel }}
             - name: QUARKUS_LOG_LEVEL
               value: {{ .Values.logLevel }}
-            - name: QUARKUS_CONSOLE_LOG_LEVEL
+            - name: QUARKUS_LOG_CONSOLE_LEVEL
               value: {{ .Values.logLevel }}
             - name: QUARKUS_LOG_FILE_LEVEL
               value: {{ .Values.logLevel }}
+            {{- if or (eq .Values.logLevel "DEBUG") (eq .Values.logLevel "TRACE") }}
+            - name: QUARKUS_LOG_MIN_LEVEL
+              value: {{ .Values.logLevel }}
+            {{- end }}
             {{- end }}
 
             {{- if eq .Values.versionStoreType "DYNAMO" }}
