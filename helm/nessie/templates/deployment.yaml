@@ -113,11 +113,6 @@ spec:
               value: {{ .Values.postgres.jdbcUrl }}
             {{- end }}
 
-            {{- range .Values.versionStoreAdvancedConfig }}
-            - name: {{ .key }}
-              value: {{ .value | quote }}
-            {{- end }}
-
             {{- if .Values.authentication.enabled }}
             - name: NESSIE_SERVER_AUTHENTICATION_ENABLED
               value: {{ .Values.authentication.enabled | quote }}
@@ -164,6 +159,12 @@ spec:
               value: {{ .Values.jaegerTracing.endpoint }}
             {{- end }}
             {{- end }}
+
+            {{- range $k, $v := .Values.advancedConfig }}
+            - name: {{ $k | upper | replace "\"" "_" | replace "." "_"  | replace "-" "_" }}
+              value: {{ $v | quote }}
+            {{- end }}
+
           ports:
             - name: nessie-server
               containerPort: 19120
