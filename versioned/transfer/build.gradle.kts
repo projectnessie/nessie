@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import org.apache.tools.ant.taskdefs.condition.Os
+
 plugins {
   `java-library`
   jacoco
@@ -75,4 +77,9 @@ dependencies {
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
   testRuntimeOnly(libs.junit.jupiter.engine)
+}
+
+// Issue w/ testcontainers/podman in GH workflows :(
+if (Os.isFamily(Os.FAMILY_MAC) && System.getenv("CI") != null) {
+  tasks.named<Test>("intTest") { this.enabled = false }
 }
