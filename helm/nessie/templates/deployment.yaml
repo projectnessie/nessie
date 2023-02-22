@@ -147,11 +147,9 @@ spec:
               value: "true"
             - name: QUARKUS_OPENTELEMETRY_TRACER_EXPORTER_OTLP_ENDPOINT
               value: {{ .Values.tracing.endpoint | quote }}
-            - name: QUARKUS_OPENTELEMETRY_TRACER_RESOURCE_ATTRIBUTES
             {{- if .Values.tracing.attributes }}
+            - name: QUARKUS_OPENTELEMETRY_TRACER_RESOURCE_ATTRIBUTES
               value: "{{- include "nessie.dictToString" .Values.tracing.attributes }}"
-            {{- else }}
-              value: "service.name={{ include "nessie.name" . }}"
             {{- end }}
             {{- if .Values.tracing.sample }}
             {{ if eq .Values.tracing.sample "all" }}
