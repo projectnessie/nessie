@@ -30,6 +30,8 @@ extra:
     provider: google
     property: UA-177850801-1
   social:
+    - icon: simple/zulip
+      link: https://project-nessie.zulipchat.com/
     - icon: fontawesome/brands/twitter
       link: https://twitter.com/projectnessie
     - icon: fontawesome/brands/docker

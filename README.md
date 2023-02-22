@@ -2,6 +2,7 @@
 
 Project Nessie is a Transactional Catalog for Data Lakes with Git-like semantics.
 
+[![Zulip](https://img.shields.io/badge/Zulip-Chat-blue?color=3d4db3&logo=zulip&style=for-the-badge&logoColor=white)](https://project-nessie.zulipchat.com/)
 [![Group Discussion](https://img.shields.io/badge/Discussion-Groups-blue.svg?color=3d4db3&logo=google&style=for-the-badge&logoColor=white)](https://groups.google.com/g/projectnessie)
 [![Twitter](https://img.shields.io/badge/Twitter-Follow_Us-blue?color=3d4db3&logo=twitter&style=for-the-badge&logoColor=white)](https://twitter.com/projectnessie)
 [![Website](https://img.shields.io/badge/https-projectnessie.org-blue?color=3d4db3&logo=firefox&style=for-the-badge&logoColor=white)](https://projectnessie.org/)
