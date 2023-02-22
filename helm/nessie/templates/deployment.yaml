@@ -36,7 +36,7 @@ spec:
           {{- if eq .Values.versionStoreType "ROCKS" }}
           volumeMounts:
             - name: rocks-storage
-              mountPath: {{ .Values.rocksdb.dbPath }}
+              mountPath: /rocks-nessie
           {{- end }}
           env:
             - name: NESSIE_VERSION_STORE_TYPE
@@ -45,10 +45,14 @@ spec:
             {{- if .Values.logLevel }}
             - name: QUARKUS_LOG_LEVEL
               value: {{ .Values.logLevel }}
-            - name: QUARKUS_CONSOLE_LOG_LEVEL
+            - name: QUARKUS_LOG_CONSOLE_LEVEL
               value: {{ .Values.logLevel }}
             - name: QUARKUS_LOG_FILE_LEVEL
               value: {{ .Values.logLevel }}
+            {{- if or (eq .Values.logLevel "DEBUG") (eq .Values.logLevel "TRACE") }}
+            - name: QUARKUS_LOG_MIN_LEVEL
+              value: {{ .Values.logLevel }}
+            {{- end }}
             {{- end }}
 
             {{- if eq .Values.versionStoreType "DYNAMO" }}
@@ -69,10 +73,8 @@ spec:
             {{- end }}
 
             {{- if eq .Values.versionStoreType "ROCKS" }}
-            {{- if .Values.rocksdb.dbPath }}
             - name: NESSIE_VERSION_STORE_ROCKS_DB_PATH
-              value: {{ .Values.rocksdb.dbPath }}
-            {{- end }}
+              value: /rocks-nessie
             {{- end }}
 
             {{- if eq .Values.versionStoreType "MONGO" }}
@@ -137,26 +139,28 @@ spec:
             {{- end }}
             {{- end }}
 
-            {{- if .Values.jaegerTracing.enabled }}
-            {{- if .Values.jaegerTracing.serviceName }}
-            - name: QUARKUS_JAEGER_SERVICE_NAME
-              value: {{ .Values.jaegerTracing.serviceName }}
+            {{- if .Values.tracing.enabled }}
+            - name: QUARKUS_OPENTELEMETRY_TRACER_ENABLED
+              value: "true"
+            - name: QUARKUS_OPENTELEMETRY_TRACER_EXPORTER_OTLP_ENDPOINT
+              value: {{ .Values.tracing.endpoint | quote }}
+            {{- if .Values.tracing.attributes }}
+            - name: QUARKUS_OPENTELEMETRY_TRACER_RESOURCE_ATTRIBUTES
+              value: "{{- include "nessie.dictToString" .Values.tracing.attributes }}"
             {{- end }}
-            {{- if .Values.jaegerTracing.publishMetrics }}
-            - name: QUARKUS_JAEGER_METRICS_ENABLED
-              value: {{ .Values.jaegerTracing.publishMetrics | quote }}
+            {{- if .Values.tracing.sample }}
+            {{ if eq .Values.tracing.sample "all" }}
+            - name: QUARKUS_OPENTELEMETRY_TRACER_SAMPLER
+              value: "on"
+            {{- else if eq .Values.tracing.sample "none" }}
+            - name: QUARKUS_OPENTELEMETRY_TRACER_SAMPLER
+              value: "off"
+            {{- else }}
+            - name: QUARKUS_OPENTELEMETRY_TRACER_SAMPLER
+              value: "ratio"
+            - name: QUARKUS_OPENTELEMETRY_TRACER_SAMPLER_RATIO
+              value: {{ .Values.tracing.sample | quote }}
             {{- end }}
-            {{- if .Values.jaegerTracing.samplerType }}
-            - name: QUARKUS_JAEGER_SAMPLER_TYPE
-              value: {{ .Values.jaegerTracing.samplerType }}
-            {{- end }}
-            {{- if .Values.jaegerTracing.samplerParam }}
-            - name: QUARKUS_JAEGER_SAMPLER_PARAM
-              value: {{ .Values.jaegerTracing.samplerParam | quote }}
-            {{- end }}
-            {{- if .Values.jaegerTracing.endpoint }}
-            - name: QUARKUS_JAEGER_ENDPOINT
-              value: {{ .Values.jaegerTracing.endpoint }}
             {{- end }}
             {{- end }}
 
