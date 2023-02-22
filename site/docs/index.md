@@ -17,4 +17,4 @@ and bug reports are on [GitHub](https://github.com/projectnessie/nessie/).
 
 [![Google Group](https://img.shields.io/badge/Google_Group-white.svg?logo=google&style=for-the-badge&color=eeeeee&logoColor=gray)](https://groups.google.com/g/projectnessie)
 [![Twitter](https://img.shields.io/badge/-Twitter-white?logo=twitter&style=for-the-badge&color=eeeeee&logoColor=gray)](https://twitter.com/projectnessie)
-[![GitHub](https://img.shields.io/badge/-GitHub-black?logo=github&style=for-the-badge&color=eeeeee&logoColor=gray)](https://github.com/projectnessie/nessie/s)
+[![GitHub](https://img.shields.io/badge/-GitHub-black?logo=github&style=for-the-badge&color=eeeeee&logoColor=gray)](https://github.com/projectnessie/nessie/)
