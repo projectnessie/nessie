@@ -35,23 +35,30 @@ jobs:
       ICEBERG_DIR: included-builds/iceberg
       ICEBERG_MAIN_REPOSITORY: apache/iceberg
       ICEBERG_MAIN_BRANCH: master
-      ICEBERG_PATCH_REPOSITORY: ''
-      ICEBERG_PATCH_BRANCH: ''
+      ICEBERG_PATCH_REPOSITORY: snazy/iceberg
+      ICEBERG_PATCH_BRANCH: iceberg-nesqueit
       SPARK_LOCAL_IP: localhost
 
     steps:
+
       - name: Prepare Git
         if: env.WF_EXEC == 'true'
         run: |
           git config --global user.email "integrations-testing@projectnessie.org"
           git config --global user.name "Integrations Testing [Bot]"
 
-      - name: Checkout nqeit repo
+      - name: Checkout NeQuEIT repo
         if: env.WF_EXEC == 'true'
         uses: actions/checkout@v3.3.0
         with:
           repository: projectnessie/query-engine-integration-tests
           ref: main
+
+      - name: Setup runner
+        if: env.WF_EXEC == 'true'
+        uses: ./.github/actions/setup-runner
+        with:
+          more-memory: 'true'
 
       - name: Checkout and patch Nessie PR
         if: env.WF_EXEC == 'true'
@@ -81,7 +88,7 @@ jobs:
         if: env.WF_EXEC == 'true'
         run: |
           mkdir -p ~/.gradle
-          echo "org.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=768m -Dfile.encoding=UTF-8" >> ~/.gradle/gradle.properties
+          echo "org.gradle.jvmargs=-Xms2g -Xmx4g -XX:MaxMetaspaceSize=768m -Dfile.encoding=UTF-8" >> ~/.gradle/gradle.properties
           echo "org.gradle.vfs.watch=false" >> ~/.gradle/gradle.properties
 
       - name: Set up JDK ${{ matrix.java-version }}
@@ -102,25 +109,19 @@ jobs:
         if: env.WF_EXEC == 'true'
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: :nessie-iceberg:nessie-spark-extensions-3.1_2.12:test :nessie-iceberg:nessie-spark-extensions-3.1_2.12:intTest --scan
+          arguments: :nessie:nessie-iceberg:nessie-spark-extensions-3.1_2.12:test :nessie:nessie-iceberg:nessie-spark-extensions-3.1_2.12:intTest --scan
 
       - name: Nessie Spark 3.2 / 2.12 Extensions test
         if: env.WF_EXEC == 'true'
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: :nessie-iceberg:nessie-spark-extensions-3.2_2.12:test :nessie-iceberg:nessie-spark-extensions-3.2_2.12:intTest --scan
+          arguments: :nessie:nessie-iceberg:nessie-spark-extensions-3.2_2.12:test :nessie:nessie-iceberg:nessie-spark-extensions-3.2_2.12:intTest --scan
 
       - name: Nessie Spark 3.3 / 2.12 Extensions test
         if: env.WF_EXEC == 'true'
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: :nessie-iceberg:nessie-spark-extensions-3.3_2.12:test :nessie-iceberg:nessie-spark-extensions-3.3_2.12:intTest --scan
-
-      - name: Stop Gradle daemon
-        if: env.WF_EXEC == 'true'
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: --stop
+          arguments: :nessie:nessie-iceberg:nessie-spark-extensions-3.3_2.12:test :nessie:nessie-iceberg:nessie-spark-extensions-3.3_2.12:intTest --scan
 
       - name: Publish Nessie + Iceberg to local Maven repo
         if: env.WF_EXEC == 'true'
