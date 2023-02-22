@@ -1,4 +1,4 @@
 ---
 versionStoreType: INMEMORY
-jaegerTracing:
+tracing:
   enabled: true

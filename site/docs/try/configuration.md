@@ -128,6 +128,36 @@ The following configurations are advanced configurations to configure how Nessie
 Metrics are published using prometheus and can be collected via standard methods. See:
 [Prometheus](https://prometheus.io).
 
+### Traces
+
+Since Nessie 0.46.0, traces are published using OpenTelemetry. See [Using
+OpenTelemetry](https://quarkus.io/guides/opentelemetry) in the Quarkus documentation.
+
+In order for the server to publish its traces, the
+`quarkus.opentelemetry.tracer.exporter.otlp.endpoint` property _must_ be set. Its value must be a
+valid collector endpoint URL, with either `http://` or `https://` scheme. The collector must talk
+the OpenTelemetry protocol (OTLP) and the port must be its gRPC port (by default 3417), e.g.
+"http://otlp-collector:4317".
+
+#### Troubleshooting traces
+
+If the server is unable to publish traces, check first for a log warning message like the following:
+
+```
+WARN  [io.qua.ope.run.exp.otl.LateBoundBatchSpanProcessor] (vert.x-eventloop-thread-5) No BatchSpanProcessor delegate specified, no action taken.
+```
+
+This means that the `quarkus.opentelemetry.tracer.exporter.otlp.endpoint` property is not set. Set
+it to a valid OTLP connector URL and try again.
+
+If you see a log error message like the following:
+
+```
+SEVERE [io.ope.exp.int.grp.OkHttpGrpcExporter] (OkHttp http://localhost:4317/...) Failed to export spans. The request could not be executed. Full error message: Failed to connect to localhost/0:0:0:0:0:0:0:1:4317
+```
+
+This means that the server is unable to connect to the collector. Check that the collector is
+running and that the URL is correct.
 
 ### Swagger UI
 The Swagger UI allows for testing the REST API and reading the API docs. It is available 
