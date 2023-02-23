@@ -28,6 +28,7 @@ plugins {
   `maven-publish`
   signing
   `nessie-conventions`
+  alias(libs.plugins.annotations.stripper)
 }
 
 apply<SmallryeOpenApiPlugin>()
@@ -87,3 +88,10 @@ val generateOpenApiSpec =
   }
 
 artifacts { add(openapiSource.name, file("src/main/resources/META-INF")) }
+
+annotationStripper {
+  registerDefault().configure {
+    annotationsToDrop("^jakarta[.].+".toRegex())
+    unmodifiedClassesForJavaVersion.set(11)
+  }
+}

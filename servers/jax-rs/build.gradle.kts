@@ -20,6 +20,7 @@ plugins {
   `maven-publish`
   signing
   `nessie-conventions`
+  alias(libs.plugins.annotations.stripper)
 }
 
 extra["maven.name"] = "Nessie - JAX-RS"
@@ -56,4 +57,11 @@ dependencies {
   api(platform(libs.jackson.bom))
   api(libs.jackson.databind)
   compileOnly(libs.jackson.annotations)
+}
+
+annotationStripper {
+  registerDefault().configure {
+    annotationsToDrop("^jakarta[.].+".toRegex())
+    unmodifiedClassesForJavaVersion.set(11)
+  }
 }

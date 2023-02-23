@@ -20,6 +20,7 @@ plugins {
   `maven-publish`
   signing
   `nessie-conventions`
+  alias(libs.plugins.annotations.stripper)
 }
 
 extra["maven.name"] = "Nessie - Client"
@@ -169,4 +170,11 @@ jacksonTestVersions.forEach { (jacksonVersion, reason) ->
     }
 
   jacksonTests { dependsOn(testTask, testTask8) }
+}
+
+annotationStripper {
+  registerDefault().configure {
+    annotationsToDrop("^jakarta[.].+".toRegex())
+    unmodifiedClassesForJavaVersion.set(11)
+  }
 }
