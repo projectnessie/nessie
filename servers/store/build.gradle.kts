@@ -20,6 +20,7 @@ plugins {
   `maven-publish`
   signing
   `nessie-conventions`
+  alias(libs.plugins.annotations.stripper)
 }
 
 extra["maven.name"] = "Nessie - Server - Store"
@@ -49,4 +50,11 @@ dependencies {
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
   testRuntimeOnly(libs.junit.jupiter.engine)
+}
+
+annotationStripper {
+  registerDefault().configure {
+    annotationsToDrop("^jakarta[.].+".toRegex())
+    unmodifiedClassesForJavaVersion.set(11)
+  }
 }
