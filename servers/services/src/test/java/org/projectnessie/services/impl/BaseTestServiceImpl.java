@@ -21,7 +21,7 @@ import static org.projectnessie.model.FetchOption.MINIMAL;
 import static org.projectnessie.model.Reference.ReferenceType.BRANCH;
 import static org.projectnessie.model.Reference.ReferenceType.TAG;
 import static org.projectnessie.services.impl.RefUtil.toReference;
-import static org.projectnessie.versioned.storage.common.logic.Logics.setupLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
 import com.google.common.collect.ImmutableMap;
 import java.security.Principal;
@@ -165,7 +165,7 @@ public abstract class BaseTestServiceImpl {
   @BeforeEach
   protected void setup() {
     if (persist != null) {
-      setupLogic(persist).initialize(config().getDefaultBranch());
+      repositoryLogic(persist).initialize(config().getDefaultBranch());
     }
     if (databaseAdapter != null) {
       databaseAdapter.initializeRepo(config().getDefaultBranch());

@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.storage.jdbc;
 
-import static org.projectnessie.versioned.storage.common.logic.Logics.setupLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REFS_NAME;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REPO_ID;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.TABLE_OBJS;
@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.logic.RepositoryDescription;
-import org.projectnessie.versioned.storage.common.logic.SetupLogic;
+import org.projectnessie.versioned.storage.common.logic.RepositoryLogic;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.BackendFactory;
 import org.projectnessie.versioned.storage.common.persist.Persist;
@@ -76,9 +76,9 @@ public abstract class AbstractTestJdbcBackendFactory {
           Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
           soft.assertThat(persist).isNotNull().isInstanceOf(JdbcPersist.class);
 
-          SetupLogic setupLogic = setupLogic(persist);
-          setupLogic.initialize("initializeAgain");
-          repoDesc = setupLogic.fetchRepositoryDescription();
+          RepositoryLogic repositoryLogic = repositoryLogic(persist);
+          repositoryLogic.initialize("initializeAgain");
+          repoDesc = repositoryLogic.fetchRepositoryDescription();
           soft.assertThat(repoDesc).isNotNull();
         }
 
@@ -91,9 +91,9 @@ public abstract class AbstractTestJdbcBackendFactory {
           Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
           soft.assertThat(persist).isNotNull().isInstanceOf(JdbcPersist.class);
 
-          SetupLogic setupLogic = setupLogic(persist);
-          setupLogic.initialize("initializeAgain");
-          soft.assertThat(setupLogic.fetchRepositoryDescription()).isEqualTo(repoDesc);
+          RepositoryLogic repositoryLogic = repositoryLogic(persist);
+          repositoryLogic.initialize("initializeAgain");
+          soft.assertThat(repositoryLogic.fetchRepositoryDescription()).isEqualTo(repoDesc);
         }
       } finally {
         ((AutoCloseable) dataSource).close();
@@ -130,9 +130,9 @@ public abstract class AbstractTestJdbcBackendFactory {
           Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
           soft.assertThat(persist).isNotNull().isInstanceOf(JdbcPersist.class);
 
-          SetupLogic setupLogic = setupLogic(persist);
-          setupLogic.initialize("initializeAgain");
-          repoDesc = setupLogic.fetchRepositoryDescription();
+          RepositoryLogic repositoryLogic = repositoryLogic(persist);
+          repositoryLogic.initialize("initializeAgain");
+          repoDesc = repositoryLogic.fetchRepositoryDescription();
           soft.assertThat(repoDesc).isNotNull();
         }
 
@@ -144,9 +144,9 @@ public abstract class AbstractTestJdbcBackendFactory {
           Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
           soft.assertThat(persist).isNotNull().isInstanceOf(JdbcPersist.class);
 
-          SetupLogic setupLogic = setupLogic(persist);
-          setupLogic.initialize("initializeAgain");
-          soft.assertThat(setupLogic.fetchRepositoryDescription()).isEqualTo(repoDesc);
+          RepositoryLogic repositoryLogic = repositoryLogic(persist);
+          repositoryLogic.initialize("initializeAgain");
+          soft.assertThat(repositoryLogic.fetchRepositoryDescription()).isEqualTo(repoDesc);
         }
       } finally {
         ((AutoCloseable) dataSource).close();

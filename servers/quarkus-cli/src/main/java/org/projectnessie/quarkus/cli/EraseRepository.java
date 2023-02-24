@@ -15,13 +15,13 @@
  */
 package org.projectnessie.quarkus.cli;
 
-import static org.projectnessie.versioned.storage.common.logic.Logics.setupLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.logic.RepositoryDescription;
-import org.projectnessie.versioned.storage.common.logic.SetupLogic;
+import org.projectnessie.versioned.storage.common.logic.RepositoryLogic;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import picocli.CommandLine;
 
@@ -63,7 +63,7 @@ public class EraseRepository extends BaseCommand {
     spec.commandLine().getOut().println("Repository erased.");
 
     if (newDefaultBranch != null) {
-      setupLogic(persist).initialize(newDefaultBranch);
+      repositoryLogic(persist).initialize(newDefaultBranch);
       spec.commandLine().getOut().println("Repository initialized.");
     }
 
@@ -116,8 +116,8 @@ public class EraseRepository extends BaseCommand {
     long code = config.repositoryId().hashCode();
     code += 1; // avoid zero for an empty repo ID
 
-    SetupLogic setupLogic = setupLogic(persist);
-    RepositoryDescription repoDesc = setupLogic.fetchRepositoryDescription();
+    RepositoryLogic repositoryLogic = repositoryLogic(persist);
+    RepositoryDescription repoDesc = repositoryLogic.fetchRepositoryDescription();
     if (repoDesc != null) {
       code = code * 31 + repoDesc.repositoryCreatedTime().toEpochMilli();
       code = code * 31 + repoDesc.oldestPossibleCommitTime().toEpochMilli();

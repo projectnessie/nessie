@@ -20,7 +20,7 @@ import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.co
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
-import static org.projectnessie.versioned.storage.common.logic.Logics.setupLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 import static org.projectnessie.versioned.storage.common.logic.ReferencesQuery.referencesQuery;
 import static org.projectnessie.versioned.storage.common.persist.ObjType.VALUE;
 
@@ -142,7 +142,7 @@ final class ExportPersist extends ExportCommon {
   @Override
   void writeRepositoryDescription() throws IOException {
     RepositoryDescription repositoryDescription =
-        setupLogic(exporter.persist()).fetchRepositoryDescription();
+        repositoryLogic(exporter.persist()).fetchRepositoryDescription();
     if (repositoryDescription != null) {
       writeRepositoryDescription(
           RepositoryDescriptionProto.newBuilder()

@@ -19,7 +19,7 @@ import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.newStoreIndex;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.keyFromString;
 import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
-import static org.projectnessie.versioned.storage.common.logic.Logics.setupLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.newCommitHeaders;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitObj.commitBuilder;
 
@@ -54,7 +54,7 @@ final class ImportPersistV2 extends ImportPersistCommon {
 
     Persist persist = requireNonNull(importer.persist());
     persist.erase();
-    setupLogic(persist)
+    repositoryLogic(persist)
         .initialize(
             repositoryDescription.getDefaultBranchName(),
             false,

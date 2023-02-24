@@ -35,7 +35,7 @@ import static org.projectnessie.versioned.storage.common.objtypes.IndexObj.index
 import static org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj.indexSegments;
 import static org.projectnessie.versioned.storage.common.objtypes.IndexStripe.indexStripe;
 import static org.projectnessie.versioned.storage.common.persist.ObjType.COMMIT;
-import static org.projectnessie.versioned.storage.common.util.SupplyOnce.supplyOnce;
+import static org.projectnessie.versioned.storage.common.util.SupplyOnce.memoize;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.AbstractIterator;
@@ -80,7 +80,7 @@ final class IndexesLogicImpl implements IndexesLogic {
   @jakarta.annotation.Nonnull
   public Supplier<StoreIndex<CommitOp>> createIndexSupplier(
       @Nonnull @jakarta.annotation.Nonnull Supplier<ObjId> commitIdSupplier) {
-    return supplyOnce(
+    return memoize(
         () -> {
           try {
             CommitObj c = persist.fetchTypedObj(commitIdSupplier.get(), COMMIT, CommitObj.class);
@@ -194,8 +194,7 @@ final class IndexesLogicImpl implements IndexesLogic {
           commit.id());
       StoreIndex<CommitOp> referenceIndex = referenceIndexFromStripes(commitStripes, commit.id());
       index = layeredIndex(referenceIndex, incremental);
-    }
-    if (referenceIndexId != null) {
+    } else if (referenceIndexId != null) {
       StoreIndex<CommitOp> referenceIndex = buildReferenceIndexOnly(referenceIndexId, commit.id());
       index = layeredIndex(referenceIndex, incremental);
     }

@@ -16,7 +16,7 @@
 package org.projectnessie.quarkus.cli;
 
 import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
-import static org.projectnessie.versioned.storage.common.logic.Logics.setupLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 import static org.projectnessie.versioned.storage.common.logic.ReferencesQuery.referencesQuery;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
@@ -50,7 +50,7 @@ class ITEraseRepositoryPersist {
             launcher.launch("erase-repository", "--confirmation-code", confirmationCode).exitCode())
         .isEqualTo(0);
 
-    soft.assertThat(setupLogic(persist).fetchRepositoryDescription()).isNull();
+    soft.assertThat(repositoryLogic(persist).fetchRepositoryDescription()).isNull();
 
     ReferenceLogic referenceLogic = referenceLogic(persist);
     PagedResult<Reference, String> iter = referenceLogic.queryReferences(referencesQuery());
@@ -71,7 +71,7 @@ class ITEraseRepositoryPersist {
                 .exitCode())
         .isEqualTo(0);
 
-    RepositoryDescription repoDesc = setupLogic(persist).fetchRepositoryDescription();
+    RepositoryDescription repoDesc = repositoryLogic(persist).fetchRepositoryDescription();
     soft.assertThat(repoDesc).isNotNull();
 
     ReferenceLogic referenceLogic = referenceLogic(persist);

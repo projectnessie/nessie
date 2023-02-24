@@ -37,5 +37,5 @@ public abstract class AbstractPersistTests {
 
   @Nested
   @SuppressWarnings("ClassCanBeStatic")
-  public class SetupLogicTests extends AbstractSetupLogicTests {}
+  public class RepositoryLogicTests extends AbstractRepositoryLogicTests {}
 }

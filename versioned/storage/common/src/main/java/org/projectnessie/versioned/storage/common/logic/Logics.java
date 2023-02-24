@@ -28,8 +28,8 @@ public final class Logics {
     return new CommitLogicImpl(persist);
   }
 
-  public static SetupLogic setupLogic(Persist persist) {
-    return new SetupLogicImpl(persist);
+  public static RepositoryLogic repositoryLogic(Persist persist) {
+    return new RepositoryLogicImpl(persist);
   }
 
   public static IndexesLogic indexesLogic(Persist persist) {

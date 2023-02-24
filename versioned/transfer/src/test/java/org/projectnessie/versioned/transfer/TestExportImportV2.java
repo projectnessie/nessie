@@ -16,7 +16,7 @@
 package org.projectnessie.versioned.transfer;
 
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_REPOSITORY_ID;
-import static org.projectnessie.versioned.storage.common.logic.Logics.setupLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
 import java.io.IOException;
 import java.util.EnumSet;
@@ -74,7 +74,7 @@ public class TestExportImportV2 extends BaseExportImport {
   void prepareTargetRepo() {
     // Initialize repository w/o a default branch
     persistImport.erase();
-    setupLogic(persistImport).initialize("main", false, b -> {});
+    repositoryLogic(persistImport).initialize("main", false, b -> {});
   }
 
   @Override

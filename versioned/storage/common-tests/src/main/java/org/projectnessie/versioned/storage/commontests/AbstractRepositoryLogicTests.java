@@ -24,7 +24,7 @@ import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.projectnessie.versioned.storage.common.logic.InternalRef.allInternalRefs;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
-import static org.projectnessie.versioned.storage.common.logic.Logics.setupLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 import static org.projectnessie.versioned.storage.common.logic.ReferencesQuery.referencesQuery;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.EMPTY_COMMIT_HEADERS;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
@@ -50,7 +50,7 @@ import org.projectnessie.versioned.storage.common.logic.CreateCommit;
 import org.projectnessie.versioned.storage.common.logic.InternalRef;
 import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
 import org.projectnessie.versioned.storage.common.logic.RepositoryDescription;
-import org.projectnessie.versioned.storage.common.logic.SetupLogic;
+import org.projectnessie.versioned.storage.common.logic.RepositoryLogic;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitType;
 import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
@@ -62,9 +62,9 @@ import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.storage.testextension.NessiePersist;
 import org.projectnessie.versioned.storage.testextension.PersistExtension;
 
-/** {@link SetupLogic} related tests to be run against every {@link Persist} implementation. */
+/** {@link RepositoryLogic} related tests to be run against every {@link Persist} implementation. */
 @ExtendWith({PersistExtension.class, SoftAssertionsExtension.class})
-public class AbstractSetupLogicTests {
+public class AbstractRepositoryLogicTests {
   @InjectSoftAssertions protected SoftAssertions soft;
 
   @NessiePersist(initializeRepo = false)
@@ -72,14 +72,14 @@ public class AbstractSetupLogicTests {
 
   @Test
   public void repositoryExists() {
-    SetupLogic setupLogic = setupLogic(persist);
-    soft.assertThat(setupLogic.repositoryExists()).isFalse();
+    RepositoryLogic repositoryLogic = repositoryLogic(persist);
+    soft.assertThat(repositoryLogic.repositoryExists()).isFalse();
 
-    setupLogic.initialize("foobar");
-    soft.assertThat(setupLogic.repositoryExists()).isTrue();
+    repositoryLogic.initialize("foobar");
+    soft.assertThat(repositoryLogic.repositoryExists()).isTrue();
 
     persist.erase();
-    soft.assertThat(setupLogic.repositoryExists()).isFalse();
+    soft.assertThat(repositoryLogic.repositoryExists()).isFalse();
 
     try (CloseableIterator<Obj> iter = persist.scanAllObjects(EnumSet.allOf(ObjType.class))) {
       soft.assertThat(iter).isExhausted();
@@ -89,7 +89,7 @@ public class AbstractSetupLogicTests {
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   public void customRepositoryDescription(boolean createDefaultBranch) throws Exception {
-    SetupLogic setupLogic = setupLogic(persist);
+    RepositoryLogic repositoryLogic = repositoryLogic(persist);
 
     Consumer<RepositoryDescription.Builder> builderConsumer =
         b ->
@@ -101,9 +101,9 @@ public class AbstractSetupLogicTests {
         RepositoryDescription.builder().defaultBranchName("main-branch-foo");
     builderConsumer.accept(repoDescBuilder);
 
-    setupLogic.initialize("main-branch-foo", createDefaultBranch, builderConsumer);
+    repositoryLogic.initialize("main-branch-foo", createDefaultBranch, builderConsumer);
 
-    RepositoryDescription repoDesc = setupLogic.fetchRepositoryDescription();
+    RepositoryDescription repoDesc = repositoryLogic.fetchRepositoryDescription();
     soft.assertThat(repoDesc).isEqualTo(repoDescBuilder.build());
 
     ReferenceLogic refLogic = referenceLogic(persist);
@@ -118,17 +118,17 @@ public class AbstractSetupLogicTests {
 
   @Test
   public void emptyRepositoryDescription() throws Exception {
-    SetupLogic setupLogic = setupLogic(persist);
-    soft.assertThat(setupLogic.fetchRepositoryDescription()).isNull();
+    RepositoryLogic repositoryLogic = repositoryLogic(persist);
+    soft.assertThat(repositoryLogic.fetchRepositoryDescription()).isNull();
 
     Reference ref =
         persist.addReference(reference(InternalRef.REF_REPO.name(), EMPTY_OBJ_ID, false));
-    soft.assertThat(setupLogic.fetchRepositoryDescription()).isNull();
+    soft.assertThat(repositoryLogic.fetchRepositoryDescription()).isNull();
 
     ObjId nonExisting = randomObjId();
     ref = persist.updateReferencePointer(ref, nonExisting);
     soft.assertThat(ref.pointer()).isEqualTo(nonExisting);
-    soft.assertThat(setupLogic.fetchRepositoryDescription()).isNull();
+    soft.assertThat(repositoryLogic.fetchRepositoryDescription()).isNull();
 
     CommitLogic commitLogic = commitLogic(persist);
     ObjId tip =
@@ -142,16 +142,16 @@ public class AbstractSetupLogicTests {
                 emptyList()));
     ref = persist.updateReferencePointer(ref, tip);
     soft.assertThat(ref.pointer()).isEqualTo(tip);
-    soft.assertThat(setupLogic.fetchRepositoryDescription()).isNull();
+    soft.assertThat(repositoryLogic.fetchRepositoryDescription()).isNull();
   }
 
   @Test
   public void defaultRepositoryDescription() {
-    SetupLogic setupLogic = setupLogic(persist);
+    RepositoryLogic repositoryLogic = repositoryLogic(persist);
 
-    setupLogic.initialize("main");
+    repositoryLogic.initialize("main");
 
-    RepositoryDescription repoDesc = requireNonNull(setupLogic.fetchRepositoryDescription());
+    RepositoryDescription repoDesc = requireNonNull(repositoryLogic.fetchRepositoryDescription());
     soft.assertThat(repoDesc.oldestPossibleCommitTime())
         .isEqualTo(repoDesc.repositoryCreatedTime());
   }
@@ -159,7 +159,7 @@ public class AbstractSetupLogicTests {
   @ParameterizedTest
   @ValueSource(strings = {"main", "master", "some-other-name"})
   public void internalRefsAndDefaultBranch(String defaultBranchName) {
-    SetupLogic setupLogic = setupLogic(persist);
+    RepositoryLogic repositoryLogic = repositoryLogic(persist);
     ReferenceLogic referenceLogic = referenceLogic(persist);
 
     soft.assertThat(allInternalRefs())
@@ -182,7 +182,7 @@ public class AbstractSetupLogicTests {
 
     soft.assertThat(referenceLogic.queryReferences(referencesQuery())).isExhausted();
 
-    setupLogic.initialize(defaultBranchName);
+    repositoryLogic.initialize(defaultBranchName);
 
     Set<Reference> refsByFind =
         Stream.concat(allInternalRefs().stream().map(InternalRef::name), Stream.of(refsHeadsMain))
@@ -220,7 +220,7 @@ public class AbstractSetupLogicTests {
 
     // repeat initialization (no-op)
 
-    setupLogic.initialize(defaultBranchName);
+    repositoryLogic.initialize(defaultBranchName);
 
     soft.assertThat(
             Stream.concat(

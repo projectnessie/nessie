@@ -15,7 +15,7 @@
  */
 package org.projectnessie.quarkus.cli;
 
-import static org.projectnessie.versioned.storage.common.logic.Logics.setupLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
 import com.google.protobuf.ByteString;
 import java.io.PrintWriter;
@@ -183,7 +183,7 @@ public class ImportRepository extends BaseCommand {
 
       PrintWriter out = spec.commandLine().getOut();
 
-      if (!erase && setupLogic(persist).repositoryExists()) {
+      if (!erase && repositoryLogic(persist).repositoryExists()) {
         spec.commandLine()
             .getErr()
             .println(

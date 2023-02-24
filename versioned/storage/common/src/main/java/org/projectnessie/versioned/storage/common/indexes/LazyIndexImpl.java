@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.storage.common.indexes;
 
-import static org.projectnessie.versioned.storage.common.util.SupplyOnce.supplyOnce;
+import static org.projectnessie.versioned.storage.common.util.SupplyOnce.memoize;
 
 import com.google.protobuf.ByteString;
 import java.util.Iterator;
@@ -39,7 +39,7 @@ final class LazyIndexImpl<V> implements StoreIndex<V> {
     this.firstKey = firstKey;
     this.lastKey = lastKey;
     this.loader =
-        supplyOnce(
+        memoize(
             () -> {
               try {
                 return supplier.get();

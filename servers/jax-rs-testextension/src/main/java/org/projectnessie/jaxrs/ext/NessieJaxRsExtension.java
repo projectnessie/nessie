@@ -16,7 +16,7 @@
 package org.projectnessie.jaxrs.ext;
 
 import static org.projectnessie.services.config.ServerConfigExtension.SERVER_CONFIG;
-import static org.projectnessie.versioned.storage.common.logic.Logics.setupLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
 import java.net.URI;
 import java.util.function.Consumer;
@@ -69,7 +69,7 @@ import org.projectnessie.services.restjavax.ValidationExceptionMapper;
 import org.projectnessie.versioned.PersistVersionStoreExtension;
 import org.projectnessie.versioned.VersionStoreImplExtension;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.storage.common.logic.SetupLogic;
+import org.projectnessie.versioned.storage.common.logic.RepositoryLogic;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 
 /** A JUnit 5 extension that starts up Weld/JerseyTest. */
@@ -143,8 +143,8 @@ public class NessieJaxRsExtension extends NessieClientResolver
                             () -> {
                               Persist persist = persistSupplier.get();
                               persist.erase();
-                              SetupLogic setupLogic = setupLogic(persist);
-                              setupLogic.initialize("main");
+                              RepositoryLogic repositoryLogic = repositoryLogic(persist);
+                              repositoryLogic.initialize("main");
                               return persist;
                             });
 

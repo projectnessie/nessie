@@ -15,7 +15,7 @@
  */
 package org.projectnessie.server;
 
-import static org.projectnessie.versioned.storage.common.logic.Logics.setupLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
 import io.quarkus.logging.Log;
 import javax.enterprise.inject.Instance;
@@ -43,7 +43,7 @@ public abstract class AbstractQuarkusRest extends BaseTestNessieRest {
         try {
           p.erase();
         } finally {
-          setupLogic(p).initialize("main");
+          repositoryLogic(p).initialize("main");
         }
       }
 

@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.storage.rocksdb;
 
-import static org.projectnessie.versioned.storage.common.logic.Logics.setupLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.logic.RepositoryDescription;
-import org.projectnessie.versioned.storage.common.logic.SetupLogic;
+import org.projectnessie.versioned.storage.common.logic.RepositoryLogic;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.PersistFactory;
@@ -51,9 +51,9 @@ public class TestRocksDBBackendTestFactory {
         Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
         soft.assertThat(persist).isNotNull().isInstanceOf(RocksDBPersist.class);
 
-        SetupLogic setupLogic = setupLogic(persist);
-        setupLogic.initialize("initializeAgain");
-        repoDesc = setupLogic.fetchRepositoryDescription();
+        RepositoryLogic repositoryLogic = repositoryLogic(persist);
+        repositoryLogic.initialize("initializeAgain");
+        repoDesc = repositoryLogic.fetchRepositoryDescription();
         soft.assertThat(repoDesc).isNotNull();
       }
 
@@ -65,9 +65,9 @@ public class TestRocksDBBackendTestFactory {
         Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
         soft.assertThat(persist).isNotNull().isInstanceOf(RocksDBPersist.class);
 
-        SetupLogic setupLogic = setupLogic(persist);
-        setupLogic.initialize("initializeAgain");
-        soft.assertThat(setupLogic.fetchRepositoryDescription()).isEqualTo(repoDesc);
+        RepositoryLogic repositoryLogic = repositoryLogic(persist);
+        repositoryLogic.initialize("initializeAgain");
+        soft.assertThat(repositoryLogic.fetchRepositoryDescription()).isEqualTo(repoDesc);
       }
     } finally {
       testFactory.stop();
@@ -83,9 +83,9 @@ public class TestRocksDBBackendTestFactory {
         Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
         soft.assertThat(persist).isNotNull().isInstanceOf(RocksDBPersist.class);
 
-        SetupLogic setupLogic = setupLogic(persist);
-        setupLogic.initialize("initializeAgain");
-        soft.assertThat(setupLogic.fetchRepositoryDescription()).isNotEqualTo(repoDesc);
+        RepositoryLogic repositoryLogic = repositoryLogic(persist);
+        repositoryLogic.initialize("initializeAgain");
+        soft.assertThat(repositoryLogic.fetchRepositoryDescription()).isNotEqualTo(repoDesc);
       }
     } finally {
       testFactory.stop();

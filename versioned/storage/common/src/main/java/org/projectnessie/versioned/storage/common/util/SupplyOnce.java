@@ -25,7 +25,7 @@ public final class SupplyOnce {
 
   private SupplyOnce() {}
 
-  public static <T> Supplier<T> supplyOnce(Supplier<T> loader) {
+  public static <T> Supplier<T> memoize(Supplier<T> loader) {
     return new NonLockingSupplyOnce<>(loader);
   }
 

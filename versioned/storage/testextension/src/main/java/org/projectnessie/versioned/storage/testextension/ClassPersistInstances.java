@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.storage.testextension;
 
-import static org.projectnessie.versioned.storage.common.logic.Logics.setupLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 import static org.projectnessie.versioned.storage.testextension.PersistExtension.KEY_REUSABLE_BACKEND;
 import static org.projectnessie.versioned.storage.testextension.PersistExtension.NAMESPACE;
 
@@ -26,7 +26,7 @@ import org.junit.jupiter.api.extension.ExtensionContext.Store;
 import org.projectnessie.versioned.storage.cache.CacheBackend;
 import org.projectnessie.versioned.storage.cache.PersistCaches;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
-import org.projectnessie.versioned.storage.common.logic.SetupLogic;
+import org.projectnessie.versioned.storage.common.logic.RepositoryLogic;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.PersistFactory;
@@ -67,7 +67,7 @@ final class ClassPersistInstances {
   static void reinit(Persist persist, boolean initialize) {
     persist.erase();
     if (initialize) {
-      SetupLogic setup = setupLogic(persist);
+      RepositoryLogic setup = repositoryLogic(persist);
       setup.initialize("main");
     }
   }

@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.storage.dynamodb;
 
-import static org.projectnessie.versioned.storage.common.logic.Logics.setupLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.KEY_NAME;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.TABLE_REFS;
 
@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.logic.RepositoryDescription;
-import org.projectnessie.versioned.storage.common.logic.SetupLogic;
+import org.projectnessie.versioned.storage.common.logic.RepositoryLogic;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.BackendFactory;
 import org.projectnessie.versioned.storage.common.persist.Persist;
@@ -65,9 +65,9 @@ public class ITDynamoDBBackendFactory {
           Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
           soft.assertThat(persist).isNotNull().isInstanceOf(DynamoDBPersist.class);
 
-          SetupLogic setupLogic = setupLogic(persist);
-          setupLogic.initialize("initializeAgain");
-          repoDesc = setupLogic.fetchRepositoryDescription();
+          RepositoryLogic repositoryLogic = repositoryLogic(persist);
+          repositoryLogic.initialize("initializeAgain");
+          repoDesc = repositoryLogic.fetchRepositoryDescription();
           soft.assertThat(repoDesc).isNotNull();
         }
 
@@ -80,9 +80,9 @@ public class ITDynamoDBBackendFactory {
           Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
           soft.assertThat(persist).isNotNull().isInstanceOf(DynamoDBPersist.class);
 
-          SetupLogic setupLogic = setupLogic(persist);
-          setupLogic.initialize("initializeAgain");
-          soft.assertThat(setupLogic.fetchRepositoryDescription()).isEqualTo(repoDesc);
+          RepositoryLogic repositoryLogic = repositoryLogic(persist);
+          repositoryLogic.initialize("initializeAgain");
+          soft.assertThat(repositoryLogic.fetchRepositoryDescription()).isEqualTo(repoDesc);
         }
       }
     } finally {
@@ -108,9 +108,9 @@ public class ITDynamoDBBackendFactory {
         Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
         soft.assertThat(persist).isNotNull().isInstanceOf(DynamoDBPersist.class);
 
-        SetupLogic setupLogic = setupLogic(persist);
-        setupLogic.initialize("initializeAgain");
-        repoDesc = setupLogic.fetchRepositoryDescription();
+        RepositoryLogic repositoryLogic = repositoryLogic(persist);
+        repositoryLogic.initialize("initializeAgain");
+        repoDesc = repositoryLogic.fetchRepositoryDescription();
         soft.assertThat(repoDesc).isNotNull();
       }
 
@@ -122,9 +122,9 @@ public class ITDynamoDBBackendFactory {
         Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
         soft.assertThat(persist).isNotNull().isInstanceOf(DynamoDBPersist.class);
 
-        SetupLogic setupLogic = setupLogic(persist);
-        setupLogic.initialize("initializeAgain");
-        soft.assertThat(setupLogic.fetchRepositoryDescription()).isEqualTo(repoDesc);
+        RepositoryLogic repositoryLogic = repositoryLogic(persist);
+        repositoryLogic.initialize("initializeAgain");
+        soft.assertThat(repositoryLogic.fetchRepositoryDescription()).isEqualTo(repoDesc);
       }
     } finally {
       testFactory.stop();

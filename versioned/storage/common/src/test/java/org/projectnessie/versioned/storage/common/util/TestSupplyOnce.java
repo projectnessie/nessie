@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.storage.common.util;
 
-import static org.projectnessie.versioned.storage.common.util.SupplyOnce.supplyOnce;
+import static org.projectnessie.versioned.storage.common.util.SupplyOnce.memoize;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -34,7 +34,7 @@ public class TestSupplyOnce {
   public void nullValue() {
     AtomicInteger counter = new AtomicInteger();
     Supplier<String> nullValue =
-        supplyOnce(
+        memoize(
             () -> {
               counter.incrementAndGet();
               return null;
@@ -54,7 +54,7 @@ public class TestSupplyOnce {
   public void someValue() {
     AtomicInteger counter = new AtomicInteger();
     Supplier<String> nullValue =
-        supplyOnce(
+        memoize(
             () -> {
               counter.incrementAndGet();
               return "foo";
@@ -74,7 +74,7 @@ public class TestSupplyOnce {
   public void failure() {
     AtomicInteger counter = new AtomicInteger();
     Supplier<String> failure =
-        supplyOnce(
+        memoize(
             () -> {
               counter.incrementAndGet();
               throw new RuntimeException("foo");

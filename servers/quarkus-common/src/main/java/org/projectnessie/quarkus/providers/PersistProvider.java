@@ -15,7 +15,7 @@
  */
 package org.projectnessie.quarkus.providers;
 
-import static org.projectnessie.versioned.storage.common.logic.Logics.setupLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
 import io.opentelemetry.api.trace.Tracer;
 import io.quarkus.runtime.Startup;
@@ -155,7 +155,7 @@ public class PersistProvider {
 
     LOGGER.info("Using {} version store{}, {}, {}", versionStoreType, info, cacheInfo, tracingInfo);
 
-    setupLogic(persist).initialize(serverConfig.getDefaultBranch());
+    repositoryLogic(persist).initialize(serverConfig.getDefaultBranch());
 
     return persist;
   }

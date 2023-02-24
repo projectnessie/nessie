@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.storage.mongodb;
 
-import static org.projectnessie.versioned.storage.common.logic.Logics.setupLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
 import com.mongodb.client.MongoClient;
 import org.assertj.core.api.SoftAssertions;
@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.logic.RepositoryDescription;
-import org.projectnessie.versioned.storage.common.logic.SetupLogic;
+import org.projectnessie.versioned.storage.common.logic.RepositoryLogic;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.BackendFactory;
 import org.projectnessie.versioned.storage.common.persist.Persist;
@@ -60,9 +60,9 @@ public class ITMongoDBBackendFactory {
           Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
           soft.assertThat(persist).isNotNull().isInstanceOf(MongoDBPersist.class);
 
-          SetupLogic setupLogic = setupLogic(persist);
-          setupLogic.initialize("initializeAgain");
-          repoDesc = setupLogic.fetchRepositoryDescription();
+          RepositoryLogic repositoryLogic = repositoryLogic(persist);
+          repositoryLogic.initialize("initializeAgain");
+          repoDesc = repositoryLogic.fetchRepositoryDescription();
           soft.assertThat(repoDesc).isNotNull();
         }
 
@@ -76,9 +76,9 @@ public class ITMongoDBBackendFactory {
           Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
           soft.assertThat(persist).isNotNull().isInstanceOf(MongoDBPersist.class);
 
-          SetupLogic setupLogic = setupLogic(persist);
-          setupLogic.initialize("initializeAgain");
-          soft.assertThat(setupLogic.fetchRepositoryDescription()).isEqualTo(repoDesc);
+          RepositoryLogic repositoryLogic = repositoryLogic(persist);
+          repositoryLogic.initialize("initializeAgain");
+          soft.assertThat(repositoryLogic.fetchRepositoryDescription()).isEqualTo(repoDesc);
         }
       }
     } finally {
@@ -104,9 +104,9 @@ public class ITMongoDBBackendFactory {
         Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
         soft.assertThat(persist).isNotNull().isInstanceOf(MongoDBPersist.class);
 
-        SetupLogic setupLogic = setupLogic(persist);
-        setupLogic.initialize("initializeAgain");
-        repoDesc = setupLogic.fetchRepositoryDescription();
+        RepositoryLogic repositoryLogic = repositoryLogic(persist);
+        repositoryLogic.initialize("initializeAgain");
+        repoDesc = repositoryLogic.fetchRepositoryDescription();
         soft.assertThat(repoDesc).isNotNull();
       }
 
@@ -118,9 +118,9 @@ public class ITMongoDBBackendFactory {
         Persist persist = persistFactory.newPersist(DEFAULT_CONFIG);
         soft.assertThat(persist).isNotNull().isInstanceOf(MongoDBPersist.class);
 
-        SetupLogic setupLogic = setupLogic(persist);
-        setupLogic.initialize("initializeAgain");
-        soft.assertThat(setupLogic.fetchRepositoryDescription()).isEqualTo(repoDesc);
+        RepositoryLogic repositoryLogic = repositoryLogic(persist);
+        repositoryLogic.initialize("initializeAgain");
+        soft.assertThat(repositoryLogic.fetchRepositoryDescription()).isEqualTo(repoDesc);
       }
     } finally {
       testFactory.stop();

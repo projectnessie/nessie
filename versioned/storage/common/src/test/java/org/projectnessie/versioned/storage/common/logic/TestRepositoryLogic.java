@@ -15,23 +15,6 @@
  */
 package org.projectnessie.versioned.storage.common.logic;
 
-import java.util.function.Consumer;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.projectnessie.versioned.storage.commontests.AbstractRepositoryLogicTests;
 
-/** Logic to setup/initialize a Nessie repository. */
-public interface SetupLogic {
-
-  void initialize(@Nonnull @jakarta.annotation.Nonnull String defaultBranchName);
-
-  void initialize(
-      @Nonnull @jakarta.annotation.Nonnull String defaultBranchName,
-      boolean createDefaultBranch,
-      Consumer<RepositoryDescription.Builder> repositoryDescription);
-
-  @Nullable
-  @jakarta.annotation.Nullable
-  RepositoryDescription fetchRepositoryDescription();
-
-  boolean repositoryExists();
-}
+public class TestRepositoryLogic extends AbstractRepositoryLogicTests {}

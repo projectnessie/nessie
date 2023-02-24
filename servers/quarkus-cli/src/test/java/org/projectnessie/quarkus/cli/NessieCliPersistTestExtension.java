@@ -15,7 +15,7 @@
  */
 package org.projectnessie.quarkus.cli;
 
-import static org.projectnessie.versioned.storage.common.logic.Logics.setupLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
 import java.util.Map;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -84,7 +84,7 @@ public class NessieCliPersistTestExtension
 
               // ... but reset the repo for each test.
               persist.erase();
-              setupLogic(persist).initialize("main");
+              repositoryLogic(persist).initialize("main");
               return persist;
             },
             Persist.class);

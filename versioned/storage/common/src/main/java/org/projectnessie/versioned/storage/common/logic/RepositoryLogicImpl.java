@@ -57,20 +57,18 @@ import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 
 /** Logic to setup/initialize a Nessie repository. */
-final class SetupLogicImpl implements SetupLogic {
+final class RepositoryLogicImpl implements RepositoryLogic {
 
   static final String REFS_HEADS = "refs/heads/";
   private final Persist persist;
 
-  SetupLogicImpl(Persist persist) {
+  RepositoryLogicImpl(Persist persist) {
     this.persist = persist;
   }
 
   @Override
   public void initialize(@Nonnull @jakarta.annotation.Nonnull String defaultBranchName) {
-    {
-      initialize(defaultBranchName, true, b -> {});
-    }
+    initialize(defaultBranchName, true, b -> {});
   }
 
   @Override
@@ -79,8 +77,6 @@ final class SetupLogicImpl implements SetupLogic {
       boolean createDefaultBranch,
       Consumer<RepositoryDescription.Builder> repositoryDescription) {
     initializeInternalRef(REF_REFS, b -> {});
-    initializeInternalRef(
-        REF_REPO, b -> addRepositoryDescription(b, repositoryDescription, defaultBranchName));
 
     if (createDefaultBranch) {
       try {
@@ -91,6 +87,9 @@ final class SetupLogicImpl implements SetupLogic {
         throw new RuntimeException(e);
       }
     }
+
+    initializeInternalRef(
+        REF_REPO, b -> addRepositoryDescription(b, repositoryDescription, defaultBranchName));
   }
 
   @Override
