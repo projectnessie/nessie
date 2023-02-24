@@ -2,6 +2,32 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.50.0 Release (February 24, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.50.0).
+
+* Strip jakarta.* annotations for Java 8 (#6172)
+* Fix Nessie GH URL in docs (#6167)
+* Refactor advanced configuration (#6159)
+* Site: Update community links CI and README.md CI (#6165)
+* Redesign telemetry support in Helm chart (#6153)
+* Disable versioned-transfer ITs in macOS CI (#6164)
+* Remove rocksdb.dbPath from Helm chart values (#6149)
+* Fix console log level setting in Helm charts (#6158)
+* Minor fixes to the build-push-images.sh script (#6155)
+* mac-os/win CI - add retry for steps that regularly timeout/hang (#6152)
+* Add missing jakarta.* annotations (#6150)
+* Disable intTest using containers/podman for macOS CI (#6148)
+* Improve nessie-ui build a little bit (#6147)
+* Bump npm from 7.24.2 to 9.4.2 and nodejs from 16.14.2 to 18.4.1 (#6145)
+* Rename jobs for mac+win GH workflows (#6143)
+* Allow all GH WFs to become "required checks" (#6131)
+* Label `model` changes with `pr-integrations` (#6132)
+* GH workflow to smoke test Docker images (#6127)
+* Fix typo in release notes (#6129)
+* PR Auto labeler (#6128)
+* Fix renovate configuration (#6124)
+
 ## 0.49.0 Release (February 17, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.49.0).
