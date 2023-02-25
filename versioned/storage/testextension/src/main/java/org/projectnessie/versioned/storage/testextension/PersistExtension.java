@@ -212,7 +212,7 @@ public class PersistExtension implements BeforeAllCallback, BeforeEachCallback, 
 
     config = config.fromFunction(configMap::get);
 
-    config = config.withClock(new UniqueMicrosClock());
+    config = config.withClock(UniqueMicrosClock.SHARED_INSTANCE);
 
     return context
         .getStore(NAMESPACE)

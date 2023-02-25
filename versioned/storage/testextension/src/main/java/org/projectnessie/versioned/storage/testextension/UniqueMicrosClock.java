@@ -37,6 +37,8 @@ final class UniqueMicrosClock extends Clock {
   static final long MICROS_PER_SECOND = SECONDS.toMicros(1);
   private final Clock clock;
 
+  static final UniqueMicrosClock SHARED_INSTANCE = new UniqueMicrosClock(Clock.systemUTC());
+
   private long lastSec;
   private int lastMicro;
 
