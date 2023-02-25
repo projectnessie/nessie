@@ -406,9 +406,4 @@ final class TelemetryPersist implements Persist {
   public String name() {
     return persist.name();
   }
-
-  @Override
-  public boolean isCaching() {
-    return persist.isCaching();
-  }
 }

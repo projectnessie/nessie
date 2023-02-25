@@ -75,11 +75,6 @@ class InmemoryPersist implements Persist {
   }
 
   @Override
-  public boolean isCaching() {
-    return false;
-  }
-
-  @Override
   @Nonnull
   @jakarta.annotation.Nonnull
   public StoreConfig config() {

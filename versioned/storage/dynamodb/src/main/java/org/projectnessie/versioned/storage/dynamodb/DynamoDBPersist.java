@@ -167,11 +167,6 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Override
-  public boolean isCaching() {
-    return false;
-  }
-
-  @Override
   public int hardObjectSizeLimit() {
     return ITEM_SIZE_LIMIT;
   }

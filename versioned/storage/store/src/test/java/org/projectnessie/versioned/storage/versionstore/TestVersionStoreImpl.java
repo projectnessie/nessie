@@ -341,10 +341,5 @@ public class TestVersionStoreImpl extends AbstractVersionStoreTests {
     public void erase() {
       delegate.erase();
     }
-
-    @Override
-    public boolean isCaching() {
-      return delegate.isCaching();
-    }
   }
 }

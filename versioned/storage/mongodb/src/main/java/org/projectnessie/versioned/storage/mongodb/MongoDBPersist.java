@@ -155,11 +155,6 @@ public class MongoDBPersist implements Persist {
     return MongoDBBackendFactory.NAME;
   }
 
-  @Override
-  public boolean isCaching() {
-    return false;
-  }
-
   @Nonnull
   @jakarta.annotation.Nonnull
   @Override

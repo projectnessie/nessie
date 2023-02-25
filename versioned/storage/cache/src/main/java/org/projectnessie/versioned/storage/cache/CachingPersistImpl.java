@@ -217,11 +217,6 @@ class CachingPersistImpl implements Persist {
     return persist.scanAllObjects(returnedObjTypes);
   }
 
-  @Override
-  public boolean isCaching() {
-    return true;
-  }
-
   // plain delegates...
 
   @Override

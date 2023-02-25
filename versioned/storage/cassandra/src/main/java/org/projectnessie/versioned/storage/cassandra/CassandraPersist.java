@@ -156,11 +156,6 @@ public class CassandraPersist implements Persist {
     return CassandraBackendFactory.NAME;
   }
 
-  @Override
-  public boolean isCaching() {
-    return false;
-  }
-
   @Nonnull
   @jakarta.annotation.Nonnull
   @Override
