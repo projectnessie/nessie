@@ -206,7 +206,7 @@ public class CassandraPersist implements Persist {
         reference.deleted())) {
       return reference;
     }
-    throw new RefAlreadyExistsException(reference);
+    throw new RefAlreadyExistsException(fetchReference(reference.name()));
   }
 
   @Nonnull

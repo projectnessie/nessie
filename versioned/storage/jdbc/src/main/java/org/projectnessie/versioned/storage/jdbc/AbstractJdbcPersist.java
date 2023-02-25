@@ -223,13 +223,13 @@ abstract class AbstractJdbcPersist implements Persist {
       ps.setBoolean(4, reference.deleted());
 
       if (ps.executeUpdate() != 1) {
-        throw new RefAlreadyExistsException(reference);
+        throw new RefAlreadyExistsException(fetchReference(reference.name()));
       }
 
       return reference;
     } catch (SQLException e) {
       if (databaseSpecific.isConstraintViolation(e)) {
-        throw new RefAlreadyExistsException(reference);
+        throw new RefAlreadyExistsException(fetchReference(reference.name()));
       }
       throw unhandledSQLException(e);
     }

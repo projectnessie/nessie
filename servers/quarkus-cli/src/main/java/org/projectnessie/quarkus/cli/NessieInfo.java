@@ -95,7 +95,7 @@ public class NessieInfo extends BaseCommand {
     CommitObj headCommit = commitLogic.fetchCommit(defaultBranch.pointer());
 
     Reference refRepo = persist.fetchReference(InternalRef.REF_REPO.name());
-    CommitObj repoCommit = commitLogic.fetchCommit(refRepo.pointer());
+    CommitObj repoCommit = refRepo != null ? commitLogic.fetchCommit(refRepo.pointer()) : null;
 
     spec.commandLine()
         .getOut()

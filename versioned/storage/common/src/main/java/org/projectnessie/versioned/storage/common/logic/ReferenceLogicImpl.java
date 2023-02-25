@@ -280,11 +280,14 @@ final class ReferenceLogicImpl implements ReferenceLogic {
           try {
             return persist.addReference(reference);
           } catch (RefAlreadyExistsException e) {
-            if (!e.reference().deleted()) {
-              // Might happen in a rare race
-              throw e;
+            Reference existing = e.reference();
+            if (existing != null) {
+              if (!existing.deleted()) {
+                // Might happen in a rare race
+                throw e;
+              }
+              maybeRecover(name, reference, createRefsIndexSupplier());
             }
-            maybeRecover(name, reference, createRefsIndexSupplier());
             // try again
             break;
           }
@@ -337,8 +340,8 @@ final class ReferenceLogicImpl implements ReferenceLogic {
       // one must throw a ReferenceNotFoundException instead of a ReferenceConditionFailedException
       if (!actAsAlreadyDeleted) {
         Supplier<StoreIndex<CommitOp>> indexSupplier = createRefsIndexSupplier();
-        reference = maybeRecover(name, reference, indexSupplier);
-        throw new RefConditionFailedException(reference);
+        Reference recovered = maybeRecover(name, reference, indexSupplier);
+        throw new RefConditionFailedException(recovered != null ? recovered : reference);
       }
     }
 
@@ -380,7 +383,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
       return commitRetry(
           persist,
           (p, retryState) -> {
-            Reference refRefs = p.fetchReference(REF_REFS.name());
+            Reference refRefs = requireNonNull(p.fetchReference(REF_REFS.name()));
             long created = p.config().currentTimeMicros();
             RefObj ref = ref(name, pointer, created);
             ObjId refObjId;
@@ -461,7 +464,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
       commitRetry(
           persist,
           (p, retryState) -> {
-            Reference refRefs = p.fetchReference(REF_REFS.name());
+            Reference refRefs = requireNonNull(p.fetchReference(REF_REFS.name()));
             CommitObj commit;
             try {
               commit = p.fetchTypedObj(refRefs.pointer(), COMMIT, CommitObj.class);

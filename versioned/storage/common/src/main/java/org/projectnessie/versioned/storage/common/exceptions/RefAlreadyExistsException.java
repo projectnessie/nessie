@@ -15,11 +15,24 @@
  */
 package org.projectnessie.versioned.storage.common.exceptions;
 
+import javax.annotation.Nullable;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 
 public class RefAlreadyExistsException extends RefException {
 
-  public RefAlreadyExistsException(Reference reference) {
-    super(reference, "Reference " + reference.name() + " already exists");
+  /**
+   * Indicates that an attempt to create a reference failed, because the same name already exists.
+   *
+   * @param existing the already existing reference, might be {@code null}, if a race with a
+   *     concurrent reference-delete-operation happened. This parameter should <em>always</em>
+   *     reflect the state fetched from the database and <em>never</em> the one of the
+   *     create-attempt.
+   */
+  public RefAlreadyExistsException(@Nullable @jakarta.annotation.Nullable Reference existing) {
+    super(
+        existing,
+        existing != null
+            ? "Reference " + existing.name() + " already exists"
+            : "Reference already exists");
   }
 }

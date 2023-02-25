@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.storage.common.exceptions;
 
+import javax.annotation.Nullable;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 
 public abstract class RefException extends Exception {
@@ -31,6 +32,8 @@ public abstract class RefException extends Exception {
     this.reference = reference;
   }
 
+  @Nullable
+  @jakarta.annotation.Nullable
   public Reference reference() {
     return reference;
   }

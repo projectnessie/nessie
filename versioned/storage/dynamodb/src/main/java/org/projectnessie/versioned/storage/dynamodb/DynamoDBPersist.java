@@ -108,7 +108,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.agrona.collections.Hashing;
 import org.agrona.collections.Object2IntHashMap;
-import org.jetbrains.annotations.NotNull;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
@@ -281,6 +280,8 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Override
+  @Nullable
+  @jakarta.annotation.Nullable
   public Reference fetchReference(@Nonnull @jakarta.annotation.Nonnull String name) {
     GetItemResponse item =
         backend.client().getItem(b -> b.tableName(TABLE_REFS).key(referenceKeyMap(name)));
@@ -371,7 +372,7 @@ public class DynamoDBPersist implements Persist {
 
   @Override
   public <T extends Obj> T fetchTypedObj(
-      @NotNull @jakarta.validation.constraints.NotNull ObjId id, ObjType type, Class<T> typeClass)
+      @Nonnull @jakarta.annotation.Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
     if (EMPTY_OBJ_ID.equals(id)) {
       return null;
@@ -394,7 +395,7 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Override
-  public ObjType fetchObjType(@NotNull @jakarta.validation.constraints.NotNull ObjId id)
+  public ObjType fetchObjType(@Nonnull @jakarta.annotation.Nonnull ObjId id)
       throws ObjNotFoundException {
     if (EMPTY_OBJ_ID.equals(id)) {
       return null;

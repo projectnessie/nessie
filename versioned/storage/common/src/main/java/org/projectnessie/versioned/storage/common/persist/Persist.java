@@ -138,6 +138,8 @@ public interface Persist {
    *
    * @return the reference or {@code null}, if it does not exist
    */
+  @Nullable
+  @jakarta.annotation.Nullable
   Reference fetchReference(@Nonnull @jakarta.annotation.Nonnull String name);
 
   /**
