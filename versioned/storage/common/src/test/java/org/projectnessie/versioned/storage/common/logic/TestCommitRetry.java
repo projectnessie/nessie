@@ -217,7 +217,7 @@ public class TestCommitRetry {
           new ArgumentMatcher<Long>() {
             @Override
             public boolean matches(Long l) {
-              return l >= finalLower && l < finalUpper && l <= maxSleep;
+              return l >= finalLower && l <= finalUpper && l <= maxSleep;
             }
 
             @Override
@@ -230,6 +230,8 @@ public class TestCommitRetry {
       if (upper * 2 <= maxSleep) {
         lower *= 2;
         upper *= 2;
+      } else {
+        upper = maxSleep;
       }
     }
 

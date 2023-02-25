@@ -167,9 +167,12 @@ public class CommitRetry {
       monotonicClock.sleepMillis(sleepMillis);
 
       upper = upper * 2;
-      if (upper <= maxSleep) {
+      long max = maxSleep;
+      if (upper <= max) {
         lowerBound *= 2;
         upperBound = upper;
+      } else {
+        upperBound = max;
       }
     }
 
