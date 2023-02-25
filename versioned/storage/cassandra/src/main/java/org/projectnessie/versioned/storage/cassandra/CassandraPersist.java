@@ -560,7 +560,7 @@ public class CassandraPersist implements Persist {
     return new ScanAllObjectsIterator(returnedObjTypes);
   }
 
-  abstract static class StoreObjDesc<O extends Obj> {
+  private abstract static class StoreObjDesc<O extends Obj> {
     final String insertCql;
     final String updateCql;
 
@@ -576,7 +576,7 @@ public class CassandraPersist implements Persist {
         throws ObjTooLargeException;
   }
 
-  static Map<ObjType, StoreObjDesc<?>> STORE_OBJ_TYPE = new EnumMap<>(ObjType.class);
+  private static final Map<ObjType, StoreObjDesc<?>> STORE_OBJ_TYPE = new EnumMap<>(ObjType.class);
 
   static {
     STORE_OBJ_TYPE.put(

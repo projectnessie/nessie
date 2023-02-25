@@ -660,7 +660,7 @@ public class DynamoDBPersist implements Persist {
     return item;
   }
 
-  abstract static class StoreObjDesc<O extends Obj> {
+  private abstract static class StoreObjDesc<O extends Obj> {
     final String typeName;
 
     StoreObjDesc(String typeName) {

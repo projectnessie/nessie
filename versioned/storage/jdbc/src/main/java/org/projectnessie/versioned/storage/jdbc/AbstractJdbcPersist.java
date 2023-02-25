@@ -651,7 +651,7 @@ abstract class AbstractJdbcPersist implements Persist {
     return new ScanAllObjectsIterator(conn, returnedObjTypes);
   }
 
-  abstract static class StoreObjDesc<O extends Obj> {
+  private abstract static class StoreObjDesc<O extends Obj> {
     final String updateSql;
 
     StoreObjDesc(String updateSql) {
@@ -667,7 +667,7 @@ abstract class AbstractJdbcPersist implements Persist {
         throws SQLException, ObjTooLargeException;
   }
 
-  static Map<ObjType, StoreObjDesc<?>> STORE_OBJ_TYPE = new EnumMap<>(ObjType.class);
+  private static final Map<ObjType, StoreObjDesc<?>> STORE_OBJ_TYPE = new EnumMap<>(ObjType.class);
 
   static {
     STORE_OBJ_TYPE.put(
