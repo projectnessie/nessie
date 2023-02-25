@@ -646,6 +646,9 @@ public class AbstractBasePersistTests {
   public void scanAllObjects(
       @NessieStoreConfig(name = CONFIG_REPOSITORY_ID, value = "some-other") @NessiePersist
           Persist otherRepo) {
+    soft.assertThat(persist.config().repositoryId())
+        .isNotEqualTo(otherRepo.config().repositoryId());
+
     ArrayList<Obj> list1;
     try (CloseableIterator<Obj> iter = persist.scanAllObjects(EnumSet.allOf(ObjType.class))) {
       list1 = newArrayList(iter);
