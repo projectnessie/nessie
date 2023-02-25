@@ -27,6 +27,7 @@ import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.s
 import com.google.common.collect.AbstractIterator;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
@@ -521,6 +522,7 @@ class RocksDBPersist implements Persist {
     private final ColumnFamilyHandle cf;
     private final RocksIterator iter;
     private boolean first = true;
+    private byte[] lastKey;
 
     ScanAllObjectsIterator(Predicate<ObjType> filter) {
       this.filter = filter;
@@ -546,6 +548,12 @@ class RocksDBPersist implements Persist {
         }
 
         byte[] k = iter.key();
+        if (lastKey != null && Arrays.equals(lastKey, k)) {
+          // RocksDB sometimes tends to return the same key twice
+          continue;
+        }
+        lastKey = k;
+
         ByteString key = ByteString.copyFrom(k);
         if (!key.startsWith(keyPrefix)) {
           continue;
