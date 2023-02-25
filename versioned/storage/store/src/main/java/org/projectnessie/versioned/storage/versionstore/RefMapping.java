@@ -17,6 +17,7 @@ package org.projectnessie.versioned.storage.versionstore;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
@@ -257,10 +258,11 @@ public class RefMapping {
 
   public Reference resolveNamedRef(@Nonnull @jakarta.annotation.Nonnull String refName)
       throws ReferenceNotFoundException {
-    Reference[] refs =
-        persist.fetchReferences(new String[] {asBranchName(refName), asTagName(refName)});
-    Reference branch = refs[0];
-    Reference tag = refs[1];
+    ReferenceLogic referenceLogic = referenceLogic(persist);
+    List<Reference> refs =
+        referenceLogic.getReferences(asList(asBranchName(refName), asTagName(refName)));
+    Reference branch = refs.get(0);
+    Reference tag = refs.get(1);
 
     // Prefer branches
     if (branch != null) {
