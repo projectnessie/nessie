@@ -34,7 +34,8 @@ final class HttpDeleteNamespace extends BaseDeleteNamespaceBuilder {
 
   @Override
   public void delete()
-      throws NessieReferenceNotFoundException, NessieNamespaceNotEmptyException,
+      throws NessieReferenceNotFoundException,
+          NessieNamespaceNotEmptyException,
           NessieNamespaceNotFoundException {
     NamespaceParamsBuilder builder =
         NamespaceParams.builder().namespace(namespace).hashOnRef(hashOnRef).refName(refName);

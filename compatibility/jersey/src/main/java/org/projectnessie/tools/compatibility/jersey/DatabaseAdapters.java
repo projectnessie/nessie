@@ -165,8 +165,11 @@ public final class DatabaseAdapters {
               DatabaseAdapterConfig,
               DatabaseConnectionProvider<?>>
           builder)
-      throws NoSuchMethodException, ClassNotFoundException, InvocationTargetException,
-          InstantiationException, IllegalAccessException {
+      throws NoSuchMethodException,
+          ClassNotFoundException,
+          InvocationTargetException,
+          InstantiationException,
+          IllegalAccessException {
     Method build =
         DatabaseAdapterFactory.Builder.class.getMethod(
             "build",

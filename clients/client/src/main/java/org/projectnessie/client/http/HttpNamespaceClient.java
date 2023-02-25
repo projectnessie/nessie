@@ -53,7 +53,8 @@ class HttpNamespaceClient implements HttpNamespaceApi {
   @Override
   public void deleteNamespace(
       @NotNull @jakarta.validation.constraints.NotNull NamespaceParams params)
-      throws NessieNamespaceNotFoundException, NessieNamespaceNotEmptyException,
+      throws NessieNamespaceNotFoundException,
+          NessieNamespaceNotEmptyException,
           NessieReferenceNotFoundException {
     client
         .newRequest()

@@ -218,7 +218,8 @@ public class ITExportImport {
   }
 
   private static void populateRepository(DatabaseAdapter adapter)
-      throws ReferenceConflictException, ReferenceNotFoundException,
+      throws ReferenceConflictException,
+          ReferenceNotFoundException,
           ReferenceAlreadyExistsException {
     BranchName branchMain = BranchName.of("main");
     BranchName branchFoo = BranchName.of("branch-foo");

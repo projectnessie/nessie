@@ -103,7 +103,8 @@ public interface HttpNamespaceApi extends NamespaceApi {
   void deleteNamespace(
       @BeanParam @jakarta.ws.rs.BeanParam @NotNull @jakarta.validation.constraints.NotNull
           NamespaceParams params)
-      throws NessieReferenceNotFoundException, NessieNamespaceNotEmptyException,
+      throws NessieReferenceNotFoundException,
+          NessieNamespaceNotEmptyException,
           NessieNamespaceNotFoundException;
 
   @Override

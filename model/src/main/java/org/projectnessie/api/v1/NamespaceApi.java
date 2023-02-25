@@ -51,7 +51,8 @@ public interface NamespaceApi {
    * @throws NessieNamespaceNotFoundException If the namespace to be deleted could not be found.
    */
   void deleteNamespace(@NotNull @jakarta.validation.constraints.NotNull NamespaceParams params)
-      throws NessieReferenceNotFoundException, NessieNamespaceNotEmptyException,
+      throws NessieReferenceNotFoundException,
+          NessieNamespaceNotEmptyException,
           NessieNamespaceNotFoundException;
 
   /**

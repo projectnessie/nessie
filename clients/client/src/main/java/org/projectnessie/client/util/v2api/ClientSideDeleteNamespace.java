@@ -49,14 +49,16 @@ public final class ClientSideDeleteNamespace extends BaseDeleteNamespaceBuilder 
 
   @Override
   public void delete()
-      throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException,
+      throws NessieNamespaceNotFoundException,
+          NessieReferenceNotFoundException,
           NessieNamespaceNotEmptyException {
     deleteWithResponse();
   }
 
   @Override
   public DeleteNamespaceResult deleteWithResponse()
-      throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException,
+      throws NessieNamespaceNotFoundException,
+          NessieReferenceNotFoundException,
           NessieNamespaceNotEmptyException {
     ContentKey key = ContentKey.of(namespace.getElements());
     Content existing;
