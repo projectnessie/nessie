@@ -258,7 +258,7 @@ public class RefMapping {
   public Reference resolveNamedRef(@Nonnull @jakarta.annotation.Nonnull String refName)
       throws ReferenceNotFoundException {
     Reference[] refs =
-        persist.findReferences(new String[] {asBranchName(refName), asTagName(refName)});
+        persist.fetchReferences(new String[] {asBranchName(refName), asTagName(refName)});
     Reference branch = refs[0];
     Reference tag = refs[1];
 

@@ -138,10 +138,10 @@ public interface Persist {
    *
    * @return the reference or {@code null}, if it does not exist
    */
-  Reference findReference(@Nonnull @jakarta.annotation.Nonnull String name);
+  Reference fetchReference(@Nonnull @jakarta.annotation.Nonnull String name);
 
   /**
-   * Like {@link #findReference(String)}, but finds multiple references by name at once, leveraging
+   * Like {@link #fetchReference(String)}, but finds multiple references by name at once, leveraging
    * bulk queries against databases.
    *
    * <p>Non-existing references are returned as {@code null} elements in the returned array.
@@ -151,7 +151,7 @@ public interface Persist {
    */
   @Nonnull
   @jakarta.annotation.Nonnull
-  Reference[] findReferences(@Nonnull @jakarta.annotation.Nonnull String[] names);
+  Reference[] fetchReferences(@Nonnull @jakarta.annotation.Nonnull String[] names);
 
   // Objects
 

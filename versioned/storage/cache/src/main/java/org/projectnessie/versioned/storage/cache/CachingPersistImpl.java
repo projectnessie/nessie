@@ -286,14 +286,14 @@ class CachingPersistImpl implements Persist {
   }
 
   @Override
-  public Reference findReference(@Nonnull @jakarta.annotation.Nonnull String name) {
-    return persist.findReference(name);
+  public Reference fetchReference(@Nonnull @jakarta.annotation.Nonnull String name) {
+    return persist.fetchReference(name);
   }
 
   @Override
   @Nonnull
   @jakarta.annotation.Nonnull
-  public Reference[] findReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
-    return persist.findReferences(names);
+  public Reference[] fetchReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
+    return persist.fetchReferences(names);
   }
 }

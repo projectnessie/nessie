@@ -100,7 +100,7 @@ class RocksDBPersist implements Persist {
   }
 
   @Override
-  public Reference findReference(@Nonnull @jakarta.annotation.Nonnull String name) {
+  public Reference fetchReference(@Nonnull @jakarta.annotation.Nonnull String name) {
     try {
       RocksDBBackend v = backend;
       TransactionDB db = v.db();
@@ -117,7 +117,7 @@ class RocksDBPersist implements Persist {
   @Override
   @Nonnull
   @jakarta.annotation.Nonnull
-  public Reference[] findReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
+  public Reference[] fetchReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
     try {
       RocksDBBackend v = backend;
       TransactionDB db = v.db();

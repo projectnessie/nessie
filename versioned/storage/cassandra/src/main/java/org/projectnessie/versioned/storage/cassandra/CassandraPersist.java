@@ -169,14 +169,14 @@ public class CassandraPersist implements Persist {
   }
 
   @Override
-  public Reference findReference(@Nonnull @jakarta.annotation.Nonnull String name) {
-    return findReferences(new String[] {name})[0];
+  public Reference fetchReference(@Nonnull @jakarta.annotation.Nonnull String name) {
+    return fetchReferences(new String[] {name})[0];
   }
 
   @Nonnull
   @jakarta.annotation.Nonnull
   @Override
-  public Reference[] findReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
+  public Reference[] fetchReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
     try (BatchedQuery<String, Reference> batchedQuery =
         backend.newBatchedQuery(
             keys -> backend.executeAsync(FIND_REFERENCES, config.repositoryId(), keys),
@@ -229,7 +229,7 @@ public class CassandraPersist implements Persist {
       return reference(reference.name(), reference.pointer(), true);
     }
 
-    Reference ref = findReference(reference.name());
+    Reference ref = fetchReference(reference.name());
     if (ref == null) {
       throw new RefNotFoundException(reference);
     }
@@ -245,7 +245,7 @@ public class CassandraPersist implements Persist {
         reference.name(),
         serializeObjId(reference.pointer()),
         true)) {
-      Reference ref = findReference(reference.name());
+      Reference ref = fetchReference(reference.name());
       if (ref == null) {
         throw new RefNotFoundException(reference);
       }
@@ -267,7 +267,7 @@ public class CassandraPersist implements Persist {
         reference.name(),
         serializeObjId(reference.pointer()),
         false)) {
-      Reference ref = findReference(reference.name());
+      Reference ref = fetchReference(reference.name());
       if (ref == null) {
         throw new RefNotFoundException(reference);
       }

@@ -95,7 +95,7 @@ final class RepositoryLogicImpl implements RepositoryLogic {
   @Override
   public boolean repositoryExists() {
     try {
-      Reference ref = persist.findReference(REF_REPO.name());
+      Reference ref = persist.fetchReference(REF_REPO.name());
       if (ref == null) {
         return false;
       }
@@ -112,7 +112,7 @@ final class RepositoryLogicImpl implements RepositoryLogic {
   @Override
   public RepositoryDescription fetchRepositoryDescription() {
     try {
-      Reference ref = persist.findReference(REF_REPO.name());
+      Reference ref = persist.fetchReference(REF_REPO.name());
       if (ref == null) {
         return null;
       }
@@ -183,7 +183,7 @@ final class RepositoryLogicImpl implements RepositoryLogic {
   @SuppressWarnings({"JavaTimeDefaultTimeZone"})
   private void initializeInternalRef(
       InternalRef internalRef, Consumer<CreateCommit.Builder> commitEnhancer) {
-    Reference reference = persist.findReference(internalRef.name());
+    Reference reference = persist.fetchReference(internalRef.name());
 
     if (reference == null) {
       CreateCommit.Builder c =

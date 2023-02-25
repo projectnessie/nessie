@@ -87,19 +87,19 @@ class InmemoryPersist implements Persist {
   }
 
   @Override
-  public Reference findReference(@Nonnull @jakarta.annotation.Nonnull String name) {
+  public Reference fetchReference(@Nonnull @jakarta.annotation.Nonnull String name) {
     return inmemory.references.get(compositeKey(name));
   }
 
   @Override
   @Nonnull
   @jakarta.annotation.Nonnull
-  public Reference[] findReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
+  public Reference[] fetchReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
     Reference[] r = new Reference[names.length];
     for (int i = 0; i < names.length; i++) {
       String name = names[i];
       if (name != null) {
-        r[i] = findReference(name);
+        r[i] = fetchReference(name);
       }
     }
     return r;

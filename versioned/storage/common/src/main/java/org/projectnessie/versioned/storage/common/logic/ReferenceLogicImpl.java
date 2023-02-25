@@ -87,8 +87,9 @@ import org.projectnessie.versioned.storage.common.persist.Reference;
  * operations when necessary.
  *
  * <p>A reference is considered as "created" and "not deleted", if it can be found via {@link
- * Persist#findReference(String)} and its {@link Reference#deleted() deleted flag} is {@code false}.
- * All other states, including the not-found state, are subject to recovery as described below.
+ * Persist#fetchReference(String)} and its {@link Reference#deleted() deleted flag} is {@code
+ * false}. All other states, including the not-found state, are subject to recovery as described
+ * below.
  *
  * <h3>Reference name index</h3>
  *
@@ -133,14 +134,14 @@ import org.projectnessie.versioned.storage.common.persist.Reference;
  *
  * <h3>Fetching references</h3>
  *
- * Accessing references by their full name is performed via {@link Persist#findReference(String)}
- * (or {@link Persist#findReferences(String[])}) and follows the resume/recovery process described
+ * Accessing references by their full name is performed via {@link Persist#fetchReference(String)}
+ * (or {@link Persist#fetchReferences(String[])}) and follows the resume/recovery process described
  * below.
  *
  * <h3>Listing references</h3>
  *
  * Listing/querying references is performed via the tip of {@link InternalRef#REF_REFS} and then
- * {@link Persist#findReferences(String[])} chunks of references to inquire their tips/HEADs.
+ * {@link Persist#fetchReferences(String[])} chunks of references to inquire their tips/HEADs.
  *
  * <h3>Non-transactional resume/recovery</h3>
  *
@@ -149,15 +150,15 @@ import org.projectnessie.versioned.storage.common.persist.Reference;
  * reference is accessed:
  *
  * <ul>
- *   <li>{@link Persist#findReference(String)} (or {@link Persist#findReferences(String[])}) is used
- *       to fetch a reference by name.
+ *   <li>{@link Persist#fetchReference(String)} (or {@link Persist#fetchReferences(String[])}) is
+ *       used to fetch a reference by name.
  *   <li>If the reference is found and {@link Reference#deleted()} is {@code false}, the reference
  *       has been found and can be returned.
  *   <li>If the the {@link Reference#deleted()} flag is {@code true}, it is possible that a previous
  *       delete-reference operation failed in the middle. The implementation must resume the
  *       reference-deletion process described above.
- *   <li>If the reference has not been found via {@link Persist#findReference(String)} (or {@link
- *       Persist#findReferences(String[])}), check whether the reference name exists in {@link
+ *   <li>If the reference has not been found via {@link Persist#fetchReference(String)} (or {@link
+ *       Persist#fetchReferences(String[])}), check whether the reference name exists in {@link
  *       InternalRef#REF_REFS} and resume the create-reference operation described above.
  * </ul>
  *
@@ -179,7 +180,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
   @jakarta.annotation.Nonnull
   public List<Reference> getReferences(
       @Nonnull @jakarta.annotation.Nonnull List<String> references) {
-    Reference[] refs = persist.findReferences(references.toArray(new String[0]));
+    Reference[] refs = persist.fetchReferences(references.toArray(new String[0]));
     List<Reference> r = new ArrayList<>(refs.length);
 
     Supplier<StoreIndex<CommitOp>> refsIndexSupplier = createRefsIndexSupplier();
@@ -245,7 +246,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
           return endOfData();
         }
         String name = k.rawString();
-        Reference r = maybeRecover(name, persist.findReference(el.key().rawString()), () -> index);
+        Reference r = maybeRecover(name, persist.fetchReference(el.key().rawString()), () -> index);
         if (r != null) {
           return r;
         }
@@ -312,7 +313,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
       throws RefNotFoundException, RefConditionFailedException, RetryTimeoutException {
     checkArgument(!isInternalReferenceName(name));
 
-    Reference reference = persist.findReference(name);
+    Reference reference = persist.fetchReference(name);
     if (reference == null) {
       StoreKey nameKey = key(name);
       Supplier<StoreIndex<CommitOp>> indexSupplier = createRefsIndexSupplier();
@@ -379,7 +380,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
       return commitRetry(
           persist,
           (p, retryState) -> {
-            Reference refRefs = p.findReference(REF_REFS.name());
+            Reference refRefs = p.fetchReference(REF_REFS.name());
             long created = p.config().currentTimeMicros();
             RefObj ref = ref(name, pointer, created);
             ObjId refObjId;
@@ -426,7 +427,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
       StoreIndexElement<CommitOp> el = indexSupplier.get().get(key(name));
       checkNotNull(el, "Key %s missing in index", name);
 
-      Reference existing = persist.findReference(name);
+      Reference existing = persist.fetchReference(name);
 
       if (existing != null) {
         return new CommitReferenceResult(existing, REF_ROW_EXISTS);
@@ -460,7 +461,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
       commitRetry(
           persist,
           (p, retryState) -> {
-            Reference refRefs = p.findReference(REF_REFS.name());
+            Reference refRefs = p.fetchReference(REF_REFS.name());
             CommitObj commit;
             try {
               commit = p.fetchTypedObj(refRefs.pointer(), COMMIT, CommitObj.class);
@@ -633,7 +634,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
     return indexesLogic(persist)
         .createIndexSupplier(
             () -> {
-              Reference ref = persist.findReference(REF_REFS.name());
+              Reference ref = persist.fetchReference(REF_REFS.name());
               return ref != null ? ref.pointer() : EMPTY_OBJ_ID;
             });
   }

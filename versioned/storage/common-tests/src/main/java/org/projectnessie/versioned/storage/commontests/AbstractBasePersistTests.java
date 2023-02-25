@@ -124,11 +124,13 @@ public class AbstractBasePersistTests {
     soft.assertThat(persist.addReference(create)).isEqualTo(create);
     soft.assertThatThrownBy(() -> persist.addReference(create))
         .isInstanceOf(RefAlreadyExistsException.class);
-    soft.assertThat(persist.findReference(name)).isEqualTo(create);
-    soft.assertThat(persist.findReferences(new String[] {name})).hasSize(1).containsExactly(create);
+    soft.assertThat(persist.fetchReference(name)).isEqualTo(create);
+    soft.assertThat(persist.fetchReferences(new String[] {name}))
+        .hasSize(1)
+        .containsExactly(create);
     soft.assertThat(persist.markReferenceAsDeleted(create)).isEqualTo(deleted);
-    soft.assertThat(persist.findReference(name)).isEqualTo(deleted);
-    soft.assertThat(persist.findReferences(new String[] {name}))
+    soft.assertThat(persist.fetchReference(name)).isEqualTo(deleted);
+    soft.assertThat(persist.fetchReferences(new String[] {name}))
         .hasSize(1)
         .containsExactly(deleted);
     soft.assertThatThrownBy(() -> persist.markReferenceAsDeleted(create))
@@ -149,8 +151,8 @@ public class AbstractBasePersistTests {
         .isInstanceOf(RefNotFoundException.class);
     soft.assertThatThrownBy(() -> persist.markReferenceAsDeleted(create))
         .isInstanceOf(RefNotFoundException.class);
-    soft.assertThat(persist.findReference(name)).isNull();
-    soft.assertThat(persist.findReferences(new String[] {name})).hasSize(1).containsOnlyNulls();
+    soft.assertThat(persist.fetchReference(name)).isNull();
+    soft.assertThat(persist.fetchReferences(new String[] {name})).hasSize(1).containsOnlyNulls();
   }
 
   @Test
@@ -166,36 +168,36 @@ public class AbstractBasePersistTests {
     Reference deleted = reference("some-reference-name", pointer2, true);
 
     soft.assertThat(persist.addReference(create)).isEqualTo(create);
-    soft.assertThat(persist.findReference("some-reference-name")).isEqualTo(create);
+    soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(create);
 
     // Wrong current pointer
     soft.assertThatThrownBy(() -> persist.updateReferencePointer(assigned1, initialPointer))
         .isInstanceOf(RefConditionFailedException.class);
-    soft.assertThat(persist.findReference("some-reference-name")).isEqualTo(create);
+    soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(create);
 
     // Correct current pointer
     soft.assertThat(persist.updateReferencePointer(create, pointer1)).isEqualTo(assigned1);
-    soft.assertThat(persist.findReference("some-reference-name")).isEqualTo(assigned1);
+    soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(assigned1);
 
     // Wrong current pointer
     soft.assertThatThrownBy(() -> persist.updateReferencePointer(assigned2, initialPointer))
         .isInstanceOf(RefConditionFailedException.class);
-    soft.assertThat(persist.findReference("some-reference-name")).isEqualTo(assigned1);
+    soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(assigned1);
 
     // Correct current pointer
     soft.assertThat(persist.updateReferencePointer(assigned1, pointer2)).isEqualTo(assigned2);
-    soft.assertThat(persist.findReference("some-reference-name")).isEqualTo(assigned2);
+    soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(assigned2);
 
     // "Bump" from current pointer to current pointer (no update)
     soft.assertThat(persist.updateReferencePointer(assigned2, assigned2.pointer()))
         .isEqualTo(assigned2);
-    soft.assertThat(persist.findReference("some-reference-name")).isEqualTo(assigned2);
+    soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(assigned2);
 
     // Delete it (must not update)
     soft.assertThat(persist.markReferenceAsDeleted(assigned2)).isEqualTo(deleted);
     soft.assertThatThrownBy(() -> persist.updateReferencePointer(deleted, pointer3))
         .isInstanceOf(RefConditionFailedException.class);
-    soft.assertThat(persist.findReference("some-reference-name")).isEqualTo(deleted);
+    soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(deleted);
 
     // Some other name - must not create a reference for it
     soft.assertThatThrownBy(
@@ -203,7 +205,7 @@ public class AbstractBasePersistTests {
                 persist.updateReferencePointer(
                     reference("other-reference-name", initialPointer, false), pointer1))
         .isInstanceOf(RefNotFoundException.class);
-    soft.assertThat(persist.findReference("other-reference-name")).isNull();
+    soft.assertThat(persist.fetchReference("other-reference-name")).isNull();
   }
 
   @Test
@@ -217,7 +219,8 @@ public class AbstractBasePersistTests {
     }
 
     soft.assertThat(
-            persist.findReferences(references.stream().map(Reference::name).toArray(String[]::new)))
+            persist.fetchReferences(
+                references.stream().map(Reference::name).toArray(String[]::new)))
         .containsExactlyElementsOf(references);
   }
 
@@ -233,16 +236,17 @@ public class AbstractBasePersistTests {
     }
 
     soft.assertThat(
-            persist.findReferences(references.stream().map(Reference::name).toArray(String[]::new)))
+            persist.fetchReferences(
+                references.stream().map(Reference::name).toArray(String[]::new)))
         .containsExactlyElementsOf(references);
 
     soft.assertThat(
-            persist.findReferences(
+            persist.fetchReferences(
                 new String[] {null, "foo", "not there", "bar", "non-existing", "baz", null}))
         .containsExactly(
             null, references.get(0), null, references.get(1), null, references.get(2), null);
 
-    soft.assertThat(persist.findReferences(new String[205])).hasSize(205).containsOnlyNulls();
+    soft.assertThat(persist.fetchReferences(new String[205])).hasSize(205).containsOnlyNulls();
   }
 
   static Stream<Obj> allObjectTypeSamples() {

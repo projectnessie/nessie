@@ -200,7 +200,7 @@ public class DynamoDBPersist implements Persist {
                       .item(referenceAttributeValues(reference)));
       return reference;
     } catch (ConditionalCheckFailedException e) {
-      throw new RefAlreadyExistsException(findReference(reference.name()));
+      throw new RefAlreadyExistsException(fetchReference(reference.name()));
     }
   }
 
@@ -220,7 +220,7 @@ public class DynamoDBPersist implements Persist {
       conditionalReferencePut(asDeleted, condition, reference.pointer());
       return asDeleted;
     } catch (ConditionalCheckFailedException e) {
-      Reference r = findReference(reference.name());
+      Reference r = fetchReference(reference.name());
       if (r == null) {
         throw new RefNotFoundException(reference.name());
       }
@@ -246,7 +246,7 @@ public class DynamoDBPersist implements Persist {
       conditionalReferencePut(bumpedReference, condition, reference.pointer());
       return bumpedReference;
     } catch (ConditionalCheckFailedException e) {
-      Reference r = findReference(reference.name());
+      Reference r = fetchReference(reference.name());
       if (r == null) {
         throw new RefNotFoundException(reference.name());
       }
@@ -277,7 +277,7 @@ public class DynamoDBPersist implements Persist {
                       .expressionAttributeValues(values)
                       .conditionExpression(condition));
     } catch (ConditionalCheckFailedException e) {
-      Reference r = findReference(reference.name());
+      Reference r = fetchReference(reference.name());
       if (r == null) {
         throw new RefNotFoundException(reference.name());
       }
@@ -286,7 +286,7 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Override
-  public Reference findReference(@Nonnull @jakarta.annotation.Nonnull String name) {
+  public Reference fetchReference(@Nonnull @jakarta.annotation.Nonnull String name) {
     GetItemResponse item =
         backend.client().getItem(b -> b.tableName(TABLE_REFS).key(referenceKeyMap(name)));
     if (!item.hasItem()) {
@@ -304,7 +304,7 @@ public class DynamoDBPersist implements Persist {
   @Nonnull
   @jakarta.annotation.Nonnull
   @Override
-  public Reference[] findReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
+  public Reference[] fetchReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
     List<Map<String, AttributeValue>> keys =
         new ArrayList<>(Math.min(names.length, BATCH_GET_LIMIT));
     Object2IntHashMap<String> nameToIndex =

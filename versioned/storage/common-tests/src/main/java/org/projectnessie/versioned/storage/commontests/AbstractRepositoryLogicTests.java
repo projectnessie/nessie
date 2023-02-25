@@ -167,7 +167,7 @@ public class AbstractRepositoryLogicTests {
             intRef ->
                 assertThat(intRef)
                     .extracting(InternalRef::name, type(String.class))
-                    .extracting(persist::findReference)
+                    .extracting(persist::fetchReference)
                     .isNull());
 
     String refsHeadsMain = "refs/heads/" + defaultBranchName;
@@ -177,7 +177,7 @@ public class AbstractRepositoryLogicTests {
             intRef ->
                 assertThat(intRef)
                     .asInstanceOf(type(String.class))
-                    .extracting(persist::findReference)
+                    .extracting(persist::fetchReference)
                     .isNull());
 
     soft.assertThat(referenceLogic.queryReferences(referencesQuery())).isExhausted();
@@ -186,7 +186,7 @@ public class AbstractRepositoryLogicTests {
 
     Set<Reference> refsByFind =
         Stream.concat(allInternalRefs().stream().map(InternalRef::name), Stream.of(refsHeadsMain))
-            .map(persist::findReference)
+            .map(persist::fetchReference)
             .collect(toSet());
     Set<Reference> refQuery = newHashSet(referenceLogic.queryReferences(referencesQuery()));
 
@@ -195,7 +195,7 @@ public class AbstractRepositoryLogicTests {
             intRef ->
                 assertThat(intRef)
                     .extracting(InternalRef::name, type(String.class))
-                    .extracting(persist::findReference)
+                    .extracting(persist::fetchReference)
                     .isNotNull()
                     .extracting(Reference::pointer)
                     .isNotEqualTo(EMPTY_OBJ_ID)
@@ -213,7 +213,7 @@ public class AbstractRepositoryLogicTests {
             intRef ->
                 assertThat(intRef)
                     .asInstanceOf(type(String.class))
-                    .extracting(persist::findReference)
+                    .extracting(persist::fetchReference)
                     .isNotNull()
                     .extracting(Reference::pointer)
                     .isEqualTo(EMPTY_OBJ_ID));
@@ -225,7 +225,7 @@ public class AbstractRepositoryLogicTests {
     soft.assertThat(
             Stream.concat(
                     allInternalRefs().stream().map(InternalRef::name), Stream.of(refsHeadsMain))
-                .map(persist::findReference))
+                .map(persist::fetchReference))
         .containsExactlyInAnyOrderElementsOf(refsByFind);
 
     soft.assertThat(newHashSet(referenceLogic.queryReferences(referencesQuery())))

@@ -134,10 +134,10 @@ final class TelemetryPersist implements Persist {
   }
 
   @Override
-  public Reference findReference(@Nonnull @jakarta.annotation.Nonnull String name) {
+  public Reference fetchReference(@Nonnull @jakarta.annotation.Nonnull String name) {
     try (Traced trace = traced("findReference")) {
       try {
-        Reference result = persist.findReference(name);
+        Reference result = persist.fetchReference(name);
         trace.attribute("found", result != null);
         return result;
       } catch (RuntimeException e) {
@@ -149,10 +149,10 @@ final class TelemetryPersist implements Persist {
   @Override
   @Nonnull
   @jakarta.annotation.Nonnull
-  public Reference[] findReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
+  public Reference[] fetchReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
     try (Traced trace = traced("findReferences").attribute("names.length", names.length)) {
       try {
-        Reference[] result = persist.findReferences(names);
+        Reference[] result = persist.fetchReferences(names);
         trace.attribute("result.length", stream(result).filter(Objects::nonNull).count());
         return result;
       } catch (RuntimeException e) {

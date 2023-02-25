@@ -136,14 +136,14 @@ class JdbcPersist extends AbstractJdbcPersist {
   }
 
   @Override
-  public Reference findReference(@Nonnull @jakarta.annotation.Nonnull String name) {
+  public Reference fetchReference(@Nonnull @jakarta.annotation.Nonnull String name) {
     return withConnection(true, conn -> super.findReference(conn, name));
   }
 
   @Override
   @Nonnull
   @jakarta.annotation.Nonnull
-  public Reference[] findReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
+  public Reference[] fetchReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
     return withConnection(true, conn -> super.findReferences(conn, names));
   }
 

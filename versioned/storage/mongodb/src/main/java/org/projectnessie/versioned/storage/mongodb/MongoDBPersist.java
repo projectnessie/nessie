@@ -243,7 +243,7 @@ public class MongoDBPersist implements Persist {
       backend.refs().insertOne(doc);
     } catch (MongoWriteException e) {
       if (e.getError().getCategory() == DUPLICATE_KEY) {
-        throw new RefAlreadyExistsException(findReference(reference.name()));
+        throw new RefAlreadyExistsException(fetchReference(reference.name()));
       }
       throw e;
     }
@@ -265,7 +265,7 @@ public class MongoDBPersist implements Persist {
                     eq(COL_REFERENCES_DELETED, false)),
                 set(COL_REFERENCES_DELETED, true));
     if (result.getModifiedCount() != 1) {
-      Reference ex = findReference(reference.name());
+      Reference ex = fetchReference(reference.name());
       if (ex == null) {
         throw new RefNotFoundException(reference.name());
       }
@@ -298,7 +298,7 @@ public class MongoDBPersist implements Persist {
         return updated;
       }
 
-      Reference ex = findReference(reference.name());
+      Reference ex = fetchReference(reference.name());
       if (ex == null) {
         throw new RefNotFoundException(reference.name());
       }
@@ -320,7 +320,7 @@ public class MongoDBPersist implements Persist {
                     eq(COL_REFERENCES_POINTER, objIdToBinary(reference.pointer())),
                     eq(COL_REFERENCES_DELETED, true)));
     if (result.getDeletedCount() != 1) {
-      Reference ex = findReference(reference.name());
+      Reference ex = fetchReference(reference.name());
       if (ex == null) {
         throw new RefNotFoundException(reference.name());
       }
@@ -329,7 +329,7 @@ public class MongoDBPersist implements Persist {
   }
 
   @Override
-  public Reference findReference(@Nonnull @jakarta.annotation.Nonnull String name) {
+  public Reference fetchReference(@Nonnull @jakarta.annotation.Nonnull String name) {
     FindIterable<Document> result = backend.refs().find(eq(ID_PROPERTY_NAME, idRefDoc(name)));
 
     Document doc = result.first();
@@ -346,7 +346,7 @@ public class MongoDBPersist implements Persist {
   @Nonnull
   @jakarta.annotation.Nonnull
   @Override
-  public Reference[] findReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
+  public Reference[] fetchReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
     List<Document> nameIdDocs =
         Arrays.stream(names).filter(Objects::nonNull).map(this::idRefDoc).collect(toList());
     FindIterable<Document> result = backend.refs().find(in(ID_PROPERTY_NAME, nameIdDocs));

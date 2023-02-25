@@ -82,7 +82,9 @@ public class AbstractReferenceLogicTests {
 
     String[] intNames = allInternalRefs().stream().map(InternalRef::name).toArray(String[]::new);
 
-    soft.assertThat(persist.findReferences(intNames)).hasSize(intNames.length).doesNotContainNull();
+    soft.assertThat(persist.fetchReferences(intNames))
+        .hasSize(intNames.length)
+        .doesNotContainNull();
 
     soft.assertThat(refLogic.getReferences(asList(intNames)))
         .hasSize(intNames.length)
@@ -100,11 +102,11 @@ public class AbstractReferenceLogicTests {
     soft.assertThatIllegalArgumentException()
         .isThrownBy(() -> refLogic.deleteReference(REF_REPO.name(), randomObjId()));
 
-    Reference refRefs = persist.findReference(REF_REPO.name());
+    Reference refRefs = persist.fetchReference(REF_REPO.name());
 
     soft.assertThatIllegalArgumentException()
         .isThrownBy(() -> refLogic.assignReference(refRefs, initialPointer));
-    soft.assertThat(persist.findReference(REF_REPO.name())).isEqualTo(refRefs);
+    soft.assertThat(persist.fetchReference(REF_REPO.name())).isEqualTo(refRefs);
   }
 
   @Test
@@ -129,7 +131,7 @@ public class AbstractReferenceLogicTests {
     soft.assertThat(
             newArrayList(
                 commitLogic(persist)
-                    .commitLog(commitLogQuery(persist.findReference(REF_REPO.name()).pointer()))))
+                    .commitLog(commitLogQuery(persist.fetchReference(REF_REPO.name()).pointer()))))
         .allMatch(c -> c.commitType() == CommitType.INTERNAL);
   }
 
@@ -149,13 +151,13 @@ public class AbstractReferenceLogicTests {
     soft.assertThatThrownBy(() -> refLogic.assignReference(notExists, randomObjId()))
         .isInstanceOf(RefNotFoundException.class);
 
-    soft.assertThat(persist.findReference("foo")).isEqualTo(refTo);
+    soft.assertThat(persist.fetchReference("foo")).isEqualTo(refTo);
     soft.assertThat(refLogic.getReferences(singletonList("foo"))).containsExactly(refTo);
 
     soft.assertThat(
             newArrayList(
                 commitLogic(persist)
-                    .commitLog(commitLogQuery(persist.findReference(REF_REPO.name()).pointer()))))
+                    .commitLog(commitLogQuery(persist.fetchReference(REF_REPO.name()).pointer()))))
         .allMatch(c -> c.commitType() == CommitType.INTERNAL);
   }
 
@@ -189,7 +191,7 @@ public class AbstractReferenceLogicTests {
     soft.assertThat(
             newArrayList(
                 commitLogic(persist)
-                    .commitLog(commitLogQuery(persist.findReference(REF_REPO.name()).pointer()))))
+                    .commitLog(commitLogQuery(persist.fetchReference(REF_REPO.name()).pointer()))))
         .allMatch(c -> c.commitType() == CommitType.INTERNAL);
   }
 
@@ -213,12 +215,12 @@ public class AbstractReferenceLogicTests {
     Reference reference = refLogic.createReference(refName, initialPointer);
     soft.assertThat(reference).isEqualTo(reference(refName, initialPointer, false));
 
-    soft.assertThat(persist.findReference(refName)).isEqualTo(reference);
+    soft.assertThat(persist.fetchReference(refName)).isEqualTo(reference);
 
     soft.assertThat(
             newArrayList(
                 commitLogic(persist)
-                    .commitLog(commitLogQuery(persist.findReference(REF_REPO.name()).pointer()))))
+                    .commitLog(commitLogQuery(persist.fetchReference(REF_REPO.name()).pointer()))))
         .allMatch(c -> c.commitType() == CommitType.INTERNAL);
   }
 
@@ -236,19 +238,19 @@ public class AbstractReferenceLogicTests {
     soft.assertThat(reference).isEqualTo(reference(refName, initialPointer, false));
 
     Reference deleted = persistSpy.markReferenceAsDeleted(reference);
-    soft.assertThat(persistSpy.findReference(refName)).isEqualTo(deleted);
+    soft.assertThat(persistSpy.fetchReference(refName)).isEqualTo(deleted);
     soft.assertThat(deleted.deleted()).isTrue();
 
     singleCommitRetry(persistSpy);
 
     soft.assertThat(refLogic.getReferences(singletonList(refName))).hasSize(1).containsOnlyNulls();
 
-    soft.assertThat(persistSpy.findReference(refName)).isNull();
+    soft.assertThat(persistSpy.fetchReference(refName)).isNull();
 
     soft.assertThat(
             newArrayList(
                 commitLogic(persist)
-                    .commitLog(commitLogQuery(persist.findReference(REF_REPO.name()).pointer()))))
+                    .commitLog(commitLogQuery(persist.fetchReference(REF_REPO.name()).pointer()))))
         .allMatch(c -> c.commitType() == CommitType.INTERNAL);
   }
 
