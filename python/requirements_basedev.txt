@@ -19,7 +19,7 @@
 assertpy==1.1
 bump2version==1.0.1
 codecov==2.1.12
-coverage==7.1.0
+coverage==7.2.0
 pip==23.0.1
 pytest==7.2.1
 pytest-cov==4.0.0
