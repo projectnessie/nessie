@@ -43,7 +43,8 @@ public interface NamespaceService {
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException;
 
   void deleteNamespace(String refName, Namespace namespaceToDelete)
-      throws NessieReferenceNotFoundException, NessieNamespaceNotEmptyException,
+      throws NessieReferenceNotFoundException,
+          NessieNamespaceNotEmptyException,
           NessieNamespaceNotFoundException;
 
   Namespace getNamespace(String refName, String hashOnRef, Namespace namespace)

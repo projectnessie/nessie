@@ -549,7 +549,8 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
    */
   @Test
   public void commitWithInvalidReference()
-      throws ReferenceNotFoundException, ReferenceConflictException,
+      throws ReferenceNotFoundException,
+          ReferenceConflictException,
           ReferenceAlreadyExistsException {
     final BranchName branch = BranchName.of("foo");
     store().create(branch, Optional.empty());

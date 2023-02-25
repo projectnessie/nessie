@@ -100,7 +100,8 @@ public abstract class AbstractAssign extends AbstractNestedVersionStore {
   /** Assigning a branch/tag to a fresh main without any commits didn't work in 0.9.2 */
   @Test
   public void assignReferenceToFreshMain()
-      throws ReferenceNotFoundException, ReferenceAlreadyExistsException,
+      throws ReferenceNotFoundException,
+          ReferenceAlreadyExistsException,
           ReferenceConflictException {
     ReferenceInfo<CommitMeta> main = store.getNamedRef("main", GetNamedRefsParams.DEFAULT);
     try (PaginationIterator<Commit> commits = store().getCommits(main.getHash(), false)) {

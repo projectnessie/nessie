@@ -68,7 +68,8 @@ public class RestNamespaceResource implements HttpNamespaceApi {
   @Override
   @JsonView(Views.V1.class)
   public void deleteNamespace(@NotNull NamespaceParams params)
-      throws NessieReferenceNotFoundException, NessieNamespaceNotEmptyException,
+      throws NessieReferenceNotFoundException,
+          NessieNamespaceNotEmptyException,
           NessieNamespaceNotFoundException {
     resource().deleteNamespace(params.getRefName(), params.getNamespace());
   }

@@ -28,10 +28,12 @@ import org.projectnessie.model.Namespace;
 public interface DeleteNamespaceBuilder extends OnNamespaceBuilder<DeleteNamespaceBuilder> {
 
   void delete()
-      throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException,
+      throws NessieNamespaceNotFoundException,
+          NessieReferenceNotFoundException,
           NessieNamespaceNotEmptyException;
 
   DeleteNamespaceResult deleteWithResponse()
-      throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException,
+      throws NessieNamespaceNotFoundException,
+          NessieReferenceNotFoundException,
           NessieNamespaceNotEmptyException;
 }
