@@ -105,6 +105,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -392,7 +393,7 @@ public class CassandraPersist implements Persist {
   @Override
   public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
       throws ObjTooLargeException {
-    boolean[] results = new boolean[objs.length];
+    AtomicIntegerArray results = new AtomicIntegerArray(objs.length);
 
     try (LimitedConcurrentRequests requests =
         new LimitedConcurrentRequests(MAX_CONCURRENT_STORES)) {
@@ -420,12 +421,7 @@ public class CassandraPersist implements Persist {
                               }
 
                               if (resultSet.wasApplied()) {
-                                // TODO verify that this the implementation is correct in terms of
-                                //  the JMM - i.e.  that all writes into the 'results' array are
-                                //  visible at the the end of storeObjs().
-                                synchronized (results) {
-                                  results[idx] = true;
-                                }
+                                results.set(idx, 1);
                               }
                               return null;
                             })
@@ -437,11 +433,12 @@ public class CassandraPersist implements Persist {
       }
     }
 
-    // TODO verify that this the implementation is correct in terms of the JMM - i.e.
-    //  that all writes into the 'results' array are visible here.
-    synchronized (results) {
-      return results;
+    int l = results.length();
+    boolean[] array = new boolean[l];
+    for (int i = 0; i < l; i++) {
+      array[i] = results.get(i) == 1;
     }
+    return array;
   }
 
   @FunctionalInterface

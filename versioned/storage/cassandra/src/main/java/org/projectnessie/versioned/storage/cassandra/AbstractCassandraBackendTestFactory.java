@@ -15,13 +15,17 @@
  */
 package org.projectnessie.versioned.storage.cassandra;
 
+import static java.lang.String.format;
 import static org.testcontainers.containers.CassandraContainer.CQL_PORT;
 
 import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.metadata.Metadata;
+import com.datastax.oss.driver.api.core.metadata.Node;
 import com.google.common.annotations.VisibleForTesting;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.projectnessie.versioned.storage.testextension.BackendTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +38,7 @@ abstract class AbstractCassandraBackendTestFactory implements BackendTestFactory
 
   private static final Logger LOGGER =
       LoggerFactory.getLogger(AbstractCassandraBackendTestFactory.class);
+  static final String KEYSPACE_FOR_TEST = "nessie";
 
   private final String systemPropertyPart;
   private final String imageName;
@@ -52,7 +57,28 @@ abstract class AbstractCassandraBackendTestFactory implements BackendTestFactory
 
   @Override
   public CassandraBackend createNewBackend() {
-    return new CassandraBackend(buildNewClient(), "nessie", 1, true);
+    CqlSession client = buildNewClient();
+    maybeCreateKeyspace(client);
+    return new CassandraBackend(client, KEYSPACE_FOR_TEST, true);
+  }
+
+  private void maybeCreateKeyspace(CqlSession session) {
+    int replicationFactor = 1;
+
+    Metadata metadata = session.getMetadata();
+
+    String datacenters =
+        metadata.getNodes().values().stream()
+            .map(Node::getDatacenter)
+            .distinct()
+            .map(dc -> format("'%s': %d", dc, replicationFactor))
+            .collect(Collectors.joining(", "));
+
+    session.execute(
+        format(
+            "CREATE KEYSPACE IF NOT EXISTS %s WITH replication = {'class': 'NetworkTopologyStrategy', %s};",
+            KEYSPACE_FOR_TEST, datacenters));
+    session.refreshSchema();
   }
 
   @VisibleForTesting

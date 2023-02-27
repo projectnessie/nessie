@@ -27,11 +27,6 @@ public interface CassandraBackendConfig {
     return "nessie";
   }
 
-  @Value.Default
-  default int replicationFactor() {
-    return 3;
-  }
-
   static ImmutableCassandraBackendConfig.Builder builder() {
     return ImmutableCassandraBackendConfig.builder();
   }

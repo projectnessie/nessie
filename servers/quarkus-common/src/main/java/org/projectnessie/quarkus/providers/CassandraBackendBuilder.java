@@ -41,7 +41,6 @@ public class CassandraBackendBuilder implements BackendBuilder {
     //          CassandraBackendConfig.builder()
     //              .client(client.toCompletableFuture().get())
     //              .keyspace(keyspace)
-    //              .replicationFactor(1)
     //              .build();
     //      return factory.buildBackend(c);
     //    } catch (InterruptedException | ExecutionException e) {

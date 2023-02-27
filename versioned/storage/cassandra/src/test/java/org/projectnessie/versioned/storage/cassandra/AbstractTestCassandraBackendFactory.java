@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.storage.cassandra;
 
+import static java.lang.String.format;
+import static org.projectnessie.versioned.storage.cassandra.AbstractCassandraBackendTestFactory.KEYSPACE_FOR_TEST;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_REFS_NAME;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_REPO_ID;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.TABLE_OBJS;
@@ -22,6 +24,8 @@ import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.T
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
 import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.metadata.Node;
+import java.util.stream.Collectors;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -52,6 +56,8 @@ public abstract class AbstractTestCassandraBackendFactory {
       soft.assertThat(factory).isNotNull().isInstanceOf(CassandraBackendFactory.class);
 
       try (CqlSession client = testFactory.buildNewClient()) {
+        setupKeyspace(client);
+
         RepositoryDescription repoDesc;
         try (Backend backend = factory.buildBackend(buildConfig(client))) {
           soft.assertThat(backend).isNotNull().isInstanceOf(CassandraBackend.class);
@@ -131,6 +137,8 @@ public abstract class AbstractTestCassandraBackendFactory {
     AbstractCassandraBackendTestFactory testFactory = testFactory();
     testFactory.start();
     try (CqlSession client = testFactory.buildNewClient()) {
+      setupKeyspace(client);
+
       BackendFactory<CassandraBackendConfig> factory =
           PersistLoader.findFactoryByName(CassandraBackendFactory.NAME);
       soft.assertThat(factory).isNotNull().isInstanceOf(CassandraBackendFactory.class);
@@ -207,7 +215,20 @@ public abstract class AbstractTestCassandraBackendFactory {
   }
 
   private static ImmutableCassandraBackendConfig buildConfig(CqlSession client) {
-    return CassandraBackendConfig.builder().client(client).replicationFactor(1).build();
+    return CassandraBackendConfig.builder().client(client).build();
+  }
+
+  private void setupKeyspace(CqlSession client) {
+    client.execute(format("DROP KEYSPACE IF EXISTS %s", KEYSPACE_FOR_TEST));
+    client.execute(
+        format(
+            "CREATE KEYSPACE IF NOT EXISTS %s WITH replication = {'class': 'NetworkTopologyStrategy', %s}",
+            KEYSPACE_FOR_TEST,
+            client.getMetadata().getNodes().values().stream()
+                .map(Node::getDatacenter)
+                .distinct()
+                .map(dc -> format("'%s': 1", dc))
+                .collect(Collectors.joining(", "))));
   }
 
   protected abstract AbstractCassandraBackendTestFactory testFactory();

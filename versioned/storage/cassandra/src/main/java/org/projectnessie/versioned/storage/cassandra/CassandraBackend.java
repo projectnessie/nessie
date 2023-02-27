@@ -44,7 +44,6 @@ import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.metadata.Metadata;
-import com.datastax.oss.driver.api.core.metadata.Node;
 import com.datastax.oss.driver.api.core.metadata.schema.ColumnMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
@@ -62,6 +61,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -82,19 +82,16 @@ final class CassandraBackend implements Backend {
   private final CqlSession session;
   private final String keyspace;
   private final boolean closeClient;
-  private final int replicationFactor;
 
   private final Map<String, PreparedStatement> statements = new ConcurrentHashMap<>();
 
   CassandraBackend(
       @Nonnull @jakarta.annotation.Nonnull CqlSession session,
       String keyspace,
-      int replicationFactor,
       boolean closeClient) {
     this.session = session;
     this.closeClient = closeClient;
     this.keyspace = keyspace;
-    this.replicationFactor = replicationFactor;
   }
 
   <K, R> BatchedQuery<K, R> newBatchedQuery(
@@ -126,7 +123,8 @@ final class CassandraBackend implements Backend {
     private final Function<Row, R> rowToResult;
     private final Function<R, K> idExtractor;
     private final Object2IntHashMap<K> idToIndex;
-    private final R[] result;
+    private final AtomicReferenceArray<R> result;
+    private final Class<? extends R> elementType;
     private volatile Throwable failure;
     private volatile int queryCount;
     private volatile int queriesCompleted;
@@ -140,9 +138,8 @@ final class CassandraBackend implements Backend {
         int results,
         Class<? extends R> elementType) {
       this.idToIndex = new Object2IntHashMap<>(results * 2, Hashing.DEFAULT_LOAD_FACTOR, -1);
-      @SuppressWarnings("unchecked")
-      R[] r = (R[]) Array.newInstance(elementType, results);
-      this.result = r;
+      this.result = new AtomicReferenceArray<>(results);
+      this.elementType = elementType;
       this.rowToResult = rowToResult;
       this.idExtractor = idExtractor;
       this.queryBuilder = queryBuilder;
@@ -208,18 +205,12 @@ final class CassandraBackend implements Backend {
                 terminate.accept(query);
               } else {
                 try {
-                  // Needed to ensure that writes into the 'result' get populated
-                  // TODO verify that this the implementation is correct in terms of the JMM:
-                  //   i.e. that all writes into the 'results' array are visible to the caller
-                  //   of finish().
-                  synchronized (result) {
-                    for (Row row : rs.currentPage()) {
-                      R resultItem = rowToResult.apply(row);
-                      K id = idExtractor.apply(resultItem);
-                      int i = idToIndex.getValue(id);
-                      if (i != -1) {
-                        result[i] = resultItem;
-                      }
+                  for (Row row : rs.currentPage()) {
+                    R resultItem = rowToResult.apply(row);
+                    K id = idExtractor.apply(resultItem);
+                    int i = idToIndex.getValue(id);
+                    if (i != -1) {
+                      result.set(i, resultItem);
                     }
                   }
 
@@ -287,12 +278,17 @@ final class CassandraBackend implements Backend {
         }
       }
 
-      // Needed to ensure that writes into the 'result' get populated
-      // TODO verify that this the implementation is correct in terms of the JMM - i.e. that all
-      //  writes into the 'results' array are visible here and to the caller.
-      synchronized (result) {
-        return result;
+      return resultToArray();
+    }
+
+    private R[] resultToArray() {
+      int l = result.length();
+      @SuppressWarnings("unchecked")
+      R[] r = (R[]) Array.newInstance(elementType, l);
+      for (int i = 0; i < l; i++) {
+        r[i] = result.get(i);
       }
+      return r;
     }
   }
 
@@ -367,21 +363,10 @@ final class CassandraBackend implements Backend {
     Metadata metadata = session.getMetadata();
     Optional<KeyspaceMetadata> keyspace = metadata.getKeyspace(this.keyspace);
 
-    if (!keyspace.isPresent()) {
-      String datacenters =
-          metadata.getNodes().values().stream()
-              .map(Node::getDatacenter)
-              .distinct()
-              .map(dc -> format("'%s': %d", dc, replicationFactor))
-              .collect(Collectors.joining(", "));
-
-      session.execute(
-          format(
-              "CREATE KEYSPACE IF NOT EXISTS %s WITH replication = {'class': 'NetworkTopologyStrategy', %s};",
-              this.keyspace, datacenters));
-      metadata = session.refreshSchema();
-      keyspace = metadata.getKeyspace(this.keyspace);
-    }
+    checkState(
+        keyspace.isPresent(),
+        "Cassandra Keyspace '%s' must exist, but does not exist.",
+        this.keyspace);
 
     createTableIfNotExists(
         keyspace.get(),
