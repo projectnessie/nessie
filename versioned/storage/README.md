@@ -272,7 +272,7 @@ run in a "real" cluster setup.
 * RocksDB is, obviously, the database that offers the best performance - in terms of request
   duration, leading to a quite high commit throughput. But, yes, it's a single-server local
   database - backups et al require downtime.
-* MongpDB - works fine - probably a good choice
+* MongoDB - works fine - probably a good choice
 * DynamoDB - not tested yet (don't wanna test against the `amazon/dynamodb-local` Docker image,
   because it is not the real DynamoDB...)
 * PostgreSQL works fine, but is definitely not the right choice for higher throughput requirements.

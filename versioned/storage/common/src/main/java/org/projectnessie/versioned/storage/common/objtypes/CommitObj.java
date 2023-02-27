@@ -70,7 +70,8 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
  *       elements in the full index.
  * </ul>
  *
- * <p>A new full index is built by taking the previous
+ * See {@link org.projectnessie.versioned.storage.common.logic.IndexesLogic} and {@link
+ * org.projectnessie.versioned.storage.common.logic.CommitLogic}.
  */
 @Value.Immutable
 public interface CommitObj extends Obj {

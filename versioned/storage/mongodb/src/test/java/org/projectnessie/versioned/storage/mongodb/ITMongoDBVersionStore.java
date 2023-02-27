@@ -19,4 +19,4 @@ import org.projectnessie.versioned.storage.commontests.AbstractVersionStoreTests
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
 
 @NessieBackend(MongoDBBackendTestFactory.class)
-public class ITMongpDBVersionStore extends AbstractVersionStoreTests {}
+public class ITMongoDBVersionStore extends AbstractVersionStoreTests {}
