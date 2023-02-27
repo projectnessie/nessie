@@ -44,7 +44,7 @@ jobs:
         brew update
         echo "::endgroup::"
         echo "::group::Brew Upgrade"
-        brew upgrade
+        brew upgrade || true
         echo "::endgroup::"
 
     - name: Prepare Podman
