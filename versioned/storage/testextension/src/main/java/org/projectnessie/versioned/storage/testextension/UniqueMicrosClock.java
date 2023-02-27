@@ -40,7 +40,7 @@ final class UniqueMicrosClock extends Clock {
   static final UniqueMicrosClock SHARED_INSTANCE = new UniqueMicrosClock(Clock.systemUTC());
 
   private long lastSec;
-  private int lastMicro;
+  private long lastMicro;
 
   UniqueMicrosClock(Clock clock) {
     this.clock = clock;
@@ -64,7 +64,7 @@ final class UniqueMicrosClock extends Clock {
   public synchronized Instant instant() {
     Instant i = clock.instant();
     long sec = i.getEpochSecond();
-    int micro = (int) NANOSECONDS.toMicros(i.getNano());
+    long micro = NANOSECONDS.toMicros(i.getNano());
     if (sec < lastSec) {
       sec = lastSec;
     }
