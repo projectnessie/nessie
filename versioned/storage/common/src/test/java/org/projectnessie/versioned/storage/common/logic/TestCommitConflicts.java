@@ -466,7 +466,8 @@ public class TestCommitConflicts {
 
     soft.assertThatThrownBy(() -> commitLogic.updateCommit(firstCommit))
         .isInstanceOf(ObjNotFoundException.class);
-    ObjId firstCommitId = commitLogic.storeCommit(firstCommit, emptyList());
+    soft.assertThat(commitLogic.storeCommit(firstCommit, emptyList())).isTrue();
+    ObjId firstCommitId = firstCommit.id();
 
     // callback for a remove + update
 
@@ -489,7 +490,8 @@ public class TestCommitConflicts {
 
     soft.assertThatThrownBy(() -> commitLogic.updateCommit(secondCommit))
         .isInstanceOf(ObjNotFoundException.class);
-    ObjId secondCommitId = requireNonNull(commitLogic.storeCommit(secondCommit, emptyList()));
+    soft.assertThat(commitLogic.storeCommit(secondCommit, emptyList())).isTrue();
+    ObjId secondCommitId = secondCommit.id();
     CommitObj secondCommitLoaded = requireNonNull(commitLogic.fetchCommit(secondCommitId));
     commitLogic.updateCommit(secondCommitLoaded);
     CommitObj secondCommitUpdated = commitLogic.fetchCommit(secondCommitId);

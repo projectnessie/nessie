@@ -23,7 +23,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
@@ -233,9 +232,7 @@ final class TelemetryPersist implements Persist {
   }
 
   @Override
-  @Nullable
-  @jakarta.annotation.Nullable
-  public ObjId storeObj(
+  public boolean storeObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     try (Traced trace = traced("storeObj").attribute("type", obj.type().name())) {
@@ -253,15 +250,21 @@ final class TelemetryPersist implements Persist {
   @Override
   @Nonnull
   @jakarta.annotation.Nonnull
-  public ObjId[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+  public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
       throws ObjTooLargeException {
     try (Traced trace = traced("storeObjs").attribute("objs.length", objs.length)) {
       stream(objs)
           .collect(groupingBy(Obj::type, counting()))
           .forEach((t, c) -> trace.attribute("type." + t.name() + ".count", c));
       try {
-        ObjId[] result = persist.storeObjs(objs);
-        trace.attribute("result.nonNull", stream(result).filter(Objects::nonNull).count());
+        boolean[] result = persist.storeObjs(objs);
+        int successes = 0;
+        for (boolean b : result) {
+          if (b) {
+            successes++;
+          }
+        }
+        trace.attribute("result.nonNull", successes);
         return result;
       } catch (ObjTooLargeException e) {
         trace.attribute("error", "too large");

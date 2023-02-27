@@ -125,9 +125,7 @@ public interface CommitLogic {
    * @see #buildCommitObj(CreateCommit, ConflictHandler, CommitOpHandler)
    * @see #updateCommit(CommitObj)
    */
-  @Nullable
-  @jakarta.annotation.Nullable
-  ObjId storeCommit(
+  boolean storeCommit(
       @Nonnull @jakarta.annotation.Nonnull CommitObj commit,
       @Nonnull @jakarta.annotation.Nonnull List<Obj> additionalObjects);
 

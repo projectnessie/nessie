@@ -81,9 +81,12 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
         createMergeTransplantCommit(mergeTypeForKey, keyDetailsMap, createCommit);
 
     CommitLogic commitLogic = commitLogic(persist);
+    boolean committed = commitLogic.storeCommit(mergeCommit, emptyList());
+
     ObjId newHead;
-    newHead = commitLogic.storeCommit(mergeCommit, emptyList());
-    if (newHead == null) {
+    if (committed) {
+      newHead = mergeCommit.id();
+    } else {
       // Commit has NOT been persisted, because it already exists.
       //
       // This MAY indicate a fast-forward merge.

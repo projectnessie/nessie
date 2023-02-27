@@ -481,10 +481,10 @@ public class DynamoDBPersist implements Persist {
   @Nonnull
   @jakarta.annotation.Nonnull
   @Override
-  public ObjId[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+  public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
       throws ObjTooLargeException {
     // DynamoDB does not support "PUT IF NOT EXISTS" in a BatchWriteItemRequest/PutItem
-    ObjId[] r = new ObjId[objs.length];
+    boolean[] r = new boolean[objs.length];
     for (int i = 0; i < objs.length; i++) {
       Obj o = objs[i];
       if (o != null) {
@@ -494,10 +494,8 @@ public class DynamoDBPersist implements Persist {
     return r;
   }
 
-  @Nullable
-  @jakarta.annotation.Nullable
   @Override
-  public ObjId storeObj(
+  public boolean storeObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     ObjId id = obj.id();
@@ -514,7 +512,7 @@ public class DynamoDBPersist implements Persist {
           .putItem(
               b -> b.tableName(TABLE_OBJS).conditionExpression(CONDITION_STORE_OBJ).item(item));
     } catch (ConditionalCheckFailedException e) {
-      return null;
+      return false;
     } catch (DynamoDbException e) {
       // Best effort to detect whether an object exceeded DynamoDB's hard item size limit of 400k.
       AwsErrorDetails errorDetails = e.awsErrorDetails();
@@ -524,7 +522,7 @@ public class DynamoDBPersist implements Persist {
       throw e;
     }
 
-    return id;
+    return true;
   }
 
   @Override

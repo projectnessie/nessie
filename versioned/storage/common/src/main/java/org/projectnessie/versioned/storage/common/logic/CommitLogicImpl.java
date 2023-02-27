@@ -284,13 +284,11 @@ final class CommitLogicImpl implements CommitLogic {
       @Nonnull @jakarta.annotation.Nonnull List<Obj> additionalObjects)
       throws CommitConflictException, ObjNotFoundException {
     CommitObj commit = buildCommitObj(createCommit, c -> CONFLICT, (k, v) -> {});
-    return storeCommit(commit, additionalObjects);
+    return storeCommit(commit, additionalObjects) ? commit.id() : null;
   }
 
-  @Nullable
-  @jakarta.annotation.Nullable
   @Override
-  public ObjId storeCommit(
+  public boolean storeCommit(
       @Nonnull @jakarta.annotation.Nonnull CommitObj commit,
       @Nonnull @jakarta.annotation.Nonnull List<Obj> additionalObjects) {
     int numAdditional = additionalObjects.size();
@@ -298,7 +296,7 @@ final class CommitLogicImpl implements CommitLogic {
       Obj[] allObjs = additionalObjects.toArray(new Obj[numAdditional + 1]);
       allObjs[numAdditional] = commit;
 
-      ObjId[] stored = persist.storeObjs(allObjs);
+      boolean[] stored = persist.storeObjs(allObjs);
       return stored[numAdditional];
     } catch (ObjTooLargeException e) {
       // The incremental index became too big - need to spill out the INCREMENTAL_* operations to

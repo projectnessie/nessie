@@ -106,7 +106,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.agrona.collections.Hashing;
 import org.agrona.collections.Object2IntHashMap;
 import org.bson.Document;
@@ -471,10 +470,8 @@ public class MongoDBPersist implements Persist {
     }
   }
 
-  @Nullable
-  @jakarta.annotation.Nullable
   @Override
-  public ObjId storeObj(
+  public boolean storeObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     Document doc = objToDoc(obj, ignoreSoftSizeRestrictions);
@@ -482,18 +479,18 @@ public class MongoDBPersist implements Persist {
       backend.objs().insertOne(doc);
     } catch (MongoWriteException e) {
       if (e.getError().getCategory() == DUPLICATE_KEY) {
-        return null;
+        return false;
       }
       throw e;
     }
 
-    return obj.id();
+    return true;
   }
 
   @Nonnull
   @jakarta.annotation.Nonnull
   @Override
-  public ObjId[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+  public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
       throws ObjTooLargeException {
     List<WriteModel<Document>> docs = new ArrayList<>(objs.length);
     for (Obj obj : objs) {
@@ -502,7 +499,7 @@ public class MongoDBPersist implements Persist {
       }
     }
 
-    ObjId[] r = new ObjId[objs.length];
+    boolean[] r = new boolean[objs.length];
 
     List<WriteModel<Document>> inserts = new ArrayList<>(docs);
     while (!inserts.isEmpty()) {
@@ -510,7 +507,7 @@ public class MongoDBPersist implements Persist {
         BulkWriteResult res = backend.objs().bulkWrite(inserts);
         for (BulkWriteInsert insert : res.getInserts()) {
           ObjId id = objIdFromBulkWriteInsert(insert);
-          r[objIdIndex(objs, id)] = id;
+          r[objIdIndex(objs, id)] = id != null;
         }
         break;
       } catch (MongoBulkWriteException e) {

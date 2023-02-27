@@ -378,26 +378,21 @@ public class CassandraPersist implements Persist {
   }
 
   @Override
-  public ObjId storeObj(
+  public boolean storeObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     return storeSingleObj(
         obj,
         ignoreSoftSizeRestrictions,
-        (storeObj, values, id) -> {
-          if (backend.executeCas(storeObj.insertCql, values)) {
-            return id;
-          }
-          return null;
-        });
+        (storeObj, values) -> backend.executeCas(storeObj.insertCql, values));
   }
 
   @Nonnull
   @jakarta.annotation.Nonnull
   @Override
-  public ObjId[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+  public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
       throws ObjTooLargeException {
-    ObjId[] results = new ObjId[objs.length];
+    boolean[] results = new boolean[objs.length];
 
     try (LimitedConcurrentRequests requests =
         new LimitedConcurrentRequests(MAX_CONCURRENT_STORES)) {
@@ -408,7 +403,7 @@ public class CassandraPersist implements Persist {
           storeSingleObj(
               o,
               false,
-              (storeObj, values, id) -> {
+              (storeObj, values) -> {
                 CompletionStage<?> cs =
                     backend
                         .executeAsync(storeObj.insertCql, values)
@@ -429,7 +424,7 @@ public class CassandraPersist implements Persist {
                                 //  the JMM - i.e.  that all writes into the 'results' array are
                                 //  visible at the the end of storeObjs().
                                 synchronized (results) {
-                                  results[idx] = id;
+                                  results[idx] = true;
                                 }
                               }
                               return null;
@@ -451,7 +446,7 @@ public class CassandraPersist implements Persist {
 
   @FunctionalInterface
   interface StoreSingleObj<R> {
-    R apply(StoreObjDesc<?> storeObj, Object[] values, ObjId id);
+    R apply(StoreObjDesc<?> storeObj, Object[] values);
   }
 
   private <R> R storeSingleObj(
@@ -474,7 +469,7 @@ public class CassandraPersist implements Persist {
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit(),
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIndexSegmentSizeLimit());
 
-    return consumer.apply(storeObj, values.toArray(new Object[0]), id);
+    return consumer.apply(storeObj, values.toArray(new Object[0]));
   }
 
   @SuppressWarnings("unchecked")

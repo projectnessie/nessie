@@ -361,7 +361,7 @@ class RocksDBPersist implements Persist {
   }
 
   @Override
-  public ObjId storeObj(
+  public boolean storeObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     checkArgument(
@@ -378,7 +378,7 @@ class RocksDBPersist implements Persist {
 
       byte[] existing = db.get(cf, key);
       if (existing != null) {
-        return null;
+        return false;
       }
 
       int incrementalIndexSizeLimit =
@@ -388,7 +388,7 @@ class RocksDBPersist implements Persist {
       byte[] serialized = serializeObj(obj, incrementalIndexSizeLimit, indexSizeLimit);
 
       db.put(cf, key, serialized);
-      return obj.id();
+      return true;
     } catch (RocksDBException e) {
       throw rocksDbException(e);
     } finally {
@@ -399,9 +399,9 @@ class RocksDBPersist implements Persist {
   @Override
   @Nonnull
   @jakarta.annotation.Nonnull
-  public ObjId[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+  public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
       throws ObjTooLargeException {
-    ObjId[] r = new ObjId[objs.length];
+    boolean[] r = new boolean[objs.length];
     for (int i = 0; i < objs.length; i++) {
       Obj o = objs[i];
       if (o != null) {

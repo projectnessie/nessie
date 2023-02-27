@@ -260,7 +260,7 @@ class InmemoryPersist implements Persist {
   }
 
   @Override
-  public ObjId storeObj(
+  public boolean storeObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     checkArgument(
@@ -273,15 +273,15 @@ class InmemoryPersist implements Persist {
     }
 
     Obj ex = inmemory.objects.putIfAbsent(compositeKey(obj.id()), obj);
-    return ex == null ? obj.id() : null;
+    return ex == null;
   }
 
   @Override
   @Nonnull
   @jakarta.annotation.Nonnull
-  public ObjId[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+  public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
       throws ObjTooLargeException {
-    ObjId[] r = new ObjId[objs.length];
+    boolean[] r = new boolean[objs.length];
     for (int i = 0; i < objs.length; i++) {
       r[i] = storeObj(objs[i]);
     }

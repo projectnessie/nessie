@@ -26,7 +26,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.versioned.BranchName;
@@ -295,17 +294,13 @@ public class TestVersionStoreImpl extends AbstractVersionStoreTests {
     }
 
     @Override
-    @Nullable
-    @jakarta.annotation.Nullable
-    public ObjId storeObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
+    public boolean storeObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
         throws ObjTooLargeException {
       return delegate.storeObj(obj);
     }
 
     @Override
-    @Nullable
-    @jakarta.annotation.Nullable
-    public ObjId storeObj(
+    public boolean storeObj(
         @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
         throws ObjTooLargeException {
       return delegate.storeObj(obj, ignoreSoftSizeRestrictions);
@@ -314,7 +309,7 @@ public class TestVersionStoreImpl extends AbstractVersionStoreTests {
     @Override
     @Nonnull
     @jakarta.annotation.Nonnull
-    public ObjId[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+    public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
         throws ObjTooLargeException {
       return delegate.storeObjs(objs);
     }

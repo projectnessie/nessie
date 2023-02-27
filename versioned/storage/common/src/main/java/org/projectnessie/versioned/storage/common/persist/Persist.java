@@ -231,9 +231,8 @@ public interface Persist {
    *     "soft" size restriction in {@link #config()}
    * @see #storeObjs(Obj[])
    */
-  @Nullable
-  @jakarta.annotation.Nullable
-  default ObjId storeObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
+  default boolean storeObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
+      throws ObjTooLargeException {
     return storeObj(obj, false);
   }
 
@@ -247,16 +246,14 @@ public interface Persist {
    * @param obj the object to store
    * @param ignoreSoftSizeRestrictions whether to explicitly ignore soft size restrictions, use
    *     {@code false}, if in doubt
-   * @return the non-null object ID if the object was stored as a new record or {@code null} if an
-   *     object with the same ID already exists.
+   * @return {@code true}, if the object was stored as a new record or {@code false} if an object
+   *     with the same ID already exists.
    * @throws ObjTooLargeException thrown when a hard database row/item size limit has been hit, or,
    *     if {@code ignoreSoftSizeRestrictions} is {@code false}, a "soft" size restriction in {@link
    *     #config()}
    * @see #storeObjs(Obj[])
    */
-  @Nullable
-  @jakarta.annotation.Nullable
-  ObjId storeObj(@Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+  boolean storeObj(@Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException;
 
   /**
@@ -268,13 +265,15 @@ public interface Persist {
    * <p>In case an object failed to be stored, it is undefined whether other objects have been
    * stored or not.
    *
-   * @see #storeObj(Obj)
+   * @return an array with {@code boolean}s indicating whether the corresponding objects were
+   *     created ({@code true}) or already present ({@code false}), see {@link #storeObj(Obj)}
    * @throws ObjTooLargeException thrown when a hard database row/item size limit has been hit, or a
    *     "soft" size restriction in {@link #config()}
+   * @see #storeObj(Obj)
    */
   @Nonnull
   @jakarta.annotation.Nonnull
-  ObjId[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs) throws ObjTooLargeException;
+  boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs) throws ObjTooLargeException;
 
   void deleteObj(@Nonnull @jakarta.annotation.Nonnull ObjId id);
 

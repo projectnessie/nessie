@@ -19,7 +19,6 @@ import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ
 
 import java.util.Set;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
@@ -128,30 +127,28 @@ class CachingPersistImpl implements Persist {
   }
 
   @Override
-  @Nullable
-  @jakarta.annotation.Nonnull
-  public ObjId storeObj(
+  public boolean storeObj(
       @jakarta.annotation.Nonnull @Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
-    ObjId id = persist.storeObj(obj, ignoreSoftSizeRestrictions);
-    if (id != null) {
+    if (persist.storeObj(obj, ignoreSoftSizeRestrictions)) {
       cache.put(obj);
+      return true;
     }
-    return id;
+    return false;
   }
 
   @Override
   @Nonnull
   @jakarta.annotation.Nonnull
-  public ObjId[] storeObjs(@jakarta.annotation.Nonnull @Nonnull Obj[] objs)
+  public boolean[] storeObjs(@jakarta.annotation.Nonnull @Nonnull Obj[] objs)
       throws ObjTooLargeException {
-    ObjId[] ids = persist.storeObjs(objs);
-    for (int i = 0; i < ids.length; i++) {
-      if (ids[i] != null) {
+    boolean[] stored = persist.storeObjs(objs);
+    for (int i = 0; i < stored.length; i++) {
+      if (stored[i]) {
         cache.put(objs[i]);
       }
     }
-    return ids;
+    return stored;
   }
 
   @Override

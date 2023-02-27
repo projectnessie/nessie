@@ -386,10 +386,8 @@ final class ReferenceLogicImpl implements ReferenceLogic {
             Reference refRefs = requireNonNull(p.fetchReference(REF_REFS.name()));
             long created = p.config().currentTimeMicros();
             RefObj ref = ref(name, pointer, created);
-            ObjId refObjId;
             try {
-              refObjId = p.storeObj(ref);
-              if (refObjId == null) {
+              if (!p.storeObj(ref)) {
                 // Oops, such a RefObj already exists
                 throw new RetryException();
               }
@@ -404,7 +402,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
                 newCommitBuilder()
                     .message("Create reference " + name + " pointing to " + pointer)
                     .parentCommitId(refRefs.pointer())
-                    .addAdds(commitAdd(k, 0, refObjId, null, null))
+                    .addAdds(commitAdd(k, 0, requireNonNull(ref.id()), null, null))
                     .headers(
                         newCommitHeaders()
                             .add("operation", "create")

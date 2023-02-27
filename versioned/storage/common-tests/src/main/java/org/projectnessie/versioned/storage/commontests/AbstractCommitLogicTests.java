@@ -103,11 +103,10 @@ public class AbstractCommitLogicTests {
     assertThat(commitLogic.fetchCommit(EMPTY_OBJ_ID)).isNull();
 
     ObjId commitId = requireNonNull(commitLogic.doCommit(stdCommit().build(), emptyList()));
-    ObjId tagObjId =
-        requireNonNull(
-            persist.storeObj(TagObj.tag(randomObjId(), commitId, null, null, ByteString.EMPTY)));
+    TagObj tag = TagObj.tag(randomObjId(), commitId, null, null, ByteString.EMPTY);
+    soft.assertThat(persist.storeObj(tag)).isTrue();
 
-    soft.assertThat(commitLogic.fetchCommit(tagObjId))
+    soft.assertThat(commitLogic.fetchCommit(requireNonNull(tag.id())))
         .isNotNull()
         .extracting(Obj::id, CommitObj::message)
         .containsExactly(commitId, STD_MESSAGE);

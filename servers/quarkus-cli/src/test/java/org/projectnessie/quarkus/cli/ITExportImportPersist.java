@@ -232,7 +232,7 @@ public class ITExportImportPersist {
         .contains("Import finalization finished.");
   }
 
-  private static void populateRepository(Persist persist) throws Exception {
+  private void populateRepository(Persist persist) throws Exception {
     ReferenceLogic referenceLogic = referenceLogic(persist);
     CommitLogic commitLogic = commitLogic(persist);
 
@@ -251,13 +251,13 @@ public class ITExportImportPersist {
     ContentValueObj valueMain = contentValue(contentId.toString(), payload, contentMain);
     ContentValueObj valueFoo = contentValue(contentId.toString(), payload, contentFoo);
 
-    ObjId valueMainId = persist.storeObj(valueMain);
+    soft.assertThat(persist.storeObj(valueMain)).isTrue();
     StoreKey key = key("namespace123", "table123");
     ObjId main =
         commitLogic.doCommit(
             newCommitBuilder()
                 .parentCommitId(EMPTY_OBJ_ID)
-                .addAdds(commitAdd(key, payload, requireNonNull(valueMainId), null, contentId))
+                .addAdds(commitAdd(key, payload, requireNonNull(valueMain.id()), null, contentId))
                 .message("hello commit on main")
                 .headers(EMPTY_COMMIT_HEADERS)
                 .build(),
@@ -265,7 +265,7 @@ public class ITExportImportPersist {
     referenceLogic.assignReference(refMain, requireNonNull(main));
 
     Reference refFoo = referenceLogic.createReference("refs/heads/branch-foo", main);
-    ObjId valueFooId = persist.storeObj(valueFoo);
+    soft.assertThat(persist.storeObj(valueFoo)).isTrue();
     ObjId foo =
         commitLogic.doCommit(
             newCommitBuilder()
@@ -274,8 +274,8 @@ public class ITExportImportPersist {
                     commitAdd(
                         key,
                         payload,
-                        requireNonNull(valueFooId),
-                        requireNonNull(valueMainId),
+                        requireNonNull(valueFoo.id()),
+                        requireNonNull(valueMain.id()),
                         contentId))
                 .message("hello commit on foo")
                 .headers(EMPTY_COMMIT_HEADERS)

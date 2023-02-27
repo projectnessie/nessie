@@ -437,24 +437,24 @@ abstract class AbstractJdbcPersist implements Persist {
     return objDesc.deserialize(rs, id);
   }
 
-  protected final ObjId storeObj(
+  protected final boolean storeObj(
       @Nonnull @jakarta.annotation.Nonnull Connection conn,
       @Nonnull @jakarta.annotation.Nonnull Obj obj,
       boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
-    ObjId[] ids = storeObjs(conn, new Obj[] {obj}, ignoreSoftSizeRestrictions);
-    return ids[0];
+    boolean[] results = storeObjs(conn, new Obj[] {obj}, ignoreSoftSizeRestrictions);
+    return results[0];
   }
 
   @Nonnull
   @jakarta.annotation.Nonnull
-  private ObjId[] storeObjs(
+  private boolean[] storeObjs(
       @Nonnull @jakarta.annotation.Nonnull Connection conn,
       @Nonnull @jakarta.annotation.Nonnull Obj[] objs,
       boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     try (PreparedStatement ps = conn.prepareStatement(databaseSpecific.wrapInsert(STORE_OBJ))) {
-      ObjId[] r = new ObjId[objs.length];
+      boolean[] r = new boolean[objs.length];
 
       Int2IntHashMap batchIndexToObjIndex =
           new Int2IntHashMap(objs.length * 2, Hashing.DEFAULT_LOAD_FACTOR, -1);
@@ -463,9 +463,7 @@ abstract class AbstractJdbcPersist implements Persist {
           updated -> {
             for (int i = 0; i < updated.length; i++) {
               if (updated[i] == 1) {
-                int objIndex = batchIndexToObjIndex.get(i);
-                Obj obj = objs[objIndex];
-                r[objIndex] = obj.id();
+                r[batchIndexToObjIndex.get(i)] = true;
               }
             }
           };
@@ -537,7 +535,7 @@ abstract class AbstractJdbcPersist implements Persist {
 
   @Nonnull
   @jakarta.annotation.Nonnull
-  protected final ObjId[] storeObjs(
+  protected final boolean[] storeObjs(
       @Nonnull @jakarta.annotation.Nonnull Connection conn,
       @Nonnull @jakarta.annotation.Nonnull Obj[] objs)
       throws ObjTooLargeException {

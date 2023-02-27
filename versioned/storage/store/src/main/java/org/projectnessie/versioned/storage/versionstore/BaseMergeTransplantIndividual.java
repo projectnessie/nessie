@@ -87,9 +87,11 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
           createMergeTransplantCommit(mergeTypeForKey, keyDetailsMap, createCommit);
 
       CommitLogic commitLogic = commitLogic(persist);
-      newHead = commitLogic.storeCommit(newCommit, emptyList());
+      boolean committed = commitLogic.storeCommit(newCommit, emptyList());
 
-      if (newHead == null) {
+      if (committed) {
+        newHead = newCommit.id();
+      } else {
         // Commit has NOT been persisted, because it already exists.
         //
         // This MAY indicate a fast-forward merge.
