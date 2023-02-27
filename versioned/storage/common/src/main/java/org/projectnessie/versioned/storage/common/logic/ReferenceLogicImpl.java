@@ -281,12 +281,9 @@ final class ReferenceLogicImpl implements ReferenceLogic {
             return persist.addReference(reference);
           } catch (RefAlreadyExistsException e) {
             Reference existing = e.reference();
-            if (existing != null) {
-              if (!existing.deleted()) {
-                // Might happen in a rare race
-                throw e;
-              }
-              maybeRecover(name, reference, createRefsIndexSupplier());
+            if (existing != null && !existing.deleted()) {
+              // Might happen in a rare race
+              throw e;
             }
             // try again
             break;
