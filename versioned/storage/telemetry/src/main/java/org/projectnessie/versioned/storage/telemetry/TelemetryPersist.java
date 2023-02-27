@@ -298,17 +298,6 @@ final class TelemetryPersist implements Persist {
   }
 
   @Override
-  public void sleep(long millis) {
-    try (Traced ignored = traced("sleep").attribute("millis", millis)) {
-      try {
-        Thread.sleep(millis);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-      }
-    }
-  }
-
-  @Override
   public void updateObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
       throws ObjTooLargeException, ObjNotFoundException {
     try (Traced trace = traced("updateObj")) {

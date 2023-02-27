@@ -54,14 +54,6 @@ public interface Persist {
   @jakarta.annotation.Nonnull
   StoreConfig config();
 
-  default void sleep(long millis) {
-    try {
-      Thread.sleep(millis);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-    }
-  }
-
   // References
 
   /**

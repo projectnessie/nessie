@@ -122,7 +122,11 @@ public class CommitRetry {
 
             @Override
             public void sleepMillis(long millis) {
-              persist.sleep(millis);
+              try {
+                Thread.sleep(millis);
+              } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+              }
             }
           });
     }
