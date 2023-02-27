@@ -387,10 +387,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
             long created = p.config().currentTimeMicros();
             RefObj ref = ref(name, pointer, created);
             try {
-              if (!p.storeObj(ref)) {
-                // Oops, such a RefObj already exists
-                throw new RetryException();
-              }
+              p.storeObj(ref);
             } catch (ObjTooLargeException e) {
               throw new RuntimeException(e);
             }
