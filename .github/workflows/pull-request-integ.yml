@@ -32,6 +32,8 @@ jobs:
       NESSIE_DIR: included-builds/nessie
       NESSIE_PATCH_REPOSITORY: ''
       NESSIE_PATCH_BRANCH: ''
+      NESQUEIT_REPOSITORY: projectnessie/query-engine-integration-tests
+      NESQUEIT_BRANCH: main
       ICEBERG_DIR: included-builds/iceberg
       ICEBERG_MAIN_REPOSITORY: apache/iceberg
       ICEBERG_MAIN_BRANCH: master
@@ -51,8 +53,8 @@ jobs:
         if: env.WF_EXEC == 'true'
         uses: actions/checkout@v3.3.0
         with:
-          repository: projectnessie/query-engine-integration-tests
-          ref: main
+          repository: ${{env.NESQUEIT_REPOSITORY}}
+          ref: ${{env.NESQUEIT_BRANCH}}
 
       - name: Setup runner
         if: env.WF_EXEC == 'true'
@@ -123,11 +125,14 @@ jobs:
         with:
           arguments: :nessie:nessie-iceberg:nessie-spark-extensions-3.3_2.12:test :nessie:nessie-iceberg:nessie-spark-extensions-3.3_2.12:intTest --scan
 
-      - name: Publish Nessie + Iceberg to local Maven repo
-        if: env.WF_EXEC == 'true'
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: publishLocal --scan
+      # TODO re-enable once Iceberg/master references a Nessie release w/ Nessie PR #6197,
+      #   Gradle's Maven publishing fails with the group-ID relocation.
+      #
+      # - name: Publish Nessie + Iceberg to local Maven repo
+      #   if: env.WF_EXEC == 'true'
+      #   uses: gradle/gradle-build-action@v2
+      #   with:
+      #     arguments: publishLocal --scan
 
       - name: Gather locally published versions
         if: env.WF_EXEC == 'true'

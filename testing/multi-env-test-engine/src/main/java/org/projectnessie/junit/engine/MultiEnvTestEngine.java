@@ -128,7 +128,7 @@ public class MultiEnvTestEngine implements TestEngine {
 
   @Override
   public Optional<String> getGroupId() {
-    return Optional.of("org.projectnessie");
+    return Optional.of("org.projectnessie.nessie");
   }
 
   @Override

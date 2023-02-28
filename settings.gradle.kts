@@ -20,6 +20,9 @@ if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_11)) {
   throw GradleException("Build requires Java 11")
 }
 
+// Needed by NesQuEIT's manageNessieProjectDependency() in its settings.gradle.kts
+System.setProperty("root-project.nessie-build", file(".").absolutePath)
+
 val baseVersion = file("version.txt").readText().trim()
 
 pluginManagement {
@@ -79,18 +82,31 @@ gradleEnterprise {
   }
 }
 
+val groupIdIntegrations = "org.projectnessie.nessie-integrations"
+val groupIdMain = "org.projectnessie.nessie"
+val projectPathToGroupId = mutableMapOf<String, String>()
+val projectNameToGroupId = mutableMapOf<String, String>()
+
+projectPathToGroupId[":"] = groupIdMain
+
+val allLoadedProjects = mutableListOf<ProjectDescriptor>()
+
 gradle.beforeProject {
   version = baseVersion
-  group = "org.projectnessie"
+  group = checkNotNull(projectPathToGroupId[path]) { "No groupId for project $path" }
+
+  if (path.startsWith(":pom-relocations")) {
+    setupRelocationProject(this)
+  }
 }
 
-include("code-coverage")
-
-fun nessieProject(name: String, directory: File): ProjectDescriptor {
+fun nessieProject(name: String, groupId: String, directory: File): ProjectDescriptor {
   include(name)
   val p = project(":$name")
   p.name = name
   p.projectDir = directory
+  projectPathToGroupId[p.path] = groupId
+  allLoadedProjects.add(p)
   return p
 }
 
@@ -100,13 +116,14 @@ fun loadProperties(file: File): Properties {
   return props
 }
 
-fun loadProjects(file: String) {
+fun loadProjects(file: String, groupId: String) =
   loadProperties(file(file)).forEach { name, directory ->
-    nessieProject(name as String, file(directory as String))
+    nessieProject(name as String, groupId, file(directory as String))
   }
-}
 
-loadProjects("gradle/projects.main.properties")
+nessieProject("code-coverage", groupIdMain, file("code-coverage"))
+
+loadProjects("gradle/projects.main.properties", groupIdMain)
 
 val ideSyncActive =
   System.getProperty("idea.sync.active").toBoolean() ||
@@ -127,7 +144,7 @@ if (gradle.parent != null && ideSyncActive) {
 // Cannot use isIntegrationsTestingEnabled() in buildSrc/src/main/kotlin/Utilities.kt, because
 // settings.gradle is evaluated before buildSrc.
 if (!System.getProperty("nessie.integrationsTesting.enable").toBoolean()) {
-  loadProjects("gradle/projects.iceberg.properties")
+  loadProjects("gradle/projects.iceberg.properties", groupIdIntegrations)
 
   val sparkScala = loadProperties(file("clients/spark-scala.properties"))
 
@@ -141,8 +158,12 @@ if (!System.getProperty("nessie.integrationsTesting.enable").toBoolean()) {
     for (scalaVersion in scalaVersions) {
       allScalaVersions.add(scalaVersion)
       val artifactId = "nessie-spark-extensions-${sparkVersion}_$scalaVersion"
-      nessieProject(artifactId, file("clients/spark-extensions/v${sparkVersion}")).buildFileName =
-        "../build.gradle.kts"
+      nessieProject(
+          artifactId,
+          groupIdIntegrations,
+          file("clients/spark-extensions/v${sparkVersion}")
+        )
+        .buildFileName = "../build.gradle.kts"
       if (ideSyncActive) {
         break
       }
@@ -152,16 +173,66 @@ if (!System.getProperty("nessie.integrationsTesting.enable").toBoolean()) {
   for (scalaVersion in allScalaVersions) {
     nessieProject(
       "nessie-spark-extensions-base_$scalaVersion",
+      groupIdIntegrations,
       file("clients/spark-extensions-base")
     )
     nessieProject(
       "nessie-spark-extensions-basetests_$scalaVersion",
+      groupIdIntegrations,
       file("clients/spark-extensions-basetests")
     )
     if (ideSyncActive) {
       break
     }
   }
+
+  projectPathToGroupId[":pom-relocations"] = "org.projectnessie"
+  allLoadedProjects
+    .filter { it.name != "code-coverage" && !it.name.startsWith("nessie-versioned-storage") }
+    .forEach { projectDescriptor ->
+      val projectDir = "pom-relocations/${projectDescriptor.name}"
+      val projectPath = ":pom-relocations:${projectDescriptor.name}"
+      include(projectPath)
+      val p = project(projectPath)
+      p.name = projectDescriptor.name
+      p.projectDir = rootDir.resolve(projectDir)
+
+      projectPathToGroupId[projectPath] = "org.projectnessie"
+    }
 }
+
+/** Setup projects to create relocation-poms. */
+fun setupRelocationProject(project: Project) =
+  project.run {
+    val newProjectPath = if (project.name == "pom-relocations") ":" else ":${project.name}"
+
+    apply<MavenPublishPlugin>()
+    apply<SigningPlugin>()
+    configure<PublishingExtension> {
+      publications {
+        register<MavenPublication>("maven") {
+          groupId = "org.projectnessie"
+          if (project.name == "pom-relocations") {
+            artifactId = "nessie"
+          }
+          version = project.version.toString()
+
+          pom {
+            withXml {
+              asNode().appendNode("parent").run {
+                appendNode("groupId", groupIdMain)
+                appendNode("artifactId", "nessie")
+                appendNode("version", project.version.toString())
+              }
+            }
+
+            distributionManagement {
+              relocation { groupId.set(projectPathToGroupId[newProjectPath]!!) }
+            }
+          }
+        }
+      }
+    }
+  }
 
 rootProject.name = "nessie"

@@ -40,11 +40,15 @@ final class OldNessie {
   static ClassLoader oldNessieClassLoader(Version version, String mainArtifactId)
       throws DependencyResolutionException {
 
+    String groupId =
+        Version.OLD_GROUP_IDS.isGreaterThanOrEqual(version)
+            ? "org.projectnessie"
+            : "org.projectnessie.nessie";
+
     Function<String, Dependency> nessieDep =
         artifactId ->
             new Dependency(
-                new DefaultArtifact("org.projectnessie", artifactId, "jar", version.toString()),
-                "compile");
+                new DefaultArtifact(groupId, artifactId, "jar", version.toString()), "compile");
 
     Dependency mainDependency = nessieDep.apply(mainArtifactId);
 

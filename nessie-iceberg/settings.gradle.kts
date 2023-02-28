@@ -20,6 +20,9 @@ if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_11)) {
   throw GradleException("Build requires Java 11")
 }
 
+// Needed by NesQuEIT's manageNessieProjectDependency() in its settings.gradle.kts
+System.setProperty("root-project.nessie-build", file("..").absolutePath)
+
 val baseVersion = file("../version.txt").readText().trim()
 
 pluginManagement {
@@ -32,15 +35,21 @@ pluginManagement {
   }
 }
 
+val groupIdIntegrations = "org.projectnessie.nessie-integrations"
+val projectPathToGroupId = mutableMapOf<String, String>()
+
+projectPathToGroupId[":"] = groupIdIntegrations
+
 gradle.beforeProject {
   version = baseVersion
-  group = "org.projectnessie"
+  group = checkNotNull(projectPathToGroupId[path]) { "No groupId for project $path" }
 }
 
-fun nessieProject(name: String, directory: File): ProjectDescriptor {
+fun nessieProject(name: String, groupId: String, directory: File): ProjectDescriptor {
   include(name)
   val p = project(":$name")
   p.projectDir = directory
+  projectPathToGroupId[p.path] = groupId
   return p
 }
 
@@ -50,18 +59,17 @@ fun loadProperties(file: File): Properties {
   return props
 }
 
-fun loadProjects(file: String) {
+fun loadProjects(file: String, groupId: String) =
   loadProperties(file(file)).forEach { name, directory ->
-    nessieProject(name as String, file("../$directory"))
+    nessieProject(name as String, groupId, file("../$directory"))
   }
-}
 
 val ideSyncActive =
   System.getProperty("idea.sync.active").toBoolean() ||
     System.getProperty("eclipse.product") != null ||
     gradle.startParameter.taskNames.any { it.startsWith("eclipse") }
 
-loadProjects("../gradle/projects.iceberg.properties")
+loadProjects("../gradle/projects.iceberg.properties", groupIdIntegrations)
 
 // Note: Unlike the "main" settings.gradle.kts this variant includes _all_ Spark _and_ Scala
 // version variants in IntelliJ.
@@ -76,8 +84,12 @@ for (sparkVersion in sparkVersions) {
   for (scalaVersion in scalaVersions) {
     allScalaVersions.add(scalaVersion)
     val artifactId = "nessie-spark-extensions-${sparkVersion}_$scalaVersion"
-    nessieProject(artifactId, file("../clients/spark-extensions/v${sparkVersion}")).buildFileName =
-      "../build.gradle.kts"
+    nessieProject(
+        artifactId,
+        groupIdIntegrations,
+        file("../clients/spark-extensions/v${sparkVersion}")
+      )
+      .buildFileName = "../build.gradle.kts"
     if (ideSyncActive) {
       break
     }
@@ -87,10 +99,12 @@ for (sparkVersion in sparkVersions) {
 for (scalaVersion in allScalaVersions) {
   nessieProject(
     "nessie-spark-extensions-base_$scalaVersion",
+    groupIdIntegrations,
     file("../clients/spark-extensions-base")
   )
   nessieProject(
     "nessie-spark-extensions-basetests_$scalaVersion",
+    groupIdIntegrations,
     file("../clients/spark-extensions-basetests")
   )
   if (ideSyncActive) {
