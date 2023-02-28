@@ -21,7 +21,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.projectnessie.model.Content;
-import org.projectnessie.model.types.ContentTypes;
 
 /** A set of helpers that users of a VersionStore must implement. */
 public interface StoreWorker {
@@ -58,9 +57,6 @@ public interface StoreWorker {
    * <p>Needs both {@code payload} and {@code onRefContent} for backwards compatibility, because old
    * persisted content objects can have fixed {@code payload == 0}, therefore the implementation for
    * the default types (Iceberg, DL, Namespace) needs this.
-   *
-   * <p>If it is ensured that all persisted values have a valid {@code payload} value, this function
-   * can be replaced with a call to {@link ContentTypes#forPayload(byte)}.
    */
   Content.Type getType(byte payload, ByteString onRefContent);
 }
