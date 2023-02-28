@@ -40,7 +40,8 @@ import org.projectnessie.versioned.NamedRef;
  * <p>Implementations can expect that either {@link #check()} or {@link #checkAndThrow()} are called
  * either once or never.
  *
- * @see Check and {@link Check.CheckType}
+ * @see Check
+ * @see Check.CheckType
  * @see AbstractBatchAccessChecker
  */
 public interface BatchAccessChecker {

@@ -57,7 +57,7 @@ public interface NessieClientBuilder<IMPL extends NessieClientBuilder<IMPL>> {
    *
    * @param configuration The function that returns a configuration value for a configuration key.
    * @return {@code this}
-   * @see #fromConfig(Function) called by {@link #fromConfig(Function)}
+   * @see #fromConfig(Function)
    */
   IMPL withAuthenticationFromConfig(Function<String, String> configuration);
 
