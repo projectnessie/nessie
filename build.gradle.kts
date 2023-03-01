@@ -17,7 +17,7 @@
 plugins {
   `maven-publish`
   signing
-  id("org.projectnessie.buildsupport.ide-integration")
+  eclipse
   `nessie-conventions`
   alias(libs.plugins.nexus.publish.plugin)
 }
@@ -40,12 +40,6 @@ val versionClientNessie: String =
 mapOf(
     "versionClientNessie" to versionClientNessie,
     "versionIceberg" to versionIceberg,
-    // TODO update the Nessie Gradle plugins to not depend on these properties / move some of the
-    //  plugins into the Nessie repository.
-    "versionCheckstyle" to libs.versions.checkstyle.get(),
-    "versionErrorProneCore" to libs.versions.errorprone.get(),
-    "versionErrorProneSlf4j" to libs.versions.errorproneSlf4j.get(),
-    "versionGoogleJavaFormat" to libs.versions.googleJavaFormat.get(),
     "versionJacoco" to libs.versions.jacoco.get(),
     "versionJandex" to libs.versions.jandex.get()
   )

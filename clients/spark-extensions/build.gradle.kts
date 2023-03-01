@@ -46,7 +46,7 @@ dependencies {
 
   testImplementation(project(":nessie-spark-extensions-basetests_${sparkScala.scalaMajorVersion}"))
 
-  val versionIceberg = dependencyVersion("versionIceberg")
+  val versionIceberg = libs.versions.iceberg.get()
   testImplementation("org.apache.iceberg:iceberg-nessie:$versionIceberg")
   testImplementation("org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:$versionIceberg")
   testImplementation("org.apache.iceberg:iceberg-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:$versionIceberg")

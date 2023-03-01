@@ -14,7 +14,17 @@
  * limitations under the License.
  */
 
-import org.gradle.api.services.BuildService
-import org.gradle.api.services.BuildServiceParameters
+import com.github.vlsi.jandex.JandexExtension
+import com.github.vlsi.jandex.JandexPlugin
+import org.gradle.api.Project
+import org.gradle.api.tasks.testing.Test
+import org.gradle.kotlin.dsl.apply
+import org.gradle.kotlin.dsl.configure
+import org.gradle.kotlin.dsl.withType
 
-abstract class DockerIntTest : BuildService<BuildServiceParameters.None> {}
+fun Project.nessieConfigureJandex() {
+  apply<JandexPlugin>()
+  configure<JandexExtension> { toolVersion.set(libsRequiredVersion("jandex")) }
+
+  tasks.withType<Test>().configureEach { dependsOn(tasks.named("processTestJandexIndex")) }
+}

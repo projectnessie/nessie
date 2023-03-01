@@ -26,7 +26,7 @@ dependencies {
   implementation(nessieProject("nessie-client"))
   implementation(nessieProject("nessie-model"))
 
-  val versionIceberg = dependencyVersion("versionIceberg")
+  val versionIceberg = libs.versions.iceberg.get()
   implementation("org.apache.iceberg:iceberg-api:$versionIceberg")
   implementation("org.apache.iceberg:iceberg-core:$versionIceberg")
   implementation("org.apache.iceberg:iceberg-common:$versionIceberg")

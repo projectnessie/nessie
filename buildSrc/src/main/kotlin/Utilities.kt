@@ -99,7 +99,15 @@ fun Project.forceJava11ForTests() {
   }
 }
 
-fun Project.dependencyVersion(key: String) = rootProject.extra[key].toString()
+fun Project.libsRequiredVersion(name: String): String {
+  val libVer =
+    extensions.getByType<VersionCatalogsExtension>().named("libs").findVersion(name).get()
+  val reqVer = libVer.requiredVersion
+  check(reqVer.isNotEmpty()) {
+    "libs-version for '$name' is empty, but must not be empty, version. strict: ${libVer.strictVersion}, required: ${libVer.requiredVersion}, preferred: ${libVer.preferredVersion}"
+  }
+  return reqVer
+}
 
 fun Project.testLogLevel() = System.getProperty("test.log.level", "WARN")
 
@@ -116,7 +124,7 @@ fun Project.nessieClientForIceberg(): Dependency {
   val dependencyHandlerScope = DependencyHandlerScope.of(dependencies)
   if (!isIntegrationsTestingEnabled()) {
     return dependencies.create(
-      "org.projectnessie:nessie-client:${dependencyVersion("versionClientNessie")}"
+      "org.projectnessie:nessie-client:${libsRequiredVersion("nessieClientVersion")}"
     )
   } else {
     return dependencyHandlerScope.nessieProject("nessie-client")

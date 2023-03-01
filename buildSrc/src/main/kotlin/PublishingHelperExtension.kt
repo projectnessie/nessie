@@ -14,32 +14,9 @@
  * limitations under the License.
  */
 
-plugins {
-  id("org.projectnessie.buildsupport.jacoco")
-  `eclipse`
-}
+import org.gradle.api.Project
 
-val hasSrcMain = projectDir.resolve("src/main").exists()
-val hasSrcTest = projectDir.resolve("src/test").exists()
-
-apply<PublishingHelperPlugin>()
-
-nessieIde()
-
-nessieConfigureSpotless()
-
-nessieConfigureJandex()
-
-nessieConfigureJava()
-
-nessieConfigureScala()
-
-if (hasSrcMain || hasSrcTest) {
-  nessieConfigureCheckstyle()
-
-  nessieConfigureErrorprone()
-
-  if (hasSrcTest) {
-    nessieConfigureTestTasks()
-  }
+open class PublishingHelperExtension(project: Project) {
+  val nessieRepoName = project.objects.property(String::class.java)
+  val inceptionYear = project.objects.property(String::class.java)
 }

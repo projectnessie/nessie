@@ -26,20 +26,14 @@ repositories {
 
 dependencies {
   implementation(gradleKotlinDsl())
-  val ver = baselibs.versions
-  implementation("com.diffplug.spotless:spotless-plugin-gradle:${ver.spotlessPlugin.get()}")
-  implementation("com.github.vlsi.gradle:jandex-plugin:${ver.jandexPlugin.get()}")
-  implementation("com.github.johnrengelman:shadow:${ver.shadowPlugin.get()}")
-  implementation("com.google.protobuf:protobuf-gradle-plugin:${ver.protobufPlugin.get()}")
-  val nessieVer = ver.nessieBuildPlugins.get()
-  implementation("org.projectnessie.buildsupport:checkstyle:$nessieVer")
-  implementation("org.projectnessie.buildsupport:errorprone:$nessieVer")
-  implementation("org.projectnessie.buildsupport:ide-integration:$nessieVer")
-  implementation("org.projectnessie.buildsupport:jacoco:$nessieVer")
-  implementation("org.projectnessie.buildsupport:jandex:$nessieVer")
-  implementation("org.projectnessie.buildsupport:publishing:$nessieVer")
-  implementation("org.projectnessie.buildsupport:reflection-config:$nessieVer")
-  implementation("org.projectnessie.buildsupport:spotless:$nessieVer")
+  implementation(baselibs.spotless)
+  implementation(baselibs.jandex)
+  implementation(baselibs.idea.ext)
+  implementation(baselibs.shadow)
+  implementation(baselibs.protobuf)
+  implementation(baselibs.errorprone)
+  implementation(baselibs.nessie.buildsupport.jacoco)
+  implementation(baselibs.nessie.buildsupport.reflectionconfig)
 
   testImplementation(platform(baselibs.junit.bom))
   testImplementation(baselibs.assertj.core)
