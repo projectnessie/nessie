@@ -17,8 +17,6 @@ package org.projectnessie.tools.compatibility.internal;
 
 import static org.projectnessie.tools.compatibility.api.Version.COMPAT_COMMON_DEPENDENCIES_START;
 import static org.projectnessie.tools.compatibility.api.Version.VERSIONED_REST_URI_START;
-import static org.projectnessie.tools.compatibility.internal.DependencyResolver.resolve;
-import static org.projectnessie.tools.compatibility.internal.DependencyResolver.toClassLoader;
 import static org.projectnessie.tools.compatibility.internal.OldNessie.oldNessieClassLoader;
 import static org.projectnessie.tools.compatibility.internal.Util.extensionStore;
 import static org.projectnessie.tools.compatibility.internal.Util.withClassLoader;
@@ -26,10 +24,6 @@ import static org.projectnessie.tools.compatibility.internal.Util.withClassLoade
 import java.net.URI;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
-import org.eclipse.aether.artifact.Artifact;
-import org.eclipse.aether.artifact.DefaultArtifact;
-import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.resolution.DependencyResolutionException;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
@@ -40,7 +34,6 @@ import org.slf4j.LoggerFactory;
 
 final class OldNessieServer implements NessieServer {
   private static final Logger LOGGER = LoggerFactory.getLogger(OldNessieServer.class);
-  public static final String FALLBACK_ROCKSDB_VERSION = "6.28.2";
 
   private final ServerKey serverKey;
   private final OldServerConnectionProvider connectionProvider;
@@ -55,9 +48,8 @@ final class OldNessieServer implements NessieServer {
       ExtensionContext context, ServerKey serverKey, BooleanSupplier initializeRepository) {
 
     Store store = extensionStore(context);
-    Store rootStore = extensionStore(context.getRoot());
 
-    ClassLoader classLoader = classLoader(store, rootStore, serverKey.getVersion());
+    ClassLoader classLoader = classLoader(store, serverKey.getVersion());
 
     OldServerConnectionProvider connectionProvider =
         oldConnectionProvider(store, classLoader, serverKey);
@@ -84,54 +76,18 @@ final class OldNessieServer implements NessieServer {
     return "old-nessie-class-loader-" + version;
   }
 
-  private static String oldSharedClassLoaderKey() {
-    return "old-shared-nessie-class-loader";
-  }
-
-  private static ClassLoader classLoader(Store store, Store rootStore, Version version) {
+  private static ClassLoader classLoader(Store store, Version version) {
     return store.getOrComputeIfAbsent(
         classLoaderKey(version),
         x -> {
           ClassLoader appClassLoader = Thread.currentThread().getContextClassLoader();
-          ClassLoader sharedClassLoader = sharedClassLoader(rootStore);
-          ClassLoader classLoader = createClassLoader(version, sharedClassLoader);
+          ClassLoader classLoader = createClassLoader(version);
           return new JerseyForOldServerClassLoader(version, classLoader, appClassLoader);
         },
         ClassLoader.class);
   }
 
-  /**
-   * Gets or creates the shared, global class loader for classes and resource that must not change.
-   *
-   * <p>This addresses the issue that RocksDB JNI must only exist once, at least on macOS. The issue
-   * is that on macOS, rocksdbjni cannot be reloaded in different class loaders. Reloading
-   * rocksdbjni however works fine on Linux.
-   */
-  private static ClassLoader sharedClassLoader(Store store) {
-    return store.getOrComputeIfAbsent(
-        oldSharedClassLoaderKey(), x -> createSharedClassLoader(), ClassLoader.class);
-  }
-
-  static ClassLoader createSharedClassLoader() {
-    String rocksdbVersion = System.getProperty("rocksdb.version");
-    if (rocksdbVersion == null) {
-      rocksdbVersion = FALLBACK_ROCKSDB_VERSION;
-      LOGGER.warn(
-          "System property rocksdb.version not present, using {} as the default for the org.rocksdb:rocksdbjni artifact",
-          rocksdbVersion);
-    }
-    Artifact rocksDbArtifact =
-        new DefaultArtifact("org.rocksdb", "rocksdbjni", "jar", rocksdbVersion);
-    try {
-      Stream<Artifact> resolvedArtifacts =
-          resolve(r -> r.setRoot(new Dependency(rocksDbArtifact, "runtime")));
-      return toClassLoader(rocksDbArtifact.toString(), resolvedArtifacts, null);
-    } catch (DependencyResolutionException e) {
-      throw new RuntimeException("Failed to resolve dependencies for RocksDB", e);
-    }
-  }
-
-  static ClassLoader createClassLoader(Version version, ClassLoader sharedClassLoader) {
+  static ClassLoader createClassLoader(Version version) {
     // The 'nessie-jaxrs' has all the necessary dependencies to the DatabaseAdapter
     // implementations, REST services, Version store implementation, etc. in older versions.
     // Newer versions declare what is required as runtime dependencies of
