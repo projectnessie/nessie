@@ -5,7 +5,7 @@ jandexPlugin = "1.86"
 junit = "5.9.2"
 nessieBuildPlugins = "0.2.20"
 protobufPlugin = "0.9.2"
-shadowPlugin = "8.0.0"
+shadowPlugin = "8.1.0"
 spotlessPlugin = "6.16.0"
 
 [libraries]

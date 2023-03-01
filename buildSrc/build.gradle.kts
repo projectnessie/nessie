@@ -29,7 +29,7 @@ dependencies {
   val ver = baselibs.versions
   implementation("com.diffplug.spotless:spotless-plugin-gradle:${ver.spotlessPlugin.get()}")
   implementation("com.github.vlsi.gradle:jandex-plugin:${ver.jandexPlugin.get()}")
-  implementation("gradle.plugin.com.github.johnrengelman:shadow:${ver.shadowPlugin.get()}")
+  implementation("com.github.johnrengelman:shadow:${ver.shadowPlugin.get()}")
   implementation("com.google.protobuf:protobuf-gradle-plugin:${ver.protobufPlugin.get()}")
   val nessieVer = ver.nessieBuildPlugins.get()
   implementation("org.projectnessie.buildsupport:checkstyle:$nessieVer")
