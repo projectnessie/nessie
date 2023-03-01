@@ -6,12 +6,9 @@ Google Groups as a mailing list.
 
 ## Get In Touch
 
-[![Slack](https://img.shields.io/badge/Slack-Join_Our_Workspace-blue?color=4051b5&logo=slack&style=for-the-badge&logoColor=white)](mailto:slack-subscribe@projectnessie.org)
-: The developers on Nessie frequent the nessie-public Slack channel. You can get an
-  invite to the channel by emailing [slack-subscribe@projectnessie.org](mailto:slack-subscribe@projectnessie.org).
-  If you want your organization invited to the channel, please state that in the request.
-  Whether you're super excited about development or just want to hear what is happening,
-  everyone is welcome to join.
+[![Zulip Chat](https://img.shields.io/badge/Zulip-Chat_With_Us-blue?color=4051b5&logo=zulip&style=for-the-badge&logoColor=white)](https://project-nessie.zulipchat.com/)
+: The developers on Nessie frequent the project's Zulip Chat. 
+  Use [this link](https://project-nessie.zulipchat.com/) to join.
 
 [![Group Discussion](https://img.shields.io/badge/Discussion-groups.google.com-blue.svg?color=4051b5&logo=google&style=for-the-badge&logoColor=white)](https://groups.google.com/g/projectnessie)
 : If long form is more your thing, we also have created a mailing list on Google groups
