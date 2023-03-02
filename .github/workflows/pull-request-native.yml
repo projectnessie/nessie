@@ -28,7 +28,7 @@ concurrency:
 jobs:
   java:
     name: Java/Gradle Native
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       WF_EXEC: ${{ contains(github.event.pull_request.labels.*.name, 'pr-native') }}
     steps:
