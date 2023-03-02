@@ -788,13 +788,13 @@ final class CommitLogicImpl implements CommitLogic {
     switch (resolution) {
       case CONFLICT:
         conflicts.add(conflict);
-        // Do not action to commit
+        // Do not the conflicting action to the commit, report the conflict
         return true;
       case IGNORE:
-        // Add action to commit
+        // Add the conflicting action to the resulting commit, not reporting as a conflict
         return false;
       case DROP:
-        // Do not action to commit
+        // Do not add the conflicting action to the resulting commit, not reporting as a conflict
         return true;
       default:
         throw new IllegalStateException("Unknown resolution " + resolution);

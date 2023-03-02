@@ -140,7 +140,7 @@ public interface CommitObj extends Obj {
 
   /**
    * Monotonically increasing counter representing the number of commits since the "beginning of
-   * time.
+   * time".
    */
   long seq();
 
