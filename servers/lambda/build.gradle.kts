@@ -76,11 +76,7 @@ tasks.withType<Test>().configureEach {
   enabled = false // TODO project.hasProperty("native")  -- verify that tests work
 
   jvmArgs("--add-opens=java.base/java.util=ALL-UNNAMED")
-  systemProperty("quarkus.log.level", testLogLevel())
-  systemProperty("quarkus.log.console.level", testLogLevel())
-  systemProperty("http.access.log.level", testLogLevel())
   systemProperty("native.image.path", quarkusBuild.nativeRunner)
-  systemProperty("quarkus.smallrye.jwt.enabled", "true")
 
   val testHeapSize: String? by project
   minHeapSize = if (testHeapSize != null) testHeapSize as String else "256m"
