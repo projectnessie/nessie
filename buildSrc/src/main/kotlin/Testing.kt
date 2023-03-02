@@ -84,8 +84,9 @@ fun Project.nessieConfigureTestTasks() {
 
     if (plugins.hasPlugin("io.quarkus")) {
       jvmArgs("--add-opens=java.base/java.util=ALL-UNNAMED")
-      systemProperty("quarkus.log.level", testLogLevel())
-      systemProperty("quarkus.log.console.level", testLogLevel())
+      // Log-levels are required to be able to parse the HTTP listen URL
+      systemProperty("quarkus.log.level", "INFO")
+      systemProperty("quarkus.log.console.level", "INFO")
       systemProperty("http.access.log.level", testLogLevel())
 
       minHeapSize = if (testHeapSize != null) testHeapSize as String else "512m"

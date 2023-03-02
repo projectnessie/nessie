@@ -181,7 +181,6 @@ tasks.withType<Test>().configureEach {
   if (project.hasProperty("native")) {
     systemProperty("native.image.path", quarkusBuild.get().nativeRunner)
   }
-  systemProperty("quarkus.smallrye.jwt.enabled", "true")
   systemProperty(
     "it.nessie.container.postgres.tag",
     System.getProperty("it.nessie.container.postgres.tag", libs.versions.postgresContainerTag.get())
