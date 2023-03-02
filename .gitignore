@@ -61,8 +61,9 @@ out/
 build/
 gradle/wrapper/gradle-wrapper.jar
 
-# Python venv
+# Python
 venv/
+__pycache__/
 
 # Site
 site/site
