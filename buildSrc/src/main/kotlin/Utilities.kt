@@ -18,6 +18,7 @@ import com.github.jengelman.gradle.plugins.shadow.ShadowPlugin
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import com.github.vlsi.jandex.JandexProcessResources
 import java.io.File
+import java.io.FileInputStream
 import java.lang.IllegalStateException
 import java.util.Properties
 import org.gradle.api.JavaVersion
@@ -27,15 +28,12 @@ import org.gradle.api.artifacts.ExternalModuleDependency
 import org.gradle.api.artifacts.ModuleDependency
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.plugins.JavaPluginExtension
-import org.gradle.api.publish.PublishingExtension
-import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.kotlin.dsl.DependencyHandlerScope
-import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.exclude
 import org.gradle.kotlin.dsl.extra
 import org.gradle.kotlin.dsl.findByType
@@ -123,8 +121,10 @@ fun isIntegrationsTestingEnabled() =
 fun Project.nessieClientForIceberg(): Dependency {
   val dependencyHandlerScope = DependencyHandlerScope.of(dependencies)
   if (!isIntegrationsTestingEnabled()) {
+    val clientVersion = libsRequiredVersion("nessieClientVersion")
     return dependencies.create(
-      "org.projectnessie:nessie-client:${libsRequiredVersion("nessieClientVersion")}"
+      if (clientVersion >= "0.50.1") "org.projectnessie.nessie:nessie-client:$clientVersion"
+      else "org.projectnessie:nessie-client:$clientVersion"
     )
   } else {
     return dependencyHandlerScope.nessieProject("nessie-client")
@@ -154,7 +154,34 @@ fun DependencyHandlerScope.nessieProject(
   if (!isIntegrationsTestingEnabled()) {
     return project(":$artifactId", configuration)
   } else {
-    return module("org.projectnessie", artifactId, configuration = configuration)
+    return module(
+      NessieProjects.groupIdForArtifact(artifactId),
+      artifactId,
+      configuration = configuration
+    )
+  }
+}
+
+private class NessieProjects {
+  companion object {
+    fun groupIdForArtifact(artifactId: String): String {
+      return if (integrationsProjects.contains(artifactId)) "org.projectnessie.nessie-integrations"
+      else "org.projectnessie.nessie"
+    }
+
+    private val integrationsProjects: Set<String> = loadIntegrationsArtifactIds()
+
+    private fun loadIntegrationsArtifactIds(): Set<String> {
+      var f: File =
+        File(
+          "${System.getProperty("root-project.nessie-build")}/gradle/projects.iceberg.properties"
+        )
+      FileInputStream(f).use {
+        val props = Properties()
+        props.load(it)
+        return props.keys.map { k -> k.toString() }.toSet()
+      }
+    }
   }
 }
 
@@ -202,29 +229,6 @@ fun Project.useBuildSubDirectory(buildSubDir: String) {
   tasks.withType<JandexProcessResources>().configureEach {
     val sourceSets: SourceSetContainer by project
     sourceSets.all { destinationDir = this.output.resourcesDir!! }
-  }
-}
-
-/** Adds relocation-information to a Maven-POM. */
-fun Project.addRelocateTo(toArtifact: String) {
-  val project = this
-  configure<PublishingExtension> {
-    publications.named("maven") {
-      this as MavenPublication
-      pom {
-        distributionManagement {
-          relocation {
-            artifactId.set(toArtifact)
-            groupId.set(project.group.toString())
-            version.set(project.version.toString())
-            message.set(
-              "The artifact ${project.name} will be removed in a future version of Nessie, " +
-                "please ensure tha all references to ${project.name} are updated to ${toArtifact}."
-            )
-          }
-        }
-      }
-    }
   }
 }
 

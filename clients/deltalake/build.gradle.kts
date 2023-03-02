@@ -75,5 +75,8 @@ nessieQuarkusApp {
 forceJava11ForTests()
 
 tasks.named<ShadowJar>("shadowJar") {
-  dependencies { include(dependency("org.projectnessie:.*:.*")) }
+  dependencies {
+    include(dependency("org.projectnessie.nessie:.*:.*"))
+    include(dependency("org.projectnessie.nessie-integrations:.*:.*"))
+  }
 }

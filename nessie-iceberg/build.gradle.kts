@@ -18,7 +18,10 @@ plugins {
   `maven-publish`
   signing
   `nessie-conventions`
+  alias(libs.plugins.nexus.publish.plugin)
 }
+
+extra["maven.name"] = "Nessie-Iceberg"
 
 // To fix circular dependencies with NessieClient, certain projects need to use the same Nessie
 // version as Iceberg/Delta has.

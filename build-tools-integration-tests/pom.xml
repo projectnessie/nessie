@@ -33,7 +33,7 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>org.projectnessie</groupId>
+        <groupId>org.projectnessie.nessie</groupId>
         <artifactId>nessie-bom</artifactId>
         <version>${nessie.version}</version>
         <type>pom</type>
@@ -51,23 +51,23 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.projectnessie</groupId>
+      <groupId>org.projectnessie.nessie</groupId>
       <artifactId>nessie-jaxrs-testextension</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.projectnessie</groupId>
+      <groupId>org.projectnessie.nessie</groupId>
       <artifactId>nessie-versioned-persist-in-memory</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.projectnessie</groupId>
+      <groupId>org.projectnessie.nessie</groupId>
       <artifactId>nessie-versioned-persist-in-memory-test</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.projectnessie</groupId>
+      <groupId>org.projectnessie.nessie</groupId>
       <artifactId>nessie-versioned-persist-rocks</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.projectnessie</groupId>
+      <groupId>org.projectnessie.nessie</groupId>
       <artifactId>nessie-versioned-persist-rocks-test</artifactId>
     </dependency>
     <dependency>

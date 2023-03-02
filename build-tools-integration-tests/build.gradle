@@ -31,12 +31,12 @@ def versionMavenResolver = "1.7.3"
 def versionMaven = "3.8.7"
 
 dependencies {
-  implementation(enforcedPlatform("org.projectnessie:nessie-bom:$nessieVersion"))
-  implementation("org.projectnessie:nessie-jaxrs-testextension")
-  implementation("org.projectnessie:nessie-versioned-persist-in-memory")
-  implementation("org.projectnessie:nessie-versioned-persist-in-memory-test")
-  implementation("org.projectnessie:nessie-versioned-persist-rocks")
-  implementation("org.projectnessie:nessie-versioned-persist-rocks-test")
+  implementation(enforcedPlatform("org.projectnessie.nessie:nessie-bom:$nessieVersion"))
+  implementation("org.projectnessie.nessie:nessie-jaxrs-testextension")
+  implementation("org.projectnessie.nessie:nessie-versioned-persist-in-memory")
+  implementation("org.projectnessie.nessie:nessie-versioned-persist-in-memory-test")
+  implementation("org.projectnessie.nessie:nessie-versioned-persist-rocks")
+  implementation("org.projectnessie.nessie:nessie-versioned-persist-rocks-test")
 
   testImplementation(platform("org.junit:junit-bom:5.9.2"))
   testImplementation("org.junit.jupiter:junit-jupiter-api")

@@ -32,6 +32,7 @@ dependencies {
   implementation("org.apache.iceberg:iceberg-common:$versionIceberg")
   implementation("org.apache.iceberg:iceberg-nessie:$versionIceberg") {
     exclude("org.projectnessie", "*")
+    exclude("org.projectnessie.nessie", "*")
   }
   implementation(libs.hadoop.client) {
     exclude("javax.servlet.jsp", "jsp-api")

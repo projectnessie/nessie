@@ -96,7 +96,13 @@ public class TestPublishedPoms {
     "nessie-versioned-persist-serialize",
     "nessie-versioned-persist-tests",
     "nessie-versioned-persist-bench",
-    //
+  })
+  void checkMainPom(String artifactId) throws Exception {
+    checkPom("org.projectnessie.nessie", artifactId);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {
     "iceberg-views",
     "nessie-deltalake",
     "nessie-spark-antlr-runtime",
@@ -107,11 +113,15 @@ public class TestPublishedPoms {
     "nessie-spark-extensions-3.3_2.12",
     "nessie-spark-extensions-3.3_2.13"
   })
-  void checkPom(String artifactId) throws Exception {
+  void checkIntegrationsPom(String artifactId) throws Exception {
+    checkPom("org.projectnessie.nessie-integrations", artifactId);
+  }
+
+  void checkPom(String groupId, String artifactId) throws Exception {
     // Note: 'collectDependencies' takes a couple 100ms :(
     CollectRequest collectRequest = new CollectRequest().setRepositories(repositories);
     collectRequest.setRoot(
-      new Dependency(new DefaultArtifact("org.projectnessie", artifactId, "jar", nessieVersion),
+      new Dependency(new DefaultArtifact(groupId, artifactId, "jar", nessieVersion),
         "runtime"));
 
     DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, null);
