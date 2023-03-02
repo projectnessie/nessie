@@ -48,6 +48,12 @@ public abstract class Content {
 
   @JsonDeserialize(using = Util.ContentTypeDeserializer.class)
   @JsonSerialize(using = Util.ContentTypeSerializer.class)
+  @Schema(
+      type = SchemaType.STRING,
+      description =
+          "Declares the type of a Nessie content object, which is currently one of "
+              + "ICEBERG_TABLE, DELTA_LAKE_TABLE, ICEBERG_VIEW or NAMESPACE, which are the "
+              + "discriminator mapping values of the 'Content' type.")
   public interface Type {
     Content.Type UNKNOWN = ContentTypes.forName("UNKNOWN");
     Content.Type ICEBERG_TABLE = ContentTypes.forName("ICEBERG_TABLE");
