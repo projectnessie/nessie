@@ -116,7 +116,15 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
   public static final Comparator<StoreIndexElement<?>> KEY_COMPARATOR =
       Comparator.comparing(StoreIndexElement::key);
 
-  private final int deserializedSize;
+  /**
+   * Serialized size of the index at the time when the {@link #StoreIndexImpl(List, int,
+   * ElementSerializer, boolean)} constructor has been called.
+   *
+   * <p>This field is used to <em>estimate</em> the serialized size when this object is serialized
+   * again, including modifications.
+   */
+  private final int originalSerializedSize;
+
   private int estimatedSerializedSizeDiff;
   private final List<StoreIndexElement<V>> elements;
   private final ElementSerializer<V> serializer;
@@ -134,11 +142,11 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
 
   StoreIndexImpl(
       List<StoreIndexElement<V>> elements,
-      int deserializedSize,
+      int originalSerializedSize,
       ElementSerializer<V> serializer,
       boolean modified) {
     this.elements = elements;
-    this.deserializedSize = deserializedSize;
+    this.originalSerializedSize = originalSerializedSize;
     this.serializer = serializer;
     this.modified = modified;
   }
@@ -189,7 +197,7 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
         parts,
         size);
     int partSize = size / parts;
-    int serializedMax = deserializedSize + estimatedSerializedSizeDiff;
+    int serializedMax = originalSerializedSize + estimatedSerializedSizeDiff;
 
     List<StoreIndex<V>> result = new ArrayList<>(parts);
     int index = 0;
@@ -415,7 +423,7 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
 
   @Override
   public int estimatedSerializedSize() {
-    return deserializedSize + estimatedSerializedSizeDiff + 1;
+    return originalSerializedSize + estimatedSerializedSizeDiff + 1;
   }
 
   @Override

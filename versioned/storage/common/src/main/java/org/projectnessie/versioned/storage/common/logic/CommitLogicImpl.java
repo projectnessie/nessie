@@ -484,7 +484,7 @@ final class CommitLogicImpl implements CommitLogic {
   private List<StoreIndex<CommitOp>> createNewReferenceIndex(
       CommitObj commitObj, StoreIndex<CommitOp> newIncremental) {
     int maxSize = persist.effectiveIndexSegmentSizeLimit();
-    // use halt of the max as the initial size for _new_ segments/splits
+    // use half of the max as the initial size for _new_ segments/splits
     int newSegmentSize = maxSize / 2;
 
     List<StoreIndex<CommitOp>> stripes = new ArrayList<>();
