@@ -18,8 +18,11 @@ package org.projectnessie.model;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import javax.validation.constraints.NotNull;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
+@Schema(type = SchemaType.OBJECT, title = "SingleReferenceResponse")
 @Value.Immutable
 @JsonSerialize(as = ImmutableSingleReferenceResponse.class)
 @JsonDeserialize(as = ImmutableSingleReferenceResponse.class)

@@ -189,20 +189,38 @@ components:
 
     entriesResponse:
       value:
-        token: "xxx"
+        token: null
+        hasMore: false
         entries:
           - name:
               elements:
                 - example
                 - key
             type: ICEBERG_TABLE
-        prefixes:
-          - elements:
-              - example
-              - a
-          - elements:
-              - example
-              - b
+
+    entriesResponseV2:
+      value:
+        token: "xxx"
+        hasMore: false
+        effectiveReference:
+          type: BRANCH
+          hash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+          name: "exampleBranch"
+        entries:
+          - name:
+              elements:
+                - example
+                - key
+            type: ICEBERG_TABLE
+            contentId: "f350b391-f492-41eb-9959-730a8c49f01e"
+            content:
+              type: ICEBERG_TABLE
+              id: "f350b391-f492-41eb-9959-730a8c49f01e"
+              metadataLocation: "/path/to/metadata/"
+              snapshotId: 23
+              schemaId: 15
+              specId: 15
+              sortOrderId: 15
 
     types:
       value:
@@ -248,48 +266,6 @@ components:
         targetBranch: "main"
         effectiveTargetHash: "e9058b675c519b3542cd8155aed42ecf1ddb4e55874e3eb241b30b96f861566a"
         expectedHash: "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
-        sourceCommits:
-          - commitMeta:
-              author: "authorName <authorName@example.com>"
-              authorTime: "2021-04-07T14:42:25.534748Z"
-              hash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
-              message: "Example Commit Message"
-            operations:
-              - type: PUT
-                key:
-                  elements:
-                    - example
-                    - key
-                content:
-                  type: ICEBERG_TABLE
-                  id: b874b5d5-f926-4eed-9be7-b2380d9810c0
-                  metadataLocation: "/path/to/metadata/"
-                  snapshotId: 1
-                  schemaId: 2
-                  specId: 3
-                  sortOrderId: 4
-            parentCommitHash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
-        targetCommits:
-          - commitMeta:
-              author: "authorName <authorName@example.com>"
-              authorTime: "2021-04-07T14:42:25.534748Z"
-              hash: "e9058b675c519b3542cd8155aed42ecf1ddb4e55874e3eb241b30b96f861566a"
-              message: "Example Commit Message"
-            operations:
-              - type: PUT
-                key:
-                  elements:
-                    - example
-                    - key
-                content:
-                  type: ICEBERG_TABLE
-                  id: b874b5d5-f926-4eed-9be7-b2380d9810c0
-                  metadataLocation: "/path/to/metadata/"
-                  snapshotId: 1
-                  schemaId: 2
-                  specId: 3
-                  sortOrderId: 4
-            parentCommitHash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
         details:
           - key:
               elements:
@@ -297,9 +273,6 @@ components:
                 - key
             mergeBehavior: "NORMAL"
             conflictType: "NONE"
-            sourceCommits:
-            targetCommits:
-              - "e9058b675c519b3542cd8155aed42ecf1ddb4e55874e3eb241b30b96f861566a"
 
     mergeResponseFail:
       value:
@@ -310,48 +283,6 @@ components:
         targetBranch: "main"
         effectiveTargetHash: "8a2f19888eb620c25b0d2cbcddfdf56fb2d3e9dd443c6d29e37c567493fc5d3b"
         expectedHash: "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
-        sourceCommits:
-          - commitMeta:
-              author: "authorName <authorName@example.com>"
-              authorTime: "2021-04-07T14:42:25.534748Z"
-              hash: "88012047ce424686ca55e8bb228ae9d9cbd6f7bbfc800d830a53a6edf2d55ffb"
-              message: "Example Commit Message"
-            operations:
-              - type: PUT
-                key:
-                  elements:
-                    - example
-                    - key
-                content:
-                  type: ICEBERG_TABLE
-                  id: b874b5d5-f926-4eed-9be7-b2380d9810c0
-                  metadataLocation: "/path/to/metadata/"
-                  snapshotId: 1
-                  schemaId: 2
-                  specId: 3
-                  sortOrderId: 4
-            parentCommitHash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
-        targetCommits:
-          - commitMeta:
-              author: "authorName <authorName@example.com>"
-              authorTime: "2021-04-07T14:42:25.534748Z"
-              hash: "54388c80e6387b8cfa4cf3e7c7909073ffc761f9c7f0d6154ec0d5c5829a4503"
-              message: "Example Commit Message"
-            operations:
-              - type: PUT
-                key:
-                  elements:
-                    - example
-                    - key
-                content:
-                  type: ICEBERG_TABLE
-                  id: b874b5d5-f926-4eed-9be7-b2380d9810c0
-                  metadataLocation: "/path/to/metadata/"
-                  snapshotId: 1
-                  schemaId: 2
-                  specId: 3
-                  sortOrderId: 4
-            parentCommitHash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
         details:
           - key:
               elements:
@@ -359,10 +290,6 @@ components:
                 - key
             mergeBehavior: "NORMAL"
             conflictType: "UNRESOLVABLE"
-            sourceCommits:
-              - "88012047ce424686ca55e8bb228ae9d9cbd6f7bbfc800d830a53a6edf2d55ffb"
-            targetCommits:
-              - "54388c80e6387b8cfa4cf3e7c7909073ffc761f9c7f0d6154ec0d5c5829a4503"
 
     operations:
       value:
@@ -394,6 +321,7 @@ components:
     logResponseAdditionalInfo:
       value:
         token: "xxx"
+        hasMore: false
         logEntries:
           - commitMeta:
               author: "authorName <authorName@example.com>"
@@ -430,6 +358,7 @@ components:
     logResponseSimple:
       value:
         token: "xxx"
+        hasMore: false
         logEntries:
           - commitMeta:
               author: "authorName <authorName@example.com>"
@@ -443,6 +372,78 @@ components:
                 additionalProp2: "yyy"
                 additionalProp3: "zzz"
               signedOffBy: "signedOffByName <signedOffBy@example.com>"
+
+    multipleContentsResponse:
+      value:
+        contents:
+          - content:
+              type: ICEBERG_TABLE
+              id: "b874b5d5-f926-4eed-9be7-b2380d9810c0"
+              metadataLocation: "/path/to/metadata/"
+              snapshotId: 1
+              schemaId: 2
+              specId: 3
+              sortOrderId: 4
+            key:
+              elements:
+                - example
+                - key
+        effectiveReference:
+          type: BRANCH
+          hash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+          name: "exampleBranch"
+
+    commitResponse:
+      value:
+        targetBranch:
+          type: BRANCH
+          hash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+          name: "exampleBranch"
+        addedContents:
+          - contentId: "7fe924d9-45af-574e-9bbc-51b48077017e"
+            key:
+              elements:
+                - example
+                - key
+
+    contentResponseIceberg:
+      value:
+        content:
+          type: ICEBERG_TABLE
+          id: b874b5d5-f926-4eed-9be7-b2380d9810c0
+          metadataLocation: "/path/to/metadata/"
+          snapshotId: 1
+          schemaId: 2
+          specId: 3
+          sortOrderId: 4
+        effectiveReference:
+          type: BRANCH
+          hash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+          name: "exampleBranch"
+
+    singleReferenceResponse:
+      value:
+        reference:
+          type: BRANCH
+          hash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+          name: "exampleBranch"
+
+    singleReferenceResponseWithMetadata:
+      value:
+        reference:
+          type: BRANCH
+          hash: "84c57a20c5e956af4af40f3cc34ecc8a9028b9586da135c79011b1867aa3191d"
+          name: "main"
+          metadata:
+            commitMetaOfHEAD:
+              hash: "84c57a20c5e956af4af40f3cc34ecc8a9028b9586da135c79011b1867aa3191d"
+              committer: ""
+              author: "nessie-author"
+              signedOffBy: null
+              message: "update table"
+              commitTime: "2021-11-26T08:01:13.855974Z"
+              authorTime: "2021-11-26T08:01:13.852826Z"
+              properties: {}
 
     referencesResponse:
       value:
@@ -559,3 +560,37 @@ components:
               schemaId: 16
               specId: 16
               sortOrderId: 16
+
+    diffResponseWithRef:
+      value:
+        hasMore: false
+        token: null
+        diffs:
+          - key:
+              elements:
+                - example
+                - key
+            from:
+              type: ICEBERG_TABLE
+              id: "f350b391-f492-41eb-9959-730a8c49f01e"
+              metadataLocation: "/path/to/metadata/"
+              snapshotId: 23
+              schemaId: 15
+              specId: 15
+              sortOrderId: 15
+            to:
+              type: ICEBERG_TABLE
+              id: "dec31d0a-7d4b-4534-8c24-24f08eda33b2"
+              metadataLocation: "/path/to/metadata/"
+              snapshotId: 24
+              schemaId: 16
+              specId: 16
+              sortOrderId: 16
+        effectiveFromReference:
+          type: BRANCH
+          hash: "da086850076827d2989c8ee1d7fd22f152f525d46a0441f2b22ad8119c0bbbe5"
+          name: "dev"
+        effectiveToReference:
+          type: BRANCH
+          hash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
+          name: "exampleBranch"
