@@ -157,24 +157,27 @@ public interface Persist {
    *
    * @return The returned object will be a concrete type according to its {@link ObjType},
    *     (de)serialization is handled by the database specific implementation of {@link Persist}.
-   *     Returns {@code null} for {@code id} equal to {@link ObjId#EMPTY_OBJ_ID}
    * @throws ObjNotFoundException with the ID for which no {@link Obj objects} exist
    * @see #fetchObjType(ObjId)
    * @see #fetchTypedObj(ObjId, ObjType, Class)
    * @see #fetchObjs(ObjId[])
    */
+  @Nonnull
+  @jakarta.annotation.Nonnull
   Obj fetchObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) throws ObjNotFoundException;
 
   /**
    * Retrieves the object with ID {@code id}, having the same {@link ObjType type}.
    *
-   * @return the object with the requested type, {@code null} for {@link ObjId#EMPTY_OBJ_ID}
+   * @return the object with the requested type
    * @throws ObjNotFoundException with the ID for which no matching {@link Obj objects} exist,
    *     either the no object with the given ID exists or that object is not of the requested type
    * @see #fetchObjType(ObjId)
    * @see #fetchObj(ObjId)
    * @see #fetchObjs(ObjId[])
    */
+  @Nonnull
+  @jakarta.annotation.Nonnull
   <T extends Obj> T fetchTypedObj(
       @Nonnull @jakarta.annotation.Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException;
@@ -182,12 +185,14 @@ public interface Persist {
   /**
    * Retrieves the type of the object with ID {@code id}.
    *
-   * @return the object's type, {@code null} for {@link ObjId#EMPTY_OBJ_ID}
+   * @return the object's type
    * @throws ObjNotFoundException with the ID for which no {@link Obj objects} exist
    * @see #fetchObj(ObjId)
    * @see #fetchTypedObj(ObjId, ObjType, Class)
    * @see #fetchObjs(ObjId[])
    */
+  @Nonnull
+  @jakarta.annotation.Nonnull
   ObjType fetchObjType(@Nonnull @jakarta.annotation.Nonnull ObjId id) throws ObjNotFoundException;
 
   /**
@@ -195,12 +200,15 @@ public interface Persist {
    * queries against databases.
    *
    * <p>The behavior when providing the same {@link ObjId} multiple times in {@code ids} is
-   * undefined, implementations may return the same object or equal objects. In any case, providing
-   * the same ID multiple times is discouraged.
+   * undefined, implementations may return the same object or equal objects or throw exceptions. In
+   * any case, providing the same ID multiple times is discouraged.
    *
+   * @param ids array with {@link ObjId}s to fetch. {@code null} array elements are legal, the
+   *     corresponding elements in the returned array will be {@code null} as well.
    * @return The returned objects will be a concrete types according to their {@link ObjType},
    *     (de)serialization is handled by the database specific implementation of {@link Persist}.
-   *     Returns {@code null} for {@code id} equal to {@link ObjId#EMPTY_OBJ_ID}
+   *     Elements are {@code null}, if the corresponding elements in the {@code ids} parameter array
+   *     are {@code null}.
    * @throws ObjNotFoundException with the IDs for which no {@link Obj objects} exist
    * @see #fetchObjType(ObjId)
    * @see #fetchTypedObj(ObjId, ObjType, Class)

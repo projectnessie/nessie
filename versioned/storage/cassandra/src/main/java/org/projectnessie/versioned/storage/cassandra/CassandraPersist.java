@@ -87,7 +87,6 @@ import static org.projectnessie.versioned.storage.common.objtypes.IndexStripe.in
 import static org.projectnessie.versioned.storage.common.objtypes.RefObj.ref;
 import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
 import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
-import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 
@@ -275,6 +274,8 @@ public class CassandraPersist implements Persist {
 
   @SuppressWarnings("unused")
   @Override
+  @Nonnull
+  @jakarta.annotation.Nonnull
   public <T extends Obj> T fetchTypedObj(
       @Nonnull @jakarta.annotation.Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
@@ -286,16 +287,17 @@ public class CassandraPersist implements Persist {
   }
 
   @Override
+  @Nonnull
+  @jakarta.annotation.Nonnull
   public Obj fetchObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) throws ObjNotFoundException {
     return fetchObjs(new ObjId[] {id})[0];
   }
 
   @Override
+  @Nonnull
+  @jakarta.annotation.Nonnull
   public ObjType fetchObjType(@Nonnull @jakarta.annotation.Nonnull ObjId id)
       throws ObjNotFoundException {
-    if (EMPTY_OBJ_ID.equals(id)) {
-      return null;
-    }
     Row row =
         backend
             .execute(FETCH_OBJ_TYPE, config.repositoryId(), singletonList(serializeObjId(id)))
@@ -344,7 +346,7 @@ public class CassandraPersist implements Persist {
 
       for (int i = 0; i < ids.length; i++) {
         ObjId id = ids[i];
-        if (id != null && !EMPTY_OBJ_ID.equals(id)) {
+        if (id != null) {
           batchedQuery.add(id, i);
         }
       }
@@ -355,7 +357,7 @@ public class CassandraPersist implements Persist {
     List<ObjId> notFound = null;
     for (int i = 0; i < ids.length; i++) {
       ObjId id = ids[i];
-      if (r[i] == null && id != null && !EMPTY_OBJ_ID.equals(id)) {
+      if (r[i] == null && id != null) {
         if (notFound == null) {
           notFound = new ArrayList<>();
         }
@@ -454,7 +456,7 @@ public class CassandraPersist implements Persist {
     ObjId id = obj.id();
     ObjType type = obj.type();
 
-    StoreObjDesc<Obj> storeObj = storeObjForObj(id, type);
+    StoreObjDesc<Obj> storeObj = storeObjForObj(type);
 
     List<Object> values = new ArrayList<>();
     values.add(config.repositoryId());
@@ -470,12 +472,7 @@ public class CassandraPersist implements Persist {
   }
 
   @SuppressWarnings("unchecked")
-  private static StoreObjDesc<Obj> storeObjForObj(ObjId id, ObjType type) {
-    checkArgument(
-        id != null && !EMPTY_OBJ_ID.equals(id),
-        "Obj to store must have a non-null ID, which must not be %s",
-        EMPTY_OBJ_ID);
-
+  private static StoreObjDesc<Obj> storeObjForObj(ObjType type) {
     @SuppressWarnings("rawtypes")
     StoreObjDesc storeObj = STORE_OBJ_TYPE.get(type);
     checkArgument(storeObj != null, "Cannot serialize object type %s ", type);
@@ -488,7 +485,7 @@ public class CassandraPersist implements Persist {
     ObjId id = obj.id();
     ObjType type = obj.type();
 
-    StoreObjDesc<Obj> storeObj = storeObjForObj(id, type);
+    StoreObjDesc<Obj> storeObj = storeObjForObj(type);
 
     List<Object> values = new ArrayList<>();
     storeObj.store(values::add, obj, Integer.MAX_VALUE, Integer.MAX_VALUE);

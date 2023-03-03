@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned.storage.cache;
 
-import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializeObj;
 
 import com.github.benmanes.caffeine.cache.Cache;
@@ -73,9 +72,6 @@ abstract class CaffeineCacheBackend implements CacheBackend {
   public Obj get(
       @Nonnull @jakarta.annotation.Nonnull String repositoryId,
       @Nonnull @jakarta.annotation.Nonnull ObjId id) {
-    if (EMPTY_OBJ_ID.equals(id)) {
-      return null;
-    }
     CacheKey key = cacheKey(repositoryId, id);
     byte[] bytes = cache().getIfPresent(key);
     return bytes != null ? ProtoSerialization.deserializeObj(id, bytes) : null;
@@ -85,9 +81,6 @@ abstract class CaffeineCacheBackend implements CacheBackend {
   public void put(
       @Nonnull @jakarta.annotation.Nonnull String repositoryId,
       @Nonnull @jakarta.annotation.Nonnull Obj obj) {
-    if (EMPTY_OBJ_ID.equals(obj.id())) {
-      return;
-    }
     CacheKey key = cacheKey(repositoryId, obj.id());
     try {
       cache().put(key, serializeObj(obj, Integer.MAX_VALUE, Integer.MAX_VALUE));
@@ -101,9 +94,6 @@ abstract class CaffeineCacheBackend implements CacheBackend {
   public void remove(
       @Nonnull @jakarta.annotation.Nonnull String repositoryId,
       @Nonnull @jakarta.annotation.Nonnull ObjId id) {
-    if (EMPTY_OBJ_ID.equals(id)) {
-      return;
-    }
     CacheKey key = cacheKey(repositoryId, id);
     cache().invalidate(key);
   }

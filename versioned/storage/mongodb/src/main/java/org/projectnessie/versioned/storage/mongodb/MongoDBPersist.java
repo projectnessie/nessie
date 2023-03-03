@@ -34,7 +34,6 @@ import static org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsO
 import static org.projectnessie.versioned.storage.common.objtypes.IndexStripe.indexStripe;
 import static org.projectnessie.versioned.storage.common.objtypes.RefObj.ref;
 import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
-import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_COMMIT;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.COL_COMMIT_CREATED;
@@ -364,11 +363,9 @@ public class MongoDBPersist implements Persist {
   }
 
   @Override
+  @Nonnull
+  @jakarta.annotation.Nonnull
   public Obj fetchObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) throws ObjNotFoundException {
-    if (EMPTY_OBJ_ID.equals(id)) {
-      return null;
-    }
-
     FindIterable<Document> result = backend.objs().find(eq(ID_PROPERTY_NAME, idObjDoc(id)));
 
     Document doc = result.first();
@@ -380,13 +377,11 @@ public class MongoDBPersist implements Persist {
   }
 
   @Override
+  @Nonnull
+  @jakarta.annotation.Nonnull
   public <T extends Obj> T fetchTypedObj(
       @Nonnull @jakarta.validation.constraints.NotNull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
-    if (EMPTY_OBJ_ID.equals(id)) {
-      return null;
-    }
-
     FindIterable<Document> result =
         backend
             .objs()
@@ -405,12 +400,10 @@ public class MongoDBPersist implements Persist {
   }
 
   @Override
+  @Nonnull
+  @jakarta.annotation.Nonnull
   public ObjType fetchObjType(@Nonnull @jakarta.validation.constraints.NotNull ObjId id)
       throws ObjNotFoundException {
-    if (EMPTY_OBJ_ID.equals(id)) {
-      return null;
-    }
-
     FindIterable<Document> result = backend.objs().find(eq(ID_PROPERTY_NAME, idObjDoc(id)));
 
     Document doc = result.first();
@@ -432,7 +425,7 @@ public class MongoDBPersist implements Persist {
     Obj[] r = new Obj[ids.length];
     for (int i = 0; i < ids.length; i++) {
       ObjId id = ids[i];
-      if (id != null && !EMPTY_OBJ_ID.equals(id)) {
+      if (id != null) {
         list.add(idObjDoc(id));
         idToIndex.put(id, i);
       }
@@ -445,7 +438,7 @@ public class MongoDBPersist implements Persist {
     List<ObjId> notFound = null;
     for (int i = 0; i < ids.length; i++) {
       ObjId id = ids[i];
-      if (!EMPTY_OBJ_ID.equals(id) && r[i] == null && id != null) {
+      if (r[i] == null && id != null) {
         if (notFound == null) {
           notFound = new ArrayList<>();
         }
@@ -572,20 +565,13 @@ public class MongoDBPersist implements Persist {
 
   @Override
   public void deleteObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) {
-    if (EMPTY_OBJ_ID.equals(id)) {
-      return;
-    }
     backend.objs().deleteOne(eq(ID_PROPERTY_NAME, idObjDoc(id)));
   }
 
   @Override
   public void deleteObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids) {
     List<Document> list =
-        Stream.of(ids)
-            .filter(Objects::nonNull)
-            .filter(id -> !EMPTY_OBJ_ID.equals(id))
-            .map(this::idObjDoc)
-            .collect(toList());
+        Stream.of(ids).filter(Objects::nonNull).map(this::idObjDoc).collect(toList());
     if (list.isEmpty()) {
       return;
     }
@@ -596,10 +582,7 @@ public class MongoDBPersist implements Persist {
   public void updateObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
       throws ObjTooLargeException, ObjNotFoundException {
     ObjId id = obj.id();
-    checkArgument(
-        id != null && !EMPTY_OBJ_ID.equals(id),
-        "Obj to store must have a non-null ID, which must not be %s",
-        EMPTY_OBJ_ID);
+    checkArgument(id != null, "Obj to store must have a non-null ID");
 
     Document doc = objToDoc(obj, true);
     Document result =
@@ -652,10 +635,7 @@ public class MongoDBPersist implements Persist {
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     ObjId id = obj.id();
-    checkArgument(
-        id != null && !EMPTY_OBJ_ID.equals(id),
-        "Obj to store must have a non-null ID, which must not be %s",
-        EMPTY_OBJ_ID);
+    checkArgument(id != null, "Obj to store must have a non-null ID");
 
     ObjType type = obj.type();
     @SuppressWarnings("rawtypes")

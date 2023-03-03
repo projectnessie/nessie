@@ -62,7 +62,6 @@ public final class ContentMapping {
   public Content fetchContent(@Nonnull @jakarta.annotation.Nonnull ObjId objId)
       throws ObjNotFoundException {
     ContentValueObj contentValue = persist.fetchTypedObj(objId, VALUE, ContentValueObj.class);
-    checkArgument(contentValue != null, "Empty content");
     return valueToContent(contentValue);
   }
 

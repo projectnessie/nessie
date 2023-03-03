@@ -183,26 +183,20 @@ final class ExportPersist extends ExportCommon {
                 try {
                   ContentValueObj value =
                       requireNonNull(exporter.persist())
-                          .fetchTypedObj(
-                              requireNonNull(
-                                  content.value(), "Commit operation has no content value"),
-                              VALUE,
-                              ContentValueObj.class);
-                  if (value != null) {
-                    Content modelContent =
-                        exporter
-                            .storeWorker()
-                            .valueFromStore(
-                                (byte) content.payload(),
-                                value.data(),
-                                () -> null,
-                                k -> Stream.empty());
-                    byte[] modelContentBytes =
-                        exporter.objectMapper().writeValueAsBytes(modelContent);
-                    opBuilder
-                        .setContentId(value.contentId())
-                        .setValue(ByteString.copyFrom(modelContentBytes));
-                  }
+                          .fetchTypedObj(valueId, VALUE, ContentValueObj.class);
+                  Content modelContent =
+                      exporter
+                          .storeWorker()
+                          .valueFromStore(
+                              (byte) content.payload(),
+                              value.data(),
+                              () -> null,
+                              k -> Stream.empty());
+                  byte[] modelContentBytes =
+                      exporter.objectMapper().writeValueAsBytes(modelContent);
+                  opBuilder
+                      .setContentId(value.contentId())
+                      .setValue(ByteString.copyFrom(modelContentBytes));
                 } catch (ObjNotFoundException | JsonProcessingException e) {
                   throw new RuntimeException(e);
                 }

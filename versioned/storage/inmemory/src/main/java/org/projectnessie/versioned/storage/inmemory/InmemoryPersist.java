@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.storage.inmemory;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 
 import com.google.common.collect.AbstractIterator;
@@ -192,10 +191,9 @@ class InmemoryPersist implements Persist {
   }
 
   @Override
+  @Nonnull
+  @jakarta.annotation.Nonnull
   public Obj fetchObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) throws ObjNotFoundException {
-    if (EMPTY_OBJ_ID.equals(id)) {
-      return null;
-    }
     Obj obj = inmemory.objects.get(compositeKey(id));
     if (obj == null) {
       throw new ObjNotFoundException(id);
@@ -204,12 +202,11 @@ class InmemoryPersist implements Persist {
   }
 
   @Override
+  @Nonnull
+  @jakarta.annotation.Nonnull
   public <T extends Obj> T fetchTypedObj(
       @Nonnull @jakarta.annotation.Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
-    if (EMPTY_OBJ_ID.equals(id)) {
-      return null;
-    }
     Obj obj = inmemory.objects.get(compositeKey(id));
     if (obj == null || obj.type() != type) {
       throw new ObjNotFoundException(id);
@@ -220,11 +217,10 @@ class InmemoryPersist implements Persist {
   }
 
   @Override
+  @Nonnull
+  @jakarta.annotation.Nonnull
   public ObjType fetchObjType(@Nonnull @jakarta.annotation.Nonnull ObjId id)
       throws ObjNotFoundException {
-    if (EMPTY_OBJ_ID.equals(id)) {
-      return null;
-    }
     Obj obj = inmemory.objects.get(compositeKey(id));
     if (obj == null) {
       throw new ObjNotFoundException(id);
@@ -241,7 +237,7 @@ class InmemoryPersist implements Persist {
     List<ObjId> notFound = null;
     for (int i = 0; i < ids.length; i++) {
       ObjId id = ids[i];
-      if (id == null || EMPTY_OBJ_ID.equals(id)) {
+      if (id == null) {
         continue;
       }
       try {
@@ -263,10 +259,7 @@ class InmemoryPersist implements Persist {
   public boolean storeObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
-    checkArgument(
-        obj.id() != null && !EMPTY_OBJ_ID.equals(obj.id()),
-        "Obj to store must have a non-null ID, which must not be %s",
-        EMPTY_OBJ_ID);
+    checkArgument(obj.id() != null, "Obj to store must have a non-null ID");
 
     if (!ignoreSoftSizeRestrictions) {
       verifySoftRestrictions(obj);

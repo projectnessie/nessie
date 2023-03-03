@@ -876,7 +876,11 @@ final class CommitLogicImpl implements CommitLogic {
     Obj obj = persist.fetchObj(commitId);
     if (obj instanceof CommitObjReference) {
       CommitObjReference commitRef = (CommitObjReference) obj;
-      obj = persist.fetchObj(commitRef.commitId());
+      ObjId refCommitId = commitRef.commitId();
+      if (EMPTY_OBJ_ID.equals(refCommitId)) {
+        return null;
+      }
+      obj = persist.fetchObj(refCommitId);
     }
     checkState(
         obj == null || obj instanceof CommitObj, "Expected a Commit object, but got %s", obj);

@@ -32,7 +32,6 @@ import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONF
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_MAX_SERIALIZED_INDEX_SIZE;
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_REPOSITORY_ID;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexElement.indexElement;
-import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.emptyImmutableIndex;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.newStoreIndex;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.key;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.EMPTY_COMMIT_HEADERS;
@@ -66,7 +65,6 @@ import static org.projectnessie.versioned.storage.common.persist.Reference.refer
 import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.function.IntFunction;
@@ -406,8 +404,6 @@ public class AbstractBasePersistTests {
             () -> persist.fetchTypedObj(obj.id(), otherType, classForType(otherType)))
         .isInstanceOf(ObjNotFoundException.class);
     soft.assertThat(persist.fetchObjs(new ObjId[] {obj.id()})).containsExactly(obj);
-    soft.assertThat(persist.fetchObjs(new ObjId[] {obj.id(), EMPTY_OBJ_ID}))
-        .containsExactly(obj, null);
 
     soft.assertThatCode(() -> persist.deleteObj(obj.id())).doesNotThrowAnyException();
     soft.assertThatCode(() -> persist.deleteObjs(new ObjId[] {obj.id()}))
@@ -449,13 +445,7 @@ public class AbstractBasePersistTests {
   }
 
   @Test
-  public void fetchObjsNulls() throws Exception {
-    soft.assertThat(persist.fetchObjs(new ObjId[10])).containsOnlyNulls().hasSize(10);
-
-    ObjId[] emptyOnes = new ObjId[10];
-    Arrays.fill(emptyOnes, EMPTY_OBJ_ID);
-    soft.assertThat(persist.fetchObjs(emptyOnes)).containsOnlyNulls().hasSize(10);
-
+  public void fetchNothing() throws Exception {
     soft.assertThat(persist.fetchObjs(new ObjId[0])).hasSize(0);
   }
 
@@ -519,13 +509,13 @@ public class AbstractBasePersistTests {
   }
 
   @Test
-  public void fetchEmptyObjId() throws Exception {
-    soft.assertThat(persist.fetchObj(EMPTY_OBJ_ID)).isNull();
-    soft.assertThat(persist.fetchObjType(EMPTY_OBJ_ID)).isNull();
-    soft.assertThat(persist.fetchTypedObj(EMPTY_OBJ_ID, COMMIT, CommitObj.class)).isNull();
-    soft.assertThat(persist.fetchObjs(new ObjId[] {EMPTY_OBJ_ID, EMPTY_OBJ_ID}))
-        .hasSize(2)
-        .containsOnlyNulls();
+  public void fetchEmptyObjId() {
+    soft.assertThatThrownBy(() -> persist.fetchObj(EMPTY_OBJ_ID))
+        .isInstanceOf(ObjNotFoundException.class);
+    soft.assertThatThrownBy(() -> persist.fetchObjType(EMPTY_OBJ_ID))
+        .isInstanceOf(ObjNotFoundException.class);
+    soft.assertThatThrownBy(() -> persist.fetchTypedObj(EMPTY_OBJ_ID, COMMIT, CommitObj.class))
+        .isInstanceOf(ObjNotFoundException.class);
   }
 
   @Test
@@ -553,7 +543,7 @@ public class AbstractBasePersistTests {
         .isInstanceOf(ObjNotFoundException.class)
         .asInstanceOf(type(ObjNotFoundException.class))
         .extracting(ObjNotFoundException::objIds, list(ObjId.class))
-        .containsExactly(id);
+        .containsExactly(EMPTY_OBJ_ID, id);
 
     ObjId id2 = randomObjId();
 
@@ -561,7 +551,7 @@ public class AbstractBasePersistTests {
         .isInstanceOf(ObjNotFoundException.class)
         .asInstanceOf(type(ObjNotFoundException.class))
         .extracting(ObjNotFoundException::objIds, list(ObjId.class))
-        .containsExactlyInAnyOrder(id, id2);
+        .containsExactlyInAnyOrder(EMPTY_OBJ_ID, id, id2);
   }
 
   @Test
@@ -626,23 +616,6 @@ public class AbstractBasePersistTests {
                           .build()
                     }))
         .isInstanceOf(ObjTooLargeException.class);
-  }
-
-  @Test
-  public void storeEmptyObjId() {
-    CommitObj obj =
-        commitBuilder()
-            .id(EMPTY_OBJ_ID)
-            .created(123L)
-            .seq(123)
-            .message("msg")
-            .incrementalIndex(emptyImmutableIndex(COMMIT_OP_SERIALIZER).serialize())
-            .headers(EMPTY_COMMIT_HEADERS)
-            .build();
-
-    soft.assertThatIllegalArgumentException()
-        .isThrownBy(() -> persist.storeObj(obj))
-        .withMessageStartingWith("Obj to store must have a non-null ID, which must not be ");
   }
 
   @Test

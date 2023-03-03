@@ -114,15 +114,6 @@ public class TestContentMapping {
   }
 
   @Test
-  public void fetchContentEmpty() {
-    ContentMapping contentMapping = new ContentMapping(persist);
-
-    soft.assertThatIllegalArgumentException()
-        .isThrownBy(() -> contentMapping.fetchContent(EMPTY_OBJ_ID))
-        .withMessageStartingWith("Empty content");
-  }
-
-  @Test
   public void commitsWithoutAdditionalInfo() throws Exception {
     ContentMapping contentMapping = new ContentMapping(persist);
 

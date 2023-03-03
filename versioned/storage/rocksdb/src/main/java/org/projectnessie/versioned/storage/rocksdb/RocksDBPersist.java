@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.storage.rocksdb;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializeObj;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializeObjId;
@@ -267,11 +266,9 @@ class RocksDBPersist implements Persist {
   }
 
   @Override
+  @Nonnull
+  @jakarta.annotation.Nonnull
   public Obj fetchObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) throws ObjNotFoundException {
-    if (EMPTY_OBJ_ID.equals(id)) {
-      return null;
-    }
-
     try {
       RocksDBBackend b = backend;
       TransactionDB db = b.db();
@@ -289,13 +286,12 @@ class RocksDBPersist implements Persist {
   }
 
   @Override
+  @Nonnull
+  @jakarta.annotation.Nonnull
   public <T extends Obj> T fetchTypedObj(
       @Nonnull @jakarta.annotation.Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
     Obj obj = fetchObj(id);
-    if (obj == null) {
-      return null;
-    }
     if (obj.type() != type) {
       throw new ObjNotFoundException(id);
     }
@@ -305,10 +301,11 @@ class RocksDBPersist implements Persist {
   }
 
   @Override
+  @Nonnull
+  @jakarta.annotation.Nonnull
   public ObjType fetchObjType(@Nonnull @jakarta.annotation.Nonnull ObjId id)
       throws ObjNotFoundException {
-    Obj obj = fetchObj(id);
-    return obj != null ? obj.type() : null;
+    return fetchObj(id).type();
   }
 
   @Override
@@ -326,7 +323,7 @@ class RocksDBPersist implements Persist {
       List<ColumnFamilyHandle> handles = new ArrayList<>(num);
       List<byte[]> keys = new ArrayList<>(num);
       for (ObjId id : ids) {
-        if (id != null && !EMPTY_OBJ_ID.equals(id)) {
+        if (id != null) {
           handles.add(cf);
           keys.add(dbKey(id));
         }
@@ -337,7 +334,7 @@ class RocksDBPersist implements Persist {
         List<byte[]> dbResult = db.multiGetAsList(handles, keys);
         for (int i = 0, ri = 0; i < num; i++) {
           ObjId id = ids[i];
-          if (id != null && !EMPTY_OBJ_ID.equals(id)) {
+          if (id != null) {
             byte[] obj = dbResult.get(ri++);
             if (obj == null) {
               if (notFound == null) {
@@ -364,10 +361,7 @@ class RocksDBPersist implements Persist {
   public boolean storeObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
-    checkArgument(
-        obj.id() != null && !EMPTY_OBJ_ID.equals(obj.id()),
-        "Obj to store must have a non-null ID, which must not be %s",
-        EMPTY_OBJ_ID);
+    checkArgument(obj.id() != null, "Obj to store must have a non-null ID");
 
     Lock l = repo.objLock(obj.id());
     try {
@@ -439,10 +433,7 @@ class RocksDBPersist implements Persist {
   public void updateObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
       throws ObjTooLargeException, ObjNotFoundException {
     ObjId id = obj.id();
-    checkArgument(
-        id != null && !EMPTY_OBJ_ID.equals(id),
-        "Obj to store must have a non-null ID, which must not be %s",
-        EMPTY_OBJ_ID);
+    checkArgument(id != null, "Obj to store must have a non-null ID");
 
     Lock l = repo.objLock(obj.id());
     try {

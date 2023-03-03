@@ -268,11 +268,15 @@ public class TestVersionStoreImpl extends AbstractVersionStoreTests {
     }
 
     @Override
+    @Nonnull
+    @jakarta.annotation.Nonnull
     public Obj fetchObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) throws ObjNotFoundException {
       return delegate.fetchObj(id);
     }
 
     @Override
+    @Nonnull
+    @jakarta.annotation.Nonnull
     public <T extends Obj> T fetchTypedObj(
         @Nonnull @jakarta.annotation.Nonnull ObjId id, ObjType type, Class<T> typeClass)
         throws ObjNotFoundException {
@@ -280,6 +284,8 @@ public class TestVersionStoreImpl extends AbstractVersionStoreTests {
     }
 
     @Override
+    @Nonnull
+    @jakarta.annotation.Nonnull
     public ObjType fetchObjType(@Nonnull @jakarta.annotation.Nonnull ObjId id)
         throws ObjNotFoundException {
       return delegate.fetchObjType(id);

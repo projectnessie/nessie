@@ -15,8 +15,6 @@
  */
 package org.projectnessie.versioned.storage.cache;
 
-import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
-
 import java.util.Set;
 import javax.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
@@ -43,19 +41,26 @@ class CachingPersistImpl implements Persist {
   }
 
   @Override
+  @Nonnull
+  @jakarta.annotation.Nonnull
   public Obj fetchObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) throws ObjNotFoundException {
     Obj o = cache.get(id);
     if (o != null) {
       return o;
     }
-    o = persist.fetchObj(id);
-    if (o != null) {
+    try {
+      o = persist.fetchObj(id);
       cache.put(o);
+      return o;
+    } catch (ObjNotFoundException e) {
+      cache.remove(id);
+      throw e;
     }
-    return o;
   }
 
   @Override
+  @Nonnull
+  @jakarta.annotation.Nonnull
   public <T extends Obj> T fetchTypedObj(
       @Nonnull @jakarta.annotation.Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
@@ -66,9 +71,7 @@ class CachingPersistImpl implements Persist {
       }
     } else {
       o = persist.fetchTypedObj(id, type, typeClass);
-      if (o != null) {
-        cache.put(o);
-      }
+      cache.put(o);
     }
     @SuppressWarnings("unchecked")
     T r = (T) o;
@@ -76,6 +79,8 @@ class CachingPersistImpl implements Persist {
   }
 
   @Override
+  @Nonnull
+  @jakarta.annotation.Nonnull
   public ObjType fetchObjType(@Nonnull @jakarta.annotation.Nonnull ObjId id)
       throws ObjNotFoundException {
     Obj o = cache.get(id);
@@ -97,7 +102,7 @@ class CachingPersistImpl implements Persist {
 
     for (int i = 0; i < ids.length; i++) {
       ObjId id = ids[i];
-      if (id == null || EMPTY_OBJ_ID.equals(id)) {
+      if (id == null) {
         continue;
       }
       Obj o = cache.get(id);

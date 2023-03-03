@@ -34,7 +34,9 @@ import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.commi
 import static org.projectnessie.versioned.storage.common.objtypes.IndexObj.index;
 import static org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj.indexSegments;
 import static org.projectnessie.versioned.storage.common.objtypes.IndexStripe.indexStripe;
+import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.ObjType.COMMIT;
+import static org.projectnessie.versioned.storage.common.persist.ObjType.INDEX;
 import static org.projectnessie.versioned.storage.common.util.SupplyOnce.memoize;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -83,7 +85,11 @@ final class IndexesLogicImpl implements IndexesLogic {
     return memoize(
         () -> {
           try {
-            CommitObj c = persist.fetchTypedObj(commitIdSupplier.get(), COMMIT, CommitObj.class);
+            ObjId commitId = commitIdSupplier.get();
+            CommitObj c =
+                EMPTY_OBJ_ID.equals(commitId)
+                    ? null
+                    : persist.fetchTypedObj(commitId, COMMIT, CommitObj.class);
             return buildCompleteIndexOrEmpty(c);
           } catch (ObjNotFoundException e) {
             throw new RuntimeException(e);
@@ -268,7 +274,7 @@ final class IndexesLogicImpl implements IndexesLogic {
       @Nonnull @jakarta.annotation.Nonnull ObjId indexId) {
     IndexObj index;
     try {
-      index = persist.fetchTypedObj(indexId, ObjType.INDEX, IndexObj.class);
+      index = persist.fetchTypedObj(indexId, INDEX, IndexObj.class);
     } catch (ObjNotFoundException e) {
       throw new IllegalStateException(
           format("Commit %s references a reference index, which does not exist", indexId));
@@ -477,11 +483,21 @@ final class IndexesLogicImpl implements IndexesLogic {
 
     ObjId oldestCommitId = commitsToUpdate.get(commitsToUpdate.size() - 1);
     CommitObj current = persist.fetchTypedObj(oldestCommitId, COMMIT, CommitObj.class);
-    CommitObj parent = persist.fetchTypedObj(current.directParent(), COMMIT, CommitObj.class);
+    CommitObj parent =
+        EMPTY_OBJ_ID.equals(current.directParent())
+            ? null
+            : persist.fetchTypedObj(current.directParent(), COMMIT, CommitObj.class);
 
     for (int i = commitsToUpdate.size() - 1; i >= 0; i--) {
       if (current == null) {
-        current = commitLogic.fetchCommit(commitsToUpdate.get(i));
+        try {
+          current = commitLogic.fetchCommit(commitsToUpdate.get(i));
+        } catch (ObjNotFoundException e) {
+          throw new IllegalStateException(
+              format(
+                  "Commit %s has been seen while walking the commit log, but no longer exists",
+                  commitsToUpdate.get(i)));
+        }
       }
 
       checkState(

@@ -30,7 +30,6 @@ import static org.projectnessie.versioned.storage.common.objtypes.IndexStripe.in
 import static org.projectnessie.versioned.storage.common.objtypes.RefObj.ref;
 import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
 import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
-import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.BATCH_GET_LIMIT;
@@ -356,11 +355,9 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Override
+  @Nonnull
+  @jakarta.annotation.Nonnull
   public Obj fetchObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) throws ObjNotFoundException {
-    if (EMPTY_OBJ_ID.equals(id)) {
-      return null;
-    }
-
     GetItemResponse item =
         backend.client().getItem(b -> b.tableName(TABLE_OBJS).key(objKeyMap(id)));
     if (!item.hasItem()) {
@@ -371,13 +368,11 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Override
+  @Nonnull
+  @jakarta.annotation.Nonnull
   public <T extends Obj> T fetchTypedObj(
       @Nonnull @jakarta.annotation.Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
-    if (EMPTY_OBJ_ID.equals(id)) {
-      return null;
-    }
-
     GetItemResponse item =
         backend.client().getItem(b -> b.tableName(TABLE_OBJS).key(objKeyMap(id)));
     if (!item.hasItem()) {
@@ -395,12 +390,10 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Override
+  @Nonnull
+  @jakarta.annotation.Nonnull
   public ObjType fetchObjType(@Nonnull @jakarta.annotation.Nonnull ObjId id)
       throws ObjNotFoundException {
-    if (EMPTY_OBJ_ID.equals(id)) {
-      return null;
-    }
-
     GetItemResponse item =
         backend
             .client()
@@ -423,7 +416,7 @@ public class DynamoDBPersist implements Persist {
     Obj[] r = new Obj[ids.length];
     for (int i = 0; i < ids.length; i++) {
       ObjId id = ids[i];
-      if (id != null && !EMPTY_OBJ_ID.equals(id)) {
+      if (id != null) {
         keys.add(objKeyMap(id));
         idToIndex.put(id, i);
 
@@ -442,7 +435,7 @@ public class DynamoDBPersist implements Persist {
     List<ObjId> notFound = null;
     for (int i = 0; i < ids.length; i++) {
       ObjId id = ids[i];
-      if (!EMPTY_OBJ_ID.equals(id) && id != null && r[i] == null) {
+      if (id != null && r[i] == null) {
         if (notFound == null) {
           notFound = new ArrayList<>();
         }
@@ -499,10 +492,7 @@ public class DynamoDBPersist implements Persist {
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     ObjId id = obj.id();
-    checkArgument(
-        id != null && !EMPTY_OBJ_ID.equals(id),
-        "Obj to store must have a non-null ID, which must not be %s",
-        EMPTY_OBJ_ID);
+    checkArgument(id != null, "Obj to store must have a non-null ID");
 
     Map<String, AttributeValue> item = objToItem(obj, id, ignoreSoftSizeRestrictions);
 
@@ -543,10 +533,7 @@ public class DynamoDBPersist implements Persist {
   public void updateObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
       throws ObjTooLargeException, ObjNotFoundException {
     ObjId id = obj.id();
-    checkArgument(
-        id != null && !EMPTY_OBJ_ID.equals(id),
-        "Obj to store must have a non-null ID, which must not be %s",
-        EMPTY_OBJ_ID);
+    checkArgument(id != null, "Obj to store must have a non-null ID");
 
     Map<String, AttributeValue> item = objToItem(obj, id, true);
 

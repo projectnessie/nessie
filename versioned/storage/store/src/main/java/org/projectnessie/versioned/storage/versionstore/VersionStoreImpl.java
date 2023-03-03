@@ -356,7 +356,7 @@ public class VersionStoreImpl implements VersionStore {
             if (opts.isComputeAheadBehind()) {
               CommitObj commonAncestor =
                   persist.fetchTypedObj(commonAncestorId, COMMIT, CommitObj.class);
-              long commonAncestorSeq = commonAncestor != null ? commonAncestor.seq() : 0L;
+              long commonAncestorSeq = commonAncestor.seq();
               refInfo.aheadBehind(
                   CommitsAheadBehind.of(
                       (int) (head.seq() - commonAncestorSeq),

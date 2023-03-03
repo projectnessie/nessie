@@ -203,7 +203,6 @@ public class AbstractRepositoryLogicTests {
                         id -> {
                           CommitObj commitObj = persist.fetchTypedObj(id, COMMIT, CommitObj.class);
                           assertThat(commitObj)
-                              .isNotNull()
                               .extracting(CommitObj::commitType)
                               .isSameAs(CommitType.INTERNAL);
                         }));

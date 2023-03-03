@@ -27,7 +27,6 @@ import static org.projectnessie.versioned.storage.common.objtypes.IndexStripe.in
 import static org.projectnessie.versioned.storage.common.objtypes.RefObj.ref;
 import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
 import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
-import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 import static org.projectnessie.versioned.storage.common.util.Closing.closeMultiple;
@@ -342,9 +341,6 @@ abstract class AbstractJdbcPersist implements Persist {
           return ObjType.valueOf(objType);
         }
       }
-      if (EMPTY_OBJ_ID.equals(id)) {
-        return null;
-      }
       throw new ObjNotFoundException(id);
     } catch (SQLException e) {
       throw unhandledSQLException(e);
@@ -373,7 +369,7 @@ abstract class AbstractJdbcPersist implements Persist {
     List<ObjId> keys = new ArrayList<>();
     for (int i = 0; i < ids.length; i++) {
       ObjId id = ids[i];
-      if (id != null && !EMPTY_OBJ_ID.equals(id)) {
+      if (id != null) {
         keys.add(id);
         idToIndex.put(id, i);
       }
@@ -408,7 +404,7 @@ abstract class AbstractJdbcPersist implements Persist {
         List<ObjId> notFound = null;
         for (int i = 0; i < ids.length; i++) {
           ObjId id = ids[i];
-          if (r[i] == null && id != null && !EMPTY_OBJ_ID.equals(id)) {
+          if (r[i] == null && id != null) {
             if (notFound == null) {
               notFound = new ArrayList<>();
             }
@@ -483,10 +479,7 @@ abstract class AbstractJdbcPersist implements Persist {
         int indexSizeLimit =
             ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIndexSegmentSizeLimit();
 
-        checkArgument(
-            id != null && !EMPTY_OBJ_ID.equals(id),
-            "Obj to store must have a non-null ID, which must not be %s",
-            EMPTY_OBJ_ID);
+        checkArgument(id != null, "Obj to store must have a non-null ID");
 
         checkArgument(STORE_OBJ_TYPE.containsKey(type), "Cannot serialize object type %s ", type);
 
@@ -596,10 +589,7 @@ abstract class AbstractJdbcPersist implements Persist {
     ObjId id = obj.id();
     ObjType type = obj.type();
 
-    checkArgument(
-        id != null && !EMPTY_OBJ_ID.equals(id),
-        "Obj to store must have a non-null ID, which must not be %s",
-        EMPTY_OBJ_ID);
+    checkArgument(id != null, "Obj to store must have a non-null ID");
 
     @SuppressWarnings("rawtypes")
     StoreObjDesc storeObj = STORE_OBJ_TYPE.get(type);

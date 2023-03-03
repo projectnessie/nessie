@@ -161,13 +161,13 @@ final class TelemetryPersist implements Persist {
   }
 
   @Override
+  @Nonnull
+  @jakarta.annotation.Nonnull
   public Obj fetchObj(@Nonnull @jakarta.annotation.Nonnull ObjId id) throws ObjNotFoundException {
     try (Traced trace = traced("fetchObj")) {
       try {
         Obj o = persist.fetchObj(id);
-        if (o != null) {
-          trace.attribute("type", o.type().name());
-        }
+        trace.attribute("type", o.type().name());
         return o;
       } catch (ObjNotFoundException e) {
         trace.attribute("error", "not found");
@@ -179,6 +179,8 @@ final class TelemetryPersist implements Persist {
   }
 
   @Override
+  @Nonnull
+  @jakarta.annotation.Nonnull
   public <T extends Obj> T fetchTypedObj(
       @Nonnull @jakarta.annotation.Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
@@ -195,6 +197,8 @@ final class TelemetryPersist implements Persist {
   }
 
   @Override
+  @Nonnull
+  @jakarta.annotation.Nonnull
   public ObjType fetchObjType(@Nonnull @jakarta.annotation.Nonnull ObjId id)
       throws ObjNotFoundException {
     try (Traced trace = traced("fetchObjType")) {

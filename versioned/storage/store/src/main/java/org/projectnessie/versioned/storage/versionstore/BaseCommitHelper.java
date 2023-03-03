@@ -250,7 +250,7 @@ class BaseCommitHelper {
 
   SourceCommitsAndParent loadSourceCommitsPlusParent(List<Hash> commitHashes)
       throws ReferenceNotFoundException {
-    checkArgument(!commitHashes.isEmpty());
+    checkArgument(!commitHashes.isEmpty(), "List with source commits must not be empty");
 
     Obj[] objs;
     try {
