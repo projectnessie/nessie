@@ -63,6 +63,18 @@
       ],
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
     },
+
+    // Run native & docker CI for some dependencies
+    {
+      matchManagers: ["maven", "gradle"],
+      matchPackageNames: [
+        "org.rocksdb:rocksdbjni",
+        "com.google.guava:guava",
+        "io.quarkus:quarkus-bom",
+        "io.quarkus.platform:quarkus-amazon-services-bom",
+      ],
+      "labels": ["pr-native", "pr-docker"]
+    },
   ],
 
   // Max 50 PRs in total, 10 per hour
