@@ -59,7 +59,7 @@ out/
 # gradle
 .gradle/
 build/
-gradle/wrapper/gradle-wrapper.jar
+!gradle-wrapper.jar
 
 # Python
 venv/
