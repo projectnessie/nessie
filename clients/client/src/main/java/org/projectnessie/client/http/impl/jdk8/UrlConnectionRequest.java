@@ -85,7 +85,7 @@ final class UrlConnectionRequest extends BaseHttpRequest {
 
       config.getResponseFilters().forEach(responseFilter -> responseFilter.filter(responseContext));
 
-      return new HttpResponse(responseContext, config.getMapper());
+      return config.responseFactory().make(responseContext, config.getMapper());
     } catch (ProtocolException e) {
       throw new HttpClientException(
           String.format("Cannot perform request against '%s'. Invalid protocol %s", uri, method),

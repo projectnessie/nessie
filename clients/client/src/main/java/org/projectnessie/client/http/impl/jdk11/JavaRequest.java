@@ -129,7 +129,7 @@ final class JavaRequest extends BaseHttpRequest {
       }
 
       response = null;
-      return new org.projectnessie.client.http.HttpResponse(responseContext, config.getMapper());
+      return config.responseFactory().make(responseContext, config.getMapper());
     } finally {
       if (response != null) {
         try {

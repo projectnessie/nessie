@@ -56,6 +56,7 @@ public interface HttpClient {
     private URI baseUri;
     private ObjectMapper mapper;
     private Class<?> jsonView;
+    private HttpResponseFactory responseFactory = HttpResponse::new;
     private SSLContext sslContext;
     private SSLParameters sslParameters;
     private int readTimeoutMillis =
@@ -96,6 +97,10 @@ public interface HttpClient {
     public Builder setJsonView(Class<?> jsonView) {
       this.jsonView = jsonView;
       return this;
+    }
+
+    public void setResponseFactory(HttpResponseFactory responseFactory) {
+      this.responseFactory = responseFactory;
     }
 
     public Builder setSslContext(SSLContext sslContext) {
@@ -171,6 +176,7 @@ public interface HttpClient {
               .baseUri(baseUri)
               .mapper(mapper)
               .jsonView(jsonView)
+              .responseFactory(responseFactory)
               .readTimeoutMillis(readTimeoutMillis)
               .connectionTimeoutMillis(connectionTimeoutMillis)
               .isDisableCompression(disableCompression)

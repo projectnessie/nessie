@@ -280,6 +280,11 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
     return this;
   }
 
+  public HttpClientBuilder withResponseFactory(HttpResponseFactory responseFactory) {
+    builder.setResponseFactory(responseFactory);
+    return this;
+  }
+
   @SuppressWarnings({"unchecked"})
   @Override
   public <API extends NessieApi> API build(Class<API> apiVersion) {
