@@ -119,7 +119,7 @@ public interface TreeService {
       @Valid @jakarta.validation.Valid Reference assignTo)
       throws NessieNotFoundException, NessieConflictException;
 
-  String deleteReference(
+  Reference deleteReference(
       ReferenceType referenceType,
       @Valid
           @jakarta.validation.Valid

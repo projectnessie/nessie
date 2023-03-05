@@ -15,6 +15,8 @@
  */
 package org.projectnessie.model;
 
+import static org.projectnessie.api.v2.params.ReferenceResolver.REF_HASH_SEPARATOR;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -25,7 +27,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
 import org.projectnessie.model.types.ContentTypes;
 
 final class Util {
@@ -35,7 +36,6 @@ final class Util {
   public static final char ZERO_BYTE = '\u0000';
   public static final char DOT = '.';
   public static final char GROUP_SEPARATOR = '\u001D';
-  public static final char REF_HASH_SEPARATOR = '@';
   public static final char URL_PATH_SEPARATOR = '/';
   public static final String DOT_STRING = ".";
   public static final String ZERO_BYTE_STRING = Character.toString(ZERO_BYTE);
@@ -81,42 +81,6 @@ final class Util {
     }
 
     return builder.toString();
-  }
-
-  public static Reference fromPathStringRef(
-      @Nonnull @jakarta.annotation.Nonnull String value,
-      @Nonnull @jakarta.annotation.Nonnull Reference.ReferenceType namedRefType) {
-    String name = null;
-    String hash = null;
-    int hashIdx = value.indexOf(REF_HASH_SEPARATOR);
-
-    if (hashIdx > 0) {
-      name = value.substring(0, hashIdx);
-    }
-
-    if (hashIdx < 0) {
-      name = value;
-    }
-
-    if (hashIdx >= 0) {
-      hash = value.substring(hashIdx + 1);
-      if (hash.isEmpty()) {
-        hash = null;
-      }
-    }
-
-    if (name == null) {
-      return Detached.of(hash);
-    } else {
-      switch (namedRefType) {
-        case TAG:
-          return Tag.of(name, hash);
-        case BRANCH:
-          return Branch.of(name, hash);
-        default:
-          throw new IllegalArgumentException("Unsupported reference type: " + namedRefType);
-      }
-    }
   }
 
   static final class ContentTypeDeserializer extends JsonDeserializer<Content.Type> {
