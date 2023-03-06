@@ -42,6 +42,19 @@ public abstract class NessieClientResolver implements ParameterResolver {
 
   protected abstract URI getBaseUri(ExtensionContext extensionContext);
 
+  private URI resolvedNessieUri(ExtensionContext extensionContext) {
+    NessieClientUriResolver resolver =
+        extensionContext
+            .getTestInstance()
+            .filter(t -> t instanceof NessieClientUriResolver)
+            .map(NessieClientUriResolver.class::cast)
+            .orElse(NessieApiVersion::resolve);
+
+    URI base = getBaseUri(extensionContext);
+    NessieApiVersion apiVersion = apiVersion(extensionContext);
+    return resolver.resolve(apiVersion, base);
+  }
+
   private boolean isNessieUri(ParameterContext parameterContext) {
     return parameterContext.isAnnotated(NessieClientUri.class);
   }
@@ -62,8 +75,7 @@ public abstract class NessieClientResolver implements ParameterResolver {
       ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
     if (isNessieUri(parameterContext)) {
-      NessieApiVersion apiVersion = apiVersion(extensionContext);
-      return apiVersion.resolve(getBaseUri(extensionContext));
+      return resolvedNessieUri(extensionContext);
     }
 
     if (isNessieClient(parameterContext)) {
@@ -75,7 +87,7 @@ public abstract class NessieClientResolver implements ParameterResolver {
 
   private NessieClientFactory clientFactoryForContext(ExtensionContext extensionContext) {
     NessieApiVersion apiVersion = apiVersion(extensionContext);
-    URI uri = apiVersion.resolve(getBaseUri(extensionContext));
+    URI uri = resolvedNessieUri(extensionContext);
     Object testInstance = extensionContext.getTestInstance().orElse(null);
 
     Class<? extends HttpResponseFactory> responseFactoryClass =
@@ -105,15 +117,15 @@ public abstract class NessieClientResolver implements ParameterResolver {
   }
 
   private static class ClientFactory implements NessieClientFactory, Serializable {
-    private final URI baseUri;
+    private final URI resolvedUri;
     private final NessieApiVersion apiVersion;
     private final Class<? extends HttpResponseFactory> responseFactoryClass;
 
     private ClientFactory(
-        URI baseUri,
+        URI nessieUri,
         NessieApiVersion apiVersion,
         Class<? extends HttpResponseFactory> responseFactoryClass) {
-      this.baseUri = baseUri;
+      this.resolvedUri = nessieUri;
       this.apiVersion = apiVersion;
       this.responseFactoryClass = responseFactoryClass;
     }
@@ -127,8 +139,7 @@ public abstract class NessieClientResolver implements ParameterResolver {
     @jakarta.annotation.Nonnull
     @Override
     public NessieApiV1 make(NessieClientCustomizer customizer) {
-      URI uri = apiVersion.resolve(baseUri);
-      HttpClientBuilder clientBuilder = HttpClientBuilder.builder().withUri(uri);
+      HttpClientBuilder clientBuilder = HttpClientBuilder.builder().withUri(resolvedUri);
       if (responseFactoryClass != null) {
         try {
           clientBuilder =
