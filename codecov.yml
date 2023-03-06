@@ -17,9 +17,9 @@
 # https://docs.codecov.com/docs/codecovyml-reference
 codecov:
   notify:
-    after_n_builds: 5
+    after_n_builds: 6
 comment:
-  after_n_builds: 5
+  after_n_builds: 6
 # https://docs.codecov.com/docs/commit-status
 coverage:
   status:
