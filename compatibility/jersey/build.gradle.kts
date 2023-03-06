@@ -85,7 +85,3 @@ dependencies {
 
   implementation("org.jboss.weld.se:weld-se-core")
 }
-
-tasks.withType<Test>().configureEach {
-  systemProperty("rocksdb.version", libs.versions.rocksdb.get())
-}

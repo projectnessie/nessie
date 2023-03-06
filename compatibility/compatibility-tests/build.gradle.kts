@@ -48,7 +48,6 @@ dependencies {
 }
 
 tasks.withType<Test>().configureEach {
-  systemProperty("rocksdb.version", libs.versions.rocksdb.get())
   systemProperty("junit.jupiter.extensions.autodetection.enabled", "true")
 }
 
