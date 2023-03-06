@@ -22,6 +22,7 @@ import javax.annotation.Nullable;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import org.immutables.value.Value;
+import org.projectnessie.client.http.HttpResponseFactory;
 import org.projectnessie.client.http.RequestFilter;
 import org.projectnessie.client.http.ResponseFilter;
 
@@ -50,6 +51,8 @@ public interface HttpRuntimeConfig {
   @Nullable
   @jakarta.annotation.Nullable
   Class<?> getJsonView();
+
+  HttpResponseFactory responseFactory();
 
   int getReadTimeoutMillis();
 
