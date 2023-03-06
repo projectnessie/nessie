@@ -25,7 +25,7 @@ plugins {
   `nessie-conventions`
 }
 
-applyShadowJar()
+apply<NessieShadowJarPlugin>()
 
 dependencies {
   implementation(project(":nessie-client"))

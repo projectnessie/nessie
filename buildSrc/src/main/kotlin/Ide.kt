@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.configure
@@ -28,65 +29,73 @@ import org.jetbrains.gradle.ext.encodings
 import org.jetbrains.gradle.ext.runConfigurations
 import org.jetbrains.gradle.ext.settings
 
-fun Project.nessieIde() {
-  apply<EclipsePlugin>()
+class NessieIdePlugin : Plugin<Project> {
+  override fun apply(project: Project): Unit =
+    project.run {
+      apply<EclipsePlugin>()
 
-  if (this == rootProject) {
-
-    val projectName = rootProject.file("ide-name.txt").readText().trim()
-    val ideName =
-      "$projectName ${rootProject.version.toString().replace(Regex("^([0-9.]+).*"), "$1")}"
-
-    apply<IdeaExtPlugin>()
-    configure<IdeaModel> {
-      module {
-        name = ideName
-        isDownloadSources = true // this is the default BTW
-        inheritOutputDirs = true
+      if (this == rootProject) {
+        applyForRootProject(this)
       }
+    }
 
-      project.settings {
-        copyright {
-          useDefault = "Nessie-ASF"
-          profiles.create("Nessie-ASF") {
-            // strip trailing LF
-            val copyrightText =
-              rootProject.file("codestyle/copyright-header.txt").readLines().joinToString("\n")
-            notice = copyrightText
+  private fun applyForRootProject(project: Project): Unit =
+    project.run {
+      val projectName = rootProject.file("ide-name.txt").readText().trim()
+      val ideName =
+        "$projectName ${rootProject.version.toString().replace(Regex("^([0-9.]+).*"), "$1")}"
+
+      apply<IdeaExtPlugin>()
+      configure<IdeaModel> {
+        module {
+          name = ideName
+          isDownloadSources = true // this is the default BTW
+          inheritOutputDirs = true
+        }
+
+        this.project.settings {
+          copyright {
+            useDefault = "Nessie-ASF"
+            profiles.create("Nessie-ASF") {
+              // strip trailing LF
+              val copyrightText =
+                rootProject.file("codestyle/copyright-header.txt").readLines().joinToString("\n")
+              notice = copyrightText
+            }
           }
+
+          encodings.encoding = "UTF-8"
+          encodings.properties.encoding = "UTF-8"
+
+          runConfigurations.register("Gradle", org.jetbrains.gradle.ext.Gradle::class.java) {
+            defaults = true
+
+            jvmArgs =
+              rootProject.projectDir
+                .resolve("gradle.properties")
+                .reader()
+                .use {
+                  val rules = java.util.Properties()
+                  rules.load(it)
+                  rules
+                }
+                .map { e -> "-D${e.key}=${e.value}" }
+                .joinToString(" ")
+          }
+
+          delegateActions.testRunner = ActionDelegationConfig.TestRunner.CHOOSE_PER_TEST
         }
-
-        encodings.encoding = "UTF-8"
-        encodings.properties.encoding = "UTF-8"
-
-        runConfigurations.register("Gradle", org.jetbrains.gradle.ext.Gradle::class.java) {
-          defaults = true
-
-          jvmArgs =
-            rootProject.projectDir
-              .resolve("gradle.properties")
-              .reader()
-              .use {
-                val rules = java.util.Properties()
-                rules.load(it)
-                rules
-              }
-              .map { e -> "-D${e.key}=${e.value}" }
-              .joinToString(" ")
-        }
-
-        delegateActions.testRunner = ActionDelegationConfig.TestRunner.CHOOSE_PER_TEST
       }
+
+      // There's no proper way to set the name of the IDEA project (when "just importing" or
+      // syncing
+      // the Gradle project)
+      val ideaDir = projectDir.resolve(".idea")
+
+      if (ideaDir.isDirectory) {
+        ideaDir.resolve(".name").writeText(ideName)
+      }
+
+      configure<EclipseModel> { project { name = ideName } }
     }
-
-    // There's no proper way to set the name of the IDEA project (when "just importing" or syncing
-    // the Gradle project)
-    val ideaDir = projectDir.resolve(".idea")
-
-    if (ideaDir.isDirectory) {
-      ideaDir.resolve(".name").writeText(ideName)
-    }
-
-    configure<EclipseModel> { project { name = ideName } }
-  }
 }

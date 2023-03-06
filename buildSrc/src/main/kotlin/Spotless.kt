@@ -16,16 +16,20 @@
 
 import com.diffplug.gradle.spotless.SpotlessExtension
 import com.diffplug.gradle.spotless.SpotlessPlugin
+import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.configure
-import org.gradle.kotlin.dsl.withType
 
-fun Project.nessieConfigureSpotless() {
+class NessieSpotlessPlugin : Plugin<Project> {
+  override fun apply(project: Project): Unit =
+    project.run {
+      apply<SpotlessPlugin>()
 
-  apply<SpotlessPlugin>()
-  if (!java.lang.Boolean.getBoolean("idea.sync.active")) {
-    plugins.withType<SpotlessPlugin>().configureEach {
+      if (System.getProperty("idea.sync.active").toBoolean()) {
+        return
+      }
+
       configure<SpotlessExtension> {
         format("xml") {
           target("src/**/*.xml", "src/**/*.xsd")
@@ -96,5 +100,4 @@ fun Project.nessieConfigureSpotless() {
         }
       }
     }
-  }
 }

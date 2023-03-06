@@ -87,7 +87,7 @@ jobs:
     - name: Gradle / compile
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: jar testClasses --scan
+        arguments: assemble --scan
 
     - name: Gradle / unit test
       uses: gradle/gradle-build-action@v2
@@ -99,7 +99,7 @@ jobs:
     - name: Gradle / check incl. integ-test
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: check -x :nessie-ui:test -x spotlessCheck -x checkstyleMain -x checkstyleTest --scan
+        arguments: check --scan
 
     - name: Capture Test Reports
       uses: actions/upload-artifact@v3

@@ -23,7 +23,7 @@ plugins {
   `nessie-conventions`
 }
 
-applyShadowJar()
+apply<NessieShadowJarPlugin>()
 
 extra["maven.name"] = "Nessie - Antlr Runtime"
 

@@ -25,7 +25,7 @@ plugins {
   `nessie-conventions`
 }
 
-applyShadowJar()
+apply<NessieShadowJarPlugin>()
 
 extra["maven.name"] = "Nessie - GC - Standalone command line tool"
 

@@ -25,7 +25,7 @@ plugins {
   `nessie-conventions`
 }
 
-applyShadowJar()
+apply<NessieShadowJarPlugin>()
 
 val sparkScala = useSparkScalaVersionsForProject("3.2")
 

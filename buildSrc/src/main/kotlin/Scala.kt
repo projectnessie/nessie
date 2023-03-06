@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.scala.ScalaPlugin
 import org.gradle.api.publish.PublishingExtension
@@ -28,38 +29,41 @@ import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.gradle.language.scala.tasks.KeepAliveMode
 
-fun Project.nessieConfigureScala() {
-  plugins.withType<ScalaPlugin>().configureEach {
-    tasks.withType<ScalaCompile>().configureEach {
-      scalaCompileOptions.keepAliveMode.set(KeepAliveMode.DAEMON)
-      scalaCompileOptions.encoding = "UTF-8"
-    }
+class NessieScalaPlugin : Plugin<Project> {
+  override fun apply(project: Project): Unit =
+    project.run {
+      plugins.withType<ScalaPlugin>().configureEach {
+        tasks.withType<ScalaCompile>().configureEach {
+          scalaCompileOptions.keepAliveMode.set(KeepAliveMode.DAEMON)
+          scalaCompileOptions.encoding = "UTF-8"
+        }
 
-    val scaladoc = tasks.named<ScalaDoc>("scaladoc")
+        val scaladoc = tasks.named<ScalaDoc>("scaladoc")
 
-    if (extensions.findByName("jandex") != null) {
-      scaladoc.configure { dependsOn(tasks.named("processJandexIndex")) }
-    }
+        if (extensions.findByName("jandex") != null) {
+          scaladoc.configure { dependsOn(tasks.named("processJandexIndex")) }
+        }
 
-    val scaladocJar =
-      tasks.register<Jar>("scaladocJar") {
-        dependsOn(scaladoc)
-        val baseJar = tasks.getByName<Jar>("jar")
-        from(scaladoc.get().destinationDir)
-        destinationDirectory.set(baseJar.destinationDirectory)
-        archiveClassifier.set("scaladoc")
-      }
+        val scaladocJar =
+          tasks.register<Jar>("scaladocJar") {
+            dependsOn(scaladoc)
+            val baseJar = tasks.getByName<Jar>("jar")
+            from(scaladoc.get().destinationDir)
+            destinationDirectory.set(baseJar.destinationDirectory)
+            archiveClassifier.set("scaladoc")
+          }
 
-    tasks.named("assemble") { dependsOn(scaladocJar) }
+        tasks.named("assemble") { dependsOn(scaladocJar) }
 
-    configure<PublishingExtension> {
-      publications {
-        withType(MavenPublication::class.java) {
-          if (name == "maven") {
-            artifact(scaladocJar)
+        configure<PublishingExtension> {
+          publications {
+            withType(MavenPublication::class.java) {
+              if (name == "maven") {
+                artifact(scaladocJar)
+              }
+            }
           }
         }
       }
     }
-  }
 }

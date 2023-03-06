@@ -255,3 +255,8 @@ class PublishingHelperPlugin : Plugin<Project> {
     return null
   }
 }
+
+open class PublishingHelperExtension(project: Project) {
+  val nessieRepoName = project.objects.property(String::class.java)
+  val inceptionYear = project.objects.property(String::class.java)
+}

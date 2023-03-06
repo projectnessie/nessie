@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import java.nio.file.Path
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.options.Option
@@ -29,14 +29,16 @@ import org.gradle.work.DisableCachingByDefault
 class ReleaseSupportPlugin : Plugin<Project> {
   override fun apply(project: Project) {
 
+    project.extensions.create("releaseSupport", ReleaseSupport::class.java)
+
     project.tasks.register("showVersion") {
       group = "Release Support"
       description = "Show current version"
 
       doFirst {
-        logger.lifecycle(
-          "Current version is ${VersionTuple.fromFile(versionTxtFile(this.project))}."
-        )
+        val versionTxtFile =
+          project.extensions.getByType(ReleaseSupport::class.java).versionFile.get().asFile
+        logger.lifecycle("Current version is ${VersionTuple.fromFile(versionTxtFile.toPath())}.")
       }
     }
 
@@ -47,9 +49,11 @@ class ReleaseSupportPlugin : Plugin<Project> {
     }
   }
 
-  companion object {
-    private fun versionTxtFile(project: Project): Path =
-      project.rootDir.toPath().resolve("./version.txt")
+  open class ReleaseSupport(project: Project) {
+    val versionFile: RegularFileProperty =
+      project.objects
+        .fileProperty()
+        .fileProvider(project.provider { project.rootDir.resolve("./version.txt") })
   }
 
   @DisableCachingByDefault(because = "Version bumps cannot be cached")
@@ -70,7 +74,8 @@ class ReleaseSupportPlugin : Plugin<Project> {
 
     @TaskAction
     fun bumpVersion() {
-      val versionFile = versionTxtFile(project)
+      val versionFile =
+        project.extensions.getByType(ReleaseSupport::class.java).versionFile.get().asFile.toPath()
       val currentVersion = VersionTuple.fromFile(versionFile)
 
       logger.lifecycle("Current version is $currentVersion.")

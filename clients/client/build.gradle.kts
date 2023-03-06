@@ -49,14 +49,13 @@ dependencies {
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
 
-  testImplementation(libs.guava)
-  testImplementation(libs.bouncycastle.bcprov)
-  testImplementation(libs.bouncycastle.bcpkix)
-  testImplementation(libs.mockito.core)
+  testFixturesApi(libs.guava)
+  testFixturesApi(libs.bouncycastle.bcprov)
+  testFixturesApi(libs.bouncycastle.bcpkix)
+  testFixturesApi(libs.mockito.core)
 
-  testImplementation(platform(libs.junit.bom))
-  testImplementation(libs.bundles.junit.testing)
-  testRuntimeOnly(libs.junit.jupiter.engine)
+  testFixturesApi(platform(libs.junit.bom))
+  testFixturesApi(libs.bundles.junit.testing)
 
   compileOnly(platform(libs.opentelemetry.bom))
   compileOnly(libs.opentelemetry.api)
@@ -66,110 +65,102 @@ dependencies {
   compileOnly(libs.awssdk.auth)
 
   // javax/jakarta
-  testCompileOnly(libs.jakarta.annotation.api)
+  testFixturesApi(libs.jakarta.annotation.api)
 
-  testImplementation(platform(libs.opentelemetry.bom))
-  testImplementation(libs.opentelemetry.api)
-  testImplementation(libs.opentelemetry.sdk)
-  testImplementation(libs.opentelemetry.semconv)
-  testImplementation(libs.opentelemetry.exporter.otlp)
-  testImplementation(platform(libs.awssdk.bom))
-  testImplementation(libs.awssdk.auth)
-  testImplementation(libs.undertow.core)
-  testImplementation(libs.undertow.servlet)
-  testRuntimeOnly(libs.logback.classic)
+  testFixturesApi(platform(libs.opentelemetry.bom))
+  testFixturesApi(libs.opentelemetry.api)
+  testFixturesApi(libs.opentelemetry.sdk)
+  testFixturesApi(libs.opentelemetry.semconv)
+  testFixturesApi(libs.opentelemetry.exporter.otlp)
+  testFixturesApi(platform(libs.awssdk.bom))
+  testFixturesApi(libs.awssdk.auth)
+  testFixturesApi(libs.undertow.core)
+  testFixturesApi(libs.undertow.servlet)
+  testFixturesImplementation(libs.logback.classic)
 }
 
 jandex { skipDefaultProcessing() }
 
 val jacksonTestVersions =
-  mapOf(
-    "2.10.0" to "Spark 3.1.2+3.1.3",
-    "2.11.4" to "Spark 3.?.? (reason unknown)",
-    "2.12.3" to "Spark 3.2.1+3.2.2",
-    "2.13.3" to "Spark 3.3.0"
+  setOf(
+    "2.10.0", // Spark 3.1.2+3.1.3
+    "2.11.4", // Spark 3.?.? (reason unknown)
+    "2.12.3", // Spark 3.2.1+3.2.2
+    "2.13.3" // Spark 3.3.0
   )
 
-val testJava8 by
-  tasks.registering(Test::class) {
-    description = "Runs tests using URLConnection client using Java 8."
-    group = "verification"
+@Suppress("UnstableApiUsage")
+fun JvmComponentDependencies.forJacksonVersion(jacksonVersion: String) {
+  implementation(project())
 
-    dependsOn("testClasses")
+  implementation("com.fasterxml.jackson.core:jackson-core:$jacksonVersion")
+  implementation("com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion")
+  implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
+}
 
-    val test = tasks.named<Test>("test").get()
+@Suppress("UnstableApiUsage")
+fun JvmTestSuite.commonCompatSuite() {
+  useJUnitJupiter()
 
-    testClassesDirs = test.testClassesDirs
-    classpath = test.classpath
+  sources { java.srcDirs(sourceSets.getByName("test").java.srcDirs) }
 
-    val javaToolchains = project.extensions.findByType(JavaToolchainService::class.java)
-    javaLauncher.set(
-      javaToolchains!!.launcherFor { languageVersion.set(JavaLanguageVersion.of(8)) }
-    )
+  targets { all { tasks.named("check") { dependsOn(testTask) } } }
+}
+
+@Suppress("UnstableApiUsage")
+fun JvmTestSuite.useJava8() {
+  targets {
+    all {
+      testTask.configure {
+        val javaToolchains = project.extensions.findByType(JavaToolchainService::class.java)
+        javaLauncher.set(
+          javaToolchains!!.launcherFor { languageVersion.set(JavaLanguageVersion.of(8)) }
+        )
+      }
+    }
   }
+}
 
-val jacksonTests by
-  tasks.registering {
-    description = "Runs tests against Jackson versions ${jacksonTestVersions.keys}."
-    group = "verification"
+@Suppress("UnstableApiUsage")
+testing {
+  suites {
+    register("testJava8", JvmTestSuite::class.java) {
+      commonCompatSuite()
+
+      dependencies { forJacksonVersion(libs.jackson.bom.get().version!!) }
+
+      useJava8()
+    }
+
+    configurations.named("testJava8Implementation") {
+      extendsFrom(configurations.getByName("testImplementation"))
+    }
+
+    jacksonTestVersions.forEach { jacksonVersion ->
+      val safeName = jacksonVersion.replace("[.]".toRegex(), "_")
+      register("testJackson_$safeName", JvmTestSuite::class.java) {
+        commonCompatSuite()
+
+        dependencies { forJacksonVersion(jacksonVersion) }
+      }
+
+      configurations.named("testJackson_${safeName}Implementation") {
+        extendsFrom(configurations.getByName("testImplementation"))
+      }
+
+      register("testJackson_${safeName}_java8", JvmTestSuite::class.java) {
+        commonCompatSuite()
+
+        dependencies { forJacksonVersion(jacksonVersion) }
+
+        useJava8()
+
+        configurations.named("testJackson_${safeName}_java8Implementation") {
+          extendsFrom(configurations.getByName("testImplementation"))
+        }
+      }
+    }
   }
-
-tasks.named("check") { dependsOn(jacksonTests, testJava8) }
-
-jacksonTestVersions.forEach { (jacksonVersion, reason) ->
-  val safeName = jacksonVersion.replace("[.]".toRegex(), "_")
-
-  val runtimeConfigName = "testRuntimeClasspath_$safeName"
-  val runtimeConfig =
-    configurations.register(runtimeConfigName) {
-      extendsFrom(configurations.runtimeClasspath.get())
-      extendsFrom(configurations.testRuntimeClasspath.get())
-    }
-
-  dependencies.add(runtimeConfigName, "com.fasterxml.jackson.core:jackson-core:$jacksonVersion!!")
-  dependencies.add(
-    runtimeConfigName,
-    "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion!!"
-  )
-  dependencies.add(
-    runtimeConfigName,
-    "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion!!"
-  )
-
-  val taskName = "testJackson_$safeName"
-  val testTask =
-    tasks.register<Test>(taskName) {
-      description = "Runs tests using Jackson $jacksonVersion for $reason."
-      group = "verification"
-
-      dependsOn("testClasses")
-
-      val test = tasks.named<Test>("test").get()
-
-      testClassesDirs = test.testClassesDirs
-      classpath = runtimeConfig.get().plus(test.classpath)
-    }
-
-  val taskName8 = "testJackson_${safeName}_java8"
-  val testTask8 =
-    tasks.register<Test>(taskName8) {
-      description = "Runs tests using Jackson $jacksonVersion for $reason using Java 8."
-      group = "verification"
-
-      dependsOn("testClasses")
-
-      val test = tasks.named<Test>("test").get()
-
-      testClassesDirs = test.testClassesDirs
-      classpath = runtimeConfig.get().plus(test.classpath)
-
-      val javaToolchains = project.extensions.findByType(JavaToolchainService::class.java)
-      javaLauncher.set(
-        javaToolchains!!.launcherFor { languageVersion.set(JavaLanguageVersion.of(8)) }
-      )
-    }
-
-  jacksonTests { dependsOn(testTask, testTask8) }
 }
 
 annotationStripper {

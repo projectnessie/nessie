@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import com.github.jengelman.gradle.plugins.shadow.ShadowPlugin
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import com.github.vlsi.jandex.JandexProcessResources
 import java.io.File
 import java.io.FileInputStream
@@ -29,7 +27,6 @@ import org.gradle.api.artifacts.ModuleDependency
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.SourceSetContainer
-import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaToolchainService
@@ -193,24 +190,6 @@ fun Project.quarkusPackageType(): String =
 
 fun Project.quarkusNonNativePackageType(): String =
   if (quarkusFatJar() || hasProperty("native")) "uber-jar" else "fast-jar"
-
-fun Project.applyShadowJar() {
-  plugins.apply(ShadowPlugin::class.java)
-
-  plugins.withType<ShadowPlugin>().configureEach {
-    val shadowJar =
-      tasks.named<ShadowJar>("shadowJar") {
-        outputs.cacheIf { false } // do not cache uber/shaded jars
-        archiveClassifier.set("")
-        mergeServiceFiles()
-      }
-
-    tasks.named<Jar>("jar") {
-      dependsOn(shadowJar)
-      archiveClassifier.set("raw")
-    }
-  }
-}
 
 /** Just load [Properties] from a [File]. */
 fun loadProperties(file: File): Properties {
