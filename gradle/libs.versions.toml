@@ -23,8 +23,9 @@ maven = "3.8.7"
 mavenResolver = "1.7.3"
 micrometer = "1.10.4"
 nessieClientVersion = "0.44.0"
+# keep both opentelemetry versions below in sync
 opentelemetry = "1.23.1"
-opentelemetryAlpha = "1.20.1-alpha"
+opentelemetryAlpha = "1.23.1-alpha"
 opentracing = "0.33.0"
 parquet = "1.12.3"
 picocli = "4.7.1"
@@ -177,7 +178,8 @@ opentelemetry-api = { module = "io.opentelemetry:opentelemetry-api" }
 opentelemetry-bom = { module = "io.opentelemetry:opentelemetry-bom", version.ref = "opentelemetry" }
 opentelemetry-exporter-otlp = { module = "io.opentelemetry:opentelemetry-exporter-otlp" }
 opentelemetry-sdk = { module = "io.opentelemetry:opentelemetry-sdk" }
-opentelemetry-semconv = { module = "io.opentelemetry:opentelemetry-semconv", version.ref = "opentelemetryAlpha" }
+opentelemetry-alpha-bom = { module = "io.opentelemetry:opentelemetry-bom-alpha", version.ref = "opentelemetryAlpha" }
+opentelemetry-semconv = { module = "io.opentelemetry:opentelemetry-semconv" }
 opentracing-api = { module = "io.opentracing:opentracing-api", version.ref = "opentracing" }
 opentracing-mock = { module = "io.opentracing:opentracing-mock", version.ref = "opentracing" }
 opentracing-util = { module = "io.opentracing:opentracing-util", version.ref = "opentracing" }

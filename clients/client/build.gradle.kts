@@ -60,6 +60,7 @@ dependencies {
 
   compileOnly(platform(libs.opentelemetry.bom))
   compileOnly(libs.opentelemetry.api)
+  compileOnly(platform(libs.opentelemetry.alpha.bom))
   compileOnly(libs.opentelemetry.semconv)
 
   compileOnly(platform(libs.awssdk.bom))
@@ -71,8 +72,9 @@ dependencies {
   testImplementation(platform(libs.opentelemetry.bom))
   testImplementation(libs.opentelemetry.api)
   testImplementation(libs.opentelemetry.sdk)
-  testImplementation(libs.opentelemetry.semconv)
   testImplementation(libs.opentelemetry.exporter.otlp)
+  testImplementation(platform(libs.opentelemetry.alpha.bom))
+  testImplementation(libs.opentelemetry.semconv)
   testImplementation(platform(libs.awssdk.bom))
   testImplementation(libs.awssdk.auth)
   testImplementation(libs.undertow.core)
