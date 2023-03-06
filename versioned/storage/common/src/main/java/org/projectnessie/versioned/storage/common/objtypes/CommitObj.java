@@ -20,7 +20,6 @@ import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.protobuf.ByteString;
 import java.util.List;
-import java.util.function.BiFunction;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
@@ -61,7 +60,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
  *       CommitOp.Action#ADD} and {@link CommitOp.Action#REMOVE} must be updated to {@link
  *       CommitOp.Action#INCREMENTAL_ADD} and {@link CommitOp.Action#INCREMENTAL_REMOVE}. This can
  *       be done by using the {@code updater} function of {@link
- *       StoreIndexes#deserializeStoreIndex(ByteString, ElementSerializer, BiFunction)}
+ *       StoreIndexes#deserializeStoreIndex(ByteString, ElementSerializer)}
  *   <li>Key modifications in a {@link #referenceIndex() full index} do not need an action and use
  *       {@link CommitOp.Action#NONE} as a placeholder.
  *   <li>When key updates from an {@link #incrementalIndex() incremental index} are offloaded into

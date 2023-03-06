@@ -61,22 +61,22 @@ public class TestStoreIndexImpl {
     segment.add(indexElement(key("foo"), EMPTY_OBJ_ID));
     soft.assertThat(segment.isModified()).isTrue();
 
-    segment = deserializeStoreIndex(segment.serialize(), OBJ_ID_SERIALIZER, (k, v) -> v);
+    segment = deserializeStoreIndex(segment.serialize(), OBJ_ID_SERIALIZER);
     soft.assertThat(segment.isModified()).isFalse();
     segment.add(indexElement(key("foo"), randomObjId()));
     soft.assertThat(segment.isModified()).isTrue();
 
-    segment = deserializeStoreIndex(segment.serialize(), OBJ_ID_SERIALIZER, (k, v) -> v);
+    segment = deserializeStoreIndex(segment.serialize(), OBJ_ID_SERIALIZER);
     soft.assertThat(segment.isModified()).isFalse();
     segment.updateAll(el -> randomObjId());
     soft.assertThat(segment.isModified()).isTrue();
 
-    segment = deserializeStoreIndex(segment.serialize(), OBJ_ID_SERIALIZER, (k, v) -> v);
+    segment = deserializeStoreIndex(segment.serialize(), OBJ_ID_SERIALIZER);
     soft.assertThat(segment.isModified()).isFalse();
     segment.remove(key("foo"));
     soft.assertThat(segment.isModified()).isTrue();
 
-    segment = deserializeStoreIndex(segment.serialize(), OBJ_ID_SERIALIZER, (k, v) -> v);
+    segment = deserializeStoreIndex(segment.serialize(), OBJ_ID_SERIALIZER);
     soft.assertThat(segment.isModified()).isFalse();
     segment.updateAll(el -> randomObjId());
     // Index is empty, nothing updated
@@ -115,7 +115,7 @@ public class TestStoreIndexImpl {
             + id2;
     String serializedC =
         "63007800410000"
-            + "20" // 4 bytes hash
+            + "20" // 32 bytes hash
             + id3;
     String serializedD =
         "64007800410000"
@@ -143,11 +143,11 @@ public class TestStoreIndexImpl {
             + id1;
     String serializedExCmodified =
         "430000"
-            + "20" // 4 bytes hash
+            + "20" // 32 bytes hash
             + id2;
 
     Function<StoreIndex<ObjId>, StoreIndex<ObjId>> reSerialize =
-        seg -> deserializeStoreIndex(seg.serialize(), OBJ_ID_SERIALIZER, (k, v) -> v);
+        seg -> deserializeStoreIndex(seg.serialize(), OBJ_ID_SERIALIZER);
 
     soft.assertThat(asHex(segment.serialize())).isEqualTo("01");
     soft.assertThat(reSerialize.apply(segment)).isEqualTo(segment);
@@ -434,28 +434,6 @@ public class TestStoreIndexImpl {
     indexTestSet.keyIndex().updateAll(el -> null);
 
     soft.assertThat(indexTestSet.keyIndex()).isEmpty();
-  }
-
-  @Test
-  public void updateAllKeepNone() {
-    KeyIndexTestSet<CommitOp> indexTestSet = basicIndexTestSet();
-
-    soft.assertThat(indexTestSet.keyIndex())
-        .isNotEmpty()
-        .allMatch(el -> el.content().action() == ADD);
-
-    StoreIndex<CommitOp> index =
-        deserializeStoreIndex(
-            indexTestSet.serialized(),
-            COMMIT_OP_SERIALIZER,
-            (key, el) -> commitOp(NONE, el.payload(), el.value()));
-
-    soft.assertThat(index).isNotEmpty().allMatch(el -> el.content().action() == NONE);
-
-    index =
-        deserializeStoreIndex(indexTestSet.serialized(), COMMIT_OP_SERIALIZER, (key, el) -> null);
-
-    soft.assertThat(index).isEmpty();
   }
 
   @Test

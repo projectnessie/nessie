@@ -217,8 +217,7 @@ public interface KeyIndexTestSet<ELEMENT> {
       ByteString serialized = index.serialize();
 
       // Re-serialize to have "clean" internal values in KeyIndexImpl
-      StoreIndex<ELEMENT> keyIndex =
-          deserializeStoreIndex(serialized, elementSerializer(), (k, v) -> v);
+      StoreIndex<ELEMENT> keyIndex = deserializeStoreIndex(serialized, elementSerializer());
 
       return ImmutableKeyIndexTestSet.<ELEMENT>builder()
           .keys(keys)
@@ -243,7 +242,7 @@ public interface KeyIndexTestSet<ELEMENT> {
   }
 
   default StoreIndex<CommitOp> deserialize() {
-    return deserializeStoreIndex(serialized(), COMMIT_OP_SERIALIZER, (k, v) -> v);
+    return deserializeStoreIndex(serialized(), COMMIT_OP_SERIALIZER);
   }
 
   default StoreIndexElement<ELEMENT> randomGetKey() {

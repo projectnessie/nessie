@@ -267,7 +267,7 @@ final class IndexesLogicImpl implements IndexesLogic {
   }
 
   static StoreIndex<CommitOp> deserializeIndex(ByteString serialized) {
-    return deserializeStoreIndex(serialized, COMMIT_OP_SERIALIZER, (k, c) -> c);
+    return deserializeStoreIndex(serialized, COMMIT_OP_SERIALIZER);
   }
 
   private StoreIndex<CommitOp> loadIndexSegment(

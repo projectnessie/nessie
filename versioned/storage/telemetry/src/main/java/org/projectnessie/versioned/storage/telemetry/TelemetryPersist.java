@@ -50,9 +50,7 @@ final class TelemetryPersist implements Persist {
   Traced traced(String spanName) {
     String repo = persist.config().repositoryId();
     Traced traced = tracerSupplier.apply(spanName);
-    return repo != null && !repo.isEmpty()
-        ? traced.attribute("repo", persist.config().repositoryId())
-        : traced;
+    return repo != null && !repo.isEmpty() ? traced.attribute("repo", repo) : traced;
   }
 
   @Override
@@ -134,7 +132,7 @@ final class TelemetryPersist implements Persist {
 
   @Override
   public Reference fetchReference(@Nonnull @jakarta.annotation.Nonnull String name) {
-    try (Traced trace = traced("findReference")) {
+    try (Traced trace = traced("fetchReference")) {
       try {
         Reference result = persist.fetchReference(name);
         trace.attribute("found", result != null);
@@ -149,7 +147,7 @@ final class TelemetryPersist implements Persist {
   @Nonnull
   @jakarta.annotation.Nonnull
   public Reference[] fetchReferences(@Nonnull @jakarta.annotation.Nonnull String[] names) {
-    try (Traced trace = traced("findReferences").attribute("names.length", names.length)) {
+    try (Traced trace = traced("fetchReferences").attribute("names.length", names.length)) {
       try {
         Reference[] result = persist.fetchReferences(names);
         trace.attribute("result.length", stream(result).filter(Objects::nonNull).count());
@@ -268,7 +266,7 @@ final class TelemetryPersist implements Persist {
             successes++;
           }
         }
-        trace.attribute("result.nonNull", successes);
+        trace.attribute("created.count", successes);
         return result;
       } catch (ObjTooLargeException e) {
         trace.attribute("error", "too large");
@@ -330,35 +328,11 @@ final class TelemetryPersist implements Persist {
   @jakarta.annotation.Nonnull
   public CloseableIterator<Obj> scanAllObjects(
       @Nonnull @jakarta.annotation.Nonnull Set<ObjType> returnedObjTypes) {
-    Traced trace = traced("scanAllObjects");
-    boolean ok = false;
-    try {
-      @SuppressWarnings("resource")
-      CloseableIterator<Obj> iter = persist.scanAllObjects(returnedObjTypes);
-      ok = true;
-      return new CloseableIterator<Obj>() {
-        @Override
-        public void close() {
-          try {
-            iter.close();
-          } finally {
-            trace.close();
-          }
-        }
-
-        @Override
-        public boolean hasNext() {
-          return iter.hasNext();
-        }
-
-        @Override
-        public Obj next() {
-          return iter.next();
-        }
-      };
-    } finally {
-      if (!ok) {
-        trace.close();
+    try (Traced trace = traced("scanAllObjects")) {
+      try {
+        return persist.scanAllObjects(returnedObjTypes);
+      } catch (RuntimeException e) {
+        throw trace.unhandledError(e);
       }
     }
   }

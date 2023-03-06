@@ -20,7 +20,6 @@ import static org.projectnessie.versioned.storage.common.indexes.IndexLoader.not
 
 import com.google.protobuf.ByteString;
 import java.util.List;
-import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
@@ -38,8 +37,8 @@ public final class StoreIndexes {
   }
 
   public static <V> StoreIndex<V> deserializeStoreIndex(
-      ByteString serialized, ElementSerializer<V> ser, BiFunction<StoreKey, V, V> updater) {
-    return StoreIndexImpl.deserializeStoreIndex(serialized.asReadOnlyByteBuffer(), ser, updater);
+      ByteString serialized, ElementSerializer<V> ser) {
+    return StoreIndexImpl.deserializeStoreIndex(serialized.asReadOnlyByteBuffer(), ser);
   }
 
   /**

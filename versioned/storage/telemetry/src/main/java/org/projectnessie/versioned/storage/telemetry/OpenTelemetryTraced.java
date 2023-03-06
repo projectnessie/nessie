@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.storage.telemetry;
 
+import static io.opentelemetry.api.trace.StatusCode.ERROR;
 import static org.projectnessie.versioned.storage.telemetry.Traced.tagName;
 
 import io.opentelemetry.api.trace.Span;
@@ -68,5 +69,11 @@ final class OpenTelemetryTraced implements Traced {
   public Traced attribute(String tag, long value) {
     span.setAttribute(tagName(tag), value);
     return this;
+  }
+
+  @Override
+  public RuntimeException unhandledError(RuntimeException e) {
+    span.setStatus(ERROR).recordException(e);
+    return e;
   }
 }

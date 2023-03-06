@@ -124,7 +124,7 @@ public class PersistProvider {
     if (versionStoreConfig.isTracingEnabled()) {
       if (opentelemetryTracer.isUnsatisfied()) {
         LOGGER.warn(
-            "OpenTelemetry is enabled, but not available, forgot to add quarkus-opentelemetry? Will fall back to OpenTracing, if enabled.");
+            "OpenTelemetry is enabled, but not available, forgot to add quarkus-opentelemetry?");
       } else {
         Tracer t = opentelemetryTracer.get();
         TelemetryPersistFactory pf = TelemetryPersistFactory.forTracer(t);

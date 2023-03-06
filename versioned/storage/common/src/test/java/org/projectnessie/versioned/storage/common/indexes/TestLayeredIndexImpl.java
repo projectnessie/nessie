@@ -59,7 +59,7 @@ public class TestLayeredIndexImpl {
     soft.assertThat(updates.isModified()).isTrue();
     soft.assertThat(layered.isModified()).isTrue();
 
-    updates = deserializeStoreIndex(updates.serialize(), COMMIT_OP_SERIALIZER, (k, v) -> v);
+    updates = deserializeStoreIndex(updates.serialize(), COMMIT_OP_SERIALIZER);
     layered = layeredIndex(reference, updates);
     soft.assertThat(updates.isModified()).isFalse();
     soft.assertThat(layered.isModified()).isFalse();

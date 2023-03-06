@@ -64,7 +64,7 @@ public class TestStripedIndexImpl {
     Supplier<List<StoreIndex<CommitOp>>> stripesSupplier =
         () ->
             originalStripesList.stream()
-                .map(s -> deserializeStoreIndex(s.serialize(), COMMIT_OP_SERIALIZER, (k, v) -> v))
+                .map(s -> deserializeStoreIndex(s.serialize(), COMMIT_OP_SERIALIZER))
                 .collect(Collectors.toList());
     List<StoreKey> firstLastKeys =
         stripesSupplier.get().stream()
@@ -151,7 +151,7 @@ public class TestStripedIndexImpl {
     Supplier<List<StoreIndex<CommitOp>>> stripesSupplier =
         () ->
             originalStripesList.stream()
-                .map(s -> deserializeStoreIndex(s.serialize(), COMMIT_OP_SERIALIZER, (k, v) -> v))
+                .map(s -> deserializeStoreIndex(s.serialize(), COMMIT_OP_SERIALIZER))
                 .collect(Collectors.toList());
     List<StoreKey> firstLastKeys =
         stripesSupplier.get().stream()

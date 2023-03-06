@@ -405,8 +405,7 @@ public class TestReferenceIndexes {
       IndexObj idx = persist.fetchTypedObj(stripe.segment(), INDEX, IndexObj.class);
       soft.assertThat(idx.index().size()).isLessThanOrEqualTo(REF_INDEX_LIFECYCLE_TEST_SEG_SIZE);
 
-      StoreIndex<CommitOp> index =
-          deserializeStoreIndex(idx.index(), COMMIT_OP_SERIALIZER, (k, v) -> v);
+      StoreIndex<CommitOp> index = deserializeStoreIndex(idx.index(), COMMIT_OP_SERIALIZER);
       soft.assertThat(index.first()).isEqualTo(stripe.firstKey());
       soft.assertThat(index.last()).isEqualTo(stripe.lastKey());
       soft.assertThat(newArrayList(index))

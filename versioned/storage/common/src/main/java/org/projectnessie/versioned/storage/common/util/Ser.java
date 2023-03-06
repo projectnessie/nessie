@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.storage.common.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.ByteBuffer;
 
@@ -24,6 +26,7 @@ public final class Ser {
   public static final ObjectMapper SHARED_OBJECT_MAPPER = new ObjectMapper();
 
   public static int varIntLen(int v) {
+    checkArgument(v >= 0);
     v &= 0x7fffffff;
     int l = 0;
     while (true) {
@@ -36,10 +39,7 @@ public final class Ser {
   }
 
   public static ByteBuffer putVarInt(ByteBuffer b, int v) {
-    if (v == 0) {
-      return b.put((byte) 0);
-    }
-
+    checkArgument(v >= 0);
     v &= 0x7fffffff;
 
     while (true) {

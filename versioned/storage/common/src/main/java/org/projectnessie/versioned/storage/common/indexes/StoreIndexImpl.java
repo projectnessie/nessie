@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.common.indexes;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.protobuf.UnsafeByteOperations.unsafeWrap;
 import static java.util.Collections.binarySearch;
 import static java.util.Collections.singletonList;
@@ -34,7 +35,6 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -461,7 +461,7 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
     int keyPos = keyBuf.position();
     if (previousKey != null) {
       int mismatch = JDK_SPECIFIC.mismatch(previousKey, keyBuf);
-      assert mismatch != -1 : "Previous and current keys must not be equal";
+      checkState(mismatch != -1, "Previous and current keys must not be equal");
       int strip = previousKey.remaining() - mismatch;
       putVarInt(target, strip);
       keyBuf.position(keyPos + mismatch);
@@ -478,8 +478,7 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
     return previousKey;
   }
 
-  static <V> StoreIndex<V> deserializeStoreIndex(
-      ByteBuffer serialized, ElementSerializer<V> ser, BiFunction<StoreKey, V, V> updater) {
+  static <V> StoreIndex<V> deserializeStoreIndex(ByteBuffer serialized, ElementSerializer<V> ser) {
     byte version = serialized.get();
     checkArgument(version == 1, "Unsupported serialized representation of KeyIndexSegment");
 
@@ -507,11 +506,7 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
 
       // read value
       V value = ser.deserialize(serialized);
-
-      value = updater.apply(key, value);
-      if (value != null) {
-        elements.add(indexElement(key, value));
-      }
+      elements.add(indexElement(key, value));
     }
 
     int len = serialized.position() - posPre;

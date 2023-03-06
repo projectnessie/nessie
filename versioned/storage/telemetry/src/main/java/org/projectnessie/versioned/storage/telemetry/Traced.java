@@ -36,8 +36,5 @@ interface Traced extends Closeable {
 
   Traced attribute(String tag, long value);
 
-  default RuntimeException unhandledError(RuntimeException e) {
-    event("Unhandled error: " + e);
-    return e;
-  }
+  RuntimeException unhandledError(RuntimeException e);
 }
