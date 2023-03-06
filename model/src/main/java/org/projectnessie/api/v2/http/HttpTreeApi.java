@@ -128,8 +128,8 @@ public interface HttpTreeApi extends TreeApi {
         content = {
           @Content(
               mediaType = MediaType.APPLICATION_JSON,
-              examples = {@ExampleObject(ref = "refObjNew")},
-              schema = @Schema(implementation = Reference.class))
+              examples = {@ExampleObject(ref = "singleReferenceResponse")},
+              schema = @Schema(implementation = SingleReferenceResponse.class))
         }),
     @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
     @APIResponse(responseCode = "403", description = "Not allowed to create reference"),
@@ -176,8 +176,11 @@ public interface HttpTreeApi extends TreeApi {
         content = {
           @Content(
               mediaType = MediaType.APPLICATION_JSON,
-              examples = {@ExampleObject(ref = "refObj")},
-              schema = @Schema(implementation = Reference.class))
+              examples = {
+                @ExampleObject(ref = "singleReferenceResponse"),
+                @ExampleObject(ref = "singleReferenceResponseWithMetadata")
+              },
+              schema = @Schema(implementation = SingleReferenceResponse.class))
         }),
     @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
     @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
@@ -217,7 +220,7 @@ public interface HttpTreeApi extends TreeApi {
         content = {
           @Content(
               mediaType = MediaType.APPLICATION_JSON,
-              examples = {@ExampleObject(ref = "entriesResponse")},
+              examples = {@ExampleObject(ref = "entriesResponseV2")},
               schema = @Schema(implementation = EntriesResponse.class))
         }),
     @APIResponse(responseCode = "200", description = "Returned successfully."),
@@ -345,7 +348,7 @@ public interface HttpTreeApi extends TreeApi {
             @Content(
                 mediaType = MediaType.APPLICATION_JSON,
                 examples = {
-                  @ExampleObject(ref = "diffResponse"),
+                  @ExampleObject(ref = "diffResponseWithRef"),
                 },
                 schema = @Schema(implementation = DiffResponse.class))),
     @APIResponse(responseCode = "400", description = "Invalid input, fromRef/toRef name not valid"),
@@ -376,7 +379,15 @@ public interface HttpTreeApi extends TreeApi {
               + "define the new HEAD of the reference being reassigned. Detached hashes may be used in the payload.",
       operationId = "assignReferenceV2")
   @APIResponses({
-    @APIResponse(responseCode = "204", description = "Assigned successfully"),
+    @APIResponse(
+        responseCode = "200",
+        description = "Assigned successfully.",
+        content = {
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON,
+              examples = {@ExampleObject(ref = "singleReferenceResponse")},
+              schema = @Schema(implementation = SingleReferenceResponse.class))
+        }),
     @APIResponse(responseCode = "400", description = "Invalid input, ref specification not valid"),
     @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
     @APIResponse(responseCode = "403", description = "Not allowed to view or assign reference"),
@@ -428,7 +439,15 @@ public interface HttpTreeApi extends TreeApi {
               + "Only branches and tags can be deleted. However, deleting the default branch may be restricted.",
       operationId = "deleteReferenceV2")
   @APIResponses({
-    @APIResponse(responseCode = "204", description = "Deleted successfully."),
+    @APIResponse(
+        responseCode = "200",
+        description = "Deleted successfully.",
+        content = {
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON,
+              examples = {@ExampleObject(ref = "singleReferenceResponse")},
+              schema = @Schema(implementation = SingleReferenceResponse.class))
+        }),
     @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
     @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
     @APIResponse(responseCode = "403", description = "Not allowed to view or delete reference"),
@@ -472,8 +491,8 @@ public interface HttpTreeApi extends TreeApi {
         content =
             @Content(
                 mediaType = MediaType.APPLICATION_JSON,
-                examples = {@ExampleObject(ref = "iceberg")},
-                schema = @Schema(implementation = org.projectnessie.model.Content.class))),
+                examples = {@ExampleObject(ref = "contentResponseIceberg")},
+                schema = @Schema(implementation = ContentResponse.class))),
     @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
     @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
     @APIResponse(
@@ -525,7 +544,7 @@ public interface HttpTreeApi extends TreeApi {
         content =
             @Content(
                 mediaType = MediaType.APPLICATION_JSON,
-                examples = @ExampleObject(ref = "multiGetResponse"),
+                examples = @ExampleObject(ref = "multipleContentsResponse"),
                 schema = @Schema(implementation = GetMultipleContentsResponse.class))),
     @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
     @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
@@ -574,7 +593,7 @@ public interface HttpTreeApi extends TreeApi {
         content =
             @Content(
                 mediaType = MediaType.APPLICATION_JSON,
-                examples = @ExampleObject(ref = "multiGetResponse"),
+                examples = @ExampleObject(ref = "multipleContentsResponse"),
                 schema = @Schema(implementation = GetMultipleContentsResponse.class))),
     @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
     @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
@@ -754,7 +773,7 @@ public interface HttpTreeApi extends TreeApi {
         content = {
           @Content(
               mediaType = MediaType.APPLICATION_JSON,
-              examples = {@ExampleObject(ref = "refObj")},
+              examples = {@ExampleObject(ref = "commitResponse")},
               schema = @Schema(implementation = CommitResponse.class))
         }),
     @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
