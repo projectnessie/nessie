@@ -71,7 +71,6 @@ dependencies {
 }
 
 tasks.withType<Test>().configureEach {
-  systemProperty("rocksdb.version", libs.versions.rocksdb.get())
   filter {
     // Exclude test-classes for the tests
     excludeTestsMatching("TestNessieCompatibilityExtensions\$*")
