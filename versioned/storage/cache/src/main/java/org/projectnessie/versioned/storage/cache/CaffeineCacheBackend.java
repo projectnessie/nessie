@@ -19,9 +19,6 @@ import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.s
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nonnull;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
@@ -34,10 +31,6 @@ import org.projectnessie.versioned.storage.serialize.ProtoSerialization;
 abstract class CaffeineCacheBackend implements CacheBackend {
 
   public static final int JAVA_OBJ_HEADER = 32;
-  public static final int JAVA_INT = 4;
-  public static final int JAVA_LONG = 8;
-  private final Map<String, Integer> repositoryIdMap = new ConcurrentHashMap<>();
-  private final AtomicInteger repositoryKey = new AtomicInteger();
 
   static ImmutableCaffeineCacheBackend.Builder builder() {
     return ImmutableCaffeineCacheBackend.builder();
@@ -100,33 +93,26 @@ abstract class CaffeineCacheBackend implements CacheBackend {
 
   @Override
   public void clear(@Nonnull @jakarta.annotation.Nonnull String repositoryId) {
-    // Do not actually remove the cached elements, but instead use a different base-cache-key for
-    // the repository, so old cached entries will not be found.
-    repositoryIdMap.computeIfPresent(repositoryId, (k, v) -> repositoryKey.incrementAndGet());
+    cache().asMap().keySet().removeIf(k -> k.repositoryId.equals(repositoryId));
   }
 
   private CacheKey cacheKey(String repositoryId, ObjId id) {
-    return new CacheKey(repositoryKey(repositoryId), id);
-  }
-
-  private int repositoryKey(String repositoryId) {
-    return repositoryIdMap.computeIfAbsent(repositoryId, k -> repositoryKey.incrementAndGet());
+    return new CacheKey(repositoryId, id);
   }
 
   static final class CacheKey {
 
-    public static final int HEAP_OVERHEAD =
-        JAVA_OBJ_HEADER + JAVA_INT + JAVA_LONG + JAVA_OBJ_HEADER;
-    final int repoKey;
+    static final int HEAP_OVERHEAD = 3 * JAVA_OBJ_HEADER;
+    final String repositoryId;
     final ObjId id;
 
-    CacheKey(int repoKey, ObjId id) {
-      this.repoKey = repoKey;
+    CacheKey(String repositoryId, ObjId id) {
+      this.repositoryId = repositoryId;
       this.id = id;
     }
 
     int heapSize() {
-      return HEAP_OVERHEAD + id.size();
+      return HEAP_OVERHEAD + id.size() + repositoryId.length();
     }
 
     @Override
@@ -138,17 +124,17 @@ abstract class CaffeineCacheBackend implements CacheBackend {
         return false;
       }
       CacheKey cacheKey = (CacheKey) o;
-      return repoKey == cacheKey.repoKey && id.equals(cacheKey.id);
+      return repositoryId.equals(cacheKey.repositoryId) && id.equals(cacheKey.id);
     }
 
     @Override
     public int hashCode() {
-      return repoKey * 31 + id.hashCode();
+      return repositoryId.hashCode() * 31 + id.hashCode();
     }
 
     @Override
     public String toString() {
-      return "CacheKey{" + repoKey + ", " + id + '}';
+      return "CacheKey{" + repositoryId + ", " + id + '}';
     }
   }
 }
