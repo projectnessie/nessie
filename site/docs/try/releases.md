@@ -2,6 +2,30 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.51.0 Release (March 06, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.51.0).
+
+* Allow tests to customize Nessie REST API URI resolution. (#6234)
+* build/nit: Remove superfluous settings (#6232)
+* Add SwaggerHub badge to README (#6233)
+* Make V2 ref path-param parsing independent of `Reference` (#6224)
+* Add tests to validate that API v1 responses do not have v2 attributes. (#6222)
+* Fix codecov-n-builds (#6230)
+* V2 REST declares wrong response types in OpenAPI spec (#6211)
+* Fix native images after recent rocksdb version bump (#6216)
+* Symlink gradle-wrapper.jar, unignore gradle-wrapper.jar (#6219)
+* upgrade GH WFs to ubuntu-22.04 (#6206)
+* Maven group-ID refactoring (#6197)
+* Fix: `Content.Type` is a string (#6202)
+* Git ignore `__pycache__` (#6201)
+* Compatibility tests code cleanup (#6198)
+* Site: Update community page with updated chat information (#6192)
+* Move Nessie speecific build code into this build (#6196)
+* Nit: javadoc (#6193)
+* Gradle 8 adoption for NesQuEIT (#6166)
+* mac-CI: Workaround for brew-upgrade issue (#6184)
+
 ## 0.50.0 Release (February 24, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.50.0).
