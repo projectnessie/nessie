@@ -193,14 +193,13 @@ public abstract class AbstractTestReferences extends BaseTestServiceImpl {
   public void getAndDeleteBranch() throws Exception {
     Branch branch = createBranch("testBranch");
     assertThat(treeApi().deleteReference(BRANCH, branch.getName(), branch.getHash()))
-        .isEqualTo(branch.getHash());
+        .isEqualTo(branch);
   }
 
   @Test
   public void getAndDeleteTag() throws Exception {
     Tag tag = createTag("testTag", treeApi().getDefaultBranch());
-    assertThat(treeApi().deleteReference(TAG, tag.getName(), tag.getHash()))
-        .isEqualTo(tag.getHash());
+    assertThat(treeApi().deleteReference(TAG, tag.getName(), tag.getHash())).isEqualTo(tag);
   }
 
   @ParameterizedTest

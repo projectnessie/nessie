@@ -15,6 +15,7 @@
  */
 package org.projectnessie.services.impl;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Sets.newHashSetWithExpectedSize;
 import static java.util.Collections.emptyList;
@@ -299,10 +300,15 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
     try {
-      NamedRef ref = toNamedRef(referenceType, referenceName);
-
       ReferenceInfo<CommitMeta> resolved =
-          getStore().getNamedRef(ref.getName(), GetNamedRefsParams.DEFAULT);
+          getStore().getNamedRef(referenceName, GetNamedRefsParams.DEFAULT);
+      NamedRef ref = resolved.getNamedRef();
+
+      checkArgument(
+          referenceType == null || referenceType == RefUtil.referenceType(ref),
+          "Expected reference type %s does not match existing reference %s",
+          referenceType,
+          ref);
 
       startAccessCheck()
           .canViewReference(
@@ -321,19 +327,28 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   }
 
   @Override
-  public String deleteReference(
+  public Reference deleteReference(
       ReferenceType referenceType, String referenceName, String expectedHash)
       throws NessieConflictException, NessieNotFoundException {
     try {
-      NamedRef ref = toNamedRef(referenceType, referenceName);
+      ReferenceInfo<CommitMeta> resolved =
+          getStore().getNamedRef(referenceName, GetNamedRefsParams.DEFAULT);
+      NamedRef ref = resolved.getNamedRef();
 
-      if (ref instanceof BranchName && getConfig().getDefaultBranch().equals(ref.getName())) {
-        throw new IllegalArgumentException(
-            "Default branch '" + ref.getName() + "' cannot be deleted.");
-      }
+      checkArgument(
+          referenceType == null || referenceType == RefUtil.referenceType(ref),
+          "Expected reference type %s does not match existing reference %s",
+          referenceType,
+          ref);
+      checkArgument(
+          !(ref instanceof BranchName && getConfig().getDefaultBranch().equals(ref.getName())),
+          "Default branch '%s' cannot be deleted.",
+          ref.getName());
+
       startAccessCheck().canDeleteReference(ref).checkAndThrow();
 
-      return getStore().delete(ref, toHash(expectedHash, true)).asString();
+      Hash deletedAthash = getStore().delete(ref, toHash(expectedHash, true));
+      return RefUtil.toReference(ref, deletedAthash);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {

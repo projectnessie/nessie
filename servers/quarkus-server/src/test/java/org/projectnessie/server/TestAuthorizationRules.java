@@ -92,8 +92,9 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   }
 
   @Test
-  @TestSecurity(user = "disallowed_user")
-  void testDeleteBranchDisallowed() {
+  @TestSecurity(user = "delete_branch_disallowed_user")
+  void testDeleteBranchDisallowed() throws BaseNessieClientServerException {
+    api().createReference().reference(Branch.of("testDeleteBranchDisallowed", null)).create();
     assertThatThrownBy(
             () ->
                 api()
@@ -105,7 +106,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
         .hasMessageContaining(
             String.format(
                 "'DELETE_REFERENCE' is not allowed for role '%s' on reference '%s'",
-                "disallowed_user", "testDeleteBranchDisallowed"));
+                "delete_branch_disallowed_user", "testDeleteBranchDisallowed"));
   }
 
   @Test

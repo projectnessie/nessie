@@ -17,10 +17,8 @@ package org.projectnessie.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.projectnessie.model.Reference.ReferenceType;
 
 class TestReference {
 
@@ -34,30 +32,5 @@ class TestReference {
   })
   void toPathString(String name, String hash, String expectedResult) {
     assertThat(Reference.toPathString(name, hash)).isEqualTo(expectedResult);
-  }
-
-  @ParameterizedTest
-  @CsvSource({
-    "a@11223344,a,11223344",
-    "a,a,",
-    "a/b,a/b,",
-    "a/b@11223344,a/b,11223344",
-    "a@,a,",
-    "a/b@,a/b,",
-  })
-  void fromPathString(String pathParameter, String expectedName, String expectedHash) {
-    for (ReferenceType type : ReferenceType.values()) {
-      assertThat(Reference.fromPathString(pathParameter, type))
-          .extracting(Reference::getType, Reference::getName, Reference::getHash)
-          .containsExactly(type, expectedName, expectedHash);
-    }
-  }
-
-  @Test
-  void fromPathStringDetached() {
-    assertThat(Reference.fromPathString("@11223344", ReferenceType.BRANCH))
-        .isInstanceOf(Detached.class)
-        .extracting(Reference::getHash)
-        .isEqualTo("11223344");
   }
 }

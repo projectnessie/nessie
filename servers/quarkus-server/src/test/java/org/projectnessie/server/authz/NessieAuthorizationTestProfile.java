@@ -59,6 +59,9 @@ public class NessieAuthorizationTestProfile extends AuthenticationEnabledProfile
               "nessie.server.authorization.rules.allow_view_merge_delete_user1",
               "op in ['VIEW_REFERENCE', 'ASSIGN_REFERENCE_TO_HASH', 'COMMIT_CHANGE_AGAINST_REFERENCE', 'DELETE_REFERENCE'] "
                   + "&& role=='user1' && (ref.startsWith('allowedBranch') || ref == 'main')")
+          .put(
+              "nessie.server.authorization.rules.delete_branch_disallowed",
+              "op in ['VIEW_REFERENCE', 'CREATE_REFERENCE'] && role=='delete_branch_disallowed_user' && ref in ['testDeleteBranchDisallowed', 'main']")
           .build();
 
   @Override

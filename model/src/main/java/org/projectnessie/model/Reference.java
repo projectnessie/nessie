@@ -105,10 +105,6 @@ public interface Reference extends Base {
     return Util.toPathStringRef(name, hash);
   }
 
-  static Reference fromPathString(String value, ReferenceType parseAsType) {
-    return Util.fromPathStringRef(value, parseAsType);
-  }
-
   /** The reference type as an enum. */
   @Schema(enumeration = {"branch", "tag"}) // Required to have lower-case values in OpenAPI
   enum ReferenceType {
