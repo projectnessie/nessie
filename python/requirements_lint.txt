@@ -15,7 +15,7 @@
 #
 -r requirements_dev.txt
 bandit==1.7.4
-black==22.12.0
+black==23.1.0
 flake8==6.0.0
 flake8-annotations==3.0.0
 flake8-bandit==4.1.1
@@ -26,6 +26,6 @@ flake8-isort==6.0.0
 isort==5.12.0
 mypy==1.0.1
 pytest-mypy==0.10.3
-safety==2.3.5
+safety==2.4.0b1
 pylint==2.16.3
 pylintfileheader==0.3.2
