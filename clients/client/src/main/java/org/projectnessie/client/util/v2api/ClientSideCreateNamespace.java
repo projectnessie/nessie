@@ -60,7 +60,7 @@ public final class ClientSideCreateNamespace extends BaseCreateNamespaceBuilder 
     }
 
     ImmutableNamespace content = Namespace.builder().from(namespace).properties(properties).build();
-    ContentKey key = ContentKey.of(namespace.getElements());
+    ContentKey key = namespace.toContentKey();
 
     GetMultipleContentsResponse contentsResponse;
     try {

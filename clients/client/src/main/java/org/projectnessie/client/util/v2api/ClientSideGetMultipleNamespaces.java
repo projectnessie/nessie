@@ -68,7 +68,7 @@ public final class ClientSideGetMultipleNamespaces extends BaseGetMultipleNamesp
             onlyDirectChildren
                 ? format(
                     "size(entry.keyElements) == %d && entry.encodedKey.startsWith('%s.')",
-                    namespace.getElements().size() + 1, nsName)
+                    namespace.getElementCount() + 1, nsName)
                 : format(
                     "entry.encodedKey == '%s' || entry.encodedKey.startsWith('%s.')",
                     nsName, nsName);

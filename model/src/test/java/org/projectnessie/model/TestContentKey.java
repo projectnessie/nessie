@@ -19,6 +19,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.InstanceOfAssertFactories.INTEGER;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -428,5 +429,25 @@ class TestContentKey {
     ContentKey k = ContentKey.of(elements);
     ContentKey k2 = ContentKey.fromPathString(k.toPathString());
     assertEquals(k, k2);
+  }
+
+  @Test
+  void toParentWithNoParent() {
+    assertThatIllegalArgumentException()
+        .isThrownBy(() -> ContentKey.of("x").getParent())
+        .withMessage("ContentKey has no parent");
+  }
+
+  static Stream<Arguments> getParent() {
+    return Stream.of(
+        arguments(ContentKey.of("a", "b", "c", "d"), ContentKey.of("a", "b", "c")),
+        arguments(ContentKey.of("a", "b", "c"), ContentKey.of("a", "b")),
+        arguments(ContentKey.of("a", "b"), ContentKey.of("a")));
+  }
+
+  @ParameterizedTest
+  @MethodSource
+  void getParent(ContentKey in, ContentKey parent) {
+    assertThat(in).extracting(ContentKey::getParent).isEqualTo(parent);
   }
 }

@@ -98,7 +98,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
             return null;
           };
 
-      ContentKey key = ContentKey.of(namespace.getElements());
+      ContentKey key = namespace.toContentKey();
       Put put = Put.of(key, namespace);
       Hash hash =
           commit(
@@ -127,7 +127,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
     WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(refName, null);
     try {
       Namespace namespace = getNamespace(namespaceToDelete, refWithHash.getHash());
-      Delete delete = Delete.of(ContentKey.of(namespace.getElements()));
+      Delete delete = Delete.of(namespace.toContentKey());
 
       Callable<Void> validator =
           () -> {
@@ -266,7 +266,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
 
       Namespace updatedNamespace = ImmutableNamespace.copyOf(namespace).withProperties(properties);
 
-      Put put = Put.of(ContentKey.of(updatedNamespace.getElements()), updatedNamespace, namespace);
+      Put put = Put.of(updatedNamespace.toContentKey(), updatedNamespace, namespace);
       commit(
           BranchName.of(refWithHash.getValue().getName()),
           "update properties for namespace " + updatedNamespace.name(),
@@ -311,7 +311,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
 
   private Optional<Content> getExplicitlyCreatedNamespace(Namespace namespace, Hash hash)
       throws ReferenceNotFoundException {
-    return Optional.ofNullable(getStore().getValue(hash, ContentKey.of(namespace.getElements())));
+    return Optional.ofNullable(getStore().getValue(hash, namespace.toContentKey()));
   }
 
   private Optional<Namespace> getImplicitlyCreatedNamespace(Namespace namespace, Hash hash)

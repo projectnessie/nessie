@@ -232,7 +232,7 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
         .containsExactly(expectedCommitMsg, "root");
 
     soft.assertThat(entries(base.getName(), null).stream().map(EntriesResponse.Entry::getName))
-        .contains(ContentKey.of(ns.getElements()));
+        .contains(ns.toContentKey());
 
     soft.assertThat(namespaceApi().getNamespace(base.getName(), null, ns)).isNotNull();
   }
@@ -288,7 +288,7 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
 
     List<EntriesResponse.Entry> entries = entries(base.getName(), null);
     soft.assertThat(entries.stream().map(EntriesResponse.Entry::getName))
-        .contains(ContentKey.of(ns.getElements()));
+        .contains(ns.toContentKey());
 
     soft.assertThat(namespaceApi().getNamespace(base.getName(), null, ns)).isNotNull();
   }
