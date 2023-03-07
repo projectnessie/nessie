@@ -17,8 +17,8 @@ package org.projectnessie.quarkus.providers;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Disposes;
+import javax.enterprise.inject.Produces;
 import javax.inject.Singleton;
-import javax.ws.rs.Produces;
 import org.projectnessie.versioned.persist.inmem.InmemoryStore;
 
 @ApplicationScoped

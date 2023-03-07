@@ -1,0 +1,342 @@
+/*
+ * Copyright (C) 2022 Dremio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.projectnessie.versioned.storage.versionstore;
+
+import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+import static java.time.format.DateTimeFormatter.ISO_ZONED_DATE_TIME;
+import static java.time.temporal.ChronoField.DAY_OF_MONTH;
+import static java.time.temporal.ChronoField.DAY_OF_WEEK;
+import static java.time.temporal.ChronoField.HOUR_OF_DAY;
+import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
+import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
+import static java.time.temporal.ChronoField.NANO_OF_SECOND;
+import static java.time.temporal.ChronoField.OFFSET_SECONDS;
+import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
+import static java.time.temporal.ChronoField.YEAR;
+import static java.util.Collections.emptyList;
+import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.newCommitHeaders;
+
+import com.google.common.base.Splitter;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
+import java.time.format.SignStyle;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.ImmutableCommitMeta;
+import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.storage.common.indexes.StoreKey;
+import org.projectnessie.versioned.storage.common.logic.CreateCommit;
+import org.projectnessie.versioned.storage.common.objtypes.CommitHeaders;
+import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
+import org.projectnessie.versioned.storage.common.persist.ObjId;
+
+public final class TypeMapping {
+
+  public static final String MAIN_UNIVERSE = "M";
+  public static final String CONTENT_DISCRIMINATOR = "C";
+
+  public static final String COMMIT_TIME = "date";
+  public static final String AUTHOR_TIME = "author-date";
+  public static final String SIGNED_OFF_BY = "signed-off-by";
+  public static final String COMMITTER = "committer";
+  public static final String AUTHOR = "author";
+
+  private static final Splitter SPLITTER_ZERO = Splitter.on('\u0000');
+  private static final Splitter SPLITTER_ONE = Splitter.on('\u0001');
+
+  private TypeMapping() {}
+
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  public static ObjId hashToObjId(@Nonnull @jakarta.annotation.Nonnull Hash hash) {
+    return ObjId.objIdFromBytes(hash.asBytes());
+  }
+
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  public static Hash objIdToHash(@Nonnull @jakarta.annotation.Nonnull ObjId objId) {
+    return Hash.of(objId.asBytes());
+  }
+
+  /**
+   * Converts a {@link StoreKey} to a {@link Key}, returning {@code null}, if the store key does not
+   * reference the {@link #MAIN_UNIVERSE main universe} or not a {@link #CONTENT_DISCRIMINATOR
+   * content object}.
+   *
+   * <p>A {@link Key} is represented as a {@link StoreKey} as follows:<br>
+   * {@code universe CHAR_0 key-element ( CHAR_1 key-element ) * CHAR_0 variant}
+   *
+   * <p>So it is the "universe" followed by {@code (char)0} followed by the key-elements, separated
+   * by {@code (char)1}, followed by {@code (char)0}, followed by the "variant".
+   */
+  @Nullable
+  @jakarta.annotation.Nullable
+  public static Key storeKeyToKey(@Nonnull @jakarta.annotation.Nonnull StoreKey storeKey) {
+    List<String> universeKeyVariant = SPLITTER_ZERO.splitToList(storeKey.rawString());
+    String universe;
+    List<String> keyElements;
+    String variant;
+    switch (universeKeyVariant.size()) {
+      case 3:
+        universe = universeKeyVariant.get(0);
+        keyElements = SPLITTER_ONE.splitToList(universeKeyVariant.get(1));
+        variant = universeKeyVariant.get(2);
+        break;
+      case 2:
+        universe = universeKeyVariant.get(0);
+        keyElements = emptyList();
+        variant = universeKeyVariant.get(1);
+        break;
+      default:
+        throw new IllegalArgumentException("Unsupported StoreKey '" + storeKey + "'");
+    }
+    if (!universe.equals(MAIN_UNIVERSE) || !CONTENT_DISCRIMINATOR.equals(variant)) {
+      return null;
+    }
+    return Key.of(keyElements);
+  }
+
+  /**
+   * Converts a {@link Key} to a {@link StoreKey} in the {@link #MAIN_UNIVERSE main universe} as a
+   * {@link #CONTENT_DISCRIMINATOR content object}.
+   */
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  public static StoreKey keyToStoreKey(@Nonnull @jakarta.annotation.Nonnull Key key) {
+    StringBuilder sb = new StringBuilder();
+    sb.append(MAIN_UNIVERSE);
+    List<String> elements = key.getElements();
+    int num = elements.size();
+    if (num > 0) {
+      sb.append((char) 0);
+      for (int i = 0; i < num; i++) {
+        if (i > 0) {
+          sb.append((char) 1);
+        }
+        sb.append(elements.get(i));
+      }
+    }
+    sb.append((char) 0).append(CONTENT_DISCRIMINATOR);
+    return StoreKey.keyFromString(sb.toString());
+  }
+
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  public static CommitHeaders headersFromCommitMeta(
+      @Nonnull @jakarta.annotation.Nonnull CommitMeta commitMeta) {
+    CommitHeaders.Builder headers = newCommitHeaders();
+    if (commitMeta.getCommitTime() != null) {
+      headers.add(COMMIT_TIME, instantToHeaderValue(commitMeta.getCommitTime()));
+    }
+    if (commitMeta.getAuthorTime() != null) {
+      headers.add(AUTHOR_TIME, instantToHeaderValue(commitMeta.getAuthorTime()));
+    }
+    if (commitMeta.getCommitter() != null) {
+      headers.add(COMMITTER, commitMeta.getCommitter());
+    }
+    if (commitMeta.getAuthor() != null) {
+      headers.add(AUTHOR, commitMeta.getAuthor());
+    }
+    if (commitMeta.getSignedOffBy() != null) {
+      headers.add(SIGNED_OFF_BY, commitMeta.getSignedOffBy());
+    }
+    commitMeta.getProperties().forEach(headers::add);
+    return headers.build();
+  }
+
+  public static ImmutableCommitMeta.Builder headersToCommitMeta(
+      @Nonnull @jakarta.annotation.Nonnull CommitHeaders headers,
+      @Nonnull @jakarta.annotation.Nonnull ImmutableCommitMeta.Builder commitMeta) {
+    for (String header : headers.keySet()) {
+      String v = headers.getFirst(header);
+      switch (header) {
+        case AUTHOR:
+          commitMeta.author(v);
+          break;
+        case COMMITTER:
+          commitMeta.committer(v);
+          break;
+        case SIGNED_OFF_BY:
+          commitMeta.signedOffBy(v);
+          break;
+        case COMMIT_TIME:
+          applyInstant(v, commitMeta::commitTime);
+          break;
+        case AUTHOR_TIME:
+          applyInstant(v, commitMeta::authorTime);
+          break;
+        default:
+          commitMeta.putProperties(header, v);
+          break;
+      }
+    }
+    return commitMeta;
+  }
+
+  public static CreateCommit.Builder fromCommitMeta(
+      @Nonnull @jakarta.annotation.Nonnull CommitMeta commitMeta,
+      @Nonnull @jakarta.annotation.Nonnull CreateCommit.Builder commit) {
+    return commit.headers(headersFromCommitMeta(commitMeta)).message(commitMeta.getMessage());
+  }
+
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  public static CommitMeta toCommitMeta(@Nonnull @jakarta.annotation.Nonnull CommitObj commit) {
+    ImmutableCommitMeta.Builder commitMeta =
+        CommitMeta.builder()
+            .message(commit.message())
+            .hash(commit.id().toString())
+            .addParentCommitHashes(commit.directParent().toString());
+    commit.secondaryParents().forEach(p -> commitMeta.addParentCommitHashes(p.toString()));
+    headersToCommitMeta(commit.headers(), commitMeta);
+    return commitMeta.build();
+  }
+
+  private static void applyInstant(String v, Consumer<Instant> t) {
+    try {
+      t.accept(headerValueToInstant(v));
+    } catch (DateTimeParseException ignore) {
+      // There's nothing we could do here to "repair" it or deal with it. The value's not
+      // gone, just not available via 'CommitMeta'. Could happen, if a string is added
+      // directly via 'CommitHeaders' but the value's read via 'CommitMeta'.
+    }
+  }
+
+  private static final DateTimeFormatter LENIENT_GIT_DATE_TIME;
+
+  private static final DateTimeFormatter LENIENT_RFC_1123_DATE_TIME;
+
+  static {
+    Map<Long, String> dow = new HashMap<>();
+    dow.put(1L, "Mon");
+    dow.put(2L, "Tue");
+    dow.put(3L, "Wed");
+    dow.put(4L, "Thu");
+    dow.put(5L, "Fri");
+    dow.put(6L, "Sat");
+    dow.put(7L, "Sun");
+    Map<Long, String> moy = new HashMap<>();
+    moy.put(1L, "Jan");
+    moy.put(2L, "Feb");
+    moy.put(3L, "Mar");
+    moy.put(4L, "Apr");
+    moy.put(5L, "May");
+    moy.put(6L, "Jun");
+    moy.put(7L, "Jul");
+    moy.put(8L, "Aug");
+    moy.put(9L, "Sep");
+    moy.put(10L, "Oct");
+    moy.put(11L, "Nov");
+    moy.put(12L, "Dec");
+
+    LENIENT_GIT_DATE_TIME =
+        new DateTimeFormatterBuilder()
+            .parseCaseInsensitive()
+            .parseLenient()
+            .optionalStart()
+            .appendText(DAY_OF_WEEK, dow)
+            .appendLiteral(' ')
+            .optionalEnd()
+            .appendText(MONTH_OF_YEAR, moy)
+            .appendLiteral(' ')
+            .appendValue(DAY_OF_MONTH, 1, 2, SignStyle.NOT_NEGATIVE)
+            .appendLiteral(' ')
+            .appendValue(HOUR_OF_DAY, 2)
+            .appendLiteral(':')
+            .appendValue(MINUTE_OF_HOUR, 2)
+            .optionalStart()
+            .appendLiteral(':')
+            .appendValue(SECOND_OF_MINUTE, 2)
+            .optionalEnd()
+            .optionalStart()
+            .appendFraction(NANO_OF_SECOND, 0, 9, true)
+            .optionalEnd()
+            .appendLiteral(' ')
+            .appendValue(YEAR, 4) // 2 digit year not handled
+            .optionalStart()
+            .appendLiteral(' ')
+            .appendOffset("+HHMM", "GMT") // should handle UT/Z/EST/EDT/CST/CDT/MST/MDT/PST/MDT
+            .optionalEnd()
+            .parseDefaulting(OFFSET_SECONDS, 0)
+            .toFormatter();
+
+    LENIENT_RFC_1123_DATE_TIME =
+        new DateTimeFormatterBuilder()
+            .parseCaseInsensitive()
+            .parseLenient()
+            .optionalStart()
+            .appendText(DAY_OF_WEEK, dow)
+            .appendLiteral(", ")
+            .optionalEnd()
+            .appendValue(DAY_OF_MONTH, 1, 2, SignStyle.NOT_NEGATIVE)
+            .appendLiteral(' ')
+            .appendText(MONTH_OF_YEAR, moy)
+            .appendLiteral(' ')
+            .appendValue(YEAR, 4) // 2 digit year not handled
+            .appendLiteral(' ')
+            .appendValue(HOUR_OF_DAY, 2)
+            .appendLiteral(':')
+            .appendValue(MINUTE_OF_HOUR, 2)
+            .optionalStart()
+            .appendLiteral(':')
+            .appendValue(SECOND_OF_MINUTE, 2)
+            .optionalEnd()
+            .optionalStart()
+            .appendFraction(NANO_OF_SECOND, 0, 9, true)
+            .optionalEnd()
+            .optionalStart()
+            .appendLiteral(' ')
+            .appendOffset("+HHMM", "GMT") // should handle UT/Z/EST/EDT/CST/CDT/MST/MDT/PST/MDT
+            .optionalEnd()
+            .parseDefaulting(OFFSET_SECONDS, 0)
+            .toFormatter();
+  }
+
+  private static final DateTimeFormatter[] DT_FORMATTERS =
+      new DateTimeFormatter[] {
+        ISO_OFFSET_DATE_TIME, LENIENT_GIT_DATE_TIME, LENIENT_RFC_1123_DATE_TIME, ISO_ZONED_DATE_TIME
+      };
+
+  public static Instant headerValueToInstant(String v) {
+    DateTimeParseException fail = null;
+    for (DateTimeFormatter formatter : DT_FORMATTERS) {
+      try {
+        ZonedDateTime zdt = ZonedDateTime.parse(v, formatter);
+        return zdt.toInstant();
+      } catch (DateTimeParseException e) {
+        if (fail == null) {
+          fail = e;
+        } else {
+          fail.addSuppressed(e);
+        }
+      }
+    }
+    throw fail;
+  }
+
+  public static String instantToHeaderValue(Instant v) {
+    return v.toString();
+  }
+}

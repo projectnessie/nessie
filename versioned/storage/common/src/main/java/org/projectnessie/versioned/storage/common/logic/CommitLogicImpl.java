@@ -1,0 +1,1098 @@
+/*
+ * Copyright (C) 2022 Dremio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.projectnessie.versioned.storage.common.logic;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Sets.newHashSetWithExpectedSize;
+import static com.google.protobuf.ByteString.copyFromUtf8;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.emptyIterator;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static java.util.Objects.requireNonNull;
+import static org.projectnessie.versioned.storage.common.indexes.StoreIndexElement.indexElement;
+import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.indexFromStripes;
+import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.newStoreIndex;
+import static org.projectnessie.versioned.storage.common.indexes.StoreKey.keyFromString;
+import static org.projectnessie.versioned.storage.common.logic.CommitConflict.ConflictType.CONTENT_ID_DIFFERS;
+import static org.projectnessie.versioned.storage.common.logic.CommitConflict.ConflictType.KEY_DOES_NOT_EXIST;
+import static org.projectnessie.versioned.storage.common.logic.CommitConflict.ConflictType.KEY_EXISTS;
+import static org.projectnessie.versioned.storage.common.logic.CommitConflict.ConflictType.PAYLOAD_DIFFERS;
+import static org.projectnessie.versioned.storage.common.logic.CommitConflict.ConflictType.VALUE_DIFFERS;
+import static org.projectnessie.versioned.storage.common.logic.CommitConflict.commitConflict;
+import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
+import static org.projectnessie.versioned.storage.common.logic.ConflictHandler.ConflictResolution.CONFLICT;
+import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Add.commitAdd;
+import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Remove.commitRemove;
+import static org.projectnessie.versioned.storage.common.logic.DiffEntry.diffEntry;
+import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
+import static org.projectnessie.versioned.storage.common.logic.PagingToken.emptyPagingToken;
+import static org.projectnessie.versioned.storage.common.logic.PagingToken.pagingToken;
+import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.Action.ADD;
+import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.Action.NONE;
+import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.Action.REMOVE;
+import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.COMMIT_OP_SERIALIZER;
+import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.commitOp;
+import static org.projectnessie.versioned.storage.common.objtypes.Hashes.hashAsObjId;
+import static org.projectnessie.versioned.storage.common.objtypes.Hashes.hashCommitHeaders;
+import static org.projectnessie.versioned.storage.common.objtypes.Hashes.newHasher;
+import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
+import static org.projectnessie.versioned.storage.common.persist.ObjType.COMMIT;
+
+import com.google.common.collect.AbstractIterator;
+import com.google.common.hash.Hasher;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import org.agrona.collections.ObjectHashSet;
+import org.projectnessie.versioned.storage.common.config.StoreConfig;
+import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
+import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
+import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
+import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
+import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
+import org.projectnessie.versioned.storage.common.indexes.StoreKey;
+import org.projectnessie.versioned.storage.common.logic.ConflictHandler.ConflictResolution;
+import org.projectnessie.versioned.storage.common.logic.CreateCommit.Add;
+import org.projectnessie.versioned.storage.common.logic.CreateCommit.Remove;
+import org.projectnessie.versioned.storage.common.logic.CreateCommit.Unchanged;
+import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
+import org.projectnessie.versioned.storage.common.objtypes.CommitObjReference;
+import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
+import org.projectnessie.versioned.storage.common.objtypes.CommitOp.Action;
+import org.projectnessie.versioned.storage.common.objtypes.CommitType;
+import org.projectnessie.versioned.storage.common.objtypes.IndexStripe;
+import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
+import org.projectnessie.versioned.storage.common.persist.Obj;
+import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/** Logic to read commits and perform commits including conflict checks. */
+final class CommitLogicImpl implements CommitLogic {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(CommitLogicImpl.class);
+
+  static final String NO_COMMON_ANCESTOR_IN_PARENTS_OF = "No common ancestor in parents of ";
+  private final Persist persist;
+
+  CommitLogicImpl(Persist persist) {
+    this.persist = persist;
+  }
+
+  @Override
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  public PagedResult<CommitObj, ObjId> commitLog(
+      @Nonnull @jakarta.annotation.Nonnull CommitLogQuery commitLogQuery) {
+    ObjId startCommitId =
+        commitLogQuery
+            .pagingToken()
+            .map(PagingToken::token)
+            .map(ObjId::objIdFromBytes)
+            .orElse(commitLogQuery.commitId());
+
+    return new CommitLogIter(startCommitId, commitLogQuery.endCommitId().orElse(null));
+  }
+
+  private final class CommitLogIter extends AbstractIterator<CommitObj>
+      implements PagedResult<CommitObj, ObjId> {
+    private final ObjId endCommitId;
+
+    private Iterator<Obj> batch;
+    private List<ObjId> next;
+
+    CommitLogIter(ObjId startCommitId, ObjId endCommitId) {
+      this.next = singletonList(startCommitId);
+      this.endCommitId = endCommitId;
+    }
+
+    @Override
+    protected CommitObj computeNext() {
+      while (true) {
+        Iterator<Obj> b = batch;
+        if (b == null || !b.hasNext()) {
+          List<ObjId> n = next;
+          next = null;
+
+          if (n == null) {
+            return endOfData();
+          }
+          int i = n.indexOf(EMPTY_OBJ_ID);
+          if (i != -1) {
+            n = n.subList(0, i);
+          }
+          if (n.isEmpty()) {
+            return endOfData();
+          }
+
+          try {
+            b = batch = Arrays.asList(persist.fetchObjs(n.toArray(new ObjId[0]))).iterator();
+          } catch (ObjNotFoundException e) {
+            throw new NoSuchElementException(
+                "Commit(s) "
+                    + e.objIds().stream().map(ObjId::toString).collect(Collectors.joining(", "))
+                    + " not found");
+          }
+        }
+
+        if (b.hasNext()) {
+          CommitObj c = (CommitObj) b.next();
+
+          if (c == null) {
+            // oops, commit not found...
+            return endOfData();
+          }
+
+          if (c.id().equals(endCommitId)) {
+            batch = emptyIterator();
+            next = null;
+          } else if (!b.hasNext()) {
+            next = c.tail();
+          }
+
+          return c;
+        }
+      }
+    }
+
+    @Nonnull
+    @jakarta.annotation.Nonnull
+    @Override
+    public PagingToken tokenForKey(ObjId key) {
+      return key != null ? pagingToken(key.asBytes()) : emptyPagingToken();
+    }
+  }
+
+  @Override
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  public PagedResult<ObjId, ObjId> commitIdLog(
+      @Nonnull @jakarta.annotation.Nonnull CommitLogQuery commitLogQuery) {
+    ObjId startCommitId =
+        commitLogQuery
+            .pagingToken()
+            .map(PagingToken::token)
+            .map(ObjId::objIdFromBytes)
+            .orElse(commitLogQuery.commitId());
+
+    return new CommitIdIter(startCommitId, commitLogQuery.endCommitId().orElse(null));
+  }
+
+  private final class CommitIdIter extends AbstractIterator<ObjId>
+      implements PagedResult<ObjId, ObjId> {
+    private final ObjId endCommitId;
+
+    private Iterator<ObjId> batch;
+    private List<ObjId> next;
+
+    CommitIdIter(ObjId startCommitId, ObjId endCommitId) {
+      this.next = singletonList(startCommitId);
+      this.endCommitId = endCommitId;
+    }
+
+    @Override
+    protected ObjId computeNext() {
+      while (true) {
+        Iterator<ObjId> b = batch;
+        if (b == null || !b.hasNext()) {
+          List<ObjId> n = next;
+          next = null;
+
+          if (n == null) {
+            return endOfData();
+          }
+          int i = n.indexOf(EMPTY_OBJ_ID);
+          if (i != -1) {
+            n = n.subList(0, i);
+          }
+          if (n.isEmpty()) {
+            return endOfData();
+          }
+
+          b = batch = n.iterator();
+        }
+
+        if (b.hasNext()) {
+          ObjId c = b.next();
+
+          if (c.equals(endCommitId)) {
+            batch = emptyIterator();
+            next = null;
+          } else if (!b.hasNext()) {
+            CommitObj obj;
+            try {
+              obj = fetchCommit(c);
+            } catch (ObjNotFoundException e) {
+              throw new NoSuchElementException("Commit '" + c + "' not found");
+            }
+            if (obj == null) {
+              // commit not found, oops
+              return endOfData();
+            }
+            next = obj.tail();
+          }
+
+          return c;
+        }
+      }
+    }
+
+    @Nonnull
+    @jakarta.annotation.Nonnull
+    @Override
+    public PagingToken tokenForKey(ObjId key) {
+      return key != null ? pagingToken(key.asBytes()) : emptyPagingToken();
+    }
+  }
+
+  @Nullable
+  @jakarta.annotation.Nullable
+  @Override
+  public ObjId doCommit(
+      @Nonnull @jakarta.annotation.Nonnull CreateCommit createCommit,
+      @Nonnull @jakarta.annotation.Nonnull List<Obj> additionalObjects)
+      throws CommitConflictException, ObjNotFoundException {
+    CommitObj commit = buildCommitObj(createCommit, c -> CONFLICT, (k, v) -> {});
+    return storeCommit(commit, additionalObjects) ? commit.id() : null;
+  }
+
+  @Override
+  public boolean storeCommit(
+      @Nonnull @jakarta.annotation.Nonnull CommitObj commit,
+      @Nonnull @jakarta.annotation.Nonnull List<Obj> additionalObjects) {
+    int numAdditional = additionalObjects.size();
+    try {
+      Obj[] allObjs = additionalObjects.toArray(new Obj[numAdditional + 1]);
+      allObjs[numAdditional] = commit;
+
+      boolean[] stored = persist.storeObjs(allObjs);
+      return stored[numAdditional];
+    } catch (ObjTooLargeException e) {
+      // The incremental index became too big - need to spill out the INCREMENTAL_* operations to
+      // the reference index.
+
+      try {
+        persist.storeObjs(additionalObjects.toArray(new Obj[numAdditional]));
+      } catch (ObjTooLargeException ex) {
+        throw new RuntimeException(ex);
+      }
+
+      commit = indexTooBigStoreUpdate(commit);
+
+      try {
+        return persist.storeObj(commit, true);
+      } catch (ObjTooLargeException ex) {
+        // Hit the "Hard database object size limit"
+        throw new RuntimeException(ex);
+      }
+    }
+  }
+
+  @Override
+  public void updateCommit(@Nonnull @jakarta.annotation.Nonnull CommitObj commit)
+      throws ObjNotFoundException {
+    try {
+      persist.updateObj(commit);
+    } catch (ObjTooLargeException e) {
+      // The incremental index became too big - need to spill out the INCREMENTAL_* operations to
+      // the reference index.
+
+      commit = indexTooBigStoreUpdate(commit);
+      try {
+        persist.updateObj(commit);
+      } catch (ObjTooLargeException ex) {
+        // Hit the "Hard database object size limit"
+        throw new RuntimeException(ex);
+      }
+    }
+  }
+
+  private CommitObj indexTooBigStoreUpdate(CommitObj commit) {
+    StoreIndex<CommitOp> newIncremental = newStoreIndex(COMMIT_OP_SERIALIZER);
+    StoreIndex<CommitOp> referenceIndex = createReferenceIndexForCommit(commit, newIncremental);
+
+    try {
+      commit = persistReferenceIndexForCommit(commit, newIncremental, referenceIndex);
+    } catch (ObjTooLargeException ex) {
+      throw new RuntimeException(ex);
+    }
+    return commit;
+  }
+
+  private CommitObj persistReferenceIndexForCommit(
+      CommitObj commit, StoreIndex<CommitOp> newIncremental, StoreIndex<CommitOp> referenceIndex)
+      throws ObjTooLargeException {
+    IndexesLogic indexesLogic = indexesLogic(persist);
+    ObjId referenceIndexId = null;
+    List<IndexStripe> referenceIndexStripes = emptyList();
+    // 'referenceIndex' can be null, if it became empty (aka all keys have been deleted)
+    if (referenceIndex != null) {
+      if (referenceIndex.stripes().size() <= persist.config().maxReferenceStripesPerCommit()) {
+        referenceIndexStripes = indexesLogic.persistIndexStripesFromIndex(referenceIndex);
+      } else {
+        referenceIndexId = indexesLogic.persistStripedIndex(referenceIndex);
+      }
+    }
+    commit =
+        CommitObj.commitBuilder()
+            .from(commit)
+            .incrementalIndex(newIncremental.serialize())
+            .referenceIndex(referenceIndexId)
+            .referenceIndexStripes(referenceIndexStripes)
+            .build();
+    return commit;
+  }
+
+  private StoreIndex<CommitOp> createReferenceIndexForCommit(
+      CommitObj commit, StoreIndex<CommitOp> newIncremental) {
+    List<StoreIndex<CommitOp>> stripes;
+    if (commit.hasReferenceIndex()) {
+      // There is already an existing reference index, spill incremental index to existing ones.
+      stripes = updateExistingReferenceIndex(commit, newIncremental);
+    } else {
+      // The commit does not refer to a reference index yet.
+      stripes = createNewReferenceIndex(commit, newIncremental);
+    }
+
+    // The reference index is empty now (someone deleted all keys...)
+    if (stripes.isEmpty()) {
+      return null;
+    } else if (stripes.size() == 1) {
+      return stripes.get(0);
+    } else {
+      return indexFromStripes(stripes);
+    }
+  }
+
+  private List<StoreIndex<CommitOp>> updateExistingReferenceIndex(
+      CommitObj commitObj, StoreIndex<CommitOp> newIncremental) {
+    int maxSize = persist.effectiveIndexSegmentSizeLimit();
+    // use halt of the max as the initial size for _new_ segments/splits
+    int newSegmentSize = maxSize / 2;
+
+    IndexesLogic indexesLogic = indexesLogic(persist);
+    StoreIndex<CommitOp> referenceIndex =
+        requireNonNull(
+                indexesLogic.buildReferenceIndexOnly(commitObj),
+                "Commit is expected to have a reference index here")
+            .asMutableIndex();
+
+    List<StoreIndex<CommitOp>> currentStripes = referenceIndex.stripes();
+
+    StoreIndex<CommitOp> incrementalIndex = indexesLogic.incrementalIndexFromCommit(commitObj);
+
+    // Prefetch the stripes that will be touched
+    Set<StoreKey> prefetch = new HashSet<>();
+    for (StoreIndexElement<CommitOp> el : incrementalIndex) {
+      CommitOp c = el.content();
+      Action action = c.action();
+      if (!action.currentCommit()) {
+        prefetch.add(el.key());
+      }
+    }
+    referenceIndex.loadIfNecessary(prefetch);
+
+    for (StoreIndexElement<CommitOp> el : incrementalIndex) {
+      CommitOp c = el.content();
+      Action action = c.action();
+      if (action.currentCommit()) {
+        // Only keep the operations for the commit itself in the incremental index.
+        newIncremental.add(el);
+      } else {
+        if (action.exists()) {
+          // Add to the reference index using the `NONE` action, if it still exists.
+          referenceIndex.add(
+              indexElement(el.key(), commitOp(NONE, c.payload(), c.value(), c.contentId())));
+        } else {
+          // The element's been removed in the incremental index, can remove it from the reference
+          // index here.
+          referenceIndex.remove(el.key());
+        }
+      }
+    }
+
+    int newStripes = 0;
+    int removedStripes = 0;
+    int touched = 0;
+    List<StoreIndex<CommitOp>> stripes = new ArrayList<>(currentStripes.size() * 2);
+    for (StoreIndex<CommitOp> s : currentStripes) {
+      if (s.isMutable()) {
+        touched++;
+        // a stripe has been modified, if it is mutable
+        if (s.estimatedSerializedSize() > maxSize) {
+          // Further split an existing stripe into at least two stripes
+          int parts = Math.max(s.estimatedSerializedSize() / newSegmentSize + 1, 2);
+          List<StoreIndex<CommitOp>> divided = s.divide(parts);
+          newStripes += divided.size() - 1;
+          stripes.addAll(divided);
+          removedStripes++;
+        } else {
+          if (s.elementCount() > 0) { // Do not add empty stripes
+            stripes.add(s);
+          } else {
+            removedStripes++;
+          }
+        }
+      } else {
+        stripes.add(s);
+      }
+    }
+
+    LOGGER.info(
+        "Generated reference index with {} stripes ({} touched, {} new, {} removed) for commit {} at seq # {}",
+        stripes.size(),
+        touched,
+        newStripes,
+        removedStripes,
+        commitObj.id(),
+        commitObj.seq());
+
+    return stripes;
+  }
+
+  private List<StoreIndex<CommitOp>> createNewReferenceIndex(
+      CommitObj commitObj, StoreIndex<CommitOp> newIncremental) {
+    int maxSize = persist.effectiveIndexSegmentSizeLimit();
+    // use half of the max as the initial size for _new_ segments/splits
+    int newSegmentSize = maxSize / 2;
+
+    List<StoreIndex<CommitOp>> stripes = new ArrayList<>();
+
+    StoreIndex<CommitOp> current = newStoreIndex(COMMIT_OP_SERIALIZER);
+
+    IndexesLogic indexesLogic = indexesLogic(persist);
+
+    for (StoreIndexElement<CommitOp> el : indexesLogic.incrementalIndexFromCommit(commitObj)) {
+      CommitOp content = el.content();
+      if (!content.action().currentCommit()) {
+        current.add(
+            indexElement(
+                el.key(), commitOp(NONE, content.payload(), content.value(), content.contentId())));
+      } else {
+        newIncremental.add(el);
+      }
+      if (current.estimatedSerializedSize() > newSegmentSize) {
+        stripes.add(current);
+        current = newStoreIndex(COMMIT_OP_SERIALIZER);
+      }
+    }
+    if (current.elementCount() > 0) {
+      stripes.add(current);
+    }
+
+    int sz = stripes.size();
+    LOGGER.info(
+        "Generated reference index with {} stripes ({} touched, {} new) for commit {} at seq # {}",
+        sz,
+        sz,
+        sz,
+        commitObj.id(),
+        commitObj.seq());
+
+    return stripes;
+  }
+
+  @SuppressWarnings("UnstableApiUsage")
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  @Override
+  public CommitObj buildCommitObj(
+      @Nonnull @jakarta.annotation.Nonnull CreateCommit createCommit,
+      @Nonnull @jakarta.annotation.Nonnull ConflictHandler conflictHandler,
+      @Nonnull @jakarta.annotation.Nonnull CommitOpHandler commitOpHandler)
+      throws CommitConflictException, ObjNotFoundException {
+    StoreConfig config = persist.config();
+
+    ObjId parentCommitId = createCommit.parentCommitId();
+    CommitObj.Builder c =
+        CommitObj.commitBuilder()
+            .created(config.currentTimeMicros())
+            .addAllSecondaryParents(createCommit.secondaryParents())
+            .addTail(parentCommitId)
+            .message(createCommit.message())
+            .headers(createCommit.headers())
+            .commitType(createCommit.commitType());
+
+    Hasher hasher =
+        newHasher()
+            .putString(COMMIT.name(), UTF_8)
+            .putBytes(parentCommitId.asByteBuffer())
+            .putString(createCommit.message(), UTF_8);
+    hashCommitHeaders(hasher, createCommit.headers());
+
+    CommitObj parent = fetchCommit(parentCommitId);
+    StoreIndex<CommitOp> index;
+    StoreIndex<CommitOp> fullIndex;
+    if (parent != null) {
+      List<ObjId> parentTail = parent.tail();
+      int amount = Math.min(config.parentsPerCommit() - 1, parentTail.size());
+      for (int i = 0; i < amount; i++) {
+        c.addTail(parentTail.get(i));
+      }
+
+      IndexesLogic indexesLogic = indexesLogic(persist);
+
+      StoreIndex<CommitOp> incrementalIndex = indexesLogic.incrementalIndexFromCommit(parent);
+      index = indexesLogic.incrementalIndexForUpdate(parent, Optional.of(incrementalIndex));
+      c.seq(parent.seq() + 1)
+          .referenceIndex(parent.referenceIndex())
+          .addAllReferenceIndexStripes(parent.referenceIndexStripes());
+      fullIndex = indexesLogic.buildCompleteIndex(parent, Optional.of(incrementalIndex));
+    } else {
+      checkArgument(
+          EMPTY_OBJ_ID.equals(parentCommitId),
+          "Commit to build points to non-existing parent commit %s",
+          parentCommitId);
+      fullIndex = index = newStoreIndex(COMMIT_OP_SERIALIZER);
+      c.seq(1L);
+    }
+
+    List<CommitConflict> conflicts = new ArrayList<>();
+
+    // Keys used in all "add", "unchanged" and "remove" actions.
+    Set<StoreKey> keys =
+        newHashSetWithExpectedSize(createCommit.adds().size() + createCommit.removes().size());
+    Set<StoreKey> readdedKeys = newHashSetWithExpectedSize(createCommit.removes().size());
+
+    preprocessCommitActions(createCommit, keys, readdedKeys);
+
+    // Results in a bulk-(pre)fetch of the requested index stripes
+    fullIndex.loadIfNecessary(keys);
+
+    Map<UUID, CommitOp> removes = new HashMap<>();
+    for (Remove remove : createCommit.removes()) {
+      StoreKey key = remove.key();
+      UUID contentId = remove.contentId();
+      int payload = remove.payload();
+
+      StoreIndexElement<CommitOp> existing = existingFromIndex(fullIndex, key);
+      CommitOp existingContent = existing != null ? existing.content() : null;
+
+      ObjId expectedValue = remove.expectedValue();
+      CommitOp op = commitOp(REMOVE, payload, expectedValue, contentId);
+      if (contentId != null) {
+        removes.put(contentId, op);
+      }
+
+      CommitConflict conflict =
+          checkForConflict(key, contentId, payload, op, existingContent, expectedValue);
+
+      if (conflict != null) {
+        if (handleConflict(conflictHandler, conflicts, conflict)) {
+          continue;
+        }
+      } else {
+        commitOpHandler.nonConflicting(key, null);
+      }
+
+      // No conflict, add "remove action" to index
+      hasher.putInt(2).putInt(payload).putString(key.rawString(), UTF_8);
+      if (contentId != null) {
+        hasher
+            .putLong(contentId.getMostSignificantBits())
+            .putLong(contentId.getLeastSignificantBits());
+      }
+      index.add(indexElement(key, op));
+    }
+
+    for (Unchanged unchanged : createCommit.unchanged()) {
+      StoreKey key = unchanged.key();
+      UUID contentId = unchanged.contentId();
+      int payload = unchanged.payload();
+
+      boolean readded = readdedKeys.contains(key);
+      CommitOp existingContent = existingContentForCommit(fullIndex, key, readded);
+
+      ObjId expectedValue = unchanged.expectedValue();
+      CommitConflict conflict =
+          checkForConflict(key, contentId, payload, null, existingContent, expectedValue);
+
+      if (conflict != null) {
+        handleConflict(conflictHandler, conflicts, conflict);
+      }
+    }
+
+    for (Add add : createCommit.adds()) {
+      StoreKey key = add.key();
+      UUID contentId = add.contentId();
+      int payload = add.payload();
+
+      CommitOp op = commitOp(ADD, payload, add.value(), add.contentId());
+      CommitConflict conflict = null;
+
+      boolean readded = readdedKeys.contains(key);
+      CommitOp existingContent = existingContentForCommit(fullIndex, key, readded);
+
+      if (!readded) {
+        // Check whether the content-ID has been removed above. If yes, check whether the content-ID
+        // is being reused. If so, then the commit contains a rename-operation.
+        CommitOp removeOp = removes.remove(contentId);
+        if (removeOp != null) {
+          if (existingContent != null) {
+            conflict = commitConflict(key, KEY_EXISTS, op, existingContent);
+          }
+          existingContent = removeOp;
+        }
+      }
+
+      ObjId expectedValue = add.expectedValue();
+      if (conflict == null) {
+        conflict = checkForConflict(key, contentId, payload, op, existingContent, expectedValue);
+      }
+
+      if (conflict != null) {
+        if (handleConflict(conflictHandler, conflicts, conflict)) {
+          continue;
+        }
+      } else {
+        commitOpHandler.nonConflicting(key, add.value());
+      }
+
+      // No conflict, add "add action" to index
+      hasher
+          .putInt(1)
+          .putString(key.rawString(), UTF_8)
+          .putInt(payload)
+          .putBytes(add.value().asByteBuffer());
+      if (contentId != null) {
+        hasher
+            .putLong(contentId.getMostSignificantBits())
+            .putLong(contentId.getLeastSignificantBits());
+      }
+      index.add(indexElement(key, op));
+    }
+
+    if (!conflicts.isEmpty()) {
+      throw new CommitConflictException(conflicts);
+    }
+
+    return c.incrementalIndex(index.serialize()).id(hashAsObjId(hasher)).build();
+  }
+
+  private static void preprocessCommitActions(
+      CreateCommit createCommit, Set<StoreKey> keys, Set<StoreKey> readdedKeys) {
+    Set<StoreKey> removedKeys = newHashSetWithExpectedSize(createCommit.removes().size());
+
+    // Collect the removed keys - both for "pure" deletes, renames and re-adds.
+    for (Remove remove : createCommit.removes()) {
+      StoreKey key = remove.key();
+      checkArgument(keys.add(key), "Duplicate key: " + key);
+      removedKeys.add(key);
+    }
+
+    // Collect the keys that are re-added w/ potentially different payload and content-ID:
+    // A "re-add" is the scenario when for example a data lake table is dropped and another one
+    // created with the same name.
+    Set<UUID> seenContentIds = newHashSetWithExpectedSize(createCommit.adds().size());
+    for (Add add : createCommit.adds()) {
+      StoreKey key = add.key();
+      // Check that the key to be 'added' is either not contained in the set of keys being
+      // 'removed' or that it is only removed+added once. The latter covers the scenario that a
+      // key is _explicitly_ removed to be added with a different payload as a _new_ key.
+      boolean unseenKey = keys.add(key);
+      if (!unseenKey && removedKeys.remove(key)) {
+        readdedKeys.add(key);
+      } else {
+        checkArgument(unseenKey, "Duplicate key: " + key);
+      }
+      UUID contentId = add.contentId();
+      if (contentId != null) {
+        checkArgument(
+            seenContentIds.add(contentId),
+            "Duplicate content ID: " + contentId + " for key: " + key);
+      }
+    }
+
+    // Collect keys from "unchanged" actions.
+    for (Unchanged unchanged : createCommit.unchanged()) {
+      StoreKey key = unchanged.key();
+      checkArgument(keys.add(key), "Duplicate key: " + key);
+    }
+  }
+
+  private static CommitConflict checkForConflict(
+      StoreKey key,
+      UUID contentId,
+      int payload,
+      CommitOp op,
+      CommitOp existingContent,
+      ObjId expectedValue) {
+    CommitConflict conflict = null;
+    if (expectedValue == null) {
+      if (existingContent != null) {
+        conflict = commitConflict(key, KEY_EXISTS, op, existingContent);
+      }
+    } else {
+      if (existingContent != null) {
+        if (payload != existingContent.payload()) {
+          conflict = commitConflict(key, PAYLOAD_DIFFERS, op, existingContent);
+        } else if (!Objects.equals(contentId, existingContent.contentId())) {
+          conflict = commitConflict(key, CONTENT_ID_DIFFERS, op, existingContent);
+        } else if (!expectedValue.equals(existingContent.value())) {
+          conflict = commitConflict(key, VALUE_DIFFERS, op, existingContent);
+        }
+      } else {
+        conflict = commitConflict(key, KEY_DOES_NOT_EXIST, op);
+      }
+    }
+    //
+
+    return conflict;
+  }
+
+  private static CommitOp existingContentForCommit(
+      StoreIndex<CommitOp> fullIndex, StoreKey key, boolean readded) {
+    StoreIndexElement<CommitOp> existing =
+        // Need to "manually" consult 'readdedKeys', because the 'index' updated above in
+        // the "remove-loop" is a _new_ index object.
+        readded ? null : existingFromIndex(fullIndex, key);
+    return existing != null ? existing.content() : null;
+  }
+
+  private static boolean handleConflict(
+      @Nonnull @jakarta.annotation.Nonnull ConflictHandler conflictHandler,
+      @Nonnull @jakarta.annotation.Nonnull List<CommitConflict> conflicts,
+      @Nonnull @jakarta.annotation.Nonnull CommitConflict conflict) {
+    ConflictResolution resolution = conflictHandler.onConflict(conflict);
+    switch (resolution) {
+      case CONFLICT:
+        conflicts.add(conflict);
+        // Do not the conflicting action to the commit, report the conflict
+        return true;
+      case IGNORE:
+        // Add the conflicting action to the resulting commit, not reporting as a conflict
+        return false;
+      case DROP:
+        // Do not add the conflicting action to the resulting commit, not reporting as a conflict
+        return true;
+      default:
+        throw new IllegalStateException("Unknown resolution " + resolution);
+    }
+  }
+
+  private static StoreIndexElement<CommitOp> existingFromIndex(
+      StoreIndex<CommitOp> index, StoreKey key) {
+    StoreIndexElement<CommitOp> existing = index.get(key);
+    return existing != null && existing.content().action().exists() ? existing : null;
+  }
+
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  @Override
+  public ObjId findCommonAncestor(
+      @Nonnull @jakarta.annotation.Nonnull ObjId headId,
+      @Nonnull @jakarta.annotation.Nonnull ObjId otherId)
+      throws NoSuchElementException {
+    PagedResult<ObjId, ObjId> log1 = commitIdLog(commitLogQuery(headId));
+    PagedResult<ObjId, ObjId> log2 = commitIdLog(commitLogQuery(otherId));
+
+    ObjectHashSet<ObjId> commits1 = new ObjectHashSet<>();
+    ObjectHashSet<ObjId> commits2 = new ObjectHashSet<>();
+
+    if (!log2.hasNext() && !EMPTY_OBJ_ID.equals(otherId)) {
+      // this is a race, commit deleted in the meantime
+      throw commonAncestorCommitNotFound(otherId);
+    }
+    if (!log1.hasNext() && !EMPTY_OBJ_ID.equals(headId)) {
+      // this is a race, commit deleted in the meantime
+      throw commonAncestorCommitNotFound(headId);
+    }
+
+    while (true) {
+      ObjId current1 = log1.hasNext() ? log1.next() : EMPTY_OBJ_ID;
+      ObjId current2 = log2.hasNext() ? log2.next() : EMPTY_OBJ_ID;
+
+      boolean eol1 = current1.equals(EMPTY_OBJ_ID);
+      boolean eol2 = current2.equals(EMPTY_OBJ_ID);
+
+      if (eol1 && eol2) {
+        throw noCommonAncestor(headId, otherId);
+      }
+
+      if (!eol1) {
+        if (commits2.contains(current1)) {
+          return current1;
+        }
+        commits1.add(current1);
+      }
+
+      if (!eol2) {
+        if (commits1.contains(current2)) {
+          return current2;
+        }
+        commits2.add(current2);
+      }
+    }
+  }
+
+  private static NoSuchElementException commonAncestorCommitNotFound(ObjId id) {
+    return new NoSuchElementException("Commit '" + id + "' not found");
+  }
+
+  private static NoSuchElementException noCommonAncestor(ObjId headId, ObjId otherId) {
+    return new NoSuchElementException(
+        NO_COMMON_ANCESTOR_IN_PARENTS_OF + headId + " and " + otherId);
+  }
+
+  @Nullable
+  @jakarta.annotation.Nullable
+  @Override
+  public CommitObj fetchCommit(@Nonnull @jakarta.annotation.Nonnull ObjId commitId)
+      throws ObjNotFoundException {
+    if (EMPTY_OBJ_ID.equals(commitId)) {
+      return null;
+    }
+    Obj obj = persist.fetchObj(commitId);
+    if (obj instanceof CommitObjReference) {
+      CommitObjReference commitRef = (CommitObjReference) obj;
+      ObjId refCommitId = commitRef.commitId();
+      if (EMPTY_OBJ_ID.equals(refCommitId)) {
+        return null;
+      }
+      obj = persist.fetchObj(refCommitId);
+    }
+    checkState(
+        obj == null || obj instanceof CommitObj, "Expected a Commit object, but got %s", obj);
+    return (CommitObj) obj;
+  }
+
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  @Override
+  public PagedResult<DiffEntry, StoreKey> diff(
+      @Nonnull @jakarta.annotation.Nonnull DiffQuery diffQuery) {
+    IndexesLogic indexesLogic = indexesLogic(persist);
+
+    StoreKey start =
+        diffQuery
+            .pagingToken()
+            .map(t -> keyFromString(t.token().toStringUtf8()))
+            .orElse(diffQuery.start());
+    StoreKey end = diffQuery.end();
+
+    StoreIndex<CommitOp> fromIndex = indexesLogic.buildCompleteIndexOrEmpty(diffQuery.fromCommit());
+    StoreIndex<CommitOp> toIndex = indexesLogic.buildCompleteIndexOrEmpty(diffQuery.toCommit());
+
+    Iterator<StoreIndexElement<CommitOp>> fromIter =
+        fromIndex.iterator(start, end, diffQuery.prefetch());
+    Iterator<StoreIndexElement<CommitOp>> toIter =
+        toIndex.iterator(start, end, diffQuery.prefetch());
+
+    return new DiffEntryIter(fromIter, toIter);
+  }
+
+  private static final class DiffEntryIter extends AbstractIterator<DiffEntry>
+      implements PagedResult<DiffEntry, StoreKey> {
+    private final Iterator<StoreIndexElement<CommitOp>> fromIter;
+    private final Iterator<StoreIndexElement<CommitOp>> toIter;
+
+    private StoreIndexElement<CommitOp> fromElement;
+    private StoreIndexElement<CommitOp> toElement;
+
+    DiffEntryIter(
+        Iterator<StoreIndexElement<CommitOp>> fromIter,
+        Iterator<StoreIndexElement<CommitOp>> toIter) {
+      this.fromIter = fromIter;
+      this.toIter = toIter;
+    }
+
+    @Override
+    protected DiffEntry computeNext() {
+      while (true) {
+        if (fromElement == null) {
+          fromElement = next(fromIter);
+        }
+        if (toElement == null) {
+          toElement = next(toIter);
+        }
+
+        if (fromElement == null && toElement == null) {
+          // No more elements, done.
+          return endOfData();
+        }
+
+        if (fromElement == null) {
+          // No more "from" elements, consume from "to"
+          return consumeTo();
+        }
+        if (toElement == null) {
+          // No more "to" elements, consume from "from"
+          return consumeFrom();
+        }
+
+        StoreKey fromKey = fromElement.key();
+        StoreKey toKey = toElement.key();
+
+        int cmp = fromKey.compareTo(toKey);
+        // Consume either the "from" element, the "to" element or produce a diff between
+        // "from" and "to".
+        if (cmp < 0) {
+          return consumeFrom();
+        } else if (cmp > 0) {
+          return consumeTo();
+        } else {
+          DiffEntry r = consumeBoth();
+          if (r != null) {
+            return r;
+          }
+        }
+      }
+    }
+
+    private DiffEntry consumeBoth() {
+      DiffEntry e = null;
+      StoreIndexElement<CommitOp> f = fromElement;
+      StoreIndexElement<CommitOp> t = toElement;
+      CommitOp fc = f.content();
+      CommitOp tc = t.content();
+      if (!Objects.equals(f.content().value(), t.content().value())) {
+        e =
+            diffEntry(
+                t.key(),
+                fc.value(),
+                fc.payload(),
+                fc.contentId(),
+                tc.value(),
+                tc.payload(),
+                tc.contentId());
+      }
+      fromElement = null;
+      toElement = null;
+      return e;
+    }
+
+    private DiffEntry consumeTo() {
+      StoreIndexElement<CommitOp> t = toElement;
+      toElement = null;
+      CommitOp c = t.content();
+      return diffEntry(t.key(), null, 0, null, c.value(), c.payload(), c.contentId());
+    }
+
+    private DiffEntry consumeFrom() {
+      StoreIndexElement<CommitOp> f = fromElement;
+      fromElement = null;
+      CommitOp c = f.content();
+      return diffEntry(f.key(), c.value(), c.payload(), c.contentId(), null, 0, null);
+    }
+
+    private StoreIndexElement<CommitOp> next(Iterator<StoreIndexElement<CommitOp>> iter) {
+      while (iter.hasNext()) {
+        StoreIndexElement<CommitOp> el = iter.next();
+        if (el.content().action().exists()) {
+          return el;
+        }
+      }
+      return null;
+    }
+
+    @Nonnull
+    @jakarta.annotation.Nonnull
+    @Override
+    public PagingToken tokenForKey(StoreKey key) {
+      return key != null ? pagingToken(copyFromUtf8(key.rawString())) : emptyPagingToken();
+    }
+  }
+
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  @Override
+  public CreateCommit.Builder diffToCreateCommit(
+      @Nonnull @jakarta.annotation.Nonnull PagedResult<DiffEntry, StoreKey> diff,
+      @Nonnull @jakarta.annotation.Nonnull CreateCommit.Builder createCommit) {
+    while (diff.hasNext()) {
+      DiffEntry d = diff.next();
+      if (d.fromId() == null) {
+        // key added
+        createCommit.addAdds(
+            commitAdd(d.key(), d.toPayload(), requireNonNull(d.toId()), null, d.toContentId()));
+      } else if (d.toId() == null) {
+        // key removed
+        createCommit.addRemoves(
+            commitRemove(d.key(), d.fromPayload(), requireNonNull(d.fromId()), d.fromContentId()));
+      } else {
+        // key updated
+        createCommit.addAdds(
+            commitAdd(
+                d.key(), d.toPayload(), requireNonNull(d.toId()), d.fromId(), d.fromContentId()));
+      }
+    }
+    return createCommit;
+  }
+
+  @Override
+  @Nullable
+  @jakarta.annotation.Nullable
+  public CommitObj headCommit(@Nonnull @jakarta.annotation.Nonnull Reference reference)
+      throws ObjNotFoundException {
+    return fetchCommit(reference.pointer());
+  }
+
+  @Override
+  public HeadsAndForkPoints identifyAllHeadsAndForkPoints(
+      int expectedCommitCount, Consumer<CommitObj> commitHandler) {
+
+    // Need to remember the time when the identification started, so that a follow-up
+    // identifyReferencedAndUnreferencedHeads() knows when it can stop scanning a named-reference's
+    // commit-log. identifyReferencedAndUnreferencedHeads() has to read up to the first commit
+    // _before_ this timestamp to not commit-IDs as "unreferenced".
+    //
+    // Note: keep in mind, that scanAllCommitLogEntries() returns all commits in a
+    // non-deterministic order. Example: if (at least) two commits are added to a branch while this
+    // function is running, the original HEAD of that branch could otherwise be returned as
+    // "unreferenced".
+    long scanStartedAtInMicros = persist.config().currentTimeMicros();
+
+    IdentifyHeadsAndForkPoints identify =
+        new IdentifyHeadsAndForkPoints(expectedCommitCount, scanStartedAtInMicros);
+
+    // scanAllCommitLogEntries() returns all commits in no specific order, parents may be scanned
+    // before or after their children.
+    try (CloseableIterator<Obj> scan = persist.scanAllObjects(EnumSet.of(COMMIT))) {
+      while (scan.hasNext()) {
+        CommitObj commit = (CommitObj) scan.next();
+
+        // Ignore commits on internal references
+        if (commit.commitType() == CommitType.INTERNAL) {
+          continue;
+        }
+
+        if (identify.handleCommit(commit)) {
+          commitHandler.accept(commit);
+        }
+      }
+    }
+
+    return identify.finish();
+  }
+}

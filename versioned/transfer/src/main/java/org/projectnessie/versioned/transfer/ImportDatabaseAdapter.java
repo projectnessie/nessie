@@ -42,6 +42,7 @@ import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Commit;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportVersion;
+import org.projectnessie.versioned.transfer.serialize.TransferTypes.HeadsAndForks;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.NamedReference;
 
 final class ImportDatabaseAdapter extends ImportCommon {
@@ -188,4 +189,7 @@ final class ImportDatabaseAdapter extends ImportCommon {
     }
     return commitCount;
   }
+
+  @Override
+  void importFinalize(HeadsAndForks headsAndForks) {}
 }

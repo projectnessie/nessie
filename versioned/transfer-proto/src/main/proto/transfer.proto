@@ -32,7 +32,18 @@ message ExportMeta {
 
 enum ExportVersion {
   Unknown = 0;
+  /*
+   * V1 represents an export from the "database adapter" based implementation
+   */
   V1 = 1;
+  /*
+   * V2 notes and changes:
+   *
+   * - V2 is an export from the "persist/backend" based implementation
+   * - flexible reference names
+   * - importing a V1 export into a V2 capable Nessie version works
+   */
+  V2 = 2;
 }
 
 message HeadsAndForks {
@@ -41,12 +52,20 @@ message HeadsAndForks {
   int64 scan_started_at_in_micros = 3;
 }
 
+// used by V2
+message Ref {
+  string name = 2;
+  bytes pointer = 3;
+}
+
+// used by V1, not used by V2
 message NamedReference {
   RefType ref_type = 1;
   string name = 2;
   bytes commit_id = 3;
 }
 
+// used by V1, not used by V2
 enum RefType {
   Branch = 0;
   Tag = 1;
@@ -57,9 +76,19 @@ message Commit {
   int64 commit_sequence = 2;
   bytes parent_commit_id = 3;
   repeated bytes additional_parents = 4;
-  bytes metadata = 5;
   repeated Operation operations = 6;
   int64 created_time_micros = 7;
+  // used by V1, not used by V2
+  optional bytes metadata = 5;
+  // V2
+  string message = 8;
+  // V2
+  repeated HeaderEntry headers = 9;
+}
+
+message HeaderEntry {
+  string name = 1;
+  repeated string values = 2;
 }
 
 message Operation {
@@ -75,6 +104,11 @@ enum OperationType {
   Delete = 1;
 }
 
-message RepositoryDescription {
+// was present but unused in V1 - used by V2
+message RepositoryDescriptionProto {
   map<string, string> properties = 1;
+  optional string repository_id = 2;
+  optional int64 oldest_commit_timestamp_millis = 3;
+  optional int64 repository_created_timestamp_millis = 4;
+  optional string default_branch_name = 5;
 }

@@ -15,6 +15,9 @@
  */
 package org.projectnessie.quarkus.cli;
 
+import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.INMEMORY;
+import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.IN_MEMORY;
+
 import java.util.concurrent.Callable;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
@@ -22,22 +25,45 @@ import org.projectnessie.quarkus.config.VersionStoreConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.storage.common.persist.Persist;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
 
 public abstract class BaseCommand implements Callable<Integer> {
   DatabaseAdapter databaseAdapter;
+  Persist persist;
+
   @Inject VersionStoreConfig versionStoreConfig;
   @Inject ServerConfig serverConfig;
 
   @Inject Instance<DatabaseAdapter> databaseAdapterInstance;
+  @Inject Instance<Persist> persistInstance;
 
   @Spec CommandSpec spec;
 
   @Override
   public final Integer call() throws Exception {
-    databaseAdapter = databaseAdapterInstance.get();
-    return callWithDatabaseAdapter();
+    VersionStoreType versionStoreType = versionStoreConfig.getVersionStoreType();
+    if (versionStoreType.isNewStorage()) {
+      persist = persistInstance.get();
+      return callWithPersist();
+    } else {
+      databaseAdapter = databaseAdapterInstance.get();
+      return callWithDatabaseAdapter();
+    }
+  }
+
+  protected Integer callWithPersist() throws Exception {
+    spec.commandLine()
+        .getErr()
+        .println(
+            spec.commandLine()
+                .getColorScheme()
+                .errorText(
+                    "Command '"
+                        + spec.name()
+                        + "' is not (yet) supported for new Nessie storage."));
+    return 1;
   }
 
   protected Integer callWithDatabaseAdapter() throws Exception {
@@ -54,7 +80,8 @@ public abstract class BaseCommand implements Callable<Integer> {
   }
 
   protected void warnOnInMemory() {
-    if (versionStoreConfig.getVersionStoreType() == VersionStoreType.INMEMORY) {
+    if (versionStoreConfig.getVersionStoreType() == INMEMORY
+        || versionStoreConfig.getVersionStoreType() == IN_MEMORY) {
       spec.commandLine()
           .getErr()
           .println(

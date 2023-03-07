@@ -28,11 +28,29 @@ public interface VersionStoreConfig {
 
   @RegisterForReflection
   enum VersionStoreType {
-    DYNAMO,
-    INMEMORY,
-    ROCKS,
-    MONGO,
-    TRANSACTIONAL,
+    DYNAMO(false),
+    INMEMORY(false),
+    ROCKS(false),
+    MONGO(false),
+    TRANSACTIONAL(false),
+
+    // NEW storage
+    IN_MEMORY(true),
+    ROCKSDB(true),
+    DYNAMODB(true),
+    MONGODB(true),
+    CASSANDRA(true),
+    JDBC(true);
+
+    private final boolean newStorage;
+
+    VersionStoreType(boolean newStorage) {
+      this.newStorage = newStorage;
+    }
+
+    public boolean isNewStorage() {
+      return newStorage;
+    }
   }
 
   @WithName("type")

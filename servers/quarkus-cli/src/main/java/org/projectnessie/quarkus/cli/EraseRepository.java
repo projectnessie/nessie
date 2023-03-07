@@ -15,8 +15,14 @@
  */
 package org.projectnessie.quarkus.cli;
 
+import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
+
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
+import org.projectnessie.versioned.storage.common.config.StoreConfig;
+import org.projectnessie.versioned.storage.common.logic.RepositoryDescription;
+import org.projectnessie.versioned.storage.common.logic.RepositoryLogic;
+import org.projectnessie.versioned.storage.common.persist.Persist;
 import picocli.CommandLine;
 
 @CommandLine.Command(
@@ -37,6 +43,32 @@ public class EraseRepository extends BaseCommand {
       description =
           "Confirmation code for erasing the repository (will be emitted by this command if not set).")
   private String confirmationCode;
+
+  @Override
+  protected Integer callWithPersist() {
+    warnOnInMemory();
+
+    String code = getConfirmationCode(persist);
+    if (!code.equals(confirmationCode)) {
+      spec.commandLine()
+          .getErr()
+          .printf(
+              "Please use the '--confirmation-code=%s' option to indicate that the"
+                  + " repository erasure operation is intentional.%nAll Nessie data will be lost!%n",
+              code);
+      return 1;
+    }
+
+    persist.erase();
+    spec.commandLine().getOut().println("Repository erased.");
+
+    if (newDefaultBranch != null) {
+      repositoryLogic(persist).initialize(newDefaultBranch);
+      spec.commandLine().getOut().println("Repository initialized.");
+    }
+
+    return 0;
+  }
 
   @Override
   protected Integer callWithDatabaseAdapter() {
@@ -73,6 +105,26 @@ public class EraseRepository extends BaseCommand {
     code = 31L * code + adapterConfig.getParentsPerCommit();
     code = 31L * code + adapterConfig.getKeyListDistance();
     code = 31L * code + adapterConfig.getMaxKeyListSize();
+    // Format the code using MAX_RADIX to reduce the resultant string length
+    return Long.toString(code, Character.MAX_RADIX);
+  }
+
+  static String getConfirmationCode(Persist persist) {
+    StoreConfig config = persist.config();
+
+    // Derive some stable number from configuration
+    long code = config.repositoryId().hashCode();
+    code += 1; // avoid zero for an empty repo ID
+
+    RepositoryLogic repositoryLogic = repositoryLogic(persist);
+    RepositoryDescription repoDesc = repositoryLogic.fetchRepositoryDescription();
+    if (repoDesc != null) {
+      code = code * 31 + repoDesc.repositoryCreatedTime().toEpochMilli();
+      code = code * 31 + repoDesc.oldestPossibleCommitTime().toEpochMilli();
+    }
+    code = 31L * code + config.parentsPerCommit();
+    code = 31L * code + config.maxIncrementalIndexSize();
+    code = 31L * code + config.maxSerializedIndexSize();
     // Format the code using MAX_RADIX to reduce the resultant string length
     return Long.toString(code, Character.MAX_RADIX);
   }

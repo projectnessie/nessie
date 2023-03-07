@@ -22,10 +22,10 @@ import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import io.quarkus.test.junit.main.QuarkusMainTest;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
+import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfilePersistInmemory;
 
 @QuarkusMainTest
-@TestProfile(QuarkusTestProfileInmemory.class)
+@TestProfile(QuarkusTestProfilePersistInmemory.class)
 class TestNessieCli {
 
   @Test

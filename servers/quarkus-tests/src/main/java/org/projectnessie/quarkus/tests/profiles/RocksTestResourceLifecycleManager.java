@@ -15,81 +15,8 @@
  */
 package org.projectnessie.quarkus.tests.profiles;
 
-import static java.nio.file.FileVisitResult.CONTINUE;
-
-import com.google.common.collect.ImmutableMap;
-import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
-import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-public class RocksTestResourceLifecycleManager implements QuarkusTestResourceLifecycleManager {
-  private Path rocksDir;
-
-  @Override
-  public Map<String, String> start() {
-    try {
-      rocksDir = Files.createTempDirectory("test-quarkus-rocks");
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-
-    return ImmutableMap.of(
-        "nessie.version.store.rocks.db-path", rocksDir.toAbsolutePath().toString());
-  }
-
-  @Override
-  public void stop() {
-    try {
-      deleteTempDir(rocksDir);
-    } catch (Exception e) {
-      throw new IllegalStateException(e);
-    }
-  }
-
-  private static void deleteTempDir(Path dir) throws IOException {
-    if (Files.notExists(dir)) {
-      return;
-    }
-
-    List<IOException> failures = new ArrayList<>();
-    Files.walkFileTree(
-        dir,
-        new SimpleFileVisitor<Path>() {
-
-          @Override
-          public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) {
-            return tryDelete(file);
-          }
-
-          @Override
-          public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
-            return tryDelete(dir);
-          }
-
-          private FileVisitResult tryDelete(Path path) {
-            try {
-              Files.delete(path);
-            } catch (NoSuchFileException ignore) {
-              // pass
-            } catch (IOException e) {
-              failures.add(e);
-            }
-            return CONTINUE;
-          }
-        });
-
-    if (!failures.isEmpty()) {
-      IOException e = new IOException("Could not delete temp-directory " + dir);
-      failures.forEach(e::addSuppressed);
-      throw e;
-    }
+public class RocksTestResourceLifecycleManager extends AbstractRocksTestResourceLifecycleManager {
+  public RocksTestResourceLifecycleManager() {
+    super("nessie.version.store.rocks.db-path");
   }
 }

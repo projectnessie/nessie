@@ -281,18 +281,24 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
             ContentKeyDetails::getConflictType,
             ContentKeyDetails::getMergeBehavior)
         .contains(tuple(key1, ContentKeyConflict.NONE, NORMAL));
-    soft.assertThat(response.getSourceCommits())
-        .asInstanceOf(list(LogEntry.class))
-        .extracting(LogEntry::getCommitMeta)
-        .extracting(CommitMeta::getHash, CommitMeta::getMessage)
-        .containsExactly(
-            tuple(committed2.getHash(), "test-branch2"),
-            tuple(committed1.getHash(), "test-branch1"));
-    soft.assertThat(response.getTargetCommits())
-        .asInstanceOf(list(LogEntry.class))
-        .extracting(LogEntry::getCommitMeta)
-        .extracting(CommitMeta::getHash, CommitMeta::getMessage)
-        .contains(tuple(baseHead.getHash(), "test-main"));
+    if (response.getSourceCommits() != null && !response.getSourceCommits().isEmpty()) {
+      // Database adapter
+      soft.assertThat(response.getSourceCommits())
+          .asInstanceOf(list(LogEntry.class))
+          .extracting(LogEntry::getCommitMeta)
+          .extracting(CommitMeta::getHash, CommitMeta::getMessage)
+          .containsExactly(
+              tuple(committed2.getHash(), "test-branch2"),
+              tuple(committed1.getHash(), "test-branch1"));
+    }
+    if (response.getTargetCommits() != null) {
+      // Database adapter
+      soft.assertThat(response.getTargetCommits())
+          .asInstanceOf(list(LogEntry.class))
+          .extracting(LogEntry::getCommitMeta)
+          .extracting(CommitMeta::getHash, CommitMeta::getMessage)
+          .contains(tuple(baseHead.getHash(), "test-main"));
+    }
 
     return newHead;
   }
@@ -328,18 +334,24 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
             ContentKeyDetails::getConflictType,
             ContentKeyDetails::getMergeBehavior)
         .contains(tuple(key1, ContentKeyConflict.UNRESOLVABLE, NORMAL));
-    soft.assertThat(conflictResult.getSourceCommits())
-        .asInstanceOf(list(LogEntry.class))
-        .extracting(LogEntry::getCommitMeta)
-        .extracting(CommitMeta::getHash, CommitMeta::getMessage)
-        .containsExactly(
-            tuple(committed2.getHash(), "test-branch2"),
-            tuple(committed1.getHash(), "test-branch1"));
-    soft.assertThat(conflictResult.getTargetCommits())
-        .asInstanceOf(list(LogEntry.class))
-        .extracting(LogEntry::getCommitMeta)
-        .extracting(CommitMeta::getMessage)
-        .containsAnyOf("test-branch2", "test-branch1", "test-main");
+    if (conflictResult.getSourceCommits() != null && !conflictResult.getSourceCommits().isEmpty()) {
+      // Database adapter
+      soft.assertThat(conflictResult.getSourceCommits())
+          .asInstanceOf(list(LogEntry.class))
+          .extracting(LogEntry::getCommitMeta)
+          .extracting(CommitMeta::getHash, CommitMeta::getMessage)
+          .containsExactly(
+              tuple(committed2.getHash(), "test-branch2"),
+              tuple(committed1.getHash(), "test-branch1"));
+    }
+    if (conflictResult.getTargetCommits() != null) {
+      // Database adapter
+      soft.assertThat(conflictResult.getTargetCommits())
+          .asInstanceOf(list(LogEntry.class))
+          .extracting(LogEntry::getCommitMeta)
+          .extracting(CommitMeta::getMessage)
+          .containsAnyOf("test-branch2", "test-branch1", "test-main");
+    }
   }
 
   @Test
@@ -461,7 +473,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
                     IcebergTable.of("something", 42, 43, 44, 45)))
             .getTargetBranch();
 
-    Branch source = createBranch("merge-transplant-msg-source");
+    Branch source = createBranch("merge-transplant-msg-source", target);
 
     ContentKey key1 = ContentKey.of("test-key1");
     ContentKey key2 = ContentKey.of("test-key2");

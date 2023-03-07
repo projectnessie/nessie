@@ -91,6 +91,7 @@ dependencies {
   testImplementation(project(":nessie-quarkus-tests"))
   testImplementation(project(":nessie-versioned-tests"))
   testImplementation(project(":nessie-versioned-persist-tests"))
+  testImplementation(project(":nessie-versioned-storage-common"))
   testImplementation("io.quarkus:quarkus-rest-client")
   testImplementation("io.quarkus:quarkus-test-security")
   testImplementation("io.quarkus:quarkus-test-oidc-server")

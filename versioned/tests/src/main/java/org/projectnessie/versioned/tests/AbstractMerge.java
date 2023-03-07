@@ -236,18 +236,24 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     Hash head = store().getNamedRef(newBranch.getName(), GetNamedRefsParams.DEFAULT).getHash();
 
     soft.assertThat(mergeResult.getSourceCommits())
-        .extracting(
-            Commit::getHash,
-            c -> c.getCommitMeta().getMessage(),
-            c -> operationsWithoutContentId(c.getOperations()))
-        .containsExactly(
-            tuple(
-                firstCommit,
-                "First Commit",
-                Arrays.asList(
-                    Put.of(Key.of("t1"), V_1_1),
-                    Put.of(Key.of("t2"), V_2_1),
-                    Put.of(Key.of("t3"), V_3_1))));
+        .satisfiesAnyOf(
+            // Persist storage
+            l -> assertThat(l).isEmpty(),
+            // Database adapter
+            l ->
+                assertThat(l)
+                    .extracting(
+                        Commit::getHash,
+                        c -> c.getCommitMeta().getMessage(),
+                        c -> operationsWithoutContentId(c.getOperations()))
+                    .containsExactly(
+                        tuple(
+                            firstCommit,
+                            "First Commit",
+                            Arrays.asList(
+                                Put.of(Key.of("t1"), V_1_1),
+                                Put.of(Key.of("t2"), V_2_1),
+                                Put.of(Key.of("t3"), V_3_1)))));
     soft.assertThat(mergeResult.getTargetCommits()).isNull();
     soft.assertThat(mergeResult.getDetails())
         .containsKeys(Key.of("t1"), Key.of("t2"), Key.of("t3"));
@@ -383,7 +389,12 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 false);
 
     soft.assertThat(result.getResultantTargetHash()).isNotEqualTo(thirdCommit);
-    soft.assertThat(result.getSourceCommits()).hasSize(3);
+    soft.assertThat(result.getSourceCommits())
+        .satisfiesAnyOf(
+            // Persist storage
+            l -> assertThat(l).isEmpty(),
+            // Database adapter
+            l -> assertThat(l).hasSize(3));
     soft.assertThat(result)
         .extracting(
             MergeResult::getCommonAncestor, MergeResult::wasSuccessful, MergeResult::wasApplied)

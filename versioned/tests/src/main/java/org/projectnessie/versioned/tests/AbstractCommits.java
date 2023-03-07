@@ -17,6 +17,7 @@ package org.projectnessie.versioned.tests;
 
 import static com.google.common.collect.Streams.stream;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
 import com.google.common.collect.ImmutableList;
@@ -347,7 +348,9 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
    * - Check that branch state hasn't changed
    */
   @Test
-  public void commitConflictingOperations() throws Exception {
+  public void commitConflictingOperationsLegacy() throws Exception {
+    assumeThat(store().getClass().getName()).doesNotEndWith("VersionStoreImpl");
+
     BranchName branch = BranchName.of("foo");
 
     store().create(branch, Optional.empty());
@@ -409,6 +412,142 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                     .delete("t3")
                     .toBranch(branch))
         .isInstanceOf(ReferenceConflictException.class);
+
+    // Checking the state hasn't changed
+    soft.assertThat(store().hashOnReference(branch, Optional.empty())).isEqualTo(secondCommit);
+  }
+
+  /*
+   * Test:
+   * - Create a new branch
+   * - Add a commit to create 2 keys
+   * - Add a second commit to delete one key and add a new one
+   * - Check that put operations against 1st commit for the 3 keys fail
+   * - Check that delete operations against 1st commit for the 3 keys fail
+   * - Check that unchanged operations against 1st commit for the 3 keys fail
+   * - Check that branch state hasn't changed
+   */
+  @Test
+  public void commitConflictingOperations() throws Exception {
+    assumeThat(store().getClass().getName()).endsWith("VersionStoreImpl");
+
+    BranchName branch = BranchName.of("foo");
+
+    store().create(branch, Optional.empty());
+
+    Hash initialCommit =
+        commit("Initial Commit").put("t1", V_1_1).put("t2", V_2_1).toBranch(branch);
+
+    Content t1 = store().getValue(branch, Key.of("t1"));
+    Content t2 = store().getValue(branch, Key.of("t2"));
+
+    Hash secondCommit =
+        commit("Second Commit")
+            .put("t1", V_1_2.withId(t1), t1)
+            .delete("t2")
+            .put("t3", V_3_1)
+            .toBranch(branch);
+    Content t3 = store().getValue(branch, Key.of("t3"));
+
+    soft.assertThatThrownBy(
+            () ->
+                commit("Conflicting Commit")
+                    .fromReference(initialCommit)
+                    .put("t1", V_1_3)
+                    .toBranch(branch))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("New value to update existing key 't1' has no content iD");
+    soft.assertThatThrownBy(
+            () ->
+                commit("Conflicting Commit")
+                    .fromReference(initialCommit)
+                    .put("t4", V_4_1)
+                    .unchanged("t2")
+                    .toBranch(branch))
+        .isInstanceOf(ReferenceConflictException.class)
+        .hasMessage(
+            "There are conflicts that prevent committing the provided operations: key 't2' does not exist.");
+    soft.assertThatThrownBy(
+            () ->
+                commit("Conflicting Commit")
+                    .fromReference(initialCommit)
+                    .put("t4", V_4_1)
+                    .unchanged("t1")
+                    .toBranch(branch))
+        .isInstanceOf(ReferenceConflictException.class)
+        .hasMessage(
+            "There are conflicts that prevent committing the provided operations: values of existing and expected content for key 't1' are different.");
+    soft.assertThatThrownBy(
+            () ->
+                commit("Conflicting Commit")
+                    .fromReference(initialCommit)
+                    .put("t1", V_1_3.withId(t1))
+                    .toBranch(branch))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Key 't1' already exists, but Put-operation has no expectedValue");
+    soft.assertThatThrownBy(
+            () ->
+                commit("Conflicting Commit")
+                    .fromReference(initialCommit)
+                    .put("t1", V_1_3.withId(t1), t1)
+                    .toBranch(branch))
+        .isInstanceOf(ReferenceConflictException.class)
+        .hasMessage(
+            "There are conflicts that prevent committing the provided operations: values of existing and expected content for key 't1' are different.");
+    soft.assertThatThrownBy(
+            () ->
+                commit("Conflicting Commit")
+                    .fromReference(initialCommit)
+                    .put("t2", V_2_2.withId(t2), t2)
+                    .toBranch(branch))
+        .isInstanceOf(ReferenceConflictException.class)
+        .hasMessage(
+            "There are conflicts that prevent committing the provided operations: key 't2' does not exist.");
+    soft.assertThatThrownBy(
+            () ->
+                commit("Conflicting Commit")
+                    .fromReference(initialCommit)
+                    .put("t3", V_3_2.withId(t3), t3)
+                    .toBranch(branch))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Key 't3' does not exist, but Put-operation has expectedValue");
+    soft.assertThatThrownBy(
+            () ->
+                commit("Conflicting Commit")
+                    .fromReference(initialCommit)
+                    .put("t3", V_3_2)
+                    .toBranch(branch))
+        .isInstanceOf(ReferenceConflictException.class)
+        .hasMessage(
+            "There are conflicts that prevent committing the provided operations: key 't3' already exists.");
+
+    soft.assertThatThrownBy(
+            () ->
+                commit("Conflicting Commit")
+                    .fromReference(initialCommit)
+                    .delete("t1")
+                    .toBranch(branch))
+        .isInstanceOf(ReferenceConflictException.class)
+        .hasMessage(
+            "There are conflicts that prevent committing the provided operations: values of existing and expected content for key 't1' are different.");
+    soft.assertThatThrownBy(
+            () ->
+                commit("Conflicting Commit")
+                    .fromReference(initialCommit)
+                    .delete("t2")
+                    .toBranch(branch))
+        .isInstanceOf(ReferenceConflictException.class)
+        .hasMessage(
+            "There are conflicts that prevent committing the provided operations: key 't2' does not exist.");
+    soft.assertThatThrownBy(
+            () ->
+                commit("Conflicting Commit")
+                    .fromReference(initialCommit)
+                    .delete("t3")
+                    .toBranch(branch))
+        .isInstanceOf(ReferenceConflictException.class)
+        .hasMessage(
+            "There are conflicts that prevent committing the provided operations: payload of existing and expected content for key 't3' are different.");
 
     // Checking the state hasn't changed
     soft.assertThat(store().hashOnReference(branch, Optional.empty())).isEqualTo(secondCommit);

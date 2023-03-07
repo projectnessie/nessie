@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.tests;
 
 import static org.assertj.core.util.Streams.stream;
+import static org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions.BASE_REFERENCE_RELATED_AND_COMMIT_META;
 
 import java.util.List;
 import java.util.Optional;
@@ -210,5 +211,17 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
     soft.assertThatThrownBy(
             () -> store().getNamedRef("1234567890abcdef", GetNamedRefsParams.DEFAULT))
         .isInstanceOf(ReferenceNotFoundException.class);
+
+    soft.assertThatThrownBy(
+            () ->
+                store()
+                    .getNamedRef(
+                        branchName.getName(),
+                        GetNamedRefsParams.builder()
+                            .baseReference(BranchName.of("does-not-exist"))
+                            .branchRetrieveOptions(BASE_REFERENCE_RELATED_AND_COMMIT_META)
+                            .build()))
+        .isInstanceOf(ReferenceNotFoundException.class)
+        .hasMessageContaining("'does-not-exist");
   }
 }

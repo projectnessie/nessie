@@ -55,6 +55,9 @@ public class DatabaseAdapterProvider {
   @Startup
   public DatabaseAdapter produceDatabaseAdapter() {
     VersionStoreType versionStoreType = storeConfig.getVersionStoreType();
+    if (versionStoreType.isNewStorage()) {
+      return null;
+    }
 
     LOGGER.info("Using {} Version store", versionStoreType);
 

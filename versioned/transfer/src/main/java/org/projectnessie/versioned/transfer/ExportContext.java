@@ -20,6 +20,7 @@ import org.projectnessie.versioned.transfer.files.ExportFileSupplier;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Commit;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.NamedReference;
+import org.projectnessie.versioned.transfer.serialize.TransferTypes.Ref;
 
 final class ExportContext {
 
@@ -45,6 +46,10 @@ final class ExportContext {
             NessieExporter.COMMITS_PREFIX,
             exportMeta::addCommitsFiles,
             exportMeta::setCommitCount);
+  }
+
+  public void writeRef(Ref ref) {
+    namedReferenceOutput.writeEntity(ref);
   }
 
   void writeNamedReference(NamedReference namedReference) {

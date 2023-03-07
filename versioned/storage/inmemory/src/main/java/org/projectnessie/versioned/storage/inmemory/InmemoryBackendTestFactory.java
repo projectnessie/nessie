@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2022 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server;
+package org.projectnessie.versioned.storage.inmemory;
 
-import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.quarkus.test.junit.TestProfile;
-import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfileInmemory;
+import org.projectnessie.versioned.storage.testextension.BackendTestFactory;
 
-@QuarkusIntegrationTest
-@TestProfile(QuarkusTestProfileInmemory.class)
-public class ITBasicOperations extends AbstractTestBasicOperations {}
+public class InmemoryBackendTestFactory implements BackendTestFactory {
+
+  @Override
+  public InmemoryBackend createNewBackend() {
+    return new InmemoryBackend();
+  }
+
+  @Override
+  public void start() {}
+
+  @Override
+  public void stop() {}
+}

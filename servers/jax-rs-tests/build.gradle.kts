@@ -54,6 +54,8 @@ dependencies {
   testImplementation(project(":nessie-versioned-persist-non-transactional-test"))
   testImplementation(project(":nessie-versioned-persist-transactional"))
   testImplementation(project(":nessie-versioned-persist-transactional-test"))
+  testImplementation(project(":nessie-versioned-storage-inmemory"))
+  testImplementation(project(":nessie-versioned-storage-jdbc"))
 
   testImplementation(project(":nessie-jaxrs-testextension"))
   testImplementation(libs.slf4j.jcl.over.slf4j)

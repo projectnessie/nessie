@@ -15,12 +15,24 @@
  */
 package org.projectnessie.quarkus.cli;
 
+import static java.util.concurrent.TimeUnit.MICROSECONDS;
+import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
+
 import com.google.protobuf.ByteString;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.stream.Collectors;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
+import org.projectnessie.versioned.storage.common.logic.CommitLogic;
+import org.projectnessie.versioned.storage.common.logic.InternalRef;
+import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
+import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
+import org.projectnessie.versioned.storage.common.persist.Reference;
 import picocli.CommandLine.Command;
 
 @Command(
@@ -67,6 +79,48 @@ public class NessieInfo extends BaseCommand {
                 .collect(Collectors.joining("\n                                   ")),
             versionStoreConfig.getVersionStoreType(),
             serverConfig.getDefaultBranch());
+
+    return 0;
+  }
+
+  @Override
+  protected Integer callWithPersist() throws Exception {
+    warnOnInMemory();
+
+    ReferenceLogic referenceLogic = referenceLogic(persist);
+    Reference defaultBranch =
+        referenceLogic.getReference("refs/heads/" + serverConfig.getDefaultBranch());
+
+    CommitLogic commitLogic = commitLogic(persist);
+    CommitObj headCommit = commitLogic.fetchCommit(defaultBranch.pointer());
+
+    Reference refRepo = persist.fetchReference(InternalRef.REF_REPO.name());
+    CommitObj repoCommit = refRepo != null ? commitLogic.fetchCommit(refRepo.pointer()) : null;
+
+    spec.commandLine()
+        .getOut()
+        .printf(
+            "%n"
+                //
+                + "Repository created:                %s%n"
+                + "Default branch head commit ID:     %s%n"
+                + "Default branch commit count:       %s%n"
+                + "%n"
+                + "From configuration:%n"
+                + "-------------------%n"
+                + "Version-store type:                %s%n"
+                + "Default branch:                    %s%n"
+                + "Parent commit IDs per commit:      %s%n",
+            repoCommit != null
+                ? LocalDateTime.ofInstant(
+                    Instant.ofEpochMilli(MICROSECONDS.toMillis(repoCommit.created())),
+                    ZoneId.systemDefault())
+                : "???",
+            defaultBranch.pointer(),
+            headCommit != null ? headCommit.seq() : 0,
+            versionStoreConfig.getVersionStoreType(),
+            serverConfig.getDefaultBranch(),
+            persist.config().parentsPerCommit());
 
     return 0;
   }

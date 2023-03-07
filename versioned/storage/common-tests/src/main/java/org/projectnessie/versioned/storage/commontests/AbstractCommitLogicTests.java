@@ -1,0 +1,663 @@
+/*
+ * Copyright (C) 2022 Dremio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.projectnessie.versioned.storage.commontests;
+
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Lists.newArrayList;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static java.util.Objects.requireNonNull;
+import static java.util.UUID.randomUUID;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.projectnessie.versioned.storage.common.indexes.StoreKey.key;
+import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
+import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Add.commitAdd;
+import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Remove.commitRemove;
+import static org.projectnessie.versioned.storage.common.logic.CreateCommit.newCommitBuilder;
+import static org.projectnessie.versioned.storage.common.logic.DiffEntry.diffEntry;
+import static org.projectnessie.versioned.storage.common.logic.DiffQuery.diffQuery;
+import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
+import static org.projectnessie.versioned.storage.common.logic.PagingToken.emptyPagingToken;
+import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.EMPTY_COMMIT_HEADERS;
+import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
+import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
+import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
+
+import com.google.protobuf.ByteString;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.assertj.core.groups.Tuple;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
+import org.projectnessie.versioned.storage.common.indexes.StoreKey;
+import org.projectnessie.versioned.storage.common.logic.CommitLogic;
+import org.projectnessie.versioned.storage.common.logic.CreateCommit;
+import org.projectnessie.versioned.storage.common.logic.DiffEntry;
+import org.projectnessie.versioned.storage.common.logic.HeadsAndForkPoints;
+import org.projectnessie.versioned.storage.common.logic.PagedResult;
+import org.projectnessie.versioned.storage.common.logic.PagingToken;
+import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
+import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
+import org.projectnessie.versioned.storage.common.objtypes.TagObj;
+import org.projectnessie.versioned.storage.common.persist.Obj;
+import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.testextension.NessiePersist;
+import org.projectnessie.versioned.storage.testextension.PersistExtension;
+
+/** {@link CommitLogic} related tests to be run against every {@link Persist} implementation. */
+@ExtendWith({PersistExtension.class, SoftAssertionsExtension.class})
+public class AbstractCommitLogicTests {
+  static final String NO_COMMON_ANCESTOR_IN_PARENTS_OF = "No common ancestor in parents of ";
+
+  public static final String STD_MESSAGE = "foo";
+
+  @InjectSoftAssertions protected SoftAssertions soft;
+
+  @NessiePersist protected Persist persist;
+
+  public static CreateCommit.Builder stdCommit() {
+    return newCommitBuilder()
+        .parentCommitId(EMPTY_OBJ_ID)
+        .headers(EMPTY_COMMIT_HEADERS)
+        .message(STD_MESSAGE);
+  }
+
+  @Test
+  public void fetchCommit() throws Exception {
+    CommitLogic commitLogic = commitLogic(persist);
+
+    assertThat(commitLogic.fetchCommit(EMPTY_OBJ_ID)).isNull();
+
+    ObjId commitId = requireNonNull(commitLogic.doCommit(stdCommit().build(), emptyList()));
+    TagObj tag = TagObj.tag(randomObjId(), commitId, null, null, ByteString.EMPTY);
+    soft.assertThat(persist.storeObj(tag)).isTrue();
+
+    soft.assertThat(commitLogic.fetchCommit(requireNonNull(tag.id())))
+        .isNotNull()
+        .extracting(Obj::id, CommitObj::message)
+        .containsExactly(commitId, STD_MESSAGE);
+
+    soft.assertThat(commitLogic.fetchCommit(commitId))
+        .isNotNull()
+        .extracting(Obj::id, CommitObj::message)
+        .containsExactly(commitId, STD_MESSAGE);
+  }
+
+  @Test
+  public void commonAncestor() throws Exception {
+    CommitLogic commitLogic = commitLogic(persist);
+
+    ObjId root = requireNonNull(commitLogic.doCommit(stdCommit().build(), emptyList()));
+
+    ObjId commonAncestor = root;
+    for (int i = 0; i < 5; i++) {
+      commonAncestor =
+          commitLogic.doCommit(
+              stdCommit().parentCommitId(commonAncestor).message("Commit #" + i).build(),
+              emptyList());
+      soft.assertThat(commonAncestor).isNotNull();
+    }
+
+    ObjId[] branches = new ObjId[5];
+    Arrays.fill(branches, commonAncestor);
+    for (int branch = 0; branch < 5; branch++) {
+      for (int i = 0; i < 5; i++) {
+        branches[branch] =
+            commitLogic.doCommit(
+                stdCommit()
+                    .parentCommitId(branches[branch])
+                    .message("Branch " + branch + " commit #" + i)
+                    .build(),
+                emptyList());
+      }
+    }
+
+    for (ObjId branch : branches) {
+      soft.assertThat(commitLogic.findCommonAncestor(branch, root)).isEqualTo(root);
+    }
+
+    for (int i = 0; i < branches.length; i++) {
+      requireNonNull(branches[i]);
+      soft.assertThat(commitLogic.findCommonAncestor(branches[i], branches[i]))
+          .isEqualTo(branches[i]);
+      for (int j = i + 1; j < branches.length; j++) {
+        soft.assertThat(commitLogic.findCommonAncestor(branches[i], branches[j]))
+            .isEqualTo(commonAncestor);
+      }
+    }
+  }
+
+  @Test
+  public void noCommonAncestor() throws Exception {
+    CommitLogic commitLogic = commitLogic(persist);
+
+    soft.assertThatThrownBy(() -> commitLogic.findCommonAncestor(EMPTY_OBJ_ID, EMPTY_OBJ_ID))
+        .isInstanceOf(NoSuchElementException.class)
+        .hasMessageStartingWith(NO_COMMON_ANCESTOR_IN_PARENTS_OF);
+
+    ObjId branch1commit1 =
+        requireNonNull(
+            commitLogic.doCommit(stdCommit().message("branch1commit1").build(), emptyList()));
+    ObjId branch1commit2 =
+        requireNonNull(
+            commitLogic.doCommit(
+                stdCommit().message("branch1commit2").parentCommitId(branch1commit1).build(),
+                emptyList()));
+    ObjId branch1commit3 =
+        requireNonNull(
+            commitLogic.doCommit(
+                stdCommit().message("branch1commit3").parentCommitId(branch1commit2).build(),
+                emptyList()));
+    ObjId branch2commit1 =
+        requireNonNull(
+            commitLogic.doCommit(stdCommit().message("branch2commit1").build(), emptyList()));
+    ObjId branch2commit2 =
+        requireNonNull(
+            commitLogic.doCommit(
+                stdCommit().message("branch2commit2").parentCommitId(branch2commit1).build(),
+                emptyList()));
+    ObjId branch2commit3 =
+        requireNonNull(
+            commitLogic.doCommit(
+                stdCommit().message("branch2commit3").parentCommitId(branch2commit2).build(),
+                emptyList()));
+
+    soft.assertThatThrownBy(() -> commitLogic.findCommonAncestor(branch1commit1, branch2commit1))
+        .isInstanceOf(NoSuchElementException.class)
+        .hasMessageStartingWith(NO_COMMON_ANCESTOR_IN_PARENTS_OF);
+    soft.assertThatThrownBy(() -> commitLogic.findCommonAncestor(branch1commit2, branch2commit1))
+        .isInstanceOf(NoSuchElementException.class)
+        .hasMessageStartingWith(NO_COMMON_ANCESTOR_IN_PARENTS_OF);
+    soft.assertThatThrownBy(() -> commitLogic.findCommonAncestor(branch1commit3, branch2commit1))
+        .isInstanceOf(NoSuchElementException.class)
+        .hasMessageStartingWith(NO_COMMON_ANCESTOR_IN_PARENTS_OF);
+    soft.assertThatThrownBy(() -> commitLogic.findCommonAncestor(branch1commit1, branch2commit2))
+        .isInstanceOf(NoSuchElementException.class)
+        .hasMessageStartingWith(NO_COMMON_ANCESTOR_IN_PARENTS_OF);
+    soft.assertThatThrownBy(() -> commitLogic.findCommonAncestor(branch1commit1, branch2commit3))
+        .isInstanceOf(NoSuchElementException.class)
+        .hasMessageStartingWith(NO_COMMON_ANCESTOR_IN_PARENTS_OF);
+    soft.assertThatThrownBy(() -> commitLogic.findCommonAncestor(branch1commit3, branch2commit3))
+        .isInstanceOf(NoSuchElementException.class)
+        .hasMessageStartingWith(NO_COMMON_ANCESTOR_IN_PARENTS_OF);
+
+    soft.assertThatThrownBy(
+            () ->
+                commitLogic.findCommonAncestor(branch1commit1, objIdFromString("1111111111111111")))
+        .isInstanceOf(NoSuchElementException.class)
+        .hasMessage("Commit '1111111111111111' not found");
+
+    soft.assertThatThrownBy(
+            () ->
+                commitLogic.findCommonAncestor(objIdFromString("1111111111111111"), branch2commit1))
+        .isInstanceOf(NoSuchElementException.class)
+        .hasMessage("Commit '1111111111111111' not found");
+
+    soft.assertThatThrownBy(
+            () -> commitLogic.findCommonAncestor(EMPTY_OBJ_ID, objIdFromString("1111111111111111")))
+        .isInstanceOf(NoSuchElementException.class)
+        .hasMessage("Commit '1111111111111111' not found");
+
+    soft.assertThatThrownBy(
+            () -> commitLogic.findCommonAncestor(objIdFromString("1111111111111111"), EMPTY_OBJ_ID))
+        .isInstanceOf(NoSuchElementException.class)
+        .hasMessage("Commit '1111111111111111' not found");
+  }
+
+  @Test
+  public void commitLog() throws Exception {
+    CommitLogic commitLogic = commitLogic(persist);
+
+    soft.assertThatThrownBy(
+            () -> newArrayList(commitLogic.commitLog(commitLogQuery(randomObjId()))))
+        .isInstanceOf(NoSuchElementException.class);
+
+    soft.assertThat(newArrayList(commitLogic.commitLog(commitLogQuery(EMPTY_OBJ_ID)))).isEmpty();
+
+    ObjId tip = requireNonNull(commitLogic.doCommit(stdCommit().build(), emptyList()));
+
+    List<ObjId> tail = new ArrayList<>();
+    tail.add(EMPTY_OBJ_ID);
+
+    List<Tuple> expected = new ArrayList<>();
+    expected.add(tuple(new ArrayList<>(tail), STD_MESSAGE, 1L));
+
+    soft.assertThat(newArrayList(commitLogic.commitLog(commitLogQuery(tip))))
+        .hasSize(1)
+        .extracting(CommitObj::tail, CommitObj::message, CommitObj::seq)
+        .containsExactlyElementsOf(expected);
+
+    for (int i = 0; i < 100; i++) {
+      tail.add(0, tip);
+      if (tail.size() > persist.config().parentsPerCommit()) {
+        tail.remove(persist.config().parentsPerCommit());
+      }
+
+      String msg = "commit #" + i;
+      tip =
+          requireNonNull(
+              commitLogic.doCommit(
+                  stdCommit().parentCommitId(tip).message(msg).build(), emptyList()));
+
+      expected.add(0, tuple(new ArrayList<>(tail), msg, 2L + i));
+    }
+
+    soft.assertThat(newArrayList(commitLogic.commitLog(commitLogQuery(tip))))
+        .hasSize(101)
+        .extracting(CommitObj::tail, CommitObj::message, CommitObj::seq)
+        .containsExactlyElementsOf(expected);
+
+    PagedResult<CommitObj, ObjId> iter = commitLogic.commitLog(commitLogQuery(tip));
+    soft.assertThat(iter.tokenForKey(null)).isEqualTo(emptyPagingToken());
+    for (int i = 0; iter.hasNext(); i++) {
+      CommitObj commit = iter.next();
+      PagingToken token = iter.tokenForKey(commit.id());
+      ObjId idFromToken = ObjId.objIdFromBytes(token.token());
+
+      soft.assertThat(newArrayList(commitLogic.commitLog(commitLogQuery(token, tip, null))))
+          .extracting(CommitObj::tail, CommitObj::message, CommitObj::seq)
+          .containsExactlyElementsOf(expected.subList(i, expected.size()));
+
+      soft.assertThat(newArrayList(commitLogic.commitLog(commitLogQuery(token, idFromToken, null))))
+          .extracting(CommitObj::tail, CommitObj::message, CommitObj::seq)
+          .containsExactlyElementsOf(expected.subList(i, expected.size()));
+
+      soft.assertThat(newArrayList(commitLogic.commitLog(commitLogQuery(idFromToken))))
+          .extracting(CommitObj::tail, CommitObj::message, CommitObj::seq)
+          .containsExactlyElementsOf(expected.subList(i, expected.size()));
+
+      soft.assertThat(
+              newArrayList(commitLogic.commitLog(commitLogQuery(token, idFromToken, idFromToken))))
+          .extracting(CommitObj::tail, CommitObj::message, CommitObj::seq)
+          .containsExactlyElementsOf(expected.subList(i, i + 1));
+
+      soft.assertThat(
+              newArrayList(commitLogic.commitLog(commitLogQuery(null, idFromToken, idFromToken))))
+          .extracting(CommitObj::tail, CommitObj::message, CommitObj::seq)
+          .containsExactlyElementsOf(expected.subList(i, i + 1));
+
+      soft.assertAll();
+    }
+  }
+
+  @Test
+  public void commitIdLog() throws Exception {
+    CommitLogic commitLogic = commitLogic(persist);
+
+    soft.assertThatThrownBy(
+            () -> newArrayList(commitLogic.commitIdLog(commitLogQuery(randomObjId()))))
+        .isInstanceOf(NoSuchElementException.class);
+
+    soft.assertThat(newArrayList(commitLogic.commitIdLog(commitLogQuery(EMPTY_OBJ_ID)))).isEmpty();
+
+    ObjId tip = requireNonNull(commitLogic.doCommit(stdCommit().build(), emptyList()));
+
+    List<ObjId> expected = new ArrayList<>();
+    expected.add(tip);
+
+    soft.assertThat(newArrayList(commitLogic.commitIdLog(commitLogQuery(tip))))
+        .hasSize(1)
+        .containsExactlyElementsOf(expected);
+
+    for (int i = 0; i < 100; i++) {
+      String msg = "commit #" + i;
+      tip =
+          requireNonNull(
+              commitLogic.doCommit(
+                  stdCommit().parentCommitId(tip).message(msg).build(), emptyList()));
+
+      expected.add(0, tip);
+    }
+
+    soft.assertThat(newArrayList(commitLogic.commitIdLog(commitLogQuery(tip))))
+        .hasSize(101)
+        .containsExactlyElementsOf(expected);
+
+    PagedResult<ObjId, ObjId> iter = commitLogic.commitIdLog(commitLogQuery(tip));
+    soft.assertThat(iter.tokenForKey(null)).isEqualTo(emptyPagingToken());
+    for (int i = 0; iter.hasNext(); i++) {
+      ObjId id = iter.next();
+
+      PagingToken token = iter.tokenForKey(id);
+      ObjId idFromToken = ObjId.objIdFromBytes(token.token());
+
+      soft.assertThat(newArrayList(commitLogic.commitIdLog(commitLogQuery(token, tip, null))))
+          .containsExactlyElementsOf(expected.subList(i, expected.size()));
+
+      soft.assertThat(
+              newArrayList(commitLogic.commitIdLog(commitLogQuery(token, idFromToken, null))))
+          .containsExactlyElementsOf(expected.subList(i, expected.size()));
+
+      soft.assertThat(newArrayList(commitLogic.commitIdLog(commitLogQuery(idFromToken))))
+          .containsExactlyElementsOf(expected.subList(i, expected.size()));
+
+      soft.assertThat(
+              newArrayList(
+                  commitLogic.commitIdLog(commitLogQuery(token, idFromToken, idFromToken))))
+          .containsExactlyElementsOf(expected.subList(i, i + 1));
+
+      soft.assertThat(
+              newArrayList(commitLogic.commitIdLog(commitLogQuery(null, idFromToken, idFromToken))))
+          .containsExactlyElementsOf(expected.subList(i, i + 1));
+
+      soft.assertAll();
+    }
+  }
+
+  static Stream<Arguments> diff() {
+    ObjId id1 = randomObjId();
+    ObjId id2 = randomObjId();
+    UUID cid1 = randomUUID();
+    return Stream.of(
+        arguments(stdCommit().message("commit 1"), stdCommit().message("commit 2"), emptyList()),
+        // single ADD in "from"
+        arguments(
+            stdCommit().addAdds(commitAdd(key("one"), 0, id1, null, cid1)),
+            stdCommit(),
+            singletonList(diffEntry(key("one"), id1, 0, cid1, null, 0, null))),
+        // single ADD in "to"
+        arguments(
+            stdCommit(),
+            stdCommit().addAdds(commitAdd(key("one"), 0, id1, null, cid1)),
+            singletonList(diffEntry(key("one"), null, 0, null, id1, 0, cid1))),
+        // ADD in "from" + "to" / same key
+        arguments(
+            stdCommit().addAdds(commitAdd(key("one"), 1, id1, null, cid1)),
+            stdCommit().addAdds(commitAdd(key("one"), 2, id2, null, cid1)),
+            singletonList(diffEntry(key("one"), id1, 1, cid1, id2, 2, cid1))),
+        // ADD in "from" + "to" / key in commit 1 "lower"
+        arguments(
+            stdCommit().addAdds(commitAdd(key("aaa"), 1, id1, null, cid1)),
+            stdCommit().addAdds(commitAdd(key("one"), 2, id2, null, cid1)),
+            asList(
+                diffEntry(key("aaa"), id1, 1, cid1, null, 0, null),
+                diffEntry(key("one"), null, 0, null, id2, 2, cid1))),
+        // ADD in "from" + "to" / key in commit 2 "lower"
+        arguments(
+            stdCommit().addAdds(commitAdd(key("one"), 1, id1, null, cid1)),
+            stdCommit().addAdds(commitAdd(key("aaa"), 2, id2, null, cid1)),
+            asList(
+                diffEntry(key("aaa"), null, 0, null, id2, 2, cid1),
+                diffEntry(key("one"), id1, 1, cid1, null, 0, null))));
+  }
+
+  @ParameterizedTest
+  @MethodSource("diff")
+  public void diff(
+      CreateCommit.Builder commitBuilder1,
+      CreateCommit.Builder commitBuilder2,
+      List<DiffEntry> diff)
+      throws Exception {
+    CommitLogic commitLogic = commitLogic(persist);
+
+    ObjId commitId1 = requireNonNull(commitLogic.doCommit(commitBuilder1.build(), emptyList()));
+    ObjId commitId2 = requireNonNull(commitLogic.doCommit(commitBuilder2.build(), emptyList()));
+    CommitObj commit1 = commitLogic.fetchCommit(commitId1);
+    CommitObj commit2 = commitLogic.fetchCommit(commitId2);
+
+    soft.assertThat(commitLogic.diff(diffQuery(commit1, commit2, false)))
+        .toIterable()
+        .containsExactlyElementsOf(diff);
+
+    soft.assertThat(commitLogic.diff(diffQuery(null, commit1, commit2, null, key("000"), false)))
+        .toIterable()
+        .isEmpty();
+
+    soft.assertThat(commitLogic.diff(diffQuery(null, commit1, commit2, key("zzz"), null, false)))
+        .toIterable()
+        .isEmpty();
+
+    soft.assertThat(
+            commitLogic.diff(diffQuery(null, commit1, commit2, key("bbb"), key("nnn"), false)))
+        .toIterable()
+        .isEmpty();
+
+    soft.assertThat(commitLogic.diff(diffQuery(null, commit1, commit2, null, key("bbb"), false)))
+        .toIterable()
+        .containsExactlyElementsOf(
+            diff.stream().filter(e -> e.key().equals(key("aaa"))).collect(Collectors.toList()));
+
+    soft.assertThat(
+            commitLogic.diff(diffQuery(null, commit1, commit2, key("a"), key("bbb"), false)))
+        .toIterable()
+        .containsExactlyElementsOf(
+            diff.stream().filter(e -> e.key().equals(key("aaa"))).collect(Collectors.toList()));
+
+    soft.assertThat(commitLogic.diff(diffQuery(null, commit1, commit2, key("o"), null, false)))
+        .toIterable()
+        .containsExactlyElementsOf(
+            diff.stream().filter(e -> e.key().equals(key("one"))).collect(Collectors.toList()));
+
+    soft.assertThat(commitLogic.diff(diffQuery(null, commit1, commit2, key("o"), key("p"), false)))
+        .toIterable()
+        .containsExactlyElementsOf(
+            diff.stream().filter(e -> e.key().equals(key("one"))).collect(Collectors.toList()));
+  }
+
+  @Test
+  public void diffWithPaging() throws Exception {
+    CommitLogic commitLogic = commitLogic(persist);
+    ObjId idAaa = randomObjId();
+    ObjId idBbb = randomObjId();
+    ObjId idCcc = randomObjId();
+    ObjId idDdd = randomObjId();
+    ObjId idEee = randomObjId();
+    ObjId idFff = randomObjId();
+    UUID cidAaa = randomUUID();
+    UUID cidBbb = randomUUID();
+    UUID cidCcc = randomUUID();
+    UUID cidDdd = randomUUID();
+    UUID cidEee = randomUUID();
+    UUID cidFff = randomUUID();
+
+    ObjId commitId1 =
+        requireNonNull(
+            commitLogic.doCommit(
+                stdCommit()
+                    .addAdds(commitAdd(key("aaa"), 0, idAaa, null, cidAaa))
+                    .addAdds(commitAdd(key("ccc"), 0, idCcc, null, cidCcc))
+                    .addAdds(commitAdd(key("eee"), 0, idEee, null, cidEee))
+                    .build(),
+                emptyList()));
+    ObjId commitId2 =
+        requireNonNull(
+            commitLogic.doCommit(
+                stdCommit()
+                    .addAdds(commitAdd(key("bbb"), 0, idBbb, null, cidBbb))
+                    .addAdds(commitAdd(key("ddd"), 0, idDdd, null, cidDdd))
+                    .addAdds(commitAdd(key("fff"), 0, idFff, null, cidFff))
+                    .build(),
+                emptyList()));
+    CommitObj commit1 = commitLogic.fetchCommit(commitId1);
+    CommitObj commit2 = commitLogic.fetchCommit(commitId2);
+
+    List<DiffEntry> diffs =
+        asList(
+            diffEntry(key("aaa"), idAaa, 0, cidAaa, null, 0, null),
+            diffEntry(key("bbb"), null, 0, null, idBbb, 0, cidBbb),
+            diffEntry(key("ccc"), idCcc, 0, cidCcc, null, 0, null),
+            diffEntry(key("ddd"), null, 0, null, idDdd, 0, cidDdd),
+            diffEntry(key("eee"), idEee, 0, cidEee, null, 0, null),
+            diffEntry(key("fff"), null, 0, null, idFff, 0, cidFff));
+
+    soft.assertThat(commitLogic.diff(diffQuery(commit1, commit2, false)))
+        .toIterable()
+        .containsExactlyElementsOf(diffs);
+
+    PagedResult<DiffEntry, StoreKey> iter = commitLogic.diff(diffQuery(commit1, commit2, false));
+    soft.assertThat(iter.tokenForKey(null)).isEqualTo(emptyPagingToken());
+    for (int offset = 0; iter.hasNext(); offset++) {
+      DiffEntry entry = iter.next();
+      soft.assertThat(entry).isEqualTo(diffs.get(offset));
+
+      PagingToken token = iter.tokenForKey(entry.key());
+      soft.assertThat(token).isNotEqualTo(emptyPagingToken());
+      soft.assertThat(commitLogic.diff(diffQuery(token, commit1, commit2, null, null, false)))
+          .toIterable()
+          .containsExactlyElementsOf(diffs.subList(offset, diffs.size()));
+    }
+  }
+
+  @Test
+  public void diffToCreateCommit() throws Exception {
+    CommitLogic commitLogic = commitLogic(persist);
+    ObjId idAaa = randomObjId();
+    ObjId idBbb = randomObjId();
+    ObjId idCcc = randomObjId();
+    ObjId idCcc2 = randomObjId();
+    ObjId idDdd = randomObjId();
+    ObjId idEee = randomObjId();
+    ObjId commitId1 =
+        requireNonNull(
+            commitLogic.doCommit(
+                stdCommit()
+                    .addAdds(commitAdd(key("aaa"), 0, idAaa, null, null))
+                    .addAdds(commitAdd(key("bbb"), 0, idBbb, null, null))
+                    .addAdds(commitAdd(key("ccc"), 0, idCcc, null, null))
+                    .build(),
+                emptyList()));
+    ObjId commitId2 =
+        requireNonNull(
+            commitLogic.doCommit(
+                stdCommit()
+                    .parentCommitId(commitId1)
+                    .addAdds(commitAdd(key("ccc"), 0, idCcc2, idCcc, null))
+                    .addAdds(commitAdd(key("ddd"), 0, idDdd, null, null))
+                    .addAdds(commitAdd(key("eee"), 0, idEee, null, null))
+                    .addRemoves(commitRemove(key("bbb"), 0, idBbb, null))
+                    .build(),
+                emptyList()));
+    CommitObj commit1 = commitLogic.fetchCommit(commitId1);
+    CommitObj commit2 = commitLogic.fetchCommit(commitId2);
+
+    CreateCommit.Builder createCommit = stdCommit();
+    soft.assertThat(
+            commitLogic.diffToCreateCommit(
+                commitLogic.diff(diffQuery(commit1, commit2, false)), createCommit))
+        .isSameAs(createCommit);
+
+    soft.assertThat(createCommit.build())
+        .extracting(CreateCommit::adds, CreateCommit::removes)
+        .containsExactly(
+            asList(
+                commitAdd(key("ccc"), 0, idCcc2, idCcc, null),
+                commitAdd(key("ddd"), 0, idDdd, null, null),
+                commitAdd(key("eee"), 0, idEee, null, null)),
+            singletonList(commitRemove(key("bbb"), 0, idBbb, null)));
+  }
+
+  @Test
+  public void headCommit() throws Exception {
+    ReferenceLogic refLogic = referenceLogic(persist);
+    CommitLogic commitLogic = commitLogic(persist);
+    ObjId tip =
+        requireNonNull(
+            commitLogic.doCommit(
+                newCommitBuilder()
+                    .headers(EMPTY_COMMIT_HEADERS)
+                    .message("msg foo")
+                    .parentCommitId(EMPTY_OBJ_ID)
+                    .build(),
+                emptyList()));
+    Reference ref = refLogic.createReference("foo", tip);
+    soft.assertThat(commitLogic.headCommit(ref))
+        .extracting(CommitObj::message)
+        .isEqualTo("msg foo");
+
+    Reference refEmpty = refLogic.createReference("empty", EMPTY_OBJ_ID);
+    soft.assertThat(commitLogic.headCommit(refEmpty)).isNull();
+
+    Reference refNotFound = refLogic.createReference("not-found", randomObjId());
+    soft.assertThatThrownBy(() -> commitLogic.headCommit(refNotFound))
+        .isInstanceOf(ObjNotFoundException.class);
+  }
+
+  static Stream<Arguments> commitsAndBranches() {
+    return Stream.of(Arguments.of(5, 5), Arguments.of(11, 3));
+  }
+
+  @ParameterizedTest
+  @MethodSource("commitsAndBranches")
+  void identifyReferencedAndUnreferencedHeads(int numBranches, int numCommits) throws Exception {
+    CommitLogic commitLogic = commitLogic(persist);
+
+    Set<ObjId> forkPoints = new HashSet<>();
+    Set<ObjId> heads = new HashSet<>();
+
+    prepareReferences(commitLogic, numCommits, numBranches, heads::add, forkPoints::add);
+
+    HeadsAndForkPoints headsAndForkPoints = commitLogic.identifyAllHeadsAndForkPoints(100, e -> {});
+
+    soft.assertThat(headsAndForkPoints.getHeads()).containsExactlyInAnyOrderElementsOf(heads);
+    soft.assertThat(headsAndForkPoints.getForkPoints())
+        .containsExactlyInAnyOrderElementsOf(forkPoints);
+  }
+
+  private void prepareReferences(
+      CommitLogic commitLogic,
+      int numCommits,
+      int numBranches,
+      Consumer<ObjId> addHead,
+      Consumer<ObjId> addForkPoint)
+      throws Exception {
+    ObjId root = addCommits(commitLogic, numCommits, EMPTY_OBJ_ID, 0);
+    addForkPoint.accept(root);
+
+    for (int branchNum = 1; branchNum <= numBranches; branchNum++) {
+      ObjId head = addCommits(commitLogic, numCommits, root, branchNum);
+      addHead.accept(head);
+    }
+  }
+
+  private ObjId addCommits(CommitLogic commitLogic, int numCommits, ObjId head, int branchNum)
+      throws Exception {
+    for (int commitNum = 0; commitNum < numCommits; commitNum++) {
+      head =
+          commitLogic.doCommit(
+              newCommitBuilder()
+                  .headers(EMPTY_COMMIT_HEADERS)
+                  .parentCommitId(head)
+                  .message(
+                      "commit #" + commitNum + " of " + numCommits + " - unifier: " + branchNum)
+                  .build(),
+              emptyList());
+      checkState(head != null);
+    }
+
+    return head;
+  }
+}
