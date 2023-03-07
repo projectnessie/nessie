@@ -233,6 +233,16 @@ fun setupRelocationProject(project: Project) =
         }
       }
     }
+
+    if (project.hasProperty("release")) {
+      configure<SigningExtension> {
+        val signingKey: String? by project
+        val signingPassword: String? by project
+        useInMemoryPgpKeys(signingKey, signingPassword)
+        val publishing = project.extensions.getByType(PublishingExtension::class.java)
+        afterEvaluate { sign(publishing.publications.getByName("maven")) }
+      }
+    }
   }
 
 rootProject.name = "nessie"
