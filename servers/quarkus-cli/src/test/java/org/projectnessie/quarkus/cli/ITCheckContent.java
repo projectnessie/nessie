@@ -32,7 +32,6 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
@@ -79,7 +78,7 @@ class ITCheckContent extends BaseContentTest<CheckContentEntry> {
   @Test
   public void testAdapterError(QuarkusMainLauncher launcher, DatabaseAdapter adapter)
       throws Exception {
-    Key k1 = Key.of("namespace123", "table123");
+    ContentKey k1 = ContentKey.of("namespace123", "table123");
     adapter.commit(
         ImmutableCommitParams.builder()
             .toBranch(BranchName.of("main"))

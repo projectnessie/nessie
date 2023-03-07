@@ -18,7 +18,7 @@ package org.projectnessie.versioned.persist.adapter;
 import com.google.protobuf.ByteString;
 import java.util.Optional;
 import org.immutables.value.Value;
-import org.projectnessie.versioned.Key;
+import org.projectnessie.model.ContentKey;
 
 @Value.Immutable
 public interface Difference {
@@ -27,7 +27,7 @@ public interface Difference {
   byte getPayload();
 
   @Value.Parameter(order = 2)
-  Key getKey();
+  ContentKey getKey();
 
   @Value.Parameter(order = 3)
   Optional<ByteString> getFromValue();
@@ -40,7 +40,7 @@ public interface Difference {
 
   static Difference of(
       byte payload,
-      Key key,
+      ContentKey key,
       Optional<ByteString> global,
       Optional<ByteString> from,
       Optional<ByteString> to) {

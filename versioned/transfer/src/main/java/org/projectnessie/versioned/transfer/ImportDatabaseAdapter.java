@@ -24,11 +24,11 @@ import java.io.InputStream;
 import java.util.Optional;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.CommitMetaSerializer;
 import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -149,7 +149,7 @@ final class ImportDatabaseAdapter extends ImportCommon {
                 .getOperationsList()
                 .forEach(
                     op -> {
-                      Key key = Key.of(op.getContentKeyList());
+                      ContentKey key = ContentKey.of(op.getContentKeyList());
                       switch (op.getOperationType()) {
                         case Delete:
                           logEntry.addDeletes(key);

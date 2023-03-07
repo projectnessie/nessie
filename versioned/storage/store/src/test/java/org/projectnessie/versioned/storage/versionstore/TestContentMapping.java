@@ -41,6 +41,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableCommitMeta;
@@ -49,7 +50,6 @@ import org.projectnessie.model.Namespace;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.ImmutableCommit;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
@@ -226,7 +226,7 @@ public class TestContentMapping {
             .hash(objIdToHash(id))
             .parentHash(objIdToHash(EMPTY_OBJ_ID))
             .commitMeta(referenceCommitMeta)
-            .addOperations(Delete.of(Key.of("bar")), Put.of(Key.of("foo"), table))
+            .addOperations(Delete.of(ContentKey.of("bar")), Put.of(ContentKey.of("foo"), table))
             .build();
 
     Commit c = contentMapping.commitObjToCommit(true, commitObj);

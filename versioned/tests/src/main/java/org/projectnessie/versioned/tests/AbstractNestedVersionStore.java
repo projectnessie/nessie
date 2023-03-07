@@ -27,12 +27,12 @@ import java.util.stream.Collectors;
 import org.assertj.core.api.SoftAssertions;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableCommit;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.Ref;
@@ -104,15 +104,15 @@ public abstract class AbstractNestedVersionStore {
   }
 
   protected Put put(String key, Content value) {
-    return Put.of(Key.of(key), value);
+    return Put.of(ContentKey.of(key), value);
   }
 
   protected Delete delete(String key) {
-    return Delete.of(Key.of(key));
+    return Delete.of(ContentKey.of(key));
   }
 
   protected Unchanged unchanged(String key) {
-    return Unchanged.of(Key.of(key));
+    return Unchanged.of(ContentKey.of(key));
   }
 
   /** Exclude {@code main} branch in tests. */
@@ -146,7 +146,7 @@ public abstract class AbstractNestedVersionStore {
     return content.map(AbstractNestedVersionStore::contentWithoutId);
   }
 
-  protected static Map<Key, Content> contentsWithoutId(Map<Key, Content> valueMap) {
+  protected static Map<ContentKey, Content> contentsWithoutId(Map<ContentKey, Content> valueMap) {
     return valueMap.entrySet().stream()
         .collect(Collectors.toMap(Map.Entry::getKey, e -> contentWithoutId(e.getValue())));
   }

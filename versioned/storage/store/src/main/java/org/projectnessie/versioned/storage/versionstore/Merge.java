@@ -18,9 +18,9 @@ package org.projectnessie.versioned.storage.versionstore;
 import java.util.Map;
 import java.util.Optional;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
@@ -32,7 +32,7 @@ interface Merge {
       Optional<?> retryState,
       Hash fromHash,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
-      Map<Key, MergeType> mergeTypes,
+      Map<ContentKey, MergeType> mergeTypes,
       MergeType defaultMergeType,
       boolean dryRun)
       throws ReferenceNotFoundException, RetryException;

@@ -39,7 +39,6 @@ import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.spi.ContentService;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.DetachedRef;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
@@ -62,7 +61,7 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
     WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
     startAccessCheck().canReadEntityValue(ref.getValue(), key, null).checkAndThrow();
     try {
-      Content obj = getStore().getValue(ref.getHash(), toKey(key));
+      Content obj = getStore().getValue(ref.getHash(), key);
       if (obj != null) {
         return ContentResponse.of(obj, makeReference(ref));
       }
@@ -80,17 +79,17 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
       WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
 
       BatchAccessChecker check = startAccessCheck();
-      List<Key> internalKeys = new ArrayList<>(externalKeys.size());
+      List<ContentKey> internalKeys = new ArrayList<>(externalKeys.size());
       for (ContentKey externalKey : externalKeys) {
         check.canReadEntityValue(ref.getValue(), externalKey, null);
-        internalKeys.add(toKey(externalKey));
+        internalKeys.add(externalKey);
       }
       check.checkAndThrow();
 
-      Map<Key, Content> values = getStore().getValues(ref.getHash(), internalKeys);
+      Map<ContentKey, Content> values = getStore().getValues(ref.getHash(), internalKeys);
       List<ContentWithKey> output =
           values.entrySet().stream()
-              .map(e -> ContentWithKey.of(toContentKey(e.getKey()), e.getValue()))
+              .map(e -> ContentWithKey.of(e.getKey(), e.getValue()))
               .collect(Collectors.toList());
 
       return GetMultipleContentsResponse.of(output, makeReference(ref));
@@ -110,13 +109,5 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
     } else {
       throw new UnsupportedOperationException("only converting tags or branches"); // todo
     }
-  }
-
-  static Key toKey(ContentKey key) {
-    return Key.of(key.getElements().toArray(new String[0]));
-  }
-
-  public static ContentKey toContentKey(Key key) {
-    return ContentKey.of(key.getElements());
   }
 }

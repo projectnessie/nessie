@@ -74,6 +74,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.Diff;
@@ -83,7 +84,6 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableKeyDetails;
 import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.ImmutableReferenceInfo;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.MergeConflictException;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MergeResult.ConflictType;
@@ -306,8 +306,8 @@ public abstract class AbstractDatabaseAdapter<
   }
 
   private static void checkContentKeysUnique(CommitParams commitParams) {
-    Set<Key> keys = new HashSet<>();
-    Set<Key> duplicates = new HashSet<>();
+    Set<ContentKey> keys = new HashSet<>();
+    Set<ContentKey> duplicates = new HashSet<>();
     Stream.concat(
             Stream.concat(
                 commitParams.getDeletes().stream(),
@@ -323,7 +323,7 @@ public abstract class AbstractDatabaseAdapter<
       throw new IllegalArgumentException(
           String.format(
               "Duplicate keys are not allowed in a commit: %s",
-              duplicates.stream().map(Key::toString).collect(Collectors.joining(", "))));
+              duplicates.stream().map(ContentKey::toString).collect(Collectors.joining(", "))));
     }
   }
 
@@ -513,12 +513,12 @@ public abstract class AbstractDatabaseAdapter<
     // Collect modified keys.
     Collections.reverse(toEntriesReverseChronological);
 
-    Map<Key, ImmutableKeyDetails.Builder> keyDetailsMap = new HashMap<>();
+    Map<ContentKey, ImmutableKeyDetails.Builder> keyDetailsMap = new HashMap<>();
 
-    Function<Key, MergeType> mergeType =
+    Function<ContentKey, MergeType> mergeType =
         key -> params.getMergeTypes().getOrDefault(key, params.getDefaultMergeType());
 
-    Function<Key, ImmutableKeyDetails.Builder> keyDetails =
+    Function<ContentKey, ImmutableKeyDetails.Builder> keyDetails =
         key ->
             keyDetailsMap.computeIfAbsent(
                 key, x -> KeyDetails.builder().mergeType(mergeType.apply(key)));
@@ -526,8 +526,8 @@ public abstract class AbstractDatabaseAdapter<
     BiConsumer<Stream<CommitLogEntry>, BiConsumer<ImmutableKeyDetails.Builder, Iterable<Hash>>>
         keysFromCommitsToKeyDetails =
             (commits, receiver) -> {
-              Map<Key, Set<Hash>> keyHashesMap = new HashMap<>();
-              Function<Key, Set<Hash>> keyHashes =
+              Map<ContentKey, Set<Hash>> keyHashesMap = new HashMap<>();
+              Function<ContentKey, Set<Hash>> keyHashes =
                   key -> keyHashesMap.computeIfAbsent(key, x -> new LinkedHashSet<>());
               commits.forEach(
                   commit -> {
@@ -541,7 +541,7 @@ public abstract class AbstractDatabaseAdapter<
               keyHashesMap.forEach((key, hashes) -> receiver.accept(keyDetails.apply(key), hashes));
             };
 
-    Set<Key> keysTouchedOnTarget = new HashSet<>();
+    Set<ContentKey> keysTouchedOnTarget = new HashSet<>();
     keysFromCommitsToKeyDetails.accept(
         commitsToMergeChronological.stream(), ImmutableKeyDetails.Builder::addAllSourceCommits);
     keysFromCommitsToKeyDetails.accept(
@@ -553,8 +553,8 @@ public abstract class AbstractDatabaseAdapter<
                 }),
         ImmutableKeyDetails.Builder::addAllTargetCommits);
 
-    Predicate<Key> skipCheckPredicate = k -> mergeType.apply(k).isSkipCheck();
-    Predicate<Key> mergePredicate = k -> mergeType.apply(k).isMerge();
+    Predicate<ContentKey> skipCheckPredicate = k -> mergeType.apply(k).isSkipCheck();
+    Predicate<ContentKey> mergePredicate = k -> mergeType.apply(k).isMerge();
 
     // Ignore keys in collision-check that will not be merged or collision-checked
     keysTouchedOnTarget.removeIf(skipCheckPredicate);
@@ -639,11 +639,12 @@ public abstract class AbstractDatabaseAdapter<
       throws ReferenceNotFoundException {
     // TODO this implementation works, but is definitely not the most efficient one.
 
-    Set<Key> allKeys = new HashSet<>();
-    try (Stream<Key> s = keysForCommitEntry(ctx, from, keyFilter).map(KeyListEntry::getKey)) {
+    Set<ContentKey> allKeys = new HashSet<>();
+    try (Stream<ContentKey> s =
+        keysForCommitEntry(ctx, from, keyFilter).map(KeyListEntry::getKey)) {
       s.forEach(allKeys::add);
     }
-    try (Stream<Key> s = keysForCommitEntry(ctx, to, keyFilter).map(KeyListEntry::getKey)) {
+    try (Stream<ContentKey> s = keysForCommitEntry(ctx, to, keyFilter).map(KeyListEntry::getKey)) {
       s.forEach(allKeys::add);
     }
 
@@ -652,9 +653,9 @@ public abstract class AbstractDatabaseAdapter<
       return Stream.empty();
     }
 
-    List<Key> allKeysList = new ArrayList<>(allKeys);
-    Map<Key, ContentAndState> fromValues = fetchValues(ctx, from, allKeysList, keyFilter);
-    Map<Key, ContentAndState> toValues = fetchValues(ctx, to, allKeysList, keyFilter);
+    List<ContentKey> allKeysList = new ArrayList<>(allKeys);
+    Map<ContentKey, ContentAndState> fromValues = fetchValues(ctx, from, allKeysList, keyFilter);
+    Map<ContentKey, ContentAndState> toValues = fetchValues(ctx, to, allKeysList, keyFilter);
 
     Function<ContentAndState, Optional<ByteString>> valToContent =
         cs -> cs != null ? Optional.of(cs.getRefState()) : Optional.empty();
@@ -995,11 +996,7 @@ public abstract class AbstractDatabaseAdapter<
       // Fill the gaps in the final result list. Note that fetchPageFromCommitLog must return the
       // list of the same size as its `remainingHashes` parameter.
       Iterator<CommitLogEntry> iter = fromStorage.iterator();
-      remainingHashes.stream()
-          .forEach(
-              i -> {
-                result.set(i, iter.next());
-              });
+      remainingHashes.stream().forEach(i -> result.set(i, iter.next()));
     }
 
     return result;
@@ -1154,7 +1151,7 @@ public abstract class AbstractDatabaseAdapter<
       long commitSeq,
       ByteString commitMeta,
       Iterable<KeyWithBytes> puts,
-      Iterable<Key> deletes,
+      Iterable<ContentKey> deletes,
       int currentKeyListDistance,
       Consumer<Hash> newKeyLists,
       @Nonnull @jakarta.annotation.Nonnull Function<Hash, CommitLogEntry> inMemoryCommits,
@@ -1191,7 +1188,7 @@ public abstract class AbstractDatabaseAdapter<
       List<Hash> parentHashes,
       ByteString commitMeta,
       Iterable<KeyWithBytes> puts,
-      Iterable<Key> deletes) {
+      Iterable<ContentKey> deletes) {
     Hasher hasher = newHasher();
     hasher.putLong(COMMIT_LOG_HASH_SEED);
     parentHashes.forEach(h -> hasher.putBytes(h.asBytes().asReadOnlyByteBuffer()));
@@ -1210,11 +1207,12 @@ public abstract class AbstractDatabaseAdapter<
    * Adds a complete key-list to the given {@link CommitLogEntry}, will read from the database.
    *
    * <p>The implementation fills {@link CommitLogEntry#getKeyList()} with the most recently updated
-   * {@link Key}s.
+   * {@link ContentKey}s.
    *
    * <p>If the calculated size of the database-object/row gets larger than {@link
-   * DatabaseAdapterConfig#getMaxKeyListSize()}, the next {@link Key}s will be added to new {@link
-   * KeyListEntity}s, each with a maximum size of {@link DatabaseAdapterConfig#getMaxKeyListSize()}.
+   * DatabaseAdapterConfig#getMaxKeyListSize()}, the next {@link ContentKey}s will be added to new
+   * {@link KeyListEntity}s, each with a maximum size of {@link
+   * DatabaseAdapterConfig#getMaxKeyListSize()}.
    *
    * <p>The current implementation fetches all keys and "blindly" populated {@link
    * CommitLogEntry#getKeyList()} and nested {@link KeyListEntity} via {@link
@@ -1250,7 +1248,7 @@ public abstract class AbstractDatabaseAdapter<
             config.getKeyListHashLoadFactor(),
             this::entitySize);
 
-    Set<Key> keysToEnhanceWithCommitId = new HashSet<>();
+    Set<ContentKey> keysToEnhanceWithCommitId = new HashSet<>();
 
     try (Stream<KeyListEntry> keys = keysForCommitEntry(ctx, startHash, null, inMemoryCommits)) {
       keys.forEach(
@@ -1326,7 +1324,7 @@ public abstract class AbstractDatabaseAdapter<
     if (commitParams.getExpectedHead().isPresent()) {
       Hash expectedHead = commitParams.getExpectedHead().get();
       if (!expectedHead.equals(branchHead)) {
-        Set<Key> operationKeys =
+        Set<ContentKey> operationKeys =
             Sets.newHashSetWithExpectedSize(
                 commitParams.getDeletes().size()
                     + commitParams.getUnchanged().size()
@@ -1374,7 +1372,7 @@ public abstract class AbstractDatabaseAdapter<
       throws ReferenceNotFoundException {
     // walk the commit-logs in reverse order - starting with the last persisted key-list
 
-    Set<Key> seen = new HashSet<>();
+    Set<ContentKey> seen = new HashSet<>();
 
     Predicate<KeyListEntry> predicate =
         keyListEntry -> keyListEntry != null && seen.add(keyListEntry.getKey());
@@ -1437,16 +1435,16 @@ public abstract class AbstractDatabaseAdapter<
   }
 
   /**
-   * Fetch the global-state and per-ref content for the given {@link Key}s and {@link Hash
+   * Fetch the global-state and per-ref content for the given {@link ContentKey}s and {@link Hash
    * commitSha}. Non-existing keys must not be present in the returned map.
    */
-  protected Map<Key, ContentAndState> fetchValues(
-      OP_CONTEXT ctx, Hash refHead, Collection<Key> keys, KeyFilterPredicate keyFilter)
+  protected Map<ContentKey, ContentAndState> fetchValues(
+      OP_CONTEXT ctx, Hash refHead, Collection<ContentKey> keys, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
-    Set<Key> remainingKeys = new HashSet<>(keys);
+    Set<ContentKey> remainingKeys = new HashSet<>(keys);
 
-    Map<Key, ContentAndState> nonGlobal = new HashMap<>();
-    Map<Key, ContentId> keyToContentIds = new HashMap<>();
+    Map<ContentKey, ContentAndState> nonGlobal = new HashMap<>();
+    Map<ContentKey, ContentId> keyToContentIds = new HashMap<>();
     Set<ContentId> contentIdsForGlobal = new HashSet<>();
 
     Consumer<CommitLogEntry> commitLogEntryHandler =
@@ -1569,7 +1567,7 @@ public abstract class AbstractDatabaseAdapter<
    * Nessie 0.31.0).
    */
   private List<KeyListEntry> fetchValuesHandleOpenAddressingKeyList(
-      OP_CONTEXT ctx, Collection<Key> remainingKeys, CommitLogEntry entry) {
+      OP_CONTEXT ctx, Collection<ContentKey> remainingKeys, CommitLogEntry entry) {
     FetchValuesUsingOpenAddressing helper = new FetchValuesUsingOpenAddressing(entry);
 
     List<KeyListEntry> keyListEntries = new ArrayList<>();
@@ -1601,7 +1599,7 @@ public abstract class AbstractDatabaseAdapter<
    * (before Nessie 0.31.0).
    */
   private List<KeyListEntry> fetchValuesHandleKeyList(
-      OP_CONTEXT ctx, Set<Key> remainingKeys, CommitLogEntry entry) {
+      OP_CONTEXT ctx, Set<ContentKey> remainingKeys, CommitLogEntry entry) {
     List<KeyListEntry> keyListEntries = new ArrayList<>();
 
     try (Stream<KeyList> keyLists = keyListsFromCommitLogEntry(ctx, entry)) {
@@ -1725,7 +1723,7 @@ public abstract class AbstractDatabaseAdapter<
 
   /**
    * Check whether the commits in the range {@code sinceCommitExcluding] .. [upToCommitIncluding}
-   * contain any of the given {@link Key}s.
+   * contain any of the given {@link ContentKey}s.
    *
    * <p>Conflicts are reported via {@code mismatches}.
    */
@@ -1733,7 +1731,7 @@ public abstract class AbstractDatabaseAdapter<
       OP_CONTEXT ctx,
       Hash upToCommitIncluding,
       Hash sinceCommitExcluding,
-      Set<Key> keys,
+      Set<ContentKey> keys,
       Consumer<String> mismatches)
       throws ReferenceNotFoundException {
     ConflictingKeyCheckResult result = new ConflictingKeyCheckResult();
@@ -1753,7 +1751,7 @@ public abstract class AbstractDatabaseAdapter<
                 return false;
               });
 
-      Set<Key> handled = new HashSet<>();
+      Set<ContentKey> handled = new HashSet<>();
       log.forEach(
           e -> {
             e.getPuts()
@@ -1875,11 +1873,11 @@ public abstract class AbstractDatabaseAdapter<
   protected boolean hasKeyCollisions(
       OP_CONTEXT ctx,
       Hash refHead,
-      Set<Key> keysTouchedOnTarget,
+      Set<ContentKey> keysTouchedOnTarget,
       List<CommitLogEntry> commitsChronological,
-      Function<Key, ImmutableKeyDetails.Builder> keyDetails)
+      Function<ContentKey, ImmutableKeyDetails.Builder> keyDetails)
       throws ReferenceNotFoundException {
-    Set<Key> keyCollisions = new HashSet<>();
+    Set<ContentKey> keyCollisions = new HashSet<>();
     for (int i = commitsChronological.size() - 1; i >= 0; i--) {
       CommitLogEntry sourceCommit = commitsChronological.get(i);
       Stream.concat(
@@ -1915,21 +1913,21 @@ public abstract class AbstractDatabaseAdapter<
    * @throws ReferenceNotFoundException If the given reference could not be found
    */
   private void removeKeyCollisionsForNamespaces(
-      OP_CONTEXT ctx, Hash hashFromTarget, Hash hashFromSource, Set<Key> keyCollisions)
+      OP_CONTEXT ctx, Hash hashFromTarget, Hash hashFromSource, Set<ContentKey> keyCollisions)
       throws ReferenceNotFoundException {
-    Predicate<Entry<Key, ContentAndState>> isNamespace =
+    Predicate<Entry<ContentKey, ContentAndState>> isNamespace =
         e ->
             STORE_WORKER
                 .getType(e.getValue().getPayload(), e.getValue().getRefState())
                 .equals(Content.Type.NAMESPACE);
-    Set<Key> namespacesOnTarget =
+    Set<ContentKey> namespacesOnTarget =
         fetchValues(ctx, hashFromTarget, keyCollisions, ALLOW_ALL).entrySet().stream()
             .filter(isNamespace)
             .map(Entry::getKey)
             .collect(Collectors.toSet());
 
     // this will be an implicit set intersection between the namespaces on source & target
-    Set<Key> intersection =
+    Set<ContentKey> intersection =
         fetchValues(ctx, hashFromSource, namespacesOnTarget, ALLOW_ALL).entrySet().stream()
             .filter(isNamespace)
             .map(Entry::getKey)
@@ -1950,16 +1948,16 @@ public abstract class AbstractDatabaseAdapter<
       List<CommitLogEntry> commitsToMergeChronological,
       Consumer<Hash> newKeyLists,
       MetadataRewriter<ByteString> rewriteMetadata,
-      Predicate<Key> includeKeyPredicate,
+      Predicate<ContentKey> includeKeyPredicate,
       Iterable<Hash> additionalParents)
       throws ReferenceConflictException, ReferenceNotFoundException {
 
     List<ByteString> commitMeta = new ArrayList<>();
-    Map<Key, KeyWithBytes> puts = new LinkedHashMap<>();
-    Set<Key> deletes = new LinkedHashSet<>();
+    Map<ContentKey, KeyWithBytes> puts = new LinkedHashMap<>();
+    Set<ContentKey> deletes = new LinkedHashSet<>();
     for (int i = commitsToMergeChronological.size() - 1; i >= 0; i--) {
       CommitLogEntry source = commitsToMergeChronological.get(i);
-      for (Key delete : source.getDeletes()) {
+      for (ContentKey delete : source.getDeletes()) {
         if (includeKeyPredicate.test(delete)) {
           deletes.add(delete);
           puts.remove(delete);
@@ -2037,7 +2035,7 @@ public abstract class AbstractDatabaseAdapter<
       List<CommitLogEntry> commitsChronological,
       Consumer<Hash> newKeyLists,
       MetadataRewriter<ByteString> rewriteMetadata,
-      Predicate<Key> includeKeyPredicate)
+      Predicate<ContentKey> includeKeyPredicate)
       throws ReferenceNotFoundException {
     int parentsPerCommit = config.getParentsPerCommit();
 
@@ -2063,7 +2061,7 @@ public abstract class AbstractDatabaseAdapter<
           sourceCommit.getPuts().stream()
               .filter(p -> includeKeyPredicate.test(p.getKey()))
               .collect(Collectors.toList());
-      List<Key> deletes =
+      List<ContentKey> deletes =
           sourceCommit.getDeletes().stream()
               .filter(includeKeyPredicate)
               .collect(Collectors.toList());

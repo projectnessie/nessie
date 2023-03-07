@@ -54,7 +54,6 @@ import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.spi.NamespaceService;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.KeyEntry;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Operation;
@@ -202,7 +201,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
 
       // Iterate through all candidate keys, split into `Key`s of explicitly created namespaces
       // (type==NAMESPACE) and collect implicitly created namespaces for all other content-types.
-      Set<Key> explicitNamespaceKeys = new HashSet<>();
+      Set<ContentKey> explicitNamespaceKeys = new HashSet<>();
       Map<List<String>, Namespace> implicitNamespaces = new HashMap<>();
       try (Stream<KeyEntry> stream =
           getNamespacesKeyStream(namespace, refWithHash.getHash(), k -> true)) {
@@ -227,7 +226,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
       // namespaces, add those to the response and the implicitly created `Namespace` for the
       // same key.
       if (!explicitNamespaceKeys.isEmpty()) {
-        Map<Key, Content> namespaceValues =
+        Map<ContentKey, Content> namespaceValues =
             getStore().getValues(refWithHash.getHash(), explicitNamespaceKeys);
         namespaceValues.values().stream()
             .filter(Namespace.class::isInstance)
@@ -297,7 +296,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
    * its name without modification as a {@link Namespace} instance. If the {@link Content.Type} is
    * for example {@link Content.Type#ICEBERG_TABLE} / {@link Content.Type#ICEBERG_VIEW} / {@link
    * Content.Type#DELTA_LAKE_TABLE}, then we are extracting its namespace name from the elements of
-   * {@link Key} without including the actual table name itself (which is the last element).
+   * {@link ContentKey} without including the actual table name itself (which is the last element).
    *
    * @param withType The {@link KeyEntry} instance holding the key and type.
    * @return A {@link Namespace} instance.
@@ -312,7 +311,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
 
   private Optional<Content> getExplicitlyCreatedNamespace(Namespace namespace, Hash hash)
       throws ReferenceNotFoundException {
-    return Optional.ofNullable(getStore().getValue(hash, Key.of(namespace.getElements())));
+    return Optional.ofNullable(getStore().getValue(hash, ContentKey.of(namespace.getElements())));
   }
 
   private Optional<Namespace> getImplicitlyCreatedNamespace(Namespace namespace, Hash hash)

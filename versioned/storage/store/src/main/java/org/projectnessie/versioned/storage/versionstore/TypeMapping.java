@@ -43,9 +43,9 @@ import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
 import org.projectnessie.versioned.storage.common.logic.CreateCommit;
 import org.projectnessie.versioned.storage.common.objtypes.CommitHeaders;
@@ -81,11 +81,11 @@ public final class TypeMapping {
   }
 
   /**
-   * Converts a {@link StoreKey} to a {@link Key}, returning {@code null}, if the store key does not
-   * reference the {@link #MAIN_UNIVERSE main universe} or not a {@link #CONTENT_DISCRIMINATOR
-   * content object}.
+   * Converts a {@link StoreKey} to a {@link ContentKey}, returning {@code null}, if the store key
+   * does not reference the {@link #MAIN_UNIVERSE main universe} or not a {@link
+   * #CONTENT_DISCRIMINATOR content object}.
    *
-   * <p>A {@link Key} is represented as a {@link StoreKey} as follows:<br>
+   * <p>A {@link ContentKey} is represented as a {@link StoreKey} as follows:<br>
    * {@code universe CHAR_0 key-element ( CHAR_1 key-element ) * CHAR_0 variant}
    *
    * <p>So it is the "universe" followed by {@code (char)0} followed by the key-elements, separated
@@ -93,7 +93,7 @@ public final class TypeMapping {
    */
   @Nullable
   @jakarta.annotation.Nullable
-  public static Key storeKeyToKey(@Nonnull @jakarta.annotation.Nonnull StoreKey storeKey) {
+  public static ContentKey storeKeyToKey(@Nonnull @jakarta.annotation.Nonnull StoreKey storeKey) {
     List<String> universeKeyVariant = SPLITTER_ZERO.splitToList(storeKey.rawString());
     String universe;
     List<String> keyElements;
@@ -115,16 +115,16 @@ public final class TypeMapping {
     if (!universe.equals(MAIN_UNIVERSE) || !CONTENT_DISCRIMINATOR.equals(variant)) {
       return null;
     }
-    return Key.of(keyElements);
+    return ContentKey.of(keyElements);
   }
 
   /**
-   * Converts a {@link Key} to a {@link StoreKey} in the {@link #MAIN_UNIVERSE main universe} as a
-   * {@link #CONTENT_DISCRIMINATOR content object}.
+   * Converts a {@link ContentKey} to a {@link StoreKey} in the {@link #MAIN_UNIVERSE main universe}
+   * as a {@link #CONTENT_DISCRIMINATOR content object}.
    */
   @Nonnull
   @jakarta.annotation.Nonnull
-  public static StoreKey keyToStoreKey(@Nonnull @jakarta.annotation.Nonnull Key key) {
+  public static StoreKey keyToStoreKey(@Nonnull @jakarta.annotation.Nonnull ContentKey key) {
     StringBuilder sb = new StringBuilder();
     sb.append(MAIN_UNIVERSE);
     List<String> elements = key.getElements();

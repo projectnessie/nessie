@@ -19,13 +19,13 @@ import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.TreeMap;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.ContentAttachment.Compression;
 import org.projectnessie.versioned.ContentAttachment.Format;
 import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableContentAttachment;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry.KeyListVariant;
 import org.projectnessie.versioned.persist.adapter.ContentId;
@@ -242,7 +242,7 @@ public final class ProtoSerialization {
 
   public static KeyWithBytes protoToKeyWithBytes(AdapterTypes.KeyWithBytes proto) {
     return KeyWithBytes.of(
-        Key.of(proto.getKey().getElementList().toArray(new String[0])),
+        ContentKey.of(proto.getKey().getElementList().toArray(new String[0])),
         ContentId.of(proto.getContentId().getId()),
         (byte) proto.getPayload(),
         proto.getValue());
@@ -274,7 +274,7 @@ public final class ProtoSerialization {
         proto.hasCommitId() ? Hash.of(proto.getCommitId()) : null);
   }
 
-  public static AdapterTypes.Key keyToProto(Key key) {
+  public static AdapterTypes.Key keyToProto(ContentKey key) {
     return AdapterTypes.Key.newBuilder().addAllElement(key.getElements()).build();
   }
 
@@ -316,8 +316,8 @@ public final class ProtoSerialization {
     return entry.build();
   }
 
-  public static Key protoToKey(AdapterTypes.Key key) {
-    return Key.of(key.getElementList().toArray(new String[0]));
+  public static ContentKey protoToKey(AdapterTypes.Key key) {
+    return ContentKey.of(key.getElementList().toArray(new String[0]));
   }
 
   public static AttachmentKey toProtoKey(ContentAttachmentKey contentAttachmentKey) {

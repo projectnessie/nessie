@@ -33,11 +33,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.KeyEntry;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
@@ -144,7 +144,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             .put("t2", V_2_1)
             .put("t3", V_3_1)
             .toBranch(branch);
-    Content t1 = store().getValue(branch, Key.of("t1"));
+    Content t1 = store().getValue(branch, ContentKey.of("t1"));
 
     Hash secondCommit =
         commit("Second Commit")
@@ -164,17 +164,17 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
 
     try (PaginationIterator<KeyEntry> keys = store().getKeys(branch, null, false)) {
       soft.assertThat(stream(keys).map(KeyEntry::getKey))
-          .containsExactlyInAnyOrder(Key.of("t1"), Key.of("t2"), Key.of("t4"));
+          .containsExactlyInAnyOrder(ContentKey.of("t1"), ContentKey.of("t2"), ContentKey.of("t4"));
     }
 
     try (PaginationIterator<KeyEntry> keys = store().getKeys(secondCommit, null, false)) {
       soft.assertThat(stream(keys).map(KeyEntry::getKey))
-          .containsExactlyInAnyOrder(Key.of("t1"), Key.of("t4"));
+          .containsExactlyInAnyOrder(ContentKey.of("t1"), ContentKey.of("t4"));
     }
 
     try (PaginationIterator<KeyEntry> keys = store().getKeys(initialCommit, null, false)) {
       soft.assertThat(stream(keys).map(KeyEntry::getKey))
-          .containsExactlyInAnyOrder(Key.of("t1"), Key.of("t2"), Key.of("t3"));
+          .containsExactlyInAnyOrder(ContentKey.of("t1"), ContentKey.of("t2"), ContentKey.of("t3"));
     }
 
     soft.assertThat(
@@ -182,41 +182,52 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                 store()
                     .getValues(
                         secondCommit,
-                        Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4")))))
+                        Arrays.asList(
+                            ContentKey.of("t1"),
+                            ContentKey.of("t2"),
+                            ContentKey.of("t3"),
+                            ContentKey.of("t4")))))
         .containsExactlyInAnyOrderEntriesOf(
-            ImmutableMap.of(Key.of("t1"), V_1_2, Key.of("t4"), V_4_1));
+            ImmutableMap.of(ContentKey.of("t1"), V_1_2, ContentKey.of("t4"), V_4_1));
 
     soft.assertThat(
             contentsWithoutId(
                 store()
                     .getValues(
                         initialCommit,
-                        Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4")))))
+                        Arrays.asList(
+                            ContentKey.of("t1"),
+                            ContentKey.of("t2"),
+                            ContentKey.of("t3"),
+                            ContentKey.of("t4")))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                Key.of("t1"), V_1_1,
-                Key.of("t2"), V_2_1,
-                Key.of("t3"), V_3_1));
+                ContentKey.of("t1"), V_1_1,
+                ContentKey.of("t2"), V_2_1,
+                ContentKey.of("t3"), V_3_1));
 
-    soft.assertThat(contentWithoutId(store().getValue(branch, Key.of("t1")))).isEqualTo(V_1_2);
-    soft.assertThat(contentWithoutId(store().getValue(branch, Key.of("t2")))).isEqualTo(V_2_2);
-    soft.assertThat(store().getValue(branch, Key.of("t3"))).isNull();
-    soft.assertThat(contentWithoutId(store().getValue(branch, Key.of("t4")))).isEqualTo(V_4_1);
-
-    soft.assertThat(contentWithoutId(store().getValue(secondCommit, Key.of("t1"))))
+    soft.assertThat(contentWithoutId(store().getValue(branch, ContentKey.of("t1"))))
         .isEqualTo(V_1_2);
-    soft.assertThat(store().getValue(secondCommit, Key.of("t2"))).isNull();
-    soft.assertThat(store().getValue(secondCommit, Key.of("t3"))).isNull();
-    soft.assertThat(contentWithoutId(store().getValue(secondCommit, Key.of("t4"))))
+    soft.assertThat(contentWithoutId(store().getValue(branch, ContentKey.of("t2"))))
+        .isEqualTo(V_2_2);
+    soft.assertThat(store().getValue(branch, ContentKey.of("t3"))).isNull();
+    soft.assertThat(contentWithoutId(store().getValue(branch, ContentKey.of("t4"))))
         .isEqualTo(V_4_1);
 
-    soft.assertThat(contentWithoutId(store().getValue(initialCommit, Key.of("t1"))))
+    soft.assertThat(contentWithoutId(store().getValue(secondCommit, ContentKey.of("t1"))))
+        .isEqualTo(V_1_2);
+    soft.assertThat(store().getValue(secondCommit, ContentKey.of("t2"))).isNull();
+    soft.assertThat(store().getValue(secondCommit, ContentKey.of("t3"))).isNull();
+    soft.assertThat(contentWithoutId(store().getValue(secondCommit, ContentKey.of("t4"))))
+        .isEqualTo(V_4_1);
+
+    soft.assertThat(contentWithoutId(store().getValue(initialCommit, ContentKey.of("t1"))))
         .isEqualTo(V_1_1);
-    soft.assertThat(contentWithoutId(store().getValue(initialCommit, Key.of("t2"))))
+    soft.assertThat(contentWithoutId(store().getValue(initialCommit, ContentKey.of("t2"))))
         .isEqualTo(V_2_1);
-    soft.assertThat(contentWithoutId(store().getValue(initialCommit, Key.of("t3"))))
+    soft.assertThat(contentWithoutId(store().getValue(initialCommit, ContentKey.of("t3"))))
         .isEqualTo(V_3_1);
-    soft.assertThat(store().getValue(initialCommit, Key.of("t4"))).isNull();
+    soft.assertThat(store().getValue(initialCommit, ContentKey.of("t4"))).isNull();
   }
 
   /*
@@ -242,15 +253,15 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             .put("t2", V_2_1)
             .put("t3", V_3_1)
             .toBranch(branch);
-    Content t1 = store().getValue(branch, Key.of("t1"));
-    Content t3 = store().getValue(branch, Key.of("t3"));
+    Content t1 = store().getValue(branch, ContentKey.of("t1"));
+    Content t3 = store().getValue(branch, ContentKey.of("t3"));
 
     Hash t1Commit =
         commit("T1 Commit")
             .fromReference(initialCommit)
             .put("t1", V_1_2.withId(t1), t1)
             .toBranch(branch);
-    t1 = store().getValue(branch, Key.of("t1"));
+    t1 = store().getValue(branch, ContentKey.of("t1"));
 
     Hash t2Commit = commit("T2 Commit").fromReference(initialCommit).delete("t2").toBranch(branch);
     Hash t3Commit =
@@ -275,66 +286,83 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
 
     try (PaginationIterator<KeyEntry> keys = store().getKeys(branch, null, false)) {
       soft.assertThat(stream(keys).map(KeyEntry::getKey))
-          .containsExactlyInAnyOrder(Key.of("t1"), Key.of("t2"), Key.of("t3"));
+          .containsExactlyInAnyOrder(ContentKey.of("t1"), ContentKey.of("t2"), ContentKey.of("t3"));
     }
 
     soft.assertThat(
             contentsWithoutId(
-                store().getValues(branch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3")))))
+                store()
+                    .getValues(
+                        branch,
+                        Arrays.asList(
+                            ContentKey.of("t1"), ContentKey.of("t2"), ContentKey.of("t3")))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                Key.of("t1"), V_1_3,
-                Key.of("t2"), NEW_v2_1,
-                Key.of("t3"), V_3_2));
+                ContentKey.of("t1"), V_1_3,
+                ContentKey.of("t2"), NEW_v2_1,
+                ContentKey.of("t3"), V_3_2));
 
     soft.assertThat(
             contentsWithoutId(
                 store()
                     .getValues(
-                        newT2Commit, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3")))))
+                        newT2Commit,
+                        Arrays.asList(
+                            ContentKey.of("t1"), ContentKey.of("t2"), ContentKey.of("t3")))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                Key.of("t1"), V_1_3,
-                Key.of("t2"), NEW_v2_1,
-                Key.of("t3"), V_3_2));
+                ContentKey.of("t1"), V_1_3,
+                ContentKey.of("t2"), NEW_v2_1,
+                ContentKey.of("t3"), V_3_2));
 
     soft.assertThat(
             contentsWithoutId(
                 store()
                     .getValues(
-                        extraCommit, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3")))))
+                        extraCommit,
+                        Arrays.asList(
+                            ContentKey.of("t1"), ContentKey.of("t2"), ContentKey.of("t3")))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                Key.of("t1"), V_1_3,
-                Key.of("t3"), V_3_2));
+                ContentKey.of("t1"), V_1_3,
+                ContentKey.of("t3"), V_3_2));
 
     soft.assertThat(
             contentsWithoutId(
                 store()
-                    .getValues(t3Commit, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3")))))
+                    .getValues(
+                        t3Commit,
+                        Arrays.asList(
+                            ContentKey.of("t1"), ContentKey.of("t2"), ContentKey.of("t3")))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                Key.of("t1"), V_1_2,
-                Key.of("t3"), V_3_1));
+                ContentKey.of("t1"), V_1_2,
+                ContentKey.of("t3"), V_3_1));
 
     soft.assertThat(
             contentsWithoutId(
                 store()
-                    .getValues(t2Commit, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3")))))
+                    .getValues(
+                        t2Commit,
+                        Arrays.asList(
+                            ContentKey.of("t1"), ContentKey.of("t2"), ContentKey.of("t3")))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                Key.of("t1"), V_1_2,
-                Key.of("t3"), V_3_1));
+                ContentKey.of("t1"), V_1_2,
+                ContentKey.of("t3"), V_3_1));
 
     soft.assertThat(
             contentsWithoutId(
                 store()
-                    .getValues(t1Commit, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3")))))
+                    .getValues(
+                        t1Commit,
+                        Arrays.asList(
+                            ContentKey.of("t1"), ContentKey.of("t2"), ContentKey.of("t3")))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                Key.of("t1"), V_1_2,
-                Key.of("t2"), V_2_1,
-                Key.of("t3"), V_3_1));
+                ContentKey.of("t1"), V_1_2,
+                ContentKey.of("t2"), V_2_1,
+                ContentKey.of("t3"), V_3_1));
   }
 
   /*
@@ -358,8 +386,8 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
     Hash initialCommit =
         commit("Initial Commit").put("t1", V_1_1).put("t2", V_2_1).toBranch(branch);
 
-    Content t1 = store().getValue(branch, Key.of("t1"));
-    store().getValue(branch, Key.of("t2"));
+    Content t1 = store().getValue(branch, ContentKey.of("t1"));
+    store().getValue(branch, ContentKey.of("t2"));
 
     Hash secondCommit =
         commit("Second Commit")
@@ -367,7 +395,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             .delete("t2")
             .put("t3", V_3_1)
             .toBranch(branch);
-    store().getValue(branch, Key.of("t3"));
+    store().getValue(branch, ContentKey.of("t3"));
 
     soft.assertThatThrownBy(
             () ->
@@ -438,8 +466,8 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
     Hash initialCommit =
         commit("Initial Commit").put("t1", V_1_1).put("t2", V_2_1).toBranch(branch);
 
-    Content t1 = store().getValue(branch, Key.of("t1"));
-    Content t2 = store().getValue(branch, Key.of("t2"));
+    Content t1 = store().getValue(branch, ContentKey.of("t1"));
+    Content t2 = store().getValue(branch, ContentKey.of("t2"));
 
     Hash secondCommit =
         commit("Second Commit")
@@ -447,7 +475,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             .delete("t2")
             .put("t3", V_3_1)
             .toBranch(branch);
-    Content t3 = store().getValue(branch, Key.of("t3"));
+    Content t3 = store().getValue(branch, ContentKey.of("t3"));
 
     soft.assertThatThrownBy(
             () ->
@@ -571,14 +599,14 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
     store().create(branch, Optional.empty());
 
     commit("Initial Commit").put("t1", V_1_1).put("t2", V_2_1).toBranch(branch);
-    Content t1 = store().getValue(branch, Key.of("t1"));
+    Content t1 = store().getValue(branch, ContentKey.of("t1"));
 
     commit("Second Commit")
         .put("t1", V_1_2.withId(t1), t1)
         .delete("t2")
         .put("t3", V_3_1)
         .toBranch(branch);
-    Content t3 = store().getValue(branch, Key.of("t3"));
+    Content t3 = store().getValue(branch, ContentKey.of("t3"));
 
     Hash putCommit =
         forceCommit("Conflicting Commit")
@@ -590,12 +618,16 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
     soft.assertThat(store().hashOnReference(branch, Optional.empty())).isEqualTo(putCommit);
     soft.assertThat(
             contentsWithoutId(
-                store().getValues(branch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3")))))
+                store()
+                    .getValues(
+                        branch,
+                        Arrays.asList(
+                            ContentKey.of("t1"), ContentKey.of("t2"), ContentKey.of("t3")))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                Key.of("t1"), V_1_3,
-                Key.of("t2"), V_2_2,
-                Key.of("t3"), V_3_2));
+                ContentKey.of("t1"), V_1_3,
+                ContentKey.of("t2"), V_2_2,
+                ContentKey.of("t3"), V_3_2));
 
     Hash unchangedCommit =
         commit("Conflicting Commit")
@@ -606,18 +638,25 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
     soft.assertThat(store().hashOnReference(branch, Optional.empty())).isEqualTo(unchangedCommit);
     soft.assertThat(
             contentsWithoutId(
-                store().getValues(branch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3")))))
+                store()
+                    .getValues(
+                        branch,
+                        Arrays.asList(
+                            ContentKey.of("t1"), ContentKey.of("t2"), ContentKey.of("t3")))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                Key.of("t1"), V_1_3,
-                Key.of("t2"), V_2_2,
-                Key.of("t3"), V_3_2));
+                ContentKey.of("t1"), V_1_3,
+                ContentKey.of("t2"), V_2_2,
+                ContentKey.of("t3"), V_3_2));
 
     Hash deleteCommit =
         commit("Conflicting Commit").delete("t1").delete("t2").delete("t3").toBranch(branch);
     soft.assertThat(store().hashOnReference(branch, Optional.empty())).isEqualTo(deleteCommit);
     soft.assertThat(
-            store().getValues(branch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))))
+            store()
+                .getValues(
+                    branch,
+                    Arrays.asList(ContentKey.of("t1"), ContentKey.of("t2"), ContentKey.of("t3"))))
         .isEmpty();
   }
 
@@ -638,8 +677,10 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             CommitMeta.fromMessage("metadata"),
             ImmutableList.of(put("keyA", foo1), put("keyB", foo2)));
 
-    soft.assertThat(contentWithoutId(store().getValue(branch, Key.of("keyA")))).isEqualTo(foo1);
-    soft.assertThat(contentWithoutId(store().getValue(branch, Key.of("keyB")))).isEqualTo(foo2);
+    soft.assertThat(contentWithoutId(store().getValue(branch, ContentKey.of("keyA"))))
+        .isEqualTo(foo1);
+    soft.assertThat(contentWithoutId(store().getValue(branch, ContentKey.of("keyB"))))
+        .isEqualTo(foo2);
   }
 
   /*
@@ -721,7 +762,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
   @Test
   void commitWithValidation() throws Exception {
     BranchName branch = BranchName.of("main");
-    Key key = Key.of("my", "table0");
+    ContentKey key = ContentKey.of("my", "table0");
     Hash branchHead = store().getNamedRef(branch.getName(), GetNamedRefsParams.DEFAULT).getHash();
 
     RuntimeException exception = new ArithmeticException("Whatever");
@@ -750,7 +791,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
     soft.assertThat(store().getValue(branch, key)).isNull();
   }
 
-  void doCommitWithValidation(BranchName branch, Key key, Callable<Void> validator)
+  void doCommitWithValidation(BranchName branch, ContentKey key, Callable<Void> validator)
       throws Exception {
     store()
         .commit(
@@ -766,7 +807,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
   void duplicateKeys() {
     BranchName branch = BranchName.of("main");
 
-    Key key = Key.of("my.awesome.table");
+    ContentKey key = ContentKey.of("my.awesome.table");
     String tableRefState = "table ref state";
 
     Content createValue1 = newOnRef("no no - not this");

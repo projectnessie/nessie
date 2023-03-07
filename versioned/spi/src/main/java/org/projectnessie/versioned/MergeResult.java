@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
+import org.projectnessie.model.ContentKey;
 
 @Value.Immutable
 public interface MergeResult<COMMIT> {
@@ -70,7 +71,7 @@ public interface MergeResult<COMMIT> {
   List<COMMIT> getTargetCommits();
 
   /** Details of all keys encountered during the merge or transplant operation. */
-  Map<Key, KeyDetails> getDetails();
+  Map<ContentKey, KeyDetails> getDetails();
 
   @Value.Immutable
   interface KeyDetails {

@@ -44,6 +44,7 @@ dependencies {
   implementation(libs.awssdk.netty.nio.client)
   implementation(libs.awssdk.url.connection.client)
 
+  testImplementation(project(":nessie-model"))
   testImplementation(project(":nessie-versioned-tests"))
   testImplementation(project(":nessie-versioned-persist-testextension"))
   testImplementation(project(":nessie-versioned-persist-tests"))

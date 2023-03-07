@@ -43,9 +43,9 @@ import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -83,8 +83,8 @@ public class CommitBench {
     TestConnectionProviderSource<DatabaseConnectionConfig> providerSource;
     DatabaseAdapter databaseAdapter;
     PersistVersionStore versionStore;
-    List<Key> keys;
-    Map<Key, String> contentIds;
+    List<ContentKey> keys;
+    Map<ContentKey, String> contentIds;
     BranchName branch = BranchName.of("main");
 
     @Setup
@@ -99,7 +99,7 @@ public class CommitBench {
       keys = new ArrayList<>(tablesPerCommit);
 
       for (int i = 0; i < tablesPerCommit; i++) {
-        Key key = Key.of("my", "table", "num" + i);
+        ContentKey key = ContentKey.of("my", "table", "num" + i);
         keys.add(key);
       }
 
@@ -177,8 +177,8 @@ public class CommitBench {
   @State(Scope.Thread)
   public static class ThreadParam {
     BranchName branch;
-    List<Key> keys;
-    Map<Key, String> contentIds;
+    List<ContentKey> keys;
+    Map<ContentKey, String> contentIds;
 
     @Setup
     public void createBranch(BenchmarkParam bp) throws Exception {
@@ -186,7 +186,8 @@ public class CommitBench {
 
       keys = new ArrayList<>(bp.tablesPerCommit);
       for (int i = 0; i < bp.tablesPerCommit; i++) {
-        Key key = Key.of("per-thread", Long.toString(Thread.currentThread().getId()), "num" + i);
+        ContentKey key =
+            ContentKey.of("per-thread", Long.toString(Thread.currentThread().getId()), "num" + i);
         keys.add(key);
       }
 
@@ -226,14 +227,17 @@ public class CommitBench {
   }
 
   private void doCommit(
-      BenchmarkParam bp, BranchName branch, List<Key> keys, Map<Key, String> contentIds)
+      BenchmarkParam bp,
+      BranchName branch,
+      List<ContentKey> keys,
+      Map<ContentKey, String> contentIds)
       throws Exception {
-    Map<Key, Content> contentByKey = bp.versionStore.getValues(branch, keys);
+    Map<ContentKey, Content> contentByKey = bp.versionStore.getValues(branch, keys);
 
     try {
       List<Operation> operations = new ArrayList<>(bp.tablesPerCommit);
       for (int i = 0; i < bp.tablesPerCommit; i++) {
-        Key key = keys.get(i);
+        ContentKey key = keys.get(i);
         Content value = contentByKey.get(key);
         if (value == null) {
           throw new RuntimeException("no value for key " + key + " in " + branch);
@@ -260,9 +264,9 @@ public class CommitBench {
   }
 
   static List<Operation> initialOperations(
-      BenchmarkParam bp, List<Key> keys, Map<Key, String> contentIds) {
+      BenchmarkParam bp, List<ContentKey> keys, Map<ContentKey, String> contentIds) {
     List<Operation> operations = new ArrayList<>(bp.tablesPerCommit);
-    for (Key key : keys) {
+    for (ContentKey key : keys) {
       String contentId = contentIds.get(key);
       operations.add(Put.of(key, onRef("initial commit content", contentId)));
     }

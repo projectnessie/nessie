@@ -39,10 +39,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
@@ -120,9 +120,9 @@ public abstract class AbstractCommitScenarios {
   void commitRenameTable(RenameTable param) throws Exception {
     BranchName branch = BranchName.of("main");
 
-    Key dummyKey = Key.of("dummy");
-    Key oldKey = Key.of("hello", "table");
-    Key newKey = Key.of("new", "name");
+    ContentKey dummyKey = ContentKey.of("dummy");
+    ContentKey oldKey = ContentKey.of("hello", "table");
+    ContentKey newKey = ContentKey.of("new", "name");
     ContentId contentId = ContentId.of("id-42");
 
     IntFunction<Hash> performDummyCommit =
@@ -265,13 +265,13 @@ public abstract class AbstractCommitScenarios {
   void commit(int tablesPerCommit) throws Exception {
     BranchName branch = BranchName.of("main");
 
-    ArrayList<Key> keys = new ArrayList<>(tablesPerCommit);
+    ArrayList<ContentKey> keys = new ArrayList<>(tablesPerCommit);
     ImmutableCommitParams.Builder commit =
         ImmutableCommitParams.builder()
             .toBranch(branch)
             .commitMetaSerialized(ByteString.copyFromUtf8("initial commit meta"));
     for (int i = 0; i < tablesPerCommit; i++) {
-      Key key = Key.of("my", "table", "num" + i);
+      ContentKey key = ContentKey.of("my", "table", "num" + i);
       keys.add(key);
 
       String cid = "id-" + i;
@@ -315,7 +315,7 @@ public abstract class AbstractCommitScenarios {
   @Test
   void commitWithValidation() throws Exception {
     BranchName branch = BranchName.of("main");
-    Key key = Key.of("my", "table0");
+    ContentKey key = ContentKey.of("my", "table0");
     Hash branchHead =
         databaseAdapter.namedRef(branch.getName(), GetNamedRefsParams.DEFAULT).getHash();
     String cid = "cid-0";
@@ -347,8 +347,8 @@ public abstract class AbstractCommitScenarios {
     assertThat(databaseAdapter.globalContent(ContentId.of(cid))).isEmpty();
   }
 
-  void doCommitWithValidation(BranchName branch, String cid, Key key, Callable<Void> validator)
-      throws Exception {
+  void doCommitWithValidation(
+      BranchName branch, String cid, ContentKey key, Callable<Void> validator) throws Exception {
     OnRefOnly c = OnRefOnly.onRef("initial commit content", cid);
 
     ImmutableCommitParams.Builder commit =
@@ -371,7 +371,7 @@ public abstract class AbstractCommitScenarios {
   void duplicateKeys() {
     BranchName branch = BranchName.of("main");
 
-    Key key = Key.of("my.awesome.table");
+    ContentKey key = ContentKey.of("my.awesome.table");
     ContentId contentsId = ContentId.of("cid");
     OnRefOnly tableRef = newOnRef("table ref state");
     ByteString tableRefState = tableRef.serialized();
@@ -432,8 +432,8 @@ public abstract class AbstractCommitScenarios {
     Hash head = mine.noAncestorHash();
     mine.create(branchName, head);
 
-    Key keyNation = Key.of("tpch", "nation");
-    Key keyRegion = Key.of("tpch", "region");
+    ContentKey keyNation = ContentKey.of("tpch", "nation");
+    ContentKey keyRegion = ContentKey.of("tpch", "region");
 
     ContentId idNation = ContentId.of("id-nation");
     ContentId idRegion = ContentId.of("id-region");
@@ -468,7 +468,7 @@ public abstract class AbstractCommitScenarios {
                         keyRegion, idRegion, payloadForContent(onRefRegion), stateRegion))
                 .build());
 
-    List<Key> nonExistentKey = Collections.singletonList(Key.of("non_existent"));
+    List<ContentKey> nonExistentKey = Collections.singletonList(ContentKey.of("non_existent"));
 
     assertThat(mine.values(commitNation, nonExistentKey, KeyFilterPredicate.ALLOW_ALL)).isEmpty();
 

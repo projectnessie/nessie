@@ -32,9 +32,9 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
@@ -72,7 +72,7 @@ public abstract class AbstractManyCommits {
     ContentId fixed = ContentId.of("FIXED");
 
     for (int i = 0; i < numCommits; i++) {
-      Key key = Key.of("many", "commits", Integer.toString(numCommits));
+      ContentKey key = ContentKey.of("many", "commits", Integer.toString(numCommits));
       OnRefOnly c = OnRefOnly.onRef("value for #" + i + " of " + numCommits, fixed.getId());
       byte payload = payloadForContent(c);
       ImmutableCommitParams.Builder commit =
@@ -115,7 +115,7 @@ public abstract class AbstractManyCommits {
   }
 
   private void verify(int i, int numCommits, BranchName branch, Hash commit, ContentId contentId) {
-    Key key = Key.of("many", "commits", Integer.toString(numCommits));
+    ContentKey key = ContentKey.of("many", "commits", Integer.toString(numCommits));
 
     try {
       commit = databaseAdapter.hashOnReference(branch, Optional.of(commit));
@@ -124,7 +124,7 @@ public abstract class AbstractManyCommits {
     }
 
     try {
-      Map<Key, ContentAndState> values =
+      Map<ContentKey, ContentAndState> values =
           databaseAdapter.values(
               commit, Collections.singletonList(key), KeyFilterPredicate.ALLOW_ALL);
 

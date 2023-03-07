@@ -32,11 +32,11 @@ import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableMergeResult;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MergeResult.KeyDetails;
 import org.projectnessie.versioned.MergeType;
@@ -70,7 +70,7 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean dryRun,
       ImmutableMergeResult.Builder<Commit> mergeResult,
-      Function<Key, MergeType> mergeTypeForKey,
+      Function<ContentKey, MergeType> mergeTypeForKey,
       SourceCommitsAndParent sourceCommits)
       throws RetryException, ReferenceNotFoundException {
     IndexesLogic indexesLogic = indexesLogic(persist);
@@ -78,7 +78,7 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
         indexesLogic.buildCompleteIndexOrEmpty(sourceCommits.sourceParent);
 
     ObjId newHead = headId();
-    Map<Key, KeyDetails> keyDetailsMap = new HashMap<>();
+    Map<ContentKey, KeyDetails> keyDetailsMap = new HashMap<>();
     for (CommitObj sourceCommit : sourceCommits.sourceCommits) {
       CreateCommit createCommit =
           cloneCommit(updateCommitMetadata, parentIndex, newHead, sourceCommit);

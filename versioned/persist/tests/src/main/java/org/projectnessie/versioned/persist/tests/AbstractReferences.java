@@ -31,10 +31,10 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -144,7 +144,7 @@ public abstract class AbstractReferences {
                 .commitMetaSerialized(ByteString.copyFromUtf8("commit meta"))
                 .addPuts(
                     KeyWithBytes.of(
-                        Key.of("foo"),
+                        ContentKey.of("foo"),
                         ContentId.of(hello.getId()),
                         payloadForContent(hello),
                         hello.serialized()))
@@ -170,7 +170,7 @@ public abstract class AbstractReferences {
                               .commitMetaSerialized(ByteString.copyFromUtf8("commit meta"))
                               .addPuts(
                                   KeyWithBytes.of(
-                                      Key.of("bar"),
+                                      ContentKey.of("bar"),
                                       ContentId.of(noNo.getId()),
                                       payloadForContent(noNo),
                                       noNo.serialized()))
@@ -216,7 +216,7 @@ public abstract class AbstractReferences {
                   .commitMetaSerialized(ByteString.copyFromUtf8("commit meta " + i))
                   .addPuts(
                       KeyWithBytes.of(
-                          Key.of("bar", Integer.toString(i)),
+                          ContentKey.of("bar", Integer.toString(i)),
                           ContentId.of(hello.getId()),
                           payloadForContent(hello),
                           hello.serialized()))
@@ -343,7 +343,7 @@ public abstract class AbstractReferences {
                       .expectedHead(Optional.of(refHeads.get(ref)))
                       .addPuts(
                           KeyWithBytes.of(
-                              Key.of("table", "c" + commit),
+                              ContentKey.of("table", "c" + commit),
                               ContentId.of("c" + commit),
                               payloadForContent(OnRefOnly.ON_REF_ONLY),
                               DefaultStoreWorker.instance()

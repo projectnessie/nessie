@@ -36,12 +36,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.VersionStore;
 
@@ -65,9 +65,15 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
       String str = String.format("commit#%05d", i);
       ImmutableCommitMeta.Builder msg = CommitMeta.builder().message(str);
 
-      Key key = Key.of("table");
+      ContentKey key = ContentKey.of("table");
       Hash parent = i == 0 ? createHash : commitHashes[i - 1];
-      Content value = store().getValue(store().hashOnReference(branch, Optional.of(parent)), key);
+      Content value =
+          store()
+              .getValue(
+                  store()
+                      .hashOnReference(
+                          branch, Optional.of(i == 0 ? createHash : commitHashes[i - 1])),
+                  key);
       Put op =
           value != null
               ? Put.of(key, onRef(str, value.getId()), value)
@@ -168,9 +174,9 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
               hashes.get(i),
               parentHashes.get(i),
               Arrays.asList(
-                  Delete.of(Key.of("delete" + i)),
-                  Put.of(Key.of("k" + i), newOnRef("v" + i)),
-                  Put.of(Key.of("key" + i), newOnRef("value" + i))));
+                  Delete.of(ContentKey.of("delete" + i)),
+                  Put.of(ContentKey.of("k" + i), newOnRef("v" + i)),
+                  Put.of(ContentKey.of("key" + i), newOnRef("value" + i))));
     }
   }
 }

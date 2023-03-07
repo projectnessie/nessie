@@ -47,10 +47,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
@@ -121,13 +121,13 @@ public abstract class AbstractManyKeys {
             .collect(Collectors.toList());
     AtomicInteger commitDist = new AtomicInteger();
 
-    Set<Key> allKeys = new HashSet<>();
+    Set<ContentKey> allKeys = new HashSet<>();
 
     IntStream.range(0, params.keys)
         .mapToObj(
             i -> {
-              Key key =
-                  Key.of(
+              ContentKey key =
+                  ContentKey.of(
                       "some",
                       Integer.toString(i),
                       "long",
@@ -147,14 +147,14 @@ public abstract class AbstractManyKeys {
 
     Hash mainHead = databaseAdapter.hashOnReference(main, Optional.empty());
     try (Stream<KeyListEntry> keys = databaseAdapter.keys(mainHead, KeyFilterPredicate.ALLOW_ALL)) {
-      List<Key> fetchedKeys = keys.map(KeyListEntry::getKey).collect(Collectors.toList());
+      List<ContentKey> fetchedKeys = keys.map(KeyListEntry::getKey).collect(Collectors.toList());
 
-      // containsExactlyInAnyOrderElementsOf() is quite expensive and slow with Key's
-      // implementation of 'Key.equals()' since it uses a collator.
+      // containsExactlyInAnyOrderElementsOf() is quite expensive and slow with ContentKey's
+      // implementation of 'ContentKey.equals()' since it uses a collator.
       List<String> fetchedKeysStrings =
-          fetchedKeys.stream().map(Key::toString).collect(Collectors.toList());
+          fetchedKeys.stream().map(ContentKey::toString).collect(Collectors.toList());
       List<String> allKeysStrings =
-          allKeys.stream().map(Key::toString).collect(Collectors.toList());
+          allKeys.stream().map(ContentKey::toString).collect(Collectors.toList());
 
       assertThat(fetchedKeysStrings)
           .hasSize(allKeysStrings.size())
@@ -200,9 +200,9 @@ public abstract class AbstractManyKeys {
     BranchName branch = BranchName.of("main");
     ByteString meta = ByteString.copyFromUtf8("msg");
 
-    Map<Key, Hash> keyToCommit = new HashMap<>();
+    Map<ContentKey, Hash> keyToCommit = new HashMap<>();
     for (int i = 0; i < 10 * keyListDistance; i++) {
-      Key key = Key.of("k" + i, longString);
+      ContentKey key = ContentKey.of("k" + i, longString);
       Hash hash =
           da.commit(
               ImmutableCommitParams.builder()
@@ -262,7 +262,7 @@ public abstract class AbstractManyKeys {
     }
 
     for (int i = 0; i < keyListDistance; i++) {
-      Key key = Key.of("pre-fix-" + i);
+      ContentKey key = ContentKey.of("pre-fix-" + i);
       Hash hash =
           da.commit(
               ImmutableCommitParams.builder()
@@ -317,7 +317,7 @@ public abstract class AbstractManyKeys {
     // 64 chars
     String keyElement = "1234567890123456789012345678901234567890123456789012345678901234";
     // generates "long" keys
-    IntFunction<Key> keyGen = i -> Key.of("k-" + i, keyElement, keyElement);
+    IntFunction<ContentKey> keyGen = i -> ContentKey.of("k-" + i, keyElement, keyElement);
     IntFunction<OnRefOnly> valueGen = i -> onRef("value-" + i, "cid-" + i);
 
     BranchName branch = BranchName.of("main");
@@ -346,8 +346,8 @@ public abstract class AbstractManyKeys {
     }
 
     for (int i = 0; i < keyNum; i++) {
-      Key key = keyGen.apply(i);
-      Map<Key, ContentAndState> values =
+      ContentKey key = keyGen.apply(i);
+      Map<ContentKey, ContentAndState> values =
           databaseAdapter.values(
               head, Collections.singletonList(key), KeyFilterPredicate.ALLOW_ALL);
       assertThat(values)
@@ -392,7 +392,7 @@ public abstract class AbstractManyKeys {
           DatabaseAdapter databaseAdapter)
       throws ReferenceNotFoundException, ReferenceConflictException {
 
-    IntFunction<Key> keyGen = i -> Key.of("k-" + i);
+    IntFunction<ContentKey> keyGen = i -> ContentKey.of("k-" + i);
     IntFunction<OnRefOnly> valueGen = i -> onRef("value-" + i, "cid-" + i);
     BranchName branch = BranchName.of("main");
 
@@ -445,7 +445,7 @@ public abstract class AbstractManyKeys {
           DatabaseAdapter databaseAdapter)
       throws ReferenceNotFoundException, ReferenceConflictException {
 
-    IntFunction<Key> keyGen = i -> Key.of("k-" + i);
+    IntFunction<ContentKey> keyGen = i -> ContentKey.of("k-" + i);
     IntFunction<OnRefOnly> valueGen = i -> onRef("value-" + i, "cid-" + i);
     BranchName branch = BranchName.of("main");
     // This should be a power of two, so that the entries hashed by KeyListBuildState completely
@@ -465,7 +465,7 @@ public abstract class AbstractManyKeys {
   private static void commitPutsOnGeneratedKeys(
       DatabaseAdapter databaseAdapter,
       BranchName branch,
-      IntFunction<Key> keyGen,
+      IntFunction<ContentKey> keyGen,
       IntFunction<OnRefOnly> valueGen,
       int keyCount)
       throws ReferenceNotFoundException, ReferenceConflictException {
@@ -511,13 +511,13 @@ public abstract class AbstractManyKeys {
   private static void checkKeysAndValuesIndividually(
       DatabaseAdapter databaseAdapter,
       Hash head,
-      IntFunction<Key> keyGen,
+      IntFunction<ContentKey> keyGen,
       IntFunction<OnRefOnly> valueGen,
       int keyCount)
       throws ReferenceNotFoundException {
     for (int i = 0; i < keyCount; i++) {
-      Key key = keyGen.apply(i);
-      Map<Key, ContentAndState> values =
+      ContentKey key = keyGen.apply(i);
+      Map<ContentKey, ContentAndState> values =
           databaseAdapter.values(
               head, Collections.singletonList(key), KeyFilterPredicate.ALLOW_ALL);
       assertThat(values)
@@ -595,9 +595,9 @@ public abstract class AbstractManyKeys {
       throws Exception {
     BranchName main = BranchName.of("main");
     Hash head = databaseAdapter.hashOnReference(main, Optional.empty());
-    Set<Key> activeKeys = new HashSet<>();
+    Set<ContentKey> activeKeys = new HashSet<>();
     for (String name : names) {
-      Key key = Key.of(name);
+      ContentKey key = ContentKey.of(name);
       head =
           databaseAdapter.commit(
               ImmutableCommitParams.builder()
@@ -615,7 +615,7 @@ public abstract class AbstractManyKeys {
       activeKeys.add(key);
     }
 
-    Map<Key, ContentAndState> values =
+    Map<ContentKey, ContentAndState> values =
         databaseAdapter.values(head, activeKeys, KeyFilterPredicate.ALLOW_ALL);
     assertThat(values.keySet()).containsExactlyInAnyOrderElementsOf(activeKeys);
   }

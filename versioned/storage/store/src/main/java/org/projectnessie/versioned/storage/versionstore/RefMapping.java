@@ -30,9 +30,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
@@ -123,7 +123,7 @@ public class RefMapping {
             + e.conflicts().stream()
                 .map(
                     conflict -> {
-                      Key key = storeKeyToKey(conflict.key());
+                      ContentKey key = storeKeyToKey(conflict.key());
                       String k =
                           key != null ? "key '" + key + "'" : "store-key '" + conflict.key() + "'";
                       switch (conflict.conflictType()) {

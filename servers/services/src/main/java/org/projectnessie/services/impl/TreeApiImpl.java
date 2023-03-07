@@ -109,7 +109,6 @@ import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.KeyEntry;
 import org.projectnessie.versioned.MergeConflictException;
 import org.projectnessie.versioned.MergeResult;
@@ -482,7 +481,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
             .getOperations()
             .forEach(
                 op -> {
-                  ContentKey key = fromKey(op.getKey());
+                  ContentKey key = op.getKey();
                   if (op instanceof Put) {
                     Content content = ((Put) op).getValue();
                     logEntry.addOperations(Operation.Put.of(key, content));
@@ -716,12 +715,12 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     return response.build();
   }
 
-  private static Map<Key, MergeType> keyMergeTypes(Collection<MergeKeyBehavior> behaviors) {
+  private static Map<ContentKey, MergeType> keyMergeTypes(Collection<MergeKeyBehavior> behaviors) {
     return behaviors != null
         ? behaviors.stream()
             .collect(
                 Collectors.toMap(
-                    e -> toKey(e.getKey()), e -> MergeType.valueOf(e.getMergeBehavior().name())))
+                    MergeKeyBehavior::getKey, e -> MergeType.valueOf(e.getMergeBehavior().name())))
         : Collections.emptyMap();
   }
 
@@ -765,7 +764,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
               protected Set<Check> checksForEntry(KeyEntry entry) {
                 return singleton(
                     canReadContentKey(
-                        refWithHash.getValue(), fromKey(entry.getKey()), entry.getContentId()));
+                        refWithHash.getValue(), entry.getKey(), entry.getContentId()));
               }
             }.initialCheck(canReadEntries(refWithHash.getValue()));
 
@@ -781,8 +780,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
             }
 
             EntriesResponse.Entry entry =
-                EntriesResponse.Entry.entry(
-                    fromKey(key.getKey()), key.getType(), key.getContentId());
+                EntriesResponse.Entry.entry(key.getKey(), key.getType(), key.getContentId());
 
             entry = namespaceDepthMapping(entry, depth);
 
@@ -804,9 +802,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
             Content c = key.getContent();
             EntriesResponse.Entry entry =
                 c != null
-                    ? EntriesResponse.Entry.entry(fromKey(key.getKey()), key.getType(), c)
-                    : EntriesResponse.Entry.entry(
-                        fromKey(key.getKey()), key.getType(), key.getContentId());
+                    ? EntriesResponse.Entry.entry(key.getKey(), key.getType(), c)
+                    : EntriesResponse.Entry.entry(key.getKey(), key.getType(), key.getContentId());
 
             if (!pagedResponseHandler.addEntry(entry)) {
               pagedResponseHandler.hasMore(authz.tokenForCurrent());
@@ -908,8 +905,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                   ops,
                   () -> null,
                   (key, cid) -> {
-                    commitResponse.addAddedContents(
-                        addedContent(ContentKey.of(key.getElements()), cid));
+                    commitResponse.addAddedContents(addedContent(key, cid));
                   });
 
       return commitResponse.targetBranch(Branch.of(branch, newHash.asString())).build();
@@ -940,14 +936,6 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       return Optional.empty();
     }
     return Optional.of(Hash.of(hash));
-  }
-
-  protected static ContentKey fromKey(Key key) {
-    return ContentKey.of(key.getElements());
-  }
-
-  public static Key toKey(ContentKey key) {
-    return Key.of(key.getElements());
   }
 
   private static Reference makeReference(
@@ -998,7 +986,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   }
 
   protected static org.projectnessie.versioned.Operation toOp(Operation o) {
-    Key key = toKey(o.getKey());
+    ContentKey key = o.getKey();
     if (o instanceof Operation.Delete) {
       return Delete.of(key);
     } else if (o instanceof Operation.Put) {

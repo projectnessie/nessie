@@ -18,17 +18,18 @@ package org.projectnessie.versioned;
 import java.util.Optional;
 import org.immutables.value.Value.Immutable;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 
 @Immutable
 public interface Diff {
 
-  Key getKey();
+  ContentKey getKey();
 
   Optional<Content> getFromValue();
 
   Optional<Content> getToValue();
 
-  static Diff of(Key key, Optional<Content> from, Optional<Content> to) {
+  static Diff of(ContentKey key, Optional<Content> from, Optional<Content> to) {
     return ImmutableDiff.builder().key(key).fromValue(from).toValue(to).build();
   }
 }

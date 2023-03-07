@@ -32,6 +32,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.paging.PaginationIterator;
 
 /** A {@link VersionStore} wrapper that publishes metrics via Micrometer. */
@@ -81,7 +82,7 @@ public final class MetricsVersionStore implements VersionStore {
       @Nonnull @jakarta.annotation.Nonnull CommitMeta metadata,
       @Nonnull @jakarta.annotation.Nonnull List<Operation> operations,
       @Nonnull @jakarta.annotation.Nonnull Callable<Void> validator,
-      @Nonnull @jakarta.annotation.Nonnull BiConsumer<Key, String> addedContents)
+      @Nonnull @jakarta.annotation.Nonnull BiConsumer<ContentKey, String> addedContents)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return this.<Hash, ReferenceNotFoundException, ReferenceConflictException>delegate2ExR(
         "commit",
@@ -96,7 +97,7 @@ public final class MetricsVersionStore implements VersionStore {
       List<Hash> sequenceToTransplant,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean keepIndividualCommits,
-      Map<Key, MergeType> mergeTypes,
+      Map<ContentKey, MergeType> mergeTypes,
       MergeType defaultMergeType,
       boolean dryRun,
       boolean fetchAdditionalInfo)
@@ -124,7 +125,7 @@ public final class MetricsVersionStore implements VersionStore {
       Optional<Hash> expectedHash,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean keepIndividualCommits,
-      Map<Key, MergeType> mergeTypes,
+      Map<ContentKey, MergeType> mergeTypes,
       MergeType defaultMergeType,
       boolean dryRun,
       boolean fetchAdditionalInfo)
@@ -194,12 +195,12 @@ public final class MetricsVersionStore implements VersionStore {
   }
 
   @Override
-  public Content getValue(Ref ref, Key key) throws ReferenceNotFoundException {
+  public Content getValue(Ref ref, ContentKey key) throws ReferenceNotFoundException {
     return delegate1Ex("getvalue", () -> delegate.getValue(ref, key));
   }
 
   @Override
-  public Map<Key, Content> getValues(Ref ref, Collection<Key> keys)
+  public Map<ContentKey, Content> getValues(Ref ref, Collection<ContentKey> keys)
       throws ReferenceNotFoundException {
     return delegate1Ex("getvalues", () -> delegate.getValues(ref, keys));
   }

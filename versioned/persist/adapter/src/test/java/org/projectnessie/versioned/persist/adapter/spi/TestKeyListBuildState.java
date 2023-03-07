@@ -41,8 +41,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitLogEntry;
@@ -54,31 +54,33 @@ public class TestKeyListBuildState {
 
   static Stream<Arguments> keyNotFoundScenarios() {
     return Stream.of(
-        Arguments.of(singletonList(Key.of("existing", "key")), Key.of("non_existing.key"), 2),
+        Arguments.of(
+            singletonList(ContentKey.of("existing", "key")), ContentKey.of("non_existing.key"), 2),
         Arguments.of(
             asList(
-                Key.of("db", "from_spark"),
-                Key.of("db", "from_flink"),
-                Key.of("db", "from_presto")),
-            Key.of("db.from_spark"),
+                ContentKey.of("db", "from_spark"),
+                ContentKey.of("db", "from_flink"),
+                ContentKey.of("db", "from_presto")),
+            ContentKey.of("db.from_spark"),
             1),
         Arguments.of(
             IntStream.range(0, 60)
-                .mapToObj(i -> Key.of("db", "table_" + i))
+                .mapToObj(i -> ContentKey.of("db", "table_" + i))
                 .collect(Collectors.toList()),
-            Key.of("db.meep"),
+            ContentKey.of("db.meep"),
             1),
         Arguments.of(
             IntStream.range(0, 100)
-                .mapToObj(i -> Key.of("db", "table_" + i))
+                .mapToObj(i -> ContentKey.of("db", "table_" + i))
                 .collect(Collectors.toList()),
-            Key.of("db.meep"),
+            ContentKey.of("db.meep"),
             1));
   }
 
   @ParameterizedTest
   @MethodSource("keyNotFoundScenarios")
-  public void keyNotFoundScenario(List<Key> keyList, Key keyToLookup, int emptyOnRound) {
+  public void keyNotFoundScenario(
+      List<ContentKey> keyList, ContentKey keyToLookup, int emptyOnRound) {
     ImmutableCommitLogEntry.Builder commitLogEntry = newCommit();
     KeyListBuildState buildState = new KeyListBuildState(commitLogEntry, 50, 50, 0.65f, e -> 1);
     keyList.stream()
@@ -94,7 +96,7 @@ public class TestKeyListBuildState {
 
     List<KeyListEntry> keyListEntries = new ArrayList<>();
 
-    Collection<Key> remainingKeys = singletonList(keyToLookup);
+    Collection<ContentKey> remainingKeys = singletonList(keyToLookup);
 
     for (int round = 0; !remainingKeys.isEmpty(); round++) {
       List<Hash> entitiesToFetch = helper.entityIdsToFetch(round, 0, remainingKeys);
@@ -292,7 +294,7 @@ public class TestKeyListBuildState {
   }
 
   private static KeyListEntry entry(String key) {
-    return KeyListEntry.of(Key.of(key), ContentId.of(key), (byte) 99, randomHash());
+    return KeyListEntry.of(ContentKey.of(key), ContentId.of(key), (byte) 99, randomHash());
   }
 
   private ImmutableCommitLogEntry.Builder newCommit() {

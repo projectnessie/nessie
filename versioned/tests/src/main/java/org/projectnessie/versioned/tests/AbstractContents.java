@@ -27,10 +27,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -51,13 +51,13 @@ public abstract class AbstractContents extends AbstractNestedVersionStore {
     store().create(branch, Optional.empty());
     final Hash hash = store().hashOnReference(branch, Optional.empty());
 
-    soft.assertThat(store().getValue(hash, Key.of("arbitrary"))).isNull();
+    soft.assertThat(store().getValue(hash, ContentKey.of("arbitrary"))).isNull();
   }
 
   @Test
   void recreateTable() throws Exception {
     BranchName branch = BranchName.of("recreateTable-main");
-    Key key = Key.of("recreateTable");
+    ContentKey key = ContentKey.of("recreateTable");
 
     store().create(branch, Optional.empty());
     // commit just something to have a "real" common ancestor and not "beginning of time", which

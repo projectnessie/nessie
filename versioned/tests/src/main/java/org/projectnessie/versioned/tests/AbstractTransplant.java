@@ -33,10 +33,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -101,7 +101,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     firstCommit =
         commit("Initial Commit").put(T_1, V_1_1).put(T_2, V_2_1).put(T_3, V_3_1).toBranch(branch);
 
-    Content t1 = store().getValue(branch, Key.of("t1"));
+    Content t1 = store().getValue(branch, ContentKey.of("t1"));
 
     secondCommit =
         commit("Second Commit")
@@ -166,12 +166,16 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                 store()
                     .getValues(
                         newBranch,
-                        Arrays.asList(Key.of(T_1), Key.of(T_2), Key.of(T_3), Key.of(T_4)))))
+                        Arrays.asList(
+                            ContentKey.of(T_1),
+                            ContentKey.of(T_2),
+                            ContentKey.of(T_3),
+                            ContentKey.of(T_4)))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                Key.of(T_1), V_1_2,
-                Key.of(T_2), V_2_2,
-                Key.of(T_4), V_4_1));
+                ContentKey.of(T_1), V_1_2,
+                ContentKey.of(T_2), V_2_2,
+                ContentKey.of(T_4), V_4_1));
 
     if (individualCommits) {
       assertCommitMeta(
@@ -206,13 +210,17 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                     .getValues(
                         newBranch,
                         Arrays.asList(
-                            Key.of(T_1), Key.of(T_2), Key.of(T_3), Key.of(T_4), Key.of(T_5)))))
+                            ContentKey.of(T_1),
+                            ContentKey.of(T_2),
+                            ContentKey.of(T_3),
+                            ContentKey.of(T_4),
+                            ContentKey.of(T_5)))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                Key.of(T_1), V_1_2,
-                Key.of(T_2), V_2_2,
-                Key.of(T_4), V_4_1,
-                Key.of(T_5), V_5_1));
+                ContentKey.of(T_1), V_1_2,
+                ContentKey.of(T_2), V_2_2,
+                ContentKey.of(T_4), V_4_1,
+                ContentKey.of(T_5), V_5_1));
   }
 
   @ParameterizedTest
@@ -263,12 +271,16 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                 store()
                     .getValues(
                         newBranch,
-                        Arrays.asList(Key.of(T_1), Key.of(T_2), Key.of(T_3), Key.of(T_4)))))
+                        Arrays.asList(
+                            ContentKey.of(T_1),
+                            ContentKey.of(T_2),
+                            ContentKey.of(T_3),
+                            ContentKey.of(T_4)))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                Key.of(T_1), V_1_2,
-                Key.of(T_2), V_2_2,
-                Key.of(T_4), V_4_1));
+                ContentKey.of(T_1), V_1_2,
+                ContentKey.of(T_2), V_2_2,
+                ContentKey.of(T_4), V_4_1));
   }
 
   @ParameterizedTest
@@ -320,7 +332,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     final BranchName newBranch = BranchName.of("bar_7");
     store().create(newBranch, Optional.empty());
     commit("Another commit").put(T_5, V_5_1).toBranch(newBranch);
-    Content t5 = store().getValue(newBranch, Key.of(T_5));
+    Content t5 = store().getValue(newBranch, ContentKey.of(T_5));
     commit("Another commit").put(T_5, V_1_4.withId(t5), t5).toBranch(newBranch);
 
     store()
@@ -340,13 +352,17 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                     .getValues(
                         newBranch,
                         Arrays.asList(
-                            Key.of(T_1), Key.of(T_2), Key.of(T_3), Key.of(T_4), Key.of(T_5)))))
+                            ContentKey.of(T_1),
+                            ContentKey.of(T_2),
+                            ContentKey.of(T_3),
+                            ContentKey.of(T_4),
+                            ContentKey.of(T_5)))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                Key.of(T_1), V_1_2,
-                Key.of(T_2), V_2_2,
-                Key.of(T_4), V_4_1,
-                Key.of(T_5), V_1_4));
+                ContentKey.of(T_1), V_1_2,
+                ContentKey.of(T_2), V_2_2,
+                ContentKey.of(T_4), V_4_1,
+                ContentKey.of(T_5), V_1_4));
   }
 
   @ParameterizedTest
@@ -423,11 +439,14 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             false);
     soft.assertThat(
             contentsWithoutId(
-                store().getValues(newBranch, Arrays.asList(Key.of(T_1), Key.of(T_4), Key.of(T_5)))))
+                store()
+                    .getValues(
+                        newBranch,
+                        Arrays.asList(ContentKey.of(T_1), ContentKey.of(T_4), ContentKey.of(T_5)))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                Key.of(T_1), V_1_2,
-                Key.of(T_4), V_4_1,
-                Key.of(T_5), V_5_1));
+                ContentKey.of(T_1), V_1_2,
+                ContentKey.of(T_4), V_4_1,
+                ContentKey.of(T_5), V_5_1));
   }
 }

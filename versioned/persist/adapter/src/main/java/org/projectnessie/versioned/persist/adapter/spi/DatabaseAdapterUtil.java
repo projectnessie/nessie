@@ -27,9 +27,9 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -55,7 +55,7 @@ public final class DatabaseAdapterUtil {
   }
 
   @SuppressWarnings("UnstableApiUsage")
-  public static void hashKey(Hasher hasher, Key k) {
+  public static void hashKey(Hasher hasher, ContentKey k) {
     k.getElements().forEach(e -> hasher.putString(e, StandardCharsets.UTF_8));
   }
 

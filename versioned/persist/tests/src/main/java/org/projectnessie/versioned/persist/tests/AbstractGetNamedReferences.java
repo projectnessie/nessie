@@ -27,12 +27,12 @@ import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableReferenceInfo;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceInfo.CommitsAheadBehind;
@@ -47,7 +47,7 @@ import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 public abstract class AbstractGetNamedReferences {
 
   public static final String MAIN_BRANCH = "main";
-  private static final Key SOME_KEY = Key.of("a", "b", "c");
+  private static final ContentKey SOME_KEY = ContentKey.of("a", "b", "c");
   private static final String SOME_CONTENT_ID = "abc";
   private final DatabaseAdapter databaseAdapter;
 

@@ -34,12 +34,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.api.NessieVersion;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.quarkus.cli.ExportRepository.Format;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.CommitMetaSerializer;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -226,7 +226,7 @@ public class ITExportImport {
 
     ByteString commitMeta =
         CommitMetaSerializer.METADATA_SERIALIZER.toBytes(CommitMeta.fromMessage("hello"));
-    Key key = Key.of("namespace123", "table123");
+    ContentKey key = ContentKey.of("namespace123", "table123");
     Hash main =
         adapter.commit(
             ImmutableCommitParams.builder()

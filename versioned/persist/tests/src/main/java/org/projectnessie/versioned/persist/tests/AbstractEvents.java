@@ -26,9 +26,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
@@ -164,7 +164,7 @@ public abstract class AbstractEvents {
 
     KeyWithBytes put =
         KeyWithBytes.of(
-            Key.of("one", "two"),
+            ContentKey.of("one", "two"),
             ContentId.of("cid-events-assign"),
             payloadForContent(OnRefOnly.ON_REF_ONLY),
             DefaultStoreWorker.instance()
@@ -211,7 +211,7 @@ public abstract class AbstractEvents {
 
     KeyWithBytes put =
         KeyWithBytes.of(
-            Key.of("one", "two"),
+            ContentKey.of("one", "two"),
             ContentId.of("cid-events-commit"),
             payloadForContent(OnRefOnly.ON_REF_ONLY),
             DefaultStoreWorker.instance()
@@ -264,7 +264,7 @@ public abstract class AbstractEvents {
 
     KeyWithBytes put =
         KeyWithBytes.of(
-            Key.of("one", "two"),
+            ContentKey.of("one", "two"),
             ContentId.of("cid-events-merge"),
             payloadForContent(OnRefOnly.ON_REF_ONLY),
             DefaultStoreWorker.instance()
@@ -336,7 +336,7 @@ public abstract class AbstractEvents {
 
     KeyWithBytes put =
         KeyWithBytes.of(
-            Key.of("one", "two"),
+            ContentKey.of("one", "two"),
             ContentId.of("cid-events-transplant"),
             payloadForContent(OnRefOnly.ON_REF_ONLY),
             DefaultStoreWorker.instance()

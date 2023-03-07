@@ -33,10 +33,10 @@ import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -192,7 +192,7 @@ public abstract class AbstractCommitLogScan {
       int numCommits, BranchName branchName, Hash head, Consumer<Hash> committed)
       throws ReferenceConflictException, ReferenceNotFoundException {
     for (int commitNum = 0; commitNum < numCommits; commitNum++) {
-      Key key = Key.of("many", "commits", Integer.toString(numCommits));
+      ContentKey key = ContentKey.of("many", "commits", Integer.toString(numCommits));
       ContentId cid = ContentId.of("cid-" + branchName.getName() + "-" + commitNum);
       OnRefOnly c =
           OnRefOnly.onRef("value for #" + commitNum + " in " + branchName.getName(), cid.getId());

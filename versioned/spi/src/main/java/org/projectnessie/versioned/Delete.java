@@ -17,6 +17,7 @@ package org.projectnessie.versioned;
 
 import javax.annotation.Nonnull;
 import org.immutables.value.Value;
+import org.projectnessie.model.ContentKey;
 
 /** A delete operation. */
 @Value.Immutable
@@ -30,7 +31,7 @@ public interface Delete extends Operation {
    */
   @Nonnull
   @jakarta.annotation.Nonnull
-  static Delete of(@Nonnull @jakarta.annotation.Nonnull Key key) {
+  static Delete of(@Nonnull @jakarta.annotation.Nonnull ContentKey key) {
     return ImmutableDelete.builder().key(key).build();
   }
 }

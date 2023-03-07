@@ -25,10 +25,10 @@ import java.util.Optional;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -101,36 +101,41 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
         // getValue()
         new ReferenceNotFoundFunction("getValue/branch")
             .msg("Named reference 'this-one-should-not-exist' not found")
-            .function(s -> s.getValue(BranchName.of("this-one-should-not-exist"), Key.of("foo"))),
+            .function(
+                s -> s.getValue(BranchName.of("this-one-should-not-exist"), ContentKey.of("foo"))),
         new ReferenceNotFoundFunction("getValue/tag")
             .msg("Named reference 'this-one-should-not-exist' not found")
-            .function(s -> s.getValue(TagName.of("this-one-should-not-exist"), Key.of("foo"))),
+            .function(
+                s -> s.getValue(TagName.of("this-one-should-not-exist"), ContentKey.of("foo"))),
         new ReferenceNotFoundFunction("getValue/hash")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")
             .function(
                 s ->
                     s.getValue(
-                        Hash.of("12341234123412341234123412341234123412341234"), Key.of("foo"))),
+                        Hash.of("12341234123412341234123412341234123412341234"),
+                        ContentKey.of("foo"))),
         // getValues()
         new ReferenceNotFoundFunction("getValues/branch")
             .msg("Named reference 'this-one-should-not-exist' not found")
             .function(
                 s ->
                     s.getValues(
-                        BranchName.of("this-one-should-not-exist"), singletonList(Key.of("foo")))),
+                        BranchName.of("this-one-should-not-exist"),
+                        singletonList(ContentKey.of("foo")))),
         new ReferenceNotFoundFunction("getValues/tag")
             .msg("Named reference 'this-one-should-not-exist' not found")
             .function(
                 s ->
                     s.getValues(
-                        TagName.of("this-one-should-not-exist"), singletonList(Key.of("foo")))),
+                        TagName.of("this-one-should-not-exist"),
+                        singletonList(ContentKey.of("foo")))),
         new ReferenceNotFoundFunction("getValues/hash")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")
             .function(
                 s ->
                     s.getValues(
                         Hash.of("12341234123412341234123412341234123412341234"),
-                        singletonList(Key.of("foo")))),
+                        singletonList(ContentKey.of("foo")))),
         // getKeys()
         new ReferenceNotFoundFunction("getKeys/branch")
             .msg("Named reference 'this-one-should-not-exist' not found")
@@ -185,7 +190,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                         BranchName.of("this-one-should-not-exist"),
                         Optional.empty(),
                         CommitMeta.fromMessage("meta"),
-                        singletonList(Delete.of(Key.of("meep"))))),
+                        singletonList(Delete.of(ContentKey.of("meep"))))),
         new ReferenceNotFoundFunction("commit/hash")
             .msg(
                 "Could not find commit '12341234123412341234123412341234123412341234' in reference 'main'.")
@@ -195,7 +200,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                         BranchName.of("main"),
                         Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
                         CommitMeta.fromMessage("meta"),
-                        singletonList(Delete.of(Key.of("meep"))))),
+                        singletonList(Delete.of(ContentKey.of("meep"))))),
         // transplant()
         new ReferenceNotFoundFunction("transplant/branch/ok")
             .msg("Named reference 'this-one-should-not-exist' not found")

@@ -35,11 +35,11 @@ import java.util.stream.Stream;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableKeyDetails;
 import org.projectnessie.versioned.ImmutableMergeResult;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.MergeConflictException;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MergeResult.ConflictType;
@@ -253,7 +253,7 @@ public abstract class AbstractMergeTransplant {
 
     databaseAdapter.create(branch, databaseAdapter.hashOnReference(main, Optional.empty()));
 
-    Map<Key, ContentAndState> keysAndValue = new HashMap<>();
+    Map<ContentKey, ContentAndState> keysAndValue = new HashMap<>();
 
     Hash[] commits = new Hash[numCommits];
     for (int i = 0; i < commits.length; i++) {
@@ -262,7 +262,7 @@ public abstract class AbstractMergeTransplant {
               .toBranch(branch)
               .commitMetaSerialized(ByteString.copyFromUtf8("commit " + i));
       for (int k = 0; k < 3; k++) {
-        Key key = Key.of("key", Integer.toString(k));
+        ContentKey key = ContentKey.of("key", Integer.toString(k));
         OnRefOnly value = OnRefOnly.newOnRef("value " + i + " for " + k);
         ByteString onRef =
             DefaultStoreWorker.instance()
@@ -379,7 +379,7 @@ public abstract class AbstractMergeTransplant {
       OnRefOnly conflictValue = OnRefOnly.newOnRef("conflict value for " + k);
       commit.addPuts(
           KeyWithBytes.of(
-              Key.of("key", Integer.toString(k)),
+              ContentKey.of("key", Integer.toString(k)),
               ContentId.of("C" + k),
               payloadForContent(conflictValue),
               DefaultStoreWorker.instance()
@@ -446,7 +446,7 @@ public abstract class AbstractMergeTransplant {
             .addAllTargetCommits(conflictLogEntries);
 
     for (int k = 0; k < 3; k++) {
-      Key key = Key.of("key", Integer.toString(k));
+      ContentKey key = ContentKey.of("key", Integer.toString(k));
 
       ImmutableKeyDetails.Builder details =
           KeyDetails.builder()
@@ -482,7 +482,7 @@ public abstract class AbstractMergeTransplant {
             .addAllSourceCommits(expectedSourceCommits);
 
     for (int k = 0; k < 3; k++) {
-      Key key = Key.of("key", Integer.toString(k));
+      ContentKey key = ContentKey.of("key", Integer.toString(k));
 
       ImmutableKeyDetails.Builder details =
           KeyDetails.builder()

@@ -60,9 +60,9 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
 import org.projectnessie.versioned.storage.common.logic.CreateCommit;
 import org.projectnessie.versioned.storage.common.objtypes.CommitHeaders;
@@ -177,10 +177,10 @@ public class TestTypeMapping {
   static Stream<Arguments> keyConversions() {
     return Stream.of(
         arguments(
-            Key.of("foo", "bar", "baz"),
+            ContentKey.of("foo", "bar", "baz"),
             key(MAIN_UNIVERSE, "foo\u0001bar\u0001baz", CONTENT_DISCRIMINATOR)),
-        arguments(Key.of("foo"), key(MAIN_UNIVERSE, "foo", CONTENT_DISCRIMINATOR)),
-        arguments(Key.of(), key(MAIN_UNIVERSE, CONTENT_DISCRIMINATOR)),
+        arguments(ContentKey.of("foo"), key(MAIN_UNIVERSE, "foo", CONTENT_DISCRIMINATOR)),
+        arguments(ContentKey.of(), key(MAIN_UNIVERSE, CONTENT_DISCRIMINATOR)),
         // unknown variant
         arguments(null, key(MAIN_UNIVERSE, "foo", "XYZ")),
         // unknown universe
@@ -189,7 +189,7 @@ public class TestTypeMapping {
 
   @ParameterizedTest
   @MethodSource("keyConversions")
-  public void keyConversions(Key key, StoreKey storeKey) {
+  public void keyConversions(ContentKey key, StoreKey storeKey) {
     if (key != null) {
       soft.assertThat(keyToStoreKey(key)).isEqualTo(storeKey);
     }
