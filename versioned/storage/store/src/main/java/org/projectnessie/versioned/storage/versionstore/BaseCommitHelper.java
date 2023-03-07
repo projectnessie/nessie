@@ -16,11 +16,12 @@
 package org.projectnessie.versioned.storage.versionstore;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.projectnessie.model.Content.Type.NAMESPACE;
 import static org.projectnessie.versioned.MergeResult.KeyDetails.keyDetails;
-import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.lazyStoreIndex;
 import static org.projectnessie.versioned.storage.common.logic.CommitConflict.ConflictType.KEY_EXISTS;
 import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
 import static org.projectnessie.versioned.storage.common.logic.CommitRetry.commitRetry;
@@ -30,21 +31,30 @@ import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.referenceConflictException;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.referenceNotFound;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.hashToObjId;
+import static org.projectnessie.versioned.storage.versionstore.TypeMapping.keyToStoreKey;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objIdToHash;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.storeKeyToKey;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.contentTypeForPayload;
+import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.Namespace;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
@@ -91,8 +101,7 @@ class BaseCommitHelper {
   final Optional<Hash> referenceHash;
   final Reference reference;
   final CommitObj head;
-  private final StoreIndex<CommitOp> headIndex;
-  private final StoreIndex<CommitOp> expectedIndex;
+  final CommitObj expected;
 
   BaseCommitHelper(
       @Nonnull @jakarta.annotation.Nonnull BranchName branch,
@@ -107,6 +116,8 @@ class BaseCommitHelper {
     this.reference = reference;
     this.head = head;
 
+    // Need to perform this "expected commit" load here as a validation that 'referenceHash' points
+    // to an existing commit (and also to produce a "proper" exception message downstream)
     CommitObj e = head;
     if (referenceHash.isPresent()) {
       ObjId referenceObjId = hashToObjId(referenceHash.get());
@@ -115,30 +126,7 @@ class BaseCommitHelper {
         e = refMapping.commitInChain(branch, head, referenceHash);
       }
     }
-    CommitObj expected = e;
-
-    this.headIndex =
-        lazyStoreIndex(
-            () -> {
-              IndexesLogic indexesLogic = indexesLogic(persist);
-              return indexesLogic.buildCompleteIndexOrEmpty(head);
-            });
-    this.expectedIndex =
-        e == head
-            ? headIndex
-            : lazyStoreIndex(
-                () -> {
-                  IndexesLogic indexesLogic = indexesLogic(persist);
-                  return indexesLogic.buildCompleteIndexOrEmpty(expected);
-                });
-  }
-
-  StoreIndex<CommitOp> headIndex() {
-    return headIndex;
-  }
-
-  StoreIndex<CommitOp> expectedIndex() {
-    return expectedIndex;
+    this.expected = e;
   }
 
   ObjId headId() {
@@ -227,6 +215,151 @@ class BaseCommitHelper {
               operationName, e.getRetry(), millis);
       LOGGER.warn("Operation timeout: {}", msg);
       throw new ReferenceRetryFailureException(msg, e.getRetry(), millis);
+    }
+  }
+
+  void validateNamespacesHaveNoChildren(
+      Set<ContentKey> deletedNamespaces, StoreIndex<CommitOp> headIndex)
+      throws ReferenceConflictException {
+    if (!persist.config().validateNamespaces()) {
+      return;
+    }
+
+    for (ContentKey namespaceKey : deletedNamespaces) {
+      StoreKey storeKey = keyToStoreKey(namespaceKey);
+
+      for (Iterator<StoreIndexElement<CommitOp>> iter = headIndex.iterator(storeKey, null, false);
+          iter.hasNext(); ) {
+        StoreIndexElement<CommitOp> el = iter.next();
+        if (!el.content().action().exists()) {
+          // element does not exist - ignore
+          continue;
+        }
+        ContentKey elContentKey = storeKeyToKey(el.key());
+        if (elContentKey == null) {
+          // not a "content object" - ignore
+          continue;
+        }
+        if (elContentKey.equals(namespaceKey)) {
+          // this is our namespace - ignore
+          continue;
+        }
+
+        int elLen = elContentKey.getElementCount();
+        int nsLen = namespaceKey.getElementCount();
+
+        // check if element is in the current namespace, fail it is true - this means,
+        // there is a live content-key in the current namespace - must not delete the namespace
+        if (elLen >= nsLen
+            && elContentKey.getElements().subList(0, nsLen).equals(namespaceKey.getElements())) {
+          throw new ReferenceConflictException(
+              format(
+                  "The namespace '%s' would be deleted, but cannot, because it has children.",
+                  namespaceKey));
+        }
+      }
+    }
+  }
+
+  void validateNamespacesExistForContentKeys(
+      Map<ContentKey, Content> newContent, StoreIndex<CommitOp> headIndex)
+      throws ReferenceConflictException {
+    Set<ContentKey> namespaceKeys =
+        newContent.keySet().stream()
+            .filter(k -> k.getElementCount() > 1)
+            .map(ContentKey::getParent)
+            .collect(Collectors.toSet());
+    validateNamespacesExist(namespaceKeys, newContent, headIndex);
+  }
+
+  void validateNamespacesExist(
+      Set<ContentKey> namespaceKeys,
+      Map<ContentKey, Content> newContent,
+      StoreIndex<CommitOp> headIndex)
+      throws ReferenceConflictException {
+    if (!persist.config().validateNamespaces()) {
+      return;
+    }
+
+    for (ContentKey key : namespaceKeys) {
+
+      Content namespaceAddedInThisCommit = newContent.get(key);
+      if (namespaceAddedInThisCommit instanceof Namespace) {
+        // Namespace for the current new-content-key has been added in this commit, that
+        // namespace will be checked separately. Assume, it's okay here.
+        return;
+      }
+
+      StoreIndexElement<CommitOp> ns = headIndex.get(keyToStoreKey(key));
+      if (ns == null || !ns.content().action().exists()) {
+        throw new ReferenceConflictException(format("Namespace '%s' must exist.", key));
+      }
+      CommitOp nsContent = ns.content();
+      if (nsContent.payload() != payloadForContent(Content.Type.NAMESPACE)) {
+        throw new ReferenceConflictException(
+            format(
+                "Expecting the key '%s' to be a namespace, but is not a namespace. "
+                    + "Using a content object that is not a namespace as a namespace is forbidden.",
+                key));
+      }
+    }
+  }
+
+  void verifyMergeTransplantCommitPolicies(
+      StoreIndex<CommitOp> headIndex, CommitObj inspectedCommit) throws ReferenceConflictException {
+
+    Map<ContentKey, Content> checkContents = new HashMap<>();
+    Set<ContentKey> deletedNamespaces = new HashSet<>();
+
+    IndexesLogic indexesLogic = indexesLogic(persist);
+    for (StoreIndexElement<CommitOp> el : indexesLogic.commitOperations(inspectedCommit)) {
+      StoreIndexElement<CommitOp> expected = headIndex.get(el.key());
+      ObjId expectedId = null;
+      if (expected != null) {
+        CommitOp expectedContent = expected.content();
+        if (expectedContent.action().exists()) {
+          expectedId = expectedContent.value();
+        }
+      }
+
+      CommitOp op = el.content();
+      if (op.action().exists()) {
+        ObjId value = requireNonNull(op.value());
+
+        if (expectedId == null) {
+          ContentKey contentKey = storeKeyToKey(el.key());
+          // 'contentKey' will be 'null', if the store-key is not in the MAIN_UNIVERSE or the
+          // variant is not CONTENT_DISCRIMINATOR.
+          checkState(
+              contentKey != null,
+              "Merge/transplant with non-content-object store-keys is not implemented.");
+
+          try {
+            Content content = new ContentMapping(persist).fetchContent(value);
+            checkContents.put(contentKey, content);
+          } catch (ObjNotFoundException e) {
+            throw new RuntimeException(e);
+          }
+        }
+      } else {
+        if (op.payload() == payloadForContent(Content.Type.NAMESPACE)) {
+          ContentKey contentKey = storeKeyToKey(el.key());
+          // 'contentKey' will be 'null', if the store-key is not in the MAIN_UNIVERSE or the
+          // variant is not CONTENT_DISCRIMINATOR.
+          checkState(
+              contentKey != null,
+              "Merge/transplant with non-content-object store-keys is not implemented.");
+
+          deletedNamespaces.add(contentKey);
+        }
+      }
+    }
+
+    if (!checkContents.isEmpty()) {
+      validateNamespacesExistForContentKeys(checkContents, headIndex);
+    }
+    if (!deletedNamespaces.isEmpty()) {
+      validateNamespacesHaveNoChildren(deletedNamespaces, headIndex);
     }
   }
 

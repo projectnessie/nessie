@@ -24,6 +24,7 @@ import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONF
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_MAX_INCREMENTAL_INDEX_SIZE;
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_MAX_REFERENCE_STRIPES_PER_COMMIT;
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_MAX_SERIALIZED_INDEX_SIZE;
+import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_NAMESPACE_VALIDATION;
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_PARENTS_PER_COMMIT;
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_REPOSITORY_ID;
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_RETRY_INITIAL_SLEEP_MILLIS_LOWER;
@@ -110,6 +111,11 @@ public class TestStoreConfig {
             "1234567",
             (Function<Adjustable, StoreConfig>) e -> e.withAssumedWallClockDriftMicros(1234567),
             (Predicate<StoreConfig>) c -> c.assumedWallClockDriftMicros() == 1234567),
+        arguments(
+            CONFIG_NAMESPACE_VALIDATION,
+            "false",
+            (Function<Adjustable, StoreConfig>) e -> e.withValidateNamespaces(false),
+            (Predicate<StoreConfig>) c -> !c.validateNamespaces()),
         // default methods (current time in micros + hasher)
         arguments(
             "x",

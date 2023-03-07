@@ -90,6 +90,8 @@ public final class SystemPropertiesConfigurer {
           config = (T) m.invoke(config, Float.parseFloat(value));
         } else if (type == Double.class || type == double.class) {
           config = (T) m.invoke(config, Double.parseDouble(value));
+        } else if (type == Boolean.class || type == boolean.class) {
+          config = (T) m.invoke(config, Boolean.parseBoolean(value));
         } else {
           throw new UnsupportedOperationException("No converter from String to " + type);
         }

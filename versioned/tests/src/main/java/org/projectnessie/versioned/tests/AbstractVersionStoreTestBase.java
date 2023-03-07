@@ -15,7 +15,10 @@
  */
 package org.projectnessie.versioned.tests;
 
+import java.util.List;
 import org.junit.jupiter.api.Nested;
+import org.projectnessie.model.CommitMeta;
+import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.VersionStore;
 
 /** Base class used for integration tests against version store implementations. */
@@ -101,4 +104,25 @@ public abstract class AbstractVersionStoreTestBase {
       super(AbstractVersionStoreTestBase.this.store());
     }
   }
+
+  @Nested
+  @SuppressWarnings("ClassCanBeStatic")
+  public class NamespaceValidation extends AbstractNamespaceValidation {
+    public NamespaceValidation() {
+      super(AbstractVersionStoreTestBase.this.store());
+    }
+  }
+
+  public static final MetadataRewriter<CommitMeta> METADATA_REWRITER =
+      new MetadataRewriter<CommitMeta>() {
+        @Override
+        public CommitMeta rewriteSingle(CommitMeta metadata) {
+          return metadata;
+        }
+
+        @Override
+        public CommitMeta squash(List<CommitMeta> metadata) {
+          return metadata.get(0);
+        }
+      };
 }

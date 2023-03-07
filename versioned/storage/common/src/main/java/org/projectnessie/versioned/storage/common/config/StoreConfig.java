@@ -62,6 +62,22 @@ public interface StoreConfig {
   String CONFIG_ASSUMED_WALL_CLOCK_DRIFT_MICROS = "assumed-wall-clock-drift-micros";
   long DEFAULT_ASSUMED_WALL_CLOCK_DRIFT_MICROS = 5_000_000L;
 
+  String CONFIG_NAMESPACE_VALIDATION = "namespace-validation";
+  boolean DEFAULT_NAMESPACE_VALIDATION = true;
+
+  /**
+   * Committing operations by default enforce that all (parent) namespaces exist.
+   *
+   * <p>This configuration setting is only present for a few Nessie releases to work around
+   * potential migration issues and is subject to removal.
+   *
+   * @since 0.52.0
+   */
+  @Value.Default
+  default boolean validateNamespaces() {
+    return DEFAULT_NAMESPACE_VALIDATION;
+  }
+
   /**
    * A free-form string that identifies a particular Nessie storage repository.
    *
@@ -293,6 +309,10 @@ public interface StoreConfig {
       if (v != null) {
         a = a.withAssumedWallClockDriftMicros(Integer.parseInt(v.trim()));
       }
+      v = configFunction.apply(CONFIG_NAMESPACE_VALIDATION);
+      if (v != null) {
+        a = a.withValidateNamespaces(Boolean.parseBoolean(v.trim()));
+      }
       return a;
     }
 
@@ -328,6 +348,9 @@ public interface StoreConfig {
 
     /** See {@link StoreConfig#assumedWallClockDriftMicros()}. */
     Adjustable withAssumedWallClockDriftMicros(long assumedWallClockDriftMicros);
+
+    /** See {@link StoreConfig#validateNamespaces ()} ()}. */
+    Adjustable withValidateNamespaces(boolean validateNamespaces);
 
     /** See {@link StoreConfig#clock()}. */
     Adjustable withClock(Clock clock);

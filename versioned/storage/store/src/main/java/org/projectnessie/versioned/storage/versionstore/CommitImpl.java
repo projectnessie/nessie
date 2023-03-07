@@ -19,11 +19,13 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Sets.newHashSetWithExpectedSize;
 import static java.util.Objects.requireNonNull;
+import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.lazyStoreIndex;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Add.commitAdd;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Remove.commitRemove;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Unchanged.commitUnchanged;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.newCommitBuilder;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.contentIdMaybe;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.referenceConflictException;
@@ -66,6 +68,7 @@ import org.projectnessie.versioned.storage.common.indexes.StoreKey;
 import org.projectnessie.versioned.storage.common.logic.CommitLogic;
 import org.projectnessie.versioned.storage.common.logic.CommitRetry.RetryException;
 import org.projectnessie.versioned.storage.common.logic.CreateCommit;
+import org.projectnessie.versioned.storage.common.logic.IndexesLogic;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
@@ -75,6 +78,8 @@ import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 
 class CommitImpl extends BaseCommitHelper {
+  private final StoreIndex<CommitOp> headIndex;
+  private final StoreIndex<CommitOp> expectedIndex;
 
   CommitImpl(
       @Nonnull @jakarta.annotation.Nonnull BranchName branch,
@@ -84,6 +89,29 @@ class CommitImpl extends BaseCommitHelper {
       @Nullable @jakarta.annotation.Nullable CommitObj head)
       throws ReferenceNotFoundException {
     super(branch, referenceHash, persist, reference, head);
+
+    this.headIndex =
+        lazyStoreIndex(
+            () -> {
+              IndexesLogic indexesLogic = indexesLogic(persist);
+              return indexesLogic.buildCompleteIndexOrEmpty(head);
+            });
+    this.expectedIndex =
+        expected == head
+            ? headIndex
+            : lazyStoreIndex(
+                () -> {
+                  IndexesLogic indexesLogic = indexesLogic(persist);
+                  return indexesLogic.buildCompleteIndexOrEmpty(expected);
+                });
+  }
+
+  StoreIndex<CommitOp> headIndex() {
+    return headIndex;
+  }
+
+  StoreIndex<CommitOp> expectedIndex() {
+    return expectedIndex;
   }
 
   /**
@@ -166,7 +194,7 @@ class CommitImpl extends BaseCommitHelper {
       CreateCommit.Builder commit,
       Consumer<Obj> contentToStore,
       CommitRetryState commitRetryState)
-      throws ObjNotFoundException {
+      throws ObjNotFoundException, ReferenceConflictException {
     Set<ContentKey> allKeys = new HashSet<>();
 
     Set<StoreKey> storeKeysForHead =
@@ -189,6 +217,8 @@ class CommitImpl extends BaseCommitHelper {
     }
 
     Map<UUID, StoreKey> deleted = new HashMap<>();
+    Map<ContentKey, Content> newContent = new HashMap<>();
+    Set<ContentKey> deletedNamespaces = new HashSet<>();
     for (int i = 0; i < operations.size(); i++) {
       Operation operation = operations.get(i);
       StoreKey storeKey = storeKeys.get(i);
@@ -201,13 +231,18 @@ class CommitImpl extends BaseCommitHelper {
             storeKey,
             contentToStore,
             commitRetryState,
-            deleted);
+            deleted,
+            newContent::put);
       } else if (operation instanceof Delete) {
-        commitAddDelete(expectedIndex(), commit, storeKey, deleted);
+        commitAddDelete(
+            expectedIndex(), commit, operation.getKey(), storeKey, deleted, deletedNamespaces::add);
       } else if (operation instanceof Unchanged) {
         commitAddUnchanged(headIndex(), expectedIndex(), commit, storeKey);
       }
     }
+
+    validateNamespacesExistForContentKeys(newContent, headIndex());
+    validateNamespacesHaveNoChildren(deletedNamespaces, headIndex());
   }
 
   private static void commitAddUnchanged(
@@ -248,8 +283,10 @@ class CommitImpl extends BaseCommitHelper {
   private void commitAddDelete(
       StoreIndex<CommitOp> expectedIndex,
       CreateCommit.Builder commit,
+      ContentKey contentKey,
       StoreKey storeKey,
-      Map<UUID, StoreKey> deleted) {
+      Map<UUID, StoreKey> deleted,
+      Consumer<ContentKey> deletedNamespaces) {
     StoreIndexElement<CommitOp> existingElement = expectedIndex.get(storeKey);
 
     int payload = 0;
@@ -268,6 +305,10 @@ class CommitImpl extends BaseCommitHelper {
         existingValue = content.value();
         existingContentID = content.contentId();
         deleted.put(existingContentID, storeKey);
+
+        if (payload == payloadForContent(Content.Type.NAMESPACE)) {
+          deletedNamespaces.accept(contentKey);
+        }
       }
     }
 
@@ -289,7 +330,8 @@ class CommitImpl extends BaseCommitHelper {
       StoreKey storeKey,
       Consumer<Obj> contentToStore,
       CommitRetryState commitRetryState,
-      Map<UUID, StoreKey> deleted)
+      Map<UUID, StoreKey> deleted,
+      BiConsumer<ContentKey, Content> newContent)
       throws ObjNotFoundException {
     Content putValue = put.getValue();
     ContentKey putKey = put.getKey();
@@ -356,6 +398,8 @@ class CommitImpl extends BaseCommitHelper {
           putKey);
 
       checkArgument(putValueId == null, "New value for new must not have a content iD");
+
+      newContent.accept(putKey, putValue);
 
       putValueId =
           commitRetryState.generatedContentIds.computeIfAbsent(

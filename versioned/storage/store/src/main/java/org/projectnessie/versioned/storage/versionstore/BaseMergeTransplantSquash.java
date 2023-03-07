@@ -19,6 +19,7 @@ import static java.util.Collections.emptyList;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.newCommitBuilder;
 import static org.projectnessie.versioned.storage.common.logic.DiffQuery.diffQuery;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.fromCommitMeta;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.toCommitMeta;
 
@@ -40,7 +41,9 @@ import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MergeResult.KeyDetails;
 import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
+import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
 import org.projectnessie.versioned.storage.common.logic.CommitLogic;
 import org.projectnessie.versioned.storage.common.logic.CommitRetry.RetryException;
@@ -48,6 +51,7 @@ import org.projectnessie.versioned.storage.common.logic.CreateCommit;
 import org.projectnessie.versioned.storage.common.logic.DiffEntry;
 import org.projectnessie.versioned.storage.common.logic.PagedResult;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
+import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
@@ -71,7 +75,7 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       SourceCommitsAndParent sourceCommits,
       @Nullable @jakarta.annotation.Nullable ObjId mergeFromId)
-      throws RetryException, ReferenceNotFoundException {
+      throws RetryException, ReferenceNotFoundException, ReferenceConflictException {
 
     CreateCommit createCommit =
         createSquashCommit(updateCommitMetadata, sourceCommits, mergeFromId);
@@ -79,6 +83,11 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
     Map<ContentKey, KeyDetails> keyDetailsMap = new HashMap<>();
     CommitObj mergeCommit =
         createMergeTransplantCommit(mergeTypeForKey, keyDetailsMap, createCommit);
+
+    // It's okay to do the fetchCommit() here and not complicate the surrounding logic (think:
+    // local cache)
+    StoreIndex<CommitOp> headIndex = indexesLogic(persist).buildCompleteIndexOrEmpty(head);
+    verifyMergeTransplantCommitPolicies(headIndex, mergeCommit);
 
     CommitLogic commitLogic = commitLogic(persist);
     boolean committed = commitLogic.storeCommit(mergeCommit, emptyList());

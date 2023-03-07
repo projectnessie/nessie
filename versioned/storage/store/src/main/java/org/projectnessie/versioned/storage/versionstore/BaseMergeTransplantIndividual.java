@@ -41,6 +41,7 @@ import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MergeResult.KeyDetails;
 import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
+import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
@@ -72,16 +73,18 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
       ImmutableMergeResult.Builder<Commit> mergeResult,
       Function<ContentKey, MergeType> mergeTypeForKey,
       SourceCommitsAndParent sourceCommits)
-      throws RetryException, ReferenceNotFoundException {
+      throws RetryException, ReferenceNotFoundException, ReferenceConflictException {
     IndexesLogic indexesLogic = indexesLogic(persist);
-    StoreIndex<CommitOp> parentIndex =
+    StoreIndex<CommitOp> sourceParentIndex =
         indexesLogic.buildCompleteIndexOrEmpty(sourceCommits.sourceParent);
+    StoreIndex<CommitOp> targetParentIndex = indexesLogic.buildCompleteIndexOrEmpty(head);
 
     ObjId newHead = headId();
     Map<ContentKey, KeyDetails> keyDetailsMap = new HashMap<>();
     for (CommitObj sourceCommit : sourceCommits.sourceCommits) {
       CreateCommit createCommit =
-          cloneCommit(updateCommitMetadata, parentIndex, newHead, sourceCommit);
+          cloneCommit(
+              updateCommitMetadata, sourceCommit, sourceParentIndex, newHead, targetParentIndex);
 
       CommitObj newCommit =
           createMergeTransplantCommit(mergeTypeForKey, keyDetailsMap, createCommit);
@@ -102,7 +105,8 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
         newHead = newCommit.id();
       }
 
-      parentIndex = indexesLogic.buildCompleteIndex(sourceCommit, Optional.empty());
+      sourceParentIndex = indexesLogic.buildCompleteIndex(sourceCommit, Optional.empty());
+      targetParentIndex = indexesLogic.buildCompleteIndex(newCommit, Optional.empty());
     }
 
     return mergeTransplantSuccess(mergeResult, newHead, dryRun, keyDetailsMap);
@@ -110,9 +114,11 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
 
   private CreateCommit cloneCommit(
       MetadataRewriter<CommitMeta> updateCommitMetadata,
-      StoreIndex<CommitOp> parentIndex,
+      CommitObj sourceCommit,
+      StoreIndex<CommitOp> sourceParentIndex,
       ObjId newHead,
-      CommitObj sourceCommit) {
+      StoreIndex<CommitOp> targetParentIndex)
+      throws ReferenceConflictException {
     CreateCommit.Builder createCommitBuilder = newCommitBuilder().parentCommitId(newHead);
 
     CommitMeta commitMeta = toCommitMeta(sourceCommit);
@@ -120,9 +126,8 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
     fromCommitMeta(updatedMeta, createCommitBuilder);
 
     IndexesLogic indexesLogic = indexesLogic(persist);
-
     for (StoreIndexElement<CommitOp> el : indexesLogic.commitOperations(sourceCommit)) {
-      StoreIndexElement<CommitOp> expected = parentIndex.get(el.key());
+      StoreIndexElement<CommitOp> expected = sourceParentIndex.get(el.key());
       ObjId expectedId = null;
       if (expected != null) {
         CommitOp expectedContent = expected.content();
@@ -141,6 +146,8 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
             commitRemove(el.key(), op.payload(), requireNonNull(expectedId), op.contentId()));
       }
     }
+
+    verifyMergeTransplantCommitPolicies(targetParentIndex, sourceCommit);
 
     return createCommitBuilder.build();
   }
