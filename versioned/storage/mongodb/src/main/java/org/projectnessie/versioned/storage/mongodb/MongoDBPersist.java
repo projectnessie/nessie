@@ -380,7 +380,7 @@ public class MongoDBPersist implements Persist {
   @Nonnull
   @jakarta.annotation.Nonnull
   public <T extends Obj> T fetchTypedObj(
-      @Nonnull @jakarta.validation.constraints.NotNull ObjId id, ObjType type, Class<T> typeClass)
+      @Nonnull @jakarta.annotation.Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
     FindIterable<Document> result =
         backend
@@ -402,7 +402,7 @@ public class MongoDBPersist implements Persist {
   @Override
   @Nonnull
   @jakarta.annotation.Nonnull
-  public ObjType fetchObjType(@Nonnull @jakarta.validation.constraints.NotNull ObjId id)
+  public ObjType fetchObjType(@Nonnull @jakarta.annotation.Nonnull ObjId id)
       throws ObjNotFoundException {
     FindIterable<Document> result = backend.objs().find(eq(ID_PROPERTY_NAME, idObjDoc(id)));
 
@@ -625,7 +625,7 @@ public class MongoDBPersist implements Persist {
     return docToObj(id, doc);
   }
 
-  private Obj docToObj(@Nonnull @jakarta.validation.constraints.NotNull ObjId id, Document doc) {
+  private Obj docToObj(@Nonnull @jakarta.annotation.Nonnull ObjId id, Document doc) {
     StoreObjDesc<?> storeObj = objTypeFromDoc(doc);
     Document inner = doc.get(storeObj.typeName, Document.class);
     return storeObj.docToObj(id, inner);
@@ -933,7 +933,7 @@ public class MongoDBPersist implements Persist {
   }
 
   @Nonnull
-  @jakarta.validation.constraints.NotNull
+  @jakarta.annotation.Nonnull
   private static List<Document> stripesToDocs(List<IndexStripe> stripes) {
     List<Document> stripesDocs = new ArrayList<>();
     for (IndexStripe stripe : stripes) {

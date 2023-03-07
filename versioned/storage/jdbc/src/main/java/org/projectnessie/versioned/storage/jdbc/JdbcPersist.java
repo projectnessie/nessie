@@ -199,7 +199,7 @@ class JdbcPersist extends AbstractJdbcPersist {
   @Nonnull
   @jakarta.annotation.Nonnull
   public <T extends Obj> T fetchTypedObj(
-      @Nonnull @jakarta.validation.constraints.NotNull ObjId id, ObjType type, Class<T> typeClass)
+      @Nonnull @jakarta.annotation.Nonnull ObjId id, ObjType type, Class<T> typeClass)
       throws ObjNotFoundException {
     return withConnectionException(true, conn -> super.fetchTypedObj(conn, id, type, typeClass));
   }
