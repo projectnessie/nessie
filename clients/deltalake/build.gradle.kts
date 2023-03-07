@@ -45,23 +45,35 @@ dependencies {
   compileOnly(libs.microprofile.openapi)
   compileOnly(libs.errorprone.annotations)
 
-  testImplementation(
+  testFixturesApi(nessieProject("nessie-model"))
+  testFixturesApi(nessieProject("nessie-client"))
+  testFixturesApi("org.apache.spark:spark-core_${sparkScala.scalaMajorVersion}") {
+    forSpark(sparkScala.sparkVersion)
+  }
+  testFixturesApi("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") {
+    forSpark(sparkScala.sparkVersion)
+  }
+  testFixturesApi(
     nessieProject(
       "nessie-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}"
     )
   )
-  testImplementation(
+  testFixturesApi(
     "com.fasterxml.jackson.module:jackson-module-scala_${sparkScala.scalaMajorVersion}"
   )
-  testImplementation(libs.jackson.databind)
-  testImplementation(libs.microprofile.openapi)
-  testImplementation(libs.logback.classic)
-  testImplementation(libs.slf4j.log4j.over.slf4j)
-  testCompileOnly(libs.errorprone.annotations)
+  testFixturesApi(libs.delta.core)
 
-  testImplementation(platform(libs.junit.bom))
-  testImplementation(libs.bundles.junit.testing)
+  testFixturesApi(platform(libs.jackson.bom))
+  testFixturesApi(libs.jackson.databind)
+  testFixturesApi(libs.microprofile.openapi)
+  testFixturesApi(libs.logback.classic)
+  testFixturesApi(libs.slf4j.log4j.over.slf4j)
+  testFixturesCompileOnly(libs.errorprone.annotations)
+
+  testFixturesApi(platform(libs.junit.bom))
+  testFixturesApi(libs.bundles.junit.testing)
   testRuntimeOnly(libs.junit.jupiter.engine)
+  intTestRuntimeOnly(libs.junit.jupiter.engine)
 
   nessieQuarkusServer(nessieQuarkusServerRunner())
 }

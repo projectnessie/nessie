@@ -52,53 +52,61 @@ dependencies {
 
   compileOnly(libs.microprofile.openapi)
 
+  testFixturesImplementation(libs.guava)
+
+  testFixturesApi(project(":nessie-model"))
+  testFixturesApi(project(":nessie-versioned-spi"))
+
+  testFixturesApi(project(":nessie-versioned-persist-adapter"))
+  testFixturesApi(project(":nessie-versioned-persist-store"))
+  testFixturesApi(project(":nessie-versioned-persist-testextension"))
+
+  testFixturesApi(platform(libs.junit.bom))
+  testFixturesApi(libs.bundles.junit.testing)
+
   testRuntimeOnly(project(":nessie-server-store"))
 
-  testImplementation(project(":nessie-versioned-persist-store"))
-  testImplementation(project(":nessie-versioned-persist-adapter"))
   testImplementation(project(":nessie-versioned-persist-serialize"))
-  testImplementation(project(":nessie-versioned-persist-testextension"))
   testImplementation(project(":nessie-versioned-persist-in-memory"))
   testImplementation(project(":nessie-versioned-persist-in-memory-test"))
-  testImplementation(project(":nessie-versioned-persist-rocks"))
-  testImplementation(project(":nessie-versioned-persist-rocks-test"))
-  testImplementation(project(":nessie-versioned-persist-dynamodb"))
-  testImplementation(project(":nessie-versioned-persist-dynamodb-test"))
-  testImplementation(project(":nessie-versioned-persist-mongodb"))
-  testImplementation(project(":nessie-versioned-persist-mongodb-test"))
+  intTestImplementation(project(":nessie-versioned-persist-rocks"))
+  intTestImplementation(project(":nessie-versioned-persist-rocks-test"))
+  intTestImplementation(project(":nessie-versioned-persist-dynamodb"))
+  intTestImplementation(project(":nessie-versioned-persist-dynamodb-test"))
+  intTestImplementation(project(":nessie-versioned-persist-mongodb"))
+  intTestImplementation(project(":nessie-versioned-persist-mongodb-test"))
   testImplementation(project(":nessie-versioned-persist-transactional"))
   testImplementation(project(":nessie-versioned-persist-transactional-test"))
 
-  testImplementation(project(":nessie-versioned-storage-common"))
-  testImplementation(project(":nessie-versioned-storage-store"))
-  testImplementation(project(":nessie-versioned-storage-testextension"))
-  testImplementation(project(":nessie-versioned-storage-inmemory"))
-  testImplementation(project(":nessie-versioned-storage-jdbc"))
-  testImplementation(project(":nessie-versioned-storage-cassandra"))
-  testImplementation(project(":nessie-versioned-storage-rocksdb"))
-  testImplementation(project(":nessie-versioned-storage-mongodb"))
-  testImplementation(project(":nessie-versioned-storage-dynamodb"))
-  testRuntimeOnly(libs.testcontainers.testcontainers)
-  testRuntimeOnly(libs.testcontainers.cassandra)
-  testRuntimeOnly(libs.testcontainers.mongodb)
-  testRuntimeOnly(libs.docker.java.api)
+  testFixturesApi(project(":nessie-versioned-storage-common"))
+  testFixturesApi(project(":nessie-versioned-storage-store"))
+  testFixturesApi(project(":nessie-versioned-storage-testextension"))
+  testFixturesApi(project(":nessie-versioned-storage-inmemory"))
+  testFixturesApi(project(":nessie-versioned-storage-jdbc"))
+  intTestImplementation(project(":nessie-versioned-storage-cassandra"))
+  intTestImplementation(project(":nessie-versioned-storage-rocksdb"))
+  intTestImplementation(project(":nessie-versioned-storage-mongodb"))
+  intTestImplementation(project(":nessie-versioned-storage-dynamodb"))
+  intTestRuntimeOnly(libs.testcontainers.testcontainers)
+  intTestRuntimeOnly(libs.testcontainers.cassandra)
+  intTestRuntimeOnly(libs.testcontainers.mongodb)
+  intTestRuntimeOnly(libs.docker.java.api)
   testRuntimeOnly(libs.agroal.pool)
   testRuntimeOnly(libs.h2)
-  testRuntimeOnly(libs.postgresql)
-  testRuntimeOnly(libs.testcontainers.postgresql)
-  testRuntimeOnly(libs.testcontainers.cockroachdb)
 
   // javax/jakarta
   testCompileOnly(libs.jakarta.annotation.api)
 
+  testFixturesCompileOnly(libs.microprofile.openapi)
   testCompileOnly(libs.microprofile.openapi)
 
+  testFixturesCompileOnly(platform(libs.jackson.bom))
+  testFixturesCompileOnly(libs.jackson.annotations)
   testCompileOnly(platform(libs.jackson.bom))
   testCompileOnly(libs.jackson.annotations)
 
-  testImplementation(platform(libs.junit.bom))
-  testImplementation(libs.bundles.junit.testing)
   testRuntimeOnly(libs.junit.jupiter.engine)
+  intTestRuntimeOnly(libs.junit.jupiter.engine)
 }
 
 // Issue w/ testcontainers/podman in GH workflows :(

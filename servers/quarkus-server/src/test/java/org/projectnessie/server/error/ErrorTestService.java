@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import org.projectnessie.versioned.paging.PaginationIterator;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
 
-/** REST service used to generate a bunch of violations for {@link TestNessieError}. */
+/** REST service used to generate a bunch of violations for {@code TestNessieError}. */
 @RequestScoped
 @Path("/nessieErrorTest")
 @Consumes(MediaType.WILDCARD)
@@ -124,8 +124,6 @@ public class ErrorTestService {
    * Throws an exception depending on the parameter.
    *
    * @return nothing
-   * @see TestNessieError#unhandledRuntimeExceptionInStore()
-   * @see TestNessieError#backendThrottledExceptionInStore()
    */
   @Path("unhandledExceptionInTvsStore/{exception}")
   @GET

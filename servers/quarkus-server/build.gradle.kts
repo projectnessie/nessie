@@ -85,21 +85,30 @@ dependencies {
 
   openapiSource(project(":nessie-model", "openapiSource"))
 
-  testImplementation(project(":nessie-client"))
-  testImplementation(project(":nessie-client-testextension"))
-  testImplementation(project(":nessie-jaxrs-tests"))
-  testImplementation(project(":nessie-quarkus-tests"))
-  testImplementation(project(":nessie-versioned-tests"))
-  testImplementation(project(":nessie-versioned-persist-tests"))
-  testImplementation(project(":nessie-versioned-storage-common"))
-  testImplementation("io.quarkus:quarkus-rest-client")
-  testImplementation("io.quarkus:quarkus-test-security")
-  testImplementation("io.quarkus:quarkus-test-oidc-server")
-  testImplementation("io.quarkus:quarkus-jacoco")
+  testFixturesApi(project(":nessie-client"))
+  testFixturesApi(project(":nessie-client-testextension"))
+  testFixturesApi(project(":nessie-jaxrs-tests"))
+  testFixturesApi(project(":nessie-quarkus-tests"))
+  testFixturesApi(project(":nessie-versioned-spi"))
+  testFixturesApi(project(":nessie-versioned-tests"))
+  testFixturesApi(project(":nessie-versioned-persist-adapter"))
+  testFixturesApi(project(":nessie-versioned-persist-store"))
+  testFixturesApi(project(":nessie-versioned-persist-tests"))
+  testFixturesApi(project(":nessie-versioned-storage-common"))
+  testFixturesApi(enforcedPlatform(libs.quarkus.bom))
+  testFixturesApi(libs.jackson.annotations)
+  testFixturesApi("io.quarkus:quarkus-rest-client")
+  testFixturesApi("io.quarkus:quarkus-test-security")
+  testFixturesApi("io.quarkus:quarkus-test-oidc-server")
+  testFixturesApi("io.quarkus:quarkus-jacoco")
+  testFixturesApi(libs.guava)
+  testFixturesApi(libs.protobuf.java)
+  testFixturesApi(libs.microprofile.openapi)
 
-  testImplementation(platform(libs.junit.bom))
-  testImplementation(libs.bundles.junit.testing)
+  testFixturesApi(platform(libs.junit.bom))
+  testFixturesApi(libs.bundles.junit.testing)
   testRuntimeOnly(libs.junit.jupiter.engine)
+  intTestRuntimeOnly(libs.junit.jupiter.engine)
 
   jacocoRuntime(libs.jacoco.report)
   jacocoRuntime(libs.jacoco.ant)
@@ -140,45 +149,7 @@ val quarkusBuild =
     inputs.properties(quarkus.quarkusBuildProperties.get())
   }
 
-val prepareJacocoReport by
-  tasks.registering {
-    doFirst {
-      // Must delete the Jacoco data file before running tests, because
-      // quarkus.jacoco.reuse-data-file=true in application.properties.
-      file("${project.buildDir}/jacoco-quarkus.exec").delete()
-      val reportDir = file("${project.buildDir}/jacoco-report")
-      delete { delete(reportDir) }
-      reportDir.mkdirs()
-    }
-  }
-
-val jacocoReport by
-  tasks.registering(JacocoReport::class) {
-    dependsOn(
-      tasks.named("compileIntegrationTestJava"),
-      tasks.named("compileNativeTestJava"),
-      tasks.named("compileQuarkusGeneratedSourcesJava")
-    )
-    executionData.from(file("${project.buildDir}/jacoco-quarkus.exec"))
-    jacocoClasspath = jacocoRuntime
-    classDirectories.from(layout.buildDirectory.dir("classes"))
-    sourceDirectories
-      .from(layout.projectDirectory.dir("src/main/java"))
-      .from(layout.projectDirectory.dir("src/test/java"))
-    reports {
-      xml.required.set(true)
-      xml.outputLocation.set(layout.buildDirectory.file("jacoco-report/jacoco.xml"))
-      csv.required.set(true)
-      csv.outputLocation.set(layout.buildDirectory.file("jacoco-report/jacoco.csv"))
-      html.required.set(true)
-      html.outputLocation.set(layout.buildDirectory.dir("jacoco-report"))
-    }
-  }
-
 tasks.withType<Test>().configureEach {
-  dependsOn(prepareJacocoReport)
-  finalizedBy(jacocoReport)
-
   if (project.hasProperty("native")) {
     systemProperty("native.image.path", quarkusBuild.get().nativeRunner)
   }
@@ -187,8 +158,6 @@ tasks.withType<Test>().configureEach {
     System.getProperty("it.nessie.container.postgres.tag", libs.versions.postgresContainerTag.get())
   )
 }
-
-tasks.named<Test>("intTest") { filter { excludeTestsMatching("ITNative*") } }
 
 // Expose runnable jar via quarkusRunner configuration for integration-tests that require the
 // server.

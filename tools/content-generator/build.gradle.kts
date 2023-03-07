@@ -52,10 +52,16 @@ dependencies {
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
 
-  testCompileOnly(libs.microprofile.openapi)
+  testFixturesApi(project(":nessie-client"))
 
-  testImplementation(platform(libs.junit.bom))
-  testImplementation(libs.bundles.junit.testing)
+  testFixturesApi(platform(libs.junit.bom))
+  testFixturesApi(libs.bundles.junit.testing)
+
+  testFixturesApi(libs.microprofile.openapi)
+  testFixturesCompileOnly(libs.picocli)
+  testFixturesCompileOnly(platform(libs.jackson.bom))
+  testFixturesCompileOnly(libs.jackson.annotations)
+
   testRuntimeOnly(libs.junit.jupiter.engine)
 
   nessieQuarkusServer(project(":nessie-quarkus", "quarkusRunner"))

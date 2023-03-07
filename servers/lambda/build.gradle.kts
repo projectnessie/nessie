@@ -92,9 +92,6 @@ artifacts {
   }
 }
 
-// TODO there are no integration-tests ...
-//  tasks.named<Test>("intTest") { filter { excludeTestsMatching("ITNative*") } }
-
 listOf("javadoc", "sourcesJar").forEach { name ->
   tasks.named(name) { dependsOn(tasks.named("compileQuarkusGeneratedSourcesJava")) }
 }

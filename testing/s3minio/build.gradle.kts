@@ -41,11 +41,16 @@ dependencies {
 
   compileOnly(libs.errorprone.annotations)
 
-  testImplementation(libs.bundles.junit.testing)
-  testRuntimeOnly(libs.junit.jupiter.engine)
-  testImplementation(libs.hadoop.common) { withSparkExcludes() }
+  // TODO issue in JvmSuitePlugin, that these dependencies are _not_ inherited by default
+  intTestImplementation(platform(libs.awssdk.bom))
+  intTestImplementation(libs.awssdk.s3)
+  intTestImplementation(libs.awssdk.url.connection.client)
 
-  testRuntimeOnly(libs.logback.classic)
+  intTestImplementation(libs.bundles.junit.testing)
+  intTestRuntimeOnly(libs.junit.jupiter.engine)
+  intTestImplementation(libs.hadoop.common) { withSparkExcludes() }
+
+  intTestRuntimeOnly(libs.logback.classic)
 }
 
 tasks.withType(Test::class.java).configureEach { systemProperty("aws.region", "us-east-1") }

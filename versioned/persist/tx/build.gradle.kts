@@ -44,19 +44,24 @@ dependencies {
   compileOnly(libs.h2)
   compileOnly(libs.postgresql)
 
-  testImplementation(project(":nessie-versioned-tests"))
-  testCompileOnly(libs.immutables.value.annotations)
-  testAnnotationProcessor(libs.immutables.value.processor)
-  testImplementation(project(":nessie-versioned-persist-testextension"))
-  testImplementation(project(":nessie-versioned-persist-tests"))
-  testImplementation(project(":nessie-versioned-persist-transactional-test"))
-  testRuntimeOnly(libs.logback.classic)
-  testRuntimeOnly(libs.h2)
-  testRuntimeOnly(libs.postgresql)
+  testFixturesApi(project(":nessie-versioned-persist-adapter"))
+  testFixturesApi(project(":nessie-versioned-persist-serialize"))
+  testFixturesApi(project(":nessie-versioned-spi"))
 
-  testImplementation(platform(libs.junit.bom))
-  testImplementation(libs.bundles.junit.testing)
+  testFixturesApi(project(":nessie-versioned-tests"))
+  testFixturesApi(libs.immutables.value.annotations)
+  testFixturesAnnotationProcessor(libs.immutables.value.processor)
+  testFixturesApi(project(":nessie-versioned-persist-testextension"))
+  testFixturesApi(project(":nessie-versioned-persist-tests"))
+  testFixturesApi(project(":nessie-versioned-persist-transactional-test"))
+  testFixturesApi(libs.logback.classic)
+  testRuntimeOnly(libs.h2)
+  intTestRuntimeOnly(libs.postgresql)
+
+  testFixturesApi(platform(libs.junit.bom))
+  testFixturesApi(libs.bundles.junit.testing)
   testRuntimeOnly(libs.junit.jupiter.engine)
+  intTestRuntimeOnly(libs.junit.jupiter.engine)
 }
 
 tasks.named<Test>("intTest") {
