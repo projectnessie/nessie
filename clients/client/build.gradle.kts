@@ -63,7 +63,7 @@ dependencies {
   compileOnly(libs.opentelemetry.semconv)
 
   compileOnly(platform(libs.awssdk.bom))
-  compileOnly(libs.awssdk.auth)
+  compileOnly(libs.awssdk.auth) { exclude("software.amazon.awssdk", "apache-client") }
 
   // javax/jakarta
   testCompileOnly(libs.jakarta.annotation.api)
@@ -74,7 +74,7 @@ dependencies {
   testImplementation(libs.opentelemetry.semconv)
   testImplementation(libs.opentelemetry.exporter.otlp)
   testImplementation(platform(libs.awssdk.bom))
-  testImplementation(libs.awssdk.auth)
+  testImplementation(libs.awssdk.auth) { exclude("software.amazon.awssdk", "apache-client") }
   testImplementation(libs.undertow.core)
   testImplementation(libs.undertow.servlet)
   testRuntimeOnly(libs.logback.classic)

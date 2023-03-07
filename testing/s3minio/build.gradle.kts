@@ -29,7 +29,7 @@ dependencies {
   implementation(libs.testcontainers.testcontainers)
 
   implementation(platform(libs.awssdk.bom))
-  implementation(libs.awssdk.s3)
+  implementation(libs.awssdk.s3) { exclude("software.amazon.awssdk", "apache-client") }
   implementation(libs.awssdk.url.connection.client)
 
   // hadoop-common brings Jackson in ancient versions, pulling in the Jackson BOM to avoid that

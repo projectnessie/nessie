@@ -55,7 +55,6 @@ dependencies {
   implementation("io.quarkus:quarkus-agroal")
   implementation("io.quarkus:quarkus-jdbc-postgresql")
   implementation("io.quarkiverse.amazonservices:quarkus-amazon-dynamodb")
-  implementation(libs.awssdk.apache.client) { exclude("commons-logging", "commons-logging") }
   implementation("io.quarkus:quarkus-mongodb-client")
   implementation(platform(libs.cassandra.driver.bom))
   implementation(libs.cassandra.driver.core)

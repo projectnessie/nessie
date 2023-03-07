@@ -39,9 +39,6 @@ dependencies {
   implementation("io.quarkus:quarkus-amazon-lambda-http")
 
   implementation(platform(libs.awssdk.bom))
-  implementation(libs.awssdk.apache.client)
-  implementation(libs.awssdk.apache.client) { exclude("commons-logging", "commons-logging") }
-  implementation(libs.awssdk.netty.nio.client)
   implementation(libs.awssdk.url.connection.client)
 
   testImplementation("io.quarkus:quarkus-test-amazon-lambda")

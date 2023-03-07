@@ -81,7 +81,6 @@ dependencies {
 
   testImplementation(platform(libs.awssdk.bom))
   testImplementation(libs.awssdk.s3)
-  testRuntimeOnly(libs.awssdk.url.connection.client)
   // TODO those are needed, because Spark serializes some configuration stuff (Spark broadcast)
   testRuntimeOnly(libs.awssdk.dynamodb)
   testRuntimeOnly(libs.awssdk.glue)

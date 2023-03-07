@@ -66,7 +66,7 @@ dependencies {
   testRuntimeOnly(libs.logback.classic)
 
   testImplementation(platform(libs.awssdk.bom))
-  testImplementation(libs.awssdk.s3)
+  testImplementation(libs.awssdk.s3) { exclude("software.amazon.awssdk", "apache-client") }
   testImplementation(libs.awssdk.url.connection.client)
 
   testCompileOnly(libs.immutables.value.annotations)
