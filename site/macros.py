@@ -39,7 +39,7 @@ def define_env(env):
     @env.macro
     def nessie_spark_extensions(spark="3.3", scala="2.12", version=__latest_nessie_version):
         return __maven_artifact(
-            "org.projectnessie",
+            "org.projectnessie.nessie-integrations",
             f"nessie-spark-extensions-{spark}_{scala}",
             version
         )
