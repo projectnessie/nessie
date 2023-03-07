@@ -154,7 +154,7 @@ jobs:
         
         !
         
-        git log --perl-regexp --author '^(?!.*dependabot(-preview)?|.*renovate|.*nessie-release-workflow).*$'\
+        git log --perl-regexp --author '^(?!.*renovate|.*nessie-release-workflow).*$'\
           --format='format:* %s' ${LAST_TAG}..HEAD . ':!python' |\
           grep -v '^\* \[release\] .*$' >> /tmp/releases.md
         
@@ -178,7 +178,7 @@ jobs:
         * See release notes and changelog on GitHub: https://github.com/projectnessie/nessie/releases/tag/nessie-${RELEASE_VERSION}
         !
         
-        git log --perl-regexp --author '^(?!.*dependabot(-preview)?|.*renovate|.*nessie-release-workflow).*$'\
+        git log --perl-regexp --author '^(?!.*renovate|.*nessie-release-workflow).*$'\
           --format='format:* %s' ${LAST_TAG}..HEAD python/ |\
           >> /tmp/HISTORY.rst
         
