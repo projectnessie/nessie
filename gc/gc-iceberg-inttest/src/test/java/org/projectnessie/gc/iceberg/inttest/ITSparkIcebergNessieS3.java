@@ -175,12 +175,15 @@ public class ITSparkIcebergNessieS3 extends SparkSqlTestBase {
     List<Step> steps();
 
     Map<String, CutoffPolicy> policies();
+
+    String namespace();
   }
 
   static Stream<TestCase> testCases() {
     return Stream.of(
         // 1
         testCase()
+            .namespace("tc_1")
             .addSteps(expiredDdl("CREATE TABLE nessie.tc_1.tbl_a (id int, name string)"))
             .addSteps(expiredDml("INSERT INTO nessie.tc_1.tbl_a select 23, \"test\""))
             .addSteps(dml("INSERT INTO nessie.tc_1.tbl_a select 24, \"case\""))
@@ -190,6 +193,7 @@ public class ITSparkIcebergNessieS3 extends SparkSqlTestBase {
             .build(),
         // 2
         testCase()
+            .namespace("tc_2")
             .addSteps(expiredDdl("CREATE TABLE nessie.tc_2.tbl_a (id int, name string)"))
             .addSteps(dml("INSERT INTO nessie.tc_2.tbl_a select 23, \"test\""))
             // on branch "branch_tc_2"
@@ -206,6 +210,12 @@ public class ITSparkIcebergNessieS3 extends SparkSqlTestBase {
   @ParameterizedTest
   @MethodSource("testCases")
   public void roundTrips(TestCase testCase) throws Exception {
+
+    api.createNamespace()
+        .namespace(testCase.namespace())
+        .refName(api.getConfig().getDefaultBranch())
+        .create();
+
     try (IcebergFiles icebergFiles =
         IcebergFiles.builder()
             .properties(minio.icebergProperties())

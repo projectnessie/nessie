@@ -34,6 +34,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -65,6 +66,16 @@ public class ITRefreshContent extends AbstractContentGeneratorTest {
 
   private void create(IcebergTable table, ContentKey key)
       throws NessieConflictException, NessieNotFoundException {
+    if (key.getElementCount() > 1) {
+      try {
+        api.createNamespace()
+            .namespace(key.getNamespace())
+            .reference(api.getDefaultBranch())
+            .create();
+      } catch (NessieNamespaceAlreadyExistsException ignore) {
+        //
+      }
+    }
     api.commitMultipleOperations()
         .branch(api.getDefaultBranch())
         .commitMeta(CommitMeta.fromMessage("test-commit"))

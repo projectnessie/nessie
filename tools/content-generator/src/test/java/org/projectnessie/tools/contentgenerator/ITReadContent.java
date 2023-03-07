@@ -50,7 +50,7 @@ class ITReadContent extends AbstractContentGeneratorTest {
             CONTENT_KEY.getElements().get(0),
             "--key",
             CONTENT_KEY.getElements().get(1));
-    assertThat(proc.getExitCode()).isEqualTo(0);
+    assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
     List<String> output = proc.getStdOutLines();
 
     assertThat(output).anySatisfy(s -> assertThat(s).contains(CONTENT_KEY.toString()));
@@ -70,7 +70,7 @@ class ITReadContent extends AbstractContentGeneratorTest {
             CONTENT_KEY.getElements().get(0),
             "--key",
             CONTENT_KEY.getElements().get(1));
-    assertThat(proc.getExitCode()).isEqualTo(0);
+    assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
     List<String> output = proc.getStdOutLines();
 
     assertThat(output).anySatisfy(s -> assertThat(s).contains(CONTENT_KEY.toString()));

@@ -25,7 +25,7 @@ class ITNessieVersion extends AbstractContentGeneratorTest {
   @Test
   void nessieVersion() {
     ProcessResult proc = runGeneratorCmd("-V");
-    assertThat(proc.getExitCode()).isEqualTo(0);
+    assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
     List<String> output = proc.getStdOutLines();
     assertThat(output)
         .hasSize(1)

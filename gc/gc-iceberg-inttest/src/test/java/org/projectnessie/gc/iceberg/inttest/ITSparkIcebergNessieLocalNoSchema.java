@@ -70,6 +70,8 @@ public class ITSparkIcebergNessieLocalNoSchema extends SparkSqlTestBase {
   public void roundTripLocal() throws Exception {
     try (IcebergFiles icebergFiles = IcebergFiles.builder().build()) {
 
+      api.createNamespace().namespace("db1").refName(api.getConfig().getDefaultBranch()).create();
+
       sql("create table nessie.db1.t1(id int) using iceberg");
       sql("insert into nessie.db1.t1 select 42");
       sql("insert into nessie.db1.t1 select 42");

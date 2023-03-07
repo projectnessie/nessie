@@ -216,7 +216,7 @@ public abstract class AbstractReferences {
                   .commitMetaSerialized(ByteString.copyFromUtf8("commit meta " + i))
                   .addPuts(
                       KeyWithBytes.of(
-                          ContentKey.of("bar", Integer.toString(i)),
+                          ContentKey.of("bar-" + i),
                           ContentId.of(hello.getId()),
                           payloadForContent(hello),
                           hello.serialized()))
@@ -343,7 +343,7 @@ public abstract class AbstractReferences {
                       .expectedHead(Optional.of(refHeads.get(ref)))
                       .addPuts(
                           KeyWithBytes.of(
-                              ContentKey.of("table", "c" + commit),
+                              ContentKey.of("table-" + commit),
                               ContentId.of("c" + commit),
                               payloadForContent(OnRefOnly.ON_REF_ONLY),
                               DefaultStoreWorker.instance()

@@ -39,9 +39,11 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.LogResponse;
+import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Validation;
@@ -70,11 +72,15 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
   }
 
   @Test
-  public void testRefreshAfterMergeWithIcebergTableCaching() throws NessieNotFoundException {
+  public void testRefreshAfterMergeWithIcebergTableCaching()
+      throws NessieNotFoundException, NessieNamespaceAlreadyExistsException {
     createBranchForTest(refName);
+    api.createNamespace().refName(refName).namespace(Namespace.of("db")).create();
+    Reference ref = api.getReference().refName(refName).get();
+
     assertThat(sql("USE REFERENCE %s IN nessie", refName))
         .hasSize(1)
-        .containsExactly(row("Branch", refName, defaultHash()));
+        .containsExactly(row("Branch", refName, ref.getHash()));
 
     sql("CREATE TABLE nessie.db.tbl (id int, name string)");
     sql("INSERT INTO nessie.db.tbl select 23, \"test\"");
@@ -142,8 +148,10 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
   }
 
   @Test
-  void testCreateReferenceFromHashOnNonDefaultBranch() throws NessieNotFoundException {
+  void testCreateReferenceFromHashOnNonDefaultBranch()
+      throws NessieNotFoundException, NessieNamespaceAlreadyExistsException {
     createBranchForTest(refName);
+    api.createNamespace().refName(refName).namespace(Namespace.of("db")).create();
 
     sql("USE REFERENCE %s IN nessie", refName);
     sql("CREATE TABLE nessie.db.tbl (id int, name string)");
@@ -603,15 +611,19 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
     "testCompaction,`tbl@testCompaction`",
     "main,`tbl@main`"
   })
-  void testCompaction(String branchName, String tableName) throws NessieNotFoundException {
+  void testCompaction(String branchName, String tableName)
+      throws NessieNotFoundException, NessieNamespaceAlreadyExistsException {
     executeAndValidateCompaction(branchName, prepareForCompaction(branchName), tableName);
   }
 
-  String prepareForCompaction(String branchName) throws NessieNotFoundException {
+  String prepareForCompaction(String branchName)
+      throws NessieNotFoundException, NessieNamespaceAlreadyExistsException {
     if (!branchName.equals("main")) {
       assertThat(sql("CREATE BRANCH %s IN nessie FROM main", branchName))
           .containsExactly(row("Branch", branchName, initialDefaultBranch.getHash()));
     }
+
+    api.createNamespace().refName(branchName).namespace(Namespace.of("db")).create();
 
     sql("USE REFERENCE %s IN nessie", branchName);
     sql("CREATE TABLE nessie.db.tbl (id int, name string)");

@@ -44,14 +44,14 @@ class ITReadCommits extends AbstractContentGeneratorTest {
     ProcessResult proc =
         runGeneratorCmd("commits", "--uri", NESSIE_API_URI, "--ref", branch.getName());
 
-    assertThat(proc.getExitCode()).isEqualTo(0);
+    assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
     List<String> output = proc.getStdOutLines();
 
     assertThat(output).anySatisfy(s -> assertThat(s).contains(COMMIT_MSG));
     assertThat(output).noneSatisfy(s -> assertThat(s).contains(CONTENT_KEY.toString()));
 
     try (NessieApiV2 api = buildNessieApi()) {
-      assertThat(api.getCommitLog().refName(branch.getName()).stream()).hasSize(1);
+      assertThat(api.getCommitLog().refName(branch.getName()).stream()).hasSize(2);
     }
   }
 
@@ -60,7 +60,7 @@ class ITReadCommits extends AbstractContentGeneratorTest {
     ProcessResult proc =
         runGeneratorCmd("commits", "--uri", NESSIE_API_URI, "--ref", branch.getName(), "--verbose");
 
-    assertThat(proc.getExitCode()).isEqualTo(0);
+    assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
     List<String> output = proc.getStdOutLines();
 
     assertThat(output).anySatisfy(s -> assertThat(s).contains(COMMIT_MSG));
@@ -74,7 +74,7 @@ class ITReadCommits extends AbstractContentGeneratorTest {
       List<LogEntry> logEntries =
           api.getCommitLog().refName(branch.getName()).fetch(FetchOption.ALL).stream()
               .collect(Collectors.toList());
-      assertThat(logEntries).hasSize(1);
+      assertThat(logEntries).hasSize(2);
       assertThat(logEntries.get(0).getOperations()).isNotEmpty();
       assertThat(logEntries.get(0).getParentCommitHash()).isNotNull();
     }

@@ -121,8 +121,8 @@ public abstract class AbstractCommitScenarios {
     BranchName branch = BranchName.of("main");
 
     ContentKey dummyKey = ContentKey.of("dummy");
-    ContentKey oldKey = ContentKey.of("hello", "table");
-    ContentKey newKey = ContentKey.of("new", "name");
+    ContentKey oldKey = ContentKey.of("hello-table");
+    ContentKey newKey = ContentKey.of("new-name");
     ContentId contentId = ContentId.of("id-42");
 
     IntFunction<Hash> performDummyCommit =
@@ -271,7 +271,7 @@ public abstract class AbstractCommitScenarios {
             .toBranch(branch)
             .commitMetaSerialized(ByteString.copyFromUtf8("initial commit meta"));
     for (int i = 0; i < tablesPerCommit; i++) {
-      ContentKey key = ContentKey.of("my", "table", "num" + i);
+      ContentKey key = ContentKey.of("my-table-num" + i);
       keys.add(key);
 
       String cid = "id-" + i;
@@ -432,8 +432,8 @@ public abstract class AbstractCommitScenarios {
     Hash head = mine.noAncestorHash();
     mine.create(branchName, head);
 
-    ContentKey keyNation = ContentKey.of("tpch", "nation");
-    ContentKey keyRegion = ContentKey.of("tpch", "region");
+    ContentKey keyNation = ContentKey.of("tpch-nation");
+    ContentKey keyRegion = ContentKey.of("tpch-region");
 
     ContentId idNation = ContentId.of("id-nation");
     ContentId idRegion = ContentId.of("id-region");

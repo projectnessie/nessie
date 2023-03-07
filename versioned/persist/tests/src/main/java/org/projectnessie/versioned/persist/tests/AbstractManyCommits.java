@@ -72,7 +72,7 @@ public abstract class AbstractManyCommits {
     ContentId fixed = ContentId.of("FIXED");
 
     for (int i = 0; i < numCommits; i++) {
-      ContentKey key = ContentKey.of("many", "commits", Integer.toString(numCommits));
+      ContentKey key = ContentKey.of("many-commits-" + numCommits);
       OnRefOnly c = OnRefOnly.onRef("value for #" + i + " of " + numCommits, fixed.getId());
       byte payload = payloadForContent(c);
       ImmutableCommitParams.Builder commit =
@@ -115,7 +115,7 @@ public abstract class AbstractManyCommits {
   }
 
   private void verify(int i, int numCommits, BranchName branch, Hash commit, ContentId contentId) {
-    ContentKey key = ContentKey.of("many", "commits", Integer.toString(numCommits));
+    ContentKey key = ContentKey.of("many-commits-" + numCommits);
 
     try {
       commit = databaseAdapter.hashOnReference(branch, Optional.of(commit));

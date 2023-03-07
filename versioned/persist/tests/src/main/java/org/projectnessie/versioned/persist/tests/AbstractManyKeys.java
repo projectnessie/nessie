@@ -128,12 +128,9 @@ public abstract class AbstractManyKeys {
             i -> {
               ContentKey key =
                   ContentKey.of(
-                      "some",
-                      Integer.toString(i),
-                      "long",
-                      "key",
-                      "value",
-                      "foobarbazfoobarbazfoobarbazfoobarbazfoobarbazfoobarbaz");
+                      "some-"
+                          + i
+                          + "-long-key-value-foobarbazfoobarbazfoobarbazfoobarbazfoobarbazfoobarbaz");
               allKeys.add(key);
               OnRefOnly val = onRef("value " + i, "cid-" + i);
               return KeyWithBytes.of(
@@ -202,7 +199,7 @@ public abstract class AbstractManyKeys {
 
     Map<ContentKey, Hash> keyToCommit = new HashMap<>();
     for (int i = 0; i < 10 * keyListDistance; i++) {
-      ContentKey key = ContentKey.of("k" + i, longString);
+      ContentKey key = ContentKey.of("k" + i + "-" + longString);
       Hash hash =
           da.commit(
               ImmutableCommitParams.builder()
@@ -317,7 +314,8 @@ public abstract class AbstractManyKeys {
     // 64 chars
     String keyElement = "1234567890123456789012345678901234567890123456789012345678901234";
     // generates "long" keys
-    IntFunction<ContentKey> keyGen = i -> ContentKey.of("k-" + i, keyElement, keyElement);
+    IntFunction<ContentKey> keyGen =
+        i -> ContentKey.of("k-" + i + "-" + keyElement + "-" + keyElement);
     IntFunction<OnRefOnly> valueGen = i -> onRef("value-" + i, "cid-" + i);
 
     BranchName branch = BranchName.of("main");

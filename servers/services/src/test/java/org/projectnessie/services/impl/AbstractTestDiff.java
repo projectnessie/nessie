@@ -59,7 +59,8 @@ public abstract class AbstractTestDiff extends BaseTestServiceImpl {
   @ValueSource(ints = {0, 20, 22})
   public void diffPaging(int numKeys) throws BaseNessieClientServerException {
     Branch defaultBranch = treeApi().getDefaultBranch();
-    Branch branch = createBranch("entriesPaging");
+    Branch branch =
+        ensureNamespacesForKeysExist(createBranch("entriesPaging"), ContentKey.of("key", "0"));
     try {
       diffApi()
           .getDiff(
@@ -99,6 +100,10 @@ public abstract class AbstractTestDiff extends BaseTestServiceImpl {
     Set<ContentKey> contents =
         pagedDiff(branch, defaultBranch, pageSize, numKeys, effectiveFrom::set, effectiveTo::set)
             .stream()
+            .filter(
+                e ->
+                    (e.getTo() == null ? e.getFrom() : e.getTo()).getType()
+                        != Content.Type.NAMESPACE)
             .map(DiffEntry::getKey)
             .collect(toSet());
 

@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.TableReference;
 
@@ -32,7 +33,8 @@ public class ITNessieStatements extends AbstractNessieSparkSqlExtensionTest {
     "main,`tbl@main`"
   })
   @Override
-  void testCompaction(String branchName, String tableName) throws NessieNotFoundException {
+  void testCompaction(String branchName, String tableName)
+      throws NessieNotFoundException, NessieNamespaceAlreadyExistsException {
     String branchHash = prepareForCompaction(branchName);
 
     // In Iceberg versions >= 0.14.0 with Spark versions <= 3.1,

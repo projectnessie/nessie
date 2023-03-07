@@ -55,8 +55,8 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
   @ParameterizedTest
   @ValueSource(strings = {"a.b.c", "a.b\u001Dc.d", "a.b.c.d", "a.b\u0000c.d"})
   public void testNamespaces(String namespaceName) throws BaseNessieClientServerException {
-    Branch branch = createBranch("testNamespaces");
     Namespace ns = Namespace.parse(namespaceName);
+    Branch branch = ensureNamespacesForKeysExist(createBranch("testNamespaces"), ns.toContentKey());
     Namespace namespace = namespaceApi().createNamespace(branch.getName(), ns);
 
     soft.assertThat(namespace)
@@ -97,9 +97,14 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
     ThrowingExtractor<String, Namespace, ?> createNamespace =
         identifier -> namespaceApi().createNamespace(branch.getName(), Namespace.parse(identifier));
 
+    Namespace a = createNamespace.apply("a");
+    Namespace ab = createNamespace.apply("a.b");
     Namespace one = createNamespace.apply("a.b.c");
     Namespace two = createNamespace.apply("a.b.d");
+    Namespace x = createNamespace.apply("x");
+    Namespace xy = createNamespace.apply("x.y");
     Namespace three = createNamespace.apply("x.y.z");
+    Namespace o = createNamespace.apply("one");
     Namespace four = createNamespace.apply("one.two");
     for (Namespace namespace : Arrays.asList(one, two, three, four)) {
       soft.assertThat(namespace).isNotNull();
@@ -108,25 +113,23 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
 
     soft.assertThat(
             namespaceApi().getNamespaces(branch.getName(), null, Namespace.EMPTY).getNamespaces())
-        .containsExactlyInAnyOrder(one, two, three, four);
+        .containsExactlyInAnyOrder(one, two, three, four, a, ab, x, xy, o);
 
     soft.assertThat(
             namespaceApi().getNamespaces(branch.getName(), null, Namespace.EMPTY).getNamespaces())
-        .containsExactlyInAnyOrder(one, two, three, four);
+        .containsExactlyInAnyOrder(one, two, three, four, a, ab, x, xy, o);
 
-    soft.assertThat(
-            namespaceApi().getNamespaces(branch.getName(), null, Namespace.of("a")).getNamespaces())
-        .containsExactlyInAnyOrder(one, two);
-    soft.assertThat(
-            namespaceApi()
-                .getNamespaces(branch.getName(), null, Namespace.of("a", "b"))
-                .getNamespaces())
-        .containsExactlyInAnyOrder(one, two);
-    soft.assertThat(
-            namespaceApi()
-                .getNamespaces(branch.getName(), null, Namespace.of("a", "b", "c"))
-                .getNamespaces())
-        .containsExactlyInAnyOrder(one);
+    Namespace nsA = Namespace.of("a");
+    soft.assertThat(namespaceApi().getNamespaces(branch.getName(), null, nsA).getNamespaces())
+        .containsExactlyInAnyOrder(one, two, a, ab)
+        .allMatch(ns -> ns.isSameOrSubElementOf(nsA));
+    Namespace nsAB = Namespace.of("a", "b");
+    soft.assertThat(namespaceApi().getNamespaces(branch.getName(), null, nsAB).getNamespaces())
+        .containsExactlyInAnyOrder(one, two, ab)
+        .allMatch(ns -> ns.isSameOrSubElementOf(nsAB));
+    Namespace nsABC = Namespace.of("a", "b", "c");
+    soft.assertThat(namespaceApi().getNamespaces(branch.getName(), null, nsABC).getNamespaces())
+        .containsExactly(one);
     soft.assertThat(
             namespaceApi()
                 .getNamespaces(branch.getName(), null, Namespace.of("a", "b", "d"))
@@ -135,7 +138,7 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
 
     soft.assertThat(
             namespaceApi().getNamespaces(branch.getName(), null, Namespace.of("x")).getNamespaces())
-        .containsExactly(three);
+        .containsExactlyInAnyOrder(three, x, xy);
     soft.assertThat(
             namespaceApi().getNamespaces(branch.getName(), null, Namespace.of("z")).getNamespaces())
         .isEmpty();
@@ -143,7 +146,7 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
             namespaceApi()
                 .getNamespaces(branch.getName(), null, Namespace.of("one"))
                 .getNamespaces())
-        .containsExactly(four);
+        .containsExactlyInAnyOrder(four, o);
   }
 
   @Test
@@ -152,6 +155,11 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
 
     List<ContentAndOperationType> contentAndOps =
         contentAndOperationTypes().collect(Collectors.toList());
+
+    init =
+        ensureNamespacesForKeysExist(
+            init,
+            contentAndOps.stream().map(co -> co.operation.getKey()).toArray(ContentKey[]::new));
 
     Branch branch =
         commit(
@@ -173,15 +181,6 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
             .filter(c -> c.operation instanceof Put)
             .map(c -> c.operation.getKey())
             .collect(Collectors.toList());
-
-    commit(
-        branch,
-        fromMessage("create namespaces"),
-        entries.stream()
-            .map(ContentKey::getNamespace)
-            .distinct()
-            .map(ns -> Put.of(ContentKey.of(ns.getElements()), ns))
-            .toArray(Operation[]::new));
 
     for (ContentKey contentKey : entries) {
       Namespace namespace = contentKey.getNamespace();
@@ -205,8 +204,9 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
                 Put.of(ContentKey.of("root"), IcebergTable.of("/dev/null", 42, 42, 42, 42)))
             .getTargetBranch();
 
-    Branch branch = createBranch("merge-branch", base);
     Namespace ns = Namespace.parse("a.b.c");
+    Branch branch =
+        ensureNamespacesForKeysExist(createBranch("merge-branch", base), ns.toContentKey());
     // create the same namespace on both branches
     namespaceApi().createNamespace(branch.getName(), ns);
 
@@ -229,7 +229,7 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
     List<LogEntry> log = commitLog(base.getName(), MINIMAL, base.getHash(), null, null);
     String expectedCommitMsg = "create namespace a.b.c";
     soft.assertThat(log.stream().map(LogEntry::getCommitMeta).map(CommitMeta::getMessage))
-        .containsExactly(expectedCommitMsg, "root");
+        .containsExactly(expectedCommitMsg, "create namespaces", "root");
 
     soft.assertThat(entries(base.getName(), null).stream().map(EntriesResponse.Entry::getName))
         .contains(ns.toContentKey());
@@ -249,17 +249,17 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
 
     Branch branch = createBranch("merge-branch", base);
     Namespace ns = Namespace.parse("a.b.c");
+    base = ensureNamespacesForKeysExist(base, ns.toContentKey());
     // create a namespace on the base branch
     namespaceApi().createNamespace(base.getName(), ns);
     base = (Branch) getReference(base.getName());
 
     // create a table with the same name on the other branch
     IcebergTable table = IcebergTable.of("merge-table1", 42, 42, 42, 42);
+    ContentKey tableKey = ContentKey.of("a", "b", "c");
+    branch = ensureNamespacesForKeysExist(branch, tableKey);
     branch =
-        commit(
-                branch,
-                fromMessage("test-merge-branch1"),
-                Put.of(ContentKey.of("a", "b", "c"), table))
+        commit(branch, fromMessage("test-merge-branch1"), Put.of(tableKey, table))
             .getTargetBranch();
     Branch finalBase = base;
     Branch finalBranch = branch;
@@ -295,11 +295,12 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
 
   @Test
   public void testNamespaceConflictWithOtherContent() throws BaseNessieClientServerException {
-    Branch branch = createBranch("testNamespaceConflictWithOtherContent");
     IcebergTable icebergTable = IcebergTable.of("icebergTable", 42, 42, 42, 42);
 
     List<String> elements = Arrays.asList("a", "b", "c");
     ContentKey key = ContentKey.of(elements);
+    Branch branch =
+        ensureNamespacesForKeysExist(createBranch("testNamespaceConflictWithOtherContent"), key);
     commit(branch, fromMessage("add table"), Put.of(key, icebergTable));
 
     Namespace ns = Namespace.of(elements);
@@ -318,9 +319,14 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
 
   @Test
   public void testNamespacesWithAndWithoutZeroBytes() throws BaseNessieClientServerException {
-    Branch branch = createBranch("testNamespacesWithAndWithoutZeroBytes");
     String firstName = "a.b\u0000c.d";
     String secondName = "a.b.c.d";
+
+    Branch branch =
+        ensureNamespacesForKeysExist(
+            createBranch("testNamespacesWithAndWithoutZeroBytes"),
+            Namespace.parse(firstName).toContentKey(),
+            Namespace.parse(secondName).toContentKey());
 
     // perform creation and retrieval
     ThrowingExtractor<String, Namespace, ?> creator =
@@ -353,23 +359,28 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
     // retrieval by prefix
     soft.assertThat(
             namespaceApi().getNamespaces(branch.getName(), null, Namespace.EMPTY).getNamespaces())
-        .containsExactlyInAnyOrderElementsOf(namespaces);
+        .containsAll(namespaces);
 
     soft.assertThat(
             namespaceApi().getNamespaces(branch.getName(), null, Namespace.of("a")).getNamespaces())
-        .containsExactlyInAnyOrderElementsOf(namespaces);
+        .containsAll(namespaces);
 
     soft.assertThat(
             namespaceApi()
                 .getNamespaces(branch.getName(), null, Namespace.of("a", "b"))
                 .getNamespaces())
-        .containsExactly(second);
+        .extracting(Namespace::toContentKey)
+        .containsExactlyInAnyOrder(
+            second.toContentKey(),
+            second.toContentKey().getParent(),
+            second.toContentKey().getParent().getParent());
 
     soft.assertThat(
             namespaceApi()
                 .getNamespaces(branch.getName(), null, Namespace.of("a", "b", "c"))
                 .getNamespaces())
-        .containsExactly(second);
+        .extracting(Namespace::toContentKey)
+        .containsExactlyInAnyOrder(second.toContentKey(), second.toContentKey().getParent());
 
     // deletion
     for (Namespace namespace : namespaces) {
@@ -382,7 +393,12 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
 
     soft.assertThat(
             namespaceApi().getNamespaces(branch.getName(), null, Namespace.EMPTY).getNamespaces())
-        .isEmpty();
+        .extracting(Namespace::toContentKey)
+        .containsExactlyInAnyOrder(
+            Namespace.parse("a").toContentKey(),
+            Namespace.parse("a.b\u0000c").toContentKey(),
+            Namespace.parse("a.b").toContentKey(),
+            Namespace.parse("a.b.c").toContentKey());
   }
 
   @Test
@@ -416,9 +432,12 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
 
   @Test
   public void testNamespaceWithProperties() throws BaseNessieClientServerException {
-    Branch branch = createBranch("namespaceWithProperties");
     Map<String, String> properties = ImmutableMap.of("key1", "val1", "key2", "val2");
     Namespace namespace = Namespace.of(properties, "a", "b", "c");
+
+    Branch branch =
+        ensureNamespacesForKeysExist(
+            createBranch("namespaceWithProperties"), namespace.toContentKey());
 
     Namespace ns =
         namespaceApi()

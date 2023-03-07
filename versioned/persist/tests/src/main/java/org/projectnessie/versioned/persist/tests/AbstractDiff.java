@@ -64,7 +64,7 @@ public abstract class AbstractDiff {
         OnRefOnly c = OnRefOnly.onRef("on-ref " + i + " for " + k, "cid-" + i + "-" + k);
         commit.addPuts(
             KeyWithBytes.of(
-                ContentKey.of("key", Integer.toString(k)),
+                ContentKey.of("key-" + k),
                 ContentId.of("C" + k),
                 payloadForContent(c),
                 DefaultStoreWorker.instance()
@@ -97,7 +97,7 @@ public abstract class AbstractDiff {
                               OnRefOnly.onRef("on-ref " + c + " for " + k, "cid-" + c + "-" + k);
                           return Difference.of(
                               payloadForContent(content),
-                              ContentKey.of("key", Integer.toString(k)),
+                              ContentKey.of("key-" + k),
                               Optional.empty(),
                               Optional.empty(),
                               Optional.of(
@@ -125,7 +125,7 @@ public abstract class AbstractDiff {
                               OnRefOnly.onRef("on-ref " + c + " for " + k, "cid-" + c + "-" + k);
                           return Difference.of(
                               payloadForContent(content),
-                              ContentKey.of("key", Integer.toString(k)),
+                              ContentKey.of("key-" + k),
                               Optional.empty(),
                               Optional.of(
                                   DefaultStoreWorker.instance()
@@ -156,7 +156,7 @@ public abstract class AbstractDiff {
                               OnRefOnly.onRef("on-ref " + c + " for " + k, "cid-" + c + "-" + k);
                           return Difference.of(
                               payloadForContent(from),
-                              ContentKey.of("key", Integer.toString(k)),
+                              ContentKey.of("key-" + k),
                               Optional.empty(),
                               Optional.of(
                                   DefaultStoreWorker.instance()

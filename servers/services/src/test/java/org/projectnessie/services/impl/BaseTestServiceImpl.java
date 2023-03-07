@@ -17,6 +17,7 @@ package org.projectnessie.services.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Preconditions.checkState;
+import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.FetchOption.MINIMAL;
 import static org.projectnessie.model.Reference.ReferenceType.BRANCH;
 import static org.projectnessie.model.Reference.ReferenceType.TAG;
@@ -29,10 +30,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -51,6 +54,7 @@ import org.projectnessie.model.DeltaLakeTable;
 import org.projectnessie.model.Detached;
 import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.model.EntriesResponse;
+import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.GetMultipleContentsResponse.ContentWithKey;
 import org.projectnessie.model.IcebergTable;
@@ -222,6 +226,12 @@ public abstract class BaseTestServiceImpl {
   protected List<Reference> allReferences(FetchOption fetchOption, String filter) {
     return treeApi()
         .getAllReferences(fetchOption, filter, null, new UnlimitedListResponseHandler<>());
+  }
+
+  protected List<Entry> withoutNamespaces(List<Entry> entries) {
+    return entries.stream()
+        .filter(e -> e.getType() != Content.Type.NAMESPACE)
+        .collect(Collectors.toList());
   }
 
   protected List<EntriesResponse.Entry> entries(Reference reference)
@@ -418,6 +428,28 @@ public abstract class BaseTestServiceImpl {
 
   protected Reference getReference(String refName) throws NessieNotFoundException {
     return treeApi().getReferenceByName(refName, MINIMAL);
+  }
+
+  protected Branch ensureNamespacesForKeysExist(Branch targetBranch, ContentKey... keysToCheck)
+      throws NessieConflictException, NessieNotFoundException {
+    Set<ContentKey> existingKeys =
+        entries(targetBranch).stream().map(Entry::getName).collect(Collectors.toSet());
+
+    Put[] nsToCreate =
+        Arrays.stream(keysToCheck)
+            .filter(k -> k.getElementCount() > 1)
+            .flatMap(
+                key ->
+                    IntStream.rangeClosed(1, key.getElementCount() - 1)
+                        .mapToObj(l -> ContentKey.of(key.getElements().subList(0, l))))
+            .distinct()
+            .filter(nsKey -> !existingKeys.contains(nsKey))
+            .map(nsKey -> Put.of(nsKey, Namespace.of(nsKey.getElements())))
+            .toArray(Put[]::new);
+    if (nsToCreate.length == 0) {
+      return targetBranch;
+    }
+    return commit(targetBranch, fromMessage("create namespaces"), nsToCreate).getTargetBranch();
   }
 
   protected CommitResponse commit(Branch targetBranch, CommitMeta meta, Operation... operations)

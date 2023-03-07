@@ -55,8 +55,9 @@ class ITGenerateContent extends AbstractContentGeneratorTest {
               testCaseBranch,
               "--type=" + contentType.name());
 
-      assertThat(proc.getExitCode()).isEqualTo(0);
-      assertThat(api.getCommitLog().refName(testCaseBranch).stream()).hasSize(numCommits);
+      assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
+      // 1 commit to create the namespaces
+      assertThat(api.getCommitLog().refName(testCaseBranch).stream()).hasSize(numCommits + 1);
     }
   }
 }

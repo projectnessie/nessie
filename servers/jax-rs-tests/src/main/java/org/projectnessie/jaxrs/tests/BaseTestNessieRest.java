@@ -58,9 +58,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.Namespace;
-import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operation.Put;
-import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.SingleReferenceResponse;
 
@@ -103,13 +101,19 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
   }
 
   private Branch commitV1(ContentKey contentKey, Content content, Branch branch) {
-    Operations contents =
+    ImmutableOperations.Builder contents =
         ImmutableOperations.builder()
-            .addOperations(Put.of(contentKey, content))
-            .commitMeta(CommitMeta.builder().author("test author").message("").build())
-            .build();
+            .commitMeta(CommitMeta.builder().author("test author").message("").build());
+    if (contentKey.getElementCount() > 1) {
+      contents.addOperations(Put.of(contentKey.getParent(), contentKey.getNamespace()));
+    }
+    if (contentKey.getElementCount() > 2) {
+      contents.addOperations(
+          Put.of(contentKey.getParent().getParent(), contentKey.getParent().getNamespace()));
+    }
+    contents.addOperations(Put.of(contentKey, content));
     return rest()
-        .body(contents)
+        .body(contents.build())
         .queryParam("expectedHash", branch.getHash())
         .post("trees/branch/{branch}/commit", branch.getName())
         .then()
@@ -299,12 +303,17 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
   }
 
   private Branch commitV2(Branch branch, ContentKey key, IcebergTable table) {
+    ImmutableOperations.Builder ops =
+        ImmutableOperations.builder().commitMeta(CommitMeta.fromMessage("test commit"));
+    if (key.getElementCount() > 1) {
+      ops.addOperations(Put.of(key.getParent(), key.getNamespace()));
+    }
+    if (key.getElementCount() > 2) {
+      ops.addOperations(Put.of(key.getParent().getParent(), key.getParent().getNamespace()));
+    }
+    ops.addOperations(Put.of(key, table));
     return rest()
-        .body(
-            ImmutableOperations.builder()
-                .commitMeta(CommitMeta.fromMessage("test commit"))
-                .addOperations(Operation.Put.of(key, table))
-                .build())
+        .body(ops.build())
         .post("trees/{ref}/history/commit", branch.toPathString())
         .then()
         .statusCode(200)
@@ -366,7 +375,7 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
             .extract()
             .as(EntriesResponse.class);
     assertThat(entries.getEntries())
-        .hasSize(2)
+        .hasSize(4)
         .allSatisfy(e -> assertThat(e.getContentId()).isNotNull());
 
     Stream<MapEntry<ContentKey, String>> contents =

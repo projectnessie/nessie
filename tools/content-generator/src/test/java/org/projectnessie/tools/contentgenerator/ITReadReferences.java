@@ -25,7 +25,7 @@ class ITReadReferences extends AbstractContentGeneratorTest {
   @Test
   void readReferences() {
     ProcessResult proc = runGeneratorCmd("refs", "--uri", NESSIE_API_URI);
-    assertThat(proc.getExitCode()).isEqualTo(0);
+    assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
     List<String> output = proc.getStdOutLines();
     assertThat(output).anySatisfy(s -> assertThat(s).contains("main"));
   }

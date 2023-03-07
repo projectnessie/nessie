@@ -524,6 +524,8 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
 
     // create the same namespace on both branches
     Namespace ns = Namespace.parse("a.b.c");
+    base = ensureNamespacesForKeysExist(base, ns.toContentKey());
+    branch = ensureNamespacesForKeysExist(branch, ns.toContentKey());
     namespaceApi().createNamespace(base.getName(), ns);
     namespaceApi().createNamespace(branch.getName(), ns);
 
@@ -572,8 +574,10 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
         .hasValueSatisfying(v -> assertThat(v).contains("test-branch1"))
         .hasValueSatisfying(v -> assertThat(v).contains("test-branch2"));
 
-    soft.assertThat(entries(base.getName(), null).stream().map(EntriesResponse.Entry::getName))
-        .containsExactlyInAnyOrder(something, key1, key2, ContentKey.of(ns.getElements()));
+    soft.assertThat(
+            withoutNamespaces(entries(base.getName(), null)).stream()
+                .map(EntriesResponse.Entry::getName))
+        .containsExactlyInAnyOrder(something, key1, key2);
 
     soft.assertThat(namespaceApi().getNamespace(base.getName(), null, ns)).isNotNull();
   }

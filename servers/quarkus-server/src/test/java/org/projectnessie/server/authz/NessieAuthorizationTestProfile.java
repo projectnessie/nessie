@@ -48,7 +48,7 @@ public class NessieAuthorizationTestProfile extends AuthenticationEnabledProfile
           .put(
               "nessie.server.authorization.rules.allow_create_or_delete_entity",
               "op in ['VIEW_REFERENCE', 'READ_ENTITY_VALUE', 'UPDATE_ENTITY', 'DELETE_ENTITY'] "
-                  + "&& role=='test_user' && path.startsWith('allowed.') && ref.startsWith('allowedBranch')")
+                  + "&& role=='test_user' && path.startsWith('allowed-') && ref.startsWith('allowedBranch')")
           .put(
               "nessie.server.authorization.rules.allow_commits_without_entity_changes",
               "op=='COMMIT_CHANGE_AGAINST_REFERENCE' && role=='test_user2' && ref.startsWith('allowedBranch')")

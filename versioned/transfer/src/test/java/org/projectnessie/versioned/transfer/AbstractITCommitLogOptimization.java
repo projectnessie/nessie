@@ -237,7 +237,7 @@ public abstract class AbstractITCommitLogOptimization {
             .toBranch(branch == 0 ? BranchName.of("main") : BranchName.of("branch-" + branch))
             .addPuts(
                 KeyWithBytes.of(
-                    ContentKey.of("branch-" + branch, "commit-" + commitSeq),
+                    ContentKey.of("branch-" + branch + "-commit-" + commitSeq),
                     ContentId.of("cid-" + branch + "-" + commitSeq),
                     DefaultStoreWorker.payloadForContent(Content.Type.ICEBERG_TABLE),
                     DefaultStoreWorker.instance()
