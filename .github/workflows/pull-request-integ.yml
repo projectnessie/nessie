@@ -152,4 +152,4 @@ jobs:
         if: env.WF_EXEC == 'true'
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: intTest
+          arguments: intTest --scan
