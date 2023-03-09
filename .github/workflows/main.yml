@@ -60,7 +60,7 @@ jobs:
       uses: gradle/gradle-build-action@v2
       if: github.repository_owner == 'projectnessie'
       with:
-        arguments: assemble publishToMavenLocal -Puber-jar --scan
+        arguments: assemble publishToMavenLocal --scan
 
     - name: Gradle / build tools integration tests
       uses: gradle/gradle-build-action@v2

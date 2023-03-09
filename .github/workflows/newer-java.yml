@@ -52,7 +52,7 @@ jobs:
     - name: Gradle / assemble + publish local
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: assemble publishToMavenLocal -Puber-jar --scan
+        arguments: assemble publishToMavenLocal --scan
 
     - name: Gradle / build tools integration tests
       uses: gradle/gradle-build-action@v2
