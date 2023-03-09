@@ -61,6 +61,12 @@ public abstract class ContentKey implements Comparable<ContentKey> {
     return getElements().toArray(new String[0]);
   }
 
+  @JsonIgnore
+  @Value.Redacted
+  public int getElementCount() {
+    return getElements().size();
+  }
+
   /**
    * Returns the namespace that is always consisting of the first <b>N-1</b> elements from {@link
    * ContentKey#getElements()}.
@@ -71,13 +77,23 @@ public abstract class ContentKey implements Comparable<ContentKey> {
   @JsonIgnore
   @Value.Redacted
   public Namespace getNamespace() {
-    return Namespace.of(getElements().subList(0, getElements().size() - 1));
+    return Namespace.of(getElements().subList(0, getElementCount() - 1));
   }
 
   @JsonIgnore
   @Value.Redacted
   public String getName() {
-    return getElements().get(getElements().size() - 1);
+    return getElements().get(getElementCount() - 1);
+  }
+
+  @JsonIgnore
+  @Value.Redacted
+  public ContentKey getParent() {
+    List<String> elements = getElements();
+    if (elements.size() <= 1) {
+      throw new IllegalArgumentException("ContentKey has no parent");
+    }
+    return ContentKey.of(elements.subList(0, elements.size() - 1));
   }
 
   public static ContentKey of(Namespace namespace, String name) {
@@ -173,7 +189,7 @@ public abstract class ContentKey implements Comparable<ContentKey> {
     if (getElements().stream().mapToInt(String::length).sum() > MAX_LENGTH) {
       throw new IllegalStateException("Key too long, max allowed length: " + MAX_LENGTH);
     }
-    if (getElements().size() > MAX_ELEMENTS) {
+    if (getElementCount() > MAX_ELEMENTS) {
       throw new IllegalStateException(
           "Key too long, max allowed number of elements: " + MAX_ELEMENTS);
     }

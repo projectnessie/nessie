@@ -48,7 +48,7 @@ public final class ClientSideGetNamespace extends BaseGetNamespaceBuilder {
   @Override
   public GetNamespaceResult getWithResponse()
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException {
-    ContentKey key = ContentKey.of(namespace.getElements());
+    ContentKey key = namespace.toContentKey();
     try {
       ContentResponse contentResponse =
           api.getContent().refName(refName).hashOnRef(hashOnRef).getSingle(key);

@@ -901,15 +901,15 @@ public abstract class BaseTestNessieApi {
             api()
                 .getContent()
                 .refName(mainName)
-                .key(ContentKey.of(namespace1.getElements()))
-                .key(ContentKey.of(namespace2.getElements()))
-                .key(ContentKey.of(namespace3.getElements()))
-                .key(ContentKey.of(namespace4.getElements()))
+                .key(namespace1.toContentKey())
+                .key(namespace2.toContentKey())
+                .key(namespace3.toContentKey())
+                .key(namespace4.toContentKey())
                 .get())
-        .containsEntry(ContentKey.of(namespace1.getElements()), namespace1WithId)
-        .containsEntry(ContentKey.of(namespace2.getElements()), namespace2WithId)
-        .containsEntry(ContentKey.of(namespace3.getElements()), namespace3WithId)
-        .containsEntry(ContentKey.of(namespace4.getElements()), namespace4WithId);
+        .containsEntry(namespace1.toContentKey(), namespace1WithId)
+        .containsEntry(namespace2.toContentKey(), namespace2WithId)
+        .containsEntry(namespace3.toContentKey(), namespace3WithId)
+        .containsEntry(namespace4.toContentKey(), namespace4WithId);
 
     soft.assertThat(api().getNamespace().refName(mainName).namespace(namespace1).get())
         .isEqualTo(namespace1WithId);

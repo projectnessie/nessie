@@ -60,7 +60,7 @@ public final class ClientSideDeleteNamespace extends BaseDeleteNamespaceBuilder 
       throws NessieNamespaceNotFoundException,
           NessieReferenceNotFoundException,
           NessieNamespaceNotEmptyException {
-    ContentKey key = ContentKey.of(namespace.getElements());
+    ContentKey key = namespace.toContentKey();
     Content existing;
     Reference ref;
     try {

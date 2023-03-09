@@ -19,23 +19,20 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.StringJoiner;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-@Execution(ExecutionMode.CONCURRENT)
 public class TestNamespace {
 
   @Test
@@ -165,7 +162,7 @@ public class TestNamespace {
     assertThat(namespace.isEmpty()).isFalse();
     assertThat(namespace.getElements()).containsExactly(elements);
 
-    namespace = Namespace.of(Arrays.asList(elements));
+    namespace = Namespace.of(elements);
     assertThat(namespace.name()).isEqualTo(expectedNamespace);
     assertThat(namespace.isEmpty()).isFalse();
     assertThat(namespace.getElements()).isEqualTo(Arrays.asList(elements));
@@ -186,7 +183,7 @@ public class TestNamespace {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(String.format(Namespace.ERROR_MSG_TEMPLATE, Arrays.toString(elements)));
 
-    assertThatThrownBy(() -> Namespace.of(Arrays.asList(elements)))
+    assertThatThrownBy(() -> Namespace.of(elements))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(String.format(Namespace.ERROR_MSG_TEMPLATE, Arrays.toString(elements)));
   }
@@ -251,65 +248,57 @@ public class TestNamespace {
 
   @ParameterizedTest
   @MethodSource("namespaceOfAndParseCases")
-  void namespaceOfAndParse(NamespaceOfParse testCase) {
-    assertThat(testCase.namespace)
+  void namespaceOfAndParse(Namespace namespace, List<String> elements, String name) {
+    assertThat(namespace)
         .extracting(
-            Namespace::getElements, Namespace::name, Namespace::toString, Namespace::toPathString)
-        .containsExactly(testCase.elements, testCase.name, testCase.name, testCase.name);
+            Namespace::getElements,
+            Namespace::toContentKey,
+            Namespace::name,
+            Namespace::toString,
+            Namespace::toPathString)
+        .containsExactly(elements, namespace.toContentKey(), name, name, name);
   }
 
-  static class NamespaceOfParse {
-    final Namespace namespace;
-    final List<String> elements;
-    final String name;
-
-    NamespaceOfParse(Namespace namespace, List<String> elements, String name) {
-      this.namespace = namespace;
-      this.elements = elements;
-      this.name = name;
-    }
-
-    @Override
-    public String toString() {
-      return new StringJoiner(", ", NamespaceOfParse.class.getSimpleName() + "[", "]")
-          .add("namespace=" + namespace)
-          .add("elements=" + elements)
-          .add("name='" + name + "'")
-          .toString();
-    }
-  }
-
-  static List<NamespaceOfParse> namespaceOfAndParseCases() {
+  static List<Arguments> namespaceOfAndParseCases() {
     return asList(
-        new NamespaceOfParse(
+        arguments(
             Namespace.fromPathString(Util.toPathString(Arrays.asList("a", "b.c", "namespace"))),
             Arrays.asList("a", "b.c", "namespace"),
             Util.toPathString(Arrays.asList("a", "b.c", "namespace"))),
-        new NamespaceOfParse(
+        arguments(
             Namespace.fromPathString(
                 Util.toPathString(Arrays.asList("a", "b.c", "d.e.f.namespace"))),
             Arrays.asList("a", "b.c", "d.e.f.namespace"),
             Util.toPathString(Arrays.asList("a", "b.c", "d.e.f.namespace"))),
-        new NamespaceOfParse(
-            Namespace.fromPathString("a.namespace"), asList("a", "namespace"), "a.namespace"),
-        new NamespaceOfParse(
-            Namespace.of("a", "namespace"), asList("a", "namespace"), "a.namespace"),
-        new NamespaceOfParse(
-            Namespace.of(asList("a", "namespace")), asList("a", "namespace"), "a.namespace"),
-        new NamespaceOfParse(
+        arguments(Namespace.fromPathString("a.namespace"), asList("a", "namespace"), "a.namespace"),
+        arguments(Namespace.of("a", "namespace"), asList("a", "namespace"), "a.namespace"),
+        arguments(Namespace.of(asList("a", "namespace")), asList("a", "namespace"), "a.namespace"),
+        arguments(
             Namespace.fromPathString("a.b.namespace"),
             asList("a", "b", "namespace"),
             "a.b.namespace"),
-        new NamespaceOfParse(
+        arguments(
             Namespace.of("a", "b", "namespace"), asList("a", "b", "namespace"), "a.b.namespace"),
-        new NamespaceOfParse(
+        arguments(
             Namespace.of(asList("a", "b", "namespace")),
             asList("a", "b", "namespace"),
             "a.b.namespace"),
-        new NamespaceOfParse(Namespace.EMPTY, Collections.emptyList(), ""),
-        new NamespaceOfParse(
+        arguments(Namespace.EMPTY, Collections.emptyList(), ""),
+        arguments(
             Namespace.of(singletonList("namespace")), singletonList("namespace"), "namespace"),
-        new NamespaceOfParse(
-            Namespace.fromPathString("namespace"), singletonList("namespace"), "namespace"));
+        arguments(Namespace.fromPathString("namespace"), singletonList("namespace"), "namespace"));
+  }
+
+  static Stream<Arguments> getParent() {
+    return Stream.of(
+        arguments(Namespace.of("a", "b", "c", "d"), Namespace.of("a", "b", "c")),
+        arguments(Namespace.of("a", "b", "c"), Namespace.of("a", "b")),
+        arguments(Namespace.of("a", "b"), Namespace.of("a")));
+  }
+
+  @ParameterizedTest
+  @MethodSource
+  void getParent(Namespace in, Namespace parent) {
+    assertThat(in).extracting(Namespace::getParent).isEqualTo(parent);
   }
 }

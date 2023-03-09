@@ -84,10 +84,36 @@ public abstract class Namespace extends Content {
     return getElements().toArray(new String[0]);
   }
 
+  @JsonIgnore
+  @Value.Redacted
+  public int getElementCount() {
+    return getElements().size();
+  }
+
+  @JsonIgnore
+  @Value.Redacted
+  public Namespace getParent() {
+    List<String> elements = getElements();
+    if (elements.size() <= 1) {
+      throw new IllegalArgumentException("Namespace has no parent");
+    }
+    return Namespace.of(elements.subList(0, elements.size() - 1));
+  }
+
   @NotNull
   @jakarta.validation.constraints.NotNull
   @JsonInclude(Include.NON_EMPTY)
   public abstract Map<String, String> getProperties();
+
+  /**
+   * Builds a {@link Namespace} using the elements of the given content key.
+   *
+   * @param contentKey key with the elements for the namespace
+   * @return new namespace
+   */
+  public static Namespace of(ContentKey contentKey) {
+    return Namespace.of(contentKey.getElementsArray());
+  }
 
   /**
    * Builds a {@link Namespace} instance for the given elements.
@@ -200,10 +226,10 @@ public abstract class Namespace extends Content {
    */
   public boolean isSameOrSubElementOf(Namespace parent) {
     Objects.requireNonNull(parent, "namespace must be non-null");
-    if (getElements().size() < parent.getElements().size()) {
+    if (getElementCount() < parent.getElementCount()) {
       return false;
     }
-    for (int i = 0; i < parent.getElements().size(); i++) {
+    for (int i = 0; i < parent.getElementCount(); i++) {
       // elements must match exactly
       if (!getElements().get(i).equals(parent.getElements().get(i))) {
         return false;
@@ -234,5 +260,9 @@ public abstract class Namespace extends Content {
   @Override
   public String toString() {
     return name();
+  }
+
+  public ContentKey toContentKey() {
+    return ContentKey.of(getElements());
   }
 }

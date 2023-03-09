@@ -770,7 +770,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
         if (namespaceDepth != null && namespaceDepth > 0) {
           int depth = namespaceDepth;
-          filterPredicate = filterPredicate.and(e -> e.getKey().getElements().size() >= depth);
+          filterPredicate = filterPredicate.and(e -> e.getKey().getElementCount() >= depth);
           Set<ContentKey> seen = new HashSet<>();
           while (authz.hasNext()) {
             KeyEntry key = authz.next();
@@ -821,7 +821,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   private static EntriesResponse.Entry namespaceDepthMapping(
       EntriesResponse.Entry entry, int depth) {
     Content.Type type =
-        entry.getName().getElements().size() > depth ? Content.Type.NAMESPACE : entry.getType();
+        entry.getName().getElementCount() > depth ? Content.Type.NAMESPACE : entry.getType();
     ContentKey key = ContentKey.of(entry.getName().getElements().subList(0, depth));
     return EntriesResponse.Entry.entry(key, type);
   }

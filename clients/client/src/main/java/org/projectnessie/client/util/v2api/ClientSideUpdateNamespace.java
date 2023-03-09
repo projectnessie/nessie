@@ -51,7 +51,7 @@ public final class ClientSideUpdateNamespace extends BaseUpdateNamespaceBuilder 
   @Override
   public UpdateNamespaceResult updateWithResponse()
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException {
-    ContentKey key = ContentKey.of(namespace.getElements());
+    ContentKey key = namespace.toContentKey();
     Namespace oldNamespace =
         api.getNamespace().refName(refName).hashOnRef(hashOnRef).namespace(namespace).get();
 
