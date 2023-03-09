@@ -17,7 +17,7 @@ SparkSession.builder
 ```
 
 In order to utilize the additional SQL grammar from the Nessie Spark SQL Extensions make sure to
-also include `org.projectnessie.integrations:nessie-spark-3.2-extensions:{{ versions.java }}` and
+also include `org.projectnessie.nessie-integrations:nessie-spark-3.2-extensions:{{ versions.java }}` and
 to set the `spark.sql.extensions` config option accordingly (see examples below).
 
 The Nessie LogStore needs the following parameters set in the Spark/Hadoop config.
@@ -35,7 +35,7 @@ These are set as follows in code (or through other methods as described [here](h
     ``` java
     //for a local spark instance
     conf.set("spark.jars.packages",
-            "org.projectnessie.integrations:nessie-deltalake:{{ versions.java }},org.projectnessie.integrations:nessie-spark-3.2-extensions:{{ versions.java }}")
+            "org.projectnessie.nessie-integrations:nessie-deltalake:{{ versions.java }},org.projectnessie.nessie-integrations:nessie-spark-3.2-extensions:{{ versions.java }}")
         .set("spark.hadoop.nessie.url", url)
         .set("spark.hadoop.nessie.ref", branch)
         .set("spark.hadoop.nessie.authentication.type", authType)
@@ -57,7 +57,7 @@ These are set as follows in code (or through other methods as described [here](h
     # here we are assuming NONE authorisation
     spark = SparkSession.builder \
             .config("spark.jars.packages",
-                "org.projectnessie.integrations:nessie-deltalake:{{ versions.java }},org.projectnessie.integrations:nessie-spark-3.2-extensions:{{ versions.java }}") \
+                "org.projectnessie.nessie-integrations:nessie-deltalake:{{ versions.java }},org.projectnessie.nessie-integrations:nessie-spark-3.2-extensions:{{ versions.java }}") \
             .config("spark.hadoop.nessie.url",
                 "http://localhost:19120/api/v1") \
             .config("spark.hadoop.nessie.ref", "main") \
