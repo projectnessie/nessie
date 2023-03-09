@@ -50,6 +50,7 @@ nessieQuarkusApp {
     }
     environmentNonInput.put("HTTP_ACCESS_LOG_LEVEL", testLogLevel())
     jvmArgumentsNonInput.add("-XX:SelfDestructTimer=30")
+    systemProperties.put("nessie.server.send-stacktrace-to-client", "true")
     System.getProperties()
       .map { e -> Maps.immutableEntry(e.key.toString(), e.value.toString()) }
       .filter { e -> e.key.startsWith("nessie.") || e.key.startsWith("quarkus.") }

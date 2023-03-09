@@ -110,6 +110,7 @@ nessieQuarkusApp {
   includeTask(tasks.named<Test>("intTest"))
   environmentNonInput.put("HTTP_ACCESS_LOG_LEVEL", testLogLevel())
   jvmArgumentsNonInput.add("-XX:SelfDestructTimer=30")
+  systemProperties.put("nessie.server.send-stacktrace-to-client", "true")
 }
 
 forceJava11ForTests()
