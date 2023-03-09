@@ -33,7 +33,6 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.ContentAndState;
@@ -140,9 +139,9 @@ public class CheckContent extends BaseCommand {
   private void check(JsonGenerator generator) throws Exception {
     Hash hash = hash();
     if (keyElements != null && !keyElements.isEmpty()) {
-      check(hash, List.of(Key.of(keyElements)), generator);
+      check(hash, List.of(ContentKey.of(keyElements)), generator);
     } else {
-      List<Key> batch = new ArrayList<>(batchSize);
+      List<ContentKey> batch = new ArrayList<>(batchSize);
       try (Stream<KeyListEntry> keys = databaseAdapter.keys(hash, KeyFilterPredicate.ALLOW_ALL)) {
         keys.forEach(
             keyListEntry -> {
@@ -174,8 +173,8 @@ public class CheckContent extends BaseCommand {
     return main.getHash();
   }
 
-  private void check(Hash hash, List<Key> keys, JsonGenerator generator) {
-    Map<Key, ContentAndState> values;
+  private void check(Hash hash, List<ContentKey> keys, JsonGenerator generator) {
+    Map<ContentKey, ContentAndState> values;
     try {
       values = databaseAdapter.values(hash, keys, KeyFilterPredicate.ALLOW_ALL);
     } catch (Exception e) {
@@ -207,7 +206,7 @@ public class CheckContent extends BaseCommand {
         });
   }
 
-  private void report(JsonGenerator generator, Key key, Throwable error, Object content) {
+  private void report(JsonGenerator generator, ContentKey key, Throwable error, Object content) {
     keysProcessed.incrementAndGet();
     if (error != null) {
       errorDetected.incrementAndGet();

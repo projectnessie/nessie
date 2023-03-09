@@ -61,6 +61,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.stubbing.Stubber;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.versioned.paging.PaginationIterator;
 
@@ -199,7 +200,7 @@ class TestMetricsVersionStore {
             new VersionStoreInvocation<>(
                 "getkeys",
                 vs -> vs.getKeys(Hash.of("cafe4242"), null, false),
-                () -> PaginationIterator.of(Key.of("hello", "world")),
+                () -> PaginationIterator.of(ContentKey.of("hello", "world")),
                 refNotFoundThrows),
             new VersionStoreInvocation<>(
                 "getnamedrefs",
@@ -213,7 +214,7 @@ class TestMetricsVersionStore {
                 runtimeThrows),
             new VersionStoreInvocation<>(
                 "getvalue",
-                vs -> vs.getValue(BranchName.of("mock-branch"), Key.of("some", "key")),
+                vs -> vs.getValue(BranchName.of("mock-branch"), ContentKey.of("some", "key")),
                 () -> IcebergTable.of("meta", 42, 43, 44, 45),
                 refNotFoundThrows),
             new VersionStoreInvocation<>(
@@ -221,7 +222,7 @@ class TestMetricsVersionStore {
                 vs ->
                     vs.getValues(
                         BranchName.of("mock-branch"),
-                        Collections.singletonList(Key.of("some", "key"))),
+                        Collections.singletonList(ContentKey.of("some", "key"))),
                 Collections::emptyMap,
                 refNotFoundThrows),
             new VersionStoreInvocation<>(

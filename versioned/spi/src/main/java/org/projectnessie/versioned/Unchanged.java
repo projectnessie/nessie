@@ -17,6 +17,7 @@ package org.projectnessie.versioned;
 
 import javax.annotation.Nonnull;
 import org.immutables.value.Value;
+import org.projectnessie.model.ContentKey;
 
 /**
  * An operation when ensures that a value has been unchanged since the expected hash for a commit.
@@ -40,7 +41,7 @@ public interface Unchanged extends Operation {
    */
   @Nonnull
   @jakarta.annotation.Nonnull
-  static Unchanged of(@Nonnull @jakarta.annotation.Nonnull Key key) {
+  static Unchanged of(@Nonnull @jakarta.annotation.Nonnull ContentKey key) {
     return ImmutableUnchanged.builder().key(key).build();
   }
 }

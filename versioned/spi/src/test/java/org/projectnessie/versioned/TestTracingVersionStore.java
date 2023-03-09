@@ -44,6 +44,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.stubbing.Stubber;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.versioned.paging.PaginationIterator;
 import org.projectnessie.versioned.test.tracing.TestTracer;
@@ -202,7 +203,7 @@ class TestTracingVersionStore {
                 .tag("nessie.version-store.ref", "Hash cafe4242")
                 .function(
                     vs -> vs.getKeys(Hash.of("cafe4242"), null, false),
-                    () -> PaginationIterator.of(Key.of("hello", "world"))),
+                    () -> PaginationIterator.of(ContentKey.of("hello", "world"))),
             new TestedTraceingStoreInvocation<VersionStore>("GetNamedRefs.stream", runtimeThrows)
                 .function(
                     stringStringDummyEnumVersionStore ->
@@ -216,7 +217,7 @@ class TestTracingVersionStore {
                 .tag("nessie.version-store.ref", "BranchName{name=mock-branch}")
                 .tag("nessie.version-store.key", "some.key")
                 .function(
-                    vs -> vs.getValue(BranchName.of("mock-branch"), Key.of("some", "key")),
+                    vs -> vs.getValue(BranchName.of("mock-branch"), ContentKey.of("some", "key")),
                     () -> IcebergTable.of("meta", 42, 43, 44, 45)),
             new TestedTraceingStoreInvocation<VersionStore>("GetValues", refNotFoundThrows)
                 .tag("nessie.version-store.ref", "BranchName{name=mock-branch}")
@@ -225,7 +226,7 @@ class TestTracingVersionStore {
                     vs ->
                         vs.getValues(
                             BranchName.of("mock-branch"),
-                            Collections.singletonList(Key.of("some", "key"))),
+                            Collections.singletonList(ContentKey.of("some", "key"))),
                     Collections::emptyMap),
             new TestedTraceingStoreInvocation<VersionStore>("GetDiffs.stream", refNotFoundThrows)
                 .tag("nessie.version-store.from", "BranchName{name=mock-branch}")

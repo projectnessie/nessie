@@ -28,9 +28,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.VersionStore;
@@ -49,7 +49,7 @@ public abstract class AbstractDuplicateTable extends AbstractNestedVersionStore 
    */
   @Test
   void duplicateTableOnBranches() throws Throwable {
-    Key key = Key.of("some", "table");
+    ContentKey key = ContentKey.of("some", "table");
 
     BranchName branch0 = BranchName.of("globalStateDuplicateTable-main");
     store().create(branch0, Optional.empty());
@@ -61,7 +61,7 @@ public abstract class AbstractDuplicateTable extends AbstractNestedVersionStore 
                 branch0,
                 Optional.empty(),
                 CommitMeta.fromMessage("initial commit"),
-                ImmutableList.of(Put.of(Key.of("unrelated", "table"), newOnRef("value"))));
+                ImmutableList.of(Put.of(ContentKey.of("unrelated", "table"), newOnRef("value"))));
 
     // Create a table with the same name on two branches.
     BranchName branch1 = BranchName.of("globalStateDuplicateTable-branch1");

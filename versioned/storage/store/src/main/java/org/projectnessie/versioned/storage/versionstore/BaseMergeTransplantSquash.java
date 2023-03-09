@@ -31,11 +31,11 @@ import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableMergeResult;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MergeResult.KeyDetails;
 import org.projectnessie.versioned.MergeType;
@@ -67,7 +67,7 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
   MergeResult<Commit> squash(
       boolean dryRun,
       ImmutableMergeResult.Builder<Commit> mergeResult,
-      Function<Key, MergeType> mergeTypeForKey,
+      Function<ContentKey, MergeType> mergeTypeForKey,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       SourceCommitsAndParent sourceCommits,
       @Nullable @jakarta.annotation.Nullable ObjId mergeFromId)
@@ -76,7 +76,7 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
     CreateCommit createCommit =
         createSquashCommit(updateCommitMetadata, sourceCommits, mergeFromId);
 
-    Map<Key, KeyDetails> keyDetailsMap = new HashMap<>();
+    Map<ContentKey, KeyDetails> keyDetailsMap = new HashMap<>();
     CommitObj mergeCommit =
         createMergeTransplantCommit(mergeTypeForKey, keyDetailsMap, createCommit);
 

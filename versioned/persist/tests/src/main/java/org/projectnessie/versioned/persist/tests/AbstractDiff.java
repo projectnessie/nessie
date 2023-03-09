@@ -25,9 +25,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.Difference;
@@ -64,7 +64,7 @@ public abstract class AbstractDiff {
         OnRefOnly c = OnRefOnly.onRef("on-ref " + i + " for " + k, "cid-" + i + "-" + k);
         commit.addPuts(
             KeyWithBytes.of(
-                Key.of("key", Integer.toString(k)),
+                ContentKey.of("key", Integer.toString(k)),
                 ContentId.of("C" + k),
                 payloadForContent(c),
                 DefaultStoreWorker.instance()
@@ -97,7 +97,7 @@ public abstract class AbstractDiff {
                               OnRefOnly.onRef("on-ref " + c + " for " + k, "cid-" + c + "-" + k);
                           return Difference.of(
                               payloadForContent(content),
-                              Key.of("key", Integer.toString(k)),
+                              ContentKey.of("key", Integer.toString(k)),
                               Optional.empty(),
                               Optional.empty(),
                               Optional.of(
@@ -125,7 +125,7 @@ public abstract class AbstractDiff {
                               OnRefOnly.onRef("on-ref " + c + " for " + k, "cid-" + c + "-" + k);
                           return Difference.of(
                               payloadForContent(content),
-                              Key.of("key", Integer.toString(k)),
+                              ContentKey.of("key", Integer.toString(k)),
                               Optional.empty(),
                               Optional.of(
                                   DefaultStoreWorker.instance()
@@ -156,7 +156,7 @@ public abstract class AbstractDiff {
                               OnRefOnly.onRef("on-ref " + c + " for " + k, "cid-" + c + "-" + k);
                           return Difference.of(
                               payloadForContent(from),
-                              Key.of("key", Integer.toString(k)),
+                              ContentKey.of("key", Integer.toString(k)),
                               Optional.empty(),
                               Optional.of(
                                   DefaultStoreWorker.instance()

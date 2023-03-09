@@ -43,9 +43,9 @@ import java.util.function.IntFunction;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
@@ -118,18 +118,18 @@ public abstract class AbstractConcurrency {
     AtomicInteger retryFailures = new AtomicInteger();
     AtomicBoolean stopFlag = new AtomicBoolean();
     List<Runnable> tasks = new ArrayList<>(variation.threads);
-    Map<Key, ContentId> keyToContentId = new HashMap<>();
-    Map<BranchName, Map<Key, ByteString>> onRefStates = new ConcurrentHashMap<>();
+    Map<ContentKey, ContentId> keyToContentId = new HashMap<>();
+    Map<BranchName, Map<ContentKey, ByteString>> onRefStates = new ConcurrentHashMap<>();
     try {
       CountDownLatch startLatch = new CountDownLatch(1);
-      Map<BranchName, Set<Key>> keysPerBranch = new HashMap<>();
+      Map<BranchName, Set<ContentKey>> keysPerBranch = new HashMap<>();
       for (int i = 0; i < variation.threads; i++) {
         BranchName branch = BranchName.of("concurrency-" + (variation.singleBranch ? "shared" : i));
-        List<Key> keys = new ArrayList<>(variation.tables);
+        List<ContentKey> keys = new ArrayList<>(variation.tables);
 
         for (int k = 0; k < variation.tables; k++) {
           String variationKey = Integer.toString(i);
-          Key key = Key.of("some", "key", variationKey, "table-" + k);
+          ContentKey key = ContentKey.of("some", "key", variationKey, "table-" + k);
           keys.add(key);
           keyToContentId.put(key, ContentId.of(String.format("%s-table-%d", variationKey, k)));
           keysPerBranch.computeIfAbsent(branch, x -> new HashSet<>()).add(key);
@@ -148,7 +148,7 @@ public abstract class AbstractConcurrency {
                   ImmutableCommitParams.Builder commitAttempt = ImmutableCommitParams.builder();
 
                   for (int ki = 0; ki < keys.size(); ki++) {
-                    Key key = keys.get(ki);
+                    ContentKey key = keys.get(ki);
                     ContentId contentId = keyToContentId.get(key);
                     OnRefOnly c = OnRefOnly.onRef("", contentId.getId());
                     commitAttempt.addPuts(
@@ -184,7 +184,7 @@ public abstract class AbstractConcurrency {
             });
       }
 
-      for (Entry<BranchName, Set<Key>> branchKeys : keysPerBranch.entrySet()) {
+      for (Entry<BranchName, Set<ContentKey>> branchKeys : keysPerBranch.entrySet()) {
         BranchName branch = branchKeys.getKey();
         databaseAdapter.create(
             branch, databaseAdapter.hashOnReference(BranchName.of("main"), Optional.empty()));
@@ -193,7 +193,7 @@ public abstract class AbstractConcurrency {
                 .toBranch(branchKeys.getKey())
                 .commitMetaSerialized(
                     ByteString.copyFromUtf8("initial commit for " + branch.getName()));
-        for (Key k : branchKeys.getValue()) {
+        for (ContentKey k : branchKeys.getValue()) {
           ContentId contentId = keyToContentId.get(k);
           OnRefOnly c = OnRefOnly.onRef("", contentId.getId());
           commitAttempt.addPuts(
@@ -223,10 +223,10 @@ public abstract class AbstractConcurrency {
       // cause Nessie-commit-retries.
       combinedFuture.get(30, TimeUnit.SECONDS);
 
-      for (Entry<BranchName, Set<Key>> branchKeys : keysPerBranch.entrySet()) {
+      for (Entry<BranchName, Set<ContentKey>> branchKeys : keysPerBranch.entrySet()) {
         BranchName branch = branchKeys.getKey();
         Hash hash = databaseAdapter.hashOnReference(branch, Optional.empty());
-        ArrayList<Key> keys = new ArrayList<>(branchKeys.getValue());
+        ArrayList<ContentKey> keys = new ArrayList<>(branchKeys.getValue());
         // Note: only fetch the values, cannot assert those here.
         databaseAdapter.values(hash, keys, KeyFilterPredicate.ALLOW_ALL);
       }
@@ -261,13 +261,13 @@ public abstract class AbstractConcurrency {
   }
 
   private void commitAndRecord(
-      Map<BranchName, Map<Key, ByteString>> onRefStates,
+      Map<BranchName, Map<ContentKey, ByteString>> onRefStates,
       BranchName branch,
       ImmutableCommitParams.Builder commitAttempt)
       throws ReferenceConflictException, ReferenceNotFoundException {
     CommitParams c = commitAttempt.build();
     databaseAdapter.commit(c);
-    Map<Key, ByteString> onRef =
+    Map<ContentKey, ByteString> onRef =
         onRefStates.computeIfAbsent(branch, b -> new ConcurrentHashMap<>());
     c.getPuts().forEach(kwb -> onRef.put(kwb.getKey(), kwb.getValue()));
   }

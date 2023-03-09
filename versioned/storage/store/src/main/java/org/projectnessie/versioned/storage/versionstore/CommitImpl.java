@@ -48,10 +48,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -96,7 +96,7 @@ class CommitImpl extends BaseCommitHelper {
    */
   static class CommitRetryState {
     final Set<ObjId> storedContents = new HashSet<>();
-    final Map<Key, String> generatedContentIds = new HashMap<>();
+    final Map<ContentKey, String> generatedContentIds = new HashMap<>();
   }
 
   Hash commit(
@@ -104,7 +104,7 @@ class CommitImpl extends BaseCommitHelper {
       @Nonnull @jakarta.annotation.Nonnull CommitMeta metadata,
       @Nonnull @jakarta.annotation.Nonnull List<Operation> operations,
       @Nonnull @jakarta.annotation.Nonnull Callable<Void> validator,
-      @Nonnull @jakarta.annotation.Nonnull BiConsumer<Key, String> addedContents)
+      @Nonnull @jakarta.annotation.Nonnull BiConsumer<ContentKey, String> addedContents)
       throws ReferenceNotFoundException,
           ReferenceConflictException,
           RetryException,
@@ -167,14 +167,14 @@ class CommitImpl extends BaseCommitHelper {
       Consumer<Obj> contentToStore,
       CommitRetryState commitRetryState)
       throws ObjNotFoundException {
-    Set<Key> allKeys = new HashSet<>();
+    Set<ContentKey> allKeys = new HashSet<>();
 
     Set<StoreKey> storeKeysForHead =
         expectedIndex() != headIndex() ? newHashSetWithExpectedSize(operations.size()) : null;
 
     List<StoreKey> storeKeys = new ArrayList<>();
     for (Operation operation : operations) {
-      Key key = operation.getKey();
+      ContentKey key = operation.getKey();
       checkArgument(allKeys.add(key), "Duplicate key in commit operations: %s", key);
       StoreKey storeKey = keyToStoreKey(key);
       storeKeys.add(storeKey);
@@ -292,7 +292,7 @@ class CommitImpl extends BaseCommitHelper {
       Map<UUID, StoreKey> deleted)
       throws ObjNotFoundException {
     Content putValue = put.getValue();
-    Key putKey = put.getKey();
+    ContentKey putKey = put.getKey();
     String putValueId = putValue.getId();
 
     int payload = payloadForContent(putValue);

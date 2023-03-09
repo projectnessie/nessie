@@ -24,9 +24,9 @@ import java.util.Iterator;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -175,7 +175,7 @@ final class ExportDatabaseAdapter extends ExportCommon {
     return commitBuilder.build();
   }
 
-  private Operation.Builder deleteOperationFromCommit(Key delete) {
+  private Operation.Builder deleteOperationFromCommit(ContentKey delete) {
     return Operation.newBuilder()
         .setOperationType(OperationType.Delete)
         .addAllContentKey(delete.getElements());

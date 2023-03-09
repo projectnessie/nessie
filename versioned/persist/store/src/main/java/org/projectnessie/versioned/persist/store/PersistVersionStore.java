@@ -37,6 +37,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
@@ -48,7 +49,6 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableCommit;
 import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.ImmutableRefLogDetails;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.KeyEntry;
 import org.projectnessie.versioned.MergeConflictException;
 import org.projectnessie.versioned.MergeResult;
@@ -117,7 +117,7 @@ public class PersistVersionStore implements VersionStore {
       @Nonnull @jakarta.annotation.Nonnull CommitMeta metadata,
       @Nonnull @jakarta.annotation.Nonnull List<Operation> operations,
       @Nonnull @jakarta.annotation.Nonnull Callable<Void> validator,
-      BiConsumer<Key, String> addedContents)
+      BiConsumer<ContentKey, String> addedContents)
       throws ReferenceNotFoundException, ReferenceConflictException {
 
     ImmutableCommitParams.Builder commitAttempt =
@@ -194,7 +194,7 @@ public class PersistVersionStore implements VersionStore {
       List<Hash> sequenceToTransplant,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean keepIndividualCommits,
-      Map<Key, MergeType> mergeTypes,
+      Map<ContentKey, MergeType> mergeTypes,
       MergeType defaultMergeType,
       boolean dryRun,
       boolean fetchAdditionalInfo)
@@ -229,7 +229,7 @@ public class PersistVersionStore implements VersionStore {
       Optional<Hash> expectedHash,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean keepIndividualCommits,
-      Map<Key, MergeType> mergeTypes,
+      Map<ContentKey, MergeType> mergeTypes,
       MergeType defaultMergeType,
       boolean dryRun,
       boolean fetchAdditionalInfo)
@@ -531,12 +531,12 @@ public class PersistVersionStore implements VersionStore {
   }
 
   @Override
-  public Content getValue(Ref ref, Key key) throws ReferenceNotFoundException {
+  public Content getValue(Ref ref, ContentKey key) throws ReferenceNotFoundException {
     return getValues(ref, Collections.singletonList(key)).get(key);
   }
 
   @Override
-  public Map<Key, Content> getValues(Ref ref, Collection<Key> keys)
+  public Map<ContentKey, Content> getValues(Ref ref, Collection<ContentKey> keys)
       throws ReferenceNotFoundException {
     Hash hash = refToHash(ref);
     return databaseAdapter.values(hash, keys, KeyFilterPredicate.ALLOW_ALL).entrySet().stream()

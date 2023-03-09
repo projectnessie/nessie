@@ -26,6 +26,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitLogEntry;
@@ -39,8 +40,8 @@ import org.projectnessie.versioned.persist.adapter.KeyListEntry;
  * accessible via {@link CommitLogEntry#getKeyListsIds()}.
  *
  * <p>Commits with {@link CommitLogEntry.KeyListVariant#OPEN_ADDRESSING} are represented as an
- * open-addressing hash map with {@link org.projectnessie.versioned.Key} as the map key. "Bucket"
- * refers to a cell in this hash map. Collisions are resolved with linear probing.
+ * open-addressing hash map with {@link ContentKey} as the map key. "Bucket" refers to a cell in
+ * this hash map. Collisions are resolved with linear probing.
  *
  * <p>That open-addressing hash map is split into multiple segments, if necessary.
  *

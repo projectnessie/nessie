@@ -44,12 +44,12 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.KeyEntry;
 import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
@@ -289,11 +289,11 @@ public abstract class BaseExportImport {
             List<KeyEntry> sourceKeyEntries = keys(sourceVersionStore(), c);
             List<KeyEntry> targetKeyEntries = keys(targetVersionStore(), c);
             soft.assertThat(targetKeyEntries).containsExactlyInAnyOrderElementsOf(sourceKeyEntries);
-            Set<Key> keys =
+            Set<ContentKey> keys =
                 targetKeyEntries.stream().map(KeyEntry::getKey).collect(Collectors.toSet());
             try {
-              Map<Key, Content> targetValues = targetVersionStore().getValues(c, keys);
-              Map<Key, Content> sourceValues = sourceVersionStore().getValues(c, keys);
+              Map<ContentKey, Content> targetValues = targetVersionStore().getValues(c, keys);
+              Map<ContentKey, Content> sourceValues = sourceVersionStore().getValues(c, keys);
               soft.assertThat(targetValues).containsExactlyInAnyOrderEntriesOf(sourceValues);
             } catch (ReferenceNotFoundException e) {
               throw new RuntimeException(e);
@@ -335,7 +335,7 @@ public abstract class BaseExportImport {
               CommitMeta.fromMessage("commit #" + commit + " " + branch),
               Collections.singletonList(
                   Put.of(
-                      Key.of(branch.getName(), "c-" + commit),
+                      ContentKey.of(branch.getName(), "c-" + commit),
                       IcebergTable.of(
                           "meta+" + branch.getName() + "-c-" + commit + "-" + head.asString(),
                           42,

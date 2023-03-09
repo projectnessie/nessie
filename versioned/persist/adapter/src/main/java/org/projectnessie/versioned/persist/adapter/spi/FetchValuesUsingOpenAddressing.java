@@ -24,8 +24,8 @@ import java.util.List;
 import java.util.function.Consumer;
 import org.agrona.collections.Hashing;
 import org.agrona.collections.Object2IntHashMap;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.KeyListEntity;
 import org.projectnessie.versioned.persist.adapter.KeyListEntry;
@@ -67,7 +67,7 @@ final class FetchValuesUsingOpenAddressing {
   }
 
   /** Calculates the open-addressing bucket for a key. */
-  int bucketForKey(Key key) {
+  int bucketForKey(ContentKey key) {
     return key.hashCode() & openAddressingMask;
   }
 
@@ -86,7 +86,8 @@ final class FetchValuesUsingOpenAddressing {
    * Identify the {@link KeyListEntity}s that need to be fetched to get the {@link KeyListEntry}s
    * for {@code remainingKeys}.
    */
-  List<Hash> entityIdsToFetch(int round, int prefetchEntities, Collection<Key> remainingKeys) {
+  List<Hash> entityIdsToFetch(
+      int round, int prefetchEntities, Collection<ContentKey> remainingKeys) {
     // prefetchEntities is user-configurable.  Throw an exception if it is negative, otherwise clamp
     // the nonnegative value to the range [0, keyListCount-1] = [0, keyListArray.length-1].
     Preconditions.checkArgument(
@@ -97,7 +98,7 @@ final class FetchValuesUsingOpenAddressing {
 
     // Identify the key-list segments to fetch
     List<Hash> entitiesToFetch = new ArrayList<>();
-    for (Key key : remainingKeys) {
+    for (ContentKey key : remainingKeys) {
       int keyBucket = bucketForKey(key);
       int segment = segmentForKey(keyBucket, round);
 
@@ -133,12 +134,12 @@ final class FetchValuesUsingOpenAddressing {
   }
 
   /**
-   * Find the {@link KeyListEntry}s for the {@code remainingKeys}, return the {@link Key}s that
-   * could not be found yet, but are likely in the next segment.
+   * Find the {@link KeyListEntry}s for the {@code remainingKeys}, return the {@link ContentKey}s
+   * that could not be found yet, but are likely in the next segment.
    */
-  Collection<Key> checkForKeys(
-      int round, Collection<Key> remainingKeys, Consumer<KeyListEntry> resultConsumer) {
-    List<Key> keysForNextRound = new ArrayList<>();
+  Collection<ContentKey> checkForKeys(
+      int round, Collection<ContentKey> remainingKeys, Consumer<KeyListEntry> resultConsumer) {
+    List<ContentKey> keysForNextRound = new ArrayList<>();
     // If we've already examined every segment (implying a miss on a completely full hashmap),
     // then return an empty collection early. Note that the initial segment may need to be examined
     // twice when the key is moved in front of its natural position due to key collisions. This
@@ -152,7 +153,7 @@ final class FetchValuesUsingOpenAddressing {
     if (keyListsArray.length < round) {
       return keysForNextRound;
     }
-    for (Key key : remainingKeys) {
+    for (ContentKey key : remainingKeys) {
       int keyBucket = bucketForKey(key);
       int segment = segmentForKey(keyBucket, round);
       int offsetInSegment = 0;

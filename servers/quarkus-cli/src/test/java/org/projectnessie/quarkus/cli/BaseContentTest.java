@@ -28,10 +28,10 @@ import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.CommitMetaSerializer;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
@@ -85,7 +85,7 @@ abstract class BaseContentTest<OutputType> {
 
   protected void commit(String testId, byte payload, ByteString value, DatabaseAdapter adapter)
       throws Exception {
-    Key key = Key.of("test_namespace", "table_" + testId);
+    ContentKey key = ContentKey.of("test_namespace", "table_" + testId);
     ContentId id = ContentId.of(testId);
 
     adapter.commit(

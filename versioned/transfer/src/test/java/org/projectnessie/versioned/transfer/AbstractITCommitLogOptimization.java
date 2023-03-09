@@ -31,12 +31,12 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.CommitMetaSerializer;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentId;
@@ -237,7 +237,7 @@ public abstract class AbstractITCommitLogOptimization {
             .toBranch(branch == 0 ? BranchName.of("main") : BranchName.of("branch-" + branch))
             .addPuts(
                 KeyWithBytes.of(
-                    Key.of("branch-" + branch, "commit-" + commitSeq),
+                    ContentKey.of("branch-" + branch, "commit-" + commitSeq),
                     ContentId.of("cid-" + branch + "-" + commitSeq),
                     DefaultStoreWorker.payloadForContent(Content.Type.ICEBERG_TABLE),
                     DefaultStoreWorker.instance()

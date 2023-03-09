@@ -25,11 +25,11 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.RefLogNotFoundException;
@@ -101,8 +101,8 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
   }
 
   @Override
-  public Map<Key, ContentAndState> values(
-      Hash commit, Collection<Key> keys, KeyFilterPredicate keyFilter)
+  public Map<ContentKey, ContentAndState> values(
+      Hash commit, Collection<ContentKey> keys, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
     try (Traced ignore =
         trace("values").tag(TAG_HASH, commit.asString()).tag(TAG_COUNT, keys.size())) {

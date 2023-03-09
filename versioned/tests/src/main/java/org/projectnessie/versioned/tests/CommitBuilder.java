@@ -21,10 +21,10 @@ import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -52,11 +52,11 @@ public class CommitBuilder {
    * @return the builder instance
    */
   public CommitBuilder put(String key, Content value) {
-    return put(Key.of(key), value);
+    return put(ContentKey.of(key), value);
   }
 
   public CommitBuilder put(String key, Content value, Content expected) {
-    return put(Key.of(key), value, expected);
+    return put(ContentKey.of(key), value, expected);
   }
 
   /**
@@ -66,11 +66,11 @@ public class CommitBuilder {
    * @param value the value associated with the key
    * @return the builder instance
    */
-  public CommitBuilder put(Key key, Content value) {
+  public CommitBuilder put(ContentKey key, Content value) {
     return add(Put.of(key, value));
   }
 
-  public CommitBuilder put(Key key, Content value, Content expected) {
+  public CommitBuilder put(ContentKey key, Content value, Content expected) {
     return add(Put.of(key, value, expected));
   }
 
@@ -81,7 +81,7 @@ public class CommitBuilder {
    * @return the builder instance
    */
   public CommitBuilder delete(String key) {
-    return delete(Key.of(key));
+    return delete(ContentKey.of(key));
   }
 
   /**
@@ -90,7 +90,7 @@ public class CommitBuilder {
    * @param key key to delete
    * @return the builder instance
    */
-  public CommitBuilder delete(Key key) {
+  public CommitBuilder delete(ContentKey key) {
     return add(Delete.of(key));
   }
 
@@ -101,7 +101,7 @@ public class CommitBuilder {
    * @return the builder instance
    */
   public CommitBuilder unchanged(String key) {
-    return unchanged(Key.of(key));
+    return unchanged(ContentKey.of(key));
   }
 
   /**
@@ -110,7 +110,7 @@ public class CommitBuilder {
    * @param key key for the operation
    * @return the builder instance
    */
-  public CommitBuilder unchanged(Key key) {
+  public CommitBuilder unchanged(ContentKey key) {
     return add(Unchanged.of(key));
   }
 

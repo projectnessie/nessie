@@ -19,6 +19,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 
 /** Setting a new value. Can optionally declare whether the prior hash must match. */
 @Value.Immutable
@@ -49,7 +50,7 @@ public interface Put extends Operation {
   @Nonnull
   @jakarta.annotation.Nonnull
   static Put of(
-      @Nonnull @jakarta.annotation.Nonnull Key key,
+      @Nonnull @jakarta.annotation.Nonnull ContentKey key,
       @Nonnull @jakarta.annotation.Nonnull Content value) {
     return ImmutablePut.builder().key(key).value(value).build();
   }
@@ -70,7 +71,7 @@ public interface Put extends Operation {
   @Nonnull
   @jakarta.annotation.Nonnull
   static Put of(
-      @Nonnull @jakarta.annotation.Nonnull Key key,
+      @Nonnull @jakarta.annotation.Nonnull ContentKey key,
       @Nonnull @jakarta.annotation.Nonnull Content value,
       @Nonnull @jakarta.annotation.Nonnull Content expectedValue) {
     return ImmutablePut.builder().key(key).value(value).expectedValue(expectedValue).build();

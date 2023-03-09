@@ -31,10 +31,10 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.ImmutableCommit;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
@@ -67,16 +67,17 @@ public final class ContentMapping {
 
   @Nonnull
   @jakarta.annotation.Nonnull
-  public Map<Key, Content> fetchContents(
-      @Nonnull @jakarta.annotation.Nonnull Map<ObjId, Key> idsToKeys) throws ObjNotFoundException {
-    Map<Key, Content> r = new HashMap<>();
+  public Map<ContentKey, Content> fetchContents(
+      @Nonnull @jakarta.annotation.Nonnull Map<ObjId, ContentKey> idsToKeys)
+      throws ObjNotFoundException {
+    Map<ContentKey, Content> r = new HashMap<>();
     ObjId[] ids = idsToKeys.keySet().toArray(new ObjId[0]);
     Obj[] objs = persist.fetchObjs(ids);
     for (int i = 0; i < ids.length; i++) {
       Obj obj = objs[i];
       if (obj instanceof ContentValueObj) {
         ContentValueObj contentValue = (ContentValueObj) obj;
-        Key key = idsToKeys.get(obj.id());
+        ContentKey key = idsToKeys.get(obj.id());
         Content content = valueToContent(contentValue);
         r.put(key, content);
       }
@@ -140,7 +141,7 @@ public final class ContentMapping {
     CommitMeta commitMeta = toCommitMeta(commitObj);
 
     if (fetchAdditionalInfo) {
-      Key key;
+      ContentKey key;
       ContentMapping contentMapping = new ContentMapping(persist);
       IndexesLogic indexesLogic = indexesLogic(persist);
       for (StoreIndexElement<CommitOp> op : indexesLogic.commitOperations(commitObj)) {

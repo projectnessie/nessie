@@ -26,11 +26,11 @@ import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableMergeResult;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
@@ -59,7 +59,7 @@ final class MergeIndividualImpl extends BaseMergeTransplantIndividual implements
       Optional<?> retryState,
       Hash fromHash,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
-      Map<Key, MergeType> mergeTypes,
+      Map<ContentKey, MergeType> mergeTypes,
       MergeType defaultMergeType,
       boolean dryRun)
       throws ReferenceNotFoundException, RetryException {
@@ -76,7 +76,7 @@ final class MergeIndividualImpl extends BaseMergeTransplantIndividual implements
     ImmutableMergeResult.Builder<Commit> mergeResult =
         prepareMergeResult().commonAncestor(objIdToHash(commonAncestorId));
 
-    Function<Key, MergeType> mergeTypeForKey =
+    Function<ContentKey, MergeType> mergeTypeForKey =
         key -> mergeTypes.getOrDefault(key, defaultMergeType);
 
     // Fast-forward, if possible

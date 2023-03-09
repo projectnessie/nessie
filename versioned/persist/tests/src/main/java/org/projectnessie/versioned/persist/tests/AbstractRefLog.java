@@ -34,10 +34,10 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceInfo;
@@ -186,7 +186,7 @@ public abstract class AbstractRefLog {
                   .commitMetaSerialized(ByteString.copyFromUtf8("foo on " + ref.getName()))
                   .addPuts(
                       KeyWithBytes.of(
-                          Key.of("table", "c" + commit),
+                          ContentKey.of("table", "c" + commit),
                           ContentId.of("c" + commit),
                           payloadForContent(OnRefOnly.ON_REF_ONLY),
                           DefaultStoreWorker.instance()

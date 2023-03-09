@@ -27,6 +27,7 @@ plugins {
 extra["maven.name"] = "Nessie - Versioned - Persist - Transactional"
 
 dependencies {
+  implementation(project(":nessie-model"))
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-persist-serialize"))
   implementation(project(":nessie-versioned-spi"))

@@ -17,13 +17,13 @@ package org.projectnessie.versioned.persist.adapter;
 
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 
 /** Composite of key, content-id, content-type and commit-id. */
 @Value.Immutable(lazyhash = true) // this type is used as a map-key in an expensive test
 public interface KeyListEntry {
-  Key getKey();
+  ContentKey getKey();
 
   ContentId getContentId();
 
@@ -33,7 +33,7 @@ public interface KeyListEntry {
   @jakarta.annotation.Nullable
   Hash getCommitId();
 
-  static KeyListEntry of(Key key, ContentId contentId, byte payload, Hash commitId) {
+  static KeyListEntry of(ContentKey key, ContentId contentId, byte payload, Hash commitId) {
     ImmutableKeyListEntry.Builder builder =
         ImmutableKeyListEntry.builder().key(key).payload(payload).contentId(contentId);
     if (commitId != null) {

@@ -19,8 +19,8 @@ import com.google.protobuf.ByteString;
 import java.util.List;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 
 /** Represents a commit-log-entry stored in the database. */
 @Value.Immutable
@@ -49,11 +49,11 @@ public interface CommitLogEntry {
   List<KeyWithBytes> getPuts();
 
   /** List of "unchanged" keys, from {@code Delete} commit operations. */
-  List<Key> getDeletes();
+  List<ContentKey> getDeletes();
 
   /**
-   * The list of all "reachable" or "known" {@link org.projectnessie.versioned.Key}s up to this
-   * commit-log-entry's <em>parent</em> commit consists of all entries in this {@link
+   * The list of all "reachable" or "known" {@link ContentKey}s up to this commit-log-entry's
+   * <em>parent</em> commit consists of all entries in this {@link
    * org.projectnessie.versioned.persist.adapter.KeyList} plus the {@link
    * org.projectnessie.versioned.persist.adapter.KeyListEntity}s via {@link #getKeyListsIds()}.
    *
@@ -66,8 +66,7 @@ public interface CommitLogEntry {
 
   /**
    * IDs of for the linked {@link org.projectnessie.versioned.persist.adapter.KeyListEntity} that,
-   * together with {@link #getKeyList()} make the complete {@link org.projectnessie.versioned.Key}
-   * for this commit.
+   * together with {@link #getKeyList()} make the complete {@link ContentKey} for this commit.
    */
   List<Hash> getKeyListsIds();
 
@@ -118,7 +117,7 @@ public interface CommitLogEntry {
       Iterable<Hash> parents,
       ByteString metadata,
       Iterable<KeyWithBytes> puts,
-      Iterable<Key> deletes,
+      Iterable<ContentKey> deletes,
       int keyListDistance,
       KeyList keyList,
       Iterable<Hash> keyListIds,
@@ -161,7 +160,7 @@ public interface CommitLogEntry {
      * CommitLogEntry#getKeyList() embedded key-list} and {@link KeyListEntity key-list entities}.
      *
      * <p>{@link KeyListEntry}s are maintained as an open-addressing hash map with {@link
-     * org.projectnessie.versioned.Key} as the map key.
+     * ContentKey} as the map key.
      *
      * <p>That open-addressing hash map is split into multiple segments, if necessary.
      *

@@ -42,13 +42,13 @@ import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.ContentAttachment.Compression;
 import org.projectnessie.versioned.ContentAttachment.Format;
 import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableContentAttachment;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
@@ -427,9 +427,9 @@ class TestSerialization {
     return ContentId.of(UUID.randomUUID().toString());
   }
 
-  public static Key randomKey() {
+  public static ContentKey randomKey() {
     ThreadLocalRandom r = ThreadLocalRandom.current();
-    return Key.of("some" + r.nextInt(10000), "other" + r.nextInt(10000));
+    return ContentKey.of("some" + r.nextInt(10000), "other" + r.nextInt(10000));
   }
 
   public static long randomLong() {

@@ -58,10 +58,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.DetachedRef;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -131,7 +131,9 @@ public class TestRefMapping {
                 new CommitConflictException(
                     singletonList(
                         commitConflict(
-                            keyToStoreKey(Key.of("aaa", "foo")), KEY_DOES_NOT_EXIST, null)))),
+                            keyToStoreKey(ContentKey.of("aaa", "foo")),
+                            KEY_DOES_NOT_EXIST,
+                            null)))),
             ReferenceConflictException.class,
             "There are conflicts that prevent committing the provided operations: key 'aaa.foo' does not exist."),
         arguments(
@@ -160,13 +162,16 @@ public class TestRefMapping {
             referenceConflictException(
                 new CommitConflictException(
                     asList(
-                        commitConflict(keyToStoreKey(Key.of("aaa", "foo")), KEY_EXISTS, null),
                         commitConflict(
-                            keyToStoreKey(Key.of("bbb", "foo")), KEY_DOES_NOT_EXIST, null),
-                        commitConflict(keyToStoreKey(Key.of("ccc", "foo")), PAYLOAD_DIFFERS, null),
+                            keyToStoreKey(ContentKey.of("aaa", "foo")), KEY_EXISTS, null),
                         commitConflict(
-                            keyToStoreKey(Key.of("ddd", "foo")), CONTENT_ID_DIFFERS, null),
-                        commitConflict(keyToStoreKey(Key.of("eee", "foo")), VALUE_DIFFERS, null)))),
+                            keyToStoreKey(ContentKey.of("bbb", "foo")), KEY_DOES_NOT_EXIST, null),
+                        commitConflict(
+                            keyToStoreKey(ContentKey.of("ccc", "foo")), PAYLOAD_DIFFERS, null),
+                        commitConflict(
+                            keyToStoreKey(ContentKey.of("ddd", "foo")), CONTENT_ID_DIFFERS, null),
+                        commitConflict(
+                            keyToStoreKey(ContentKey.of("eee", "foo")), VALUE_DIFFERS, null)))),
             ReferenceConflictException.class,
             "There are conflicts that prevent committing the provided operations: "
                 + "key 'aaa.foo' already exists, "

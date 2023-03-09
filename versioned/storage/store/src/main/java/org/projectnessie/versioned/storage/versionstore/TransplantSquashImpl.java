@@ -22,11 +22,11 @@ import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableMergeResult;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
@@ -53,7 +53,7 @@ final class TransplantSquashImpl extends BaseMergeTransplantSquash implements Tr
       Optional<?> retryState,
       List<Hash> sequenceToTransplant,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
-      Map<Key, MergeType> mergeTypes,
+      Map<ContentKey, MergeType> mergeTypes,
       MergeType defaultMergeType,
       boolean dryRun)
       throws ReferenceNotFoundException, RetryException {
@@ -61,7 +61,7 @@ final class TransplantSquashImpl extends BaseMergeTransplantSquash implements Tr
 
     ImmutableMergeResult.Builder<Commit> mergeResult = prepareMergeResult();
 
-    Function<Key, MergeType> mergeTypeForKey =
+    Function<ContentKey, MergeType> mergeTypeForKey =
         key -> mergeTypes.getOrDefault(key, defaultMergeType);
 
     return squash(dryRun, mergeResult, mergeTypeForKey, updateCommitMetadata, sourceCommits, null);

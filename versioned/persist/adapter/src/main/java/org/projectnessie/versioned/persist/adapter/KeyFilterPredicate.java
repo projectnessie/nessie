@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.persist.adapter;
 
-import org.projectnessie.versioned.Key;
+import org.projectnessie.model.ContentKey;
 
 /**
  * Predicate to filter content-key/content-id/content-type for {@link DatabaseAdapter} functionality
@@ -24,7 +24,7 @@ import org.projectnessie.versioned.Key;
  * rules.
  */
 public interface KeyFilterPredicate {
-  boolean check(Key key, ContentId contentId, byte type);
+  boolean check(ContentKey key, ContentId contentId, byte type);
 
   KeyFilterPredicate ALLOW_ALL = (k, c, t) -> true;
 }

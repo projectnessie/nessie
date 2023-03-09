@@ -19,6 +19,7 @@ import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 
 @Value.Immutable
 public interface KeyEntry {
@@ -26,7 +27,7 @@ public interface KeyEntry {
   /** Get the type of this entity. */
   Content.Type getType();
 
-  Key getKey();
+  ContentKey getKey();
 
   String getContentId();
 
@@ -40,14 +41,14 @@ public interface KeyEntry {
 
   static KeyEntry of(
       Content.Type type,
-      Key key,
+      ContentKey key,
       @NotNull @jakarta.validation.constraints.NotNull String contentId) {
     return builder().type(type).key(key).contentId(contentId).build();
   }
 
   static KeyEntry of(
       Content.Type type,
-      Key key,
+      ContentKey key,
       @NotNull @jakarta.validation.constraints.NotNull Content content) {
     return builder().type(type).key(key).contentId(content.getId()).content(content).build();
   }

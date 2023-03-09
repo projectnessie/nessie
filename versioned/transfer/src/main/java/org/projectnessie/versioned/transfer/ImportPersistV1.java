@@ -26,7 +26,7 @@ import static org.projectnessie.versioned.storage.versionstore.TypeMapping.keyTo
 import java.io.IOException;
 import java.io.InputStream;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.versioned.Key;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
 import org.projectnessie.versioned.storage.common.exceptions.RetryTimeoutException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
@@ -117,7 +117,7 @@ final class ImportPersistV1 extends ImportPersistCommon {
         .getOperationsList()
         .forEach(
             op -> {
-              StoreKey storeKey = keyToStoreKey(Key.of(op.getContentKeyList()));
+              StoreKey storeKey = keyToStoreKey(ContentKey.of(op.getContentKeyList()));
               processCommitOp(batchWriter, index, op, storeKey);
             });
 

@@ -22,8 +22,8 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.ContentAttachment;
-import org.projectnessie.versioned.Key;
 
 /** API helper method to encapsulate parameters for {@link DatabaseAdapter#commit(CommitParams)}. */
 @Value.Immutable
@@ -45,10 +45,10 @@ public interface CommitParams extends ToBranchParams {
   List<ContentAttachment> getAttachments();
 
   /** List of "unchanged" keys, from {@code Unchanged} commit operations. */
-  List<Key> getUnchanged();
+  List<ContentKey> getUnchanged();
 
   /** List of "unchanged" keys, from {@code Delete} commit operations. */
-  List<Key> getDeletes();
+  List<ContentKey> getDeletes();
 
   /** Serialized commit-metadata. */
   ByteString getCommitMetaSerialized();

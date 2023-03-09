@@ -40,7 +40,13 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableContentKey.class)
 @JsonDeserialize(as = ImmutableContentKey.class)
-public abstract class ContentKey {
+public abstract class ContentKey implements Comparable<ContentKey> {
+
+  /** Maximum number of characters in a key. Note: characters can take up to 3 bytes via UTF-8. */
+  public static final int MAX_LENGTH = 500;
+
+  /** Maximum number of elements. */
+  public static final int MAX_ELEMENTS = 20;
 
   @NotNull
   @jakarta.validation.constraints.NotNull
@@ -136,5 +142,40 @@ public abstract class ContentKey {
   @Override
   public String toString() {
     return String.join(DOT_STRING, getElements());
+  }
+
+  @Override
+  public int hashCode() {
+    int h = 1;
+    for (String element : getElements()) {
+      h = 31 * h + element.hashCode();
+    }
+    return h;
+  }
+
+  @Override
+  public final int compareTo(ContentKey that) {
+    List<String> a = this.getElements();
+    List<String> b = that.getElements();
+    int max = Math.min(a.size(), b.size());
+    for (int i = 0; i < max; i++) {
+      int cmp = a.get(i).compareTo(b.get(i));
+      if (cmp != 0) {
+        return cmp;
+      }
+    }
+
+    return a.size() - b.size();
+  }
+
+  @Value.Check
+  protected void check() {
+    if (getElements().stream().mapToInt(String::length).sum() > MAX_LENGTH) {
+      throw new IllegalStateException("Key too long, max allowed length: " + MAX_LENGTH);
+    }
+    if (getElements().size() > MAX_ELEMENTS) {
+      throw new IllegalStateException(
+          "Key too long, max allowed number of elements: " + MAX_ELEMENTS);
+    }
   }
 }

@@ -31,11 +31,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -110,7 +110,7 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
                 .message(String.format("user %03d/commit %03d", user, commitNum))
                 .addParentCommitHashes(parent.asString());
 
-        Key key = Key.of(param.tableNameGen.apply(user));
+        ContentKey key = ContentKey.of(param.tableNameGen.apply(user));
         List<Operation> ops =
             singleBranchManyUsersOps(branch, commitNum, user, hashKnownByUser, key);
 
@@ -145,7 +145,7 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
   }
 
   private List<Operation> singleBranchManyUsersOps(
-      BranchName branch, int commitNum, int user, Hash hashKnownByUser, Key key)
+      BranchName branch, int commitNum, int user, Hash hashKnownByUser, ContentKey key)
       throws ReferenceNotFoundException {
     List<Operation> ops;
     Content existing =

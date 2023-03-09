@@ -16,6 +16,7 @@
 package org.projectnessie.versioned;
 
 import org.immutables.value.Value;
+import org.projectnessie.model.ContentKey;
 
 public interface Operation {
   /**
@@ -30,5 +31,5 @@ public interface Operation {
   }
 
   /** The key for this operation. */
-  Key getKey();
+  ContentKey getKey();
 }

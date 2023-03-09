@@ -63,13 +63,13 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableMergeResult;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.RefLogNotFoundException;
@@ -158,8 +158,8 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   @Override
-  public Map<Key, ContentAndState> values(
-      Hash commit, Collection<Key> keys, KeyFilterPredicate keyFilter)
+  public Map<ContentKey, ContentAndState> values(
+      Hash commit, Collection<ContentKey> keys, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
     return fetchValues(NON_TRANSACTIONAL_OPERATION_CONTEXT, commit, keys, keyFilter);
   }

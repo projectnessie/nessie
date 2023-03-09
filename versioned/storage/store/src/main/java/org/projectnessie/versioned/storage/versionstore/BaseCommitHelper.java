@@ -44,11 +44,11 @@ import java.util.Optional;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableMergeResult;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MergeResult.ConflictType;
 import org.projectnessie.versioned.MergeResult.KeyDetails;
@@ -312,7 +312,7 @@ class BaseCommitHelper {
       ObjId fromId,
       CommitObj source,
       ImmutableMergeResult.Builder<Commit> result,
-      Function<Key, MergeType> mergeTypeForKey)
+      Function<ContentKey, MergeType> mergeTypeForKey)
       throws RetryException {
     result.wasSuccessful(true);
 
@@ -320,7 +320,7 @@ class BaseCommitHelper {
     for (StoreIndexElement<CommitOp> el : indexesLogic.incrementalIndexFromCommit(source)) {
       if (el.content().action().currentCommit()) {
         StoreKey k = el.key();
-        Key key = storeKeyToKey(k);
+        ContentKey key = storeKeyToKey(k);
         // Note: key==null, if not the "main universe" or not a "content" discriminator
         if (key != null) {
           result.putDetails(key, keyDetails(mergeTypeForKey.apply(key), ConflictType.NONE));
@@ -359,8 +359,8 @@ class BaseCommitHelper {
   }
 
   CommitObj createMergeTransplantCommit(
-      Function<Key, MergeType> mergeTypeForKey,
-      Map<Key, KeyDetails> keyDetailsMap,
+      Function<ContentKey, MergeType> mergeTypeForKey,
+      Map<ContentKey, KeyDetails> keyDetailsMap,
       CreateCommit createCommit)
       throws ReferenceNotFoundException {
     try {
@@ -368,7 +368,7 @@ class BaseCommitHelper {
       return commitLogic.buildCommitObj(
           createCommit,
           conflict -> {
-            Key key = storeKeyToKey(conflict.key());
+            ContentKey key = storeKeyToKey(conflict.key());
             // Note: key==null, if not the "main universe" or not a "content"
             // discriminator
             if (key != null) {
@@ -404,7 +404,7 @@ class BaseCommitHelper {
             return ConflictResolution.IGNORE;
           },
           (k, v) -> {
-            Key key = storeKeyToKey(k);
+            ContentKey key = storeKeyToKey(k);
             // Note: key==null, if not the "main universe" or not a "content"
             // discriminator
             if (key != null) {
@@ -435,10 +435,10 @@ class BaseCommitHelper {
       ImmutableMergeResult.Builder<Commit> mergeResult,
       ObjId newHead,
       boolean dryRun,
-      Map<Key, KeyDetails> keyDetailsMap)
+      Map<ContentKey, KeyDetails> keyDetailsMap)
       throws RetryException {
     boolean hasConflicts = false;
-    for (Entry<Key, KeyDetails> keyDetail : keyDetailsMap.entrySet()) {
+    for (Entry<ContentKey, KeyDetails> keyDetail : keyDetailsMap.entrySet()) {
       KeyDetails details = keyDetail.getValue();
       if (details.getConflictType() == ConflictType.UNRESOLVABLE) {
         hasConflicts = true;

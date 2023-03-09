@@ -38,8 +38,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitLogEntry;
@@ -70,7 +70,7 @@ public class TestFetchValuesUsingOpenAddressing {
             getCommitFixture(2, 4, KeyWithSpecificHash::withMaxIntHash));
 
     // Make a key that won't match anything in the commit
-    Key nonExistentKey = new KeyWithSpecificHash(Integer.MAX_VALUE, ImmutableList.of("foo"));
+    ContentKey nonExistentKey = new KeyWithSpecificHash(Integer.MAX_VALUE, ImmutableList.of("foo"));
 
     // Look for a non-existent key.
     // The fake segments here are all full, so this will probe through the entire hashtable.
@@ -78,7 +78,7 @@ public class TestFetchValuesUsingOpenAddressing {
     // the first non-embedded segment in round 2, etc.
     // This has the side-effect of adding entityIdToSegment mappings, which we'll need to call
     // entityLoaded in the next part of this test.
-    List<Key> singleton = ImmutableList.of(nonExistentKey);
+    List<ContentKey> singleton = ImmutableList.of(nonExistentKey);
     assertEquals(ImmutableList.of(Hash.of("03")), fetch.entityIdsToFetch(0, 0, singleton));
     assertEquals(Collections.EMPTY_LIST, fetch.entityIdsToFetch(1, 0, singleton));
     assertEquals(ImmutableList.of(Hash.of("01")), fetch.entityIdsToFetch(2, 0, singleton));
@@ -142,7 +142,8 @@ public class TestFetchValuesUsingOpenAddressing {
 
     final CommitLogEntry commitFixture =
         getCommitFixture(segmentSize, segmentCount, KeyWithSpecificHash::withMaxIntHash);
-    final Key nonExistentKey = new KeyWithSpecificHash(Integer.MAX_VALUE, ImmutableList.of("foo"));
+    final ContentKey nonExistentKey =
+        new KeyWithSpecificHash(Integer.MAX_VALUE, ImmutableList.of("foo"));
 
     for (int prefetch = 0; prefetch < segmentCount * 2; prefetch++) {
       List<Hash> expectedHashes =
@@ -224,7 +225,7 @@ public class TestFetchValuesUsingOpenAddressing {
   })
   public void keyCollision(
       int naturalPos, int movedPos, int movedKeyFoundInRound, boolean skipEmbedded) {
-    Function<Integer, Key> bucketToKey =
+    Function<Integer, ContentKey> bucketToKey =
         bucket -> {
           // Simulate key collision by artificially crafting their hash codes instead of bothering
           // with real insertion.
@@ -255,11 +256,11 @@ public class TestFetchValuesUsingOpenAddressing {
 
     // Validate lookup for all 16 keys
     for (int b = 0; b < 16; b++) {
-      Key key = bucketToKey.apply(b);
+      ContentKey key = bucketToKey.apply(b);
       // Reset FetchValuesUsingOpenAddressing for each key for ease of validation
       FetchValuesUsingOpenAddressing fetch = new FetchValuesUsingOpenAddressing(entry);
       AtomicReference<KeyListEntry> hit = new AtomicReference<>();
-      Collection<Key> remaining = ImmutableList.of(key);
+      Collection<ContentKey> remaining = ImmutableList.of(key);
       // Simulate loading key lists in multiple rounds
       for (int r = 0; r < segmentCount + 1; r++) {
         // Note: Do not preload segments for each of validation
@@ -324,7 +325,7 @@ public class TestFetchValuesUsingOpenAddressing {
   }
 
   private CommitLogEntry getCommitFixture(
-      final int segmentSize, final int segmentCount, Function<Integer, Key> bucketToKey) {
+      final int segmentSize, final int segmentCount, Function<Integer, ContentKey> bucketToKey) {
     return getCommitFixture(segmentSize, segmentSize, segmentCount, bucketToKey);
   }
 
@@ -343,7 +344,7 @@ public class TestFetchValuesUsingOpenAddressing {
       final int embeddedSize,
       final int segmentSize,
       final int segmentCount,
-      Function<Integer, Key> bucketToKey) {
+      Function<Integer, ContentKey> bucketToKey) {
     // Create segments of uniform size.  This list has one fewer elements than segmentCount,
     // because the initial segment corresponding to the embedded-key-list doesn't have its
     // offset recorded (somewhere on the interval [0, second-segment-offset)).
@@ -389,7 +390,10 @@ public class TestFetchValuesUsingOpenAddressing {
 
   /** Builds a fake {@linkplain KeyListEntity}. */
   private static KeyListEntity getKeyListEntity(
-      int startingBucket, int segmentIndex, int entryCount, Function<Integer, Key> bucketToKey) {
+      int startingBucket,
+      int segmentIndex,
+      int entryCount,
+      Function<Integer, ContentKey> bucketToKey) {
     ImmutableKeyList.Builder listBuilder = ImmutableKeyList.builder();
 
     for (int i = 0, bucket = startingBucket; i < entryCount; i++, bucket++) {
@@ -402,7 +406,7 @@ public class TestFetchValuesUsingOpenAddressing {
         .build();
   }
 
-  private static ImmutableKeyListEntry getKeyListEntry(Key k) {
+  private static ImmutableKeyListEntry getKeyListEntry(ContentKey k) {
     return ImmutableKeyListEntry.builder()
         .key(k)
         .payload((byte) 99)
@@ -411,7 +415,7 @@ public class TestFetchValuesUsingOpenAddressing {
   }
 
   /** All instances return {@linkplain Integer#MAX_VALUE} from {@linkplain #hashCode()}. */
-  private static class KeyWithSpecificHash extends Key {
+  private static class KeyWithSpecificHash extends ContentKey {
 
     private final int hashCode;
     final List<String> elements;
@@ -421,7 +425,7 @@ public class TestFetchValuesUsingOpenAddressing {
       this.elements = ImmutableList.copyOf(elements);
     }
 
-    private static Key withMaxIntHash(int bucket) {
+    private static ContentKey withMaxIntHash(int bucket) {
       return new KeyWithSpecificHash(Integer.MAX_VALUE, ImmutableList.of("" + bucket));
     }
 
@@ -435,10 +439,10 @@ public class TestFetchValuesUsingOpenAddressing {
       if (this == o) {
         return true;
       }
-      if (!(o instanceof Key)) {
+      if (!(o instanceof ContentKey)) {
         return false;
       }
-      Key that = (Key) o;
+      ContentKey that = (ContentKey) o;
       boolean equals = Objects.equals(elements, that.getElements());
       if (equals) {
         assertThat(hashCode)

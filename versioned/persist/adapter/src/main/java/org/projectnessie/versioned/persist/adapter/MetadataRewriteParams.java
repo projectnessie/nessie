@@ -18,7 +18,7 @@ package org.projectnessie.versioned.persist.adapter;
 import com.google.protobuf.ByteString;
 import java.util.Map;
 import org.immutables.value.Value;
-import org.projectnessie.versioned.Key;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
 
@@ -30,7 +30,7 @@ public interface MetadataRewriteParams extends ToBranchParams {
     return false;
   }
 
-  Map<Key, MergeType> getMergeTypes();
+  Map<ContentKey, MergeType> getMergeTypes();
 
   @Value.Default
   default boolean isDryRun() {
@@ -51,9 +51,9 @@ public interface MetadataRewriteParams extends ToBranchParams {
 
     B defaultMergeType(MergeType defaultMergeType);
 
-    B putMergeTypes(Key key, MergeType value);
+    B putMergeTypes(ContentKey key, MergeType value);
 
-    B mergeTypes(Map<? extends Key, ? extends MergeType> entries);
+    B mergeTypes(Map<? extends ContentKey, ? extends MergeType> entries);
 
     B isDryRun(boolean dryRun);
 

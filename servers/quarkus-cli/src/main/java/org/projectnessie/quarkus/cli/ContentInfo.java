@@ -37,7 +37,6 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.DetachedRef;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
@@ -150,9 +149,9 @@ public class ContentInfo extends BaseCommand {
 
   private void check(JsonGenerator generator, ReferenceInfo<ByteString> head) throws Exception {
     if (keyElements != null && !keyElements.isEmpty()) {
-      check(head, Collections.singleton(Key.of(keyElements)), generator);
+      check(head, Collections.singleton(ContentKey.of(keyElements)), generator);
     } else {
-      Set<Key> batch = new HashSet<>(batchSize);
+      Set<ContentKey> batch = new HashSet<>(batchSize);
       try (Stream<KeyListEntry> keys =
           databaseAdapter.keys(head.getHash(), KeyFilterPredicate.ALLOW_ALL)) {
         keys.forEach(
@@ -187,7 +186,8 @@ public class ContentInfo extends BaseCommand {
     return databaseAdapter.namedRefs(GetNamedRefsParams.DEFAULT);
   }
 
-  private void check(ReferenceInfo<ByteString> head, Set<Key> keys, JsonGenerator generator) {
+  private void check(
+      ReferenceInfo<ByteString> head, Set<ContentKey> keys, JsonGenerator generator) {
     try {
       AtomicInteger distanceFromHead = new AtomicInteger();
       try (Stream<CommitLogEntry> commitLog = databaseAdapter.commitLog(head.getHash());
@@ -234,7 +234,7 @@ public class ContentInfo extends BaseCommand {
   private void report(
       JsonGenerator generator,
       String referenceName,
-      Key key,
+      ContentKey key,
       KeyWithBytes value,
       CommitLogEntry entry,
       long distanceFromHead,

@@ -26,6 +26,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.paging.PaginationIterator;
 
 /**
@@ -88,7 +89,7 @@ public interface VersionStore {
       @Nonnull @jakarta.annotation.Nonnull CommitMeta metadata,
       @Nonnull @jakarta.annotation.Nonnull List<Operation> operations,
       @Nonnull @jakarta.annotation.Nonnull Callable<Void> validator,
-      @Nonnull @jakarta.annotation.Nonnull BiConsumer<Key, String> addedContents)
+      @Nonnull @jakarta.annotation.Nonnull BiConsumer<ContentKey, String> addedContents)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   default Hash commit(
@@ -132,7 +133,7 @@ public interface VersionStore {
       List<Hash> sequenceToTransplant,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean keepIndividualCommits,
-      Map<Key, MergeType> mergeTypes,
+      Map<ContentKey, MergeType> mergeTypes,
       MergeType defaultMergeType,
       boolean dryRun,
       boolean fetchAdditionalInfo)
@@ -177,7 +178,7 @@ public interface VersionStore {
       Optional<Hash> expectedHash,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean keepIndividualCommits,
-      Map<Key, MergeType> mergeTypes,
+      Map<ContentKey, MergeType> mergeTypes,
       MergeType defaultMergeType,
       boolean dryRun,
       boolean fetchAdditionalInfo)
@@ -293,7 +294,7 @@ public interface VersionStore {
    * @return The value.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  Content getValue(Ref ref, Key key) throws ReferenceNotFoundException;
+  Content getValue(Ref ref, ContentKey key) throws ReferenceNotFoundException;
 
   /**
    * Get the values for a list of keys.
@@ -303,7 +304,8 @@ public interface VersionStore {
    * @return A parallel list of values.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  Map<Key, Content> getValues(Ref ref, Collection<Key> keys) throws ReferenceNotFoundException;
+  Map<ContentKey, Content> getValues(Ref ref, Collection<ContentKey> keys)
+      throws ReferenceNotFoundException;
 
   /**
    * Get list of diffs between two refs.

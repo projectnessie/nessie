@@ -65,6 +65,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Diff;
@@ -72,7 +73,6 @@ import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableReferenceInfo;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.KeyEntry;
 import org.projectnessie.versioned.MergeConflictException;
 import org.projectnessie.versioned.MergeResult;
@@ -451,7 +451,7 @@ public class VersionStoreImpl implements VersionStore {
         result,
         indexElement -> {
           try {
-            Key key = storeKeyToKey(indexElement.key());
+            ContentKey key = storeKeyToKey(indexElement.key());
             CommitOp commitOp = indexElement.content();
             Content.Type contentType = contentTypeForPayload((byte) commitOp.payload());
 
@@ -499,7 +499,7 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   @Override
-  public Content getValue(Ref ref, Key key) throws ReferenceNotFoundException {
+  public Content getValue(Ref ref, ContentKey key) throws ReferenceNotFoundException {
     RefMapping refMapping = new RefMapping(persist);
     CommitObj head = refMapping.resolveRefHead(ref);
     if (head == null) {
@@ -527,7 +527,7 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   @Override
-  public Map<Key, Content> getValues(Ref ref, Collection<Key> keys)
+  public Map<ContentKey, Content> getValues(Ref ref, Collection<ContentKey> keys)
       throws ReferenceNotFoundException {
     RefMapping refMapping = new RefMapping(persist);
     CommitObj head = refMapping.resolveRefHead(ref);
@@ -543,8 +543,8 @@ public class VersionStoreImpl implements VersionStore {
       index.loadIfNecessary(
           keys.stream().map(TypeMapping::keyToStoreKey).collect(Collectors.toSet()));
 
-      Map<ObjId, Key> idsToKeys = new HashMap<>();
-      for (Key key : keys) {
+      Map<ObjId, ContentKey> idsToKeys = new HashMap<>();
+      for (ContentKey key : keys) {
         StoreKey storeKey = keyToStoreKey(key);
         StoreIndexElement<CommitOp> indexElement = index.get(storeKey);
         if (indexElement == null || !indexElement.content().action().exists()) {
@@ -569,7 +569,7 @@ public class VersionStoreImpl implements VersionStore {
       @Nonnull @jakarta.annotation.Nonnull CommitMeta metadata,
       @Nonnull @jakarta.annotation.Nonnull List<Operation> operations,
       @Nonnull @jakarta.annotation.Nonnull Callable<Void> validator,
-      @Nonnull @jakarta.annotation.Nonnull BiConsumer<Key, String> addedContents)
+      @Nonnull @jakarta.annotation.Nonnull BiConsumer<ContentKey, String> addedContents)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return committingOperation(
         "commit",
@@ -588,7 +588,7 @@ public class VersionStoreImpl implements VersionStore {
       Optional<Hash> expectedHash,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean keepIndividualCommits,
-      Map<Key, MergeType> mergeTypes,
+      Map<ContentKey, MergeType> mergeTypes,
       MergeType defaultMergeType,
       boolean dryRun,
       boolean fetchAdditionalInfo)
@@ -623,7 +623,7 @@ public class VersionStoreImpl implements VersionStore {
       List<Hash> sequenceToTransplant,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean keepIndividualCommits,
-      Map<Key, MergeType> mergeTypes,
+      Map<ContentKey, MergeType> mergeTypes,
       MergeType defaultMergeType,
       boolean dryRun,
       boolean fetchAdditionalInfo)

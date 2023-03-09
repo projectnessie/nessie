@@ -17,12 +17,12 @@ package org.projectnessie.versioned.persist.adapter;
 
 import com.google.protobuf.ByteString;
 import org.immutables.value.Value;
-import org.projectnessie.versioned.Key;
+import org.projectnessie.model.ContentKey;
 
 /** Composite of key, content-id, content-type and content. */
 @Value.Immutable
 public interface KeyWithBytes {
-  Key getKey();
+  ContentKey getKey();
 
   ContentId getContentId();
 
@@ -30,7 +30,7 @@ public interface KeyWithBytes {
 
   ByteString getValue();
 
-  static KeyWithBytes of(Key key, ContentId contentId, byte payload, ByteString value) {
+  static KeyWithBytes of(ContentKey key, ContentId contentId, byte payload, ByteString value) {
     return ImmutableKeyWithBytes.builder()
         .key(key)
         .contentId(contentId)

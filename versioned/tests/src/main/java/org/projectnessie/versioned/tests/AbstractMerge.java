@@ -37,11 +37,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
@@ -96,7 +96,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     firstCommit =
         commit("First Commit").put("t1", V_1_1).put("t2", V_2_1).put("t3", V_3_1).toBranch(branch);
 
-    Content t1 = store().getValue(branch, Key.of("t1"));
+    Content t1 = store().getValue(branch, ContentKey.of("t1"));
 
     commit("Second Commit")
         .put("t1", V_1_2.withId(t1), t1)
@@ -182,12 +182,16 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 store()
                     .getValues(
                         newBranch,
-                        Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4")))))
+                        Arrays.asList(
+                            ContentKey.of("t1"),
+                            ContentKey.of("t2"),
+                            ContentKey.of("t3"),
+                            ContentKey.of("t4")))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                Key.of("t1"), V_1_2,
-                Key.of("t2"), V_2_2,
-                Key.of("t4"), V_4_1));
+                ContentKey.of("t1"), V_1_2,
+                ContentKey.of("t2"), V_2_2,
+                ContentKey.of("t4"), V_4_1));
   }
 
   @ParameterizedTest
@@ -251,12 +255,12 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                             firstCommit,
                             "First Commit",
                             Arrays.asList(
-                                Put.of(Key.of("t1"), V_1_1),
-                                Put.of(Key.of("t2"), V_2_1),
-                                Put.of(Key.of("t3"), V_3_1)))));
+                                Put.of(ContentKey.of("t1"), V_1_1),
+                                Put.of(ContentKey.of("t2"), V_2_1),
+                                Put.of(ContentKey.of("t3"), V_3_1)))));
     soft.assertThat(mergeResult.getTargetCommits()).isNull();
     soft.assertThat(mergeResult.getDetails())
-        .containsKeys(Key.of("t1"), Key.of("t2"), Key.of("t3"));
+        .containsKeys(ContentKey.of("t1"), ContentKey.of("t2"), ContentKey.of("t3"));
     soft.assertThat(mergeResult)
         // compare "effective" merge-result with re-constructed merge-result
         .isEqualTo(
@@ -305,12 +309,16 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 store()
                     .getValues(
                         newBranch,
-                        Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4")))))
+                        Arrays.asList(
+                            ContentKey.of("t1"),
+                            ContentKey.of("t2"),
+                            ContentKey.of("t3"),
+                            ContentKey.of("t4")))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                Key.of("t1"), V_1_1,
-                Key.of("t2"), V_2_1,
-                Key.of("t3"), V_3_1));
+                ContentKey.of("t1"), V_1_1,
+                ContentKey.of("t2"), V_2_1,
+                ContentKey.of("t3"), V_3_1));
 
     // not modifying commit meta, will just "fast forward"
     soft.assertThat(store().hashOnReference(newBranch, Optional.empty())).isEqualTo(firstCommit);
@@ -406,13 +414,17 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                     .getValues(
                         newBranch,
                         Arrays.asList(
-                            Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5")))))
+                            ContentKey.of("t1"),
+                            ContentKey.of("t2"),
+                            ContentKey.of("t3"),
+                            ContentKey.of("t4"),
+                            ContentKey.of("t5")))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                Key.of("t1"), V_1_2,
-                Key.of("t2"), V_2_2,
-                Key.of("t4"), V_4_1,
-                Key.of("t5"), V_5_1));
+                ContentKey.of("t1"), V_1_2,
+                ContentKey.of("t2"), V_2_2,
+                ContentKey.of("t4"), V_4_1,
+                ContentKey.of("t5"), V_5_1));
 
     final List<Commit> commits = commitsList(newBranch, false);
     if (individualCommits) {
@@ -452,7 +464,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   protected void nonEmptyFastForwardMerge(boolean individualCommits) throws VersionStoreException {
-    final Key key = Key.of("t1");
+    final ContentKey key = ContentKey.of("t1");
     final BranchName etl = BranchName.of("etl");
     final BranchName review = BranchName.of("review");
     store().create(etl, Optional.of(initialHash));
@@ -532,13 +544,17 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                     .getValues(
                         newBranch,
                         Arrays.asList(
-                            Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5")))))
+                            ContentKey.of("t1"),
+                            ContentKey.of("t2"),
+                            ContentKey.of("t3"),
+                            ContentKey.of("t4"),
+                            ContentKey.of("t5")))))
         .containsExactlyInAnyOrderEntriesOf(
             ImmutableMap.of(
-                Key.of("t1"), V_1_2,
-                Key.of("t2"), V_2_2,
-                Key.of("t4"), V_4_1,
-                Key.of("t5"), V_5_1));
+                ContentKey.of("t1"), V_1_2,
+                ContentKey.of("t2"), V_2_2,
+                ContentKey.of("t4"), V_4_1,
+                ContentKey.of("t5"), V_5_1));
 
     final List<Commit> commits = commitsList(newBranch, false);
     if (individualCommits) {
@@ -580,10 +596,10 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
     // we're essentially modifying the same key on both branches and then merging one branch into
     // the other and expect a conflict
-    Key conflictingKey1 = Key.of("some_key1");
-    Key conflictingKey2 = Key.of("some_key2");
-    Key key3 = Key.of("some_key3");
-    Key key4 = Key.of("some_key4");
+    ContentKey conflictingKey1 = ContentKey.of("some_key1");
+    ContentKey conflictingKey2 = ContentKey.of("some_key2");
+    ContentKey key3 = ContentKey.of("some_key3");
+    ContentKey key4 = ContentKey.of("some_key4");
 
     store()
         .commit(

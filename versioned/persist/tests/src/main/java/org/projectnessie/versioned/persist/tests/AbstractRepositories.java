@@ -26,10 +26,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
@@ -89,7 +89,7 @@ public abstract class AbstractRepositories {
             .commitMetaSerialized(fooCommitMeta)
             .addPuts(
                 KeyWithBytes.of(
-                    Key.of("foo"),
+                    ContentKey.of("foo"),
                     ContentId.of(fooValue.getId()),
                     payloadForContent(fooValue),
                     fooValue.serialized()))
@@ -100,7 +100,7 @@ public abstract class AbstractRepositories {
             .commitMetaSerialized(barCommitMeta)
             .addPuts(
                 KeyWithBytes.of(
-                    Key.of("bar"),
+                    ContentKey.of("bar"),
                     ContentId.of(barValue.getId()),
                     payloadForContent(barValue),
                     barValue.serialized()))

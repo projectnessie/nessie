@@ -27,10 +27,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nonnull;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -88,7 +88,8 @@ public class TestVersionStoreImpl extends AbstractVersionStoreTests {
                   fromMessage("conflicting pointer bump"),
                   singletonList(
                       Put.of(
-                          Key.of("other", "key-" + num), IcebergTable.of("meta", 42, 43, 44, 45))));
+                          ContentKey.of("other", "key-" + num),
+                          IcebergTable.of("meta", 42, 43, 44, 45))));
             } catch (ReferenceNotFoundException | ReferenceConflictException e) {
               throw new RuntimeException(e);
             }
@@ -105,7 +106,9 @@ public class TestVersionStoreImpl extends AbstractVersionStoreTests {
                     Optional.of(branch1),
                     fromMessage("commit foo"),
                     singletonList(
-                        Put.of(Key.of("some", "key"), IcebergTable.of("meta", 42, 43, 44, 45)))))
+                        Put.of(
+                            ContentKey.of("some", "key"),
+                            IcebergTable.of("meta", 42, 43, 44, 45)))))
         .isInstanceOf(ReferenceRetryFailureException.class)
         .hasMessageStartingWith(
             "The commit operation could not be performed after 3 retries within the configured commit timeout after ");
@@ -139,7 +142,9 @@ public class TestVersionStoreImpl extends AbstractVersionStoreTests {
                     Optional.of(branch1),
                     fromMessage("conflicting pointer bump"),
                     singletonList(
-                        Put.of(Key.of("other", "key"), IcebergTable.of("meta", 42, 43, 44, 45))));
+                        Put.of(
+                            ContentKey.of("other", "key"),
+                            IcebergTable.of("meta", 42, 43, 44, 45))));
               } catch (ReferenceNotFoundException | ReferenceConflictException e) {
                 throw new RuntimeException(e);
               }
@@ -154,7 +159,8 @@ public class TestVersionStoreImpl extends AbstractVersionStoreTests {
         branch,
         Optional.of(branch1),
         fromMessage("commit foo"),
-        singletonList(Put.of(Key.of("some", "key"), IcebergTable.of("meta", 42, 43, 44, 45))));
+        singletonList(
+            Put.of(ContentKey.of("some", "key"), IcebergTable.of("meta", 42, 43, 44, 45))));
   }
 
   static class PersistDelegate extends BasePersistDelegate implements Persist {
