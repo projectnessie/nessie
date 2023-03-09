@@ -137,7 +137,7 @@ public class ITRollingUpgrades {
   void commitDataInOld() throws Exception {
     ThreadLocalRandom tlr = ThreadLocalRandom.current();
 
-    ContentKey key = ContentKey.of("key", "v" + version.toString());
+    ContentKey key = ContentKey.of("key-v" + version.toString());
     IcebergTable table =
         IcebergTable.of(
             "metadata-" + version,
@@ -165,7 +165,7 @@ public class ITRollingUpgrades {
 
     Branch branch = apiCurrent.getDefaultBranch();
 
-    ContentKey key = ContentKey.of("keyCurrent", "v" + version.toString());
+    ContentKey key = ContentKey.of("keyCurrent-v" + version.toString());
     IcebergTable table =
         IcebergTable.of(
             "metadataCurrent-" + version,

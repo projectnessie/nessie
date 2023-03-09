@@ -33,6 +33,7 @@ import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -56,16 +57,30 @@ import org.projectnessie.tools.compatibility.api.VersionCondition;
 @VersionCondition(maxVersion = Version.NOT_CURRENT_STRING)
 public abstract class AbstractCompatibilityTests {
 
-  public static final String NESSIE_0_30_0 = "0.30.0";
   @NessieAPI protected NessieApiV1 api;
   @NessieAPI protected NessieApiV2 apiV2;
   @NessieVersion Version version;
 
   abstract Version getClientVersion();
 
+  Branch createMissingNamespaces(Branch branch, ContentKey namespaceKey)
+      throws NessieNotFoundException {
+    for (int i = 1; i <= namespaceKey.getElementCount(); i++) {
+      try {
+        api.createNamespace()
+            .refName(branch.getName())
+            .namespace(Namespace.of(namespaceKey.getElements().subList(0, i)))
+            .create();
+      } catch (NessieNamespaceAlreadyExistsException ignore) {
+        // ignore
+      }
+    }
+    return (Branch) api.getReference().refName(branch.getName()).get();
+  }
+
   @SuppressWarnings("deprecation")
   Stream<Reference> allReferences() throws NessieNotFoundException {
-    if (getClientVersion().isGreaterThan(Version.parseVersion(NESSIE_0_30_0))) {
+    if (getClientVersion().isGreaterThanOrEqual(Version.CLIENT_RESULTS_NATIVE_STREAM)) {
       return api.getAllReferences().stream();
     } else {
       return StreamingUtil.getAllReferencesStream(api, Function.identity(), OptionalInt.empty());
@@ -76,7 +91,7 @@ public abstract class AbstractCompatibilityTests {
   Stream<LogResponse.LogEntry> commitLog(
       Function<GetCommitLogBuilder, GetCommitLogBuilder> configurer)
       throws NessieNotFoundException {
-    if (getClientVersion().isGreaterThan(Version.parseVersion(NESSIE_0_30_0))) {
+    if (getClientVersion().isGreaterThanOrEqual(Version.CLIENT_RESULTS_NATIVE_STREAM)) {
       return configurer.apply(api.getCommitLog()).stream();
     } else {
       return StreamingUtil.getCommitLogStream(api, configurer, OptionalInt.empty());
@@ -108,12 +123,14 @@ public abstract class AbstractCompatibilityTests {
   @Test
   void commit() throws Exception {
     Branch defaultBranch = api.getDefaultBranch();
-    Branch branch = Branch.of("commitToBranch", defaultBranch.getHash());
+    String branchName = "commitToBranch";
+    Branch branch = Branch.of(branchName, defaultBranch.getHash());
     Reference created =
         api.createReference().sourceRefName(defaultBranch.getName()).reference(branch).create();
     assertThat(created).isEqualTo(branch);
 
     ContentKey key = ContentKey.of("my", "tables", "table_name");
+    branch = createMissingNamespaces(branch, key.getParent());
     IcebergTable content = IcebergTable.of("metadata-location", 42L, 43, 44, 45, "content-id");
     String commitMessage = "hello world";
     Put operation = Put.of(key, content);
@@ -124,12 +141,14 @@ public abstract class AbstractCompatibilityTests {
             .branch(branch)
             .commit();
     assertThat(branchNew)
+        .isNotEqualTo(created)
         .isNotEqualTo(branch)
         .extracting(Branch::getName)
-        .isEqualTo(branch.getName());
+        .isEqualTo(branchName);
 
-    Stream<LogEntry> commitLog = commitLog(b -> b.refName(branch.getName()));
+    Stream<LogEntry> commitLog = commitLog(b -> b.refName(branchName));
     assertThat(commitLog)
+        .filteredOn(e -> !e.getCommitMeta().getMessage().startsWith("create namespace "))
         .hasSize(1)
         .map(LogEntry::getCommitMeta)
         .map(CommitMeta::getMessage)
@@ -140,30 +159,36 @@ public abstract class AbstractCompatibilityTests {
   }
 
   @Test
-  @VersionCondition(minVersion = "0.23.1")
   public void namespace() throws NessieNotFoundException, NessieConflictException {
     Branch defaultBranch = api.getDefaultBranch();
-    Branch branch = Branch.of("createNamespace", defaultBranch.getHash());
-    Reference reference =
-        api.createReference().sourceRefName(defaultBranch.getName()).reference(branch).create();
+    String branchName = "createNamespace";
+    Branch branch = Branch.of(branchName, defaultBranch.getHash());
+    api.createReference().sourceRefName(defaultBranch.getName()).reference(branch).create();
 
     Namespace namespaceNoContentId = Namespace.of("a", "b", "c");
+
+    branch = createMissingNamespaces(branch, namespaceNoContentId.toContentKey().getParent());
+
     Namespace namespace =
-        api.createNamespace().namespace(namespaceNoContentId).reference(reference).create();
-    reference = api.getReference().refName(reference.getName()).get();
-    assertThat(api.getNamespace().namespace(namespaceNoContentId).reference(reference).get())
+        api.createNamespace().namespace(namespaceNoContentId).reference(branch).create();
+    branch = (Branch) api.getReference().refName(branch.getName()).get();
+    assertThat(api.getNamespace().namespace(namespaceNoContentId).reference(branch).get())
         .isEqualTo(namespace);
-    assertThat(api.getNamespace().namespace(namespace).reference(reference).get())
+    assertThat(api.getNamespace().namespace(namespace).reference(branch).get())
         .isEqualTo(namespace);
     assertThat(
             api.getMultipleNamespaces()
                 .namespace(Namespace.EMPTY)
-                .reference(reference)
+                .reference(branch)
                 .get()
                 .getNamespaces())
-        .containsExactly(namespace);
-    api.deleteNamespace().reference(reference).namespace(namespace).delete();
-    Reference finalRef = api.getReference().refName(reference.getName()).get();
+        .extracting(Namespace::toContentKey)
+        .containsExactlyInAnyOrder(
+            namespace.toContentKey(),
+            namespace.toContentKey().getParent(),
+            namespace.toContentKey().getParent().getParent());
+    api.deleteNamespace().reference(branch).namespace(namespace).delete();
+    Reference finalRef = api.getReference().refName(branchName).get();
     assertThatThrownBy(() -> api.getNamespace().namespace(namespace).reference(finalRef).get())
         .isInstanceOf(NessieNamespaceNotFoundException.class);
   }
@@ -173,22 +198,23 @@ public abstract class AbstractCompatibilityTests {
   public void namespaceWithProperties() throws NessieNotFoundException, NessieConflictException {
     Branch defaultBranch = api.getDefaultBranch();
     Branch branch = Branch.of("namespaceWithProperties", defaultBranch.getHash());
-    Reference reference =
-        api.createReference().sourceRefName(defaultBranch.getName()).reference(branch).create();
+    api.createReference().sourceRefName(defaultBranch.getName()).reference(branch).create();
 
     Map<String, String> properties = ImmutableMap.of("key1", "prop1", "key2", "prop2");
     Namespace namespaceNoContentId = Namespace.of(properties, "a", "b", "c");
 
+    branch = createMissingNamespaces(branch, namespaceNoContentId.toContentKey().getParent());
+
     Namespace namespace =
         api.createNamespace()
             .namespace(namespaceNoContentId)
-            .reference(reference)
+            .reference(branch)
             .properties(properties)
             .create();
-    reference = api.getReference().refName(reference.getName()).get();
-    assertThat(api.getNamespace().namespace(namespaceNoContentId).reference(reference).get())
+    branch = (Branch) api.getReference().refName(branch.getName()).get();
+    assertThat(api.getNamespace().namespace(namespaceNoContentId).reference(branch).get())
         .isEqualTo(namespace);
-    assertThat(api.getNamespace().namespace(namespace).reference(reference).get())
+    assertThat(api.getNamespace().namespace(namespace).reference(branch).get())
         .isEqualTo(namespace);
 
     api.updateProperties()
@@ -211,6 +237,9 @@ public abstract class AbstractCompatibilityTests {
     api.createReference().sourceRefName(defaultBranch.getName()).reference(dest).create();
 
     ContentKey key = ContentKey.of("my", "tables", "table_name");
+
+    src = createMissingNamespaces(src, key.getParent());
+
     IcebergTable content =
         IcebergTable.of("metadata-location", 42L, 43, 44, 45, "content-id-transplant");
     String commitMessage = "hello world";
@@ -221,6 +250,8 @@ public abstract class AbstractCompatibilityTests {
             .operation(operation)
             .branch(src)
             .commit();
+
+    dest = createMissingNamespaces(dest, key.getParent());
 
     MergeResponse response =
         api.transplantCommitsIntoBranch()
@@ -246,6 +277,9 @@ public abstract class AbstractCompatibilityTests {
     api.createReference().sourceRefName(defaultBranch.getName()).reference(dest).create();
 
     ContentKey key = ContentKey.of("my", "tables", "table_name");
+
+    src = createMissingNamespaces(src, key.getParent());
+
     IcebergTable content =
         IcebergTable.of("metadata-location", 42L, 43, 44, 45, "content-id-merge");
     String commitMessage = "hello world";
@@ -267,7 +301,7 @@ public abstract class AbstractCompatibilityTests {
   }
 
   boolean nessieWithMergeResponse() {
-    return version.isGreaterThan(Version.parseVersion(NESSIE_0_30_0));
+    return version.isGreaterThan(Version.HAS_MERGE_RESPONSE);
   }
 
   public void mergeBehavior() throws BaseNessieClientServerException {

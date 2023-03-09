@@ -15,6 +15,7 @@
  */
 package org.projectnessie.tools.compatibility.internal;
 
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.tools.compatibility.internal.Util.withClassLoader;
 
@@ -63,7 +64,8 @@ class TestTranslatingVersionNessieApi {
   @BeforeAll
   static void init() throws Exception {
     oldVersionClassLoader =
-        OldNessie.oldNessieClassLoader(Version.parseVersion("0.19.0"), "nessie-client");
+        OldNessie.oldNessieClassLoader(
+            Version.parseVersion("0.19.0"), singletonList("nessie-client"));
   }
 
   @Test
@@ -99,7 +101,10 @@ class TestTranslatingVersionNessieApi {
 
     try (TranslatingVersionNessieApi translating =
         new TranslatingVersionNessieApi(
-            createOldVersionNessieAPi(), NessieApiV1.class, oldVersionClassLoader)) {
+            Version.CURRENT,
+            createOldVersionNessieAPi(),
+            NessieApiV1.class,
+            oldVersionClassLoader)) {
 
       soft.assertThat(translating.translateObject(null, oldVersionClassLoader, contextClassLoader))
           .isNull();
@@ -123,7 +128,7 @@ class TestTranslatingVersionNessieApi {
               new Object[] {
                 null,
                 modelObj,
-                Collections.singletonList(modelObj),
+                singletonList(modelObj),
                 Collections.singleton(modelObj),
                 Collections.singletonMap("key", modelObj)
               },
@@ -171,7 +176,10 @@ class TestTranslatingVersionNessieApi {
 
     try (TranslatingVersionNessieApi translating =
         new TranslatingVersionNessieApi(
-            createOldVersionNessieAPi(), NessieApiV1.class, oldVersionClassLoader)) {
+            Version.CURRENT,
+            createOldVersionNessieAPi(),
+            NessieApiV1.class,
+            oldVersionClassLoader)) {
 
       Object translatedObject =
           translating.translateObject(modelObj, oldVersionClassLoader, contextClassLoader);
@@ -205,7 +213,10 @@ class TestTranslatingVersionNessieApi {
 
     try (TranslatingVersionNessieApi translating =
         new TranslatingVersionNessieApi(
-            createOldVersionNessieAPi(), NessieApiV1.class, oldVersionClassLoader)) {
+            Version.CURRENT,
+            createOldVersionNessieAPi(),
+            NessieApiV1.class,
+            oldVersionClassLoader)) {
 
       Class<?> contextClass = contextClassLoader.loadClass(className);
 
@@ -373,7 +384,10 @@ class TestTranslatingVersionNessieApi {
       throws Exception {
     try (TranslatingVersionNessieApi translating =
         new TranslatingVersionNessieApi(
-            createOldVersionNessieAPi(), NessieApiV1.class, oldVersionClassLoader)) {
+            Version.CURRENT,
+            createOldVersionNessieAPi(),
+            NessieApiV1.class,
+            oldVersionClassLoader)) {
       Class<?> nessieErrorClass =
           oldVersionClassLoader.loadClass("org.projectnessie.error.NessieError");
 

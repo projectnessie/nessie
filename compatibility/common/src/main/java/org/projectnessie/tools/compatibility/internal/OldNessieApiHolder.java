@@ -15,6 +15,7 @@
  */
 package org.projectnessie.tools.compatibility.internal;
 
+import static java.util.Collections.singletonList;
 import static org.projectnessie.tools.compatibility.internal.OldNessie.oldNessieClassLoader;
 import static org.projectnessie.tools.compatibility.internal.Util.extensionStore;
 
@@ -36,6 +37,7 @@ final class OldNessieApiHolder extends AbstractNessieApiHolder {
     ClassLoader oldVersionClassLoader = nessieVersionClassLoader(extensionContext);
     this.translatingApiInstance =
         new TranslatingVersionNessieApi(
+            clientKey.getVersion(),
             createNessieClient(oldVersionClassLoader, clientKey),
             clientKey.getType(),
             oldVersionClassLoader);
@@ -70,7 +72,7 @@ final class OldNessieApiHolder extends AbstractNessieApiHolder {
     }
 
     try {
-      return oldNessieClassLoader(clientKey.getVersion(), "nessie-client");
+      return oldNessieClassLoader(clientKey.getVersion(), singletonList("nessie-client"));
     } catch (DependencyResolutionException e) {
       throw new RuntimeException(
           "Failed to resolve dependencies for Nessie client version " + clientKey.getVersion(), e);

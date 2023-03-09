@@ -174,7 +174,7 @@ public class ITUpgradePath {
   @Test
   @Order(103)
   void commit() throws Exception {
-    ContentKey key = ContentKey.of("my", "tables", "table_name");
+    ContentKey key = ContentKey.of("my-tables-table_name");
     IcebergTable content =
         IcebergTable.of("metadata-location", 42L, 43, 44, 45, "content-id-" + version);
     String commitMessage = "hello world " + version;
@@ -228,7 +228,7 @@ public class ITUpgradePath {
         .allSatisfy(
             ref -> {
               String versionFromRef = ref.getName().substring(VERSION_BRANCH_PREFIX.length());
-              ContentKey key = ContentKey.of("my", "tables", "table_name");
+              ContentKey key = ContentKey.of("my-tables-table_name");
               IcebergTable content =
                   IcebergTable.of(
                       "metadata-location", 42L, 43, 44, 45, "content-id-" + versionFromRef);
@@ -339,7 +339,7 @@ public class ITUpgradePath {
     // The number of keys equals the number of commits per version.
     List<ContentKey> keys =
         IntStream.range(0, keysUpgradeCommitsPerVersion)
-            .mapToObj(i -> ContentKey.of(EXPLICIT_KEYS_ELEMENT, "upgrade", "table" + i))
+            .mapToObj(i -> ContentKey.of(EXPLICIT_KEYS_ELEMENT + "-upgrade-table-" + i))
             .collect(Collectors.toList());
     for (Entry<String, Map<ContentKey, IcebergTable>> hashToKeyValues :
         keysUpgradeAtHash.entrySet()) {
@@ -395,7 +395,7 @@ public class ITUpgradePath {
         keysUpgradeAtHash.getOrDefault(keysUpgradeBranch.getHash(), Collections.emptyMap());
 
     for (int i = 0; i < keysUpgradeCommitsPerVersion; i++) {
-      ContentKey key = ContentKey.of(EXPLICIT_KEYS_ELEMENT, "upgrade", "table" + i);
+      ContentKey key = ContentKey.of(EXPLICIT_KEYS_ELEMENT + "-upgrade-table-" + i);
       if ((i % 10) == 9) {
         keysUpgradeBranch =
             commitMaybeRetry(

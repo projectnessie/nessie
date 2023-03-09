@@ -15,6 +15,8 @@
  */
 package org.projectnessie.tools.compatibility.internal;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.projectnessie.tools.compatibility.api.Version.COMPAT_COMMON_DEPENDENCIES_START;
 import static org.projectnessie.tools.compatibility.api.Version.VERSIONED_REST_URI_START;
 import static org.projectnessie.tools.compatibility.internal.OldNessie.oldNessieClassLoader;
@@ -22,6 +24,7 @@ import static org.projectnessie.tools.compatibility.internal.Util.extensionStore
 import static org.projectnessie.tools.compatibility.internal.Util.withClassLoader;
 
 import java.net.URI;
+import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import org.eclipse.aether.resolution.DependencyResolutionException;
@@ -91,13 +94,16 @@ final class OldNessieServer implements NessieServer {
     // The 'nessie-jaxrs' has all the necessary dependencies to the DatabaseAdapter
     // implementations, REST services, Version store implementation, etc. in older versions.
     // Newer versions declare what is required as runtime dependencies of
-    // `nessie-compatibility-common`
-    String artifactId =
+    // `nessie-compatibility-common`, except mongodb
+    List<String> artifactIds =
         version.isGreaterThanOrEqual(COMPAT_COMMON_DEPENDENCIES_START)
-            ? "nessie-compatibility-common"
-            : "nessie-jaxrs";
+            ? asList(
+                "nessie-compatibility-common",
+                "nessie-versioned-persist-mongodb",
+                "nessie-versioned-persist-mongodb-test")
+            : singletonList("nessie-jaxrs");
     try {
-      return oldNessieClassLoader(version, artifactId);
+      return oldNessieClassLoader(version, artifactIds);
     } catch (DependencyResolutionException e) {
       throw new RuntimeException(
           "Failed to resolve dependencies for Nessie server version " + version, e);

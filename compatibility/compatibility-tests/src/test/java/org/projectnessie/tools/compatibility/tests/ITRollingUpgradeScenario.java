@@ -98,7 +98,7 @@ public class ITRollingUpgradeScenario {
   Branch commit(NessieApiV1 api, String suffix, Branch head) throws Exception {
     ThreadLocalRandom tlr = ThreadLocalRandom.current();
 
-    ContentKey key = ContentKey.of("key-" + suffix, "v" + version.toString());
+    ContentKey key = ContentKey.of("key-" + suffix + "-v" + version.toString());
     IcebergTable table =
         IcebergTable.of(
             "metadata-" + version,

@@ -21,6 +21,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -49,11 +50,14 @@ final class TranslatingVersionNessieApi implements AutoCloseable {
   private final IdentityHashMap<ClassLoader, Object> objectMappers = new IdentityHashMap<>();
   private final ClassLoader oldVersionClassLoader;
   private final NessieApi proxy;
+  private final Version version;
 
   TranslatingVersionNessieApi(
+      Version version,
       AutoCloseable oldVersionApiInstance,
       Class<? extends NessieApi> currentVersionApiType,
       ClassLoader oldVersionClassLoader) {
+    this.version = version;
     this.oldVersionApiInstance = oldVersionApiInstance;
     this.oldVersionClassLoader = oldVersionClassLoader;
     this.proxy =
@@ -408,11 +412,24 @@ final class TranslatingVersionNessieApi implements AutoCloseable {
             Thread.currentThread().getContextClassLoader(),
             interfaces,
             (proxyInstance, method, args) -> {
-              Method targetMethod =
-                  o.getClass()
-                      .getMethod(
-                          method.getName(),
-                          translateTypes(reverseClassLoader, method.getParameterTypes()));
+              Method targetMethod;
+              try {
+                targetMethod =
+                    o.getClass()
+                        .getMethod(
+                            method.getName(),
+                            translateTypes(reverseClassLoader, method.getParameterTypes()));
+              } catch (NoSuchMethodException e) {
+                throw new RuntimeException(
+                    String.format(
+                        "Method '%s.%s(%s)' does not exist for Nessie version %s.",
+                        method.getDeclaringClass().getName(),
+                        method.getName(),
+                        Arrays.stream(method.getParameterTypes())
+                            .map(Object::toString)
+                            .collect(Collectors.joining(",")),
+                        version));
+              }
               targetMethod.setAccessible(true);
               try {
                 Object result =
