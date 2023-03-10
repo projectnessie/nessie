@@ -20,7 +20,7 @@ import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.plugins.quality.Checkstyle
 import org.gradle.kotlin.dsl.apply
-import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.withType
 
 /** Makes the generated sources available to IDEs, disables Checkstyle on generated code. */
@@ -29,8 +29,9 @@ class ProtobufHelperPlugin : Plugin<Project> {
   override fun apply(project: Project): Unit =
     project.run {
       apply<ProtobufPlugin>()
-      plugins.withType<ProtobufPlugin>().configureEach {
-        val sourceSets = project.extensions.getByType<JavaPluginExtension>().sourceSets
+
+      configure<JavaPluginExtension> {
+        val sourceSets = this.sourceSets
 
         val sourceSetJavaMain = sourceSets.getByName("main").java
         sourceSetJavaMain.srcDir(project.buildDir.resolve("generated/source/proto/main/java"))

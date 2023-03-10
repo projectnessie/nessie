@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -124,8 +124,6 @@ public class ErrorTestService {
    * Throws an exception depending on the parameter.
    *
    * @return nothing
-   * @see TestNessieError#unhandledRuntimeExceptionInStore()
-   * @see TestNessieError#backendThrottledExceptionInStore()
    */
   @Path("unhandledExceptionInTvsStore/{exception}")
   @GET

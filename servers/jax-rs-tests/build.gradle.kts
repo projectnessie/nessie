@@ -64,5 +64,4 @@ dependencies {
   testCompileOnly(libs.microprofile.openapi)
 
   testImplementation(libs.bundles.junit.testing)
-  testRuntimeOnly(libs.junit.jupiter.engine)
 }

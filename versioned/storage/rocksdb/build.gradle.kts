@@ -53,5 +53,4 @@ dependencies {
   testImplementation(project(":nessie-versioned-tests"))
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
-  testRuntimeOnly(libs.junit.jupiter.engine)
 }

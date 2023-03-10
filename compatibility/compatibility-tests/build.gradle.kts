@@ -36,15 +36,15 @@ dependencies {
   implementation(platform(libs.jackson.bom))
   implementation(libs.jackson.annotations)
 
-  testImplementation(libs.guava)
-  testImplementation(project(":nessie-versioned-persist-adapter"))
-  testImplementation(project(":nessie-versioned-persist-non-transactional"))
-  testImplementation(project(":nessie-versioned-persist-in-memory"))
-  testImplementation(project(":nessie-versioned-persist-in-memory-test"))
-  testImplementation(project(":nessie-versioned-persist-rocks"))
-  testImplementation(project(":nessie-versioned-persist-rocks-test"))
-  testImplementation(project(":nessie-versioned-persist-mongodb"))
-  testImplementation(project(":nessie-versioned-persist-mongodb-test"))
+  intTestImplementation(libs.guava)
+  intTestImplementation(project(":nessie-versioned-persist-adapter"))
+  intTestImplementation(project(":nessie-versioned-persist-non-transactional"))
+  intTestImplementation(project(":nessie-versioned-persist-in-memory"))
+  intTestImplementation(project(":nessie-versioned-persist-in-memory-test"))
+  intTestImplementation(project(":nessie-versioned-persist-rocks"))
+  intTestImplementation(project(":nessie-versioned-persist-rocks-test"))
+  intTestImplementation(project(":nessie-versioned-persist-mongodb"))
+  intTestImplementation(project(":nessie-versioned-persist-mongodb-test"))
 }
 
 tasks.withType<Test>().configureEach {

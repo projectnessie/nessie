@@ -32,7 +32,6 @@ dependencies {
   implementation(baselibs.shadow)
   implementation(baselibs.protobuf)
   implementation(baselibs.errorprone)
-  implementation(baselibs.nessie.buildsupport.jacoco)
   implementation(baselibs.nessie.buildsupport.reflectionconfig)
 
   testImplementation(platform(baselibs.junit.bom))

@@ -15,6 +15,7 @@
  */
 
 import org.gradle.api.JavaVersion
+import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.plugins.JavaPlugin
@@ -28,49 +29,52 @@ import org.gradle.kotlin.dsl.maven
 import org.gradle.kotlin.dsl.repositories
 import org.gradle.kotlin.dsl.withType
 
-fun Project.nessieConfigureJava() {
-  tasks.withType<Jar>().configureEach {
-    manifest {
-      attributes["Implementation-Title"] = "Nessie ${project.name}"
-      attributes["Implementation-Version"] = project.version
-      attributes["Implementation-Vendor"] = "Dremio"
+class NessieJavaPlugin : Plugin<Project> {
+  override fun apply(project: Project): Unit =
+    project.run {
+      tasks.withType<Jar>().configureEach {
+        manifest {
+          attributes["Implementation-Title"] = "Nessie ${project.name}"
+          attributes["Implementation-Version"] = project.version
+          attributes["Implementation-Vendor"] = "Dremio"
+        }
+        duplicatesStrategy = DuplicatesStrategy.WARN
+      }
+
+      repositories {
+        mavenCentral { content { excludeVersionByRegex("io[.]delta", ".*", ".*-nessie") } }
+        maven("https://storage.googleapis.com/nessie-maven") {
+          name = "Nessie Delta custom Repository"
+          content { includeVersionByRegex("io[.]delta", ".*", ".*-nessie") }
+        }
+        if (System.getProperty("withMavenLocal").toBoolean()) {
+          mavenLocal()
+        }
+      }
+
+      tasks.withType<JavaCompile>().configureEach {
+        options.encoding = "UTF-8"
+        options.compilerArgs.add("-parameters")
+
+        // Required to enable incremental compilation w/ immutables, see
+        // https://github.com/immutables/immutables/pull/858 and
+        // https://github.com/immutables/immutables/issues/804#issuecomment-487366544
+        options.compilerArgs.add("-Aimmutables.gradle.incremental")
+      }
+
+      tasks.withType<Javadoc>().configureEach {
+        val opt = options as CoreJavadocOptions
+        // don't spam log w/ "warning: no @param/@return"
+        opt.addStringOption("Xdoclint:-reference", "-quiet")
+      }
+
+      plugins.withType<JavaPlugin>().configureEach {
+        configure<JavaPluginExtension> {
+          withJavadocJar()
+          withSourcesJar()
+          sourceCompatibility = JavaVersion.VERSION_1_8
+          targetCompatibility = JavaVersion.VERSION_1_8
+        }
+      }
     }
-    duplicatesStrategy = DuplicatesStrategy.WARN
-  }
-
-  repositories {
-    mavenCentral { content { excludeVersionByRegex("io[.]delta", ".*", ".*-nessie") } }
-    maven("https://storage.googleapis.com/nessie-maven") {
-      name = "Nessie Delta custom Repository"
-      content { includeVersionByRegex("io[.]delta", ".*", ".*-nessie") }
-    }
-    if (System.getProperty("withMavenLocal").toBoolean()) {
-      mavenLocal()
-    }
-  }
-
-  tasks.withType<JavaCompile>().configureEach {
-    options.encoding = "UTF-8"
-    options.compilerArgs.add("-parameters")
-
-    // Required to enable incremental compilation w/ immutables, see
-    // https://github.com/immutables/immutables/pull/858 and
-    // https://github.com/immutables/immutables/issues/804#issuecomment-487366544
-    options.compilerArgs.add("-Aimmutables.gradle.incremental")
-  }
-
-  tasks.withType<Javadoc>().configureEach {
-    val opt = options as CoreJavadocOptions
-    // don't spam log w/ "warning: no @param/@return"
-    opt.addStringOption("Xdoclint:-reference", "-quiet")
-  }
-
-  plugins.withType<JavaPlugin>().configureEach {
-    configure<JavaPluginExtension> {
-      withJavadocJar()
-      withSourcesJar()
-      sourceCompatibility = JavaVersion.VERSION_1_8
-      targetCompatibility = JavaVersion.VERSION_1_8
-    }
-  }
 }

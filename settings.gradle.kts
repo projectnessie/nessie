@@ -121,8 +121,6 @@ fun loadProjects(file: String, groupId: String) =
     nessieProject(name as String, groupId, file(directory as String))
   }
 
-nessieProject("code-coverage", groupIdMain, file("code-coverage"))
-
 loadProjects("gradle/projects.main.properties", groupIdMain)
 
 val ideSyncActive =
@@ -188,7 +186,7 @@ if (!System.getProperty("nessie.integrationsTesting.enable").toBoolean()) {
 
   projectPathToGroupId[":pom-relocations"] = "org.projectnessie"
   allLoadedProjects
-    .filter { it.name != "code-coverage" && !it.name.startsWith("nessie-versioned-storage") }
+    .filter { !it.name.startsWith("nessie-versioned-storage") }
     .forEach { projectDescriptor ->
       val projectDir = "pom-relocations/${projectDescriptor.name}"
       val projectPath = ":pom-relocations:${projectDescriptor.name}"

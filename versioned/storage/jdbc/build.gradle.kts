@@ -57,18 +57,18 @@ dependencies {
 
   compileOnly(project(":nessie-versioned-storage-testextension"))
 
-  testImplementation(project(":nessie-versioned-storage-common-tests"))
-  testImplementation(project(":nessie-versioned-storage-testextension"))
-  testImplementation(project(":nessie-versioned-tests"))
-  testRuntimeOnly(libs.agroal.pool)
+  testFixturesApi(project(":nessie-versioned-storage-common"))
+  testFixturesApi(project(":nessie-versioned-storage-common-tests"))
+  testFixturesApi(project(":nessie-versioned-storage-testextension"))
+  testFixturesApi(project(":nessie-versioned-tests"))
+  testFixturesImplementation(libs.agroal.pool)
   testRuntimeOnly(libs.h2)
-  testRuntimeOnly(libs.postgresql)
-  testRuntimeOnly(libs.testcontainers.postgresql)
-  testRuntimeOnly(libs.testcontainers.cockroachdb)
-  testRuntimeOnly(libs.docker.java.api)
-  testImplementation(platform(libs.junit.bom))
-  testImplementation(libs.bundles.junit.testing)
-  testRuntimeOnly(libs.junit.jupiter.engine)
+  intTestRuntimeOnly(libs.postgresql)
+  intTestRuntimeOnly(libs.testcontainers.postgresql)
+  intTestRuntimeOnly(libs.testcontainers.cockroachdb)
+  intTestRuntimeOnly(libs.docker.java.api)
+  testFixturesImplementation(platform(libs.junit.bom))
+  testFixturesImplementation(libs.bundles.junit.testing)
 }
 
 // Testcontainers is not supported on Windows :(

@@ -25,7 +25,7 @@ plugins {
   `nessie-conventions`
 }
 
-applyShadowJar()
+apply<NessieShadowJarPlugin>()
 
 extra["maven.name"] = "Nessie - GC - Standalone command line tool"
 
@@ -96,7 +96,6 @@ dependencies {
 
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
-  testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
 tasks.named<Test>("test") { systemProperty("expectedNessieVersion", project.version) }

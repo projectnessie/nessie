@@ -16,7 +16,7 @@ runs:
         verbose: true
         fail_ci_if_error: true
         flags: java
-        files: code-coverage/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml
+        files: 'build/reports/jacoco/*odeCoverageReport/*odeCoverageReport.xml'
     - uses: codecov/codecov-action@v3
       if: github.repository_owner == 'projectnessie'
       continue-on-error: true

@@ -25,7 +25,7 @@ plugins {
   `nessie-conventions`
 }
 
-applyShadowJar()
+apply<NessieShadowJarPlugin>()
 
 val sparkScala = getSparkScalaVersionsForProject()
 
@@ -42,25 +42,25 @@ dependencies {
 
   if (sparkScala.sparkMajorVersion == "3.3") {
     implementation(platform(libs.jackson.bom))
+    testFixturesImplementation(platform(libs.jackson.bom))
   }
 
-  testImplementation(project(":nessie-spark-extensions-basetests_${sparkScala.scalaMajorVersion}"))
+  testFixturesApi(project(":nessie-spark-extensions-basetests_${sparkScala.scalaMajorVersion}"))
 
   val versionIceberg = libs.versions.iceberg.get()
-  testImplementation("org.apache.iceberg:iceberg-nessie:$versionIceberg")
-  testImplementation("org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:$versionIceberg")
-  testImplementation("org.apache.iceberg:iceberg-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:$versionIceberg")
-  testImplementation("org.apache.iceberg:iceberg-hive-metastore:$versionIceberg")
+  testFixturesImplementation("org.apache.iceberg:iceberg-nessie:$versionIceberg")
+  testFixturesImplementation("org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:$versionIceberg")
+  testFixturesImplementation("org.apache.iceberg:iceberg-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:$versionIceberg")
+  testFixturesImplementation("org.apache.iceberg:iceberg-hive-metastore:$versionIceberg")
 
-  testImplementation(libs.logback.classic)
-  testImplementation(libs.slf4j.log4j.over.slf4j)
-  testImplementation("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
-  testImplementation("org.apache.spark:spark-core_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
-  testImplementation("org.apache.spark:spark-hive_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
+  testFixturesRuntimeOnly(libs.logback.classic)
+  testFixturesImplementation(libs.slf4j.log4j.over.slf4j)
+  testFixturesImplementation("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
+  testFixturesImplementation("org.apache.spark:spark-core_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
+  testFixturesImplementation("org.apache.spark:spark-hive_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
 
-  testImplementation(platform(libs.junit.bom))
-  testImplementation(libs.bundles.junit.testing)
-  testRuntimeOnly(libs.junit.jupiter.engine)
+  testFixturesApi(platform(libs.junit.bom))
+  testFixturesApi(libs.bundles.junit.testing)
 
   nessieQuarkusServer(nessieQuarkusServerRunner())
 }

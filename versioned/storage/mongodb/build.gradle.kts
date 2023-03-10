@@ -54,13 +54,12 @@ dependencies {
 
   compileOnly(project(":nessie-versioned-storage-testextension"))
 
-  testImplementation(project(":nessie-versioned-storage-common-tests"))
-  testImplementation(project(":nessie-versioned-storage-testextension"))
-  testImplementation(project(":nessie-versioned-tests"))
-  testRuntimeOnly(libs.testcontainers.mongodb)
-  testImplementation(platform(libs.junit.bom))
-  testImplementation(libs.bundles.junit.testing)
-  testRuntimeOnly(libs.junit.jupiter.engine)
+  intTestImplementation(project(":nessie-versioned-storage-common-tests"))
+  intTestImplementation(project(":nessie-versioned-storage-testextension"))
+  intTestImplementation(project(":nessie-versioned-tests"))
+  intTestRuntimeOnly(libs.testcontainers.mongodb)
+  intTestImplementation(platform(libs.junit.bom))
+  intTestImplementation(libs.bundles.junit.testing)
 }
 
 // Testcontainers is not supported on Windows :(

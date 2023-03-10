@@ -25,7 +25,7 @@ plugins {
   `nessie-conventions`
 }
 
-applyShadowJar()
+apply<NessieShadowJarPlugin>()
 
 dependencies {
   implementation(project(":nessie-client"))
@@ -52,11 +52,15 @@ dependencies {
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
 
-  testCompileOnly(libs.microprofile.openapi)
+  testFixturesImplementation(project(":nessie-client"))
 
-  testImplementation(platform(libs.junit.bom))
-  testImplementation(libs.bundles.junit.testing)
-  testRuntimeOnly(libs.junit.jupiter.engine)
+  testFixturesApi(platform(libs.junit.bom))
+  testFixturesApi(libs.bundles.junit.testing)
+
+  testFixturesApi(libs.microprofile.openapi)
+  testFixturesCompileOnly(libs.picocli)
+  testFixturesCompileOnly(platform(libs.jackson.bom))
+  testFixturesCompileOnly(libs.jackson.annotations)
 
   nessieQuarkusServer(project(":nessie-quarkus", "quarkusRunner"))
 }
