@@ -71,7 +71,7 @@ public class CheckContent extends BaseCommand {
         "The max number of keys to load at the same time.",
         "If an error occurs while loading or parsing the values for a single key, the error "
             + "will be propagated to all keys processed in the same batch. In such a case, rerun "
-            + "the check for the affected keys either with a batch size of 1."
+            + "the check for the affected keys with a batch size of 1."
       })
   private int batchSize;
 
