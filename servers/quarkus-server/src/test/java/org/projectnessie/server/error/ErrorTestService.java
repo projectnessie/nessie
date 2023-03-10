@@ -44,7 +44,7 @@ import org.projectnessie.versioned.paging.PaginationIterator;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.store.PersistVersionStore;
 
-/** REST service used to generate a bunch of violations for {@code TestNessieError}. */
+/** REST service used to generate a bunch of violations for {@link TestNessieError}. */
 @RequestScoped
 @Path("/nessieErrorTest")
 @Consumes(MediaType.WILDCARD)
