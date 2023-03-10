@@ -16,6 +16,7 @@
 package org.projectnessie.quarkus.cli;
 
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
+import static org.projectnessie.model.Content.Type.NAMESPACE;
 import static org.projectnessie.quarkus.cli.ImportRepository.ERASE_BEFORE_IMPORT;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
@@ -26,6 +27,7 @@ import io.quarkus.test.junit.main.QuarkusMainLauncher;
 import io.quarkus.test.junit.main.QuarkusMainTest;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.UUID;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -36,6 +38,7 @@ import org.projectnessie.api.NessieVersion;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.Namespace;
 import org.projectnessie.quarkus.cli.ExportRepository.Format;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.CommitMetaSerializer;
@@ -227,6 +230,8 @@ public class ITExportImport {
     ByteString commitMeta =
         CommitMetaSerializer.METADATA_SERIALIZER.toBytes(CommitMeta.fromMessage("hello"));
     ContentKey key = ContentKey.of("namespace123", "table123");
+    String namespaceId = UUID.randomUUID().toString();
+    String tableId = UUID.randomUUID().toString();
     Hash main =
         adapter.commit(
             ImmutableCommitParams.builder()
@@ -234,12 +239,23 @@ public class ITExportImport {
                 .commitMetaSerialized(commitMeta)
                 .addPuts(
                     KeyWithBytes.of(
+                        key.getParent(),
+                        ContentId.of(namespaceId),
+                        payloadForContent(NAMESPACE),
+                        DefaultStoreWorker.instance()
+                            .toStoreOnReferenceState(
+                                Namespace.builder()
+                                    .id(namespaceId)
+                                    .addElements("namespace123")
+                                    .build(),
+                                a -> {})),
+                    KeyWithBytes.of(
                         key,
-                        ContentId.of("id123"),
+                        ContentId.of(tableId),
                         payloadForContent(ICEBERG_TABLE),
                         DefaultStoreWorker.instance()
                             .toStoreOnReferenceState(
-                                IcebergTable.of("meta", 42, 43, 44, 45, "id123"), a -> {})))
+                                IcebergTable.of("meta", 42, 43, 44, 45, tableId), a -> {})))
                 .build());
     adapter.create(branchFoo, main);
     adapter.commit(
