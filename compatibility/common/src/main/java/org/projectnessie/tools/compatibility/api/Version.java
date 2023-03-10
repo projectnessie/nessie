@@ -24,6 +24,8 @@ import java.util.Objects;
  */
 public class Version implements Comparable<Version> {
 
+  public static final Version CLIENT_RESULTS_NATIVE_STREAM = Version.parseVersion("0.31.0");
+  public static final Version HAS_MERGE_RESPONSE = Version.parseVersion("0.31.0");
   public static final Version VERSIONED_REST_URI_START = Version.parseVersion("0.46.0");
   public static final Version REFLOG_FOR_COMMIT_REMOVED = Version.parseVersion("0.44.0");
   // OPENTRACING_VERSION_MISMATCH_* is the version range where Nessie declared dependencies on

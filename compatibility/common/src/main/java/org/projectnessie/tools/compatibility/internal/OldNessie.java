@@ -19,6 +19,7 @@ import static java.util.Arrays.asList;
 import static org.projectnessie.tools.compatibility.internal.DependencyResolver.resolve;
 import static org.projectnessie.tools.compatibility.internal.DependencyResolver.toClassLoader;
 
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -37,7 +38,7 @@ final class OldNessie {
    * This function handles the special cases for Nessie 0.40.0..0.41.0 which have a few issues in
    * the published poms.
    */
-  static ClassLoader oldNessieClassLoader(Version version, String mainArtifactId)
+  static ClassLoader oldNessieClassLoader(Version version, List<String> artifactIds)
       throws DependencyResolutionException {
 
     String groupId =
@@ -50,9 +51,17 @@ final class OldNessie {
             new Dependency(
                 new DefaultArtifact(groupId, artifactId, "jar", version.toString()), "compile");
 
+    String mainArtifactId = artifactIds.get(0);
+
     Dependency mainDependency = nessieDep.apply(mainArtifactId);
 
-    Consumer<CollectRequest> collect = r -> r.setRoot(mainDependency);
+    Consumer<CollectRequest> collect =
+        r -> {
+          r.setRoot(mainDependency);
+          for (int i = 1; i < artifactIds.size(); i++) {
+            r.addDependency(nessieDep.apply(artifactIds.get(i)));
+          }
+        };
 
     if (Version.OPENTRACING_VERSION_MISMATCH_LOW.isLessThanOrEqual(version)
         && Version.OPENTRACING_VERSION_MISMATCH_HIGH.isGreaterThanOrEqual(version)) {
@@ -80,6 +89,9 @@ final class OldNessie {
               r.setRoot(mainDependency);
             }
             r.addDependency(mainDependency);
+            for (int i = 1; i < artifactIds.size(); i++) {
+              r.addDependency(nessieDep.apply(artifactIds.get(i)));
+            }
 
             asList("opentracing-api", "opentracing-util", "opentracing-noop")
                 .forEach(
@@ -96,6 +108,9 @@ final class OldNessie {
       collect =
           r -> {
             r.setRoot(mainDependency);
+            for (int i = 1; i < artifactIds.size(); i++) {
+              r.addDependency(nessieDep.apply(artifactIds.get(i)));
+            }
 
             // Nessie clients in versions 0.46.0 - 0.47.1 use slf4j (through transitive compile-only
             // dependencies), but do not declare an explicit runtime dependency on it.
