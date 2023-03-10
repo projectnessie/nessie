@@ -23,9 +23,7 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.Operation;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
-import picocli.CommandLine.Spec;
 
 /** Implementation to read commit log. */
 @Command(name = "commits", mixinStandardHelpOptions = true, description = "Read commits")
@@ -35,8 +33,6 @@ public class ReadCommits extends AbstractCommand {
       names = {"-r", "--ref"},
       description = "Name of the branch/tag to read the commit log from, defaults to 'main'")
   private String ref = "main";
-
-  @Spec private CommandSpec spec;
 
   @Override
   public void execute() throws NessieNotFoundException {

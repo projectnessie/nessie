@@ -25,9 +25,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Reference;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
-import picocli.CommandLine.Spec;
 
 /** Deletes content objects. */
 @Command(name = "delete", mixinStandardHelpOptions = true, description = "Delete content objects")
@@ -48,8 +46,6 @@ public class DeleteContent extends AbstractCommand {
       names = {"-m", "--message"},
       description = "Commit message (auto-generated if not set)")
   private String message;
-
-  @Spec private CommandSpec spec;
 
   @Override
   public void execute() throws NessieNotFoundException, NessieConflictException {

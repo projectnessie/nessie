@@ -23,9 +23,7 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.GetMultipleContentsResponse;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
-import picocli.CommandLine.Spec;
 
 /** Reads content objects. */
 @Command(name = "content", mixinStandardHelpOptions = true, description = "Read content objects")
@@ -41,8 +39,6 @@ public class ReadContent extends AbstractCommand {
       description = "Content key to use",
       required = true)
   private List<String> key;
-
-  @Spec private CommandSpec spec;
 
   @Override
   public void execute() throws NessieNotFoundException {

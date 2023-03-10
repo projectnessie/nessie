@@ -16,6 +16,7 @@
 package org.projectnessie.tools.contentgenerator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.projectnessie.tools.contentgenerator.RunContentGenerator.runGeneratorCmd;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,6 +28,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.LogResponse.LogEntry;
+import org.projectnessie.tools.contentgenerator.RunContentGenerator.ProcessResult;
 
 class ITReadCommits extends AbstractContentGeneratorTest {
 

@@ -16,6 +16,7 @@
 package org.projectnessie.tools.contentgenerator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.projectnessie.tools.contentgenerator.RunContentGenerator.runGeneratorCmd;
 
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +28,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Reference;
+import org.projectnessie.tools.contentgenerator.RunContentGenerator.ProcessResult;
 
 class ITDeleteContent extends AbstractContentGeneratorTest {
 
