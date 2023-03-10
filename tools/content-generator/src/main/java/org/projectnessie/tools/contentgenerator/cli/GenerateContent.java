@@ -24,10 +24,13 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.function.IntFunction;
@@ -50,6 +53,7 @@ import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.model.ImmutableIcebergView;
+import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.types.ContentTypes;
@@ -184,6 +188,8 @@ public class GenerateContent extends AbstractCommand {
           .getOut()
           .printf("Starting contents generation, %d commits...%n", numCommits);
 
+      Map<String, Set<ContentKey>> createdNamespaces = new HashMap<>();
+
       for (int commitNum = 0; commitNum < numCommits; commitNum++) {
         // Choose a random branch to commit to
         String branchName = branches.get(random.nextInt(branches.size()));
@@ -207,6 +213,9 @@ public class GenerateContent extends AbstractCommand {
                 commitToBranch.getName(),
                 commitToBranch.getHash());
 
+        Set<ContentKey> namespacesForBranch =
+            createdNamespaces.computeIfAbsent(branchName, b -> new HashSet<>());
+
         CommitMultipleOperationsBuilder commit =
             api.commitMultipleOperations()
                 .branch(commitToBranch)
@@ -218,6 +227,34 @@ public class GenerateContent extends AbstractCommand {
                         .author(System.getProperty("user.name"))
                         .authorTime(Instant.now())
                         .build());
+
+        // Collect the namespaces that we do not (yet) know whether those exist.
+        Set<ContentKey> namespacesToCheck = new HashSet<>();
+        for (ContentKey key : keys) {
+          for (ContentKey namespaceKey = key;
+              namespaceKey.getElementCount() > 1;
+              namespaceKey = namespaceKey.getParent()) {
+            ContentKey nsKey = namespaceKey.getParent();
+            if (!namespacesForBranch.contains(nsKey)) {
+              namespacesToCheck.add(nsKey);
+            }
+          }
+        }
+
+        // Only create the missing namespaces
+        if (!namespacesToCheck.isEmpty()) {
+          Set<ContentKey> existingNamespaces =
+              api.getContent()
+                  .keys(new ArrayList<>(namespacesToCheck))
+                  .refName(branchName)
+                  .get()
+                  .keySet();
+          namespacesToCheck.stream()
+              .filter(nsKey -> !existingNamespaces.contains(nsKey))
+              .map(nsKey -> Put.of(nsKey, Namespace.of(nsKey)))
+              .forEach(commit::operation);
+        }
+
         for (ContentKey key : keys) {
           Content existingContent = existing.get(key);
           Content newContents =
@@ -235,6 +272,9 @@ public class GenerateContent extends AbstractCommand {
         }
         try {
           Branch newHead = commit.commit();
+
+          // We know that these namespaces exist, so we can skip those in the next round.
+          namespacesForBranch.addAll(namespacesToCheck);
 
           if (random.nextDouble() < newTagProbability) {
             Tag tag = Tag.of("new-tag-" + random.nextLong(), newHead.getHash());
