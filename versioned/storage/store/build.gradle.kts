@@ -57,7 +57,6 @@ dependencies {
   testImplementation(project(":nessie-versioned-storage-testextension"))
   testImplementation(project(":nessie-versioned-tests"))
   testImplementation(libs.bundles.junit.testing)
-  testRuntimeOnly(libs.junit.jupiter.engine)
 
   testCompileOnly(platform(libs.jackson.bom))
   testCompileOnly(libs.jackson.annotations)

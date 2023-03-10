@@ -107,9 +107,6 @@ dependencies {
   testFixturesCompileOnly(libs.jackson.annotations)
   testCompileOnly(platform(libs.jackson.bom))
   testCompileOnly(libs.jackson.annotations)
-
-  testRuntimeOnly(libs.junit.jupiter.engine)
-  intTestRuntimeOnly(libs.junit.jupiter.engine)
 }
 
 // Issue w/ testcontainers/podman in GH workflows :(

@@ -62,8 +62,6 @@ dependencies {
   testFixturesCompileOnly(platform(libs.jackson.bom))
   testFixturesCompileOnly(libs.jackson.annotations)
 
-  testRuntimeOnly(libs.junit.jupiter.engine)
-
   nessieQuarkusServer(project(":nessie-quarkus", "quarkusRunner"))
 }
 

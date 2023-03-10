@@ -58,10 +58,8 @@ dependencies {
   testRuntimeOnly(libs.h2)
   intTestRuntimeOnly(libs.postgresql)
 
-  testFixturesApi(platform(libs.junit.bom))
-  testFixturesApi(libs.bundles.junit.testing)
-  testRuntimeOnly(libs.junit.jupiter.engine)
-  intTestRuntimeOnly(libs.junit.jupiter.engine)
+  testFixturesImplementation(platform(libs.junit.bom))
+  testFixturesImplementation(libs.bundles.junit.testing)
 }
 
 tasks.named<Test>("intTest") {

@@ -118,7 +118,7 @@ class NessieTestingPlugin : Plugin<Project> {
       configure<TestingExtension> {
         val test =
           suites.named<JvmTestSuite>("test") {
-            useJUnitJupiter()
+            useJUnitJupiter(libsRequiredVersion("junit"))
 
             targets.all {
               testTask.configure {
@@ -133,7 +133,7 @@ class NessieTestingPlugin : Plugin<Project> {
           }
 
         suites.register<JvmTestSuite>("intTest") {
-          useJUnitJupiter()
+          useJUnitJupiter(libsRequiredVersion("junit"))
 
           testType.set(TestSuiteType.INTEGRATION_TEST)
 

@@ -33,5 +33,5 @@ dependencies {
   implementation(libs.junit.platform.launcher)
 
   testImplementation(libs.junit.platform.testkit)
-  testImplementation(libs.junit.jupiter.engine)
+  testCompileOnly(libs.junit.jupiter.engine)
 }

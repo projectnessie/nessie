@@ -69,8 +69,6 @@ dependencies {
   intTestRuntimeOnly(libs.docker.java.api)
   testFixturesImplementation(platform(libs.junit.bom))
   testFixturesImplementation(libs.bundles.junit.testing)
-  testRuntimeOnly(libs.junit.jupiter.engine)
-  intTestRuntimeOnly(libs.junit.jupiter.engine)
 }
 
 // Testcontainers is not supported on Windows :(

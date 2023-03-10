@@ -100,7 +100,7 @@ fun JvmComponentDependencies.forJacksonVersion(jacksonVersion: String) {
 
 @Suppress("UnstableApiUsage")
 fun JvmTestSuite.commonCompatSuite() {
-  useJUnitJupiter()
+  useJUnitJupiter(libsRequiredVersion("junit"))
 
   sources { java.srcDirs(sourceSets.getByName("test").java.srcDirs) }
 

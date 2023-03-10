@@ -60,7 +60,6 @@ dependencies {
   intTestRuntimeOnly(libs.testcontainers.mongodb)
   intTestImplementation(platform(libs.junit.bom))
   intTestImplementation(libs.bundles.junit.testing)
-  intTestRuntimeOnly(libs.junit.jupiter.engine)
 }
 
 // Testcontainers is not supported on Windows :(

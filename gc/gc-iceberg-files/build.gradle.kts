@@ -71,8 +71,6 @@ dependencies {
 
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
-  testRuntimeOnly(libs.junit.jupiter.engine)
-  intTestRuntimeOnly(libs.junit.jupiter.engine)
 }
 
 tasks.withType(Test::class.java).configureEach {
