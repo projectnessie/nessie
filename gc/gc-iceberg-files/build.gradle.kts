@@ -57,17 +57,17 @@ dependencies {
   testFixturesApi(nessieProject("nessie-s3mock"))
   testFixturesApi(nessieProject("nessie-s3minio"))
 
-  testFixturesApi(libs.logback.classic)
+  testFixturesCompileOnly(libs.logback.classic)
 
-  testFixturesApi(platform(libs.jackson.bom))
-  testFixturesApi(libs.jackson.annotations)
+  testFixturesCompileOnly(platform(libs.jackson.bom))
+  testFixturesAnnotationProcessor(libs.jackson.annotations)
 
-  testFixturesApi(libs.microprofile.openapi)
+  testFixturesCompileOnly(libs.microprofile.openapi)
 
   testFixturesApi(platform(libs.awssdk.bom))
   testFixturesApi(libs.awssdk.s3)
-  testFixturesApi(libs.awssdk.sts)
-  testFixturesApi(libs.hadoop.aws)
+  testFixturesRuntimeOnly(libs.awssdk.sts)
+  testFixturesRuntimeOnly(libs.hadoop.aws)
 
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)

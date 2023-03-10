@@ -64,6 +64,9 @@ dependencies {
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
 
+  testFixturesCompileOnly(libs.jakarta.annotation.api)
+  testFixturesCompileOnly(libs.findbugs.jsr305)
+
   testRuntimeOnly(project(":nessie-server-store"))
 
   testImplementation(project(":nessie-versioned-persist-serialize"))

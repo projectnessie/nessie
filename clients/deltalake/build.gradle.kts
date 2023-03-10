@@ -45,29 +45,29 @@ dependencies {
   compileOnly(libs.microprofile.openapi)
   compileOnly(libs.errorprone.annotations)
 
-  testFixturesApi(nessieProject("nessie-model"))
-  testFixturesApi(nessieProject("nessie-client"))
-  testFixturesApi("org.apache.spark:spark-core_${sparkScala.scalaMajorVersion}") {
+  testFixturesImplementation(nessieProject("nessie-model"))
+  testFixturesImplementation(nessieProject("nessie-client"))
+  testFixturesImplementation("org.apache.spark:spark-core_${sparkScala.scalaMajorVersion}") {
     forSpark(sparkScala.sparkVersion)
   }
-  testFixturesApi("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") {
+  testFixturesImplementation("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") {
     forSpark(sparkScala.sparkVersion)
   }
-  testFixturesApi(
+  testFixturesImplementation(
     nessieProject(
       "nessie-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}"
     )
   )
-  testFixturesApi(
+  testFixturesImplementation(
     "com.fasterxml.jackson.module:jackson-module-scala_${sparkScala.scalaMajorVersion}"
   )
-  testFixturesApi(libs.delta.core)
+  testFixturesImplementation(libs.delta.core)
 
-  testFixturesApi(platform(libs.jackson.bom))
-  testFixturesApi(libs.jackson.databind)
+  testFixturesImplementation(platform(libs.jackson.bom))
+  testFixturesImplementation(libs.jackson.databind)
   testFixturesApi(libs.microprofile.openapi)
-  testFixturesApi(libs.logback.classic)
-  testFixturesApi(libs.slf4j.log4j.over.slf4j)
+  testFixturesImplementation(libs.logback.classic)
+  testFixturesImplementation(libs.slf4j.log4j.over.slf4j)
   testFixturesCompileOnly(libs.errorprone.annotations)
 
   testFixturesApi(platform(libs.junit.bom))

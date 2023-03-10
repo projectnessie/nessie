@@ -52,7 +52,7 @@ dependencies {
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
 
-  testFixturesApi(project(":nessie-client"))
+  testFixturesImplementation(project(":nessie-client"))
 
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)

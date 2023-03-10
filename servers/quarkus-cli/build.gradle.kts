@@ -82,7 +82,7 @@ dependencies {
   annotationProcessor(libs.immutables.value.processor)
 
   testFixturesApi(project(":nessie-quarkus-tests"))
-  testFixturesApi(project(":nessie-versioned-persist-adapter"))
+  testFixturesImplementation(project(":nessie-versioned-persist-adapter"))
   intTestImplementation(project(":nessie-versioned-persist-mongodb-test"))
   testFixturesApi(project(":nessie-versioned-tests"))
   intTestImplementation(project(":nessie-versioned-storage-mongodb"))

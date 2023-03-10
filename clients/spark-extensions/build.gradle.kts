@@ -42,22 +42,22 @@ dependencies {
 
   if (sparkScala.sparkMajorVersion == "3.3") {
     implementation(platform(libs.jackson.bom))
-    testFixturesApi(platform(libs.jackson.bom))
+    testFixturesImplementation(platform(libs.jackson.bom))
   }
 
   testFixturesApi(project(":nessie-spark-extensions-basetests_${sparkScala.scalaMajorVersion}"))
 
   val versionIceberg = libs.versions.iceberg.get()
-  testFixturesApi("org.apache.iceberg:iceberg-nessie:$versionIceberg")
-  testFixturesApi("org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:$versionIceberg")
-  testFixturesApi("org.apache.iceberg:iceberg-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:$versionIceberg")
-  testFixturesApi("org.apache.iceberg:iceberg-hive-metastore:$versionIceberg")
+  testFixturesImplementation("org.apache.iceberg:iceberg-nessie:$versionIceberg")
+  testFixturesImplementation("org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:$versionIceberg")
+  testFixturesImplementation("org.apache.iceberg:iceberg-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:$versionIceberg")
+  testFixturesImplementation("org.apache.iceberg:iceberg-hive-metastore:$versionIceberg")
 
-  testFixturesApi(libs.logback.classic)
-  testFixturesApi(libs.slf4j.log4j.over.slf4j)
-  testFixturesApi("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
-  testFixturesApi("org.apache.spark:spark-core_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
-  testFixturesApi("org.apache.spark:spark-hive_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
+  testFixturesRuntimeOnly(libs.logback.classic)
+  testFixturesImplementation(libs.slf4j.log4j.over.slf4j)
+  testFixturesImplementation("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
+  testFixturesImplementation("org.apache.spark:spark-core_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
+  testFixturesImplementation("org.apache.spark:spark-hive_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
 
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)

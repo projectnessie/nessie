@@ -49,12 +49,12 @@ dependencies {
   testFixturesApi(project(":nessie-versioned-spi"))
 
   testFixturesApi(project(":nessie-versioned-tests"))
-  testFixturesApi(libs.immutables.value.annotations)
+  testFixturesCompileOnly(libs.immutables.value.annotations)
   testFixturesAnnotationProcessor(libs.immutables.value.processor)
   testFixturesApi(project(":nessie-versioned-persist-testextension"))
   testFixturesApi(project(":nessie-versioned-persist-tests"))
   testFixturesApi(project(":nessie-versioned-persist-transactional-test"))
-  testFixturesApi(libs.logback.classic)
+  testFixturesImplementation(libs.logback.classic)
   testRuntimeOnly(libs.h2)
   intTestRuntimeOnly(libs.postgresql)
 

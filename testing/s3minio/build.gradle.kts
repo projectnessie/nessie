@@ -41,11 +41,6 @@ dependencies {
 
   compileOnly(libs.errorprone.annotations)
 
-  // TODO issue in JvmSuitePlugin, that these dependencies are _not_ inherited by default
-  intTestImplementation(platform(libs.awssdk.bom))
-  intTestImplementation(libs.awssdk.s3)
-  intTestImplementation(libs.awssdk.url.connection.client)
-
   intTestImplementation(libs.bundles.junit.testing)
   intTestRuntimeOnly(libs.junit.jupiter.engine)
   intTestImplementation(libs.hadoop.common) { withSparkExcludes() }

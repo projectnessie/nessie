@@ -55,17 +55,18 @@ dependencies {
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
 
-  testFixturesApi(platform(libs.jackson.bom))
-  testFixturesApi(libs.jackson.databind)
-  testFixturesApi(libs.guava)
+  testFixturesImplementation(platform(libs.jackson.bom))
+  testFixturesImplementation(libs.jackson.databind)
+  testFixturesImplementation(libs.guava)
+  testFixturesApi(libs.jakarta.annotation.api)
   testFixturesApi(project(":nessie-client"))
   testFixturesApi(project(":nessie-server-store"))
   testFixturesApi(project(":nessie-versioned-transfer-proto"))
   testFixturesApi(project(":nessie-versioned-spi"))
   testFixturesApi(project(":nessie-versioned-persist-adapter"))
   testFixturesApi(project(":nessie-versioned-persist-testextension"))
-  testImplementation(project(":nessie-versioned-persist-in-memory"))
-  testImplementation(project(":nessie-versioned-persist-in-memory-test"))
+  testFixturesApi(project(":nessie-versioned-persist-in-memory"))
+  testFixturesApi(project(":nessie-versioned-persist-in-memory-test"))
   intTestImplementation(project(":nessie-versioned-persist-mongodb"))
   intTestImplementation(project(":nessie-versioned-persist-mongodb-test"))
   intTestImplementation(project(":nessie-versioned-persist-dynamodb"))
@@ -88,9 +89,9 @@ dependencies {
   intTestRuntimeOnly(libs.h2)
 
   // javax/jakarta
-  testFixturesApi(libs.jakarta.annotation.api)
+  testFixturesImplementation(libs.jakarta.annotation.api)
 
-  testFixturesApi(libs.microprofile.openapi)
+  testFixturesImplementation(libs.microprofile.openapi)
 
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
