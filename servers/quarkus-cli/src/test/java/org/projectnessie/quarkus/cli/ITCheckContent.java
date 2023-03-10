@@ -15,7 +15,9 @@
  */
 package org.projectnessie.quarkus.cli;
 
+import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.groups.Tuple.tuple;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
@@ -23,6 +25,7 @@ import com.google.protobuf.ByteString;
 import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.junit.main.QuarkusMainLauncher;
 import io.quarkus.test.junit.main.QuarkusMainTest;
+import java.util.Comparator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -62,23 +65,23 @@ class ITCheckContent extends BaseContentTest<CheckContentEntry> {
   @Test
   public void testNonExistingKey(QuarkusMainLauncher launcher) throws Exception {
     launch(launcher, "check-content", "-k", "namespace123", "-k", "unknown12345");
-    assertThat(entries).hasSize(1);
     assertThat(entries)
+        .hasSize(1)
         .first()
-        .satisfies(
-            e -> {
-              assertThat(e.getStatus()).isEqualTo("ERROR");
-              assertThat(e.getKey()).isEqualTo(ContentKey.of("namespace123", "unknown12345"));
-              assertThat(e.getContent()).isNull();
-              assertThat(e.getErrorMessage()).isEqualTo("Missing content");
-            });
+        .extracting(
+            CheckContentEntry::getKey,
+            CheckContentEntry::getStatus,
+            CheckContentEntry::getContent,
+            CheckContentEntry::getErrorMessage)
+        .containsExactly(
+            ContentKey.of("namespace123", "unknown12345"), "ERROR", null, "Missing content");
     assertThat(result.exitCode()).isEqualTo(2);
   }
 
   @Test
   public void testAdapterError(QuarkusMainLauncher launcher, DatabaseAdapter adapter)
       throws Exception {
-    ContentKey k1 = ContentKey.of("namespace123", "table123");
+    ContentKey k1 = ContentKey.of("table123");
     adapter.commit(
         ImmutableCommitParams.builder()
             .toBranch(BranchName.of("main"))
@@ -92,18 +95,19 @@ class ITCheckContent extends BaseContentTest<CheckContentEntry> {
             .build());
 
     launch(launcher, "check-content");
-    assertThat(entries).hasSize(1);
     assertThat(entries)
+        .hasSize(1)
         .first()
-        .satisfies(
-            e -> {
-              assertThat(e.getStatus()).isEqualTo("ERROR");
-              assertThat(e.getKey()).isEqualTo(ContentKey.of("namespace123", "table123"));
-              assertThat(e.getContent()).isNull();
-              assertThat(e.getErrorMessage()).isEqualTo("Failure parsing data");
-              assertThat(e.getExceptionStackTrace())
-                  .contains("Protocol message contained an invalid tag");
-            });
+        .extracting(
+            CheckContentEntry::getKey,
+            CheckContentEntry::getStatus,
+            CheckContentEntry::getContent,
+            CheckContentEntry::getErrorMessage,
+            e ->
+                e.getExceptionStackTrace() != null
+                    && e.getExceptionStackTrace()
+                        .contains("Protocol message contained an invalid tag"))
+        .containsExactly(ContentKey.of("table123"), "ERROR", null, "Failure parsing data", true);
     assertThat(result.exitCode()).isEqualTo(2);
   }
 
@@ -120,16 +124,25 @@ class ITCheckContent extends BaseContentTest<CheckContentEntry> {
 
     // Note: SimpleStoreWorker will not be able to parse IcebergTable objects
     launch(launcher, "check-content", "--summary", "--batch=" + batchSize);
-    assertThat(entries).allSatisfy(e -> assertThat(e.getStatus()).isEqualTo("ERROR"));
-    assertThat(entries).allSatisfy(e -> assertThat(e.getErrorMessage()).isNotEmpty());
-    assertThat(entries).allSatisfy(e -> assertThat(e.getExceptionStackTrace()).isNotEmpty());
-    assertThat(entries).hasSize(4);
-    assertThat(entries).anySatisfy(e -> assertThat(e.getKey().getName()).isEqualTo("table_111"));
-    assertThat(entries).anySatisfy(e -> assertThat(e.getKey().getName()).isEqualTo("table_222"));
-    assertThat(entries).anySatisfy(e -> assertThat(e.getKey().getName()).isEqualTo("table_333"));
-    assertThat(entries).anySatisfy(e -> assertThat(e.getKey().getName()).isEqualTo("table_444"));
+    assertThat(entries.stream().sorted(Comparator.comparing(CheckContentEntry::getKey)))
+        .extracting(
+            CheckContentEntry::getKey,
+            CheckContentEntry::getStatus,
+            e -> e.getErrorMessage() != null && !e.getErrorMessage().isEmpty(),
+            e -> e.getExceptionStackTrace() != null && !e.getExceptionStackTrace().isEmpty())
+        .containsExactly(
+            tuple(
+                ContentKey.of("test_namespace"),
+                batchSize > 1 ? "ERROR" : "OK",
+                batchSize > 1,
+                batchSize > 1),
+            tuple(ContentKey.of("test_namespace", "table_111"), "ERROR", true, true),
+            tuple(ContentKey.of("test_namespace", "table_222"), "ERROR", true, true),
+            tuple(ContentKey.of("test_namespace", "table_333"), "ERROR", true, true),
+            tuple(ContentKey.of("test_namespace", "table_444"), "ERROR", true, true));
     assertThat(result.exitCode()).isEqualTo(2);
-    assertThat(result.getOutputStream()).contains("Detected 4 errors in 4 keys.");
+    assertThat(result.getOutputStream())
+        .contains(format("Detected %d errors in 5 keys.", batchSize > 1 ? 5 : 4));
   }
 
   @Test
@@ -140,20 +153,13 @@ class ITCheckContent extends BaseContentTest<CheckContentEntry> {
     commit(table2, adapter);
 
     launch(launcher, "check-content", "--show-content");
-    assertThat(entries).hasSize(2);
-    assertThat(entries).allSatisfy(e -> assertThat(e.getStatus()).isEqualTo("OK"));
-    assertThat(entries)
-        .anySatisfy(
-            e -> {
-              assertThat(e.getKey()).isEqualTo(ContentKey.of("test_namespace", "table_111"));
-              assertThat(e.getContent()).isEqualTo(table1);
-            });
-    assertThat(entries)
-        .anySatisfy(
-            e -> {
-              assertThat(e.getKey()).isEqualTo(ContentKey.of("test_namespace", "table_222"));
-              assertThat(e.getContent()).isEqualTo(table2);
-            });
+    assertThat(entries.stream().sorted(Comparator.comparing(CheckContentEntry::getKey)))
+        .extracting(
+            CheckContentEntry::getKey, CheckContentEntry::getStatus, CheckContentEntry::getContent)
+        .containsExactly(
+            tuple(ContentKey.of("test_namespace"), "OK", namespace),
+            tuple(ContentKey.of("test_namespace", "table_111"), "OK", table1),
+            tuple(ContentKey.of("test_namespace", "table_222"), "OK", table2));
     assertThat(result.exitCode()).isEqualTo(0);
   }
 
@@ -164,7 +170,7 @@ class ITCheckContent extends BaseContentTest<CheckContentEntry> {
     commit(table2, adapter);
 
     launch(launcher, "check-content");
-    assertThat(entries).hasSize(2);
+    assertThat(entries).hasSize(3);
     assertThat(entries).allSatisfy(e -> assertThat(e.getContent()).isNull());
     assertThat(result.exitCode()).isEqualTo(0);
   }
@@ -182,7 +188,7 @@ class ITCheckContent extends BaseContentTest<CheckContentEntry> {
     assertThat(result.getOutputStream()).anySatisfy(line -> assertThat(line).contains("meta_111"));
     assertThat(result.getOutputStream()).anySatisfy(line -> assertThat(line).contains("meta_222"));
     assertThat(result.exitCode()).isEqualTo(0);
-    assertThat(result.getOutputStream()).contains("Detected 0 errors in 2 keys.");
+    assertThat(result.getOutputStream()).contains("Detected 0 errors in 3 keys.");
   }
 
   @Test
@@ -198,15 +204,17 @@ class ITCheckContent extends BaseContentTest<CheckContentEntry> {
   public void testHashWithBrokenCommit(QuarkusMainLauncher launcher, DatabaseAdapter adapter)
       throws Exception {
     commit(table1, adapter);
-    ReferenceInfo good = adapter.namedRef("main", GetNamedRefsParams.DEFAULT);
+    ReferenceInfo<?> good = adapter.namedRef("main", GetNamedRefsParams.DEFAULT);
 
     OnRefOnly val = onRef("123", "222");
     commit(val.getId(), payloadForContent(val), val.serialized(), adapter);
 
     launch(launcher, "check-content", "--hash", good.getHash().asString());
-    assertThat(entries).hasSize(1);
-    assertThat(entries).allSatisfy(e -> assertThat(e.getKey().getName()).isEqualTo("table_111"));
-    assertThat(entries).allSatisfy(e -> assertThat(e.getStatus()).isEqualTo("OK"));
+    assertThat(entries.stream().sorted(Comparator.comparing(CheckContentEntry::getKey)))
+        .extracting(CheckContentEntry::getKey, CheckContentEntry::getStatus)
+        .containsExactly(
+            tuple(ContentKey.of("test_namespace"), "OK"),
+            tuple(ContentKey.of("test_namespace", "table_111"), "OK"));
     assertThat(result.exitCode()).isEqualTo(0);
   }
 }
