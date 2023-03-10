@@ -52,7 +52,10 @@ public class MinioExtension
       return enabled("Running on Linux");
     }
     if (OS.current() == OS.MAC) {
-      return enabled("Running on macOS");
+      if (System.getenv("CI_MAC") == null) {
+        // Disable tests on Github Actions
+        return enabled("Running on macOS locally");
+      }
     }
     return disabled(
         format(
