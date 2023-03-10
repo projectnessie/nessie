@@ -46,7 +46,9 @@ dependencies {
   implementation(libs.opentracing.util)
   implementation(libs.micrometer.core)
 
+  testCompileOnly(platform(libs.jackson.bom))
+  testCompileOnly(libs.jackson.annotations)
+
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
-  testRuntimeOnly(libs.junit.jupiter.engine)
 }

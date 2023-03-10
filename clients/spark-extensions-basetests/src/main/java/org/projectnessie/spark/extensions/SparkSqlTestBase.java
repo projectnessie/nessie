@@ -49,6 +49,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableOperations;
+import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
@@ -303,7 +304,9 @@ public abstract class SparkSqlTestBase {
                 .commitMeta(cm1)
                 .build()
             : ImmutableOperations.builder()
-                .addOperations(Operation.Put.of(key, IcebergTable.of("foo", 42, 42, 42, 42)))
+                .addOperations(
+                    Operation.Put.of(ContentKey.of("table"), Namespace.of("table")),
+                    Operation.Put.of(key, IcebergTable.of("foo", 42, 42, 42, 42)))
                 .commitMeta(cm1)
                 .build();
 

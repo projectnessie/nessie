@@ -186,7 +186,7 @@ public abstract class AbstractRefLog {
                   .commitMetaSerialized(ByteString.copyFromUtf8("foo on " + ref.getName()))
                   .addPuts(
                       KeyWithBytes.of(
-                          ContentKey.of("table", "c" + commit),
+                          ContentKey.of("table-" + commit),
                           ContentId.of("c" + commit),
                           payloadForContent(OnRefOnly.ON_REF_ONLY),
                           DefaultStoreWorker.instance()

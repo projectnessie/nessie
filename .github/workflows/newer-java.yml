@@ -32,7 +32,7 @@ jobs:
     - name: Gradle / compile
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: spotlessCheck checkstyleMain checkstyleTest jar testClasses --scan
+        arguments: spotlessCheck checkstyle assemble --scan
 
     - name: Gradle / unit test
       uses: gradle/gradle-build-action@v2
@@ -52,12 +52,7 @@ jobs:
     - name: Gradle / assemble + publish local
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: |
-          assemble
-          codeCoverageReport -x test -x intTest
-          publishToMavenLocal
-          -Puber-jar
-          --scan
+        arguments: assemble publishToMavenLocal --scan
 
     - name: Gradle / build tools integration tests
       uses: gradle/gradle-build-action@v2
@@ -72,7 +67,6 @@ jobs:
           :nessie-quarkus:quarkusBuild
           :nessie-quarkus:intTest
           -Pnative
-          -Pdocker
           --scan
 
     - name: Capture Test Reports

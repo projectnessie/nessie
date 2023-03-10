@@ -25,7 +25,7 @@ plugins {
   `nessie-conventions`
 }
 
-applyShadowJar()
+apply<NessieShadowJarPlugin>()
 
 val sparkScala = useSparkScalaVersionsForProject("3.2")
 
@@ -45,23 +45,33 @@ dependencies {
   compileOnly(libs.microprofile.openapi)
   compileOnly(libs.errorprone.annotations)
 
-  testImplementation(
+  testFixturesImplementation(nessieProject("nessie-model"))
+  testFixturesImplementation(nessieProject("nessie-client"))
+  testFixturesImplementation("org.apache.spark:spark-core_${sparkScala.scalaMajorVersion}") {
+    forSpark(sparkScala.sparkVersion)
+  }
+  testFixturesImplementation("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") {
+    forSpark(sparkScala.sparkVersion)
+  }
+  testFixturesImplementation(
     nessieProject(
       "nessie-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}"
     )
   )
-  testImplementation(
+  testFixturesImplementation(
     "com.fasterxml.jackson.module:jackson-module-scala_${sparkScala.scalaMajorVersion}"
   )
-  testImplementation(libs.jackson.databind)
-  testImplementation(libs.microprofile.openapi)
-  testImplementation(libs.logback.classic)
-  testImplementation(libs.slf4j.log4j.over.slf4j)
-  testCompileOnly(libs.errorprone.annotations)
+  testFixturesImplementation(libs.delta.core)
 
-  testImplementation(platform(libs.junit.bom))
-  testImplementation(libs.bundles.junit.testing)
-  testRuntimeOnly(libs.junit.jupiter.engine)
+  testFixturesImplementation(platform(libs.jackson.bom))
+  testFixturesImplementation(libs.jackson.databind)
+  testFixturesApi(libs.microprofile.openapi)
+  testFixturesImplementation(libs.logback.classic)
+  testFixturesImplementation(libs.slf4j.log4j.over.slf4j)
+  testFixturesCompileOnly(libs.errorprone.annotations)
+
+  testFixturesApi(platform(libs.junit.bom))
+  testFixturesApi(libs.bundles.junit.testing)
 
   nessieQuarkusServer(nessieQuarkusServerRunner())
 }

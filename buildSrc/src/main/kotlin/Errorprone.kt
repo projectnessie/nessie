@@ -19,6 +19,7 @@ import kotlin.collections.HashMap
 import net.ltgt.gradle.errorprone.CheckSeverity
 import net.ltgt.gradle.errorprone.ErrorPronePlugin
 import net.ltgt.gradle.errorprone.errorprone
+import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.JavaPluginExtension
@@ -29,52 +30,56 @@ import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.withType
 
-fun Project.nessieConfigureErrorprone() {
-  apply<ErrorPronePlugin>()
-  tasks.withType<JavaCompile>().configureEach {
-    options.errorprone.disableWarningsInGeneratedCode.set(true)
+class NessieErrorpronePlugin : Plugin<Project> {
+  override fun apply(project: Project): Unit =
+    project.run {
+      apply<ErrorPronePlugin>()
+      tasks.withType<JavaCompile>().configureEach {
+        options.errorprone.disableWarningsInGeneratedCode.set(true)
 
-    val errorproneRules = rootProject.projectDir.resolve("codestyle/errorprone-rules.properties")
-    inputs.file(errorproneRules).withPathSensitivity(PathSensitivity.RELATIVE)
+        val errorproneRules =
+          rootProject.projectDir.resolve("codestyle/errorprone-rules.properties")
+        inputs.file(errorproneRules).withPathSensitivity(PathSensitivity.RELATIVE)
 
-    val checksMapProperty =
-      objects
-        .mapProperty(String::class.java, CheckSeverity::class.java)
-        .convention(
-          provider {
-            val checksMap = HashMap<String, CheckSeverity>()
-            errorproneRules.reader().use {
-              val rules = Properties()
-              rules.load(it)
-              rules.forEach { k, v ->
-                val key = k as String
-                val value = v as String
-                if (key.isNotEmpty() && value.isNotEmpty()) {
-                  checksMap[key.trim()] = CheckSeverity.valueOf(value.trim())
+        val checksMapProperty =
+          objects
+            .mapProperty(String::class.java, CheckSeverity::class.java)
+            .convention(
+              provider {
+                val checksMap = HashMap<String, CheckSeverity>()
+                errorproneRules.reader().use {
+                  val rules = Properties()
+                  rules.load(it)
+                  rules.forEach { k, v ->
+                    val key = k as String
+                    val value = v as String
+                    if (key.isNotEmpty() && value.isNotEmpty()) {
+                      checksMap[key.trim()] = CheckSeverity.valueOf(value.trim())
+                    }
+                  }
                 }
+                checksMap
               }
-            }
-            checksMap
-          }
-        )
+            )
 
-    options.errorprone.checks.putAll(checksMapProperty)
-    options.errorprone.excludedPaths.set(".*/build/generated.*")
-  }
-  plugins.withType<JavaPlugin>().configureEach {
-    configure<JavaPluginExtension> {
-      sourceSets.configureEach {
-        dependencies {
-          add(
-            "errorprone",
-            "com.google.errorprone:error_prone_core:${libsRequiredVersion("errorprone")}"
-          )
-          add(
-            "errorprone",
-            "jp.skypencil.errorprone.slf4j:errorprone-slf4j:${libsRequiredVersion("errorproneSlf4j")}"
-          )
+        options.errorprone.checks.putAll(checksMapProperty)
+        options.errorprone.excludedPaths.set(".*/build/generated.*")
+      }
+      plugins.withType<JavaPlugin>().configureEach {
+        configure<JavaPluginExtension> {
+          sourceSets.configureEach {
+            dependencies {
+              add(
+                "errorprone",
+                "com.google.errorprone:error_prone_core:${libsRequiredVersion("errorprone")}"
+              )
+              add(
+                "errorprone",
+                "jp.skypencil.errorprone.slf4j:errorprone-slf4j:${libsRequiredVersion("errorproneSlf4j")}"
+              )
+            }
+          }
         }
       }
     }
-  }
 }

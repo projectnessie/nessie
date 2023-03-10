@@ -226,7 +226,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   @TestSecurity(user = "test_user2")
   void testCanCommitButNotUpdateOrDeleteEntity() throws BaseNessieClientServerException {
     String role = "test_user2";
-    ContentKey key = ContentKey.of("allowed", "some");
+    ContentKey key = ContentKey.of("allowed-some");
     String branchName = "allowedBranchForTestUser2";
     createBranch(Branch.of(branchName, null));
 
@@ -282,8 +282,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
     Branch targetBranch = retrieveBranch(targetBranchName);
 
     addContent(
-        targetBranch,
-        Put.of(ContentKey.of("allowed", "x"), IcebergTable.of("foo", 42, 42, 42, 42)));
+        targetBranch, Put.of(ContentKey.of("allowed-x"), IcebergTable.of("foo", 42, 42, 42, 42)));
     targetBranch = retrieveBranch(targetBranchName);
 
     api().assignBranch().branch(branch).assignTo(targetBranch).assign();
@@ -297,8 +296,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
 
     Branch main = retrieveBranch("main");
     addContent(
-        main,
-        Put.of(ContentKey.of("unrelated", "key"), IcebergTable.of("unrelated", 11, 12, 13, 14)));
+        main, Put.of(ContentKey.of("unrelated-key"), IcebergTable.of("unrelated", 11, 12, 13, 14)));
     main = retrieveBranch("main");
 
     String branchName = "adminCanReadWhenMerging";
@@ -309,8 +307,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
     createBranch(Branch.of(targetBranchName, main.getHash()));
     Branch targetBranch = retrieveBranch(targetBranchName);
 
-    addContent(
-        branch, Put.of(ContentKey.of("allowed", "x"), IcebergTable.of("foo", 42, 42, 42, 42)));
+    addContent(branch, Put.of(ContentKey.of("allowed-x"), IcebergTable.of("foo", 42, 42, 42, 42)));
     branch = retrieveBranch(branchName);
 
     api().mergeRefIntoBranch().fromRef(branch).branch(targetBranch).merge();
@@ -331,8 +328,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
     createBranch(Branch.of(targetBranchName, null));
     Branch targetBranch = retrieveBranch(targetBranchName);
 
-    addContent(
-        branch, Put.of(ContentKey.of("allowed", "x"), IcebergTable.of("foo", 42, 42, 42, 42)));
+    addContent(branch, Put.of(ContentKey.of("allowed-x"), IcebergTable.of("foo", 42, 42, 42, 42)));
     branch = retrieveBranch(branchName);
 
     api()

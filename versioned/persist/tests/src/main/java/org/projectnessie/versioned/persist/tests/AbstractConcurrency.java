@@ -129,7 +129,7 @@ public abstract class AbstractConcurrency {
 
         for (int k = 0; k < variation.tables; k++) {
           String variationKey = Integer.toString(i);
-          ContentKey key = ContentKey.of("some", "key", variationKey, "table-" + k);
+          ContentKey key = ContentKey.of("some-key-" + variationKey + "-table-" + k);
           keys.add(key);
           keyToContentId.put(key, ContentId.of(String.format("%s-table-%d", variationKey, k)));
           keysPerBranch.computeIfAbsent(branch, x -> new HashSet<>()).add(key);

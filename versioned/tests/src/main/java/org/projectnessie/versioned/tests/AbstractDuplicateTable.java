@@ -49,7 +49,7 @@ public abstract class AbstractDuplicateTable extends AbstractNestedVersionStore 
    */
   @Test
   void duplicateTableOnBranches() throws Throwable {
-    ContentKey key = ContentKey.of("some", "table");
+    ContentKey key = ContentKey.of("some-table");
 
     BranchName branch0 = BranchName.of("globalStateDuplicateTable-main");
     store().create(branch0, Optional.empty());
@@ -61,7 +61,7 @@ public abstract class AbstractDuplicateTable extends AbstractNestedVersionStore 
                 branch0,
                 Optional.empty(),
                 CommitMeta.fromMessage("initial commit"),
-                ImmutableList.of(Put.of(ContentKey.of("unrelated", "table"), newOnRef("value"))));
+                ImmutableList.of(Put.of(ContentKey.of("unrelated-table"), newOnRef("value"))));
 
     // Create a table with the same name on two branches.
     BranchName branch1 = BranchName.of("globalStateDuplicateTable-branch1");

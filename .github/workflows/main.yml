@@ -36,19 +36,19 @@ jobs:
     - name: Gradle / compile
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: spotlessCheck checkstyleMain checkstyleTest jar testClasses --scan
+        arguments: spotlessCheck checkstyle assemble --scan
 
     - name: Gradle / unit test
       uses: gradle/gradle-build-action@v2
       if: github.repository_owner == 'projectnessie'
       with:
-        arguments: test --scan
+        arguments: test testCodeCoverageReport --scan
 
     - name: Gradle / check incl. integ-test
       uses: gradle/gradle-build-action@v2
       if: github.repository_owner == 'projectnessie'
       with:
-        arguments: check codeCoverageReport -x test --scan
+        arguments: check -x test intTestCodeCoverageReport --scan
 
     - name: Gradle / Gatling simulations
       uses: gradle/gradle-build-action@v2
@@ -60,11 +60,7 @@ jobs:
       uses: gradle/gradle-build-action@v2
       if: github.repository_owner == 'projectnessie'
       with:
-        arguments: |
-          assemble
-          publishToMavenLocal
-          -Puber-jar
-          --scan
+        arguments: assemble publishToMavenLocal --scan
 
     - name: Gradle / build tools integration tests
       uses: gradle/gradle-build-action@v2
@@ -108,7 +104,6 @@ jobs:
             :nessie-quarkus:quarkusBuild
             :nessie-quarkus:intTest
             -Pnative
-            -Pdocker
             --scan
 
       - name: Capture Test Reports

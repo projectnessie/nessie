@@ -61,7 +61,8 @@ tasks.named<Jar>("sourcesJar") {
 }
 
 tasks.withType(com.google.protobuf.gradle.ProtobufExtract::class).configureEach {
-  if (name == "extractIncludeTestProto") {
-    dependsOn(tasks.named("processJandexIndex"))
+  when (name) {
+    "extractIncludeTestProto" -> dependsOn(tasks.named("processJandexIndex"))
+    "extractIncludeTestFixturesProto" -> dependsOn(tasks.named("processJandexIndex"))
   }
 }

@@ -14,17 +14,38 @@
  * limitations under the License.
  */
 
+import com.github.vlsi.jandex.JandexBuildAction
 import com.github.vlsi.jandex.JandexExtension
 import com.github.vlsi.jandex.JandexPlugin
+import com.github.vlsi.jandex.JandexProcessResources
+import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.tasks.testing.Test
+import org.gradle.api.tasks.SourceSet
+import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.configure
-import org.gradle.kotlin.dsl.withType
+import org.gradle.kotlin.dsl.provideDelegate
 
-fun Project.nessieConfigureJandex() {
-  apply<JandexPlugin>()
-  configure<JandexExtension> { toolVersion.set(libsRequiredVersion("jandex")) }
+class NessieJandexPlugin : Plugin<Project> {
+  override fun apply(project: Project): Unit =
+    project.run {
+      apply<JandexPlugin>()
+      configure<JandexExtension> { toolVersion.set(libsRequiredVersion("jandex")) }
 
-  tasks.withType<Test>().configureEach { dependsOn(tasks.named("processTestJandexIndex")) }
+      val sourceSets: SourceSetContainer? by project
+      sourceSets?.withType(SourceSet::class.java)?.configureEach {
+        val sourceSet = this
+
+        val jandexTaskName = sourceSet.getTaskName("process", "jandexIndex")
+        tasks.named(jandexTaskName, JandexProcessResources::class.java) {
+          if ("main" != sourceSet.name) {
+            // No Jandex for non-main
+            jandexBuildAction.set(JandexBuildAction.NONE)
+          }
+          if (!project.plugins.hasPlugin("io.quarkus")) {
+            dependsOn(tasks.named(sourceSet.classesTaskName))
+          }
+        }
+      }
+    }
 }

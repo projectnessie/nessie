@@ -44,17 +44,16 @@ dependencies {
   implementation(libs.awssdk.netty.nio.client)
   implementation(libs.awssdk.url.connection.client)
 
-  testImplementation(project(":nessie-model"))
-  testImplementation(project(":nessie-versioned-tests"))
-  testImplementation(project(":nessie-versioned-persist-testextension"))
-  testImplementation(project(":nessie-versioned-persist-tests"))
-  testImplementation(project(":nessie-versioned-persist-non-transactional-test"))
-  testImplementation(project(":nessie-versioned-persist-dynamodb-test"))
-  testImplementation(libs.logback.classic)
+  intTestImplementation(project(":nessie-model"))
+  intTestImplementation(project(":nessie-versioned-tests"))
+  intTestImplementation(project(":nessie-versioned-persist-testextension"))
+  intTestImplementation(project(":nessie-versioned-persist-tests"))
+  intTestImplementation(project(":nessie-versioned-persist-non-transactional-test"))
+  intTestImplementation(project(":nessie-versioned-persist-dynamodb-test"))
+  intTestImplementation(libs.logback.classic)
 
-  testImplementation(platform(libs.junit.bom))
-  testImplementation(libs.bundles.junit.testing)
-  testRuntimeOnly(libs.junit.jupiter.engine)
+  intTestImplementation(platform(libs.junit.bom))
+  intTestImplementation(libs.bundles.junit.testing)
 }
 
 // Testcontainers is not supported on Windows :(

@@ -14,32 +14,24 @@
  * limitations under the License.
  */
 
-plugins {
-  id("org.projectnessie.buildsupport.jacoco")
-  `eclipse`
-}
-
-val hasSrcMain = projectDir.resolve("src/main").exists()
-val hasSrcTest = projectDir.resolve("src/test").exists()
-
 apply<PublishingHelperPlugin>()
 
-nessieIde()
+apply<NessieIdePlugin>()
 
-nessieConfigureSpotless()
+apply<NessieSpotlessPlugin>()
 
-nessieConfigureJandex()
+apply<NessieJandexPlugin>()
 
-nessieConfigureJava()
+apply<NessieJavaPlugin>()
 
-nessieConfigureScala()
+apply<NessieScalaPlugin>()
 
-if (hasSrcMain || hasSrcTest) {
-  nessieConfigureCheckstyle()
+if (projectDir.resolve("src").exists()) {
+  apply<NessieCheckstylePlugin>()
 
-  nessieConfigureErrorprone()
+  apply<NessieErrorpronePlugin>()
 
-  if (hasSrcTest) {
-    nessieConfigureTestTasks()
-  }
+  apply<NessieTestingPlugin>()
+
+  apply<NessieCodeCoveragePlugin>()
 }

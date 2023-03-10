@@ -54,19 +54,19 @@ jobs:
     - name: Gradle / compile
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: spotlessCheck checkstyleMain checkstyleTest jar testClasses --scan
+        arguments: spotlessCheck checkstyle assemble --scan
 
     - name: Gradle / unit test
       uses: gradle/gradle-build-action@v2
       env:
         SPARK_LOCAL_IP: localhost
       with:
-        arguments: test --scan
+        arguments: test testCodeCoverageReport --scan
 
     - name: Gradle / check incl. integ-test
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: check codeCoverageReport -x test --scan
+        arguments: check -x test intTestCodeCoverageReport --scan
 
     - name: Gradle / Gatling simulations
       uses: gradle/gradle-build-action@v2
@@ -77,10 +77,7 @@ jobs:
     - name: Gradle / assemble + publish local
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: |
-          assemble
-          publishToMavenLocal
-          --scan
+        arguments: assemble publishToMavenLocal --scan
 
     - name: Gradle / build tools integration tests
       uses: gradle/gradle-build-action@v2

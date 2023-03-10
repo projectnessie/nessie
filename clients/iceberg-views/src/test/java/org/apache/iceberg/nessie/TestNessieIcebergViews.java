@@ -18,6 +18,7 @@ package org.apache.iceberg.nessie;
 import static org.apache.iceberg.types.Types.NestedField.required;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.projectnessie.model.CommitMeta.fromMessage;
 
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
@@ -44,6 +45,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -51,6 +53,8 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.LogResponse.LogEntry;
+import org.projectnessie.model.Namespace;
+import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
 
 public class TestNessieIcebergViews extends BaseIcebergTest {
@@ -67,6 +71,7 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
   private static final TableIdentifier TABLE_IDENTIFIER = TableIdentifier.of(DB_NAME, TABLE_NAME);
   private static final Schema SCHEMA =
       new Schema(Types.StructType.of(required(1, "id", Types.LongType.get())).fields());
+  public static final String CREATE_REQUIRED_NAMESPACES = "create required namespaces";
 
   private Path tableLocation;
 
@@ -75,7 +80,19 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
   }
 
   @BeforeEach
-  public void beforeEach() {
+  public void beforeEach() throws Exception {
+    try {
+      api.commitMultipleOperations()
+          .branchName(branch)
+          .commitMeta(fromMessage(CREATE_REQUIRED_NAMESPACES))
+          .operation(Put.of(ContentKey.of("db"), Namespace.of("db")))
+          .operation(Put.of(ContentKey.of("nessie"), Namespace.of("nessie")))
+          .operation(Put.of(ContentKey.of("nessie", "db"), Namespace.of("nessie", "db")))
+          .commit();
+    } catch (NessieNamespaceAlreadyExistsException e) {
+      // ignore
+    }
+
     Table table = catalog.createTable(TABLE_IDENTIFIER, SCHEMA);
     this.tableLocation = new Path(table.location());
     catalog.create(
@@ -112,7 +129,7 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
     assertThat(metadataFilesForViews(viewIdentifier.name())).isNotNull().hasSize(1);
 
     verifyCommitMetadata();
-    assertThat(api.getCommitLog().refName(BRANCH).stream()).hasSize(3);
+    assertThat(api.getCommitLog().refName(BRANCH).stream()).hasSize(4);
 
     verifyViewInNessie(viewIdentifier, icebergView, BRANCH);
   }
@@ -172,7 +189,7 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
     assertThat(metadataFilesForViews(VIEW_IDENTIFIER.name())).isNotNull().hasSize(4);
 
     verifyCommitMetadata();
-    assertThat(api.getCommitLog().refName(BRANCH).stream()).hasSize(6);
+    assertThat(api.getCommitLog().refName(BRANCH).stream()).hasSize(7);
     verifyViewInNessie(VIEW_IDENTIFIER, icebergView, BRANCH);
   }
 
@@ -200,7 +217,7 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
     assertThat(metadataFilesForViews(VIEW_IDENTIFIER.name())).isNotNull().hasSize(2);
 
     verifyCommitMetadata();
-    assertThat(api.getCommitLog().refName(BRANCH).stream()).hasSize(3);
+    assertThat(api.getCommitLog().refName(BRANCH).stream()).hasSize(4);
     verifyViewInNessie(VIEW_IDENTIFIER, icebergView, BRANCH);
   }
 
@@ -287,6 +304,7 @@ public class TestNessieIcebergViews extends BaseIcebergTest {
     assertThat(log)
         .isNotNull()
         .isNotEmpty()
+        .filteredOn(e -> !e.getCommitMeta().getMessage().equals(CREATE_REQUIRED_NAMESPACES))
         .allSatisfy(
             logEntry -> {
               CommitMeta commit = logEntry.getCommitMeta();

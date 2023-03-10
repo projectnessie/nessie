@@ -49,7 +49,6 @@ dependencies {
 
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
-  testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
 buildForJava11()
@@ -91,9 +90,6 @@ artifacts {
     builtBy(quarkusBuild)
   }
 }
-
-// TODO there are no integration-tests ...
-//  tasks.named<Test>("intTest") { filter { excludeTestsMatching("ITNative*") } }
 
 listOf("javadoc", "sourcesJar").forEach { name ->
   tasks.named(name) { dependsOn(tasks.named("compileQuarkusGeneratedSourcesJava")) }

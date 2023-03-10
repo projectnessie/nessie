@@ -35,6 +35,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import javax.validation.constraints.NotNull;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterEach;
@@ -208,7 +209,13 @@ public abstract class BaseTestNessieApi {
     Branch main = api().getDefaultBranch();
     soft.assertThat(api().getAllReferences().get().getReferences()).containsExactly(main);
 
-    Branch main1 = prepCommit(main, "commit", dummyPut("key", "foo")).commit();
+    Branch main1 =
+        prepCommit(
+                main,
+                "commit",
+                Put.of(ContentKey.of("key"), Namespace.of("key")),
+                dummyPut("key", "foo"))
+            .commit();
 
     CommitMeta commitMetaMain =
         api().getCommitLog().reference(main1).get().getLogEntries().get(0).getCommitMeta();
@@ -400,7 +407,14 @@ public abstract class BaseTestNessieApi {
   public void commitMergeTransplant() throws Exception {
     Branch main = api().getDefaultBranch();
 
-    main = prepCommit(main, "common ancestor", dummyPut("unrelated")).commit();
+    main =
+        prepCommit(
+                main,
+                "common ancestor",
+                dummyPut("unrelated"),
+                Put.of(ContentKey.of("a"), Namespace.of("a")),
+                Put.of(ContentKey.of("b"), Namespace.of("b")))
+            .commit();
     main = prepCommit(main, "common ancestor", Delete.of(ContentKey.of("unrelated"))).commit();
 
     Branch branch = createReference(Branch.of("branch", main.getHash()), main.getName());
@@ -428,12 +442,16 @@ public abstract class BaseTestNessieApi {
     soft.assertThat(api().getEntries().reference(branch).get().getEntries())
         .extracting(EntriesResponse.Entry::getName)
         .containsExactlyInAnyOrder(
-            ContentKey.of("a", "a"), ContentKey.of("b", "a"), ContentKey.of("b", "b"));
+            ContentKey.of("a"),
+            ContentKey.of("b"),
+            ContentKey.of("a", "a"),
+            ContentKey.of("b", "a"),
+            ContentKey.of("b", "b"));
 
     soft.assertThat(api().getCommitLog().refName(main.getName()).get().getLogEntries()).hasSize(2);
     soft.assertThat(api().getEntries().reference(main).get().getEntries())
         .extracting(EntriesResponse.Entry::getName)
-        .isEmpty();
+        .containsExactly(ContentKey.of("a"), ContentKey.of("b"));
 
     api().mergeRefIntoBranch().fromRef(branch).branch(main).keepIndividualCommits(false).merge();
     Reference main2 = api().getReference().refName(main.getName()).get();
@@ -442,9 +460,15 @@ public abstract class BaseTestNessieApi {
     soft.assertThat(api().getEntries().reference(main2).get().getEntries())
         .extracting(EntriesResponse.Entry::getName)
         .containsExactlyInAnyOrder(
-            ContentKey.of("a", "a"), ContentKey.of("b", "a"), ContentKey.of("b", "b"));
+            ContentKey.of("a"),
+            ContentKey.of("b"),
+            ContentKey.of("a", "a"),
+            ContentKey.of("b", "a"),
+            ContentKey.of("b", "b"));
 
-    soft.assertThat(api().getEntries().reference(otherBranch).get().getEntries()).isEmpty();
+    soft.assertThat(api().getEntries().reference(otherBranch).get().getEntries())
+        .extracting(EntriesResponse.Entry::getName)
+        .containsExactly(ContentKey.of("a"), ContentKey.of("b"));
     api()
         .transplantCommitsIntoBranch()
         .fromRefName(main.getName())
@@ -454,7 +478,11 @@ public abstract class BaseTestNessieApi {
     soft.assertThat(api().getEntries().refName(otherBranch.getName()).get().getEntries())
         .extracting(EntriesResponse.Entry::getName)
         .containsExactlyInAnyOrder(
-            ContentKey.of("a", "a"), ContentKey.of("b", "a"), ContentKey.of("b", "b"));
+            ContentKey.of("a"),
+            ContentKey.of("b"),
+            ContentKey.of("a", "a"),
+            ContentKey.of("b", "a"),
+            ContentKey.of("b", "b"));
 
     soft.assertThat(
             api()
@@ -484,7 +512,9 @@ public abstract class BaseTestNessieApi {
 
     Branch branch = createReference(Branch.of("branch", main.getHash()), main.getName());
 
-    branch = prepCommit(branch, "one", dummyPut("a", "a")).commit();
+    branch =
+        prepCommit(branch, "one", Put.of(ContentKey.of("a"), Namespace.of("a")), dummyPut("a", "a"))
+            .commit();
     Reference mainParent = api().getReference().refName(main.getName()).get();
 
     api().mergeRefIntoBranch().fromRef(branch).branch(main).merge();
@@ -505,10 +535,24 @@ public abstract class BaseTestNessieApi {
     Branch branch2 = createReference(Branch.of("b2", main.getHash()), main.getName());
 
     branch1 =
-        prepCommit(branch1, "c1", dummyPut("1", "1"), dummyPut("1", "2"), dummyPut("1", "3"))
+        prepCommit(
+                branch1,
+                "c1",
+                Put.of(ContentKey.of("1"), Namespace.of("1")),
+                dummyPut("1", "1"),
+                dummyPut("1", "2"),
+                dummyPut("1", "3"))
             .commit();
     branch2 =
-        prepCommit(branch2, "c2", dummyPut("1", "1"), dummyPut("3", "1"), dummyPut("4", "1"))
+        prepCommit(
+                branch2,
+                "c2",
+                Put.of(ContentKey.of("1"), Namespace.of("1")),
+                Put.of(ContentKey.of("3"), Namespace.of("3")),
+                Put.of(ContentKey.of("4"), Namespace.of("4")),
+                dummyPut("1", "1"),
+                dummyPut("3", "1"),
+                dummyPut("4", "1"))
             .commit();
 
     ContentKey key11 = ContentKey.of("1", "1");
@@ -517,9 +561,27 @@ public abstract class BaseTestNessieApi {
     ContentKey key31 = ContentKey.of("3", "1");
     ContentKey key41 = ContentKey.of("4", "1");
     Map<ContentKey, Content> contents1 =
-        api().getContent().reference(branch1).key(key11).key(key12).key(key13).get();
+        api()
+            .getContent()
+            .reference(branch1)
+            .key(key11)
+            .key(key12)
+            .key(key13)
+            .key(key11.getParent())
+            .key(key31.getParent())
+            .key(key41.getParent())
+            .get();
     Map<ContentKey, Content> contents2 =
-        api().getContent().reference(branch2).key(key11).key(key31).key(key41).get();
+        api()
+            .getContent()
+            .reference(branch2)
+            .key(key11)
+            .key(key31)
+            .key(key41)
+            .key(key11.getParent())
+            .key(key31.getParent())
+            .key(key41.getParent())
+            .get();
 
     DiffResponse diff1response = api().getDiff().fromRef(branch1).toRef(branch2).get();
     List<DiffEntry> diff1 = diff1response.getDiffs();
@@ -530,11 +592,17 @@ public abstract class BaseTestNessieApi {
     }
     soft.assertThat(diff1)
         .containsExactlyInAnyOrder(
+            DiffEntry.diffEntry(
+                key11.getParent(),
+                contents1.get(key11.getParent()),
+                contents2.get(key11.getParent())),
             DiffEntry.diffEntry(key11, contents1.get(key11), contents2.get(key11)),
             DiffEntry.diffEntry(key12, contents1.get(key12), null),
             DiffEntry.diffEntry(key13, contents1.get(key13), null),
             DiffEntry.diffEntry(key31, null, contents2.get(key31)),
-            DiffEntry.diffEntry(key41, null, contents2.get(key41)));
+            DiffEntry.diffEntry(key41, null, contents2.get(key41)),
+            DiffEntry.diffEntry(key31.getParent(), null, contents2.get(key31.getParent())),
+            DiffEntry.diffEntry(key41.getParent(), null, contents2.get(key41.getParent())));
 
     List<DiffEntry> diff2 =
         api().getDiff().fromRefName(branch1.getName()).toRef(branch2).get().getDiffs();
@@ -548,12 +616,12 @@ public abstract class BaseTestNessieApi {
 
       List<DiffEntry> all = new ArrayList<>();
       String token = null;
-      for (int i = 0; i < 5; i++) {
+      for (int i = 0; i < 8; i++) {
         DiffResponse resp =
             api().getDiff().fromRef(branch1).toRef(branch2).maxRecords(1).pageToken(token).get();
         all.addAll(resp.getDiffs());
         token = resp.getToken();
-        if (i == 4) {
+        if (i == 7) {
           soft.assertThat(token).isNull();
         } else {
           soft.assertThat(token).isNotNull();
@@ -576,8 +644,8 @@ public abstract class BaseTestNessieApi {
     Branch branch1 = createReference(Branch.of("b1", main.getHash()), main.getName());
     Branch branch2 = createReference(Branch.of("b2", main.getHash()), main.getName());
 
-    Branch from = prepCommit(branch1, "c1", dummyPut("1", "1")).commit();
-    Branch to = prepCommit(branch2, "c2", dummyPut("2", "2")).commit();
+    Branch from = prepCommit(branch1, "c1", dummyPut("1-1")).commit();
+    Branch to = prepCommit(branch2, "c2", dummyPut("2-2")).commit();
 
     assertThatThrownBy(() -> api().getDiff().maxRecords(1).fromRef(from).toRef(to).get())
         .isInstanceOf(NessieBadRequestException.class)
@@ -588,7 +656,17 @@ public abstract class BaseTestNessieApi {
   public void commitLog() throws Exception {
     Branch main = api().getDefaultBranch();
     for (int i = 0; i < 10; i++) {
-      main = prepCommit(main, "c-" + i, dummyPut("c", Integer.toString(i))).commit();
+      if (i == 0) {
+        main =
+            prepCommit(
+                    main,
+                    "c-" + i,
+                    Put.of(ContentKey.of("c"), Namespace.of("c")),
+                    dummyPut("c", Integer.toString(i)))
+                .commit();
+      } else {
+        main = prepCommit(main, "c-" + i, dummyPut("c", Integer.toString(i))).commit();
+      }
     }
 
     List<LogEntry> notPaged = api().getCommitLog().reference(main).get().getLogEntries();
@@ -660,15 +738,20 @@ public abstract class BaseTestNessieApi {
         prepCommit(
                 main,
                 "commit",
-                IntStream.range(0, 10)
-                    .mapToObj(i -> dummyPut("b.b", "c", Integer.toString(i)))
+                Stream.concat(
+                        Stream.of(
+                            Put.of(ContentKey.of("b.b"), Namespace.of("b.b")),
+                            Put.of(ContentKey.of("b.b", "c"), Namespace.of("b.b", "c"))),
+                        IntStream.range(0, 8)
+                            .mapToObj(i -> dummyPut("b.b", "c", Integer.toString(i))))
                     .toArray(Operation[]::new))
             .commitWithResponse();
     main = committed.getTargetBranch();
 
     List<ContentKey> allKeys =
-        IntStream.range(0, 10)
-            .mapToObj(i -> ContentKey.of("b.b", "c", Integer.toString(i)))
+        Stream.concat(
+                Stream.of(ContentKey.of("b.b"), ContentKey.of("b.b", "c")),
+                IntStream.range(0, 8).mapToObj(i -> ContentKey.of("b.b", "c", Integer.toString(i))))
             .collect(Collectors.toList());
 
     GetMultipleContentsResponse resp =
@@ -699,9 +782,10 @@ public abstract class BaseTestNessieApi {
         prepCommit(
                 main0,
                 "commit",
-                IntStream.range(0, 10)
-                    .mapToObj(i -> dummyPut("c", Integer.toString(i)))
-                    .toArray(Operation[]::new))
+                Stream.concat(
+                        Stream.of(Put.of(ContentKey.of("c"), Namespace.of("c"))),
+                        IntStream.range(0, 9).mapToObj(i -> dummyPut("c", Integer.toString(i))))
+                    .toArray(Put[]::new))
             .commit();
 
     EntriesResponse response = api().getEntries().reference(main).withContent(isV2()).get();
@@ -1049,7 +1133,17 @@ public abstract class BaseTestNessieApi {
     Branch branch =
         createReference(Branch.of("commitLogForNamelessReference", main.getHash()), main.getName());
     for (int i = 0; i < 5; i++) {
-      branch = prepCommit(branch, "c-" + i, dummyPut("c", Integer.toString(i))).commit();
+      if (i == 0) {
+        branch =
+            prepCommit(
+                    branch,
+                    "c-" + i,
+                    Put.of(ContentKey.of("c"), Namespace.of("c")),
+                    dummyPut("c", Integer.toString(i)))
+                .commit();
+      } else {
+        branch = prepCommit(branch, "c-" + i, dummyPut("c", Integer.toString(i))).commit();
+      }
     }
     List<LogResponse.LogEntry> log =
         api().getCommitLog().hashOnRef(branch.getHash()).stream().collect(Collectors.toList());

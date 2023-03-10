@@ -53,28 +53,24 @@ dependencies {
 
   implementation(libs.slf4j.api)
 
-  testImplementation(nessieProject("nessie-gc-base-tests"))
-  testImplementation(nessieProject("nessie-s3mock"))
-  testImplementation(nessieProject("nessie-s3minio"))
+  testFixturesApi(nessieProject("nessie-gc-base-tests"))
+  testFixturesApi(nessieProject("nessie-s3mock"))
+  testFixturesApi(nessieProject("nessie-s3minio"))
 
-  testRuntimeOnly(libs.logback.classic)
+  testFixturesRuntimeOnly(libs.logback.classic)
 
-  testCompileOnly(libs.immutables.value.annotations)
-  testAnnotationProcessor(libs.immutables.value.processor)
+  testFixturesCompileOnly(platform(libs.jackson.bom))
+  testFixturesAnnotationProcessor(libs.jackson.annotations)
 
-  testCompileOnly(platform(libs.jackson.bom))
-  testCompileOnly(libs.jackson.annotations)
+  testFixturesCompileOnly(libs.microprofile.openapi)
 
-  testCompileOnly(libs.microprofile.openapi)
+  testFixturesApi(platform(libs.awssdk.bom))
+  testFixturesApi(libs.awssdk.s3)
+  testFixturesRuntimeOnly(libs.awssdk.sts)
+  testFixturesRuntimeOnly(libs.hadoop.aws)
 
-  testImplementation(platform(libs.awssdk.bom))
-  testImplementation(libs.awssdk.s3)
-  testRuntimeOnly(libs.awssdk.sts)
-  testRuntimeOnly(libs.hadoop.aws)
-
-  testImplementation(platform(libs.junit.bom))
-  testImplementation(libs.bundles.junit.testing)
-  testRuntimeOnly(libs.junit.jupiter.engine)
+  testFixturesApi(platform(libs.junit.bom))
+  testFixturesApi(libs.bundles.junit.testing)
 }
 
 tasks.withType(Test::class.java).configureEach {

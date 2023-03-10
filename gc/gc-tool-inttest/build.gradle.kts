@@ -52,52 +52,51 @@ dependencies {
 
   runtimeOnly(libs.h2)
 
-  testRuntimeOnly(libs.logback.classic)
+  intTestRuntimeOnly(libs.logback.classic)
 
-  testImplementation(
+  intTestImplementation(
     nessieProject("nessie-spark-extensions-basetests_${sparkScala.scalaMajorVersion}")
   )
-  testImplementation(nessieProject("nessie-s3minio"))
+  intTestImplementation(nessieProject("nessie-s3minio"))
 
-  testImplementation("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") {
+  intTestImplementation("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") {
     forSpark(sparkScala.sparkVersion)
   }
-  testImplementation("org.apache.spark:spark-core_${sparkScala.scalaMajorVersion}") {
+  intTestImplementation("org.apache.spark:spark-core_${sparkScala.scalaMajorVersion}") {
     forSpark(sparkScala.sparkVersion)
   }
-  testRuntimeOnly("org.apache.spark:spark-hive_${sparkScala.scalaMajorVersion}") {
+  intTestRuntimeOnly("org.apache.spark:spark-hive_${sparkScala.scalaMajorVersion}") {
     forSpark(sparkScala.sparkVersion)
   }
 
-  testImplementation(libs.iceberg.core)
-  testRuntimeOnly(libs.iceberg.hive.metastore)
-  testRuntimeOnly(libs.iceberg.aws)
-  testRuntimeOnly(libs.iceberg.nessie)
-  testRuntimeOnly(libs.iceberg.core)
-  testRuntimeOnly(
+  intTestImplementation(libs.iceberg.core)
+  intTestRuntimeOnly(libs.iceberg.hive.metastore)
+  intTestRuntimeOnly(libs.iceberg.aws)
+  intTestRuntimeOnly(libs.iceberg.nessie)
+  intTestRuntimeOnly(libs.iceberg.core)
+  intTestRuntimeOnly(
     "org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:${libs.versions.iceberg.get()}"
   )
-  testRuntimeOnly(libs.iceberg.hive.metastore)
-  testRuntimeOnly(libs.iceberg.aws)
+  intTestRuntimeOnly(libs.iceberg.hive.metastore)
+  intTestRuntimeOnly(libs.iceberg.aws)
 
-  testRuntimeOnly(libs.hadoop.client)
-  testRuntimeOnly(libs.hadoop.aws)
-  testRuntimeOnly(libs.awssdk.sts)
+  intTestRuntimeOnly(libs.hadoop.client)
+  intTestRuntimeOnly(libs.hadoop.aws)
+  intTestRuntimeOnly(libs.awssdk.sts)
 
-  testRuntimeOnly(platform(libs.awssdk.bom))
-  testRuntimeOnly(libs.awssdk.s3)
-  testRuntimeOnly(libs.awssdk.url.connection.client)
+  intTestRuntimeOnly(platform(libs.awssdk.bom))
+  intTestRuntimeOnly(libs.awssdk.s3)
+  intTestRuntimeOnly(libs.awssdk.url.connection.client)
   // TODO those are needed, because Spark serializes some configuration stuff (Spark broadcast)
-  testRuntimeOnly(libs.awssdk.dynamodb)
-  testRuntimeOnly(libs.awssdk.glue)
-  testRuntimeOnly(libs.awssdk.kms)
+  intTestRuntimeOnly(libs.awssdk.dynamodb)
+  intTestRuntimeOnly(libs.awssdk.glue)
+  intTestRuntimeOnly(libs.awssdk.kms)
 
-  testCompileOnly(libs.jackson.annotations)
-  testCompileOnly(libs.microprofile.openapi)
+  intTestCompileOnly(libs.jackson.annotations)
+  intTestCompileOnly(libs.microprofile.openapi)
 
-  testImplementation(platform(libs.junit.bom))
-  testImplementation(libs.bundles.junit.testing)
-  testRuntimeOnly(libs.junit.jupiter.engine)
+  intTestImplementation(platform(libs.junit.bom))
+  intTestImplementation(libs.bundles.junit.testing)
 
   nessieQuarkusServer(nessieQuarkusServerRunner())
 }

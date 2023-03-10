@@ -31,7 +31,9 @@ dependencies {
   api(project(":nessie-versioned-persist-serialize-proto"))
   implementation(libs.guava)
 
+  testCompileOnly(platform(libs.jackson.bom))
+  testCompileOnly(libs.jackson.annotations)
+
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
-  testRuntimeOnly(libs.junit.jupiter.engine)
 }
