@@ -132,11 +132,39 @@ To deploy the ui (from `ui` directory):
 
 ### Docker image
 
-When running `./gradlew :nessie-quarkus:quarkusBuild -Pnative` a docker image will
-be created at `projectnessie/nessie` which can be started with `docker run -p 19120:19120 projectnessie/nessie`
-and the relevant environment variables. Environment variables  are specified as per
-https://github.com/eclipse/microprofile-config/blob/master/spec/src/main/asciidoc/configsources.asciidoc#default-configsources  
+Official Nessie images are built with support for [multiplatform builds](./tools/dockerbuild#readme). But to quickly
+build a docker image for testing purposes, simply run the following command:
 
+```shell
+./gradlew :nessie-quarkus:clean :nessie-quarkus:quarkusBuild
+docker build -f ./tools/dockerbuild/docker/Dockerfile-jvm -t nessie-unstable:latest ./servers/quarkus-server 
+```
+
+If you prefer to build a native docker image instead, add `-Pnative` and use a dedicated Dockerfile:
+
+```shell
+./gradlew :nessie-quarkus:clean :nessie-quarkus:quarkusBuild -Pnative
+docker build -f ./tools/dockerbuild/docker/Dockerfile-native -t nessie-unstable:latest ./servers/quarkus-server 
+```
+
+Warning: building native images this way may not work properly on macOS with Apple Silicon processors.
+
+Check that your image is available locally:
+
+```shell
+docker images
+```
+
+You should see something like this:
+
+```
+REPOSITORY       TAG     IMAGE ID       CREATED          SIZE
+nessie-unstable  latest  24bb4c7bd696   15 seconds ago   555MB
+```
+
+Once this is done you can run your image with `docker run -p 19120:19120 nessie-unstable:latest`, passing the relevant
+environment variables, if any. Environment variables names must follow MicroProfile Config's [mapping
+rules](https://github.com/eclipse/microprofile-config/blob/master/spec/src/main/asciidoc/configsources.asciidoc#environment-variables-mapping-rules).
 
 ### AWS Lambda
 You can also deploy to AWS lambda function by following the steps in `servers/lambda/README.md`
