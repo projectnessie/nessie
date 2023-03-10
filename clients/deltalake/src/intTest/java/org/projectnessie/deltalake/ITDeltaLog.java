@@ -39,9 +39,9 @@ import org.projectnessie.model.Reference;
 import scala.Tuple2;
 
 @EnabledOnOs(
-    value = {OS.LINUX},
+    value = {OS.LINUX, OS.MAC},
     disabledReason =
-        "tests fail on macOS + Windows with 'java.lang.IllegalArgumentException: Can not create a Path from an empty string' via 'org.apache.spark.sql.delta.DeltaLog.ensureLogDirectoryExist()'")
+        "tests fail on Windows with 'java.lang.IllegalArgumentException: Can not create a Path from an empty string' via 'org.apache.spark.sql.delta.DeltaLog.ensureLogDirectoryExist()'")
 class ITDeltaLog extends AbstractDeltaTest {
 
   @TempDir File tempPath;
