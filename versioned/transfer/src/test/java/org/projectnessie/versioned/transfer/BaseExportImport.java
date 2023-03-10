@@ -335,7 +335,7 @@ public abstract class BaseExportImport {
               CommitMeta.fromMessage("commit #" + commit + " " + branch),
               Collections.singletonList(
                   Put.of(
-                      ContentKey.of(branch.getName(), "c-" + commit),
+                      ContentKey.of(branch.getName() + "-c-" + commit),
                       IcebergTable.of(
                           "meta+" + branch.getName() + "-c-" + commit + "-" + head.asString(),
                           42,

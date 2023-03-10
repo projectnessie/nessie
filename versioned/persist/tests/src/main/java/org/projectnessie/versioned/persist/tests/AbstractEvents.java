@@ -164,7 +164,7 @@ public abstract class AbstractEvents {
 
     KeyWithBytes put =
         KeyWithBytes.of(
-            ContentKey.of("one", "two"),
+            ContentKey.of("one-two"),
             ContentId.of("cid-events-assign"),
             payloadForContent(OnRefOnly.ON_REF_ONLY),
             DefaultStoreWorker.instance()
@@ -211,7 +211,7 @@ public abstract class AbstractEvents {
 
     KeyWithBytes put =
         KeyWithBytes.of(
-            ContentKey.of("one", "two"),
+            ContentKey.of("one-two"),
             ContentId.of("cid-events-commit"),
             payloadForContent(OnRefOnly.ON_REF_ONLY),
             DefaultStoreWorker.instance()
@@ -264,7 +264,7 @@ public abstract class AbstractEvents {
 
     KeyWithBytes put =
         KeyWithBytes.of(
-            ContentKey.of("one", "two"),
+            ContentKey.of("one-two"),
             ContentId.of("cid-events-merge"),
             payloadForContent(OnRefOnly.ON_REF_ONLY),
             DefaultStoreWorker.instance()
@@ -336,7 +336,7 @@ public abstract class AbstractEvents {
 
     KeyWithBytes put =
         KeyWithBytes.of(
-            ContentKey.of("one", "two"),
+            ContentKey.of("one-two"),
             ContentId.of("cid-events-transplant"),
             payloadForContent(OnRefOnly.ON_REF_ONLY),
             DefaultStoreWorker.instance()

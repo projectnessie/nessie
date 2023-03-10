@@ -57,7 +57,7 @@ class ITDeltaLog extends AbstractDeltaTest {
     String csvSalaries1 = ITDeltaLog.class.getResource("/salaries1.csv").getPath();
     String csvSalaries2 = ITDeltaLog.class.getResource("/salaries2.csv").getPath();
     String csvSalaries3 = ITDeltaLog.class.getResource("/salaries3.csv").getPath();
-    String pathSalaries = new File(tempPath, "salaries").getAbsolutePath();
+    String pathSalaries = ensureNamespaceExists(new File(tempPath, "salaries").getAbsolutePath());
 
     spark.sql(
         String.format(
@@ -100,7 +100,7 @@ class ITDeltaLog extends AbstractDeltaTest {
     String csvSalaries1 = ITDeltaLog.class.getResource("/salaries1.csv").getPath();
     String csvSalaries2 = ITDeltaLog.class.getResource("/salaries2.csv").getPath();
     String csvSalaries3 = ITDeltaLog.class.getResource("/salaries3.csv").getPath();
-    String pathSalaries = new File(tempPath, "salaries").getAbsolutePath();
+    String pathSalaries = ensureNamespaceExists(new File(tempPath, "salaries").getAbsolutePath());
 
     spark.sql(
         String.format(
@@ -144,13 +144,13 @@ class ITDeltaLog extends AbstractDeltaTest {
   }
 
   @Test
-  void testWithoutCondition() {
+  void testWithoutCondition() throws Exception {
     Dataset<Row> targetTable =
         createKVDataSet(
             Arrays.asList(tuple2(1, 10), tuple2(2, 20), tuple2(3, 30), tuple2(4, 40)),
             "key",
             "value");
-    targetTable.write().format("delta").save(tempPath.getAbsolutePath());
+    targetTable.write().format("delta").save(ensureNamespaceExists(tempPath.getAbsolutePath()));
     DeltaTable target = DeltaTable.forPath(spark, tempPath.getAbsolutePath());
 
     target.delete();
@@ -160,13 +160,13 @@ class ITDeltaLog extends AbstractDeltaTest {
   }
 
   @Test
-  public void testWithCondition() {
+  public void testWithCondition() throws Exception {
     Dataset<Row> targetTable =
         createKVDataSet(
             Arrays.asList(tuple2(1, 10), tuple2(2, 20), tuple2(3, 30), tuple2(4, 40)),
             "key",
             "value");
-    targetTable.write().format("delta").save(tempPath.getAbsolutePath());
+    targetTable.write().format("delta").save(ensureNamespaceExists(tempPath.getAbsolutePath()));
     DeltaTable target = DeltaTable.forPath(spark, tempPath.getAbsolutePath());
 
     target.delete("key = 1 or key = 2");
@@ -176,13 +176,13 @@ class ITDeltaLog extends AbstractDeltaTest {
   }
 
   @Test
-  public void testWithColumnCondition() {
+  public void testWithColumnCondition() throws Exception {
     Dataset<Row> targetTable =
         createKVDataSet(
             Arrays.asList(tuple2(1, 10), tuple2(2, 20), tuple2(3, 30), tuple2(4, 40)),
             "key",
             "value");
-    targetTable.write().format("delta").save(tempPath.getAbsolutePath());
+    targetTable.write().format("delta").save(ensureNamespaceExists(tempPath.getAbsolutePath()));
     DeltaTable target = DeltaTable.forPath(spark, tempPath.getAbsolutePath());
 
     target.delete(functions.expr("key = 1 or key = 2"));
@@ -207,13 +207,13 @@ class ITDeltaLog extends AbstractDeltaTest {
   }
 
   @Test
-  public void testWithoutCondition2() {
+  public void testWithoutCondition2() throws Exception {
     Dataset<Row> targetTable =
         createKVDataSet(
             Arrays.asList(tuple2(1, 10), tuple2(2, 20), tuple2(3, 30), tuple2(4, 40)),
             "key",
             "value");
-    targetTable.write().format("delta").save(tempPath.getAbsolutePath());
+    targetTable.write().format("delta").save(ensureNamespaceExists(tempPath.getAbsolutePath()));
     DeltaTable target = DeltaTable.forPath(spark, tempPath.getAbsolutePath());
 
     Map<String, String> set = ImmutableMap.of("key", "100");
@@ -229,13 +229,13 @@ class ITDeltaLog extends AbstractDeltaTest {
   }
 
   @Test
-  public void testWithoutConditionUsingColumn() {
+  public void testWithoutConditionUsingColumn() throws Exception {
     Dataset<Row> targetTable =
         createKVDataSet(
             Arrays.asList(tuple2(1, 10), tuple2(2, 20), tuple2(3, 30), tuple2(4, 40)),
             "key",
             "value");
-    targetTable.write().format("delta").save(tempPath.getAbsolutePath());
+    targetTable.write().format("delta").save(ensureNamespaceExists(tempPath.getAbsolutePath()));
     DeltaTable target = DeltaTable.forPath(spark, tempPath.getAbsolutePath());
 
     Map<String, Column> set = ImmutableMap.of("key", functions.expr("100"));
@@ -251,13 +251,13 @@ class ITDeltaLog extends AbstractDeltaTest {
   }
 
   @Test
-  public void testWithCondition2() {
+  public void testWithCondition2() throws Exception {
     Dataset<Row> targetTable =
         createKVDataSet(
             Arrays.asList(tuple2(1, 10), tuple2(2, 20), tuple2(3, 30), tuple2(4, 40)),
             "key",
             "value");
-    targetTable.write().format("delta").save(tempPath.getAbsolutePath());
+    targetTable.write().format("delta").save(ensureNamespaceExists(tempPath.getAbsolutePath()));
     DeltaTable target = DeltaTable.forPath(spark, tempPath.getAbsolutePath());
 
     Map<String, String> set = ImmutableMap.of("key", "100");
@@ -270,13 +270,13 @@ class ITDeltaLog extends AbstractDeltaTest {
   }
 
   @Test
-  public void testWithConditionUsingColumn() {
+  public void testWithConditionUsingColumn() throws Exception {
     Dataset<Row> targetTable =
         createKVDataSet(
             Arrays.asList(tuple2(1, 10), tuple2(2, 20), tuple2(3, 30), tuple2(4, 40)),
             "key",
             "value");
-    targetTable.write().format("delta").save(tempPath.getAbsolutePath());
+    targetTable.write().format("delta").save(ensureNamespaceExists(tempPath.getAbsolutePath()));
     DeltaTable target = DeltaTable.forPath(spark, tempPath.getAbsolutePath());
 
     Map<String, Column> set = ImmutableMap.of("key", functions.expr("100"));
@@ -290,10 +290,10 @@ class ITDeltaLog extends AbstractDeltaTest {
   }
 
   @Test
-  public void checkBasicApi() {
+  public void checkBasicApi() throws Exception {
     Dataset<Row> targetTable =
         createKVDataSet(Arrays.asList(tuple2(1, 10), tuple2(2, 20)), "key1", "value1");
-    targetTable.write().format("delta").save(tempPath.getAbsolutePath());
+    targetTable.write().format("delta").save(ensureNamespaceExists(tempPath.getAbsolutePath()));
 
     Dataset<Row> sourceTable =
         createKVDataSet(Arrays.asList(tuple2(1, 100), tuple2(3, 30)), "key2", "value2");
@@ -316,10 +316,10 @@ class ITDeltaLog extends AbstractDeltaTest {
   }
 
   @Test
-  public void checkExtendedApi() {
+  public void checkExtendedApi() throws Exception {
     Dataset<Row> targetTable =
         createKVDataSet(Arrays.asList(tuple2(1, 10), tuple2(2, 20)), "key1", "value1");
-    targetTable.write().format("delta").save(tempPath.getAbsolutePath());
+    targetTable.write().format("delta").save(ensureNamespaceExists(tempPath.getAbsolutePath()));
 
     Dataset<Row> sourceTable =
         createKVDataSet(Arrays.asList(tuple2(1, 100), tuple2(3, 30)), "key2", "value2");
@@ -346,11 +346,11 @@ class ITDeltaLog extends AbstractDeltaTest {
   }
 
   @Test
-  public void checkExtendedApiWithColumn() {
+  public void checkExtendedApiWithColumn() throws Exception {
     Dataset<Row> targetTable =
         createKVDataSet(
             Arrays.asList(tuple2(1, 10), tuple2(2, 20), tuple2(4, 40)), "key1", "value1");
-    targetTable.write().format("delta").save(tempPath.getAbsolutePath());
+    targetTable.write().format("delta").save(ensureNamespaceExists(tempPath.getAbsolutePath()));
 
     Dataset<Row> sourceTable =
         createKVDataSet(
@@ -381,13 +381,13 @@ class ITDeltaLog extends AbstractDeltaTest {
   }
 
   @Test
-  public void checkUpdateAllAndInsertAll() {
+  public void checkUpdateAllAndInsertAll() throws Exception {
     Dataset<Row> targetTable =
         createKVDataSet(
             Arrays.asList(tuple2(1, 10), tuple2(2, 20), tuple2(4, 40), tuple2(5, 50)),
             "key",
             "value");
-    targetTable.write().format("delta").save(tempPath.getAbsolutePath());
+    targetTable.write().format("delta").save(ensureNamespaceExists(tempPath.getAbsolutePath()));
 
     Dataset<Row> sourceTable =
         createKVDataSet(
@@ -423,11 +423,11 @@ class ITDeltaLog extends AbstractDeltaTest {
   }
 
   @Test
-  public void testAPI() {
+  public void testAPI() throws Exception {
     String input = Utils.createTempDir(System.getProperty("java.io.tmpdir"), "input").toString();
     List<String> data = Arrays.asList("hello", "world");
     Dataset<Row> dataDF = spark.createDataset(data, Encoders.STRING()).toDF();
-    dataDF.write().format("delta").mode("overwrite").save(input);
+    dataDF.write().format("delta").mode("overwrite").save(ensureNamespaceExists(input));
 
     // Test creating DeltaTable by path
     DeltaTable table1 = DeltaTable.forPath(spark, input);

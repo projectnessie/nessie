@@ -31,8 +31,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
-import org.projectnessie.error.BaseNessieClientServerException;
-import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
@@ -54,14 +52,14 @@ class ITDeltaLogBranches extends AbstractDeltaTest {
   }
 
   @Test
-  void testBranches() throws BaseNessieClientServerException {
+  void testBranches() throws Exception {
     Dataset<Row> targetTable =
         createKVDataSet(
             Arrays.asList(tuple2(1, 10), tuple2(2, 20), tuple2(3, 30), tuple2(4, 40)),
             "key",
             "value");
     // write some data to table
-    targetTable.write().format("delta").save(tempPath.getAbsolutePath());
+    targetTable.write().format("delta").save(ensureNamespaceExists(tempPath.getAbsolutePath()));
     // create test at the point where there is only 1 commit
     Branch sourceRef = getBranch();
     api.createReference()
@@ -92,14 +90,14 @@ class ITDeltaLogBranches extends AbstractDeltaTest {
   }
 
   @Test
-  void testCheckpoint() throws NessieNotFoundException {
+  void testCheckpoint() throws Exception {
     Dataset<Row> targetTable =
         createKVDataSet(
             Arrays.asList(tuple2(1, 10), tuple2(2, 20), tuple2(3, 30), tuple2(4, 40)),
             "key",
             "value");
     // write some data to table
-    targetTable.write().format("delta").save(tempPath.getAbsolutePath());
+    targetTable.write().format("delta").save(ensureNamespaceExists(tempPath.getAbsolutePath()));
     // write enough to trigger a checkpoint generation
     for (int i = 0; i < 15; i++) {
       targetTable.write().format("delta").mode("append").save(tempPath.getAbsolutePath());

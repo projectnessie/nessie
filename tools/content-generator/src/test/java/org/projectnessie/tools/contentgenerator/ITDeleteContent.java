@@ -53,7 +53,7 @@ class ITDeleteContent extends AbstractContentGeneratorTest {
             CONTENT_KEY.getElements().get(0),
             "--key",
             CONTENT_KEY.getElements().get(1));
-    assertThat(proc.getExitCode()).isEqualTo(0);
+    assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
     List<String> output = proc.getStdOutLines();
 
     Reference head;
@@ -84,7 +84,7 @@ class ITDeleteContent extends AbstractContentGeneratorTest {
             CONTENT_KEY.getElements().get(0),
             "--key",
             CONTENT_KEY.getElements().get(1));
-    assertThat(proc.getExitCode()).isEqualTo(0);
+    assertThat(proc).extracting(ProcessResult::getExitCode).isEqualTo(0);
 
     try (NessieApiV2 api = buildNessieApi()) {
       CommitMeta commitMeta =

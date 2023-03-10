@@ -192,7 +192,7 @@ public abstract class AbstractCommitLogScan {
       int numCommits, BranchName branchName, Hash head, Consumer<Hash> committed)
       throws ReferenceConflictException, ReferenceNotFoundException {
     for (int commitNum = 0; commitNum < numCommits; commitNum++) {
-      ContentKey key = ContentKey.of("many", "commits", Integer.toString(numCommits));
+      ContentKey key = ContentKey.of("many-commits-" + numCommits);
       ContentId cid = ContentId.of("cid-" + branchName.getName() + "-" + commitNum);
       OnRefOnly c =
           OnRefOnly.onRef("value for #" + commitNum + " in " + branchName.getName(), cid.getId());

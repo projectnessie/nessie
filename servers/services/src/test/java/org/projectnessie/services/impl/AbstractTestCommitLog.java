@@ -102,36 +102,49 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
 
   @Test
   public void filterCommitLogOperations() throws BaseNessieClientServerException {
-    Branch branch = createBranch("filterCommitLogOperations");
+    ContentKey hello = ContentKey.of("hello", "world", "BaseTable");
+    ContentKey ollah = ContentKey.of("dlrow", "olleh", "BaseTable");
+
+    Branch branch =
+        ensureNamespacesForKeysExist(createBranch("filterCommitLogOperations"), hello, ollah);
 
     branch =
         commit(
                 branch,
                 fromMessage("some awkward message"),
-                Put.of(
-                    ContentKey.of("hello", "world", "BaseTable"),
-                    IcebergView.of("path1", 1, 1, "Spark", "SELECT ALL THE THINGS")),
-                Put.of(
-                    ContentKey.of("dlrow", "olleh", "BaseTable"),
-                    IcebergView.of("path2", 1, 1, "Spark", "SELECT ALL THE THINGS")))
+                Put.of(hello, IcebergView.of("path1", 1, 1, "Spark", "SELECT ALL THE THINGS")),
+                Put.of(ollah, IcebergView.of("path2", 1, 1, "Spark", "SELECT ALL THE THINGS")))
             .getTargetBranch();
 
-    soft.assertThat(commitLog(branch.getName(), ALL, "operations.exists(op, op.type == 'PUT')"))
+    soft.assertThat(
+            commitLog(
+                branch.getName(),
+                ALL,
+                "operations.exists(op, op.type == 'PUT') && commit.message != 'create namespaces'"))
         .hasSize(1);
     soft.assertThat(
             commitLog(
-                branch.getName(), ALL, "operations.exists(op, op.key.startsWith('hello.world.'))"))
+                branch.getName(),
+                ALL,
+                "operations.exists(op, op.key.startsWith('hello.world.')) && commit.message != 'create namespaces'"))
         .hasSize(1);
     soft.assertThat(
             commitLog(
-                branch.getName(), ALL, "operations.exists(op, op.key.startsWith('not.there.'))"))
+                branch.getName(),
+                ALL,
+                "operations.exists(op, op.key.startsWith('not.there.')) && commit.message != 'create namespaces'"))
         .isEmpty();
     soft.assertThat(
-            commitLog(branch.getName(), ALL, "operations.exists(op, op.name == 'BaseTable')"))
+            commitLog(
+                branch.getName(),
+                ALL,
+                "operations.exists(op, op.name == 'BaseTable') && commit.message != 'create namespaces'"))
         .hasSize(1);
     soft.assertThat(
             commitLog(
-                branch.getName(), ALL, "operations.exists(op, op.name == 'ThereIsNoSuchTable')"))
+                branch.getName(),
+                ALL,
+                "operations.exists(op, op.name == 'ThereIsNoSuchTable') && commit.message != 'create namespaces'"))
         .isEmpty();
   }
 

@@ -56,7 +56,8 @@ public abstract class AbstractTestEntries extends BaseTestServiceImpl {
   @ParameterizedTest
   @ValueSource(ints = {0, 20, 22})
   public void entriesPaging(int numKeys) throws BaseNessieClientServerException {
-    Branch branch = createBranch("entriesPaging");
+    Branch branch =
+        ensureNamespacesForKeysExist(createBranch("entriesPaging"), ContentKey.of("key", "0"));
     try {
       treeApi()
           .getEntries(
@@ -92,7 +93,8 @@ public abstract class AbstractTestEntries extends BaseTestServiceImpl {
 
     AtomicReference<Reference> effectiveReference = new AtomicReference<>();
     List<EntriesResponse.Entry> contents =
-        pagedEntries(branch, null, pageSize, numKeys, effectiveReference::set, true);
+        withoutNamespaces(
+            pagedEntries(branch, null, pageSize, numKeys, effectiveReference::set, true));
 
     soft.assertThat(effectiveReference).hasValue(branch);
 
@@ -145,18 +147,20 @@ public abstract class AbstractTestEntries extends BaseTestServiceImpl {
   @ParameterizedTest
   @EnumSource(ReferenceMode.class)
   public void filterEntriesByName(ReferenceMode refMode) throws BaseNessieClientServerException {
-    Branch branch = createBranch("filterEntriesByName");
     ContentKey first = ContentKey.of("a", "b.b", "c", "firstTable");
     ContentKey second = ContentKey.of("a", "b.b", "c", "secondTable");
-    ContentKey third = ContentKey.of("a", "b.bbb");
     ContentKey fourth = ContentKey.of("a", "b.bbb", "Foo");
+    ContentKey abb = ContentKey.of("a", "b.b");
+    ContentKey abbc = ContentKey.of("a", "b.b", "c");
+    ContentKey abbbb = ContentKey.of("a", "b.bbb");
+    Branch branch =
+        ensureNamespacesForKeysExist(createBranch("filterEntriesByName"), first, second, fourth);
     branch =
         commit(
                 branch,
                 fromMessage("commit 1"),
                 Put.of(first, IcebergTable.of("path1", 42, 42, 42, 42)),
                 Put.of(second, IcebergTable.of("path2", 42, 42, 42, 42)),
-                Put.of(third, IcebergTable.of("path3", 42, 42, 42, 42)),
                 Put.of(fourth, IcebergTable.of("path4", 42, 42, 42, 42)))
             .getTargetBranch();
 
@@ -170,7 +174,7 @@ public abstract class AbstractTestEntries extends BaseTestServiceImpl {
 
     entries = entries(refMode.transform(branch), null, "entry.namespace.startsWith('a')");
     soft.assertThat(entries.stream().map(EntriesResponse.Entry::getName))
-        .containsExactlyInAnyOrder(first, second, third, fourth);
+        .containsExactlyInAnyOrder(first, second, abb, abbc, abbbb, fourth);
 
     entries = entries(refMode.transform(branch), null, "entry.namespace.startsWith('a.b\u001db.')");
     soft.assertThat(entries.stream().map(EntriesResponse.Entry::getName))
@@ -195,16 +199,17 @@ public abstract class AbstractTestEntries extends BaseTestServiceImpl {
             null,
             "entry.encodedKey == 'a.b\u001dbbb' || entry.encodedKey.startsWith('a.b\u001dbbb.')");
     soft.assertThat(entries.stream().map(EntriesResponse.Entry::getName))
-        .containsExactlyInAnyOrder(third, fourth);
+        .containsExactlyInAnyOrder(abbbb, fourth);
   }
 
   @ParameterizedTest
   @EnumSource(ReferenceMode.class)
   public void filterEntriesByFullKeyName(ReferenceMode refMode)
       throws BaseNessieClientServerException {
-    Branch branch = createBranch("filterEntriesByFullKeyName");
     ContentKey first = ContentKey.of("a", "b", "c", "table");
     ContentKey second = ContentKey.of("d", "b", "c", "table");
+    Branch branch =
+        ensureNamespacesForKeysExist(createBranch("filterEntriesByFullKeyName"), first, second);
     branch =
         commit(
                 branch,
@@ -226,11 +231,13 @@ public abstract class AbstractTestEntries extends BaseTestServiceImpl {
   @EnumSource(ReferenceMode.class)
   public void filterEntriesByNamespace(ReferenceMode refMode)
       throws BaseNessieClientServerException {
-    Branch branch = createBranch("filterEntriesByNamespace");
     ContentKey first = ContentKey.of("a", "b", "c", "firstTable");
     ContentKey second = ContentKey.of("a", "b", "c", "secondTable");
     ContentKey third = ContentKey.of("a", "thirdTable");
     ContentKey fourth = ContentKey.of("a", "fourthTable");
+    Branch branch =
+        ensureNamespacesForKeysExist(
+            createBranch("filterEntriesByNamespace"), first, second, third, fourth);
     branch =
         commit(
                 branch,
@@ -241,30 +248,38 @@ public abstract class AbstractTestEntries extends BaseTestServiceImpl {
                 Put.of(fourth, IcebergTable.of("path4", 42, 42, 42, 42)))
             .getTargetBranch();
 
-    List<EntriesResponse.Entry> entries = entries(refMode.transform(branch));
+    List<EntriesResponse.Entry> entries = withoutNamespaces(entries(refMode.transform(branch)));
     soft.assertThat(entries).isNotNull().hasSize(4);
 
-    entries = entries(refMode.transform(branch));
+    entries = withoutNamespaces(entries(refMode.transform(branch)));
     soft.assertThat(entries).isNotNull().hasSize(4);
 
-    entries = entries(refMode.transform(branch), null, "entry.namespace.startsWith('a.b')");
+    entries =
+        withoutNamespaces(
+            entries(refMode.transform(branch), null, "entry.namespace.startsWith('a.b')"));
     soft.assertThat(entries)
         .hasSize(2)
         .map(e -> e.getName().getNamespace().name())
         .allMatch(n -> n.startsWith("a.b"));
 
-    entries = entries(refMode.transform(branch), null, "entry.namespace.startsWith('a')");
+    entries =
+        withoutNamespaces(
+            entries(refMode.transform(branch), null, "entry.namespace.startsWith('a')"));
     soft.assertThat(entries)
         .hasSize(4)
         .map(e -> e.getName().getNamespace().name())
         .allMatch(n -> n.startsWith("a"));
 
     entries =
-        entries(refMode.transform(branch), null, "entry.namespace.startsWith('a.b.c.firstTable')");
+        withoutNamespaces(
+            entries(
+                refMode.transform(branch), null, "entry.namespace.startsWith('a.b.c.firstTable')"));
     soft.assertThat(entries).isEmpty();
 
     entries =
-        entries(refMode.transform(branch), null, "entry.namespace.startsWith('a.fourthTable')");
+        withoutNamespaces(
+            entries(
+                refMode.transform(branch), null, "entry.namespace.startsWith('a.fourthTable')"));
     soft.assertThat(entries).isEmpty();
   }
 
@@ -272,13 +287,20 @@ public abstract class AbstractTestEntries extends BaseTestServiceImpl {
   @EnumSource(ReferenceMode.class)
   public void filterEntriesByNamespaceAndPrefixDepth(ReferenceMode refMode)
       throws BaseNessieClientServerException {
-    Branch branch = createBranch("filterEntriesByNamespaceAndPrefixDepth");
     ContentKey first = ContentKey.of("a", "b", "c", "firstTable");
     ContentKey second = ContentKey.of("a", "b", "c", "secondTable");
     ContentKey third = ContentKey.of("a", "thirdTable");
     ContentKey fourth = ContentKey.of("a", "b", "fourthTable");
     ContentKey fifth = ContentKey.of("a", "boo", "fifthTable");
     ContentKey withoutNamespace = ContentKey.of("withoutNamespace");
+    Branch branch =
+        ensureNamespacesForKeysExist(
+            createBranch("filterEntriesByNamespaceAndPrefixDepth"),
+            first,
+            second,
+            third,
+            fourth,
+            fifth);
     List<ContentKey> keys = ImmutableList.of(first, second, third, fourth, fifth, withoutNamespace);
     branch =
         commit(
@@ -290,10 +312,10 @@ public abstract class AbstractTestEntries extends BaseTestServiceImpl {
             .getTargetBranch();
 
     Reference reference = refMode.transform(branch);
-    List<EntriesResponse.Entry> entries = entries(reference, 0, null);
+    List<EntriesResponse.Entry> entries = withoutNamespaces(entries(reference, 0, null));
     soft.assertThat(entries).isNotNull().hasSize(6);
 
-    entries = entries(reference, 0, "entry.namespace.matches('a(\\\\.|$)')");
+    entries = withoutNamespaces(entries(reference, 0, "entry.namespace.matches('a(\\\\.|$)')"));
     soft.assertThat(entries).isNotNull().hasSize(5);
 
     entries = entries(reference, 1, "entry.namespace.matches('a(\\\\.|$)')");

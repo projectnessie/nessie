@@ -37,11 +37,16 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
+import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.Namespace;
+import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Tag;
 import org.projectnessie.spark.extensions.NessieSpark32SessionExtensions;
 
@@ -179,5 +184,28 @@ public class AbstractDeltaTest {
 
   protected Branch getBranch() throws NessieNotFoundException {
     return (Branch) api.getReference().refName(branch).get();
+  }
+
+  protected String ensureNamespaceExists(String path)
+      throws NessieNotFoundException, NessieConflictException {
+    ContentKey contentKey = DeltaContentKeyUtil.fromFilePathString(path);
+    List<ContentKey> namespaceKeys =
+        IntStream.rangeClosed(1, contentKey.getElementCount())
+            .mapToObj(e -> ContentKey.of(contentKey.getElements().subList(0, e)))
+            .collect(Collectors.toList());
+    Branch branch = getBranch();
+    namespaceKeys.removeAll(api.getContent().keys(namespaceKeys).reference(branch).get().keySet());
+    if (!namespaceKeys.isEmpty()) {
+      CommitMultipleOperationsBuilder commitBuilder =
+          api.commitMultipleOperations()
+              .branch(branch)
+              .commitMeta(CommitMeta.fromMessage("create namespaces"));
+      for (ContentKey namespaceKey : namespaceKeys) {
+        commitBuilder.operation(Put.of(namespaceKey, Namespace.of(namespaceKey)));
+      }
+      commitBuilder.commit();
+    }
+
+    return path;
   }
 }

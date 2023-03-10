@@ -147,7 +147,10 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
 
   @Test
   public void verifyAllContentAndOperationTypes() throws BaseNessieClientServerException {
-    Branch branch = createBranch("contentAndOperationAll");
+    Branch branch =
+        ensureNamespacesForKeysExist(
+            createBranch("contentAndOperationAll"),
+            contentAndOperationTypes().map(co -> co.operation.getKey()).toArray(ContentKey[]::new));
 
     List<ContentAndOperationType> contentAndOps =
         contentAndOperationTypes().collect(Collectors.toList());
@@ -240,7 +243,10 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
   @MethodSource("contentAndOperationTypes")
   public void verifyContentAndOperationTypesIndividually(
       ContentAndOperationType contentAndOperationType) throws BaseNessieClientServerException {
-    Branch branch = createBranch("contentAndOperation_" + contentAndOperationType);
+    Branch branch =
+        ensureNamespacesForKeysExist(
+            createBranch("contentAndOperation_" + contentAndOperationType),
+            contentAndOperationType.operation.getKey());
 
     if (contentAndOperationType.prepare != null) {
       branch =
@@ -267,7 +273,7 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
     if (contentAndOperationType.operation instanceof Put) {
       Put put = (Put) contentAndOperationType.operation;
 
-      List<EntriesResponse.Entry> entries = entries(branch.getName(), null);
+      List<EntriesResponse.Entry> entries = withoutNamespaces(entries(branch.getName(), null));
       soft.assertThat(entries)
           .hasSize(1)
           .extracting(EntriesResponse.Entry::getName, EntriesResponse.Entry::getType)
@@ -296,7 +302,7 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
           .extracting(this::clearIdOnOperation)
           .isEqualTo(put);
     } else if (contentAndOperationType.operation instanceof Delete) {
-      List<EntriesResponse.Entry> entries = entries(branch.getName(), null);
+      List<EntriesResponse.Entry> entries = withoutNamespaces(entries(branch.getName(), null));
       soft.assertThat(entries).isEmpty();
 
       // Diff against of committed HEAD and previous commit must yield the content in the
@@ -317,7 +323,7 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
           .extracting(LogEntry::getOperations, list(Operation.class))
           .containsExactly(contentAndOperationType.operation);
     } else if (contentAndOperationType.operation instanceof Unchanged) {
-      List<EntriesResponse.Entry> entries = entries(branch.getName(), null);
+      List<EntriesResponse.Entry> entries = withoutNamespaces(entries(branch.getName(), null));
       soft.assertThat(entries)
           .extracting(EntriesResponse.Entry::getName, EntriesResponse.Entry::getType)
           .containsExactly(tuple(fixedContentKey, contentAndOperationType.type));

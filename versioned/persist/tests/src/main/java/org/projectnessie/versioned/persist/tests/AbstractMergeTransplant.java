@@ -262,7 +262,7 @@ public abstract class AbstractMergeTransplant {
               .toBranch(branch)
               .commitMetaSerialized(ByteString.copyFromUtf8("commit " + i));
       for (int k = 0; k < 3; k++) {
-        ContentKey key = ContentKey.of("key", Integer.toString(k));
+        ContentKey key = ContentKey.of("key-" + k);
         OnRefOnly value = OnRefOnly.newOnRef("value " + i + " for " + k);
         ByteString onRef =
             DefaultStoreWorker.instance()
@@ -379,7 +379,7 @@ public abstract class AbstractMergeTransplant {
       OnRefOnly conflictValue = OnRefOnly.newOnRef("conflict value for " + k);
       commit.addPuts(
           KeyWithBytes.of(
-              ContentKey.of("key", Integer.toString(k)),
+              ContentKey.of("key-" + k),
               ContentId.of("C" + k),
               payloadForContent(conflictValue),
               DefaultStoreWorker.instance()
@@ -415,7 +415,7 @@ public abstract class AbstractMergeTransplant {
                         .toBranch(conflict)
                         .expectedHead(Optional.of(conflictBase))))
         .isInstanceOf(MergeConflictException.class)
-        .hasMessage("The following keys have been changed in conflict: 'key.0', 'key.1'")
+        .hasMessage("The following keys have been changed in conflict: 'key-0', 'key-1'")
         .asInstanceOf(InstanceOfAssertFactories.throwable(MergeConflictException.class))
         .extracting(MergeConflictException::getMergeResult)
         .isEqualTo(expectedMergeResult);
@@ -446,7 +446,7 @@ public abstract class AbstractMergeTransplant {
             .addAllTargetCommits(conflictLogEntries);
 
     for (int k = 0; k < 3; k++) {
-      ContentKey key = ContentKey.of("key", Integer.toString(k));
+      ContentKey key = ContentKey.of("key-" + k);
 
       ImmutableKeyDetails.Builder details =
           KeyDetails.builder()
@@ -482,7 +482,7 @@ public abstract class AbstractMergeTransplant {
             .addAllSourceCommits(expectedSourceCommits);
 
     for (int k = 0; k < 3; k++) {
-      ContentKey key = ContentKey.of("key", Integer.toString(k));
+      ContentKey key = ContentKey.of("key-" + k);
 
       ImmutableKeyDetails.Builder details =
           KeyDetails.builder()

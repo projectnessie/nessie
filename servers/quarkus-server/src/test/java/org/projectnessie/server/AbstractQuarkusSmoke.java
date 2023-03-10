@@ -115,7 +115,7 @@ public abstract class AbstractQuarkusSmoke {
                 .sourceRefName(main.getName())
                 .create();
 
-    ContentKey key = ContentKey.of("a", "table");
+    ContentKey key = ContentKey.of("a-table");
 
     CommitResponse commitResp =
         api()

@@ -72,6 +72,10 @@ public class AbstractContentGeneratorTest {
                   throw new RuntimeException(e);
                 }
               });
+      api.createNamespace()
+          .namespace(CONTENT_KEY.getNamespace())
+          .refName(defaultBranch.getName())
+          .create();
     }
   }
 
@@ -116,6 +120,11 @@ public class AbstractContentGeneratorTest {
 
     List<String> getStdOutLines() {
       return Arrays.asList(stdOut.split("\n"));
+    }
+
+    @Override
+    public String toString() {
+      return "ProcessResult{" + "exitCode=" + exitCode + ", stdOut='" + stdOut + '\'' + '}';
     }
   }
 

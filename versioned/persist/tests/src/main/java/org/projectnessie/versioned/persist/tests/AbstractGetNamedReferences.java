@@ -47,7 +47,7 @@ import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 public abstract class AbstractGetNamedReferences {
 
   public static final String MAIN_BRANCH = "main";
-  private static final ContentKey SOME_KEY = ContentKey.of("a", "b", "c");
+  private static final ContentKey SOME_KEY = ContentKey.of("abc");
   private static final String SOME_CONTENT_ID = "abc";
   private final DatabaseAdapter databaseAdapter;
 

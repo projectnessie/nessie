@@ -73,7 +73,7 @@ abstract class AbstractTestBasicOperations {
     Branch branch = (Branch) api.getReference().refName("testx").get();
     Stream<Entry> tables = api.getEntries().refName("testx").stream();
     assertThat(tables).isEmpty();
-    ContentKey key = ContentKey.of("x", "x");
+    ContentKey key = ContentKey.of("xx");
     tryEndpointPass(
         () ->
             api.commitMultipleOperations()

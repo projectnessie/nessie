@@ -38,9 +38,9 @@ public abstract class AbstractTestMisc extends BaseTestServiceImpl {
 
   @Test
   public void checkSpecialCharacterRoundTrip() throws BaseNessieClientServerException {
-    Branch branch = createBranch("specialchar");
     // ContentKey k = ContentKey.of("/%国","国.国");
     ContentKey key = ContentKey.of("a.b", "c.txt");
+    Branch branch = ensureNamespacesForKeysExist(createBranch("specialchar"), key);
     IcebergTable table = IcebergTable.of("path1", 42, 42, 42, 42);
     commit(branch, fromMessage("commit 1"), Put.of(key, table));
 
