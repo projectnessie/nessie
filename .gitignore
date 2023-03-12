@@ -67,3 +67,6 @@ __pycache__/
 
 # Site
 site/site
+
+#jEnv, see https://github.com/jenv/jenv
+.java-version
