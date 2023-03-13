@@ -26,5 +26,5 @@ import org.projectnessie.client.NessieClientBuilder;
 @FunctionalInterface
 public interface NessieClientCustomizer {
 
-  NessieClientBuilder<?> configure(NessieClientBuilder<?> builder, NessieApiVersion apiVersion);
+  NessieClientBuilder configure(NessieClientBuilder builder, NessieApiVersion apiVersion);
 }

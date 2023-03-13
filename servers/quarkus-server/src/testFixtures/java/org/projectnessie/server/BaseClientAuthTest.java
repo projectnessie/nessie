@@ -30,7 +30,7 @@ public abstract class BaseClientAuthTest {
 
   private NessieClientFactory apiProvider;
   private NessieApiV1 api;
-  private Consumer<NessieClientBuilder<?>> customizer;
+  private Consumer<NessieClientBuilder> customizer;
 
   @BeforeEach
   void setUp(NessieClientFactory apiProvider) {
@@ -45,7 +45,7 @@ public abstract class BaseClientAuthTest {
     }
   }
 
-  protected void withClientCustomizer(Consumer<NessieClientBuilder<?>> customizer) {
+  protected void withClientCustomizer(Consumer<NessieClientBuilder> customizer) {
     Preconditions.checkState(api == null, "withClientCustomizer but api has already been created!");
     this.customizer = customizer;
   }

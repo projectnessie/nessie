@@ -41,7 +41,7 @@ public enum NessieApiVersion {
     return base.resolve(getPathElement());
   }
 
-  public NessieApiV1 build(NessieClientBuilder<?> builder) {
+  public NessieApiV1 build(NessieClientBuilder builder) {
     return builder.build(clientApiClass);
   }
 }

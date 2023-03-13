@@ -20,18 +20,21 @@ import java.util.List;
 import org.projectnessie.client.auth.NessieAuthenticationProvider;
 
 /** Configuration constants for Nessie clients. */
+@SuppressWarnings("JavadocDeclaration")
 public final class NessieConfigConstants {
   /** Config property name ({@value #CONF_NESSIE_URI}) for the Nessie service URL. */
   public static final String CONF_NESSIE_URI = "nessie.uri";
 
   /**
-   * Config property name ({@value #CONF_NESSIE_USERNAME}) for the user name used for (basic)
+   * Config property name ({@value #CONF_NESSIE_USERNAME}) for the username used for (basic)
    * authentication.
    *
    * @deprecated "basic" HTTP authentication is not considered secure. Use {@link
    *     #CONF_NESSIE_AUTH_TOKEN} instead.
    */
-  @Deprecated public static final String CONF_NESSIE_USERNAME = "nessie.authentication.username";
+  @SuppressWarnings("DeprecatedIsStillUsed")
+  @Deprecated
+  public static final String CONF_NESSIE_USERNAME = "nessie.authentication.username";
 
   /**
    * Config property name ({@value #CONF_NESSIE_PASSWORD}) for the password used for (basic)
@@ -40,7 +43,9 @@ public final class NessieConfigConstants {
    * @deprecated "basic" HTTP authentication is not considered secure. Use {@link
    *     #CONF_NESSIE_AUTH_TOKEN} instead.
    */
-  @Deprecated public static final String CONF_NESSIE_PASSWORD = "nessie.authentication.password";
+  @SuppressWarnings("DeprecatedIsStillUsed")
+  @Deprecated
+  public static final String CONF_NESSIE_PASSWORD = "nessie.authentication.password";
 
   /**
    * Config property name ({@value #CONF_NESSIE_AUTH_TOKEN}) for the token used for (bearer)
@@ -238,10 +243,18 @@ public final class NessieConfigConstants {
   public static final String CONF_NESSIE_DISABLE_COMPRESSION =
       "nessie.transport.disable-compression";
 
+  /** Config property name ({@value #CONF_NESSIE_CLIENT_NAME}) for custom client builder name. */
+  public static final String CONF_NESSIE_CLIENT_NAME = "nessie.client-builder-name";
+
   /**
    * Config property name ({@value #CONF_NESSIE_CLIENT_BUILDER_IMPL}) for custom client builder
    * class name.
+   *
+   * @deprecated Prefer using Nessie client implementation <em>names</em>, configured via {@link
+   *     #CONF_NESSIE_CLIENT_NAME}.
    */
+  @SuppressWarnings("DeprecatedIsStillUsed")
+  @Deprecated
   public static final String CONF_NESSIE_CLIENT_BUILDER_IMPL = "nessie.client-builder-impl";
 
   /**

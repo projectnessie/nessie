@@ -15,6 +15,14 @@
  */
 package org.projectnessie.tools.contentgenerator.cli;
 
+import static org.projectnessie.client.NessieClientBuilder.createClientBuilderFromSystemSettings;
+import static org.projectnessie.client.NessieClientConfigSources.mapConfigSource;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_CLIENT_NAME;
+
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
+import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.api.NessieApiV2;
 import picocli.CommandLine;
 
@@ -35,5 +43,40 @@ import picocli.CommandLine;
     })
 public abstract class ContentGenerator<API extends NessieApiV2> {
 
-  public abstract API createNessieApiInstance();
+  @CommandLine.Option(
+      names = {"-u", "--uri"},
+      scope = CommandLine.ScopeType.INHERIT,
+      description = "Nessie API endpoint URI, defaults to http://localhost:19120/api/v2.")
+  private URI uri = URI.create("http://localhost:19120/api/v2");
+
+  @CommandLine.Option(
+      names = "--nessie-client",
+      description = "Name of the Nessie client to use, defaults to HTTP suitable for REST.")
+  private String nessieClientName;
+
+  @CommandLine.Option(
+      names = "--nessie-option",
+      description = "Parameters to configure the NessieClientBuilder.",
+      split = ",",
+      arity = "0..*")
+  private Map<String, String> nessieOptions = new HashMap<>();
+
+  public API createNessieApiInstance() {
+    @SuppressWarnings("unchecked")
+    API api = (API) createNessieClientBuilder().build(NessieApiV2.class);
+    return api;
+  }
+
+  public NessieClientBuilder createNessieClientBuilder() {
+    Map<String, String> mainConfig = new HashMap<>(nessieOptions);
+    if (nessieClientName != null) {
+      mainConfig.put(CONF_NESSIE_CLIENT_NAME, nessieClientName);
+    }
+    NessieClientBuilder clientBuilder =
+        createClientBuilderFromSystemSettings(mapConfigSource(mainConfig));
+    if (uri != null) {
+      clientBuilder.withUri(uri);
+    }
+    return clientBuilder;
+  }
 }

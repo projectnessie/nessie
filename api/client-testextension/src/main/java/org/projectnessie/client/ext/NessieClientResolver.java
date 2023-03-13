@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.ext;
 
+import static org.projectnessie.client.NessieClientBuilder.createClientBuilderFromSystemSettings;
 import static org.projectnessie.client.ext.MultiVersionApiTest.apiVersion;
 
 import java.io.Serializable;
@@ -30,8 +31,8 @@ import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.platform.commons.util.AnnotationUtils;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.client.http.HttpResponseFactory;
+import org.projectnessie.client.http.NessieHttpClientBuilder;
 
 /**
  * A base class for extensions that manage a Nessie test execution environment. This class injects
@@ -158,17 +159,19 @@ public abstract class NessieClientResolver implements ParameterResolver {
     @jakarta.annotation.Nonnull
     @Override
     public NessieApiV1 make(NessieClientCustomizer customizer) {
-      HttpClientBuilder clientBuilder = HttpClientBuilder.builder().withUri(resolvedUri);
+      NessieClientBuilder clientBuilder =
+          createClientBuilderFromSystemSettings().withUri(resolvedUri);
       if (responseFactoryClass != null) {
         try {
           clientBuilder =
-              clientBuilder.withResponseFactory(
-                  responseFactoryClass.getDeclaredConstructor().newInstance());
+              clientBuilder
+                  .asInstanceOf(NessieHttpClientBuilder.class)
+                  .withResponseFactory(responseFactoryClass.getDeclaredConstructor().newInstance());
         } catch (Exception e) {
           throw new RuntimeException(e);
         }
       }
-      NessieClientBuilder<?> builder = customizer.configure(clientBuilder, apiVersion);
+      NessieClientBuilder builder = customizer.configure(clientBuilder, apiVersion);
       return apiVersion.build(builder);
     }
   }

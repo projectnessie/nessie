@@ -86,7 +86,6 @@ public class AwsAuthenticationProvider implements NessieAuthenticationProvider {
     private final Region region;
     private final AwsCredentialsProvider awsCredentialsProvider;
 
-    @SuppressWarnings({"QsPrivateBeanMembersInspection", "CdiInjectionPointsInspection"})
     private AwsAuthentication(Region region, String profile) {
       this.region = region;
 
@@ -110,7 +109,6 @@ public class AwsAuthenticationProvider implements NessieAuthenticationProvider {
     private final AwsCredentialsProvider awsCredentialsProvider;
     private final Region region;
 
-    @SuppressWarnings({"QsPrivateBeanMembersInspection", "CdiInjectionPointsInspection"})
     private AwsHttpAuthenticationFilter(Region region, AwsCredentialsProvider credentialsProvider) {
       this.awsCredentialsProvider = credentialsProvider;
       this.objectMapper =

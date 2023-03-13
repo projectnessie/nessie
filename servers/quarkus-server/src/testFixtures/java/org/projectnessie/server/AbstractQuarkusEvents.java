@@ -97,8 +97,8 @@ public abstract class AbstractQuarkusEvents {
     RestAssured.port = uri.getPort();
   }
 
-  protected NessieClientBuilder<?> customizeClient(
-      NessieClientBuilder<?> builder, NessieApiVersion apiVersion) {
+  protected NessieClientBuilder customizeClient(
+      NessieClientBuilder builder, NessieApiVersion apiVersion) {
     return builder;
   }
 
