@@ -74,7 +74,7 @@ loadProjects("../gradle/projects.iceberg.properties", groupIdIntegrations)
 // Note: Unlike the "main" settings.gradle.kts this variant includes _all_ Spark _and_ Scala
 // version variants in IntelliJ.
 
-val sparkScala = loadProperties(file("../clients/spark-scala.properties"))
+val sparkScala = loadProperties(file("../integrations/spark-scala.properties"))
 val sparkVersions = sparkScala["sparkVersions"].toString().split(",").map { it.trim() }
 val allScalaVersions = LinkedHashSet<String>()
 
@@ -87,7 +87,7 @@ for (sparkVersion in sparkVersions) {
     nessieProject(
         artifactId,
         groupIdIntegrations,
-        file("../clients/spark-extensions/v${sparkVersion}")
+        file("../integrations/spark-extensions/v${sparkVersion}")
       )
       .buildFileName = "../build.gradle.kts"
     if (ideSyncActive) {
@@ -100,12 +100,12 @@ for (scalaVersion in allScalaVersions) {
   nessieProject(
     "nessie-spark-extensions-base_$scalaVersion",
     groupIdIntegrations,
-    file("../clients/spark-extensions-base")
+    file("../integrations/spark-extensions-base")
   )
   nessieProject(
     "nessie-spark-extensions-basetests_$scalaVersion",
     groupIdIntegrations,
-    file("../clients/spark-extensions-basetests")
+    file("../integrations/spark-extensions-basetests")
   )
   if (ideSyncActive) {
     break

@@ -144,7 +144,7 @@ if (gradle.parent != null && ideSyncActive) {
 if (!System.getProperty("nessie.integrationsTesting.enable").toBoolean()) {
   loadProjects("gradle/projects.iceberg.properties", groupIdIntegrations)
 
-  val sparkScala = loadProperties(file("clients/spark-scala.properties"))
+  val sparkScala = loadProperties(file("integrations/spark-scala.properties"))
 
   val sparkVersions = sparkScala["sparkVersions"].toString().split(",").map { it.trim() }
   val allScalaVersions = LinkedHashSet<String>()
@@ -159,7 +159,7 @@ if (!System.getProperty("nessie.integrationsTesting.enable").toBoolean()) {
       nessieProject(
           artifactId,
           groupIdIntegrations,
-          file("clients/spark-extensions/v${sparkVersion}")
+          file("integrations/spark-extensions/v${sparkVersion}")
         )
         .buildFileName = "../build.gradle.kts"
       if (ideSyncActive) {
@@ -172,12 +172,12 @@ if (!System.getProperty("nessie.integrationsTesting.enable").toBoolean()) {
     nessieProject(
       "nessie-spark-extensions-base_$scalaVersion",
       groupIdIntegrations,
-      file("clients/spark-extensions-base")
+      file("integrations/spark-extensions-base")
     )
     nessieProject(
       "nessie-spark-extensions-basetests_$scalaVersion",
       groupIdIntegrations,
-      file("clients/spark-extensions-basetests")
+      file("integrations/spark-extensions-basetests")
     )
     if (ideSyncActive) {
       break
