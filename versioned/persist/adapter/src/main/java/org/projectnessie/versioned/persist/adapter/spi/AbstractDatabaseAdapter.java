@@ -1228,8 +1228,7 @@ public abstract class AbstractDatabaseAdapter<
               int keyLen = key.getElementCount();
               for (ContentKey deleted : deletes) {
                 int deletedLen = deleted.getElementCount();
-                if (keyLen > deletedLen
-                    && key.getElements().subList(0, deletedLen).equals(deleted.getElements())) {
+                if (keyLen > deletedLen && key.startsWith(deleted)) {
                   return true;
                 }
               }
@@ -1289,9 +1288,7 @@ public abstract class AbstractDatabaseAdapter<
 
         // check if element is in the current namespace, fail it is true - this means,
         // there is a live content-key in the current namespace - must not delete the namespace
-        if (!ck.equals(deleted)
-            && ckLen >= nsLen
-            && ck.getElements().subList(0, nsLen).equals(deleted.getElements())) {
+        if (ckLen > nsLen && ck.startsWith(deleted)) {
           throw new ReferenceConflictException(
               format(
                   "The namespace '%s' would be deleted, but cannot, because it has children.",
