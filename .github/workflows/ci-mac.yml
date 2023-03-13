@@ -36,6 +36,7 @@ jobs:
     if: (github.repository == 'projectnessie/nessie' && github.event_name != 'pull_request') || contains(github.event.pull_request.labels.*.name, 'pr-macos-win')
     env:
       SPARK_LOCAL_IP: localhost
+      CI_MAC: "true"
 
     steps:
     - name: Brew update & upgrade

@@ -51,9 +51,13 @@ public class MinioExtension
     if (OS.current() == OS.LINUX) {
       return enabled("Running on Linux");
     }
+    if (OS.current() == OS.MAC && System.getenv("CI_MAC") == null) {
+      // Disable tests on GitHub Actions
+      return enabled("Running on macOS locally");
+    }
     return disabled(
         format(
-            "Disabled on %s, because neither macOS nor Windows support wildcard localhost FQDNs.",
+            "Disabled on %s, because it doesn't support wildcard localhost FQDNs.",
             OS.current().name()));
   }
 
