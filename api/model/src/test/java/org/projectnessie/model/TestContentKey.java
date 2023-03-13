@@ -450,4 +450,41 @@ class TestContentKey {
   void getParent(ContentKey in, ContentKey parent) {
     assertThat(in).extracting(ContentKey::getParent).isEqualTo(parent);
   }
+
+  static Stream<Arguments> truncateToLength() {
+    return Stream.of(
+        arguments(ContentKey.of("x"), 1, ContentKey.of("x")),
+        arguments(ContentKey.of("x"), 2, ContentKey.of("x")),
+        arguments(ContentKey.of("x"), 0, ContentKey.of()),
+        arguments(ContentKey.of("x", "y", "z"), 1, ContentKey.of("x")),
+        arguments(ContentKey.of("x", "y", "z"), 2, ContentKey.of("x", "y")),
+        arguments(ContentKey.of("x", "y", "z"), 3, ContentKey.of("x", "y", "z")),
+        arguments(ContentKey.of("x", "y", "z"), 4, ContentKey.of("x", "y", "z")),
+        arguments(ContentKey.of("x", "y", "z"), 0, ContentKey.of()));
+  }
+
+  @ParameterizedTest
+  @MethodSource
+  void truncateToLength(ContentKey key, int len, ContentKey expected) {
+    assertThat(key.truncateToLength(len)).isEqualTo(expected);
+  }
+
+  static Stream<Arguments> startsWith() {
+    return Stream.of(
+        arguments(ContentKey.of("x"), ContentKey.of("x", "y"), false),
+        arguments(ContentKey.of("x"), ContentKey.of("x"), true),
+        arguments(ContentKey.of("x"), ContentKey.of("y"), false),
+        arguments(ContentKey.of("x"), ContentKey.of(), true),
+        arguments(ContentKey.of("x", "y", "z"), ContentKey.of("x"), true),
+        arguments(ContentKey.of("x", "y", "z"), ContentKey.of("x", "y"), true),
+        arguments(ContentKey.of("x", "y", "z"), ContentKey.of("x", "y", "z"), true),
+        arguments(ContentKey.of("x", "y", "z"), ContentKey.of(), true));
+  }
+
+  @ParameterizedTest
+  @MethodSource
+  void startsWith(ContentKey key, ContentKey other, boolean expect) {
+    assertThat(key.startsWith(other)).isEqualTo(expect);
+    assertThat(key.startsWith(Namespace.of(other))).isEqualTo(expect);
+  }
 }
