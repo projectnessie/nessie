@@ -83,8 +83,9 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
     Map<ContentKey, KeyDetails> keyDetailsMap = new HashMap<>();
     for (CommitObj sourceCommit : sourceCommits.sourceCommits) {
       CreateCommit createCommit =
-          cloneCommit(
-              updateCommitMetadata, sourceCommit, sourceParentIndex, newHead, targetParentIndex);
+          cloneCommit(updateCommitMetadata, sourceCommit, sourceParentIndex, newHead);
+
+      verifyMergeTransplantCommitPolicies(targetParentIndex, sourceCommit);
 
       CommitObj newCommit =
           createMergeTransplantCommit(mergeTypeForKey, keyDetailsMap, createCommit);
@@ -116,9 +117,7 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       CommitObj sourceCommit,
       StoreIndex<CommitOp> sourceParentIndex,
-      ObjId newHead,
-      StoreIndex<CommitOp> targetParentIndex)
-      throws ReferenceConflictException {
+      ObjId newHead) {
     CreateCommit.Builder createCommitBuilder = newCommitBuilder().parentCommitId(newHead);
 
     CommitMeta commitMeta = toCommitMeta(sourceCommit);
@@ -146,8 +145,6 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
             commitRemove(el.key(), op.payload(), requireNonNull(expectedId), op.contentId()));
       }
     }
-
-    verifyMergeTransplantCommitPolicies(targetParentIndex, sourceCommit);
 
     return createCommitBuilder.build();
   }

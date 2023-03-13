@@ -1560,16 +1560,6 @@ public abstract class AbstractDatabaseAdapter<
   protected Map<ContentKey, ContentAndState> fetchValues(
       OP_CONTEXT ctx, Hash refHead, Collection<ContentKey> keys, KeyFilterPredicate keyFilter)
       throws ReferenceNotFoundException {
-    return fetchValues(ctx, refHead, keys, keyFilter, x -> null);
-  }
-
-  protected Map<ContentKey, ContentAndState> fetchValues(
-      OP_CONTEXT ctx,
-      Hash refHead,
-      Collection<ContentKey> keys,
-      KeyFilterPredicate keyFilter,
-      Function<Hash, CommitLogEntry> inMemoryCommits)
-      throws ReferenceNotFoundException {
     Set<ContentKey> remainingKeys = new HashSet<>(keys);
 
     Map<ContentKey, ContentAndState> nonGlobal = new HashMap<>();
@@ -1614,7 +1604,7 @@ public abstract class AbstractDatabaseAdapter<
     // handles the 'Put` operations.
 
     AtomicBoolean keyListProcessed = new AtomicBoolean();
-    try (Stream<CommitLogEntry> baseLog = readCommitLogStream(ctx, refHead, inMemoryCommits);
+    try (Stream<CommitLogEntry> baseLog = readCommitLogStream(ctx, refHead);
         Stream<CommitLogEntry> log = takeUntilExcludeLast(baseLog, e -> remainingKeys.isEmpty())) {
       log.forEach(
           entry -> {

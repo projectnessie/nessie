@@ -269,24 +269,15 @@ class BaseCommitHelper {
             .filter(k -> k.getElementCount() > 1)
             .map(ContentKey::getParent)
             .collect(Collectors.toSet());
-    validateNamespacesExist(namespaceKeys, newContent, headIndex);
-  }
-
-  void validateNamespacesExist(
-      Set<ContentKey> namespaceKeys,
-      Map<ContentKey, Content> newContent,
-      StoreIndex<CommitOp> headIndex)
-      throws ReferenceConflictException {
     if (!persist.config().validateNamespaces()) {
       return;
     }
 
     for (ContentKey key : namespaceKeys) {
-
       Content namespaceAddedInThisCommit = newContent.get(key);
       if (namespaceAddedInThisCommit instanceof Namespace) {
-        // Namespace for the current new-content-key has been added in this commit, that
-        // namespace will be checked separately. Assume, it's okay here.
+        // Namespace for the current new-content-key has been added via the currently validated
+        // commit. Nothing to do for `Namespace`s here.
         return;
       }
 
