@@ -248,14 +248,21 @@ class BaseCommitHelper {
         int elLen = elContentKey.getElementCount();
         int nsLen = namespaceKey.getElementCount();
 
+        ContentKey truncatedElContentKey = elContentKey.truncateToLength(nsLen);
+
+        int cmp = truncatedElContentKey.compareTo(namespaceKey);
+
         // check if element is in the current namespace, fail it is true - this means,
         // there is a live content-key in the current namespace - must not delete the namespace
-        if (elLen >= nsLen
-            && elContentKey.getElements().subList(0, nsLen).equals(namespaceKey.getElements())) {
+        if (elLen >= nsLen && cmp == 0) {
           throw new ReferenceConflictException(
               format(
                   "The namespace '%s' would be deleted, but cannot, because it has children.",
                   namespaceKey));
+        }
+        if (cmp > 0) {
+          // iterated past the namespaceKey - break
+          break;
         }
       }
     }
