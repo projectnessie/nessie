@@ -101,8 +101,8 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
     BranchName branch = BranchName.of("commitWithNonNamespace");
     store().create(branch, Optional.empty());
 
-    // Add something else than a namespace using the content key of the namespace
     if (key.getElementCount() == 3) {
+      // Give the non-namespace content commit a valid namespace.
       store()
           .commit(
               branch,
@@ -111,6 +111,8 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
               singletonList(
                   Put.of(key.getParent().getParent(), Namespace.of(key.getParent().getParent()))));
     }
+
+    // Add a non-namespace content using the parent key of the namespace to be checked below.
     store()
         .commit(
             branch,

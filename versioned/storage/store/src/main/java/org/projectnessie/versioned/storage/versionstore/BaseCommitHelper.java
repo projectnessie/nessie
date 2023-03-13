@@ -219,13 +219,13 @@ class BaseCommitHelper {
   }
 
   void validateNamespacesHaveNoChildren(
-      Set<ContentKey> deletedNamespaces, StoreIndex<CommitOp> headIndex)
+      Set<ContentKey> namespacesToCheck, StoreIndex<CommitOp> headIndex)
       throws ReferenceConflictException {
     if (!persist.config().validateNamespaces()) {
       return;
     }
 
-    for (ContentKey namespaceKey : deletedNamespaces) {
+    for (ContentKey namespaceKey : namespacesToCheck) {
       StoreKey storeKey = keyToStoreKey(namespaceKey);
 
       for (Iterator<StoreIndexElement<CommitOp>> iter = headIndex.iterator(storeKey, null, false);
@@ -264,14 +264,18 @@ class BaseCommitHelper {
   void validateNamespacesExistForContentKeys(
       Map<ContentKey, Content> newContent, StoreIndex<CommitOp> headIndex)
       throws ReferenceConflictException {
+    if (!persist.config().validateNamespaces()) {
+      return;
+    }
+    if (newContent.isEmpty()) {
+      return;
+    }
+
     Set<ContentKey> namespaceKeys =
         newContent.keySet().stream()
             .filter(k -> k.getElementCount() > 1)
             .map(ContentKey::getParent)
             .collect(Collectors.toSet());
-    if (!persist.config().validateNamespaces()) {
-      return;
-    }
 
     for (ContentKey key : namespaceKeys) {
       Content namespaceAddedInThisCommit = newContent.get(key);
@@ -346,12 +350,8 @@ class BaseCommitHelper {
       }
     }
 
-    if (!checkContents.isEmpty()) {
-      validateNamespacesExistForContentKeys(checkContents, headIndex);
-    }
-    if (!deletedNamespaces.isEmpty()) {
-      validateNamespacesHaveNoChildren(deletedNamespaces, headIndex);
-    }
+    validateNamespacesExistForContentKeys(checkContents, headIndex);
+    validateNamespacesHaveNoChildren(deletedNamespaces, headIndex);
   }
 
   /** Source commits for merge and transplant operations. */
