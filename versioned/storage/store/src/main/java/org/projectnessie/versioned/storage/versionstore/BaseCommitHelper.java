@@ -282,7 +282,7 @@ class BaseCommitHelper {
       if (namespaceAddedInThisCommit instanceof Namespace) {
         // Namespace for the current new-content-key has been added via the currently validated
         // commit. Nothing to do for `Namespace`s here.
-        return;
+        continue;
       }
 
       StoreIndexElement<CommitOp> ns = headIndex.get(keyToStoreKey(key));
