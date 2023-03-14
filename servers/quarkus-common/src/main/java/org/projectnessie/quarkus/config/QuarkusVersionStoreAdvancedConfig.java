@@ -40,6 +40,11 @@ import org.projectnessie.versioned.persist.tx.TxDatabaseAdapterConfig;
 public interface QuarkusVersionStoreAdvancedConfig
     extends NonTransactionalDatabaseAdapterConfig, TxDatabaseAdapterConfig {
 
+  @WithName("validate-namespaces")
+  @WithDefault("" + DEFAULT_NAMESPACE_VALIDATION)
+  @Override
+  boolean validateNamespaces();
+
   @WithName("repository-id")
   @WithDefault(DEFAULT_REPOSITORY_ID)
   // Use RepoIdConverter for the "key-prefix" property because it can be an empty string,

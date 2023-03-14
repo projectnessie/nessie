@@ -33,6 +33,7 @@ dependencies {
   implementation(project(":nessie-versioned-storage-testextension"))
   implementation(project(":nessie-versioned-tests"))
   implementation(project(":nessie-versioned-spi"))
+  implementation(project(":nessie-server-store"))
 
   // javax/jakarta
   compileOnly(libs.jakarta.validation.api)

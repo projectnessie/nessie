@@ -47,6 +47,20 @@ public interface DatabaseAdapterConfig {
   int DEFAULT_RETRY_MAX_SLEEP_MILLIS = 75;
   long DEFAULT_ASSUMED_WALL_CLOCK_DRIFT_MICROS = 5_000_000L;
   int DEFAULT_ATTACHMENT_KEYS_BATCH_SIZE = 100;
+  boolean DEFAULT_NAMESPACE_VALIDATION = true;
+
+  /**
+   * Committing operations by default enforce that all (parent) namespaces exist.
+   *
+   * <p>This configuration setting is only present for a few Nessie releases to work around
+   * potential migration issues and is subject to removal.
+   *
+   * @since 0.52.0
+   */
+  @Value.Default
+  default boolean validateNamespaces() {
+    return DEFAULT_NAMESPACE_VALIDATION;
+  }
 
   /**
    * A free-form string that identifies a particular Nessie storage repository.

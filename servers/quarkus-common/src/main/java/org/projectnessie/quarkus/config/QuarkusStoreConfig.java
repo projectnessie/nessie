@@ -86,6 +86,11 @@ public interface QuarkusStoreConfig extends StoreConfig {
   @Override
   long assumedWallClockDriftMicros();
 
+  @WithName(CONFIG_NAMESPACE_VALIDATION)
+  @WithDefault("" + DEFAULT_NAMESPACE_VALIDATION)
+  @Override
+  boolean validateNamespaces();
+
   String CONFIG_CACHE_CAPACITY_MB = "cache-capacity-mb";
   int DEFAULT_CACHE_CAPACITY_MB = 0;
 

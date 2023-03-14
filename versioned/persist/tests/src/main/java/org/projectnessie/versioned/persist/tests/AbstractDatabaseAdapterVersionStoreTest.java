@@ -24,6 +24,7 @@ import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterConfigItem;
 import org.projectnessie.versioned.persist.tests.extension.NessieDbTracer;
 import org.projectnessie.versioned.persist.tests.extension.NessieMockedTracingExtension;
+import org.projectnessie.versioned.tests.AbstractNoNamespaceValidation;
 import org.projectnessie.versioned.tests.AbstractVersionStoreTestBase;
 
 @ExtendWith(DatabaseAdapterExtension.class)
@@ -46,6 +47,20 @@ public abstract class AbstractDatabaseAdapterVersionStoreTest extends AbstractVe
   public class Tracing extends AbstractTracing {
     public Tracing() {
       super(AbstractDatabaseAdapterVersionStoreTest.store);
+    }
+  }
+
+  @Nested
+  @SuppressWarnings("ClassCanBeStatic")
+  public class NoNamespaceValidation extends AbstractNoNamespaceValidation {
+
+    @NessieDbAdapter(withTracing = true)
+    @NessieDbAdapterConfigItem(name = "validate.namespaces", value = "false")
+    VersionStore store;
+
+    @Override
+    protected VersionStore store() {
+      return store;
     }
   }
 }

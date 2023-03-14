@@ -96,6 +96,54 @@ public abstract class ContentKey implements Comparable<ContentKey> {
     return ContentKey.of(elements.subList(0, elements.size() - 1));
   }
 
+  /**
+   * Return the content key, truncated to the given maximum length if the number of elements is
+   * greater than {@code targetMaxLength}, otherwise returns this content key.
+   */
+  public ContentKey truncateToLength(int targetMaxLength) {
+    List<String> elements;
+    elements = getElements();
+    List<String> truncated = truncateToLengthElements(elements, targetMaxLength);
+    if (truncated == elements) {
+      return this;
+    }
+    return ContentKey.of(truncated);
+  }
+
+  private static List<String> truncateToLengthElements(List<String> elements, int targetMaxLength) {
+    int len = elements.size();
+    if (len <= targetMaxLength) {
+      return elements;
+    }
+    return elements.subList(0, targetMaxLength);
+  }
+
+  public boolean startsWith(ContentKey other) {
+    List<String> elements = getElements();
+    List<String> otherElements = other.getElements();
+    return startsWith(elements, otherElements);
+  }
+
+  public boolean startsWith(Namespace other) {
+    List<String> elements = getElements();
+    List<String> otherElements = other.getElements();
+    return startsWith(elements, otherElements);
+  }
+
+  private static boolean startsWith(List<String> elements, List<String> otherElements) {
+    int len = elements.size();
+    int otherLen = otherElements.size();
+    if (otherLen > len) {
+      return false;
+    }
+    for (int i = 0; i < otherLen; i++) {
+      if (!elements.get(i).equals(otherElements.get(i))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   public static ContentKey of(Namespace namespace, String name) {
     ImmutableContentKey.Builder b = ImmutableContentKey.builder();
     if (namespace != null && !namespace.isEmpty()) {

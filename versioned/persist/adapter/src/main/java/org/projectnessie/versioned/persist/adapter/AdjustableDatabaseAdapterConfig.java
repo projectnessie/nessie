@@ -19,6 +19,8 @@ import java.time.Clock;
 
 public interface AdjustableDatabaseAdapterConfig extends DatabaseAdapterConfig {
 
+  AdjustableDatabaseAdapterConfig withValidateNamespaces(boolean validateNamespaces);
+
   AdjustableDatabaseAdapterConfig withRepositoryId(String repositoryId);
 
   AdjustableDatabaseAdapterConfig withParentsPerCommit(int parentsPerCommit);

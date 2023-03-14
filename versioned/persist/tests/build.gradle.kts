@@ -30,6 +30,7 @@ dependencies {
   implementation(project(":nessie-versioned-persist-testextension"))
   implementation(project(":nessie-versioned-spi"))
   implementation(project(":nessie-versioned-tests"))
+  implementation(project(":nessie-server-store"))
   implementation(libs.guava)
   implementation(libs.micrometer.core)
   implementation(libs.opentracing.mock)

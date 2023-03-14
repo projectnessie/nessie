@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.persist.adapter.spi;
 
+import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -27,6 +28,8 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUti
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.takeUntilExcludeLast;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.takeUntilIncludeLast;
 import static org.projectnessie.versioned.persist.adapter.spi.Traced.trace;
+import static org.projectnessie.versioned.store.DefaultStoreWorker.contentTypeForPayload;
+import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -321,7 +324,7 @@ public abstract class AbstractDatabaseAdapter<
             });
     if (!duplicates.isEmpty()) {
       throw new IllegalArgumentException(
-          String.format(
+          format(
               "Duplicate keys are not allowed in a commit: %s",
               duplicates.stream().map(ContentKey::toString).collect(Collectors.joining(", "))));
     }
@@ -382,7 +385,7 @@ public abstract class AbstractDatabaseAdapter<
     if (commitsToMergeChronological.isEmpty()) {
       // Nothing to merge, shortcut
       throw new IllegalArgumentException(
-          String.format(
+          format(
               "No hashes to merge from '%s' onto '%s' @ '%s' using common ancestor '%s',"
                   + " expected commit ID from request was '%s'.",
               mergeParams.getMergeFromHash().asString(),
@@ -568,13 +571,13 @@ public abstract class AbstractDatabaseAdapter<
     if (hasCollisions && !params.isDryRun()) {
       MergeResult<CommitLogEntry> result = mergeResult.resultantTargetHash(toHead).build();
       throw new MergeConflictException(
-          String.format(
+          format(
               "The following keys have been changed in conflict: %s",
               result.getDetails().entrySet().stream()
                   .filter(e -> e.getValue().getConflictType() != ConflictType.NONE)
                   .map(Map.Entry::getKey)
                   .sorted()
-                  .map(key -> String.format("'%s'", key))
+                  .map(key -> format("'%s'", key))
                   .collect(Collectors.joining(", "))),
           result);
     }
@@ -1151,13 +1154,15 @@ public abstract class AbstractDatabaseAdapter<
       long commitSeq,
       ByteString commitMeta,
       Iterable<KeyWithBytes> puts,
-      Iterable<ContentKey> deletes,
+      Set<ContentKey> deletes,
       int currentKeyListDistance,
       Consumer<Hash> newKeyLists,
       @Nonnull @jakarta.annotation.Nonnull Function<Hash, CommitLogEntry> inMemoryCommits,
       Iterable<Hash> additionalParents)
-      throws ReferenceNotFoundException {
+      throws ReferenceNotFoundException, ReferenceConflictException {
     Hash commitHash = individualCommitHash(parentHashes, commitMeta, puts, deletes);
+
+    namespacesValidationForCommit(ctx, parentHashes, puts, deletes, inMemoryCommits);
 
     int keyListDistance = currentKeyListDistance + 1;
 
@@ -1180,6 +1185,139 @@ public abstract class AbstractDatabaseAdapter<
       entry = buildKeyList(ctx, entry, newKeyLists, inMemoryCommits);
     }
     return entry;
+  }
+
+  private void namespacesValidationForCommit(
+      OP_CONTEXT ctx,
+      List<Hash> parentHashes,
+      Iterable<KeyWithBytes> puts,
+      Set<ContentKey> deletes,
+      Function<Hash, CommitLogEntry> inMemoryCommits)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+    if (!config.validateNamespaces()) {
+      return;
+    }
+
+    // Collect the keys that need to be checked for being a namespace, and the payload per
+    // content-key
+    Set<ContentKey> keysToCheck = new HashSet<>();
+    Set<ContentKey> expectedNamespaces = new HashSet<>();
+    Map<ContentKey, Byte> putPayloads = new HashMap<>();
+    for (KeyWithBytes put : puts) {
+      ContentKey key = put.getKey();
+      keysToCheck.add(key);
+      if (key.getElementCount() > 1) {
+        ContentKey parent = key.getParent();
+        keysToCheck.add(parent);
+        expectedNamespaces.add(parent);
+      }
+      putPayloads.put(key, put.getPayload());
+    }
+
+    // Fetch the contents for the keys to be checked, included the keys to be deleted
+    Set<ContentKey> keysToFetch = new HashSet<>(keysToCheck);
+    keysToFetch.addAll(deletes);
+
+    Map<ContentKey, Byte> fetchedPayloads;
+    try (Stream<KeyListEntry> keysStream =
+        keysForCommitEntry(
+            ctx,
+            parentHashes.get(0),
+            (key, contentId, type) -> {
+              // Key is required either by a put-operation's parent key or a delete-operation
+              if (keysToFetch.contains(key)) {
+                return true;
+              }
+
+              // Also include the keys that are children of the deleted keys
+              int keyLen = key.getElementCount();
+              for (ContentKey deleted : deletes) {
+                int deletedLen = deleted.getElementCount();
+                if (keyLen > deletedLen && key.startsWith(deleted)) {
+                  return true;
+                }
+              }
+              return false;
+            },
+            inMemoryCommits)) {
+      fetchedPayloads =
+          keysStream.collect(Collectors.toMap(KeyListEntry::getKey, KeyListEntry::getPayload));
+    }
+
+    byte namespacePayload = payloadForContent(Content.Type.NAMESPACE);
+
+    for (ContentKey key : keysToCheck) {
+      Byte payloadInPut = putPayloads.get(key);
+
+      // Figure out the payload of the keys to be checked, and whether those exist
+      byte payload;
+      boolean exists = payloadInPut != null;
+      Byte existingContentPayload = fetchedPayloads.get(key);
+      if (!exists) {
+        exists = existingContentPayload != null;
+        payload = exists ? existingContentPayload : (byte) 0;
+      } else {
+        payload = payloadInPut;
+      }
+
+      // Validate that the payload did not change
+      if (existingContentPayload != null && payload != existingContentPayload) {
+        throw new IllegalArgumentException(
+            format(
+                "Cannot overwrite existing key '%s' of type %s with a different payload %s",
+                key,
+                contentTypeForPayload(existingContentPayload),
+                contentTypeForPayload(payload)));
+      }
+
+      // Validate that each content-key's parent namespace exists
+      if (expectedNamespaces.contains(key)) {
+        if (!exists) {
+          throw new ReferenceConflictException(format("Namespace '%s' must exist.", key));
+        }
+        if (payload != namespacePayload) {
+          throw new ReferenceConflictException(
+              format(
+                  "Expecting the key '%s' to be a namespace, but is not a namespace. "
+                      + "Using a content object that is not a namespace as a namespace is forbidden.",
+                  key));
+        }
+      }
+    }
+
+    // Validate that deleted namespaces do not have children
+    for (ContentKey deleted : deletes) {
+      Byte deletedPayload = fetchedPayloads.get(deleted);
+      if (deletedPayload == null) {
+        // oh, deleted content does not exist - bummer
+        continue;
+      }
+
+      if (deletedPayload != namespacePayload) {
+        // not a namespace, go ahead
+        continue;
+      }
+
+      int nsLen = deleted.getElementCount();
+
+      for (ContentKey ck : fetchedPayloads.keySet()) {
+        if (deletes.contains(ck)) {
+          // this key is being deleted as well - ignore
+          continue;
+        }
+
+        int ckLen = ck.getElementCount();
+
+        // check if element is in the current namespace, fail it is true - this means,
+        // there is a live content-key in the current namespace - must not delete the namespace
+        if (ckLen > nsLen && ck.startsWith(deleted)) {
+          throw new ReferenceConflictException(
+              format(
+                  "The namespace '%s' would be deleted, but cannot, because it has children.",
+                  deleted));
+        }
+      }
+    }
   }
 
   /** Calculate the hash for the content of a {@link CommitLogEntry}. */
@@ -1759,7 +1897,7 @@ public abstract class AbstractDatabaseAdapter<
                     a -> {
                       if (keys.contains(a.getKey()) && handled.add(a.getKey())) {
                         mismatches.accept(
-                            String.format(
+                            format(
                                 "Key '%s' has conflicting put-operation from commit '%s'.",
                                 a.getKey(), e.getHash().asString()));
                       }
@@ -1769,7 +1907,7 @@ public abstract class AbstractDatabaseAdapter<
                     a -> {
                       if (keys.contains(a) && handled.add(a)) {
                         mismatches.accept(
-                            String.format(
+                            format(
                                 "Key '%s' has conflicting delete-operation from commit '%s'.",
                                 a, e.getHash().asString()));
                       }
@@ -1829,7 +1967,7 @@ public abstract class AbstractDatabaseAdapter<
         findCommonAncestor(ctx, from, commonAncestorState, (dist, hash) -> hash);
     if (commonAncestorHash == null) {
       throw new ReferenceConflictException(
-          String.format(
+          format(
               "No common ancestor found for merge of '%s' into branch '%s' @ '%s'",
               from, toBranch.getName(), toHead.asString()));
     }
@@ -2033,7 +2171,7 @@ public abstract class AbstractDatabaseAdapter<
       Consumer<Hash> newKeyLists,
       MetadataRewriter<ByteString> rewriteMetadata,
       Predicate<ContentKey> includeKeyPredicate)
-      throws ReferenceNotFoundException {
+      throws ReferenceNotFoundException, ReferenceConflictException {
     int parentsPerCommit = config.getParentsPerCommit();
 
     List<Hash> parents = new ArrayList<>(parentsPerCommit);
@@ -2058,10 +2196,10 @@ public abstract class AbstractDatabaseAdapter<
           sourceCommit.getPuts().stream()
               .filter(p -> includeKeyPredicate.test(p.getKey()))
               .collect(Collectors.toList());
-      List<ContentKey> deletes =
+      Set<ContentKey> deletes =
           sourceCommit.getDeletes().stream()
               .filter(includeKeyPredicate)
-              .collect(Collectors.toList());
+              .collect(Collectors.toSet());
 
       if (puts.isEmpty() && deletes.isEmpty()) {
         // Copied commit will not contain any operation, skip.
@@ -2128,19 +2266,16 @@ public abstract class AbstractDatabaseAdapter<
       if (currentState == null) {
         if (expectedState.getValue().isPresent()) {
           mismatches.accept(
-              String.format(
-                  "No current global-state for content-id '%s'.", expectedState.getKey()));
+              format("No current global-state for content-id '%s'.", expectedState.getKey()));
         }
       } else {
         if (!expectedState.getValue().isPresent()) {
           // This happens, when a table's being created on a branch, but that table already exists.
           mismatches.accept(
-              String.format(
-                  "Global-state for content-id '%s' already exists.", expectedState.getKey()));
+              format("Global-state for content-id '%s' already exists.", expectedState.getKey()));
         } else if (!currentState.equals(expectedState.getValue().get())) {
           mismatches.accept(
-              String.format(
-                  "Mismatch in global-state for content-id '%s'.", expectedState.getKey()));
+              format("Mismatch in global-state for content-id '%s'.", expectedState.getKey()));
         }
       }
     }

@@ -19,6 +19,7 @@ import com.google.protobuf.ByteString;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
@@ -48,7 +49,7 @@ public interface CommitParams extends ToBranchParams {
   List<ContentKey> getUnchanged();
 
   /** List of "unchanged" keys, from {@code Delete} commit operations. */
-  List<ContentKey> getDeletes();
+  Set<ContentKey> getDeletes();
 
   /** Serialized commit-metadata. */
   ByteString getCommitMetaSerialized();
