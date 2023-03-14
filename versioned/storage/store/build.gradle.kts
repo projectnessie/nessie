@@ -31,6 +31,7 @@ dependencies {
   implementation(project(":nessie-model"))
   implementation(project(":nessie-versioned-spi"))
   implementation(libs.protobuf.java)
+  implementation(libs.agrona)
 
   // javax/jakarta
   compileOnly(libs.jakarta.validation.api)

@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Sets.newHashSetWithExpectedSize;
 import static java.util.Objects.requireNonNull;
+import static org.agrona.collections.Hashing.DEFAULT_LOAD_FACTOR;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.lazyStoreIndex;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Add.commitAdd;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Remove.commitRemove;
@@ -46,8 +47,10 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.ObjIntConsumer;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import org.agrona.collections.Object2IntHashMap;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
@@ -218,7 +221,8 @@ class CommitImpl extends BaseCommitHelper {
 
     Map<UUID, StoreKey> deleted = new HashMap<>();
     Map<ContentKey, Content> newContent = new HashMap<>();
-    Set<ContentKey> deletedNamespaces = new HashSet<>();
+    Object2IntHashMap<ContentKey> deletedKeysAndPayload =
+        new Object2IntHashMap<>(operations.size() * 2, DEFAULT_LOAD_FACTOR, -1);
     for (int i = 0; i < operations.size(); i++) {
       Operation operation = operations.get(i);
       StoreKey storeKey = storeKeys.get(i);
@@ -235,14 +239,19 @@ class CommitImpl extends BaseCommitHelper {
             newContent::put);
       } else if (operation instanceof Delete) {
         commitAddDelete(
-            expectedIndex(), commit, operation.getKey(), storeKey, deleted, deletedNamespaces::add);
+            expectedIndex(),
+            commit,
+            operation.getKey(),
+            storeKey,
+            deleted,
+            deletedKeysAndPayload::put);
       } else if (operation instanceof Unchanged) {
         commitAddUnchanged(headIndex(), expectedIndex(), commit, storeKey);
       }
     }
 
     validateNamespacesExistForContentKeys(newContent, headIndex());
-    validateNamespacesHaveNoChildren(deletedNamespaces, headIndex());
+    validateNamespacesToDeleteHaveNoChildren(deletedKeysAndPayload, headIndex());
   }
 
   private static void commitAddUnchanged(
@@ -286,7 +295,7 @@ class CommitImpl extends BaseCommitHelper {
       ContentKey contentKey,
       StoreKey storeKey,
       Map<UUID, StoreKey> deleted,
-      Consumer<ContentKey> deletedNamespaces) {
+      ObjIntConsumer<ContentKey> deletedKeys) {
     StoreIndexElement<CommitOp> existingElement = expectedIndex.get(storeKey);
 
     int payload = 0;
@@ -306,9 +315,7 @@ class CommitImpl extends BaseCommitHelper {
         existingContentID = content.contentId();
         deleted.put(existingContentID, storeKey);
 
-        if (payload == payloadForContent(Content.Type.NAMESPACE)) {
-          deletedNamespaces.accept(contentKey);
-        }
+        deletedKeys.accept(contentKey, payload);
       }
     }
 

@@ -22,12 +22,15 @@ import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.versioned.tests.AbstractVersionStoreTestBase.METADATA_REWRITER;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -310,5 +313,75 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
     } else {
       soft.assertThatCode(mergeTransplant).doesNotThrowAnyException();
     }
+  }
+
+  @Test
+  void mustNotOverwriteNamespace() throws Exception {
+    BranchName root = BranchName.of("root");
+    store().create(root, Optional.empty());
+
+    ContentKey key = ContentKey.of("key");
+
+    store()
+        .commit(
+            root,
+            Optional.empty(),
+            fromMessage("create table ns.foo"),
+            singletonList(Put.of(key, Namespace.of(key))));
+
+    soft.assertThatThrownBy(
+            () ->
+                store()
+                    .commit(
+                        root,
+                        Optional.empty(),
+                        fromMessage("create table ns.foo"),
+                        singletonList(Put.of(key, newOnRef("foo")))))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void deleteHierarchy() throws Exception {
+    BranchName root = BranchName.of("root");
+    store().create(root, Optional.empty());
+
+    List<Namespace> namespaces =
+        asList(
+            Namespace.of("a"),
+            Namespace.of("a", "b"),
+            Namespace.of("a", "b", "c"),
+            Namespace.of("x"),
+            Namespace.of("x", "y"),
+            Namespace.of("x", "y", "z"));
+    List<ContentKey> tables =
+        namespaces.stream()
+            .flatMap(
+                ns ->
+                    Stream.of(
+                        ContentKey.of(ns, "A"), ContentKey.of(ns, "B"), ContentKey.of(ns, "C")))
+            .collect(Collectors.toList());
+
+    store()
+        .commit(
+            root,
+            Optional.empty(),
+            fromMessage("unrelated"),
+            Stream.concat(
+                    tables.stream().map(t -> Put.of(t, newOnRef(t.toString()))),
+                    namespaces.stream().map(ns -> Put.of(ns.toContentKey(), ns)))
+                .collect(Collectors.toList()));
+
+    soft.assertThatCode(
+            () ->
+                store()
+                    .commit(
+                        root,
+                        Optional.empty(),
+                        fromMessage("delete all the things"),
+                        Stream.concat(
+                                namespaces.stream().map(ns -> Delete.of(ns.toContentKey())),
+                                tables.stream().map(Delete::of))
+                            .collect(Collectors.toList())))
+        .doesNotThrowAnyException();
   }
 }

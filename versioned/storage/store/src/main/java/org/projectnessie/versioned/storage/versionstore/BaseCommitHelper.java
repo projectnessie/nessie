@@ -40,7 +40,6 @@ import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForCon
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +51,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import org.agrona.collections.Object2IntHashMap;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Namespace;
@@ -218,53 +218,66 @@ class BaseCommitHelper {
     }
   }
 
-  void validateNamespacesHaveNoChildren(
-      Set<ContentKey> namespacesToCheck, StoreIndex<CommitOp> headIndex)
+  void validateNamespacesToDeleteHaveNoChildren(
+      Object2IntHashMap<ContentKey> allKeysToDelete, StoreIndex<CommitOp> headIndex)
       throws ReferenceConflictException {
     if (!persist.config().validateNamespaces()) {
       return;
     }
 
-    for (ContentKey namespaceKey : namespacesToCheck) {
-      StoreKey storeKey = keyToStoreKey(namespaceKey);
+    int payloadNamespace = payloadForContent(NAMESPACE);
 
-      for (Iterator<StoreIndexElement<CommitOp>> iter = headIndex.iterator(storeKey, null, false);
-          iter.hasNext(); ) {
-        StoreIndexElement<CommitOp> el = iter.next();
-        if (!el.content().action().exists()) {
-          // element does not exist - ignore
-          continue;
-        }
-        ContentKey elContentKey = storeKeyToKey(el.key());
-        if (elContentKey == null) {
-          // not a "content object" - ignore
-          continue;
-        }
-        if (elContentKey.equals(namespaceKey)) {
-          // this is our namespace - ignore
-          continue;
-        }
+    try {
+      allKeysToDelete.forEach(
+          (namespaceKey, payload) -> {
+            if (payloadNamespace != payload) {
+              return;
+            }
 
-        int elLen = elContentKey.getElementCount();
-        int nsLen = namespaceKey.getElementCount();
+            StoreKey storeKey = keyToStoreKey(namespaceKey);
 
-        ContentKey truncatedElContentKey = elContentKey.truncateToLength(nsLen);
+            for (Iterator<StoreIndexElement<CommitOp>> iter =
+                    headIndex.iterator(storeKey, null, false);
+                iter.hasNext(); ) {
+              StoreIndexElement<CommitOp> el = iter.next();
+              if (!el.content().action().exists()) {
+                // element does not exist - ignore
+                continue;
+              }
+              ContentKey elContentKey = storeKeyToKey(el.key());
+              if (elContentKey == null) {
+                // not a "content object" - ignore
+                continue;
+              }
+              if (elContentKey.equals(namespaceKey)) {
+                // this is our namespace - ignore
+                continue;
+              }
+              if (allKeysToDelete.containsKey(elContentKey)) {
+                // this key is being deleted as well - ignore
+                continue;
+              }
 
-        int cmp = truncatedElContentKey.compareTo(namespaceKey);
+              int elLen = elContentKey.getElementCount();
+              int nsLen = namespaceKey.getElementCount();
 
-        // check if element is in the current namespace, fail it is true - this means,
-        // there is a live content-key in the current namespace - must not delete the namespace
-        if (elLen >= nsLen && cmp == 0) {
-          throw new ReferenceConflictException(
-              format(
+              // check if element is in the current namespace, fail it is true - this means,
+              // there is a live content-key in the current namespace - must not delete the
+              // namespace
+              ContentKey truncatedElContentKey = elContentKey.truncateToLength(nsLen);
+              int cmp = truncatedElContentKey.compareTo(namespaceKey);
+              checkArgument(
+                  elLen < nsLen || cmp != 0,
                   "The namespace '%s' would be deleted, but cannot, because it has children.",
-                  namespaceKey));
-        }
-        if (cmp > 0) {
-          // iterated past the namespaceKey - break
-          break;
-        }
-      }
+                  namespaceKey);
+              if (cmp > 0) {
+                // iterated past the namespaceKey - break
+                break;
+              }
+            }
+          });
+    } catch (IllegalArgumentException iae) {
+      throw new ReferenceConflictException(iae.getMessage());
     }
   }
 
@@ -311,7 +324,7 @@ class BaseCommitHelper {
       StoreIndex<CommitOp> headIndex, CommitObj inspectedCommit) throws ReferenceConflictException {
 
     Map<ContentKey, Content> checkContents = new HashMap<>();
-    Set<ContentKey> deletedNamespaces = new HashSet<>();
+    Object2IntHashMap<ContentKey> deletedKeysAndPayload = new Object2IntHashMap<>(-1);
 
     IndexesLogic indexesLogic = indexesLogic(persist);
     for (StoreIndexElement<CommitOp> el : indexesLogic.commitOperations(inspectedCommit)) {
@@ -344,21 +357,18 @@ class BaseCommitHelper {
           }
         }
       } else {
-        if (op.payload() == payloadForContent(Content.Type.NAMESPACE)) {
-          ContentKey contentKey = storeKeyToKey(el.key());
-          // 'contentKey' will be 'null', if the store-key is not in the MAIN_UNIVERSE or the
-          // variant is not CONTENT_DISCRIMINATOR.
-          checkState(
-              contentKey != null,
-              "Merge/transplant with non-content-object store-keys is not implemented.");
-
-          deletedNamespaces.add(contentKey);
-        }
+        ContentKey contentKey = storeKeyToKey(el.key());
+        // 'contentKey' will be 'null', if the store-key is not in the MAIN_UNIVERSE or the
+        // variant is not CONTENT_DISCRIMINATOR.
+        checkState(
+            contentKey != null,
+            "Merge/transplant with non-content-object store-keys is not implemented.");
+        deletedKeysAndPayload.put(contentKey, op.payload());
       }
     }
 
     validateNamespacesExistForContentKeys(checkContents, headIndex);
-    validateNamespacesHaveNoChildren(deletedNamespaces, headIndex);
+    validateNamespacesToDeleteHaveNoChildren(deletedKeysAndPayload, headIndex);
   }
 
   /** Source commits for merge and transplant operations. */

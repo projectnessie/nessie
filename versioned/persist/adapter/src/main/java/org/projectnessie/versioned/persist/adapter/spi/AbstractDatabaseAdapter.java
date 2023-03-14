@@ -28,6 +28,7 @@ import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUti
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.takeUntilExcludeLast;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.takeUntilIncludeLast;
 import static org.projectnessie.versioned.persist.adapter.spi.Traced.trace;
+import static org.projectnessie.versioned.store.DefaultStoreWorker.contentTypeForPayload;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -1153,7 +1154,7 @@ public abstract class AbstractDatabaseAdapter<
       long commitSeq,
       ByteString commitMeta,
       Iterable<KeyWithBytes> puts,
-      Iterable<ContentKey> deletes,
+      Set<ContentKey> deletes,
       int currentKeyListDistance,
       Consumer<Hash> newKeyLists,
       @Nonnull @jakarta.annotation.Nonnull Function<Hash, CommitLogEntry> inMemoryCommits,
@@ -1161,9 +1162,7 @@ public abstract class AbstractDatabaseAdapter<
       throws ReferenceNotFoundException, ReferenceConflictException {
     Hash commitHash = individualCommitHash(parentHashes, commitMeta, puts, deletes);
 
-    if (config.validateNamespaces()) {
-      namespacesValidationForCommit(ctx, parentHashes, puts, deletes, inMemoryCommits);
-    }
+    namespacesValidationForCommit(ctx, parentHashes, puts, deletes, inMemoryCommits);
 
     int keyListDistance = currentKeyListDistance + 1;
 
@@ -1192,28 +1191,34 @@ public abstract class AbstractDatabaseAdapter<
       OP_CONTEXT ctx,
       List<Hash> parentHashes,
       Iterable<KeyWithBytes> puts,
-      Iterable<ContentKey> deletes,
+      Set<ContentKey> deletes,
       Function<Hash, CommitLogEntry> inMemoryCommits)
       throws ReferenceNotFoundException, ReferenceConflictException {
+    if (!config.validateNamespaces()) {
+      return;
+    }
 
     // Collect the keys that need to be checked for being a namespace, and the payload per
     // content-key
     Set<ContentKey> keysToCheck = new HashSet<>();
+    Set<ContentKey> expectedNamespaces = new HashSet<>();
     Map<ContentKey, Byte> putPayloads = new HashMap<>();
     for (KeyWithBytes put : puts) {
       ContentKey key = put.getKey();
+      keysToCheck.add(key);
       if (key.getElementCount() > 1) {
-        keysToCheck.add(key.getParent());
+        ContentKey parent = key.getParent();
+        keysToCheck.add(parent);
+        expectedNamespaces.add(parent);
       }
       putPayloads.put(key, put.getPayload());
     }
-    keysToCheck.removeAll(putPayloads.keySet());
 
     // Fetch the contents for the keys to be checked, included the keys to be deleted
     Set<ContentKey> keysToFetch = new HashSet<>(keysToCheck);
-    deletes.forEach(keysToFetch::add);
+    keysToFetch.addAll(deletes);
 
-    Map<ContentKey, Byte> keyPayloads;
+    Map<ContentKey, Byte> fetchedPayloads;
     try (Stream<KeyListEntry> keysStream =
         keysForCommitEntry(
             ctx,
@@ -1235,42 +1240,54 @@ public abstract class AbstractDatabaseAdapter<
               return false;
             },
             inMemoryCommits)) {
-      keyPayloads =
+      fetchedPayloads =
           keysStream.collect(Collectors.toMap(KeyListEntry::getKey, KeyListEntry::getPayload));
     }
 
     byte namespacePayload = payloadForContent(Content.Type.NAMESPACE);
 
-    // Validate that each content-key's parent namespace exists
     for (ContentKey key : keysToCheck) {
       Byte payloadInPut = putPayloads.get(key);
 
       // Figure out the payload of the keys to be checked, and whether those exist
       byte payload;
       boolean exists = payloadInPut != null;
+      Byte existingContentPayload = fetchedPayloads.get(key);
       if (!exists) {
-        Byte p = keyPayloads.get(key);
-        exists = p != null;
-        payload = exists ? p : (byte) 0;
+        exists = existingContentPayload != null;
+        payload = exists ? existingContentPayload : (byte) 0;
       } else {
         payload = payloadInPut;
       }
 
-      if (!exists) {
-        throw new ReferenceConflictException(format("Namespace '%s' must exist.", key));
-      }
-      if (payload != namespacePayload) {
-        throw new ReferenceConflictException(
+      // Validate that the payload did not change
+      if (existingContentPayload != null && payload != existingContentPayload) {
+        throw new IllegalArgumentException(
             format(
-                "Expecting the key '%s' to be a namespace, but is not a namespace. "
-                    + "Using a content object that is not a namespace as a namespace is forbidden.",
-                key));
+                "Cannot overwrite existing key '%s' of type %s with a different payload %s",
+                key,
+                contentTypeForPayload(existingContentPayload),
+                contentTypeForPayload(payload)));
+      }
+
+      // Validate that each content-key's parent namespace exists
+      if (expectedNamespaces.contains(key)) {
+        if (!exists) {
+          throw new ReferenceConflictException(format("Namespace '%s' must exist.", key));
+        }
+        if (payload != namespacePayload) {
+          throw new ReferenceConflictException(
+              format(
+                  "Expecting the key '%s' to be a namespace, but is not a namespace. "
+                      + "Using a content object that is not a namespace as a namespace is forbidden.",
+                  key));
+        }
       }
     }
 
     // Validate that deleted namespaces do not have children
     for (ContentKey deleted : deletes) {
-      Byte deletedPayload = keyPayloads.get(deleted);
+      Byte deletedPayload = fetchedPayloads.get(deleted);
       if (deletedPayload == null) {
         // oh, deleted content does not exist - bummer
         continue;
@@ -1283,7 +1300,12 @@ public abstract class AbstractDatabaseAdapter<
 
       int nsLen = deleted.getElementCount();
 
-      for (ContentKey ck : keyPayloads.keySet()) {
+      for (ContentKey ck : fetchedPayloads.keySet()) {
+        if (deletes.contains(ck)) {
+          // this key is being deleted as well - ignore
+          continue;
+        }
+
         int ckLen = ck.getElementCount();
 
         // check if element is in the current namespace, fail it is true - this means,
@@ -2174,10 +2196,10 @@ public abstract class AbstractDatabaseAdapter<
           sourceCommit.getPuts().stream()
               .filter(p -> includeKeyPredicate.test(p.getKey()))
               .collect(Collectors.toList());
-      List<ContentKey> deletes =
+      Set<ContentKey> deletes =
           sourceCommit.getDeletes().stream()
               .filter(includeKeyPredicate)
-              .collect(Collectors.toList());
+              .collect(Collectors.toSet());
 
       if (puts.isEmpty() && deletes.isEmpty()) {
         // Copied commit will not contain any operation, skip.
