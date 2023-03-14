@@ -43,7 +43,7 @@ mapOf(
     "versionJacoco" to libs.versions.jacoco.get(),
     "versionJandex" to libs.versions.jandex.get()
   )
-  .plus(loadProperties(file("clients/spark-scala.properties")))
+  .plus(loadProperties(file("integrations/spark-scala.properties")))
   .forEach { (k, v) -> extra[k.toString()] = v }
 
 tasks.named<Wrapper>("wrapper") { distributionType = Wrapper.DistributionType.ALL }
