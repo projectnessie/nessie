@@ -15,29 +15,29 @@
  */
 package org.projectnessie.tools.contentgenerator;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.projectnessie.model.Content.Type.DELTA_LAKE_TABLE;
+import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
+import static org.projectnessie.model.Content.Type.ICEBERG_VIEW;
+import static org.projectnessie.tools.contentgenerator.RunContentGenerator.runGeneratorCmd;
 
-import java.util.Arrays;
 import java.util.List;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.model.Content;
-import org.projectnessie.model.types.ContentTypes;
+import org.projectnessie.tools.contentgenerator.RunContentGenerator.ProcessResult;
 
 class ITGenerateContent extends AbstractContentGeneratorTest {
 
   static List<Content.Type> basicGenerateContentTest() {
-    return Arrays.asList(ContentTypes.all());
+    return asList(ICEBERG_TABLE, ICEBERG_VIEW, DELTA_LAKE_TABLE);
   }
 
   @ParameterizedTest
   @MethodSource("basicGenerateContentTest")
   void basicGenerateContentTest(Content.Type contentType) throws Exception {
-    Assumptions.assumeTrue(
-        !contentType.equals(Content.Type.UNKNOWN) && !contentType.equals(Content.Type.NAMESPACE));
-
     int numCommits = 20;
 
     try (NessieApiV2 api = buildNessieApi()) {

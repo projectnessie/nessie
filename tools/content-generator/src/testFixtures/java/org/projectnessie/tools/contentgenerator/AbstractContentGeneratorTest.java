@@ -18,10 +18,6 @@ package org.projectnessie.tools.contentgenerator;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.projectnessie.client.api.NessieApiV2;
@@ -36,7 +32,6 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
-import org.projectnessie.tools.contentgenerator.cli.NessieContentGenerator;
 
 /** Base class for content generator tests. */
 public class AbstractContentGeneratorTest {
@@ -102,40 +97,5 @@ public class AbstractContentGeneratorTest {
         .fromSystemProperties()
         .withUri(NESSIE_API_URI)
         .build(NessieApiV2.class);
-  }
-
-  protected static final class ProcessResult {
-
-    private final int exitCode;
-    private final String stdOut;
-
-    ProcessResult(int exitCode, String stdOut) {
-      this.exitCode = exitCode;
-      this.stdOut = stdOut;
-    }
-
-    int getExitCode() {
-      return exitCode;
-    }
-
-    List<String> getStdOutLines() {
-      return Arrays.asList(stdOut.split("\n"));
-    }
-
-    @Override
-    public String toString() {
-      return "ProcessResult{" + "exitCode=" + exitCode + ", stdOut='" + stdOut + '\'' + '}';
-    }
-  }
-
-  protected ProcessResult runGeneratorCmd(String... params) {
-    try (StringWriter stringOut = new StringWriter();
-        PrintWriter out = new PrintWriter(stringOut)) {
-      int exitCode = NessieContentGenerator.runMain(out, params);
-      String output = stringOut.toString();
-      return new ProcessResult(exitCode, output);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
   }
 }

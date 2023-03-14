@@ -15,11 +15,17 @@
  */
 package org.projectnessie.tools.contentgenerator.cli;
 
+import static java.lang.String.format;
+
+import com.google.errorprone.annotations.FormatMethod;
+import com.google.errorprone.annotations.FormatString;
 import java.util.concurrent.Callable;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.BaseNessieClientServerException;
 import picocli.CommandLine;
+import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
+import picocli.CommandLine.Spec;
 
 public abstract class AbstractCommand implements Callable<Integer> {
 
@@ -28,7 +34,19 @@ public abstract class AbstractCommand implements Callable<Integer> {
   @Option(
       names = {"-v", "--verbose"},
       description = "Produce verbose output (if possible)")
-  private boolean verbose = false;
+  private boolean verbose;
+
+  @Spec protected CommandSpec spec;
+
+  private volatile boolean hasError;
+
+  @FormatMethod
+  protected void addError(@FormatString String format, Object... args) {
+    spec.commandLine()
+        .getErr()
+        .println(spec.commandLine().getColorScheme().errorText(format(format, args)));
+    hasError = true;
+  }
 
   protected boolean isVerbose() {
     return verbose;
@@ -47,7 +65,16 @@ public abstract class AbstractCommand implements Callable<Integer> {
    */
   @Override
   public final Integer call() throws Exception {
-    execute();
-    return 0;
+    try {
+      execute();
+      return hasError ? 1 : 0;
+    } finally {
+      if (hasError) {
+        spec.commandLine()
+            .getErr()
+            .println(
+                spec.commandLine().getColorScheme().errorText("See above messages for errors!"));
+      }
+    }
   }
 }

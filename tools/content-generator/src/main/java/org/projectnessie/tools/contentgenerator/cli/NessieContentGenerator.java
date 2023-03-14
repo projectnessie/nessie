@@ -54,6 +54,11 @@ public class NessieContentGenerator extends ContentGenerator<NessieApiV2> {
 
   @VisibleForTesting
   public static int runMain(PrintWriter out, String[] arguments) {
+    return runMain(out, null, arguments);
+  }
+
+  @VisibleForTesting
+  public static int runMain(PrintWriter out, PrintWriter err, String[] arguments) {
     CommandLine commandLine =
         new CommandLine(new NessieContentGenerator())
             .setExecutionExceptionHandler(
@@ -72,6 +77,9 @@ public class NessieContentGenerator extends ContentGenerator<NessieApiV2> {
                 });
     if (null != out) {
       commandLine = commandLine.setOut(out);
+    }
+    if (null != err) {
+      commandLine = commandLine.setErr(err);
     }
     try {
       return commandLine.execute(arguments);

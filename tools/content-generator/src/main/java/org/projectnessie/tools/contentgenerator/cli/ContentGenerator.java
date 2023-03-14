@@ -29,6 +29,7 @@ import picocli.CommandLine;
       ReadContent.class,
       RefreshContent.class,
       DeleteContent.class,
+      CreateMissingNamespaces.class,
       CommandLine.HelpCommand.class
     })
 public abstract class ContentGenerator<API extends NessieApiV2> {

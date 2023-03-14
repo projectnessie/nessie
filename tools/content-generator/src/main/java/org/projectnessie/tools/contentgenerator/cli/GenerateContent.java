@@ -60,10 +60,8 @@ import org.projectnessie.model.types.ContentTypes;
 import org.projectnessie.tools.contentgenerator.keygen.KeyGenerator;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ITypeConverter;
-import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
-import picocli.CommandLine.Spec;
 
 @Command(name = "generate", mixinStandardHelpOptions = true, description = "Generate commits")
 public class GenerateContent extends AbstractCommand {
@@ -125,8 +123,6 @@ public class GenerateContent extends AbstractCommand {
 
   @Option(names = "--continue-on-error", defaultValue = "false")
   private boolean continueOnError;
-
-  @Spec private CommandSpec spec;
 
   @Override
   public void execute() throws BaseNessieClientServerException {

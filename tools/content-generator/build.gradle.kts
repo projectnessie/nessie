@@ -62,6 +62,11 @@ dependencies {
   testFixturesCompileOnly(platform(libs.jackson.bom))
   testFixturesCompileOnly(libs.jackson.annotations)
 
+  testImplementation(project(":nessie-jaxrs-testextension"))
+
+  testImplementation(project(":nessie-versioned-persist-in-memory"))
+  testImplementation(project(":nessie-versioned-persist-in-memory-test"))
+
   nessieQuarkusServer(project(":nessie-quarkus", "quarkusRunner"))
 }
 

@@ -37,10 +37,8 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Reference;
-import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
-import picocli.CommandLine.Spec;
 
 @Command(
     name = "content-refresh",
@@ -90,8 +88,6 @@ public class RefreshContent extends AbstractCommand {
       description =
           "If set, input references that are not branches will be ignored (as opposed to reported as errors).")
   private boolean skipTags;
-
-  @Spec private CommandLine.Model.CommandSpec spec;
 
   @Override
   public void execute() throws BaseNessieClientServerException {

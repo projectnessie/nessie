@@ -20,14 +20,10 @@ import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Reference;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Model.CommandSpec;
-import picocli.CommandLine.Spec;
 
 /** Implementation to read all references. */
 @Command(name = "refs", mixinStandardHelpOptions = true, description = "Read references")
 public class ReadReferences extends AbstractCommand {
-
-  @Spec private CommandSpec spec;
 
   @Override
   public void execute() throws NessieNotFoundException {

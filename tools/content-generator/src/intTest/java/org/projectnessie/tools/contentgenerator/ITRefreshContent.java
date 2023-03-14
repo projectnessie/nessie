@@ -16,6 +16,7 @@
 package org.projectnessie.tools.contentgenerator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.projectnessie.tools.contentgenerator.RunContentGenerator.runGeneratorCmd;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
