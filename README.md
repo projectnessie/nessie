@@ -181,3 +181,7 @@ You can also deploy to AWS lambda function by following the steps in `servers/la
 
 The Nessie project uses the Google Java Code Style, scalafmt and pep8.
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for more information.
+
+## Acknowledgements
+
+See [ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENTS.md)
