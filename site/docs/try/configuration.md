@@ -8,7 +8,10 @@ set Nessie to use the INMEMORY version store running on port 8080, you would run
 more information, see [Docker image options](#docker-image-options) below.
 
 ```bash
-docker run -p 8080:19120 -e JAVA_OPTS_APPEND="-Dnessie.version.store.type=INMEMORY" projectnessie/nessie
+docker run \
+  -p 8080:19120 \
+  -e JAVA_OPTS_APPEND="-Dnessie.version.store.type=INMEMORY" \
+  ghcr.io/projectnessie/nessie
 ```
 
 ## Core Nessie Configuration Settings
@@ -171,7 +174,7 @@ instead of 19120, use the following command.
 ```bash
 docker run -p 8080:19120 \
   -e JAVA_OPTS_APPEND="-Dnessie.version.store.type=INMEMORY" \
-  projectnessie/nessie
+  ghcr.io/projectnessie/nessie
 ```
 
 Java VM options are passed via the `JAVA_OPTS_APPEND` environment variable.

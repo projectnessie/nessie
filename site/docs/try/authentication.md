@@ -32,8 +32,12 @@ When using Nessie [Docker](./docker.md) images, the authentication options can b
 the `docker` command line as environment variables, for example:
 
 ```bash
-$ docker run -p 19120:19120 -e QUARKUS_OIDC_CLIENT_ID=<Client ID> -e QUARKUS_OIDC_AUTH_SERVER_URL=<OpenID Server URL>
- -e NESSIE_SERVER_AUTHENTICATION_ENABLED=true --network host projectnessie/nessie
+$ docker run -p 19120:19120 \
+  -e QUARKUS_OIDC_CLIENT_ID=$YOUR_OIDC_Client_ID \
+  -e QUARKUS_OIDC_AUTH_SERVER_URL=$YOUR_OpenID_Server_URL \
+  -e NESSIE_SERVER_AUTHENTICATION_ENABLED=true \
+  --network host \
+  ghcr.io/projectnessie/nessie
 ```
 
 Note the use of the `host` Docker network. In this example, it is assumed that the Open ID Server
