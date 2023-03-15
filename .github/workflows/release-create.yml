@@ -76,7 +76,7 @@ jobs:
         # and the two workarounds below are removed.
         python3 -m pip install -r python/requirements.txt
     - name: Setup Go
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@v4
     ### END runner setup
 
     - name: Bump to release version
