@@ -32,7 +32,7 @@ jobs:
     env:
       WF_EXEC: ${{ contains(github.event.pull_request.labels.*.name, 'pr-native') }}
     steps:
-      - uses: actions/checkout@v3.3.0
+      - uses: actions/checkout@v3.4.0
         if: env.WF_EXEC == 'true'
       - name: Setup runner
         if: env.WF_EXEC == 'true'

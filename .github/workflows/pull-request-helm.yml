@@ -34,7 +34,7 @@ jobs:
     steps:
       - name: Checkout
         if: env.WF_EXEC == 'true'
-        uses: actions/checkout@v3.3.0
+        uses: actions/checkout@v3.4.0
         with:
           fetch-depth: 0
       - name: Set up Helm

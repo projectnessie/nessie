@@ -21,7 +21,7 @@ jobs:
       SPARK_LOCAL_IP: localhost
 
     steps:
-    - uses: actions/checkout@v3.3.0
+    - uses: actions/checkout@v3.4.0
     - name: Setup runner
       uses: ./.github/actions/setup-runner
     - name: Setup Java, Gradle
