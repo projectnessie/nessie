@@ -1,0 +1,35 @@
+name: Synchronize Container Registries
+
+on:
+  schedule:
+    # Run daily on week days
+    - cron:  '0 11,23 * * 1-5'
+  workflow_run:
+    workflows:
+      - 'Publish release'
+      - 'Publish in-development builds from main'
+    types:
+      - completed
+  workflow_dispatch:
+
+jobs:
+  sync:
+    name: Synchronize Container Registries
+    runs-on: ubuntu-22.04
+    if: github.repository_owner == 'projectnessie'
+
+    steps:
+      - uses: actions/checkout@v3.3.0
+
+      - name: Sync images
+        env:
+          REGCLIENT_VERSION: 0.4.7
+          QUAY_IO_USER: ${{ secrets.QUAY_IO_USER }}
+          QUAY_IO_TOKEN: ${{ secrets.QUAY_IO_TOKEN }}
+          GHCR_IO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -L https://github.com/regclient/regclient/releases/download/v${REGCLINET_VERSION}/regsync-linux-amd64 > regsync
+          sha512sum -c .github/docker-sync/regsync.sha512
+          chmod 755 regsync
+
+          ./regsync -v info -c .github/docker-sync/regsync.yml once

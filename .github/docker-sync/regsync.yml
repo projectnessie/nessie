@@ -1,0 +1,35 @@
+version: 1
+creds:
+  - registry: docker.io
+  - registry: quay.io
+    user: "{{env \"QUAY_IO_USER\"}}"
+    pass: "{{env \"QUAY_IO_TOKEN\"}}"
+  - registry: ghcr.io
+    user: "$"
+    pass: "{{env \"GHCR_IO_TOKEN\"}}"
+defaults:
+  ratelimit:
+    min: 100
+    retry: 15m
+  parallel: 2
+sync:
+  - source: docker.io/projectnessie/nessie-unstable
+    target: quay.io/projectnessie/nessie-unstable
+    type: repository
+    tags:
+      allow:
+      - "latest.*"
+      - "0[.][567]\\d+[.].*"
+  - source: docker.io/projectnessie/nessie-unstable
+    target: ghcr.io/projectnessie/nessie-unstable
+    type: repository
+    tags:
+      allow:
+      - "latest.*"
+      - "0[.][567]\\d+[.].*"
+  - source: docker.io/projectnessie/nessie
+    target: quay.io/projectnessie/nessie
+    type: repository
+  - source: docker.io/projectnessie/nessie
+    target: ghcr.io/projectnessie/nessie
+    type: repository
