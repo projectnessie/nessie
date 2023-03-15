@@ -556,8 +556,13 @@ public interface HttpTreeApi extends TreeApi {
   @JsonView(Views.V2.class)
   GetMultipleContentsResponse getSeveralContents(
       @Parameter(
-              description = "Reference to use.",
-              examples = {@ExampleObject(ref = "ref")})
+              description = REF_PARAMETER_DESCRIPTION,
+              examples = {
+                @ExampleObject(ref = "ref"),
+                @ExampleObject(ref = "refWithHash"),
+                @ExampleObject(ref = "refDefault"),
+                @ExampleObject(ref = "refDetached"),
+              })
           @PathParam("ref")
           @jakarta.ws.rs.PathParam("ref")
           String ref,
