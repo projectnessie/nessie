@@ -28,7 +28,7 @@ jobs:
           QUAY_IO_TOKEN: ${{ secrets.QUAY_IO_TOKEN }}
           GHCR_IO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          curl -L https://github.com/regclient/regclient/releases/download/v${REGCLINET_VERSION}/regsync-linux-amd64 > regsync
+          curl -L https://github.com/regclient/regclient/releases/download/v${REGCLIENT_VERSION}/regsync-linux-amd64 > regsync
           sha512sum -c .github/docker-sync/regsync.sha512
           chmod 755 regsync
 
