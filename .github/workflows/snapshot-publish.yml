@@ -45,11 +45,11 @@ jobs:
           rm -rf "${ARTIFACTS}"
           mkdir -p "${ARTIFACTS}"
 
-          echo '${{ secrets.DOCKER_TOKEN }}' | docker login -u '${{ secrets.DOCKER_USERNAME }}' --password-stdin
+          echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u $ --password-stdin 
           tools/dockerbuild/build-push-images.sh \
             -a "${ARTIFACTS}" \
             -g ":nessie-quarkus" \
             -p "servers/quarkus-server" \
             -n \
-            projectnessie/nessie-unstable
+            ghcr.io/projectnessie/nessie-unstable
           rm -rf "${ARTIFACTS}"

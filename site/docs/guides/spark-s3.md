@@ -10,7 +10,7 @@ Docker is used at the runtime environments for Nessie. Spark is assumed to be in
 Start the Nessie server container from the `projectnessie/nessie` Docker image in default mode.
 
 ```shell
-docker run -p 19120:19120 projectnessie/nessie:latest
+docker run -p 19120:19120 ghcr.io/projectnessie/nessie:latest
 ```
 
 Note: this example will run the Nessie Server using in-memory storage for table metadata. If/when the container

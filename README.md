@@ -9,7 +9,7 @@ Project Nessie is a Transactional Catalog for Data Lakes with Git-like semantics
 
 [![Maven Central](https://img.shields.io/maven-central/v/org.projectnessie/nessie?label=Maven%20Central&logo=apachemaven&color=3f6ec6&style=for-the-badge&logoColor=white)](https://search.maven.org/artifact/org.projectnessie/nessie)
 [![PyPI](https://img.shields.io/pypi/v/pynessie.svg?label=PyPI&logo=python&color=3f6ec6&style=for-the-badge&logoColor=white)](https://pypi.python.org/pypi/pynessie)
-[![Docker](https://img.shields.io/docker/v/projectnessie/nessie/latest?label=Docker&logo=docker&color=3f6ec6&style=for-the-badge&logoColor=white)](https://hub.docker.com/r/projectnessie/nessie)
+[![quay.io Docker](https://img.shields.io/maven-central/v/org.projectnessie/nessie?label=quay.io+Docker&logo=docker&color=3f6ec6&style=for-the-badge&logoColor=white)](https://quay.io/repository/projectnessie/nessie?tab=tags)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/nessie&color=3f6ec6&labelColor=&style=for-the-badge&logoColor=white)](https://artifacthub.io/packages/search?repo=nessie)
 [![Swagger Hub](https://img.shields.io/badge/swagger%20hub-nessie-3f6ec6?style=for-the-badge&logo=swagger&link=https%3A%2F%2Fapp.swaggerhub.com%2Fapis%2Fprojectnessie%2Fnessie)](https://app.swaggerhub.com/apis/projectnessie/nessie)
 
@@ -29,9 +29,14 @@ Nessie supports Iceberg Tables/Views and Delta Lake Tables. Additionally, Nessie
 
 You can quickly get started with Nessie by using our small, fast docker image.
 
+**IMPORTANT NOTE** Nessie moves away from `docker.io` to GitHub's container registry `ghcr.io`,
+and also `quay.io`. Previous releases are already available on both ghcr.io and quay.io. Please
+update references to `projectnessie/nessie` in your code to either `ghcr.io/projectnessie/nessie`
+or `quay.io/projectnessie/nessie`.
+
 ```
-docker pull projectnessie/nessie
-docker run -p 19120:19120 projectnessie/nessie
+docker pull ghcr.io/projectnessie/nessie
+docker run -p 19120:19120 ghcr.io/projectnessie/nessie
 ```
 _For trying Nessie image with different configuration options, refer to the templates under the [docker module](./docker#readme)._<br>
 
@@ -71,8 +76,13 @@ Authentication can be enabled by setting the following Quarkus properties:
 One can start the `projectnessie/nessie` docker image in authenticated mode by setting
 the properties mentioned above via docker environment variables. For example:
 
-```
-docker run -p 19120:19120 -e QUARKUS_OIDC_CLIENT_ID=<Client ID> -e QUARKUS_OIDC_AUTH_SERVER_URL=<OpenID Server URL> -e NESSIE_SERVER_AUTHENTICATION_ENABLED=true --network host projectnessie/nessie
+```shell
+docker run -p 19120:19120 \
+  -e QUARKUS_OIDC_CLIENT_ID=<Client ID> \
+  -e QUARKUS_OIDC_AUTH_SERVER_URL=<OpenID Server URL> \
+  -e NESSIE_SERVER_AUTHENTICATION_ENABLED=true \
+  --network host \
+  ghcr.io/projectnessie/nessie
 ```
 
 ## Building and Developing Nessie
@@ -162,7 +172,7 @@ REPOSITORY       TAG     IMAGE ID       CREATED          SIZE
 nessie-unstable  latest  24bb4c7bd696   15 seconds ago   555MB
 ```
 
-Once this is done you can run your image with `docker run -p 19120:19120 nessie-unstable:latest`, passing the relevant
+Once this is done you can run your image with `docker run -p 19120:19120 quay.io/nessie-unstable:latest`, passing the relevant
 environment variables, if any. Environment variables names must follow MicroProfile Config's [mapping
 rules](https://github.com/eclipse/microprofile-config/blob/master/spec/src/main/asciidoc/configsources.asciidoc#environment-variables-mapping-rules).
 

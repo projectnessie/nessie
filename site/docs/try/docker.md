@@ -7,20 +7,20 @@ image. This is the easiest and fastest way to try out nessie locally and test al
 The image is relatively small and builds on top of standard base images. To get started:
 
 ```bash
-$ docker pull projectnessie/nessie
+$ docker pull ghcr.io/projectnessie/nessie
 ```
 
 ```bash
-Pulling from projectnessie/nessie
+Pulling from ghcr.io/projectnessie/nessie
 0fd3b5213a9b: Already exists
 aebb8c556853: Already exists
 a50558612231: Pull complete
 Digest: sha256:bda3dead4eb51a4c0ff87c7ce5a81ad49a37dd17d785f2549f4559f06cbf24d6
-Status: Downloaded newer image for projectnessie/nessie
+Status: Downloaded newer image for ghcr.io/projectnessie/nessie
 ```
 
 ```bash
-$ docker run -p 19120:19120 projectnessie/nessie
+$ docker run -p 19120:19120 ghcr.io/projectnessie/nessie
 ```
 
 ```bash
