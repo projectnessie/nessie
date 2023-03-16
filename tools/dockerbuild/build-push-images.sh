@@ -170,8 +170,10 @@ if [[ ${NATIVE} == 1 ]] ; then
     -t "${IMAGE_NAME}:${IMAGE_TAG_BASE}-native" \
     "${BASE_DIR}/${PROJECT_DIR}" \
     --push \
+    --provenance=false --sbom=false \
     --output type=registry
     # Note: '--output type=registry' is needed to be able to push to a local registry (e.g. localhost:5000)
+    # Note: '--provenance=false --sbom=false' work around UI issues in ghcr + quay showing 'unknown/unknown' architectures
   gh_summary "## Native image tags, built for ${NATIVE_PLATFORM}"
   gh_summary "* \`docker pull ${IMAGE_NAME}:latest-native\`"
   gh_summary "* \`docker pull ${IMAGE_NAME}:${IMAGE_TAG_BASE}-native\`"
@@ -198,8 +200,10 @@ docker buildx build \
   -t "${IMAGE_NAME}:${IMAGE_TAG_BASE}-java" \
   "${BASE_DIR}/${PROJECT_DIR}" \
   --push \
+  --provenance=false --sbom=false \
   --output type=registry
   # Note: '--output type=registry' is needed to be able to push to a local registry (e.g. localhost:5000)
+  # Note: '--provenance=false --sbom=false' work around UI issues in ghcr + quay showing 'unknown/unknown' architectures
   gh_summary "## Java image tags, built for ${PLATFORMS}"
   gh_summary "* \`docker pull ${IMAGE_NAME}:latest\`"
   gh_summary "* \`docker pull ${IMAGE_NAME}:latest-java\`"
