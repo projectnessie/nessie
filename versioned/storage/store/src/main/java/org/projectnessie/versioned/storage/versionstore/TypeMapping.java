@@ -125,6 +125,9 @@ public final class TypeMapping {
   @Nonnull
   @jakarta.annotation.Nonnull
   public static StoreKey keyToStoreKey(@Nonnull @jakarta.annotation.Nonnull ContentKey key) {
+    // Note: the relative values of outer and inner (key elements) separators affect the correctness
+    // of StoreKey comparisons WRT to ContentKey comparisons. The inner separator must be greater
+    // than the outer separator because longer ContentKeys are greater than shorter ContentKeys.
     StringBuilder sb = new StringBuilder();
     sb.append(MAIN_UNIVERSE);
     List<String> elements = key.getElements();

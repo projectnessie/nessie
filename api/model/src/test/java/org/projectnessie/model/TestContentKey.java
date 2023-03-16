@@ -326,12 +326,12 @@ class TestContentKey {
     assertThatThrownBy(() -> ContentKey.of("a", "b", "\u0000", "c", "d"))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(
-            "Content key '[a, b, \u0000, c, d]' must not contain a zero byte (\\u0000) / group separator (\\u001D).");
+            "Content key '[a, b, \u0000, c, d]' must not contain characters less than 0x20.");
 
     assertThatThrownBy(() -> ContentKey.of("a", "b", "\u001D", "c", "d"))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(
-            "Content key '[a, b, \u001D, c, d]' must not contain a zero byte (\\u0000) / group separator (\\u001D).");
+            "Content key '[a, b, \u001D, c, d]' must not contain characters less than 0x20.");
   }
 
   @Test
@@ -358,9 +358,14 @@ class TestContentKey {
     assertRoundTrip("/%国", "国.国");
   }
 
+  static Stream<Arguments> invalidChars() {
+    return IntStream.range(0, 0x20)
+        .mapToObj(asciiCode -> arguments("invalid-char-" + asciiCode + ((char) asciiCode)));
+  }
+
   @ParameterizedTest
-  @ValueSource(strings = {"\u0000", "\u001D"})
-  void blockZeroByteUsage(String s) {
+  @MethodSource("invalidChars")
+  void blockSpecialBytesUsage(String s) {
     assertThrows(IllegalArgumentException.class, () -> ContentKey.of(s));
   }
 

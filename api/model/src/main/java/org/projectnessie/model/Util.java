@@ -33,13 +33,12 @@ final class Util {
 
   private Util() {}
 
+  public static final int FIRST_ALLOWED_KEY_CHAR = 0x20;
   public static final char ZERO_BYTE = '\u0000';
   public static final char DOT = '.';
   public static final char GROUP_SEPARATOR = '\u001D';
   public static final char URL_PATH_SEPARATOR = '/';
   public static final String DOT_STRING = ".";
-  public static final String ZERO_BYTE_STRING = Character.toString(ZERO_BYTE);
-  public static final String GROUP_SEPARATOR_STRING = Character.toString(GROUP_SEPARATOR);
 
   /**
    * Convert from path encoded string to normal string.
