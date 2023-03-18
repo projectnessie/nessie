@@ -125,6 +125,7 @@ public class EraseRepository extends BaseCommand {
     code = 31L * code + config.parentsPerCommit();
     code = 31L * code + config.maxIncrementalIndexSize();
     code = 31L * code + config.maxSerializedIndexSize();
+    code = Math.abs(code);
     // Format the code using MAX_RADIX to reduce the resultant string length
     return Long.toString(code, Character.MAX_RADIX);
   }
