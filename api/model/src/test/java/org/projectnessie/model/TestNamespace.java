@@ -119,7 +119,6 @@ public class TestNamespace {
     assertThat(namespace.isSameOrSubElementOf(Namespace.parse("a.b\u001Dc.namespace"))).isTrue();
     assertThat(namespace.isSameOrSubElementOf(Namespace.parse("a.b\u0000c.namespace"))).isTrue();
 
-    assertThat(namespace.isSameOrSubElementOf(Namespace.of("a", "\u0012b"))).isFalse();
     assertThat(namespace.isSameOrSubElementOf(Namespace.of("x"))).isFalse();
     assertThat(namespace.isSameOrSubElementOf(Namespace.of("a", "b", "c"))).isFalse();
 
@@ -204,7 +203,7 @@ public class TestNamespace {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(
             String.format(
-                "Namespace '%s' must not contain a zero byte (\\u0000) / group separator (\\u001D).",
+                "Namespace '%s' must not contain characters less than 0x20.",
                 singletonList(identifier)));
   }
 

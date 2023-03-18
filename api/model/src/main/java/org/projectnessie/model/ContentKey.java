@@ -16,8 +16,7 @@
 package org.projectnessie.model;
 
 import static org.projectnessie.model.Util.DOT_STRING;
-import static org.projectnessie.model.Util.GROUP_SEPARATOR_STRING;
-import static org.projectnessie.model.Util.ZERO_BYTE_STRING;
+import static org.projectnessie.model.Util.FIRST_ALLOWED_KEY_CHAR;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -171,15 +170,15 @@ public abstract class ContentKey implements Comparable<ContentKey> {
         throw new IllegalArgumentException(
             String.format("Content key '%s' must not contain a null element.", elements));
       }
-      if (e.contains(ZERO_BYTE_STRING) || e.contains(GROUP_SEPARATOR_STRING)) {
-        throw new IllegalArgumentException(
-            String.format(
-                "Content key '%s' must not contain a zero byte (\\u0000) / group separator (\\u001D).",
-                elements));
-      }
       if (e.isEmpty()) {
         throw new IllegalArgumentException(
             String.format("Content key '%s' must not contain an empty element.", elements));
+      }
+      if (e.chars().anyMatch(i -> i < FIRST_ALLOWED_KEY_CHAR)) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Content key '%s' must not contain characters less than 0x%2h.",
+                elements, FIRST_ALLOWED_KEY_CHAR));
       }
     }
   }

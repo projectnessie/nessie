@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.storage.versionstore;
 
+import static java.lang.Integer.signum;
 import static java.util.TimeZone.getTimeZone;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
@@ -194,6 +195,24 @@ public class TestTypeMapping {
       soft.assertThat(keyToStoreKey(key)).isEqualTo(storeKey);
     }
     soft.assertThat(storeKeyToKey(storeKey)).isEqualTo(key);
+  }
+
+  static Stream<Arguments> keyComparisons() {
+    return Stream.of(
+        arguments(ContentKey.of("a", "b", "c"), ContentKey.of("a", "b", "c")),
+        arguments(ContentKey.of("a", "b", "c"), ContentKey.of("a", "b", "d")),
+        arguments(ContentKey.of("a", "b", "c"), ContentKey.of("a", "b", "cc")),
+        arguments(ContentKey.of("a", "b", "c"), ContentKey.of("a", "aaa")),
+        arguments(ContentKey.of("a", "b", "c"), ContentKey.of("a", "a")),
+        arguments(ContentKey.of("a", "b", "c"), ContentKey.of()));
+  }
+
+  @ParameterizedTest
+  @MethodSource("keyComparisons")
+  public void keyComparisons(ContentKey k1, ContentKey k2) {
+    int cmp = signum(k1.compareTo(k2));
+    soft.assertThat(signum(keyToStoreKey(k1).compareTo(keyToStoreKey(k2)))).isEqualTo(cmp);
+    soft.assertThat(signum(keyToStoreKey(k2).compareTo(keyToStoreKey(k1)))).isEqualTo(-cmp);
   }
 
   static Stream<Arguments> headers() {
