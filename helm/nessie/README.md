@@ -8,7 +8,7 @@ helm-docs --chart-search-root=helm
 
 # Nessie Helm chart
 
-![Version: 0.51.1](https://img.shields.io/badge/Version-0.51.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
+![Version: 0.52.0](https://img.shields.io/badge/Version-0.52.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 
 A Helm chart for Nessie.
 
@@ -68,7 +68,7 @@ $ helm uninstall --namespace nessie-ns nessie
 | dynamodb.secret.awsSecretAccessKey | string | `"aws_secret_access_key"` | The secret key storing the AWS secret access key. |
 | dynamodb.secret.name | string | `"awscreds"` | The secret name to pull AWS credentials from. |
 | image.pullPolicy | string | `"IfNotPresent"` | The image pull policy. |
-| image.repository | string | `"projectnessie/nessie"` | The image repository to pull from. |
+| image.repository | string | `"ghcr.io/projectnessie/nessie"` | The image repository to pull from. |
 | image.tag | string | `""` | Overrides the image tag whose default is the chart version. |
 | ingress.annotations | object | `{}` | Annotations to add to the ingress. |
 | ingress.enabled | bool | `false` | Specifies whether an ingress should be created. |
