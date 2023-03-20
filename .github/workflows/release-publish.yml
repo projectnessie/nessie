@@ -138,7 +138,7 @@ jobs:
           ghcr.io/projectnessie/nessie
 
         # Add version to the openapi file name
-        cp api/model/build/generated/openapi/META-INF/openapi/openapi.yaml model/build/nessie-openapi-${RELEASE_VERSION}.yaml
+        cp api/model/build/generated/openapi/META-INF/openapi/openapi.yaml api/model/build/nessie-openapi-${RELEASE_VERSION}.yaml
 
         echo "QUARKUS_UBER_JAR=${ARTIFACTS}/nessie-quarkus-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
         echo "CLI_UBER_JAR=${ARTIFACTS}/nessie-quarkus-cli-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
