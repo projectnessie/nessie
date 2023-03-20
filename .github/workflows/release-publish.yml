@@ -144,7 +144,7 @@ jobs:
         echo "CLI_UBER_JAR=${ARTIFACTS}/nessie-quarkus-cli-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
         echo "QUARKUS_NATIVE_BINARY=${ARTIFACTS}/nessie-quarkus-${RELEASE_VERSION}-runner" >> ${GITHUB_ENV}
         echo "GC_EXEC=gc/gc-shell/build/executable/nessie-gc" >> ${GITHUB_ENV}
-        echo "NESSIE_OPENAPI=model/build/nessie-openapi-${RELEASE_VERSION}.yaml" >> ${GITHUB_ENV}
+        echo "NESSIE_OPENAPI=api/model/build/nessie-openapi-${RELEASE_VERSION}.yaml" >> ${GITHUB_ENV}
 
         echo "## Successfully released ${RELEASE_VERSION} to Sonatype" >> $GITHUB_STEP_SUMMARY
 
