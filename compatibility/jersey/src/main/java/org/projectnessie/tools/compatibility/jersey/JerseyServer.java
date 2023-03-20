@@ -90,10 +90,6 @@ public class JerseyServer implements AutoCloseable {
                 config::register,
                 false);
             withJavaxClass(
-                "org.projectnessie.services.restjavax.InstantParamConverterProvider",
-                config::register,
-                true);
-            withJavaxClass(
                 "org.projectnessie.services.restjavax.ValidationExceptionMapper",
                 c -> config.register(c, 10),
                 true);
