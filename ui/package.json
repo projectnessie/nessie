@@ -49,7 +49,7 @@
     "semver": "7.3.8",
     "source-map-loader": "^4.0.0",
     "style-loader": "3.3.2",
-    "typescript": "^4.8.3",
+    "typescript": "^5.0.0",
     "typescript-logging": "^2.0.2",
     "typescript-logging-log4ts-style": "^2.0.2",
     "url-loader": "4.1.1",
