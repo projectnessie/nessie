@@ -60,7 +60,7 @@ dependencies {
   testFixturesRuntimeOnly(libs.logback.classic)
 
   testFixturesCompileOnly(platform(libs.jackson.bom))
-  testFixturesAnnotationProcessor(libs.jackson.annotations)
+  testFixturesCompileOnly(libs.jackson.annotations)
 
   testFixturesCompileOnly(libs.microprofile.openapi)
 
