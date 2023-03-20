@@ -2,6 +2,46 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.52.2 Release (March 20, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.52.2).
+
+* Ninja: fix release WF
+* Fix release WF (#6334)
+* New storage: fix writetamp collision in C* integration tests (#6332)
+* Use positive repo erase confirmation codes. (#6317)
+* Forbid special ASCII chars in content keys (#6313)
+* GH WF: Remove `concurrency` from PR jobs (#6314)
+* Replace Docker Hub with ghcr.io (#6305)
+* Fix param examples for getSeveralContents() (#6302)
+* Fix labeler config (#6303)
+* Workaround UI issues in ghcr.io + quay.io (#6299)
+* Fix docker-sync WF typo (#6296)
+* GH WF to sync container repositories (#6295)
+* Content-tool: Add command to create missing namespaces (#6280)
+* Ensure parent namespace(s) for commited content objects exist (#6246)
+* Core reorg: use `api/` and `integrations/` directories (#6288)
+* Add ACKNOWLEDGEMENTS.md (#6289)
+* Allow some integration tests to be executed on macOS (#6266)
+* Build/CI: Allow renovate to update the Maven wrapper (#6286)
+* Update the Docker image section of main README.md (#6267)
+* Ignore jEnv .java-version file (#6268)
+* Use JvmTestSuite + JacocoReport (#6231)
+* Content-generator tool changes for 'Ensure parent namespace(s) for commited content objects exist' PR (#6265)
+* Test changes for 'Ensure parent namespace(s) for commited content objects exist' PR (#6263)
+* CLI tool cheanges for 'Ensure parent namespace(s) for commited content objects exist' PR (#6264)
+* compatiblity-tests: Extracted test changes for namespace-validation (#6261)
+* Fix maven group id in docs (#6259)
+* Add helper functions to `Namespace` and `ContentKey()` (#6256)
+* Let ITs against Nessie/Quarkus send back stack traces (#6257)
+* Replace `Key` with `ContentKey` (#6242)
+* New DynamoDB storage - do not pull in the Apache HTTP client (#6243)
+* Add missing Gradle build scan for last check (#6254)
+* Fix `AbstractDatabaseAdapter.removeKeyCollisionsForNamespaces` (#6253)
+* Fix wrong parameter validation override (#6241)
+* Nit: remove mentions of dependabot (#6239)
+* New Nessie storage model (#5641)
+
 ## 0.52.1 Release (March 20, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.52.1).
