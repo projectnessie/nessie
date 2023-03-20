@@ -539,6 +539,16 @@ public class CassandraPersist implements Persist {
         requests.submitted(backend.executeAsync(ERASE_OBJ, repoId, objId));
       }
     }
+    // We must ensure that the system clock advances a little, so that C*'s next write-timestamp
+    // does not collide with the write-timestamps of the DELETE statements above. Otherwise, the
+    // above DELETEs will silently "overrule" a following INSERT/UPDATE statement. In C*, if a
+    // DELETE and another INSERT/UPDATE have the same write-timestamp, the DELETE wins. This makes
+    // Nessie tests fail on machines that are "fast enough".
+    try {
+      Thread.sleep(2L);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
   }
 
   @Override
