@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.common.base.Throwables;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotSupportedException;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 import java.security.AccessControlException;
@@ -82,13 +83,18 @@ public class NessieExceptionMapper extends BaseExceptionMapper<Exception> {
     } else if (exception instanceof NotSupportedException) {
       errorCode = ErrorCode.UNSUPPORTED_MEDIA_TYPE;
       message = exception.getMessage();
+    } else if (exception instanceof WebApplicationException
+        && exception.getCause() instanceof IllegalArgumentException
+        && ((WebApplicationException) exception).getResponse().getStatus() == 404) {
+      errorCode = ErrorCode.BAD_REQUEST;
+      message = exception.getCause().getMessage();
     } else {
       LOGGER.warn("Unhandled exception returned as HTTP/500 to client", exception);
       errorCode = ErrorCode.UNKNOWN;
       message =
           Throwables.getCausalChain(exception).stream()
               .map(Throwable::toString)
-              .collect(Collectors.joining(", caused by"));
+              .collect(Collectors.joining(", caused by "));
     }
 
     return buildExceptionResponse(errorCode, message, exception);

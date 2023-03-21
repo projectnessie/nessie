@@ -22,6 +22,7 @@ import java.security.AccessControlException;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.ws.rs.NotSupportedException;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 import org.projectnessie.error.BaseNessieClientServerException;
@@ -82,13 +83,18 @@ public class NessieExceptionMapper extends BaseExceptionMapper<Exception> {
     } else if (exception instanceof NotSupportedException) {
       errorCode = ErrorCode.UNSUPPORTED_MEDIA_TYPE;
       message = exception.getMessage();
+    } else if (exception instanceof WebApplicationException
+        && exception.getCause() instanceof IllegalArgumentException
+        && ((WebApplicationException) exception).getResponse().getStatus() == 404) {
+      errorCode = ErrorCode.BAD_REQUEST;
+      message = exception.getCause().getMessage();
     } else {
       LOGGER.warn("Unhandled exception returned as HTTP/500 to client", exception);
       errorCode = ErrorCode.UNKNOWN;
       message =
           Throwables.getCausalChain(exception).stream()
               .map(Throwable::toString)
-              .collect(Collectors.joining(", caused by"));
+              .collect(Collectors.joining(", caused by "));
     }
 
     return buildExceptionResponse(errorCode, message, exception);

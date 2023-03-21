@@ -43,6 +43,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.client.ext.NessieApiVersion;
 import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.client.ext.NessieClientUri;
+import org.projectnessie.error.ErrorCode;
 import org.projectnessie.error.NessieError;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -489,5 +490,23 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
         .contains("\"authors\"")
         .doesNotContain("\"signedOffBy\"") // only for API v1
         .contains("allSignedOffBy");
+  }
+
+  @NessieApiVersions(versions = {NessieApiVersion.V2})
+  @Test
+  public void paramConverterInvalidValue() {
+    NessieError nessieError =
+        rest()
+            .delete(
+                "trees/test%402e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d?type=X")
+            .then()
+            .statusCode(400)
+            .extract()
+            .as(NessieError.class);
+    assertThat(nessieError)
+        .extracting(NessieError::getStatus, NessieError::getErrorCode)
+        .containsExactly(400, ErrorCode.BAD_REQUEST);
+    assertThat(nessieError.getMessage())
+        .contains("No enum constant org.projectnessie.model.Reference.ReferenceType.X");
   }
 }
