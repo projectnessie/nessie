@@ -218,7 +218,7 @@ jobs:
 
         * ${NUM_COMMITS} commits since ${LAST_TAG#nessie-}
         * Maven Central: https://search.maven.org/search?q=g:org.projectnessie+v:${RELEASE_VERSION}
-        * Docker Hub: https://hub.docker.com/r/projectnessie/nessie
+        * Docker images: https://github.com/projectnessie/nessie/pkgs/container/nessie and https://quay.io/repository/projectnessie/nessie?tab=tags
           * Multiplatform Java image (amd64, arm64, ppc64le, s390x): \`docker pull ghcr.io/projectnessie/nessie:${RELEASE_VERSION}-java\`
           * Image with native amd64 binary: \`docker pull ghcr.io/projectnessie/nessie:${RELEASE_VERSION}-native\`
             (only recommended for short running Nessie instances, amd64 only)
