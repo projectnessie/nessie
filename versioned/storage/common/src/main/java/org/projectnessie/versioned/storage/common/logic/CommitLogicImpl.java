@@ -882,8 +882,7 @@ final class CommitLogicImpl implements CommitLogic {
       }
       obj = persist.fetchObj(refCommitId);
     }
-    checkState(
-        obj == null || obj instanceof CommitObj, "Expected a Commit object, but got %s", obj);
+    checkState(obj instanceof CommitObj, "Expected a Commit object, but got %s", obj);
     return (CommitObj) obj;
   }
 
