@@ -59,7 +59,6 @@ import org.projectnessie.services.rest.RestV2ConfigResource;
 import org.projectnessie.services.rest.RestV2TreeResource;
 import org.projectnessie.services.restjavax.ConstraintViolationExceptionMapper;
 import org.projectnessie.services.restjavax.ContentKeyParamConverterProvider;
-import org.projectnessie.services.restjavax.InstantParamConverterProvider;
 import org.projectnessie.services.restjavax.NamespaceParamConverterProvider;
 import org.projectnessie.services.restjavax.NessieExceptionMapper;
 import org.projectnessie.services.restjavax.NessieJaxRsJsonMappingExceptionMapper;
@@ -265,7 +264,6 @@ public class NessieJaxRsExtension extends NessieClientResolver
               config.register(ContentKeyParamConverterProvider.class);
               config.register(NamespaceParamConverterProvider.class);
               config.register(ReferenceTypeParamConverterProvider.class);
-              config.register(InstantParamConverterProvider.class);
               config.register(ValidationExceptionMapper.class, 10);
               config.register(ConstraintViolationExceptionMapper.class, 10);
               config.register(NessieExceptionMapper.class);
