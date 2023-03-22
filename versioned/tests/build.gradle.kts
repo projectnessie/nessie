@@ -28,7 +28,6 @@ dependencies {
   implementation(project(":nessie-versioned-spi"))
   implementation(libs.guava)
   implementation(libs.slf4j.api)
-  implementation(libs.protobuf.java)
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
 

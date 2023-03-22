@@ -43,7 +43,6 @@ dependencies {
   implementation(libs.guava)
   implementation(libs.slf4j.api)
 
-  implementation(libs.protobuf.java)
   implementation(platform(libs.cassandra.driver.bom))
   implementation(libs.cassandra.driver.core)
 

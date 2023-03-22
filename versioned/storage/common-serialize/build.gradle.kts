@@ -27,10 +27,8 @@ extra["maven.name"] = "Nessie - Storage - Common proto serialization"
 description = "Protobuf based serialization for storage objects."
 
 dependencies {
-  implementation(project(":nessie-versioned-storage-common"))
-  implementation(project(":nessie-versioned-storage-common-proto"))
-
-  implementation(libs.protobuf.java)
+  api(project(":nessie-versioned-storage-common"))
+  api(project(":nessie-versioned-storage-common-proto"))
 
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)

@@ -34,7 +34,6 @@ dependencies {
   implementation(libs.guava)
   implementation(libs.micrometer.core)
   implementation(libs.opentracing.mock)
-  implementation(libs.protobuf.java)
 
   compileOnly(platform(libs.jackson.bom))
   compileOnly(libs.jackson.annotations)

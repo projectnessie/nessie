@@ -28,6 +28,7 @@ description = "Storage implementation using in-memory maps, not persisting."
 
 dependencies {
   implementation(project(":nessie-versioned-storage-common"))
+  implementation(project(path = ":nessie-protobuf-relocated", configuration = "shadow"))
 
   // javax/jakarta
   compileOnly(libs.jakarta.validation.api)
@@ -37,7 +38,6 @@ dependencies {
 
   compileOnly(libs.errorprone.annotations)
   implementation(libs.guava)
-  implementation(libs.protobuf.java)
 
   compileOnly(project(":nessie-versioned-storage-testextension"))
 

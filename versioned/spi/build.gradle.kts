@@ -26,7 +26,7 @@ extra["maven.name"] = "Nessie - Versioned Store SPI"
 
 dependencies {
   implementation(project(":nessie-model"))
-  implementation(libs.protobuf.java)
+  api(project(path = ":nessie-protobuf-relocated", configuration = "shadow"))
   implementation(libs.jackson.databind)
   compileOnly(libs.immutables.builder)
   compileOnly(libs.immutables.value.annotations)

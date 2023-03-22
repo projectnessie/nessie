@@ -67,8 +67,6 @@ dependencies {
   compileOnly(libs.jakarta.validation.api)
   compileOnly(libs.javax.validation.api)
 
-  implementation(libs.protobuf.java)
-
   compileOnly(libs.graalvm.nativeimage.svm)
 
   compileOnly(platform(libs.jackson.bom))

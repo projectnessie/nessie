@@ -43,7 +43,6 @@ dependencies {
 
   compileOnly(libs.errorprone.annotations)
   implementation(libs.guava)
-  implementation(libs.protobuf.java)
 
   implementation(libs.logback.classic)
 

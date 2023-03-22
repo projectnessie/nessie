@@ -60,8 +60,6 @@ dependencies {
   implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
   implementation("io.quarkus:quarkus-picocli")
 
-  implementation(libs.protobuf.java)
-
   // javax/jakarta
   compileOnly(libs.jakarta.annotation.api)
   compileOnly(libs.findbugs.jsr305)

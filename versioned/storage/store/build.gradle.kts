@@ -30,7 +30,6 @@ dependencies {
   implementation(project(":nessie-versioned-storage-common"))
   implementation(project(":nessie-model"))
   implementation(project(":nessie-versioned-spi"))
-  implementation(libs.protobuf.java)
   implementation(libs.agrona)
 
   // javax/jakarta
