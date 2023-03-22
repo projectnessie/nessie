@@ -58,7 +58,7 @@ jobs:
 
       - name: Set up & Start Minikube
         if: env.WF_EXEC == 'true'
-        uses: medyagh/setup-minikube@v0.0.11
+        uses: medyagh/setup-minikube@v0.0.12
         with:
           cache: false
 
