@@ -18,6 +18,7 @@ package org.projectnessie.tools.compatibility.jersey;
 import java.lang.reflect.Method;
 import java.util.Locale;
 import java.util.Map;
+import org.projectnessie.versioned.persist.adapter.AdjustableDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
@@ -96,18 +97,14 @@ public final class DatabaseAdapters {
     DatabaseAdapterFactory<
             DatabaseAdapter,
             DatabaseAdapterConfig,
-            DatabaseAdapterConfig,
+            AdjustableDatabaseAdapterConfig,
             DatabaseConnectionProvider<?>>
         factory = DatabaseAdapterFactory.loadFactoryByName(databaseAdapterName);
 
-    DatabaseAdapterFactory.Builder<
-            DatabaseAdapter,
-            DatabaseAdapterConfig,
-            DatabaseAdapterConfig,
-            DatabaseConnectionProvider<?>>
-        builder = factory.newBuilder();
-
-    builder.withConnector(connectionProvider);
-    return builder.build();
+    return factory
+        .newBuilder()
+        .withConnector(connectionProvider)
+        .configure(SystemPropertiesConfigurer::configureAdapterFromSystemProperties)
+        .build();
   }
 }
