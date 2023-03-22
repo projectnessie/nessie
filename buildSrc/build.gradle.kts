@@ -30,7 +30,6 @@ dependencies {
   implementation(baselibs.jandex)
   implementation(baselibs.idea.ext)
   implementation(baselibs.shadow)
-  implementation(baselibs.protobuf)
   implementation(baselibs.errorprone)
   implementation(baselibs.nessie.buildsupport.reflectionconfig)
 
