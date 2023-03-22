@@ -4,7 +4,7 @@
 errorpronePlugin = "3.0.1"
 jandexPlugin = "1.87"
 junit = "5.9.2"
-nessieBuildPlugins = "0.2.20"
+nessieBuildPlugins = "0.2.21"
 protobufPlugin = "0.9.2"
 shadowPlugin = "8.1.1"
 spotlessPlugin = "6.17.0"
