@@ -93,7 +93,8 @@ public final class DatabaseAdapters {
 
   public static DatabaseAdapter createDatabaseAdapter(
       String databaseAdapterName,
-      DatabaseConnectionProvider<DatabaseConnectionConfig> connectionProvider) {
+      DatabaseConnectionProvider<DatabaseConnectionConfig> connectionProvider,
+      Map<String, String> configuration) {
     DatabaseAdapterFactory<
             DatabaseAdapter,
             DatabaseAdapterConfig,
@@ -105,6 +106,8 @@ public final class DatabaseAdapters {
         .newBuilder()
         .withConnector(connectionProvider)
         .configure(SystemPropertiesConfigurer::configureAdapterFromSystemProperties)
+        .configure(
+            c -> SystemPropertiesConfigurer.configureAdapterFromProperties(c, configuration::get))
         .build();
   }
 }

@@ -97,7 +97,7 @@ public class RollingUpgradesExtension extends AbstractMultiVersionExtension {
             "nessie.store.database.name",
             mongo.getDatabaseName());
 
-    return new ServerKey(version, databaseAdapterName, configuration);
+    return ServerKey.forContext(context, version, databaseAdapterName, configuration);
   }
 
   private void populateNessieApiFields(

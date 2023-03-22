@@ -55,7 +55,8 @@ public class OlderNessieServersExtension extends AbstractMultiVersionExtension {
     }
 
     BooleanSupplier initializeRepository = () -> true;
-    ServerKey serverKey = new ServerKey(version, "In-Memory", Collections.emptyMap());
+    ServerKey serverKey =
+        ServerKey.forContext(context, version, "In-Memory", Collections.emptyMap());
     NessieServer nessieServer =
         nessieServer(classContext(context), serverKey, initializeRepository);
 
