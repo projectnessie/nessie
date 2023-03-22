@@ -31,7 +31,7 @@ public class Version implements Comparable<Version> {
   // OPENTRACING_VERSION_MISMATCH_* is the version range where Nessie declared dependencies on
   // incompatible versions of some OpenTracing artifacts.
   public static final Version OPENTRACING_VERSION_MISMATCH_LOW = Version.parseVersion("0.40.0");
-  public static final Version OPENTRACING_VERSION_MISMATCH_HIGH = Version.parseVersion("0.41.0");
+  public static final Version OPENTRACING_VERSION_MISMATCH_HIGH = Version.parseVersion("0.42.0");
   // CLIENT_LOG4J_UNDECLARED_* is the version range where :nessie-client uses log4j without
   // declaring an explicit dependency in its POM.
   public static final Version CLIENT_LOG4J_UNDECLARED_LOW = Version.parseVersion("0.46.0");

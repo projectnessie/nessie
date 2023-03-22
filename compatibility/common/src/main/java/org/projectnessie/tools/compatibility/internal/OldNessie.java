@@ -69,6 +69,7 @@ final class OldNessie {
       // Nessie versions 0.40.0 up to 0.41.0 used _different_ versions for
       // opentracing-noop (0.30.0) + opentracing-api (0.33.0), which are unfortunately
       // not compatible with each other.
+      // Also need to _add_ opentracing to Nessie 0.42.0.
       // Blindly replace remove all dependencies from io.opentracing with the specific version
       // 0.33.0. Using the opentracing-mock artifact for simplicity (transitive dependencies
       // to the required artifacts).

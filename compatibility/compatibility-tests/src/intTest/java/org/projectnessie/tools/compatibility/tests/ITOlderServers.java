@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.tools.compatibility.api.Version;
-import org.projectnessie.tools.compatibility.api.VersionCondition;
 import org.projectnessie.tools.compatibility.internal.OlderNessieServersExtension;
 
 @ExtendWith(OlderNessieServersExtension.class)
@@ -30,8 +29,6 @@ public class ITOlderServers extends AbstractCompatibilityTests {
     return Version.CURRENT;
   }
 
-  // MergeBehavior is supported in REST API by servers since 0.26.0
-  @VersionCondition(minVersion = "0.26.0")
   @Override
   @Test
   public void mergeBehavior() throws BaseNessieClientServerException {
