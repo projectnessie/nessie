@@ -17,7 +17,6 @@ package org.projectnessie.versioned.persist.adapter;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.errorprone.annotations.MustBeClosed;
-import com.google.protobuf.ByteString;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +25,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.Diff;

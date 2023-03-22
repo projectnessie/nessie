@@ -15,9 +15,9 @@
  */
 package org.projectnessie.versioned.storage.common.logic;
 
-import static com.google.protobuf.UnsafeByteOperations.unsafeWrap;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
+import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.unsafeWrap;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Add.commitAdd;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.newCommitBuilder;
 import static org.projectnessie.versioned.storage.common.logic.InternalRef.KEY_REPO_DESCRIPTION;
@@ -33,13 +33,13 @@ import static org.projectnessie.versioned.storage.common.persist.ObjType.STRING;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 import static org.projectnessie.versioned.storage.common.util.Ser.SHARED_OBJECT_MAPPER;
 
-import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;

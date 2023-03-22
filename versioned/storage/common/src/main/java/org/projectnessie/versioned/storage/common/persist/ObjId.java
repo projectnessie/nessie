@@ -16,8 +16,8 @@
 package org.projectnessie.versioned.storage.common.persist;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.protobuf.UnsafeByteOperations.unsafeWrap;
 import static java.util.Objects.requireNonNull;
+import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.unsafeWrap;
 import static org.projectnessie.versioned.storage.common.util.Hex.hexChar;
 import static org.projectnessie.versioned.storage.common.util.Hex.nibble;
 import static org.projectnessie.versioned.storage.common.util.Hex.nibbleFromLong;
@@ -28,11 +28,11 @@ import static org.projectnessie.versioned.storage.common.util.Ser.varIntLen;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.hash.Hashing;
-import com.google.protobuf.ByteString;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ThreadLocalRandom;
 import javax.annotation.Nonnull;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 
 public abstract class ObjId {
   // TODO Should this class actually be merged with the existing `Hash` class,

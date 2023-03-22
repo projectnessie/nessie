@@ -17,7 +17,6 @@ package org.projectnessie.versioned.storage.mongodb;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.protobuf.UnsafeByteOperations.unsafeWrap;
 import static com.mongodb.ErrorCategory.DUPLICATE_KEY;
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
@@ -25,6 +24,7 @@ import static com.mongodb.client.model.Filters.in;
 import static com.mongodb.client.model.Updates.set;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
+import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.unsafeWrap;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.keyFromString;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.newCommitHeaders;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitObj.commitBuilder;
@@ -83,7 +83,6 @@ import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.ID_PR
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.ID_REPO_PATH;
 
 import com.google.common.collect.AbstractIterator;
-import com.google.protobuf.ByteString;
 import com.mongodb.MongoBulkWriteException;
 import com.mongodb.MongoWriteException;
 import com.mongodb.bulk.BulkWriteError;
@@ -110,6 +109,7 @@ import org.agrona.collections.Object2IntHashMap;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.Binary;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;

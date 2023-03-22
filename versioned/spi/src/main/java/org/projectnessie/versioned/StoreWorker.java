@@ -15,12 +15,12 @@
  */
 package org.projectnessie.versioned;
 
-import com.google.protobuf.ByteString;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.projectnessie.model.Content;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 
 /** A set of helpers that users of a VersionStore must implement. */
 public interface StoreWorker {

@@ -17,9 +17,9 @@ package org.projectnessie.versioned.storage.dynamodb;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.protobuf.UnsafeByteOperations.unsafeWrap;
 import static java.util.Collections.emptyListIterator;
 import static java.util.Collections.singletonMap;
+import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.unsafeWrap;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.keyFromString;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.newCommitHeaders;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitObj.commitBuilder;
@@ -91,7 +91,6 @@ import static software.amazon.awssdk.services.dynamodb.model.ComparisonOperator.
 import static software.amazon.awssdk.services.dynamodb.model.ComparisonOperator.IN;
 
 import com.google.common.collect.AbstractIterator;
-import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -107,6 +106,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.agrona.collections.Hashing;
 import org.agrona.collections.Object2IntHashMap;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;

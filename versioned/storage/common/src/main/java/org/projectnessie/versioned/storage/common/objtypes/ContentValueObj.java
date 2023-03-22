@@ -18,10 +18,10 @@ package org.projectnessie.versioned.storage.common.objtypes;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.projectnessie.versioned.storage.common.objtypes.Hashes.contentValueHash;
 
-import com.google.protobuf.ByteString;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;

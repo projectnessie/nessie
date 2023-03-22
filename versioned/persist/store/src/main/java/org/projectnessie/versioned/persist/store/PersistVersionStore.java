@@ -21,7 +21,6 @@ import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForCon
 
 import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.MustBeClosed;
-import com.google.protobuf.ByteString;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -39,6 +38,7 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ImmutableCommitMeta;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.CommitMetaSerializer;

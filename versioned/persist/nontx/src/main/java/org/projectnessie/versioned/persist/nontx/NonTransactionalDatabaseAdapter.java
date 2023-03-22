@@ -37,7 +37,6 @@ import static org.projectnessie.versioned.persist.nontx.NonTransactionalOperatio
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.errorprone.annotations.MustBeClosed;
-import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -64,6 +63,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.ContentAttachmentKey;

@@ -15,9 +15,9 @@
  */
 package org.projectnessie.versioned.persist.adapter;
 
-import com.google.protobuf.ByteString;
 import org.immutables.value.Value;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 
 /** Composite of key, content-id, content-type and content. */
 @Value.Immutable

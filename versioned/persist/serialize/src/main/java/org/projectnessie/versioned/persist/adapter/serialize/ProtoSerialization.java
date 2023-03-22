@@ -16,10 +16,10 @@
 package org.projectnessie.versioned.persist.adapter.serialize;
 
 import com.google.common.base.Preconditions;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.TreeMap;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
+import org.projectnessie.nessie.relocated.protobuf.InvalidProtocolBufferException;
 import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.ContentAttachment.Compression;
 import org.projectnessie.versioned.ContentAttachment.Format;

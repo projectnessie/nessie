@@ -19,12 +19,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.protobuf.ByteString;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ser.Views;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 
 public class TestCommitMetaSerializer {
 

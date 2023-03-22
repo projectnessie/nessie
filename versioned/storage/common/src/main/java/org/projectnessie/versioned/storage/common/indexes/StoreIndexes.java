@@ -18,10 +18,10 @@ package org.projectnessie.versioned.storage.common.indexes;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.projectnessie.versioned.storage.common.indexes.IndexLoader.notLoading;
 
-import com.google.protobuf.ByteString;
 import java.util.List;
 import java.util.function.Supplier;
 import javax.annotation.Nonnull;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 
 /** Factory methods for store indexes. */

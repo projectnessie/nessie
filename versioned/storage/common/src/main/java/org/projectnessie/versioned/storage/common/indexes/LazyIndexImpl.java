@@ -17,7 +17,6 @@ package org.projectnessie.versioned.storage.common.indexes;
 
 import static org.projectnessie.versioned.storage.common.util.SupplyOnce.memoize;
 
-import com.google.protobuf.ByteString;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -25,6 +24,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 
 final class LazyIndexImpl<V> implements StoreIndex<V> {

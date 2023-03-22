@@ -24,7 +24,6 @@ import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.s
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializeReference;
 
 import com.google.common.collect.AbstractIterator;
-import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -32,6 +31,7 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.function.Predicate;
 import javax.annotation.Nonnull;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;

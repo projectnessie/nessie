@@ -15,10 +15,10 @@
  */
 package org.projectnessie.versioned.testworker;
 
-import com.google.protobuf.ByteString;
 import org.immutables.value.Value;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.types.ContentTypes;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 
 /** Content with on-reference state only. */
 @Value.Immutable

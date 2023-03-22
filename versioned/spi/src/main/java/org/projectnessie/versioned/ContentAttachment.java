@@ -15,9 +15,9 @@
  */
 package org.projectnessie.versioned;
 
-import com.google.protobuf.ByteString;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 
 /** Represents all fields of a "content attachment" in Nessie. */
 @Value.Immutable

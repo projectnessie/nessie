@@ -25,8 +25,8 @@ import static org.projectnessie.versioned.storage.common.persist.ObjType.VALUE;
 
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
-import com.google.protobuf.ByteString;
 import java.util.List;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 
 @SuppressWarnings("UnstableApiUsage")

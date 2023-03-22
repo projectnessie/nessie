@@ -16,13 +16,13 @@
 package org.projectnessie.versioned;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.ByteString.Output;
 import java.io.IOException;
 import java.io.InputStream;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ser.Views;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
+import org.projectnessie.nessie.relocated.protobuf.ByteString.Output;
 
 public class CommitMetaSerializer implements Serializer<CommitMeta> {
 

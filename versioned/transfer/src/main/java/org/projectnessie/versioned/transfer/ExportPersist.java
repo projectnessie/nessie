@@ -25,12 +25,12 @@ import static org.projectnessie.versioned.storage.common.logic.ReferencesQuery.r
 import static org.projectnessie.versioned.storage.common.persist.ObjType.VALUE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.projectnessie.model.Content;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.logic.CommitLogic;
 import org.projectnessie.versioned.storage.common.logic.HeadsAndForkPoints;

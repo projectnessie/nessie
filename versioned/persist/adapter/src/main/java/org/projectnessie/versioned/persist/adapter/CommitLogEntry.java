@@ -15,11 +15,11 @@
  */
 package org.projectnessie.versioned.persist.adapter;
 
-import com.google.protobuf.ByteString;
 import java.util.List;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.Hash;
 
 /** Represents a commit-log-entry stored in the database. */
