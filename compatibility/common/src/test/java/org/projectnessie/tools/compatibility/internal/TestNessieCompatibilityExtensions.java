@@ -74,7 +74,7 @@ class TestNessieCompatibilityExtensions {
             c -> {
               EngineExecutionResults result =
                   EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
-                      .configurationParameter("nessie.versions", "0.18.0,0.19.0")
+                      .configurationParameter("nessie.versions", "0.42.0,0.43.0")
                       .selectors(selectClass(c))
                       .filters(new MultiEnvTestFilter())
                       .execute();
@@ -96,28 +96,28 @@ class TestNessieCompatibilityExtensions {
   @Test
   void olderClients() {
     EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
-        .configurationParameter("nessie.versions", "0.18.0,current")
+        .configurationParameter("nessie.versions", "0.42.0,current")
         .selectors(selectClass(OldClientsSample.class))
         .execute();
     soft.assertThat(OldClientsSample.allVersions)
-        .containsExactly(Version.parseVersion("0.18.0"), Version.CURRENT);
+        .containsExactly(Version.parseVersion("0.42.0"), Version.CURRENT);
     soft.assertThat(OldClientsSample.minVersionHigh).containsExactly(Version.CURRENT);
     soft.assertThat(OldClientsSample.maxVersionHigh)
-        .containsExactly(Version.parseVersion("0.18.0"));
+        .containsExactly(Version.parseVersion("0.42.0"));
     soft.assertThat(OldClientsSample.never).isEmpty();
   }
 
   @Test
   void olderServers() {
     EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
-        .configurationParameter("nessie.versions", "0.18.0,current")
+        .configurationParameter("nessie.versions", "0.42.0,current")
         .selectors(selectClass(OldServersSample.class))
         .execute();
     soft.assertThat(OldServersSample.allVersions)
-        .containsExactly(Version.parseVersion("0.18.0"), Version.CURRENT);
+        .containsExactly(Version.parseVersion("0.42.0"), Version.CURRENT);
     soft.assertThat(OldServersSample.minVersionHigh).containsExactly(Version.CURRENT);
     soft.assertThat(OldServersSample.maxVersionHigh)
-        .containsExactly(Version.parseVersion("0.18.0"));
+        .containsExactly(Version.parseVersion("0.42.0"));
     soft.assertThat(OldServersSample.never).isEmpty();
 
     // Base URI should not include the API version suffix
@@ -127,26 +127,26 @@ class TestNessieCompatibilityExtensions {
   @Test
   void nestedTests() {
     EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
-        .configurationParameter("nessie.versions", "0.18.0,current")
+        .configurationParameter("nessie.versions", "0.42.0,current")
         .selectors(selectClass(OuterSample.class))
         .selectors(selectClass(OuterSample.Inner.class))
         .filters(new MultiEnvTestFilter())
         .execute();
     soft.assertThat(OuterSample.outerVersions)
-        .containsExactly(Version.parseVersion("0.18.0"), Version.CURRENT);
+        .containsExactly(Version.parseVersion("0.42.0"), Version.CURRENT);
     soft.assertThat(OuterSample.innerVersions).containsExactlyElementsOf(OuterSample.outerVersions);
   }
 
   @Test
   void upgrade() {
     EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
-        .configurationParameter("nessie.versions", "0.18.0,current")
+        .configurationParameter("nessie.versions", "0.42.0,current")
         .selectors(selectClass(UpgradeSample.class))
         .execute();
     soft.assertThat(UpgradeSample.allVersions)
-        .containsExactly(Version.parseVersion("0.18.0"), Version.CURRENT);
+        .containsExactly(Version.parseVersion("0.42.0"), Version.CURRENT);
     soft.assertThat(UpgradeSample.minVersionHigh).containsExactly(Version.CURRENT);
-    soft.assertThat(UpgradeSample.maxVersionHigh).containsExactly(Version.parseVersion("0.18.0"));
+    soft.assertThat(UpgradeSample.maxVersionHigh).containsExactly(Version.parseVersion("0.42.0"));
     soft.assertThat(UpgradeSample.never).isEmpty();
   }
 

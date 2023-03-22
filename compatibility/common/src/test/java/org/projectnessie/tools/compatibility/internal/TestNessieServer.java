@@ -76,7 +76,7 @@ class TestNessieServer {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"0.19.0", "0.41.0"})
+  @ValueSource(strings = {"0.42.0"})
   @DisabledOnOs(OS.MAC)
   void oldNessieVersionServer(String nessieVersion) {
     ExtensionValuesStore valuesStore = new ExtensionValuesStore(null);

@@ -15,12 +15,9 @@
  */
 package org.projectnessie.tools.compatibility.jersey;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Locale;
 import java.util.Map;
-import org.projectnessie.server.store.TableCommitMetaStoreWorker;
-import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterFactory;
@@ -111,89 +108,6 @@ public final class DatabaseAdapters {
         builder = factory.newBuilder();
 
     builder.withConnector(connectionProvider);
-    try {
-      // Signature 'public DatabaseAdapter build(StoreWorker storeWorker)'
-      return buildWithStoreWorker(builder);
-    } catch (NoSuchMethodException | ClassNotFoundException | NoClassDefFoundError e) {
-      try {
-        // Signature 'public DatabaseAdapter build(ContentVariantSupplier contentVariantSupplier)'
-        return buildWithContentVariantSupplier(builder);
-      } catch (NoSuchMethodException
-          | ClassNotFoundException
-          | NoClassDefFoundError
-          | InvocationTargetException
-          | InstantiationException
-          | IllegalAccessException e2) {
-        try {
-          // "Old" signature 'public DatabaseAdapter build()'
-          //noinspection JavaReflectionMemberAccess
-          return buildPre019(builder, DatabaseAdapterFactory.Builder.class.getMethod("build"));
-        } catch (NoSuchMethodException ex) {
-          throw new RuntimeException(ex);
-        }
-      }
-    }
-  }
-
-  private static DatabaseAdapter buildPre019(
-      DatabaseAdapterFactory.Builder<
-              DatabaseAdapter,
-              DatabaseAdapterConfig,
-              DatabaseAdapterConfig,
-              DatabaseConnectionProvider<?>>
-          builder,
-      Method build) {
-    return doBuild(builder, build);
-  }
-
-  private static DatabaseAdapter buildWithStoreWorker(
-      DatabaseAdapterFactory.Builder<
-              DatabaseAdapter,
-              DatabaseAdapterConfig,
-              DatabaseAdapterConfig,
-              DatabaseConnectionProvider<?>>
-          builder)
-      throws NoSuchMethodException, ClassNotFoundException {
-    Method build = DatabaseAdapterFactory.Builder.class.getMethod("build", StoreWorker.class);
-    return doBuild(builder, build, new TableCommitMetaStoreWorker());
-  }
-
-  private static DatabaseAdapter buildWithContentVariantSupplier(
-      DatabaseAdapterFactory.Builder<
-              DatabaseAdapter,
-              DatabaseAdapterConfig,
-              DatabaseAdapterConfig,
-              DatabaseConnectionProvider<?>>
-          builder)
-      throws NoSuchMethodException,
-          ClassNotFoundException,
-          InvocationTargetException,
-          InstantiationException,
-          IllegalAccessException {
-    Method build =
-        DatabaseAdapterFactory.Builder.class.getMethod(
-            "build",
-            Class.forName("org.projectnessie.versioned.persist.adapter.ContentVariantSupplier"));
-    Object cvs =
-        Class.forName("org.projectnessie.versioned.persist.store.GenericContentVariantSupplier")
-            .getDeclaredConstructor(StoreWorker.class)
-            .newInstance(new TableCommitMetaStoreWorker());
-    return doBuild(builder, build, cvs);
-  }
-
-  private static DatabaseAdapter doBuild(
-      DatabaseAdapterFactory.Builder<
-              DatabaseAdapter,
-              DatabaseAdapterConfig,
-              DatabaseAdapterConfig,
-              DatabaseConnectionProvider<?>>
-          builder,
-      Method build,
-      Object... args) {
-    try {
-      return (DatabaseAdapter) build.invoke(builder, args);
-    } catch (IllegalAccessException | InvocationTargetException e) {
-      throw new RuntimeException(e);
-    }
+    return builder.build();
   }
 }
