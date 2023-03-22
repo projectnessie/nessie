@@ -16,7 +16,7 @@ jobs:
       matrix:
         include:
           - java-version: 17
-          - java-version: 19
+          - java-version: 20
     env:
       SPARK_LOCAL_IP: localhost
 
