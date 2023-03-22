@@ -28,7 +28,7 @@ apply<NessieShadowJarPlugin>()
 
 extra["maven.name"] = "Nessie - Relocated Protobuf ${libs.protobuf.java.get().version}"
 
-dependencies { implementation(libs.protobuf.java) }
+dependencies { compileOnly(libs.protobuf.java) }
 
 reflectionConfig {
   // Consider classes that extend one of these classes...
@@ -40,14 +40,25 @@ reflectionConfig {
   )
   // ... and classes the implement this interface.
   classImplementsPatterns.set(listOf("com.google.protobuf.ProtocolMessageEnum"))
-  // Also include generated classes (e.g. google.protobuf.Empty) via the "runtimeClasspath",
-  // which contains the the "com.google.protobuf:protobuf-java" dependency.
-  includeConfigurations.set(listOf("runtimeClasspath"))
+  // Include the "com.google.protobuf:protobuf-java" dependency.
+  includeConfigurations.set(listOf("compileClasspath"))
+  // Relocate it to our Nessie package name.
   relocations.put("com[.]google[.]protobuf[.]", "org.projectnessie.nessie.relocated.protobuf.$1")
 }
 
-tasks.named<ShadowJar>("shadowJar") {
-  dependsOn("generateReflectionConfig")
-  relocate("com.google.protobuf", "org.projectnessie.nessie.relocated.protobuf")
-  manifest { attributes["Google-Protobuf-Version"] = libs.protobuf.java.get().version }
-}
+val shadowJar =
+  tasks.named<ShadowJar>("shadowJar") {
+    relocate("com.google.protobuf", "org.projectnessie.nessie.relocated.protobuf")
+    manifest {
+      attributes["Specification-Title"] = "Google Protobuf"
+      attributes["Specification-Version"] = libs.protobuf.java.get().version
+    }
+    configurations = listOf(project.configurations.getByName("compileClasspath"))
+    dependencies { include(dependency(libs.protobuf.java.get())) }
+  }
+
+tasks.named("compileJava") { finalizedBy(shadowJar) }
+
+tasks.named("processResources") { finalizedBy(shadowJar) }
+
+tasks.named<Jar>("jar") { dependsOn("processJandexIndex", "generateReflectionConfig") }
