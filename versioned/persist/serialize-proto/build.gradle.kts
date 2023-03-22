@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+import com.google.protobuf.gradle.GenerateProtoTask
 import com.google.protobuf.gradle.ProtobufExtension
+import com.google.protobuf.gradle.ProtobufExtract
 
 plugins {
   `java-library`
@@ -22,13 +24,12 @@ plugins {
   signing
   id("org.projectnessie.buildsupport.reflectionconfig")
   `nessie-conventions`
+  alias(libs.plugins.protobuf)
 }
-
-apply<ProtobufHelperPlugin>()
 
 extra["maven.name"] = "Nessie - Versioned - Persist - Serialization (Proto)"
 
-dependencies { api(libs.protobuf.java) }
+dependencies { api(project(path = ":nessie-protobuf-relocated", configuration = "shadow")) }
 
 // *.proto files taken from https://github.com/googleapis/googleapis/ repo, available as a git
 // submodule
@@ -40,16 +41,28 @@ extensions.configure<ProtobufExtension> {
   }
 }
 
+tasks.named<GenerateProtoTask>("generateProto") {
+  doLast {
+    fileTree("$buildDir/generated/source/proto/main").forEach {
+      it.writeText(
+        it.readText().replace("com.google.protobuf", "org.projectnessie.nessie.relocated.protobuf")
+      )
+    }
+  }
+}
+
 reflectionConfig {
   // Consider classes that extend one of these classes...
   classExtendsPatterns.set(
     listOf(
-      "com.google.protobuf.GeneratedMessageV3",
-      "com.google.protobuf.GeneratedMessageV3.Builder"
+      "org.projectnessie.nessie.relocated.protobuf.GeneratedMessageV3",
+      "org.projectnessie.nessie.relocated.protobuf.GeneratedMessageV3.Builder"
     )
   )
   // ... and classes the implement this interface.
-  classImplementsPatterns.set(listOf("com.google.protobuf.ProtocolMessageEnum"))
+  classImplementsPatterns.set(
+    listOf("org.projectnessie.nessie.relocated.protobuf.ProtocolMessageEnum")
+  )
   // Also include generated classes (e.g. google.protobuf.Empty) via the "runtimeClasspath",
   // which contains the the "com.google.protobuf:protobuf-java" dependency.
   includeConfigurations.set(listOf("runtimeClasspath"))
@@ -60,7 +73,7 @@ tasks.named<Jar>("sourcesJar") {
   dependsOn(tasks.named("generateProto"), tasks.named("generateReflectionConfig"))
 }
 
-tasks.withType(com.google.protobuf.gradle.ProtobufExtract::class).configureEach {
+tasks.withType(ProtobufExtract::class).configureEach {
   when (name) {
     "extractIncludeTestProto" -> dependsOn(tasks.named("processJandexIndex"))
     "extractIncludeTestFixturesProto" -> dependsOn(tasks.named("processJandexIndex"))
