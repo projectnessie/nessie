@@ -114,6 +114,7 @@ public interface IndexesLogic {
    * Updates, if necessary, all commits in the given commit and all its predecessors to contain
    * {@link CommitObj#incompleteIndex() complete indexes}.
    */
-  void completeIndexesInCommitChain(@Nonnull @jakarta.annotation.Nonnull ObjId commitId)
+  void completeIndexesInCommitChain(
+      @Nonnull @jakarta.annotation.Nonnull ObjId commitId, Runnable progressCallback)
       throws ObjNotFoundException;
 }

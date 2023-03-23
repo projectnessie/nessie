@@ -448,21 +448,23 @@ final class IndexesLogicImpl implements IndexesLogic {
   }
 
   @Override
-  public void completeIndexesInCommitChain(@Nonnull @jakarta.annotation.Nonnull ObjId commitId)
+  public void completeIndexesInCommitChain(
+      @Nonnull @jakarta.annotation.Nonnull ObjId commitId, Runnable progressCallback)
       throws ObjNotFoundException {
     Deque<ObjId> idsToProcess = new ArrayDeque<>();
     idsToProcess.add(commitId);
 
     while (!idsToProcess.isEmpty()) {
       ObjId id = idsToProcess.pollFirst();
-      completeIndexesInCommitChain(id, idsToProcess);
+      completeIndexesInCommitChain(id, idsToProcess, progressCallback);
     }
   }
 
   @VisibleForTesting
   void completeIndexesInCommitChain(
       @Nonnull @jakarta.annotation.Nonnull ObjId commitId,
-      @Nonnull @jakarta.annotation.Nonnull Deque<ObjId> idsToProcess)
+      @Nonnull @jakarta.annotation.Nonnull Deque<ObjId> idsToProcess,
+      Runnable progressCallback)
       throws ObjNotFoundException {
     CommitLogic commitLogic = commitLogic(persist);
 
@@ -481,29 +483,33 @@ final class IndexesLogicImpl implements IndexesLogic {
     // HEAD commit first
     List<ObjId> commitsToUpdate = findCommitsWithIncompleteIndex(commitId);
 
-    ObjId oldestCommitId = commitsToUpdate.get(commitsToUpdate.size() - 1);
+    int totalCommits = commitsToUpdate.size();
+    ObjId oldestCommitId = commitsToUpdate.get(totalCommits - 1);
     CommitObj current = persist.fetchTypedObj(oldestCommitId, COMMIT, CommitObj.class);
     CommitObj parent =
         EMPTY_OBJ_ID.equals(current.directParent())
             ? null
             : persist.fetchTypedObj(current.directParent(), COMMIT, CommitObj.class);
 
-    for (int i = commitsToUpdate.size() - 1; i >= 0; i--) {
+    for (int i = totalCommits - 1; i >= 0; i--) {
+      ObjId currentId = commitsToUpdate.get(i);
       if (current == null) {
         try {
-          current = commitLogic.fetchCommit(commitsToUpdate.get(i));
+          current = commitLogic.fetchCommit(currentId);
         } catch (ObjNotFoundException e) {
           throw new IllegalStateException(
               format(
                   "Commit %s has been seen while walking the commit log, but no longer exists",
-                  commitsToUpdate.get(i)));
+                  currentId));
         }
       }
 
       checkState(
           current != null,
           "Commit %s has been seen while walking the commit log, but no longer exists",
-          commitsToUpdate.get(i));
+          currentId);
+
+      progressCallback.run();
 
       idsToProcess.addAll(current.secondaryParents());
 

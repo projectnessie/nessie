@@ -51,7 +51,9 @@ abstract class ImportPersistCommon extends ImportCommon {
     IndexesLogic indexesLogic = indexesLogic(requireNonNull(importer.persist()));
     for (ByteString head : headsAndForks.getHeadsList()) {
       try {
-        indexesLogic.completeIndexesInCommitChain(ObjId.objIdFromBytes(head));
+        indexesLogic.completeIndexesInCommitChain(
+            ObjId.objIdFromBytes(head),
+            () -> importer.progressListener().progress(ProgressEvent.FINALIZE_PROGRESS));
       } catch (ObjNotFoundException e) {
         throw new RuntimeException(e);
       }
