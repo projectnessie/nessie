@@ -535,7 +535,7 @@ public class DynamoDBPersist implements Persist {
     ObjId id = obj.id();
     checkArgument(id != null, "Obj to store must have a non-null ID");
 
-    Map<String, AttributeValue> item = objToItem(obj, id, true);
+    Map<String, AttributeValue> item = objToItem(obj, id, false);
 
     String condition = COL_OBJ_TYPE + " = :type";
     Map<String, AttributeValue> values = singletonMap(":type", fromS(obj.type().shortName()));

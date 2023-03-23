@@ -294,7 +294,9 @@ class InmemoryPersist implements Persist {
   }
 
   @Override
-  public void updateObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjNotFoundException {
+  public void updateObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
+      throws ObjNotFoundException, ObjTooLargeException {
+    verifySoftRestrictions(obj);
     Obj v =
         inmemory.objects.computeIfPresent(
             compositeKey(obj.id()), (k, ex) -> ex.type() == obj.type() ? obj : ex);
@@ -305,7 +307,7 @@ class InmemoryPersist implements Persist {
 
   @Override
   public void updateObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjNotFoundException {
+      throws ObjTooLargeException, ObjNotFoundException {
     List<ObjId> notFound = null;
     for (Obj obj : objs) {
       try {

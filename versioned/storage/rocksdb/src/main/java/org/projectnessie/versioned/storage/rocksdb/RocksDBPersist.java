@@ -447,7 +447,8 @@ class RocksDBPersist implements Persist {
         throw new ObjNotFoundException(id);
       }
 
-      byte[] serialized = serializeObj(obj, Integer.MAX_VALUE, Integer.MAX_VALUE);
+      byte[] serialized =
+          serializeObj(obj, effectiveIncrementalIndexSizeLimit(), effectiveIndexSegmentSizeLimit());
 
       db.put(cf, key, serialized);
     } catch (RocksDBException e) {

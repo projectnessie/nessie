@@ -488,7 +488,8 @@ public class CassandraPersist implements Persist {
     StoreObjDesc<Obj> storeObj = storeObjForObj(type);
 
     List<Object> values = new ArrayList<>();
-    storeObj.store(values::add, obj, Integer.MAX_VALUE, Integer.MAX_VALUE);
+    storeObj.store(
+        values::add, obj, effectiveIncrementalIndexSizeLimit(), effectiveIndexSegmentSizeLimit());
     values.add(config.repositoryId());
     values.add(serializeObjId(id));
     values.add(type.name());

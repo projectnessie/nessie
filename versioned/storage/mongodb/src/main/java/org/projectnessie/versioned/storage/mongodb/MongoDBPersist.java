@@ -584,7 +584,7 @@ public class MongoDBPersist implements Persist {
     ObjId id = obj.id();
     checkArgument(id != null, "Obj to store must have a non-null ID");
 
-    Document doc = objToDoc(obj, true);
+    Document doc = objToDoc(obj, false);
     UpdateResult result = backend.objs().replaceOne(eq(ID_PROPERTY_NAME, idObjDoc(id)), doc);
     if (result.getMatchedCount() == 0L) {
       // Testing "modified count" would be wrong here, because it represents the number of actually
