@@ -596,7 +596,9 @@ abstract class AbstractJdbcPersist implements Persist {
     checkArgument(storeObj != null, "Cannot serialize object type %s ", type);
     try (PreparedStatement ps = conn.prepareStatement(storeObj.updateSql)) {
       //noinspection unchecked
-      int idx = storeObj.store(ps, 1, obj, Integer.MAX_VALUE, Integer.MAX_VALUE);
+      int idx =
+          storeObj.store(
+              ps, 1, obj, effectiveIncrementalIndexSizeLimit(), effectiveIndexSegmentSizeLimit());
       ps.setString(idx++, config.repositoryId());
       serializeObjId(ps, idx++, id);
       ps.setString(idx, type.name());
