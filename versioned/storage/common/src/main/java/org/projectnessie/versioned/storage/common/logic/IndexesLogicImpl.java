@@ -43,10 +43,12 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.AbstractIterator;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -482,16 +484,30 @@ final class IndexesLogicImpl implements IndexesLogic {
 
     // HEAD commit first
     List<ObjId> commitsToUpdate = findCommitsWithIncompleteIndex(commitId);
+    // Let the HEAD be the last element in the list, and the oldest commit being at index #0
+    Collections.reverse(commitsToUpdate);
 
     int totalCommits = commitsToUpdate.size();
-    ObjId oldestCommitId = commitsToUpdate.get(totalCommits - 1);
+    ObjId oldestCommitId = commitsToUpdate.get(0);
+
+    IntFunction<ObjId[]> prefetchIds =
+        i -> commitsToUpdate.subList(i, Math.min(totalCommits, i + 100)).toArray(new ObjId[0]);
+
+    // perform a bulk-load against the database, populates the cache
+    persist.fetchObjs(prefetchIds.apply(0));
+
     CommitObj current = persist.fetchTypedObj(oldestCommitId, COMMIT, CommitObj.class);
     CommitObj parent =
         EMPTY_OBJ_ID.equals(current.directParent())
             ? null
             : persist.fetchTypedObj(current.directParent(), COMMIT, CommitObj.class);
 
-    for (int i = totalCommits - 1; i >= 0; i--) {
+    for (int i = 0; i < totalCommits; i++) {
+      if (i > 0 && (i % 100) == 0) {
+        // perform a bulk-load against the database, populates the cache
+        persist.fetchObjs(prefetchIds.apply(i));
+      }
+
       ObjId currentId = commitsToUpdate.get(i);
       if (current == null) {
         try {
