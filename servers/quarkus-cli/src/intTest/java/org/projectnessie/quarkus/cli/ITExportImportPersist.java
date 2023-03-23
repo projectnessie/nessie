@@ -194,7 +194,7 @@ public class ITExportImportPersist {
             "containing [0-9]+ named references \\(in [0-9]+ files\\) and [0-9]+ commits \\(in [0-9]+ files\\)")
         .contains("Importing into a MONGODB version store...")
         .contains("Imported Nessie repository, 2 commits, 2 named references.")
-        .contains("Import finalization finished.");
+        .contains("Import finalization finished, total duration: ");
   }
 
   @Test
@@ -229,7 +229,7 @@ public class ITExportImportPersist {
             "containing [0-9]+ named references \\(in [0-9]+ files\\) and [0-9]+ commits \\(in [0-9]+ files\\)")
         .contains("Importing into a MONGODB version store...")
         .contains("Imported Nessie repository, 2 commits, 2 named references.")
-        .contains("Import finalization finished.");
+        .contains("Import finalization finished, total duration: ");
   }
 
   private void populateRepository(Persist persist) throws Exception {
