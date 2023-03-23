@@ -52,7 +52,8 @@ public class OlderNessieClientsExtension extends AbstractMultiVersionExtension {
       return;
     }
 
-    ServerKey serverKey = new ServerKey(Version.CURRENT, "In-Memory", Collections.emptyMap());
+    ServerKey serverKey =
+        ServerKey.forContext(context, Version.CURRENT, "In-Memory", Collections.emptyMap());
     BooleanSupplier initializeRepository = () -> true;
 
     populateNessieApiFields(

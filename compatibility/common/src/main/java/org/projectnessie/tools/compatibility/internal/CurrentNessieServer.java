@@ -91,7 +91,10 @@ final class CurrentNessieServer implements NessieServer {
           createDatabaseConnectionProvider(
               serverKey.getDatabaseAdapterName(), serverKey.getDatabaseAdapterConfig());
       this.databaseAdapter =
-          createDatabaseAdapter(serverKey.getDatabaseAdapterName(), connectionProvider);
+          createDatabaseAdapter(
+              serverKey.getDatabaseAdapterName(),
+              connectionProvider,
+              serverKey.getDatabaseAdapterConfig());
 
       if (initializeRepository.getAsBoolean()) {
         databaseAdapter.eraseRepo();

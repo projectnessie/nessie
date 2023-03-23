@@ -15,10 +15,15 @@
  */
 package org.projectnessie.tools.compatibility.internal;
 
+import static org.junit.platform.commons.support.AnnotationSupport.findRepeatableAnnotations;
+
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.projectnessie.client.api.NessieApi;
+import org.projectnessie.tools.compatibility.api.NessieServerProperty;
 import org.projectnessie.tools.compatibility.api.Version;
 
 /** Value object representing the version, type and configuration of a {@link NessieApi}. */
@@ -33,6 +38,21 @@ final class ServerKey {
     this.version = Objects.requireNonNull(version);
     this.databaseAdapterName = Objects.requireNonNull(databaseAdapterName);
     this.databaseAdapterConfig = Objects.requireNonNull(databaseAdapterConfig);
+  }
+
+  public static ServerKey forContext(
+      ExtensionContext context,
+      Version version,
+      String databaseAdapterName,
+      Map<String, String> defaultConfig) {
+    Map<String, String> config = new HashMap<>(defaultConfig);
+    context
+        .getTestClass()
+        .ifPresent(
+            instance ->
+                findRepeatableAnnotations(instance, NessieServerProperty.class)
+                    .forEach(prop -> config.put(prop.name(), prop.value())));
+    return new ServerKey(version, databaseAdapterName, config);
   }
 
   Version getVersion() {

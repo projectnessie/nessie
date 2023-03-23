@@ -23,8 +23,11 @@ import static org.projectnessie.tools.compatibility.internal.OldNessie.oldNessie
 import static org.projectnessie.tools.compatibility.internal.Util.extensionStore;
 import static org.projectnessie.tools.compatibility.internal.Util.withClassLoader;
 
+import java.lang.reflect.Method;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import org.eclipse.aether.resolution.DependencyResolutionException;
@@ -148,15 +151,31 @@ final class OldNessieServer implements NessieServer {
             Class<?> databaseConnectionProviderClass =
                 classLoader.loadClass(
                     "org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider");
-            Object databaseAdapter =
-                classLoader
-                    .loadClass("org.projectnessie.tools.compatibility.jersey.DatabaseAdapters")
-                    .getMethod(
-                        "createDatabaseAdapter", String.class, databaseConnectionProviderClass)
-                    .invoke(
-                        null,
-                        serverKey.getDatabaseAdapterName(),
-                        connectionProvider.connectionProvider);
+            Class<?> adaptersFactoryClass =
+                classLoader.loadClass(
+                    "org.projectnessie.tools.compatibility.jersey.DatabaseAdapters");
+
+            List<Object> createParams = new ArrayList<>();
+            createParams.add(serverKey.getDatabaseAdapterName());
+            createParams.add(connectionProvider.connectionProvider);
+            Method createAdapterMethod;
+            try {
+              createAdapterMethod =
+                  adaptersFactoryClass.getMethod(
+                      "createDatabaseAdapter",
+                      String.class,
+                      databaseConnectionProviderClass,
+                      Map.class);
+
+              createParams.add(serverKey.getDatabaseAdapterConfig());
+            } catch (NoSuchMethodException e) {
+              // Fallback for the method without the config Map (support older servers)
+              createAdapterMethod =
+                  adaptersFactoryClass.getMethod(
+                      "createDatabaseAdapter", String.class, databaseConnectionProviderClass);
+            }
+
+            Object databaseAdapter = createAdapterMethod.invoke(null, createParams.toArray());
 
             // Call eraseRepo + initializeRepo only when requested. This is always true for
             // old-clients and old-servers test cases (once per test class + Nessie version).

@@ -83,7 +83,7 @@ public class NessieUpgradesExtension extends AbstractMultiVersionExtension {
     Map<String, String> configuration =
         Collections.singletonMap("nessie.store.db.path", tempDir.resolve("persist").toString());
 
-    return new ServerKey(version, databaseAdapterName, configuration);
+    return ServerKey.forContext(context, version, databaseAdapterName, configuration);
   }
 
   private BooleanSupplier initializeRepositorySupplier(
