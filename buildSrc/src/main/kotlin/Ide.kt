@@ -37,6 +37,27 @@ class NessieIdePlugin : Plugin<Project> {
       when (path) {
         ":" -> applyForRootProject(project)
         ":nessie-ui" -> applyForUiProject(project)
+        else -> applyForAllProjects(project)
+      }
+    }
+
+  private fun applyForAllProjects(project: Project): Unit =
+    project.run {
+      apply<IdeaExtPlugin>()
+      configure<IdeaModel> {
+        module {
+          // Do not index the following folders
+          excludeDirs =
+            excludeDirs +
+              setOf(
+                project.buildDir.resolve("libs"),
+                project.buildDir.resolve("reports"),
+                project.buildDir.resolve("test-results"),
+                project.buildDir.resolve("classes"),
+                project.buildDir.resolve("jacoco"),
+                project.buildDir.resolve("jandex")
+              )
+        }
       }
     }
 
@@ -44,7 +65,10 @@ class NessieIdePlugin : Plugin<Project> {
     project.run {
       apply<IdeaExtPlugin>()
       configure<IdeaModel> {
-        module { excludeDirs = excludeDirs + setOf(project.projectDir.resolve("node_modules")) }
+        module {
+          // Do not index the node_modules folders
+          excludeDirs = excludeDirs + setOf(project.projectDir.resolve("node_modules"))
+        }
       }
     }
 
@@ -61,6 +85,7 @@ class NessieIdePlugin : Plugin<Project> {
           isDownloadSources = true // this is the default BTW
           inheritOutputDirs = true
 
+          // Do not index the .mvn folders
           excludeDirs = excludeDirs + setOf(project.projectDir.resolve(".mvn"))
         }
 
