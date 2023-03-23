@@ -20,6 +20,7 @@ import static org.projectnessie.versioned.storage.common.logic.Logics.repository
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
@@ -238,6 +239,8 @@ public class ImportRepository extends BaseCommand {
     private int count;
     private boolean dot;
     private ExportMeta exportMeta;
+    private long timeOffset;
+    private long timeLast;
 
     public ImportProgressListener(PrintWriter out) {
       this.out = out;
@@ -270,19 +273,15 @@ public class ImportRepository extends BaseCommand {
           break;
         case START_COMMITS:
           out.printf("Importing %d commits...%n", exportMeta.getCommitCount());
-          count = 0;
-          dot = false;
+          startPhase();
           break;
         case END_COMMITS:
-          if (dot) {
-            out.println();
-          }
-          out.printf("%d commits imported.%n%n", count);
+          endPhase();
+          out.printf("%d commits imported, total duration: %s.%n%n", count, totalDuration());
           break;
         case START_NAMED_REFERENCES:
           out.printf("Importing %d named references...%n", exportMeta.getNamedReferencesCount());
-          count = 0;
-          dot = false;
+          startPhase();
           break;
         case COMMIT_WRITTEN:
         case NAMED_REFERENCE_WRITTEN:
@@ -290,32 +289,48 @@ public class ImportRepository extends BaseCommand {
           count++;
           if ((count % 10) == 0) {
             out.print('.');
+            out.flush();
             dot = true;
           }
-          if ((count % 500) == 0) {
-            out.printf(" %d%n", count);
+          if ((count % 1000) == 0) {
+            long last = timeLast;
+            long now = System.nanoTime();
+            timeLast = now;
+            out.printf(" %d - duration: %s%n", count, Duration.ofNanos(now - last));
             dot = false;
           }
           break;
         case END_NAMED_REFERENCES:
-          if (dot) {
-            out.println();
-          }
-          out.printf("%d named references imported.%n%n", count);
+          endPhase();
+          out.printf(
+              "%d named references imported, total duration: %s.%n%n", count, totalDuration());
           break;
         case START_FINALIZE:
           out.printf("Finalizing import...%n");
-          count = 0;
-          dot = false;
+          startPhase();
           break;
         case END_FINALIZE:
-          if (dot) {
-            out.println();
-          }
-          out.printf("Import finalization finished.%n%n");
+          endPhase();
+          out.printf("Import finalization finished, total duration: %s.%n%n", totalDuration());
           break;
         default:
           break;
+      }
+    }
+
+    private Duration totalDuration() {
+      return Duration.ofNanos(System.nanoTime() - timeOffset);
+    }
+
+    private void startPhase() {
+      count = 0;
+      timeLast = timeOffset = System.nanoTime();
+      dot = false;
+    }
+
+    private void endPhase() {
+      if (dot) {
+        out.println();
       }
     }
   }
