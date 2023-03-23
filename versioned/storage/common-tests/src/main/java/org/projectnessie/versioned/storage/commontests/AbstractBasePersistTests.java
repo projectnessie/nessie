@@ -32,6 +32,7 @@ import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONF
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_MAX_SERIALIZED_INDEX_SIZE;
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_REPOSITORY_ID;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexElement.indexElement;
+import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.deserializeStoreIndex;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.newStoreIndex;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.key;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.EMPTY_COMMIT_HEADERS;
@@ -66,7 +67,9 @@ import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.function.Function;
 import java.util.function.IntFunction;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -646,10 +649,20 @@ public class AbstractBasePersistTests {
 
   @ParameterizedTest
   @MethodSource("allObjectTypeSamples")
-  public void updateNonExisting(Obj obj) {
-    soft.assertThatThrownBy(() -> persist.updateObj(obj)).isInstanceOf(ObjNotFoundException.class);
-    soft.assertThatThrownBy(() -> persist.updateObjs(new Obj[] {obj}))
+  public void upsertNonExisting(Obj obj) throws Exception {
+    soft.assertThatThrownBy(() -> persist.fetchObj(obj.id()))
         .isInstanceOf(ObjNotFoundException.class);
+    persist.upsertObj(obj);
+    soft.assertThat(persist.fetchObj(obj.id())).isEqualTo(obj);
+  }
+
+  @ParameterizedTest
+  @MethodSource("allObjectTypeSamples")
+  public void upsertNonExistingBulk(Obj obj) throws Exception {
+    soft.assertThatThrownBy(() -> persist.fetchObj(obj.id()))
+        .isInstanceOf(ObjNotFoundException.class);
+    persist.upsertObjs(new Obj[] {obj});
+    soft.assertThat(persist.fetchObj(obj.id())).isEqualTo(obj);
   }
 
   @ParameterizedTest
@@ -663,17 +676,83 @@ public class AbstractBasePersistTests {
 
     soft.assertThat(newObj).isNotEqualTo(obj);
 
-    persist.updateObj(obj);
+    persist.upsertObj(obj);
 
     soft.assertThat(persist.fetchObj(obj.id())).isEqualTo(obj);
 
-    persist.updateObj(newObj);
+    persist.upsertObj(newObj);
 
     soft.assertThat(persist.fetchObj(obj.id())).isEqualTo(newObj);
   }
 
   @Test
   public void updateManyObjects() throws Exception {
+    Supplier<CommitObj> newCommit =
+        () -> {
+          StoreIndex<CommitOp> index = newStoreIndex(COMMIT_OP_SERIALIZER);
+          index.add(
+              indexElement(key("updated", "added", "key"), commitOp(ADD, 123, randomObjId())));
+          index.add(
+              indexElement(key("updated", "removed", "key"), commitOp(REMOVE, 123, randomObjId())));
+
+          return commitBuilder()
+              .id(randomObjId())
+              .created(123L)
+              .headers(
+                  newCommitHeaders().add("Foo", "bar").add("Foo", "baz").add("meep", "moo").build())
+              .message("hello world")
+              .referenceIndex(objIdFromString("1234567890123456"))
+              .addTail(objIdFromString("1234567890000000"))
+              .addTail(objIdFromString("aaaaaaaaaaaaaaaa"))
+              .addTail(objIdFromString("abababababababab"))
+              .addTail(objIdFromString("deadbeefcafebabe"))
+              .addTail(objIdFromString("0000000000000000"))
+              .addSecondaryParents(objIdFromString("1234567cc8900000"))
+              .addSecondaryParents(objIdFromString("aaaaaccaaaaaaaaa"))
+              .addSecondaryParents(objIdFromString("abaccbababababab"))
+              .addSecondaryParents(objIdFromString("dcceadbeefcafeba"))
+              .addSecondaryParents(objIdFromString("cc00000000000000"))
+              .addReferenceIndexStripes(indexStripe(key("abc"), key("def"), randomObjId()))
+              .addReferenceIndexStripes(indexStripe(key("def"), key("ghi"), randomObjId()))
+              .addReferenceIndexStripes(indexStripe(key("ghi"), key("jkl"), randomObjId()))
+              .incrementalIndex(index.serialize())
+              .commitType(CommitType.INTERNAL)
+              .seq(42L)
+              .build();
+        };
+
+    Function<CommitObj, CommitObj> updateCommit =
+        commit -> {
+          StoreIndex<CommitOp> index =
+              deserializeStoreIndex(commit.incrementalIndex(), COMMIT_OP_SERIALIZER);
+          index.add(indexElement(key("added", "key"), commitOp(REMOVE, 123, randomObjId())));
+
+          return commitBuilder()
+              .from(commit)
+              .message(commit.message() + " UPDATE")
+              .addTail(objIdFromString("feeddeadbeef"))
+              .addReferenceIndexStripes(indexStripe(key("mno"), key("pqr"), randomObjId()))
+              .incrementalIndex(index.serialize())
+              .build();
+        };
+
+    Obj[] objs = IntStream.range(0, 200).mapToObj(x -> newCommit.get()).toArray(Obj[]::new);
+    Obj[] newObjs =
+        IntStream.range(0, 400)
+            .mapToObj(i -> ((i & 1) == 0) ? objs[i / 2] : newCommit.get())
+            .toArray(Obj[]::new);
+
+    persist.storeObjs(objs);
+    soft.assertThat(persist.fetchObjs(stream(objs).map(Obj::id).toArray(ObjId[]::new)))
+        .containsExactly(objs);
+
+    persist.upsertObjs(newObjs);
+    soft.assertThat(persist.fetchObjs(stream(newObjs).map(Obj::id).toArray(ObjId[]::new)))
+        .containsExactly(newObjs);
+  }
+
+  @Test
+  public void updateMultipleObjects() throws Exception {
     Obj[] objs = allObjectTypeSamples().toArray(Obj[]::new);
     Obj[] newObjs = stream(objs).map(this::updateObjChange).toArray(Obj[]::new);
 
@@ -682,12 +761,10 @@ public class AbstractBasePersistTests {
     }
 
     persist.storeObjs(objs);
-
     soft.assertThat(persist.fetchObjs(stream(objs).map(Obj::id).toArray(ObjId[]::new)))
         .containsExactly(objs);
 
-    persist.updateObjs(newObjs);
-
+    persist.upsertObjs(newObjs);
     soft.assertThat(persist.fetchObjs(stream(objs).map(Obj::id).toArray(ObjId[]::new)))
         .containsExactly(newObjs);
   }

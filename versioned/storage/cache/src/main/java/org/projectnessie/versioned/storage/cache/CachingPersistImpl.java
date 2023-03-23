@@ -157,20 +157,19 @@ class CachingPersistImpl implements Persist {
   }
 
   @Override
-  public void updateObj(@jakarta.annotation.Nonnull @Nonnull Obj obj)
-      throws ObjTooLargeException, ObjNotFoundException {
+  public void upsertObj(@jakarta.annotation.Nonnull @Nonnull Obj obj) throws ObjTooLargeException {
     try {
-      persist.updateObj(obj);
+      persist.upsertObj(obj);
     } finally {
       cache.remove(obj.id());
     }
   }
 
   @Override
-  public void updateObjs(@jakarta.annotation.Nonnull @Nonnull Obj[] objs)
-      throws ObjTooLargeException, ObjNotFoundException {
+  public void upsertObjs(@jakarta.annotation.Nonnull @Nonnull Obj[] objs)
+      throws ObjTooLargeException {
     try {
-      persist.updateObjs(objs);
+      persist.upsertObjs(objs);
     } finally {
       for (Obj obj : objs) {
         if (obj != null) {

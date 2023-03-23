@@ -300,11 +300,10 @@ final class TelemetryPersist implements Persist {
   }
 
   @Override
-  public void updateObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
-      throws ObjTooLargeException, ObjNotFoundException {
-    try (Traced trace = traced("updateObj")) {
+  public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
+    try (Traced trace = traced("upsertObj")) {
       try {
-        persist.updateObj(obj);
+        persist.upsertObj(obj);
       } catch (RuntimeException e) {
         throw trace.unhandledError(e);
       }
@@ -312,11 +311,11 @@ final class TelemetryPersist implements Persist {
   }
 
   @Override
-  public void updateObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException, ObjNotFoundException {
-    try (Traced trace = traced("updateObjs")) {
+  public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+      throws ObjTooLargeException {
+    try (Traced trace = traced("upsertObjs")) {
       try {
-        persist.updateObjs(objs);
+        persist.upsertObjs(objs);
       } catch (RuntimeException e) {
         throw trace.unhandledError(e);
       }

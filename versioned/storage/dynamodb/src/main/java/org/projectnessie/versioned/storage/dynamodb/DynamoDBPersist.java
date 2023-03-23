@@ -522,35 +522,22 @@ public class DynamoDBPersist implements Persist {
 
   @Override
   public void deleteObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids) {
-    try (BatchDelete batchDelete = new BatchDelete(TABLE_OBJS)) {
+    try (BatchWrite batchWrite = new BatchWrite(TABLE_OBJS)) {
       for (ObjId id : ids) {
-        batchDelete.add(objKey(id));
+        batchWrite.addDelete(objKey(id));
       }
     }
   }
 
   @Override
-  public void updateObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
-      throws ObjTooLargeException, ObjNotFoundException {
+  public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
     ObjId id = obj.id();
     checkArgument(id != null, "Obj to store must have a non-null ID");
 
     Map<String, AttributeValue> item = objToItem(obj, id, false);
 
-    String condition = COL_OBJ_TYPE + " = :type";
-    Map<String, AttributeValue> values = singletonMap(":type", fromS(obj.type().shortName()));
-
     try {
-      backend
-          .client()
-          .putItem(
-              b ->
-                  b.tableName(TABLE_OBJS)
-                      .conditionExpression(condition)
-                      .expressionAttributeValues(values)
-                      .item(item));
-    } catch (ConditionalCheckFailedException e) {
-      throw new ObjNotFoundException(id);
+      backend.client().putItem(b -> b.tableName(TABLE_OBJS).item(item));
     } catch (DynamoDbException e) {
       // Best effort to detect whether an object exceeded DynamoDB's hard item size limit of 400k.
       AwsErrorDetails errorDetails = e.awsErrorDetails();
@@ -562,11 +549,18 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Override
-  public void updateObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException, ObjNotFoundException {
+  public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+      throws ObjTooLargeException {
     // DynamoDB does not support "PUT IF NOT EXISTS" in a BatchWriteItemRequest/PutItem
-    for (Obj obj : objs) {
-      updateObj(obj);
+    try (BatchWrite batchWrite = new BatchWrite(TABLE_OBJS)) {
+      for (Obj obj : objs) {
+        ObjId id = obj.id();
+        checkArgument(id != null, "Obj to store must have a non-null ID");
+
+        Map<String, AttributeValue> item = objToItem(obj, id, false);
+
+        batchWrite.addPut(item);
+      }
     }
   }
 
@@ -583,7 +577,7 @@ public class DynamoDBPersist implements Persist {
     Stream.of(TABLE_REFS, TABLE_OBJS)
         .forEach(
             table -> {
-              try (BatchDelete batchDelete = new BatchDelete(table)) {
+              try (BatchWrite batchWrite = new BatchWrite(table)) {
                 backend
                     .client()
                     .scanPaginator(
@@ -596,7 +590,7 @@ public class DynamoDBPersist implements Persist {
                         r ->
                             r.items().stream()
                                 .map(attrs -> attrs.get(KEY_NAME))
-                                .forEach(batchDelete::add));
+                                .forEach(batchWrite::addDelete));
               }
             });
   }
@@ -951,21 +945,27 @@ public class DynamoDBPersist implements Persist {
     return fromL(stripeAttr);
   }
 
-  private final class BatchDelete implements AutoCloseable {
+  private final class BatchWrite implements AutoCloseable {
     private final String tableName;
     private final List<WriteRequest> requestItems = new ArrayList<>();
 
-    BatchDelete(String tableName) {
+    BatchWrite(String tableName) {
       this.tableName = tableName;
     }
 
-    void add(AttributeValue key) {
-      requestItems.add(
-          WriteRequest.builder().deleteRequest(b -> b.key(singletonMap(KEY_NAME, key))).build());
-
+    private void addRequest(WriteRequest.Builder request) {
+      requestItems.add(request.build());
       if (requestItems.size() == BATCH_WRITE_MAX_REQUESTS) {
         flush();
       }
+    }
+
+    void addDelete(AttributeValue key) {
+      addRequest(WriteRequest.builder().deleteRequest(b -> b.key(singletonMap(KEY_NAME, key))));
+    }
+
+    public void addPut(Map<String, AttributeValue> item) {
+      addRequest(WriteRequest.builder().putRequest(b -> b.item(item)));
     }
 
     // close() is actually a flush, implementing AutoCloseable for easier use of BatchDelete using

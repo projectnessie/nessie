@@ -177,15 +177,15 @@ public class TestVersionStoreImpl extends AbstractVersionStoreTests {
     }
 
     @Override
-    public void updateObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
-        throws ObjTooLargeException, ObjNotFoundException {
-      delegate.updateObj(obj);
+    public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
+        throws ObjTooLargeException {
+      delegate.upsertObj(obj);
     }
 
     @Override
-    public void updateObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-        throws ObjTooLargeException, ObjNotFoundException {
-      delegate.updateObjs(objs);
+    public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+        throws ObjTooLargeException {
+      delegate.upsertObjs(objs);
     }
   }
 

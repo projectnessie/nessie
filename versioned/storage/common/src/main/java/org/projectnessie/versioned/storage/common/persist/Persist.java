@@ -286,32 +286,25 @@ public interface Persist {
   void deleteObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids);
 
   /**
-   * Updates an existing object, used only for maintenance operations, never for production code.
-   * The "user facing semantics" of an object <em>must not</em> change.
+   * Updates an existing object or inserts it as a new object, used only for maintenance operations,
+   * never for production code. The "user facing semantics" of an object <em>must not</em> change.
    *
-   * <p>Unlike {@link #storeObj(Obj)}, {@code updateObj} always ignores soft size limits from {@link
-   * #config()}.
-   *
-   * @see #updateObjs(Obj[])
+   * @see #upsertObjs (Obj[])
    * @throws ObjTooLargeException thrown when a hard database row/item size limit has been hit
    */
-  void updateObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
-      throws ObjTooLargeException, ObjNotFoundException;
+  void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException;
 
   /**
-   * Updates an existing object, used only for maintenance operations, never for production code.
-   * The "user facing semantics" of an object <em>must not</em> change.
-   *
-   * <p>Unlike {@link #storeObj(Obj)}, {@code updateObj} always ignores soft size limits from {@link
-   * #config()}.
+   * Updates existing objects or inserts those as a new objects, used only for maintenance
+   * operations, never for production code. The "user facing semantics" of an object <em>must
+   * not</em> change.
    *
    * <p>In case an object failed to be updated, it is undefined whether other objects have been
    * updated or not.
    *
-   * @see #updateObj(Obj)
+   * @see #upsertObj( Obj)
    */
-  void updateObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException, ObjNotFoundException;
+  void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs) throws ObjTooLargeException;
 
   /**
    * Returns an iterator over all objects that match the given predicate.

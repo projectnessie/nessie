@@ -430,8 +430,7 @@ class RocksDBPersist implements Persist {
   }
 
   @Override
-  public void updateObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
-      throws ObjTooLargeException, ObjNotFoundException {
+  public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
     ObjId id = obj.id();
     checkArgument(id != null, "Obj to store must have a non-null ID");
 
@@ -441,11 +440,6 @@ class RocksDBPersist implements Persist {
       TransactionDB db = b.db();
       ColumnFamilyHandle cf = b.objs();
       byte[] key = dbKey(id);
-
-      byte[] existing = db.get(cf, key);
-      if (existing == null || deserializeObj(id, existing).type() != obj.type()) {
-        throw new ObjNotFoundException(id);
-      }
 
       byte[] serialized =
           serializeObj(obj, effectiveIncrementalIndexSizeLimit(), effectiveIndexSegmentSizeLimit());
@@ -459,10 +453,10 @@ class RocksDBPersist implements Persist {
   }
 
   @Override
-  public void updateObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException, ObjNotFoundException {
+  public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+      throws ObjTooLargeException {
     for (Obj obj : objs) {
-      updateObj(obj);
+      upsertObj(obj);
     }
   }
 

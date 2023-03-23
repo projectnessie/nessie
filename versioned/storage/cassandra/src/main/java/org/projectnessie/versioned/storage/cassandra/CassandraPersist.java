@@ -20,13 +20,6 @@ import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.singletonList;
 import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.unsafeWrap;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.ADD_REFERENCE;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COLS_COMMIT;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COLS_INDEX;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COLS_REF;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COLS_SEGMENTS;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COLS_STRING;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COLS_TAG;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COLS_VALUE;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_COMMIT_CREATED;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_COMMIT_HEADERS;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_COMMIT_INCOMPLETE_INDEX;
@@ -64,20 +57,19 @@ import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.F
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.FIND_OBJS;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.FIND_OBJS_TYPED;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.FIND_REFERENCES;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_COMMIT;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_INDEX;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_REF;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_SEGMENTS;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_STRING;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_TAG;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_VALUE;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.MARK_REFERENCE_AS_DELETED;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.MAX_CONCURRENT_DELETES;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.MAX_CONCURRENT_STORES;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.PURGE_REFERENCE;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.SCAN_OBJS;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.STORE_OBJ_COMMIT;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.STORE_OBJ_INDEX;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.STORE_OBJ_REF;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.STORE_OBJ_SEGMENTS;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.STORE_OBJ_STRING;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.STORE_OBJ_TAG;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.STORE_OBJ_VALUE;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.UPDATE_OBJ_PREFIX;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.UPDATE_OBJ_SUFFIX;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.STORE_OBJ_SUFFIX;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.UPDATE_REFERENCE_POINTER;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.keyFromString;
 import static org.projectnessie.versioned.storage.common.objtypes.ContentValueObj.contentValue;
@@ -384,16 +376,34 @@ public class CassandraPersist implements Persist {
   public boolean storeObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
-    return storeSingleObj(
+    return writeSingleObj(
         obj,
         ignoreSoftSizeRestrictions,
-        (storeObj, values) -> backend.executeCas(storeObj.insertCql, values));
+        (storeObj, values) -> backend.executeCas(storeObj.cql(true), values));
   }
 
   @Nonnull
   @jakarta.annotation.Nonnull
   @Override
   public boolean[] storeObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+      throws ObjTooLargeException {
+    return persistObjs(objs, true);
+  }
+
+  @Override
+  public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
+    writeSingleObj(obj, false, (storeObj, values) -> backend.execute(storeObj.cql(false), values));
+  }
+
+  @Override
+  public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+      throws ObjTooLargeException {
+    persistObjs(objs, false);
+  }
+
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  private boolean[] persistObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs, boolean insert)
       throws ObjTooLargeException {
     AtomicIntegerArray results = new AtomicIntegerArray(objs.length);
 
@@ -403,13 +413,13 @@ public class CassandraPersist implements Persist {
         Obj o = objs[i];
         if (o != null) {
           int idx = i;
-          storeSingleObj(
+          writeSingleObj(
               o,
               false,
               (storeObj, values) -> {
                 CompletionStage<?> cs =
                     backend
-                        .executeAsync(storeObj.insertCql, values)
+                        .executeAsync(storeObj.cql(insert), values)
                         .handle(
                             (resultSet, e) -> {
                               if (e != null) {
@@ -444,14 +454,14 @@ public class CassandraPersist implements Persist {
   }
 
   @FunctionalInterface
-  interface StoreSingleObj<R> {
+  interface WriteSingleObj<R> {
     R apply(StoreObjDesc<?> storeObj, Object[] values);
   }
 
-  private <R> R storeSingleObj(
+  private <R> R writeSingleObj(
       @Nonnull @jakarta.annotation.Nonnull Obj obj,
       boolean ignoreSoftSizeRestrictions,
-      StoreSingleObj<R> consumer)
+      WriteSingleObj<R> consumer)
       throws ObjTooLargeException {
     ObjId id = obj.id();
     ObjType type = obj.type();
@@ -477,34 +487,6 @@ public class CassandraPersist implements Persist {
     StoreObjDesc storeObj = STORE_OBJ_TYPE.get(type);
     checkArgument(storeObj != null, "Cannot serialize object type %s ", type);
     return storeObj;
-  }
-
-  @Override
-  public void updateObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
-      throws ObjTooLargeException, ObjNotFoundException {
-    ObjId id = obj.id();
-    ObjType type = obj.type();
-
-    StoreObjDesc<Obj> storeObj = storeObjForObj(type);
-
-    List<Object> values = new ArrayList<>();
-    storeObj.store(
-        values::add, obj, effectiveIncrementalIndexSizeLimit(), effectiveIndexSegmentSizeLimit());
-    values.add(config.repositoryId());
-    values.add(serializeObjId(id));
-    values.add(type.name());
-
-    if (!backend.execute(storeObj.updateCql, values.toArray(new Object[0])).wasApplied()) {
-      throw new ObjNotFoundException(id);
-    }
-  }
-
-  @Override
-  public void updateObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException, ObjNotFoundException {
-    for (Obj obj : objs) {
-      updateObj(obj);
-    }
   }
 
   @Override
@@ -561,12 +543,10 @@ public class CassandraPersist implements Persist {
   }
 
   private abstract static class StoreObjDesc<O extends Obj> {
-    final String insertCql;
-    final String updateCql;
+    private final String insertCql;
 
-    StoreObjDesc(String insertCql, String updateCql) {
+    StoreObjDesc(String insertCql) {
       this.insertCql = insertCql;
-      this.updateCql = updateCql;
     }
 
     abstract O deserialize(Row row, ObjId id);
@@ -574,6 +554,13 @@ public class CassandraPersist implements Persist {
     abstract void store(
         Consumer<Object> values, O obj, int incrementalIndexLimit, int maxSerializedIndexSize)
         throws ObjTooLargeException;
+
+    String cql(boolean insert) {
+      if (insert) {
+        return insertCql + STORE_OBJ_SUFFIX;
+      }
+      return insertCql;
+    }
   }
 
   private static final Map<ObjType, StoreObjDesc<?>> STORE_OBJ_TYPE = new EnumMap<>(ObjType.class);
@@ -581,7 +568,7 @@ public class CassandraPersist implements Persist {
   static {
     STORE_OBJ_TYPE.put(
         ObjType.COMMIT,
-        new StoreObjDesc<CommitObj>(STORE_OBJ_COMMIT, generateUpdateSql(COLS_COMMIT)) {
+        new StoreObjDesc<CommitObj>(INSERT_OBJ_COMMIT) {
           @Override
           void store(
               Consumer<Object> values,
@@ -674,7 +661,7 @@ public class CassandraPersist implements Persist {
         });
     STORE_OBJ_TYPE.put(
         ObjType.REF,
-        new StoreObjDesc<RefObj>(STORE_OBJ_REF, generateUpdateSql(COLS_REF)) {
+        new StoreObjDesc<RefObj>(INSERT_OBJ_REF) {
           @Override
           void store(
               Consumer<Object> values,
@@ -697,7 +684,7 @@ public class CassandraPersist implements Persist {
         });
     STORE_OBJ_TYPE.put(
         ObjType.VALUE,
-        new StoreObjDesc<ContentValueObj>(STORE_OBJ_VALUE, generateUpdateSql(COLS_VALUE)) {
+        new StoreObjDesc<ContentValueObj>(INSERT_OBJ_VALUE) {
           @Override
           void store(
               Consumer<Object> values,
@@ -721,7 +708,7 @@ public class CassandraPersist implements Persist {
         });
     STORE_OBJ_TYPE.put(
         ObjType.INDEX_SEGMENTS,
-        new StoreObjDesc<IndexSegmentsObj>(STORE_OBJ_SEGMENTS, generateUpdateSql(COLS_SEGMENTS)) {
+        new StoreObjDesc<IndexSegmentsObj>(INSERT_OBJ_SEGMENTS) {
           @Override
           void store(
               Consumer<Object> values,
@@ -761,7 +748,7 @@ public class CassandraPersist implements Persist {
         });
     STORE_OBJ_TYPE.put(
         ObjType.INDEX,
-        new StoreObjDesc<IndexObj>(STORE_OBJ_INDEX, generateUpdateSql(COLS_INDEX)) {
+        new StoreObjDesc<IndexObj>(INSERT_OBJ_INDEX) {
           @Override
           void store(
               Consumer<Object> values,
@@ -787,7 +774,7 @@ public class CassandraPersist implements Persist {
         });
     STORE_OBJ_TYPE.put(
         ObjType.TAG,
-        new StoreObjDesc<TagObj>(STORE_OBJ_TAG, generateUpdateSql(COLS_TAG)) {
+        new StoreObjDesc<TagObj>(INSERT_OBJ_TAG) {
           @Override
           void store(
               Consumer<Object> values,
@@ -836,7 +823,7 @@ public class CassandraPersist implements Persist {
         });
     STORE_OBJ_TYPE.put(
         ObjType.STRING,
-        new StoreObjDesc<StringObj>(STORE_OBJ_STRING, generateUpdateSql(COLS_STRING)) {
+        new StoreObjDesc<StringObj>(INSERT_OBJ_STRING) {
           @Override
           void store(
               Consumer<Object> values,
@@ -861,10 +848,6 @@ public class CassandraPersist implements Persist {
                 deserializeBytes(row, COL_STRING_TEXT));
           }
         });
-  }
-
-  private static String generateUpdateSql(String colsString) {
-    return UPDATE_OBJ_PREFIX + colsString.replace(",", "=?,") + "=?" + UPDATE_OBJ_SUFFIX;
   }
 
   private static ByteString deserializeBytes(Row row, int idx) {
