@@ -34,8 +34,17 @@ class NessieIdePlugin : Plugin<Project> {
     project.run {
       apply<EclipsePlugin>()
 
-      if (this == rootProject) {
-        applyForRootProject(this)
+      when (path) {
+        ":" -> applyForRootProject(project)
+        ":nessie-ui" -> applyForUiProject(project)
+      }
+    }
+
+  private fun applyForUiProject(project: Project): Unit =
+    project.run {
+      apply<IdeaExtPlugin>()
+      configure<IdeaModel> {
+        module { excludeDirs = excludeDirs + setOf(project.projectDir.resolve("node_modules")) }
       }
     }
 
@@ -51,6 +60,8 @@ class NessieIdePlugin : Plugin<Project> {
           name = ideName
           isDownloadSources = true // this is the default BTW
           inheritOutputDirs = true
+
+          excludeDirs = excludeDirs + setOf(project.projectDir.resolve(".mvn"))
         }
 
         this.project.settings {
