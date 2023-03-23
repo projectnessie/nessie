@@ -17,12 +17,22 @@
 import com.github.jengelman.gradle.plugins.shadow.ShadowExtension
 import groovy.util.Node
 import groovy.util.NodeList
+import javax.inject.Inject
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.ConfigurationVariant
+import org.gradle.api.artifacts.ProjectDependency
+import org.gradle.api.artifacts.SelfResolvingDependency
 import org.gradle.api.artifacts.component.ModuleComponentSelector
 import org.gradle.api.artifacts.result.DependencyResult
+import org.gradle.api.attributes.Bundling
+import org.gradle.api.attributes.Category
+import org.gradle.api.attributes.LibraryElements
+import org.gradle.api.attributes.Usage
+import org.gradle.api.component.SoftwareComponentFactory
+import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
@@ -38,7 +48,9 @@ import org.gradle.plugins.signing.SigningPlugin
 
 /** Applies common configurations to all Nessie projects. */
 @Suppress("unused")
-class PublishingHelperPlugin : Plugin<Project> {
+class PublishingHelperPlugin
+@Inject
+constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Plugin<Project> {
   override fun apply(project: Project): Unit =
     project.run {
       extensions.create("publishingHelper", PublishingHelperExtension::class.java, this)
@@ -47,25 +59,24 @@ class PublishingHelperPlugin : Plugin<Project> {
         configure<PublishingExtension> {
           publications {
             register<MavenPublication>("maven") {
-              val shadowExtension = project.extensions.findByType(ShadowExtension::class.java)
-              if (shadowExtension != null) {
-                shadowExtension.component(this)
-                project.afterEvaluate {
-                  // Sonatype requires the javadoc and sources jar to be present, but the
-                  // Shadow extension does not publish those.
-                  artifact(tasks.named("javadocJar"))
-                  artifact(tasks.named("sourcesJar"))
+              val mavenPublication = this
+              afterEvaluate {
+                // This MUST happen in an 'afterEvaluate' to ensure that the Shadow*Plugin has
+                // been applied.
+                if (project.extensions.findByType(ShadowExtension::class.java) != null) {
+                  configureShadowPublishing(project, mavenPublication)
+                } else {
+                  from(components.firstOrNull { c -> c.name == "javaPlatform" || c.name == "java" })
                 }
-              } else {
-                from(components.firstOrNull { c -> c.name == "javaPlatform" || c.name == "java" })
-              }
-              suppressPomMetadataWarningsFor("testApiElements")
-              suppressPomMetadataWarningsFor("testJavadocElements")
-              suppressPomMetadataWarningsFor("testRuntimeElements")
-              suppressPomMetadataWarningsFor("testSourcesElements")
 
-              groupId = "$group"
-              version = project.version.toString()
+                suppressPomMetadataWarningsFor("testApiElements")
+                suppressPomMetadataWarningsFor("testJavadocElements")
+                suppressPomMetadataWarningsFor("testRuntimeElements")
+                suppressPomMetadataWarningsFor("testSourcesElements")
+
+                mavenPublication.groupId = "$group"
+                mavenPublication.version = project.version.toString()
+              }
 
               tasks.named("generatePomFileForMavenPublication") {
                 val e = project.extensions.getByType(PublishingHelperExtension::class.java)
@@ -200,6 +211,94 @@ class PublishingHelperPlugin : Plugin<Project> {
         }
       }
     }
+
+  /**
+   * "Proper" publication of shadow-jar instead of the "main" jar, with "the right" Gradle's module
+   * metadata that refers to the shadow-jar instead of the "main" jar, which is not published by
+   * Nessie.
+   *
+   * Pieces of this function are taken from the `Java(Base)Plugin` and `ShadowExtension`.
+   */
+  private fun configureShadowPublishing(project: Project, mavenPublication: MavenPublication) {
+    fun isPublishable(element: ConfigurationVariant): Boolean {
+      for (artifact in element.artifacts) {
+        if (JavaBasePlugin.UNPUBLISHABLE_VARIANT_ARTIFACTS.contains(artifact.type)) {
+          return false
+        }
+      }
+      return true
+    }
+
+    val shadowJar = project.tasks.named("shadowJar")
+
+    val shadowApiElements =
+      project.configurations.create("shadowApiElements") {
+        isCanBeConsumed = true
+        isCanBeResolved = false
+        attributes {
+          attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage::class.java, Usage.JAVA_API))
+          attribute(
+            Category.CATEGORY_ATTRIBUTE,
+            project.objects.named(Category::class.java, Category.LIBRARY)
+          )
+          attribute(
+            LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
+            project.objects.named(LibraryElements::class.java, LibraryElements.JAR)
+          )
+          attribute(
+            Bundling.BUNDLING_ATTRIBUTE,
+            project.objects.named(Bundling::class.java, Bundling.SHADOWED)
+          )
+        }
+        outgoing.artifact(shadowJar)
+      }
+
+    val component = softwareComponentFactory.adhoc("shadow")
+    component.addVariantsFromConfiguration(shadowApiElements) {
+      if (isPublishable(configurationVariant)) {
+        mapToMavenScope("compile")
+      } else {
+        skip()
+      }
+    }
+    // component.addVariantsFromConfiguration(configurations.getByName("runtimeElements")) {
+    component.addVariantsFromConfiguration(
+      project.configurations.getByName("shadowRuntimeElements")
+    ) {
+      if (isPublishable(configurationVariant)) {
+        mapToMavenScope("runtime")
+      } else {
+        skip()
+      }
+    }
+    // Sonatype requires the javadoc and sources jar to be present, but the
+    // Shadow extension does not publish those.
+    component.addVariantsFromConfiguration(project.configurations.getByName("javadocElements")) {}
+    component.addVariantsFromConfiguration(project.configurations.getByName("sourcesElements")) {}
+    mavenPublication.from(component)
+
+    // This a replacement to add dependencies to the pom, if necessary. Equivalent to
+    // 'shadowExtension.component(mavenPublication)', which we cannot use.
+
+    mavenPublication.pom {
+      withXml {
+        val node = asNode()
+        val depNode = node.get("dependencies")
+        val dependenciesNode =
+          if ((depNode as NodeList).isNotEmpty()) depNode.get(0) as Node
+          else node.appendNode("dependencies")
+        project.configurations.getByName("shadow").allDependencies.forEach {
+          if ((it is ProjectDependency) || !(it is SelfResolvingDependency)) {
+            val dependencyNode = dependenciesNode.appendNode("dependency")
+            dependencyNode.appendNode("groupId", it.group)
+            dependencyNode.appendNode("artifactId", it.name)
+            dependencyNode.appendNode("version", it.version)
+            dependencyNode.appendNode("scope", "runtime")
+          }
+        }
+      }
+    }
+  }
 
   /**
    * Scans the generated pom.xml for `<dependencies>` in `<dependencyManagement>` that do not have a
