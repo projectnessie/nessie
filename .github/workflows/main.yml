@@ -171,7 +171,7 @@ jobs:
         run: ct lint --debug --charts ./helm/nessie
 
       - name: Set up & Start Minikube
-        uses: medyagh/setup-minikube@v0.0.11
+        uses: medyagh/setup-minikube@v0.0.12
         with:
           cache: false
 
