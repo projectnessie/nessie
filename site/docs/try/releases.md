@@ -2,6 +2,25 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.53.0 Release (March 23, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.53.0).
+
+* Import: paint dots also during the finalize phase (#6366)
+* Use relocated protobuf runtime (#6355)
+* Build/publishing: Proper Gradle module metadata for shadow-jars (#6361)
+* Intellij: exclude `/.mvn` + `/ui/node_modules` (#6364)
+* Support annotation-based configuration in "old server" tests (#6356)
+* Mongo/storage: use `replaceOne` instead of `findAndReplaceOne` (#6363)
+* Compatibility-test: allow adapter-configuration via system properties (#6353)
+* Compatibility-tests: require Nessie >= 0.42.0, cleanup code (#6352)
+* CI: Bump newer-java-version WF from 19 to 20 (#6348)
+* Properly return `ParamConverterProvider` errors as HTTP/400 (#6346)
+* Remove InstantParamConverterProvider (#6341)
+* Update release notes template, remove "Docker Hub" (#6339)
+* Build: Fix Jackson-annotations configuration for build-plugins int-test (#6337)
+* Nit: Remove unnecessary null-check (#6344)
+
 ## 0.52.3 Release (March 20, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.52.3).
