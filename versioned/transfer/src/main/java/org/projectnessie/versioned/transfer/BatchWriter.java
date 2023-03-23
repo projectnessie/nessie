@@ -57,9 +57,9 @@ final class BatchWriter<T> implements AutoCloseable {
         batchSize, attachments -> databaseAdapter.putAttachments(attachments.stream()));
   }
 
-  static BatchWriter<Obj> objWriter(Persist persist) {
+  static BatchWriter<Obj> objWriter(int batchSize, Persist persist) {
     return new BatchWriter<>(
-        20,
+        batchSize,
         objs -> {
           try {
             persist.storeObjs(objs.toArray(new Obj[0]));

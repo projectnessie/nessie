@@ -63,7 +63,8 @@ abstract class ImportPersistCommon extends ImportCommon {
   @Override
   long importCommits() throws IOException {
     long commitCount = 0L;
-    try (BatchWriter<Obj> batchWriter = BatchWriter.objWriter(requireNonNull(importer.persist()))) {
+    try (BatchWriter<Obj> batchWriter =
+        BatchWriter.objWriter(importer.commitBatchSize(), requireNonNull(importer.persist()))) {
       for (String fileName : exportMeta.getCommitsFilesList()) {
         try (InputStream input = importFiles.newFileInput(fileName)) {
           while (true) {
