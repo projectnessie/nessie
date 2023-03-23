@@ -15,8 +15,8 @@
  */
 package org.projectnessie.versioned.persist.adapter;
 
-import com.google.protobuf.ByteString;
 import org.immutables.value.Value;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 
 /**
  * Used when dealing with global states in operations for Nessie-GC, like enumerating all globally

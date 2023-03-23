@@ -18,7 +18,6 @@ package org.projectnessie.versioned.transfer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
-import com.google.protobuf.ByteString;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
@@ -33,6 +32,7 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.CommitMetaSerializer;
 import org.projectnessie.versioned.GetNamedRefsParams;

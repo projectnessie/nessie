@@ -18,8 +18,8 @@ package org.projectnessie.versioned.storage.common.util;
 import static org.projectnessie.versioned.storage.common.util.Ser.putVarInt;
 import static org.projectnessie.versioned.storage.common.util.Ser.varIntLen;
 
-import com.google.protobuf.ByteString;
 import java.nio.ByteBuffer;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 
 public final class Util {
   private Util() {}

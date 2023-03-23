@@ -20,7 +20,6 @@ import static org.projectnessie.versioned.persist.tests.DatabaseAdapterTestUtils
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
 import com.google.common.collect.Maps;
-import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
@@ -33,6 +32,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceNotFoundException;

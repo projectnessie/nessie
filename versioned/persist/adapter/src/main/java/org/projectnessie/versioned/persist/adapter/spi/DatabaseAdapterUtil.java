@@ -17,7 +17,6 @@ package org.projectnessie.versioned.persist.adapter.spi;
 
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
-import com.google.protobuf.UnsafeByteOperations;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.Spliterator;
@@ -28,6 +27,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;

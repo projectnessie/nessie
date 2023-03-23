@@ -18,7 +18,6 @@ package org.projectnessie.versioned.storage.common.indexes;
 import static java.util.Collections.singletonList;
 
 import com.google.common.collect.AbstractIterator;
-import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -26,6 +25,7 @@ import java.util.Set;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 
 /**
  * Combines two {@link StoreIndex store indexes}, where one index serves as the "reference" and the

@@ -15,13 +15,12 @@
  */
 package org.projectnessie.versioned.storage.common.logic;
 
-import static com.google.protobuf.UnsafeByteOperations.unsafeWrap;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.unsafeWrap;
 import static org.projectnessie.versioned.storage.common.logic.PagingToken.emptyPagingToken;
 import static org.projectnessie.versioned.storage.common.logic.PagingToken.pagingToken;
 
-import com.google.protobuf.ByteString;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -31,6 +30,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestPagingToken {

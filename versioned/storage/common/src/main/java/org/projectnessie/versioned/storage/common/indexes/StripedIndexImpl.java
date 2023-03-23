@@ -20,7 +20,6 @@ import static java.util.Arrays.asList;
 import static java.util.Arrays.binarySearch;
 
 import com.google.common.collect.AbstractIterator;
-import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -29,6 +28,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 
 final class StripedIndexImpl<V> implements StoreIndex<V> {
 

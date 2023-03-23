@@ -15,10 +15,10 @@
  */
 package org.projectnessie.versioned.persist.adapter;
 
-import com.google.protobuf.ByteString;
 import java.util.Map;
 import org.immutables.value.Value;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
 

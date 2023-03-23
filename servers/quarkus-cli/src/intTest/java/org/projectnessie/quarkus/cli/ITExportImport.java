@@ -20,7 +20,6 @@ import static org.projectnessie.model.Content.Type.NAMESPACE;
 import static org.projectnessie.quarkus.cli.ImportRepository.ERASE_BEFORE_IMPORT;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
-import com.google.protobuf.ByteString;
 import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.junit.main.LaunchResult;
 import io.quarkus.test.junit.main.QuarkusMainLauncher;
@@ -39,6 +38,7 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Namespace;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.quarkus.cli.ExportRepository.Format;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.CommitMetaSerializer;

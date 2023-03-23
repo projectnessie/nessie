@@ -18,12 +18,12 @@ package org.projectnessie.versioned.testworker;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.versioned.testworker.WithAttachmentsContent.withAttachments;
 
-import com.google.protobuf.ByteString;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.projectnessie.model.Content;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.ContentAttachmentKey;
 

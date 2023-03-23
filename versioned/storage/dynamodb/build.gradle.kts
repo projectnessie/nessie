@@ -43,7 +43,6 @@ dependencies {
   implementation(libs.guava)
   implementation(libs.slf4j.api)
 
-  implementation(libs.protobuf.java)
   implementation(platform(libs.awssdk.bom))
   implementation(libs.awssdk.dynamodb) { exclude("software.amazon.awssdk", "apache-client") }
   implementation(libs.awssdk.netty.nio.client)

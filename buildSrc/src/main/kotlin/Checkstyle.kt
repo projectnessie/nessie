@@ -29,6 +29,11 @@ import org.gradle.kotlin.dsl.withType
 class NessieCheckstylePlugin : Plugin<Project> {
   override fun apply(project: Project): Unit =
     project.run {
+      if (project.name.endsWith("-proto")) {
+        // Exclude projects that only generate Java from protobuf
+        return
+      }
+
       apply<CheckstylePlugin>()
       configure<CheckstyleExtension> {
         toolVersion = libsRequiredVersion("checkstyle")

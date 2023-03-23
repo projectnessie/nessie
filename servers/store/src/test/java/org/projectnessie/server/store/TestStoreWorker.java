@@ -21,7 +21,6 @@ import static org.assertj.core.api.Assertions.fail;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.protobuf.ByteString;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.List;
@@ -39,6 +38,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.Namespace;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.server.store.proto.ObjectTypes;
 import org.projectnessie.server.store.proto.ObjectTypes.IcebergMetadataPointer;
 import org.projectnessie.server.store.proto.ObjectTypes.IcebergRefState;

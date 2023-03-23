@@ -15,12 +15,12 @@
  */
 package org.projectnessie.versioned.transfer;
 
-import com.google.protobuf.AbstractMessage;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.function.Consumer;
 import java.util.function.LongConsumer;
+import org.projectnessie.nessie.relocated.protobuf.AbstractMessage;
 import org.projectnessie.versioned.transfer.files.ExportFileSupplier;
 
 final class SizeLimitedOutput {

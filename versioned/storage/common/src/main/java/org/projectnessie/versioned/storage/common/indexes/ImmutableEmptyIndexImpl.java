@@ -15,12 +15,11 @@
  */
 package org.projectnessie.versioned.storage.common.indexes;
 
-import static com.google.protobuf.UnsafeByteOperations.unsafeWrap;
 import static java.util.Collections.emptyIterator;
 import static java.util.Collections.emptyList;
+import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.unsafeWrap;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.newStoreIndex;
 
-import com.google.protobuf.ByteString;
 import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.List;
@@ -28,6 +27,7 @@ import java.util.Set;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 
 final class ImmutableEmptyIndexImpl<V> implements StoreIndex<V> {
 

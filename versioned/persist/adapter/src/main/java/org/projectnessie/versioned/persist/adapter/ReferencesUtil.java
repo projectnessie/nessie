@@ -18,7 +18,6 @@ package org.projectnessie.versioned.persist.adapter;
 import static org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter.NO_ANCESTOR;
 
 import com.google.common.annotations.Beta;
-import com.google.protobuf.ByteString;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -28,6 +27,7 @@ import org.agrona.collections.Hashing;
 import org.agrona.collections.Object2IntHashMap;
 import org.agrona.collections.Object2ObjectHashMap;
 import org.agrona.collections.ObjectHashSet;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;

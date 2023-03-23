@@ -18,10 +18,10 @@ package org.projectnessie.versioned.storage.common.objtypes;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import com.google.protobuf.ByteString;
 import java.util.List;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.indexes.ElementSerializer;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndexes;

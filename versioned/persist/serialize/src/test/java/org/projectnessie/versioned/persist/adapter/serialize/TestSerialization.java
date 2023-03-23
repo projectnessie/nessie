@@ -21,10 +21,6 @@ import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSeriali
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.toProtoKey;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.toProtoValue;
 
-import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
-import com.google.protobuf.MessageLite;
-import com.google.protobuf.UnsafeByteOperations;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -43,6 +39,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
+import org.projectnessie.nessie.relocated.protobuf.InvalidProtocolBufferException;
+import org.projectnessie.nessie.relocated.protobuf.MessageLite;
+import org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations;
 import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.ContentAttachment.Compression;
 import org.projectnessie.versioned.ContentAttachment.Format;

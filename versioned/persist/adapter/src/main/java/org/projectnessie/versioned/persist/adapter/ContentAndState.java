@@ -15,10 +15,10 @@
  */
 package org.projectnessie.versioned.persist.adapter;
 
-import com.google.protobuf.ByteString;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 
 /** Composite for the per-named-reference and global state for a content key. */
 @Value.Immutable

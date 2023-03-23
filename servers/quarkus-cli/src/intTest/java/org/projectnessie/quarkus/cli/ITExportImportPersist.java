@@ -29,7 +29,6 @@ import static org.projectnessie.versioned.storage.common.objtypes.ContentValueOb
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
-import com.google.protobuf.ByteString;
 import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.junit.main.LaunchResult;
 import io.quarkus.test.junit.main.QuarkusMainLauncher;
@@ -45,6 +44,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.api.NessieVersion;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.quarkus.cli.ExportRepository.Format;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;

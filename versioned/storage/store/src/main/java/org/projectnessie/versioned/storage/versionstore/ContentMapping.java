@@ -24,7 +24,6 @@ import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objId
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.storeKeyToKey;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.toCommitMeta;
 
-import com.google.protobuf.ByteString;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -32,6 +31,7 @@ import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.ImmutableCommit;

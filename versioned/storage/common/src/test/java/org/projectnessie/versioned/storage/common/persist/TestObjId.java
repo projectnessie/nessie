@@ -25,7 +25,6 @@ import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFrom
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
 
 import com.google.common.hash.Hashing;
-import com.google.protobuf.ByteString;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
@@ -39,6 +38,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.persist.ObjId.ObjId256;
 import org.projectnessie.versioned.storage.common.persist.ObjId.ObjIdEmpty;
 import org.projectnessie.versioned.storage.common.persist.ObjId.ObjIdGeneric;

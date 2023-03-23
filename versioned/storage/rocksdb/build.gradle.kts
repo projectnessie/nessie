@@ -39,7 +39,6 @@ dependencies {
   compileOnly(libs.errorprone.annotations)
   implementation(libs.guava)
 
-  implementation(libs.protobuf.java)
   implementation(libs.rocksdb.jni)
 
   compileOnly(libs.immutables.builder)

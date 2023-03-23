@@ -20,7 +20,6 @@ import static java.util.Collections.emptyMap;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import com.google.errorprone.annotations.MustBeClosed;
-import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -46,6 +45,7 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.GetNamedRefsParams;

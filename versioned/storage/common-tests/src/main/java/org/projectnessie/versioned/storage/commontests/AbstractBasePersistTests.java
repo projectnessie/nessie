@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.storage.commontests;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static com.google.protobuf.ByteString.copyFromUtf8;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
@@ -28,6 +27,7 @@ import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
+import static org.projectnessie.nessie.relocated.protobuf.ByteString.copyFromUtf8;
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_MAX_INCREMENTAL_INDEX_SIZE;
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_MAX_SERIALIZED_INDEX_SIZE;
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_REPOSITORY_ID;
@@ -63,7 +63,6 @@ import static org.projectnessie.versioned.storage.common.persist.ObjType.VALUE;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 
 import com.google.common.collect.Lists;
-import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -80,6 +79,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;

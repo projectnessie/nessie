@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned.persist.tests;
 
-import com.google.protobuf.ByteString;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -28,6 +27,7 @@ import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;

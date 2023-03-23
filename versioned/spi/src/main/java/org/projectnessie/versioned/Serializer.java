@@ -15,8 +15,8 @@
  */
 package org.projectnessie.versioned;
 
-import com.google.protobuf.ByteString;
 import java.io.Serializable;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 
 /**
  * Used to serialize &amp; deserialize the values in the store. Provided to an implementation of

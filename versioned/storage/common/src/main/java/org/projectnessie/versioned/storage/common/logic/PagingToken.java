@@ -15,13 +15,13 @@
  */
 package org.projectnessie.versioned.storage.common.logic;
 
-import static com.google.protobuf.UnsafeByteOperations.unsafeWrap;
+import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.unsafeWrap;
 import static org.projectnessie.versioned.storage.common.util.Hex.hexChar;
 import static org.projectnessie.versioned.storage.common.util.Hex.nibble;
 
-import com.google.protobuf.ByteString;
 import javax.annotation.Nonnull;
 import org.immutables.value.Value;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 
 @Value.Immutable
 public interface PagingToken {

@@ -19,12 +19,12 @@ import static java.util.Objects.requireNonNull;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.errorprone.annotations.MustBeClosed;
-import com.google.protobuf.ByteString;
 import java.util.Iterator;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.NamedRef;

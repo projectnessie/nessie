@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.storage.commontests;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static com.google.protobuf.ByteString.copyFromUtf8;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.IntStream.rangeClosed;
@@ -24,6 +23,7 @@ import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
+import static org.projectnessie.nessie.relocated.protobuf.ByteString.copyFromUtf8;
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_COMMIT_TIMEOUT_MILLIS;
 import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
 import static org.projectnessie.versioned.storage.common.logic.InternalRef.REF_REPO;

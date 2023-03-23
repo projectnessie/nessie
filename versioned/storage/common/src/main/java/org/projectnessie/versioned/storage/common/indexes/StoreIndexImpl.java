@@ -17,16 +17,15 @@ package org.projectnessie.versioned.storage.common.indexes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.protobuf.UnsafeByteOperations.unsafeWrap;
 import static java.util.Collections.binarySearch;
 import static java.util.Collections.singletonList;
+import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.unsafeWrap;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexElement.indexElement;
 import static org.projectnessie.versioned.storage.common.util.JdkSpecifics.JDK_SPECIFIC;
 import static org.projectnessie.versioned.storage.common.util.Ser.putVarInt;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.AbstractIterator;
-import com.google.protobuf.ByteString;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.AbstractList;
@@ -38,6 +37,7 @@ import java.util.Set;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.util.Ser;
 

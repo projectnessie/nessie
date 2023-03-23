@@ -15,11 +15,11 @@
  */
 package org.projectnessie.server.store;
 
-import com.google.protobuf.ByteString;
 import java.util.function.Supplier;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.DeltaLakeTable;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.server.store.proto.ObjectTypes;
 
 public final class DeltaLakeTableSerializer extends BaseSerializer<DeltaLakeTable> {

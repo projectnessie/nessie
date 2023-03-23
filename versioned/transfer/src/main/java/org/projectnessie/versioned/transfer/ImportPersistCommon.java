@@ -24,10 +24,10 @@ import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.commi
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.contentIdMaybe;
 import static org.projectnessie.versioned.storage.common.objtypes.ContentValueObj.contentValue;
 
-import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.io.InputStream;
 import org.projectnessie.model.Content;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;

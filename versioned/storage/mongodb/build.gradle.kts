@@ -43,7 +43,6 @@ dependencies {
   implementation(libs.guava)
   implementation(libs.slf4j.api)
 
-  implementation(libs.protobuf.java)
   implementation(libs.mongodb.driver.sync)
 
   compileOnly(libs.testcontainers.mongodb)

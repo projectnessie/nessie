@@ -15,9 +15,9 @@
  */
 package org.projectnessie.server.store;
 
-import com.google.protobuf.ByteString;
 import java.util.function.Supplier;
 import org.projectnessie.model.Content;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.server.store.proto.ObjectTypes;
 
 /**

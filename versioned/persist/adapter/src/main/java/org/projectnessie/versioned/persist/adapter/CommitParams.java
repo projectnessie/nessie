@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned.persist.adapter;
 
-import com.google.protobuf.ByteString;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,6 +23,7 @@ import java.util.concurrent.Callable;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.ContentAttachment;
 
 /** API helper method to encapsulate parameters for {@link DatabaseAdapter#commit(CommitParams)}. */

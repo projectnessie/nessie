@@ -41,7 +41,6 @@ dependencies {
   compileOnly(libs.errorprone.annotations)
   implementation(libs.guava)
   implementation(libs.agrona)
-  implementation(libs.protobuf.java)
   implementation(libs.slf4j.api)
 
   compileOnly(libs.immutables.builder)

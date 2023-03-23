@@ -19,10 +19,10 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.UnsafeByteOperations;
 import java.util.Arrays;
 import javax.annotation.Nonnull;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
+import org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations;
 
 /**
  * Describes a specific point in time/history. Internally is a binary value but a string

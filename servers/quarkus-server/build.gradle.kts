@@ -102,7 +102,6 @@ dependencies {
   testFixturesApi("io.quarkus:quarkus-test-oidc-server")
   testFixturesApi("io.quarkus:quarkus-jacoco")
   testFixturesImplementation(libs.guava)
-  testFixturesImplementation(libs.protobuf.java)
   testFixturesImplementation(libs.microprofile.openapi)
 
   testFixturesApi(platform(libs.junit.bom))
