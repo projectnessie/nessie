@@ -286,6 +286,7 @@ public class ImportRepository extends BaseCommand {
           break;
         case COMMIT_WRITTEN:
         case NAMED_REFERENCE_WRITTEN:
+        case FINALIZE_PROGRESS:
           count++;
           if ((count % 10) == 0) {
             out.print('.');
@@ -304,6 +305,7 @@ public class ImportRepository extends BaseCommand {
           break;
         case START_FINALIZE:
           out.printf("Finalizing import...%n");
+          count = 0;
           dot = false;
           break;
         case END_FINALIZE:

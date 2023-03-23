@@ -105,26 +105,27 @@ public class TestIndexesLogicImpl extends AbstractIndexesLogicTests {
 
     if (discrete) {
       Deque<ObjId> deque = new ArrayDeque<>();
-      indexesLogic.completeIndexesInCommitChain(headId, deque);
+      indexesLogic.completeIndexesInCommitChain(headId, deque, () -> {});
       soft.assertThat(deque).containsExactly(secondaryHeadId);
 
       deque = new ArrayDeque<>();
-      indexesLogic.completeIndexesInCommitChain(secondaryHeadId, deque);
+      indexesLogic.completeIndexesInCommitChain(secondaryHeadId, deque, () -> {});
       soft.assertThat(deque).isEmpty();
 
       deque = new ArrayDeque<>();
-      indexesLogic.completeIndexesInCommitChain(headId, deque);
+      indexesLogic.completeIndexesInCommitChain(headId, deque, () -> {});
       soft.assertThat(deque).isEmpty();
 
       deque = new ArrayDeque<>();
-      indexesLogic.completeIndexesInCommitChain(secondaryHeadId, deque);
+      indexesLogic.completeIndexesInCommitChain(secondaryHeadId, deque, () -> {});
       soft.assertThat(deque).isEmpty();
     } else {
-      soft.assertThatThrownBy(() -> indexesLogic.completeIndexesInCommitChain(randomObjId()))
+      soft.assertThatThrownBy(
+              () -> indexesLogic.completeIndexesInCommitChain(randomObjId(), () -> {}))
           .isInstanceOf(ObjNotFoundException.class);
-      indexesLogic.completeIndexesInCommitChain(EMPTY_OBJ_ID);
-      indexesLogic.completeIndexesInCommitChain(headId);
-      indexesLogic.completeIndexesInCommitChain(headId);
+      indexesLogic.completeIndexesInCommitChain(EMPTY_OBJ_ID, () -> {});
+      indexesLogic.completeIndexesInCommitChain(headId, () -> {});
+      indexesLogic.completeIndexesInCommitChain(headId, () -> {});
     }
 
     soft.assertThat(indexesLogic.findCommitsWithIncompleteIndex(headId)).isEmpty();
