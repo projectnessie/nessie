@@ -135,8 +135,9 @@ public interface CommitLogic {
    * incremental index} becomes too big.
    *
    * @param commit the commit to update
+   * @return the persisted commit, containing the updated incremental and reference indexes
    */
-  void updateCommit(@Nonnull @jakarta.annotation.Nonnull CommitObj commit)
+  CommitObj updateCommit(@Nonnull @jakarta.annotation.Nonnull CommitObj commit)
       throws ObjNotFoundException;
 
   /**

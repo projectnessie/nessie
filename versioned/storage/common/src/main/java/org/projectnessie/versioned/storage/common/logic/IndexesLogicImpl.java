@@ -532,7 +532,7 @@ final class IndexesLogicImpl implements IndexesLogic {
               .referenceIndex(referenceIndex)
               .incrementalIndex(newIndex.serialize())
               .build();
-      commitLogic.updateCommit(newCommit);
+      newCommit = commitLogic.updateCommit(newCommit);
 
       parent = newCommit;
       current = null;

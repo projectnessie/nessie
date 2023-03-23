@@ -320,7 +320,7 @@ final class CommitLogicImpl implements CommitLogic {
   }
 
   @Override
-  public void updateCommit(@Nonnull @jakarta.annotation.Nonnull CommitObj commit)
+  public CommitObj updateCommit(@Nonnull @jakarta.annotation.Nonnull CommitObj commit)
       throws ObjNotFoundException {
     try {
       persist.updateObj(commit);
@@ -336,6 +336,7 @@ final class CommitLogicImpl implements CommitLogic {
         throw new RuntimeException(ex);
       }
     }
+    return commit;
   }
 
   private CommitObj indexTooBigStoreUpdate(CommitObj commit) {
