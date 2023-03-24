@@ -101,10 +101,11 @@ public class ImportRepository extends BaseCommand {
   protected Integer callWithDatabaseAdapter() throws Exception {
     warnOnInMemory();
 
-    spec.commandLine()
-        .getOut()
-        .printf("Importing into a %s version store...%n", versionStoreConfig.getVersionStoreType());
+    PrintWriter out = spec.commandLine().getOut();
 
+    out.printf("Importing into a %s version store...%n", versionStoreConfig.getVersionStoreType());
+
+    long t0 = System.nanoTime();
     try (ImportFileSupplier importFileSupplier = createImportFileSupplier()) {
 
       NessieImporter.Builder builder =
@@ -114,8 +115,6 @@ public class ImportRepository extends BaseCommand {
       if (commitBatchSize != null) {
         builder.commitBatchSize(commitBatchSize);
       }
-
-      PrintWriter out = spec.commandLine().getOut();
 
       if (!erase) {
         try (Stream<ReferenceInfo<ByteString>> refs =
@@ -163,6 +162,8 @@ public class ImportRepository extends BaseCommand {
       }
 
       return 0;
+    } finally {
+      out.printf("Total duration: %s%n", Duration.ofNanos(System.nanoTime() - t0));
     }
   }
 
@@ -170,10 +171,11 @@ public class ImportRepository extends BaseCommand {
   protected Integer callWithPersist() throws Exception {
     warnOnInMemory();
 
-    spec.commandLine()
-        .getOut()
-        .printf("Importing into a %s version store...%n", versionStoreConfig.getVersionStoreType());
+    PrintWriter out = spec.commandLine().getOut();
 
+    out.printf("Importing into a %s version store...%n", versionStoreConfig.getVersionStoreType());
+
+    long t0 = System.nanoTime();
     try (ImportFileSupplier importFileSupplier = createImportFileSupplier()) {
 
       NessieImporter.Builder builder =
@@ -181,8 +183,6 @@ public class ImportRepository extends BaseCommand {
       if (commitBatchSize != null) {
         builder.commitBatchSize(commitBatchSize);
       }
-
-      PrintWriter out = spec.commandLine().getOut();
 
       if (!erase && repositoryLogic(persist).repositoryExists()) {
         spec.commandLine()
@@ -204,6 +204,8 @@ public class ImportRepository extends BaseCommand {
           importResult.importedCommitCount(), importResult.importedReferenceCount());
 
       return 0;
+    } finally {
+      out.printf("Total duration: %s%n", Duration.ofNanos(System.nanoTime() - t0));
     }
   }
 
