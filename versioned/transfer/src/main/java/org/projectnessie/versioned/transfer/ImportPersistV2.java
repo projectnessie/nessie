@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned.transfer;
 
-import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.newStoreIndex;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.keyFromString;
 import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
@@ -26,6 +25,7 @@ import static org.projectnessie.versioned.storage.common.objtypes.CommitObj.comm
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
+import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
 import org.projectnessie.versioned.storage.common.exceptions.RetryTimeoutException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
@@ -34,9 +34,7 @@ import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
 import org.projectnessie.versioned.storage.common.objtypes.CommitHeaders;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
-import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
-import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Commit;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Ref;
@@ -52,7 +50,6 @@ final class ImportPersistV2 extends ImportPersistCommon {
   void prepareRepository() throws IOException {
     RepositoryDescriptionProto repositoryDescription = importer.loadRepositoryDescription();
 
-    Persist persist = requireNonNull(importer.persist());
     persist.erase();
     repositoryLogic(persist)
         .initialize(
@@ -69,32 +66,36 @@ final class ImportPersistV2 extends ImportPersistCommon {
 
   @Override
   long importNamedReferences() throws IOException {
-    long namedReferenceCount = 0L;
-    ReferenceLogic refLogic = referenceLogic(requireNonNull(importer.persist()));
-    for (String fileName : exportMeta.getNamedReferencesFilesList()) {
-      try (InputStream input = importFiles.newFileInput(fileName)) {
-        while (true) {
-          Ref ref = Ref.parseDelimitedFrom(input);
-          if (ref == null) {
-            break;
-          }
+    try {
+      long namedReferenceCount = 0L;
+      ReferenceLogic refLogic = referenceLogic(persist);
+      for (String fileName : exportMeta.getNamedReferencesFilesList()) {
+        try (InputStream input = importFiles.newFileInput(fileName)) {
+          while (true) {
+            Ref ref = Ref.parseDelimitedFrom(input);
+            if (ref == null) {
+              break;
+            }
 
-          try {
-            refLogic.createReference(ref.getName(), ObjId.objIdFromBytes(ref.getPointer()));
-          } catch (RefAlreadyExistsException | RetryTimeoutException e) {
-            throw new RuntimeException(e);
-          }
+            try {
+              refLogic.createReference(ref.getName(), ObjId.objIdFromBytes(ref.getPointer()));
+            } catch (RefAlreadyExistsException | RetryTimeoutException e) {
+              throw new RuntimeException(e);
+            }
 
-          namedReferenceCount++;
-          importer.progressListener().progress(ProgressEvent.NAMED_REFERENCE_WRITTEN);
+            namedReferenceCount++;
+            importer.progressListener().progress(ProgressEvent.NAMED_REFERENCE_WRITTEN);
+          }
         }
       }
+      return namedReferenceCount;
+    } finally {
+      persist.flush();
     }
-    return namedReferenceCount;
   }
 
   @Override
-  void processCommit(BatchWriter<Obj> batchWriter, Commit commit) {
+  void processCommit(Commit commit) throws ObjTooLargeException {
     CommitHeaders.Builder headers = newCommitHeaders();
     commit
         .getHeadersList()
@@ -118,12 +119,12 @@ final class ImportPersistV2 extends ImportPersistCommon {
         .forEach(
             op -> {
               StoreKey storeKey = keyFromString(op.getContentKey(0));
-              processCommitOp(batchWriter, index, op, storeKey);
+              processCommitOp(index, op, storeKey);
             });
 
     c.incrementalIndex(index.serialize());
 
-    batchWriter.add(c.build());
+    persist.storeObj(c.build());
 
     importer.progressListener().progress(ProgressEvent.COMMIT_WRITTEN);
   }

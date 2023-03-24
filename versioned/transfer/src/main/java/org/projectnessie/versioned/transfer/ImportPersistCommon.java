@@ -28,13 +28,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import org.projectnessie.model.Content;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
+import org.projectnessie.versioned.storage.batching.BatchingPersist;
+import org.projectnessie.versioned.storage.batching.WriteBatching;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
+import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
 import org.projectnessie.versioned.storage.common.logic.IndexesLogic;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
-import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Commit;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
@@ -42,29 +44,50 @@ import org.projectnessie.versioned.transfer.serialize.TransferTypes.HeadsAndFork
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Operation;
 
 abstract class ImportPersistCommon extends ImportCommon {
+  protected final BatchingPersist persist;
+
   ImportPersistCommon(ExportMeta exportMeta, NessieImporter importer) {
     super(exportMeta, importer);
+    this.persist =
+        WriteBatching.builder()
+            .persist(requireNonNull(importer.persist()))
+            .batchSize(importer.commitBatchSize())
+            .optimistic(true)
+            .build()
+            .create();
+  }
+
+  @Override
+  ImportResult importRepo() throws IOException {
+    try {
+      return super.importRepo();
+    } finally {
+      persist.flush();
+    }
   }
 
   @Override
   void importFinalize(HeadsAndForks headsAndForks) {
-    IndexesLogic indexesLogic = indexesLogic(requireNonNull(importer.persist()));
-    for (ByteString head : headsAndForks.getHeadsList()) {
-      try {
-        indexesLogic.completeIndexesInCommitChain(
-            ObjId.objIdFromBytes(head),
-            () -> importer.progressListener().progress(ProgressEvent.FINALIZE_PROGRESS));
-      } catch (ObjNotFoundException e) {
-        throw new RuntimeException(e);
+    try {
+      IndexesLogic indexesLogic = indexesLogic(persist);
+      for (ByteString head : headsAndForks.getHeadsList()) {
+        try {
+          indexesLogic.completeIndexesInCommitChain(
+              ObjId.objIdFromBytes(head),
+              () -> importer.progressListener().progress(ProgressEvent.FINALIZE_PROGRESS));
+        } catch (ObjNotFoundException e) {
+          throw new RuntimeException(e);
+        }
       }
+    } finally {
+      persist.flush();
     }
   }
 
   @Override
   long importCommits() throws IOException {
     long commitCount = 0L;
-    try (BatchWriter<Obj> batchWriter =
-        BatchWriter.objWriter(importer.commitBatchSize(), requireNonNull(importer.persist()))) {
+    try {
       for (String fileName : exportMeta.getCommitsFilesList()) {
         try (InputStream input = importFiles.newFileInput(fileName)) {
           while (true) {
@@ -72,19 +95,22 @@ abstract class ImportPersistCommon extends ImportCommon {
             if (commit == null) {
               break;
             }
-            processCommit(batchWriter, commit);
+            processCommit(commit);
             commitCount++;
           }
+        } catch (ObjTooLargeException e) {
+          throw new RuntimeException(e);
         }
       }
+    } finally {
+      persist.flush();
     }
     return commitCount;
   }
 
-  abstract void processCommit(BatchWriter<Obj> batchWriter, Commit commit) throws IOException;
+  abstract void processCommit(Commit commit) throws IOException, ObjTooLargeException;
 
-  void processCommitOp(
-      BatchWriter<Obj> batchWriter, StoreIndex<CommitOp> index, Operation op, StoreKey storeKey) {
+  void processCommitOp(StoreIndex<CommitOp> index, Operation op, StoreKey storeKey) {
     byte payload = (byte) op.getPayload();
     switch (op.getOperationType()) {
       case Delete:
@@ -105,11 +131,11 @@ abstract class ImportPersistCommon extends ImportCommon {
                       });
 
           ContentValueObj value = contentValue(op.getContentId(), payload, onRef);
-          batchWriter.add(value);
+          persist.storeObj(value);
           index.add(
               indexElement(
                   storeKey, commitOp(ADD, payload, value.id(), contentIdMaybe(op.getContentId()))));
-        } catch (IOException e) {
+        } catch (ObjTooLargeException | IOException e) {
           throw new RuntimeException(e);
         }
         break;

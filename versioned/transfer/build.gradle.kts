@@ -31,6 +31,7 @@ dependencies {
   implementation(project(":nessie-versioned-spi"))
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-transfer-proto"))
+  implementation(project(":nessie-versioned-storage-batching"))
   implementation(project(":nessie-versioned-storage-common"))
   implementation(project(":nessie-versioned-storage-store"))
 

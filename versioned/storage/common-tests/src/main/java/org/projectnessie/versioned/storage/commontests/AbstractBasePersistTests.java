@@ -252,7 +252,7 @@ public class AbstractBasePersistTests {
     soft.assertThat(persist.fetchReferences(new String[205])).hasSize(205).containsOnlyNulls();
   }
 
-  static Stream<Obj> allObjectTypeSamples() {
+  public static Stream<Obj> allObjectTypeSamples() {
     String nonAscii = "äöüß^€éèêµ";
     byte[] someFooBar = "Some foo bar baz".getBytes(UTF_8);
     ByteString fooBar = ByteString.copyFrom(someFooBar);
@@ -754,7 +754,7 @@ public class AbstractBasePersistTests {
   @Test
   public void updateMultipleObjects() throws Exception {
     Obj[] objs = allObjectTypeSamples().toArray(Obj[]::new);
-    Obj[] newObjs = stream(objs).map(this::updateObjChange).toArray(Obj[]::new);
+    Obj[] newObjs = stream(objs).map(AbstractBasePersistTests::updateObjChange).toArray(Obj[]::new);
 
     for (int i = 0; i < objs.length; i++) {
       soft.assertThat(newObjs[i]).isNotEqualTo(objs[i]);
@@ -769,7 +769,7 @@ public class AbstractBasePersistTests {
         .containsExactly(newObjs);
   }
 
-  private Obj updateObjChange(Obj obj) {
+  public static Obj updateObjChange(Obj obj) {
     Obj newObj;
     switch (obj.type()) {
       case COMMIT:
@@ -822,8 +822,7 @@ public class AbstractBasePersistTests {
                 ByteString.copyFrom(new byte[123]));
         break;
       default:
-        soft.fail("Unknown object type %s", obj.type());
-        return null;
+        throw new UnsupportedOperationException("Unknown object type " + obj.type());
     }
     return newObj;
   }

@@ -23,9 +23,6 @@ import java.util.function.Consumer;
 import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
-import org.projectnessie.versioned.storage.common.persist.Obj;
-import org.projectnessie.versioned.storage.common.persist.Persist;
 
 /**
  * Buffers a configurable amount of objects and passes those as batches to a consumer, should be
@@ -55,18 +52,6 @@ final class BatchWriter<T> implements AutoCloseable {
       int batchSize, DatabaseAdapter databaseAdapter) {
     return new BatchWriter<>(
         batchSize, attachments -> databaseAdapter.putAttachments(attachments.stream()));
-  }
-
-  static BatchWriter<Obj> objWriter(int batchSize, Persist persist) {
-    return new BatchWriter<>(
-        batchSize,
-        objs -> {
-          try {
-            persist.storeObjs(objs.toArray(new Obj[0]));
-          } catch (ObjTooLargeException e) {
-            throw new RuntimeException(e);
-          }
-        });
   }
 
   BatchWriter(int capacity, Consumer<List<T>> flush) {
