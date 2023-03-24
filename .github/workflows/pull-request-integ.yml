@@ -47,7 +47,7 @@ jobs:
 
       - name: Checkout NeQuEIT repo
         if: env.WF_EXEC == 'true'
-        uses: actions/checkout@v3.4.0
+        uses: actions/checkout@v3.5.0
         with:
           repository: ${{env.NESQUEIT_REPOSITORY}}
           ref: ${{env.NESQUEIT_BRANCH}}

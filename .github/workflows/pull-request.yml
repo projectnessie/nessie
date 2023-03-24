@@ -45,7 +45,7 @@ jobs:
       SPARK_LOCAL_IP: localhost
 
     steps:
-    - uses: actions/checkout@v3.4.0
+    - uses: actions/checkout@v3.5.0
     - name: Setup runner
       uses: ./.github/actions/setup-runner
     - name: Setup Java, Gradle
@@ -108,7 +108,7 @@ jobs:
         python-version: ['3.7', '3.8', '3.9', '3.10']
 
     steps:
-    - uses: actions/checkout@v3.4.0
+    - uses: actions/checkout@v3.5.0
     - name: Setup Python
       uses: ./.github/actions/dev-tool-python
       with:
@@ -128,7 +128,7 @@ jobs:
     name: Build Website
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3.4.0
+      - uses: actions/checkout@v3.5.0
       - name: Setup Python
         uses: ./.github/actions/dev-tool-python
         with:
