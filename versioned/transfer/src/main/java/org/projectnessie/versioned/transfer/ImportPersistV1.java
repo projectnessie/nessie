@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned.transfer;
 
-import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.newStoreIndex;
 import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
@@ -27,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
 import org.projectnessie.versioned.storage.common.exceptions.RetryTimeoutException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
@@ -34,9 +34,7 @@ import org.projectnessie.versioned.storage.common.indexes.StoreKey;
 import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
-import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
-import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.versionstore.RefMapping;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Commit;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
@@ -50,51 +48,54 @@ final class ImportPersistV1 extends ImportPersistCommon {
 
   @Override
   void prepareRepository() {
-    Persist persist = requireNonNull(importer.persist());
     persist.erase();
     repositoryLogic(persist).initialize("main", false, b -> {});
   }
 
   @Override
   long importNamedReferences() throws IOException {
-    long namedReferenceCount = 0L;
-    ReferenceLogic refLogic = referenceLogic(requireNonNull(importer.persist()));
-    for (String fileName : exportMeta.getNamedReferencesFilesList()) {
-      try (InputStream input = importFiles.newFileInput(fileName)) {
-        while (true) {
-          NamedReference namedReference = NamedReference.parseDelimitedFrom(input);
-          if (namedReference == null) {
-            break;
-          }
-
-          String ref;
-          switch (namedReference.getRefType()) {
-            case Tag:
-              ref = RefMapping.REFS_TAGS + namedReference.getName();
+    try {
+      long namedReferenceCount = 0L;
+      ReferenceLogic refLogic = referenceLogic(persist);
+      for (String fileName : exportMeta.getNamedReferencesFilesList()) {
+        try (InputStream input = importFiles.newFileInput(fileName)) {
+          while (true) {
+            NamedReference namedReference = NamedReference.parseDelimitedFrom(input);
+            if (namedReference == null) {
               break;
-            case Branch:
-              ref = RefMapping.REFS_HEADS + namedReference.getName();
-              break;
-            default:
-              throw new IllegalArgumentException("Unknown reference type " + namedReference);
-          }
+            }
 
-          try {
-            refLogic.createReference(ref, ObjId.objIdFromBytes(namedReference.getCommitId()));
-          } catch (RefAlreadyExistsException | RetryTimeoutException e) {
-            throw new RuntimeException(e);
-          }
+            String ref;
+            switch (namedReference.getRefType()) {
+              case Tag:
+                ref = RefMapping.REFS_TAGS + namedReference.getName();
+                break;
+              case Branch:
+                ref = RefMapping.REFS_HEADS + namedReference.getName();
+                break;
+              default:
+                throw new IllegalArgumentException("Unknown reference type " + namedReference);
+            }
 
-          namedReferenceCount++;
-          importer.progressListener().progress(ProgressEvent.NAMED_REFERENCE_WRITTEN);
+            try {
+              refLogic.createReference(ref, ObjId.objIdFromBytes(namedReference.getCommitId()));
+            } catch (RefAlreadyExistsException | RetryTimeoutException e) {
+              throw new RuntimeException(e);
+            }
+
+            namedReferenceCount++;
+            importer.progressListener().progress(ProgressEvent.NAMED_REFERENCE_WRITTEN);
+          }
         }
       }
+      return namedReferenceCount;
+    } finally {
+      persist.flush();
     }
-    return namedReferenceCount;
   }
 
   @Override
-  void processCommit(BatchWriter<Obj> batchWriter, Commit commit) throws IOException {
+  void processCommit(Commit commit) throws IOException, ObjTooLargeException {
     CommitMeta metadata;
     try (InputStream in = commit.getMetadata().newInput()) {
       metadata = importer.objectMapper().readValue(in, CommitMeta.class);
@@ -118,12 +119,12 @@ final class ImportPersistV1 extends ImportPersistCommon {
         .forEach(
             op -> {
               StoreKey storeKey = keyToStoreKey(ContentKey.of(op.getContentKeyList()));
-              processCommitOp(batchWriter, index, op, storeKey);
+              processCommitOp(index, op, storeKey);
             });
 
     c.incrementalIndex(index.serialize());
 
-    batchWriter.add(c.build());
+    persist.storeObj(c.build());
 
     importer.progressListener().progress(ProgressEvent.COMMIT_WRITTEN);
   }

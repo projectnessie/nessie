@@ -27,23 +27,20 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import javax.annotation.Nonnull;
-import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
 import org.projectnessie.versioned.storage.common.exceptions.RefConditionFailedException;
 import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundException;
-import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
-import org.projectnessie.versioned.storage.common.objtypes.IndexObj;
 import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
-import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.ValidatingPersist;
 
-class InmemoryPersist implements Persist {
+class InmemoryPersist implements ValidatingPersist {
 
   private final InmemoryBackend inmemory;
   private final StoreConfig config;
@@ -323,23 +320,6 @@ class InmemoryPersist implements Persist {
   public CloseableIterator<Obj> scanAllObjects(
       @Nonnull @jakarta.annotation.Nonnull Set<ObjType> returnedObjTypes) {
     return new ScanAllObjectsIterator(returnedObjTypes::contains);
-  }
-
-  private void verifySoftRestrictions(Obj obj) throws ObjTooLargeException {
-    if (obj instanceof CommitObj) {
-      CommitObj c = (CommitObj) obj;
-      ByteString serializedIndex = c.incrementalIndex();
-      if (serializedIndex.size() > effectiveIncrementalIndexSizeLimit()) {
-        throw new ObjTooLargeException(
-            serializedIndex.size(), effectiveIncrementalIndexSizeLimit());
-      }
-    } else if (obj instanceof IndexObj) {
-      IndexObj s = (IndexObj) obj;
-      ByteString index = s.index();
-      if (index.size() > effectiveIndexSegmentSizeLimit()) {
-        throw new ObjTooLargeException(index.size(), effectiveIndexSegmentSizeLimit());
-      }
-    }
   }
 
   private class ScanAllObjectsIterator extends AbstractIterator<Obj>

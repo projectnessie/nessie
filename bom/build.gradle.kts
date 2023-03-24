@@ -67,6 +67,7 @@ dependencies {
     api(project(":nessie-versioned-persist-transactional"))
     api(project(":nessie-versioned-persist-transactional-test"))
     api(project(":nessie-versioned-spi"))
+    api(project(":nessie-versioned-storage-batching"))
     api(project(":nessie-versioned-storage-cache"))
     api(project(":nessie-versioned-storage-cassandra"))
     api(project(":nessie-versioned-storage-common"))
