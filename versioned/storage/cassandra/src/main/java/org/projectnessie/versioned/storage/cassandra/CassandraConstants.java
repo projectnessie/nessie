@@ -41,11 +41,7 @@ final class CassandraConstants {
   static final String COLS_STRING =
       "s_content_type, s_compression, s_filename, s_predecessors, s_text";
 
-  static final String UPDATE_OBJ_PREFIX = "UPDATE %s." + TABLE_OBJS + " SET ";
-  static final String UPDATE_OBJ_SUFFIX =
-      " WHERE " + COL_REPO_ID + "=?" + " AND " + COL_OBJ_ID + "=? IF " + COL_OBJ_TYPE + "=?";
-
-  static final String STORE_OBJ_PREFIX =
+  static final String INSERT_OBJ_PREFIX =
       "INSERT INTO %s."
           + TABLE_OBJS
           + " ("
@@ -56,20 +52,17 @@ final class CassandraConstants {
           + COL_OBJ_TYPE
           + ", ";
   static final String STORE_OBJ_SUFFIX = " IF NOT EXISTS";
-  static final String STORE_OBJ_STRING =
-      STORE_OBJ_PREFIX + COLS_STRING + ") VALUES (?,?,?, ?,?,?,?,?)" + STORE_OBJ_SUFFIX;
-  static final String STORE_OBJ_TAG =
-      STORE_OBJ_PREFIX + COLS_TAG + ") VALUES (?,?,?, ?,?,?,?)" + STORE_OBJ_SUFFIX;
-  static final String STORE_OBJ_INDEX =
-      STORE_OBJ_PREFIX + COLS_INDEX + ") VALUES (?,?,?, ?)" + STORE_OBJ_SUFFIX;
-  static final String STORE_OBJ_SEGMENTS =
-      STORE_OBJ_PREFIX + COLS_SEGMENTS + ") VALUES (?,?,?, ?)" + STORE_OBJ_SUFFIX;
-  static final String STORE_OBJ_VALUE =
-      STORE_OBJ_PREFIX + COLS_VALUE + ") VALUES (?,?,?, ?,?,?)" + STORE_OBJ_SUFFIX;
-  static final String STORE_OBJ_REF =
-      STORE_OBJ_PREFIX + COLS_REF + ") VALUES (?,?,?, ?,?,?)" + STORE_OBJ_SUFFIX;
-  static final String STORE_OBJ_COMMIT =
-      STORE_OBJ_PREFIX + COLS_COMMIT + ") VALUES (?,?,?, ?,?,?,?,?,?,?,?,?,?,?)" + STORE_OBJ_SUFFIX;
+  static final String INSERT_OBJ_STRING =
+      INSERT_OBJ_PREFIX + COLS_STRING + ") VALUES (?,?,?, ?,?,?,?,?)";
+  static final String INSERT_OBJ_TAG = INSERT_OBJ_PREFIX + COLS_TAG + ") VALUES (?,?,?, ?,?,?,?)";
+  static final String INSERT_OBJ_INDEX = INSERT_OBJ_PREFIX + COLS_INDEX + ") VALUES (?,?,?, ?)";
+  static final String INSERT_OBJ_SEGMENTS =
+      INSERT_OBJ_PREFIX + COLS_SEGMENTS + ") VALUES (?,?,?, ?)";
+  static final String INSERT_OBJ_VALUE = INSERT_OBJ_PREFIX + COLS_VALUE + ") VALUES (?,?,?, ?,?,?)";
+  static final String INSERT_OBJ_REF = INSERT_OBJ_PREFIX + COLS_REF + ") VALUES (?,?,?, ?,?,?)";
+  static final String INSERT_OBJ_COMMIT =
+      INSERT_OBJ_PREFIX + COLS_COMMIT + ") VALUES (?,?,?, ?,?,?,?,?,?,?,?,?,?,?)";
+
   static final String CREATE_TABLE_OBJS =
       "CREATE TABLE %s."
           + TABLE_OBJS

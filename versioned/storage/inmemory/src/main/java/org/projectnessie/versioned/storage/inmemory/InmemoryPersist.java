@@ -294,33 +294,16 @@ class InmemoryPersist implements Persist {
   }
 
   @Override
-  public void updateObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
-      throws ObjNotFoundException, ObjTooLargeException {
+  public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
     verifySoftRestrictions(obj);
-    Obj v =
-        inmemory.objects.computeIfPresent(
-            compositeKey(obj.id()), (k, ex) -> ex.type() == obj.type() ? obj : ex);
-    if (!obj.equals(v)) {
-      throw new ObjNotFoundException(obj.id());
-    }
+    inmemory.objects.put(compositeKey(obj.id()), obj);
   }
 
   @Override
-  public void updateObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException, ObjNotFoundException {
-    List<ObjId> notFound = null;
+  public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+      throws ObjTooLargeException {
     for (Obj obj : objs) {
-      try {
-        updateObj(obj);
-      } catch (ObjNotFoundException nf) {
-        if (notFound == null) {
-          notFound = new ArrayList<>();
-        }
-        notFound.add(obj.id());
-      }
-    }
-    if (notFound != null) {
-      throw new ObjNotFoundException(notFound);
+      upsertObj(obj);
     }
   }
 

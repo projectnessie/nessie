@@ -320,17 +320,16 @@ final class CommitLogicImpl implements CommitLogic {
   }
 
   @Override
-  public CommitObj updateCommit(@Nonnull @jakarta.annotation.Nonnull CommitObj commit)
-      throws ObjNotFoundException {
+  public CommitObj updateCommit(@Nonnull @jakarta.annotation.Nonnull CommitObj commit) {
     try {
-      persist.updateObj(commit);
+      persist.upsertObj(commit);
     } catch (ObjTooLargeException e) {
       // The incremental index became too big - need to spill out the INCREMENTAL_* operations to
       // the reference index.
 
       commit = indexTooBigStoreUpdate(commit);
       try {
-        persist.updateObj(commit);
+        persist.upsertObj(commit);
       } catch (ObjTooLargeException ex) {
         // Hit the "Hard database object size limit"
         throw new RuntimeException(ex);

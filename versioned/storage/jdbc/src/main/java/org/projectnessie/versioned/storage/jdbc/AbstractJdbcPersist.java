@@ -17,6 +17,7 @@ package org.projectnessie.versioned.storage.jdbc;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
 import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.unsafeWrap;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.keyFromString;
@@ -31,13 +32,6 @@ import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFrom
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 import static org.projectnessie.versioned.storage.common.util.Closing.closeMultiple;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.ADD_REFERENCE;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COLS_COMMIT;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COLS_INDEX;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COLS_REF;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COLS_SEGMENTS;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COLS_STRING;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COLS_TAG;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COLS_VALUE;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_COMMIT_CREATED;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_COMMIT_HEADERS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_COMMIT_INCOMPLETE_INDEX;
@@ -78,8 +72,6 @@ import static org.projectnessie.versioned.storage.jdbc.SqlConstants.MAX_BATCH_SI
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.PURGE_REFERENCE;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.SCAN_OBJS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.STORE_OBJ;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.UPDATE_OBJ_PREFIX;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.UPDATE_OBJ_SUFFIX;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.UPDATE_REFERENCE_POINTER;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -438,17 +430,49 @@ abstract class AbstractJdbcPersist implements Persist {
       @Nonnull @jakarta.annotation.Nonnull Obj obj,
       boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
-    boolean[] results = storeObjs(conn, new Obj[] {obj}, ignoreSoftSizeRestrictions);
-    return results[0];
+    return upsertObjs(conn, new Obj[] {obj}, ignoreSoftSizeRestrictions, true)[0];
   }
 
   @Nonnull
   @jakarta.annotation.Nonnull
-  private boolean[] storeObjs(
+  protected final boolean[] storeObjs(
+      @Nonnull @jakarta.annotation.Nonnull Connection conn,
+      @Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+      throws ObjTooLargeException {
+    return upsertObjs(conn, objs, false, true);
+  }
+
+  protected final Void updateObj(
+      @Nonnull @jakarta.annotation.Nonnull Connection conn,
+      @Nonnull @jakarta.annotation.Nonnull Obj obj)
+      throws ObjTooLargeException {
+    updateObjs(conn, new Obj[] {obj});
+    return null;
+  }
+
+  protected final Void updateObjs(
+      @Nonnull @jakarta.annotation.Nonnull Connection conn,
+      @Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+      throws ObjTooLargeException {
+    upsertObjs(conn, objs, false, false);
+    return null;
+  }
+
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  private boolean[] upsertObjs(
       @Nonnull @jakarta.annotation.Nonnull Connection conn,
       @Nonnull @jakarta.annotation.Nonnull Obj[] objs,
-      boolean ignoreSoftSizeRestrictions)
+      boolean ignoreSoftSizeRestrictions,
+      boolean insert)
       throws ObjTooLargeException {
+    if (!insert) {
+      // Sadly an INSERT INTO ... ON CONFLICT DO UPDATE SET ... does not work with parameters in the
+      // UPDATE SET clause. Since the JDBC connection is configured with auto-commit=false, we can
+      // just DELETE the updates to be upserted and INSERT them again.
+      deleteObjs(conn, stream(objs).map(Obj::id).toArray(ObjId[]::new));
+    }
+
     try (PreparedStatement ps = conn.prepareStatement(databaseSpecific.wrapInsert(STORE_OBJ))) {
       boolean[] r = new boolean[objs.length];
 
@@ -526,15 +550,6 @@ abstract class AbstractJdbcPersist implements Persist {
     }
   }
 
-  @Nonnull
-  @jakarta.annotation.Nonnull
-  protected final boolean[] storeObjs(
-      @Nonnull @jakarta.annotation.Nonnull Connection conn,
-      @Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
-    return storeObjs(conn, objs, false);
-  }
-
   protected final void deleteObj(
       @Nonnull @jakarta.annotation.Nonnull Connection conn,
       @Nonnull @jakarta.annotation.Nonnull ObjId id) {
@@ -582,46 +597,6 @@ abstract class AbstractJdbcPersist implements Persist {
     }
   }
 
-  protected final Void updateObj(
-      @Nonnull @jakarta.annotation.Nonnull Connection conn,
-      @Nonnull @jakarta.annotation.Nonnull Obj obj)
-      throws ObjTooLargeException, ObjNotFoundException {
-    ObjId id = obj.id();
-    ObjType type = obj.type();
-
-    checkArgument(id != null, "Obj to store must have a non-null ID");
-
-    @SuppressWarnings("rawtypes")
-    StoreObjDesc storeObj = STORE_OBJ_TYPE.get(type);
-    checkArgument(storeObj != null, "Cannot serialize object type %s ", type);
-    try (PreparedStatement ps = conn.prepareStatement(storeObj.updateSql)) {
-      //noinspection unchecked
-      int idx =
-          storeObj.store(
-              ps, 1, obj, effectiveIncrementalIndexSizeLimit(), effectiveIndexSegmentSizeLimit());
-      ps.setString(idx++, config.repositoryId());
-      serializeObjId(ps, idx++, id);
-      ps.setString(idx, type.name());
-
-      if (ps.executeUpdate() == 0) {
-        throw new ObjNotFoundException(id);
-      }
-      return null;
-    } catch (SQLException e) {
-      throw unhandledSQLException(e);
-    }
-  }
-
-  protected final Void updateObjs(
-      @Nonnull @jakarta.annotation.Nonnull Connection conn,
-      @Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException, ObjNotFoundException {
-    for (Obj obj : objs) {
-      updateObj(conn, obj);
-    }
-    return null;
-  }
-
   protected final void erase(@Nonnull @jakarta.annotation.Nonnull Connection conn) {
     try (PreparedStatement ps = conn.prepareStatement(ERASE_REFS)) {
       ps.setString(1, config.repositoryId());
@@ -642,11 +617,6 @@ abstract class AbstractJdbcPersist implements Persist {
   }
 
   private abstract static class StoreObjDesc<O extends Obj> {
-    final String updateSql;
-
-    StoreObjDesc(String updateSql) {
-      this.updateSql = updateSql;
-    }
 
     abstract O deserialize(ResultSet rs, ObjId id) throws SQLException;
 
@@ -662,7 +632,7 @@ abstract class AbstractJdbcPersist implements Persist {
   static {
     STORE_OBJ_TYPE.put(
         ObjType.COMMIT,
-        new StoreObjDesc<CommitObj>(generateUpdateSql(COLS_COMMIT)) {
+        new StoreObjDesc<CommitObj>() {
           @Override
           int storeNone(PreparedStatement ps, int idx) throws SQLException {
             ps.setNull(idx++, Types.BIGINT);
@@ -776,7 +746,7 @@ abstract class AbstractJdbcPersist implements Persist {
         });
     STORE_OBJ_TYPE.put(
         ObjType.REF,
-        new StoreObjDesc<RefObj>(generateUpdateSql(COLS_REF)) {
+        new StoreObjDesc<RefObj>() {
           @Override
           int storeNone(PreparedStatement ps, int idx) throws SQLException {
             ps.setNull(idx++, Types.VARCHAR);
@@ -810,7 +780,7 @@ abstract class AbstractJdbcPersist implements Persist {
         });
     STORE_OBJ_TYPE.put(
         ObjType.VALUE,
-        new StoreObjDesc<ContentValueObj>(generateUpdateSql(COLS_VALUE)) {
+        new StoreObjDesc<ContentValueObj>() {
           @Override
           int storeNone(PreparedStatement ps, int idx) throws SQLException {
             ps.setNull(idx++, Types.VARCHAR);
@@ -844,7 +814,7 @@ abstract class AbstractJdbcPersist implements Persist {
         });
     STORE_OBJ_TYPE.put(
         ObjType.INDEX_SEGMENTS,
-        new StoreObjDesc<IndexSegmentsObj>(generateUpdateSql(COLS_SEGMENTS)) {
+        new StoreObjDesc<IndexSegmentsObj>() {
           @Override
           int storeNone(PreparedStatement ps, int idx) throws SQLException {
             ps.setNull(idx++, Types.BINARY);
@@ -893,7 +863,7 @@ abstract class AbstractJdbcPersist implements Persist {
         });
     STORE_OBJ_TYPE.put(
         ObjType.INDEX,
-        new StoreObjDesc<IndexObj>(generateUpdateSql(COLS_INDEX)) {
+        new StoreObjDesc<IndexObj>() {
           @Override
           int storeNone(PreparedStatement ps, int idx) throws SQLException {
             ps.setNull(idx++, Types.BINARY);
@@ -927,7 +897,7 @@ abstract class AbstractJdbcPersist implements Persist {
         });
     STORE_OBJ_TYPE.put(
         ObjType.TAG,
-        new StoreObjDesc<TagObj>(generateUpdateSql(COLS_TAG)) {
+        new StoreObjDesc<TagObj>() {
           @Override
           int storeNone(PreparedStatement ps, int idx) throws SQLException {
             ps.setNull(idx++, Types.VARCHAR);
@@ -987,7 +957,7 @@ abstract class AbstractJdbcPersist implements Persist {
         });
     STORE_OBJ_TYPE.put(
         ObjType.STRING,
-        new StoreObjDesc<StringObj>(generateUpdateSql(COLS_STRING)) {
+        new StoreObjDesc<StringObj>() {
           @Override
           int storeNone(PreparedStatement ps, int idx) throws SQLException {
             ps.setNull(idx++, Types.VARCHAR);
@@ -1025,10 +995,6 @@ abstract class AbstractJdbcPersist implements Persist {
                 deserializeBytes(rs, COL_STRING_TEXT));
           }
         });
-  }
-
-  private static String generateUpdateSql(String colsString) {
-    return UPDATE_OBJ_PREFIX + colsString.replace(",", "=?,") + "=?" + UPDATE_OBJ_SUFFIX;
   }
 
   private static void serializeBytes(PreparedStatement ps, int idx, ByteString blob)

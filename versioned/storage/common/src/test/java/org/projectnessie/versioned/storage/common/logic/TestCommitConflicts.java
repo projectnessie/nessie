@@ -464,8 +464,6 @@ public class TestCommitConflicts {
         .containsEntry(fooKey, fooAddId)
         .containsEntry(barKey, barAddId);
 
-    soft.assertThatThrownBy(() -> commitLogic.updateCommit(firstCommit))
-        .isInstanceOf(ObjNotFoundException.class);
     soft.assertThat(commitLogic.storeCommit(firstCommit, emptyList())).isTrue();
     ObjId firstCommitId = firstCommit.id();
 
@@ -488,8 +486,6 @@ public class TestCommitConflicts {
         .containsEntry(fooKey, null)
         .containsEntry(barKey, barUpdateId);
 
-    soft.assertThatThrownBy(() -> commitLogic.updateCommit(secondCommit))
-        .isInstanceOf(ObjNotFoundException.class);
     soft.assertThat(commitLogic.storeCommit(secondCommit, emptyList())).isTrue();
     ObjId secondCommitId = secondCommit.id();
     CommitObj secondCommitLoaded = requireNonNull(commitLogic.fetchCommit(secondCommitId));

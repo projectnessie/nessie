@@ -137,8 +137,7 @@ public interface CommitLogic {
    * @param commit the commit to update
    * @return the persisted commit, containing the updated incremental and reference indexes
    */
-  CommitObj updateCommit(@Nonnull @jakarta.annotation.Nonnull CommitObj commit)
-      throws ObjNotFoundException;
+  CommitObj updateCommit(@Nonnull @jakarta.annotation.Nonnull CommitObj commit);
 
   /**
    * Similar to {@link #doCommit(CreateCommit, List)}, but does not persist the {@link CommitObj}

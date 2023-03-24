@@ -247,19 +247,14 @@ class JdbcPersist extends AbstractJdbcPersist {
   }
 
   @Override
-  public void updateObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
-      throws ObjTooLargeException, ObjNotFoundException {
-    withConnectionExceptions(
-        (SQLRunnableExceptions<Void, ObjTooLargeException, ObjNotFoundException>)
-            conn -> super.updateObj(conn, obj));
+  public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
+    withConnectionException(false, conn -> super.updateObj(conn, obj));
   }
 
   @Override
-  public void updateObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException, ObjNotFoundException {
-    withConnectionExceptions(
-        (SQLRunnableExceptions<Void, ObjTooLargeException, ObjNotFoundException>)
-            conn -> super.updateObjs(conn, objs));
+  public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+      throws ObjTooLargeException {
+    withConnectionException(false, conn -> super.updateObjs(conn, objs));
   }
 
   @Override

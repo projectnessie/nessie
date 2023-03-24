@@ -39,10 +39,6 @@ final class SqlConstants {
   static final String COLS_STRING =
       "s_content_type, s_compression, s_filename, s_predecessors, s_text";
 
-  static final String UPDATE_OBJ_PREFIX = "UPDATE " + TABLE_OBJS + " SET ";
-  static final String UPDATE_OBJ_SUFFIX =
-      " WHERE " + COL_REPO_ID + "=?" + " AND " + COL_OBJ_ID + "=? AND " + COL_OBJ_TYPE + "=?";
-
   static final String STORE_OBJ =
       "INSERT INTO "
           + TABLE_OBJS

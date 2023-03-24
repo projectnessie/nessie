@@ -91,6 +91,8 @@ import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.InsertOneModel;
+import com.mongodb.client.model.ReplaceOneModel;
+import com.mongodb.client.model.ReplaceOptions;
 import com.mongodb.client.model.WriteModel;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
@@ -579,26 +581,49 @@ public class MongoDBPersist implements Persist {
   }
 
   @Override
-  public void updateObj(@Nonnull @jakarta.annotation.Nonnull Obj obj)
-      throws ObjTooLargeException, ObjNotFoundException {
+  public void upsertObj(@Nonnull @jakarta.annotation.Nonnull Obj obj) throws ObjTooLargeException {
     ObjId id = obj.id();
     checkArgument(id != null, "Obj to store must have a non-null ID");
 
+    ReplaceOptions options = upsertOptions();
+
     Document doc = objToDoc(obj, false);
-    UpdateResult result = backend.objs().replaceOne(eq(ID_PROPERTY_NAME, idObjDoc(id)), doc);
-    if (result.getMatchedCount() == 0L) {
-      // Testing "modified count" would be wrong here, because it represents the number of actually
-      // changed docs (which isn't the case if the obj is equal to the persisted one).
-      throw new ObjNotFoundException(id);
+    UpdateResult result =
+        backend.objs().replaceOne(eq(ID_PROPERTY_NAME, idObjDoc(id)), doc, options);
+    if (!result.wasAcknowledged()) {
+      throw new RuntimeException("Upsert not acknowledged");
     }
   }
 
+  private static ReplaceOptions upsertOptions() {
+    // A `ReplaceOneModel` with the default replace options (upsert==false) silently does just
+    // nothing.
+    ReplaceOptions options = new ReplaceOptions();
+    options.upsert(true);
+    return options;
+  }
+
   @Override
-  public void updateObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException, ObjNotFoundException {
-    // MongoDB does not support bulk conditional updates
+  public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
+      throws ObjTooLargeException {
+    ReplaceOptions options = upsertOptions();
+
+    List<WriteModel<Document>> docs = new ArrayList<>(objs.length);
     for (Obj obj : objs) {
-      updateObj(obj);
+      if (obj != null) {
+        ObjId id = obj.id();
+        docs.add(
+            new ReplaceOneModel<>(
+                eq(ID_PROPERTY_NAME, idObjDoc(id)), objToDoc(obj, false), options));
+      }
+    }
+
+    List<WriteModel<Document>> updates = new ArrayList<>(docs);
+    if (!updates.isEmpty()) {
+      BulkWriteResult res = backend.objs().bulkWrite(updates);
+      if (!res.wasAcknowledged()) {
+        throw new RuntimeException("Upsert not acknowledged");
+      }
     }
   }
 
