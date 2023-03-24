@@ -2,6 +2,20 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.53.1 Release (March 24, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.53.1).
+
+* New storage: add "batch write" facade (#6385)
+* Persist: replace `updateObj()` with `upsertObj()` (#6384)
+* Import: print total duration (#6383)
+* IntelliJ: exclude more directories from indexing (#6374)
+* Import: Eager prefetching of commits during finalization (#6378)
+* New storage: `Persist.updateObj()` must respect index-size limits (#6377)
+* Import: use updated commit as new parent (#6376)
+* Nessie Import: Respect commit import batch size (new model) (#6375)
+* Nessie Import: Print durations, double row size printed to console (#6370)
+
 ## 0.53.0 Release (March 23, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.53.0).
