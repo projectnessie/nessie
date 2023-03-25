@@ -40,6 +40,7 @@ public interface VersionStoreConfig {
     DYNAMODB(true),
     MONGODB(true),
     CASSANDRA(true),
+    SPANNER(true),
     JDBC(true);
 
     private final boolean newStorage;

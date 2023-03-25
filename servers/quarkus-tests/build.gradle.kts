@@ -35,6 +35,7 @@ dependencies {
   implementation(project(":nessie-versioned-persist-transactional"))
   implementation(project(":nessie-versioned-persist-transactional-test"))
   implementation(project(":nessie-versioned-storage-cassandra"))
+  implementation(project(":nessie-versioned-storage-spanner"))
   implementation(project(":nessie-versioned-storage-testextension"))
 
   implementation(enforcedPlatform(libs.quarkus.bom))
@@ -55,6 +56,13 @@ dependencies {
   implementation(libs.testcontainers.keycloak) {
     exclude(group = "org.slf4j") // uses SLF4J 2.x, we are not ready yet
   }
+
+  // Only include the "bom" with the right versions. Cannot use Google's Spanner Quarkus extension,
+  // because it does *NOT* work with the Spanner simulator, because it is built in a way that
+  // requires credentials - and there is NO way around it. The hack that Google documents is not
+  // great and no longer works.
+  compileOnly(enforcedPlatform(libs.quarkus.google.cloud.services.bom))
+  compileOnly(libs.google.cloud.spanner)
 }
 
 buildForJava11()

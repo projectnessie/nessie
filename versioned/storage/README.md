@@ -409,6 +409,42 @@ HTTP_ACCESS_LOG_LEVEL=ERROR java -Xms2g -Xmx2G \
   -jar servers/quarkus-server/build/quarkus-app/quarkus-run.jar
 ```
 
+### Spanner
+
+```bash
+sudo apt install google-cloud-cli
+sudo apt install google-cloud-cli-spanner-emulator
+```
+
+(See [Google Cloud Spanner Emulator Docs](https://cloud.google.com/spanner/docs/emulator#use-gcloud) and [gcloud](https://cloud.google.com/sdk/gcloud/reference/spanner/databases/create))
+```bash
+docker run -p 9010:9010 -p 9020:9020 gcr.io/cloud-spanner-emulator/emulator
+
+gcloud config configurations create nessie-spanner-emulator
+gcloud config set auth/disable_credentials true
+gcloud config set project nessie-quarkus-project
+gcloud config set api_endpoint_overrides/spanner http://localhost:9020/
+gcloud spanner instances create nessie-quarkus-instance    --config=emulator-config --description="Test Instance" --nodes=1
+gcloud spanner databases create nessie-database --instance nessie-quarkus-instance
+# Switch back to default configuration - we don't need it anymore
+gcloud config configurations activate default
+gcloud config configurations delete nessie-spanner-emulator --quiet
+```
+
+```bash
+HTTP_ACCESS_LOG_LEVEL=ERROR java -Xms2g -Xmx2G \
+  -Dquarkus.http.port=19121 \
+  -Dnessie.server.send-stacktrace-to-client=true \
+  -Dnessie.version.store.type=SPANNER \
+  -Dnessie.version.store.persist.cache-capacity-mb=1024 \
+  -Dnessie.version.store.persist.commit-timeout-millis=10000 \
+  -Dquarkus.google.cloud.project-id=nessie-quarkus-project \
+  -Dnessie.version.store.persist.spanner.instance-id=nessie-quarkus-instance \
+  -Dnessie.version.store.persist.spanner.database-id=nessie-database \
+  -Dnessie.version.store.persist.spanner.emulator-host=127.0.0.1:9010 \
+  -jar servers/quarkus-server/build/quarkus-app/quarkus-run.jar
+```
+
 #### Advanced
 
 Performance of ScyllaDB doing file I/O "inside the Docker container" is pretty bad. To give ScyllaDB

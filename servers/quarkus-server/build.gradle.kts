@@ -81,6 +81,30 @@ dependencies {
   implementation("io.opentelemetry.instrumentation:opentelemetry-micrometer-1.5")
   implementation(libs.opentracing.util)
 
+  // Disable Spanner in native images due to https://github.com/oracle/graal/issues/5504
+  // See https://github.com/quarkiverse/quarkus-google-cloud-services/issues/401
+  if (quarkusPackageType() != "native") {
+    implementation(project(":nessie-versioned-storage-spanner"))
+
+    // Only include the "bom" with the right versions and the "individual" dependencies here.
+    // Cannot use Google's Spanner Quarkus extension, because it does *NOT* work with the Spanner
+    // simulator, because it is built in a way that requires credentials - and there is NO way
+    // around it. The hack that Google documents is not great and no longer works.
+    // See https://github.com/quarkiverse/quarkus-google-cloud-services/issues/400
+    implementation(enforcedPlatform(libs.quarkus.google.cloud.services.bom))
+
+    implementation("io.quarkiverse.googlecloudservices:quarkus-google-cloud-common")
+    implementation("io.quarkiverse.googlecloudservices:quarkus-google-cloud-common-grpc")
+    implementation("com.google.cloud:google-cloud-spanner") {
+      exclude(group = "commons-logging:commons-logging")
+      exclude(group = "javax.annotation:javax.annotation-api")
+      exclude(group = "io.grpc:grpc-netty-shaded")
+      exclude(group = "org.checkerframework:checker-qual")
+      exclude(group = "org.codehaus.mojo:animal-sniffer-annotations")
+    }
+    implementation("io.quarkus:quarkus-grpc-common")
+  }
+
   openapiSource(project(":nessie-model", "openapiSource"))
 
   testFixturesApi(project(":nessie-client"))
@@ -118,7 +142,6 @@ val pullOpenApiSpec by
   }
 
 val openApiSpecDir = buildDir.resolve("openapi-extra")
-val useNative = project.hasProperty("native")
 
 quarkus {
   quarkusBuildProperties.put("quarkus.package.type", quarkusPackageType())

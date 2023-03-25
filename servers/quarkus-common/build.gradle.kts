@@ -62,6 +62,26 @@ dependencies {
   implementation("org.jboss.slf4j:slf4j-jboss-logmanager")
   implementation(libs.opentelemetry.api)
 
+  // Spanner workaround (because using the Google Spanner emulator doesn't work as Google's code
+  // demands credentials, and the documented and other workarounds do not work at all).
+  // See https://github.com/quarkiverse/quarkus-google-cloud-services/issues/400
+  //
+  // Spanner's a compileOnly dependency due to a Google or Graal native image bug, see
+  // https://github.com/oracle/graal/issues/5504 + ':nessie-quarkus' and
+  // https://github.com/quarkiverse/quarkus-google-cloud-services/issues/401
+  compileOnly(project(":nessie-versioned-storage-spanner")) // See ':nessie-quarkus'
+  compileOnly(enforcedPlatform(libs.quarkus.google.cloud.services.bom))
+  compileOnly("io.quarkiverse.googlecloudservices:quarkus-google-cloud-common")
+  compileOnly("io.quarkiverse.googlecloudservices:quarkus-google-cloud-common-grpc")
+  compileOnly("com.google.cloud:google-cloud-spanner") {
+    exclude(group = "commons-logging:commons-logging")
+    exclude(group = "javax.annotation:javax.annotation-api")
+    exclude(group = "io.grpc:grpc-netty-shaded")
+    exclude(group = "org.checkerframework:checker-qual")
+    exclude(group = "org.codehaus.mojo:animal-sniffer-annotations")
+  }
+  compileOnly("io.quarkus:quarkus-grpc-common")
+
   // javax/jakarta
   compileOnly(libs.jakarta.validation.api)
   compileOnly(libs.javax.validation.api)

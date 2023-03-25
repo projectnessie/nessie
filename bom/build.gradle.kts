@@ -79,6 +79,7 @@ dependencies {
     api(project(":nessie-versioned-storage-jdbc"))
     api(project(":nessie-versioned-storage-mongodb"))
     api(project(":nessie-versioned-storage-rocksdb"))
+    api(project(":nessie-versioned-storage-spanner"))
     api(project(":nessie-versioned-storage-store"))
     api(project(":nessie-versioned-storage-telemetry"))
     api(project(":nessie-versioned-storage-testextension"))
