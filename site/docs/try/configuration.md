@@ -27,12 +27,32 @@ docker run \
 
 ### Version Store Settings
 
-| Property                              | Default values | Type               | Description                                                                                                                                                                                                                                                                             |
-|---------------------------------------|----------------|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `nessie.version.store.type`           | `IN_MEMORY`    | `VersionStoreType` | Sets which type of version store to use by Nessie. Possible values are: `IN_MEMORY`, `ROCKSDB`, `DYNAMODB`, `MONGODB`, `CASSANDRA`, `JDBC`. <br/><br/> The legacy types `DYNAMO`, `INMEMORY`, `ROCKS`, `MONGO`, `TRANSACTIONAL` are deprecated and will be removed in a future release. |
-| `nessie.version.store.trace.enable`   | `true`         | `boolean`          | Sets whether calls against the version-store are traced with OpenTracing/OpenTelemetry (Jaeger).                                                                                                                                                                                        |
-| `nessie.version.store.metrics.enable` | `true`         | `boolean`          | Sets whether metrics for the version-store are enabled.                                                                                                                                                                                                                                 |
-| `nessie.version.store.events.enable`  | `true`         | `boolean`          | Sets whether events for the version-store are enabled.                                                                                                                                                                                                                                  |
+| Property                              | Default values | Type               | Description                                                                                                                                                                                                                                                                                         |
+|---------------------------------------|----------------|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `nessie.version.store.type`           | `IN_MEMORY`    | `VersionStoreType` | Sets which type of version store to use by Nessie. Possible values are: `IN_MEMORY`, `ROCKSDB`, `DYNAMODB`, `MONGODB`, `CASSANDRA`, `JDBC`, `BIGTABLE`. <br/><br/> The legacy types `DYNAMO`, `INMEMORY`, `ROCKS`, `MONGO`, `TRANSACTIONAL` are deprecated and will be removed in a future release. |
+| `nessie.version.store.trace.enable`   | `true`         | `boolean`          | Sets whether calls against the version-store are traced with OpenTracing/OpenTelemetry (Jaeger).                                                                                                                                                                                                    |
+| `nessie.version.store.metrics.enable` | `true`         | `boolean`          | Sets whether metrics for the version-store are enabled.                                                                                                                                                                                                                                             |
+| `nessie.version.store.events.enable`  | `true`         | `boolean`          | Sets whether events for the version-store are enabled.                                                                                                                                                                                                                                              |
+
+#### BigTable Version Store Settings
+
+When setting `nessie.version.store.type=BIGTABLE` which enables Google BigTable as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
+
+| Property                                                     | Default values | Type                  | Description                                                                                                              |
+|--------------------------------------------------------------|----------------|-----------------------|--------------------------------------------------------------------------------------------------------------------------|
+| `quarkus.google.cloud.project-id`                            |                | `String`              | The Google project ID, mandatory.                                                                                        |
+| (Google authentication)                                      |                |                       | See [Quarkiverse](https://quarkiverse.github.io/quarkiverse-docs/quarkus-google-cloud-services/main/) for documentation. | 
+| `nessie.version.store.persist.bigtable.app-profile-id`       | `nessie`       | `String`              | Sets the instance-id to configured with Google BigTable.                                                                 |
+| `nessie.version.store.persist.bigtable.instance-id`          | `nessie`       | `String`              | Sets the instance-id to configured with Google BigTable.                                                                 |
+| `nessie.version.store.persist.bigtable.quota-project-id`     | n/a            | `String`              | Google BigTable quote project ID (optional).                                                                             |
+| `nessie.version.store.persist.bigtable.emulator-host`        | n/a            | `String`              | App-profile-ID to use.                                                                                                   |
+| `nessie.version.store.persist.bigtable.emulator-port`        | `8086`         | `int`                 | When using the BigTable emulator, configures its port.                                                                   |
+| `nessie.version.store.persist.bigtable.endpoint`             | n/a            | `String`              | Google BigTable endpoint (if not default).                                                                               |
+| `nessie.version.store.persist.bigtable.mtls-endpoint`        | n/a            | `String`              | Google BigTable MTLS endpoint (if not default).                                                                          |
+| `nessie.version.store.persist.bigtable.jwt-audience-mapping` | n/a            | `Map<String, String>` | Google BigTable JWT audience mappings (if necessary).                                                                    |
+
+!!! info
+A complete set of Google Cloud & BigTable configuration options for Quarkus can be found on [Quarkiverse](https://quarkiverse.github.io/quarkiverse-docs/quarkus-google-cloud-services/main/)
 
 #### JDBC Version Store Settings
 
