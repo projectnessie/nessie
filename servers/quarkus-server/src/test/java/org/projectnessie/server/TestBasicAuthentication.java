@@ -27,6 +27,7 @@ import org.projectnessie.client.auth.BasicAuthenticationProvider;
 import org.projectnessie.client.rest.NessieNotAuthorizedException;
 import org.projectnessie.server.authn.AuthenticationEnabledProfile;
 
+@SuppressWarnings("resource") // api() returns an AutoCloseable
 @QuarkusTest
 @TestProfile(value = TestBasicAuthentication.Profile.class)
 class TestBasicAuthentication extends BaseClientAuthTest {

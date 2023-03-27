@@ -28,6 +28,7 @@ import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfilePersistInmemor
  * This test validates that setting `nessie.server.authentication.enabled=false` allows all requests
  * regardless of their authentication type.
  */
+@SuppressWarnings("resource") // api() returns an AutoCloseable
 @QuarkusTest
 @TestProfile(QuarkusTestProfilePersistInmemory.class)
 public class TestDisabledAuthentication extends BaseClientAuthTest {
