@@ -32,7 +32,6 @@ import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONF
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_MAX_SERIALIZED_INDEX_SIZE;
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_REPOSITORY_ID;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexElement.indexElement;
-import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.deserializeStoreIndex;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.newStoreIndex;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.key;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.EMPTY_COMMIT_HEADERS;
@@ -67,7 +66,6 @@ import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -718,21 +716,6 @@ public class AbstractBasePersistTests {
               .incrementalIndex(index.serialize())
               .commitType(CommitType.INTERNAL)
               .seq(42L)
-              .build();
-        };
-
-    Function<CommitObj, CommitObj> updateCommit =
-        commit -> {
-          StoreIndex<CommitOp> index =
-              deserializeStoreIndex(commit.incrementalIndex(), COMMIT_OP_SERIALIZER);
-          index.add(indexElement(key("added", "key"), commitOp(REMOVE, 123, randomObjId())));
-
-          return commitBuilder()
-              .from(commit)
-              .message(commit.message() + " UPDATE")
-              .addTail(objIdFromString("feeddeadbeef"))
-              .addReferenceIndexStripes(indexStripe(key("mno"), key("pqr"), randomObjId()))
-              .incrementalIndex(index.serialize())
               .build();
         };
 
