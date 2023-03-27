@@ -181,6 +181,7 @@ public class CommitBench {
     Map<ContentKey, String> contentIds;
 
     @Setup
+    @SuppressWarnings("deprecation") // Thread.getId() deprecated since 19
     public void createBranch(BenchmarkParam bp) throws Exception {
       branch = BranchName.of("thread-" + Thread.currentThread().getId());
 

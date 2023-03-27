@@ -27,12 +27,14 @@ abstract class BaseHttpOnReferenceRequest<R extends OnReferenceBuilder<R>> exten
     super(client);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public R refName(String refName) {
     this.refName = refName;
     return (R) this;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public R hashOnRef(String hashOnRef) {
     this.hashOnRef = hashOnRef;

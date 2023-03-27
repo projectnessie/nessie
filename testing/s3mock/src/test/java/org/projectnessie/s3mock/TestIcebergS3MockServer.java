@@ -51,12 +51,14 @@ public class TestIcebergS3MockServer extends AbstractIcebergS3MockServer {
 
   @Test
   public void smoke() throws Exception {
+    @SuppressWarnings("resource")
     JsonNode node = doGet(createServer(b -> {}).getBaseUri().resolve("ready"), JsonNode.class);
     soft.assertThat(node.get("ready")).isEqualTo(BooleanNode.TRUE);
   }
 
   @Test
   public void listBuckets() throws Exception {
+    @SuppressWarnings("resource")
     S3MockServer server =
         createServer(
             b ->
@@ -80,6 +82,7 @@ public class TestIcebergS3MockServer extends AbstractIcebergS3MockServer {
 
   @Test
   public void headObject() throws Exception {
+    @SuppressWarnings("resource")
     S3MockServer server = createServer(b -> b.putBuckets(BUCKET, S3Bucket.builder().build()));
 
     soft.assertThat(doHead(server.getBaseUri().resolve(BUCKET + "/" + MY_OBJECT_NAME)))
@@ -92,6 +95,7 @@ public class TestIcebergS3MockServer extends AbstractIcebergS3MockServer {
   public void getObject() throws Exception {
     Map<String, MockObject> objects = new HashMap<>();
 
+    @SuppressWarnings("resource")
     S3MockServer server =
         createServer(
             b ->
@@ -132,6 +136,7 @@ public class TestIcebergS3MockServer extends AbstractIcebergS3MockServer {
     return ((HttpURLConnection) conn).getResponseCode();
   }
 
+  @SuppressWarnings("unchecked")
   public <T> T doGet(URI uri, Class<T> type, Map<String, String> headers) throws Exception {
     URLConnection conn = uri.toURL().openConnection();
     headers.forEach(conn::addRequestProperty);
@@ -160,9 +165,7 @@ public class TestIcebergS3MockServer extends AbstractIcebergS3MockServer {
       return JSON_MAPPER.readValue(out.toByteArray(), type);
     }
     if (type.isAssignableFrom(String.class)) {
-      @SuppressWarnings("unchecked")
-      T r = (T) out.toString("UTF-8");
-      return r;
+      return (T) out.toString("UTF-8");
     }
     return (T) out.toByteArray();
   }

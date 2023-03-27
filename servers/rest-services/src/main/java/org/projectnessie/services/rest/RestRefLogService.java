@@ -31,6 +31,7 @@ import org.projectnessie.versioned.VersionStore;
 @ValidateOnExecution(type = ExecutableType.ALL)
 @jakarta.validation.executable.ValidateOnExecution(
     type = jakarta.validation.executable.ExecutableType.ALL)
+@Deprecated
 public class RestRefLogService extends RefLogApiImpl {
   // Mandated by CDI 2.0
   public RestRefLogService() {

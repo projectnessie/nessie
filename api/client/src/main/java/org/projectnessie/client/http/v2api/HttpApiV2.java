@@ -147,6 +147,7 @@ public class HttpApiV2 implements NessieApiV2 {
   }
 
   @Override
+  @Deprecated
   public GetRefLogBuilder getRefLog() {
     throw new UnsupportedOperationException("Reflog is not supported in API v2");
   }

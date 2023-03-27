@@ -22,12 +22,14 @@ abstract class BaseOnReferenceBuilder<R extends OnReferenceBuilder<R>>
   protected String refName;
   protected String hashOnRef;
 
+  @SuppressWarnings("unchecked")
   @Override
   public R refName(String refName) {
     this.refName = refName;
     return (R) this;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public R hashOnRef(String hashOnRef) {
     this.hashOnRef = hashOnRef;

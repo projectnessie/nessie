@@ -205,16 +205,16 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   @Test
   @TestSecurity(user = "admin_user")
   @NessieApiVersions(versions = NessieApiVersion.V1) // Reflog is not supported in API v2
+  @SuppressWarnings("deprecation")
   void testRefLogAllowed() throws Exception {
-    //noinspection deprecation
     assertThat(api().getRefLog().stream()).isNotNull();
   }
 
   @Test
   @TestSecurity(user = "disallowed_user")
   @NessieApiVersions(versions = NessieApiVersion.V1) // Reflog is not supported in API v2
+  @SuppressWarnings("deprecation")
   void testRefLogDisallowed() {
-    //noinspection deprecation
     assertThatThrownBy(() -> api().getRefLog().stream())
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining(

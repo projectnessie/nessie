@@ -21,6 +21,7 @@ import org.projectnessie.api.v1.params.RefLogParams;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.RefLogResponse;
 
+@Deprecated
 public interface RefLogApi {
 
   // Note: When substantial changes in Nessie API (this and related interfaces) are made

@@ -446,21 +446,23 @@ final class TranslatingVersionNessieApi implements AutoCloseable {
 
   static <T extends NessieApi> T unsupportedApiInterfaceProxy(
       Class<T> declaredType, Version runtimeVersion) {
-    //noinspection unchecked
-    return (T)
-        Proxy.newProxyInstance(
-            declaredType.getClassLoader(),
-            getAllInterfaces(declaredType),
-            (proxyInstance, method, args) -> {
-              // Ignore close() calls - they are made by the test framework (normally)
-              if ("close".equals(method.getName())) {
-                return null;
-              }
+    @SuppressWarnings("unchecked")
+    T r =
+        (T)
+            Proxy.newProxyInstance(
+                declaredType.getClassLoader(),
+                getAllInterfaces(declaredType),
+                (proxyInstance, method, args) -> {
+                  // Ignore close() calls - they are made by the test framework (normally)
+                  if ("close".equals(method.getName())) {
+                    return null;
+                  }
 
-              throw new UnsupportedOperationException(
-                  String.format(
-                      "Nessie API %s is not supported in version %s",
-                      declaredType.getSimpleName(), runtimeVersion));
-            });
+                  throw new UnsupportedOperationException(
+                      String.format(
+                          "Nessie API %s is not supported in version %s",
+                          declaredType.getSimpleName(), runtimeVersion));
+                });
+    return r;
   }
 }

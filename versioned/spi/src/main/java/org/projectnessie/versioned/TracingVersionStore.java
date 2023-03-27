@@ -272,6 +272,7 @@ public class TracingVersionStore implements VersionStore {
   }
 
   @Override
+  @Deprecated
   public Stream<RefLogDetails> getRefLog(Hash refLogId) throws RefLogNotFoundException {
     return delegate.getRefLog(refLogId);
   }

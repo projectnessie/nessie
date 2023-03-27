@@ -21,6 +21,7 @@ import org.projectnessie.api.v1.params.RefLogParams;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.RefLogResponse;
 
+@Deprecated
 class HttpRefLogClient implements HttpRefLogApi {
 
   private final HttpClient client;

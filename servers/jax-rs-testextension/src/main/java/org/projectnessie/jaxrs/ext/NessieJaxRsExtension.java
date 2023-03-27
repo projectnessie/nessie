@@ -227,6 +227,7 @@ public class NessieJaxRsExtension extends NessieClientResolver
       this.accessChecker = accessChecker;
     }
 
+    @SuppressWarnings("resource")
     public EnvHolder(Extension versionStoreExtension) throws Exception {
       weld = new Weld();
       // Let Weld scan all the resources to discover injection points and dependencies
@@ -251,7 +252,9 @@ public class NessieJaxRsExtension extends NessieClientResolver
               config.register(RestContentResource.class);
               config.register(RestDiffResource.class);
               config.register(RestNamespaceResource.class);
-              config.register(RestRefLogResource.class);
+              @SuppressWarnings("deprecation")
+              Class<?> refLogResource = RestRefLogResource.class;
+              config.register(refLogResource);
               config.register(ConfigApiImpl.class);
               config.register(ContentKeyParamConverterProvider.class);
               config.register(NamespaceParamConverterProvider.class);

@@ -57,11 +57,13 @@ public class MultiEnvExtensionRegistry {
       annotations.addAll(AnnotationUtils.findRepeatableAnnotations(cl, ExtendWith.class));
     }
 
-    //noinspection unchecked
-    return (Stream<? extends MultiEnvTestExtension>)
-        annotations.stream()
-            .flatMap(e -> Arrays.stream(e.value()))
-            .filter(MultiEnvTestExtension.class::isAssignableFrom)
-            .flatMap(registry::stream);
+    @SuppressWarnings("unchecked")
+    Stream<? extends MultiEnvTestExtension> r =
+        (Stream<? extends MultiEnvTestExtension>)
+            annotations.stream()
+                .flatMap(e -> Arrays.stream(e.value()))
+                .filter(MultiEnvTestExtension.class::isAssignableFrom)
+                .flatMap(registry::stream);
+    return r;
   }
 }

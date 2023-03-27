@@ -23,6 +23,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.RefLogResponse;
 import org.projectnessie.model.RefLogResponse.RefLogResponseEntry;
 
+@Deprecated
 public abstract class BaseGetRefLogBuilder<PARAMS> implements GetRefLogBuilder {
 
   private final BiFunction<PARAMS, String, PARAMS> paramsForPage;

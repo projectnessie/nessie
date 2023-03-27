@@ -135,6 +135,7 @@ public final class HttpApiV1 implements NessieApiV1 {
   }
 
   @Override
+  @Deprecated
   public GetRefLogBuilder getRefLog() {
     return new HttpGetRefLog(client);
   }

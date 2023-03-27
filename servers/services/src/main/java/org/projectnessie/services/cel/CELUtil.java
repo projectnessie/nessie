@@ -80,6 +80,7 @@ public final class CELUtil {
   public static final List<Object> COMMIT_LOG_TYPES =
       ImmutableList.of(CommitMeta.class, OperationForCel.class, ContentKey.class, Namespace.class);
 
+  @SuppressWarnings("deprecation")
   public static final List<Object> REFLOG_TYPES =
       ImmutableList.of(RefLogResponse.RefLogResponseEntry.class);
 
@@ -92,6 +93,7 @@ public final class CELUtil {
   public static final ReferenceMetadata EMPTY_REFERENCE_METADATA =
       ImmutableReferenceMetadata.builder().commitMetaOfHEAD(EMPTY_COMMIT_META).build();
 
+  @SuppressWarnings("deprecation")
   public static final List<Decl> REFLOG_DECLARATIONS =
       ImmutableList.of(
           Decls.newVar(

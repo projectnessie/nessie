@@ -212,6 +212,7 @@ public final class MetricsVersionStore implements VersionStore {
   }
 
   @Override
+  @Deprecated
   public Stream<RefLogDetails> getRefLog(Hash refLogId) throws RefLogNotFoundException {
     return delegateStream1Ex("getreflog", () -> delegate.getRefLog(refLogId));
   }

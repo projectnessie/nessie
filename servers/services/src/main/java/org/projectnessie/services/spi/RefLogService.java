@@ -27,6 +27,7 @@ import org.projectnessie.model.Validation;
  * <p>Refer to the javadoc of corresponding client-facing interfaces in the {@code model} module for
  * the meaning of various methods and their parameters.
  */
+@Deprecated
 public interface RefLogService {
   RefLogResponse getRefLog(
       @Nullable

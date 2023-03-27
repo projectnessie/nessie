@@ -729,6 +729,7 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   @Override
+  @Deprecated
   public Stream<RefLogDetails> getRefLog(Hash refLogId) {
     throw new UnsupportedOperationException();
   }

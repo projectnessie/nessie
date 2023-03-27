@@ -215,8 +215,7 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
                         c.operation.getKey(), ((Put) c.operation).getContent());
                   }
                   if (c.operation instanceof Unchanged) {
-                    return Maps.immutableEntry(
-                        c.operation.getKey(), ((Put) c.prepare).getContent());
+                    return Maps.immutableEntry(c.operation.getKey(), c.prepare.getContent());
                   }
                   return null;
                 })

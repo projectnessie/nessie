@@ -22,6 +22,8 @@ import org.junit.platform.engine.ConfigurationParameters;
 
 public class EmptyConfigurationParameters implements ConfigurationParameters {
   @Override
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public int size() {
     return 0;
   }

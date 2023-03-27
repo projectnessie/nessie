@@ -93,6 +93,7 @@ public class TestHttpClientBuilder {
             "Cannot start http client. file:///foo/bar/baz must be a valid http or https address");
   }
 
+  @SuppressWarnings("deprecation")
   static List<Function<HttpClientBuilder, HttpClientBuilder>> basicAuthConfigs() {
     return Arrays.asList(
         cfg ->
