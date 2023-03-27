@@ -22,7 +22,6 @@ import java.net.URLClassLoader;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
@@ -64,7 +63,7 @@ final class DependencyResolver {
     return asIndependentClassLoader(info, toUrls(artifacts), parentClassLoader);
   }
 
-  static List<URL> toUrls(Stream<Artifact> artifacts) {
+  static Stream<URL> toUrls(Stream<Artifact> artifacts) {
     return artifacts
         .map(Artifact::getFile)
         .map(File::toURI)
@@ -75,13 +74,12 @@ final class DependencyResolver {
               } catch (MalformedURLException e) {
                 throw new RuntimeException(e);
               }
-            })
-        .collect(Collectors.toList());
+            });
   }
 
   static ClassLoader asIndependentClassLoader(
-      String info, List<URL> classpath, ClassLoader parentClassLoader) {
-    return new VersionClassLoader(info, classpath.toArray(new URL[0]), parentClassLoader);
+      String info, Stream<URL> classpath, ClassLoader parentClassLoader) {
+    return new VersionClassLoader(info, classpath.toArray(URL[]::new), parentClassLoader);
   }
 
   static final class VersionClassLoader extends URLClassLoader {
