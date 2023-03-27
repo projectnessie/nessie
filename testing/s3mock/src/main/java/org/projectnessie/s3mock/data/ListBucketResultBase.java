@@ -21,7 +21,7 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 public interface ListBucketResultBase {
-  interface Builder<B extends Builder> {
+  interface Builder<B extends Builder<B>> {
     B name(String name);
 
     B prefix(String prefix);
