@@ -48,7 +48,6 @@ node {
 val npmBuildTarget = project.buildDir.resolve("npm")
 val npmBuildDir = npmBuildTarget.resolve("META-INF/resources")
 val openApiSpecDir = project.projectDir.resolve("src/openapi")
-val generatedOpenApiCodeUnfixed = project.buildDir.resolve("generated/ts")
 val generatedOpenApiCode = project.projectDir.resolve("src/generated")
 val testCoverageDir = project.projectDir.resolve("coverage")
 val nodeModulesDir = project.projectDir.resolve("node_modules")
@@ -64,9 +63,19 @@ val clean =
     }
   }
 
-val nodeSetup = tasks.named<NodeSetupTask>("nodeSetup") { mustRunAfter(clean) }
+val nodeSetup =
+  tasks.named<NodeSetupTask>("nodeSetup") {
+    mustRunAfter(clean)
+    logging.captureStandardOutput(LogLevel.INFO)
+    logging.captureStandardError(LogLevel.LIFECYCLE)
+  }
 
-val npmSetup = tasks.named<NpmSetupTask>("npmSetup") { mustRunAfter(clean, nodeSetup) }
+val npmSetup =
+  tasks.named<NpmSetupTask>("npmSetup") {
+    mustRunAfter(clean, nodeSetup)
+    logging.captureStandardOutput(LogLevel.INFO)
+    logging.captureStandardError(LogLevel.LIFECYCLE)
+  }
 
 val npmInstallReal =
   tasks.named<NpmInstallTask>("npmInstall") {
@@ -99,6 +108,8 @@ val npmInstall =
     inputs.property("npm.version", node.npmVersion)
     inputs.files("package.json", "package-lock.json").withPathSensitivity(PathSensitivity.RELATIVE)
     outputs.dir(shadowPackageJson)
+    logging.captureStandardOutput(LogLevel.INFO)
+    logging.captureStandardError(LogLevel.LIFECYCLE)
     doFirst {
       sync {
         from(".")
@@ -109,35 +120,43 @@ val npmInstall =
     }
   }
 
+val openapiGenerator by configurations.creating
+
+dependencies { openapiGenerator(libs.openapi.generator.cli) }
+
 val npmGenerateAPI =
-  tasks.register<NpmTask>("npmGenerateApi") {
+  tasks.register<JavaExec>("npmGenerateApi") {
     description = "Generate from OpenAPI spec"
-    dependsOn(npmInstall)
-    inputs.dir(shadowPackageJson).withPathSensitivity(PathSensitivity.RELATIVE)
+    outputs.cacheIf { true }
     inputs.dir(openApiSpecDir).withPathSensitivity(PathSensitivity.RELATIVE)
-    outputs.dir(generatedOpenApiCodeUnfixed)
+    outputs.dir(generatedOpenApiCode)
+    classpath(openapiGenerator)
+    mainClass.set("org.openapitools.codegen.OpenAPIGenerator")
+    logging.captureStandardOutput(LogLevel.INFO)
+    logging.captureStandardError(LogLevel.LIFECYCLE)
+    args(
+      "generate",
+      "-g",
+      "typescript-fetch",
+      "-i",
+      "${openApiSpecDir.relativeTo(projectDir)}/nessie-openapi-0.45.0.yaml",
+      "-o",
+      "src/generated/utils/api",
+      "--additional-properties=supportsES6=true"
+    )
     doFirst {
       // Remove previously generated code to have generated files consistent with the OpenAPI spec
-      delete(generatedOpenApiCodeUnfixed)
+      delete(generatedOpenApiCode)
     }
-    args.set(listOf("run", "generate-api"))
-  }
-
-val npmFixGeneratedClient =
-  tasks.register<NpmTask>("npmFixGeneratedClient") {
-    description = "Fix generated OpenAPI code"
-    dependsOn(npmGenerateAPI)
-    inputs.dir(generatedOpenApiCodeUnfixed).withPathSensitivity(PathSensitivity.RELATIVE)
-    outputs.dir(generatedOpenApiCode)
-    doFirst {
-      sync {
-        // "Sync" ensures that the contents in src/generated match the contents of the
-        // code generated via npmGenerateAPI
-        into(generatedOpenApiCode)
-        from(generatedOpenApiCodeUnfixed.resolve("src/generated"))
-      }
+    doLast {
+      // openapi-generator produces Line 264 in runtime.ts as
+      //    export type FetchAPI = GlobalFetch['fetch'];
+      // but must be
+      //    export type FetchAPI = WindowOrWorkerGlobalScope['fetch'];
+      val f = generatedOpenApiCode.resolve("utils/api/runtime.ts")
+      val src = f.readText()
+      f.writeText(src.replace("GlobalFetch", "WindowOrWorkerGlobalScope"))
     }
-    args.set(listOf("run", "fix-generated-client"))
   }
 
 /*
@@ -154,7 +173,7 @@ val npmFixGeneratedClient =
 val npmBuild =
   tasks.register<NpmTask>("npmBuild") {
     description = "Run 'npm build'"
-    dependsOn(npmFixGeneratedClient)
+    dependsOn(npmInstall, npmGenerateAPI)
     inputs.dir(project.projectDir.resolve("config")).withPathSensitivity(PathSensitivity.RELATIVE)
     inputs.dir(project.projectDir.resolve("public")).withPathSensitivity(PathSensitivity.RELATIVE)
     inputs.dir(project.projectDir.resolve("scripts")).withPathSensitivity(PathSensitivity.RELATIVE)
@@ -227,6 +246,8 @@ tasks.withType<NpmTask>().configureEach {
     "PATH",
     "${System.getenv("PATH")}${System.getProperty("path.separator")}$javaDir/bin"
   )
+  logging.captureStandardOutput(LogLevel.INFO)
+  logging.captureStandardError(LogLevel.LIFECYCLE)
 }
 
 tasks.named<Jar>("jar") {
@@ -245,18 +266,18 @@ tasks.named<Jar>("jar") {
 // Hack-ish, but works.
 sourceSets { main { resources { srcDir(npmBuildTarget) } } }
 
-tasks.named("processResources") { mustRunAfter(npmBuild, npmFixGeneratedClient) }
+tasks.named("processResources") { mustRunAfter(npmBuild, npmGenerateAPI) }
 
 tasks.named<Jar>("sourcesJar") {
   mustRunAfter(npmBuild)
-  from(npmFixGeneratedClient)
+  from(npmGenerateAPI)
   from("src")
 }
 
 tasks.withType<SpotlessTask>().configureEach {
   // Declare this unnecessary dependency here, otherwise Gradle complains about spotlessXml using
   // the output of npmFixGeneratedClient, which disables build optimizations
-  mustRunAfter(npmFixGeneratedClient)
+  mustRunAfter(npmGenerateAPI)
 }
 
 tasks.named("test") { dependsOn(npmTest) }

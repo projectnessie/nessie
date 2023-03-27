@@ -60,9 +60,7 @@
     "start": "node scripts/start.js",
     "build": "node scripts/build.js",
     "test": "node scripts/test.js",
-    "lint": "eslint src/**/*.{ts,tsx} --fix",
-    "generate-api": "openapi-generator-cli generate -g typescript-fetch -i src/openapi/nessie-openapi-0.45.0.yaml -o build/generated/ts/src/generated/utils/api --additional-properties=supportsES6=true",
-    "fix-generated-client": "node src/build-scripts/fix-generated-client.js"
+    "lint": "eslint src/**/*.{ts,tsx} --fix"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -82,7 +80,6 @@
   "proxy": "http://localhost:19120",
   "devDependencies": {
     "@babel/core": "^7.19.1",
-    "@openapitools/openapi-generator-cli": "^2.5.2",
     "@pmmmwh/react-refresh-webpack-plugin": "0.5.10",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^14.0.0",
