@@ -26,6 +26,7 @@ import java.util.Iterator;
 import org.apache.iceberg.exceptions.RuntimeIOException;
 import org.apache.iceberg.util.JsonUtil;
 
+@SuppressWarnings("deprecation")
 public class VersionParser {
 
   private static final String VERSION_ID = "version-id";

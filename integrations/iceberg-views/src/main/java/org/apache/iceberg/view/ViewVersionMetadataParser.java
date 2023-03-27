@@ -36,6 +36,7 @@ import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.util.JsonUtil;
 
+@SuppressWarnings("deprecation")
 public class ViewVersionMetadataParser {
 
   private ViewVersionMetadataParser() {}

@@ -33,6 +33,7 @@ import org.apache.iceberg.hadoop.HadoopFileIO;
 import org.apache.iceberg.io.FileIO;
 
 /** The Views implementation Based on FileIO. */
+@SuppressWarnings("deprecation")
 public class HadoopViewOperations implements ViewOperations {
   private final Configuration conf;
   private final Path location;
