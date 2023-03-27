@@ -34,41 +34,49 @@ public abstract class BaseMergeTransplantBuilder<B extends OnBranchBuilder<B>>
   protected Map<ContentKey, MergeKeyBehavior> mergeModes;
   protected String message;
 
+  @SuppressWarnings("unchecked")
   public B message(String message) {
     this.message = message;
     return (B) this;
   }
 
+  @SuppressWarnings("unchecked")
   public B fromRefName(String fromRefName) {
     this.fromRefName = fromRefName;
     return (B) this;
   }
 
+  @SuppressWarnings("unchecked")
   public B keepIndividualCommits(boolean keepIndividualCommits) {
     this.keepIndividualCommits = keepIndividualCommits;
     return (B) this;
   }
 
+  @SuppressWarnings("unchecked")
   public B dryRun(boolean dryRun) {
     this.dryRun = dryRun;
     return (B) this;
   }
 
+  @SuppressWarnings("unchecked")
   public B fetchAdditionalInfo(boolean fetchAdditionalInfo) {
     this.fetchAdditionalInfo = fetchAdditionalInfo;
     return (B) this;
   }
 
+  @SuppressWarnings("unchecked")
   public B returnConflictAsResult(boolean returnConflictAsResult) {
     this.returnConflictAsResult = returnConflictAsResult;
     return (B) this;
   }
 
+  @SuppressWarnings("unchecked")
   public B defaultMergeMode(MergeBehavior mergeBehavior) {
     defaultMergeMode = mergeBehavior;
     return (B) this;
   }
 
+  @SuppressWarnings("unchecked")
   public B mergeMode(ContentKey key, MergeBehavior mergeBehavior) {
     if (mergeModes == null) {
       mergeModes = new HashMap<>();

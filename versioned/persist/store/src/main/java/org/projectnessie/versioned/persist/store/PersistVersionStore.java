@@ -609,6 +609,7 @@ public class PersistVersionStore implements VersionStore {
 
   @Override
   @MustBeClosed
+  @Deprecated
   public Stream<RefLogDetails> getRefLog(Hash refLogId) throws RefLogNotFoundException {
     return databaseAdapter
         .refLog(refLogId)

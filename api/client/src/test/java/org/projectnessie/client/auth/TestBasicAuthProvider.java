@@ -18,8 +18,6 @@ package org.projectnessie.client.auth;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_PASSWORD;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_USERNAME;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
@@ -38,6 +36,7 @@ import org.projectnessie.client.http.impl.RequestContextImpl;
 
 @Execution(ExecutionMode.CONCURRENT)
 class TestBasicAuthProvider {
+  @SuppressWarnings("deprecation")
   @Test
   void testNullParams() {
     assertAll(
@@ -45,13 +44,17 @@ class TestBasicAuthProvider {
             assertThatThrownBy(
                     () ->
                         new BasicAuthenticationProvider()
-                            .build(ImmutableMap.of(CONF_NESSIE_PASSWORD, "pass")::get))
+                            .build(
+                                ImmutableMap.of(NessieConfigConstants.CONF_NESSIE_PASSWORD, "pass")
+                                    ::get))
                 .isInstanceOf(NullPointerException.class),
         () ->
             assertThatThrownBy(
                     () ->
                         new BasicAuthenticationProvider()
-                            .build(ImmutableMap.of(CONF_NESSIE_USERNAME, "user")::get))
+                            .build(
+                                ImmutableMap.of(NessieConfigConstants.CONF_NESSIE_USERNAME, "user")
+                                    ::get))
                 .isInstanceOf(NullPointerException.class),
         () ->
             assertThatThrownBy(() -> new BasicAuthenticationProvider().build(s -> null))
@@ -69,13 +72,14 @@ class TestBasicAuthProvider {
 
   @Test
   void testFromConfig() {
+    @SuppressWarnings("deprecation")
     Map<String, String> authCfg =
         ImmutableMap.of(
             NessieConfigConstants.CONF_NESSIE_AUTH_TYPE,
             BasicAuthenticationProvider.AUTH_TYPE_VALUE,
-            CONF_NESSIE_USERNAME,
+            NessieConfigConstants.CONF_NESSIE_USERNAME,
             "Aladdin",
-            CONF_NESSIE_PASSWORD,
+            NessieConfigConstants.CONF_NESSIE_PASSWORD,
             "OpenSesame");
 
     NessieAuthentication authentication = NessieAuthenticationProvider.fromConfig(authCfg::get);

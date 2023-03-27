@@ -28,6 +28,7 @@ import org.projectnessie.model.Validation;
  *
  * @since {@link NessieApiV1}
  */
+@Deprecated
 public interface GetRefLogBuilder
     extends PagingBuilder<GetRefLogBuilder, RefLogResponse, RefLogResponse.RefLogResponseEntry>,
         QueryBuilder<GetRefLogBuilder> {

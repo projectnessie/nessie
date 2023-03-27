@@ -604,6 +604,7 @@ public class DynamoDBPersist implements Persist {
     return ObjType.fromShortName(shortType);
   }
 
+  @SuppressWarnings("unchecked")
   private Obj decomposeObj(Map<String, AttributeValue> item) {
     ObjId id = objIdFromString(item.get(KEY_NAME).s().substring(keyPrefix.length()));
     ObjType type = objTypeFromItem(item);
@@ -611,10 +612,10 @@ public class DynamoDBPersist implements Persist {
     StoreObjDesc storeObj = STORE_OBJ_TYPE.get(type);
     checkState(storeObj != null, "Cannot deserialize object type %s", type);
     Map<String, AttributeValue> inner = item.get(storeObj.typeName).m();
-    //noinspection unchecked
     return storeObj.fromMap(id, inner);
   }
 
+  @SuppressWarnings("unchecked")
   @Nonnull
   @jakarta.annotation.Nonnull
   private Map<String, AttributeValue> objToItem(
@@ -633,7 +634,6 @@ public class DynamoDBPersist implements Persist {
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit();
     int indexSizeLimit =
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIndexSegmentSizeLimit();
-    //noinspection unchecked
     storeObj.toMap(obj, inner, incrementalIndexSizeLimit, indexSizeLimit);
     item.put(storeObj.typeName, fromM(inner));
     return item;

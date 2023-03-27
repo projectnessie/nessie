@@ -207,10 +207,14 @@ class TestMetricsVersionStore {
                 stringStringDummyEnumVersionStore ->
                     stringStringDummyEnumVersionStore.getNamedRefs(
                         GetNamedRefsParams.DEFAULT, null),
-                () ->
-                    PaginationIterator.of(
-                        WithHash.of(Hash.of("cafebabe"), BranchName.of("foo")),
-                        WithHash.of(Hash.of("deadbeef"), BranchName.of("cow"))),
+                () -> {
+                  @SuppressWarnings("unchecked")
+                  PaginationIterator<WithHash<BranchName>> r =
+                      PaginationIterator.of(
+                          WithHash.of(Hash.of("cafebabe"), BranchName.of("foo")),
+                          WithHash.of(Hash.of("deadbeef"), BranchName.of("cow")));
+                  return r;
+                },
                 runtimeThrows),
             new VersionStoreInvocation<>(
                 "getvalue",

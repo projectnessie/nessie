@@ -67,6 +67,7 @@ final class NessieHttpClient extends NessieApiClient {
     return clientBuilder.build();
   }
 
+  @SuppressWarnings("deprecation")
   private NessieHttpClient(HttpClient client) {
     super(
         wrap(HttpConfigApi.class, new HttpConfigClient(client)),

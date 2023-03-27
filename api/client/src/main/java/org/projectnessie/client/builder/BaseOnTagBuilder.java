@@ -21,12 +21,14 @@ public abstract class BaseOnTagBuilder<R extends OnTagBuilder<R>> implements OnT
   protected String tagName;
   protected String hash;
 
+  @SuppressWarnings("unchecked")
   @Override
   public R tagName(String tagName) {
     this.tagName = tagName;
     return (R) this;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public R hash(String hash) {
     this.hash = hash;

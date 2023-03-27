@@ -104,6 +104,7 @@ class TestTracingVersionStore {
 
     // "Declare" test-invocations for all VersionStore functions with their respective outcomes
     // and exceptions.
+    @SuppressWarnings("unchecked")
     Stream<TestedTraceingStoreInvocation<VersionStore>> versionStoreFunctions =
         Stream.of(
             new TestedTraceingStoreInvocation<VersionStore>("GetNamedRef", refNotFoundThrows)
@@ -257,6 +258,7 @@ class TestTracingVersionStore {
             && !(expectedThrow instanceof IllegalArgumentException);
     String opNameTag = "nessie.version-store.operation";
 
+    @SuppressWarnings("resource")
     TestTracer tracer = new TestTracer();
     tracer.registerForCurrentTest();
 

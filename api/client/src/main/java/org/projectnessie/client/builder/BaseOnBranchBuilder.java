@@ -22,12 +22,14 @@ public abstract class BaseOnBranchBuilder<R extends OnBranchBuilder<R>>
   protected String branchName;
   protected String hash;
 
+  @SuppressWarnings("unchecked")
   @Override
   public R branchName(String branchName) {
     this.branchName = branchName;
     return (R) this;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public R hash(String hash) {
     this.hash = hash;

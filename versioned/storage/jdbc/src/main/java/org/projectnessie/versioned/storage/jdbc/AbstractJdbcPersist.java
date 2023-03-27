@@ -458,6 +458,7 @@ abstract class AbstractJdbcPersist implements Persist {
     return null;
   }
 
+  @SuppressWarnings("unchecked")
   @Nonnull
   @jakarta.annotation.Nonnull
   private boolean[] upsertObjs(
@@ -518,7 +519,6 @@ abstract class AbstractJdbcPersist implements Persist {
           if (e.getKey() == type) {
             @SuppressWarnings("rawtypes")
             StoreObjDesc storeType = e.getValue();
-            //noinspection unchecked
             idx = storeType.store(ps, idx, obj, incrementalIndexSizeLimit, indexSizeLimit);
           } else {
             idx = e.getValue().storeNone(ps, idx);

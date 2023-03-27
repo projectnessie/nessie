@@ -132,6 +132,7 @@ public class TestIcebergS3MockServer extends AbstractIcebergS3MockServer {
     return ((HttpURLConnection) conn).getResponseCode();
   }
 
+  @SuppressWarnings("unchecked")
   public <T> T doGet(URI uri, Class<T> type, Map<String, String> headers) throws Exception {
     URLConnection conn = uri.toURL().openConnection();
     headers.forEach(conn::addRequestProperty);
@@ -160,9 +161,7 @@ public class TestIcebergS3MockServer extends AbstractIcebergS3MockServer {
       return JSON_MAPPER.readValue(out.toByteArray(), type);
     }
     if (type.isAssignableFrom(String.class)) {
-      @SuppressWarnings("unchecked")
-      T r = (T) out.toString("UTF-8");
-      return r;
+      return (T) out.toString("UTF-8");
     }
     return (T) out.toByteArray();
   }

@@ -45,6 +45,7 @@ import org.projectnessie.versioned.RefLogDetails;
 import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 
+@Deprecated
 public class RefLogApiImpl extends BaseApiImpl implements RefLogService {
 
   private static final int MAX_REF_LOG_ENTRIES = 250;

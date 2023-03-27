@@ -652,6 +652,7 @@ public class MongoDBPersist implements Persist {
     return storeObj.docToObj(id, inner);
   }
 
+  @SuppressWarnings("unchecked")
   private Document objToDoc(
       @Nonnull @jakarta.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
@@ -671,7 +672,6 @@ public class MongoDBPersist implements Persist {
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit();
     int indexSizeLimit =
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIndexSegmentSizeLimit();
-    //noinspection unchecked
     storeObj.objToDoc(obj, inner, incrementalIndexSizeLimit, indexSizeLimit);
     doc.put(storeObj.typeName, inner);
     return doc;

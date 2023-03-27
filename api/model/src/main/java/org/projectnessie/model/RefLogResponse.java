@@ -23,6 +23,7 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
+@SuppressWarnings("all")
 @Value.Immutable
 @Schema(type = SchemaType.OBJECT, title = "RefLogResponse", deprecated = true, hidden = true)
 @JsonSerialize(as = ImmutableRefLogResponse.class)
@@ -34,6 +35,7 @@ public interface RefLogResponse extends PaginatedResponse {
   @jakarta.validation.constraints.NotNull
   List<RefLogResponseEntry> getLogEntries();
 
+  @SuppressWarnings("all")
   @Value.Immutable
   @Schema(type = SchemaType.OBJECT, title = "RefLogResponseEntry", deprecated = true, hidden = true)
   @JsonSerialize(as = ImmutableRefLogResponseEntry.class)

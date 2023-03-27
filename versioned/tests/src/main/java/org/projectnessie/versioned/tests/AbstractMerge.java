@@ -194,6 +194,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 ContentKey.of("t4"), V_4_1));
   }
 
+  @SuppressWarnings({"deprecation", "DataFlowIssue"})
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void compareDryAndEffectiveMergeResults(boolean individualCommits) throws VersionStoreException {
@@ -373,6 +374,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     }
   }
 
+  @SuppressWarnings("deprecation")
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   protected void mergeIntoNonConflictingBranch(boolean individualCommits)

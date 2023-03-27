@@ -84,6 +84,7 @@ public class TestFetchValuesUsingOpenAddressing {
     assertEquals(ImmutableList.of(Hash.of("01")), fetch.entityIdsToFetch(2, 0, singleton));
     assertEquals(ImmutableList.of(Hash.of("02")), fetch.entityIdsToFetch(3, 0, singleton));
 
+    @SuppressWarnings("unchecked")
     Consumer<KeyListEntry> keyHits = mock(Consumer.class);
     fetch.entityLoaded(getKeyListEntity(6, 3, 2, KeyWithSpecificHash::withMaxIntHash));
     fetch.checkForKeys(0, singleton, keyHits);
