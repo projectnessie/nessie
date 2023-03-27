@@ -174,7 +174,6 @@ public class NessieJaxRsExtension extends NessieClientResolver
       ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
     return super.supportsParameter(parameterContext, extensionContext)
-        || parameterContext.isAnnotated(NessieUri.class)
         || parameterContext.isAnnotated(NessieSecurityContext.class)
         || parameterContext.isAnnotated(NessieAccessChecker.class);
   }
@@ -185,13 +184,6 @@ public class NessieJaxRsExtension extends NessieClientResolver
       throws ParameterResolutionException {
     if (super.supportsParameter(parameterContext, extensionContext)) {
       return super.resolveParameter(parameterContext, extensionContext);
-    }
-
-    if (parameterContext.isAnnotated(NessieUri.class)) {
-      // Backward compatibility with older (external) tests
-      // Inject v1 URIs in this case. Version-aware test should use
-      // `org.projectnessie.client.ext.NessieUri`.
-      return getBaseUri(extensionContext).resolve("v1");
     }
 
     EnvHolder env = getEnv(extensionContext);
