@@ -16,8 +16,10 @@
 
 package org.projectnessie.buildtools;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
@@ -37,11 +39,15 @@ import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
+import org.eclipse.aether.util.repository.SimpleArtifactDescriptorPolicy;
+import org.eclipse.aether.util.repository.SimpleResolutionErrorPolicy;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-/** Resolves all published Nessie jar artifacts and lets Maven fail on any issue in a pom. */
+/**
+ * Resolves all published Nessie jar artifacts and lets Maven fail on any issue in a pom.
+ */
 public class TestPublishedPoms {
 
   static RepositorySystem repositorySystem;
@@ -52,9 +58,20 @@ public class TestPublishedPoms {
   @BeforeAll
   static void setup() {
     nessieVersion = System.getProperty("nessie.version");
-    assertThat(nessieVersion).as("System property nessie.version").isNotNull();
+    if (nessieVersion == null) {
+      try {
+        nessieVersion = new String(Files.readAllBytes(Paths.get("../version.txt")),
+          StandardCharsets.UTF_8).trim();
+      } catch (IOException e) {
+        throw new RuntimeException(
+          "System property nessie.version is not set and no version.txt file in the parent directory",
+          e);
+      }
+    }
     repositorySystem = buildRepositorySystem();
+
     repositorySystemSession = newSession(repositorySystem);
+
     repositories = new ArrayList<>();
     repositories.add(new RemoteRepository.Builder(
       "maven-central", "default", "https://repo1.maven.org/maven2/")
@@ -159,6 +176,23 @@ public class TestPublishedPoms {
 
     LocalRepository localRepo = new LocalRepository(localRepository);
     session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
+
+    // Let Maven "bark" for all kinds of dependency issues - otherwise dependency errors are
+    // silently dropped on the floor resulting in wrong dependency resolutions.
+    session.setArtifactDescriptorPolicy(new SimpleArtifactDescriptorPolicy(0));
+    session.setResolutionErrorPolicy(new SimpleResolutionErrorPolicy(0));
+
+    // Add properties that Maven profile activation or pom's need.
+    // java.version --> Maven profile activation based on Java version
+    // java.version --> pom's resolving a tools.jar :facepalm:
+    System.getProperties()
+      .forEach(
+        (k, v) -> {
+          String key = k.toString();
+          if (key.startsWith("java.")) {
+            session.setSystemProperty(key, v.toString());
+          }
+        });
 
     return session;
   }

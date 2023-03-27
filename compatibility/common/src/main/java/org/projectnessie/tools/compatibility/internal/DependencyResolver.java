@@ -42,6 +42,8 @@ import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
+import org.eclipse.aether.util.repository.SimpleArtifactDescriptorPolicy;
+import org.eclipse.aether.util.repository.SimpleResolutionErrorPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -114,6 +116,7 @@ final class DependencyResolver {
     // Note: 'collectDependencies' takes a couple 100ms :(
     CollectRequest collectRequest = new CollectRequest().setRepositories(repositories);
     collect.accept(collectRequest);
+    collectRequest.setRequestContext("project");
 
     DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, null);
     DependencyResult dependencyResult =
@@ -153,6 +156,23 @@ final class DependencyResolver {
 
     LocalRepository localRepo = new LocalRepository(localRepository);
     session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
+
+    // Let Maven "bark" for all kinds of dependency issues - otherwise dependency errors are
+    // silently dropped on the floor resulting in wrong dependency resolutions.
+    session.setArtifactDescriptorPolicy(new SimpleArtifactDescriptorPolicy(0));
+    session.setResolutionErrorPolicy(new SimpleResolutionErrorPolicy(0));
+
+    // Add properties that Maven profile activation or pom's need.
+    // java.version --> Maven profile activation based on Java version
+    // java.version --> pom's resolving a tools.jar :facepalm:
+    System.getProperties()
+        .forEach(
+            (k, v) -> {
+              String key = k.toString();
+              if (key.startsWith("java.")) {
+                session.setSystemProperty(key, v.toString());
+              }
+            });
 
     return session;
   }
