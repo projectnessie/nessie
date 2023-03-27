@@ -18,7 +18,6 @@ package org.projectnessie.services.restjavax;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.common.base.Throwables;
-import java.security.AccessControlException;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.ws.rs.NotSupportedException;
@@ -76,8 +75,7 @@ public class NessieExceptionMapper extends BaseExceptionMapper<Exception> {
       LOGGER.warn("Backend throttled/refused the request: {}", exception.toString());
       errorCode = ErrorCode.TOO_MANY_REQUESTS;
       message = "Backend store refused to process the request: " + exception;
-    } else if (exception instanceof AccessControlException
-        || exception instanceof AccessCheckException) {
+    } else if (exception instanceof AccessCheckException) {
       errorCode = ErrorCode.FORBIDDEN;
       message = exception.getMessage();
     } else if (exception instanceof NotSupportedException) {
