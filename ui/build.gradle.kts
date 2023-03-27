@@ -149,6 +149,10 @@ val npmGenerateAPI =
       delete(generatedOpenApiCode)
     }
     doLast {
+      // openapi-generator produces Line 264 in runtime.ts as
+      //    export type FetchAPI = GlobalFetch['fetch'];
+      // but must be
+      //    export type FetchAPI = WindowOrWorkerGlobalScope['fetch'];
       val f = generatedOpenApiCode.resolve("utils/api/runtime.ts")
       val src = f.readText()
       f.writeText(src.replace("GlobalFetch", "WindowOrWorkerGlobalScope"))
