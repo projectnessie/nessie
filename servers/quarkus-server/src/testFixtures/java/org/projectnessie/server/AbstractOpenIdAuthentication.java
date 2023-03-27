@@ -27,6 +27,7 @@ import org.projectnessie.client.auth.BearerAuthenticationProvider;
 import org.projectnessie.client.rest.NessieNotAuthorizedException;
 import org.projectnessie.server.authn.AuthenticationEnabledProfile;
 
+@SuppressWarnings("resource") // api() returns an AutoCloseable
 public abstract class AbstractOpenIdAuthentication extends BaseClientAuthTest {
 
   private String getJwtToken() {

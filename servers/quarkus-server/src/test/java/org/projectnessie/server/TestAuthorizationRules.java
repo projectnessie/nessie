@@ -39,6 +39,7 @@ import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
 import org.projectnessie.server.authz.NessieAuthorizationTestProfile;
 
+@SuppressWarnings("resource") // api() returns an AutoCloseable
 @QuarkusTest
 @TestProfile(value = NessieAuthorizationTestProfile.class)
 class TestAuthorizationRules extends BaseClientAuthTest {
