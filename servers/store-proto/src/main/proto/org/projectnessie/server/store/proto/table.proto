@@ -97,7 +97,7 @@ message IcebergRefState {
 }
 
 message IcebergViewState {
-  int32 version_id = 1;
+  int64 version_id = 1;
   int32 schema_id = 2;
   string sql_text = 3;
   string dialect = 4;
