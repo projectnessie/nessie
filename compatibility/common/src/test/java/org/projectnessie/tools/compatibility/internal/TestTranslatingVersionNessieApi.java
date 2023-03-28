@@ -65,7 +65,7 @@ class TestTranslatingVersionNessieApi {
   static void init() throws Exception {
     oldVersionClassLoader =
         OldNessie.oldNessieClassLoader(
-            Version.parseVersion("0.19.0"), singletonList("nessie-client"));
+            Version.parseVersion("0.42.0"), singletonList("nessie-client"));
   }
 
   @Test
@@ -265,24 +265,28 @@ class TestTranslatingVersionNessieApi {
   }
 
   private static Stream<Arguments> runtimeExceptions() {
+    // The "original" test code here used the exception classes in the package
+    // org.projectnessie.client.rest, present last time in Nessie 0.19.0. Sadly, the pom of 0.19.0
+    // has errors which prevent that version from being used with newer Maven/Maven-Resolver
+    // versions - so the "current" and "old" class names are the same here, which might look odd.
     return Stream.of(
         Arguments.of(
             400,
             "bad request",
             NessieBackendThrottledException.class,
-            "org.projectnessie.client.rest.NessieBackendThrottledException",
+            "org.projectnessie.error.NessieBackendThrottledException",
             ErrorCode.UNKNOWN),
         Arguments.of(
             400,
             "bad request",
             NessieBadRequestException.class,
-            "org.projectnessie.client.rest.NessieBadRequestException",
+            "org.projectnessie.error.NessieBadRequestException",
             ErrorCode.UNKNOWN),
         Arguments.of(
             401,
             "forbidden",
             NessieForbiddenException.class,
-            "org.projectnessie.client.rest.NessieForbiddenException",
+            "org.projectnessie.error.NessieForbiddenException",
             ErrorCode.UNKNOWN));
   }
 
@@ -424,7 +428,7 @@ class TestTranslatingVersionNessieApi {
     return OldNessieApiHolder.createNessieClient(
         oldVersionClassLoader,
         new ClientKey(
-            Version.parseVersion("0.19.0"),
+            Version.parseVersion("0.42.0"),
             "org.projectnessie.client.http.HttpClientBuilder",
             NessieApiV1.class,
             Collections.singletonMap("nessie.uri", "http://127.42.42.42:19120")));

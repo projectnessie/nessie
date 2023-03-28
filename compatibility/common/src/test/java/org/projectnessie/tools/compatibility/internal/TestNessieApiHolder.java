@@ -87,7 +87,7 @@ class TestNessieApiHolder {
           new OldNessieApiHolder(
               ctx,
               new ClientKey(
-                  Version.parseVersion("0.19.0"),
+                  Version.parseVersion("0.42.0"),
                   "org.projectnessie.client.http.HttpClientBuilder",
                   NessieApiV1.class,
                   Collections.singletonMap("nessie.uri", "http://127.42.42.42:19120")));
