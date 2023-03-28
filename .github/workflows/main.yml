@@ -36,6 +36,7 @@ jobs:
     - name: Gradle / compile
       uses: gradle/gradle-build-action@v2
       with:
+        gradle-home-cache-cleanup: true
         arguments: spotlessCheck checkstyle assemble --scan
 
     - name: Gradle / unit test

@@ -25,6 +25,16 @@ runs:
     - name: Setup gradle.properties
       shell: bash
       run: |
-        mkdir -p ~/.gradle
+        mkdir -p ~/.gradle/init.d
+        echo > ~/.gradle/init.d/cache-settings.gradle.kts <<!
+        beforeSettings {
+          caches {
+            releasedWrappers.setRemoveUnusedEntriesAfterDays(2)
+            snapshotWrappers.setRemoveUnusedEntriesAfterDays(1)
+            downloadedResources.setRemoveUnusedEntriesAfterDays(5)
+            createdResources.setRemoveUnusedEntriesAfterDays(2)
+          }
+        }
+        !
         echo "org.gradle.jvmargs=-Xmx1280m -XX:MaxMetaspaceSize=768m -Dfile.encoding=UTF-8" >> ~/.gradle/gradle.properties
         echo "org.gradle.vfs.watch=false" >> ~/.gradle/gradle.properties
