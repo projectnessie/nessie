@@ -15,27 +15,35 @@
  */
 package org.projectnessie.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotEmpty;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
 @Value.Immutable
-@JsonSerialize(as = ImmutableGenericMetadata.class)
-@JsonDeserialize(as = ImmutableGenericMetadata.class)
-public interface GenericMetadata {
+@JsonSerialize(as = ImmutableContentMetadata.class)
+@JsonDeserialize(as = ImmutableContentMetadata.class)
+public interface ContentMetadata {
 
   @NotEmpty
   @jakarta.validation.constraints.NotEmpty
+  @Value.Parameter(order = 1)
   String getVariant();
 
+  @Nullable
+  @jakarta.annotation.Nullable
   @Schema(type = SchemaType.OBJECT)
+  @Value.Parameter(order = 2)
+  @JsonInclude(Include.NON_NULL)
   JsonNode getMetadata();
 
-  static GenericMetadata of(String variant, JsonNode metadata) {
-    return ImmutableGenericMetadata.builder().variant(variant).metadata(metadata).build();
+  static ContentMetadata of(String variant, JsonNode metadata) {
+    return ImmutableContentMetadata.of(variant, metadata);
   }
 }

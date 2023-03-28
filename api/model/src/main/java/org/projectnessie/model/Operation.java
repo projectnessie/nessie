@@ -15,12 +15,15 @@
  */
 package org.projectnessie.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.util.List;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -90,6 +93,15 @@ public interface Operation {
     @SuppressWarnings("DeprecatedIsStillUsed")
     @JsonView(Views.V1.class)
     Content getExpectedContent();
+
+    /**
+     * Additional information about the operation and/or content object. If and how a Nessie server
+     * uses and handles the information depends on the server version and type of metadata (called
+     * variant).
+     */
+    @JsonInclude(Include.NON_EMPTY)
+    @JsonView(Views.V2.class)
+    List<ContentMetadata> getMetadata();
 
     static Put of(ContentKey key, Content content) {
       return ImmutablePut.builder().key(key).content(content).build();

@@ -15,6 +15,8 @@
  */
 package org.projectnessie.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -71,6 +73,11 @@ public interface GetMultipleContentsResponse {
     @NotNull
     @jakarta.validation.constraints.NotNull
     Content getContent();
+
+    /** Additional content related information, if any. */
+    @JsonInclude(Include.NON_EMPTY)
+    @JsonView(Views.V2.class)
+    List<ContentMetadata> getMetadata();
 
     static ContentWithKey of(ContentKey key, Content content) {
       return ImmutableContentWithKey.builder().key(key).content(content).build();
