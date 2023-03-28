@@ -22,11 +22,19 @@ runs:
         server-password: MAVEN_OSSRH_TOKEN
         gpg-private-key: ${{ inputs.gpg-private-key }}
         gpg-passphrase: MAVEN_GPG_PASSPHRASE
+    - name: Setup testcontainers.properties
+      shell: bash
+      run: |
+        cat > ~/.testcontainers.properties <<!
+        # Disable startup checks - speeds up test execution by a few seconds.
+        # See https://www.testcontainers.org/features/configuration/#disabling-the-startup-checks
+        checks.disable=true
+        !
     - name: Setup gradle.properties
       shell: bash
       run: |
         mkdir -p ~/.gradle/init.d
-        echo > ~/.gradle/init.d/cache-settings.gradle.kts <<!
+        cat > ~/.gradle/init.d/cache-settings.gradle.kts <<!
         beforeSettings {
           caches {
             releasedWrappers.setRemoveUnusedEntriesAfterDays(2)
