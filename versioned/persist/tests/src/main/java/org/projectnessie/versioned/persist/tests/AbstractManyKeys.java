@@ -18,7 +18,6 @@ package org.projectnessie.versioned.persist.tests;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.Mockito.spy;
-import static org.projectnessie.versioned.persist.tests.DatabaseAdapterTestUtils.ALWAYS_THROWING_ATTACHMENT_CONSUMER;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
@@ -211,8 +210,7 @@ public abstract class AbstractManyKeys {
                           ContentId.of("c" + i),
                           payloadForContent(OnRefOnly.ON_REF_ONLY),
                           DefaultStoreWorker.instance()
-                              .toStoreOnReferenceState(
-                                  onRef("r" + i, "c" + i), ALWAYS_THROWING_ATTACHMENT_CONSUMER)))
+                              .toStoreOnReferenceState(onRef("r" + i, "c" + i))))
                   .build());
       keyToCommit.put(key, hash);
     }
@@ -271,8 +269,7 @@ public abstract class AbstractManyKeys {
                           ContentId.of("c" + i),
                           payloadForContent(OnRefOnly.ON_REF_ONLY),
                           DefaultStoreWorker.instance()
-                              .toStoreOnReferenceState(
-                                  onRef("pf" + i, "cpf" + i), ALWAYS_THROWING_ATTACHMENT_CONSUMER)))
+                              .toStoreOnReferenceState(onRef("pf" + i, "cpf" + i))))
                   .build());
       keyToCommit.put(key, hash);
     }
@@ -608,7 +605,7 @@ public abstract class AbstractManyKeys {
                           ContentId.of("id-" + name),
                           payloadForContent(OnRefOnly.ON_REF_ONLY),
                           DefaultStoreWorker.instance()
-                              .toStoreOnReferenceState(OnRefOnly.newOnRef("c" + name), att -> {})))
+                              .toStoreOnReferenceState(OnRefOnly.newOnRef("c" + name))))
                   .build());
       activeKeys.add(key);
     }

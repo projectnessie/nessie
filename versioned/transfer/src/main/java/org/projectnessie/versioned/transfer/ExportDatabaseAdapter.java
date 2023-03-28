@@ -200,8 +200,7 @@ final class ExportDatabaseAdapter extends ExportCommon {
                 requireNonNull(exporter.databaseAdapter())
                     .globalContent(p.getContentId())
                     .map(ContentIdAndBytes::getValue)
-                    .orElse(null),
-            requireNonNull(exporter.databaseAdapter())::mapToAttachment);
+                    .orElse(null));
   }
 
   private ByteString contentToValue(Content content) {

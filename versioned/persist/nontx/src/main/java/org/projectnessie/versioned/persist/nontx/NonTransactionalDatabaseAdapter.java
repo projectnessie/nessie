@@ -15,8 +15,6 @@
  */
 package org.projectnessie.versioned.persist.nontx;
 
-import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.attachmentContent;
-import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.toProtoKey;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.assignConflictMessage;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.commitConflictMessage;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.createConflictMessage;
@@ -45,7 +43,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -65,8 +62,6 @@ import java.util.stream.StreamSupport;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.BranchName;
-import org.projectnessie.versioned.ContentAttachment;
-import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableMergeResult;
@@ -108,8 +103,6 @@ import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.spi.BatchSpliterator;
 import org.projectnessie.versioned.persist.adapter.spi.Traced;
 import org.projectnessie.versioned.persist.adapter.spi.TryLoopState;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentKey;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentValue;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.ContentIdWithBytes;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
@@ -633,41 +626,6 @@ public abstract class NonTransactionalDatabaseAdapter<
   }
 
   @Override
-  public Stream<ContentAttachmentKey> getAttachmentKeys(String contentId) {
-    return fetchAttachmentKeys(contentId).map(ProtoSerialization::attachmentKey);
-  }
-
-  @Override
-  public Stream<ContentAttachment> mapToAttachment(Stream<ContentAttachmentKey> keys) {
-    Spliterator<Entry<AttachmentKey, AttachmentValue>> split =
-        new BatchSpliterator<>(
-            attachmentChunkSize(),
-            keys,
-            chunk ->
-                fetchAttachments(chunk.stream().map(ProtoSerialization::toProtoKey)).spliterator(),
-            Spliterator.NONNULL | Spliterator.DISTINCT | Spliterator.IMMUTABLE);
-
-    return StreamSupport.stream(split, false).map(e -> attachmentContent(e.getKey(), e.getValue()));
-  }
-
-  @Override
-  public void putAttachments(Stream<ContentAttachment> attachments) {
-    persistAttachments(NON_TRANSACTIONAL_OPERATION_CONTEXT, attachments);
-  }
-
-  @Override
-  public boolean consistentPutAttachment(
-      ContentAttachment attachment, Optional<String> expectedVersion) {
-    return consistentWriteAttachment(
-        toProtoKey(attachment), ProtoSerialization.toProtoValue(attachment), expectedVersion);
-  }
-
-  @Override
-  public void deleteAttachments(Stream<ContentAttachmentKey> keys) {
-    purgeAttachments(keys.map(ProtoSerialization::toProtoKey));
-  }
-
-  @Override
   public void writeMultipleCommits(List<CommitLogEntry> commitLogEntries)
       throws ReferenceConflictException {
     try {
@@ -690,10 +648,6 @@ public abstract class NonTransactionalDatabaseAdapter<
   // /////////////////////////////////////////////////////////////////////////////////////////////
   // Non-Transactional DatabaseAdapter subclass API (protected)
   // /////////////////////////////////////////////////////////////////////////////////////////////
-
-  protected int attachmentChunkSize() {
-    return config.getAttachmentKeysBatchSize();
-  }
 
   protected final RepoDescription fetchRepositoryDescription(NonTransactionalOperationContext ctx) {
     try (Traced ignore = trace("fetchRepositoryDescription")) {
@@ -1559,36 +1513,4 @@ public abstract class NonTransactionalDatabaseAdapter<
   public Stream<RefLog> refLog(Hash offset) throws RefLogNotFoundException {
     return readRefLogStream(NON_TRANSACTIONAL_OPERATION_CONTEXT, offset);
   }
-
-  @Override
-  protected void persistAttachments(
-      NonTransactionalOperationContext ctx, Stream<ContentAttachment> attachments) {
-    new BatchSpliterator<ContentAttachment, Void>(
-            attachmentChunkSize(),
-            attachments,
-            batch -> {
-              writeAttachments(
-                  batch.stream()
-                      .map(
-                          b ->
-                              Maps.immutableEntry(
-                                  toProtoKey(b), ProtoSerialization.toProtoValue(b))));
-              return Spliterators.emptySpliterator();
-            },
-            Spliterator.DISTINCT | Spliterator.IMMUTABLE | Spliterator.NONNULL)
-        .forEachRemaining(x -> {});
-  }
-
-  protected abstract void writeAttachments(
-      Stream<Map.Entry<AttachmentKey, AttachmentValue>> attachments);
-
-  protected abstract boolean consistentWriteAttachment(
-      AttachmentKey key, AttachmentValue value, Optional<String> expectedVersion);
-
-  protected abstract Stream<AttachmentKey> fetchAttachmentKeys(String contentId);
-
-  protected abstract Stream<Map.Entry<AttachmentKey, AttachmentValue>> fetchAttachments(
-      Stream<AttachmentKey> keys);
-
-  protected abstract void purgeAttachments(Stream<AttachmentKey> keys);
 }

@@ -17,7 +17,6 @@ package org.projectnessie.versioned.persist.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.projectnessie.versioned.persist.tests.DatabaseAdapterTestUtils.ALWAYS_THROWING_ATTACHMENT_CONSUMER;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
@@ -159,9 +158,7 @@ public abstract class AbstractCommitScenarios {
                     oldKey,
                     contentId,
                     payload,
-                    DefaultStoreWorker.instance()
-                        .toStoreOnReferenceState(
-                            initialContent, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
+                    DefaultStoreWorker.instance().toStoreOnReferenceState(initialContent)));
     Hash hashInitial = databaseAdapter.commit(commit.build());
 
     List<Hash> beforeRename =
@@ -179,9 +176,7 @@ public abstract class AbstractCommitScenarios {
                     newKey,
                     contentId,
                     payload,
-                    DefaultStoreWorker.instance()
-                        .toStoreOnReferenceState(
-                            renamContent, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
+                    DefaultStoreWorker.instance().toStoreOnReferenceState(renamContent)));
     Hash hashRename = databaseAdapter.commit(commit.build());
 
     List<Hash> beforeDelete =
@@ -282,8 +277,7 @@ public abstract class AbstractCommitScenarios {
               key,
               ContentId.of(cid),
               payloadForContent(c),
-              DefaultStoreWorker.instance()
-                  .toStoreOnReferenceState(c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
+              DefaultStoreWorker.instance().toStoreOnReferenceState(c)));
     }
     Hash head = databaseAdapter.commit(commit.build());
 
@@ -302,8 +296,7 @@ public abstract class AbstractCommitScenarios {
                 keys.get(i),
                 ContentId.of(cid),
                 payloadForContent(newContent),
-                DefaultStoreWorker.instance()
-                    .toStoreOnReferenceState(newContent, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
+                DefaultStoreWorker.instance().toStoreOnReferenceState(newContent)));
       }
 
       Hash newHead = databaseAdapter.commit(commit.build());
@@ -360,8 +353,7 @@ public abstract class AbstractCommitScenarios {
                     key,
                     ContentId.of(cid),
                     payloadForContent(c),
-                    DefaultStoreWorker.instance()
-                        .toStoreOnReferenceState(c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)))
+                    DefaultStoreWorker.instance().toStoreOnReferenceState(c)))
             .putExpectedStates(ContentId.of(cid), Optional.empty())
             .validator(validator);
     databaseAdapter.commit(commit.build());
@@ -441,10 +433,8 @@ public abstract class AbstractCommitScenarios {
     OnRefOnly onRefNation = OnRefOnly.onRef("nation", idNation.getId());
     OnRefOnly onRefRegion = OnRefOnly.onRef("region", idRegion.getId());
 
-    ByteString stateNation =
-        DefaultStoreWorker.instance().toStoreOnReferenceState(onRefNation, att -> {});
-    ByteString stateRegion =
-        DefaultStoreWorker.instance().toStoreOnReferenceState(onRefRegion, att -> {});
+    ByteString stateNation = DefaultStoreWorker.instance().toStoreOnReferenceState(onRefNation);
+    ByteString stateRegion = DefaultStoreWorker.instance().toStoreOnReferenceState(onRefRegion);
 
     Hash commitNation =
         mine.commit(

@@ -70,6 +70,8 @@ public class RocksDbInstance implements DatabaseConnectionProvider<RocksDbConfig
           CF_REF_HEADS,
           CF_REF_NAMES,
           CF_REF_LOG_HEADS,
+          // Have to retain those here, otherwise an upgraded RocksDB instance that has these
+          // column families won't start.
           CF_ATTACHMENTS,
           CF_ATTACHMENT_KEYS);
 
@@ -82,8 +84,6 @@ public class RocksDbInstance implements DatabaseConnectionProvider<RocksDbConfig
   private ColumnFamilyHandle cfRefHeads;
   private ColumnFamilyHandle cfRefNames;
   private ColumnFamilyHandle cfRefLogHeads;
-  private ColumnFamilyHandle cfAttachments;
-  private ColumnFamilyHandle cfAttachmentKeys;
 
   private final ReadWriteLock lock = new StampedLock().asReadWriteLock();
 
@@ -153,8 +153,6 @@ public class RocksDbInstance implements DatabaseConnectionProvider<RocksDbConfig
         cfRefHeads = columnFamilyHandleMap.get(CF_REF_HEADS);
         cfRefNames = columnFamilyHandleMap.get(CF_REF_NAMES);
         cfRefLogHeads = columnFamilyHandleMap.get(CF_REF_LOG_HEADS);
-        cfAttachments = columnFamilyHandleMap.get(CF_ATTACHMENTS);
-        cfAttachmentKeys = columnFamilyHandleMap.get(CF_ATTACHMENT_KEYS);
       } catch (RocksDBException e) {
         throw new RuntimeException("RocksDB failed to start", e);
       }
@@ -205,14 +203,6 @@ public class RocksDbInstance implements DatabaseConnectionProvider<RocksDbConfig
     return db;
   }
 
-  public ColumnFamilyHandle getCfAttachments() {
-    return cfAttachments;
-  }
-
-  public ColumnFamilyHandle getCfAttachmentKeys() {
-    return cfAttachmentKeys;
-  }
-
   public Stream<ColumnFamilyHandle> allWithCompositeKey() {
     return Stream.of(
         cfGlobalLog,
@@ -222,8 +212,6 @@ public class RocksDbInstance implements DatabaseConnectionProvider<RocksDbConfig
         cfRefLog,
         cfRefHeads,
         cfRefNames,
-        cfRefLogHeads,
-        cfAttachments,
-        cfAttachmentKeys);
+        cfRefLogHeads);
   }
 }

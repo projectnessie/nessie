@@ -28,12 +28,9 @@ final class Tables {
   static final String TABLE_REF_HEADS = "ref_heads";
   static final String TABLE_REF_NAMES = "ref_names";
   static final String TABLE_REF_LOG_HEADS = "ref_log_heads";
-  static final String TABLE_ATTACHMENTS = "attachments";
-  static final String TABLE_ATTACHMENT_KEYS = "attachment_keys";
 
   static final String KEY_NAME = "key";
   static final String VALUE_NAME = "val";
-  static final String VERSION_NAME = "ver";
 
   private Tables() {}
 
@@ -50,8 +47,6 @@ final class Tables {
         TABLE_REF_LOG,
         TABLE_REF_HEADS,
         TABLE_REF_NAMES,
-        TABLE_REF_LOG_HEADS,
-        TABLE_ATTACHMENTS,
-        TABLE_ATTACHMENT_KEYS);
+        TABLE_REF_LOG_HEADS);
   }
 }

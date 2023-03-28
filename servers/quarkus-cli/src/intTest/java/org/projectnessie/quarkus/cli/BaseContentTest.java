@@ -77,7 +77,7 @@ abstract class BaseContentTest<OutputType> {
   }
 
   protected void commit(IcebergTable table, DatabaseAdapter adapter) throws Exception {
-    commit(table, adapter, DefaultStoreWorker.instance().toStoreOnReferenceState(table, att -> {}));
+    commit(table, adapter, DefaultStoreWorker.instance().toStoreOnReferenceState(table));
   }
 
   protected void commit(IcebergTable table, DatabaseAdapter adapter, ByteString serialized)
@@ -105,8 +105,7 @@ abstract class BaseContentTest<OutputType> {
               .id(UUID.randomUUID().toString())
               .addElements("test_namespace")
               .build();
-      ByteString namespaceValue =
-          DefaultStoreWorker.instance().toStoreOnReferenceState(namespace, x -> {});
+      ByteString namespaceValue = DefaultStoreWorker.instance().toStoreOnReferenceState(namespace);
       byte nsPayload = DefaultStoreWorker.payloadForContent(namespace);
       c.addPuts(
           KeyWithBytes.of(

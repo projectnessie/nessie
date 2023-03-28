@@ -168,7 +168,7 @@ public abstract class AbstractEvents {
             ContentId.of("cid-events-assign"),
             payloadForContent(OnRefOnly.ON_REF_ONLY),
             DefaultStoreWorker.instance()
-                .toStoreOnReferenceState(OnRefOnly.onRef("foo", "cid-events-assign"), att -> {}));
+                .toStoreOnReferenceState(OnRefOnly.onRef("foo", "cid-events-assign")));
 
     ByteString meta = ByteString.copyFromUtf8("foo bar baz");
 
@@ -215,7 +215,7 @@ public abstract class AbstractEvents {
             ContentId.of("cid-events-commit"),
             payloadForContent(OnRefOnly.ON_REF_ONLY),
             DefaultStoreWorker.instance()
-                .toStoreOnReferenceState(OnRefOnly.onRef("foo", "cid-events-commit"), att -> {}));
+                .toStoreOnReferenceState(OnRefOnly.onRef("foo", "cid-events-commit")));
 
     ByteString meta = ByteString.copyFromUtf8("foo bar baz");
 
@@ -268,7 +268,7 @@ public abstract class AbstractEvents {
             ContentId.of("cid-events-merge"),
             payloadForContent(OnRefOnly.ON_REF_ONLY),
             DefaultStoreWorker.instance()
-                .toStoreOnReferenceState(OnRefOnly.onRef("foo", "cid-events-merge"), att -> {}));
+                .toStoreOnReferenceState(OnRefOnly.onRef("foo", "cid-events-merge")));
 
     ByteString meta = ByteString.copyFromUtf8("merge me");
 
@@ -340,8 +340,7 @@ public abstract class AbstractEvents {
             ContentId.of("cid-events-transplant"),
             payloadForContent(OnRefOnly.ON_REF_ONLY),
             DefaultStoreWorker.instance()
-                .toStoreOnReferenceState(
-                    OnRefOnly.onRef("foo", "cid-events-transplant"), att -> {}));
+                .toStoreOnReferenceState(OnRefOnly.onRef("foo", "cid-events-transplant")));
 
     ByteString meta = ByteString.copyFromUtf8("transplant me");
 

@@ -15,10 +15,7 @@
  */
 package org.projectnessie.versioned;
 
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 import org.projectnessie.model.Content;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 
@@ -26,22 +23,12 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 public interface StoreWorker {
 
   /** Returns the serialized representation of the on-reference part of the given content-object. */
-  ByteString toStoreOnReferenceState(
-      Content content, Consumer<ContentAttachment> attachmentConsumer);
+  ByteString toStoreOnReferenceState(Content content);
 
   Content valueFromStore(
-      byte payload,
-      ByteString onReferenceValue,
-      Supplier<ByteString> globalState,
-      Function<Stream<ContentAttachmentKey>, Stream<ContentAttachment>> attachmentsRetriever);
+      byte payload, ByteString onReferenceValue, Supplier<ByteString> globalState);
 
   Content applyId(Content content, String id);
-
-  /**
-   * Production implementations already always return {@code false}, but tests still require this
-   * one.
-   */
-  boolean requiresGlobalState(Content content);
 
   /**
    * Checks whether the given persisted content has been persisted using global state.

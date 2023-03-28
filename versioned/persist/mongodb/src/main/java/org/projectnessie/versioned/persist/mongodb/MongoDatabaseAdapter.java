@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned.persist.mongodb;
 
-import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.attachmentKeyAsString;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.protoToKeyList;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.toProto;
 
@@ -41,12 +40,9 @@ import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.function.Function;
@@ -76,9 +72,6 @@ import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapter
 import org.projectnessie.versioned.persist.nontx.NonTransactionalDatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.nontx.NonTransactionalOperationContext;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentKey;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentValue;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes.ContentId;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
@@ -95,14 +88,10 @@ public class MongoDatabaseAdapter
   private static final String ID_HASH_NAME = "hash";
   private static final String ID_REF_NAME = "ref";
   private static final String ID_STRIPE = "stripe";
-  private static final String ID_ATTR_CONTENT_ID = "cid";
-  private static final String ID_ATTR_OBJECT_TYPE = "type";
-  private static final String ID_ATTR_OBJECT_ID = "oid";
   private static final String ID_REPO_PATH = ID_PROPERTY_NAME + "." + ID_REPO_NAME;
   private static final String DATA_PROPERTY_NAME = "data";
   private static final String GLOBAL_ID_PROPERTY_NAME = "globalId";
   private static final String LOCK_ID_PROPERTY_NAME = "lockId";
-  private static final String VALUE_VERSION_PROPERTY_NAME = "version";
 
   private final String repositoryId;
   private final String globalPointerKey;
@@ -156,34 +145,8 @@ public class MongoDatabaseAdapter
     return idDoc;
   }
 
-  private Document toId(AttachmentKey id) {
-    Document idDoc = new Document();
-    // Note: the order of `put` calls matters
-    idDoc.put(ID_REPO_NAME, repositoryId);
-    idDoc.put(ID_ATTR_CONTENT_ID, id.getContentId().getId());
-    idDoc.put(ID_ATTR_OBJECT_TYPE, id.getAttachmentType());
-    idDoc.put(ID_ATTR_OBJECT_ID, id.getAttachmentId());
-    return idDoc;
-  }
-
-  private Document toIdAttachmentKeyContentId(String contentId) {
-    Document idDoc = new Document();
-    // Note: the order of `put` calls matters
-    idDoc.put(ID_REPO_NAME, repositoryId);
-    idDoc.put(ID_ATTR_CONTENT_ID, contentId);
-    return idDoc;
-  }
-
   private List<Document> toIdsFromHashes(Collection<Hash> ids) {
     return ids.stream().map(this::toId).collect(Collectors.toList());
-  }
-
-  private List<Document> toIdsFromAttachmentKeys(Stream<AttachmentKey> ids) {
-    return ids.map(this::toId).collect(Collectors.toList());
-  }
-
-  private Document toDoc(AttachmentKey id, byte[] data) {
-    return toDoc(toId(id), data);
   }
 
   private Document toDoc(Hash id, byte[] data) {
@@ -271,19 +234,8 @@ public class MongoDatabaseAdapter
     verifyAcknowledged(result, collection);
   }
 
-  private static void bulkWrite(
-      MongoCollection<Document> collection, List<WriteModel<Document>> requests) {
-    verifyAcknowledged(collection.bulkWrite(requests), collection);
-  }
-
   private void delete(MongoCollection<Document> collection, Collection<Hash> ids) {
     DeleteResult result = collection.deleteMany(Filters.in(ID_PROPERTY_NAME, toIdsFromHashes(ids)));
-    verifyAcknowledged(result, collection);
-  }
-
-  private void delete(MongoCollection<Document> collection, Stream<AttachmentKey> ids) {
-    DeleteResult result =
-        collection.deleteMany(Filters.in(ID_PROPERTY_NAME, toIdsFromAttachmentKeys(ids)));
     verifyAcknowledged(result, collection);
   }
 
@@ -815,174 +767,6 @@ public class MongoDatabaseAdapter
       }
     }
     return false;
-  }
-
-  @Override
-  protected void writeAttachments(Stream<Entry<AttachmentKey, AttachmentValue>> attachments) {
-    Map<String, List<AttachmentKey>> attachmentsKeys = new HashMap<>();
-
-    List<WriteModel<Document>> requests =
-        attachments
-            .map(
-                e -> {
-                  AttachmentValue value = e.getValue();
-                  attachmentsKeys
-                      .computeIfAbsent(e.getKey().getContentId().getId(), c -> new ArrayList<>())
-                      .add(e.getKey());
-                  Document doc = toDoc(e.getKey(), value.toByteArray());
-                  if (value.hasVersion()) {
-                    doc.put(VALUE_VERSION_PROPERTY_NAME, value.getVersion());
-                  }
-                  return doc;
-                })
-            .map(
-                doc ->
-                    new UpdateOneModel<Document>(
-                        Filters.eq(doc.get(ID_PROPERTY_NAME)),
-                        new Document("$set", doc),
-                        new UpdateOptions().upsert(true)))
-            .collect(Collectors.toList());
-
-    bulkWrite(client.getAttachments(), requests);
-
-    requests =
-        attachmentsKeys.entrySet().stream()
-            .map(
-                e ->
-                    new UpdateOneModel<Document>(
-                        Filters.eq(ID_PROPERTY_NAME, toIdAttachmentKeyContentId(e.getKey())),
-                        Updates.addEachToSet(
-                            DATA_PROPERTY_NAME,
-                            e.getValue().stream()
-                                .map(ProtoSerialization::attachmentKeyAsString)
-                                .collect(Collectors.toList())),
-                        new UpdateOptions().upsert(true)))
-            .collect(Collectors.toList());
-
-    bulkWrite(client.getAttachmentKeys(), requests);
-  }
-
-  @Override
-  protected boolean consistentWriteAttachment(
-      AttachmentKey key, AttachmentValue value, Optional<String> expectedVersion) {
-    Document doc = toDoc(key, value.toByteArray());
-    doc.put(VALUE_VERSION_PROPERTY_NAME, value.getVersion());
-
-    Document id = toId(key);
-
-    if (expectedVersion.isPresent()) {
-      if (!verifySuccessfulUpdate(
-          client.getAttachments(),
-          coll ->
-              coll.updateOne(
-                  Filters.and(
-                      Filters.eq(id),
-                      Filters.eq(VALUE_VERSION_PROPERTY_NAME, expectedVersion.get())),
-                  new Document("$set", doc)))) {
-        return false;
-      }
-    } else {
-      try {
-        if (!client.getAttachments().insertOne(doc).wasAcknowledged()) {
-          return false;
-        }
-      } catch (MongoWriteException writeException) {
-        if (isDuplicateKeyError(writeException)) {
-          return false;
-        }
-        throw writeException;
-      }
-    }
-
-    verifyAcknowledged(
-        client
-            .getAttachmentKeys()
-            .updateOne(
-                Filters.eq(
-                    ID_PROPERTY_NAME, toIdAttachmentKeyContentId(key.getContentId().getId())),
-                Updates.addToSet(DATA_PROPERTY_NAME, attachmentKeyAsString(key)),
-                new UpdateOptions().upsert(true)),
-        client.getAttachmentKeys());
-
-    return true;
-  }
-
-  @Override
-  protected void purgeAttachments(Stream<AttachmentKey> keys) {
-    Map<String, List<AttachmentKey>> attachmentsKeys = new HashMap<>();
-
-    delete(
-        client.getAttachments(),
-        keys.peek(
-            key ->
-                attachmentsKeys
-                    .computeIfAbsent(key.getContentId().getId(), c -> new ArrayList<>())
-                    .add(key)));
-
-    attachmentsKeys.forEach(
-        (cid, attachmentKeys) ->
-            verifyAcknowledged(
-                client
-                    .getAttachmentKeys()
-                    .updateOne(
-                        Filters.eq(ID_PROPERTY_NAME, toIdAttachmentKeyContentId(cid)),
-                        Updates.pullAll(
-                            DATA_PROPERTY_NAME,
-                            attachmentKeys.stream()
-                                .map(ProtoSerialization::attachmentKeyAsString)
-                                .collect(Collectors.toList())),
-                        new UpdateOptions().upsert(true)),
-                client.getAttachmentKeys()));
-  }
-
-  @Override
-  protected Stream<AttachmentKey> fetchAttachmentKeys(String contentId) {
-    Document doc =
-        client
-            .getAttachmentKeys()
-            .find(Filters.eq(ID_PROPERTY_NAME, toIdAttachmentKeyContentId(contentId)))
-            .first();
-    if (doc == null) {
-      return Stream.empty();
-    }
-    List<String> keys = doc.getList(DATA_PROPERTY_NAME, String.class);
-    return keys.stream().map(ProtoSerialization::attachmentKeyFromString);
-  }
-
-  @Override
-  protected Stream<Entry<AttachmentKey, AttachmentValue>> fetchAttachments(
-      Stream<AttachmentKey> keys) {
-
-    List<AttachmentKey> keyList = keys.collect(Collectors.toList());
-    List<Document> ids = keyList.stream().map(this::toId).collect(Collectors.toList());
-    FindIterable<Document> docs =
-        client.getAttachments().find(Filters.in(ID_PROPERTY_NAME, ids)).limit(ids.size());
-
-    Map<AttachmentKey, AttachmentValue> loaded = Maps.newHashMapWithExpectedSize(ids.size());
-    for (Document doc : docs) {
-      Document idDoc = doc.get(ID_PROPERTY_NAME, Document.class);
-      AttachmentKey k =
-          AttachmentKey.newBuilder()
-              .setContentId(ContentId.newBuilder().setId(idDoc.getString(ID_ATTR_CONTENT_ID)))
-              .setAttachmentType(idDoc.getString(ID_ATTR_OBJECT_TYPE))
-              .setAttachmentId(idDoc.getString(ID_ATTR_OBJECT_ID))
-              .build();
-      AttachmentValue v;
-      try {
-        v = AttachmentValue.parseFrom(data(doc));
-      } catch (InvalidProtocolBufferException e) {
-        throw new RuntimeException(e);
-      }
-      loaded.put(k, v);
-    }
-
-    return keyList.stream()
-        .map(
-            k -> {
-              AttachmentValue v = loaded.get(k);
-              return v != null ? Maps.immutableEntry(k, v) : null;
-            })
-        .filter(Objects::nonNull);
   }
 
   private static boolean verifySuccessfulUpdate(

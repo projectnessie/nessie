@@ -52,6 +52,4 @@ public interface AdjustableDatabaseAdapterConfig extends DatabaseAdapterConfig {
   AdjustableDatabaseAdapterConfig withParentsPerRefLogEntry(int parentsPerRefLogEntry);
 
   AdjustableDatabaseAdapterConfig withAssumedWallClockDriftMicros(long assumedWallClockDriftMicros);
-
-  AdjustableDatabaseAdapterConfig withAttachmentKeysBatchSize(int attachmentKeysBatchSize);
 }

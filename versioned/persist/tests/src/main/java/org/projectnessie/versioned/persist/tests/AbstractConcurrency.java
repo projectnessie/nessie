@@ -17,7 +17,6 @@ package org.projectnessie.versioned.persist.tests;
 
 import static io.micrometer.core.instrument.Metrics.globalRegistry;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.projectnessie.versioned.persist.tests.DatabaseAdapterTestUtils.ALWAYS_THROWING_ATTACHMENT_CONSUMER;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -156,8 +155,7 @@ public abstract class AbstractConcurrency {
                             keys.get(ki),
                             contentId,
                             payloadForContent(c),
-                            DefaultStoreWorker.instance()
-                                .toStoreOnReferenceState(c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
+                            DefaultStoreWorker.instance().toStoreOnReferenceState(c)));
                   }
 
                   try {
@@ -201,8 +199,7 @@ public abstract class AbstractConcurrency {
                   k,
                   contentId,
                   payloadForContent(c),
-                  DefaultStoreWorker.instance()
-                      .toStoreOnReferenceState(c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
+                  DefaultStoreWorker.instance().toStoreOnReferenceState(c)));
         }
         commitAndRecord(onRefStates, branch, commitAttempt);
       }

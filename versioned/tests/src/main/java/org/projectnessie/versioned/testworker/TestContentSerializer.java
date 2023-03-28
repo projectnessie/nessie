@@ -17,14 +17,10 @@ package org.projectnessie.versioned.testworker;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.types.ContentTypes;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
-import org.projectnessie.versioned.ContentAttachment;
-import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.store.ContentSerializer;
 
 abstract class TestContentSerializer<C extends Content> implements ContentSerializer<C> {
@@ -42,10 +38,7 @@ abstract class TestContentSerializer<C extends Content> implements ContentSerial
 
   @Override
   public C valueFromStore(
-      byte payload,
-      ByteString onReferenceValue,
-      Supplier<ByteString> globalState,
-      Function<Stream<ContentAttachmentKey>, Stream<ContentAttachment>> attachmentsRetriever) {
+      byte payload, ByteString onReferenceValue, Supplier<ByteString> globalState) {
     String serialized = onReferenceValue.toStringUtf8();
 
     int i = serialized.indexOf(':');
@@ -62,12 +55,8 @@ abstract class TestContentSerializer<C extends Content> implements ContentSerial
     String onRef = serialized.substring(i + 1);
 
     ByteString global = globalState.get();
-    return valueFromStore(contentId, onRef, global, attachmentsRetriever);
+    return valueFromStore(contentId, onRef, global);
   }
 
-  protected abstract C valueFromStore(
-      String contentId,
-      String onRef,
-      ByteString global,
-      Function<Stream<ContentAttachmentKey>, Stream<ContentAttachment>> attachmentsRetriever);
+  protected abstract C valueFromStore(String contentId, String onRef, ByteString global);
 }

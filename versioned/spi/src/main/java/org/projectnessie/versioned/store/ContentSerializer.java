@@ -15,14 +15,9 @@
  */
 package org.projectnessie.versioned.store;
 
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 import org.projectnessie.model.Content;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
-import org.projectnessie.versioned.ContentAttachment;
-import org.projectnessie.versioned.ContentAttachmentKey;
 
 /**
  * Content serializers provide persistence layer (de)serialization functionality for a specific
@@ -33,13 +28,9 @@ public interface ContentSerializer<C extends Content> {
 
   byte payload();
 
-  ByteString toStoreOnReferenceState(C content, Consumer<ContentAttachment> attachmentConsumer);
+  ByteString toStoreOnReferenceState(C content);
 
   C applyId(C content, String id);
-
-  default boolean requiresGlobalState(C content) {
-    return false;
-  }
 
   default boolean requiresGlobalState(ByteString onReferenceValue) {
     return false;
@@ -49,9 +40,5 @@ public interface ContentSerializer<C extends Content> {
     return contentType();
   }
 
-  C valueFromStore(
-      byte payload,
-      ByteString onReferenceValue,
-      Supplier<ByteString> globalState,
-      Function<Stream<ContentAttachmentKey>, Stream<ContentAttachment>> attachmentsRetriever);
+  C valueFromStore(byte payload, ByteString onReferenceValue, Supplier<ByteString> globalState);
 }

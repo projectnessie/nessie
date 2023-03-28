@@ -16,23 +16,17 @@
 package org.projectnessie.versioned.persist.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
 
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
-import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 
 public class DatabaseAdapterTestUtils {
-
-  public static final Consumer<ContentAttachment> ALWAYS_THROWING_ATTACHMENT_CONSUMER =
-      attachment -> fail("Unexpected use of Consumer<ContentAttachment>");
 
   public static <T extends DatabaseAdapterConfig> void assertAdjustableConfigConvention(
       Class<T> configClass, Class<? extends T> adjustableConfigClass) {

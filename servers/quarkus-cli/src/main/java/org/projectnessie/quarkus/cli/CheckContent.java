@@ -202,8 +202,7 @@ public class CheckContent extends BaseCommand {
                     .valueFromStore(
                         contentAndState.getPayload(),
                         contentAndState.getRefState(),
-                        contentAndState::getGlobalState,
-                        databaseAdapter::mapToAttachment);
+                        contentAndState::getGlobalState);
             report(generator, k, null, value);
           } catch (Exception e) {
             report(generator, k, e, null);

@@ -15,10 +15,7 @@
  */
 package org.projectnessie.server.store;
 
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
@@ -30,8 +27,6 @@ import org.projectnessie.model.Namespace;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.nessie.relocated.protobuf.InvalidProtocolBufferException;
 import org.projectnessie.server.store.proto.ObjectTypes;
-import org.projectnessie.versioned.ContentAttachment;
-import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.store.ContentSerializer;
 
 /**
@@ -41,8 +36,7 @@ import org.projectnessie.versioned.store.ContentSerializer;
 abstract class BaseSerializer<C extends Content> implements ContentSerializer<C> {
 
   @Override
-  public ByteString toStoreOnReferenceState(
-      C content, Consumer<ContentAttachment> attachmentConsumer) {
+  public ByteString toStoreOnReferenceState(C content) {
     ObjectTypes.Content.Builder builder = ObjectTypes.Content.newBuilder().setId(content.getId());
     toStoreOnRefState(content, builder);
     return builder.build().toByteString();
@@ -50,10 +44,7 @@ abstract class BaseSerializer<C extends Content> implements ContentSerializer<C>
 
   @Override
   public C valueFromStore(
-      byte payload,
-      ByteString onReferenceValue,
-      Supplier<ByteString> globalState,
-      Function<Stream<ContentAttachmentKey>, Stream<ContentAttachment>> attachmentsRetriever) {
+      byte payload, ByteString onReferenceValue, Supplier<ByteString> globalState) {
     ObjectTypes.Content content = parse(onReferenceValue);
     return valueFromStore(content, globalState);
   }

@@ -247,15 +247,14 @@ public class ITExportImport {
                                 Namespace.builder()
                                     .id(namespaceId)
                                     .addElements("namespace123")
-                                    .build(),
-                                a -> {})),
+                                    .build())),
                     KeyWithBytes.of(
                         key,
                         ContentId.of(tableId),
                         payloadForContent(ICEBERG_TABLE),
                         DefaultStoreWorker.instance()
                             .toStoreOnReferenceState(
-                                IcebergTable.of("meta", 42, 43, 44, 45, tableId), a -> {})))
+                                IcebergTable.of("meta", 42, 43, 44, 45, tableId))))
                 .build());
     adapter.create(branchFoo, main);
     adapter.commit(
@@ -269,7 +268,7 @@ public class ITExportImport {
                     payloadForContent(ICEBERG_TABLE),
                     DefaultStoreWorker.instance()
                         .toStoreOnReferenceState(
-                            IcebergTable.of("meta2", 43, 43, 44, 45, "id123"), a -> {})))
+                            IcebergTable.of("meta2", 43, 43, 44, 45, "id123"))))
             .build());
   }
 }

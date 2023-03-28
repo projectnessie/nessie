@@ -15,17 +15,11 @@
  */
 package org.projectnessie.versioned.persist.adapter.serialize;
 
-import com.google.common.base.Preconditions;
 import java.util.TreeMap;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.nessie.relocated.protobuf.InvalidProtocolBufferException;
-import org.projectnessie.versioned.ContentAttachment;
-import org.projectnessie.versioned.ContentAttachment.Compression;
-import org.projectnessie.versioned.ContentAttachment.Format;
-import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.ImmutableContentAttachment;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry.KeyListVariant;
 import org.projectnessie.versioned.persist.adapter.ContentId;
@@ -40,8 +34,6 @@ import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.RefLog;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentKey;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentValue;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RepoProps;
 
 public final class ProtoSerialization {
@@ -318,158 +310,6 @@ public final class ProtoSerialization {
 
   public static ContentKey protoToKey(AdapterTypes.Key key) {
     return ContentKey.of(key.getElementList().toArray(new String[0]));
-  }
-
-  public static AttachmentKey toProtoKey(ContentAttachmentKey contentAttachmentKey) {
-    return AttachmentKey.newBuilder()
-        .setContentId(
-            AdapterTypes.ContentId.newBuilder().setId(contentAttachmentKey.getContentId()))
-        .setAttachmentId(contentAttachmentKey.getAttachmentId())
-        .setAttachmentType(contentAttachmentKey.getAttachmentType())
-        .build();
-  }
-
-  public static AttachmentKey toProtoKey(ContentAttachment contentAttachment) {
-    ContentAttachmentKey key = contentAttachment.getKey();
-    return AttachmentKey.newBuilder()
-        .setContentId(AdapterTypes.ContentId.newBuilder().setId(key.getContentId()))
-        .setAttachmentType(key.getAttachmentType())
-        .setAttachmentId(key.getAttachmentId())
-        .build();
-  }
-
-  public static AttachmentValue toProtoValue(ContentAttachment contentAttachment) {
-    AttachmentValue.Builder builder =
-        AttachmentValue.newBuilder()
-            .setFormat(formatFromContentAttachment(contentAttachment))
-            .setCompression(compressionFromContentAttachment(contentAttachment))
-            .setData(contentAttachment.getData());
-    if (contentAttachment.getObjectId() != null) {
-      builder.setObjectId(contentAttachment.getObjectId());
-    }
-    if (contentAttachment.getVersion() != null) {
-      builder.setVersion(contentAttachment.getVersion());
-    }
-    return builder.build();
-  }
-
-  private static AdapterTypes.Format formatFromContentAttachment(
-      ContentAttachment contentAttachment) {
-    AdapterTypes.Format format;
-    switch (contentAttachment.getFormat()) {
-      case JSON:
-        format = AdapterTypes.Format.JSON;
-        break;
-      case CBOR:
-        format = AdapterTypes.Format.CBOR;
-        break;
-      default:
-        throw new IllegalArgumentException(
-            "Unsupported compression " + contentAttachment.getFormat());
-    }
-    return format;
-  }
-
-  private static AdapterTypes.Compression compressionFromContentAttachment(
-      ContentAttachment contentAttachment) {
-    AdapterTypes.Compression compression;
-    switch (contentAttachment.getCompression()) {
-      case NONE:
-        compression = AdapterTypes.Compression.NONE;
-        break;
-      default:
-        throw new IllegalArgumentException(
-            "Unsupported compression " + contentAttachment.getCompression());
-    }
-    return compression;
-  }
-
-  public static ContentAttachmentKey attachmentKey(AttachmentKey key) {
-    return ContentAttachmentKey.of(
-        key.getContentId().getId(), key.getAttachmentType(), key.getAttachmentId());
-  }
-
-  public static AttachmentKey attachmentKey(ContentAttachmentKey key) {
-    return AttachmentKey.newBuilder()
-        .setContentId(AdapterTypes.ContentId.newBuilder().setId(key.getContentId()))
-        .setAttachmentType(key.getAttachmentType())
-        .setAttachmentId(key.getAttachmentId())
-        .build();
-  }
-
-  public static ContentAttachment attachmentContent(AttachmentKey key, AttachmentValue value) {
-    return attachmentContent(attachmentKey(key), value);
-  }
-
-  public static ContentAttachment attachmentContent(
-      ContentAttachmentKey key, AttachmentValue value) {
-    return attachmentContent(ContentAttachment.builder().key(key), value);
-  }
-
-  private static ContentAttachment attachmentContent(
-      ImmutableContentAttachment.Builder builder, AttachmentValue value) {
-    builder
-        .format(formatFromAttachmentValue(value))
-        .compression(compressionFromAttachmentValue(value))
-        .data(value.getData());
-    if (value.hasObjectId()) {
-      builder.objectId(value.getObjectId());
-    }
-    if (value.hasVersion()) {
-      builder.version(value.getVersion());
-    }
-    return builder.build();
-  }
-
-  private static Format formatFromAttachmentValue(AttachmentValue value) {
-    Format c;
-    switch (value.getFormat()) {
-      case JSON:
-        c = Format.JSON;
-        break;
-      case CBOR:
-        c = Format.CBOR;
-        break;
-      default:
-        throw new IllegalArgumentException("Unsupported format " + value.getFormat());
-    }
-    return c;
-  }
-
-  private static Compression compressionFromAttachmentValue(AttachmentValue value) {
-    Compression c;
-    switch (value.getCompression()) {
-      case NONE:
-        c = Compression.NONE;
-        break;
-      default:
-        throw new IllegalArgumentException("Unsupported compression " + value.getCompression());
-    }
-    return c;
-  }
-
-  public static String attachmentKeyContentIdAsString(String contentId) {
-    Preconditions.checkState(
-        !contentId.contains("::"), "Attributes of an attachment key must not contain '::'");
-    return contentId + "::";
-  }
-
-  public static String attachmentKeyAsString(AttachmentKey key) {
-    return ContentAttachmentKey.keyPartsAsString(
-        key.getContentId().getId(), key.getAttachmentType(), key.getAttachmentId());
-  }
-
-  public static AttachmentKey attachmentKeyFromString(String key) {
-    int i = key.indexOf("::");
-    String cid = key.substring(0, i);
-    int j = key.indexOf("::", i + 2);
-    String objType = key.substring(i + 2, j);
-    String objId = key.substring(j + 2);
-    return AttachmentKey.newBuilder()
-        .setContentId(AdapterTypes.ContentId.newBuilder().setId(cid))
-        .setAttachmentType(objType)
-        .setAttachmentId(objId)
-        .build();
   }
 
   /** Functional interface for the various {@code protoToABC()} methods above. */
