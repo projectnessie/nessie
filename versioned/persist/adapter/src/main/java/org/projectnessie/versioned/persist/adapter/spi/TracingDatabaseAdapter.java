@@ -26,8 +26,6 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
-import org.projectnessie.versioned.ContentAttachment;
-import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.MergeResult;
@@ -259,43 +257,6 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
   @Override
   public void assertCleanStateForTests() {
     delegate.assertCleanStateForTests();
-  }
-
-  @Override
-  public Stream<ContentAttachmentKey> getAttachmentKeys(String contentId) {
-    try (Traced ignore = trace("getAttachmentKeys.stream")) {
-      return delegate.getAttachmentKeys(contentId);
-    }
-  }
-
-  @Override
-  public Stream<ContentAttachment> mapToAttachment(Stream<ContentAttachmentKey> keys) {
-    try (Traced ignore = trace("getAttachments.stream")) {
-      return delegate.mapToAttachment(keys);
-    }
-  }
-
-  @Override
-  public boolean consistentPutAttachment(
-      ContentAttachment attachment, Optional<String> expectedVersion) {
-    try (Traced ignore =
-        trace("consistentPutAttachment").tag(TAG_CONTENT_ID, attachment.getKey().getContentId())) {
-      return delegate.consistentPutAttachment(attachment, expectedVersion);
-    }
-  }
-
-  @Override
-  public void putAttachments(Stream<ContentAttachment> attachments) {
-    try (Traced ignore = trace("putAttachments")) {
-      delegate.putAttachments(attachments);
-    }
-  }
-
-  @Override
-  public void deleteAttachments(Stream<ContentAttachmentKey> keys) {
-    try (Traced ignore = trace("deleteAttachments")) {
-      delegate.deleteAttachments(keys);
-    }
   }
 
   @Override

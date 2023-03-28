@@ -242,11 +242,9 @@ public class ITExportImportPersist {
     StoreWorker storeWorker = DefaultStoreWorker.instance();
     byte payload = payloadForContent(ICEBERG_TABLE);
     ByteString contentMain =
-        storeWorker.toStoreOnReferenceState(
-            IcebergTable.of("meta", 42, 43, 44, 45, "id123"), a -> {});
+        storeWorker.toStoreOnReferenceState(IcebergTable.of("meta", 42, 43, 44, 45, "id123"));
     ByteString contentFoo =
-        storeWorker.toStoreOnReferenceState(
-            IcebergTable.of("meta2", 43, 43, 44, 45, "id123"), a -> {});
+        storeWorker.toStoreOnReferenceState(IcebergTable.of("meta2", 43, 43, 44, 45, "id123"));
 
     ContentValueObj valueMain = contentValue(contentId.toString(), payload, contentMain);
     ContentValueObj valueFoo = contentValue(contentId.toString(), payload, contentFoo);

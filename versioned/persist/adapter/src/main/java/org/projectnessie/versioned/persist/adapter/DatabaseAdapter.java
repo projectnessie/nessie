@@ -26,8 +26,6 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
-import org.projectnessie.versioned.ContentAttachment;
-import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
@@ -312,58 +310,6 @@ public interface DatabaseAdapter {
    */
   @MustBeClosed
   Stream<CommitLogEntry> scanAllCommitLogEntries();
-
-  /**
-   * Retrieve the known attachment keys for a content ID.
-   *
-   * <p>Implementations may return keys that do not or no longer exist. Especially non-transactional
-   * database adapter implementations allow this as a compromise. See {@link
-   * #mapToAttachment(Stream)}, which only returns existing content attachments.
-   */
-  @MustBeClosed
-  Stream<ContentAttachmentKey> getAttachmentKeys(String contentId);
-
-  /**
-   * Retrieve the content attachments identified via {@code keys}. Attachments that do not exist are
-   * not returned.
-   *
-   * <p>Whether the input stream is "terminated" or "fluently" mapped, can vary between
-   * implementations.
-   */
-  @MustBeClosed
-  Stream<ContentAttachment> mapToAttachment(Stream<ContentAttachmentKey> keys);
-
-  /**
-   * Consistent put-attachment operation.
-   *
-   * <p>Either a "put-if-absent", if {@code expectedVersion} is empty or a compare-and-swap based on
-   * the value of {@code expectedVersion}.
-   *
-   * <p>Note: this method uses conditional put operations, unlike {@link #putAttachments(Stream)}.
-   * Users should not use this method and {@link #putAttachments(Stream)} for the same keys.
-   *
-   * @param attachment the attachment to write
-   * @param expectedVersion indicator for put-if-absent or the expected value on an existing item
-   */
-  boolean consistentPutAttachment(ContentAttachment attachment, Optional<String> expectedVersion);
-
-  /**
-   * Bulk-write the given content attachments. The values of attachments written with this method
-   * should be immutable and deterministic for the respective attachment keys.
-   *
-   * <p>The behavior of the implementation whether an already existing attachment will be
-   * overwritten or not is undefined.
-   *
-   * <p>The outcome of this method is undefined when an error occurred.
-   *
-   * <p>Note: this method uses unconditional put operations, unlike {@link
-   * #consistentPutAttachment(ContentAttachment, Optional)}. Should not use this method and {@link
-   * #consistentPutAttachment(ContentAttachment, Optional)} for the same keys.
-   */
-  void putAttachments(Stream<ContentAttachment> attachments);
-
-  /** Unconditionally delete the content attachments identified via {@code keys}. */
-  void deleteAttachments(Stream<ContentAttachmentKey> keys);
 
   @VisibleForTesting
   void assertCleanStateForTests();

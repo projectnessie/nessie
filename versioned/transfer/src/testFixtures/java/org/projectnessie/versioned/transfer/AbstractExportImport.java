@@ -39,11 +39,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.versioned.BranchName;
-import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceInfo;
@@ -232,14 +230,6 @@ public abstract class AbstractExportImport {
                         assertThat(createdReferences.get(refNum)).isFalse();
                         createdReferences.set(refNum);
                         return hash;
-                      }
-                    case "putAttachments":
-                      {
-                        @SuppressWarnings("unchecked")
-                        Stream<ContentAttachment> attachmentStream =
-                            (Stream<ContentAttachment>) args[0];
-                        assertThat(attachmentStream).isEmpty();
-                        return null;
                       }
                     default:
                       throw new UnsupportedOperationException(method.toString());

@@ -216,7 +216,7 @@ public abstract class AbstractCommitLogScan {
                           key,
                           cid,
                           payload,
-                          DefaultStoreWorker.instance().toStoreOnReferenceState(c, att -> {})))
+                          DefaultStoreWorker.instance().toStoreOnReferenceState(c)))
                   .build());
       committed.accept(head);
     }

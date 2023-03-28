@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
-import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 
@@ -46,12 +45,6 @@ final class BatchWriter<T> implements AutoCloseable {
             throw new RuntimeException(e);
           }
         });
-  }
-
-  static BatchWriter<ContentAttachment> attachmentsBatchWriter(
-      int batchSize, DatabaseAdapter databaseAdapter) {
-    return new BatchWriter<>(
-        batchSize, attachments -> databaseAdapter.putAttachments(attachments.stream()));
   }
 
   BatchWriter(int capacity, Consumer<List<T>> flush) {

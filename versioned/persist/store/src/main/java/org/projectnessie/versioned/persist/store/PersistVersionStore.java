@@ -19,7 +19,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
-import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Collection;
 import java.util.Collections;
@@ -155,7 +154,7 @@ public class PersistVersionStore implements VersionStore {
                 op.getKey(),
                 contentId,
                 payloadForContent(content),
-                STORE_WORKER.toStoreOnReferenceState(content, commitAttempt::addAttachments)));
+                STORE_WORKER.toStoreOnReferenceState(content)));
 
         if (expected != null) {
           String expectedId = expected.getId();
@@ -171,10 +170,6 @@ public class PersistVersionStore implements VersionStore {
               expectedContentId,
               op.getKey());
         }
-
-        Preconditions.checkState(
-            !STORE_WORKER.requiresGlobalState(content),
-            "Nessie no longer supports content with global state");
       } else if (operation instanceof Delete) {
         commitAttempt.addDeletes(operation.getKey());
       } else if (operation instanceof Unchanged) {
@@ -473,8 +468,7 @@ public class PersistVersionStore implements VersionStore {
                           STORE_WORKER.valueFromStore(
                               put.getPayload(),
                               put.getValue(),
-                              () -> getGlobalContents.apply(put),
-                              databaseAdapter::mapToAttachment))));
+                              () -> getGlobalContents.apply(put)))));
     };
   }
 
@@ -544,8 +538,7 @@ public class PersistVersionStore implements VersionStore {
   }
 
   private Content mapContentAndState(ContentAndState cs) {
-    return STORE_WORKER.valueFromStore(
-        cs.getPayload(), cs.getRefState(), cs::getGlobalState, databaseAdapter::mapToAttachment);
+    return STORE_WORKER.valueFromStore(cs.getPayload(), cs.getRefState(), cs::getGlobalState);
   }
 
   @Override
@@ -568,18 +561,12 @@ public class PersistVersionStore implements VersionStore {
                     .map(
                         v ->
                             STORE_WORKER.valueFromStore(
-                                d.getPayload(),
-                                v,
-                                () -> d.getGlobal().orElse(null),
-                                databaseAdapter::mapToAttachment)),
+                                d.getPayload(), v, () -> d.getGlobal().orElse(null))),
                 d.getToValue()
                     .map(
                         v ->
                             STORE_WORKER.valueFromStore(
-                                d.getPayload(),
-                                v,
-                                () -> d.getGlobal().orElse(null),
-                                databaseAdapter::mapToAttachment)))) {
+                                d.getPayload(), v, () -> d.getGlobal().orElse(null))))) {
       @Override
       protected String computeTokenForCurrent() {
         throw new IllegalArgumentException("Paging not supported");

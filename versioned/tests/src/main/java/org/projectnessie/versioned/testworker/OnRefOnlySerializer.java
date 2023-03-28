@@ -18,13 +18,8 @@ package org.projectnessie.versioned.testworker;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Stream;
 import org.projectnessie.model.Content;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
-import org.projectnessie.versioned.ContentAttachment;
-import org.projectnessie.versioned.ContentAttachmentKey;
 
 public class OnRefOnlySerializer extends TestContentSerializer<OnRefOnly> {
 
@@ -39,8 +34,7 @@ public class OnRefOnlySerializer extends TestContentSerializer<OnRefOnly> {
   }
 
   @Override
-  public ByteString toStoreOnReferenceState(
-      OnRefOnly content, Consumer<ContentAttachment> attachmentConsumer) {
+  public ByteString toStoreOnReferenceState(OnRefOnly content) {
     return content.serialized();
   }
 
@@ -50,11 +44,7 @@ public class OnRefOnlySerializer extends TestContentSerializer<OnRefOnly> {
   }
 
   @Override
-  protected OnRefOnly valueFromStore(
-      String contentId,
-      String onRef,
-      ByteString global,
-      Function<Stream<ContentAttachmentKey>, Stream<ContentAttachment>> attachmentsRetriever) {
+  protected OnRefOnly valueFromStore(String contentId, String onRef, ByteString global) {
     assertThat(global).isNull();
     return onRef(onRef, contentId);
   }

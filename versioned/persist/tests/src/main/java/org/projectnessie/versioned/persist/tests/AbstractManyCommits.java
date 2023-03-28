@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.persist.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.projectnessie.versioned.persist.tests.DatabaseAdapterTestUtils.ALWAYS_THROWING_ATTACHMENT_CONSUMER;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
 import com.google.common.collect.Maps;
@@ -84,8 +83,7 @@ public abstract class AbstractManyCommits {
                       key,
                       fixed,
                       payload,
-                      DefaultStoreWorker.instance()
-                          .toStoreOnReferenceState(c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
+                      DefaultStoreWorker.instance().toStoreOnReferenceState(c)));
       Hash hash = databaseAdapter.commit(commit.build());
       commits[i] = hash;
     }
@@ -131,9 +129,7 @@ public abstract class AbstractManyCommits {
       OnRefOnly expected =
           OnRefOnly.onRef("value for #" + i + " of " + numCommits, contentId.getId());
 
-      ByteString expectValue =
-          DefaultStoreWorker.instance()
-              .toStoreOnReferenceState(expected, ALWAYS_THROWING_ATTACHMENT_CONSUMER);
+      ByteString expectValue = DefaultStoreWorker.instance().toStoreOnReferenceState(expected);
       ContentAndState expect = ContentAndState.of(payloadForContent(expected), expectValue);
       assertThat(values).containsExactly(Maps.immutableEntry(key, expect));
     } catch (ReferenceNotFoundException e) {

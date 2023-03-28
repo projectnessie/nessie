@@ -24,6 +24,5 @@ public class TestContentSerializerBundle implements ContentSerializerBundle {
   @Override
   public void register(Consumer<ContentSerializer<?>> registry) {
     registry.accept(new OnRefOnlySerializer());
-    registry.accept(new WithAttachmentsSerializer());
   }
 }

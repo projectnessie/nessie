@@ -24,7 +24,6 @@ import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
-import org.projectnessie.versioned.ContentAttachment;
 
 /** API helper method to encapsulate parameters for {@link DatabaseAdapter#commit(CommitParams)}. */
 @Value.Immutable
@@ -41,9 +40,6 @@ public interface CommitParams extends ToBranchParams {
    * Content}.
    */
   List<KeyWithBytes> getPuts();
-
-  /** The content attachments for the put operations. */
-  List<ContentAttachment> getAttachments();
 
   /** List of "unchanged" keys, from {@code Unchanged} commit operations. */
   List<ContentKey> getUnchanged();

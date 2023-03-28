@@ -16,10 +16,7 @@
 package org.projectnessie.versioned.persist.adapter.serialize;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.toProto;
-import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.toProtoKey;
-import static org.projectnessie.versioned.persist.adapter.serialize.ProtoSerialization.toProtoValue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,7 +32,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.model.ContentKey;
@@ -43,12 +39,7 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.nessie.relocated.protobuf.InvalidProtocolBufferException;
 import org.projectnessie.nessie.relocated.protobuf.MessageLite;
 import org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations;
-import org.projectnessie.versioned.ContentAttachment;
-import org.projectnessie.versioned.ContentAttachment.Compression;
-import org.projectnessie.versioned.ContentAttachment.Format;
-import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.ImmutableContentAttachment;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.ContentIdAndBytes;
@@ -58,8 +49,6 @@ import org.projectnessie.versioned.persist.adapter.KeyListEntry;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.persist.adapter.RepoDescription;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentKey;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes.AttachmentValue;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStateLogEntry;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.GlobalStatePointer;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.NamedReference;
@@ -307,26 +296,6 @@ class TestSerialization {
                 throw new RuntimeException(e);
               }
             }));
-    params.add(
-        new TypeSerialization<>(
-            ContentAttachmentKey.class,
-            AdapterTypes.AttachmentKey.class,
-            TestSerialization::createAttachmentKey,
-            ProtoSerialization::toProtoKey,
-            v -> {
-              try {
-                return AdapterTypes.AttachmentKey.parseFrom(v);
-              } catch (InvalidProtocolBufferException e) {
-                throw new RuntimeException(e);
-              }
-            },
-            v -> {
-              try {
-                return ProtoSerialization.attachmentKey(AdapterTypes.AttachmentKey.parseFrom(v));
-              } catch (InvalidProtocolBufferException e) {
-                throw new RuntimeException(e);
-              }
-            }));
     return params;
   }
 
@@ -372,57 +341,6 @@ class TestSerialization {
     assertThat(repoProps.getPropertiesList()).containsExactlyElementsOf(expected);
   }
 
-  @Test
-  public void attachmentContentSerialization() throws Exception {
-    for (int i = 0; i < 500; i++) {
-      ContentAttachment entry = createContentAttachment();
-
-      AttachmentKey attachmentKey = toProtoKey(entry);
-      AttachmentValue attachmentValue = toProtoValue(entry);
-      byte[] serializedKey = attachmentKey.toByteArray();
-      byte[] serializedValue = attachmentValue.toByteArray();
-      ContentAttachment deserialized =
-          ProtoSerialization.attachmentContent(
-              AdapterTypes.AttachmentKey.parseFrom(serializedKey),
-              AdapterTypes.AttachmentValue.parseFrom(serializedValue));
-
-      assertThat(deserialized).isEqualTo(entry);
-    }
-  }
-
-  @Test
-  public void attachmentKeyAsString() {
-    AttachmentKey attachmentKey =
-        AttachmentKey.newBuilder()
-            .setContentId(AdapterTypes.ContentId.newBuilder().setId("content-id").build())
-            .setAttachmentType("object-type")
-            .setAttachmentId("object-id")
-            .build();
-    String str = ProtoSerialization.attachmentKeyAsString(attachmentKey);
-
-    assertThat(str).isEqualTo("content-id::object-type::object-id");
-
-    AttachmentKey fromStr = ProtoSerialization.attachmentKeyFromString(str);
-
-    assertThat(fromStr).isEqualTo(attachmentKey);
-  }
-
-  @Test
-  public void malformedAttachmentKey() {
-    assertThatThrownBy(() -> ContentAttachmentKey.of("cid", "type", "oid::foo").asString())
-        .isInstanceOf(IllegalStateException.class);
-    assertThatThrownBy(() -> ContentAttachmentKey.of("cid", "type::", "oid").asString())
-        .isInstanceOf(IllegalStateException.class);
-    assertThatThrownBy(() -> ContentAttachmentKey.of("cid::", "type", "oid").asString())
-        .isInstanceOf(IllegalStateException.class);
-    assertThatThrownBy(() -> ContentAttachmentKey.keyPartsAsString("cid", "type", "oid::foo"))
-        .isInstanceOf(IllegalStateException.class);
-    assertThatThrownBy(() -> ContentAttachmentKey.keyPartsAsString("cid", "type::", "oid"))
-        .isInstanceOf(IllegalStateException.class);
-    assertThatThrownBy(() -> ContentAttachmentKey.keyPartsAsString("cid::", "type", "oid"))
-        .isInstanceOf(IllegalStateException.class);
-  }
-
   public static ContentId randomId() {
     return ContentId.of(UUID.randomUUID().toString());
   }
@@ -451,32 +369,9 @@ class TestSerialization {
     StringBuilder sb = new StringBuilder(num);
     for (int i = 0; i < num; i++) {
       char c = (char) rand.nextInt(32, 126);
-      // ':' character is illegal in attachment keys
-      if (c == ':') {
-        c = '_';
-      }
       sb.append(c);
     }
     return sb.toString();
-  }
-
-  private static ContentAttachmentKey createAttachmentKey() {
-    return ContentAttachmentKey.of(randomId().getId(), randomString(5), randomString(8));
-  }
-
-  private static ContentAttachment createContentAttachment() {
-    ImmutableContentAttachment.Builder attachment =
-        ContentAttachment.builder()
-            .key(createAttachmentKey())
-            .compression(
-                Compression.values()[
-                    ThreadLocalRandom.current().nextInt(Compression.values().length)])
-            .format(Format.values()[ThreadLocalRandom.current().nextInt(Format.values().length)])
-            .data(randomBytes(30));
-    if (ThreadLocalRandom.current().nextBoolean()) {
-      attachment.objectId(ThreadLocalRandom.current().nextLong());
-    }
-    return attachment.build();
   }
 
   static GlobalStateLogEntry createGlobalEntry() {

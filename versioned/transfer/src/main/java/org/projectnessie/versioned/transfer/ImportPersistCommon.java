@@ -121,14 +121,7 @@ abstract class ImportPersistCommon extends ImportCommon {
       case Put:
         try (InputStream inValue = op.getValue().newInput()) {
           Content content = importer.objectMapper().readValue(inValue, Content.class);
-          ByteString onRef =
-              importer
-                  .storeWorker()
-                  .toStoreOnReferenceState(
-                      content,
-                      att -> {
-                        throw new UnsupportedOperationException();
-                      });
+          ByteString onRef = importer.storeWorker().toStoreOnReferenceState(content);
 
           ContentValueObj value = contentValue(op.getContentId(), payload, onRef);
           persist.storeObj(value);

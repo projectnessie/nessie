@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.persist.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.projectnessie.versioned.persist.tests.DatabaseAdapterTestUtils.ALWAYS_THROWING_ATTACHMENT_CONSUMER;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
 import java.util.Optional;
@@ -67,8 +66,7 @@ public abstract class AbstractDiff {
                 ContentKey.of("key-" + k),
                 ContentId.of("C" + k),
                 payloadForContent(c),
-                DefaultStoreWorker.instance()
-                    .toStoreOnReferenceState(c, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
+                DefaultStoreWorker.instance().toStoreOnReferenceState(c)));
       }
       commits[i] = databaseAdapter.commit(commit.build());
     }
@@ -101,9 +99,7 @@ public abstract class AbstractDiff {
                               Optional.empty(),
                               Optional.empty(),
                               Optional.of(
-                                  DefaultStoreWorker.instance()
-                                      .toStoreOnReferenceState(
-                                          content, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
+                                  DefaultStoreWorker.instance().toStoreOnReferenceState(content)));
                         })
                     .collect(Collectors.toList()));
       }
@@ -128,9 +124,7 @@ public abstract class AbstractDiff {
                               ContentKey.of("key-" + k),
                               Optional.empty(),
                               Optional.of(
-                                  DefaultStoreWorker.instance()
-                                      .toStoreOnReferenceState(
-                                          content, ALWAYS_THROWING_ATTACHMENT_CONSUMER)),
+                                  DefaultStoreWorker.instance().toStoreOnReferenceState(content)),
                               Optional.empty());
                         })
                     .collect(Collectors.toList()));
@@ -159,13 +153,9 @@ public abstract class AbstractDiff {
                               ContentKey.of("key-" + k),
                               Optional.empty(),
                               Optional.of(
-                                  DefaultStoreWorker.instance()
-                                      .toStoreOnReferenceState(
-                                          from, ALWAYS_THROWING_ATTACHMENT_CONSUMER)),
+                                  DefaultStoreWorker.instance().toStoreOnReferenceState(from)),
                               Optional.of(
-                                  DefaultStoreWorker.instance()
-                                      .toStoreOnReferenceState(
-                                          to, ALWAYS_THROWING_ATTACHMENT_CONSUMER)));
+                                  DefaultStoreWorker.instance().toStoreOnReferenceState(to)));
                         })
                     .collect(Collectors.toList()));
       }

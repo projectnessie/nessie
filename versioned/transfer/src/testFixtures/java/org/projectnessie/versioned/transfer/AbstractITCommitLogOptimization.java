@@ -243,8 +243,7 @@ public abstract class AbstractITCommitLogOptimization {
                     DefaultStoreWorker.instance()
                         .toStoreOnReferenceState(
                             IcebergTable.of(
-                                "meta", 42L, 43, 44, 45, "cid-" + branch + "-" + commitSeq),
-                            a -> {})))
+                                "meta", 42L, 43, 44, 45, "cid-" + branch + "-" + commitSeq))))
             .commitMetaSerialized(
                 CommitMetaSerializer.METADATA_SERIALIZER.toBytes(
                     CommitMeta.fromMessage("branch-" + branch + "-" + commitSeq)))

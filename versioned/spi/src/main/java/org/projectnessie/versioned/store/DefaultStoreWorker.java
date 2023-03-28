@@ -20,15 +20,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.Content;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
-import org.projectnessie.versioned.ContentAttachment;
-import org.projectnessie.versioned.ContentAttachmentKey;
 import org.projectnessie.versioned.StoreWorker;
 
 /**
@@ -132,9 +127,8 @@ public class DefaultStoreWorker implements StoreWorker {
   }
 
   @Override
-  public ByteString toStoreOnReferenceState(
-      Content content, Consumer<ContentAttachment> attachmentConsumer) {
-    return serializer(content).toStoreOnReferenceState(content, attachmentConsumer);
+  public ByteString toStoreOnReferenceState(Content content) {
+    return serializer(content).toStoreOnReferenceState(content);
   }
 
   @Override
@@ -143,18 +137,9 @@ public class DefaultStoreWorker implements StoreWorker {
   }
 
   @Override
-  public boolean requiresGlobalState(Content content) {
-    return serializer(content).requiresGlobalState(content);
-  }
-
-  @Override
   public Content valueFromStore(
-      byte payload,
-      ByteString onReferenceValue,
-      Supplier<ByteString> globalState,
-      Function<Stream<ContentAttachmentKey>, Stream<ContentAttachment>> attachmentsRetriever) {
-    return serializer(payload)
-        .valueFromStore(payload, onReferenceValue, globalState, attachmentsRetriever);
+      byte payload, ByteString onReferenceValue, Supplier<ByteString> globalState) {
+    return serializer(payload).valueFromStore(payload, onReferenceValue, globalState);
   }
 
   @Override

@@ -26,7 +26,6 @@ import static org.projectnessie.versioned.storage.versionstore.TypeMapping.toCom
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
@@ -87,10 +86,7 @@ public final class ContentMapping {
 
   private static Content valueToContent(ContentValueObj contentValue) {
     return STORE_WORKER.valueFromStore(
-        (byte) contentValue.payload(),
-        contentValue.data(),
-        () -> null,
-        attachmentKeyStream -> Stream.empty());
+        (byte) contentValue.payload(), contentValue.data(), () -> null);
   }
 
   @Nonnull
@@ -101,12 +97,7 @@ public final class ContentMapping {
     String contentId = putValue.getId();
     checkArgument(contentId != null, "Content to store must have a non-null content ID");
 
-    ByteString contentPut =
-        STORE_WORKER.toStoreOnReferenceState(
-            putValue,
-            a -> {
-              throw new IllegalArgumentException();
-            });
+    ByteString contentPut = STORE_WORKER.toStoreOnReferenceState(putValue);
 
     return contentValue(contentId, payload, contentPut);
   }

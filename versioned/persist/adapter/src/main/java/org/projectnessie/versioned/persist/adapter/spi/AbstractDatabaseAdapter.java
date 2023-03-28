@@ -79,7 +79,6 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations;
 import org.projectnessie.versioned.BranchName;
-import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
@@ -302,8 +301,6 @@ public abstract class AbstractDatabaseAdapter<
             currentCommit,
             emptyList());
     writeIndividualCommit(ctx, newBranchCommit);
-
-    persistAttachments(ctx, commitParams.getAttachments().stream());
 
     return newBranchCommit;
   }
@@ -2354,6 +2351,4 @@ public abstract class AbstractDatabaseAdapter<
                 e));
     Tags.ERROR.set(log, true);
   }
-
-  protected abstract void persistAttachments(OP_CONTEXT ctx, Stream<ContentAttachment> attachments);
 }

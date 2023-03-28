@@ -37,8 +37,6 @@ public class MongoDatabaseClient implements DatabaseConnectionProvider<MongoClie
   static final String TABLE_REF_HEADS = "ref_heads";
   static final String TABLE_REF_NAMES = "ref_names";
   static final String TABLE_REF_LOG_HEADS = "ref_log_heads";
-  private static final String ATTACHMENTS = "attachments";
-  private static final String ATTACHMENT_KEYS = "attachment_keys";
 
   private MongoClientConfig config;
   private MongoClient managedClient;
@@ -51,8 +49,6 @@ public class MongoDatabaseClient implements DatabaseConnectionProvider<MongoClie
   private MongoCollection<Document> refHeads;
   private MongoCollection<Document> refNames;
   private MongoCollection<Document> refLogHeads;
-  private MongoCollection<Document> attachments;
-  private MongoCollection<Document> attachmentKeys;
 
   @Override
   public void configure(MongoClientConfig config) {
@@ -97,8 +93,6 @@ public class MongoDatabaseClient implements DatabaseConnectionProvider<MongoClie
     refHeads = database.getCollection(TABLE_REF_HEADS);
     refNames = database.getCollection(TABLE_REF_NAMES);
     refLogHeads = database.getCollection(TABLE_REF_LOG_HEADS);
-    attachments = database.getCollection(ATTACHMENTS);
-    attachmentKeys = database.getCollection(ATTACHMENT_KEYS);
   }
 
   public MongoCollection<Document> getRepoDesc() {
@@ -137,24 +131,7 @@ public class MongoDatabaseClient implements DatabaseConnectionProvider<MongoClie
     return refLogHeads;
   }
 
-  public MongoCollection<Document> getAttachments() {
-    return attachments;
-  }
-
-  public MongoCollection<Document> getAttachmentKeys() {
-    return attachmentKeys;
-  }
-
   public Stream<MongoCollection<Document>> allWithCompositeId() {
-    return Stream.of(
-        globalLog,
-        commitLog,
-        keyLists,
-        refLog,
-        refHeads,
-        refNames,
-        refLogHeads,
-        attachments,
-        attachmentKeys);
+    return Stream.of(globalLog, commitLog, keyLists, refLog, refHeads, refNames, refLogHeads);
   }
 }

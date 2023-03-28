@@ -347,8 +347,7 @@ public abstract class AbstractReferences {
                               ContentId.of("c" + commit),
                               payloadForContent(OnRefOnly.ON_REF_ONLY),
                               DefaultStoreWorker.instance()
-                                  .toStoreOnReferenceState(
-                                      OnRefOnly.newOnRef("c" + commit), att -> {})))
+                                  .toStoreOnReferenceState(OnRefOnly.newOnRef("c" + commit))))
                       .build());
           refHeads.put(ref, newHead);
         }

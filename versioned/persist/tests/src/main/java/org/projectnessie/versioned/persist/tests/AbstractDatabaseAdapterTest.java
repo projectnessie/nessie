@@ -119,14 +119,6 @@ public abstract class AbstractDatabaseAdapterTest {
 
   @Nested
   @SuppressWarnings("ClassCanBeStatic")
-  public class ContentAttachments extends AbstractContentAttachments {
-    ContentAttachments() {
-      super(databaseAdapter);
-    }
-  }
-
-  @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class References extends AbstractReferences {
     References() {
       super(databaseAdapter);

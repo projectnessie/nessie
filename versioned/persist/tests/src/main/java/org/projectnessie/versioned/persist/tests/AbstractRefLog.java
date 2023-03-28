@@ -190,8 +190,7 @@ public abstract class AbstractRefLog {
                           ContentId.of("c" + commit),
                           payloadForContent(OnRefOnly.ON_REF_ONLY),
                           DefaultStoreWorker.instance()
-                              .toStoreOnReferenceState(
-                                  OnRefOnly.newOnRef("c" + commit), att -> {})))
+                              .toStoreOnReferenceState(OnRefOnly.newOnRef("c" + commit))))
                   .build());
         }
       }

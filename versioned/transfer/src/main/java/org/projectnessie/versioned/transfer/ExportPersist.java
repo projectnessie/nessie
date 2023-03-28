@@ -28,7 +28,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 import org.projectnessie.model.Content;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
@@ -187,11 +186,7 @@ final class ExportPersist extends ExportCommon {
                   Content modelContent =
                       exporter
                           .storeWorker()
-                          .valueFromStore(
-                              (byte) content.payload(),
-                              value.data(),
-                              () -> null,
-                              k -> Stream.empty());
+                          .valueFromStore((byte) content.payload(), value.data(), () -> null);
                   byte[] modelContentBytes =
                       exporter.objectMapper().writeValueAsBytes(modelContent);
                   opBuilder

@@ -27,7 +27,6 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.CommitMetaSerializer;
-import org.projectnessie.versioned.ContentAttachment;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
@@ -114,10 +113,7 @@ final class ImportDatabaseAdapter extends ImportCommon {
         requireNonNull(importer.databaseAdapter()).getConfig().getKeyListDistance();
 
     try (BatchWriter<CommitLogEntry> commitBatchWriter =
-            BatchWriter.commitBatchWriter(importer.commitBatchSize(), importer.databaseAdapter());
-        BatchWriter<ContentAttachment> attachmentsBatchWriter =
-            BatchWriter.attachmentsBatchWriter(
-                importer.attachmentBatchSize(), importer.databaseAdapter())) {
+        BatchWriter.commitBatchWriter(importer.commitBatchSize(), importer.databaseAdapter())) {
 
       for (String fileName : exportMeta.getCommitsFilesList()) {
         try (InputStream input = importFiles.newFileInput(fileName)) {
@@ -159,9 +155,7 @@ final class ImportDatabaseAdapter extends ImportCommon {
                             Content content =
                                 importer.objectMapper().readValue(inValue, Content.class);
                             ByteString onRef =
-                                importer
-                                    .storeWorker()
-                                    .toStoreOnReferenceState(content, attachmentsBatchWriter::add);
+                                importer.storeWorker().toStoreOnReferenceState(content);
 
                             logEntry.addPuts(
                                 KeyWithBytes.of(
