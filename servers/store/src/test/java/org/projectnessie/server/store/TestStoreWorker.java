@@ -188,7 +188,7 @@ class TestStoreWorker {
         .isInstanceOf(IcebergView.class)
         .asInstanceOf(InstanceOfAssertFactories.type(IcebergView.class))
         .extracting(IcebergView::getMetadataLocation, IcebergView::getVersionId)
-        .containsExactly("metadata-location", 42);
+        .containsExactly("metadata-location", 42L);
   }
 
   static Stream<Arguments> requiresGlobalStateModelType() {
@@ -297,7 +297,7 @@ class TestStoreWorker {
         .isInstanceOf(IcebergView.class)
         .asInstanceOf(InstanceOfAssertFactories.type(IcebergView.class))
         .extracting(IcebergView::getMetadataLocation, IcebergView::getVersionId)
-        .containsExactly("metadata-location", 42);
+        .containsExactly("metadata-location", 42L);
   }
 
   @ParameterizedTest

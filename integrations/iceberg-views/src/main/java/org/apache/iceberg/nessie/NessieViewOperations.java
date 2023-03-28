@@ -125,8 +125,9 @@ public class NessieViewOperations extends BaseMetastoreViewOperations {
           new BaseVersion(
               v.versionId(), v.parentId(), v.timestampMillis(), v.summary(), v.viewDefinition());
 
-      List<Version> versions = getVersionsUntil(metadata, icebergView.getVersionId());
-      List<HistoryEntry> history = getHistoryEntriesUntil(metadata, icebergView.getVersionId());
+      List<Version> versions = getVersionsUntil(metadata, (int) icebergView.getVersionId());
+      List<HistoryEntry> history =
+          getHistoryEntriesUntil(metadata, (int) icebergView.getVersionId());
       metadata =
           ViewVersionMetadata.newViewVersionMetadata(
               baseVersion,

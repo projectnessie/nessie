@@ -42,7 +42,7 @@ public abstract class IcebergView extends IcebergContent {
   public abstract String getMetadataLocation();
 
   /** Corresponds to Iceberg's {@code currentVersionId}. */
-  public abstract int getVersionId();
+  public abstract long getVersionId();
 
   public abstract int getSchemaId();
 
@@ -72,7 +72,7 @@ public abstract class IcebergView extends IcebergContent {
   }
 
   public static IcebergView of(
-      String metadataLocation, int versionId, int schemaId, String dialect, String sqlText) {
+      String metadataLocation, long versionId, int schemaId, String dialect, String sqlText) {
     return builder()
         .metadataLocation(metadataLocation)
         .versionId(versionId)
@@ -85,7 +85,7 @@ public abstract class IcebergView extends IcebergContent {
   public static IcebergView of(
       String id,
       String metadataLocation,
-      int versionId,
+      long versionId,
       int schemaId,
       String dialect,
       String sqlText) {
