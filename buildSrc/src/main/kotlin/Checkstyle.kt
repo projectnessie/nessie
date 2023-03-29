@@ -34,6 +34,9 @@ class NessieCheckstylePlugin : Plugin<Project> {
         // Exclude projects that only generate Java from protobuf
         return
       }
+      if (project.extra.has("duplicated-project-sources")) {
+        return
+      }
 
       apply<CheckstylePlugin>()
       configure<CheckstyleExtension> {

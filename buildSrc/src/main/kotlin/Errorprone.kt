@@ -33,6 +33,10 @@ import org.gradle.kotlin.dsl.withType
 class NessieErrorpronePlugin : Plugin<Project> {
   override fun apply(project: Project): Unit =
     project.run {
+      if (project.extra.has("duplicated-project-sources")) {
+        return
+      }
+
       apply<ErrorPronePlugin>()
       tasks.withType<JavaCompile>().configureEach {
         options.errorprone.disableWarningsInGeneratedCode.set(true)
