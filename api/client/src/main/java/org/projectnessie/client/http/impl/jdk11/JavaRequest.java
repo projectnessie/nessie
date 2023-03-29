@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.http.impl.jdk11;
 
+import static java.lang.Boolean.getBoolean;
 import static java.lang.Thread.currentThread;
 
 import java.io.IOException;
@@ -187,5 +188,7 @@ final class JavaRequest extends BaseHttpRequest {
    * the subscribing code.
    */
   private static final Executor writerPool =
-      new ForkJoinPool(Math.max(8, ForkJoinPool.getCommonPoolParallelism()));
+      getBoolean("nessie.http.client.separatePool")
+          ? new ForkJoinPool(Math.max(8, ForkJoinPool.getCommonPoolParallelism()))
+          : ForkJoinPool.commonPool();
 }
