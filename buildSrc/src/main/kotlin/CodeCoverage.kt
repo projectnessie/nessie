@@ -37,7 +37,7 @@ class NessieCodeCoveragePlugin : Plugin<Project> {
             path != ":nessie-compatibility-tests")
       ) {
         apply<JacocoPlugin>()
-        apply<JacocoReportAggregationPlugin>()
+        @Suppress("UnstableApiUsage") apply<JacocoReportAggregationPlugin>()
 
         tasks.withType<JacocoReport>().configureEach {
           reports {

@@ -52,7 +52,7 @@ class NessieTestingPlugin : Plugin<Project> {
         val intTestParallelism =
           Integer.getInteger(
             "nessie.intTestParallelism",
-            Math.max(Runtime.getRuntime().availableProcessors() / 4, 1)
+            (Runtime.getRuntime().availableProcessors() / 4).coerceAtLeast(1)
           )
         maxParallelUsages.set(intTestParallelism)
       }
@@ -64,7 +64,7 @@ class NessieTestingPlugin : Plugin<Project> {
         val intTestParallelism =
           Integer.getInteger(
             "nessie.testParallelism",
-            Math.max(Runtime.getRuntime().availableProcessors() / 2, 1)
+            (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
           )
         maxParallelUsages.set(intTestParallelism)
       }
@@ -89,7 +89,7 @@ class NessieTestingPlugin : Plugin<Project> {
         }
       }
 
-      apply<JvmTestSuitePlugin>()
+      @Suppress("UnstableApiUsage") apply<JvmTestSuitePlugin>()
 
       tasks.withType<Test>().configureEach {
         val testJvmArgs: String? by project
@@ -123,6 +123,7 @@ class NessieTestingPlugin : Plugin<Project> {
         filter { isFailOnNoMatchingTests = false }
       }
 
+      @Suppress("UnstableApiUsage")
       configure<TestingExtension> {
         val test =
           suites.named<JvmTestSuite>("test") {
@@ -212,5 +213,5 @@ class NessieTestingPlugin : Plugin<Project> {
       }
     }
 
-  abstract class TestingParallelismHelper : BuildService<BuildServiceParameters.None> {}
+  abstract class TestingParallelismHelper : BuildService<BuildServiceParameters.None>
 }

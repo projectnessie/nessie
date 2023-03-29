@@ -23,7 +23,7 @@ data class VersionTuple(val major: Int, val minor: Int, val patch: Int, val snap
   Comparable<VersionTuple> {
 
   companion object Factory {
-    val pattern =
+    val pattern: Pattern =
       Pattern.compile(
         "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?\$"
       )
@@ -69,12 +69,10 @@ data class VersionTuple(val major: Int, val minor: Int, val patch: Int, val snap
 
   fun asRelease(): VersionTuple = VersionTuple(major, minor, patch, false)
 
-  fun writeToFile(file: Path) = Files.writeString(file, toString())
+  fun writeToFile(file: Path): Path = Files.writeString(file, toString())
 
   override fun compareTo(other: VersionTuple): Int {
-    var cmp: Int
-
-    cmp = major.compareTo(other.major)
+    var cmp: Int = major.compareTo(other.major)
     if (cmp != 0) {
       return cmp
     }
