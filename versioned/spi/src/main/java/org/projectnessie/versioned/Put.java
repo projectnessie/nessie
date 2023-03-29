@@ -16,7 +16,6 @@
 package org.projectnessie.versioned;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
@@ -32,16 +31,17 @@ public interface Put extends Operation {
    */
   Content getValue();
 
-  @Nullable
-  @jakarta.annotation.Nullable
-  Content getExpectedValue();
-
   /**
-   * Creates a put-operation for the given key and value without an expected-value so the returned
-   * put-operation is unconditional.
+   * Creates a put-operation for the given key and value.
    *
-   * <p>Unconditional put-operations must be used for content-types that do not support global-state
-   * and for those that do support global-state when a new content object is added.
+   * <p>{@code value} with a {@code null} content ID is <em>required</em> when creating/adding new
+   * content.
+   *
+   * <p>{@code value} with a non-{@code null} content ID is <em>required</em> when updating existing
+   * content.
+   *
+   * <p>A content object is considered to be the same using the {@link ContentKey content-key} and
+   * the {@link Content#getId() content-id}.
    *
    * @param key the key impacted by the operation
    * @param value the new value associated with the key
@@ -53,27 +53,5 @@ public interface Put extends Operation {
       @Nonnull @jakarta.annotation.Nonnull ContentKey key,
       @Nonnull @jakarta.annotation.Nonnull Content value) {
     return ImmutablePut.builder().key(key).value(value).build();
-  }
-
-  /**
-   * Creates a conditional put-operation for the given key and value with an expected-value so the
-   * returned put-operation will check whether the current state in Nessie matches the expected
-   * state in {@code expectedValue}.
-   *
-   * <p>Using a conditional put-operation for a content-type that does not support global-state
-   * results in an error.
-   *
-   * @param key the key impacted by the operation
-   * @param value the new value associated with the key
-   * @param expectedValue the expected value associated with the key
-   * @return a put operation for the key and value
-   */
-  @Nonnull
-  @jakarta.annotation.Nonnull
-  static Put of(
-      @Nonnull @jakarta.annotation.Nonnull ContentKey key,
-      @Nonnull @jakarta.annotation.Nonnull Content value,
-      @Nonnull @jakarta.annotation.Nonnull Content expectedValue) {
-    return ImmutablePut.builder().key(key).value(value).expectedValue(expectedValue).build();
   }
 }

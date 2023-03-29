@@ -26,6 +26,10 @@ public interface Delete extends Operation {
   /**
    * Creates a delete operation for the given key.
    *
+   * <p>If the key for a content shall change (aka a rename), then use a {@link Delete} operation
+   * using the current (old) key and a {@link Put} operation using the new key providing the {@code
+   * value} with the correct content ID.
+   *
    * @param key the key impacted by the operation
    * @return a delete operation for the key
    */

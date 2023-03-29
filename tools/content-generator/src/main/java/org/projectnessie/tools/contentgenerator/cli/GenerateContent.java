@@ -46,10 +46,7 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.DeltaLakeTable;
 import org.projectnessie.model.GetMultipleContentsResponse;
-import org.projectnessie.model.IcebergTable;
-import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.model.ImmutableIcebergView;
@@ -258,13 +255,7 @@ public class GenerateContent extends AbstractCommand {
                   existingContent,
                   random,
                   existingContent != null ? existingContent.getId() : null);
-          if (existingContent instanceof IcebergTable
-              || existingContent instanceof IcebergView
-              || existingContent instanceof DeltaLakeTable) {
-            commit.operation(Put.of(key, newContents, existingContent));
-          } else {
-            commit.operation(Put.of(key, newContents));
-          }
+          commit.operation(Put.of(key, newContents));
         }
         try {
           Branch newHead = commit.commit();

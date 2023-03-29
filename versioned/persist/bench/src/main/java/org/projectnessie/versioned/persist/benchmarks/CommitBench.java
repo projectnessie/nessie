@@ -249,8 +249,7 @@ public class CommitBench {
                 key,
                 // Must add randomness here, otherwise concurrent threads will compute the same
                 // hashes, because parent, "content", key are all the same.
-                onRef("commit value " + ThreadLocalRandom.current().nextLong(), contentId),
-                onRef("foo", contentId)));
+                onRef("commit value " + ThreadLocalRandom.current().nextLong(), contentId)));
       }
 
       bp.versionStore.commit(

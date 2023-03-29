@@ -99,7 +99,6 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
             contentReference.snapshotId(),
             "Iceberg content is expected to have a non-null snapshot-ID");
 
-    // This is to respect Nessie's global state
     Snapshot snapshot =
         snapshotId < 0L ? tableMetadata.currentSnapshot() : tableMetadata.snapshot(snapshotId);
 

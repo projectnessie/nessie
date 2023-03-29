@@ -179,7 +179,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
                 source.getName(),
                 committed1.getHash(),
                 fromMessage("test-branch2"),
-                Put.of(key1, table1, table1))
+                Put.of(key1, table1))
             .getTargetBranch();
     soft.assertThat(committed2.getHash()).isNotNull();
 
@@ -546,8 +546,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
             contentApi().getContent(key1, committed1.getName(), committed1.getHash()).getContent();
 
     Branch committed2 =
-        commit(committed1, fromMessage("test-branch2"), Put.of(key1, table1, table1))
-            .getTargetBranch();
+        commit(committed1, fromMessage("test-branch2"), Put.of(key1, table1)).getTargetBranch();
     soft.assertThat(committed2.getHash()).isNotNull();
 
     commit(base, fromMessage("test-main"), Put.of(key2, table2));

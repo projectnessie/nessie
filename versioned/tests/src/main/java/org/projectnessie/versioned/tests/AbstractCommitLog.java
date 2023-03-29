@@ -74,10 +74,7 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
                       .hashOnReference(
                           branch, Optional.of(i == 0 ? createHash : commitHashes[i - 1])),
                   key);
-      Put op =
-          value != null
-              ? Put.of(key, onRef(str, value.getId()), value)
-              : Put.of(key, newOnRef(str));
+      Put op = value != null ? Put.of(key, onRef(str, value.getId())) : Put.of(key, newOnRef(str));
 
       commitHashes[i] =
           store().commit(branch, Optional.of(parent), msg.build(), ImmutableList.of(op));

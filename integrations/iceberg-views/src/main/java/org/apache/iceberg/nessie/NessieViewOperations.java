@@ -240,7 +240,7 @@ public class NessieViewOperations extends BaseMetastoreViewOperations {
       builder.message(buildCommitMsg(base, metadata) + " " + key.getName());
       Branch branch =
           api.commitMultipleOperations()
-              .operation(Operation.Put.of(key, newView, icebergView))
+              .operation(Operation.Put.of(key, newView))
               .commitMeta(NessieUtil.catalogOptions(builder, catalogOptions).build())
               .branch(reference.getAsBranch())
               .commit();

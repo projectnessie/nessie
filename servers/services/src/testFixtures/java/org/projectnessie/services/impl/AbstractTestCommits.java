@@ -50,7 +50,7 @@ public abstract class AbstractTestCommits extends BaseTestServiceImpl {
                     commit.getTargetBranch(),
                     fromMessage("setup"),
                     Delete.of(oldName),
-                    Put.of(newName, table, table)))
+                    Put.of(newName, table)))
         .doesNotThrowAnyException();
 
     soft.assertThat(contents(main.getName(), null, oldName, newName))

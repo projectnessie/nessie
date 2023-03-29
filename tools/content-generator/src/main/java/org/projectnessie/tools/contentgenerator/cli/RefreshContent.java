@@ -192,7 +192,7 @@ public class RefreshContent extends AbstractCommand {
 
     for (Map.Entry<ContentKey, Content> entry : contentMap.entrySet()) {
       Content content = entry.getValue();
-      request.operation(Operation.Put.of(entry.getKey(), content, content));
+      request.operation(Operation.Put.of(entry.getKey(), content));
     }
 
     Branch head = request.commit();

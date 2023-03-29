@@ -130,17 +130,9 @@ public class PersistVersionStore implements VersionStore {
       if (operation instanceof Put) {
         Put op = (Put) operation;
         Content content = op.getValue();
-        Content expected = op.getExpectedValue();
 
         if (content.getId() == null) {
           // No content-ID --> New content
-
-          checkArgument(
-              expected == null,
-              "Expected content must not be set when creating new content. "
-                  + "The put operation's content has no content ID and is considered as new. "
-                  + "Key: '%s'",
-              op.getKey());
 
           // assign content-ID
           String cid = UUID.randomUUID().toString();
@@ -155,21 +147,6 @@ public class PersistVersionStore implements VersionStore {
                 contentId,
                 payloadForContent(content),
                 STORE_WORKER.toStoreOnReferenceState(content)));
-
-        if (expected != null) {
-          String expectedId = expected.getId();
-          checkArgument(
-              expectedId != null,
-              "Content id for expected content must not be null, key '%s'",
-              op.getKey());
-          ContentId expectedContentId = ContentId.of(expectedId);
-          checkArgument(
-              contentId.equals(expectedContentId),
-              "Content ids for new ('%s') and expected ('%s') content differ for key '%s'",
-              contentId,
-              expectedContentId,
-              op.getKey());
-        }
       } else if (operation instanceof Delete) {
         commitAttempt.addDeletes(operation.getKey());
       } else if (operation instanceof Unchanged) {

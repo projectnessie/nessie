@@ -90,7 +90,7 @@ class CommitToBranchSimulation extends Simulation {
               .commitMeta(
                 CommitMeta.fromMessage(s"test-commit $userId $commitNum")
               )
-              .operation(Put.of(key, table, expectedTable.orNull))
+              .operation(Put.of(key, table))
               .commit()
 
             session.set("branch", updatedBranch)
