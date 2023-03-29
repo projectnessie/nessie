@@ -87,6 +87,7 @@ class NessieTestingPlugin : Plugin<Project> {
       tasks.withType<Test>().configureEach {
         val testJvmArgs: String? by project
         val testHeapSize: String? by project
+        jvmArgs("-XX:+HeapDumpOnOutOfMemoryError")
         if (testJvmArgs != null) {
           jvmArgs((testJvmArgs as String).split(" "))
         }
