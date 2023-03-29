@@ -28,6 +28,10 @@ plugins {
 extra["maven.name"] = "Nessie - Perf Test - Simulations"
 
 dependencies {
+  if (System.getProperty("idea.sync.active").toBoolean()) {
+    // IJ complains about Scala-library not present (it's there for the 'gatling' source set).
+    compileOnly("org.scala-lang:scala-library:${scalaDependencyVersion("2.13")}")
+  }
   gatling(project(":nessie-model"))
   gatling(project(":nessie-client"))
   gatling(project(":nessie-perftest-gatling"))
