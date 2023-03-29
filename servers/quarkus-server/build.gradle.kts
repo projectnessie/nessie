@@ -35,8 +35,6 @@ val quarkusRunner by
 val openapiSource by
   configurations.creating { description = "Used to reference OpenAPI spec files" }
 
-val jacocoRuntime by configurations.creating { description = "Jacoco task runtime" }
-
 dependencies {
   implementation(project(":nessie-model"))
   implementation(project(":nessie-services"))
@@ -106,9 +104,6 @@ dependencies {
 
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
-
-  jacocoRuntime(libs.jacoco.report)
-  jacocoRuntime(libs.jacoco.ant)
 }
 
 buildForJava11()

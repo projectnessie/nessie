@@ -27,8 +27,6 @@ plugins {
 
 extra["maven.name"] = "Nessie - Quarkus CLI"
 
-val jacocoRuntime by configurations.creating { description = "Jacoco task runtime" }
-
 dependencies {
   implementation(project(":nessie-quarkus-common"))
   implementation(project(":nessie-services"))
@@ -92,9 +90,6 @@ dependencies {
 
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
-
-  jacocoRuntime(libs.jacoco.report)
-  jacocoRuntime(libs.jacoco.ant)
 }
 
 buildForJava11()
