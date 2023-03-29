@@ -15,7 +15,6 @@
  */
 
 import java.util.Properties
-import kotlin.collections.HashMap
 import net.ltgt.gradle.errorprone.CheckSeverity
 import net.ltgt.gradle.errorprone.ErrorPronePlugin
 import net.ltgt.gradle.errorprone.errorprone
@@ -28,6 +27,7 @@ import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.dependencies
+import org.gradle.kotlin.dsl.extra
 import org.gradle.kotlin.dsl.withType
 
 class NessieErrorpronePlugin : Plugin<Project> {
@@ -46,19 +46,25 @@ class NessieErrorpronePlugin : Plugin<Project> {
             .mapProperty(String::class.java, CheckSeverity::class.java)
             .convention(
               provider {
-                val checksMap = HashMap<String, CheckSeverity>()
-                errorproneRules.reader().use {
-                  val rules = Properties()
-                  rules.load(it)
-                  rules.forEach { k, v ->
-                    val key = k as String
-                    val value = v as String
-                    if (key.isNotEmpty() && value.isNotEmpty()) {
-                      checksMap[key.trim()] = CheckSeverity.valueOf(value.trim())
+                if (rootProject.extra.has("nessieErrorproneRules")) {
+                  @Suppress("UNCHECKED_CAST")
+                  rootProject.extra["nessieErrorproneRules"] as Map<String, CheckSeverity>
+                } else {
+                  val checksMap = mutableMapOf<String, CheckSeverity>()
+                  errorproneRules.reader().use {
+                    val rules = Properties()
+                    rules.load(it)
+                    rules.forEach { k, v ->
+                      val key = k as String
+                      val value = v as String
+                      if (key.isNotEmpty() && value.isNotEmpty()) {
+                        checksMap[key.trim()] = CheckSeverity.valueOf(value.trim())
+                      }
                     }
                   }
+                  rootProject.extra["nessieErrorproneRules"] = checksMap
+                  checksMap
                 }
-                checksMap
               }
             )
 

@@ -38,6 +38,13 @@ import org.gradle.testing.base.TestingExtension
 class NessieTestingPlugin : Plugin<Project> {
   override fun apply(project: Project): Unit =
     project.run {
+
+      // No Java means: no scala, no kotlin
+      // So no code -> so nothing to test
+      if (!project.plugins.hasPlugin("java-base")) {
+        return
+      }
+
       gradle.sharedServices.registerIfAbsent(
         "intTestParallelismConstraint",
         TestingParallelismHelper::class.java

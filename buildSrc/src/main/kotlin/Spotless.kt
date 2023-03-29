@@ -52,26 +52,14 @@ class NessieSpotlessPlugin : Plugin<Project> {
           }
         }
 
-        val dirsInSrc = projectDir.resolve("src").listFiles()
-        val sourceLangs =
-          if (dirsInSrc != null)
-            dirsInSrc
-              .filter { f -> f.isDirectory }
-              .map { f -> f.listFiles() }
-              .filterNotNull()
-              .flatMap { l -> l.filter { f -> f.isDirectory } }
-              .map { f -> f.name }
-              .distinct()
-          else listOf()
-
-        if (sourceLangs.contains("antlr4")) {
+        if (project.plugins.hasPlugin("antlr")) {
           antlr4 {
             licenseHeaderFile(rootProject.file("codestyle/copyright-header-java.txt"))
             target("src/**/antlr4/**")
             targetExclude("build/**")
           }
         }
-        if (sourceLangs.contains("java")) {
+        if (project.plugins.hasPlugin("java-base")) {
           java {
             googleJavaFormat(libsRequiredVersion("googleJavaFormat"))
             licenseHeaderFile(rootProject.file("codestyle/copyright-header-java.txt"))
@@ -79,7 +67,7 @@ class NessieSpotlessPlugin : Plugin<Project> {
             targetExclude("build/**")
           }
         }
-        if (sourceLangs.contains("scala")) {
+        if (project.plugins.hasPlugin("scala")) {
           scala {
             scalafmt()
             licenseHeaderFile(
@@ -90,7 +78,7 @@ class NessieSpotlessPlugin : Plugin<Project> {
             targetExclude("buildSrc/build/**")
           }
         }
-        if (sourceLangs.contains("kotlin")) {
+        if (project.plugins.hasPlugin("kotlin")) {
           kotlin {
             ktfmt().googleStyle()
             licenseHeaderFile(rootProject.file("codestyle/copyright-header-java.txt"), "$")
