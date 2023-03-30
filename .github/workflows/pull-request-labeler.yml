@@ -25,5 +25,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/labeler@v4
+        # Ignore auto-labeler errors as the tags are likely not present in Nessie forks
+        continue-on-error: true
         with:
           repo-token: "${{ secrets.CI_REPORTS_TOKEN }}"
