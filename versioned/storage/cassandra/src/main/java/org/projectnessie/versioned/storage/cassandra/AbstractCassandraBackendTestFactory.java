@@ -62,6 +62,12 @@ abstract class AbstractCassandraBackendTestFactory implements BackendTestFactory
     return new CassandraBackend(client, KEYSPACE_FOR_TEST, true);
   }
 
+  public void maybeCreateKeyspace() {
+    try (CqlSession client = buildNewClient()) {
+      maybeCreateKeyspace(client);
+    }
+  }
+
   private void maybeCreateKeyspace(CqlSession session) {
     int replicationFactor = 1;
 
@@ -91,7 +97,7 @@ abstract class AbstractCassandraBackendTestFactory implements BackendTestFactory
   }
 
   @SuppressWarnings("resource")
-  private void startTestNode(Optional<String> containerNetworkId) {
+  public void startTestNode(Optional<String> containerNetworkId) {
     if (container != null) {
       throw new IllegalStateException("Already started");
     }
@@ -131,6 +137,18 @@ abstract class AbstractCassandraBackendTestFactory implements BackendTestFactory
     localDc = container.getLocalDatacenter();
 
     hostAndPort = InetSocketAddress.createUnresolved(host, port);
+  }
+
+  public String getKeyspace() {
+    return KEYSPACE_FOR_TEST;
+  }
+
+  public InetSocketAddress getHostAndPort() {
+    return hostAndPort;
+  }
+
+  public String getLocalDc() {
+    return localDc;
   }
 
   @Override

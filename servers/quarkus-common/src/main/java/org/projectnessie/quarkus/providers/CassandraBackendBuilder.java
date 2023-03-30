@@ -17,34 +17,38 @@ package org.projectnessie.quarkus.providers;
 
 import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.CASSANDRA;
 
+import com.datastax.oss.quarkus.runtime.api.session.QuarkusCqlSession;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 import javax.enterprise.context.Dependent;
+import javax.inject.Inject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.projectnessie.versioned.storage.cassandra.CassandraBackendConfig;
+import org.projectnessie.versioned.storage.cassandra.CassandraBackendFactory;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 
 @StoreType(CASSANDRA)
 @Dependent
 public class CassandraBackendBuilder implements BackendBuilder {
 
-  // @Inject CompletionStage<QuarkusCqlSession> client;
+  @Inject CompletionStage<QuarkusCqlSession> client;
 
-  //  @Inject
-  //  @ConfigProperty(name = "quarkus.cassandra.keyspace")
-  //  String keyspace;
+  @Inject
+  @ConfigProperty(name = "quarkus.cassandra.keyspace")
+  String keyspace;
 
   @Override
   public Backend buildBackend() {
-    throw new UnsupportedOperationException(
-        "The CASSANDRA version store type is currently unsupported, because there is no Quarkus 3 "
-            + "compatible version of com.datastax.oss.quarkus:cassandra-quarkus-client.");
-    // TODO   CassandraBackendFactory factory = new CassandraBackendFactory();
-    //    try {
-    //      CassandraBackendConfig c =
-    //          CassandraBackendConfig.builder()
-    //              .client(client.toCompletableFuture().get())
-    //              .keyspace(keyspace)
-    //              .build();
-    //      return factory.buildBackend(c);
-    //    } catch (InterruptedException | ExecutionException e) {
-    //      throw new RuntimeException(e);
-    //    }
+    CassandraBackendFactory factory = new CassandraBackendFactory();
+    try {
+      CassandraBackendConfig c =
+          CassandraBackendConfig.builder()
+              .client(client.toCompletableFuture().get())
+              .keyspace(keyspace)
+              .build();
+      return factory.buildBackend(c);
+    } catch (InterruptedException | ExecutionException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

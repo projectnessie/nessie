@@ -93,6 +93,7 @@ dependencies {
   testFixturesImplementation(project(":nessie-versioned-persist-store"))
   testFixturesImplementation(project(":nessie-versioned-persist-tests"))
   testFixturesImplementation(project(":nessie-versioned-storage-common"))
+  testFixturesImplementation(project(":nessie-versioned-storage-testextension"))
   testFixturesApi(enforcedPlatform(libs.quarkus.bom))
   testFixturesImplementation(libs.jackson.annotations)
   testFixturesApi("io.quarkus:quarkus-rest-client")
