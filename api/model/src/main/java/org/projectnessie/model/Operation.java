@@ -113,7 +113,7 @@ public interface Operation {
               + "\n"
               + "If the key for a content shall change (aka a rename), then use a `Delete` "
               + "operation using the current (old) key and a `Put` operation using the new key "
-              + "populating both the `value` and `expectedValue` fields. See `Put` operation.")
+              + "with the current `Content` in the the `value` field. See `Put` operation.")
   @Value.Immutable
   @JsonSerialize(as = ImmutableDelete.class)
   @JsonDeserialize(as = ImmutableDelete.class)
