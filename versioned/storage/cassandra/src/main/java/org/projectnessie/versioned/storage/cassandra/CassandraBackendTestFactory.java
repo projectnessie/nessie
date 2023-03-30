@@ -17,9 +17,21 @@ package org.projectnessie.versioned.storage.cassandra;
 
 import static java.util.Collections.emptyList;
 
+import org.testcontainers.containers.CassandraContainer;
+
 public class CassandraBackendTestFactory extends AbstractCassandraBackendTestFactory {
+
+  private static final String JVM_OPTS_TEST =
+      "-Dcassandra.skip_wait_for_gossip_to_settle=0 "
+          + "-Dcassandra.num_tokens=1 "
+          + "-Dcassandra.initial_token=0";
 
   public CassandraBackendTestFactory() {
     super("cassandra", "cassandra", emptyList());
+  }
+
+  @Override
+  protected void configureContainer(CassandraContainer<?> c) {
+    c.withEnv("JVM_OPTS", JVM_OPTS_TEST);
   }
 }
