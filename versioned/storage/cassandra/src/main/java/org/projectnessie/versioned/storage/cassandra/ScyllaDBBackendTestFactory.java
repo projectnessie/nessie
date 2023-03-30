@@ -37,7 +37,7 @@ public class ScyllaDBBackendTestFactory extends AbstractCassandraBackendTestFact
             "--skip-wait-for-gossip-to-settle",
             "1",
             "--memory",
-            format("%dG", min(8, max(getRuntime().availableProcessors(), 2))),
+            format("%dG", min(4, max(getRuntime().availableProcessors(), 2))),
             "--overprovisioned",
             "1"));
   }
