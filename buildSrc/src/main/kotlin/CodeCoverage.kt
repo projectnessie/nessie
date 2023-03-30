@@ -43,7 +43,7 @@ import org.gradle.testing.jacoco.tasks.JacocoReport
 /**
  * Provides a series of code-coverage report tasks:
  *
- * Tasks with the pattern `jacoco<test-suite-name>Report` provide a code-coverage reports for tests
+ * Tasks with the pattern `jacoco<test-suite-name>Report` provide a code-coverage report for tests
  * in the "local" project reporting for the project's sources.
  *
  * Tasks with the pattern `<test-suite-name>CodeCoverageReport` provide a code-coverage reports for
