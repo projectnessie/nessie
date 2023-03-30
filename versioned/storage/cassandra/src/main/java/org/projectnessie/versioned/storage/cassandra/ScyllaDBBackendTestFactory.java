@@ -17,6 +17,8 @@ package org.projectnessie.versioned.storage.cassandra;
 
 import static java.util.Arrays.asList;
 
+import org.testcontainers.containers.CassandraContainer;
+
 public class ScyllaDBBackendTestFactory extends AbstractCassandraBackendTestFactory {
 
   public ScyllaDBBackendTestFactory() {
@@ -25,4 +27,7 @@ public class ScyllaDBBackendTestFactory extends AbstractCassandraBackendTestFact
         "scylladb",
         asList("--smp", "1", "--skip-wait-for-gossip-to-settle", "0"));
   }
+
+  @Override
+  protected void configureContainer(CassandraContainer<?> c) {}
 }

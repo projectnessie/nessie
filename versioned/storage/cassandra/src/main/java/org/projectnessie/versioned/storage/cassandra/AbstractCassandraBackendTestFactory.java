@@ -112,6 +112,7 @@ abstract class AbstractCassandraBackendTestFactory implements BackendTestFactory
           new CassandraContainer<>(dockerImageName)
               .withLogConsumer(new Slf4jLogConsumer(LOGGER))
               .withCommand(args.toArray(new String[0]));
+      configureContainer(c);
       containerNetworkId.ifPresent(c::withNetworkMode);
       try {
         c.start();
@@ -150,6 +151,8 @@ abstract class AbstractCassandraBackendTestFactory implements BackendTestFactory
   public String getLocalDc() {
     return localDc;
   }
+
+  protected abstract void configureContainer(CassandraContainer<?> c);
 
   @Override
   public void start() {
