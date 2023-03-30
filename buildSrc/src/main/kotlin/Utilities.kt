@@ -36,7 +36,6 @@ import org.gradle.kotlin.dsl.extra
 import org.gradle.kotlin.dsl.findByType
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.module
-import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.project
 import org.gradle.kotlin.dsl.provideDelegate
 import org.gradle.kotlin.dsl.withType
@@ -104,7 +103,7 @@ fun Project.libsRequiredVersion(name: String): String {
   return reqVer
 }
 
-fun Project.testLogLevel() = System.getProperty("test.log.level", "WARN")
+fun testLogLevel(): String = System.getProperty("test.log.level", "WARN")
 
 /** Check whether the current build is run in the context of integrations-testing. */
 fun isIntegrationsTestingEnabled() =
@@ -117,14 +116,14 @@ fun isIntegrationsTestingEnabled() =
  */
 fun Project.nessieClientForIceberg(): Dependency {
   val dependencyHandlerScope = DependencyHandlerScope.of(dependencies)
-  if (!isIntegrationsTestingEnabled()) {
+  return if (!isIntegrationsTestingEnabled()) {
     val clientVersion = libsRequiredVersion("nessieClientVersion")
-    return dependencies.create(
+    dependencies.create(
       if (clientVersion >= "0.50.1") "org.projectnessie.nessie:nessie-client:$clientVersion"
       else "org.projectnessie:nessie-client:$clientVersion"
     )
   } else {
-    return dependencyHandlerScope.nessieProject("nessie-client")
+    dependencyHandlerScope.nessieProject("nessie-client")
   }
 }
 
@@ -148,14 +147,10 @@ fun DependencyHandlerScope.nessieProject(
   artifactId: String,
   configuration: String? = null
 ): ModuleDependency {
-  if (!isIntegrationsTestingEnabled()) {
-    return project(":$artifactId", configuration)
+  return if (!isIntegrationsTestingEnabled()) {
+    project(":$artifactId", configuration)
   } else {
-    return module(
-      NessieProjects.groupIdForArtifact(artifactId),
-      artifactId,
-      configuration = configuration
-    )
+    module(NessieProjects.groupIdForArtifact(artifactId), artifactId, configuration = configuration)
   }
 }
 
@@ -169,7 +164,7 @@ private class NessieProjects {
     private val integrationsProjects: Set<String> = loadIntegrationsArtifactIds()
 
     private fun loadIntegrationsArtifactIds(): Set<String> {
-      var f: File =
+      val f =
         File(
           "${System.getProperty("root-project.nessie-build")}/gradle/projects.iceberg.properties"
         )
@@ -270,4 +265,4 @@ class SparkScalaVersions(
   val scalaMajorVersion: String,
   val sparkVersion: String,
   val scalaVersion: String
-) {}
+)

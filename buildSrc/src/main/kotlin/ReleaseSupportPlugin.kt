@@ -105,6 +105,7 @@ class ReleaseSupportPlugin : Plugin<Project> {
     }
   }
 
+  @Suppress("EnumEntryName")
   enum class BumpType {
     // lower-case, used as command line option values
     none,

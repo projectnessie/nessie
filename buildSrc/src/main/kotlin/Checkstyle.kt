@@ -23,6 +23,7 @@ import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.configure
+import org.gradle.kotlin.dsl.extra
 import org.gradle.kotlin.dsl.provideDelegate
 import org.gradle.kotlin.dsl.withType
 
@@ -33,11 +34,21 @@ class NessieCheckstylePlugin : Plugin<Project> {
         // Exclude projects that only generate Java from protobuf
         return
       }
+      if (project.extra.has("duplicated-project-sources")) {
+        return
+      }
 
       apply<CheckstylePlugin>()
       configure<CheckstyleExtension> {
         toolVersion = libsRequiredVersion("checkstyle")
-        config = resources.text.fromFile(rootProject.file("codestyle/checkstyle-config.xml"))
+        val checkstyleConfig: String
+        if (rootProject.extra.has("nessieCheckstyleConfig")) {
+          checkstyleConfig = rootProject.extra["nessieCheckstyleConfig"] as String
+        } else {
+          checkstyleConfig = rootProject.file("codestyle/checkstyle-config.xml").readText()
+          rootProject.extra["nessieCheckstyleConfig"] = checkstyleConfig
+        }
+        config = resources.text.fromString(checkstyleConfig)
         isShowViolations = true
         isIgnoreFailures = false
       }

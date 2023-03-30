@@ -34,6 +34,10 @@ class NessieIdePlugin : Plugin<Project> {
     project.run {
       apply<EclipsePlugin>()
 
+      if (!System.getProperty("idea.sync.active").toBoolean()) {
+        return
+      }
+
       when (path) {
         ":" -> applyForRootProject(project)
         ":nessie-ui" -> applyForUiProject(project)

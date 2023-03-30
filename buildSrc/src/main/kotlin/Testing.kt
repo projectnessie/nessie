@@ -38,6 +38,13 @@ import org.gradle.testing.base.TestingExtension
 class NessieTestingPlugin : Plugin<Project> {
   override fun apply(project: Project): Unit =
     project.run {
+
+      // No Java means: no scala, no kotlin
+      // So no code -> so nothing to test
+      if (!project.plugins.hasPlugin("java-base")) {
+        return
+      }
+
       gradle.sharedServices.registerIfAbsent(
         "intTestParallelismConstraint",
         TestingParallelismHelper::class.java
@@ -45,7 +52,7 @@ class NessieTestingPlugin : Plugin<Project> {
         val intTestParallelism =
           Integer.getInteger(
             "nessie.intTestParallelism",
-            Math.max(Runtime.getRuntime().availableProcessors() / 4, 1)
+            (Runtime.getRuntime().availableProcessors() / 4).coerceAtLeast(1)
           )
         maxParallelUsages.set(intTestParallelism)
       }
@@ -57,7 +64,7 @@ class NessieTestingPlugin : Plugin<Project> {
         val intTestParallelism =
           Integer.getInteger(
             "nessie.testParallelism",
-            Math.max(Runtime.getRuntime().availableProcessors() / 2, 1)
+            (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
           )
         maxParallelUsages.set(intTestParallelism)
       }
@@ -82,7 +89,7 @@ class NessieTestingPlugin : Plugin<Project> {
         }
       }
 
-      apply<JvmTestSuitePlugin>()
+      @Suppress("UnstableApiUsage") apply<JvmTestSuitePlugin>()
 
       tasks.withType<Test>().configureEach {
         val testJvmArgs: String? by project
@@ -116,6 +123,7 @@ class NessieTestingPlugin : Plugin<Project> {
         filter { isFailOnNoMatchingTests = false }
       }
 
+      @Suppress("UnstableApiUsage")
       configure<TestingExtension> {
         val test =
           suites.named<JvmTestSuite>("test") {
@@ -205,5 +213,5 @@ class NessieTestingPlugin : Plugin<Project> {
       }
     }
 
-  abstract class TestingParallelismHelper : BuildService<BuildServiceParameters.None> {}
+  abstract class TestingParallelismHelper : BuildService<BuildServiceParameters.None>
 }

@@ -146,8 +146,11 @@ if (!System.getProperty("nessie.integrationsTesting.enable").toBoolean()) {
 
   val sparkScala = loadProperties(file("integrations/spark-scala.properties"))
 
+  val noSourceChecksProjects = mutableSetOf<String>()
+
   val sparkVersions = sparkScala["sparkVersions"].toString().split(",").map { it.trim() }
-  val allScalaVersions = LinkedHashSet<String>()
+  val allScalaVersions = mutableSetOf<String>()
+  var first = true
   for (sparkVersion in sparkVersions) {
     val scalaVersions =
       sparkScala["sparkVersion-${sparkVersion}-scalaVersions"].toString().split(",").map {
@@ -162,23 +165,29 @@ if (!System.getProperty("nessie.integrationsTesting.enable").toBoolean()) {
           file("integrations/spark-extensions/v${sparkVersion}")
         )
         .buildFileName = "../build.gradle.kts"
+      if (first) {
+        first = false
+      } else {
+        noSourceChecksProjects.add(":$artifactId")
+      }
       if (ideSyncActive) {
         break
       }
     }
   }
 
+  first = true
   for (scalaVersion in allScalaVersions) {
-    nessieProject(
-      "nessie-spark-extensions-base_$scalaVersion",
-      groupIdIntegrations,
-      file("integrations/spark-extensions-base")
-    )
-    nessieProject(
-      "nessie-spark-extensions-basetests_$scalaVersion",
-      groupIdIntegrations,
-      file("integrations/spark-extensions-basetests")
-    )
+    for (name in listOf("base", "basetests")) {
+      val prj = "nessie-spark-extensions-${name}_$scalaVersion"
+      nessieProject(prj, groupIdIntegrations, file("integrations/spark-extensions-${name}"))
+      if (!first) {
+        noSourceChecksProjects.add(":$prj")
+      }
+    }
+    if (first) {
+      first = false
+    }
     if (ideSyncActive) {
       break
     }
@@ -197,6 +206,12 @@ if (!System.getProperty("nessie.integrationsTesting.enable").toBoolean()) {
 
       projectPathToGroupId[projectPath] = "org.projectnessie"
     }
+
+  gradle.beforeProject {
+    if (noSourceChecksProjects.contains(this.path)) {
+      project.extra["duplicated-project-sources"] = true
+    }
+  }
 }
 
 /** Setup projects to create relocation-poms. */

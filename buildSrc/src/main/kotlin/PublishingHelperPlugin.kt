@@ -33,6 +33,7 @@ import org.gradle.api.attributes.LibraryElements
 import org.gradle.api.attributes.Usage
 import org.gradle.api.component.SoftwareComponentFactory
 import org.gradle.api.plugins.JavaBasePlugin
+import org.gradle.api.provider.Property
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
@@ -53,7 +54,7 @@ class PublishingHelperPlugin
 constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Plugin<Project> {
   override fun apply(project: Project): Unit =
     project.run {
-      extensions.create("publishingHelper", PublishingHelperExtension::class.java, this)
+      extensions.create("publishingHelper", PublishingHelperExtension::class.java)
 
       plugins.withType<MavenPublishPlugin>().configureEach {
         configure<PublishingExtension> {
@@ -285,10 +286,10 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
         val node = asNode()
         val depNode = node.get("dependencies")
         val dependenciesNode =
-          if ((depNode as NodeList).isNotEmpty()) depNode.get(0) as Node
+          if ((depNode as NodeList).isNotEmpty()) depNode[0] as Node
           else node.appendNode("dependencies")
         project.configurations.getByName("shadow").allDependencies.forEach {
-          if ((it is ProjectDependency) || !(it is SelfResolvingDependency)) {
+          if ((it is ProjectDependency) || it !is SelfResolvingDependency) {
             val dependencyNode = dependenciesNode.appendNode("dependency")
             dependencyNode.appendNode("groupId", it.group)
             dependencyNode.appendNode("artifactId", it.name)
@@ -355,7 +356,7 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
   }
 }
 
-open class PublishingHelperExtension(project: Project) {
-  val nessieRepoName = project.objects.property(String::class.java)
-  val inceptionYear = project.objects.property(String::class.java)
+abstract class PublishingHelperExtension {
+  abstract val nessieRepoName: Property<String>
+  abstract val inceptionYear: Property<String>
 }

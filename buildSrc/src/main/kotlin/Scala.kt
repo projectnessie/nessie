@@ -34,7 +34,7 @@ class NessieScalaPlugin : Plugin<Project> {
     project.run {
       plugins.withType<ScalaPlugin>().configureEach {
         tasks.withType<ScalaCompile>().configureEach {
-          scalaCompileOptions.keepAliveMode.set(KeepAliveMode.DAEMON)
+          @Suppress("UnstableApiUsage") scalaCompileOptions.keepAliveMode.set(KeepAliveMode.DAEMON)
           scalaCompileOptions.encoding = "UTF-8"
         }
 
