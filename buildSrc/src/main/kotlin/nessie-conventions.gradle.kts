@@ -35,3 +35,9 @@ if (projectDir.resolve("src").exists()) {
 
   apply<NessieCodeCoveragePlugin>()
 }
+
+tasks.register("compileAll") {
+  group = "build"
+  description = "Runs all compilation and jar tasks"
+  dependsOn(tasks.withType<AbstractCompile>(), tasks.withType<ProcessResources>())
+}
