@@ -43,6 +43,8 @@ dependencies {
   implementation(libs.testcontainers.mongodb)
   implementation(libs.docker.java.api)
 
+  implementation(libs.cassandra.quarkus.tests)
+
   implementation(platform(libs.awssdk.bom))
   implementation(libs.awssdk.dynamodb) { exclude("software.amazon.awssdk", "apache-client") }
 

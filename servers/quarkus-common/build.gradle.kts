@@ -59,7 +59,7 @@ dependencies {
   implementation("io.quarkus:quarkus-mongodb-client")
   implementation(platform(libs.cassandra.driver.bom))
   implementation(libs.cassandra.driver.core)
-  // TODO implementation(libs.cassandra.quarkus)
+  implementation(libs.cassandra.quarkus)
   implementation("org.jboss.slf4j:slf4j-jboss-logmanager")
   implementation(libs.opentelemetry.api)
 
