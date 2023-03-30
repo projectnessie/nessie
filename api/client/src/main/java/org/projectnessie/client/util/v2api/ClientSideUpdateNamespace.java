@@ -74,7 +74,7 @@ public final class ClientSideUpdateNamespace extends BaseUpdateNamespaceBuilder 
               .branchName(refName)
               .hash(expectedHash)
               .commitMeta(CommitMeta.fromMessage("update namespace " + key))
-              .operation(Put.of(key, updatedNamespace, oldNamespace))
+              .operation(Put.of(key, updatedNamespace))
               .commitWithResponse();
 
       return UpdateNamespaceResult.of(updatedNamespace, oldNamespace, commit.getTargetBranch());

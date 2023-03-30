@@ -991,9 +991,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       return Delete.of(key);
     } else if (o instanceof Operation.Put) {
       Operation.Put put = (Operation.Put) o;
-      return put.getExpectedContent() != null
-          ? Put.of(key, put.getContent(), put.getExpectedContent())
-          : Put.of(key, put.getContent());
+      return Put.of(key, put.getContent());
     } else if (o instanceof Operation.Unchanged) {
       return Unchanged.of(key);
     } else {

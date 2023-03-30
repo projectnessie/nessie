@@ -322,7 +322,7 @@ class MixedWorkloadsSimulation extends Simulation {
                     .commitMeta(fromMessage(s"Update table ${tableAndLock._1}"))
                     .operation(
                       Operation.Put
-                        .of(tableAndLock._1, updatedTable, currentTable)
+                        .of(tableAndLock._1, updatedTable)
                     )
                     .commit()
                   session.set("updated", true)

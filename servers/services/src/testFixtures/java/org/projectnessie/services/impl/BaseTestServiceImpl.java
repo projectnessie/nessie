@@ -491,11 +491,7 @@ public abstract class BaseTestServiceImpl {
         try {
           Content existing =
               contentApi().getContent(key, branch.getName(), currentHash).getContent();
-          op =
-              Put.of(
-                  key,
-                  IcebergTable.of("some-file-" + i, 42, 42, 42, 42, existing.getId()),
-                  existing);
+          op = Put.of(key, IcebergTable.of("some-file-" + i, 42, 42, 42, 42, existing.getId()));
         } catch (NessieContentNotFoundException notFound) {
           op = Put.of(key, IcebergTable.of("some-file-" + i, 42, 42, 42, 42));
         }
@@ -554,12 +550,7 @@ public abstract class BaseTestServiceImpl {
   protected static Operation operationWithoutContentId(Operation op) {
     if (op instanceof Put) {
       Put put = (Put) op;
-      return put.getExpectedContent() != null
-          ? Put.of(
-              put.getKey(),
-              contentWithoutId(put.getContent()),
-              contentWithoutId(put.getExpectedContent()))
-          : Put.of(put.getKey(), contentWithoutId(put.getContent()));
+      return Put.of(put.getKey(), contentWithoutId(put.getContent()));
     }
     return op;
   }

@@ -80,7 +80,7 @@ class KeyListSpillingSimulation extends Simulation {
               val key = ContentKey.of(s"$userId $commitIndex $i" + padding)
               val table = IcebergTable
                 .of(s"metadata_${userId}_${commitNum}_$i", 42, 43, 44, 45)
-              Put.of(key, table, null)
+              Put.of(key, table)
             })
 
           // Call the Nessie client operation to perform a commit with one or more put ops

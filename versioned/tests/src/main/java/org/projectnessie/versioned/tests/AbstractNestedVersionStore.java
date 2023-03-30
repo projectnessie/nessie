@@ -172,12 +172,7 @@ public abstract class AbstractNestedVersionStore {
             op -> {
               if (op instanceof Put) {
                 Put put = (Put) op;
-                return put.getExpectedValue() != null
-                    ? Put.of(
-                        put.getKey(),
-                        contentWithoutId(put.getValue()),
-                        contentWithoutId(put.getExpectedValue()))
-                    : Put.of(put.getKey(), contentWithoutId(put.getValue()));
+                return Put.of(put.getKey(), contentWithoutId(put.getValue()));
               }
               return op;
             })

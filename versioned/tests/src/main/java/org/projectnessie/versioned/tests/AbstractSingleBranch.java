@@ -150,14 +150,11 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
     List<Operation> ops;
     Content existing =
         store().getValue(store.hashOnReference(branch, Optional.of(hashKnownByUser)), key);
-    if (existing != null) {
-      Content value =
-          onRef(String.format("data_file_%03d_%03d", user, commitNum), existing.getId());
-      ops = ImmutableList.of(Put.of(key, value, existing));
-    } else {
-      Content value = newOnRef(String.format("data_file_%03d_%03d", user, commitNum));
-      ops = ImmutableList.of(Put.of(key, value));
-    }
+    Content value =
+        existing != null
+            ? onRef(String.format("data_file_%03d_%03d", user, commitNum), existing.getId())
+            : newOnRef(String.format("data_file_%03d_%03d", user, commitNum));
+    ops = ImmutableList.of(Put.of(key, value));
     return ops;
   }
 }

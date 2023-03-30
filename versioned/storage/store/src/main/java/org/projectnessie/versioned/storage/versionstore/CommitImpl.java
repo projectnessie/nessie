@@ -269,7 +269,6 @@ class CommitImpl extends BaseCommitHelper {
 
       // TODO add much stricter handling of Delete against existing content, but that requires
       //  changes to the model
-      // TODO require expectedContent for existing content
       // TODO validate content-ID in store-index against content-ID in operation
 
       if (expectedElement != null) {
@@ -349,15 +348,12 @@ class CommitImpl extends BaseCommitHelper {
     UUID existingContentID;
     String expectedContentIDString;
 
-    Content expectedContent = put.getExpectedValue();
-
     ContentMapping contentMapping = new ContentMapping(persist);
 
     StoreIndexElement<CommitOp> existing = expectedIndex.get(storeKey);
-    String expectedUUID = expectedContent != null ? expectedContent.getId() : null;
-    if (existing == null && expectedUUID != null) {
+    if (existing == null && putValueId != null) {
       // Check for a Delete-op in the same commit, representing a rename operation.
-      UUID expectedContentID = UUID.fromString(expectedUUID);
+      UUID expectedContentID = UUID.fromString(putValueId);
       StoreKey deletedKey = deleted.remove(expectedContentID);
       if (deletedKey != null) {
         existing = expectedIndex.get(deletedKey);
@@ -387,23 +383,10 @@ class CommitImpl extends BaseCommitHelper {
             expectedContentIDString,
             putValueId);
 
-        checkArgument(
-            expectedContent != null,
-            "Key '%s' already exists, but Put-operation has no expectedValue",
-            putKey);
-
-        checkArgument(
-            expectedUUID != null, "Expected value to update key '%s' has no content iD", putKey);
-
         exists = true;
       }
     }
     if (!exists) {
-      checkArgument(
-          expectedContent == null,
-          "Key '%s' does not exist, but Put-operation has expectedValue",
-          putKey);
-
       checkArgument(putValueId == null, "New value for new must not have a content iD");
 
       newContent.accept(putKey, putValue);

@@ -148,7 +148,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
 
     Hash secondCommit =
         commit("Second Commit")
-            .put("t1", V_1_2.withId(t1), t1)
+            .put("t1", V_1_2.withId(t1))
             .delete("t2")
             .delete("t3")
             .put("t4", V_4_1)
@@ -259,7 +259,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
     Hash t1Commit =
         commit("T1 Commit")
             .fromReference(initialCommit)
-            .put("t1", V_1_2.withId(t1), t1)
+            .put("t1", V_1_2.withId(t1))
             .toBranch(branch);
     t1 = store().getValue(branch, ContentKey.of("t1"));
 
@@ -269,8 +269,8 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
     Hash extraCommit =
         commit("Extra Commit")
             .fromReference(t1Commit)
-            .put("t1", V_1_3.withId(t1), t1)
-            .put("t3", V_3_2.withId(t3), t3)
+            .put("t1", V_1_3.withId(t1))
+            .put("t3", V_3_2.withId(t3))
             .toBranch(branch);
     Hash newT2Commit =
         commit("New T2 Commit").fromReference(t2Commit).put("t2", NEW_v2_1).toBranch(branch);
@@ -391,7 +391,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
 
     Hash secondCommit =
         commit("Second Commit")
-            .put("t1", V_1_2.withId(t1), t1)
+            .put("t1", V_1_2.withId(t1))
             .delete("t2")
             .put("t3", V_3_1)
             .toBranch(branch);
@@ -471,7 +471,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
 
     Hash secondCommit =
         commit("Second Commit")
-            .put("t1", V_1_2.withId(t1), t1)
+            .put("t1", V_1_2.withId(t1))
             .delete("t2")
             .put("t3", V_3_1)
             .toBranch(branch);
@@ -511,14 +511,6 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                     .fromReference(initialCommit)
                     .put("t1", V_1_3.withId(t1))
                     .toBranch(branch))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Key 't1' already exists, but Put-operation has no expectedValue");
-    soft.assertThatThrownBy(
-            () ->
-                commit("Conflicting Commit")
-                    .fromReference(initialCommit)
-                    .put("t1", V_1_3.withId(t1), t1)
-                    .toBranch(branch))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessage(
             "There are conflicts that prevent committing the provided operations: values of existing and expected content for key 't1' are different.");
@@ -526,7 +518,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             () ->
                 commit("Conflicting Commit")
                     .fromReference(initialCommit)
-                    .put("t2", V_2_2.withId(t2), t2)
+                    .put("t2", V_2_2.withId(t2))
                     .toBranch(branch))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessage(
@@ -535,10 +527,10 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             () ->
                 commit("Conflicting Commit")
                     .fromReference(initialCommit)
-                    .put("t3", V_3_2.withId(t3), t3)
+                    .put("t3", V_3_2.withId(t3))
                     .toBranch(branch))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Key 't3' does not exist, but Put-operation has expectedValue");
+        .hasMessage("New value for new must not have a content iD");
     soft.assertThatThrownBy(
             () ->
                 commit("Conflicting Commit")
@@ -602,7 +594,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
     Content t1 = store().getValue(branch, ContentKey.of("t1"));
 
     commit("Second Commit")
-        .put("t1", V_1_2.withId(t1), t1)
+        .put("t1", V_1_2.withId(t1))
         .delete("t2")
         .put("t3", V_3_1)
         .toBranch(branch);
@@ -610,9 +602,9 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
 
     Hash putCommit =
         forceCommit("Conflicting Commit")
-            .put("t1", V_1_3.withId(t1), t1)
+            .put("t1", V_1_3.withId(t1))
             .put("t2", V_2_2)
-            .put("t3", V_3_2.withId(t3), t3)
+            .put("t3", V_3_2.withId(t3))
             .toBranch(branch);
 
     soft.assertThat(store().hashOnReference(branch, Optional.empty())).isEqualTo(putCommit);

@@ -91,12 +91,8 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
         commit(
             response.getTargetBranch(),
             fromMessage("test"),
-            Put.of(
-                key1, IcebergTable.of("loc", 1, 2, 3, 4, contentIds.get(key1)), contents.get(key1)),
-            Put.of(
-                key2,
-                IcebergTable.of("blah", 1, 2, 3, 4, contentIds.get(key2)),
-                contents.get(key2)));
+            Put.of(key1, IcebergTable.of("loc", 1, 2, 3, 4, contentIds.get(key1))),
+            Put.of(key2, IcebergTable.of("blah", 1, 2, 3, 4, contentIds.get(key2))));
     soft.assertThat(response.getAddedContents()).isNull();
   }
 
@@ -397,9 +393,7 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
       Put op;
       try {
         Content existing = contentApi().getContent(key, branch.getName(), currentHash).getContent();
-        op =
-            Put.of(
-                key, IcebergTable.of("some-file-" + i, 42, 42, 42, 42, existing.getId()), existing);
+        op = Put.of(key, IcebergTable.of("some-file-" + i, 42, 42, 42, 42, existing.getId()));
       } catch (NessieNotFoundException notFound) {
         op = Put.of(key, IcebergTable.of("some-file-" + i, 42, 42, 42, 42));
       }

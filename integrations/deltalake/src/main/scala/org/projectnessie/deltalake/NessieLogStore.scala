@@ -287,17 +287,8 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
       val currentTable = getTable(path.getParent, targetRef)
       val table =
         updateDeltaTable(currentTable, path, targetRef, lastCheckpoint)
-      val put = currentTable
-        .map(
-          Put.of(
-            DeltaContentKeyUtil.fromHadoopPath(path.getParent),
-            table,
-            _
-          )
-        )
-        .getOrElse(
-          Put.of(DeltaContentKeyUtil.fromHadoopPath(path.getParent), table)
-        )
+      val put =
+        Put.of(DeltaContentKeyUtil.fromHadoopPath(path.getParent), table)
       val meta = CommitMeta
         .builder()
         .message(message)

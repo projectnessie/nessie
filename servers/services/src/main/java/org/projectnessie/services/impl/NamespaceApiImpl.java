@@ -266,7 +266,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
 
       Namespace updatedNamespace = ImmutableNamespace.copyOf(namespace).withProperties(properties);
 
-      Put put = Put.of(updatedNamespace.toContentKey(), updatedNamespace, namespace);
+      Put put = Put.of(updatedNamespace.toContentKey(), updatedNamespace);
       commit(
           BranchName.of(refWithHash.getValue().getName()),
           "update properties for namespace " + updatedNamespace.name(),
