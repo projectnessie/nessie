@@ -86,7 +86,6 @@ dependencies {
   intTestImplementation(project(":nessie-versioned-storage-mongodb"))
   testFixturesApi(project(":nessie-versioned-storage-testextension"))
   testFixturesApi(enforcedPlatform(libs.quarkus.bom))
-  testFixturesApi("io.quarkus:quarkus-jacoco")
   testFixturesApi("io.quarkus:quarkus-junit5")
   testFixturesApi(libs.microprofile.openapi)
 
@@ -115,14 +114,6 @@ tasks.withType<QuarkusBuild>().configureEach {
   outputs.doNotCacheIf("Do not add huge cache artifacts to build cache") { true }
   inputs.property("final.name", quarkus.finalName())
   inputs.properties(quarkus.quarkusBuildProperties.get())
-}
-
-tasks.named<Test>("intTest") {
-  // Quarkus accumulates stuff in QuarkusClassLoader.transformedClasses throughout CLI
-  // re-invocations during testing. Therefore, we restart the test JVM after running 2 test
-  // classes. The number is rather arbitrary since the real factor seems to be the number
-  // of CLI launches performed in the same JVM.
-  setForkEvery(2)
 }
 
 if (quarkusFatJar()) {
