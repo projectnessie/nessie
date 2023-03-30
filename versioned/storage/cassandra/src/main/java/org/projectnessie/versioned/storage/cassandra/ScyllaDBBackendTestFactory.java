@@ -15,6 +15,10 @@
  */
 package org.projectnessie.versioned.storage.cassandra;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static java.lang.Runtime.getRuntime;
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 
 import org.testcontainers.containers.CassandraContainer;
@@ -25,7 +29,17 @@ public class ScyllaDBBackendTestFactory extends AbstractCassandraBackendTestFact
     super(
         "scylladb/scylla",
         "scylladb",
-        asList("--smp", "1", "--skip-wait-for-gossip-to-settle", "0"));
+        asList(
+            "--smp",
+            Integer.toString(max(getRuntime().availableProcessors(), 2)),
+            "--developer-mode",
+            "1",
+            "--skip-wait-for-gossip-to-settle",
+            "1",
+            "--memory",
+            format("%dG", min(8, max(getRuntime().availableProcessors(), 2))),
+            "--overprovisioned",
+            "1"));
   }
 
   @Override
