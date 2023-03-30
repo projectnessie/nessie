@@ -47,25 +47,21 @@ jobs:
 
     - name: Gradle / check incl. integ-test
       uses: gradle/gradle-build-action@v2
-      if: github.repository_owner == 'projectnessie'
       with:
         arguments: check -x test intTestCodeCoverageReport --scan
 
     - name: Gradle / Gatling simulations
       uses: gradle/gradle-build-action@v2
-      if: github.repository_owner == 'projectnessie'
       with:
         arguments: gatlingRun
 
     - name: Gradle / assemble + publish local
       uses: gradle/gradle-build-action@v2
-      if: github.repository_owner == 'projectnessie'
       with:
         arguments: assemble publishToMavenLocal --scan
 
     - name: Gradle / build tools integration tests
       uses: gradle/gradle-build-action@v2
-      if: github.repository_owner == 'projectnessie'
       with:
         arguments: buildToolsIntegrationTest
 
@@ -120,7 +116,6 @@ jobs:
   python:
     name: Python
     runs-on: ubuntu-22.04
-    if: github.repository_owner == 'projectnessie'
     env:
       working-directory: ./python
     strategy:
