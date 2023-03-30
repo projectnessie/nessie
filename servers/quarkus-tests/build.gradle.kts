@@ -43,7 +43,12 @@ dependencies {
   implementation(libs.testcontainers.mongodb)
   implementation(libs.docker.java.api)
 
-  implementation(libs.cassandra.quarkus.tests)
+  implementation(platform(libs.cassandra.driver.bom))
+  implementation(platform(libs.cassandra.quarkus.bom))
+  implementation(libs.cassandra.driver.core)
+  implementation(libs.cassandra.quarkus) { exclude("com.datastax.oss", "java-driver-core") }
+  implementation(libs.cassandra.quarkus.tests) { exclude("org.testcontainers", "cassandra") }
+  implementation(libs.testcontainers.cassandra)
 
   implementation(platform(libs.awssdk.bom))
   implementation(libs.awssdk.dynamodb) { exclude("software.amazon.awssdk", "apache-client") }

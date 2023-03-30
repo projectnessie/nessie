@@ -58,8 +58,9 @@ dependencies {
   implementation(libs.awssdk.apache.client) { exclude("commons-logging", "commons-logging") }
   implementation("io.quarkus:quarkus-mongodb-client")
   implementation(platform(libs.cassandra.driver.bom))
+  implementation(platform(libs.cassandra.quarkus.bom))
   implementation(libs.cassandra.driver.core)
-  implementation(libs.cassandra.quarkus)
+  implementation(libs.cassandra.quarkus) { exclude("com.datastax.oss", "java-driver-core") }
   implementation("org.jboss.slf4j:slf4j-jboss-logmanager")
   implementation(libs.opentelemetry.api)
 
