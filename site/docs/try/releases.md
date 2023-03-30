@@ -2,6 +2,40 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.54.0 Release (March 30, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.54.0).
+
+* Scylla: 8->4G (#6446)
+* Remove the need to pass `Put.expectedContent()` (#6438)
+* Tests: Faster ScyllaDB container startup (#6444)
+* IntelliJ: Always use Gradle to run tests (#6445)
+* Testing: Faster C* container startup (#6443)
+* Re-add Cassandra version store type to Nessie-Quarkus (#6440)
+* Allow CI on Nessie forks (#6442)
+* Cleanup/build: Remove no longer used Gradle configuration (#6437)
+* Add missing "project only" code-coverage-report tasks (#6436)
+* Fix OOM when running tests `:nessie-cli` (#6435)
+* Some minor Gradle build optimizations (#6428)
+* Testing: add `-XX:+HeapDumpOnOutOfMemoryError` (#6433)
+* Nit: fix IntelliJ import warning for nessie-perftest-simulations (#6431)
+* Disable testcontainers startup checks (#6423)
+* Remove old content-attachments approach (#6422)
+* Expand iceberg-views version-ID to 64 bit (#6421)
+* Update Nessie client version as per Iceberg 1.2.0 release (#6412)
+* Site: Update Iceberg, Flink, Presto versions (#6419)
+* Gradle CI tweaks (#6416)
+* Bump maven to 3.9.1 + maven-resolver to 1.9.7 (#6413)
+* Nit: suppress "unclosed resource" warning in some tests (#6408)
+* UI-Build: Use openapi-generator jar directly (#6411)
+* Nit: remove unnecessary `.collect()` (#6414)
+* Nit: Suppress a bunch of unchecked and deprecated warnings (#6410)
+* Fix nullability for fields of ContentValueObj (#6409)
+* Remove deprecated and unused `@NessieUri` annotation (#6407)
+* Tests: Update Quarkus' TestNessieError (#6399)
+* Remove exception mapping for `java.security.AccessControlException` (#6405)
+* Nit: remove unused code from #6384 (#6406)
+
 ## 0.53.1 Release (March 24, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.53.1).
