@@ -123,7 +123,7 @@ class NessieIdePlugin : Plugin<Project> {
                 .joinToString(" ")
           }
 
-          delegateActions.testRunner = ActionDelegationConfig.TestRunner.CHOOSE_PER_TEST
+          delegateActions.testRunner = ActionDelegationConfig.TestRunner.GRADLE
         }
       }
 
