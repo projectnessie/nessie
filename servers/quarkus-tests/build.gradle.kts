@@ -34,11 +34,14 @@ dependencies {
   implementation(project(":nessie-versioned-persist-mongodb-test"))
   implementation(project(":nessie-versioned-persist-transactional"))
   implementation(project(":nessie-versioned-persist-transactional-test"))
+  implementation(project(":nessie-versioned-storage-cassandra"))
+  implementation(project(":nessie-versioned-storage-testextension"))
 
   implementation(enforcedPlatform(libs.quarkus.bom))
   implementation("io.quarkus:quarkus-junit5")
 
   implementation(libs.testcontainers.testcontainers)
+  implementation(libs.testcontainers.cassandra)
   implementation(libs.testcontainers.postgresql)
   implementation(libs.testcontainers.mongodb)
   implementation(libs.docker.java.api)
