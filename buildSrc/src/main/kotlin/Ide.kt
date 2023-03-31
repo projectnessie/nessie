@@ -123,7 +123,10 @@ class NessieIdePlugin : Plugin<Project> {
                 .joinToString(" ")
           }
 
-          delegateActions.testRunner = ActionDelegationConfig.TestRunner.GRADLE
+          delegateActions.testRunner =
+            ActionDelegationConfig.TestRunner.valueOf(
+              System.getProperty("nessie.intellij.test-runner", "CHOOSE_PER_TEST")
+            )
         }
       }
 
