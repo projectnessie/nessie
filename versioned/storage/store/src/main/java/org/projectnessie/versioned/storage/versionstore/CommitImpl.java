@@ -373,7 +373,7 @@ class CommitImpl extends BaseCommitHelper {
                 : contentIdFromContent(existingValue);
 
         checkArgument(
-            putValueId != null, "New value to update existing key '%s' has no content iD", putKey);
+            putValueId != null, "New value to update existing key '%s' has no content ID", putKey);
 
         checkArgument(
             expectedContentIDString.equals(putValueId),
@@ -387,7 +387,8 @@ class CommitImpl extends BaseCommitHelper {
       }
     }
     if (!exists) {
-      checkArgument(putValueId == null, "New value for new must not have a content iD");
+      checkArgument(
+          putValueId == null, "New value for key '%s' must not have a content ID", putKey);
 
       newContent.accept(putKey, putValue);
 

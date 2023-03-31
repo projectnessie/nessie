@@ -484,7 +484,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                     .put("t1", V_1_3)
                     .toBranch(branch))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("New value to update existing key 't1' has no content iD");
+        .hasMessage("New value to update existing key 't1' has no content ID");
     soft.assertThatThrownBy(
             () ->
                 commit("Conflicting Commit")
@@ -530,7 +530,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                     .put("t3", V_3_2.withId(t3))
                     .toBranch(branch))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("New value for new must not have a content iD");
+        .hasMessage("New value for key 't3' must not have a content ID");
     soft.assertThatThrownBy(
             () ->
                 commit("Conflicting Commit")
