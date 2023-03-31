@@ -62,6 +62,10 @@ nessieQuarkusApp {
   }
 }
 
+tasks.withType(GatlingRunTask::class.java).configureEach {
+  inputs.files(configurations.getByName("gatlingRuntimeClasspath"))
+}
+
 gatling {
   gatlingVersion = libs.versions.gatling.get()
   // Null is OK (io.gatling.gradle.LogbackConfigTask checks for it)
