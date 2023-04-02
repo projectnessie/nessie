@@ -29,7 +29,7 @@ requirements = [
     "attrs",  # features we use are not regularly changing
     "botocore",  # features we use are not regularly changing
     "Click<9.0.0,>6.0.0",  # pinning to 7.x or 8.x as we have used w/ both
-    "confuse==2.0.0",  # important for config so don't change w/o testing
+    "confuse==2.0.1",  # important for config so don't change w/o testing
     "desert",  # features we use are not regularly changing
     "marshmallow",  # features we use are not regularly changing
     "marshmallow_oneofschema",  # features we use are not regularly changing
