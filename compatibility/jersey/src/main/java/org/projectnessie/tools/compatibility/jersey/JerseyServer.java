@@ -15,6 +15,8 @@
  */
 package org.projectnessie.tools.compatibility.jersey;
 
+import static org.jboss.weld.environment.se.Weld.SHUTDOWN_HOOK_SYSTEM_PROPERTY;
+
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.util.function.Consumer;
@@ -60,6 +62,7 @@ public class JerseyServer implements AutoCloseable {
     weld.addExtension(new ServerConfigExtension());
     weld.addExtension(PersistVersionStoreExtension.forDatabaseAdapter(databaseAdapterSupplier));
     weld.addExtension(authzExtension());
+    weld.property(SHUTDOWN_HOOK_SYSTEM_PROPERTY, "false");
     weld.initialize();
 
     jerseyTest =
