@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-22.04
     if: github.repository_owner == 'projectnessie'
     strategy:
-      max-parallel: 4
+      max-parallel: 1
       matrix:
         include:
           - java-version: 17
