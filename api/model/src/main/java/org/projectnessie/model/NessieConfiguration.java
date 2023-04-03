@@ -15,11 +15,13 @@
  */
 package org.projectnessie.model;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import javax.annotation.Nullable;
 import javax.validation.constraints.Size;
 import org.immutables.value.Value;
+import org.projectnessie.model.ser.Views;
 
 /** configuration object to tell a client how a server is configured. */
 @Value.Immutable
@@ -38,9 +40,29 @@ public abstract class NessieConfiguration {
   public abstract String getDefaultBranch();
 
   /**
+   * The minimum API version supported by the server.
+   *
+   * <p>API versions are numbered sequentially, as they are developed.
+   */
+  @JsonView(Views.V2.class)
+  @Value.Default
+  public int getMinSupportedApiVersion() {
+    return 1;
+  }
+
+  /**
    * The maximum API version supported by the server.
    *
    * <p>API versions are numbered sequentially, as they are developed.
    */
   public abstract int getMaxSupportedApiVersion();
+
+  @JsonView(Views.V2.class)
+  @Nullable
+  @jakarta.annotation.Nullable
+  public abstract String getSpecVersion();
+
+  public static NessieConfiguration getConfigWithPredefinedVersions() {
+    return NessieConfigurationHolder.NESSIE_API_SPEC;
+  }
 }

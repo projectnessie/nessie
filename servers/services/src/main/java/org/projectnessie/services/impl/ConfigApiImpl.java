@@ -31,8 +31,8 @@ public class ConfigApiImpl implements ConfigService {
   @Override
   public NessieConfiguration getConfig() {
     return ImmutableNessieConfiguration.builder()
+        .from(NessieConfiguration.getConfigWithPredefinedVersions())
         .defaultBranch(this.config.getDefaultBranch())
-        .maxSupportedApiVersion(2)
         .build();
   }
 }

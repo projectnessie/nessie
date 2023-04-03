@@ -69,6 +69,33 @@ public class TestModelObjectsSerialization {
     final String branchName = "testBranch";
 
     return Arrays.asList(
+        new Case(NessieConfiguration.class)
+            .view(Views.V1.class)
+            .obj(
+                ImmutableNessieConfiguration.builder()
+                    .defaultBranch("default-branch")
+                    .minSupportedApiVersion(11)
+                    .maxSupportedApiVersion(42)
+                    .specVersion("42.1.2")
+                    .build())
+            .jsonNode(
+                o -> o.put("defaultBranch", "default-branch").put("maxSupportedApiVersion", 42))
+            .skipFinalCompare(),
+        new Case(NessieConfiguration.class)
+            .view(Views.V2.class)
+            .obj(
+                ImmutableNessieConfiguration.builder()
+                    .defaultBranch("default-branch")
+                    .minSupportedApiVersion(11)
+                    .maxSupportedApiVersion(42)
+                    .specVersion("42.1.2")
+                    .build())
+            .jsonNode(
+                o ->
+                    o.put("defaultBranch", "default-branch")
+                        .put("minSupportedApiVersion", 11)
+                        .put("maxSupportedApiVersion", 42)
+                        .put("specVersion", "42.1.2")),
         new Case(Branch.class)
             .obj(Branch.of(branchName, HASH))
             .jsonNode(o -> o.put("type", "BRANCH").put("name", "testBranch").put("hash", HASH)),
