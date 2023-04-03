@@ -1,0 +1,41 @@
+name: 'Save incremental Gradle build cache'
+description: 'Save incremental Gradle build cache'
+inputs:
+  job-name:
+    description: 'job name'
+  java-version:
+    description: 'Java version'
+    default: '11'
+runs:
+  using: "composite"
+  steps:
+    - name: Prepare build-cache archive
+      shell: bash
+      run: |
+        if [[ -d ~/.gradle/caches/build-cache-1/ ]] ; then
+          echo "::group::Gradle build cache / identify updated build cache items"
+
+          cd ~/.gradle/caches/build-cache-1/
+
+          echo "Gradle build-cache-1 has $(ls -1 . | wc -l) files"
+          # Identify the added and changed files in build-cache-1.
+
+          echo "Identifying changed/added files..."
+          # 'diff' returns 1, if files differ :(
+          (diff --brief --recursive --new-file --no-dereference ~/saved-build-cache-1/ . || true) | \
+            cut -d\  -f4 > ~/ci-gradle-build-cache-diff
+          echo "Identified $(wc -l < ~/ci-gradle-build-cache-diff) changed/added files in build-cache-1"
+
+          # Only call 'tar', if there is some difference
+          # Note: actions/upload-artifact takes care of compressing the artifact, no need to bug the CPU here
+          echo "Creating artifact (if necessary)..."
+          [[ -s ~/ci-gradle-build-cache-diff ]] && tar cf ~/ci-gradle-build-cache-${{ inputs.job-name }}-${{ inputs.java-version }}.tar -T ~/ci-gradle-build-cache-diff
+          echo "::endgroup::"
+        fi
+    - name: Archive code-checks incremental
+      uses: actions/upload-artifact@v3
+      with:
+        name: ci-gradle-build-cache-${{ inputs.job-name }}-${{ inputs.java-version }}
+        path: ~/ci-gradle-build-cache-${{ inputs.job-name }}-${{ inputs.java-version }}.tar
+        if-no-files-found: ignore
+        retention-days: 1

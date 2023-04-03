@@ -92,6 +92,7 @@ jobs:
     - name: Gradle / compile
       uses: gradle/gradle-build-action@v2
       with:
+        cache-read-only: true
         arguments: assemble --scan
 
     - name: Gradle / unit test
@@ -123,9 +124,9 @@ jobs:
     env:
       working-directory: ./python
     strategy:
-      max-parallel: 4
+      max-parallel: 1
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.8', '3.9', '3.10', '3.7']
 
     steps:
     - uses: actions/checkout@v3.5.0

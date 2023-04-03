@@ -108,3 +108,5 @@ spotless {
     target("nessie-iceberg/*.gradle.kts", "*.gradle.kts", "buildSrc/*.gradle.kts")
   }
 }
+
+val listProjectsWithPrefix by tasks.registering(ListChildProjectsTask::class)

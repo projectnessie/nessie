@@ -19,7 +19,6 @@ Project Nessie is a Transactional Catalog for Data Lakes with Git-like semantics
 [![Java 17+18](https://img.shields.io/github/actions/workflow/status/projectnessie/nessie/newer-java.yml?label=Java%2017%2B&logo=Github&style=flat-square)](https://github.com/projectnessie/nessie/actions/workflows/newer-java.yml)
 [![Windows Build](https://img.shields.io/github/actions/workflow/status/projectnessie/nessie/ci-win.yml?label=Windows&logo=windows&style=flat-square)](https://github.com/projectnessie/nessie/actions/workflows/ci-win.yml)
 [![macOS Build](https://img.shields.io/github/actions/workflow/status/projectnessie/nessie/ci-mac.yml?label=macOS&logo=apple&style=flat-square)](https://github.com/projectnessie/nessie/actions/workflows/ci-mac.yml)
-[![codecov](https://img.shields.io/codecov/c/github/projectnessie/nessie?style=flat-square)](https://codecov.io/gh/projectnessie/nessie)
 
 More information can be found at [projectnessie.org](https://projectnessie.org/).
 

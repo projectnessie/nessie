@@ -1,0 +1,74 @@
+name: 'Incremental Gradle build cache prepare'
+description: 'Prepare to save incremental Gradle build cache'
+inputs:
+  cache-read-only:
+    description: 'Gradle cache read only'
+    default: 'true'
+  java-version:
+    description: 'Java version'
+    default: '11'
+  job-id:
+    description: 'Job name to prefer'
+    default: 'nessie-ci'
+  job-instance:
+    description: 'Job instance to prefer'
+    default: 'ci'
+runs:
+  using: "composite"
+  steps:
+    - name: Prep env
+      shell: bash
+      run: |
+        echo "GRADLE_BUILD_ACTION_CACHE_KEY_ENVIRONMENT=java-${{ inputs.java-version }}" >> ${GITHUB_ENV}
+        echo "GRADLE_BUILD_ACTION_CACHE_KEY_JOB=${{ inputs.job-id }}" >> ${GITHUB_ENV}
+        if [[ -n "${{ inputs.no-daemon }}" ]] ; then
+          echo "G_DAEMON_FLAG=--no-daemon" >> ${GITHUB_ENV}
+        fi
+        if [[ -n "${{ inputs.job-instance }}" ]] ; then
+          echo "GRADLE_BUILD_ACTION_CACHE_KEY_JOB_INSTANCE=${{ inputs.job-instance }}" >> ${GITHUB_ENV}
+        fi
+
+    - name: Gradle / Init
+      uses: gradle/gradle-build-action@v2
+      with:
+        cache-read-only: ${{ inputs.cache-read-only }}
+        arguments: -h
+
+    - name: Download existing workflow artifacts
+      uses: actions/download-artifact@v3
+      # Just in case, don't know the exact inner workings of Gradle's build cache and whether
+      # the download-action complains about duplicate files.
+      continue-on-error: true
+      with:
+        path: ~/downloaded-artifacts/
+
+    - name: Extract caches
+      shell: bash
+      run: |
+        echo "::group::Gradle build cache / add incremental updates"
+        mkdir -p ~/.gradle/caches/build-cache-1/
+        echo "Gradle build-cache-1 contains $(ls -1 ~/.gradle/caches/build-cache-1/ | wc -l) files"
+
+        if [[ -d ~/downloaded-artifacts/ ]] ; then
+          find ~/downloaded-artifacts/ -type f -name "ci-gradle-build-cache-*-${{ inputs.java-version }}.tar" | while read arch ; do
+            echo "Adding archive content from $arch ..."
+            (cd ~/.gradle/caches/build-cache-1/ ; tar xf $arch)
+          done
+
+        else
+          echo "No previous build cache artifacts downloaded."
+        fi
+        echo "::endgroup::"
+
+    - name: Memoize build-cache
+      shell: bash
+      run: |
+        echo "::group::Saving state of Gradle's build-cache-1 ..."
+        rm -rf ~/saved-build-cache-1/
+        mkdir -p ~/saved-build-cache-1/
+
+        if [[ -d ~/.gradle/caches/build-cache-1/ ]] ; then
+          echo "Gradle build-cache-1 contains $(ls -1 ~/.gradle/caches/build-cache-1/ | wc -l) files"
+          (cd ~/.gradle/caches/build-cache-1/ ; cp -r . ~/saved-build-cache-1/)
+        fi
+        echo "::endgroup::"
