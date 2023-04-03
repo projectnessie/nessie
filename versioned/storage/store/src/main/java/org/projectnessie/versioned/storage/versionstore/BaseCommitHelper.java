@@ -458,14 +458,12 @@ class BaseCommitHelper {
     result.wasSuccessful(true);
 
     IndexesLogic indexesLogic = indexesLogic(persist);
-    for (StoreIndexElement<CommitOp> el : indexesLogic.incrementalIndexFromCommit(source)) {
-      if (el.content().action().currentCommit()) {
-        StoreKey k = el.key();
-        ContentKey key = storeKeyToKey(k);
-        // Note: key==null, if not the "main universe" or not a "content" discriminator
-        if (key != null) {
-          result.putDetails(key, keyDetails(mergeTypeForKey.apply(key), ConflictType.NONE));
-        }
+    for (StoreIndexElement<CommitOp> el : indexesLogic.commitOperations(source)) {
+      StoreKey k = el.key();
+      ContentKey key = storeKeyToKey(k);
+      // Note: key==null, if not the "main universe" or not a "content" discriminator
+      if (key != null) {
+        result.putDetails(key, keyDetails(mergeTypeForKey.apply(key), ConflictType.NONE));
       }
     }
 

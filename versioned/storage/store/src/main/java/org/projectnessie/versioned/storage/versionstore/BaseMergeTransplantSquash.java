@@ -49,6 +49,7 @@ import org.projectnessie.versioned.storage.common.logic.CommitLogic;
 import org.projectnessie.versioned.storage.common.logic.CommitRetry.RetryException;
 import org.projectnessie.versioned.storage.common.logic.CreateCommit;
 import org.projectnessie.versioned.storage.common.logic.DiffEntry;
+import org.projectnessie.versioned.storage.common.logic.IndexesLogic;
 import org.projectnessie.versioned.storage.common.logic.PagedResult;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
@@ -88,6 +89,12 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
     // local cache)
     StoreIndex<CommitOp> headIndex = indexesLogic(persist).buildCompleteIndexOrEmpty(head);
     verifyMergeTransplantCommitPolicies(headIndex, mergeCommit);
+
+    IndexesLogic indexesLogic = indexesLogic(persist);
+    if (!indexesLogic.commitOperations(mergeCommit).iterator().hasNext()) {
+      // The squashed commit is empty, i.e. it doesn't contain any operations: don't persist it.
+      return mergeTransplantSuccess(mergeResult, headId(), dryRun, keyDetailsMap);
+    }
 
     CommitLogic commitLogic = commitLogic(persist);
     boolean committed = commitLogic.storeCommit(mergeCommit, emptyList());
