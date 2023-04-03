@@ -26,8 +26,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.client.NessieConfigConstants;
@@ -38,7 +36,6 @@ import org.projectnessie.client.auth.NessieAuthentication;
 import org.projectnessie.client.util.HttpTestServer;
 import org.projectnessie.client.util.HttpTestUtil;
 
-@Execution(ExecutionMode.CONCURRENT)
 public class TestHttpClientBuilder {
   interface IncompatibleApiInterface extends NessieApi {}
 

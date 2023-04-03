@@ -21,11 +21,8 @@ import com.google.common.collect.ImmutableMap;
 import java.util.Collections;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.projectnessie.client.NessieConfigConstants;
 
-@Execution(ExecutionMode.CONCURRENT)
 class TestNoneAuthProvider {
   @Test
   void testNone() {

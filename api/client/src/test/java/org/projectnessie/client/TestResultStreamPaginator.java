@@ -27,12 +27,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.PaginatedResponse;
 
-@Execution(ExecutionMode.CONCURRENT)
 class TestResultStreamPaginator {
   @Test
   void testNotFoundException() {

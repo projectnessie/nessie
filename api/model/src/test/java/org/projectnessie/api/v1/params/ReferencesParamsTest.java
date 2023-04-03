@@ -18,11 +18,8 @@ package org.projectnessie.api.v1.params;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.projectnessie.model.FetchOption;
 
-@Execution(ExecutionMode.CONCURRENT)
 public class ReferencesParamsTest {
 
   @Test
