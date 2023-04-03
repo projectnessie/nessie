@@ -17,8 +17,6 @@ package org.projectnessie.api.v2.params;
 
 import java.util.Arrays;
 import java.util.List;
-import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
@@ -28,7 +26,6 @@ import org.projectnessie.model.TestModelObjectsSerialization;
  * This test merely checks the JSON serialization/deserialization of API parameter classes, with an
  * intention to identify breaking cases whenever jackson version varies.
  */
-@Execution(ExecutionMode.CONCURRENT)
 public class TestParamObjectsSerialization extends TestModelObjectsSerialization {
 
   @SuppressWarnings("unused") // called by JUnit framework based on annotations in superclass

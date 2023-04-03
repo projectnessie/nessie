@@ -21,11 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.net.URI;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.projectnessie.client.http.HttpClientException;
 
-@Execution(ExecutionMode.CONCURRENT)
 class TestUriBuilder {
 
   @Test
