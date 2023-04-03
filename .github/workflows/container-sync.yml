@@ -1,9 +1,6 @@
 name: Synchronize Container Registries
 
 on:
-  schedule:
-    # Run daily on week days
-    - cron:  '0 11,23 * * 1-5'
   workflow_run:
     workflows:
       - 'Publish release'
