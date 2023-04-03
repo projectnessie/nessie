@@ -54,7 +54,7 @@ dependencies {
   testFixturesApi(project(":nessie-versioned-persist-testextension"))
   testFixturesApi(project(":nessie-versioned-persist-tests"))
   testFixturesApi(project(":nessie-versioned-persist-transactional-test"))
-  testFixturesImplementation(libs.logback.classic)
+  testFixturesImplementation(libs.bundles.logback.logging)
   testRuntimeOnly(libs.h2)
   intTestRuntimeOnly(libs.postgresql)
 

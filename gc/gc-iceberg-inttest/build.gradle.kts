@@ -91,7 +91,7 @@ dependencies {
   intTestCompileOnly(libs.immutables.value.annotations)
   intTestAnnotationProcessor(libs.immutables.value.processor)
 
-  intTestRuntimeOnly(libs.logback.classic)
+  intTestRuntimeOnly(libs.bundles.logback.logging)
 
   // javax/jakarta
   intTestCompileOnly(libs.jakarta.validation.api)

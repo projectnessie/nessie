@@ -66,7 +66,7 @@ dependencies {
   annotationProcessor(libs.picocli.codegen)
 
   implementation(libs.slf4j.api)
-  runtimeOnly(libs.logback.classic)
+  runtimeOnly(libs.bundles.logback.logging)
 
   compileOnly(libs.microprofile.openapi)
   compileOnly(libs.jackson.annotations)
@@ -86,7 +86,7 @@ dependencies {
   testImplementation(nessieProject("nessie-versioned-persist-in-memory"))
   testImplementation(nessieProject("nessie-versioned-persist-in-memory-test"))
 
-  testRuntimeOnly(libs.logback.classic)
+  testRuntimeOnly(libs.bundles.logback.logging)
 
   testCompileOnly(libs.immutables.value.annotations)
   testAnnotationProcessor(libs.immutables.value.processor)

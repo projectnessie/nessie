@@ -53,7 +53,7 @@ dependencies {
   testFixturesImplementation("org.apache.iceberg:iceberg-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:$versionIceberg")
   testFixturesImplementation("org.apache.iceberg:iceberg-hive-metastore:$versionIceberg")
 
-  testFixturesRuntimeOnly(libs.logback.classic)
+  testFixturesRuntimeOnly(libs.bundles.logback.logging)
   testFixturesImplementation(libs.slf4j.log4j.over.slf4j)
   testFixturesImplementation("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
   testFixturesImplementation("org.apache.spark:spark-core_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
