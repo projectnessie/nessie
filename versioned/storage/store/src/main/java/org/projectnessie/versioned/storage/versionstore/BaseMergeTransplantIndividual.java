@@ -90,6 +90,11 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
       CommitObj newCommit =
           createMergeTransplantCommit(mergeTypeForKey, keyDetailsMap, createCommit);
 
+      if (!indexesLogic.commitOperations(newCommit).iterator().hasNext()) {
+        // No operations in this commit, skip it.
+        continue;
+      }
+
       CommitLogic commitLogic = commitLogic(persist);
       boolean committed = commitLogic.storeCommit(newCommit, emptyList());
 
