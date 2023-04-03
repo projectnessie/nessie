@@ -50,7 +50,7 @@ on:
 concurrency:
   # PRs: 1 CI run concurrently
   # main branch: 1 CI run per commit (so every commit is checked)
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.head_commit.id }}-${{ github.event.pull_request.head.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.head_commit.id }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -792,10 +792,6 @@ jobs:
       # published.
       - helm-testing
       - site
-    strategy:
-      max-parallel: 2
-      matrix:
-        java-version: ['11'] # Ideally also '17', but GH concurrent job limit ... :(
     steps:
       # Intentionally empty job (for all GH WF) events so that the "required checks" setting
       # only needs to contain this job as the only required check for PRs.
