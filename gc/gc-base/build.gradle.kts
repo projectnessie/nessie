@@ -54,7 +54,7 @@ dependencies {
   testImplementation(project(":nessie-versioned-persist-in-memory"))
   testImplementation(project(":nessie-versioned-persist-in-memory-test"))
 
-  testRuntimeOnly(libs.logback.classic)
+  testRuntimeOnly(libs.bundles.logback.logging)
 
   testCompileOnly(libs.microprofile.openapi)
 

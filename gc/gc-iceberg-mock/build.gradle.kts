@@ -47,7 +47,7 @@ dependencies {
   compileOnly(libs.jakarta.annotation.api)
   compileOnly(libs.findbugs.jsr305)
 
-  testRuntimeOnly(libs.logback.classic)
+  testRuntimeOnly(libs.bundles.logback.logging)
 
   testImplementation(libs.iceberg.core)
 

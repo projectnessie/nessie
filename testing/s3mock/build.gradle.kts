@@ -63,7 +63,7 @@ dependencies {
 
   implementation(libs.slf4j.api)
 
-  testRuntimeOnly(libs.logback.classic)
+  testRuntimeOnly(libs.bundles.logback.logging)
 
   testImplementation(platform(libs.awssdk.bom))
   testImplementation(libs.awssdk.s3)
