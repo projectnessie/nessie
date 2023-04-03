@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.tests;
 
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
@@ -39,10 +40,12 @@ import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
+import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
+import org.projectnessie.versioned.paging.PaginationIterator;
 import org.projectnessie.versioned.testworker.OnRefOnly;
 
 @ExtendWith(SoftAssertionsExtension.class)
@@ -448,5 +451,73 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                 ContentKey.of(T_1), V_1_2,
                 ContentKey.of(T_4), V_4_1,
                 ContentKey.of(T_5), V_5_1));
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  protected void transplantEmptyCommit(boolean individualCommits) throws VersionStoreException {
+    BranchName source = BranchName.of("source");
+    BranchName target = BranchName.of("target");
+    store().create(source, Optional.of(this.initialHash));
+    store().create(target, Optional.of(this.initialHash));
+
+    ContentKey key1 = ContentKey.of("key1");
+    ContentKey key2 = ContentKey.of("key2");
+
+    // Add two commits to the target branch
+
+    Hash targetHead =
+        store()
+            .commit(
+                target,
+                Optional.empty(),
+                CommitMeta.fromMessage("target 1"),
+                singletonList(Put.of(key1, V_1_1)));
+
+    targetHead =
+        store()
+            .commit(
+                target,
+                Optional.of(targetHead),
+                CommitMeta.fromMessage("target 2"),
+                singletonList(Put.of(key2, V_2_1)));
+
+    // Add two commits to the source branch, with conflicting changes to key1 and key2
+
+    Hash source1 =
+        store()
+            .commit(
+                source,
+                Optional.empty(),
+                CommitMeta.fromMessage("source 1"),
+                singletonList(Put.of(key1, V_1_2)));
+
+    Hash source2 =
+        store()
+            .commit(
+                source,
+                Optional.of(source1),
+                CommitMeta.fromMessage("source 2"),
+                singletonList(Put.of(key2, V_2_2)));
+
+    // Transplant the source branch into the target branch, with a drop of key1 and key2
+
+    store()
+        .transplant(
+            target,
+            Optional.of(targetHead),
+            Arrays.asList(source1, source2),
+            createMetadataRewriter(", merge-drop"),
+            individualCommits,
+            ImmutableMap.of(key1, MergeType.DROP, key2, MergeType.DROP),
+            MergeType.NORMAL,
+            false,
+            false);
+
+    // No new commit should have been created in the target branch
+    try (PaginationIterator<Commit> iterator = store().getCommits(target, true)) {
+      Hash newTargetHead = iterator.next().getHash();
+      assertThat(newTargetHead).isEqualTo(targetHead);
+    }
   }
 }
