@@ -15,6 +15,7 @@
  */
 package org.projectnessie.jaxrs.ext;
 
+import static org.jboss.weld.environment.se.Weld.SHUTDOWN_HOOK_SYSTEM_PROPERTY;
 import static org.projectnessie.services.config.ServerConfigExtension.SERVER_CONFIG;
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
@@ -238,6 +239,7 @@ public class NessieJaxRsExtension extends NessieClientResolver
       weld.addExtension(new ServerConfigExtension());
       weld.addExtension(versionStoreExtension);
       weld.addExtension(new AuthorizerExtension().setAccessCheckerSupplier(this::createNewChecker));
+      weld.property(SHUTDOWN_HOOK_SYSTEM_PROPERTY, "false");
       weld.initialize();
 
       jerseyTest =
