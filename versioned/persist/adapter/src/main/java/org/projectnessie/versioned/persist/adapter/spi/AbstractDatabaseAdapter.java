@@ -2091,8 +2091,9 @@ public abstract class AbstractDatabaseAdapter<
       CommitLogEntry source = commitsToMergeChronological.get(i);
       for (ContentKey delete : source.getDeletes()) {
         if (includeKeyPredicate.test(delete)) {
-          deletes.add(delete);
-          puts.remove(delete);
+          if (puts.remove(delete) == null) {
+            deletes.add(delete);
+          }
         }
       }
       for (KeyWithBytes put : source.getPuts()) {

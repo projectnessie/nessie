@@ -29,6 +29,7 @@ import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -518,6 +519,48 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     try (PaginationIterator<Commit> iterator = store().getCommits(target, true)) {
       Hash newTargetHead = iterator.next().getHash();
       assertThat(newTargetHead).isEqualTo(targetHead);
+    }
+  }
+
+  @Test
+  protected void testTransplantSquashOperations() throws VersionStoreException {
+    BranchName source = BranchName.of("source");
+    BranchName target = BranchName.of("target");
+    store().create(source, Optional.empty());
+    store().create(target, Optional.empty());
+
+    // Add 3 commits to the source branch:
+    // C1: PUT t1=v1.1, PUT t2=v2.1
+    // C2: DELETE t1, DELETE t2
+    // C3: PUT t2=v2.2
+
+    Hash c1 = commit("C1").put(T_1, V_1_1).put(T_2, V_2_1).toBranch(source);
+    Hash c2 = commit("C2").delete(T_1).delete(T_2).toBranch(source);
+    Hash c3 = commit("C3").put(T_2, V_2_2).toBranch(source);
+
+    store()
+        .transplant(
+            target,
+            Optional.empty(),
+            Arrays.asList(c1, c2, c3),
+            createMetadataRewriter(""),
+            false,
+            Collections.emptyMap(),
+            MergeType.NORMAL,
+            false,
+            false);
+
+    // Expected operation in the squashed commit: PUT t2=v2.2
+    try (PaginationIterator<Commit> commits = store().getCommits(target, true)) {
+      Commit squashed = commits.next();
+      soft.assertThat(squashed.getOperations())
+          .singleElement()
+          .satisfies(
+              o -> {
+                soft.assertThat(o).isInstanceOf(Put.class);
+                soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_2));
+                soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_2_2);
+              });
     }
   }
 }
