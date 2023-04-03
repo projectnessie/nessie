@@ -905,6 +905,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
   protected void testMergeSquashOperations() throws VersionStoreException {
     ContentKey key1 = ContentKey.of("t1");
     ContentKey key2 = ContentKey.of("t2");
+    ContentKey key3 = ContentKey.of("t3");
+    ContentKey key4 = ContentKey.of("t4");
 
     BranchName source = BranchName.of("source");
     store().create(source, Optional.empty());
@@ -915,12 +917,12 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     store().create(target, Optional.of(ancestor));
 
     // Add 3 commits to the source branch:
-    // C1: PUT t1=v1.1, PUT t2=v2.1
-    // C2: DELETE t1, DELETE t2
+    // C1: PUT t1=v1.1, PUT t2=v2.1, PUT t3=v3.1
+    // C2: DELETE t1, DELETE t2, DELETE t3, PUT t4=v3.1 (rename t3 => t4)
     // C3: PUT t2=v2.2
 
-    commit("C1").put(key1, V_1_1).put(key2, V_2_1).toBranch(source);
-    commit("C2").delete(key1).delete(key2).toBranch(source);
+    commit("C1").put(key1, V_1_1).put(key2, V_2_1).put(key3, V_3_1).toBranch(source);
+    commit("C2").delete(key1).delete(key2).delete(key3).put(key4, V_3_1).toBranch(source);
     Hash sourceHead = commit("C3").put(key2, V_2_2).toBranch(source);
 
     store()
@@ -935,16 +937,21 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             false,
             false);
 
-    // Expected operation in the squashed commit: PUT t2=v2.2
+    // Expected operation in the squashed commit: PUT t2=v2.2, PUT t4=v3.1 (rename t3 => t4)
     try (PaginationIterator<Commit> commits = store().getCommits(target, true)) {
       Commit squashed = commits.next();
       soft.assertThat(squashed.getOperations())
-          .singleElement()
-          .satisfies(
+          .hasSize(2)
+          .satisfiesExactlyInAnyOrder(
               o -> {
                 soft.assertThat(o).isInstanceOf(Put.class);
                 soft.assertThat(o.getKey()).isEqualTo(key2);
                 soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_2_2);
+              },
+              o -> {
+                soft.assertThat(o).isInstanceOf(Put.class);
+                soft.assertThat(o.getKey()).isEqualTo(key4);
+                soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_3_1);
               });
     }
   }
