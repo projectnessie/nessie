@@ -18,12 +18,13 @@ package org.projectnessie.model;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.function.Consumer;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -46,17 +47,20 @@ public class TestModelObjectsSerialization {
     String json =
         MAPPER.writerWithView(goodCase.serializationView).writeValueAsString(goodCase.obj);
     JsonNode j = MAPPER.readValue(json, JsonNode.class);
-    JsonNode d = MAPPER.readValue(goodCase.deserializedJson, JsonNode.class);
-    Assertions.assertThat(j).isEqualTo(d);
+    Assertions.assertThat(j).isEqualTo(goodCase.deserializedJson);
     Object deserialized = MAPPER.readValue(json, goodCase.deserializeAs);
-    Assertions.assertThat(deserialized).isEqualTo(goodCase.obj);
+    if (!goodCase.skipFinalCompare) {
+      Assertions.assertThat(deserialized).isEqualTo(goodCase.obj);
+    }
   }
 
   @ParameterizedTest
   @MethodSource("negativeCases")
   void testNegativeSerDeCases(Case invalidCase) {
     Assertions.assertThatThrownBy(
-            () -> MAPPER.readValue(invalidCase.deserializedJson, invalidCase.deserializeAs))
+            () ->
+                MAPPER.readValue(
+                    invalidCase.deserializedJson.toString(), invalidCase.deserializeAs))
         .isInstanceOf(JsonProcessingException.class);
   }
 
@@ -65,211 +69,204 @@ public class TestModelObjectsSerialization {
     final String branchName = "testBranch";
 
     return Arrays.asList(
-        new Case(
-            Branch.of(branchName, HASH),
-            Branch.class,
-            Json.from("type", "BRANCH").add("name", "testBranch").add("hash", HASH)),
-        new Case(
-            Branch.of(branchName, null),
-            Branch.class,
-            Json.from("type", "BRANCH").add("name", "testBranch").addNoQuotes("hash", "null")),
-        new Case(
-            Tag.of("tagname", HASH),
-            Tag.class,
-            Json.from("type", "TAG").add("name", "tagname").add("hash", HASH)),
-        new Case(
-            EntriesResponse.builder()
-                .addEntries(
-                    ImmutableEntry.builder()
-                        .type(Content.Type.ICEBERG_TABLE)
-                        .name(ContentKey.fromPathString("/tmp/testpath"))
-                        .build())
-                .token(HASH)
-                .isHasMore(true)
-                .build(),
-            EntriesResponse.class,
-            Json.from("token", HASH)
-                .addArrNoQuotes(
-                    "entries",
-                    Json.from("type", "ICEBERG_TABLE")
-                        .addNoQuotes("name", Json.arr("elements", "/tmp/testpath")))
-                .addNoQuotes("hasMore", true)),
-        new Case(
-            CommitMeta.builder()
-                .message("msg")
-                .hash(HASH)
-                .author("a1")
-                .author("a2")
-                .signedOffBy("s1")
-                .signedOffBy("s2")
-                .addParentCommitHashes("p1")
-                .addParentCommitHashes("p2")
-                .committer("c1")
-                .putAllProperties("p1", Arrays.asList("v1a", "v1b"))
-                .putProperties("p2", "v2")
-                .authorTime(Instant.ofEpochSecond(1))
-                .commitTime(Instant.ofEpochSecond(2))
-                .build(),
-            Views.V2.class,
-            CommitMeta.class,
-            Json.from("hash", HASH)
-                .add("committer", "c1")
-                .addArr("authors", "a1", "a2")
-                .addArr("allSignedOffBy", "s1", "s2")
-                .add("message", "msg")
-                .add("commitTime", "1970-01-01T00:00:02Z")
-                .add("authorTime", "1970-01-01T00:00:01Z")
-                .addNoQuotes(
-                    "allProperties", Json.arr("p1", "v1a", "v1b").addArr("p2", "v2").toString())
-                .addArr("parentCommitHashes", "p1", "p2")),
-        new Case(
-            LogResponse.builder()
-                .token(HASH)
-                .addLogEntries(
-                    LogEntry.builder()
-                        .commitMeta(
-                            ImmutableCommitMeta.builder()
-                                .commitTime(now)
-                                .author("author@example.com")
-                                .committer("committer@example.com")
-                                .authorTime(now)
-                                .hash(HASH)
-                                .message("test commit")
-                                .putProperties("prop1", "val1")
-                                .signedOffBy("signer@example.com")
-                                .build())
-                        .build())
-                .isHasMore(true)
-                .build(),
-            LogResponse.class,
-            Json.from("token", HASH)
-                .addArrNoQuotes(
-                    "logEntries",
-                    Json.noQuotes(
-                            "commitMeta",
-                            Json.from("hash", HASH)
-                                .add("committer", "committer@example.com")
-                                .add("author", "author@example.com")
-                                .add("signedOffBy", "signer@example.com")
-                                .add("message", "test commit")
-                                .add("commitTime", now.toString())
-                                .add("authorTime", now.toString())
-                                .addNoQuotes("properties", Json.from("prop1", "val1")))
-                        .addNoQuotes("parentCommitHash", null)
-                        .addNoQuotes("operations", null))
-                .addNoQuotes("hasMore", true)));
+        new Case(Branch.class)
+            .obj(Branch.of(branchName, HASH))
+            .jsonNode(o -> o.put("type", "BRANCH").put("name", "testBranch").put("hash", HASH)),
+        new Case(Branch.class)
+            .obj(Branch.of(branchName, null))
+            .jsonNode(o -> o.put("type", "BRANCH").put("name", "testBranch").putNull("hash")),
+        new Case(Tag.class)
+            .obj(Tag.of("tagname", HASH))
+            .jsonNode(o -> o.put("type", "TAG").put("name", "tagname").put("hash", HASH)),
+        new Case(EntriesResponse.class)
+            .obj(
+                EntriesResponse.builder()
+                    .addEntries(
+                        ImmutableEntry.builder()
+                            .type(Content.Type.ICEBERG_TABLE)
+                            .name(ContentKey.fromPathString("/tmp/testpath"))
+                            .build())
+                    .token(HASH)
+                    .isHasMore(true)
+                    .build())
+            .jsonNode(
+                o ->
+                    o.put("token", HASH)
+                        .put("hasMore", true)
+                        .putNull("effectiveReference")
+                        .putArray("entries")
+                        .add(
+                            JsonNodeFactory.instance
+                                .objectNode()
+                                .put("type", "ICEBERG_TABLE")
+                                .putNull("contentId")
+                                .putNull("content")
+                                .set(
+                                    "name",
+                                    JsonNodeFactory.instance
+                                        .objectNode()
+                                        .set(
+                                            "elements",
+                                            JsonNodeFactory.instance
+                                                .arrayNode()
+                                                .add("/tmp/testpath"))))),
+        new Case(CommitMeta.class)
+            .obj(
+                CommitMeta.builder()
+                    .message("msg")
+                    .hash(HASH)
+                    .author("a1")
+                    .author("a2")
+                    .signedOffBy("s1")
+                    .signedOffBy("s2")
+                    .addParentCommitHashes("p1")
+                    .addParentCommitHashes("p2")
+                    .committer("c1")
+                    .putAllProperties("p1", Arrays.asList("v1a", "v1b"))
+                    .putProperties("p2", "v2")
+                    .authorTime(Instant.ofEpochSecond(1))
+                    .commitTime(Instant.ofEpochSecond(2))
+                    .build())
+            .view(Views.V2.class)
+            .jsonNode(
+                o -> {
+                  o.put("hash", HASH)
+                      .put("committer", "c1")
+                      .set("authors", JsonNodeFactory.instance.arrayNode().add("a1").add("a2"));
+                  o.set("allSignedOffBy", JsonNodeFactory.instance.arrayNode().add("s1").add("s2"));
+                  o.put("message", "msg")
+                      .put("commitTime", "1970-01-01T00:00:02Z")
+                      .put("authorTime", "1970-01-01T00:00:01Z")
+                      .set(
+                          "allProperties",
+                          ((ObjectNode)
+                                  JsonNodeFactory.instance
+                                      .objectNode()
+                                      .set(
+                                          "p1",
+                                          JsonNodeFactory.instance
+                                              .arrayNode()
+                                              .add("v1a")
+                                              .add("v1b")))
+                              .set("p2", JsonNodeFactory.instance.arrayNode().add("v2")));
+                  o.set(
+                      "parentCommitHashes",
+                      JsonNodeFactory.instance.arrayNode().add("p1").add("p2"));
+                }),
+        new Case(LogResponse.class)
+            .obj(
+                LogResponse.builder()
+                    .token(HASH)
+                    .addLogEntries(
+                        LogEntry.builder()
+                            .commitMeta(
+                                ImmutableCommitMeta.builder()
+                                    .commitTime(now)
+                                    .author("author@example.com")
+                                    .committer("committer@example.com")
+                                    .authorTime(now)
+                                    .hash(HASH)
+                                    .message("test commit")
+                                    .putProperties("prop1", "val1")
+                                    .signedOffBy("signer@example.com")
+                                    .build())
+                            .build())
+                    .isHasMore(true)
+                    .build())
+            .jsonNode(
+                o -> {
+                  ObjectNode meta =
+                      JsonNodeFactory.instance
+                          .objectNode()
+                          .put("hash", HASH)
+                          .put("committer", "committer@example.com")
+                          .put("author", "author@example.com")
+                          .set(
+                              "authors",
+                              JsonNodeFactory.instance.arrayNode().add("author@example.com"));
+                  meta.put("signedOffBy", "signer@example.com")
+                      .set(
+                          "allSignedOffBy",
+                          JsonNodeFactory.instance.arrayNode().add("signer@example.com"));
+                  meta.put("message", "test commit")
+                      .put("commitTime", now.toString())
+                      .put("authorTime", now.toString())
+                      .set(
+                          "properties", JsonNodeFactory.instance.objectNode().put("prop1", "val1"));
+                  meta.set(
+                      "allProperties",
+                      JsonNodeFactory.instance
+                          .objectNode()
+                          .set("prop1", JsonNodeFactory.instance.arrayNode().add("val1")));
+
+                  o.put("token", HASH)
+                      .put("hasMore", true)
+                      .set(
+                          "logEntries",
+                          JsonNodeFactory.instance
+                              .arrayNode()
+                              .add(
+                                  JsonNodeFactory.instance
+                                      .objectNode()
+                                      .putNull("parentCommitHash")
+                                      .putNull("operations")
+                                      .set("commitMeta", meta)));
+                }));
   }
 
   static List<Case> negativeCases() {
     return Arrays.asList(
         // Special chars in the branch name make it invalid
-        new Case(
-            Branch.class, Json.from("type", "BRANCH").add("name", "$p@c!@L").add("hash", HASH)),
+        new Case(Branch.class)
+            .jsonNode(o -> o.put("type", "BRANCH").put("name", "$p@c!@L").put("hash", HASH)),
 
         // Invalid hash
-        new Case(
-            Branch.class,
-            Json.from("type", "BRANCH").add("name", "testBranch").add("hash", "invalidhash")),
+        new Case(Branch.class)
+            .jsonNode(
+                o -> o.put("type", "BRANCH").put("name", "testBranch").put("hash", "invalidhash")),
 
         // No name
-        new Case(
-            Branch.class,
-            Json.from("type", "BRANCH").addNoQuotes("name", "null").add("hash", HASH)),
-        new Case(
-            Tag.class, Json.from("type", "TAG").add("name", "tagname").add("hash", "invalidhash")));
+        new Case(Branch.class)
+            .jsonNode(o -> o.put("type", "BRANCH").putNull("name").put("hash", HASH)),
+        new Case(Tag.class)
+            .jsonNode(o -> o.put("type", "TAG").put("name", "tagname").put("hash", "invalidhash")));
   }
 
   protected static class Case {
 
-    final Object obj;
-    final Class<?> serializationView;
+    Object obj;
+    Class<?> serializationView;
     final Class<?> deserializeAs;
-    final String deserializedJson;
+    ObjectNode deserializedJson = JsonNodeFactory.instance.objectNode();
+    boolean skipFinalCompare;
 
-    public Case(Class<?> deserializeAs, Json deserializedJson) {
-      this(null, deserializeAs, deserializedJson);
-    }
-
-    public Case(Object obj, Class<?> deserializeAs, Json deserializedJson) {
-      this(obj, Views.V1.class, deserializeAs, deserializedJson);
-    }
-
-    public Case(
-        Object obj, Class<?> serializationView, Class<?> deserializeAs, Json deserializedJson) {
-      this.obj = obj;
-      this.serializationView = serializationView;
+    public Case(Class<?> deserializeAs) {
       this.deserializeAs = deserializeAs;
-      this.deserializedJson = deserializedJson.toString();
+    }
+
+    public Case obj(Object obj) {
+      this.obj = obj;
+      return this;
+    }
+
+    public Case view(Class<?> serializationView) {
+      this.serializationView = serializationView;
+      return this;
+    }
+
+    public Case skipFinalCompare() {
+      this.skipFinalCompare = true;
+      return this;
+    }
+
+    public Case jsonNode(Consumer<ObjectNode> objNode) {
+      objNode.accept(deserializedJson);
+      return this;
     }
 
     @Override
     public String toString() {
       return deserializeAs.getName() + " : " + obj;
-    }
-  }
-
-  protected static
-  class Json { // Helps in building json strings, which can be used for verification.
-
-    @SuppressWarnings("InlineFormatString")
-    private static final String STR_KV_FORMAT = "%s,\"%s\":\"%s\"";
-
-    @SuppressWarnings("InlineFormatString")
-    private static final String NO_QUOTES_KV_FORMAT = "%s,\"%s\":%s";
-
-    String currentContent;
-
-    private Json(String currentContent) {
-      this.currentContent = currentContent;
-    }
-
-    public static Json from(String key, String val) {
-      return new Json(String.format("\"%s\":\"%s\"", key, val));
-    }
-
-    public static Json noQuotes(String key, Object val) {
-      return new Json(String.format("\"%s\":%s", key, val));
-    }
-
-    public static Json arr(String key, String... val) {
-      String currentContent =
-          Stream.of(val)
-              .collect(Collectors.joining("\",\"", String.format("\"%s\":[\"", key), "\"]"));
-      return new Json(currentContent);
-    }
-
-    public Json add(String key, String val) {
-      this.currentContent = String.format(STR_KV_FORMAT, currentContent, key, val);
-      return this;
-    }
-
-    public Json addArr(String key, String... val) {
-      String keyContent =
-          Stream.of(val)
-              .map(v -> String.format("\"%s\"", v))
-              .collect(Collectors.joining(",", String.format("\"%s\":[", key), "]"));
-      this.currentContent = String.format("%s,%s", currentContent, keyContent);
-      return this;
-    }
-
-    public Json addArrNoQuotes(String key, Object... val) {
-      String keyContent =
-          Stream.of(val)
-              .map(Object::toString)
-              .collect(Collectors.joining(",", String.format("\"%s\":[", key), "]"));
-      this.currentContent = String.format("%s,%s", currentContent, keyContent);
-      return this;
-    }
-
-    public Json addNoQuotes(String key, Object val) {
-      String v = val != null ? val.toString() : "null";
-      this.currentContent = String.format(NO_QUOTES_KV_FORMAT, currentContent, key, v);
-      return this;
-    }
-
-    @Override
-    public String toString() {
-      return String.format("{%s}", currentContent);
     }
   }
 }

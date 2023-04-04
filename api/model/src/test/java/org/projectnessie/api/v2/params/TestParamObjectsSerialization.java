@@ -15,6 +15,7 @@
  */
 package org.projectnessie.api.v2.params;
 
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import java.util.Arrays;
 import java.util.List;
 import org.projectnessie.model.ContentKey;
@@ -33,89 +34,161 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
     final String branchName = "testBranch";
 
     return Arrays.asList(
-        new Case(
-            ImmutableTransplant.builder()
-                .addHashesToTransplant(HASH)
-                .fromRefName(branchName)
-                .build(),
-            Transplant.class,
-            Json.from("fromRefName", "testBranch").addArr("hashesToTransplant", HASH)),
-        new Case(
-            ImmutableTransplant.builder()
-                .message("test-msg")
-                .addHashesToTransplant(HASH)
-                .fromRefName(branchName)
-                .build(),
-            Transplant.class,
-            Json.from("fromRefName", "testBranch")
-                .add("message", "test-msg")
-                .addArr("hashesToTransplant", HASH)),
-        new Case(
-            ImmutableMerge.builder().fromHash(HASH).fromRefName(branchName).build(),
-            Merge.class,
-            Json.from("fromRefName", "testBranch").add("fromHash", HASH)),
-        new Case(
-            ImmutableMerge.builder()
-                .message("test-msg")
-                .fromHash(HASH)
-                .fromRefName(branchName)
-                .build(),
-            Merge.class,
-            Json.from("fromRefName", "testBranch")
-                .add("message", "test-msg")
-                .add("fromHash", HASH)),
-        new Case(
-            ImmutableMerge.builder()
-                .fromHash(HASH)
-                .fromRefName(branchName)
-                .defaultKeyMergeMode(MergeBehavior.FORCE)
-                .isFetchAdditionalInfo(true)
-                .addKeyMergeModes(
-                    MergeKeyBehavior.of(ContentKey.of("merge", "me"), MergeBehavior.NORMAL),
-                    MergeKeyBehavior.of(ContentKey.of("ignore", "this"), MergeBehavior.DROP))
-                .build(),
-            Merge.class,
-            Json.from("fromRefName", "testBranch")
-                .addArrNoQuotes(
-                    "keyMergeModes",
-                    Json.noQuotes("key", Json.arr("elements", "merge", "me"))
-                        .add("mergeBehavior", "NORMAL"),
-                    Json.noQuotes("key", Json.arr("elements", "ignore", "this"))
-                        .add("mergeBehavior", "DROP"))
-                .add("defaultKeyMergeMode", "FORCE")
-                .add("fromHash", HASH)
-                .addNoQuotes("isFetchAdditionalInfo", "true")),
-        new Case(
-            ImmutableMerge.builder()
-                .fromHash(HASH)
-                .fromRefName(branchName)
-                .isDryRun(false)
-                .addKeyMergeModes(
-                    MergeKeyBehavior.of(ContentKey.of("merge", "me"), MergeBehavior.NORMAL),
-                    MergeKeyBehavior.of(ContentKey.of("ignore", "this"), MergeBehavior.DROP))
-                .build(),
-            Merge.class,
-            Json.from("fromRefName", "testBranch")
-                .addArrNoQuotes(
-                    "keyMergeModes",
-                    Json.noQuotes("key", Json.arr("elements", "merge", "me"))
-                        .add("mergeBehavior", "NORMAL"),
-                    Json.noQuotes("key", Json.arr("elements", "ignore", "this"))
-                        .add("mergeBehavior", "DROP"))
-                .add("fromHash", HASH)
-                .addNoQuotes("isDryRun", "false")));
+        new Case(Transplant.class)
+            .obj(
+                ImmutableTransplant.builder()
+                    .addHashesToTransplant(HASH)
+                    .fromRefName(branchName)
+                    .build())
+            .jsonNode(
+                o ->
+                    o.put("fromRefName", "testBranch")
+                        .set("hashesToTransplant", JsonNodeFactory.instance.arrayNode().add(HASH))),
+        new Case(Transplant.class)
+            .obj(
+                ImmutableTransplant.builder()
+                    .addHashesToTransplant(HASH)
+                    .fromRefName(branchName)
+                    .message("test-msg")
+                    .build())
+            .jsonNode(
+                o ->
+                    o.put("fromRefName", "testBranch")
+                        .put("message", "test-msg")
+                        .set("hashesToTransplant", JsonNodeFactory.instance.arrayNode().add(HASH))),
+        new Case(Merge.class)
+            .obj(ImmutableMerge.builder().fromHash(HASH).fromRefName(branchName).build())
+            .jsonNode(o -> o.put("fromRefName", "testBranch").put("fromHash", HASH)),
+        new Case(Merge.class)
+            .obj(
+                ImmutableMerge.builder()
+                    .fromHash(HASH)
+                    .fromRefName(branchName)
+                    .message("test-msg")
+                    .build())
+            .jsonNode(
+                o ->
+                    o.put("fromRefName", "testBranch")
+                        .put("message", "test-msg")
+                        .put("fromHash", HASH)),
+        new Case(Merge.class)
+            .obj(
+                ImmutableMerge.builder()
+                    .fromHash(HASH)
+                    .fromRefName(branchName)
+                    .defaultKeyMergeMode(MergeBehavior.FORCE)
+                    .isFetchAdditionalInfo(true)
+                    .addKeyMergeModes(
+                        MergeKeyBehavior.of(ContentKey.of("merge", "me"), MergeBehavior.NORMAL),
+                        MergeKeyBehavior.of(ContentKey.of("ignore", "this"), MergeBehavior.DROP))
+                    .build())
+            .jsonNode(
+                o ->
+                    o.put("fromRefName", "testBranch")
+                        .put("defaultKeyMergeMode", "FORCE")
+                        .put("fromHash", HASH)
+                        .put("isFetchAdditionalInfo", true)
+                        .set(
+                            "keyMergeModes",
+                            JsonNodeFactory.instance
+                                .arrayNode()
+                                .add(
+                                    JsonNodeFactory.instance
+                                        .objectNode()
+                                        .put("mergeBehavior", "NORMAL")
+                                        .set(
+                                            "key",
+                                            JsonNodeFactory.instance
+                                                .objectNode()
+                                                .set(
+                                                    "elements",
+                                                    JsonNodeFactory.instance
+                                                        .arrayNode()
+                                                        .add("merge")
+                                                        .add("me"))))
+                                .add(
+                                    JsonNodeFactory.instance
+                                        .objectNode()
+                                        .put("mergeBehavior", "DROP")
+                                        .set(
+                                            "key",
+                                            JsonNodeFactory.instance
+                                                .objectNode()
+                                                .set(
+                                                    "elements",
+                                                    JsonNodeFactory.instance
+                                                        .arrayNode()
+                                                        .add("ignore")
+                                                        .add("this")))))),
+        new Case(Merge.class)
+            .obj(
+                ImmutableMerge.builder()
+                    .fromHash(HASH)
+                    .fromRefName(branchName)
+                    .message("test-msg")
+                    .isDryRun(false)
+                    .addKeyMergeModes(
+                        MergeKeyBehavior.of(ContentKey.of("merge", "me"), MergeBehavior.NORMAL),
+                        MergeKeyBehavior.of(ContentKey.of("ignore", "this"), MergeBehavior.DROP))
+                    .build())
+            .jsonNode(
+                o ->
+                    o.put("fromRefName", "testBranch")
+                        .put("message", "test-msg")
+                        .put("fromHash", HASH)
+                        .put("isDryRun", false)
+                        .set(
+                            "keyMergeModes",
+                            JsonNodeFactory.instance
+                                .arrayNode()
+                                .add(
+                                    JsonNodeFactory.instance
+                                        .objectNode()
+                                        .put("mergeBehavior", "NORMAL")
+                                        .set(
+                                            "key",
+                                            JsonNodeFactory.instance
+                                                .objectNode()
+                                                .set(
+                                                    "elements",
+                                                    JsonNodeFactory.instance
+                                                        .arrayNode()
+                                                        .add("merge")
+                                                        .add("me"))))
+                                .add(
+                                    JsonNodeFactory.instance
+                                        .objectNode()
+                                        .put("mergeBehavior", "DROP")
+                                        .set(
+                                            "key",
+                                            JsonNodeFactory.instance
+                                                .objectNode()
+                                                .set(
+                                                    "elements",
+                                                    JsonNodeFactory.instance
+                                                        .arrayNode()
+                                                        .add("ignore")
+                                                        .add("this")))))));
   }
 
   @SuppressWarnings("unused") // called by JUnit framework based on annotations in superclass
   static List<Case> negativeCases() {
     return Arrays.asList(
-        new Case(
-            Transplant.class,
-            Json.arr("hashesToTransplant", "invalidhash").addNoQuotes("fromRefName", "null")),
+        new Case(Transplant.class)
+            .jsonNode(
+                o ->
+                    o.putNull("fromRefName")
+                        .set(
+                            "hashesToTransplant",
+                            JsonNodeFactory.instance.arrayNode().add("invalidhash"))),
 
         // Invalid hash
-        new Case(
-            Transplant.class,
-            Json.arr("hashesToTransplant", "invalidhash").add("fromRefName", "testBranch")));
+        new Case(Transplant.class)
+            .jsonNode(
+                o ->
+                    o.put("fromRefName", "testBranch")
+                        .set(
+                            "hashesToTransplant",
+                            JsonNodeFactory.instance.arrayNode().add("invalidhash"))));
   }
 }
