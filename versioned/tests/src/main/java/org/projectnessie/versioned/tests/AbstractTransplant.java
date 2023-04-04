@@ -17,6 +17,7 @@ package org.projectnessie.versioned.tests;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
 import com.google.common.collect.ImmutableMap;
@@ -532,10 +533,16 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     // Add 3 commits to the source branch:
     // C1: PUT t1=v1.1, PUT t2=v2.1, PUT t3=v3.1
     // C2: DELETE t1, DELETE t2, DELETE t3, PUT t4=v3.1 (rename t3 => t4)
-    // C3: PUT t2=v2.2
+    // C3: PUT t2=v2.2 (recreate)
 
     Hash c1 = commit("C1").put(T_1, V_1_1).put(T_2, V_2_1).put(T_3, V_3_1).toBranch(source);
-    Hash c2 = commit("C2").delete(T_1).delete(T_2).delete(T_3).put(T_4, V_3_1).toBranch(source);
+    Hash c2 =
+        commit("C2")
+            .delete(T_1)
+            .delete(T_2)
+            .delete(T_3)
+            .put(T_4, store().getValue(source, ContentKey.of(T_3)))
+            .toBranch(source);
     Hash c3 = commit("C3").put(T_2, V_2_2).toBranch(source);
 
     store()
@@ -550,22 +557,19 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             false,
             false);
 
-    // Expected operation in the squashed commit: PUT t2=v2.2, PUT t4=v3.1 (rename t3 => t4)
+    Content v22 = store().getValue(target, ContentKey.of(T_2));
+    Content v31 = store().getValue(target, ContentKey.of(T_4));
+
+    // Expected operations in the squashed commit:
+    // PUT t2=v2.2 (re-created with same key and new value)
+    // PUT t4=v3.1 (renamed with new key and same value)
     try (PaginationIterator<Commit> commits = store().getCommits(target, true)) {
       Commit squashed = commits.next();
       soft.assertThat(squashed.getOperations())
           .hasSize(2)
-          .satisfiesExactlyInAnyOrder(
-              o -> {
-                soft.assertThat(o).isInstanceOf(Put.class);
-                soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_2));
-                soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_2_2);
-              },
-              o -> {
-                soft.assertThat(o).isInstanceOf(Put.class);
-                soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_4));
-                soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_3_1);
-              });
+          .extracting("key", "value")
+          .containsExactlyInAnyOrder(
+              tuple(ContentKey.of(T_2), v22), tuple(ContentKey.of(T_4), v31));
     }
   }
 }

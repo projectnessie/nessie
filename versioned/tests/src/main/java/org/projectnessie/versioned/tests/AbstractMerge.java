@@ -905,8 +905,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
   protected void testMergeSquashOperations() throws VersionStoreException {
     ContentKey key1 = ContentKey.of("t1");
     ContentKey key2 = ContentKey.of("t2");
-    ContentKey key3 = ContentKey.of("t3");
-    ContentKey key4 = ContentKey.of("t4");
+    ContentKey key3a = ContentKey.of("t3a");
+    ContentKey key3b = ContentKey.of("t3b");
 
     BranchName source = BranchName.of("source");
     store().create(source, Optional.empty());
@@ -917,12 +917,17 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     store().create(target, Optional.of(ancestor));
 
     // Add 3 commits to the source branch:
-    // C1: PUT t1=v1.1, PUT t2=v2.1, PUT t3=v3.1
-    // C2: DELETE t1, DELETE t2, DELETE t3, PUT t4=v3.1 (rename t3 => t4)
-    // C3: PUT t2=v2.2
+    // C1: PUT t1=v1.1, PUT t2=v2.1, PUT t3a=v3.1
+    // C2: DELETE t1, DELETE t2, DELETE t3a, PUT t3b=v3.1 (rename t3a => t3b)
+    // C3: PUT t2=v2.2 (recreate)
 
-    commit("C1").put(key1, V_1_1).put(key2, V_2_1).put(key3, V_3_1).toBranch(source);
-    commit("C2").delete(key1).delete(key2).delete(key3).put(key4, V_3_1).toBranch(source);
+    commit("C1").put(key1, V_1_1).put(key2, V_2_1).put(key3a, V_3_1).toBranch(source);
+    commit("C2")
+        .delete(key1)
+        .delete(key2)
+        .delete(key3a)
+        .put(key3b, store().getValue(source, key3a))
+        .toBranch(source);
     Hash sourceHead = commit("C3").put(key2, V_2_2).toBranch(source);
 
     store()
@@ -937,22 +942,18 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             false,
             false);
 
-    // Expected operations in the squashed commit: PUT t2=v2.2, PUT t4=v3.1 (rename t3 => t4)
+    Content v22 = store().getValue(target, key2);
+    Content v31 = store().getValue(target, key3b);
+
+    // Expected operations in the squashed commit:
+    // PUT t2=v2.2 (re-created with same key and new value)
+    // PUT t3b=v3.1 (renamed with new key and same value)
     try (PaginationIterator<Commit> commits = store().getCommits(target, true)) {
       Commit squashed = commits.next();
       soft.assertThat(squashed.getOperations())
           .hasSize(2)
-          .satisfiesExactlyInAnyOrder(
-              o -> {
-                soft.assertThat(o).isInstanceOf(Put.class);
-                soft.assertThat(o.getKey()).isEqualTo(key2);
-                soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_2_2);
-              },
-              o -> {
-                soft.assertThat(o).isInstanceOf(Put.class);
-                soft.assertThat(o.getKey()).isEqualTo(key4);
-                soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_3_1);
-              });
+          .extracting("key", "value")
+          .containsExactlyInAnyOrder(tuple(key2, v22), tuple(key3b, v31));
     }
   }
 }
