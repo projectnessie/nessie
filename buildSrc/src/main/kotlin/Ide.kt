@@ -54,12 +54,12 @@ class NessieIdePlugin : Plugin<Project> {
           excludeDirs =
             excludeDirs +
               setOf(
-                project.buildDir.resolve("libs"),
-                project.buildDir.resolve("reports"),
-                project.buildDir.resolve("test-results"),
-                project.buildDir.resolve("classes"),
-                project.buildDir.resolve("jacoco"),
-                project.buildDir.resolve("jandex")
+                buildDir.resolve("libs"),
+                buildDir.resolve("reports"),
+                buildDir.resolve("test-results"),
+                buildDir.resolve("classes"),
+                buildDir.resolve("jacoco"),
+                buildDir.resolve("jandex")
               )
         }
       }
@@ -71,7 +71,8 @@ class NessieIdePlugin : Plugin<Project> {
       configure<IdeaModel> {
         module {
           // Do not index the node_modules folders
-          excludeDirs = excludeDirs + setOf(project.projectDir.resolve("node_modules"))
+          excludeDirs =
+            excludeDirs + setOf(projectDir.resolve("node_modules"), projectDir.resolve("coverage"))
         }
       }
     }
@@ -89,8 +90,17 @@ class NessieIdePlugin : Plugin<Project> {
           isDownloadSources = true // this is the default BTW
           inheritOutputDirs = true
 
-          // Do not index the .mvn folders
-          excludeDirs = excludeDirs + setOf(project.projectDir.resolve(".mvn"))
+          val buildToolsIT = projectDir.resolve("build-tools-integration-tests")
+          excludeDirs =
+            excludeDirs +
+              setOf(
+                // Do not index the .mvn folders
+                projectDir.resolve(".mvn"),
+                // And more...
+                buildToolsIT.resolve(".gradle"),
+                buildToolsIT.resolve("build"),
+                buildToolsIT.resolve("target")
+              )
         }
 
         this.project.settings {
