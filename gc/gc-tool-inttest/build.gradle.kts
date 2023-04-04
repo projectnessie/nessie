@@ -47,6 +47,8 @@ dependencies {
     exclude("org.apache.hadoop")
     exclude("org.apache.zookeeper")
   }
+  // Bump the jabx-impl version 2.2.3-1 via hadoop-common to make it work with Java 17+
+  implementation(libs.jaxb.impl)
 
   implementation(libs.slf4j.api)
 
