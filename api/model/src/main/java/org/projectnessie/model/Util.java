@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.projectnessie.model.Conflict.ConflictType;
 import org.projectnessie.model.types.ContentTypes;
 
 final class Util {
@@ -80,6 +81,14 @@ final class Util {
     }
 
     return builder.toString();
+  }
+
+  static final class ConflictTypeDeserializer extends JsonDeserializer<ConflictType> {
+    @Override
+    public ConflictType deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+      String name = p.readValueAs(String.class);
+      return name != null ? ConflictType.parse(name) : null;
+    }
   }
 
   static final class ContentTypeDeserializer extends JsonDeserializer<Content.Type> {

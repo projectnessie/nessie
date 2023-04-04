@@ -15,6 +15,8 @@
  */
 package org.projectnessie.model;
 
+import static org.projectnessie.model.Conflict.ConflictType.UNEXPECTED_HASH;
+import static org.projectnessie.model.Conflict.conflict;
 import static org.projectnessie.model.JsonUtil.arrayNode;
 import static org.projectnessie.model.JsonUtil.objectNode;
 
@@ -71,6 +73,27 @@ public class TestModelObjectsSerialization {
     final String branchName = "testBranch";
 
     return Arrays.asList(
+        new Case(ReferenceConflicts.class)
+            .obj(
+                ReferenceConflicts.referenceConflicts(
+                    conflict(UNEXPECTED_HASH, ContentKey.of("foo", "bar"), "some message")))
+            .jsonNode(
+                o ->
+                    o.put("type", "REFERENCE_CONFLICTS")
+                        .set(
+                            "conflicts",
+                            arrayNode()
+                                .add(
+                                    objectNode()
+                                        .put("conflictType", "UNEXPECTED_HASH")
+                                        .put("message", "some message")
+                                        .set(
+                                            "key",
+                                            objectNode()
+                                                .set(
+                                                    "elements",
+                                                    arrayNode().add("foo").add("bar"))))))
+            .skipFinalCompare(),
         new Case(NessieConfiguration.class)
             .view(Views.V1.class)
             .obj(

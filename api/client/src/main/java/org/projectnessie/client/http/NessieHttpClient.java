@@ -63,7 +63,7 @@ final class NessieHttpClient extends NessieApiClient {
     if (authentication != null) {
       authentication.applyToHttpClient(clientBuilder);
     }
-    clientBuilder.addResponseFilter(new NessieHttpResponseFilter(MAPPER));
+    clientBuilder.addResponseFilter(new NessieHttpResponseFilter());
     return clientBuilder.build();
   }
 

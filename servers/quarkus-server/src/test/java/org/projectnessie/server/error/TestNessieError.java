@@ -71,7 +71,7 @@ class TestNessieError {
         HttpClient.builder()
             .setBaseUri(uri.resolve("nessieErrorTest"))
             .setObjectMapper(mapper)
-            .addResponseFilter(new NessieHttpResponseFilter(mapper))
+            .addResponseFilter(new NessieHttpResponseFilter())
             .build();
   }
 

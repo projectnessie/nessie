@@ -15,8 +15,14 @@
  */
 package org.projectnessie.error;
 
+import org.projectnessie.model.NessieErrorDetails;
+
 /** A common interfaces for Nessie exceptions that have an associated {@link ErrorCode}. */
 public interface ErrorCodeAware {
 
   ErrorCode getErrorCode();
+
+  default NessieErrorDetails getErrorDetails() {
+    return null;
+  }
 }

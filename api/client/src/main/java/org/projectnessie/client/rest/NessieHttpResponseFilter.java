@@ -15,23 +15,18 @@
  */
 package org.projectnessie.client.rest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.ResponseFilter;
 
 public class NessieHttpResponseFilter implements ResponseFilter {
 
-  private final ObjectMapper mapper;
-
-  public NessieHttpResponseFilter(ObjectMapper mapper) {
-    this.mapper = mapper;
-  }
+  public NessieHttpResponseFilter() {}
 
   @Override
   public void filter(ResponseContext con) {
     try {
-      ResponseCheckFilter.checkResponse(con, mapper);
+      ResponseCheckFilter.checkResponse(con);
     } catch (RuntimeException e) {
       throw e; // re-throw RuntimeExceptions unchanged
     } catch (Exception e) {
