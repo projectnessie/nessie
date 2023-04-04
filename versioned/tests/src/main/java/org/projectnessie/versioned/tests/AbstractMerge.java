@@ -937,7 +937,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             false,
             false);
 
-    // Expected operation in the squashed commit: PUT t2=v2.2, PUT t4=v3.1 (rename t3 => t4)
+    // Expected operations in the squashed commit: PUT t2=v2.2, PUT t4=v3.1 (rename t3 => t4)
     try (PaginationIterator<Commit> commits = store().getCommits(target, true)) {
       Commit squashed = commits.next();
       soft.assertThat(squashed.getOperations())

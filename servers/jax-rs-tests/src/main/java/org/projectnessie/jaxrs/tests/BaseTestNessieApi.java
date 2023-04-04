@@ -1221,4 +1221,73 @@ public abstract class BaseTestNessieApi {
             immutableEntry(a, Content.Type.ICEBERG_TABLE),
             immutableEntry(b, Content.Type.ICEBERG_VIEW));
   }
+
+  /**
+   * This test verifies that a merge with squash strategy correctly merges operations targeting the
+   * same key, and that the result commit does not contain duplicate keys or spurious operations.
+   */
+  @Test
+  public void commitMergeSquashSameKeys() throws Exception {
+    Branch main = api().getDefaultBranch();
+
+    Put ns = Put.of(ContentKey.of("ns"), Namespace.of("ns"));
+    main = prepCommit(main, "common ancestor", ns).commit();
+
+    Branch source = createReference(Branch.of("source", main.getHash()), main.getName());
+    Branch target = createReference(Branch.of("target", main.getHash()), main.getName());
+
+    ContentKey key1 = ContentKey.of("ns", "t1");
+    ContentKey key2 = ContentKey.of("ns", "t2");
+    ContentKey key3 = ContentKey.of("ns", "t3");
+    ContentKey key4 = ContentKey.of("ns", "t4");
+
+    IcebergTable t1a = IcebergTable.of("t1", 1, 1, 1, 1);
+    IcebergTable t2a = IcebergTable.of("t2", 1, 1, 1, 1);
+    IcebergTable t2b = IcebergTable.of("t2", 2, 2, 2, 2);
+    IcebergTable t3a = IcebergTable.of("t3", 1, 1, 1, 1);
+
+    // Add 3 commits to the source branch:
+    // C1: PUT t1=v1.1, PUT t2=v2.1, PUT t3=v3.1
+    // C2: DELETE t1, DELETE t2, DELETE t3, PUT t4=v3.1 (rename t3 => t4)
+    // C3: PUT t2=v2.2
+
+    source =
+        prepCommit(source, "C1", Put.of(key1, t1a), Put.of(key2, t2a), Put.of(key3, t3a)).commit();
+    source =
+        prepCommit(
+                source, "C2", Delete.of(key1), Delete.of(key2), Delete.of(key3), Put.of(key4, t3a))
+            .commit();
+    source = prepCommit(source, "C3", Put.of(key2, t2b)).commit();
+
+    api().mergeRefIntoBranch().fromRef(source).branch(target).keepIndividualCommits(false).merge();
+
+    // Expected operations in the squashed commit: PUT t2=v2.2, PUT t4=v3.1 (rename t3 => t4)
+    LogEntry logEntry =
+        api()
+            .getCommitLog()
+            .refName(target.getName())
+            .fetch(ALL)
+            .maxRecords(1)
+            .get()
+            .getLogEntries()
+            .get(0);
+    soft.assertThat(logEntry.getOperations())
+        .extracting("key", "content")
+        .hasSize(2)
+        .satisfiesExactlyInAnyOrder(
+            t -> {
+              soft.assertThat(t.toArray()[0]).isEqualTo(key2);
+              soft.assertThat(t.toArray()[1])
+                  .usingRecursiveComparison()
+                  .ignoringFields("id")
+                  .isEqualTo(t2b);
+            },
+            t -> {
+              soft.assertThat(t.toArray()[0]).isEqualTo(key4);
+              soft.assertThat(t.toArray()[1])
+                  .usingRecursiveComparison()
+                  .ignoringFields("id")
+                  .isEqualTo(t3a);
+            });
+  }
 }
