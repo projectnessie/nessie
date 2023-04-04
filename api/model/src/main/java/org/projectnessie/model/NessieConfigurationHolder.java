@@ -33,10 +33,7 @@ final class NessieConfigurationHolder {
 
   static {
     try {
-      URL src =
-          NessieConfiguration.class
-              .getClassLoader()
-              .getResource("org/projectnessie/model/NessieConfiguration.json");
+      URL src = NessieConfiguration.class.getResource("NessieConfiguration.json");
       NESSIE_API_SPEC = new ObjectMapper().readValue(src, NessieConfiguration.class);
     } catch (IOException e) {
       throw new RuntimeException(e);

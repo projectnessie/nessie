@@ -62,7 +62,7 @@ public abstract class NessieConfiguration {
   @jakarta.annotation.Nullable
   public abstract String getSpecVersion();
 
-  public static NessieConfiguration getConfigWithPredefinedVersions() {
+  public static NessieConfiguration getBuiltInConfig() {
     return NessieConfigurationHolder.NESSIE_API_SPEC;
   }
 }

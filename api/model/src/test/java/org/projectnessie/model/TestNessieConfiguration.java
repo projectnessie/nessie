@@ -17,7 +17,7 @@ package org.projectnessie.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.projectnessie.model.NessieConfiguration.getConfigWithPredefinedVersions;
+import static org.projectnessie.model.NessieConfiguration.getBuiltInConfig;
 
 import org.junit.jupiter.api.Test;
 
@@ -26,7 +26,7 @@ public class TestNessieConfiguration {
   @Test
   public void checkPredefinedVersions() {
     // Only verify that loading the NessieConfiguration.json works and does not throw.
-    assertThatCode(() -> getConfigWithPredefinedVersions()).doesNotThrowAnyException();
-    assertThat(getConfigWithPredefinedVersions()).isNotNull();
+    assertThatCode(() -> getBuiltInConfig()).doesNotThrowAnyException();
+    assertThat(getBuiltInConfig()).isNotNull();
   }
 }

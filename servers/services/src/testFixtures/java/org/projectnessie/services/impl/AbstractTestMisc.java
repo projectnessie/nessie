@@ -38,7 +38,7 @@ public abstract class AbstractTestMisc extends BaseTestServiceImpl {
     NessieConfiguration serverConfig = configApi().getConfig();
     NessieConfiguration expectedConfig =
         ImmutableNessieConfiguration.builder()
-            .from(NessieConfiguration.getConfigWithPredefinedVersions())
+            .from(NessieConfiguration.getBuiltInConfig())
             .defaultBranch(serverConfig.getDefaultBranch())
             .build();
     assertThat(serverConfig).isEqualTo(expectedConfig);
