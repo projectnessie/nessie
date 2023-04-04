@@ -22,6 +22,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
@@ -47,7 +48,8 @@ public interface HttpConfigApi extends ConfigApi {
         content =
             @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = NessieConfiguration.class))),
+                schema = @Schema(implementation = NessieConfiguration.class),
+                examples = {@ExampleObject(ref = "nessieConfigV1")})),
     @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
     @APIResponse(responseCode = "400", description = "Unknown Error")
   })

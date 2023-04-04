@@ -38,10 +38,17 @@ paths: {} # inferred from java annotations
 
 components:
   examples:
-    nessieConfig:
+    nessieConfigV1:
       value:
         defaultBranch: main
         maxSupportedApiVersion: 2
+
+    nessieConfig:
+      value:
+        defaultBranch: main
+        minSupportedApiVersion: 1
+        maxSupportedApiVersion: 2
+        specVersion: "2.0"
 
     namespace:
       value: "a.b.c"

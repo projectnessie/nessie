@@ -26,6 +26,8 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.ImmutableNessieConfiguration;
+import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operation.Unchanged;
 
@@ -33,7 +35,13 @@ public abstract class AbstractTestMisc extends BaseTestServiceImpl {
 
   @Test
   public void testSupportedApiVersions() {
-    assertThat(configApi().getConfig().getMaxSupportedApiVersion()).isEqualTo(2);
+    NessieConfiguration serverConfig = configApi().getConfig();
+    NessieConfiguration expectedConfig =
+        ImmutableNessieConfiguration.builder()
+            .from(NessieConfiguration.getBuiltInConfig())
+            .defaultBranch(serverConfig.getDefaultBranch())
+            .build();
+    assertThat(serverConfig).isEqualTo(expectedConfig);
   }
 
   @Test
