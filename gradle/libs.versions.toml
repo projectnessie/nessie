@@ -37,7 +37,7 @@ quarkusNativeBuilderImage = "quay.io/quarkus/ubi-quarkus-mandrel-builder-image:2
 quarkusJibBaseJvmImage = "registry.access.redhat.com/ubi8/openjdk-17-runtime:1.14"
 rocksdb = "8.0.0"
 slf4j = "2.0.7"
-testcontainers = "1.17.6"
+testcontainers = "1.18.0"
 undertow = "2.2.19.Final"
 
 [bundles]
