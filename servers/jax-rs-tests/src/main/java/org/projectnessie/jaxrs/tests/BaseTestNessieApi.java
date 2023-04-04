@@ -22,6 +22,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.projectnessie.model.CommitMeta.fromMessage;
@@ -30,6 +31,7 @@ import static org.projectnessie.model.FetchOption.ALL;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hashing;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -41,6 +43,8 @@ import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.api.CreateNamespaceResult;
 import org.projectnessie.client.api.DeleteNamespaceResult;
@@ -1226,8 +1230,14 @@ public abstract class BaseTestNessieApi {
    * This test verifies that a merge with squash strategy correctly merges operations targeting the
    * same key, and that the result commit does not contain duplicate keys or spurious operations.
    */
-  @Test
-  public void commitMergeSquashSameKeys() throws Exception {
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void commitMergeSquashSameKeys(boolean merge) throws Exception {
+
+    assumeThat(merge || !isV2())
+        .as("Transplant with squash commits is only allowed in V1")
+        .isTrue();
+
     Branch main = api().getDefaultBranch();
 
     Put ns = Put.of(ContentKey.of("ns"), Namespace.of("ns"));
@@ -1253,13 +1263,31 @@ public abstract class BaseTestNessieApi {
 
     source =
         prepCommit(source, "C1", Put.of(key1, t1a), Put.of(key2, t2a), Put.of(key3, t3a)).commit();
+    String c1 = source.getHash();
     source =
         prepCommit(
                 source, "C2", Delete.of(key1), Delete.of(key2), Delete.of(key3), Put.of(key4, t3a))
             .commit();
+    String c2 = source.getHash();
     source = prepCommit(source, "C3", Put.of(key2, t2b)).commit();
+    String c3 = source.getHash();
 
-    api().mergeRefIntoBranch().fromRef(source).branch(target).keepIndividualCommits(false).merge();
+    if (merge) {
+      api()
+          .mergeRefIntoBranch()
+          .fromRef(source)
+          .branch(target)
+          .keepIndividualCommits(false)
+          .merge();
+    } else {
+      api()
+          .transplantCommitsIntoBranch()
+          .fromRefName(source.getName())
+          .hashesToTransplant(Arrays.asList(c1, c2, c3))
+          .branch(target)
+          .keepIndividualCommits(false)
+          .transplant();
+    }
 
     // Expected operations in the squashed commit: PUT t2=v2.2, PUT t4=v3.1 (rename t3 => t4)
     LogEntry logEntry =
