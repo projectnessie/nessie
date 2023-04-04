@@ -22,6 +22,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.projectnessie.model.CommitMeta.fromMessage;
@@ -1240,30 +1241,51 @@ public abstract class BaseTestNessieApi {
 
     ContentKey key1 = ContentKey.of("ns", "t1");
     ContentKey key2 = ContentKey.of("ns", "t2");
-    ContentKey key3 = ContentKey.of("ns", "t3");
-    ContentKey key4 = ContentKey.of("ns", "t4");
+    ContentKey key3a = ContentKey.of("ns", "t3a");
+    ContentKey key3b = ContentKey.of("ns", "t3b");
 
-    IcebergTable t1a = IcebergTable.of("t1", 1, 1, 1, 1);
-    IcebergTable t2a = IcebergTable.of("t2", 1, 1, 1, 1);
-    IcebergTable t2b = IcebergTable.of("t2", 2, 2, 2, 2);
-    IcebergTable t3a = IcebergTable.of("t3", 1, 1, 1, 1);
+    IcebergTable t1 = IcebergTable.of("t1", 1, 1, 1, 1);
+    IcebergTable t2a = IcebergTable.of("t2a", 1, 1, 1, 1);
+    IcebergTable t2b = IcebergTable.of("t2b", 2, 2, 2, 2);
+    IcebergTable t3 = IcebergTable.of("t3", 1, 1, 1, 1);
 
     // Add 3 commits to the source branch:
-    // C1: PUT t1=v1.1, PUT t2=v2.1, PUT t3=v3.1
-    // C2: DELETE t1, DELETE t2, DELETE t3, PUT t4=v3.1 (rename t3 => t4)
-    // C3: PUT t2=v2.2
 
+    // C1: PUT key1=t1, PUT key2=t2a, PUT key3a=t3
     source =
-        prepCommit(source, "C1", Put.of(key1, t1a), Put.of(key2, t2a), Put.of(key3, t3a)).commit();
+        prepCommit(source, "C1", Put.of(key1, t1), Put.of(key2, t2a), Put.of(key3a, t3)).commit();
+
+    Map<ContentKey, Content> contents =
+        api().getContent().refName(source.getName()).key(key3a).get();
+    assertThat(contents).hasSize(1).containsKey(key3a);
+    t3 = (IcebergTable) contents.get(key3a);
+
+    // C2:
+    // - DELETE key1
+    // - DELETE key2 (to be re-created in the next commit)
+    // - DELETE key3a, PUT key3b=t3 (rename key3a => key3b, same payload t3)
     source =
         prepCommit(
-                source, "C2", Delete.of(key1), Delete.of(key2), Delete.of(key3), Put.of(key4, t3a))
+                source, "C2", Delete.of(key1), Delete.of(key2), Delete.of(key3a), Put.of(key3b, t3))
             .commit();
+
+    // C3: PUT key2=t2b (re-create key2)
     source = prepCommit(source, "C3", Put.of(key2, t2b)).commit();
 
     api().mergeRefIntoBranch().fromRef(source).branch(target).keepIndividualCommits(false).merge();
 
-    // Expected operations in the squashed commit: PUT t2=v2.2, PUT t4=v3.1 (rename t3 => t4)
+    contents = api().getContent().refName(source.getName()).keys(Arrays.asList(key2, key3b)).get();
+    assertThat(contents).hasSize(2).containsKeys(key2, key3b);
+    IcebergTable t2final = (IcebergTable) contents.get(key2);
+    IcebergTable t3final = (IcebergTable) contents.get(key3b);
+
+    assertThat(t2final).usingRecursiveComparison().ignoringFields("id").isEqualTo(t2b);
+    assertThat(t3final).usingRecursiveComparison().ignoringFields("id").isEqualTo(t3);
+
+    // Expected operations in the squashed commit:
+    // PUT key2=t2b (same key re-created with different content)
+    // PUT key3b=t3 (renamed to different key, same content)
+
     LogEntry logEntry =
         api()
             .getCommitLog()
@@ -1273,24 +1295,11 @@ public abstract class BaseTestNessieApi {
             .get()
             .getLogEntries()
             .get(0);
+
     soft.assertThat(logEntry.getOperations())
         .extracting("key", "content")
         .hasSize(2)
-        .satisfiesExactlyInAnyOrder(
-            t -> {
-              soft.assertThat(t.toArray()[0]).isEqualTo(key2);
-              soft.assertThat(t.toArray()[1])
-                  .usingRecursiveComparison()
-                  .ignoringFields("id")
-                  .isEqualTo(t2b);
-            },
-            t -> {
-              soft.assertThat(t.toArray()[0]).isEqualTo(key4);
-              soft.assertThat(t.toArray()[1])
-                  .usingRecursiveComparison()
-                  .ignoringFields("id")
-                  .isEqualTo(t3a);
-            });
+        .containsExactlyInAnyOrder(tuple(key2, t2final), tuple(key3b, t3final));
   }
 
   /**
@@ -1309,27 +1318,37 @@ public abstract class BaseTestNessieApi {
 
     ContentKey key1 = ContentKey.of("t1");
     ContentKey key2 = ContentKey.of("t2");
-    ContentKey key3 = ContentKey.of("t3");
-    ContentKey key4 = ContentKey.of("t4");
+    ContentKey key3a = ContentKey.of("t3a");
+    ContentKey key3b = ContentKey.of("t3b");
 
-    IcebergTable t1a = IcebergTable.of("t1", 1, 1, 1, 1);
-    IcebergTable t2a = IcebergTable.of("t2", 1, 1, 1, 1);
-    IcebergTable t2b = IcebergTable.of("t2", 2, 2, 2, 2);
-    IcebergTable t3a = IcebergTable.of("t3", 1, 1, 1, 1);
+    IcebergTable t1 = IcebergTable.of("t1", 1, 1, 1, 1);
+    IcebergTable t2a = IcebergTable.of("t2a", 1, 1, 1, 1);
+    IcebergTable t2b = IcebergTable.of("t2b", 2, 2, 2, 2);
+    IcebergTable t3 = IcebergTable.of("t3", 1, 1, 1, 1);
 
     // Add 3 commits to the source branch:
-    // C1: PUT t1=v1.1, PUT t2=v2.1, PUT t3=v3.1
-    // C2: DELETE t1, DELETE t2, DELETE t3, PUT t4=v3.1 (rename t3 => t4)
-    // C3: PUT t2=v2.2
-
+    // C1: PUT key1=t1, PUT key2=t2a, PUT key3a=t3
     source =
-        prepCommit(source, "C1", Put.of(key1, t1a), Put.of(key2, t2a), Put.of(key3, t3a)).commit();
+        prepCommit(source, "C1", Put.of(key1, t1), Put.of(key2, t2a), Put.of(key3a, t3)).commit();
+
+    Map<ContentKey, Content> contents =
+        api().getContent().refName(source.getName()).key(key3a).get();
+    assertThat(contents).hasSize(1).containsKey(key3a);
+    t3 = (IcebergTable) contents.get(key3a);
+
     String c1 = source.getHash();
+
+    // C2:
+    // - DELETE key1
+    // - DELETE key2 (to be re-created in the next commit)
+    // - DELETE key3a, PUT key3b=t3 (rename key3a => key3b, same payload t3)
     source =
         prepCommit(
-                source, "C2", Delete.of(key1), Delete.of(key2), Delete.of(key3), Put.of(key4, t3a))
+                source, "C2", Delete.of(key1), Delete.of(key2), Delete.of(key3a), Put.of(key3b, t3))
             .commit();
     String c2 = source.getHash();
+
+    // C3: PUT key2=t2b (re-create key2)
     source = prepCommit(source, "C3", Put.of(key2, t2b)).commit();
     String c3 = source.getHash();
 
@@ -1341,7 +1360,18 @@ public abstract class BaseTestNessieApi {
         .keepIndividualCommits(false)
         .transplant();
 
-    // Expected operations in the squashed commit: PUT t2=v2.2, PUT t4=v3.1 (rename t3 => t4)
+    contents = api().getContent().refName(source.getName()).keys(Arrays.asList(key2, key3b)).get();
+    assertThat(contents).hasSize(2).containsKeys(key2, key3b);
+    IcebergTable t2final = (IcebergTable) contents.get(key2);
+    IcebergTable t3final = (IcebergTable) contents.get(key3b);
+
+    assertThat(t2final).usingRecursiveComparison().ignoringFields("id").isEqualTo(t2b);
+    assertThat(t3final).usingRecursiveComparison().ignoringFields("id").isEqualTo(t3);
+
+    // Expected operations in the squashed commit:
+    // PUT key2=t2b (same key re-created with different content)
+    // PUT key3b=t3 (renamed to different key, same content)
+
     LogEntry logEntry =
         api()
             .getCommitLog()
@@ -1351,23 +1381,10 @@ public abstract class BaseTestNessieApi {
             .get()
             .getLogEntries()
             .get(0);
+
     soft.assertThat(logEntry.getOperations())
         .extracting("key", "content")
         .hasSize(2)
-        .satisfiesExactlyInAnyOrder(
-            t -> {
-              soft.assertThat(t.toArray()[0]).isEqualTo(key2);
-              soft.assertThat(t.toArray()[1])
-                  .usingRecursiveComparison()
-                  .ignoringFields("id")
-                  .isEqualTo(t2b);
-            },
-            t -> {
-              soft.assertThat(t.toArray()[0]).isEqualTo(key4);
-              soft.assertThat(t.toArray()[1])
-                  .usingRecursiveComparison()
-                  .ignoringFields("id")
-                  .isEqualTo(t3a);
-            });
+        .containsExactlyInAnyOrder(tuple(key2, t2final), tuple(key3b, t3final));
   }
 }
