@@ -32,6 +32,8 @@ dependencies {
   implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-persist-store"))
   implementation(project(":nessie-versioned-persist-testextension"))
+  implementation(project(":nessie-versioned-storage-common"))
+  implementation(project(":nessie-versioned-storage-store"))
   implementation(project(":nessie-versioned-spi"))
 
   // javax/jakarta

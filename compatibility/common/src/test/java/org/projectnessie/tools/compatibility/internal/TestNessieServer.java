@@ -18,6 +18,7 @@ package org.projectnessie.tools.compatibility.internal;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.projectnessie.tools.compatibility.internal.ServerKey.StorageKind.DATABASE_ADAPTER;
 
 import java.util.Collections;
 import org.assertj.core.api.SoftAssertions;
@@ -51,7 +52,8 @@ class TestNessieServer {
       ExtensionContext ctx = mock(ExtensionContext.class);
       when(ctx.getStore(any(Namespace.class))).thenReturn(store);
 
-      ServerKey key = new ServerKey(Version.CURRENT, "In-Memory", Collections.emptyMap());
+      ServerKey key =
+          new ServerKey(Version.CURRENT, "In-Memory", DATABASE_ADAPTER, Collections.emptyMap());
 
       when(ctx.getStore(any(Namespace.class))).thenReturn(store);
       soft.assertThatThrownBy(() -> NessieServer.nessieServerExisting(ctx, key))
@@ -92,7 +94,11 @@ class TestNessieServer {
       when(ctx.getStore(any(Namespace.class))).thenReturn(store);
 
       ServerKey key =
-          new ServerKey(Version.parseVersion(nessieVersion), "In-Memory", Collections.emptyMap());
+          new ServerKey(
+              Version.parseVersion(nessieVersion),
+              "In-Memory",
+              DATABASE_ADAPTER,
+              Collections.emptyMap());
 
       when(ctx.getStore(any(Namespace.class))).thenReturn(store);
       soft.assertThatThrownBy(() -> NessieServer.nessieServerExisting(ctx, key))
