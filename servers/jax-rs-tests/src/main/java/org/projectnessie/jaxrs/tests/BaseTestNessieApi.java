@@ -22,7 +22,6 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.projectnessie.model.CommitMeta.fromMessage;
@@ -43,8 +42,6 @@ import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.api.CreateNamespaceResult;
 import org.projectnessie.client.api.DeleteNamespaceResult;
@@ -1230,13 +1227,8 @@ public abstract class BaseTestNessieApi {
    * This test verifies that a merge with squash strategy correctly merges operations targeting the
    * same key, and that the result commit does not contain duplicate keys or spurious operations.
    */
-  @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  public void commitMergeSquashSameKeys(boolean merge) throws Exception {
-
-    assumeThat(merge || !isV2())
-        .as("Transplant with squash commits is only allowed in V1")
-        .isTrue();
+  @Test
+  public void commitMergeSquashSameKeys() throws Exception {
 
     Branch main = api().getDefaultBranch();
 
@@ -1263,6 +1255,75 @@ public abstract class BaseTestNessieApi {
 
     source =
         prepCommit(source, "C1", Put.of(key1, t1a), Put.of(key2, t2a), Put.of(key3, t3a)).commit();
+    source =
+        prepCommit(
+                source, "C2", Delete.of(key1), Delete.of(key2), Delete.of(key3), Put.of(key4, t3a))
+            .commit();
+    source = prepCommit(source, "C3", Put.of(key2, t2b)).commit();
+
+    api().mergeRefIntoBranch().fromRef(source).branch(target).keepIndividualCommits(false).merge();
+
+    // Expected operations in the squashed commit: PUT t2=v2.2, PUT t4=v3.1 (rename t3 => t4)
+    LogEntry logEntry =
+        api()
+            .getCommitLog()
+            .refName(target.getName())
+            .fetch(ALL)
+            .maxRecords(1)
+            .get()
+            .getLogEntries()
+            .get(0);
+    soft.assertThat(logEntry.getOperations())
+        .extracting("key", "content")
+        .hasSize(2)
+        .satisfiesExactlyInAnyOrder(
+            t -> {
+              soft.assertThat(t.toArray()[0]).isEqualTo(key2);
+              soft.assertThat(t.toArray()[1])
+                  .usingRecursiveComparison()
+                  .ignoringFields("id")
+                  .isEqualTo(t2b);
+            },
+            t -> {
+              soft.assertThat(t.toArray()[0]).isEqualTo(key4);
+              soft.assertThat(t.toArray()[1])
+                  .usingRecursiveComparison()
+                  .ignoringFields("id")
+                  .isEqualTo(t3a);
+            });
+  }
+
+  /**
+   * This test verifies that a transplant with squash strategy correctly merges operations targeting
+   * the same key, and that the result commit does not contain duplicate keys or spurious
+   * operations.
+   */
+  @Test
+  @NessieApiVersions(versions = NessieApiVersion.V1)
+  public void commitTransplantSquashSameKeys() throws Exception {
+
+    Branch main = api().getDefaultBranch();
+
+    Branch source = createReference(Branch.of("source", main.getHash()), main.getName());
+    Branch target = createReference(Branch.of("target", main.getHash()), main.getName());
+
+    ContentKey key1 = ContentKey.of("t1");
+    ContentKey key2 = ContentKey.of("t2");
+    ContentKey key3 = ContentKey.of("t3");
+    ContentKey key4 = ContentKey.of("t4");
+
+    IcebergTable t1a = IcebergTable.of("t1", 1, 1, 1, 1);
+    IcebergTable t2a = IcebergTable.of("t2", 1, 1, 1, 1);
+    IcebergTable t2b = IcebergTable.of("t2", 2, 2, 2, 2);
+    IcebergTable t3a = IcebergTable.of("t3", 1, 1, 1, 1);
+
+    // Add 3 commits to the source branch:
+    // C1: PUT t1=v1.1, PUT t2=v2.1, PUT t3=v3.1
+    // C2: DELETE t1, DELETE t2, DELETE t3, PUT t4=v3.1 (rename t3 => t4)
+    // C3: PUT t2=v2.2
+
+    source =
+        prepCommit(source, "C1", Put.of(key1, t1a), Put.of(key2, t2a), Put.of(key3, t3a)).commit();
     String c1 = source.getHash();
     source =
         prepCommit(
@@ -1272,22 +1333,13 @@ public abstract class BaseTestNessieApi {
     source = prepCommit(source, "C3", Put.of(key2, t2b)).commit();
     String c3 = source.getHash();
 
-    if (merge) {
-      api()
-          .mergeRefIntoBranch()
-          .fromRef(source)
-          .branch(target)
-          .keepIndividualCommits(false)
-          .merge();
-    } else {
-      api()
-          .transplantCommitsIntoBranch()
-          .fromRefName(source.getName())
-          .hashesToTransplant(Arrays.asList(c1, c2, c3))
-          .branch(target)
-          .keepIndividualCommits(false)
-          .transplant();
-    }
+    api()
+        .transplantCommitsIntoBranch()
+        .fromRefName(source.getName())
+        .hashesToTransplant(Arrays.asList(c1, c2, c3))
+        .branch(target)
+        .keepIndividualCommits(false)
+        .transplant();
 
     // Expected operations in the squashed commit: PUT t2=v2.2, PUT t4=v3.1 (rename t3 => t4)
     LogEntry logEntry =
