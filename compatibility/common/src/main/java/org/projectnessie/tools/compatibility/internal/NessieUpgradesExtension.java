@@ -79,11 +79,10 @@ public class NessieUpgradesExtension extends AbstractMultiVersionExtension {
             .getPath();
 
     // Eagerly create the Nessie server instance
-    String databaseAdapterName = "RocksDB";
     Map<String, String> configuration =
         Collections.singletonMap("nessie.store.db.path", tempDir.resolve("persist").toString());
 
-    return ServerKey.forContext(context, version, databaseAdapterName, configuration);
+    return ServerKey.forContext(context, version, "RocksDB", configuration);
   }
 
   private BooleanSupplier initializeRepositorySupplier(
@@ -91,7 +90,7 @@ public class NessieUpgradesExtension extends AbstractMultiVersionExtension {
     return () ->
         globalForClass(context)
             .getOrCompute(
-                "initialize-repository-" + serverKey.getDatabaseAdapterName(),
+                "initialize-repository-" + serverKey.getStorageName(),
                 k -> new AtomicBoolean(true),
                 AtomicBoolean.class)
             .getAndSet(false);

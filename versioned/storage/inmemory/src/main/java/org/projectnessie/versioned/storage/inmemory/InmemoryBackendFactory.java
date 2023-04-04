@@ -20,7 +20,7 @@ import org.projectnessie.versioned.storage.common.persist.BackendFactory;
 
 public class InmemoryBackendFactory implements BackendFactory<InmemoryBackendConfig> {
 
-  public static final String NAME = "Inmemory";
+  public static final String NAME = "In-Memory";
 
   @Override
   @Nonnull

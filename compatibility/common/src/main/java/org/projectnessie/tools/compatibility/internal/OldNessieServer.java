@@ -148,64 +148,41 @@ final class OldNessieServer implements NessieServer {
       withClassLoader(
           classLoader,
           () -> {
-            Class<?> databaseConnectionProviderClass =
-                classLoader.loadClass(
-                    "org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider");
-            Class<?> adaptersFactoryClass =
-                classLoader.loadClass(
-                    "org.projectnessie.tools.compatibility.jersey.DatabaseAdapters");
+            Supplier<?> databaseAdapterSupplier = null;
+            Supplier<?> persistsSupplier = null;
 
-            List<Object> createParams = new ArrayList<>();
-            createParams.add(serverKey.getDatabaseAdapterName());
-            createParams.add(connectionProvider.connectionProvider);
-            Method createAdapterMethod;
-            try {
-              createAdapterMethod =
-                  adaptersFactoryClass.getMethod(
-                      "createDatabaseAdapter",
-                      String.class,
-                      databaseConnectionProviderClass,
-                      Map.class);
+            switch (serverKey.getStorageKind()) {
+              case DATABASE_ADAPTER:
+                Object databaseAdapter = createDatabaseAdapter(classLoader);
+                databaseAdapterSupplier = () -> databaseAdapter;
+                break;
 
-              createParams.add(serverKey.getDatabaseAdapterConfig());
-            } catch (NoSuchMethodException e) {
-              // Fallback for the method without the config Map (support older servers)
-              createAdapterMethod =
-                  adaptersFactoryClass.getMethod(
-                      "createDatabaseAdapter", String.class, databaseConnectionProviderClass);
+              case PERSIST:
+                Object persist = createPersist(classLoader);
+                persistsSupplier = () -> persist;
+                break;
+
+              default:
+                throw new IllegalStateException(
+                    "Unsupported storage kind: " + serverKey.getStorageKind());
             }
-
-            Object databaseAdapter = createAdapterMethod.invoke(null, createParams.toArray());
-
-            // Call eraseRepo + initializeRepo only when requested. This is always true for
-            // old-clients and old-servers test cases (once per test class + Nessie version).
-            // Upgrade tests initialize the repository only once.
-            if (initializeRepository.getAsBoolean()) {
-              LOGGER.info(
-                  "Initializing database adapter repository for Nessie Server version {} with {} using {}",
-                  serverKey.getVersion(),
-                  serverKey.getDatabaseAdapterName(),
-                  serverKey.getDatabaseAdapterConfig());
-              try {
-                databaseAdapter.getClass().getMethod("eraseRepo").invoke(databaseAdapter);
-              } catch (NoSuchMethodException e) {
-                // ignore, older Nessie versions do not have the 'eraseRepo' method
-              }
-              databaseAdapter
-                  .getClass()
-                  .getMethod("initializeRepo", String.class)
-                  .invoke(databaseAdapter, "main");
-            }
-
-            Supplier<?> databaseAdapterSupplier = () -> databaseAdapter;
 
             Class<?> jerseyServerClass =
                 classLoader.loadClass("org.projectnessie.tools.compatibility.jersey.JerseyServer");
-            jerseyServer =
-                (AutoCloseable)
-                    jerseyServerClass
-                        .getConstructor(Supplier.class)
-                        .newInstance(databaseAdapterSupplier);
+            try {
+              jerseyServer =
+                  (AutoCloseable)
+                      jerseyServerClass
+                          .getConstructor(Supplier.class, Supplier.class)
+                          .newInstance(databaseAdapterSupplier, persistsSupplier);
+            } catch (NoSuchMethodException e) {
+              // Fall back to old constructor signature
+              jerseyServer =
+                  (AutoCloseable)
+                      jerseyServerClass
+                          .getConstructor(Supplier.class)
+                          .newInstance(databaseAdapterSupplier);
+            }
             uri = (URI) jerseyServerClass.getMethod("getUri").invoke(jerseyServer);
 
             return null;
@@ -214,19 +191,81 @@ final class OldNessieServer implements NessieServer {
       LOGGER.info(
           "Nessie Server for version {} with {} started at {} using {}",
           serverKey.getVersion(),
-          serverKey.getDatabaseAdapterName(),
+          serverKey.getStorageName(),
           uri,
-          serverKey.getDatabaseAdapterConfig());
+          serverKey.getConfig());
     } catch (Exception e) {
       initError = e;
       throw new RuntimeException(
           String.format(
               "Failed to setup/start Nessie server for version %s with %s using %s",
-              serverKey.getVersion(),
-              serverKey.getDatabaseAdapterName(),
-              serverKey.getDatabaseAdapterConfig()),
+              serverKey.getVersion(), serverKey.getStorageName(), serverKey.getConfig()),
           e);
     }
+  }
+
+  private Object createDatabaseAdapter(ClassLoader classLoader) throws Exception {
+    Class<?> databaseConnectionProviderClass =
+        classLoader.loadClass(
+            "org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider");
+    Class<?> adaptersFactoryClass =
+        classLoader.loadClass("org.projectnessie.tools.compatibility.jersey.DatabaseAdapters");
+
+    List<Object> createParams = new ArrayList<>();
+    createParams.add(serverKey.getStorageName());
+    createParams.add(connectionProvider.connectionProvider);
+    Method createAdapterMethod;
+    try {
+      createAdapterMethod =
+          adaptersFactoryClass.getMethod(
+              "createDatabaseAdapter", String.class, databaseConnectionProviderClass, Map.class);
+
+      createParams.add(serverKey.getConfig());
+    } catch (NoSuchMethodException e) {
+      // Fallback for the method without the config Map (support older servers)
+      createAdapterMethod =
+          adaptersFactoryClass.getMethod(
+              "createDatabaseAdapter", String.class, databaseConnectionProviderClass);
+    }
+
+    Object databaseAdapter = createAdapterMethod.invoke(null, createParams.toArray());
+
+    // Call eraseRepo + initializeRepo only when requested. This is always true for
+    // old-clients and old-servers test cases (once per test class + Nessie version).
+    // Upgrade tests initialize the repository only once.
+    if (initializeRepository.getAsBoolean()) {
+      LOGGER.info(
+          "Initializing database adapter repository for Nessie Server version {} with {} using {}",
+          serverKey.getVersion(),
+          serverKey.getStorageName(),
+          serverKey.getConfig());
+      try {
+        databaseAdapter.getClass().getMethod("eraseRepo").invoke(databaseAdapter);
+      } catch (NoSuchMethodException e) {
+        // ignore, older Nessie versions do not have the 'eraseRepo' method
+      }
+      databaseAdapter
+          .getClass()
+          .getMethod("initializeRepo", String.class)
+          .invoke(databaseAdapter, "main");
+    }
+
+    return databaseAdapter;
+  }
+
+  private Object createPersist(ClassLoader classLoader) throws Exception {
+    Class<?> backendClass =
+        classLoader.loadClass("org.projectnessie.versioned.storage.common.persist.Backend");
+    Class<?> backendsClass =
+        classLoader.loadClass("org.projectnessie.tools.compatibility.jersey.Backends");
+
+    return backendsClass
+        .getMethod("createPersist", backendClass, Boolean.TYPE, Map.class)
+        .invoke(
+            null,
+            connectionProvider.connectionProvider,
+            initializeRepository.getAsBoolean(),
+            serverKey.getConfig());
   }
 
   @Override

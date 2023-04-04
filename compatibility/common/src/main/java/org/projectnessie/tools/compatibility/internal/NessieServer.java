@@ -28,6 +28,8 @@ import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.tools.compatibility.api.Version;
 
 interface NessieServer extends CloseableResource {
+  String STORE_TYPE_PROPERTY = "nessie.test.store.kind";
+
   static NessieServer nessieServerExisting(ExtensionContext context, ServerKey serverKey) {
     return Objects.requireNonNull(
         extensionStore(context).get(serverKey, NessieServer.class),

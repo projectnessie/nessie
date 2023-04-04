@@ -89,7 +89,6 @@ public class RollingUpgradesExtension extends AbstractMultiVersionExtension {
             .getOrCompute("local-mongo", x -> new LocalMongoResource(), LocalMongoResource.class);
 
     // Eagerly create the Nessie server instance
-    String databaseAdapterName = "MongoDB";
     Map<String, String> configuration =
         ImmutableMap.of(
             "nessie.store.connection.string",
@@ -97,7 +96,7 @@ public class RollingUpgradesExtension extends AbstractMultiVersionExtension {
             "nessie.store.database.name",
             mongo.getDatabaseName());
 
-    return ServerKey.forContext(context, version, databaseAdapterName, configuration);
+    return ServerKey.forContext(context, version, "MongoDB", configuration);
   }
 
   private void populateNessieApiFields(

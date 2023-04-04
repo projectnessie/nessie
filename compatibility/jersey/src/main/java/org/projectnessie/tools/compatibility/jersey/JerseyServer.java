@@ -39,6 +39,7 @@ import org.projectnessie.services.rest.RestConfigResource;
 import org.projectnessie.services.rest.RestContentResource;
 import org.projectnessie.services.rest.RestTreeResource;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
+import org.projectnessie.versioned.storage.common.persist.Persist;
 
 /**
  * Jersey server implementation, which uses reflection to get Nessie related classes.
@@ -52,7 +53,9 @@ public class JerseyServer implements AutoCloseable {
   private final Weld weld;
   private final JerseyTest jerseyTest;
 
-  public JerseyServer(Supplier<DatabaseAdapter> databaseAdapterSupplier) throws Exception {
+  public JerseyServer(
+      Supplier<DatabaseAdapter> databaseAdapterSupplier, Supplier<Persist> persistSupplier)
+      throws Exception {
     weld = new Weld();
     // Let Weld scan all the resources to discover injection points and dependencies
     weld.addPackages(true, RestConfigResource.class);
@@ -60,7 +63,15 @@ public class JerseyServer implements AutoCloseable {
     // Inject external beans
     weld.addExtension(new PrincipalExtension());
     weld.addExtension(new ServerConfigExtension());
-    weld.addExtension(PersistVersionStoreExtension.forDatabaseAdapter(databaseAdapterSupplier));
+
+    if (databaseAdapterSupplier != null) {
+      weld.addExtension(PersistVersionStoreExtension.forDatabaseAdapter(databaseAdapterSupplier));
+    }
+
+    if (persistSupplier != null) {
+      weld.addExtension(VersionStoreImplExtension.forPersist(persistSupplier));
+    }
+
     weld.addExtension(authzExtension());
     weld.property(SHUTDOWN_HOOK_SYSTEM_PROPERTY, "false");
     weld.initialize();

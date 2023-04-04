@@ -17,6 +17,8 @@ package org.projectnessie.tools.compatibility.internal;
 
 import static org.projectnessie.tools.compatibility.internal.Util.extensionStore;
 import static org.projectnessie.tools.compatibility.internal.Util.throwUnchecked;
+import static org.projectnessie.tools.compatibility.jersey.Backends.createBackend;
+import static org.projectnessie.tools.compatibility.jersey.Backends.createPersist;
 import static org.projectnessie.tools.compatibility.jersey.DatabaseAdapters.createDatabaseAdapter;
 import static org.projectnessie.tools.compatibility.jersey.DatabaseAdapters.createDatabaseConnectionProvider;
 import static org.projectnessie.tools.compatibility.jersey.ServerConfigExtension.SERVER_CONFIG;
@@ -29,6 +31,8 @@ import org.projectnessie.tools.compatibility.jersey.JerseyServer;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionConfig;
 import org.projectnessie.versioned.persist.adapter.DatabaseConnectionProvider;
+import org.projectnessie.versioned.storage.common.persist.Backend;
+import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +44,8 @@ final class CurrentNessieServer implements NessieServer {
   private final BooleanSupplier initializeRepository;
 
   private DatabaseAdapter databaseAdapter;
-  private DatabaseConnectionProvider<DatabaseConnectionConfig> connectionProvider;
+  private Persist persist;
+  private AutoCloseable connectionProvider;
 
   static CurrentNessieServer currentNessieServer(
       ExtensionContext extensionContext,
@@ -76,7 +81,19 @@ final class CurrentNessieServer implements NessieServer {
     try {
       this.serverKey = serverKey;
       this.initializeRepository = initializeRepository;
-      this.jersey = new JerseyServer(this::getOrCreateDatabaseAdapter);
+      switch (serverKey.getStorageKind()) {
+        case DATABASE_ADAPTER:
+          this.jersey = new JerseyServer(this::getOrCreateDatabaseAdapter, null);
+          break;
+
+        case PERSIST:
+          this.jersey = new JerseyServer(null, this::getOrCreatePersist);
+          break;
+
+        default:
+          throw new IllegalStateException(
+              "Unsupported storage kind: " + serverKey.getStorageKind());
+      }
 
       LOGGER.info("Nessie Server started at {}", jersey.getUri());
     } catch (Exception e) {
@@ -87,14 +104,12 @@ final class CurrentNessieServer implements NessieServer {
   private synchronized DatabaseAdapter getOrCreateDatabaseAdapter() {
     if (this.databaseAdapter == null) {
       LOGGER.info("Creating connection provider for current Nessie version");
-      this.connectionProvider =
-          createDatabaseConnectionProvider(
-              serverKey.getDatabaseAdapterName(), serverKey.getDatabaseAdapterConfig());
+      DatabaseConnectionProvider<DatabaseConnectionConfig> dbConnectionProvider =
+          createDatabaseConnectionProvider(serverKey.getStorageName(), serverKey.getConfig());
+      this.connectionProvider = dbConnectionProvider;
       this.databaseAdapter =
           createDatabaseAdapter(
-              serverKey.getDatabaseAdapterName(),
-              connectionProvider,
-              serverKey.getDatabaseAdapterConfig());
+              serverKey.getStorageName(), dbConnectionProvider, serverKey.getConfig());
 
       if (initializeRepository.getAsBoolean()) {
         databaseAdapter.eraseRepo();
@@ -102,5 +117,16 @@ final class CurrentNessieServer implements NessieServer {
       }
     }
     return this.databaseAdapter;
+  }
+
+  private synchronized Persist getOrCreatePersist() {
+    if (persist == null) {
+      LOGGER.info("Creating Persist current Nessie version");
+      Backend backend = createBackend(serverKey.getStorageName());
+      connectionProvider = backend;
+
+      persist = createPersist(backend, initializeRepository.getAsBoolean(), serverKey.getConfig());
+    }
+    return persist;
   }
 }

@@ -34,21 +34,33 @@ class OldServerConnectionProvider implements CloseableResource {
       LOGGER.info(
           "Creating connection provider for Nessie version {} with {} using {}",
           serverKey.getVersion(),
-          serverKey.getDatabaseAdapterName(),
-          serverKey.getDatabaseAdapterConfig());
+          serverKey.getStorageName(),
+          serverKey.getConfig());
       this.connectionProvider =
           withClassLoader(
               classLoader,
-              () ->
-                  (AutoCloseable)
-                      classLoader
-                          .loadClass(
-                              "org.projectnessie.tools.compatibility.jersey.DatabaseAdapters")
-                          .getMethod("createDatabaseConnectionProvider", String.class, Map.class)
-                          .invoke(
-                              null,
-                              serverKey.getDatabaseAdapterName(),
-                              serverKey.getDatabaseAdapterConfig()));
+              () -> {
+                switch (serverKey.getStorageKind()) {
+                  case DATABASE_ADAPTER:
+                    return (AutoCloseable)
+                        classLoader
+                            .loadClass(
+                                "org.projectnessie.tools.compatibility.jersey.DatabaseAdapters")
+                            .getMethod("createDatabaseConnectionProvider", String.class, Map.class)
+                            .invoke(null, serverKey.getStorageName(), serverKey.getConfig());
+
+                  case PERSIST:
+                    return (AutoCloseable)
+                        classLoader
+                            .loadClass("org.projectnessie.tools.compatibility.jersey.Backends")
+                            .getMethod("createBackend", String.class)
+                            .invoke(null, serverKey.getStorageName());
+
+                  default:
+                    throw new IllegalStateException(
+                        "Unsupported storage kind: " + serverKey.getStorageKind());
+                }
+              });
     } catch (Exception e) {
       throw Util.throwUnchecked(e);
     }
@@ -60,8 +72,8 @@ class OldServerConnectionProvider implements CloseableResource {
       LOGGER.info(
           "Closing connection provider for Nessie version {} with {} using {}",
           serverKey.getVersion(),
-          serverKey.getDatabaseAdapterName(),
-          serverKey.getDatabaseAdapterConfig());
+          serverKey.getStorageName(),
+          serverKey.getConfig());
       connectionProvider.close();
     }
   }
