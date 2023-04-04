@@ -73,7 +73,7 @@ class NessieErrorpronePlugin : Plugin<Project> {
             )
 
         options.errorprone.checks.putAll(checksMapProperty)
-        options.errorprone.excludedPaths.set(".*/build/generated.*")
+        options.errorprone.excludedPaths.set(".*/build/[generated|tmp].*")
       }
       plugins.withType<JavaPlugin>().configureEach {
         configure<JavaPluginExtension> {
