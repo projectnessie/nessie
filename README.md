@@ -14,7 +14,7 @@ Project Nessie is a Transactional Catalog for Data Lakes with Git-like semantics
 [![Swagger Hub](https://img.shields.io/badge/swagger%20hub-nessie-3f6ec6?style=for-the-badge&logo=swagger&link=https%3A%2F%2Fapp.swaggerhub.com%2Fapis%2Fprojectnessie%2Fnessie)](https://app.swaggerhub.com/apis/projectnessie/nessie)
 
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/projectnessie/nessie/main.yml?label=Main%20CI&logo=Github&style=flat-square)](https://github.com/projectnessie/nessie/actions/workflows/main.yml)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/projectnessie/nessie/ci.yml?branch=main&label=Main%20CI&logo=Github&style=flat-square)](https://github.com/projectnessie/nessie/actions/workflows/ci.yml)
 [![Query Engines CI](https://img.shields.io/github/actions/workflow/status/projectnessie/query-engine-integration-tests/main.yml?label=Nessie%2FIceberg%20in-dev&logo=Github&style=flat-square)](https://github.com/projectnessie/query-engine-integration-tests/actions/workflows/main.yml)
 [![Java 17+18](https://img.shields.io/github/actions/workflow/status/projectnessie/nessie/newer-java.yml?label=Java%2017%2B&logo=Github&style=flat-square)](https://github.com/projectnessie/nessie/actions/workflows/newer-java.yml)
 [![Windows Build](https://img.shields.io/github/actions/workflow/status/projectnessie/nessie/ci-win.yml?label=Windows&logo=windows&style=flat-square)](https://github.com/projectnessie/nessie/actions/workflows/ci-win.yml)
