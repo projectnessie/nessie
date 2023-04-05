@@ -54,7 +54,7 @@ dependencies {
 
   runtimeOnly(libs.h2)
 
-  intTestRuntimeOnly(libs.bundles.logback.logging)
+  intTestRuntimeOnly(libs.logback.classic)
 
   intTestImplementation(
     nessieProject("nessie-spark-extensions-basetests_${sparkScala.scalaMajorVersion}")

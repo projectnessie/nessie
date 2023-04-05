@@ -44,7 +44,7 @@ dependencies {
   compileOnly(libs.errorprone.annotations)
   implementation(libs.guava)
 
-  implementation(libs.bundles.logback.logging)
+  implementation(libs.logback.classic)
 
   compileOnly(libs.immutables.builder)
   compileOnly(libs.immutables.value.annotations)

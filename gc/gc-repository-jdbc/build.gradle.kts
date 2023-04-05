@@ -54,7 +54,7 @@ dependencies {
 
   testImplementation(project(":nessie-gc-base-tests"))
 
-  testRuntimeOnly(libs.bundles.logback.logging)
+  testRuntimeOnly(libs.logback.classic)
 
   testImplementation(libs.guava)
 

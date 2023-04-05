@@ -60,7 +60,7 @@ dependencies {
   testFixturesApi(nessieProject("nessie-s3mock"))
   testFixturesApi(nessieProject("nessie-s3minio"))
 
-  testFixturesRuntimeOnly(libs.bundles.logback.logging)
+  testFixturesRuntimeOnly(libs.logback.classic)
 
   testFixturesCompileOnly(platform(libs.jackson.bom))
   testFixturesCompileOnly(libs.jackson.annotations)
