@@ -604,25 +604,25 @@ jobs:
         with:
           arguments: :nessie:nessie-iceberg:nessie-spark-extensions-3.3_2.12:test :nessie:nessie-iceberg:nessie-spark-extensions-3.3_2.12:intTest --scan
 
-      - name: Publish Nessie + Iceberg to local Maven repo
-        if: env.WF_EXEC == 'true'
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: publishLocal --scan
-
-      - name: Gather locally published versions
-        if: env.WF_EXEC == 'true'
-        run: |
-          NESSIE_VERSION="$(cat included-builds/nessie/version.txt)"
-          ICEBERG_VERSION="$(cat included-builds/iceberg/build/iceberg-build.properties | grep '^git.build.version=' | cut -d= -f2)"
-          echo "NESSIE_VERSION=${NESSIE_VERSION}" >> ${GITHUB_ENV}
-          echo "ICEBERG_VERSION=${ICEBERG_VERSION}" >> ${GITHUB_ENV}
-          cat <<! >> $GITHUB_STEP_SUMMARY
-          ## Published versions
-          | Published Nessie version | Published Iceberg version |
-          | ------------------------ | ------------------------- |
-          | ${NESSIE_VERSION}        | ${ICEBERG_VERSION}        |
-          !
+      #- name: Publish Nessie + Iceberg to local Maven repo
+      #  if: env.WF_EXEC == 'true'
+      #  uses: gradle/gradle-build-action@v2
+      #  with:
+      #    arguments: publishLocal --scan
+      #
+      #- name: Gather locally published versions
+      #  if: env.WF_EXEC == 'true'
+      #  run: |
+      #    NESSIE_VERSION="$(cat included-builds/nessie/version.txt)"
+      #    ICEBERG_VERSION="$(cat included-builds/iceberg/build/iceberg-build.properties | grep '^git.build.version=' | cut -d= -f2)"
+      #    echo "NESSIE_VERSION=${NESSIE_VERSION}" >> ${GITHUB_ENV}
+      #    echo "ICEBERG_VERSION=${ICEBERG_VERSION}" >> ${GITHUB_ENV}
+      #    cat <<! >> $GITHUB_STEP_SUMMARY
+      #    ## Published versions
+      #    | Published Nessie version | Published Iceberg version |
+      #    | ------------------------ | ------------------------- |
+      #    | ${NESSIE_VERSION}        | ${ICEBERG_VERSION}        |
+      #    !
 
       - name: Tools & Integrations tests
         if: env.WF_EXEC == 'true'
