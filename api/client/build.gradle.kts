@@ -76,7 +76,7 @@ dependencies {
   testFixturesApi(libs.awssdk.auth)
   testFixturesApi(libs.undertow.core)
   testFixturesApi(libs.undertow.servlet)
-  testFixturesImplementation(libs.bundles.logback.logging)
+  testFixturesImplementation(libs.logback.classic)
 }
 
 jandex { skipDefaultProcessing() }

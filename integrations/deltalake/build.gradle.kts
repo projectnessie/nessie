@@ -66,7 +66,7 @@ dependencies {
   testFixturesImplementation(platform(libs.jackson.bom))
   testFixturesImplementation(libs.jackson.databind)
   testFixturesApi(libs.microprofile.openapi)
-  testFixturesImplementation(libs.bundles.logback.logging)
+  testFixturesImplementation(libs.logback.classic)
   testFixturesImplementation(libs.slf4j.log4j.over.slf4j)
   testFixturesCompileOnly(libs.errorprone.annotations)
 

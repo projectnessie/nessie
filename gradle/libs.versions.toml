@@ -71,7 +71,6 @@ managed-testcontainers = ["testcontainers-cockroachdb", "testcontainers-mongodb"
   "testcontainers-postgresql", "testcontainers-testcontainers"]
 
 junit-testing = ["assertj-core", "mockito-core", "junit-jupiter-api", "junit-jupiter-params"]
-logback-logging = ["logback-classic", "slf4j-simple"]
 
 [libraries]
 agroal-pool = { module = "io.agroal:agroal-pool", version = "2.1" }
@@ -204,7 +203,6 @@ scala-library-v213 = { module = "org.scala-lang:scala-library", version = { stri
 slf4j-api = {  module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-jcl-over-slf4j = { module = "org.slf4j:jcl-over-slf4j", version.ref = "slf4j" }
 slf4j-log4j-over-slf4j = { module = "org.slf4j:log4j-over-slf4j", version.ref = "slf4j" }
-slf4j-simple = {  module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 smallrye-openapi-plugin = { module = "io.smallrye:smallrye-open-api-gradle-plugin", version = "3.3.2" }
 spark-sql-v31-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { strictly = "[3.1, 3.2[", prefer = "3.1.3"}}
 spark-sql-v32-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { strictly = "[3.2, 3.3[", prefer = "3.2.3"}}
