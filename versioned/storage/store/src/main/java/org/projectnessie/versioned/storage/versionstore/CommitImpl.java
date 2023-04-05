@@ -250,8 +250,7 @@ class CommitImpl extends BaseCommitHelper {
       }
     }
 
-    validateNamespacesExistForContentKeys(newContent, headIndex());
-    validateNamespacesToDeleteHaveNoChildren(deletedKeysAndPayload, headIndex());
+    validateNamespaces(newContent, deletedKeysAndPayload, headIndex());
   }
 
   private static void commitAddUnchanged(

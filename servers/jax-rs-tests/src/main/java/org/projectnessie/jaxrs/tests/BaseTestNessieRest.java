@@ -18,12 +18,15 @@ package org.projectnessie.jaxrs.tests;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
+import static org.assertj.core.api.InstanceOfAssertFactories.list;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
 
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
+import io.restassured.response.ValidatableResponse;
 import io.restassured.specification.RequestSpecification;
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -31,7 +34,6 @@ import java.net.URI;
 import java.net.URL;
 import java.util.UUID;
 import java.util.stream.Stream;
-import org.assertj.core.api.InstanceOfAssertFactories;
 import org.assertj.core.data.MapEntry;
 import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.BeforeAll;
@@ -48,6 +50,8 @@ import org.projectnessie.error.NessieError;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.CommitResponse;
+import org.projectnessie.model.Conflict;
+import org.projectnessie.model.Conflict.ConflictType;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
@@ -61,6 +65,7 @@ import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.ReferenceConflicts;
 import org.projectnessie.model.SingleReferenceResponse;
 
 /** REST specific tests. */
@@ -101,23 +106,36 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
     throw new IllegalArgumentException("Expected IcebergTable, got " + content);
   }
 
-  private Branch commitV1(ContentKey contentKey, Content content, Branch branch) {
+  private ValidatableResponse prepareCommitV1(
+      ContentKey contentKey,
+      Content content,
+      Branch branch,
+      int clientSpec,
+      boolean buildMissingNamespaces) {
     ImmutableOperations.Builder contents =
         ImmutableOperations.builder()
             .commitMeta(CommitMeta.builder().author("test author").message("").build());
-    if (contentKey.getElementCount() > 1) {
-      contents.addOperations(Put.of(contentKey.getParent(), contentKey.getNamespace()));
-    }
-    if (contentKey.getElementCount() > 2) {
-      contents.addOperations(
-          Put.of(contentKey.getParent().getParent(), contentKey.getParent().getNamespace()));
+    if (buildMissingNamespaces) {
+      if (contentKey.getElementCount() > 1) {
+        contents.addOperations(Put.of(contentKey.getParent(), contentKey.getNamespace()));
+      }
+      if (contentKey.getElementCount() > 2) {
+        contents.addOperations(
+            Put.of(contentKey.getParent().getParent(), contentKey.getParent().getNamespace()));
+      }
     }
     contents.addOperations(Put.of(contentKey, content));
-    return rest()
-        .body(contents.build())
-        .queryParam("expectedHash", branch.getHash())
+    RequestSpecification resp = rest().body(contents.build());
+    if (clientSpec > 0) {
+      resp = resp.header("Nessie-Client-Spec", clientSpec);
+    }
+    return resp.queryParam("expectedHash", branch.getHash())
         .post("trees/branch/{branch}/commit", branch.getName())
-        .then()
+        .then();
+  }
+
+  private Branch commitV1(ContentKey contentKey, Content content, Branch branch) {
+    return prepareCommitV1(contentKey, content, branch, 2, true)
         .statusCode(200)
         .extract()
         .as(Branch.class);
@@ -126,6 +144,88 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
   private Branch createBranchV1(String name) {
     Branch test = ImmutableBranch.builder().name(name).build();
     return rest().body(test).post("trees/tree").then().statusCode(200).extract().as(Branch.class);
+  }
+
+  @Test
+  @NessieApiVersions(versions = {NessieApiVersion.V1})
+  public void testReferenceConflictDetailsV1() {
+    ContentKey key = ContentKey.of("namespace", "foo");
+    IcebergTable table = IcebergTable.of("content-table1", 42, 42, 42, 42);
+
+    Branch branch = createBranchV1("ref-conflicts");
+
+    NessieError nessieError =
+        prepareCommitV1(key, table, branch, 2, false)
+            .statusCode(409)
+            .extract()
+            .as(NessieError.class);
+    soft.assertThat(nessieError.getErrorCode()).isEqualTo(ErrorCode.REFERENCE_CONFLICT);
+    soft.assertThat(nessieError.getErrorDetails())
+        .isNotNull()
+        .asInstanceOf(type(ReferenceConflicts.class))
+        .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
+        .hasSize(1)
+        .extracting(Conflict::conflictType)
+        .containsExactly(ConflictType.NAMESPACE_ABSENT);
+
+    // Older Nessie clients must not receive the new `errorDetails` property.
+    nessieError =
+        prepareCommitV1(key, table, branch, 1, false)
+            .statusCode(409)
+            .extract()
+            .as(NessieError.class);
+    soft.assertThat(nessieError.getErrorCode()).isEqualTo(ErrorCode.REFERENCE_CONFLICT);
+    soft.assertThat(nessieError.getErrorDetails()).isNull();
+
+    // Older Nessie clients must not receive the new `errorDetails` property.
+    nessieError =
+        prepareCommitV1(key, table, branch, 0, false)
+            .statusCode(409)
+            .extract()
+            .as(NessieError.class);
+    soft.assertThat(nessieError.getErrorCode()).isEqualTo(ErrorCode.REFERENCE_CONFLICT);
+    soft.assertThat(nessieError.getErrorDetails()).isNull();
+  }
+
+  @Test
+  @NessieApiVersions(versions = {NessieApiVersion.V2})
+  public void testReferenceConflictDetailsV2() {
+    ContentKey key = ContentKey.of("namespace", "foo");
+    IcebergTable table = IcebergTable.of("content-table1", 42, 42, 42, 42);
+
+    Branch branch = createBranchV2("ref-conflicts");
+
+    NessieError nessieError =
+        prepareCommitV2(branch, key, table, 2, false)
+            .statusCode(409)
+            .extract()
+            .as(NessieError.class);
+    soft.assertThat(nessieError.getErrorCode()).isEqualTo(ErrorCode.REFERENCE_CONFLICT);
+    soft.assertThat(nessieError.getErrorDetails())
+        .isNotNull()
+        .asInstanceOf(type(ReferenceConflicts.class))
+        .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
+        .hasSize(1)
+        .extracting(Conflict::conflictType)
+        .containsExactly(ConflictType.NAMESPACE_ABSENT);
+
+    // Older Nessie clients must not receive the new `errorDetails` property.
+    nessieError =
+        prepareCommitV2(branch, key, table, 1, false)
+            .statusCode(409)
+            .extract()
+            .as(NessieError.class);
+    soft.assertThat(nessieError.getErrorCode()).isEqualTo(ErrorCode.REFERENCE_CONFLICT);
+    soft.assertThat(nessieError.getErrorDetails()).isNull();
+
+    // Older Nessie clients must not receive the new `errorDetails` property.
+    nessieError =
+        prepareCommitV2(branch, key, table, 0, false)
+            .statusCode(409)
+            .extract()
+            .as(NessieError.class);
+    soft.assertThat(nessieError.getErrorCode()).isEqualTo(ErrorCode.REFERENCE_CONFLICT);
+    soft.assertThat(nessieError.getErrorDetails()).isNull();
   }
 
   @NessieApiVersions(versions = {NessieApiVersion.V1})
@@ -303,20 +403,32 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
             .getReference();
   }
 
-  private Branch commitV2(Branch branch, ContentKey key, IcebergTable table) {
+  private ValidatableResponse prepareCommitV2(
+      Branch branch,
+      ContentKey key,
+      IcebergTable table,
+      int clientSpec,
+      boolean buildMissingNamespaces) {
     ImmutableOperations.Builder ops =
         ImmutableOperations.builder().commitMeta(CommitMeta.fromMessage("test commit"));
-    if (key.getElementCount() > 1) {
-      ops.addOperations(Put.of(key.getParent(), key.getNamespace()));
-    }
-    if (key.getElementCount() > 2) {
-      ops.addOperations(Put.of(key.getParent().getParent(), key.getParent().getNamespace()));
+    if (buildMissingNamespaces) {
+      if (key.getElementCount() > 1) {
+        ops.addOperations(Put.of(key.getParent(), key.getNamespace()));
+      }
+      if (key.getElementCount() > 2) {
+        ops.addOperations(Put.of(key.getParent().getParent(), key.getParent().getNamespace()));
+      }
     }
     ops.addOperations(Put.of(key, table));
-    return rest()
-        .body(ops.build())
-        .post("trees/{ref}/history/commit", branch.toPathString())
-        .then()
+    RequestSpecification resp = rest().body(ops.build());
+    if (clientSpec > 0) {
+      resp = resp.header("Nessie-Client-Spec", clientSpec);
+    }
+    return resp.post("trees/{ref}/history/commit", branch.toPathString()).then();
+  }
+
+  private Branch commitV2(Branch branch, ContentKey key, IcebergTable table) {
+    return prepareCommitV2(branch, key, table, 2, true)
         .statusCode(200)
         .extract()
         .as(CommitResponse.class)
@@ -351,7 +463,7 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
     IcebergTable table = IcebergTable.of("test-location", 1, 2, 3, 4);
     branch = commitV2(branch, key, table);
     assertThat(getContentV2(branch, key))
-        .asInstanceOf(InstanceOfAssertFactories.type(IcebergTable.class))
+        .asInstanceOf(type(IcebergTable.class))
         .extracting(IcebergTable::getMetadataLocation)
         .isEqualTo("test-location");
   }

@@ -18,7 +18,12 @@ package org.projectnessie.versioned.tests;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.tuple;
+import static org.assertj.core.api.InstanceOfAssertFactories.list;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.projectnessie.model.CommitMeta.fromMessage;
+import static org.projectnessie.model.Conflict.ConflictType.NAMESPACE_ABSENT;
+import static org.projectnessie.model.Conflict.ConflictType.NOT_A_NAMESPACE;
 import static org.projectnessie.versioned.tests.AbstractVersionStoreTestBase.METADATA_REWRITER;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
@@ -36,8 +41,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.model.Conflict;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Namespace;
+import org.projectnessie.model.ReferenceConflicts;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
@@ -77,7 +84,16 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
                         fromMessage("non-existing-ns"),
                         singletonList(Put.of(key, newOnRef("value")))))
         .isInstanceOf(ReferenceConflictException.class)
-        .hasMessage("Namespace '%s' must exist.", key.getNamespace());
+        .hasMessage("Namespace '%s' must exist.", key.getNamespace())
+        .asInstanceOf(type(ReferenceConflictException.class))
+        .extracting(ReferenceConflictException::getReferenceConflicts)
+        .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
+        .extracting(Conflict::conflictType, Conflict::key, Conflict::message)
+        .containsExactly(
+            tuple(
+                NAMESPACE_ABSENT,
+                key.getNamespace().toContentKey(),
+                "namespace '" + key.getNamespace() + "' must exist"));
 
     store()
         .commit(
@@ -95,7 +111,16 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
                         fromMessage("non-existing-ns"),
                         singletonList(Put.of(key, newOnRef("value")))))
         .isInstanceOf(ReferenceConflictException.class)
-        .hasMessage("Namespace '%s' must exist.", key.getNamespace());
+        .hasMessage("Namespace '%s' must exist.", key.getNamespace())
+        .asInstanceOf(type(ReferenceConflictException.class))
+        .extracting(ReferenceConflictException::getReferenceConflicts)
+        .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
+        .extracting(Conflict::conflictType, Conflict::key, Conflict::message)
+        .containsExactly(
+            tuple(
+                NAMESPACE_ABSENT,
+                key.getNamespace().toContentKey(),
+                "namespace '" + key.getNamespace() + "' must exist"));
   }
 
   @ParameterizedTest
@@ -133,9 +158,21 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
                         singletonList(Put.of(key, newOnRef("value")))))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessage(
-            "Expecting the key '%s' to be a namespace, but is not a namespace. "
-                + "Using a content object that is not a namespace as a namespace is forbidden.",
-            key.getNamespace());
+            "Expecting the key '%s' to be a namespace, but is not a namespace "
+                + "(using a content object that is not a namespace as a namespace is forbidden).",
+            key.getNamespace())
+        .asInstanceOf(type(ReferenceConflictException.class))
+        .extracting(ReferenceConflictException::getReferenceConflicts)
+        .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
+        .extracting(Conflict::conflictType, Conflict::key, Conflict::message)
+        .containsExactly(
+            tuple(
+                NOT_A_NAMESPACE,
+                key.getNamespace().toContentKey(),
+                "expecting the key '"
+                    + key.getNamespace()
+                    + "' to be a namespace, but is not a namespace "
+                    + "(using a content object that is not a namespace as a namespace is forbidden)"));
   }
 
   @ParameterizedTest

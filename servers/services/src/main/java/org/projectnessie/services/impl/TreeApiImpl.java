@@ -321,7 +321,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
-      throw new NessieReferenceConflictException(e.getMessage(), e);
+      throw new NessieReferenceConflictException(e.getReferenceConflicts(), e.getMessage(), e);
     }
   }
 
@@ -351,7 +351,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
-      throw new NessieReferenceConflictException(e.getMessage(), e);
+      throw new NessieReferenceConflictException(e.getReferenceConflicts(), e.getMessage(), e);
     }
   }
 
@@ -609,9 +609,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
         MergeResult<Commit> mr = (MergeResult<Commit>) e.getMergeResult();
         return createResponse(fetchAdditionalInfo, mr);
       }
-      throw new NessieReferenceConflictException(e.getMessage(), e);
+      throw new NessieReferenceConflictException(e.getReferenceConflicts(), e.getMessage(), e);
     } catch (ReferenceConflictException e) {
-      throw new NessieReferenceConflictException(e.getMessage(), e);
+      throw new NessieReferenceConflictException(e.getReferenceConflicts(), e.getMessage(), e);
     }
   }
 
@@ -657,9 +657,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
         MergeResult<Commit> mr = (MergeResult<Commit>) e.getMergeResult();
         return createResponse(fetchAdditionalInfo, mr);
       }
-      throw new NessieReferenceConflictException(e.getMessage(), e);
+      throw new NessieReferenceConflictException(e.getReferenceConflicts(), e.getMessage(), e);
     } catch (ReferenceConflictException e) {
-      throw new NessieReferenceConflictException(e.getMessage(), e);
+      throw new NessieReferenceConflictException(e.getReferenceConflicts(), e.getMessage(), e);
     }
   }
 
@@ -912,7 +912,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (ReferenceConflictException e) {
-      throw new NessieReferenceConflictException(e.getMessage(), e);
+      throw new NessieReferenceConflictException(e.getReferenceConflicts(), e.getMessage(), e);
     }
   }
 

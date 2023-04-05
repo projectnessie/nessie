@@ -135,13 +135,13 @@ public class TestRefMapping {
                             KEY_DOES_NOT_EXIST,
                             null)))),
             ReferenceConflictException.class,
-            "There are conflicts that prevent committing the provided operations: key 'aaa.foo' does not exist."),
+            "Key 'aaa.foo' does not exist."),
         arguments(
             referenceConflictException(
                 new CommitConflictException(
                     singletonList(commitConflict(key("aaa", "foo"), KEY_DOES_NOT_EXIST, null)))),
             ReferenceConflictException.class,
-            "There are conflicts that prevent committing the provided operations: store-key 'aaa/foo' does not exist."),
+            "Store-key 'aaa/foo' does not exist."),
         arguments(
             referenceConflictException(
                 new CommitConflictException(
@@ -152,7 +152,7 @@ public class TestRefMapping {
                         commitConflict(key("ddd", "foo"), CONTENT_ID_DIFFERS, null),
                         commitConflict(key("eee", "foo"), VALUE_DIFFERS, null)))),
             ReferenceConflictException.class,
-            "There are conflicts that prevent committing the provided operations: "
+            "There are multiple conflicts that prevent committing the provided operations: "
                 + "store-key 'aaa/foo' already exists, "
                 + "store-key 'bbb/foo' does not exist, "
                 + "payload of existing and expected content for store-key 'ccc/foo' are different, "
@@ -173,7 +173,7 @@ public class TestRefMapping {
                         commitConflict(
                             keyToStoreKey(ContentKey.of("eee", "foo")), VALUE_DIFFERS, null)))),
             ReferenceConflictException.class,
-            "There are conflicts that prevent committing the provided operations: "
+            "There are multiple conflicts that prevent committing the provided operations: "
                 + "key 'aaa.foo' already exists, "
                 + "key 'bbb.foo' does not exist, "
                 + "payload of existing and expected content for key 'ccc.foo' are different, "

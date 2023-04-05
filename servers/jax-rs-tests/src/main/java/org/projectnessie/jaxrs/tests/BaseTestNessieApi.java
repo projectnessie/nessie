@@ -23,6 +23,7 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.FetchOption.ALL;
@@ -37,6 +38,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.validation.constraints.NotNull;
+import org.assertj.core.api.AbstractThrowableAssert;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,6 +66,8 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.CommitResponse.AddedContent;
+import org.projectnessie.model.Conflict;
+import org.projectnessie.model.Conflict.ConflictType;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
@@ -84,6 +88,7 @@ import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.ReferenceConflicts;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Tag;
 
@@ -285,13 +290,19 @@ public abstract class BaseTestNessieApi {
       tag = Tag.of(tag.getName(), main.getHash());
     }
 
-    if (isV2()) {
-      soft.assertThatThrownBy(() -> api.assignBranch().branch(branch).assignTo(main).assignAndGet())
-          .isInstanceOf(NessieReferenceConflictException.class);
-    } else {
-      soft.assertThatThrownBy(() -> api.assignBranch().branch(branch).assignTo(main).assign())
-          .isInstanceOf(NessieReferenceConflictException.class);
-    }
+    AbstractThrowableAssert<?, ? extends Throwable> assignConflict =
+        isV2()
+            ? soft.assertThatThrownBy(
+                () -> api.assignBranch().branch(branch).assignTo(main).assignAndGet())
+            : soft.assertThatThrownBy(
+                () -> api.assignBranch().branch(branch).assignTo(main).assign());
+    assignConflict
+        .isInstanceOf(NessieReferenceConflictException.class)
+        .asInstanceOf(type(NessieReferenceConflictException.class))
+        .extracting(NessieReferenceConflictException::getErrorDetails)
+        .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
+        .extracting(Conflict::conflictType)
+        .containsExactly(ConflictType.UNEXPECTED_HASH);
 
     Branch branchAssigned;
     if (isV2()) {
@@ -319,13 +330,17 @@ public abstract class BaseTestNessieApi {
       api().deleteTag().tag(tag).delete();
     }
 
-    if (isV2()) {
-      soft.assertThatThrownBy(() -> api().deleteBranch().branch(branch).getAndDelete())
-          .isInstanceOf(NessieReferenceConflictException.class);
-    } else {
-      soft.assertThatThrownBy(() -> api().deleteBranch().branch(branch).delete())
-          .isInstanceOf(NessieReferenceConflictException.class);
-    }
+    AbstractThrowableAssert<?, ? extends Throwable> deleteConflict =
+        isV2()
+            ? soft.assertThatThrownBy(() -> api().deleteBranch().branch(branch).getAndDelete())
+            : soft.assertThatThrownBy(() -> api().deleteBranch().branch(branch).delete());
+    deleteConflict
+        .isInstanceOf(NessieReferenceConflictException.class)
+        .asInstanceOf(type(NessieReferenceConflictException.class))
+        .extracting(NessieReferenceConflictException::getErrorDetails)
+        .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
+        .extracting(Conflict::conflictType)
+        .containsExactly(ConflictType.UNEXPECTED_HASH);
 
     if (isV2()) {
       Branch deleted = api().deleteBranch().branch(branchAssigned).getAndDelete();

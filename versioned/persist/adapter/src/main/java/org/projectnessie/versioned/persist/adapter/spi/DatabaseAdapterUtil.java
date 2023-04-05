@@ -15,6 +15,10 @@
  */
 package org.projectnessie.versioned.persist.adapter.spi;
 
+import static java.lang.String.format;
+import static org.projectnessie.model.Conflict.ConflictType.UNEXPECTED_HASH;
+import static org.projectnessie.model.Conflict.conflict;
+
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import java.nio.charset.StandardCharsets;
@@ -66,12 +70,11 @@ public final class DatabaseAdapterUtil {
   /** Builds a {@link ReferenceNotFoundException} exception with a human-readable message. */
   public static ReferenceNotFoundException hashNotFound(NamedRef ref, Hash hash) {
     return new ReferenceNotFoundException(
-        String.format(
-            "Could not find commit '%s' in reference '%s'.", hash.asString(), ref.getName()));
+        format("Could not find commit '%s' in reference '%s'.", hash.asString(), ref.getName()));
   }
 
   public static ReferenceNotFoundException referenceNotFound(String ref) {
-    return new ReferenceNotFoundException(String.format("Named reference '%s' not found", ref));
+    return new ReferenceNotFoundException(format("Named reference '%s' not found", ref));
   }
 
   public static ReferenceNotFoundException referenceNotFound(NamedRef ref) {
@@ -79,16 +82,16 @@ public final class DatabaseAdapterUtil {
   }
 
   public static ReferenceNotFoundException referenceNotFound(Hash hash) {
-    return new ReferenceNotFoundException(String.format("Commit '%s' not found", hash.asString()));
+    return new ReferenceNotFoundException(format("Commit '%s' not found", hash.asString()));
   }
 
   public static ReferenceAlreadyExistsException referenceAlreadyExists(NamedRef ref) {
     return new ReferenceAlreadyExistsException(
-        String.format("Named reference '%s' already exists.", ref.getName()));
+        format("Named reference '%s' already exists.", ref.getName()));
   }
 
   public static String mergeConflictMessage(String err, MergeParams mergeParams) {
-    return String.format(
+    return format(
         "%s during merge of '%s' into '%s%s' requiring a common ancestor",
         err,
         mergeParams.getMergeFromHash().asString(),
@@ -97,7 +100,7 @@ public final class DatabaseAdapterUtil {
   }
 
   public static String transplantConflictMessage(String err, TransplantParams transplantParams) {
-    return String.format(
+    return format(
         "%s during transplant of %d commits into '%s%s'",
         err,
         transplantParams.getSequenceToTransplant().size(),
@@ -107,26 +110,26 @@ public final class DatabaseAdapterUtil {
 
   public static String commitConflictMessage(
       String err, BranchName commitTo, Optional<Hash> expectedHead) {
-    return String.format(
+    return format(
         "%s during commit against '%s%s'",
         err, commitTo.getName(), expectedHead.map(h -> "@" + h.asString()).orElse(""));
   }
 
   public static String createConflictMessage(String err, NamedRef ref, Hash target) {
-    return String.format(
+    return format(
         "%s during create of reference '%s' at '%s'", err, ref.getName(), target.asString());
   }
 
   public static String deleteConflictMessage(
       String err, NamedRef reference, Optional<Hash> expectedHead) {
-    return String.format(
+    return format(
         "%s during delete of reference '%s%s'",
         err, reference.getName(), expectedHead.map(h -> "@" + h.asString()).orElse(""));
   }
 
   public static String assignConflictMessage(
       String err, NamedRef assignee, Optional<Hash> expectedHead, Hash assignTo) {
-    return String.format(
+    return format(
         "%s during reassign of reference %s%s to '%s'",
         err,
         assignee.getName(),
@@ -135,11 +138,11 @@ public final class DatabaseAdapterUtil {
   }
 
   public static String maintenanceConflictMessage(String err, String msg) {
-    return String.format("%s during %s", err, msg);
+    return format("%s during %s", err, msg);
   }
 
   public static String repoDescUpdateConflictMessage(String err) {
-    return String.format("%s during update of the repository description", err);
+    return format("%s during update of the repository description", err);
   }
 
   /**
@@ -151,9 +154,14 @@ public final class DatabaseAdapterUtil {
       throws ReferenceConflictException {
     if (expectedHead.isPresent() && !referenceCurrentHead.equals(expectedHead.get())) {
       throw new ReferenceConflictException(
-          String.format(
-              "Named-reference '%s' is not at expected hash '%s', but at '%s'.",
-              reference.getName(), expectedHead.get().asString(), referenceCurrentHead.asString()));
+          conflict(
+              UNEXPECTED_HASH,
+              null,
+              format(
+                  "named-reference '%s' is not at expected hash '%s', but at '%s'",
+                  reference.getName(),
+                  expectedHead.get().asString(),
+                  referenceCurrentHead.asString())));
     }
   }
 

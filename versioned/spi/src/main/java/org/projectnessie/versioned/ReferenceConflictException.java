@@ -15,6 +15,14 @@
  */
 package org.projectnessie.versioned;
 
+import static java.util.Collections.singletonList;
+import static org.projectnessie.model.ReferenceConflicts.referenceConflicts;
+
+import java.util.List;
+import java.util.stream.Collectors;
+import org.projectnessie.model.Conflict;
+import org.projectnessie.model.ReferenceConflicts;
+
 /**
  * Exception thrown when the hash associated with a named reference does not match with the hash
  * provided by the caller.
@@ -22,11 +30,41 @@ package org.projectnessie.versioned;
 public class ReferenceConflictException extends VersionStoreException {
   private static final long serialVersionUID = 4381980193289615523L;
 
+  private final ReferenceConflicts referenceConflicts;
+
   public ReferenceConflictException(String message) {
+    this(null, message);
+  }
+
+  public ReferenceConflictException(Conflict conflict) {
+    this(singletonList(conflict));
+  }
+
+  public ReferenceConflictException(List<Conflict> conflicts) {
+    this(referenceConflicts(conflicts), buildMessage(conflicts));
+  }
+
+  private static String buildMessage(List<Conflict> conflicts) {
+    if (conflicts.size() == 1) {
+      String msg = conflicts.get(0).message();
+      return Character.toUpperCase(msg.charAt(0)) + msg.substring(1) + '.';
+    }
+    return "There are multiple conflicts that prevent committing the provided operations: "
+        + conflicts.stream().map(Conflict::message).collect(Collectors.joining(", "))
+        + ".";
+  }
+
+  public ReferenceConflictException(ReferenceConflicts referenceConflicts, String message) {
     super(message);
+    this.referenceConflicts = referenceConflicts;
   }
 
   public ReferenceConflictException(String message, Throwable t) {
     super(message, t);
+    this.referenceConflicts = null;
+  }
+
+  public ReferenceConflicts getReferenceConflicts() {
+    return referenceConflicts;
   }
 }
