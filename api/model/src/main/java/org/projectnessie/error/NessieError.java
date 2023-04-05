@@ -29,7 +29,10 @@ import org.projectnessie.model.NessieErrorDetails;
 /**
  * Represents Nessie-specific API error details.
  *
- * <p>All Nessie servers respond
+ * <p>All clients receive all properties that are not marked with an {@code @since} Javadoc tag.
+ * Those properties, like the {@link #getErrorDetails()} property, will only be returned to clients,
+ * if they sent the appropriate {@code Nessie-Client-Spec} header. The header value is an integer
+ * that must be greater than or equal to the version noted in the {@code @since} Javadoc tag.
  */
 @Value.Immutable
 @JsonSerialize(as = ImmutableNessieError.class)
