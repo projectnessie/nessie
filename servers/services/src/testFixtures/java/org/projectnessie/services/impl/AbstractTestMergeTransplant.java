@@ -22,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.map;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.assertj.core.data.MapEntry.entry;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.FetchOption.MINIMAL;
@@ -46,6 +47,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceConflictException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Conflict;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.IcebergTable;
@@ -57,6 +59,7 @@ import org.projectnessie.model.MergeResponse.ContentKeyDetails;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.ReferenceConflicts;
 
 public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
 
@@ -198,7 +201,12 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
 
     soft.assertThatThrownBy(() -> actor.act(target, source, committed1, committed2, false))
         .isInstanceOf(NessieReferenceConflictException.class)
-        .hasMessageContaining("keys have been changed in conflict");
+        .hasMessageContaining("keys have been changed in conflict")
+        .asInstanceOf(type(NessieReferenceConflictException.class))
+        .extracting(NessieReferenceConflictException::getErrorDetails)
+        .isNotNull()
+        .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
+        .hasSizeGreaterThan(0);
 
     // try again --> conflict, but return information
 

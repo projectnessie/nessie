@@ -18,6 +18,7 @@ package org.projectnessie.versioned.storage.versionstore;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static org.projectnessie.model.Conflict.conflict;
 import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
@@ -30,6 +31,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import org.projectnessie.model.Conflict.ConflictType;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
@@ -118,47 +120,57 @@ public class RefMapping {
   }
 
   public static ReferenceConflictException referenceConflictException(CommitConflictException e) {
-    String msg =
-        "There are conflicts that prevent committing the provided operations: "
-            + e.conflicts().stream()
-                .map(
-                    conflict -> {
-                      ContentKey key = storeKeyToKey(conflict.key());
-                      String k =
-                          key != null ? "key '" + key + "'" : "store-key '" + conflict.key() + "'";
-                      switch (conflict.conflictType()) {
-                        case KEY_DOES_NOT_EXIST:
-                          return k + " does not exist";
-                        case KEY_EXISTS:
-                          return k + " already exists";
-                        case PAYLOAD_DIFFERS:
-                          return "payload of existing and expected content for "
+    return new ReferenceConflictException(
+        e.conflicts().stream()
+            .map(
+                conflict -> {
+                  ContentKey key = storeKeyToKey(conflict.key());
+                  String k =
+                      key != null ? "key '" + key + "'" : "store-key '" + conflict.key() + "'";
+                  String msg;
+                  ConflictType conflictType;
+                  switch (conflict.conflictType()) {
+                    case KEY_DOES_NOT_EXIST:
+                      conflictType = ConflictType.KEY_DOES_NOT_EXIST;
+                      msg = k + " does not exist";
+                      break;
+                    case KEY_EXISTS:
+                      conflictType = ConflictType.KEY_EXISTS;
+                      msg = k + " already exists";
+                      break;
+                    case PAYLOAD_DIFFERS:
+                      conflictType = ConflictType.PAYLOAD_DIFFERS;
+                      msg = "payload of existing and expected content for " + k + " are different";
+                      break;
+                    case CONTENT_ID_DIFFERS:
+                      conflictType = ConflictType.CONTENT_ID_DIFFERS;
+                      msg =
+                          "content IDs of existing and expected content for "
                               + k
                               + " are different";
-                        case CONTENT_ID_DIFFERS:
-                          return "content IDs of existing and expected content for "
-                              + k
-                              + " are different";
-                        case VALUE_DIFFERS:
-                          return "values of existing and expected content for "
-                              + k
-                              + " are different";
-                        default:
-                          return conflict.toString();
-                      }
-                    })
-                .collect(Collectors.joining(", "))
-            + ".";
-
-    return new ReferenceConflictException(msg);
+                      break;
+                    case VALUE_DIFFERS:
+                      conflictType = ConflictType.VALUE_DIFFERS;
+                      msg = "values of existing and expected content for " + k + " are different";
+                      break;
+                    default:
+                      conflictType = ConflictType.UNKNOWN;
+                      msg = conflict.toString();
+                  }
+                  return conflict(conflictType, key, msg);
+                })
+            .collect(Collectors.toList()));
   }
 
   public static ReferenceConflictException referenceConflictException(
       NamedRef ref, Hash expected, ObjId currentHeadCommit) {
     return new ReferenceConflictException(
-        format(
-            "Named-reference '%s' is not at expected hash '%s', but at '%s'.",
-            ref.getName(), expected.asString(), currentHeadCommit));
+        conflict(
+            ConflictType.UNEXPECTED_HASH,
+            null,
+            format(
+                "named-reference '%s' is not at expected hash '%s', but at '%s'",
+                ref.getName(), expected.asString(), currentHeadCommit)));
   }
 
   public static void verifyExpectedHash(

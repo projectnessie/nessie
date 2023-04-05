@@ -29,6 +29,7 @@ dependencies {
   implementation(project(":nessie-versioned-persist-non-transactional"))
   implementation(project(":nessie-versioned-persist-serialize"))
   implementation(project(":nessie-versioned-spi"))
+  implementation(project(":nessie-model"))
   implementation(libs.guava)
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)

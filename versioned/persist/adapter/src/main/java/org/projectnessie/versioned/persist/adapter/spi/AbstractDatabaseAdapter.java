@@ -19,6 +19,10 @@ import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static org.projectnessie.model.Conflict.ConflictType.NAMESPACE_ABSENT;
+import static org.projectnessie.model.Conflict.ConflictType.NAMESPACE_NOT_EMPTY;
+import static org.projectnessie.model.Conflict.ConflictType.NOT_A_NAMESPACE;
+import static org.projectnessie.model.Conflict.conflict;
 import static org.projectnessie.versioned.persist.adapter.KeyFilterPredicate.ALLOW_ALL;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterMetrics.tryLoopFinished;
 import static org.projectnessie.versioned.persist.adapter.spi.DatabaseAdapterUtil.hashKey;
@@ -74,6 +78,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
+import org.projectnessie.model.Conflict;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
@@ -1243,6 +1248,8 @@ public abstract class AbstractDatabaseAdapter<
 
     byte namespacePayload = payloadForContent(Content.Type.NAMESPACE);
 
+    List<Conflict> conflicts = new ArrayList<>();
+
     for (ContentKey key : keysToCheck) {
       Byte payloadInPut = putPayloads.get(key);
 
@@ -1270,14 +1277,16 @@ public abstract class AbstractDatabaseAdapter<
       // Validate that each content-key's parent namespace exists
       if (expectedNamespaces.contains(key)) {
         if (!exists) {
-          throw new ReferenceConflictException(format("Namespace '%s' must exist.", key));
-        }
-        if (payload != namespacePayload) {
-          throw new ReferenceConflictException(
-              format(
-                  "Expecting the key '%s' to be a namespace, but is not a namespace. "
-                      + "Using a content object that is not a namespace as a namespace is forbidden.",
-                  key));
+          conflicts.add(conflict(NAMESPACE_ABSENT, key, format("namespace '%s' must exist", key)));
+        } else if (payload != namespacePayload) {
+          conflicts.add(
+              conflict(
+                  NOT_A_NAMESPACE,
+                  key,
+                  format(
+                      "expecting the key '%s' to be a namespace, but is not a namespace "
+                          + "(using a content object that is not a namespace as a namespace is forbidden)",
+                      key)));
         }
       }
     }
@@ -1308,12 +1317,19 @@ public abstract class AbstractDatabaseAdapter<
         // check if element is in the current namespace, fail it is true - this means,
         // there is a live content-key in the current namespace - must not delete the namespace
         if (ckLen > nsLen && ck.startsWith(deleted)) {
-          throw new ReferenceConflictException(
-              format(
-                  "The namespace '%s' would be deleted, but cannot, because it has children.",
-                  deleted));
+          conflicts.add(
+              conflict(
+                  NAMESPACE_NOT_EMPTY,
+                  deleted,
+                  format(
+                      "the namespace '%s' would be deleted, but cannot, because it has children",
+                      deleted)));
         }
       }
+    }
+
+    if (!conflicts.isEmpty()) {
+      throw new ReferenceConflictException(conflicts);
     }
   }
 

@@ -18,6 +18,8 @@ package org.projectnessie.services.impl;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
+import static org.assertj.core.api.InstanceOfAssertFactories.list;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.FetchOption.MINIMAL;
 import static org.projectnessie.model.MergeBehavior.NORMAL;
@@ -40,6 +42,7 @@ import org.projectnessie.error.NessieNamespaceNotFoundException;
 import org.projectnessie.error.NessieReferenceConflictException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Conflict;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.IcebergTable;
@@ -48,6 +51,7 @@ import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.ReferenceConflicts;
 import org.projectnessie.services.impl.AbstractTestContents.ContentAndOperationType;
 
 public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
@@ -279,7 +283,12 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
                         false,
                         false))
         .isInstanceOf(NessieReferenceConflictException.class)
-        .hasMessage("The following keys have been changed in conflict: 'a.b.c'");
+        .hasMessage("The following keys have been changed in conflict: 'a.b.c'")
+        .asInstanceOf(type(NessieReferenceConflictException.class))
+        .extracting(NessieReferenceConflictException::getErrorDetails)
+        .isNotNull()
+        .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
+        .hasSizeGreaterThan(0);
 
     List<LogEntry> log = commitLog(base.getName(), MINIMAL, base.getHash(), null, null);
     // merging should not have been possible ("test-merge-branch1" shouldn't be in the commits)

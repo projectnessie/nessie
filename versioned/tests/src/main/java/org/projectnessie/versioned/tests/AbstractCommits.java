@@ -17,7 +17,10 @@ package org.projectnessie.versioned.tests;
 
 import static com.google.common.collect.Streams.stream;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.Assumptions.assumeThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.list;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
 import com.google.common.collect.ImmutableList;
@@ -32,8 +35,11 @@ import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Conflict;
+import org.projectnessie.model.Conflict.ConflictType;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.ReferenceConflicts;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.GetNamedRefsParams;
@@ -493,8 +499,13 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                     .unchanged("t2")
                     .toBranch(branch))
         .isInstanceOf(ReferenceConflictException.class)
-        .hasMessage(
-            "There are conflicts that prevent committing the provided operations: key 't2' does not exist.");
+        .hasMessageEndingWith("Key 't2' does not exist.")
+        .asInstanceOf(type(ReferenceConflictException.class))
+        .extracting(ReferenceConflictException::getReferenceConflicts)
+        .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
+        .extracting(Conflict::conflictType, Conflict::key, Conflict::message)
+        .containsExactly(
+            tuple(ConflictType.KEY_DOES_NOT_EXIST, ContentKey.of("t2"), "key 't2' does not exist"));
     soft.assertThatThrownBy(
             () ->
                 commit("Conflicting Commit")
@@ -503,8 +514,16 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                     .unchanged("t1")
                     .toBranch(branch))
         .isInstanceOf(ReferenceConflictException.class)
-        .hasMessage(
-            "There are conflicts that prevent committing the provided operations: values of existing and expected content for key 't1' are different.");
+        .hasMessageEndingWith("Values of existing and expected content for key 't1' are different.")
+        .asInstanceOf(type(ReferenceConflictException.class))
+        .extracting(ReferenceConflictException::getReferenceConflicts)
+        .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
+        .extracting(Conflict::conflictType, Conflict::key, Conflict::message)
+        .containsExactly(
+            tuple(
+                ConflictType.VALUE_DIFFERS,
+                ContentKey.of("t1"),
+                "values of existing and expected content for key 't1' are different"));
     soft.assertThatThrownBy(
             () ->
                 commit("Conflicting Commit")
@@ -512,8 +531,16 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                     .put("t1", V_1_3.withId(t1))
                     .toBranch(branch))
         .isInstanceOf(ReferenceConflictException.class)
-        .hasMessage(
-            "There are conflicts that prevent committing the provided operations: values of existing and expected content for key 't1' are different.");
+        .hasMessageEndingWith("Values of existing and expected content for key 't1' are different.")
+        .asInstanceOf(type(ReferenceConflictException.class))
+        .extracting(ReferenceConflictException::getReferenceConflicts)
+        .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
+        .extracting(Conflict::conflictType, Conflict::key, Conflict::message)
+        .containsExactly(
+            tuple(
+                ConflictType.VALUE_DIFFERS,
+                ContentKey.of("t1"),
+                "values of existing and expected content for key 't1' are different"));
     soft.assertThatThrownBy(
             () ->
                 commit("Conflicting Commit")
@@ -521,8 +548,13 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                     .put("t2", V_2_2.withId(t2))
                     .toBranch(branch))
         .isInstanceOf(ReferenceConflictException.class)
-        .hasMessage(
-            "There are conflicts that prevent committing the provided operations: key 't2' does not exist.");
+        .hasMessageEndingWith("Key 't2' does not exist.")
+        .asInstanceOf(type(ReferenceConflictException.class))
+        .extracting(ReferenceConflictException::getReferenceConflicts)
+        .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
+        .extracting(Conflict::conflictType, Conflict::key, Conflict::message)
+        .containsExactly(
+            tuple(ConflictType.KEY_DOES_NOT_EXIST, ContentKey.of("t2"), "key 't2' does not exist"));
     soft.assertThatThrownBy(
             () ->
                 commit("Conflicting Commit")
@@ -530,7 +562,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                     .put("t3", V_3_2.withId(t3))
                     .toBranch(branch))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("New value for key 't3' must not have a content ID");
+        .hasMessageContaining("New value for key 't3' must not have a content ID");
     soft.assertThatThrownBy(
             () ->
                 commit("Conflicting Commit")
@@ -538,8 +570,13 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                     .put("t3", V_3_2)
                     .toBranch(branch))
         .isInstanceOf(ReferenceConflictException.class)
-        .hasMessage(
-            "There are conflicts that prevent committing the provided operations: key 't3' already exists.");
+        .hasMessageEndingWith("Key 't3' already exists.")
+        .asInstanceOf(type(ReferenceConflictException.class))
+        .extracting(ReferenceConflictException::getReferenceConflicts)
+        .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
+        .extracting(Conflict::conflictType, Conflict::key, Conflict::message)
+        .containsExactly(
+            tuple(ConflictType.KEY_EXISTS, ContentKey.of("t3"), "key 't3' already exists"));
 
     soft.assertThatThrownBy(
             () ->
@@ -548,8 +585,16 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                     .delete("t1")
                     .toBranch(branch))
         .isInstanceOf(ReferenceConflictException.class)
-        .hasMessage(
-            "There are conflicts that prevent committing the provided operations: values of existing and expected content for key 't1' are different.");
+        .hasMessageEndingWith("Values of existing and expected content for key 't1' are different.")
+        .asInstanceOf(type(ReferenceConflictException.class))
+        .extracting(ReferenceConflictException::getReferenceConflicts)
+        .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
+        .extracting(Conflict::conflictType, Conflict::key, Conflict::message)
+        .containsExactly(
+            tuple(
+                ConflictType.VALUE_DIFFERS,
+                ContentKey.of("t1"),
+                "values of existing and expected content for key 't1' are different"));
     soft.assertThatThrownBy(
             () ->
                 commit("Conflicting Commit")
@@ -557,8 +602,13 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                     .delete("t2")
                     .toBranch(branch))
         .isInstanceOf(ReferenceConflictException.class)
-        .hasMessage(
-            "There are conflicts that prevent committing the provided operations: key 't2' does not exist.");
+        .hasMessageEndingWith("Key 't2' does not exist.")
+        .asInstanceOf(type(ReferenceConflictException.class))
+        .extracting(ReferenceConflictException::getReferenceConflicts)
+        .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
+        .extracting(Conflict::conflictType, Conflict::key, Conflict::message)
+        .containsExactly(
+            tuple(ConflictType.KEY_DOES_NOT_EXIST, ContentKey.of("t2"), "key 't2' does not exist"));
     soft.assertThatThrownBy(
             () ->
                 commit("Conflicting Commit")
@@ -566,8 +616,17 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                     .delete("t3")
                     .toBranch(branch))
         .isInstanceOf(ReferenceConflictException.class)
-        .hasMessage(
-            "There are conflicts that prevent committing the provided operations: payload of existing and expected content for key 't3' are different.");
+        .hasMessageEndingWith(
+            "Payload of existing and expected content for key 't3' are different.")
+        .asInstanceOf(type(ReferenceConflictException.class))
+        .extracting(ReferenceConflictException::getReferenceConflicts)
+        .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
+        .extracting(Conflict::conflictType, Conflict::key, Conflict::message)
+        .containsExactly(
+            tuple(
+                ConflictType.PAYLOAD_DIFFERS,
+                ContentKey.of("t3"),
+                "payload of existing and expected content for key 't3' are different"));
 
     // Checking the state hasn't changed
     soft.assertThat(store().hashOnReference(branch, Optional.empty())).isEqualTo(secondCommit);
