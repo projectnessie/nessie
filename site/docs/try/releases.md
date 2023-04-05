@@ -2,6 +2,19 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.56.0 Release (April 05, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.56.0).
+
+* CI: Save 15m in CI NesQuEIT (#6505)
+* Populate reference conflict details (#6503)
+* Enhance `NessieError` with error details (#6492)
+* Revert slf4j2 bump (#6504)
+* Revert "Update smartbear/swaggerhub-cli action to v0.7.0 (#6478)" (#6500)
+* Test code cleanup / no functional change (#6502)
+* Add `@JsonView` to HttpConfigApi v2 (#6498)
+* Fix CI badge on README.md (#6499)
+
 ## 0.55.0 Release (April 04, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.55.0).
