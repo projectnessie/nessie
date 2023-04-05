@@ -15,6 +15,7 @@
  */
 package org.projectnessie.api.v2.http;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -28,6 +29,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.projectnessie.api.v2.ConfigApi;
 import org.projectnessie.model.NessieConfiguration;
+import org.projectnessie.model.ser.Views;
 
 @Path("v2/config")
 @jakarta.ws.rs.Path("v2/config")
@@ -53,5 +55,6 @@ public interface HttpConfigApi extends ConfigApi {
                 examples = {@ExampleObject(ref = "nessieConfig")})),
     @APIResponse(responseCode = "401", description = "Invalid credentials provided")
   })
+  @JsonView(Views.V2.class)
   NessieConfiguration getConfig();
 }
