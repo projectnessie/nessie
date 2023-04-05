@@ -15,24 +15,24 @@
  */
 package org.projectnessie.services.restjavax;
 
-import com.google.common.base.Throwables;
 import java.util.function.Consumer;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.ext.ExceptionMapper;
 import org.projectnessie.error.ErrorCode;
-import org.projectnessie.error.ImmutableNessieError;
 import org.projectnessie.error.NessieError;
 import org.projectnessie.services.config.ServerConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.projectnessie.services.rest.RestCommon;
 
 /** Code shared between concrete exception-mapper implementations. */
 public abstract class BaseExceptionMapper<T extends Throwable> implements ExceptionMapper<T> {
-  private static final Logger LOGGER = LoggerFactory.getLogger(BaseExceptionMapper.class);
 
   private final ServerConfig serverConfig;
+
+  @Context private HttpHeaders headers;
 
   protected BaseExceptionMapper(ServerConfig serverConfig) {
     this.serverConfig = serverConfig;
@@ -54,31 +54,21 @@ public abstract class BaseExceptionMapper<T extends Throwable> implements Except
       boolean includeExceptionStackTrace,
       Consumer<ResponseBuilder> responseHandler) {
 
-    String stack = includeExceptionStackTrace ? Throwables.getStackTraceAsString(e) : null;
-
     Response.Status status = Response.Status.fromStatusCode(errorCode.httpStatus());
     if (status == null) {
       status = Response.Status.INTERNAL_SERVER_ERROR;
     }
 
-    if (message == null) {
-      message = "";
-    }
-
     NessieError error =
-        ImmutableNessieError.builder()
-            .message(message)
-            .status(status.getStatusCode())
-            .errorCode(errorCode)
-            .reason(status.getReasonPhrase())
-            .serverStackTrace(stack)
-            .build();
-    LOGGER.debug(
-        "Failure on server, propagated to client. Status: {} {}, Message: {}.",
-        status.getStatusCode(),
-        status.getReasonPhrase(),
-        message,
-        e);
+        RestCommon.buildNessieError(
+            message,
+            status.getStatusCode(),
+            status.getReasonPhrase(),
+            errorCode,
+            e,
+            includeExceptionStackTrace,
+            headers::getHeaderString);
+
     ResponseBuilder responseBuilder =
         Response.status(status).entity(error).type(MediaType.APPLICATION_JSON_TYPE);
     responseHandler.accept(responseBuilder);

@@ -15,26 +15,46 @@
  */
 package org.projectnessie.error;
 
+import org.projectnessie.model.NessieErrorDetails;
+import org.projectnessie.model.ReferenceConflicts;
+
 /**
  * This exception is thrown when the expected state of a reference (e.g. the hash of the HEAD of a
  * branch) does not match the hash provided by the caller or when the requested operation could not
  * be completed within the configured time and number of retries due to concurrent operations.
  */
 public class NessieReferenceConflictException extends NessieConflictException {
-  public NessieReferenceConflictException(String message, Throwable cause) {
+  private final ReferenceConflicts referenceConflicts;
+
+  public NessieReferenceConflictException(
+      ReferenceConflicts referenceConflicts, String message, Throwable cause) {
     super(message, cause);
+    this.referenceConflicts = referenceConflicts;
+  }
+
+  public NessieReferenceConflictException(String message, Throwable cause) {
+    this(null, message, cause);
   }
 
   public NessieReferenceConflictException(String message) {
     super(message);
+    this.referenceConflicts = null;
   }
 
   public NessieReferenceConflictException(NessieError error) {
     super(error);
+    NessieErrorDetails errorDetails = error.getErrorDetails();
+    this.referenceConflicts =
+        errorDetails instanceof ReferenceConflicts ? (ReferenceConflicts) errorDetails : null;
   }
 
   @Override
   public ErrorCode getErrorCode() {
     return ErrorCode.REFERENCE_CONFLICT;
+  }
+
+  @Override
+  public ReferenceConflicts getErrorDetails() {
+    return referenceConflicts;
   }
 }

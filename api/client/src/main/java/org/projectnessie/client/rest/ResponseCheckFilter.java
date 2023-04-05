@@ -15,6 +15,9 @@
  */
 package org.projectnessie.client.rest;
 
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_INVALID_SUBTYPE;
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,13 +34,21 @@ import org.projectnessie.error.NessieError;
 public class ResponseCheckFilter {
 
   /**
+   * Object mapper that ignores unknown properties and unknown subtypes, so it is able to process
+   * instances of {@link NessieError} and especially {@link
+   * org.projectnessie.model.NessieErrorDetails} with added/unknown properties or unknown subtypes
+   * of the latter.
+   */
+  private static final ObjectMapper MAPPER =
+      new ObjectMapper().disable(FAIL_ON_UNKNOWN_PROPERTIES).disable(FAIL_ON_INVALID_SUBTYPE);
+
+  /**
    * check that response had a valid return code. Throw exception if not.
    *
    * @param con open http connection
-   * @param mapper Jackson ObjectMapper instance for this client
    * @throws IOException Throws IOException for certain error types.
    */
-  public static void checkResponse(ResponseContext con, ObjectMapper mapper) throws Exception {
+  public static void checkResponse(ResponseContext con) throws Exception {
     final Status status;
     final NessieError error;
     // this could IOException, in which case the error will be passed up to the client as an
@@ -50,7 +61,7 @@ public class ResponseCheckFilter {
     // this could IOException, in which case the error will be passed up to the client as an
     // HttpClientException
     try (InputStream is = con.getErrorStream()) {
-      error = decodeErrorObject(status, is, mapper.reader());
+      error = decodeErrorObject(status, is, MAPPER.reader());
     }
 
     Optional<Exception> modelException = ErrorCode.asException(error);

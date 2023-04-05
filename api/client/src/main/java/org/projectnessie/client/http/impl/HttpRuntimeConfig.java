@@ -93,4 +93,9 @@ public interface HttpRuntimeConfig {
   default boolean forceUrlConnectionClient() {
     return false;
   }
+
+  @Value.Default
+  default int getClientSpec() {
+    return 2;
+  }
 }

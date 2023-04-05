@@ -15,17 +15,34 @@
  */
 package org.projectnessie.client.rest;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_INVALID_SUBTYPE;
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.projectnessie.model.ReferenceConflicts.referenceConflicts;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.util.TokenBuffer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Stream;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -40,13 +57,134 @@ import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieError;
 import org.projectnessie.error.NessieForbiddenException;
+import org.projectnessie.error.NessieReferenceConflictException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.error.NessieUnsupportedMediaTypeException;
+import org.projectnessie.model.Conflict;
+import org.projectnessie.model.Conflict.ConflictType;
+import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.ReferenceConflicts;
 import software.amazon.awssdk.utils.StringInputStream;
 
+@ExtendWith(SoftAssertionsExtension.class)
 public class TestResponseFilter {
 
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final ObjectMapper MAPPER =
+      new ObjectMapper().disable(FAIL_ON_UNKNOWN_PROPERTIES).disable(FAIL_ON_INVALID_SUBTYPE);
+
+  @InjectSoftAssertions protected SoftAssertions soft;
+
+  @ParameterizedTest
+  @MethodSource("testReferenceConflicts")
+  void testReferenceConflicts(JsonNode nessieError, ReferenceConflicts referenceConflicts) {
+    soft.assertThatThrownBy(
+            () ->
+                ResponseCheckFilter.checkResponse(
+                    new TestResponseContext(Status.CONFLICT, nessieError)))
+        .asInstanceOf(type(NessieReferenceConflictException.class))
+        .extracting(NessieReferenceConflictException::getErrorDetails)
+        .isEqualTo(referenceConflicts);
+  }
+
+  static Stream<Arguments> testReferenceConflicts() {
+    Function<BiFunction<ObjectNode, ObjectNode, ObjectNode>, JsonNode> nessieErrorBuilder =
+        p -> {
+          ObjectNode referenceConflicts = objectNode().put("type", "REFERENCE_CONFLICTS");
+          ObjectNode nessieError =
+              objectNode()
+                  .put("status", 409)
+                  .put("reason", "something odd")
+                  .put("message", "help me")
+                  .put("errorCode", "REFERENCE_CONFLICT");
+          referenceConflicts = p.apply(nessieError, referenceConflicts);
+          if (referenceConflicts != null) {
+            nessieError.set("errorDetails", referenceConflicts);
+          }
+          return nessieError;
+        };
+
+    return Stream.of(
+        // 1 - null conflicts
+        arguments(nessieErrorBuilder.apply((nessieError, refConflicts) -> null), null),
+        // 2 - empty conflicts
+        arguments(
+            nessieErrorBuilder.apply(
+                (nessieError, refConflicts) -> refConflicts.set("conflicts", arrayNode())),
+            referenceConflicts(emptyList())),
+        // 3 - unknown property in ReferenceConflicts
+        arguments(
+            nessieErrorBuilder.apply(
+                (nessieError, refConflicts) ->
+                    refConflicts
+                        .put("someNewPropertyInReferenceConflicts", "bar")
+                        .set("conflicts", arrayNode())),
+            referenceConflicts(emptyList())),
+        // 4 - single conflict
+        arguments(
+            nessieErrorBuilder.apply(
+                (nessieError, refConflicts) ->
+                    refConflicts.set(
+                        "conflicts",
+                        arrayNode()
+                            .add(
+                                objectNode()
+                                    .put("conflictType", "NAMESPACE_ABSENT")
+                                    .put("message", "not there")
+                                    .set(
+                                        "key",
+                                        objectNode().set("elements", arrayNode().add("ck")))))),
+            referenceConflicts(
+                singletonList(
+                    Conflict.conflict(
+                        ConflictType.NAMESPACE_ABSENT, ContentKey.of("ck"), "not there")))),
+        // 5 - unknown conflict type
+        arguments(
+            nessieErrorBuilder.apply(
+                (nessieError, refConflicts) ->
+                    refConflicts.set(
+                        "conflicts",
+                        arrayNode()
+                            .add(
+                                objectNode()
+                                    .put("conflictType", "SOME_NEW_TYPE_WAS_ADDED")
+                                    .put("message", "not there")
+                                    .set(
+                                        "key",
+                                        objectNode().set("elements", arrayNode().add("ck")))))),
+            referenceConflicts(
+                singletonList(
+                    Conflict.conflict(ConflictType.UNKNOWN, ContentKey.of("ck"), "not there")))),
+        // 6 - new property in Conflict
+        arguments(
+            nessieErrorBuilder.apply(
+                (nessieError, refConflicts) ->
+                    refConflicts.set(
+                        "conflicts",
+                        arrayNode()
+                            .add(
+                                objectNode()
+                                    .put("conflictType", "KEY_EXISTS")
+                                    .put("message", "not there")
+                                    .put("someNewPropertyInConflict", 42)))),
+            referenceConflicts(
+                singletonList(Conflict.conflict(ConflictType.KEY_EXISTS, null, "not there")))),
+        // 7 - new property in NessieError
+        arguments(
+            nessieErrorBuilder.apply(
+                (nessieError, refConflicts) -> {
+                  nessieError.put("someNewPropertyInNessieError", 42);
+                  return null;
+                }),
+            null),
+        // 8 - simulate a new NessieErrorDetails type
+        arguments(
+            nessieErrorBuilder.apply(
+                (nessieError, refConflicts) -> {
+                  refConflicts.put("type", "SOME_NEW_ERROR_DETAILS_SUBTYPE").put("foo", "bar");
+                  return refConflicts;
+                }),
+            null));
+  }
 
   @ParameterizedTest
   @MethodSource("provider")
@@ -61,16 +199,18 @@ public class TestResponseFilter {
             .serverStackTrace("xxx")
             .build();
     try {
-      ResponseCheckFilter.checkResponse(new TestResponseContext(responseCode, error), MAPPER);
+      ResponseCheckFilter.checkResponse(new TestResponseContext(responseCode, error));
     } catch (Exception e) {
-      assertThat(e).isInstanceOf(clazz);
+      soft.assertThat(e).isInstanceOf(clazz);
       if (e instanceof NessieServiceException) {
-        assertThat(((NessieServiceException) e).getError()).isEqualTo(error);
+        soft.assertThat(((NessieServiceException) e).getError()).isEqualTo(error);
       }
       if (e instanceof BaseNessieClientServerException) {
-        assertThat(((BaseNessieClientServerException) e).getStatus()).isEqualTo(error.getStatus());
-        assertThat(((BaseNessieClientServerException) e).getServerStackTrace())
-            .isEqualTo(error.getServerStackTrace());
+        soft.assertThat((BaseNessieClientServerException) e)
+            .extracting(
+                BaseNessieClientServerException::getStatus,
+                BaseNessieClientServerException::getServerStackTrace)
+            .containsExactly(error.getStatus(), error.getServerStackTrace());
       }
     }
   }
@@ -82,13 +222,13 @@ public class TestResponseFilter {
     assertThatThrownBy(
             () ->
                 ResponseCheckFilter.checkResponse(
-                    new TestResponseContext(Status.UNSUPPORTED_MEDIA_TYPE, error), MAPPER))
+                    new TestResponseContext(Status.UNSUPPORTED_MEDIA_TYPE, error)))
         .isInstanceOf(RuntimeException.class)
         .hasMessage("xxx (HTTP/415): unknown");
   }
 
   @Test
-  void testBadReturnNoError() throws Exception {
+  void testBadReturnNoError() {
     assertThatThrownBy(
             () ->
                 ResponseCheckFilter.checkResponse(
@@ -123,8 +263,7 @@ public class TestResponseFilter {
                       public URI getRequestedUri() {
                         return null;
                       }
-                    },
-                    MAPPER))
+                    }))
         .isInstanceOf(NessieNotAuthorizedException.class)
         .hasMessageContaining("" + Status.UNAUTHORIZED.getCode())
         .hasMessageContaining(Status.UNAUTHORIZED.getReason())
@@ -132,7 +271,7 @@ public class TestResponseFilter {
   }
 
   @Test
-  void testUnexpectedError() throws Exception {
+  void testUnexpectedError() {
     assertThatThrownBy(
             () ->
                 ResponseCheckFilter.checkResponse(
@@ -169,21 +308,18 @@ public class TestResponseFilter {
                       public URI getRequestedUri() {
                         return null;
                       }
-                    },
-                    MAPPER))
+                    }))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("" + Status.NOT_IMPLEMENTED.getCode())
         .hasMessageContaining(Status.NOT_IMPLEMENTED.getReason())
         .hasMessageContaining("ee7f7293-67ad-42bd-8973-179801e7120e-1")
-        .hasMessageContaining("UnrecognizedPropertyException"); // jackson parse error
+        .hasMessageContaining("Cannot build NessieError"); // jackson parse error
   }
 
   @Test
   void testBadReturnBadError() {
     assertThatThrownBy(
-            () ->
-                ResponseCheckFilter.checkResponse(
-                    new TestResponseContext(Status.UNAUTHORIZED, null), MAPPER))
+            () -> ResponseCheckFilter.checkResponse(new TestResponseContext(Status.UNAUTHORIZED)))
         .isInstanceOf(NessieNotAuthorizedException.class)
         .hasMessageContaining("" + Status.UNAUTHORIZED.getCode())
         .hasMessageContaining(Status.UNAUTHORIZED.getReason())
@@ -192,45 +328,60 @@ public class TestResponseFilter {
 
   @Test
   void testGood() {
-    assertDoesNotThrow(
-        () -> ResponseCheckFilter.checkResponse(new TestResponseContext(Status.OK, null), MAPPER));
+    assertDoesNotThrow(() -> ResponseCheckFilter.checkResponse(new TestResponseContext(Status.OK)));
   }
 
   private static Stream<Arguments> provider() {
     return Stream.of(
-        Arguments.of(Status.BAD_REQUEST, ErrorCode.UNKNOWN, RuntimeException.class),
-        Arguments.of(Status.BAD_REQUEST, ErrorCode.BAD_REQUEST, NessieBadRequestException.class),
-        Arguments.of(Status.UNAUTHORIZED, ErrorCode.UNKNOWN, NessieNotAuthorizedException.class),
-        Arguments.of(Status.FORBIDDEN, ErrorCode.FORBIDDEN, NessieForbiddenException.class),
-        Arguments.of(Status.FORBIDDEN, ErrorCode.UNKNOWN, NessieServiceException.class),
-        Arguments.of(Status.TOO_MANY_REQUESTS, ErrorCode.UNKNOWN, NessieServiceException.class),
-        Arguments.of(
+        arguments(Status.BAD_REQUEST, ErrorCode.UNKNOWN, RuntimeException.class),
+        arguments(Status.BAD_REQUEST, ErrorCode.BAD_REQUEST, NessieBadRequestException.class),
+        arguments(Status.UNAUTHORIZED, ErrorCode.UNKNOWN, NessieNotAuthorizedException.class),
+        arguments(Status.FORBIDDEN, ErrorCode.FORBIDDEN, NessieForbiddenException.class),
+        arguments(Status.FORBIDDEN, ErrorCode.UNKNOWN, NessieServiceException.class),
+        arguments(Status.TOO_MANY_REQUESTS, ErrorCode.UNKNOWN, NessieServiceException.class),
+        arguments(
             Status.TOO_MANY_REQUESTS,
             ErrorCode.TOO_MANY_REQUESTS,
             NessieBackendThrottledException.class),
-        Arguments.of(
+        arguments(
             Status.NOT_FOUND, ErrorCode.CONTENT_NOT_FOUND, NessieContentNotFoundException.class),
-        Arguments.of(
+        arguments(
             Status.NOT_FOUND,
             ErrorCode.REFERENCE_NOT_FOUND,
             NessieReferenceNotFoundException.class),
-        Arguments.of(Status.NOT_FOUND, ErrorCode.UNKNOWN, RuntimeException.class),
-        Arguments.of(Status.CONFLICT, ErrorCode.REFERENCE_CONFLICT, NessieConflictException.class),
-        Arguments.of(Status.CONFLICT, ErrorCode.UNKNOWN, RuntimeException.class),
-        Arguments.of(
+        arguments(Status.NOT_FOUND, ErrorCode.UNKNOWN, RuntimeException.class),
+        arguments(Status.CONFLICT, ErrorCode.REFERENCE_CONFLICT, NessieConflictException.class),
+        arguments(Status.CONFLICT, ErrorCode.UNKNOWN, RuntimeException.class),
+        arguments(
             Status.UNSUPPORTED_MEDIA_TYPE,
             ErrorCode.UNSUPPORTED_MEDIA_TYPE,
             NessieUnsupportedMediaTypeException.class),
-        Arguments.of(
+        arguments(
             Status.INTERNAL_SERVER_ERROR, ErrorCode.UNKNOWN, NessieInternalServerException.class));
   }
 
   private static class TestResponseContext implements ResponseContext {
 
     private final Status code;
-    private final NessieError error;
+    private final JsonNode error;
+
+    TestResponseContext(Status code) {
+      this.code = code;
+      this.error = null;
+    }
 
     TestResponseContext(Status code, NessieError error) {
+      this.code = code;
+      TokenBuffer tokenBuffer = new TokenBuffer(MAPPER, false);
+      try {
+        MAPPER.writeValue(tokenBuffer, error);
+        this.error = tokenBuffer.asParser().readValueAsTree();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    TestResponseContext(Status code, JsonNode error) {
       this.code = code;
       this.error = error;
     }
@@ -269,5 +420,13 @@ public class TestResponseFilter {
     public URI getRequestedUri() {
       return null;
     }
+  }
+
+  static ObjectNode objectNode() {
+    return JsonNodeFactory.instance.objectNode();
+  }
+
+  static ArrayNode arrayNode() {
+    return JsonNodeFactory.instance.arrayNode();
   }
 }

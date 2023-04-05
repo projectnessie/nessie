@@ -33,6 +33,11 @@ public abstract class HttpRequest
   protected HttpRequest(HttpRuntimeConfig config) {
     this.uriBuilder = new UriBuilder(config.getBaseUri());
     this.config = config;
+
+    int clientSpec = config.getClientSpec();
+    if (clientSpec > 0) {
+      headers.put("Nessie-Client-Spec", Integer.toString(clientSpec));
+    }
   }
 
   public HttpRequest contentsType(String contentType) {

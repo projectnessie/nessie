@@ -72,11 +72,17 @@ public interface HttpClient {
     private boolean http2Upgrade;
     private String followRedirects;
     private boolean forceUrlConnectionClient;
+    private int clientSpec = 2;
 
     private Builder() {}
 
     public URI getBaseUri() {
       return baseUri;
+    }
+
+    public Builder setClientSpec(int clientSpec) {
+      this.clientSpec = clientSpec;
+      return this;
     }
 
     public Builder setBaseUri(URI baseUri) {
@@ -187,6 +193,7 @@ public interface HttpClient {
               .isHttp11Only(!http2Upgrade)
               .followRedirects(followRedirects)
               .forceUrlConnectionClient(forceUrlConnectionClient)
+              .clientSpec(clientSpec)
               .build();
 
       return ImplSwitch.FACTORY.apply(config);

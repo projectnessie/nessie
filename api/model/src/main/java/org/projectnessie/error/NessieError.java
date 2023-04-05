@@ -16,14 +16,24 @@
 package org.projectnessie.error;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
+import org.projectnessie.model.NessieErrorDetails;
 
-/** Represents Nessie-specific API error details. */
+/**
+ * Represents Nessie-specific API error details.
+ *
+ * <p>All clients receive all properties that are not marked with an {@code @since} Javadoc tag.
+ * Those properties, like the {@link #getErrorDetails()} property, will only be returned to clients,
+ * if they sent the appropriate {@code Nessie-Client-Spec} header. The header value is an integer
+ * that must be greater than or equal to the version noted in the {@code @since} Javadoc tag.
+ */
 @Value.Immutable
 @JsonSerialize(as = ImmutableNessieError.class)
 @JsonDeserialize(as = ImmutableNessieError.class)
@@ -46,6 +56,17 @@ public interface NessieError {
   default ErrorCode getErrorCode() {
     return ErrorCode.UNKNOWN;
   }
+
+  /**
+   * Details for this particular error.
+   *
+   * @since Nessie Client spec 2, only serialized to clients, if clients send the HTTP header {@code
+   *     Nessie-Client-Spec} with an integer value that is at least 2.
+   */
+  @Nullable
+  @jakarta.annotation.Nullable
+  @JsonInclude(Include.NON_NULL)
+  NessieErrorDetails getErrorDetails();
 
   /** Server-side exception stack trace related to this error (if available). */
   @Nullable

@@ -15,18 +15,76 @@
  */
 package org.projectnessie.error;
 
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.projectnessie.model.Conflict.ConflictType.UNEXPECTED_HASH;
+import static org.projectnessie.model.Conflict.ConflictType.UNKNOWN;
+import static org.projectnessie.model.Conflict.conflict;
+import static org.projectnessie.model.JsonUtil.arrayNode;
+import static org.projectnessie.model.JsonUtil.objectNode;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.model.Conflict;
+import org.projectnessie.model.ContentKey;
 
 class TestNessieError {
 
   private static final ObjectMapper mapper = new ObjectMapper();
   public static final int HTTP_500_CODE = 500;
   public static final String HTTP_500_MESSAGE = "Internal Server Error";
+
+  static Stream<Arguments> conflictDeserialization() {
+    JsonNode ckJson = objectNode().set("elements", arrayNode().add("foo"));
+
+    return Stream.of(
+        arguments(
+            objectNode()
+                .put("conflictType", "UNEXPECTED_HASH")
+                .put("message", "msg")
+                .set("key", ckJson),
+            conflict(UNEXPECTED_HASH, ContentKey.of("foo"), "msg")),
+        arguments(
+            objectNode().put("conflictType", "UNKNOWN").put("message", "msg").set("key", ckJson),
+            conflict(UNKNOWN, ContentKey.of("foo"), "msg")),
+        arguments(
+            objectNode()
+                .put("conflictType", "THIS_IS_SOME_NEW_CONFLICT_TYPE")
+                .put("message", "msg")
+                .set("key", ckJson),
+            conflict(UNKNOWN, ContentKey.of("foo"), "msg")),
+        arguments(
+            objectNode()
+                .put("conflictType", "THIS_IS_SOME_NEW_CONFLICT_TYPE")
+                .put("message", "msg")
+                .put("someNewField", "blah")
+                .set("key", ckJson),
+            conflict(UNKNOWN, ContentKey.of("foo"), "msg")),
+        arguments(objectNode().put("message", "msg"), conflict(null, null, "msg")));
+  }
+
+  /**
+   * Verify that especially {@link Conflict} deserialization works properly, that unknown {@link
+   * Conflict.ConflictType}s are properly mapped and that the lenient object-mapper does not fail
+   * for unknown properties (special case for {@link org.projectnessie.error.NessieError}
+   * deserialization).
+   */
+  @ParameterizedTest
+  @MethodSource("conflictDeserialization")
+  void conflictDeserialization(JsonNode input, Conflict expected) throws Exception {
+    Conflict parsedConflict =
+        new ObjectMapper().disable(FAIL_ON_UNKNOWN_PROPERTIES).treeToValue(input, Conflict.class);
+    Assertions.assertThat(parsedConflict).isEqualTo(expected);
+  }
 
   @Test
   void fullMessage() {
