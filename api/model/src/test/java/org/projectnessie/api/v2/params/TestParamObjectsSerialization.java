@@ -15,7 +15,9 @@
  */
 package org.projectnessie.api.v2.params;
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import static org.projectnessie.model.JsonUtil.arrayNode;
+import static org.projectnessie.model.JsonUtil.objectNode;
+
 import java.util.Arrays;
 import java.util.List;
 import org.projectnessie.model.ContentKey;
@@ -43,7 +45,7 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
             .jsonNode(
                 o ->
                     o.put("fromRefName", "testBranch")
-                        .set("hashesToTransplant", JsonNodeFactory.instance.arrayNode().add(HASH))),
+                        .set("hashesToTransplant", arrayNode().add(HASH))),
         new Case(Transplant.class)
             .obj(
                 ImmutableTransplant.builder()
@@ -55,7 +57,7 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
                 o ->
                     o.put("fromRefName", "testBranch")
                         .put("message", "test-msg")
-                        .set("hashesToTransplant", JsonNodeFactory.instance.arrayNode().add(HASH))),
+                        .set("hashesToTransplant", arrayNode().add(HASH))),
         new Case(Merge.class)
             .obj(ImmutableMerge.builder().fromHash(HASH).fromRefName(branchName).build())
             .jsonNode(o -> o.put("fromRefName", "testBranch").put("fromHash", HASH)),
@@ -90,36 +92,25 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
                         .put("isFetchAdditionalInfo", true)
                         .set(
                             "keyMergeModes",
-                            JsonNodeFactory.instance
-                                .arrayNode()
+                            arrayNode()
                                 .add(
-                                    JsonNodeFactory.instance
-                                        .objectNode()
+                                    objectNode()
                                         .put("mergeBehavior", "NORMAL")
                                         .set(
                                             "key",
-                                            JsonNodeFactory.instance
-                                                .objectNode()
+                                            objectNode()
                                                 .set(
                                                     "elements",
-                                                    JsonNodeFactory.instance
-                                                        .arrayNode()
-                                                        .add("merge")
-                                                        .add("me"))))
+                                                    arrayNode().add("merge").add("me"))))
                                 .add(
-                                    JsonNodeFactory.instance
-                                        .objectNode()
+                                    objectNode()
                                         .put("mergeBehavior", "DROP")
                                         .set(
                                             "key",
-                                            JsonNodeFactory.instance
-                                                .objectNode()
+                                            objectNode()
                                                 .set(
                                                     "elements",
-                                                    JsonNodeFactory.instance
-                                                        .arrayNode()
-                                                        .add("ignore")
-                                                        .add("this")))))),
+                                                    arrayNode().add("ignore").add("this")))))),
         new Case(Merge.class)
             .obj(
                 ImmutableMerge.builder()
@@ -139,36 +130,25 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
                         .put("isDryRun", false)
                         .set(
                             "keyMergeModes",
-                            JsonNodeFactory.instance
-                                .arrayNode()
+                            arrayNode()
                                 .add(
-                                    JsonNodeFactory.instance
-                                        .objectNode()
+                                    objectNode()
                                         .put("mergeBehavior", "NORMAL")
                                         .set(
                                             "key",
-                                            JsonNodeFactory.instance
-                                                .objectNode()
+                                            objectNode()
                                                 .set(
                                                     "elements",
-                                                    JsonNodeFactory.instance
-                                                        .arrayNode()
-                                                        .add("merge")
-                                                        .add("me"))))
+                                                    arrayNode().add("merge").add("me"))))
                                 .add(
-                                    JsonNodeFactory.instance
-                                        .objectNode()
+                                    objectNode()
                                         .put("mergeBehavior", "DROP")
                                         .set(
                                             "key",
-                                            JsonNodeFactory.instance
-                                                .objectNode()
+                                            objectNode()
                                                 .set(
                                                     "elements",
-                                                    JsonNodeFactory.instance
-                                                        .arrayNode()
-                                                        .add("ignore")
-                                                        .add("this")))))));
+                                                    arrayNode().add("ignore").add("this")))))));
   }
 
   @SuppressWarnings("unused") // called by JUnit framework based on annotations in superclass
@@ -178,17 +158,13 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
             .jsonNode(
                 o ->
                     o.putNull("fromRefName")
-                        .set(
-                            "hashesToTransplant",
-                            JsonNodeFactory.instance.arrayNode().add("invalidhash"))),
+                        .set("hashesToTransplant", arrayNode().add("invalidhash"))),
 
         // Invalid hash
         new Case(Transplant.class)
             .jsonNode(
                 o ->
                     o.put("fromRefName", "testBranch")
-                        .set(
-                            "hashesToTransplant",
-                            JsonNodeFactory.instance.arrayNode().add("invalidhash"))));
+                        .set("hashesToTransplant", arrayNode().add("invalidhash"))));
   }
 }

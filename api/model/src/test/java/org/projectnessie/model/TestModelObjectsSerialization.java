@@ -15,10 +15,12 @@
  */
 package org.projectnessie.model;
 
+import static org.projectnessie.model.JsonUtil.arrayNode;
+import static org.projectnessie.model.JsonUtil.objectNode;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.time.Instant;
@@ -123,20 +125,14 @@ public class TestModelObjectsSerialization {
                         .putNull("effectiveReference")
                         .putArray("entries")
                         .add(
-                            JsonNodeFactory.instance
-                                .objectNode()
+                            objectNode()
                                 .put("type", "ICEBERG_TABLE")
                                 .putNull("contentId")
                                 .putNull("content")
                                 .set(
                                     "name",
-                                    JsonNodeFactory.instance
-                                        .objectNode()
-                                        .set(
-                                            "elements",
-                                            JsonNodeFactory.instance
-                                                .arrayNode()
-                                                .add("/tmp/testpath"))))),
+                                    objectNode()
+                                        .set("elements", arrayNode().add("/tmp/testpath"))))),
         new Case(CommitMeta.class)
             .obj(
                 CommitMeta.builder()
@@ -159,26 +155,16 @@ public class TestModelObjectsSerialization {
                 o -> {
                   o.put("hash", HASH)
                       .put("committer", "c1")
-                      .set("authors", JsonNodeFactory.instance.arrayNode().add("a1").add("a2"));
-                  o.set("allSignedOffBy", JsonNodeFactory.instance.arrayNode().add("s1").add("s2"));
+                      .set("authors", arrayNode().add("a1").add("a2"));
+                  o.set("allSignedOffBy", arrayNode().add("s1").add("s2"));
                   o.put("message", "msg")
                       .put("commitTime", "1970-01-01T00:00:02Z")
                       .put("authorTime", "1970-01-01T00:00:01Z")
                       .set(
                           "allProperties",
-                          ((ObjectNode)
-                                  JsonNodeFactory.instance
-                                      .objectNode()
-                                      .set(
-                                          "p1",
-                                          JsonNodeFactory.instance
-                                              .arrayNode()
-                                              .add("v1a")
-                                              .add("v1b")))
-                              .set("p2", JsonNodeFactory.instance.arrayNode().add("v2")));
-                  o.set(
-                      "parentCommitHashes",
-                      JsonNodeFactory.instance.arrayNode().add("p1").add("p2"));
+                          ((ObjectNode) objectNode().set("p1", arrayNode().add("v1a").add("v1b")))
+                              .set("p2", arrayNode().add("v2")));
+                  o.set("parentCommitHashes", arrayNode().add("p1").add("p2"));
                 }),
         new Case(LogResponse.class)
             .obj(
@@ -203,38 +189,26 @@ public class TestModelObjectsSerialization {
             .jsonNode(
                 o -> {
                   ObjectNode meta =
-                      JsonNodeFactory.instance
-                          .objectNode()
+                      objectNode()
                           .put("hash", HASH)
                           .put("committer", "committer@example.com")
                           .put("author", "author@example.com")
-                          .set(
-                              "authors",
-                              JsonNodeFactory.instance.arrayNode().add("author@example.com"));
+                          .set("authors", arrayNode().add("author@example.com"));
                   meta.put("signedOffBy", "signer@example.com")
-                      .set(
-                          "allSignedOffBy",
-                          JsonNodeFactory.instance.arrayNode().add("signer@example.com"));
+                      .set("allSignedOffBy", arrayNode().add("signer@example.com"));
                   meta.put("message", "test commit")
                       .put("commitTime", now.toString())
                       .put("authorTime", now.toString())
-                      .set(
-                          "properties", JsonNodeFactory.instance.objectNode().put("prop1", "val1"));
-                  meta.set(
-                      "allProperties",
-                      JsonNodeFactory.instance
-                          .objectNode()
-                          .set("prop1", JsonNodeFactory.instance.arrayNode().add("val1")));
+                      .set("properties", objectNode().put("prop1", "val1"));
+                  meta.set("allProperties", objectNode().set("prop1", arrayNode().add("val1")));
 
                   o.put("token", HASH)
                       .put("hasMore", true)
                       .set(
                           "logEntries",
-                          JsonNodeFactory.instance
-                              .arrayNode()
+                          arrayNode()
                               .add(
-                                  JsonNodeFactory.instance
-                                      .objectNode()
+                                  objectNode()
                                       .putNull("parentCommitHash")
                                       .putNull("operations")
                                       .set("commitMeta", meta)));
@@ -264,7 +238,7 @@ public class TestModelObjectsSerialization {
     Object obj;
     Class<?> serializationView;
     final Class<?> deserializeAs;
-    ObjectNode deserializedJson = JsonNodeFactory.instance.objectNode();
+    ObjectNode deserializedJson = objectNode();
     boolean skipFinalCompare;
 
     public Case(Class<?> deserializeAs) {
