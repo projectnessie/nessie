@@ -394,16 +394,15 @@ The system does not provide any ordering guarantees. Events may be emitted in an
 Event delivery is the act of handing over an event to the subscriber's `EventListener`. For optimal event delivery,
 implementers of the `EventListener` interface are expected to respect the following requirements:
 
-* Methods in the `EventListener` interface SHOULD NOT block the calling thread. If required, implementers of the
+* Methods in the `EventListener` interface MUST NOT block the calling thread. If required, implementers of the
   `EventListener` interface should rather dispatch the calls to separate thread pools, if the underlying event
   processing requires blocking I/O.
-* Methods in the `EventListener` interface operate in fire and forget mode: the method SHOULD return as soon as the
-  event was published to the destination queue, not when it was read by all consumers. In other words, implementations
+* Methods in the `EventListener` interface operate in fire and forget mode: the method MUST return as soon as the
   should not wait for read acknowledgements.
 * The server COULD impose a (configurable) timeout after which the thread calling the `EventListener` method is
   interrupted and delivery is considered failed.
 * A `RuntimeException` MAY be thrown to indicate that event delivery wasn't possible, e.g. because the underlying
-  pub/sub system is unreachable. But in this case, the exception SHOULD be thrown immediately.
+  pub/sub system is unreachable. But in this case, the exception MUST be thrown immediately.
 * For increased resilience, a failed invocation of the subscriber's `EventListener` method MAY be retried a configurable
   number of times, with exponential backoff.
 
