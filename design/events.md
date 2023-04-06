@@ -358,7 +358,12 @@ or on the recovery read is left to be sorted out later.
 
 **Event delivery implementation must not block a Nessie API call, nor jeopardize the server's stability and
 responsiveness.** Instead, events will require asynchronous processing, and likely, an event emission queue.
-Implementation details will be sorted out later, including mitigation actions when the event queue gets full.
+
+To protect against the event queue getting full, or against misbehaving consumers, the server should be able to
+take actions to preserve its stability and responsiveness. For example, it could be configured to drop events when
+the queue is full, or to drop events for a given subscriber if it is not able to process events fast enough.
+A circuit breaker could also be used to prevent a subscriber from throwing many errors in a row. Implementation 
+details for these protective actions will be sorted out later and are not a requirement for the MVP.
 
 ### 2.3.2. Ordering guarantees
 
@@ -410,4 +415,4 @@ These will be fleshed out later, e.g.:
 
 * What is the maximum number of events per second that the system should handle?
 * How to prevent a high number of events from flooding the server? Should events be dropped? Should we introduce a 
-  circuit breaker?
+  circuit breaker as mentioned above in 2.3.1?
