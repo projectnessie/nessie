@@ -379,7 +379,7 @@ implementers of the `EventListener` interface are expected to respect the follow
 * A `RuntimeException` MAY be thrown to indicate that event delivery wasn't possible, e.g. because the underlying
   pub/sub system is unreachable. But in this case, the exception MUST be thrown immediately.
 * For increased resilience, a failed invocation of the subscriber's `EventListener` method MAY be retried a configurable
-  number of times, with exponential backoff.
+  number of times, with exponential backoff. This is however not a requirement for the MVP.
 
 **This effectively makes the system provide at-most-once delivery guarantees**. Subscribers must be prepared to miss
 some events, and to receive events out of sequence.
