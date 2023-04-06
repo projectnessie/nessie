@@ -15,6 +15,10 @@
  */
 grammar NessieSqlExtensions;
 
+@header {
+// PACKAGE_PLACEHOLDER
+}
+
 @lexer::members {
   /**
    * Verify whether current token is a valid decimal token (which contains dot).

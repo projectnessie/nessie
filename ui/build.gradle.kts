@@ -15,11 +15,11 @@
  */
 
 import com.diffplug.gradle.spotless.SpotlessTask
-import com.github.gradle.node.npm.task.NpmInstallTask
 import com.github.gradle.node.npm.task.NpmSetupTask
 import com.github.gradle.node.npm.task.NpmTask
 import com.github.gradle.node.task.NodeSetupTask
 import org.apache.tools.ant.taskdefs.condition.Os
+import org.gradle.api.internal.file.FileOperations
 
 plugins {
   // The ':nessie-ui' module is technically not a Java library, but declaring it as such provides
@@ -53,14 +53,20 @@ val testCoverageDir = project.projectDir.resolve("coverage")
 val nodeModulesDir = project.projectDir.resolve("node_modules")
 val shadowPackageJson = project.buildDir.resolve("packageJson")
 
+val fs = properties.get("fileOperations") as FileOperations
+
+class DeleteFiles(private val fs: FileOperations, private val files: Any) : Action<Task> {
+  override fun execute(task: Task) {
+    fs.delete(files)
+  }
+}
+
 val clean =
   tasks.named("clean") {
-    doFirst {
-      delete(nodeModulesDir)
-      delete(project.projectDir.resolve("tsconfig.tsbuildinfo"))
-      delete(testCoverageDir)
-      delete(generatedOpenApiCode)
-    }
+    doFirst(DeleteFiles(fs, nodeModulesDir))
+    doFirst(DeleteFiles(fs, project.projectDir.resolve("tsconfig.tsbuildinfo")))
+    doFirst(DeleteFiles(fs, testCoverageDir))
+    doFirst(DeleteFiles(fs, generatedOpenApiCode))
   }
 
 val nodeSetup =
@@ -77,30 +83,43 @@ val npmSetup =
     logging.captureStandardError(LogLevel.LIFECYCLE)
   }
 
-val npmInstallReal =
-  tasks.named<NpmInstallTask>("npmInstall") {
-    doFirst {
-      // Delete the node_modules dir so it stays consistent
-      delete(nodeModulesDir)
-    }
+class NpmInstallCacheIf(val dotGradleDir: File, val npmVersion: Property<String>) : Spec<Task> {
+  override fun isSatisfiedBy(element: Task?): Boolean {
+    // Do not let the UI module assume that npm is already setup (#4461)
+    //
+    // ... which can happen when using multiple Git worktrees, when one of those
+    // did the NPM-setup dance, letting the "other" Git worktree "think", that
+    // it did already the NPM-setup dance, too.
+    return dotGradleDir
+      .resolve("npm/npm-v${npmVersion}/lib/node_modules/npm/node_modules")
+      .isDirectory
   }
+}
+
+class NpmInstallActionSync(private val target: File) : Action<SyncSpec> {
+  override fun execute(sync: SyncSpec) {
+    sync.from(".")
+    sync.include("package*.json")
+    sync.into(target)
+  }
+}
+
+class NpmInstallSync(private val fileOperations: FileOperations, private val target: File) :
+  Action<Task> {
+  override fun execute(t: Task) {
+    fileOperations.sync(NpmInstallActionSync(target))
+  }
+}
 
 // The node_modules directory is huge (> 500M), so checking the contents takes a couple of seconds.
 // To mitigate the effect, this script uses a trick by using the package*.json files and only
 // execute
 // the "real" npmInstall, when those are our of sync.
 val npmInstall =
-  tasks.register("npmInstallFacade") {
+  tasks.named("npmInstall") {
     mustRunAfter(clean)
     dependsOn(npmSetup)
-    outputs.cacheIf {
-      // Do not let the UI module assume that npm is already setup (#4461)
-      //
-      // ... which can happen when using multiple Git worktrees, when one of those
-      // did the NPM-setup dance, letting the "other" Git worktree "think", that
-      // it did already the NPM-setup dance, too.
-      dotGradle.resolve("npm/npm-v${node.npmVersion}/lib/node_modules/npm/node_modules").isDirectory
-    }
+    outputs.cacheIf(NpmInstallCacheIf(dotGradle, node.npmVersion))
     // Need to add the fully qualified path here, so a "cached" npmInstallFacade run from another
     // directory with Nessie doesn't let "this" code-tree "think" that it has one.
     inputs.property("node.modules.dir", project.projectDir)
@@ -110,14 +129,9 @@ val npmInstall =
     outputs.dir(shadowPackageJson)
     logging.captureStandardOutput(LogLevel.INFO)
     logging.captureStandardError(LogLevel.LIFECYCLE)
-    doFirst {
-      sync {
-        from(".")
-        include("package*.json")
-        into(shadowPackageJson)
-      }
-      npmInstallReal.get().exec()
-    }
+    // Delete the node_modules dir so it stays consistent
+    doFirst(NpmInstallSync(fs, shadowPackageJson))
+    doFirst(DeleteFiles(fs, nodeModulesDir))
   }
 
 val openapiGenerator by configurations.creating
@@ -144,19 +158,18 @@ val npmGenerateAPI =
       "src/generated/utils/api",
       "--additional-properties=supportsES6=true"
     )
-    doFirst {
-      // Remove previously generated code to have generated files consistent with the OpenAPI spec
-      delete(generatedOpenApiCode)
-    }
-    doLast {
-      // openapi-generator produces Line 264 in runtime.ts as
-      //    export type FetchAPI = GlobalFetch['fetch'];
-      // but must be
-      //    export type FetchAPI = WindowOrWorkerGlobalScope['fetch'];
-      val f = generatedOpenApiCode.resolve("utils/api/runtime.ts")
-      val src = f.readText()
-      f.writeText(src.replace("GlobalFetch", "WindowOrWorkerGlobalScope"))
-    }
+    // Remove previously generated code to have generated files consistent with the OpenAPI spec
+    doFirst(DeleteFiles(fs, generatedOpenApiCode))
+    // openapi-generator produces Line 264 in runtime.ts as
+    //    export type FetchAPI = GlobalFetch['fetch'];
+    // but must be
+    //    export type FetchAPI = WindowOrWorkerGlobalScope['fetch'];
+    doLast(
+      ReplaceInFiles(
+        fileTree(generatedOpenApiCode.resolve("utils/api/runtime.ts")),
+        mapOf("GlobalFetch" to "WindowOrWorkerGlobalScope")
+      )
+    )
   }
 
 /*
@@ -183,10 +196,8 @@ val npmBuild =
       .files(fileTree(".") { include("*.json", "*.js") })
       .withPathSensitivity(PathSensitivity.RELATIVE)
     outputs.dir(npmBuildDir)
-    doFirst {
-      // Remove all previously generated output
-      delete(npmBuildTarget)
-    }
+    // Remove all previously generated output
+    doFirst(DeleteFiles(fs, npmBuildTarget))
     args.set(listOf("run", "build"))
     environment.put("GENERATE_SOURCEMAP", "false")
     environment.put("DISABLE_ESLINT_PLUGIN", "false")
@@ -205,7 +216,7 @@ val npmTest =
     inputs.dir(generatedOpenApiCode).withPathSensitivity(PathSensitivity.RELATIVE)
     inputs.dir(npmBuildDir).withPathSensitivity(PathSensitivity.RELATIVE)
     outputs.dir(testCoverageDir)
-    doFirst { delete(testCoverageDir) }
+    doFirst(DeleteFiles(fs, testCoverageDir))
     npmCommand.add("test")
     args.addAll("--", "--coverage")
     usesService(
@@ -224,8 +235,8 @@ val npmLint =
       .withPathSensitivity(PathSensitivity.RELATIVE)
     val lintedMarker = project.buildDir.resolve("npmLintRun")
     outputs.file(lintedMarker)
-    doFirst { delete(lintedMarker) }
-    doLast { lintedMarker.writeText("linted") }
+    doFirst(DeleteFiles(fs, lintedMarker))
+    doLast(WriteFile(lintedMarker, "linted"))
     args.set(listOf("run", "lint"))
   }
 
