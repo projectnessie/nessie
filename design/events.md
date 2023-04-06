@@ -185,11 +185,10 @@ reference the `org.projectnessie.model` package.
           <li>Previous HEAD</li>
           <li>New HEAD</li>
           <li><code>CommitMeta</code> object</li>
-          <li>Operations (list of PUTs and DELETEs)</li>
         </ul>
       </td>
-      <td>Operations are listed in summarized form (only keys without contents), in order to avoid huge event payloads. 
-          Full operation contents are sent separately in content-related events.
+      <td>Operations (PUTs and DELETEs) are not included, in order to avoid huge event payloads. 
+          Full operation contents are sent separately as content-related events.
         <p>A <code>COMMIT</code> event should trigger:</p>
         <ul>
           <li>0-N content events (one for each PUT/DELETE operation).</li>
