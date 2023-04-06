@@ -135,71 +135,40 @@ reference the `org.projectnessie.model` package.
 			<td><strong>Comments</strong></td>
 		</tr>
 		<tr>
-			<td rowspan="9">Git-like events</td>
-			<td rowspan="6">Reference events</td>
-			<td><code>BRANCH_CREATED</code></td>
+			<td rowspan="6">Git-like events</td>
+			<td rowspan="3">Reference events</td>
+			<td><code>REFERENCE_CREATED</code></td>
 			<td>API call</td>
 			<td>
 				<ul>
-					<li>Branch name</li>
+					<li>Reference name</li>
+					<li>Reference type (Branch, Tag...)</li>
 					<li>New HEAD</li>
 				</ul>
 			</td>
       <td>&nbsp;</td>
 		</tr>
 		<tr>
-			<td><code>BRANCH_UPDATED</code></td>
+			<td><code>REFERENCE_UPDATED</code></td>
 			<td>API call</td>
 			<td>
 				<ul>
-					<li>Branch name</li>
+					<li>Reference name</li>
+					<li>Reference type (Branch, Tag...)</li>
 					<li>Previous HEAD</li>
 					<li>New HEAD</li>
 				</ul>
 			</td>
-			<td>I.e., reassigned to a different hash, through an API call exclusively. Indirect branch updates due to a commit 
+			<td>I.e., reassigned to a different hash, through an API call exclusively. Indirect reference updates due to a commit 
           do not trigger this event.</td>
 		</tr>
 		<tr>
-			<td><code>BRANCH_DELETED</code></td>
+			<td><code>REFERENCE_DELETED</code></td>
 			<td>API call</td>
 			<td>
 				<ul>
-					<li>Branch name</li>
-					<li>Previous HEAD</li>
-				</ul>
-			</td>
-      <td>&nbsp;</td>
-		</tr>
-		<tr>
-			<td><code>TAG_CREATED</code></td>
-			<td>API call</td>
-			<td>
-				<ul>
-					<li>Tag name</li>
-					<li>New HEAD</li>
-				</ul>
-			</td>
-      <td>&nbsp;</td>
-		</tr>
-		<tr>
-			<td><code>TAG_UPDATED</code></td>
-			<td>API call</td>
-			<td>
-				<ul>
-					<li>Tag name</li>
-					<li>Previous HEAD</li>
-					<li>New HEAD</li>
-				</ul>
-			</td>
-			<td>I.e., reassigned to a different hash.</td>
-		</tr>
-		<tr>
-			<td><code>TAG_DELETED</code></td>
-			<td>API call</td>
-			<td>
-				<ul>
-					<li>Tag name</li>
+					<li>Reference name</li>
+					<li>Reference type (Branch, Tag...)</li>
 					<li>Previous HEAD</li>
 				</ul>
 			</td>
