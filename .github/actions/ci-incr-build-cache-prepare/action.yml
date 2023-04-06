@@ -4,6 +4,9 @@ inputs:
   cache-read-only:
     description: 'Gradle cache read only'
     default: 'true'
+  memoize:
+    description: 'Memoize cache for later save'
+    default: 'false'
   java-version:
     description: 'Java version'
     default: '11'
@@ -46,15 +49,14 @@ runs:
       shell: bash
       run: |
         echo "::group::Gradle build cache / add incremental updates"
-        mkdir -p ~/.gradle/caches/build-cache-1/
-        echo "Gradle build-cache-1 contains $(ls -1 ~/.gradle/caches/build-cache-1/ | wc -l) files"
+        mkdir -p ~/.gradle/caches/
+        echo "Gradle caches/ contains $(find ~/.gradle/caches/ -type f | wc -l) files"
 
         if [[ -d ~/downloaded-artifacts/ ]] ; then
-          find ~/downloaded-artifacts/ -type f -name "ci-gradle-build-cache-*-${{ inputs.java-version }}.tar" | while read arch ; do
+          find ~/downloaded-artifacts/ -type f -name "ci-gradle-caches-*-${{ inputs.java-version }}.tar" | while read arch ; do
             echo "Adding archive content from $arch ..."
-            (cd ~/.gradle/caches/build-cache-1/ ; tar xf $arch)
+            (cd ~/.gradle/caches/ ; tar xf $arch)
           done
-
         else
           echo "No previous build cache artifacts downloaded."
         fi
@@ -62,13 +64,16 @@ runs:
 
     - name: Memoize build-cache
       shell: bash
+      if: inputs.memoize == 'true'
       run: |
-        echo "::group::Saving state of Gradle's build-cache-1 ..."
-        rm -rf ~/saved-build-cache-1/
-        mkdir -p ~/saved-build-cache-1/
+        echo "::group::Saving state of Gradle's caches/ ..."
+        rm -rf ~/saved-gradle-caches/
+        mkdir -p ~/saved-gradle-caches/
 
-        if [[ -d ~/.gradle/caches/build-cache-1/ ]] ; then
-          echo "Gradle build-cache-1 contains $(ls -1 ~/.gradle/caches/build-cache-1/ | wc -l) files"
-          (cd ~/.gradle/caches/build-cache-1/ ; cp -r . ~/saved-build-cache-1/)
+        if [[ -d ~/.gradle/caches/ ]] ; then
+          echo "Gradle caches/ contains $(find ~/.gradle/caches/ -type f | wc -l) files"
+          (cd ~/.gradle/caches/ ; cp --recursive --preserve=all . ~/saved-gradle-caches/)
+          rm ~/saved-gradle-caches/user-id*
+          find ~/saved-gradle-caches/ -name "*.lock" | xargs rm -f
         fi
         echo "::endgroup::"
