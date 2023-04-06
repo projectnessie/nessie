@@ -74,6 +74,7 @@ jobs:
         uses: ./.github/actions/ci-incr-build-cache-prepare
         with:
           java-version: ${{ matrix.java-version }}
+          memoize: ${{ github.event_name == 'push' }}
 
       - name: Gradle / Code Checks
         uses: gradle/gradle-build-action@v2
@@ -107,6 +108,7 @@ jobs:
 
       - name: Save partial Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-save
+        if: github.event_name == 'push'
         with:
           job-name: 'code-checks'
           java-version: ${{ matrix.java-version }}
@@ -131,6 +133,7 @@ jobs:
         uses: ./.github/actions/ci-incr-build-cache-prepare
         with:
           java-version: ${{ matrix.java-version }}
+          memoize: ${{ github.event_name == 'push' }}
 
       - name: Gradle / test
         uses: gradle/gradle-build-action@v2
@@ -139,6 +142,7 @@ jobs:
 
       - name: Save partial Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-save
+        if: github.event_name == 'push'
         with:
           job-name: 'test'
           java-version: ${{ matrix.java-version }}
@@ -163,6 +167,7 @@ jobs:
         uses: ./.github/actions/ci-incr-build-cache-prepare
         with:
           java-version: ${{ matrix.java-version }}
+          memoize: ${{ github.event_name == 'push' }}
 
       - name: Gradle / Test Quarkus
         uses: gradle/gradle-build-action@v2
@@ -171,6 +176,7 @@ jobs:
 
       - name: Save partial Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-save
+        if: github.event_name == 'push'
         with:
           job-name: 'test-quarkus'
           java-version: ${{ matrix.java-version }}
@@ -195,6 +201,8 @@ jobs:
 
       - name: Prepare Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-prepare
+        with:
+          memoize: ${{ github.event_name == 'push' }}
 
       - name: Gradle / intTest
         run: |
@@ -212,6 +220,7 @@ jobs:
 
       - name: Save partial Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-save
+        if: github.event_name == 'push'
         with:
           job-name: 'int-test'
           java-version: ${{ matrix.java-version }}
@@ -236,6 +245,7 @@ jobs:
         uses: ./.github/actions/ci-incr-build-cache-prepare
         with:
           java-version: ${{ matrix.java-version }}
+          memoize: ${{ github.event_name == 'push' }}
 
       - name: Gradle / intTest versioned/stores
         run: |
@@ -245,6 +255,7 @@ jobs:
 
       - name: Save partial Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-save
+        if: github.event_name == 'push'
         with:
           job-name: 'int-test-stores'
           java-version: ${{ matrix.java-version }}
@@ -263,6 +274,8 @@ jobs:
 
       - name: Prepare Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-prepare
+        with:
+          memoize: ${{ github.event_name == 'push' }}
 
       - name: Gradle / intTest integrations
         run: |
@@ -271,6 +284,7 @@ jobs:
 
       - name: Save partial Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-save
+        if: github.event_name == 'push'
         with:
           job-name: 'int-test-integrations'
 
@@ -294,6 +308,7 @@ jobs:
         uses: ./.github/actions/ci-incr-build-cache-prepare
         with:
           java-version: ${{ matrix.java-version }}
+          memoize: ${{ github.event_name == 'push' }}
 
       - name: Gradle / intTest Quarkus
         uses: gradle/gradle-build-action@v2
@@ -302,6 +317,7 @@ jobs:
 
       - name: Save partial Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-save
+        if: github.event_name == 'push'
         with:
           job-name: 'int-test-quarkus'
           java-version: ${{ matrix.java-version }}
@@ -334,6 +350,7 @@ jobs:
         uses: ./.github/actions/ci-incr-build-cache-prepare
         with:
           java-version: ${{ matrix.java-version }}
+          memoize: false
 
       - name: Gradle / intTest Quarkus native
         if: env.WF_EXEC == 'true'
@@ -411,6 +428,8 @@ jobs:
       - name: Prepare Gradle build cache
         if: env.WF_EXEC == 'true'
         uses: ./.github/actions/ci-incr-build-cache-prepare
+        with:
+          memoize: false
 
       - name: Docker images publishing
         if: env.WF_EXEC == 'true'
@@ -763,6 +782,7 @@ jobs:
         with:
           java-version: ${{ matrix.java-version }}
           cache-read-only: false
+          memoize: false
 
       - name: Trigger Gradle home cleanup
         run: ./gradlew --no-daemon :showVersion
