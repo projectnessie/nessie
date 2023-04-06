@@ -350,9 +350,9 @@ level in the call stack to intercept events. For example, a commit event could b
 `org.projectnessie.versioned.VersionStore.commit()`. The delegate pattern is already used at this level to inject
 telemetry, cf. `TracingVersionStore`. A similar delegate pattern could be used for events.
 
-Note: the new storage model has the ability to recover from a failed write upon the next read targeting the same
-reference. Whether the corresponding event should be triggered on the failed write or on the recovery read is left to be
-sorted out later.
+Note: for named-reference creation and deletion, the new storage model has the ability to recover from a failed write 
+upon the next read targeting the same reference. Whether the corresponding event should be triggered on the failed write 
+or on the recovery read is left to be sorted out later.
 
 ### 2.3.1. Asynchronous delivery
 
