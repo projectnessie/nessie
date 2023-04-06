@@ -89,7 +89,7 @@ Notes:
   Git-like events are exceptionally triggered outside an API call, e.g. when the default branch is initialized.
 * All committing events can reference multiple operations (PUTs and DELETEs), and theoretically, multiple tables or 
   views. Therefore, a committing event should be accompanied by zero, one or multiple content-related events, one for 
-  each table or view affected; see below. (Zero content events are possible, e.g. with empty merges.)
+  each table or view affected; see below. (Events for empty commits are possible, e.g. with empty merges.)
 * The new storage model opens up the notion of "references" to be a generic pointer to any kind of stored object. 
   Other reference events could be defined when other types of references will be accessible to end users through 
   Nessie's API. At the time of writing though, only branches and tags are exposed.
