@@ -301,7 +301,8 @@ implementation.
 
 It should be possible to register more than one subscriber, although technical limitations on the maximum number of
 concurrent subscribers might apply. In practice, the number of subscribers should not grow so significantly that it
-could become a bottleneck.
+could become a bottleneck. When having more than one subscriber, it becomes important to ensure that subscribers do
+not block each other: see section 2.3.3 below for more details about non-blocking requirements for subscribers.
 
 ### 2.2.1. Event filters
 
