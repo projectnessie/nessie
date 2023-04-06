@@ -146,7 +146,8 @@ reference the `org.projectnessie.model` package.
           <li>New HEAD</li>
         </ul>
       </td>
-      <td>&nbsp;</td>
+      <td>In all reference events, the reference name should be included in short form 
+          (e.g. <code>branch1</code>) and in full form (e.g. <code>/refs/heads/branch1</code>)</td>
     </tr>
     <tr>
       <td><code>REFERENCE_UPDATED</code></td>
