@@ -274,6 +274,7 @@ reference the `org.projectnessie.model` package.
 Every event should carry the following contextual attributes:
 
 * Event ID: a (random) UUID that uniquely identifies the event.
+* Event type: the type of event, as defined in the table above.
 * Event time (created-at info): the timestamp when the event was generated. This should be automatically assigned by 
   the server; it will be purely informational and, as with every wall clock time, will be sensitive to clock skews.
 * Event location (sent-by info): the Nessie instance that generated the event. This could be a distinctive application 
@@ -281,6 +282,10 @@ Every event should carry the following contextual attributes:
 * Event originator (created-by info): the authenticated user principal that triggered the event, or empty if not 
   authenticated or not known.
 * Repository ID. 
+
+**Important note:** consumers must protect themselves against added event types; if they are relying on enums, they 
+should be prepared to handle unknown enum constants, for example, by always adding a `default` branch in `switch` 
+statements.
 
 Other useful tracing attributes could be added if necessary. The above attributes are contextual and as such, may 
 overlap with the attributes that will be included in tracing signals. See 2.4.2 below.
