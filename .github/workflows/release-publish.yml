@@ -140,10 +140,12 @@ jobs:
         # Add version to the openapi file name
         cp api/model/build/generated/openapi/META-INF/openapi/openapi.yaml api/model/build/nessie-openapi-${RELEASE_VERSION}.yaml
 
+        cp gc/gc-tool/build/executable/nessie-gc gc/gc-tool/build/executable/nessie-gc-${RELEASE_VERSION}
+
         echo "QUARKUS_UBER_JAR=${ARTIFACTS}/nessie-quarkus-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
         echo "CLI_UBER_JAR=${ARTIFACTS}/nessie-quarkus-cli-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
         echo "QUARKUS_NATIVE_BINARY=${ARTIFACTS}/nessie-quarkus-${RELEASE_VERSION}-runner" >> ${GITHUB_ENV}
-        echo "GC_EXEC=gc/gc-shell/build/executable/nessie-gc" >> ${GITHUB_ENV}
+        echo "GC_EXEC=gc/gc-tool/build/executable/nessie-gc-${RELEASE_VERSION}" >> ${GITHUB_ENV}
         echo "NESSIE_OPENAPI=api/model/build/nessie-openapi-${RELEASE_VERSION}.yaml" >> ${GITHUB_ENV}
 
         echo "## Successfully released ${RELEASE_VERSION} to Sonatype" >> $GITHUB_STEP_SUMMARY
@@ -209,9 +211,10 @@ jobs:
         git log --perl-regexp --author '^(?!.*renovate|.*nessie-release-workflow).*$' --format='format:* %s' ${LAST_TAG}..${GIT_TAG} | grep -v '^\* \[release\] .*$' > ${DIR}/release-log
 
         Q_NATIVE_URL="https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-quarkus-${RELEASE_VERSION}-runner"
+        Q_GC_EXEC="https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-gc-${RELEASE_VERSION}"
         Q_UBER_URL="https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-quarkus-${RELEASE_VERSION}-runner.jar"
-        Q_MC_URL="https://search.maven.org/search?q=g:org.projectnessie+AND+a:nessie-quarkus+AND+v:${RELEASE_VERSION}"
         Q_HELM_CHART_URL="https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-helm-${RELEASE_VERSION}.tgz"
+        Q_MC_URL="https://search.maven.org/search?q=g:org.projectnessie+AND+a:nessie-quarkus+AND+v:${RELEASE_VERSION}"
 
         cat <<EOF > ${NOTES_FILE}
         # Nessie ${RELEASE_VERSION} release
@@ -231,12 +234,14 @@ jobs:
 
         The attached [\`nessie-quarkus-${RELEASE_VERSION}-runner.jar\`](${Q_UBER_URL}) is a standalone uber-jar file that runs on Java 11 or newer and it is also available via [Maven Central](${Q_MC_URL}). Download and run it (requires Java 11):
         \`\`\`
-        wget https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-quarkus-${RELEASE_VERSION}-runner.jar
+        wget ${Q_UBER_URL}
         java -jar nessie-quarkus-${RELEASE_VERSION}-runner.jar
         \`\`\`
 
-        Nessie GC tool is attached as [\`nessie-gc\`](${GC_EXEC}), which is an executable. Can also be run using `java -jar nessie-gc`, because it is actually a Java archive.
-        Shell completion can be generated from the nessie-gc tool.
+        Nessie GC tool is attached as [\`nessie-gc-${RELEASE_VERSION}\`](${Q_GC_EXEC}), which is an executable.
+        (\`chmod 744 nessie-gc-${RELEASE_VERSION}\` after download.)
+        Can also be run using \`java -jar nessie-gc-${RELEASE_VERSION}\`, because it is actually a Java archive.
+        Shell completion can be generated from the \`nessie-gc\` tool.
 
         The attached [\`nessie-helm-${RELEASE_VERSION}.tgz\`](${Q_HELM_CHART_URL}) is a packaged Helm chart, which can be downloaded and installed via Helm.
         There is also the [Nessie Helm chart repo](https://charts.projectnessie.org/), which can be added and used to install the Nessie Helm chart.
@@ -259,7 +264,7 @@ jobs:
           "${QUARKUS_NATIVE_BINARY}" \
           "${QUARKUS_UBER_JAR}" \
           "${CLI_UBER_JAR}" \
-          ${GC_JAR} \
+          "${GC_EXEC}" \
           "${NESSIE_OPENAPI}" \
           "${NESSIE_HELM_CHART}"
 
