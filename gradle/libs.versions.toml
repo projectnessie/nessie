@@ -177,7 +177,7 @@ maven-resolver-transport-http = { module = "org.apache.maven.resolver:maven-reso
 micrometer-core = { module = "io.micrometer:micrometer-core", version.ref = "micrometer" }
 microprofile-openapi = { module = "org.eclipse.microprofile.openapi:microprofile-openapi-api", version = "3.1" }
 mockito-core = { module = "org.mockito:mockito-core", version = "4.11.0" }
-mongodb-driver-sync = { module = "org.mongodb:mongodb-driver-sync", version = "4.9.0" }
+mongodb-driver-sync = { module = "org.mongodb:mongodb-driver-sync", version = "4.9.1" }
 openapi-generator-cli = { module = "org.openapitools:openapi-generator-cli", version = "6.5.0" }
 opentelemetry-api = { module = "io.opentelemetry:opentelemetry-api" }
 opentelemetry-bom = { module = "io.opentelemetry:opentelemetry-bom", version.ref = "opentelemetry" }
