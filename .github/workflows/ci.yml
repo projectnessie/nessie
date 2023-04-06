@@ -74,7 +74,6 @@ jobs:
         uses: ./.github/actions/ci-incr-build-cache-prepare
         with:
           java-version: ${{ matrix.java-version }}
-          memoize: ${{ github.event_name == 'push' }}
 
       - name: Gradle / Code Checks
         uses: gradle/gradle-build-action@v2
@@ -133,7 +132,6 @@ jobs:
         uses: ./.github/actions/ci-incr-build-cache-prepare
         with:
           java-version: ${{ matrix.java-version }}
-          memoize: ${{ github.event_name == 'push' }}
 
       - name: Gradle / test
         uses: gradle/gradle-build-action@v2
@@ -167,7 +165,6 @@ jobs:
         uses: ./.github/actions/ci-incr-build-cache-prepare
         with:
           java-version: ${{ matrix.java-version }}
-          memoize: ${{ github.event_name == 'push' }}
 
       - name: Gradle / Test Quarkus
         uses: gradle/gradle-build-action@v2
@@ -201,14 +198,21 @@ jobs:
 
       - name: Prepare Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-prepare
-        with:
-          memoize: ${{ github.event_name == 'push' }}
 
       - name: Gradle / intTest
         run: |
+          echo "::group::Collect :nessie-versioned-storage projects"
           ./gradlew :listProjectsWithPrefix --prefix :nessie-versioned-persist- --output ../persist-prjs.txt --exclude
+          echo "::endgroup::"
+
+          echo "::group::Collect :nessie-versioned-persist projects"
           ./gradlew :listProjectsWithPrefix --prefix :nessie-versioned-storage- --output ../storage-prjs.txt --exclude
+          echo "::endgroup::"
+
+          echo "::group::Collect :nessie-spark-extensions projects"
           ./gradlew :listProjectsWithPrefix --prefix :nessie-spark-ext --output ../spark-prjs.txt --exclude
+          echo "::endgroup::"
+
           ./gradlew intTest \
             -x :nessie-quarkus:intTest \
             -x :nessie-quarkus-cli:intTest \
@@ -245,12 +249,17 @@ jobs:
         uses: ./.github/actions/ci-incr-build-cache-prepare
         with:
           java-version: ${{ matrix.java-version }}
-          memoize: ${{ github.event_name == 'push' }}
 
       - name: Gradle / intTest versioned/stores
         run: |
+          echo "::group::Collect :nessie-versioned-storage projects"
           ./gradlew :listProjectsWithPrefix --prefix :nessie-versioned-storage- --output ../storage-prjs.txt
+          echo "::endgroup::"
+
+          echo "::group::Collect :nessie-versioned-persist projects"
           ./gradlew :listProjectsWithPrefix --prefix :nessie-versioned-persist- --output ../persist-prjs.txt
+          echo "::endgroup::"
+
           ./gradlew $(cat ../persist-prjs.txt) $(cat ../storage-prjs.txt) --scan
 
       - name: Save partial Gradle build cache
@@ -274,12 +283,13 @@ jobs:
 
       - name: Prepare Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-prepare
-        with:
-          memoize: ${{ github.event_name == 'push' }}
 
       - name: Gradle / intTest integrations
         run: |
+          echo "::group::Collect :nessie-spark-extensions projects"
           ./gradlew :listProjectsWithPrefix --prefix :nessie-spark-ext --output ../spark-prjs.txt
+          echo "::endgroup::"
+
           ./gradlew :nessie-deltalake:intTest $(cat ../spark-prjs.txt) --scan
 
       - name: Save partial Gradle build cache
@@ -308,7 +318,6 @@ jobs:
         uses: ./.github/actions/ci-incr-build-cache-prepare
         with:
           java-version: ${{ matrix.java-version }}
-          memoize: ${{ github.event_name == 'push' }}
 
       - name: Gradle / intTest Quarkus
         uses: gradle/gradle-build-action@v2
@@ -350,7 +359,6 @@ jobs:
         uses: ./.github/actions/ci-incr-build-cache-prepare
         with:
           java-version: ${{ matrix.java-version }}
-          memoize: false
 
       - name: Gradle / intTest Quarkus native
         if: env.WF_EXEC == 'true'
@@ -428,8 +436,6 @@ jobs:
       - name: Prepare Gradle build cache
         if: env.WF_EXEC == 'true'
         uses: ./.github/actions/ci-incr-build-cache-prepare
-        with:
-          memoize: false
 
       - name: Docker images publishing
         if: env.WF_EXEC == 'true'
@@ -782,7 +788,6 @@ jobs:
         with:
           java-version: ${{ matrix.java-version }}
           cache-read-only: false
-          memoize: false
 
       - name: Trigger Gradle home cleanup
         run: ./gradlew --no-daemon :showVersion
