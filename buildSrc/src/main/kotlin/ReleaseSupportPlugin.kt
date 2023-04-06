@@ -31,15 +31,9 @@ class ReleaseSupportPlugin : Plugin<Project> {
 
     project.extensions.create("releaseSupport", ReleaseSupport::class.java)
 
-    project.tasks.register("showVersion") {
+    project.tasks.register<ShowVersionTask>("showVersion") {
       group = "Release Support"
       description = "Show current version"
-
-      doFirst {
-        val versionTxtFile =
-          project.extensions.getByType(ReleaseSupport::class.java).versionFile.get().asFile
-        logger.lifecycle("Current version is ${VersionTuple.fromFile(versionTxtFile.toPath())}.")
-      }
     }
 
     project.tasks.register<BumpVersionTask>("bumpVersion") {
@@ -54,6 +48,16 @@ class ReleaseSupportPlugin : Plugin<Project> {
       project.objects
         .fileProperty()
         .fileProvider(project.provider { project.rootDir.resolve("./version.txt") })
+  }
+
+  @DisableCachingByDefault(because = "Version information cannot be cached")
+  open class ShowVersionTask : DefaultTask() {
+    @TaskAction
+    fun showVersion() {
+      val versionTxtFile =
+        project.extensions.getByType(ReleaseSupport::class.java).versionFile.get().asFile
+      logger.lifecycle("Current version is ${VersionTuple.fromFile(versionTxtFile.toPath())}.")
+    }
   }
 
   @DisableCachingByDefault(because = "Version bumps cannot be cached")
