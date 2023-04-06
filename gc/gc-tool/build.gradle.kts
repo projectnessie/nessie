@@ -140,24 +140,14 @@ listOf("compileTestJava", "jandexMain", "jar", "shadowJar").forEach { t ->
 val shadowJar = tasks.named<ShadowJar>("shadowJar")
 
 val unixExecutable by
-  tasks.registering {
+  tasks.registering(UnixExecutableTask::class) {
     group = "build"
     description = "Generates the Unix executable"
 
     dependsOn(shadowJar)
-    val dir = buildDir.resolve("executable")
-    val executable = dir.resolve("nessie-gc")
-    inputs.files(shadowJar.get().archiveFile).withPathSensitivity(PathSensitivity.RELATIVE)
-    outputs.files(executable)
-    outputs.cacheIf { false } // very big file
-    doFirst {
-      dir.mkdirs()
-      executable.outputStream().use { out ->
-        projectDir.resolve("src/exec/exec-preamble.sh").inputStream().use { i -> i.transferTo(out) }
-        shadowJar.get().archiveFile.get().asFile.inputStream().use { i -> i.transferTo(out) }
-      }
-      executable.setExecutable(true)
-    }
+    executable.set(buildDir.resolve("executable").resolve("nessie-gc"))
+    template.set(projectDir.resolve("src/exec/exec-preamble.sh"))
+    sourceJar.set(shadowJar.get().archiveFile)
   }
 
 shadowJar {
