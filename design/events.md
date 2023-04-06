@@ -125,148 +125,148 @@ Here is the complete list of proposed event types and event attributes. Unqualif
 reference the `org.projectnessie.model` package.
 
 <table>
-	<tbody>
-		<tr>
-			<td><strong>Category</strong></td>
-			<td><strong>Sub-category</strong></td>
-			<td><strong>Event type</strong></td>
-			<td><strong>Triggered by</strong></td>
-			<td><strong>Specific event attributes</strong></td>
-			<td><strong>Comments</strong></td>
-		</tr>
-		<tr>
-			<td rowspan="6">Git-like events</td>
-			<td rowspan="3">Reference events</td>
-			<td><code>REFERENCE_CREATED</code></td>
-			<td>API call</td>
-			<td>
-				<ul>
-					<li>Reference name</li>
-					<li>Reference type (Branch, Tag...)</li>
-					<li>New HEAD</li>
-				</ul>
-			</td>
+  <tbody>
+    <tr>
+      <td><strong>Category</strong></td>
+      <td><strong>Sub-category</strong></td>
+      <td><strong>Event type</strong></td>
+      <td><strong>Triggered by</strong></td>
+      <td><strong>Specific event attributes</strong></td>
+      <td><strong>Comments</strong></td>
+    </tr>
+    <tr>
+      <td rowspan="6">Git-like events</td>
+      <td rowspan="3">Reference events</td>
+      <td><code>REFERENCE_CREATED</code></td>
+      <td>API call</td>
+      <td>
+        <ul>
+          <li>Reference name</li>
+          <li>Reference type (Branch, Tag...)</li>
+          <li>New HEAD</li>
+        </ul>
+      </td>
       <td>&nbsp;</td>
-		</tr>
-		<tr>
-			<td><code>REFERENCE_UPDATED</code></td>
-			<td>API call</td>
-			<td>
-				<ul>
-					<li>Reference name</li>
-					<li>Reference type (Branch, Tag...)</li>
-					<li>Previous HEAD</li>
-					<li>New HEAD</li>
-				</ul>
-			</td>
-			<td>I.e., reassigned to a different hash, through an API call exclusively. Indirect reference updates due to a commit 
+    </tr>
+    <tr>
+      <td><code>REFERENCE_UPDATED</code></td>
+      <td>API call</td>
+      <td>
+        <ul>
+          <li>Reference name</li>
+          <li>Reference type (Branch, Tag...)</li>
+          <li>Previous HEAD</li>
+          <li>New HEAD</li>
+        </ul>
+      </td>
+      <td>I.e., reassigned to a different hash, through an API call exclusively. Indirect reference updates due to a commit 
           do not trigger this event.</td>
-		</tr>
-		<tr>
-			<td><code>REFERENCE_DELETED</code></td>
-			<td>API call</td>
-			<td>
-				<ul>
-					<li>Reference name</li>
-					<li>Reference type (Branch, Tag...)</li>
-					<li>Previous HEAD</li>
-				</ul>
-			</td>
+    </tr>
+    <tr>
+      <td><code>REFERENCE_DELETED</code></td>
+      <td>API call</td>
+      <td>
+        <ul>
+          <li>Reference name</li>
+          <li>Reference type (Branch, Tag...)</li>
+          <li>Previous HEAD</li>
+        </ul>
+      </td>
       <td>&nbsp;</td>
-		</tr>
-		<tr>
-			<td rowspan="3">Committing events</td>
-			<td><code>COMMIT</code></td>
-			<td>API call</td>
-			<td>
-				<ul>
-					<li>Branch name</li>
-					<li>Previous HEAD</li>
-					<li>New HEAD</li>
-					<li><code>CommitMeta</code> object</li>
-					<li>Operations (list of PUTs and DELETEs)</li>
-				</ul>
-			</td>
-			<td>Operations are listed in summarized form (only keys without contents), in order to avoid huge event payloads. 
+    </tr>
+    <tr>
+      <td rowspan="3">Committing events</td>
+      <td><code>COMMIT</code></td>
+      <td>API call</td>
+      <td>
+        <ul>
+          <li>Branch name</li>
+          <li>Previous HEAD</li>
+          <li>New HEAD</li>
+          <li><code>CommitMeta</code> object</li>
+          <li>Operations (list of PUTs and DELETEs)</li>
+        </ul>
+      </td>
+      <td>Operations are listed in summarized form (only keys without contents), in order to avoid huge event payloads. 
           Full operation contents are sent separately in content-related events.
-				<p>A <code>COMMIT</code> event should trigger:</p>
-				<ul>
-					<li>0-N content events (one for each PUT/DELETE operation).</li>
-				</ul>
-			</td>
-		</tr>
-		<tr>
-			<td><code>MERGE</code></td>
-			<td>API call</td>
-			<td>
-				<ul>
-					<li>Source branch name</li>
-					<li>Target branch name</li>
-					<li>Previous target branch HEAD</li>
-					<li>New target branch HEAD</li>
-					<li>Common ancestor hash</li>
-					<li>List of commits with their operations (list of PUTs and DELETEs)</li>
-				</ul>
-			</td>
-			<td>Operations are listed in summarized form (only keys without contents), in order to avoid huge event payloads. 
+        <p>A <code>COMMIT</code> event should trigger:</p>
+        <ul>
+          <li>0-N content events (one for each PUT/DELETE operation).</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><code>MERGE</code></td>
+      <td>API call</td>
+      <td>
+        <ul>
+          <li>Source branch name</li>
+          <li>Target branch name</li>
+          <li>Previous target branch HEAD</li>
+          <li>New target branch HEAD</li>
+          <li>Common ancestor hash</li>
+          <li>List of commits with their operations (list of PUTs and DELETEs)</li>
+        </ul>
+      </td>
+      <td>Operations are listed in summarized form (only keys without contents), in order to avoid huge event payloads. 
           Full operation contents are sent separately in content-related events.
-				<p>A <code>MERGE</code> event should trigger:</p>
-				<ul>
-					<li>0-N content events (one for each global PUT/DELETE operation, excluding intermediary operations).</li>
-				</ul>
-			</td>
-		</tr>
-		<tr>
-			<td><code>TRANSPLANT</code></td>
-			<td>API call</td>
-			<td>
-				<ul>
-					<li>Source branch name</li>
-					<li>Target branch name</li>
-					<li>Previous target branch HEAD</li>
-					<li>New target branch HEAD</li>
-					<li>List of commits with their operations (list of PUTs and DELETEs)</li>
-				</ul>
-			</td>
-			<td>Operations are listed in summarized form (only keys without contents), in order to avoid huge event payloads. 
+        <p>A <code>MERGE</code> event should trigger:</p>
+        <ul>
+          <li>0-N content events (one for each global PUT/DELETE operation, excluding intermediary operations).</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><code>TRANSPLANT</code></td>
+      <td>API call</td>
+      <td>
+        <ul>
+          <li>Source branch name</li>
+          <li>Target branch name</li>
+          <li>Previous target branch HEAD</li>
+          <li>New target branch HEAD</li>
+          <li>List of commits with their operations (list of PUTs and DELETEs)</li>
+        </ul>
+      </td>
+      <td>Operations are listed in summarized form (only keys without contents), in order to avoid huge event payloads. 
           Full operation contents are sent separately in content-related events.
-				<p>A <code>TRANSPLANT</code> event should trigger:</p>
-				<ul>
-					<li>0-N content events (one for each global PUT/DELETE operation, excluding intermediary operations).</li>
-				</ul>
-			</td>
-		</tr>
-		<tr>
-			<td colspan="2" rowspan="2">Content-related events</td>
-			<td><code>CONTENT_STORED</code></td>
-			<td>Committing event</td>
-			<td>
-				<ul>
-					<li>Branch name</li>
-					<li>Commit Hash</li>
-					<li>Content type</li>
-					<li>Content key</li>
-					<li><code>Content</code> object</li>
-				</ul>
-			</td>
-			<td>Corresponds to a PUT operation from a committing event. Note that it's not possible to distinguish a creation 
+        <p>A <code>TRANSPLANT</code> event should trigger:</p>
+        <ul>
+          <li>0-N content events (one for each global PUT/DELETE operation, excluding intermediary operations).</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td colspan="2" rowspan="2">Content-related events</td>
+      <td><code>CONTENT_STORED</code></td>
+      <td>Committing event</td>
+      <td>
+        <ul>
+          <li>Branch name</li>
+          <li>Commit Hash</li>
+          <li>Content type</li>
+          <li>Content key</li>
+          <li><code>Content</code> object</li>
+        </ul>
+      </td>
+      <td>Corresponds to a PUT operation from a committing event. Note that it's not possible to distinguish a creation 
           from an update.</td>
-		</tr>
-		<tr>
-			<td><code>CONTENT_REMOVED</code></td>
-			<td>Committing event</td>
-			<td>
-				<ul>
-					<li>Branch name</li>
-					<li>Commit Hash</li>
-					<li>Content type</li>
-					<li>Content key</li>
-				</ul>
-			</td>
-			<td>Corresponds to a DELETE operation from a committing event. Note that the actual Content object that was 
+    </tr>
+    <tr>
+      <td><code>CONTENT_REMOVED</code></td>
+      <td>Committing event</td>
+      <td>
+        <ul>
+          <li>Branch name</li>
+          <li>Commit Hash</li>
+          <li>Content type</li>
+          <li>Content key</li>
+        </ul>
+      </td>
+      <td>Corresponds to a DELETE operation from a committing event. Note that the actual Content object that was 
           deleted is not available.</td>
-		</tr>
-	</tbody>
+    </tr>
+  </tbody>
 </table>
 
 ### 2.1.5. Common event attributes
