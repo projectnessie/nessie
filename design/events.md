@@ -201,6 +201,7 @@ reference the `org.projectnessie.model` package.
       <td>
         <ul>
           <li>Source branch name</li>
+          <li>Source branch HEAD</li>
           <li>Target branch name</li>
           <li>Previous target branch HEAD</li>
           <li>New target branch HEAD</li>
