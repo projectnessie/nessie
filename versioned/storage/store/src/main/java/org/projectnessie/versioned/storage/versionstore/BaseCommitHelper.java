@@ -417,9 +417,14 @@ class BaseCommitHelper {
     }
   }
 
-  SourceCommitsAndParent loadSourceCommitsPlusParent(List<Hash> commitHashes)
+  SourceCommitsAndParent loadSourceCommitsForTransplant(List<Hash> commitHashes)
       throws ReferenceNotFoundException {
-    checkArgument(!commitHashes.isEmpty(), "List with source commits must not be empty");
+    checkArgument(
+        !commitHashes.isEmpty(),
+        "No hashes to transplant onto %s @ %s, expected commit ID from request was %s.",
+        head != null ? head.id() : EMPTY_OBJ_ID,
+        branch.getName(),
+        referenceHash.map(Hash::asString).orElse("not specified"));
 
     Obj[] objs;
     try {
@@ -455,25 +460,35 @@ class BaseCommitHelper {
     return new SourceCommitsAndParent(commits, parent);
   }
 
-  SourceCommitsAndParent loadSourceCommitsPlusParent(
+  SourceCommitsAndParent loadSourceCommitsForMerge(
       @Nonnull @jakarta.annotation.Nonnull ObjId startCommitId,
       @Nonnull @jakarta.annotation.Nonnull ObjId endCommitId) {
     CommitLogic commitLogic = commitLogic(persist);
     List<CommitObj> commits = new ArrayList<>();
+    CommitObj parent = null;
     for (PagedResult<CommitObj, ObjId> commitLog =
             commitLogic.commitLog(commitLogQuery(null, startCommitId, endCommitId));
         commitLog.hasNext(); ) {
       CommitObj commit = commitLog.next();
       if (commit.id().equals(endCommitId)) {
-        Collections.reverse(commits);
-        return new SourceCommitsAndParent(commits, commit);
+        parent = commit;
+        break;
       }
       commits.add(commit);
     }
 
-    // Ends here, if 'endCommitId' is NO_ANCESTOR
+    checkArgument(
+        !commits.isEmpty(),
+        "No hashes to merge from %s onto %s @ %s using common ancestor %s, expected commit ID from request was %s.",
+        startCommitId,
+        head != null ? head.id() : EMPTY_OBJ_ID,
+        branch.getName(),
+        endCommitId,
+        referenceHash.map(Hash::asString).orElse("not specified"));
+
+    // Ends here, if 'endCommitId' is NO_ANCESTOR (parent == null)
     Collections.reverse(commits);
-    return new SourceCommitsAndParent(commits, null);
+    return new SourceCommitsAndParent(commits, parent);
   }
 
   ImmutableMergeResult<Commit> mergeSquashFastForward(

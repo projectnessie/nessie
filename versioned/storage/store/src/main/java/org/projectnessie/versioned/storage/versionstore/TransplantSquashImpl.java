@@ -58,7 +58,7 @@ final class TransplantSquashImpl extends BaseMergeTransplantSquash implements Tr
       MergeType defaultMergeType,
       boolean dryRun)
       throws ReferenceNotFoundException, RetryException, ReferenceConflictException {
-    SourceCommitsAndParent sourceCommits = loadSourceCommitsPlusParent(sequenceToTransplant);
+    SourceCommitsAndParent sourceCommits = loadSourceCommitsForTransplant(sequenceToTransplant);
 
     ImmutableMergeResult.Builder<Commit> mergeResult = prepareMergeResult();
 

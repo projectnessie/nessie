@@ -89,7 +89,7 @@ final class MergeIndividualImpl extends BaseMergeTransplantIndividual implements
       return mergeSquashFastForward(dryRun, fromId, source, mergeResult, mergeTypeForKey);
     }
 
-    SourceCommitsAndParent sourceCommits = loadSourceCommitsPlusParent(fromId, commonAncestorId);
+    SourceCommitsAndParent sourceCommits = loadSourceCommitsForMerge(fromId, commonAncestorId);
 
     return individualCommits(
         updateCommitMetadata, dryRun, mergeResult, mergeTypeForKey, sourceCommits);

@@ -64,7 +64,7 @@ final class MergeSquashImpl extends BaseMergeTransplantSquash implements Merge {
     ObjId fromId = hashToObjId(fromHash);
     ObjId commonAncestorId = identifyCommonAncestor(fromId);
 
-    SourceCommitsAndParent sourceCommits = loadSourceCommitsPlusParent(fromId, commonAncestorId);
+    SourceCommitsAndParent sourceCommits = loadSourceCommitsForMerge(fromId, commonAncestorId);
 
     ImmutableMergeResult.Builder<Commit> mergeResult =
         prepareMergeResult().commonAncestor(objIdToHash(commonAncestorId));
