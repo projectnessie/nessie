@@ -84,7 +84,7 @@ Notes:
 
 * Git-like events are rather "low-level" events. Most subscribers of the new system would probably not subscribe
   directly to these events, but rather to more high-level events (see below); however, Git-like events could prove
-  useful for audit use cases ("who did what and when").
+  useful e.g. to feed an external auditing system or to propagate events to 3rd-party/external systems.
 * Git-like events have a close relationship to API calls and are almost always triggered by such calls. Only a few 
   Git-like events are exceptionally triggered outside an API call, e.g. when the default branch is initialized.
 * All committing events can reference multiple operations (PUTs and DELETEs), and theoretically, multiple tables or 
