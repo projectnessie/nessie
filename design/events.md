@@ -205,11 +205,10 @@ reference the `org.projectnessie.model` package.
           <li>Previous target branch HEAD</li>
           <li>New target branch HEAD</li>
           <li>Common ancestor hash</li>
-          <li>List of commits with their operations (list of PUTs and DELETEs)</li>
         </ul>
       </td>
-      <td>Operations are listed in summarized form (only keys without contents), in order to avoid huge event payloads. 
-          Full operation contents are sent separately in content-related events.
+      <td>Operations (PUTs and DELETEs) are not included, in order to avoid huge event payloads. 
+          Full operation contents are sent separately as content-related events.
         <p>A <code>MERGE</code> event should trigger:</p>
         <ul>
           <li>0-N content events (one for each global PUT/DELETE operation, excluding intermediary operations).</li>
@@ -225,11 +224,10 @@ reference the `org.projectnessie.model` package.
           <li>Target branch name</li>
           <li>Previous target branch HEAD</li>
           <li>New target branch HEAD</li>
-          <li>List of commits with their operations (list of PUTs and DELETEs)</li>
         </ul>
       </td>
-      <td>Operations are listed in summarized form (only keys without contents), in order to avoid huge event payloads. 
-          Full operation contents are sent separately in content-related events.
+      <td>Operations (PUTs and DELETEs) are not included, in order to avoid huge event payloads. 
+          Full operation contents are sent separately as content-related events.
         <p>A <code>TRANSPLANT</code> event should trigger:</p>
         <ul>
           <li>0-N content events (one for each global PUT/DELETE operation, excluding intermediary operations).</li>
