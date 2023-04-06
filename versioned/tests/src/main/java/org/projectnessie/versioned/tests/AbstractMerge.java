@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.tests;
 
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
@@ -32,6 +33,7 @@ import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -898,5 +900,60 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
       Hash newTargetHead = iterator.next().getHash();
       assertThat(newTargetHead).isEqualTo(targetHead);
     }
+  }
+
+  @Test
+  public void mergeFromAndIntoHead() throws Exception {
+    BranchName branch = BranchName.of("source");
+    store().create(branch, Optional.of(this.initialHash));
+
+    ContentKey key1 = ContentKey.of("key1");
+    ContentKey key2 = ContentKey.of("key2");
+
+    Hash commit1 =
+        store()
+            .commit(
+                branch,
+                Optional.empty(),
+                CommitMeta.fromMessage("commit 1"),
+                singletonList(Put.of(key1, VALUE_1)));
+
+    Hash commit2 =
+        store()
+            .commit(
+                branch,
+                Optional.empty(),
+                CommitMeta.fromMessage("commit 2"),
+                singletonList(Put.of(key2, VALUE_2)));
+
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(
+            () ->
+                store()
+                    .merge(
+                        commit2,
+                        branch,
+                        Optional.of(commit1),
+                        createMetadataRewriter(""),
+                        false,
+                        emptyMap(),
+                        MergeType.NORMAL,
+                        false,
+                        false));
+
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(
+            () ->
+                store()
+                    .merge(
+                        commit1,
+                        branch,
+                        Optional.of(commit2),
+                        createMetadataRewriter(""),
+                        false,
+                        emptyMap(),
+                        MergeType.NORMAL,
+                        false,
+                        false));
   }
 }
