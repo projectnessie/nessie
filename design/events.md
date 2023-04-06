@@ -381,8 +381,8 @@ implementers of the `EventListener` interface are expected to respect the follow
 * For increased resilience, a failed invocation of the subscriber's `EventListener` method MAY be retried a configurable
   number of times, with exponential backoff. This is however not a requirement for the MVP.
 
-**This effectively makes the system provide at-most-once delivery guarantees**. Subscribers must be prepared to miss
-some events, and to receive events out of sequence.
+**This effectively makes the system provide best-effort delivery guarantees**. Subscribers must be prepared to miss
+some events, receive duplicate events, and to receive events out of sequence.
 
 Event coalescing (that is, coalescing two or more consecutive, similar events into one) is out of the scope for the MVP
 but could be introduced later as a means to prevent event flooding.
