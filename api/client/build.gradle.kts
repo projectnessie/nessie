@@ -77,6 +77,11 @@ dependencies {
   testFixturesApi(libs.undertow.core)
   testFixturesApi(libs.undertow.servlet)
   testFixturesImplementation(libs.logback.classic)
+
+  intTestImplementation(libs.testcontainers.testcontainers)
+  intTestImplementation(libs.testcontainers.junit)
+  intTestImplementation(libs.testcontainers.keycloak)
+  intTestImplementation(libs.slf4j.api)
 }
 
 jandex { skipDefaultProcessing() }

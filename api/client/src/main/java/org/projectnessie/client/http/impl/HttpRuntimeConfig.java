@@ -22,13 +22,14 @@ import javax.annotation.Nullable;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import org.immutables.value.Value;
+import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpResponseFactory;
 import org.projectnessie.client.http.RequestFilter;
 import org.projectnessie.client.http.ResponseFilter;
 
 /** Implementation specific HTTP configuration holder. */
 @Value.Immutable
-public interface HttpRuntimeConfig {
+public interface HttpRuntimeConfig extends AutoCloseable {
 
   static ImmutableHttpRuntimeConfig.Builder builder() {
     return ImmutableHttpRuntimeConfig.builder();
@@ -61,6 +62,9 @@ public interface HttpRuntimeConfig {
   boolean isDisableCompression();
 
   SSLContext getSslContext();
+
+  @Nullable
+  HttpAuthentication getAuthentication();
 
   List<RequestFilter> getRequestFilters();
 
@@ -97,5 +101,13 @@ public interface HttpRuntimeConfig {
   @Value.Default
   default int getClientSpec() {
     return 2;
+  }
+
+  @Override
+  default void close() {
+    HttpAuthentication authentication = getAuthentication();
+    if (authentication != null) {
+      authentication.close();
+    }
   }
 }

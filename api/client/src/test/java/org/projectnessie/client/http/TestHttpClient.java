@@ -29,17 +29,24 @@ import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import com.google.common.base.Splitter;
+import java.io.BufferedReader;
 import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URI;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -48,6 +55,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import javax.net.ssl.SSLHandshakeException;
 import org.assertj.core.api.AbstractThrowableAssert;
 import org.assertj.core.api.SoftAssertions;
@@ -59,6 +67,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.client.util.HttpTestServer;
 import org.projectnessie.model.CommitMeta;
 
@@ -69,10 +78,6 @@ public class TestHttpClient {
   private static final Instant NOW = Instant.now();
 
   @InjectSoftAssertions protected SoftAssertions soft;
-
-  private HttpRequest get(URI baseUri) {
-    return createClient(baseUri, b -> {}).newRequest();
-  }
 
   private HttpClient createClient(URI baseUri, Consumer<HttpClient.Builder> customizer) {
     HttpClient.Builder b =
@@ -106,16 +111,16 @@ public class TestHttpClient {
             MAPPER.writeValue(os, r);
           }
         };
-    try (HttpTestServer server = new HttpTestServer("/", handler, ssl)) {
-      HttpClient client =
-          createClient(
-              server.getUri(),
-              b -> {
-                if (ssl) {
-                  b.setSslContext(server.getSslContext());
-                }
-                b.setHttp2Upgrade(http2);
-              });
+    try (HttpTestServer server = new HttpTestServer("/", handler, ssl);
+        HttpClient client =
+            createClient(
+                server.getUri(),
+                b -> {
+                  if (ssl) {
+                    b.setSslContext(server.getSslContext());
+                  }
+                  b.setHttp2Upgrade(http2);
+                })) {
 
       JsonNode result = client.newRequest().get().readEntity(JsonNode.class);
       soft.assertThat(result)
@@ -129,14 +134,12 @@ public class TestHttpClient {
 
   @Test
   void testHttpsWithInsecureClient() throws Exception {
-    try (HttpTestServer server = new HttpTestServer("/", (req, resp) -> {}, true)) {
-      HttpRequest insecureClient =
-          HttpClient.builder()
-              .setBaseUri(server.getUri())
-              .setObjectMapper(MAPPER)
-              .build()
-              .newRequest();
-      assertThatThrownBy(insecureClient::get)
+    try (HttpTestServer server = new HttpTestServer("/", (req, resp) -> {}, true);
+        HttpClient insecureClient =
+            HttpClient.builder().setBaseUri(server.getUri()).setObjectMapper(MAPPER).build()) {
+      HttpRequest request;
+      request = insecureClient.newRequest();
+      assertThatThrownBy(request::get)
           .isInstanceOf(HttpClientException.class)
           .cause()
           .satisfiesAnyOf(
@@ -185,7 +188,7 @@ public class TestHttpClient {
 
     try (HttpTestServer server = new HttpTestServer(handler, ssl)) {
       for (boolean disableCompression : new boolean[] {false, true}) {
-        HttpClient client =
+        try (HttpClient client =
             createClient(
                 server.getUri(),
                 b -> {
@@ -193,51 +196,52 @@ public class TestHttpClient {
                   if (ssl) {
                     b.setSslContext(server.getSslContext());
                   }
-                });
+                })) {
 
-        // Intentionally repeat a bunch of requests as fast as possible to validate that the
-        // server/client combination works fine.
-        for (int i = 0; i < 5; i++) {
-          for (int num : new int[] {1, 10, 20, 100}) {
-            int len = 10_000;
+          // Intentionally repeat a bunch of requests as fast as possible to validate that the
+          // server/client combination works fine.
+          for (int i = 0; i < 5; i++) {
+            for (int num : new int[] {1, 10, 20, 100}) {
+              int len = 10_000;
 
-            ArrayBean inputBean = ArrayBean.construct(10_000, num);
+              ArrayBean inputBean = ArrayBean.construct(10_000, num);
 
-            Supplier<HttpRequest> newRequest =
-                () ->
-                    client
-                        .newRequest()
-                        .queryParam("len", Integer.toString(len))
-                        .queryParam("num", Integer.toString(num))
-                        .queryParam("disableCompression", Boolean.toString(disableCompression));
+              Supplier<HttpRequest> newRequest =
+                  () ->
+                      client
+                          .newRequest()
+                          .queryParam("len", Integer.toString(len))
+                          .queryParam("num", Integer.toString(num))
+                          .queryParam("disableCompression", Boolean.toString(disableCompression));
 
-            soft.assertThatCode(
-                    () ->
-                        assertThat(newRequest.get().get().readEntity(ArrayBean.class))
-                            .isEqualTo(inputBean))
-                .describedAs("GET, disableCompression:%s, num:%d", disableCompression, num)
-                .doesNotThrowAnyException();
+              soft.assertThatCode(
+                      () ->
+                          assertThat(newRequest.get().get().readEntity(ArrayBean.class))
+                              .isEqualTo(inputBean))
+                  .describedAs("GET, disableCompression:%s, num:%d", disableCompression, num)
+                  .doesNotThrowAnyException();
 
-            soft.assertThatCode(
-                    () ->
-                        assertThat(newRequest.get().delete().readEntity(ArrayBean.class))
-                            .isEqualTo(inputBean))
-                .describedAs("DELETE, disableCompression:%s, num:%d", disableCompression, num)
-                .doesNotThrowAnyException();
+              soft.assertThatCode(
+                      () ->
+                          assertThat(newRequest.get().delete().readEntity(ArrayBean.class))
+                              .isEqualTo(inputBean))
+                  .describedAs("DELETE, disableCompression:%s, num:%d", disableCompression, num)
+                  .doesNotThrowAnyException();
 
-            soft.assertThatCode(
-                    () ->
-                        assertThat(newRequest.get().put(inputBean).readEntity(ArrayBean.class))
-                            .isEqualTo(inputBean))
-                .describedAs("PUT, disableCompression:%s, num:%d", disableCompression, num)
-                .doesNotThrowAnyException();
+              soft.assertThatCode(
+                      () ->
+                          assertThat(newRequest.get().put(inputBean).readEntity(ArrayBean.class))
+                              .isEqualTo(inputBean))
+                  .describedAs("PUT, disableCompression:%s, num:%d", disableCompression, num)
+                  .doesNotThrowAnyException();
 
-            soft.assertThatCode(
-                    () ->
-                        assertThat(newRequest.get().post(inputBean).readEntity(ArrayBean.class))
-                            .isEqualTo(inputBean))
-                .describedAs("POST, disableCompression:%s, num:%d", disableCompression, num)
-                .doesNotThrowAnyException();
+              soft.assertThatCode(
+                      () ->
+                          assertThat(newRequest.get().post(inputBean).readEntity(ArrayBean.class))
+                              .isEqualTo(inputBean))
+                  .describedAs("POST, disableCompression:%s, num:%d", disableCompression, num)
+                  .doesNotThrowAnyException();
+            }
           }
         }
       }
@@ -254,8 +258,11 @@ public class TestHttpClient {
           writeResponseBody(resp, response);
         };
     try (HttpTestServer server = new HttpTestServer(handler)) {
-      ExampleBean bean = get(server.getUri()).get().readEntity(ExampleBean.class);
-      soft.assertThat(bean).isEqualTo(inputBean);
+      URI baseUri = server.getUri();
+      try (HttpClient client = createClient(baseUri, b -> {})) {
+        ExampleBean bean = client.newRequest().get().readEntity(ExampleBean.class);
+        soft.assertThat(bean).isEqualTo(inputBean);
+      }
     }
   }
 
@@ -272,7 +279,10 @@ public class TestHttpClient {
           writeEmptyResponse(resp);
         };
     try (HttpTestServer server = new HttpTestServer(handler)) {
-      get(server.getUri()).put(inputBean);
+      URI baseUri = server.getUri();
+      try (HttpClient client = createClient(baseUri, b -> {})) {
+        client.newRequest().put(inputBean);
+      }
     }
   }
 
@@ -289,7 +299,10 @@ public class TestHttpClient {
           writeEmptyResponse(resp);
         };
     try (HttpTestServer server = new HttpTestServer(handler)) {
-      get(server.getUri()).post(inputBean);
+      URI baseUri = server.getUri();
+      try (HttpClient client = createClient(baseUri, b -> {})) {
+        client.newRequest().post(inputBean);
+      }
     }
   }
 
@@ -301,7 +314,10 @@ public class TestHttpClient {
           writeEmptyResponse(resp);
         };
     try (HttpTestServer server = new HttpTestServer(handler)) {
-      get(server.getUri()).delete();
+      URI baseUri = server.getUri();
+      try (HttpClient client = createClient(baseUri, b -> {})) {
+        client.newRequest().delete();
+      }
     }
   }
 
@@ -316,9 +332,12 @@ public class TestHttpClient {
           writeResponseBody(resp, response);
         };
     try (HttpTestServer server = new HttpTestServer(handler)) {
-      ExampleBean bean =
-          get(server.getUri()).queryParam("x", "y").get().readEntity(ExampleBean.class);
-      soft.assertThat(bean).isEqualTo(inputBean);
+      URI baseUri = server.getUri();
+      try (HttpClient client = createClient(baseUri, b -> {})) {
+        ExampleBean bean =
+            client.newRequest().queryParam("x", "y").get().readEntity(ExampleBean.class);
+        soft.assertThat(bean).isEqualTo(inputBean);
+      }
     }
   }
 
@@ -336,13 +355,17 @@ public class TestHttpClient {
           writeResponseBody(resp, response);
         };
     try (HttpTestServer server = new HttpTestServer(handler)) {
-      ExampleBean bean =
-          get(server.getUri())
-              .queryParam("x", "y")
-              .queryParam("a", "b")
-              .get()
-              .readEntity(ExampleBean.class);
-      soft.assertThat(bean).isEqualTo(inputBean);
+      URI baseUri = server.getUri();
+      try (HttpClient client = createClient(baseUri, b -> {})) {
+        ExampleBean bean =
+            client
+                .newRequest()
+                .queryParam("x", "y")
+                .queryParam("a", "b")
+                .get()
+                .readEntity(ExampleBean.class);
+        soft.assertThat(bean).isEqualTo(inputBean);
+      }
     }
   }
 
@@ -358,9 +381,12 @@ public class TestHttpClient {
           writeResponseBody(resp, response);
         };
     try (HttpTestServer server = new HttpTestServer(handler)) {
-      ExampleBean bean =
-          get(server.getUri()).queryParam("x", (String) null).get().readEntity(ExampleBean.class);
-      soft.assertThat(bean).isEqualTo(inputBean);
+      URI baseUri = server.getUri();
+      try (HttpClient client = createClient(baseUri, b -> {})) {
+        ExampleBean bean =
+            client.newRequest().queryParam("x", (String) null).get().readEntity(ExampleBean.class);
+        soft.assertThat(bean).isEqualTo(inputBean);
+      }
     }
   }
 
@@ -374,15 +400,19 @@ public class TestHttpClient {
           writeResponseBody(resp, response);
         };
     try (HttpTestServer server = new HttpTestServer("/a/b", handler)) {
-      ExampleBean bean = get(server.getUri()).path("a/b").get().readEntity(ExampleBean.class);
-      soft.assertThat(bean).isEqualTo(inputBean);
-      bean =
-          get(server.getUri())
-              .path("a/{b}")
-              .resolveTemplate("b", "b")
-              .get()
-              .readEntity(ExampleBean.class);
-      soft.assertThat(bean).isEqualTo(inputBean);
+      URI baseUri = server.getUri();
+      try (HttpClient client = createClient(baseUri, b1 -> {})) {
+        ExampleBean bean = client.newRequest().path("a/b").get().readEntity(ExampleBean.class);
+        soft.assertThat(bean).isEqualTo(inputBean);
+        bean =
+            client
+                .newRequest()
+                .path("a/{b}")
+                .resolveTemplate("b", "b")
+                .get()
+                .readEntity(ExampleBean.class);
+        soft.assertThat(bean).isEqualTo(inputBean);
+      }
     }
   }
 
@@ -402,11 +432,12 @@ public class TestHttpClient {
         };
     try (HttpTestServer server = new HttpTestServer("/a/b", handler)) {
       AtomicReference<ResponseContext> responseContext = new AtomicReference<>();
-      HttpClient client =
-          createClient(server.getUri(), b -> b.addResponseFilter(responseContext::set));
-
-      AbstractThrowableAssert<?, ? extends Throwable> reqAssert =
-          soft.assertThatCode(() -> client.newRequest().get().readEntity(ExampleBean.class));
+      AbstractThrowableAssert<?, ? extends Throwable> reqAssert;
+      try (HttpClient client =
+          createClient(server.getUri(), b -> b.addResponseFilter(responseContext::set))) {
+        reqAssert =
+            soft.assertThatCode(() -> client.newRequest().get().readEntity(ExampleBean.class));
+      }
       if (status.getCode() < 400) {
         reqAssert.doesNotThrowAnyException();
       } else {
@@ -432,35 +463,37 @@ public class TestHttpClient {
         (req, resp) -> resp.sendError(Status.INTERNAL_SERVER_ERROR.getCode());
     try (HttpTestServer server = new HttpTestServer("/a/b", handler)) {
       AtomicReference<ResponseContext> responseContext = new AtomicReference<>();
-      HttpClient client =
-          createClient(server.getUri(), b -> b.addResponseFilter(responseContext::set));
+      try (HttpClient client =
+          createClient(server.getUri(), b -> b.addResponseFilter(responseContext::set))) {
 
-      soft.assertThatThrownBy(
-              () -> client.newRequest().path("a/{b}").get().readEntity(ExampleBean.class))
-          .isInstanceOf(HttpClientException.class);
-      soft.assertThat(responseContext.get())
-          .isNotNull()
-          .extracting(
-              rc -> {
-                try {
-                  return rc.getResponseCode();
-                } catch (IOException e) {
-                  throw new RuntimeException(e);
-                }
-              })
-          .isEqualTo(Status.INTERNAL_SERVER_ERROR);
+        soft.assertThatThrownBy(
+                () -> client.newRequest().path("a/{b}").get().readEntity(ExampleBean.class))
+            .isInstanceOf(HttpClientException.class);
+        soft.assertThat(responseContext.get())
+            .isNotNull()
+            .extracting(
+                rc -> {
+                  try {
+                    return rc.getResponseCode();
+                  } catch (IOException e) {
+                    throw new RuntimeException(e);
+                  }
+                })
+            .isEqualTo(Status.INTERNAL_SERVER_ERROR);
 
-      responseContext.set(null);
-      soft.assertThatThrownBy(
-              () ->
-                  client
-                      .newRequest()
-                      .path("a/b")
-                      .resolveTemplate("b", "b")
-                      .get()
-                      .readEntity(ExampleBean.class))
-          .isInstanceOf(HttpClientException.class)
-          .hasMessageContaining("Cannot build uri. Not all template keys (b) were used in uri a/b");
+        responseContext.set(null);
+        soft.assertThatThrownBy(
+                () ->
+                    client
+                        .newRequest()
+                        .path("a/b")
+                        .resolveTemplate("b", "b")
+                        .get()
+                        .readEntity(ExampleBean.class))
+            .isInstanceOf(HttpClientException.class)
+            .hasMessageContaining(
+                "Cannot build uri. Not all template keys (b) were used in uri a/b");
+      }
       soft.assertThat(responseContext.get()).isNull();
     }
   }
@@ -477,9 +510,9 @@ public class TestHttpClient {
           writeEmptyResponse(resp);
         };
     try (HttpTestServer server = new HttpTestServer(handler)) {
-      HttpClient.Builder client =
+      HttpClient.Builder builder =
           HttpClient.builder().setBaseUri(server.getUri()).setObjectMapper(MAPPER);
-      client.addRequestFilter(
+      builder.addRequestFilter(
           context -> {
             requestFilterCalled.set(true);
             context.putHeader("x", "y");
@@ -489,7 +522,7 @@ public class TestHttpClient {
                   soft.assertThat(failure).isNull();
                 });
           });
-      client.addResponseFilter(
+      builder.addResponseFilter(
           con -> {
             try {
               soft.assertThat(con.getResponseCode()).isEqualTo(Status.OK);
@@ -499,7 +532,9 @@ public class TestHttpClient {
               throw new IOError(e);
             }
           });
-      client.build().newRequest().get();
+      try (HttpClient client = builder.build()) {
+        client.newRequest().get();
+      }
       soft.assertThat(responseContextGotFilter.get())
           .isNotNull()
           .isSameAs(responseContextGotCallback.get());
@@ -516,7 +551,10 @@ public class TestHttpClient {
           writeEmptyResponse(resp);
         };
     try (HttpTestServer server = new HttpTestServer(handler)) {
-      get(server.getUri()).header("x", "y").get();
+      URI baseUri = server.getUri();
+      try (HttpClient client = createClient(baseUri, b -> {})) {
+        client.newRequest().header("x", "y").get();
+      }
     }
   }
 
@@ -532,8 +570,35 @@ public class TestHttpClient {
           writeEmptyResponse(resp);
         };
     try (HttpTestServer server = new HttpTestServer(handler)) {
-      get(server.getUri()).header("x", "y").header("x", "z").get();
+      URI baseUri = server.getUri();
+      try (HttpClient client = createClient(baseUri, b -> {})) {
+        client.newRequest().header("x", "y").header("x", "z").get();
+      }
     }
+  }
+
+  @ParameterizedTest
+  @MethodSource
+  void testPostForm(ExampleBean inputBean) throws Exception {
+    HttpTestServer.RequestHandler handler =
+        (req, resp) -> {
+          soft.assertThat(req.getMethod()).isEqualTo("POST");
+          soft.assertThat(req.getContentType()).isEqualTo("application/x-www-form-urlencoded");
+          Map<String, String> data = decodeFormData(req.getInputStream());
+          ExampleBean actual = MAPPER.convertValue(data, ExampleBean.class);
+          soft.assertThat(actual).isEqualTo(inputBean);
+          writeEmptyResponse(resp);
+        };
+    try (HttpTestServer server = new HttpTestServer(handler)) {
+      URI baseUri = server.getUri();
+      try (HttpClient client = createClient(baseUri, b -> {})) {
+        client.newRequest().postForm(inputBean);
+      }
+    }
+  }
+
+  static Stream<ExampleBean> testPostForm() {
+    return Stream.of(new ExampleBean(), new ExampleBean("x", 1, NOW));
   }
 
   @SuppressWarnings("unused")
@@ -648,5 +713,23 @@ public class TestHttpClient {
     public int hashCode() {
       return Objects.hash(data);
     }
+  }
+
+  public static Map<String, String> decodeFormData(InputStream in) throws IOException {
+    Map<String, String> decodedValues;
+    try (BufferedReader reader =
+        new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
+      String data = reader.readLine();
+      String decodedData = URLDecoder.decode(data, StandardCharsets.UTF_8.name());
+      decodedValues = new HashMap<>();
+      Iterable<String> keyValues = Splitter.on('&').split(decodedData);
+      for (String keyValue : keyValues) {
+        List<String> parts = Splitter.on('=').splitToList(keyValue);
+        String key = parts.get(0);
+        String value = parts.get(1);
+        decodedValues.put(key, value);
+      }
+    }
+    return decodedValues;
   }
 }

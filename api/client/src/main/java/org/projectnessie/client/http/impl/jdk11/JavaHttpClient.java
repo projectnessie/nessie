@@ -72,4 +72,9 @@ public final class JavaHttpClient implements org.projectnessie.client.http.HttpC
   public URI getBaseUri() {
     return config.getBaseUri();
   }
+
+  @Override
+  public void close() {
+    config.close();
+  }
 }

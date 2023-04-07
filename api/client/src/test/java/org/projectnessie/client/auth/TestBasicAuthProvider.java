@@ -33,7 +33,7 @@ import org.projectnessie.client.http.impl.HttpHeaders;
 import org.projectnessie.client.http.impl.RequestContextImpl;
 
 class TestBasicAuthProvider {
-  @SuppressWarnings("deprecation")
+  @SuppressWarnings({"deprecation", "resource"})
   @Test
   void testNullParams() {
     assertAll(

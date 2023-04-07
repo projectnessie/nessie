@@ -17,10 +17,12 @@ package org.projectnessie.client.http.impl;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -46,6 +48,18 @@ public final class HttpHeaders {
     String key = name.toLowerCase(Locale.ROOT);
     HttpHeader h = headers.get(key);
     return h != null ? h.getValues() : Collections.emptyList();
+  }
+
+  public Optional<String> getFirstValue(String name) {
+    String key = name.toLowerCase(Locale.ROOT);
+    HttpHeader h = headers.get(key);
+    if (h != null) {
+      Iterator<String> it = h.getValues().iterator();
+      if (it.hasNext()) {
+        return Optional.of(it.next());
+      }
+    }
+    return Optional.empty();
   }
 
   public Map<String, Iterable<String>> asMap() {

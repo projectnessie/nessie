@@ -95,6 +95,16 @@ public abstract class HttpRequest
     return executeRequest(Method.PUT, obj);
   }
 
+  /**
+   * Sets the content-type to application/x-www-form-urlencoded. The provided body will be
+   * automatically encoded as form data. This is a convenience method for {@code
+   * contentsType("application/x-www-form-urlencoded").post(obj)}. The request should be sent with
+   * {@link #post(Object)}.
+   */
+  public HttpResponse postForm(Object obj) {
+    return contentsType("application/x-www-form-urlencoded").post(obj);
+  }
+
   public HttpRequest resolveTemplate(String name, String value) {
     uriBuilder.resolveTemplate(name, value);
     return this;

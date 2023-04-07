@@ -54,4 +54,9 @@ public final class UrlConnectionClient implements HttpClient {
   public URI getBaseUri() {
     return config.getBaseUri();
   }
+
+  @Override
+  public void close() {
+    config.close();
+  }
 }

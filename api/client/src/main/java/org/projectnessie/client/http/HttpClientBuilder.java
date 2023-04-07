@@ -28,6 +28,9 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_TRACING
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
 import static org.projectnessie.client.NessieConfigConstants.CONF_READ_TIMEOUT;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
@@ -44,6 +47,7 @@ import org.projectnessie.client.auth.NessieAuthentication;
 import org.projectnessie.client.auth.NessieAuthenticationProvider;
 import org.projectnessie.client.http.v1api.HttpApiV1;
 import org.projectnessie.client.http.v2api.HttpApiV2;
+import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.model.ser.Views;
 
 /**
@@ -51,8 +55,16 @@ import org.projectnessie.model.ser.Views;
  */
 public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder> {
 
-  private final HttpClient.Builder builder = HttpClient.builder();
-  private HttpAuthentication authentication;
+  private static final ObjectMapper MAPPER =
+      new ObjectMapper()
+          .enable(SerializationFeature.INDENT_OUTPUT)
+          .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+
+  private final HttpClient.Builder builder =
+      HttpClient.builder()
+          .setObjectMapper(MAPPER)
+          .addResponseFilter(new NessieHttpResponseFilter());
+
   private boolean tracing;
 
   protected HttpClientBuilder() {}
@@ -175,6 +187,7 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
    * @see #fromConfig(Function)
    */
   @Override
+  @CanIgnoreReturnValue
   public HttpClientBuilder withAuthenticationFromConfig(Function<String, String> configuration) {
     withAuthentication(NessieAuthenticationProvider.fromConfig(configuration));
     return this;
@@ -187,18 +200,20 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
    * @return {@code this}
    */
   @Override
+  @CanIgnoreReturnValue
   public HttpClientBuilder withUri(URI uri) {
     builder.setBaseUri(uri);
     return this;
   }
 
   @Override
+  @CanIgnoreReturnValue
   public HttpClientBuilder withAuthentication(NessieAuthentication authentication) {
     if (authentication != null && !(authentication instanceof HttpAuthentication)) {
       throw new IllegalArgumentException(
           "HttpClientBuilder only accepts instances of HttpAuthentication");
     }
-    this.authentication = (HttpAuthentication) authentication;
+    builder.setAuthentication((HttpAuthentication) authentication);
     return this;
   }
 
@@ -209,6 +224,7 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
    * @param tracing {@code true} to enable passing HTTP headers for active tracing spans.
    * @return {@code this}
    */
+  @CanIgnoreReturnValue
   public HttpClientBuilder withTracing(boolean tracing) {
     this.tracing = tracing;
     return this;
@@ -221,6 +237,7 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
    * @param readTimeoutMillis number of seconds to wait for a response from server.
    * @return {@code this}
    */
+  @CanIgnoreReturnValue
   public HttpClientBuilder withReadTimeout(int readTimeoutMillis) {
     builder.setReadTimeoutMillis(readTimeoutMillis);
     return this;
@@ -233,6 +250,7 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
    * @param connectionTimeoutMillis number of seconds to wait to connect to the server.
    * @return {@code this}
    */
+  @CanIgnoreReturnValue
   public HttpClientBuilder withConnectionTimeout(int connectionTimeoutMillis) {
     builder.setConnectionTimeoutMillis(connectionTimeoutMillis);
     return this;
@@ -244,6 +262,7 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
    * @param disableCompression whether the compression shall be disabled or not.
    * @return {@code this}
    */
+  @CanIgnoreReturnValue
   public HttpClientBuilder withDisableCompression(boolean disableCompression) {
     builder.setDisableCompression(disableCompression);
     return this;
@@ -255,50 +274,61 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
    * @param sslContext the SSL context to use
    * @return {@code this}
    */
+  @CanIgnoreReturnValue
   public HttpClientBuilder withSSLContext(SSLContext sslContext) {
     builder.setSslContext(sslContext);
     return this;
   }
 
+  @CanIgnoreReturnValue
   public HttpClientBuilder withSSLParameters(SSLParameters sslParameters) {
     builder.setSslParameters(sslParameters);
     return this;
   }
 
+  @CanIgnoreReturnValue
   public HttpClientBuilder withHttp2Upgrade(boolean http2Upgrade) {
     builder.setHttp2Upgrade(http2Upgrade);
     return this;
   }
 
+  @CanIgnoreReturnValue
   public HttpClientBuilder withFollowRedirects(String redirects) {
     builder.setFollowRedirects(redirects);
     return this;
   }
 
+  @CanIgnoreReturnValue
   public HttpClientBuilder withForceUrlConnectionClient(boolean forceUrlConnectionClient) {
     builder.setForceUrlConnectionClient(forceUrlConnectionClient);
     return this;
   }
 
+  @CanIgnoreReturnValue
   public HttpClientBuilder withResponseFactory(HttpResponseFactory responseFactory) {
     builder.setResponseFactory(responseFactory);
     return this;
   }
 
-  @SuppressWarnings({"unchecked"})
+  @SuppressWarnings("unchecked")
   @Override
   public <API extends NessieApi> API build(Class<API> apiVersion) {
     Objects.requireNonNull(apiVersion, "API version class must be non-null");
 
+    if (tracing) {
+      // Do this at the last possible moment because once added, tracing cannot be removed.
+      builder.addTracing();
+    }
+
+    HttpClient httpClient = builder.build();
+
     if (apiVersion.isAssignableFrom(HttpApiV1.class)) {
       builder.setJsonView(Views.V1.class);
-      NessieHttpClient client = new NessieHttpClient(authentication, tracing, builder);
-      return (API) new HttpApiV1(client);
+      return (API) new HttpApiV1(new NessieHttpClient(httpClient));
     }
 
     if (apiVersion.isAssignableFrom(HttpApiV2.class)) {
       builder.setJsonView(Views.V2.class);
-      HttpClient httpClient = NessieHttpClient.buildClient(authentication, tracing, builder);
       return (API) new HttpApiV2(httpClient);
     }
 

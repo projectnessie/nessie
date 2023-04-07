@@ -56,12 +56,12 @@ class TestNessieHttpClient {
           Assertions.assertEquals("GET", req.getMethod());
           HttpTestUtil.writeResponseBody(resp, "<html>hello world>", "text/html");
         };
-    try (HttpTestServer server = new HttpTestServer(handler)) {
-      NessieApiV1 api =
-          HttpClientBuilder.builder()
-              .withUri(server.getUri())
-              .withTracing(true)
-              .build(NessieApiV1.class);
+    try (HttpTestServer server = new HttpTestServer(handler);
+        NessieApiV1 api =
+            HttpClientBuilder.builder()
+                .withUri(server.getUri())
+                .withTracing(true)
+                .build(NessieApiV1.class)) {
       assertThatThrownBy(api::getDefaultBranch)
           .isInstanceOf(NessieBadResponseException.class)
           .hasMessageStartingWith(
@@ -108,7 +108,7 @@ class TestNessieHttpClient {
                 .build(NessieApiV1.class)) {
       OpenTelemetry otel = GlobalOpenTelemetry.get();
       Span span = otel.getTracer("nessie-client").spanBuilder("testOpenTracing").startSpan();
-      try (Scope scope = span.makeCurrent()) {
+      try (Scope ignored = span.makeCurrent()) {
         api.getConfig();
       }
     }
@@ -132,7 +132,7 @@ class TestNessieHttpClient {
                 .build(NessieApiV1.class)) {
       OpenTelemetry otel = GlobalOpenTelemetry.get();
       Span span = otel.getTracer("nessie-client").spanBuilder("testOpenTracing").startSpan();
-      try (Scope scope = span.makeCurrent()) {
+      try (Scope ignored = span.makeCurrent()) {
         api.getConfig();
       }
     }

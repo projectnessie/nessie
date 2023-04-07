@@ -56,7 +56,7 @@ public class HttpApiV2 implements NessieApiV2 {
 
   @Override
   public void close() {
-    // nop
+    this.client.close();
   }
 
   @Override

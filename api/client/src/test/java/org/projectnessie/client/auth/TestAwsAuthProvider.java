@@ -54,6 +54,7 @@ class TestAwsAuthProvider {
   }
 
   @Test
+  @SuppressWarnings("resource")
   void testAws() {
     Map<String, String> authCfg =
         ImmutableMap.of(
