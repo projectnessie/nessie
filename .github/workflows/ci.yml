@@ -666,6 +666,16 @@ jobs:
         uses: actions/checkout@v3.5.0
         with:
           fetch-depth: 0
+
+      # Skip remaining steps, if version is not available
+      - name: Precheck
+        run: |
+          EXPECT_VERSION="$(cat helm/nessie/Chart.yaml | grep -E '^version: ')"
+          curl https://charts.projectnessie.org/index.yaml 2>/dev/null | grep -q "${EXPECT_VERSION}" || (
+            echo "Skipping Helm checks, because Nessie Helm chart version ${EXPECT_VERSION} is not available"
+            echo "WF_EXEC=false" >> ${GITHUB_ENV}  
+          )
+
       - name: Set up Helm
         if: env.WF_EXEC == 'true'
         uses: azure/setup-helm@v3
