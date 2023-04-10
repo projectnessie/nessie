@@ -49,12 +49,14 @@ final class ServerKey {
       String storageName,
       Map<String, String> defaultConfig) {
     Map<String, String> config = new HashMap<>(defaultConfig);
-    context
-        .getTestClass()
-        .ifPresent(
-            instance ->
-                findRepeatableAnnotations(instance, NessieServerProperty.class)
-                    .forEach(prop -> config.put(prop.name(), prop.value())));
+    Util.forEachContextFromRoot(
+        context,
+        c ->
+            c.getTestClass()
+                .ifPresent(
+                    instance ->
+                        findRepeatableAnnotations(instance, NessieServerProperty.class)
+                            .forEach(prop -> config.put(prop.name(), prop.value()))));
 
     String storeKindStr = config.get(STORAGE_KIND_PROPERTY);
     StorageKind kind = StorageKind.DATABASE_ADAPTER;

@@ -22,6 +22,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -87,6 +89,21 @@ class TestUtil {
         .thenReturn("[engine:my-engine]/[class:some.package.ClassName]/[test:fooBar]");
 
     soft.assertThat(Util.classContext(ctxMethod)).isSameAs(ctxClass);
+  }
+
+  @Test
+  void forEachContextFromRoot() {
+    ExtensionContext ctxEngine = mock(ExtensionContext.class);
+    ExtensionContext ctxClass = mock(ExtensionContext.class);
+    ExtensionContext ctxMethod = mock(ExtensionContext.class);
+
+    when(ctxEngine.getParent()).thenReturn(Optional.empty());
+    when(ctxClass.getParent()).thenReturn(Optional.of(ctxEngine));
+    when(ctxMethod.getParent()).thenReturn(Optional.of(ctxClass));
+
+    List<ExtensionContext> iterated = new ArrayList<>();
+    Util.forEachContextFromRoot(ctxMethod, iterated::add);
+    soft.assertThat(iterated).containsExactly(ctxEngine, ctxClass, ctxMethod);
   }
 
   @Test
