@@ -38,7 +38,7 @@ public final class Backends {
     return backend;
   }
 
-  public static <CONFIG> Persist createPersist(
+  public static Persist createPersist(
       Backend backend, boolean initializeRepository, Map<String, String> configuration) {
     PersistFactory persistFactory = backend.createFactory();
     StoreConfig storeConfig = ImmutableAdjustable.builder().build();
