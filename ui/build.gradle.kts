@@ -37,8 +37,8 @@ val dotGradle = rootProject.rootDir.resolve(".gradle")
 
 node {
   download.set(true)
-  version.set("18.14.1")
-  npmVersion.set("9.4.2")
+  version.set("18.15.0")
+  npmVersion.set("9.5.0")
   workDir.set(dotGradle.resolve("nodejs"))
   npmWorkDir.set(dotGradle.resolve("npm"))
   yarnWorkDir.set(dotGradle.resolve("yarn"))
