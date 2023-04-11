@@ -4,9 +4,6 @@ inputs:
   cache-read-only:
     description: 'Gradle cache read only'
     default: 'true'
-  memoize:
-    description: 'Memoize cache for later save'
-    default: 'false'
   java-version:
     description: 'Java version'
     default: '11'
@@ -50,7 +47,6 @@ runs:
       run: |
         echo "::group::Gradle build cache / add incremental updates"
         mkdir -p ~/.gradle/caches/
-        echo "Gradle caches/ contains $(find ~/.gradle/caches/ -type f | wc -l) files"
 
         if [[ -d ~/downloaded-artifacts/ ]] ; then
           find ~/downloaded-artifacts/ -type f -name "ci-gradle-caches-*-${{ inputs.java-version }}.tar" | while read arch ; do
@@ -60,20 +56,7 @@ runs:
         else
           echo "No previous build cache artifacts downloaded."
         fi
-        echo "::endgroup::"
+        
+        date +%s > ~/caches-prepared-at-epoch
 
-    - name: Memoize build-cache
-      shell: bash
-      if: inputs.memoize == 'true'
-      run: |
-        echo "::group::Saving state of Gradle's caches/ ..."
-        rm -rf ~/saved-gradle-caches/
-        mkdir -p ~/saved-gradle-caches/
-
-        if [[ -d ~/.gradle/caches/ ]] ; then
-          echo "Gradle caches/ contains $(find ~/.gradle/caches/ -type f | wc -l) files"
-          (cd ~/.gradle/caches/ ; cp --recursive --preserve=all . ~/saved-gradle-caches/)
-          rm ~/saved-gradle-caches/user-id*
-          find ~/saved-gradle-caches/ -name "*.lock" | xargs rm -f
-        fi
         echo "::endgroup::"
