@@ -33,7 +33,7 @@ jobs:
           ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.OSSRH_TOKEN }}
         uses: gradle/gradle-build-action@v2
         with:
-          cache-read-only: true
+          cache-disabled: true
           arguments: |
             publishToSonatype closeAndReleaseSonatypeStagingRepository
             -Prelease -Puber-jar
