@@ -16,11 +16,8 @@
 
 import io.smallrye.openapi.api.OpenApiConfig.OperationIdStrategy
 import io.smallrye.openapi.gradleplugin.SmallryeOpenApiExtension
-import io.smallrye.openapi.gradleplugin.SmallryeOpenApiPlugin
 import io.smallrye.openapi.gradleplugin.SmallryeOpenApiTask
 import org.apache.tools.ant.filters.ReplaceTokens
-
-buildscript { dependencies { classpath(libs.smallrye.openapi.plugin) } }
 
 plugins {
   `java-library`
@@ -29,9 +26,8 @@ plugins {
   signing
   `nessie-conventions`
   alias(libs.plugins.annotations.stripper)
+  alias(libs.plugins.smallrye.openapi)
 }
-
-apply<SmallryeOpenApiPlugin>()
 
 dependencies {
   implementation(platform(libs.jackson.bom))
