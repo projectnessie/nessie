@@ -669,6 +669,7 @@ jobs:
 
       # Skip remaining steps, if version is not available
       - name: Precheck
+        if: env.WF_EXEC == 'true'
         run: |
           EXPECT_VERSION="$(cat helm/nessie/Chart.yaml | grep -E '^version: ')"
           curl https://charts.projectnessie.org/index.yaml 2>/dev/null | grep -q "${EXPECT_VERSION}" || (
