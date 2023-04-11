@@ -45,7 +45,7 @@ class CommitToBranchSimulation extends Simulation {
             // Table used in the Nessie commit
             val tableName = params.makeTableName(session)
 
-            val key = ContentKey.of("name", "space", tableName)
+            val key = ContentKey.of("table-" + tableName)
 
             val existingTable =
               client.getContent.reference(branch).key(key).get().get(key)
