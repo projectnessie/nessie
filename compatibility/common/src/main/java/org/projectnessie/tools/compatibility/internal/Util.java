@@ -20,6 +20,7 @@ import java.net.URI;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
 import org.junit.platform.engine.UniqueId;
@@ -53,6 +54,11 @@ final class Util {
       }
       c = parent.get();
     }
+  }
+
+  static void forEachContextFromRoot(ExtensionContext current, Consumer<ExtensionContext> action) {
+    current.getParent().ifPresent(p -> forEachContextFromRoot(p, action));
+    action.accept(current);
   }
 
   static <T> T withClassLoader(ClassLoader classLoader, Callable<T> callable) throws Exception {
