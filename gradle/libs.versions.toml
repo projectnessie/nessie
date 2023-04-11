@@ -219,7 +219,7 @@ undertow-servlet = { module = "io.undertow:undertow-servlet", version.ref = "und
 weld-se-core = { module = "org.jboss.weld.se:weld-se-core", version = "3.1.9.Final" }
 
 [plugins]
-annotations-stripper = { id = "org.projectnessie.annotation-stripper", version = "0.1.1" }
+annotations-stripper = { id = "org.projectnessie.annotation-stripper", version = "0.1.2" }
 errorprone = { id = "net.ltgt.errorprone", version = "3.0.1" }
 gatling = { id = "io.gatling.gradle", version = "3.9.3.1" }
 jmh = { id = "me.champeau.jmh", version = "0.7.0" }
