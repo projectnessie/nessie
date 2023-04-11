@@ -2,6 +2,28 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.57.0 Release (April 11, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.57.0).
+
+* CI: adjust Gradle cache storage parameters for non-`ci.yml` workflows (#6521)
+* Build: use Smallrye-OpenAPI-Plugin from Gradle plugins (#6525)
+* Perftest: Fix commit-to-branch simulation (#6552)
+* Support `@NessieServerProperty` annotations in nested tests (#6548)
+* Remove unused type parameter in Backends.createPersist (#6554)
+* CI: Skip Helm CI, if version is not available (#6546)
+* Fix wrong jackson-core coordinates (#6553)
+* CI: Un-bump latest Java from 20 to 19 (#359) (#6551)
+* CI-Workflow updates (#6481)
+* CI: finally the correct artifacts (#6520)
+* README: Fix deep-links into CI jobs (#6522)
+* Bump nodejs to 18.15.0 LTS + npm to 9.5.0 LTS (#6542)
+* Merge: Verify that there is at least one source commit (#6514)
+* Gradle: minor non-changes for configuration-cache (#6513)
+* CI: Cache everything that's needed (#6515)
+* Fix `nessie-gc` publication (#6511)
+* Fix specVersion to comply with semver syntax (#6506)
+
 ## 0.56.0 Release (April 05, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.56.0).

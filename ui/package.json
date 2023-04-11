@@ -1,6 +1,6 @@
 {
   "name": "nessie-ui",
-  "version": "0.56.1",
+  "version": "0.57.0",
   "lockfileVersion": 2,
   "private": true,
   "dependencies": {
