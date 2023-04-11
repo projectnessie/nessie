@@ -138,7 +138,7 @@ immutables-value-fixture = { module = "org.immutables:value-fixture", version.re
 immutables-value-processor = { module = "org.immutables:value-processor", version.ref = "immutables" }
 jackson-bom = { module = "com.fasterxml.jackson:jackson-bom", version = "2.14.2" }
 jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations" }
-jackson-core = { module = "com.fasterxml.jackson.core:jackson-databind" }
+jackson-core = { module = "com.fasterxml.jackson.core:jackson-core" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind" }
 jackson-dataformat-xml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml" }
 jackson-jaxrs-json-provider = { module = "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider" }
