@@ -702,7 +702,7 @@ jobs:
 
       - name: Set up & Start Minikube
         if: env.WF_EXEC == 'true'
-        uses: medyagh/setup-minikube@v0.0.12
+        uses: medyagh/setup-minikube@v0.0.13
         with:
           cache: false
 
