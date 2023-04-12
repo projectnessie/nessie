@@ -51,15 +51,14 @@ dependencies {
 
   implementation(enforcedPlatform(libs.quarkus.bom))
   implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
+  implementation(enforcedPlatform(libs.quarkus.cassandra.bom))
   implementation("io.quarkus:quarkus-hibernate-validator")
   implementation("io.quarkus:quarkus-agroal")
   implementation("io.quarkus:quarkus-jdbc-postgresql")
   implementation("io.quarkiverse.amazonservices:quarkus-amazon-dynamodb")
   implementation(libs.awssdk.apache.client) { exclude("commons-logging", "commons-logging") }
   implementation("io.quarkus:quarkus-mongodb-client")
-  implementation(platform(libs.cassandra.driver.bom))
-  implementation(libs.cassandra.driver.core)
-  implementation(libs.cassandra.quarkus)
+  implementation("com.datastax.oss.quarkus:cassandra-quarkus-client")
   implementation("org.jboss.slf4j:slf4j-jboss-logmanager")
   implementation(libs.opentelemetry.api)
 

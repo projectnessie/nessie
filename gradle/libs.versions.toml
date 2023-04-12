@@ -31,7 +31,6 @@ picocli = "4.7.2"
 postgresContainerTag = "14"
 protobuf = "3.22.2"
 quarkus = "2.16.6.Final"
-quarkusAmazon = "2.16.6.Final"
 quarkusLoggingSentry = "2.0.0"
 quarkusNativeBuilderImage = "quay.io/quarkus/ubi-quarkus-mandrel-builder-image:22.3-java17"
 quarkusJibBaseJvmImage = "registry.access.redhat.com/ubi8/openjdk-17-runtime:1.14"
@@ -93,7 +92,6 @@ bouncycastle-bcpkix = { module = "org.bouncycastle:bcpkix-jdk15on", version.ref 
 bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk15on", version.ref = "bouncycastle" }
 cassandra-driver-bom = { module = "com.datastax.oss:java-driver-bom", version.ref = "cassandraDriver" }
 cassandra-driver-core = { module = "com.datastax.oss:java-driver-core" }
-cassandra-quarkus = { module = "com.datastax.oss.quarkus:cassandra-quarkus-client", version = "1.1.3" }
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "2.9.3" }
 cel-bom = { module = "org.projectnessie.cel:cel-bom", version = "0.3.13" }
 cel-jackson = { module = "org.projectnessie.cel:cel-jackson" }
@@ -192,10 +190,10 @@ picocli = { module = "info.picocli:picocli-codegen", version.ref = "picocli" }
 picocli-codegen = { module = "info.picocli:picocli-codegen", version.ref = "picocli" }
 postgresql = { module = "org.postgresql:postgresql", version = "42.6.0" }
 protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf" }
-quarkus-amazon-services-bom = { module = "io.quarkus.platform:quarkus-amazon-services-bom", version.ref = "quarkusAmazon" }
-quarkus-bom = { module = "io.quarkus:quarkus-bom", version.ref = "quarkus" }
+quarkus-amazon-services-bom = { module = "io.quarkus.platform:quarkus-amazon-services-bom", version.ref = "quarkus" }
+quarkus-bom = { module = "io.quarkus.platform:quarkus-bom", version.ref = "quarkus" }
+quarkus-cassandra-bom = { module = "io.quarkus.platform:quarkus-cassandra-bom", version.ref = "quarkus" }
 quarkus-logging-sentry = { module = "io.quarkiverse.loggingsentry:quarkus-logging-sentry", version.ref = "quarkusLoggingSentry" }
-quarkus-opentelemetry = { module = "io.quarkus:quarkus-opentelemetry", version.ref = "quarkus" }
 rest-assured = { module = "io.rest-assured:rest-assured", version = "5.3.0" }
 rocksdb-jni = { module = "org.rocksdb:rocksdbjni", version.ref = "rocksdb" }
 scala-library-v212 = { module = "org.scala-lang:scala-library", version = { strictly = "[2.12, 2.13[", prefer = "2.12.17" }}
