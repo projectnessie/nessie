@@ -80,8 +80,9 @@ dependencies {
 
   intTestImplementation(libs.testcontainers.testcontainers)
   intTestImplementation(libs.testcontainers.junit)
-  intTestImplementation(libs.testcontainers.keycloak)
-  intTestImplementation(libs.slf4j.api)
+  intTestImplementation(libs.testcontainers.keycloak) {
+    exclude(group = "org.slf4j") // uses SLF4J 2.x, we are not ready yet
+  }
 }
 
 jandex { skipDefaultProcessing() }
