@@ -81,11 +81,14 @@ public class NessieExceptionMapper extends BaseExceptionMapper<Exception> {
     } else if (exception instanceof NotSupportedException) {
       errorCode = ErrorCode.UNSUPPORTED_MEDIA_TYPE;
       message = exception.getMessage();
-    } else if (exception instanceof WebApplicationException
-        && exception.getCause() instanceof IllegalArgumentException
-        && ((WebApplicationException) exception).getResponse().getStatus() == 404) {
-      errorCode = ErrorCode.BAD_REQUEST;
-      message = exception.getCause().getMessage();
+    } else if (exception instanceof WebApplicationException) {
+      if (exception.getCause() instanceof IllegalArgumentException
+          && ((WebApplicationException) exception).getResponse().getStatus() == 404) {
+        errorCode = ErrorCode.BAD_REQUEST;
+        message = exception.getCause().getMessage();
+      } else {
+        return ((WebApplicationException) exception).getResponse();
+      }
     } else {
       LOGGER.warn("Unhandled exception returned as HTTP/500 to client", exception);
       errorCode = ErrorCode.UNKNOWN;
