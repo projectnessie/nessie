@@ -320,15 +320,15 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
       builder.addTracing();
     }
 
-    HttpClient httpClient = builder.build();
-
     if (apiVersion.isAssignableFrom(HttpApiV1.class)) {
       builder.setJsonView(Views.V1.class);
+      HttpClient httpClient = builder.build();
       return (API) new HttpApiV1(new NessieHttpClient(httpClient));
     }
 
     if (apiVersion.isAssignableFrom(HttpApiV2.class)) {
       builder.setJsonView(Views.V2.class);
+      HttpClient httpClient = builder.build();
       return (API) new HttpApiV2(httpClient);
     }
 
