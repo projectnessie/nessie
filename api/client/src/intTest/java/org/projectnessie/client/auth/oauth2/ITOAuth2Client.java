@@ -44,7 +44,10 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.projectnessie.client.auth.BasicAuthenticationProvider;
+import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClient;
+import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.http.HttpRequest;
 import org.projectnessie.client.http.HttpResponse;
 import org.projectnessie.client.http.Status;
@@ -104,7 +107,7 @@ public class ITOAuth2Client {
     ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     try (OAuth2Client client1 = new OAuth2Client(params1);
         OAuth2Client client2 = new OAuth2Client(params2);
-        HttpClient validatingClient = validatingHttpClient().build()) {
+        HttpClient validatingClient = validatingHttpClient("Client1").build()) {
       client1.start();
       client2.start();
       ScheduledFuture<?> future =
@@ -143,7 +146,7 @@ public class ITOAuth2Client {
   void testOAuth2ClientInitialRefreshToken() {
     OAuth2ClientParams params = clientParams("Client2").build();
     try (OAuth2Client client = new OAuth2Client(params);
-        HttpClient validatingClient = validatingHttpClient().build()) {
+        HttpClient validatingClient = validatingHttpClient("Client2").build()) {
       client.start();
       // first request: client credentials grant
       Tokens firstTokens = client.fetchNewTokens();
@@ -175,7 +178,7 @@ public class ITOAuth2Client {
   void testOAuth2ClientTokenExchange() {
     OAuth2ClientParams params = clientParams("Client1").build();
     try (OAuth2Client client = new OAuth2Client(params);
-        HttpClient validatingClient = validatingHttpClient().build()) {
+        HttpClient validatingClient = validatingHttpClient("Client1").build()) {
       client.start();
       // first request: client credentials grant
       Tokens firstTokens = client.fetchNewTokens();
@@ -213,7 +216,7 @@ public class ITOAuth2Client {
   void testOAuth2ClientNoRefreshToken() {
     OAuth2ClientParams params = clientParams("Client1").tokenExchangeEnabled(false).build();
     try (OAuth2Client client = new OAuth2Client(params);
-        HttpClient validatingClient = validatingHttpClient().build()) {
+        HttpClient validatingClient = validatingHttpClient("Client1").build()) {
       client.start();
       // first request: client credentials grant
       Tokens firstTokens = client.fetchNewTokens();
@@ -247,7 +250,7 @@ public class ITOAuth2Client {
   void testOAuth2ClientPasswordGrant() {
     OAuth2ClientParams params = clientParams("Client2").grantType("password").build();
     try (OAuth2Client client = new OAuth2Client(params);
-        HttpClient validatingClient = validatingHttpClient().build()) {
+        HttpClient validatingClient = validatingHttpClient("Client2").build()) {
       client.start();
       // first request: password grant
       Tokens firstTokens = client.fetchNewTokens();
@@ -278,11 +281,7 @@ public class ITOAuth2Client {
   @Test
   void testOAuth2ClientUnauthorizedBadPassword() {
     OAuth2ClientParams params =
-        clientParams("Client2")
-            .grantType("password")
-            .username("Alice")
-            .password("BAD PASSWORD")
-            .build();
+        clientParams("Client2").grantType("password").password("BAD PASSWORD").build();
     try (OAuth2Client client = new OAuth2Client(params)) {
       client.start();
       soft.assertThatThrownBy(client::authenticate)
@@ -292,13 +291,28 @@ public class ITOAuth2Client {
     }
   }
 
+  @Test
+  void testOAuth2ClientExpiredToken() throws InterruptedException {
+    OAuth2ClientParams params = clientParams("Client1").build();
+    try (OAuth2Client client = new OAuth2Client(params);
+        HttpClient validatingClient = validatingHttpClient("Client1").build()) {
+      Tokens tokens = client.fetchNewTokens();
+      // Emulate a token expiration; we don't want to wait 10 seconds just for the token to really
+      // expire.
+      revokeAccessToken(validatingClient, tokens.getAccessToken());
+      soft.assertThatThrownBy(() -> tryUseAccessToken(validatingClient, tokens.getAccessToken()))
+          .isInstanceOf(HttpClientException.class)
+          .hasMessageContaining("401");
+    }
+  }
+
   /**
    * Attempts to use the access token to obtain a UMA (User Management Access) ticket from Keycloak,
    * authorizing the client represented by the token to access resources hosted by "ResourceServer".
    */
-  private void tryUseAccessToken(HttpClient validatingClient, AccessToken accessToken) {
+  private void tryUseAccessToken(HttpClient httpClient, AccessToken accessToken) {
     HttpRequest request =
-        validatingClient
+        httpClient
             .newRequest()
             .path("realms/master/protocol/openid-connect/token")
             .header("Authorization", "Bearer " + accessToken.getPayload());
@@ -317,6 +331,12 @@ public class ITOAuth2Client {
     JwtToken jwtToken = JwtToken.parse(entity.get("access_token").asText());
     soft.assertThat(jwtToken).isNotNull();
     soft.assertThat(jwtToken.getAudience()).isEqualTo("ResourceServer");
+  }
+
+  private void revokeAccessToken(HttpClient httpClient, AccessToken accessToken) {
+    HttpRequest request =
+        httpClient.newRequest().path("realms/master/protocol/openid-connect/revoke");
+    request.postForm(ImmutableMap.of("token", accessToken.getPayload()));
   }
 
   private void compareTokens(Tokens oldTokens, Tokens newTokens, String clientId) {
@@ -388,10 +408,15 @@ public class ITOAuth2Client {
     master.users().create(user);
   }
 
-  private static HttpClient.Builder validatingHttpClient() {
-    return HttpClient.builder()
-        .setBaseUri(URI.create(KEYCLOAK.getAuthServerUrl()))
-        .setObjectMapper(new ObjectMapper())
-        .setDisableCompression(true);
+  private static HttpClient.Builder validatingHttpClient(String clientId) {
+    @SuppressWarnings("resource")
+    HttpAuthentication authentication = BasicAuthenticationProvider.create(clientId, "s3cr3t");
+    HttpClient.Builder builder =
+        HttpClient.builder()
+            .setBaseUri(URI.create(KEYCLOAK.getAuthServerUrl()))
+            .setObjectMapper(new ObjectMapper())
+            .setDisableCompression(true);
+    authentication.applyToHttpClient(builder);
+    return builder;
   }
 }
