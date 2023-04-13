@@ -33,7 +33,7 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.Version }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- if eq .Values.versionStoreType "ROCKS" }}
+          {{- if or (eq .Values.versionStoreType "ROCKSDB") (eq .Values.versionStoreType "ROCKS") }}
           volumeMounts:
             - name: rocks-storage
               mountPath: /rocks-nessie
@@ -55,7 +55,7 @@ spec:
             {{- end }}
             {{- end }}
 
-            {{- if eq .Values.versionStoreType "DYNAMO" }}
+            {{- if or (eq .Values.versionStoreType "DYNAMODB") (eq .Values.versionStoreType "DYNAMO") }}
             {{- if .Values.dynamodb.region }}
             - name: AWS_REGION
               value: {{ .Values.dynamodb.region }}
@@ -72,12 +72,33 @@ spec:
                   key: {{ .Values.dynamodb.secret.awsSecretAccessKey }}
             {{- end }}
 
+            {{- if eq .Values.versionStoreType "CASSANDRA" }}
+            - name: QUARKUS_CASSANDRA_KEYSPACE
+              value: {{ .Values.cassandra.keyspace }}
+            - name: QUARKUS_CASSANDRA_CONTACT_POINTS
+              value: {{ .Values.cassandra.contactPoints }}
+            {{- if .Values.cassandra.localDatacenter }}
+            - name: QUARKUS_CASSANDRA_LOCAL_DATACENTER
+              value: {{ .Values.cassandra.localDatacenter }}
+            {{- end}}
+            {{- if .Values.cassandra.auth.username }}
+            - name: QUARKUS_CASSANDRA_AUTH_USERNAME
+              value: {{ .Values.cassandra.auth.username }}
+            - name: QUARKUS_CASSANDRA_AUTH_PASSWORD
+              value: {{ .Values.cassandra.auth.password }}
+            {{- end}}
+            {{- end }}
+
+            {{- if eq .Values.versionStoreType "ROCKSDB" }}
+            - name: NESSIE_VERSION_STORE_PERSIST_ROCKS_DATABASE_PATH
+              value: /rocks-nessie
+            {{- end }}
             {{- if eq .Values.versionStoreType "ROCKS" }}
             - name: NESSIE_VERSION_STORE_ROCKS_DB_PATH
               value: /rocks-nessie
             {{- end }}
 
-            {{- if eq .Values.versionStoreType "MONGO" }}
+            {{- if or (eq .Values.versionStoreType "MONGODB") (eq .Values.versionStoreType "MONGO") }}
             {{- if .Values.mongodb.name }}
             - name: QUARKUS_MONGODB_DATABASE
               value: {{ .Values.mongodb.name }}
@@ -100,7 +121,7 @@ spec:
             {{- end }}
             {{- end }}
 
-            {{- if eq .Values.versionStoreType "TRANSACTIONAL" }}
+            {{- if or (eq .Values.versionStoreType "JDBC") (eq .Values.versionStoreType "TRANSACTIONAL") }}
             - name: QUARKUS_DATASOURCE_USERNAME
               valueFrom:
                 secretKeyRef:

@@ -13,8 +13,20 @@ image:
 # -- The default logging level for the nessie server.
 logLevel: INFO
 
-# -- Which type of version store to use: INMEMORY, ROCKS, DYNAMO, MONGO, TRANSACTIONAL.
-versionStoreType: INMEMORY
+# -- Which type of version store to use: IN_MEMORY, ROCKSDB, DYNAMODB, MONGODB, CASSANDRA, JDBC.
+# (Legacy version store types are: INMEMORY, ROCKS, DYNAMO, MONGO, TRANSACTIONAL. If you are using
+# one of these legacy version store types, migrate your existing repositories to the new version
+# store types using the nessie-quarkus-cli tool's export/import functionality.)
+versionStoreType: IN_MEMORY
+
+cassandra:
+  keyspace: nessie
+  contactPoints:
+  localDatacenter:
+  auth:
+    {}
+    # username:
+    # password:
 
 # RocksDB settings. Only required when using ROCKS version store type; ignored otherwise.
 rocksdb:
@@ -73,7 +85,8 @@ postgres:
 advancedConfig:
   {}
 #  nessie.server.default-branch: my-branch
-#  nessie.version.store.advanced.repository-id: my-repository
+#  nessie.version.store.persist.cache-capacity-mb: 64
+#  nessie.version.store.persist.repository-id: my-repository
 #  quarkus.log.console.format: "%d{HH:mm:ss} %s%e%n"
 #  quarkus.log.category."org.projectnessie".level: DEBUG
 
