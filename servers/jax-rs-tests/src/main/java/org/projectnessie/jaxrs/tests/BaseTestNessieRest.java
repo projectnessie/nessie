@@ -35,7 +35,6 @@ import java.net.URL;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.assertj.core.data.MapEntry;
-import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -279,13 +278,16 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
     Namespace ns = Namespace.of("id");
 
     // Elicit 415 when PUTting a namespace with a content type not consumed by the server
-    rest()
-        .body(ns)
-        .contentType(ContentType.TEXT)
-        .put(path)
-        .then()
-        .statusCode(415)
-        .statusLine(StringContains.containsStringIgnoringCase("Unsupported Media Type"));
+    NessieError error =
+        rest()
+            .body(ns)
+            .contentType(ContentType.TEXT)
+            .put(path)
+            .then()
+            .statusCode(415)
+            .extract()
+            .as(NessieError.class);
+    assertThat(error.getReason()).containsIgnoringCase("Unsupported Media Type");
 
     // Rerun the request, but with a supported content type (text/json)
     rest().body(ns).put(path).then().statusCode(200);
