@@ -20,9 +20,14 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_SECRET;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEFAULT_ACCESS_TOKEN_LIFESPAN;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEFAULT_REFRESH_TOKEN_LIFESPAN;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_PASSWORD;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_REFRESH_SAFETY_WINDOW;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_USERNAME;
 import static org.projectnessie.client.NessieConfigConstants.DEFAULT_DEFAULT_ACCESS_TOKEN_LIFESPAN;
 import static org.projectnessie.client.NessieConfigConstants.DEFAULT_DEFAULT_REFRESH_TOKEN_LIFESPAN;
 import static org.projectnessie.client.NessieConfigConstants.DEFAULT_REFRESH_SAFETY_WINDOW;
@@ -53,7 +58,16 @@ interface OAuth2ClientParams {
 
   byte[] getClientSecret();
 
+  Optional<String> getUsername();
+
+  Optional<byte[]> getPassword();
+
   Optional<String> getScope();
+
+  @Value.Default
+  default String getGrantType() {
+    return CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS;
+  }
 
   @Value.Default
   default ObjectMapper getObjectMapper() {
@@ -105,6 +119,28 @@ interface OAuth2ClientParams {
     if (getClientSecret().length == 0) {
       throw new IllegalArgumentException("client secret must not be empty");
     }
+    if (!getGrantType().equals(CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS)
+        && !getGrantType().equals(CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD)) {
+      throw new IllegalArgumentException(
+          String.format(
+              "grant type must be either '%s' or '%s'",
+              CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS,
+              CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD));
+    }
+    if (getGrantType().equals(CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD)) {
+      if (!getUsername().isPresent() || getUsername().get().isEmpty()) {
+        throw new IllegalArgumentException(
+            String.format(
+                "username must be set if grant type is '%s'",
+                CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD));
+      }
+      if (!getPassword().isPresent() || getPassword().get().length == 0) {
+        throw new IllegalArgumentException(
+            String.format(
+                "password must be set if grant type is '%s'",
+                CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD));
+      }
+    }
     if (getDefaultAccessTokenLifespan().compareTo(MIN_REFRESH_DELAY) < 0) {
       throw new IllegalArgumentException(
           String.format(
@@ -141,6 +177,12 @@ interface OAuth2ClientParams {
                     config.apply(CONF_NESSIE_OAUTH2_CLIENT_SECRET),
                     "client secret must not be null")
                 .getBytes(StandardCharsets.UTF_8))
+        .username(Optional.ofNullable(config.apply(CONF_NESSIE_OAUTH2_USERNAME)))
+        .password(
+            Optional.ofNullable(config.apply(CONF_NESSIE_OAUTH2_PASSWORD)).map(String::getBytes))
+        .grantType(
+            Optional.ofNullable(config.apply(CONF_NESSIE_OAUTH2_GRANT_TYPE))
+                .orElse(CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS))
         .scope(Optional.ofNullable(config.apply(CONF_NESSIE_OAUTH2_CLIENT_SCOPES)))
         .defaultAccessTokenLifespan(
             Duration.parse(

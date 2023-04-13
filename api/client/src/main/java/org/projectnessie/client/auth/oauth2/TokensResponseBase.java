@@ -27,7 +27,7 @@ import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
 /**
- * Common base for {@link NewTokensResponse}, {@link RefreshTokensResponse} and {@link
+ * Common base for {@link ClientCredentialsTokensResponse}, {@link RefreshTokensResponse} and {@link
  * TokensExchangeResponse}, since they share most of their schema, which is declared in <a
  * href="https://datatracker.ietf.org/doc/html/rfc6749#section-5.1">Section 5.1</a>.
  *
@@ -92,8 +92,9 @@ interface TokensResponseBase extends Tokens {
    * authorization grant as described in <a
    * href="https://datatracker.ietf.org/doc/html/rfc6749#section-6">Section 6</a>.
    *
-   * <p>Note: in the client credentials flow (grant type {@value NewTokensRequest#GRANT_TYPE}), as
-   * per <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-4.4.3">Section 4.4.3</a>, "A
+   * <p>Note: in the client credentials flow (grant type {@value
+   * ClientCredentialsTokensRequest#GRANT_TYPE}), as per <a
+   * href="https://datatracker.ietf.org/doc/html/rfc6749#section-4.4.3">Section 4.4.3</a>, "A
    * refresh token SHOULD NOT be included". Keycloak indeed does not include a refresh token in the
    * response to a client credentials flow, unless the client is configured with the attribute
    * "client_credentials.use_refresh_token" set to "true".

@@ -56,6 +56,30 @@ public final class NessieConfigConstants {
   public static final String CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT =
       "nessie.authentication.oauth2.token-endpoint";
 
+  public static final String CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS =
+      "client_credentials";
+
+  public static final String CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD = "password";
+
+  /**
+   * Config property name ({@value #CONF_NESSIE_OAUTH2_GRANT_TYPE}) for the OAuth2 authentication
+   * provider. The grant type to use when authenticating against the OAuth2 server. Valid values
+   * are: {@value #CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS} (default) or {@value
+   * #CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD}. Required if using OAuth2 authentication, ignored
+   * otherwise.
+   *
+   * <p>When using the "client_credentials" grant type, the client ID and secret are used to
+   * authenticate the client against the OAuth2 server. The client must be configured to allow this
+   * grant type.
+   *
+   * <p>When using the "password" grant type, the client ID and secret are used to authenticate the
+   * client against the OAuth2 server, and the username and password are used to authenticate the
+   * user. The client must be configured to allow this grant type, and the user must be configured
+   * to allow the client to use this grant type.
+   */
+  public static final String CONF_NESSIE_OAUTH2_GRANT_TYPE =
+      "nessie.authentication.oauth2.grant-type";
+
   /**
    * Config property name ({@value #CONF_NESSIE_OAUTH2_CLIENT_ID}) for the OAuth2 authentication
    * provider. The client ID to use when authenticating against the OAuth2 server. Required if using
@@ -71,6 +95,20 @@ public final class NessieConfigConstants {
    */
   public static final String CONF_NESSIE_OAUTH2_CLIENT_SECRET =
       "nessie.authentication.oauth2.client-secret";
+
+  /**
+   * Config property name ({@value #CONF_NESSIE_OAUTH2_USERNAME}) for the OAuth2 authentication
+   * provider. The username to use when authenticating against the OAuth2 server. Required if using
+   * OAuth2 authentication and "password" grant type, ignored otherwise.
+   */
+  public static final String CONF_NESSIE_OAUTH2_USERNAME = "nessie.authentication.oauth2.username";
+
+  /**
+   * Config property name ({@value #CONF_NESSIE_OAUTH2_PASSWORD}) for the OAuth2 authentication
+   * provider. The user password to use when authenticating against the OAuth2 server. Required if
+   * using OAuth2 authentication and the "password" grant type, ignored otherwise.
+   */
+  public static final String CONF_NESSIE_OAUTH2_PASSWORD = "nessie.authentication.oauth2.password";
 
   public static final String DEFAULT_DEFAULT_ACCESS_TOKEN_LIFESPAN = "PT1M";
 

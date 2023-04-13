@@ -21,8 +21,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
 /**
- * A <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-6">Token Request</a> that uses
- * the {@value #GRANT_TYPE} grant type to refresh an existing access token.
+ * A <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-4.4.2">Token Request</a> using
+ * the {@value #GRANT_TYPE} grant type to obtain a new access token.
  *
  * <p>Example:
  *
@@ -32,19 +32,17 @@ import org.immutables.value.Value;
  * Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
  * Content-Type: application/x-www-form-urlencoded
  *
- * grant_type=refresh_token&refresh_token=tGzv3JOkF0XG5Qx2TlKWIA
+ * grant_type=password&username=johndoe&password=A3ddj3w
  * </pre>
- *
- * The response to this request is an {@link ClientCredentialsTokensResponse}.
  */
 @Value.Immutable
-@JsonSerialize(as = ImmutableRefreshTokensRequest.class)
-@JsonDeserialize(as = ImmutableRefreshTokensRequest.class)
-interface RefreshTokensRequest extends TokensRequestBase {
+@JsonSerialize(as = ImmutablePasswordTokensRequest.class)
+@JsonDeserialize(as = ImmutablePasswordTokensRequest.class)
+interface PasswordTokensRequest extends TokensRequestBase {
 
-  String GRANT_TYPE = "refresh_token";
+  String GRANT_TYPE = "password";
 
-  /** REQUIRED. Value MUST be set to "refresh_token". */
+  /** REQUIRED. Value MUST be set to "password". */
   @Value.Default
   @JsonProperty("grant_type")
   @Override
@@ -52,7 +50,11 @@ interface RefreshTokensRequest extends TokensRequestBase {
     return GRANT_TYPE;
   }
 
-  /** REQUIRED. The refresh token issued to the client. */
-  @JsonProperty("refresh_token")
-  String getRefreshToken();
+  /** REQUIRED. The resource owner username. */
+  @JsonProperty("username")
+  String getUsername();
+
+  /** REQUIRED. The resource owner password. */
+  @JsonProperty("password")
+  String getPassword();
 }

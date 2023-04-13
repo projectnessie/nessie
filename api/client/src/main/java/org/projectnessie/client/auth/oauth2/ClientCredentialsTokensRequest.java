@@ -18,7 +18,6 @@ package org.projectnessie.client.auth.oauth2;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
 /**
@@ -37,23 +36,17 @@ import org.immutables.value.Value;
  * </pre>
  */
 @Value.Immutable
-@JsonSerialize(as = ImmutableNewTokensRequest.class)
-@JsonDeserialize(as = ImmutableNewTokensRequest.class)
-interface NewTokensRequest {
+@JsonSerialize(as = ImmutableClientCredentialsTokensRequest.class)
+@JsonDeserialize(as = ImmutableClientCredentialsTokensRequest.class)
+interface ClientCredentialsTokensRequest extends TokensRequestBase {
 
   String GRANT_TYPE = "client_credentials";
 
   /** REQUIRED. Value MUST be set to "client_credentials". */
   @Value.Default
   @JsonProperty("grant_type")
+  @Override
   default String getGrantType() {
     return GRANT_TYPE;
   }
-
-  /**
-   * OPTIONAL. The scope of the access request as described by <a
-   * href="https://datatracker.ietf.org/doc/html/rfc6749#section-3.3">Section 3.3</a>.
-   */
-  @Nullable
-  String getScope();
 }

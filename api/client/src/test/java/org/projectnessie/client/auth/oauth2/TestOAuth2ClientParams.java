@@ -56,6 +56,22 @@ class TestOAuth2ClientParams {
             newBuilder().clientSecret(),
             new IllegalArgumentException("client secret must not be empty")),
         Arguments.of(
+            newBuilder().grantType("invalid"),
+            new IllegalArgumentException(
+                "grant type must be either 'client_credentials' or 'password'")),
+        Arguments.of(
+            newBuilder().grantType("password"),
+            new IllegalArgumentException("username must be set if grant type is 'password'")),
+        Arguments.of(
+            newBuilder().grantType("password").username(""),
+            new IllegalArgumentException("username must be set if grant type is 'password'")),
+        Arguments.of(
+            newBuilder().grantType("password").username("Alice"),
+            new IllegalArgumentException("password must be set if grant type is 'password'")),
+        Arguments.of(
+            newBuilder().grantType("password").username("Alice").password(new byte[0]),
+            new IllegalArgumentException("password must be set if grant type is 'password'")),
+        Arguments.of(
             newBuilder()
                 .defaultAccessTokenLifespan(OAuth2ClientParams.MIN_REFRESH_DELAY.minusSeconds(1)),
             new IllegalArgumentException(

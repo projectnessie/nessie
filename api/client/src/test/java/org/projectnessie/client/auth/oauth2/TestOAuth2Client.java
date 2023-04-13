@@ -35,7 +35,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.projectnessie.client.http.Status;
 import org.projectnessie.client.http.TestHttpClient;
 import org.projectnessie.client.util.HttpTestServer;
 
@@ -47,183 +46,71 @@ class TestOAuth2Client {
   @InjectSoftAssertions protected SoftAssertions soft;
 
   @Test
-  void testFetchNewTokens() throws Exception {
-    HttpTestServer.RequestHandler handler =
-        (req, resp) -> {
-          soft.assertThat(req.getMethod()).isEqualTo("POST");
-          soft.assertThat(req.getContentType()).isEqualTo("application/x-www-form-urlencoded");
-          soft.assertThat(req.getHeader("Authorization")).isEqualTo("Basic QWxpY2U6czNjcjN0");
-          Map<String, String> data = TestHttpClient.decodeFormData(req.getInputStream());
-          NewTokensRequest request = MAPPER.convertValue(data, NewTokensRequest.class);
-          soft.assertThat(request.getGrantType()).isEqualTo(NewTokensRequest.GRANT_TYPE);
-          soft.assertThat(request.getScope()).isEqualTo("test");
-          NewTokensResponse response =
-              ImmutableNewTokensResponse.builder()
-                  .tokenType("bearer")
-                  .accessTokenPayload("cafebabe")
-                  .accessTokenExpirationTime(NOW.plus(Duration.ofHours(1)))
-                  .refreshTokenPayload("12345678")
-                  .refreshTokenExpirationTime(NOW.plus(Duration.ofDays(1)))
-                  .scope("test")
-                  .extraParameters(ImmutableMap.of("foo", "bar"))
-                  .build();
-          writeResponseBody(resp, response, "application/json");
-        };
+  void testClientCredentials() throws Exception {
 
-    try (HttpTestServer server = new HttpTestServer(handler, true)) {
+    try (HttpTestServer server = new HttpTestServer(handler(), true)) {
+
+      ImmutableOAuth2ClientParams params = paramsBuilder(server).build();
+      params.getHttpClient().setSslContext(server.getSslContext());
+
+      try (OAuth2Client client = new OAuth2Client(params)) {
+        ClientCredentialsTokensResponse tokens =
+            ((ClientCredentialsTokensResponse) client.fetchNewTokens());
+        checkInitialResponse(tokens);
+      }
+    }
+  }
+
+  @Test
+  void testPassword() throws Exception {
+
+    try (HttpTestServer server = new HttpTestServer(handler(), true)) {
 
       ImmutableOAuth2ClientParams params =
-          ImmutableOAuth2ClientParams.builder()
-              .tokenEndpoint(server.getUri())
-              .clientId("Alice")
-              .clientSecret("s3cr3t".getBytes(StandardCharsets.UTF_8))
-              .scope("test")
+          paramsBuilder(server)
+              .grantType("password")
+              .username("Bob")
+              .password("s3cr3t".getBytes(StandardCharsets.UTF_8))
               .build();
       params.getHttpClient().setSslContext(server.getSslContext());
 
       try (OAuth2Client client = new OAuth2Client(params)) {
-        NewTokensResponse tokens = ((NewTokensResponse) client.fetchNewTokens());
-        assertThat(tokens.getAccessToken()).isNotNull();
-        soft.assertThat(tokens.getAccessToken().getPayload()).isEqualTo("cafebabe");
-        soft.assertThat(tokens.getAccessToken().getTokenType()).isEqualTo("bearer");
-        soft.assertThat(tokens.getAccessToken().getExpirationTime())
-            .isAfterOrEqualTo(NOW.plus(Duration.ofHours(1)).minusSeconds(10));
-        assertThat(tokens.getRefreshToken()).isNotNull();
-        soft.assertThat(tokens.getRefreshToken().getPayload()).isEqualTo("12345678");
-        soft.assertThat(tokens.getRefreshToken().getExpirationTime())
-            .isAfterOrEqualTo(NOW.plus(Duration.ofDays(1)).minusSeconds(10));
-        soft.assertThat(tokens.getScope()).isEqualTo("test");
-        soft.assertThat(tokens.getExtraParameters()).containsExactly(entry("foo", "bar"));
+        PasswordTokensResponse tokens = ((PasswordTokensResponse) client.fetchNewTokens());
+        checkInitialResponse(tokens);
       }
     }
   }
 
   @Test
   void testRefreshTokens() throws Exception {
-    HttpTestServer.RequestHandler handler =
-        (req, resp) -> {
-          soft.assertThat(req.getMethod()).isEqualTo("POST");
-          soft.assertThat(req.getContentType()).isEqualTo("application/x-www-form-urlencoded");
-          soft.assertThat(req.getHeader("Authorization")).isEqualTo("Basic QWxpY2U6czNjcjN0");
-          Map<String, String> data = TestHttpClient.decodeFormData(req.getInputStream());
-          RefreshTokensRequest request = MAPPER.convertValue(data, RefreshTokensRequest.class);
-          soft.assertThat(request.getGrantType()).isEqualTo(RefreshTokensRequest.GRANT_TYPE);
-          soft.assertThat(request.getRefreshToken()).isEqualTo("12345678");
-          soft.assertThat(request.getScope()).isEqualTo("test");
-          NewTokensResponse response =
-              ImmutableNewTokensResponse.builder()
-                  .tokenType("bearer")
-                  .accessTokenPayload("cafebabe")
-                  .accessTokenExpirationTime(NOW.plus(Duration.ofHours(2)))
-                  .refreshTokenPayload("12345678")
-                  .refreshTokenExpirationTime(NOW.plus(Duration.ofDays(2)))
-                  .scope("test")
-                  .extraParameters(ImmutableMap.of("foo", "bar"))
-                  .build();
-          writeResponseBody(resp, response, "application/json");
-        };
-    try (HttpTestServer server = new HttpTestServer(handler, true)) {
 
-      ImmutableOAuth2ClientParams params =
-          ImmutableOAuth2ClientParams.builder()
-              .tokenEndpoint(server.getUri())
-              .clientId("Alice")
-              .clientSecret("s3cr3t".getBytes(StandardCharsets.UTF_8))
-              .scope("test")
-              .build();
+    try (HttpTestServer server = new HttpTestServer(handler(), true)) {
+
+      ImmutableOAuth2ClientParams params = paramsBuilder(server).build();
       params.getHttpClient().setSslContext(server.getSslContext());
 
       try (OAuth2Client client = new OAuth2Client(params)) {
-        Tokens currentTokens =
-            ImmutableNewTokensResponse.builder()
-                .tokenType("bearer")
-                .accessTokenPayload("cafebabe")
-                .accessTokenExpirationTime(NOW.plus(Duration.ofHours(1)))
-                .refreshTokenPayload("12345678")
-                .refreshTokenExpirationTime(NOW.plus(Duration.ofDays(1)))
-                .scope("test")
-                .build();
+        Tokens currentTokens = getClientCredentialsTokensResponse();
         RefreshTokensResponse tokens =
             ((RefreshTokensResponse) client.refreshTokens(currentTokens));
-        assertThat(tokens.getAccessToken()).isNotNull();
-        soft.assertThat(tokens.getAccessToken().getPayload()).isEqualTo("cafebabe");
-        soft.assertThat(tokens.getAccessToken().getTokenType()).isEqualTo("bearer");
-        soft.assertThat(tokens.getAccessToken().getExpirationTime())
-            .isAfterOrEqualTo(NOW.plus(Duration.ofHours(2)).minusSeconds(10));
-        assertThat(tokens.getRefreshToken()).isNotNull();
-        soft.assertThat(tokens.getRefreshToken().getPayload()).isEqualTo("12345678");
-        soft.assertThat(tokens.getRefreshToken().getExpirationTime())
-            .isAfterOrEqualTo(NOW.plus(Duration.ofDays(2)).minusSeconds(10));
-        soft.assertThat(tokens.getScope()).isEqualTo("test");
-        soft.assertThat(tokens.getExtraParameters()).containsExactly(entry("foo", "bar"));
+        checkRefreshResponse(tokens);
       }
     }
   }
 
   @Test
   void testExchangeTokens() throws Exception {
-    HttpTestServer.RequestHandler handler =
-        (req, resp) -> {
-          soft.assertThat(req.getMethod()).isEqualTo("POST");
-          soft.assertThat(req.getContentType()).isEqualTo("application/x-www-form-urlencoded");
-          soft.assertThat(req.getHeader("Authorization")).isEqualTo("Basic QWxpY2U6czNjcjN0");
-          Map<String, String> data = TestHttpClient.decodeFormData(req.getInputStream());
-          TokensExchangeRequest request = MAPPER.convertValue(data, TokensExchangeRequest.class);
-          soft.assertThat(request.getGrantType()).isEqualTo(TokensExchangeRequest.GRANT_TYPE);
-          soft.assertThat(request.getSubjectToken()).isEqualTo("cafebabe");
-          soft.assertThat(request.getSubjectTokenType())
-              .isEqualTo(TokenTypeIdentifiers.ACCESS_TOKEN);
-          soft.assertThat(request.getActorToken()).isNull();
-          soft.assertThat(request.getActorTokenType()).isNull();
-          soft.assertThat(request.getRequestedTokenType())
-              .isEqualTo(TokenTypeIdentifiers.REFRESH_TOKEN);
-          soft.assertThat(request.getScope()).isEqualTo("test");
-          TokensExchangeResponse response =
-              ImmutableTokensExchangeResponse.builder()
-                  .issuedTokenType(TokenTypeIdentifiers.REFRESH_TOKEN)
-                  .tokenType("bearer")
-                  .accessTokenPayload("babecafe")
-                  .accessTokenExpirationTime(NOW.plus(Duration.ofHours(2)))
-                  .refreshTokenPayload("90abcdef")
-                  .refreshTokenExpirationTime(NOW.plus(Duration.ofDays(2)))
-                  .scope("test")
-                  .extraParameters(ImmutableMap.of("foo", "bar"))
-                  .build();
-          writeResponseBody(resp, response, "application/json");
-        };
-    try (HttpTestServer server = new HttpTestServer(handler, true)) {
 
-      ImmutableOAuth2ClientParams params =
-          ImmutableOAuth2ClientParams.builder()
-              .tokenEndpoint(server.getUri())
-              .clientId("Alice")
-              .clientSecret("s3cr3t".getBytes(StandardCharsets.UTF_8))
-              .scope("test")
-              .build();
+    try (HttpTestServer server = new HttpTestServer(handler(), true)) {
+
+      ImmutableOAuth2ClientParams params = paramsBuilder(server).build();
       params.getHttpClient().setSslContext(server.getSslContext());
 
       try (OAuth2Client client = new OAuth2Client(params)) {
-        Tokens currentTokens =
-            ImmutableNewTokensResponse.builder()
-                .tokenType("bearer")
-                .accessTokenPayload("cafebabe")
-                .accessTokenExpirationTime(NOW.plus(Duration.ofHours(1)))
-                .scope("test")
-                .build();
+        Tokens currentTokens = getClientCredentialsTokensResponse();
         TokensExchangeResponse tokens =
             ((TokensExchangeResponse) client.exchangeTokens(currentTokens));
-        assertThat(tokens.getAccessToken()).isNotNull();
-        soft.assertThat(tokens.getAccessToken().getPayload()).isEqualTo("babecafe");
-        soft.assertThat(tokens.getAccessToken().getTokenType()).isEqualTo("bearer");
-        soft.assertThat(tokens.getAccessToken().getExpirationTime())
-            .isAfterOrEqualTo(NOW.plus(Duration.ofHours(2)).minusSeconds(10));
-        assertThat(tokens.getRefreshToken()).isNotNull();
-        soft.assertThat(tokens.getRefreshToken().getPayload()).isEqualTo("90abcdef");
-        soft.assertThat(tokens.getRefreshToken().getExpirationTime())
-            .isAfterOrEqualTo(NOW.plus(Duration.ofDays(2)).minusSeconds(10));
-        soft.assertThat(tokens.getIssuedTokenType()).isEqualTo(TokenTypeIdentifiers.REFRESH_TOKEN);
-        soft.assertThat(tokens.getScope()).isEqualTo("test");
-        soft.assertThat(tokens.getExtraParameters()).containsExactly(entry("foo", "bar"));
+        checkExchangeResponse(tokens);
       }
     }
   }
@@ -233,22 +120,12 @@ class TestOAuth2Client {
     HttpTestServer.RequestHandler handler = (req, resp) -> {};
     try (HttpTestServer server = new HttpTestServer(handler, false)) {
 
-      ImmutableOAuth2ClientParams params =
-          ImmutableOAuth2ClientParams.builder()
-              .tokenEndpoint(server.getUri())
-              .clientId("Alice")
-              .clientSecret("s3cr3t".getBytes(StandardCharsets.UTF_8))
-              .build();
+      ImmutableOAuth2ClientParams params = paramsBuilder(server).build();
 
       try (OAuth2Client client = new OAuth2Client(params)) {
         Tokens currentTokens =
-            ImmutableNewTokensResponse.builder()
-                .tokenType("bearer")
-                .accessTokenPayload("cafebabe")
-                .accessTokenExpirationTime(NOW.plus(Duration.ofHours(1)))
-                .refreshTokenPayload("12345678")
-                .refreshTokenExpirationTime(NOW.minus(Duration.ofSeconds(1)))
-                .build();
+            getClientCredentialsTokensResponse()
+                .withRefreshTokenExpirationTime(NOW.minus(Duration.ofSeconds(1)));
 
         soft.assertThatThrownBy(() -> client.refreshTokens(currentTokens))
             .isInstanceOf(OAuth2Client.MustFetchNewTokensException.class)
@@ -263,22 +140,10 @@ class TestOAuth2Client {
     try (HttpTestServer server = new HttpTestServer(handler, false)) {
 
       ImmutableOAuth2ClientParams params =
-          ImmutableOAuth2ClientParams.builder()
-              .tokenEndpoint(server.getUri())
-              .clientId("Alice")
-              .clientSecret("s3cr3t".getBytes(StandardCharsets.UTF_8))
-              .tokenExchangeEnabled(false)
-              .scope("test")
-              .build();
+          paramsBuilder(server).tokenExchangeEnabled(false).build();
 
       try (OAuth2Client client = new OAuth2Client(params)) {
-        Tokens currentTokens =
-            ImmutableNewTokensResponse.builder()
-                .tokenType("bearer")
-                .accessTokenPayload("cafebabe")
-                .accessTokenExpirationTime(NOW.plus(Duration.ofHours(1)))
-                .scope("test")
-                .build();
+        Tokens currentTokens = getClientCredentialsTokensResponse();
 
         soft.assertThatThrownBy(() -> client.exchangeTokens(currentTokens))
             .isInstanceOf(OAuth2Client.MustFetchNewTokensException.class)
@@ -289,42 +154,21 @@ class TestOAuth2Client {
 
   @Test
   void testBadRequest() throws Exception {
-    HttpTestServer.RequestHandler handler =
-        (req, resp) -> {
-          soft.assertThat(req.getMethod()).isEqualTo("POST");
-          soft.assertThat(req.getContentType()).isEqualTo("application/x-www-form-urlencoded");
-          soft.assertThat(req.getHeader("Authorization")).isEqualTo("Basic QWxpY2U6czNjcjN0");
-          Map<String, String> data = TestHttpClient.decodeFormData(req.getInputStream());
-          NewTokensRequest tokenRequest = MAPPER.convertValue(data, NewTokensRequest.class);
-          soft.assertThat(tokenRequest.getGrantType()).isEqualTo(NewTokensRequest.GRANT_TYPE);
-          soft.assertThat(tokenRequest.getScope()).isEqualTo("test");
-          ErrorResponse response =
-              ImmutableErrorResponse.builder()
-                  .errorDescription("Try again")
-                  .errorCode("invalid_request")
-                  .build();
-          writeResponseBody(resp, response, "application/json", Status.BAD_REQUEST.getCode());
-        };
 
-    try (HttpTestServer server = new HttpTestServer(handler, true)) {
+    try (HttpTestServer server = new HttpTestServer(handler(), true)) {
 
-      ImmutableOAuth2ClientParams params =
-          ImmutableOAuth2ClientParams.builder()
-              .tokenEndpoint(server.getUri())
-              .clientId("Alice")
-              .clientSecret("s3cr3t".getBytes(StandardCharsets.UTF_8))
-              .scope("test")
-              .build();
+      ImmutableOAuth2ClientParams params = paramsBuilder(server).scope("invalid-scope").build();
       params.getHttpClient().setSslContext(server.getSslContext());
 
       try (OAuth2Client client = new OAuth2Client(params)) {
+
         soft.assertThatThrownBy(client::fetchNewTokens)
             .isInstanceOf(OAuth2Exception.class)
             .extracting(OAuth2Exception.class::cast)
             .satisfies(
                 r -> {
-                  soft.assertThat(r.getMessage()).isEqualTo("Try again");
                   soft.assertThat(r.getErrorCode()).isEqualTo("invalid_request");
+                  soft.assertThat(r.getMessage()).isEqualTo("Unknown scope: invalid-scope");
                 });
       }
     }
@@ -408,5 +252,152 @@ class TestOAuth2Client {
         Arguments.of(now, now.plus(oneMinute), now.plus(oneMinute), thirtySeconds, thirtySeconds),
         // expirationTime - safety window <= MIN_REFRESH_DELAY
         Arguments.of(now, now.plus(oneMinute), now.plus(oneMinute), oneMinute, MIN_REFRESH_DELAY));
+  }
+
+  private HttpTestServer.RequestHandler handler() {
+    return (req, resp) -> {
+      soft.assertThat(req.getMethod()).isEqualTo("POST");
+      soft.assertThat(req.getContentType()).isEqualTo("application/x-www-form-urlencoded");
+      soft.assertThat(req.getHeader("Authorization")).isEqualTo("Basic QWxpY2U6czNjcjN0");
+      Map<String, String> data = TestHttpClient.decodeFormData(req.getInputStream());
+      if (data.containsKey("scope") && data.get("scope").equals("invalid-scope")) {
+        ErrorResponse response =
+            ImmutableErrorResponse.builder()
+                .errorCode("invalid_request")
+                .errorDescription("Unknown scope: invalid-scope")
+                .build();
+        writeResponseBody(resp, response, "application/json", 400);
+        return;
+      }
+      TokensRequestBase request;
+      TokensResponseBase response;
+      int statusCode = 200;
+      switch (data.get("grant_type")) {
+        case ClientCredentialsTokensRequest.GRANT_TYPE:
+          request = MAPPER.convertValue(data, ClientCredentialsTokensRequest.class);
+          soft.assertThat(request.getScope()).isEqualTo("test");
+          response = getClientCredentialsTokensResponse();
+          break;
+        case PasswordTokensRequest.GRANT_TYPE:
+          request = MAPPER.convertValue(data, PasswordTokensRequest.class);
+          soft.assertThat(request.getScope()).isEqualTo("test");
+          soft.assertThat(((PasswordTokensRequest) request).getUsername()).isEqualTo("Bob");
+          soft.assertThat(((PasswordTokensRequest) request).getPassword()).isEqualTo("s3cr3t");
+          response = getPasswordTokensResponse();
+          break;
+        case RefreshTokensRequest.GRANT_TYPE:
+          request = MAPPER.convertValue(data, RefreshTokensRequest.class);
+          soft.assertThat(request.getScope()).isEqualTo("test");
+          soft.assertThat(((RefreshTokensRequest) request).getRefreshToken()).isEqualTo("12345678");
+          response = getRefreshTokensResponse();
+          break;
+        case TokensExchangeRequest.GRANT_TYPE:
+          request = MAPPER.convertValue(data, TokensExchangeRequest.class);
+          soft.assertThat(request.getScope()).isEqualTo("test");
+          soft.assertThat(((TokensExchangeRequest) request).getSubjectToken())
+              .isEqualTo("cafebabe");
+          soft.assertThat(((TokensExchangeRequest) request).getSubjectTokenType())
+              .isEqualTo(TokenTypeIdentifiers.ACCESS_TOKEN);
+          soft.assertThat(((TokensExchangeRequest) request).getActorToken()).isNull();
+          soft.assertThat(((TokensExchangeRequest) request).getActorTokenType()).isNull();
+          soft.assertThat(((TokensExchangeRequest) request).getRequestedTokenType())
+              .isEqualTo(TokenTypeIdentifiers.REFRESH_TOKEN);
+          response = getTokensExchangeResponse();
+          break;
+        default:
+          throw new AssertionError("Unexpected grant type: " + data.get("grant_type"));
+      }
+      writeResponseBody(resp, response, "application/json", statusCode);
+    };
+  }
+
+  private static ImmutableClientCredentialsTokensResponse getClientCredentialsTokensResponse() {
+    return ImmutableClientCredentialsTokensResponse.builder()
+        .tokenType("bearer")
+        .accessTokenPayload("cafebabe")
+        .accessTokenExpirationTime(NOW.plus(Duration.ofHours(1)))
+        .refreshTokenPayload("12345678")
+        .refreshTokenExpirationTime(NOW.plus(Duration.ofDays(1)))
+        .scope("test")
+        .extraParameters(ImmutableMap.of("foo", "bar"))
+        .build();
+  }
+
+  private static ImmutablePasswordTokensResponse getPasswordTokensResponse() {
+    return ImmutablePasswordTokensResponse.builder()
+        .tokenType("bearer")
+        .accessTokenPayload("cafebabe")
+        .accessTokenExpirationTime(NOW.plus(Duration.ofHours(1)))
+        .refreshTokenPayload("12345678")
+        .refreshTokenExpirationTime(NOW.plus(Duration.ofDays(1)))
+        .scope("test")
+        .extraParameters(ImmutableMap.of("foo", "bar"))
+        .build();
+  }
+
+  private static ImmutableRefreshTokensResponse getRefreshTokensResponse() {
+    return ImmutableRefreshTokensResponse.builder()
+        .tokenType("bearer")
+        .accessTokenPayload("babecafe")
+        .accessTokenExpirationTime(NOW.plus(Duration.ofHours(2)))
+        .refreshTokenPayload("90abcdef")
+        .refreshTokenExpirationTime(NOW.plus(Duration.ofDays(2)))
+        .scope("test")
+        .extraParameters(ImmutableMap.of("foo", "bar"))
+        .build();
+  }
+
+  private static ImmutableTokensExchangeResponse getTokensExchangeResponse() {
+    return ImmutableTokensExchangeResponse.builder()
+        .issuedTokenType(TokenTypeIdentifiers.REFRESH_TOKEN)
+        .tokenType("bearer")
+        .accessTokenPayload("babecafe")
+        .accessTokenExpirationTime(NOW.plus(Duration.ofHours(2)))
+        .refreshTokenPayload("90abcdef")
+        .refreshTokenExpirationTime(NOW.plus(Duration.ofDays(2)))
+        .scope("test")
+        .extraParameters(ImmutableMap.of("foo", "bar"))
+        .build();
+  }
+
+  private void checkInitialResponse(TokensResponseBase response) {
+    soft.assertThat(response.getAccessToken()).isNotNull();
+    soft.assertThat(response.getAccessToken().getPayload()).isEqualTo("cafebabe");
+    soft.assertThat(response.getAccessToken().getTokenType()).isEqualTo("bearer");
+    soft.assertThat(response.getAccessToken().getExpirationTime())
+        .isAfterOrEqualTo(NOW.plus(Duration.ofHours(1)).minusSeconds(10));
+    assertThat(response.getRefreshToken()).isNotNull();
+    soft.assertThat(response.getRefreshToken().getPayload()).isEqualTo("12345678");
+    soft.assertThat(response.getRefreshToken().getExpirationTime())
+        .isAfterOrEqualTo(NOW.plus(Duration.ofDays(1)).minusSeconds(10));
+    soft.assertThat(response.getScope()).isEqualTo("test");
+    soft.assertThat(response.getExtraParameters()).containsExactly(entry("foo", "bar"));
+  }
+
+  private void checkRefreshResponse(TokensResponseBase tokens) {
+    assertThat(tokens.getAccessToken()).isNotNull();
+    soft.assertThat(tokens.getAccessToken().getPayload()).isEqualTo("babecafe");
+    soft.assertThat(tokens.getAccessToken().getTokenType()).isEqualTo("bearer");
+    soft.assertThat(tokens.getAccessToken().getExpirationTime())
+        .isAfterOrEqualTo(NOW.plus(Duration.ofHours(2)).minusSeconds(10));
+    assertThat(tokens.getRefreshToken()).isNotNull();
+    soft.assertThat(tokens.getRefreshToken().getPayload()).isEqualTo("90abcdef");
+    soft.assertThat(tokens.getRefreshToken().getExpirationTime())
+        .isAfterOrEqualTo(NOW.plus(Duration.ofDays(2)).minusSeconds(10));
+    soft.assertThat(tokens.getScope()).isEqualTo("test");
+    soft.assertThat(tokens.getExtraParameters()).containsExactly(entry("foo", "bar"));
+  }
+
+  private void checkExchangeResponse(TokensExchangeResponse tokens) {
+    checkRefreshResponse(tokens);
+    soft.assertThat(tokens.getIssuedTokenType()).isEqualTo(TokenTypeIdentifiers.REFRESH_TOKEN);
+  }
+
+  private static ImmutableOAuth2ClientParams.Builder paramsBuilder(HttpTestServer server) {
+    return ImmutableOAuth2ClientParams.builder()
+        .tokenEndpoint(server.getUri())
+        .clientId("Alice")
+        .clientSecret("s3cr3t".getBytes(StandardCharsets.UTF_8))
+        .scope("test");
   }
 }

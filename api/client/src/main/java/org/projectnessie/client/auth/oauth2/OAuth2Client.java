@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS;
 import static org.projectnessie.client.auth.oauth2.OAuth2ClientParams.MIN_REFRESH_DELAY;
 import static org.projectnessie.client.auth.oauth2.TokenTypeIdentifiers.ACCESS_TOKEN;
 import static org.projectnessie.client.auth.oauth2.TokenTypeIdentifiers.REFRESH_TOKEN;
@@ -23,8 +24,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
@@ -55,6 +58,9 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(OAuth2Client.class);
 
+  private final String grantType;
+  private final String username;
+  private final byte[] password;
   private final String scope;
   private final Duration defaultAccessTokenLifespan;
   private final Duration defaultRefreshTokenLifespan;
@@ -70,15 +76,18 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
   private volatile ScheduledFuture<?> tokenRefreshFuture;
 
   OAuth2Client(OAuth2ClientParams params) {
-    this.scope = params.getScope().orElse(null);
-    this.defaultAccessTokenLifespan = params.getDefaultAccessTokenLifespan();
-    this.defaultRefreshTokenLifespan = params.getDefaultRefreshTokenLifespan();
-    this.refreshSafetyWindow = params.getRefreshSafetyWindow();
-    this.tokenExchangeEnabled = params.getTokenExchangeEnabled();
-    this.httpClient = params.getHttpClient().addResponseFilter(this::checkErrorResponse).build();
-    this.executor = params.getExecutor().orElseGet(OAuth2Client::createDefaultExecutor);
-    this.shouldCloseExecutor = !params.getExecutor().isPresent();
-    this.objectMapper = params.getObjectMapper();
+    grantType = params.getGrantType();
+    username = params.getUsername().orElse(null);
+    password = params.getPassword().orElse(null);
+    scope = params.getScope().orElse(null);
+    defaultAccessTokenLifespan = params.getDefaultAccessTokenLifespan();
+    defaultRefreshTokenLifespan = params.getDefaultRefreshTokenLifespan();
+    refreshSafetyWindow = params.getRefreshSafetyWindow();
+    tokenExchangeEnabled = params.getTokenExchangeEnabled();
+    httpClient = params.getHttpClient().addResponseFilter(this::checkErrorResponse).build();
+    executor = params.getExecutor().orElseGet(OAuth2Client::createDefaultExecutor);
+    shouldCloseExecutor = !params.getExecutor().isPresent();
+    objectMapper = params.getObjectMapper();
     currentTokensStage = started.thenApplyAsync((v) -> fetchNewTokens(), executor);
     currentTokensStage.thenAccept(this::scheduleTokensRenewal);
   }
@@ -145,6 +154,9 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
           }
         }
       }
+      if (password != null) {
+        Arrays.fill(password, (byte) 0);
+      }
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     }
@@ -179,9 +191,21 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
 
   Tokens fetchNewTokens() {
     LOGGER.debug("Fetching new tokens");
-    NewTokensRequest body = ImmutableNewTokensRequest.builder().scope(scope).build();
-    HttpResponse httpResponse = httpClient.newRequest().postForm(body);
-    return httpResponse.readEntity(NewTokensResponse.class);
+    if (grantType.equals(CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS)) {
+      ClientCredentialsTokensRequest body =
+          ImmutableClientCredentialsTokensRequest.builder().scope(scope).build();
+      HttpResponse httpResponse = httpClient.newRequest().postForm(body);
+      return httpResponse.readEntity(ClientCredentialsTokensResponse.class);
+    } else {
+      PasswordTokensRequest body =
+          ImmutablePasswordTokensRequest.builder()
+              .username(username)
+              .password(new String(password, StandardCharsets.UTF_8))
+              .scope(scope)
+              .build();
+      HttpResponse httpResponse = httpClient.newRequest().postForm(body);
+      return httpResponse.readEntity(PasswordTokensResponse.class);
+    }
   }
 
   Tokens refreshTokens(Tokens currentTokens) {

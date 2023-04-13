@@ -63,7 +63,7 @@ class TestOAuth2AuthenticationProvider {
     HttpTestServer.RequestHandler handler =
         (req, resp) -> {
           TokensResponseBase tokenResponse =
-              ImmutableNewTokensResponse.builder()
+              ImmutableClientCredentialsTokensResponse.builder()
                   .accessTokenPayload("cafebabe")
                   .tokenType("bearer")
                   .build();

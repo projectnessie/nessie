@@ -43,9 +43,9 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableTokensExchangeRequest.class)
 @JsonDeserialize(as = ImmutableTokensExchangeRequest.class)
-interface TokensExchangeRequest {
+interface TokensExchangeRequest extends TokensRequestBase {
 
-  URI GRANT_TYPE = URI.create("urn:ietf:params:oauth:grant-type:token-exchange");
+  String GRANT_TYPE = "urn:ietf:params:oauth:grant-type:token-exchange";
 
   /**
    * REQUIRED. The value urn:ietf:params:oauth2:grant-type:token-exchange indicates that a token
@@ -53,7 +53,8 @@ interface TokensExchangeRequest {
    */
   @Value.Default
   @JsonProperty("grant_type")
-  default URI getGrantType() {
+  @Override
+  default String getGrantType() {
     return GRANT_TYPE;
   }
 
@@ -91,16 +92,6 @@ interface TokensExchangeRequest {
    */
   @Nullable
   String getAudience();
-
-  /**
-   * OPTIONAL. A list of space-delimited, case-sensitive strings, as defined in Section 3.3 of
-   * [RFC6749], that allow the client to specify the desired scope of the requested security token
-   * in the context of the service or resource where the token will be used. The values and
-   * associated semantics of scope are service specific and expected to be described in the relevant
-   * service documentation.
-   */
-  @Nullable
-  String getScope();
 
   /**
    * OPTIONAL. An identifier, as described in <a
