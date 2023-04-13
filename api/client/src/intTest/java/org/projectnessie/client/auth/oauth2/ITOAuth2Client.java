@@ -67,12 +67,18 @@ public class ITOAuth2Client {
 
   @BeforeAll
   static void setUpKeycloak() {
-    Keycloak keycloakAdmin = KEYCLOAK.getKeycloakAdminClient();
-    master = keycloakAdmin.realms().realm("master");
-    createClient("ResourceServer", false);
-    createUser();
     tokenEndpoint =
         URI.create(KEYCLOAK.getAuthServerUrl() + "/realms/master/protocol/openid-connect/token");
+    Keycloak keycloakAdmin = KEYCLOAK.getKeycloakAdminClient();
+    master = keycloakAdmin.realms().realm("master");
+    updateMasterRealm(10, 15);
+    // Create 2 clients, one sending refresh tokens for client_credentials, the other one not
+    createClient("Client1", false);
+    createClient("Client2", true);
+    // Create a client that will act as a resource server attempting to validate access tokens
+    createClient("ResourceServer", false);
+    // Create a user that will be used to obtain access tokens via password grant
+    createUser();
   }
 
   /**
@@ -83,30 +89,18 @@ public class ITOAuth2Client {
    * meantime, another HTTP client will attempt to validate the obtained tokens.
    */
   @Test
-  void testOAuth2Client() throws InterruptedException {
-
-    String id = "OAuth2Client" + System.nanoTime();
-    createClient(id, false);
-    updateMasterRealm(10, 15);
-    OAuth2ClientParams params = clientParams(id).refreshSafetyWindow(Duration.ofSeconds(5)).build();
+  void testOAuth2ClientWithBackgroundRefresh() throws InterruptedException {
+    OAuth2ClientParams params = clientParams("Client1").build();
     ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
-
     try (OAuth2Client client = new OAuth2Client(params);
         HttpClient validatingClient = validatingHttpClient().build()) {
-
       client.start();
-
       ScheduledFuture<?> future =
           executor.scheduleWithFixedDelay(
-              () -> {
-                Tokens tokens = client.getCurrentTokens();
-                soft.assertThat(tokens).isNotNull();
-                tryUseAccessToken(validatingClient, tokens.getAccessToken());
-              },
+              () -> tryUseAccessToken(validatingClient, client.getCurrentTokens().getAccessToken()),
               0,
               1,
               TimeUnit.SECONDS);
-
       try {
         future.get(20, TimeUnit.SECONDS);
       } catch (TimeoutException e) {
@@ -132,9 +126,7 @@ public class ITOAuth2Client {
    */
   @Test
   void testOAuth2ClientInitialRefreshToken() {
-    String id = "OAuth2Client" + System.nanoTime();
-    createClient(id, true);
-    OAuth2ClientParams params = clientParams(id).build();
+    OAuth2ClientParams params = clientParams("Client2").build();
     try (OAuth2Client client = new OAuth2Client(params);
         HttpClient validatingClient = validatingHttpClient().build()) {
       client.start();
@@ -148,7 +140,7 @@ public class ITOAuth2Client {
       soft.assertThat(refreshedTokens).isInstanceOf(RefreshTokensResponse.class);
       soft.assertThat(refreshedTokens.getRefreshToken()).isNotNull();
       tryUseAccessToken(validatingClient, refreshedTokens.getAccessToken());
-      compareTokens(firstTokens, refreshedTokens, id);
+      compareTokens(firstTokens, refreshedTokens, "Client2");
     }
   }
 
@@ -166,9 +158,7 @@ public class ITOAuth2Client {
    */
   @Test
   void testOAuth2ClientTokenExchange() {
-    String id = "OAuth2Client" + System.nanoTime();
-    createClient(id, false);
-    OAuth2ClientParams params = clientParams(id).build();
+    OAuth2ClientParams params = clientParams("Client1").build();
     try (OAuth2Client client = new OAuth2Client(params);
         HttpClient validatingClient = validatingHttpClient().build()) {
       client.start();
@@ -182,13 +172,13 @@ public class ITOAuth2Client {
       soft.assertThat(exchangedTokens).isInstanceOf(TokensExchangeResponse.class);
       soft.assertThat(exchangedTokens.getRefreshToken()).isNotNull();
       tryUseAccessToken(validatingClient, exchangedTokens.getAccessToken());
-      compareTokens(firstTokens, exchangedTokens, id);
+      compareTokens(firstTokens, exchangedTokens, "Client1");
       // third request: refresh token grant
       Tokens refreshedTokens = client.refreshTokens(exchangedTokens);
       soft.assertThat(refreshedTokens).isInstanceOf(RefreshTokensResponse.class);
       soft.assertThat(refreshedTokens.getRefreshToken()).isNotNull();
       tryUseAccessToken(validatingClient, refreshedTokens.getAccessToken());
-      compareTokens(exchangedTokens, refreshedTokens, id);
+      compareTokens(exchangedTokens, refreshedTokens, "Client1");
     }
   }
 
@@ -206,9 +196,7 @@ public class ITOAuth2Client {
    */
   @Test
   void testOAuth2ClientNoRefreshToken() {
-    String id = "OAuth2Client" + System.nanoTime();
-    createClient(id, false);
-    OAuth2ClientParams params = clientParams(id).tokenExchangeEnabled(false).build();
+    OAuth2ClientParams params = clientParams("Client1").tokenExchangeEnabled(false).build();
     try (OAuth2Client client = new OAuth2Client(params);
         HttpClient validatingClient = validatingHttpClient().build()) {
       client.start();
@@ -225,7 +213,7 @@ public class ITOAuth2Client {
       soft.assertThat(nextTokens).isInstanceOf(ClientCredentialsTokensResponse.class);
       soft.assertThat(nextTokens.getRefreshToken()).isNull();
       tryUseAccessToken(validatingClient, nextTokens.getAccessToken());
-      compareTokens(firstTokens, nextTokens, id);
+      compareTokens(firstTokens, nextTokens, "Client1");
     }
   }
 
@@ -242,10 +230,8 @@ public class ITOAuth2Client {
    */
   @Test
   void testOAuth2ClientPasswordGrant() {
-    String id = "OAuth2Client" + System.nanoTime();
-    createClient(id, false);
     OAuth2ClientParams params =
-        clientParams(id)
+        clientParams("Client2")
             .grantType("password")
             .username("Alice")
             .password("s3cr3t".getBytes(StandardCharsets.UTF_8))
@@ -263,16 +249,14 @@ public class ITOAuth2Client {
       soft.assertThat(refreshedTokens).isInstanceOf(RefreshTokensResponse.class);
       soft.assertThat(refreshedTokens.getRefreshToken()).isNotNull();
       tryUseAccessToken(validatingClient, refreshedTokens.getAccessToken());
-      compareTokens(firstTokens, refreshedTokens, id);
+      compareTokens(firstTokens, refreshedTokens, "Client2");
     }
   }
 
   @Test
   void testOAuth2ClientUnauthorizedBadClientSecret() {
-    String id = "OAuth2Client" + System.nanoTime();
-    createClient(id, false);
     OAuth2ClientParams params =
-        clientParams(id).clientSecret("BAD SECRET".getBytes(StandardCharsets.UTF_8)).build();
+        clientParams("Client1").clientSecret("BAD SECRET".getBytes(StandardCharsets.UTF_8)).build();
     try (OAuth2Client client = new OAuth2Client(params)) {
       client.start();
       soft.assertThatThrownBy(client::authenticate)
@@ -284,10 +268,8 @@ public class ITOAuth2Client {
 
   @Test
   void testOAuth2ClientUnauthorizedBadPassword() {
-    String id = "OAuth2Client" + System.nanoTime();
-    createClient(id, false);
     OAuth2ClientParams params =
-        clientParams(id)
+        clientParams("Client2")
             .grantType("password")
             .username("Alice")
             .password("BAD PASSWORD".getBytes(StandardCharsets.UTF_8))
@@ -329,11 +311,12 @@ public class ITOAuth2Client {
   }
 
   private void compareTokens(Tokens oldTokens, Tokens newTokens, String clientId) {
+    // use isBeforeOrEqualTo because the 2 tokens might have been issued in the same second
     soft.assertThat(oldTokens.getAccessToken().getExpirationTime())
-        .isBefore(newTokens.getAccessToken().getExpirationTime());
+        .isBeforeOrEqualTo(newTokens.getAccessToken().getExpirationTime());
     if (oldTokens.getRefreshToken() != null && newTokens.getRefreshToken() != null) {
       soft.assertThat(oldTokens.getRefreshToken().getExpirationTime())
-          .isBefore(newTokens.getRefreshToken().getExpirationTime());
+          .isBeforeOrEqualTo(newTokens.getRefreshToken().getExpirationTime());
     }
     // compare JWT tokens
     JwtToken oldToken = JwtToken.parse(oldTokens.getAccessToken().getPayload());
@@ -343,7 +326,6 @@ public class ITOAuth2Client {
     soft.assertThat(oldToken.getPayload().get("azp").asText())
         .isEqualTo(newToken.getPayload().get("azp").asText())
         .isEqualTo(clientId);
-    // can be equal because the 2 tokens were issued in the same second
     soft.assertThat(oldToken.getExpirationTime()).isBeforeOrEqualTo(newToken.getExpirationTime());
   }
 
@@ -352,7 +334,9 @@ public class ITOAuth2Client {
         .tokenEndpoint(tokenEndpoint)
         .clientId(clientId)
         .clientSecret("s3cr3t".getBytes(StandardCharsets.UTF_8))
-        .refreshSafetyWindow(Duration.ofSeconds(3));
+        .defaultAccessTokenLifespan(Duration.ofSeconds(10))
+        .defaultRefreshTokenLifespan(Duration.ofSeconds(15))
+        .refreshSafetyWindow(Duration.ofSeconds(5));
   }
 
   @SuppressWarnings("SameParameterValue")
