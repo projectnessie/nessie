@@ -331,6 +331,126 @@ jobs:
           job-name: 'int-test-quarkus'
           java-version: ${{ matrix.java-version }}
 
+  determine-jobs:
+    name: CI Determine jobs
+    runs-on: ubuntu-22.04
+    outputs:
+      # Each "conditional" job has a mapped output here, also a "non-PR" case and a "PR" case
+      # with label and globs (at the end of the script).
+      native: ${{ steps.determine.outputs.native }}
+      docker: ${{ steps.determine.outputs.docker }}
+      nesqueit: ${{ steps.determine.outputs.nesqueit }}
+      helm: ${{ steps.determine.outputs.helm }}
+    steps:
+      - name: install minimatch
+        shell: bash
+        run: npm install minimatch@"^7.4.3"
+      - name: Determine conditional jobs to run
+        id: determine
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const {Minimatch} = require("minimatch");
+
+            async function getChangedFiles(pull_request) {
+              const listFilesOptions = github.rest.pulls.listFiles.endpoint.merge({
+                owner: pull_request.base.repo.owner.login,
+                repo: pull_request.base.repo.name,
+                pull_number: pull_request.number,
+              });
+              return github.paginate(listFilesOptions).then(resp => resp.map(f => f.filename))
+            }
+
+            function isMatch(changedFile, matchers) {
+              for (const matcher of matchers) {
+                if (matcher.match(changedFile)) {
+                  core.info("Match found for changed file " + changedFile);
+                  return true;
+                }
+              }
+              core.info("No changed file matched the globs");
+              return false;
+            }
+
+            function filesMatchAnyGlob(changedFiles, globs) {
+              const matchers = globs.map(g => new Minimatch(g));
+              for (const changedFile of changedFiles) {
+                if (isMatch(changedFile, matchers)) {
+                  return true;
+                }
+              }
+              return false;
+            }
+
+            function checkLabelOrGlobs(pr, changedFiles, labelName, globs) {
+              core.info("Checking for " + labelName);
+
+              // If the PR has the given label, then let the conditional job run.
+              for (const label of pr.labels) {
+                if (label.name === labelName) {
+                  core.info("PR has label " + labelName);
+                  return true;
+                }
+              }
+
+              // For pull request, check the list of changed files against the given globs.
+              // Let the conditional job run, if any of the globs matches and of the changed files.
+              core.info("Checking changed files against globs " + globs);
+              return filesMatchAnyGlob(changedFiles, globs);
+            }
+
+            ///////////////////////////////////////////////////////////////////////////////////////
+            // "Non PR" case:
+            // Behavior of the conditional jobs when the event that triggered the workflow is not
+            // for a pull request (usually a push-to-main).
+            //
+            if (!context.payload || !context.payload.pull_request) {
+              core.info("Not a pull-request, enabling all jobs.");
+
+              // Yield default values for all event payload types, except pull_request
+              core.setOutput('native', true);
+              core.setOutput('docker', true);
+              core.setOutput('nesqueit', false); // handled in a scheduled job
+              core.setOutput('helm', true);
+              return true;
+            }
+
+            ///////////////////////////////////////////////////////////////////////////////////////
+            // "PR" case:
+            // Determine the whether the conditional jobs shall run, based on a label name, which
+            // has been manually added, or, if the label is not present, based on some globs to
+            // check.
+
+            const pr = context.payload.pull_request
+            core.info("pull-request #" + pr.number);
+
+            // Retrieves the full list of changed files for the PR.
+            const changedFiles = await getChangedFiles(pr);
+
+            core.startGroup('PR job check / Quarkus intTest native');
+            core.setOutput('native', checkLabelOrGlobs(pr, changedFiles,
+              'pr-native',
+              ['gradle/wrapper/**', 'servers/**', '.github/**']));
+            core.endGroup();
+
+            core.startGroup('PR job check / Docker');
+            core.setOutput('docker', checkLabelOrGlobs(pr, changedFiles,
+              'pr-docker',
+              ['gradle/wrapper/**', 'tools/dockerbuild/**', '.github/**']));
+            core.endGroup();
+
+            core.startGroup('PR job check / NesQuEIT');
+            core.setOutput('nesqueit', checkLabelOrGlobs(pr, changedFiles,
+              'pr-integrations',
+              ['gradle/wrapper/**', 'integrations/**', 'api/**', '.github/**']));
+            core.endGroup();
+
+            core.startGroup('PR job check / Helm');
+            core.setOutput('helm', checkLabelOrGlobs(pr, changedFiles,
+              'pr-helm',
+              ['helm/**', '.github/**']));
+            core.endGroup();
+
   native-quarkus:
     name: CI intTest Quarkus native
     runs-on: ubuntu-22.04
@@ -338,7 +458,9 @@ jobs:
       max-parallel: 2
       matrix:
         java-version: ['11'] # Ideally also '17', but GH concurrent job limit ... :(
-    if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'pr-native')
+    needs:
+      - determine-jobs
+    if: needs.determine-jobs.outputs.native == 'true'
     steps:
       - uses: actions/checkout@v3.5.1
       - name: Setup runner
@@ -366,7 +488,9 @@ jobs:
   docker-testing:
     name: CI Docker build and publishing
     runs-on: ubuntu-22.04
-    if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pr-docker')
+    needs:
+      - determine-jobs
+    if: needs.determine-jobs.outputs.docker == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v3.5.1
@@ -512,8 +636,10 @@ jobs:
   nesqueit:
     name: CI NesQuEIT
     runs-on: ubuntu-22.04
+    needs:
+      - determine-jobs
     # Only run NesQuEIT tests for PRs, if requested. This job can easily run for 30+ minutes.
-    if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pr-integrations')
+    if: github.event_name == 'pull_request' && needs.determine-jobs.outputs.nesqueit == 'true'
     env:
       NESSIE_DIR: included-builds/nessie
       NESSIE_PATCH_REPOSITORY: ''
@@ -624,7 +750,9 @@ jobs:
   helm-testing:
     name: CI Lint & Test Helm chart
     runs-on: ubuntu-22.04
-    if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'pr-helm')
+    needs:
+      - determine-jobs
+    if: needs.determine-jobs.outputs.helm == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v3.5.1
@@ -767,31 +895,3 @@ jobs:
         run: ./gradlew --no-daemon :showVersion
 
       # Note: the "Post Gradle invocation" archives the updated build cache.
-
-  finish:
-    # 'Ci Success' is the (only) required check for PRs, so we can change the jobs above without
-    # having to update the GH configuration every time.
-    name: CI Success
-    runs-on: ubuntu-22.04
-    if: github.event_name == 'pull_request'
-    needs:
-      - code-checks
-      - test
-      - test-quarkus
-      - int-test
-      - int-test-stores
-      - int-test-integrations
-      - int-test-quarkus
-      - native-quarkus
-      - python
-      - docker-testing
-      - nesqueit
-      # Note: help-testing can run into errors, when the recently released Nessie version is
-      # not yet available - so: Nessie release commits pushed, but Helm chart not yet built and
-      # published.
-      - helm-testing
-      - site
-    steps:
-      # Intentionally empty job (for all GH WF) events so that the "required checks" setting
-      # only needs to contain this job as the only required check for PRs.
-      - run: echo "Success"
