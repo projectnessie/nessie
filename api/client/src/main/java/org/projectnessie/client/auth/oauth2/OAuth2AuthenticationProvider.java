@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
+import java.util.Locale;
 import java.util.Objects;
 import java.util.function.Function;
 import org.projectnessie.client.auth.NessieAuthenticationProvider;
@@ -74,8 +75,9 @@ public class OAuth2AuthenticationProvider implements NessieAuthenticationProvide
       return "";
     }
     if (tokenType.length() == 1) {
-      return tokenType.toUpperCase();
+      return tokenType.toUpperCase(Locale.ROOT);
     }
-    return tokenType.substring(0, 1).toUpperCase() + tokenType.substring(1).toLowerCase();
+    return tokenType.substring(0, 1).toUpperCase(Locale.ROOT)
+        + tokenType.substring(1).toLowerCase(Locale.ROOT);
   }
 }

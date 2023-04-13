@@ -27,6 +27,4 @@
     <level value="${test.log.level:-INFO}"/>
     <appender-ref ref="console"/>
   </root>
-  <logger name="com.github.dockerjava" level="WARN"/>
-  <logger name="org.projectnessie.client.auth.oauth2" level="DEBUG"/>
 </configuration>
