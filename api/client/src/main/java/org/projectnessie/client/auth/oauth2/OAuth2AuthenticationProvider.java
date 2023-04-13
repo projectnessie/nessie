@@ -21,6 +21,7 @@ import java.util.function.Function;
 import org.projectnessie.client.auth.NessieAuthenticationProvider;
 import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClient;
+import org.projectnessie.client.http.RequestContext;
 
 public class OAuth2AuthenticationProvider implements NessieAuthenticationProvider {
 
@@ -43,11 +44,11 @@ public class OAuth2AuthenticationProvider implements NessieAuthenticationProvide
     return new OAuth2Authentication(authenticator);
   }
 
-  private static class OAuth2Authentication implements HttpAuthentication {
+  static class OAuth2Authentication implements HttpAuthentication {
 
     private final OAuth2Authenticator authenticator;
 
-    private OAuth2Authentication(OAuth2Authenticator authenticator) {
+    OAuth2Authentication(OAuth2Authenticator authenticator) {
       Objects.requireNonNull(
           authenticator,
           "OAuth2Authenticator must not be null for authentication type " + AUTH_TYPE_VALUE);
@@ -56,28 +57,21 @@ public class OAuth2AuthenticationProvider implements NessieAuthenticationProvide
 
     @Override
     public void applyToHttpClient(HttpClient.Builder client) {
-      client.addRequestFilter(
-          ctx -> {
-            AccessToken token = authenticator.authenticate();
-            ctx.putHeader(
-                "Authorization", capitalize(token.getTokenType()) + " " + token.getPayload());
-          });
+      client.addRequestFilter(this::addAuthHeader);
+    }
+
+    void addAuthHeader(RequestContext ctx) {
+      AccessToken token = authenticator.authenticate();
+      if (!token.getTokenType().toLowerCase(Locale.ROOT).equals("bearer")) {
+        throw new IllegalArgumentException(
+            "OAuth2 token type must be 'Bearer', but was: " + token.getTokenType());
+      }
+      ctx.putHeader("Authorization", "Bearer " + token.getPayload());
     }
 
     @Override
     public void close() {
       authenticator.close();
     }
-  }
-
-  static String capitalize(String tokenType) {
-    if (tokenType == null || tokenType.isEmpty()) {
-      return "";
-    }
-    if (tokenType.length() == 1) {
-      return tokenType.toUpperCase(Locale.ROOT);
-    }
-    return tokenType.substring(0, 1).toUpperCase(Locale.ROOT)
-        + tokenType.substring(1).toLowerCase(Locale.ROOT);
   }
 }

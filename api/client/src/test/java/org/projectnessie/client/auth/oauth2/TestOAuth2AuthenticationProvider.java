@@ -17,6 +17,7 @@ package org.projectnessie.client.auth.oauth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_ID;
@@ -26,22 +27,16 @@ import static org.projectnessie.client.util.HttpTestUtil.writeResponseBody;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
-import java.util.stream.Stream;
-import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import org.projectnessie.client.NessieConfigConstants;
 import org.projectnessie.client.auth.NessieAuthentication;
 import org.projectnessie.client.auth.NessieAuthenticationProvider;
+import org.projectnessie.client.auth.oauth2.OAuth2AuthenticationProvider.OAuth2Authentication;
 import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.RequestContext;
 import org.projectnessie.client.http.RequestFilter;
-import org.projectnessie.client.http.impl.HttpHeaders;
-import org.projectnessie.client.http.impl.RequestContextImpl;
 import org.projectnessie.client.util.HttpTestServer;
 
 class TestOAuth2AuthenticationProvider {
@@ -92,54 +87,36 @@ class TestOAuth2AuthenticationProvider {
     when(authenticator.authenticate())
         .thenReturn(ImmutableAccessToken.builder().payload("cafebabe").tokenType("bearer").build());
     HttpAuthentication authentication = OAuth2AuthenticationProvider.create(authenticator);
-    assertThat(authentication).isInstanceOf(HttpAuthentication.class);
-
-    // Intercept the call to HttpClient.register(RequestFilter) and extract the RequestFilter for
-    // our test
-    RequestFilter[] authFilter = new RequestFilter[1];
+    assertThat(authentication).isInstanceOf(OAuth2Authentication.class);
     HttpClient.Builder client = Mockito.mock(HttpClient.Builder.class);
-    Mockito.doAnswer(
-            invocationOnMock -> {
-              Object[] args = invocationOnMock.getArguments();
-              if (args.length == 1 && args[0] instanceof RequestFilter) {
-                authFilter[0] = (RequestFilter) args[0];
-              }
-              return null;
-            })
-        .when(client)
-        .addRequestFilter(Mockito.any());
     authentication.applyToHttpClient(client);
+    verify(client).addRequestFilter(Mockito.any(RequestFilter.class));
+  }
 
-    // Check that the registered RequestFilter works as expected (sets the right HTTP header)
-
-    assertThat(authFilter[0]).isInstanceOf(RequestFilter.class);
-
-    HttpHeaders headers = new HttpHeaders();
-    RequestContext context = new RequestContextImpl(headers, null, null, null);
-    authFilter[0].filter(context);
-
-    assertThat(headers.asMap())
-        .containsKey("Authorization")
-        .extracting("Authorization", InstanceOfAssertFactories.iterable(String.class))
-        .containsExactly("Bearer cafebabe");
-
+  @Test
+  public void testAddAuthHeader() {
+    OAuth2Authenticator authenticator = Mockito.mock(OAuth2Authenticator.class);
+    when(authenticator.authenticate())
+        .thenReturn(ImmutableAccessToken.builder().payload("cafebabe").tokenType("BeArEr").build());
+    OAuth2Authentication authentication = new OAuth2Authentication(authenticator);
+    RequestContext context = mock(RequestContext.class);
+    authentication.addAuthHeader(context);
     verify(authenticator).authenticate();
+    verify(context).putHeader("Authorization", "Bearer cafebabe");
   }
 
-  @ParameterizedTest
-  @MethodSource
-  public void testCapitalize(String input, String expected) {
-    String actual = OAuth2AuthenticationProvider.capitalize(input);
-    assertThat(actual).isEqualTo(expected);
-  }
-
-  static Stream<Arguments> testCapitalize() {
-    return Stream.of(
-        Arguments.of(null, ""),
-        Arguments.of("", ""),
-        Arguments.of("a", "A"),
-        Arguments.of("abc", "Abc"),
-        Arguments.of("ABC", "Abc"),
-        Arguments.of("AbC", "Abc"));
+  @Test
+  public void testTokenTypeInvalid() {
+    OAuth2Authenticator authenticator = Mockito.mock(OAuth2Authenticator.class);
+    when(authenticator.authenticate())
+        .thenReturn(
+            ImmutableAccessToken.builder().payload("cafebabe").tokenType("INVALID").build());
+    OAuth2Authentication authentication = new OAuth2Authentication(authenticator);
+    RequestContext context = mock(RequestContext.class);
+    assertThatThrownBy(() -> authentication.addAuthHeader(context))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("OAuth2 token type must be 'Bearer', but was: INVALID");
+    verify(authenticator).authenticate();
+    verify(context, Mockito.never()).putHeader(Mockito.any(), Mockito.any());
   }
 }
