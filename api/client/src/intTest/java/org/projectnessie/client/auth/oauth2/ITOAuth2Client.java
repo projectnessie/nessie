@@ -85,19 +85,40 @@ public class ITOAuth2Client {
    * This test exercises the OAuth2 client "in real life", that is, with background token refresh
    * running.
    *
-   * <p>For 20 seconds, the OAuth2 client will strive to keep the access token valid; in the
+   * <p>For 20 seconds, 2 OAuth2 clients will strive to keep the access tokens valid; in the
    * meantime, another HTTP client will attempt to validate the obtained tokens.
+   *
+   * <p>This should be enough to exercise the OAuth2 client's background refresh logic with the 4
+   * supported grant types / requests:
+   *
+   * <ul>
+   *   <li><code>client_credentials</code>
+   *   <li><code>password</code>
+   *   <li><code>refresh_token</code>
+   *   <li><code>urn:ietf:params:oauth2:grant-type:token-exchange</code> (token exchange)
+   * </ul>
    */
   @Test
   void testOAuth2ClientWithBackgroundRefresh() throws InterruptedException {
-    OAuth2ClientParams params = clientParams("Client1").build();
+    OAuth2ClientParams params1 = clientParams("Client1").build();
+    OAuth2ClientParams params2 =
+        clientParams("Client2")
+            .grantType("password")
+            .username("Alice")
+            .password("s3cr3t".getBytes(StandardCharsets.UTF_8))
+            .build();
     ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
-    try (OAuth2Client client = new OAuth2Client(params);
+    try (OAuth2Client client1 = new OAuth2Client(params1);
+        OAuth2Client client2 = new OAuth2Client(params2);
         HttpClient validatingClient = validatingHttpClient().build()) {
-      client.start();
+      client1.start();
+      client2.start();
       ScheduledFuture<?> future =
           executor.scheduleWithFixedDelay(
-              () -> tryUseAccessToken(validatingClient, client.getCurrentTokens().getAccessToken()),
+              () -> {
+                tryUseAccessToken(validatingClient, client1.getCurrentTokens().getAccessToken());
+                tryUseAccessToken(validatingClient, client2.getCurrentTokens().getAccessToken());
+              },
               0,
               1,
               TimeUnit.SECONDS);
