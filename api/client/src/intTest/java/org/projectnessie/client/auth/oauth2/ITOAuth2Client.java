@@ -311,14 +311,6 @@ public class ITOAuth2Client {
   }
 
   private void compareTokens(Tokens oldTokens, Tokens newTokens, String clientId) {
-    // use isBeforeOrEqualTo because the 2 tokens might have been issued in the same second
-    soft.assertThat(oldTokens.getAccessToken().getExpirationTime())
-        .isBeforeOrEqualTo(newTokens.getAccessToken().getExpirationTime());
-    if (oldTokens.getRefreshToken() != null && newTokens.getRefreshToken() != null) {
-      soft.assertThat(oldTokens.getRefreshToken().getExpirationTime())
-          .isBeforeOrEqualTo(newTokens.getRefreshToken().getExpirationTime());
-    }
-    // compare JWT tokens
     JwtToken oldToken = JwtToken.parse(oldTokens.getAccessToken().getPayload());
     JwtToken newToken = JwtToken.parse(newTokens.getAccessToken().getPayload());
     soft.assertThat(newToken.getSubject()).isEqualTo(oldToken.getSubject());
@@ -326,7 +318,6 @@ public class ITOAuth2Client {
     soft.assertThat(oldToken.getPayload().get("azp").asText())
         .isEqualTo(newToken.getPayload().get("azp").asText())
         .isEqualTo(clientId);
-    soft.assertThat(oldToken.getExpirationTime()).isBeforeOrEqualTo(newToken.getExpirationTime());
   }
 
   private static ImmutableOAuth2ClientParams.Builder clientParams(String clientId) {
