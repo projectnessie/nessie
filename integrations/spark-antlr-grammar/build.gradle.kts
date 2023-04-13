@@ -37,21 +37,17 @@ configurations.api.get().setExtendsFrom(listOf())
 
 tasks.named<AntlrTask>("generateGrammarSource") {
   arguments.add("-visitor")
-  doLast {
-    val dir = project.buildDir.resolve("generated-src/antlr/main")
-    fileTree(dir)
-      .matching { include("**/*.java") }
-      .forEach { f ->
-        f.writeText(
-          "package org.apache.spark.sql.catalyst.parser.extensions;\n" +
-            f.readText()
-              .replace(
-                "import org.antlr.v4.runtime.",
-                "import org.projectnessie.shaded.org.antlr.v4.runtime."
-              )
-        )
-      }
-  }
+  doLast(
+    ReplaceInFiles(
+      fileTree(project.buildDir.resolve("generated-src/antlr/main")).matching {
+        include("**/*.java")
+      },
+      mapOf(
+        "import org.antlr.v4.runtime." to "import org.projectnessie.shaded.org.antlr.v4.runtime.",
+        "// PACKAGE_PLACEHOLDER" to "package org.apache.spark.sql.catalyst.parser.extensions;"
+      )
+    )
+  )
 }
 
 tasks.withType<Checkstyle>().configureEach {

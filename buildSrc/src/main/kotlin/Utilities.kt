@@ -19,13 +19,16 @@ import java.io.File
 import java.io.FileInputStream
 import java.lang.IllegalStateException
 import java.util.Properties
+import org.gradle.api.Action
 import org.gradle.api.DefaultTask
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ExternalModuleDependency
 import org.gradle.api.artifacts.ModuleDependency
 import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.gradle.api.file.FileTree
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.InputFile
@@ -294,5 +297,26 @@ abstract class UnixExecutableTask : DefaultTask() {
       sourceJar.get().asFile.inputStream().use { i -> i.transferTo(out) }
     }
     exec.setExecutable(true)
+  }
+}
+
+class ReplaceInFiles(val files: FileTree, val replacements: Map<String, String>) : Action<Task> {
+  override fun execute(task: Task) {
+    files.forEach { f ->
+      val src = f.readText()
+      var txt = src
+      for (e in replacements.entries) {
+        txt = txt.replace(e.key, e.value)
+      }
+      if (txt != src) {
+        f.writeText(txt)
+      }
+    }
+  }
+}
+
+class WriteFile(val file: File, val text: String) : Action<Task> {
+  override fun execute(task: Task) {
+    file.writeText(text)
   }
 }

@@ -81,12 +81,9 @@ class NessieTestingPlugin : Plugin<Project> {
       }
       if (plugins.hasPlugin("io.quarkus")) {
         // This directory somehow disappears... Maybe some weird Quarkus code.
-        tasks.named("quarkusGenerateCodeTests") {
-          doFirst { buildDir.resolve("resources/testFixtures").mkdirs() }
-        }
-        tasks.withType<Test>().configureEach {
-          doFirst { buildDir.resolve("resources/testFixtures").mkdirs() }
-        }
+        val testFixturesDir = buildDir.resolve("resources/testFixtures")
+        tasks.named("quarkusGenerateCodeTests") { doFirst { testFixturesDir.mkdirs() } }
+        tasks.withType<Test>().configureEach { doFirst { testFixturesDir.mkdirs() } }
       }
 
       @Suppress("UnstableApiUsage") apply<JvmTestSuitePlugin>()

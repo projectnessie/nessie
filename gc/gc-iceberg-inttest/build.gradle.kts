@@ -116,9 +116,9 @@ forceJava11ForTests()
 
 tasks.withType(Test::class.java).configureEach {
   systemProperty("aws.region", "us-east-1")
+  val tmpdir = project.buildDir.resolve("tmpdir")
   jvmArgumentProviders.add(
     CommandLineArgumentProvider {
-      val tmpdir = project.buildDir.resolve("tmpdir")
       tmpdir.mkdirs()
       listOf("-Djava.io.tmpdir=$tmpdir")
     }

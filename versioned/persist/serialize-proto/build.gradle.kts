@@ -42,13 +42,12 @@ extensions.configure<ProtobufExtension> {
 }
 
 tasks.named<GenerateProtoTask>("generateProto") {
-  doLast {
-    fileTree("$buildDir/generated/source/proto/main").forEach {
-      it.writeText(
-        it.readText().replace("com.google.protobuf", "org.projectnessie.nessie.relocated.protobuf")
-      )
-    }
-  }
+  doLast(
+    ReplaceInFiles(
+      fileTree(project.buildDir.resolve("generated/source/proto/main")),
+      mapOf("com.google.protobuf" to "org.projectnessie.nessie.relocated.protobuf")
+    )
+  )
 }
 
 reflectionConfig {
