@@ -23,7 +23,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import dasniko.testcontainers.keycloak.KeycloakContainer;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -101,12 +100,7 @@ public class ITOAuth2Client {
   @Test
   void testOAuth2ClientWithBackgroundRefresh() throws InterruptedException {
     OAuth2ClientParams params1 = clientParams("Client1").build();
-    OAuth2ClientParams params2 =
-        clientParams("Client2")
-            .grantType("password")
-            .username("Alice")
-            .password("s3cr3t".getBytes(StandardCharsets.UTF_8))
-            .build();
+    OAuth2ClientParams params2 = clientParams("Client2").grantType("password").build();
     ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     try (OAuth2Client client1 = new OAuth2Client(params1);
         OAuth2Client client2 = new OAuth2Client(params2);
@@ -251,12 +245,7 @@ public class ITOAuth2Client {
    */
   @Test
   void testOAuth2ClientPasswordGrant() {
-    OAuth2ClientParams params =
-        clientParams("Client2")
-            .grantType("password")
-            .username("Alice")
-            .password("s3cr3t".getBytes(StandardCharsets.UTF_8))
-            .build();
+    OAuth2ClientParams params = clientParams("Client2").grantType("password").build();
     try (OAuth2Client client = new OAuth2Client(params);
         HttpClient validatingClient = validatingHttpClient().build()) {
       client.start();
@@ -276,8 +265,7 @@ public class ITOAuth2Client {
 
   @Test
   void testOAuth2ClientUnauthorizedBadClientSecret() {
-    OAuth2ClientParams params =
-        clientParams("Client1").clientSecret("BAD SECRET".getBytes(StandardCharsets.UTF_8)).build();
+    OAuth2ClientParams params = clientParams("Client1").clientSecret("BAD SECRET").build();
     try (OAuth2Client client = new OAuth2Client(params)) {
       client.start();
       soft.assertThatThrownBy(client::authenticate)
@@ -293,7 +281,7 @@ public class ITOAuth2Client {
         clientParams("Client2")
             .grantType("password")
             .username("Alice")
-            .password("BAD PASSWORD".getBytes(StandardCharsets.UTF_8))
+            .password("BAD PASSWORD")
             .build();
     try (OAuth2Client client = new OAuth2Client(params)) {
       client.start();
@@ -345,7 +333,9 @@ public class ITOAuth2Client {
     return ImmutableOAuth2ClientParams.builder()
         .tokenEndpoint(tokenEndpoint)
         .clientId(clientId)
-        .clientSecret("s3cr3t".getBytes(StandardCharsets.UTF_8))
+        .clientSecret("s3cr3t")
+        .username("Alice")
+        .password("s3cr3t")
         .defaultAccessTokenLifespan(Duration.ofSeconds(10))
         .defaultRefreshTokenLifespan(Duration.ofSeconds(15))
         .refreshSafetyWindow(Duration.ofSeconds(5));

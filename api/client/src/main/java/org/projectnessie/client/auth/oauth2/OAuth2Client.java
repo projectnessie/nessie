@@ -78,7 +78,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
   OAuth2Client(OAuth2ClientParams params) {
     grantType = params.getGrantType();
     username = params.getUsername().orElse(null);
-    password = params.getPassword().orElse(null);
+    password = params.getPassword().map(s -> s.getBytes(StandardCharsets.UTF_8)).orElse(null);
     scope = params.getScope().orElse(null);
     defaultAccessTokenLifespan = params.getDefaultAccessTokenLifespan();
     defaultRefreshTokenLifespan = params.getDefaultRefreshTokenLifespan();

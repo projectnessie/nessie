@@ -22,7 +22,6 @@ import static org.projectnessie.client.util.HttpTestUtil.writeResponseBody;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
@@ -67,11 +66,7 @@ class TestOAuth2Client {
     try (HttpTestServer server = new HttpTestServer(handler(), true)) {
 
       ImmutableOAuth2ClientParams params =
-          paramsBuilder(server)
-              .grantType("password")
-              .username("Bob")
-              .password("s3cr3t".getBytes(StandardCharsets.UTF_8))
-              .build();
+          paramsBuilder(server).grantType("password").username("Bob").password("s3cr3t").build();
       params.getHttpClient().setSslContext(server.getSslContext());
 
       try (OAuth2Client client = new OAuth2Client(params)) {
@@ -397,7 +392,7 @@ class TestOAuth2Client {
     return ImmutableOAuth2ClientParams.builder()
         .tokenEndpoint(server.getUri())
         .clientId("Alice")
-        .clientSecret("s3cr3t".getBytes(StandardCharsets.UTF_8))
+        .clientSecret("s3cr3t")
         .scope("test");
   }
 }

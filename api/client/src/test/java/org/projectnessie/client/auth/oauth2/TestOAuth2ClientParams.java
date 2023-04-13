@@ -25,7 +25,6 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT;
 
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Properties;
 import java.util.function.Function;
@@ -53,7 +52,7 @@ class TestOAuth2ClientParams {
         Arguments.of(
             newBuilder().clientId(""), new IllegalArgumentException("client ID must not be empty")),
         Arguments.of(
-            newBuilder().clientSecret(),
+            newBuilder().clientSecret(""),
             new IllegalArgumentException("client secret must not be empty")),
         Arguments.of(
             newBuilder().grantType("invalid"),
@@ -69,7 +68,7 @@ class TestOAuth2ClientParams {
             newBuilder().grantType("password").username("Alice"),
             new IllegalArgumentException("password must be set if grant type is 'password'")),
         Arguments.of(
-            newBuilder().grantType("password").username("Alice").password(new byte[0]),
+            newBuilder().grantType("password").username("Alice").password(""),
             new IllegalArgumentException("password must be set if grant type is 'password'")),
         Arguments.of(
             newBuilder()
@@ -149,7 +148,7 @@ class TestOAuth2ClientParams {
   private static ImmutableOAuth2ClientParams.Builder newBuilder() {
     return OAuth2ClientParams.builder()
         .clientId("Alice")
-        .clientSecret("s3cr3t".getBytes(StandardCharsets.UTF_8))
+        .clientSecret("s3cr3t")
         .tokenEndpoint(URI.create("https://example.com/token"));
   }
 

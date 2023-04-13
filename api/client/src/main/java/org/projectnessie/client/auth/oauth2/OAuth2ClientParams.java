@@ -34,7 +34,6 @@ import static org.projectnessie.client.NessieConfigConstants.DEFAULT_REFRESH_SAF
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
@@ -56,11 +55,11 @@ interface OAuth2ClientParams {
 
   String getClientId();
 
-  byte[] getClientSecret();
+  String getClientSecret();
 
   Optional<String> getUsername();
 
-  Optional<byte[]> getPassword();
+  Optional<String> getPassword();
 
   Optional<String> getScope();
 
@@ -102,8 +101,7 @@ interface OAuth2ClientParams {
     // authorization server MUST support the HTTP Basic authentication scheme
     // for authenticating clients that were issued a client password.
     HttpAuthentication authentication =
-        BasicAuthenticationProvider.create(
-            getClientId(), new String(getClientSecret(), StandardCharsets.UTF_8));
+        BasicAuthenticationProvider.create(getClientId(), getClientSecret());
     return HttpClient.builder()
         .setBaseUri(getTokenEndpoint())
         .setObjectMapper(getObjectMapper())
@@ -116,7 +114,7 @@ interface OAuth2ClientParams {
     if (getClientId().isEmpty()) {
       throw new IllegalArgumentException("client ID must not be empty");
     }
-    if (getClientSecret().length == 0) {
+    if (getClientSecret().isEmpty()) {
       throw new IllegalArgumentException("client secret must not be empty");
     }
     if (!getGrantType().equals(CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS)
@@ -134,7 +132,7 @@ interface OAuth2ClientParams {
                 "username must be set if grant type is '%s'",
                 CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD));
       }
-      if (!getPassword().isPresent() || getPassword().get().length == 0) {
+      if (!getPassword().isPresent() || getPassword().get().isEmpty()) {
         throw new IllegalArgumentException(
             String.format(
                 "password must be set if grant type is '%s'",
@@ -174,12 +172,9 @@ interface OAuth2ClientParams {
                 config.apply(CONF_NESSIE_OAUTH2_CLIENT_ID), "client ID must not be null"))
         .clientSecret(
             Objects.requireNonNull(
-                    config.apply(CONF_NESSIE_OAUTH2_CLIENT_SECRET),
-                    "client secret must not be null")
-                .getBytes(StandardCharsets.UTF_8))
+                config.apply(CONF_NESSIE_OAUTH2_CLIENT_SECRET), "client secret must not be null"))
         .username(Optional.ofNullable(config.apply(CONF_NESSIE_OAUTH2_USERNAME)))
-        .password(
-            Optional.ofNullable(config.apply(CONF_NESSIE_OAUTH2_PASSWORD)).map(String::getBytes))
+        .password(Optional.ofNullable(config.apply(CONF_NESSIE_OAUTH2_PASSWORD)))
         .grantType(
             Optional.ofNullable(config.apply(CONF_NESSIE_OAUTH2_GRANT_TYPE))
                 .orElse(CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS))
