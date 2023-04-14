@@ -90,7 +90,7 @@ class ITCheckContent extends BaseContentTest<CheckContentEntry> {
                 KeyWithBytes.of(
                     k1,
                     ContentId.of("id123"),
-                    payloadForContent(Content.Type.ICEBERG_TABLE),
+                    (byte) payloadForContent(Content.Type.ICEBERG_TABLE),
                     ByteString.copyFrom(new byte[] {1, 2, 3})))
             .build());
 
@@ -207,7 +207,7 @@ class ITCheckContent extends BaseContentTest<CheckContentEntry> {
     ReferenceInfo<?> good = adapter.namedRef("main", GetNamedRefsParams.DEFAULT);
 
     OnRefOnly val = onRef("123", "222");
-    commit(val.getId(), payloadForContent(val), val.serialized(), adapter);
+    commit(val.getId(), (byte) payloadForContent(val), val.serialized(), adapter);
 
     launch(launcher, "check-content", "--hash", good.getHash().asString());
     assertThat(entries.stream().sorted(Comparator.comparing(CheckContentEntry::getKey)))

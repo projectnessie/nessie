@@ -1246,7 +1246,7 @@ public abstract class AbstractDatabaseAdapter<
           keysStream.collect(Collectors.toMap(KeyListEntry::getKey, KeyListEntry::getPayload));
     }
 
-    byte namespacePayload = payloadForContent(Content.Type.NAMESPACE);
+    int namespacePayload = payloadForContent(Content.Type.NAMESPACE);
 
     List<Conflict> conflicts = new ArrayList<>();
 

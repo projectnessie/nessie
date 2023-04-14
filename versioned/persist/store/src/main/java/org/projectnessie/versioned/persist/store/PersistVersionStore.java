@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.persist.store;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
@@ -141,11 +142,13 @@ public class PersistVersionStore implements VersionStore {
         }
 
         ContentId contentId = ContentId.of(content.getId());
+        int payload = payloadForContent(content);
+        checkState(payload > 0 && payload <= Byte.MAX_VALUE);
         commitAttempt.addPuts(
             KeyWithBytes.of(
                 op.getKey(),
                 contentId,
-                payloadForContent(content),
+                (byte) payload,
                 STORE_WORKER.toStoreOnReferenceState(content)));
       } else if (operation instanceof Delete) {
         commitAttempt.addDeletes(operation.getKey());

@@ -146,7 +146,7 @@ public abstract class AbstractCommitScenarios {
 
     Content initialContent = newOnRef("initial commit content");
     Content renamContent = OnRefOnly.onRef("rename commit content", initialContent.getId());
-    byte payload = payloadForContent(initialContent);
+    byte payload = (byte) payloadForContent(initialContent);
 
     commit =
         ImmutableCommitParams.builder()
@@ -275,7 +275,7 @@ public abstract class AbstractCommitScenarios {
           KeyWithBytes.of(
               key,
               ContentId.of(cid),
-              payloadForContent(c),
+              (byte) payloadForContent(c),
               DefaultStoreWorker.instance().toStoreOnReferenceState(c)));
     }
     Hash head = databaseAdapter.commit(commit.build());
@@ -294,7 +294,7 @@ public abstract class AbstractCommitScenarios {
             KeyWithBytes.of(
                 keys.get(i),
                 ContentId.of(cid),
-                payloadForContent(newContent),
+                (byte) payloadForContent(newContent),
                 DefaultStoreWorker.instance().toStoreOnReferenceState(newContent)));
       }
 
@@ -351,7 +351,7 @@ public abstract class AbstractCommitScenarios {
                 KeyWithBytes.of(
                     key,
                     ContentId.of(cid),
-                    payloadForContent(c),
+                    (byte) payloadForContent(c),
                     DefaultStoreWorker.instance().toStoreOnReferenceState(c)))
             .putExpectedStates(ContentId.of(cid), Optional.empty())
             .validator(validator);
@@ -369,9 +369,9 @@ public abstract class AbstractCommitScenarios {
 
     OnRefOnly noNo = onRef("no no", contentsId.getId());
     KeyWithBytes createPut1 =
-        KeyWithBytes.of(key, contentsId, payloadForContent(noNo), noNo.serialized());
+        KeyWithBytes.of(key, contentsId, (byte) payloadForContent(noNo), noNo.serialized());
     KeyWithBytes createPut2 =
-        KeyWithBytes.of(key, contentsId, payloadForContent(tableRef), tableRefState);
+        KeyWithBytes.of(key, contentsId, (byte) payloadForContent(tableRef), tableRefState);
 
     ImmutableCommitParams.Builder commit1 =
         ImmutableCommitParams.builder()
@@ -443,7 +443,7 @@ public abstract class AbstractCommitScenarios {
                 .commitMetaSerialized(ByteString.copyFromUtf8("commit nation"))
                 .addPuts(
                     KeyWithBytes.of(
-                        keyNation, idNation, payloadForContent(onRefNation), stateNation))
+                        keyNation, idNation, (byte) payloadForContent(onRefNation), stateNation))
                 .build());
 
     Hash commitRegion =
@@ -454,7 +454,7 @@ public abstract class AbstractCommitScenarios {
                 .commitMetaSerialized(ByteString.copyFromUtf8("commit region"))
                 .addPuts(
                     KeyWithBytes.of(
-                        keyRegion, idRegion, payloadForContent(onRefRegion), stateRegion))
+                        keyRegion, idRegion, (byte) payloadForContent(onRefRegion), stateRegion))
                 .build());
 
     List<ContentKey> nonExistentKey = Collections.singletonList(ContentKey.of("non_existent"));
@@ -464,7 +464,8 @@ public abstract class AbstractCommitScenarios {
     assertThat(
             mine.values(
                 commitNation, Collections.singletonList(keyNation), KeyFilterPredicate.ALLOW_ALL))
-        .containsEntry(keyNation, ContentAndState.of(payloadForContent(onRefNation), stateNation));
+        .containsEntry(
+            keyNation, ContentAndState.of((byte) payloadForContent(onRefNation), stateNation));
 
     assertThat(
             mine.values(
@@ -474,7 +475,8 @@ public abstract class AbstractCommitScenarios {
     assertThat(
             mine.values(
                 commitRegion, Collections.singletonList(keyNation), KeyFilterPredicate.ALLOW_ALL))
-        .containsEntry(keyNation, ContentAndState.of(payloadForContent(onRefNation), stateNation));
+        .containsEntry(
+            keyNation, ContentAndState.of((byte) payloadForContent(onRefNation), stateNation));
 
     assertThat(mine.values(commitNation, nonExistentKey, KeyFilterPredicate.ALLOW_ALL)).isEmpty();
     assertThat(mine.values(commitRegion, nonExistentKey, KeyFilterPredicate.ALLOW_ALL)).isEmpty();
@@ -482,7 +484,9 @@ public abstract class AbstractCommitScenarios {
     assertThat(
             mine.values(
                 commitRegion, Arrays.asList(keyNation, keyRegion), KeyFilterPredicate.ALLOW_ALL))
-        .containsEntry(keyNation, ContentAndState.of(payloadForContent(onRefNation), stateNation))
-        .containsEntry(keyRegion, ContentAndState.of(payloadForContent(onRefRegion), stateRegion));
+        .containsEntry(
+            keyNation, ContentAndState.of((byte) payloadForContent(onRefNation), stateNation))
+        .containsEntry(
+            keyRegion, ContentAndState.of((byte) payloadForContent(onRefRegion), stateRegion));
   }
 }

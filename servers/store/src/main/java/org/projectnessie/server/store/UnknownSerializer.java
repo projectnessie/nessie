@@ -32,7 +32,7 @@ public final class UnknownSerializer extends BaseSerializer<Content> {
   }
 
   @Override
-  public byte payload() {
+  public int payload() {
     return 0;
   }
 

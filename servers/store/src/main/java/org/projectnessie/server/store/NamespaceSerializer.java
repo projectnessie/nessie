@@ -17,6 +17,7 @@ package org.projectnessie.server.store;
 
 import java.util.function.Supplier;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.ImmutableNamespace;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.server.store.proto.ObjectTypes;
@@ -29,7 +30,7 @@ public final class NamespaceSerializer extends BaseSerializer<Namespace> {
   }
 
   @Override
-  public byte payload() {
+  public int payload() {
     return 4;
   }
 
@@ -44,7 +45,7 @@ public final class NamespaceSerializer extends BaseSerializer<Namespace> {
 
   @Override
   public Namespace applyId(Namespace content, String id) {
-    return Namespace.builder().from(content).id(id).build();
+    return ((ImmutableNamespace) content).withId(id);
   }
 
   @Override

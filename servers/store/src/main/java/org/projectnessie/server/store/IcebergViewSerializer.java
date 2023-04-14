@@ -18,6 +18,7 @@ package org.projectnessie.server.store;
 import java.util.function.Supplier;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.IcebergView;
+import org.projectnessie.model.ImmutableIcebergView;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.server.store.proto.ObjectTypes;
 
@@ -29,7 +30,7 @@ public final class IcebergViewSerializer extends BaseSerializer<IcebergView> {
   }
 
   @Override
-  public byte payload() {
+  public int payload() {
     return 3;
   }
 
@@ -48,7 +49,7 @@ public final class IcebergViewSerializer extends BaseSerializer<IcebergView> {
 
   @Override
   public IcebergView applyId(IcebergView content, String id) {
-    return IcebergView.builder().from(content).id(id).build();
+    return ((ImmutableIcebergView) content).withId(id);
   }
 
   @Override

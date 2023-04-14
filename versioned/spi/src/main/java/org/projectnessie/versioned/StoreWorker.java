@@ -25,10 +25,13 @@ public interface StoreWorker {
   /** Returns the serialized representation of the on-reference part of the given content-object. */
   ByteString toStoreOnReferenceState(Content content);
 
-  Content valueFromStore(
-      byte payload, ByteString onReferenceValue, Supplier<ByteString> globalState);
+  Content valueFromStore(int payload, ByteString onReferenceValue);
 
   Content applyId(Content content, String id);
+
+  @Deprecated // for removal
+  Content valueFromStore(
+      int payload, ByteString onReferenceValue, Supplier<ByteString> globalState);
 
   /**
    * Checks whether the given persisted content has been persisted using global state.
@@ -36,7 +39,9 @@ public interface StoreWorker {
    * <p>This function can be entirely removed once all content objects are guaranteed to have no
    * global state.
    */
-  boolean requiresGlobalState(byte payload, ByteString content);
+  @SuppressWarnings("DeprecatedIsStillUsed")
+  @Deprecated // for removal
+  boolean requiresGlobalState(int payload, ByteString content);
 
   /**
    * Retrieve the {@link Content.Type} for the given persisted representation.
@@ -45,5 +50,6 @@ public interface StoreWorker {
    * persisted content objects can have fixed {@code payload == 0}, therefore the implementation for
    * the default types (Iceberg, DL, Namespace) needs this.
    */
-  Content.Type getType(byte payload, ByteString onRefContent);
+  @Deprecated // for removal
+  Content.Type getType(int payload, ByteString onRefContent);
 }

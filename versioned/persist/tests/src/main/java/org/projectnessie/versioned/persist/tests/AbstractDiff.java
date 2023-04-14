@@ -65,7 +65,7 @@ public abstract class AbstractDiff {
             KeyWithBytes.of(
                 ContentKey.of("key-" + k),
                 ContentId.of("C" + k),
-                payloadForContent(c),
+                (byte) payloadForContent(c),
                 DefaultStoreWorker.instance().toStoreOnReferenceState(c)));
       }
       commits[i] = databaseAdapter.commit(commit.build());
@@ -94,7 +94,7 @@ public abstract class AbstractDiff {
                           OnRefOnly content =
                               OnRefOnly.onRef("on-ref " + c + " for " + k, "cid-" + c + "-" + k);
                           return Difference.of(
-                              payloadForContent(content),
+                              (byte) payloadForContent(content),
                               ContentKey.of("key-" + k),
                               Optional.empty(),
                               Optional.empty(),
@@ -120,7 +120,7 @@ public abstract class AbstractDiff {
                           OnRefOnly content =
                               OnRefOnly.onRef("on-ref " + c + " for " + k, "cid-" + c + "-" + k);
                           return Difference.of(
-                              payloadForContent(content),
+                              (byte) payloadForContent(content),
                               ContentKey.of("key-" + k),
                               Optional.empty(),
                               Optional.of(
@@ -149,7 +149,7 @@ public abstract class AbstractDiff {
                           OnRefOnly to =
                               OnRefOnly.onRef("on-ref " + c + " for " + k, "cid-" + c + "-" + k);
                           return Difference.of(
-                              payloadForContent(from),
+                              (byte) payloadForContent(from),
                               ContentKey.of("key-" + k),
                               Optional.empty(),
                               Optional.of(

@@ -82,7 +82,7 @@ abstract class BaseContentTest<OutputType> {
 
   protected void commit(IcebergTable table, DatabaseAdapter adapter, ByteString serialized)
       throws Exception {
-    commit(table.getId(), payloadForContent(table), serialized, adapter);
+    commit(table.getId(), (byte) payloadForContent(table), serialized, adapter);
   }
 
   private boolean testNamespaceCreated;
@@ -106,7 +106,7 @@ abstract class BaseContentTest<OutputType> {
               .addElements("test_namespace")
               .build();
       ByteString namespaceValue = DefaultStoreWorker.instance().toStoreOnReferenceState(namespace);
-      byte nsPayload = DefaultStoreWorker.payloadForContent(namespace);
+      byte nsPayload = (byte) DefaultStoreWorker.payloadForContent(namespace);
       c.addPuts(
           KeyWithBytes.of(
               ContentKey.of("test_namespace"),

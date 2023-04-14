@@ -240,7 +240,7 @@ public class ITExportImportPersist {
 
     UUID contentId = UUID.randomUUID();
     StoreWorker storeWorker = DefaultStoreWorker.instance();
-    byte payload = payloadForContent(ICEBERG_TABLE);
+    int payload = payloadForContent(ICEBERG_TABLE);
     ByteString contentMain =
         storeWorker.toStoreOnReferenceState(IcebergTable.of("meta", 42, 43, 44, 45, "id123"));
     ByteString contentFoo =

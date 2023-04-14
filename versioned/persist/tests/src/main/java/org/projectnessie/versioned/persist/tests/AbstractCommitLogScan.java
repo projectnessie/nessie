@@ -196,7 +196,7 @@ public abstract class AbstractCommitLogScan {
       ContentId cid = ContentId.of("cid-" + branchName.getName() + "-" + commitNum);
       OnRefOnly c =
           OnRefOnly.onRef("value for #" + commitNum + " in " + branchName.getName(), cid.getId());
-      byte payload = payloadForContent(c);
+      byte payload = (byte) payloadForContent(c);
 
       head =
           databaseAdapter.commit(

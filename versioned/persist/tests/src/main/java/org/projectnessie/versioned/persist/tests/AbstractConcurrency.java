@@ -154,7 +154,7 @@ public abstract class AbstractConcurrency {
                         KeyWithBytes.of(
                             keys.get(ki),
                             contentId,
-                            payloadForContent(c),
+                            (byte) payloadForContent(c),
                             DefaultStoreWorker.instance().toStoreOnReferenceState(c)));
                   }
 
@@ -198,7 +198,7 @@ public abstract class AbstractConcurrency {
               KeyWithBytes.of(
                   k,
                   contentId,
-                  payloadForContent(c),
+                  (byte) payloadForContent(c),
                   DefaultStoreWorker.instance().toStoreOnReferenceState(c)));
         }
         commitAndRecord(onRefStates, branch, commitAttempt);

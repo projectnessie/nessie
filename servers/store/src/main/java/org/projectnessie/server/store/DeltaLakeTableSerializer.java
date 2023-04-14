@@ -30,7 +30,7 @@ public final class DeltaLakeTableSerializer extends BaseSerializer<DeltaLakeTabl
   }
 
   @Override
-  public byte payload() {
+  public int payload() {
     return 2;
   }
 
@@ -49,7 +49,7 @@ public final class DeltaLakeTableSerializer extends BaseSerializer<DeltaLakeTabl
 
   @Override
   public DeltaLakeTable applyId(DeltaLakeTable content, String id) {
-    return ImmutableDeltaLakeTable.builder().from(content).id(id).build();
+    return ((ImmutableDeltaLakeTable) content).withId(id);
   }
 
   @Override

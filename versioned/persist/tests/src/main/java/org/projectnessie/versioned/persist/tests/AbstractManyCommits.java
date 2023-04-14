@@ -73,7 +73,7 @@ public abstract class AbstractManyCommits {
     for (int i = 0; i < numCommits; i++) {
       ContentKey key = ContentKey.of("many-commits-" + numCommits);
       OnRefOnly c = OnRefOnly.onRef("value for #" + i + " of " + numCommits, fixed.getId());
-      byte payload = payloadForContent(c);
+      byte payload = (byte) payloadForContent(c);
       ImmutableCommitParams.Builder commit =
           ImmutableCommitParams.builder()
               .toBranch(branch)
@@ -130,7 +130,7 @@ public abstract class AbstractManyCommits {
           OnRefOnly.onRef("value for #" + i + " of " + numCommits, contentId.getId());
 
       ByteString expectValue = DefaultStoreWorker.instance().toStoreOnReferenceState(expected);
-      ContentAndState expect = ContentAndState.of(payloadForContent(expected), expectValue);
+      ContentAndState expect = ContentAndState.of((byte) payloadForContent(expected), expectValue);
       assertThat(values).containsExactly(Maps.immutableEntry(key, expect));
     } catch (ReferenceNotFoundException e) {
       throw new RuntimeException(e);

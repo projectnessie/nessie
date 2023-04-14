@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned.testworker;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
 import org.projectnessie.model.Content;
@@ -29,7 +28,7 @@ public class OnRefOnlySerializer extends TestContentSerializer<OnRefOnly> {
   }
 
   @Override
-  public byte payload() {
+  public int payload() {
     return 127;
   }
 
@@ -44,8 +43,7 @@ public class OnRefOnlySerializer extends TestContentSerializer<OnRefOnly> {
   }
 
   @Override
-  protected OnRefOnly valueFromStore(String contentId, String onRef, ByteString global) {
-    assertThat(global).isNull();
+  protected OnRefOnly valueFromStore(String contentId, String onRef) {
     return onRef(onRef, contentId);
   }
 }

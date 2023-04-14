@@ -91,7 +91,7 @@ public abstract class AbstractRepositories {
                 KeyWithBytes.of(
                     ContentKey.of("foo"),
                     ContentId.of(fooValue.getId()),
-                    payloadForContent(fooValue),
+                    (byte) payloadForContent(fooValue),
                     fooValue.serialized()))
             .build());
     bar.commit(
@@ -102,7 +102,7 @@ public abstract class AbstractRepositories {
                 KeyWithBytes.of(
                     ContentKey.of("bar"),
                     ContentId.of(barValue.getId()),
-                    payloadForContent(barValue),
+                    (byte) payloadForContent(barValue),
                     barValue.serialized()))
             .build());
 
