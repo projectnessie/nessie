@@ -99,8 +99,6 @@ public class ITOAuth2Client {
     // Create 2 clients, one sending refresh tokens for client_credentials, the other one not
     createClient("Client1", false);
     createClient("Client2", true);
-    // Create a client that will act as a resource server attempting to validate access tokens
-    createClient("ResourceServer", false);
     // Create a user that will be used to obtain access tokens via password grant
     createUser();
   }
