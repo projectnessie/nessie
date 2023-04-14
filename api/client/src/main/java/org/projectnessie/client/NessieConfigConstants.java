@@ -64,18 +64,20 @@ public final class NessieConfigConstants {
   /**
    * Config property name ({@value #CONF_NESSIE_OAUTH2_GRANT_TYPE}) for the OAuth2 authentication
    * provider. The grant type to use when authenticating against the OAuth2 server. Valid values
-   * are: {@value #CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS} (default) or {@value
-   * #CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD}. Required if using OAuth2 authentication, ignored
-   * otherwise.
+   * are: {@value #CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS} or {@value
+   * #CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD}. Optional, defaults to {@value
+   * #CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS}.
    *
-   * <p>When using the "client_credentials" grant type, the client ID and secret are used to
-   * authenticate the client against the OAuth2 server. The client must be configured to allow this
-   * grant type.
+   * <p>For both grant types, a {@linkplain #CONF_NESSIE_OAUTH2_CLIENT_ID client ID} and {@linkplain
+   * #CONF_NESSIE_OAUTH2_CLIENT_SECRET client secret} must be provided; they are used to
+   * authenticate the client against the OAuth2 server.
    *
-   * <p>When using the "password" grant type, the client ID and secret are used to authenticate the
-   * client against the OAuth2 server, and the username and password are used to authenticate the
-   * user. The client must be configured to allow this grant type, and the user must be configured
-   * to allow the client to use this grant type.
+   * <p>Additionally, when using the "password" grant type, a {@linkplain
+   * #CONF_NESSIE_OAUTH2_USERNAME username} and {@linkplain #CONF_NESSIE_OAUTH2_PASSWORD password}
+   * must also be provided; they are used to authenticate the user.
+   *
+   * <p>Both client and user must be properly configured with appropriate permissions in the OAuth2
+   * server for the authentication to succeed.
    */
   public static final String CONF_NESSIE_OAUTH2_GRANT_TYPE =
       "nessie.authentication.oauth2.grant-type";
@@ -127,7 +129,7 @@ public final class NessieConfigConstants {
   /**
    * Config property name ({@value #CONF_NESSIE_OAUTH2_DEFAULT_REFRESH_TOKEN_LIFESPAN}) for the
    * OAuth2 authentication provider. The default refresh token lifespan; if the OAuth2 server
-   * returns an refresh token without specifying its expiration time, this value will be used.
+   * returns a refresh token without specifying its expiration time, this value will be used.
    * Optional, defaults to {@value #DEFAULT_DEFAULT_REFRESH_TOKEN_LIFESPAN}. Must be a valid <a
    * href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO-8601 duration</a>.
    */
@@ -139,7 +141,7 @@ public final class NessieConfigConstants {
   /**
    * Config property name ({@value #CONF_NESSIE_OAUTH2_REFRESH_SAFETY_WINDOW}) for the OAuth2
    * authentication provider. The refresh safety window to use; a new token will be fetched when the
-   * current token's remaining validity is less than this value. Optional, defaults to {@value
+   * current token's remaining lifespan is less than this value. Optional, defaults to {@value
    * #DEFAULT_REFRESH_SAFETY_WINDOW}. Must be a valid <a
    * href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO-8601 duration</a>.
    */

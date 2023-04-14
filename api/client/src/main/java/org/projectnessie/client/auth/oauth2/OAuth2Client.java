@@ -44,8 +44,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A simple OAuth2 client that supports the "client_credentials" grant type for fetching new access
- * tokens, using pre-defined client credentials.
+ * A simple OAuth2 client that supports the "client_credentials" and "password" grant types for
+ * fetching new access tokens, using pre-defined client credentials.
  *
  * <p>This client also supports refreshing access tokens using both the refresh token method defined
  * in RFC 6749 and the token exchange method defined in RFC 8693.
