@@ -26,4 +26,10 @@ import org.projectnessie.client.http.HttpAuthentication;
  * specific implementations. For example, the Nessie HTTP based transport implements the {@link
  * HttpAuthentication}.
  */
-public interface NessieAuthentication {}
+public interface NessieAuthentication extends AutoCloseable {
+
+  @Override
+  default void close() {
+    // no-op
+  }
+}

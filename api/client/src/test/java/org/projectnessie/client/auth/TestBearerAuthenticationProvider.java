@@ -39,6 +39,7 @@ class TestBearerAuthenticationProvider {
   }
 
   @Test
+  @SuppressWarnings("resource")
   void testNullParams() {
     assertAll(
         () ->

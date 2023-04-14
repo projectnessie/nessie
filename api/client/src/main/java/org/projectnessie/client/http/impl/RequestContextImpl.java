@@ -73,14 +73,27 @@ public class RequestContextImpl implements RequestContext {
   }
 
   @Override
+  public Optional<String> getContentType() {
+    return headers.getFirstValue("Content-Type");
+  }
+
+  @Override
   public Optional<Object> getBody() {
-    return body == null ? Optional.empty() : Optional.of(body);
+    return Optional.ofNullable(body);
+  }
+
+  @Override
+  public boolean isFormEncoded() {
+    return getMethod() == Method.POST
+        && getContentType()
+            .filter(ct -> ct.equals("application/x-www-form-urlencoded"))
+            .isPresent();
   }
 
   /**
    * Adds a callback to be called when the request has finished. The {@code responseCallback} {@link
    * BiConsumer consumer} is called with a non-{@code null} {@link ResponseContext}, if the HTTP
-   * request technically succeeded. The The {@code responseCallback} {@link BiConsumer consumer} is
+   * request technically succeeded. The {@code responseCallback} {@link BiConsumer consumer} is
    * called with a non-{@code null} {@link Exception} object, if the HTTP request technically
    * failed.
    *

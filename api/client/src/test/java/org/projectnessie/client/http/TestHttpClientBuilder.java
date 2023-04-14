@@ -36,6 +36,7 @@ import org.projectnessie.client.auth.NessieAuthentication;
 import org.projectnessie.client.util.HttpTestServer;
 import org.projectnessie.client.util.HttpTestUtil;
 
+@SuppressWarnings("resource")
 public class TestHttpClientBuilder {
   interface IncompatibleApiInterface extends NessieApi {}
 

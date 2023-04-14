@@ -16,6 +16,7 @@
 package org.projectnessie.client.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -28,6 +29,8 @@ import org.projectnessie.client.http.impl.HttpRuntimeConfig;
 import org.projectnessie.client.http.impl.HttpUtils;
 import org.projectnessie.client.http.impl.jdk11.JavaHttpClient;
 import org.projectnessie.client.http.impl.jdk8.UrlConnectionClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Simple Http client to make REST calls.
@@ -35,7 +38,7 @@ import org.projectnessie.client.http.impl.jdk8.UrlConnectionClient;
  * <p>Assumptions: - always send/receive JSON - set headers accordingly by default - very simple
  * interactions w/ API - no cookies - no caching of connections. Could be slow
  */
-public interface HttpClient {
+public interface HttpClient extends AutoCloseable {
 
   enum Method {
     GET,
@@ -52,13 +55,19 @@ public interface HttpClient {
 
   URI getBaseUri();
 
+  @Override
+  void close();
+
   class Builder {
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpClient.class);
+
     private URI baseUri;
     private ObjectMapper mapper;
     private Class<?> jsonView;
     private HttpResponseFactory responseFactory = HttpResponse::new;
     private SSLContext sslContext;
     private SSLParameters sslParameters;
+    private HttpAuthentication authentication;
     private int readTimeoutMillis =
         Integer.getInteger(
             "sun.net.client.defaultReadTimeout", NessieConfigConstants.DEFAULT_READ_TIMEOUT_MILLIS);
@@ -80,65 +89,85 @@ public interface HttpClient {
       return baseUri;
     }
 
+    @CanIgnoreReturnValue
     public Builder setClientSpec(int clientSpec) {
       this.clientSpec = clientSpec;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder setBaseUri(URI baseUri) {
       this.baseUri = baseUri;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder setDisableCompression(boolean disableCompression) {
       this.disableCompression = disableCompression;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder setObjectMapper(ObjectMapper mapper) {
       this.mapper = mapper;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder setJsonView(Class<?> jsonView) {
       this.jsonView = jsonView;
       return this;
     }
 
-    public void setResponseFactory(HttpResponseFactory responseFactory) {
+    @CanIgnoreReturnValue
+    public Builder setResponseFactory(HttpResponseFactory responseFactory) {
       this.responseFactory = responseFactory;
+      return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder setSslContext(SSLContext sslContext) {
       this.sslContext = sslContext;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder setSslParameters(SSLParameters sslParameters) {
       this.sslParameters = sslParameters;
       return this;
     }
 
+    @CanIgnoreReturnValue
+    public Builder setAuthentication(HttpAuthentication authentication) {
+      this.authentication = authentication;
+      return this;
+    }
+
+    @CanIgnoreReturnValue
     public Builder setHttp2Upgrade(boolean http2Upgrade) {
       this.http2Upgrade = http2Upgrade;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder setFollowRedirects(String followRedirects) {
       this.followRedirects = followRedirects;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder setForceUrlConnectionClient(boolean forceUrlConnectionClient) {
       this.forceUrlConnectionClient = forceUrlConnectionClient;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder setReadTimeoutMillis(int readTimeoutMillis) {
       this.readTimeoutMillis = readTimeoutMillis;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder setConnectionTimeoutMillis(int connectionTimeoutMillis) {
       this.connectionTimeoutMillis = connectionTimeoutMillis;
       return this;
@@ -148,6 +177,7 @@ public interface HttpClient {
      * Register a request filter. This filter will be run before the request starts and can modify
      * eg headers.
      */
+    @CanIgnoreReturnValue
     public Builder addRequestFilter(RequestFilter filter) {
       requestFilters.add(filter);
       return this;
@@ -157,8 +187,24 @@ public interface HttpClient {
      * Register a response filter. This filter will be run after the request finishes and can for
      * example handle error states.
      */
+    @CanIgnoreReturnValue
     public Builder addResponseFilter(ResponseFilter filter) {
       responseFilters.add(filter);
+      return this;
+    }
+
+    /**
+     * Add tracing to the client. This will load the opentracing libraries. It is not possible to
+     * remove tracing once it is added.
+     */
+    @CanIgnoreReturnValue
+    public Builder addTracing() {
+      try {
+        OpentelemetryTracing.addTracing(this);
+      } catch (NoClassDefFoundError e) {
+        LOGGER.warn(
+            "Failed to initialize tracing, the opentracing libraries are probably missing.", e);
+      }
       return this;
     }
 
@@ -177,6 +223,10 @@ public interface HttpClient {
         }
       }
 
+      if (authentication != null) {
+        authentication.applyToHttpClient(this);
+      }
+
       HttpRuntimeConfig config =
           HttpRuntimeConfig.builder()
               .baseUri(baseUri)
@@ -188,6 +238,7 @@ public interface HttpClient {
               .isDisableCompression(disableCompression)
               .sslContext(sslContext)
               .sslParameters(sslParameters)
+              .authentication(authentication)
               .addAllRequestFilters(requestFilters)
               .addAllResponseFilters(responseFilters)
               .isHttp11Only(!http2Upgrade)

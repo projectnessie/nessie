@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client;
+package org.projectnessie.client.http;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.opentelemetry.api.GlobalOpenTelemetry;
@@ -31,7 +33,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.http.HttpClientBuilder;
+import org.projectnessie.client.api.NessieApiV2;
+import org.projectnessie.client.http.v1api.HttpApiV1;
+import org.projectnessie.client.http.v2api.HttpApiV2;
 import org.projectnessie.client.rest.NessieBadResponseException;
 import org.projectnessie.client.rest.NessieInternalServerException;
 import org.projectnessie.client.rest.NessieNotAuthorizedException;
@@ -56,12 +60,12 @@ class TestNessieHttpClient {
           Assertions.assertEquals("GET", req.getMethod());
           HttpTestUtil.writeResponseBody(resp, "<html>hello world>", "text/html");
         };
-    try (HttpTestServer server = new HttpTestServer(handler)) {
-      NessieApiV1 api =
-          HttpClientBuilder.builder()
-              .withUri(server.getUri())
-              .withTracing(true)
-              .build(NessieApiV1.class);
+    try (HttpTestServer server = new HttpTestServer(handler);
+        NessieApiV1 api =
+            HttpClientBuilder.builder()
+                .withUri(server.getUri())
+                .withTracing(true)
+                .build(NessieApiV1.class)) {
       assertThatThrownBy(api::getDefaultBranch)
           .isInstanceOf(NessieBadResponseException.class)
           .hasMessageStartingWith(
@@ -108,7 +112,7 @@ class TestNessieHttpClient {
                 .build(NessieApiV1.class)) {
       OpenTelemetry otel = GlobalOpenTelemetry.get();
       Span span = otel.getTracer("nessie-client").spanBuilder("testOpenTracing").startSpan();
-      try (Scope scope = span.makeCurrent()) {
+      try (Scope ignored = span.makeCurrent()) {
         api.getConfig();
       }
     }
@@ -132,7 +136,7 @@ class TestNessieHttpClient {
                 .build(NessieApiV1.class)) {
       OpenTelemetry otel = GlobalOpenTelemetry.get();
       Span span = otel.getTracer("nessie-client").spanBuilder("testOpenTracing").startSpan();
-      try (Scope scope = span.makeCurrent()) {
+      try (Scope ignored = span.makeCurrent()) {
         api.getConfig();
       }
     }
@@ -185,6 +189,30 @@ class TestNessieHttpClient {
           .isInstanceOf(NessieNotAuthorizedException.class)
           .hasMessageContaining("Unauthorized");
     }
+  }
+
+  @Test
+  void testCloseApiV1() {
+    NessieApiClient client = mock(NessieApiClient.class);
+    NessieApiV1 api = new HttpApiV1(client);
+    api.close();
+    verify(client).close();
+  }
+
+  @Test
+  void testCloseApiV2() {
+    HttpClient client = mock(HttpClient.class);
+    NessieApiV2 api = new HttpApiV2(client);
+    api.close();
+    verify(client).close();
+  }
+
+  @Test
+  void testCloseApiClient() {
+    HttpClient client = mock(HttpClient.class);
+    NessieApiClient apiClient = new NessieHttpClient(client);
+    apiClient.close();
+    verify(client).close();
   }
 
   static HttpTestServer.RequestHandler handlerForHeaderTest(

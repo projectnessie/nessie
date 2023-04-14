@@ -44,6 +44,134 @@ public final class NessieConfigConstants {
    * authentication.
    */
   public static final String CONF_NESSIE_AUTH_TOKEN = "nessie.authentication.token";
+
+  /**
+   * Config property name ({@value #CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT}) for the OAuth2
+   * authentication provider. The URL of the OAuth2 token endpoint; this should include not only the
+   * OAuth2 server's address, but also the path to the token REST resource, if any. For Keycloak,
+   * this is typically {@code
+   * https://<keycloak-server>/realms/<realm-name>/protocol/openid-connect/token}. Required if using
+   * OAuth2 authentication, ignored otherwise.
+   */
+  public static final String CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT =
+      "nessie.authentication.oauth2.token-endpoint";
+
+  public static final String CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS =
+      "client_credentials";
+
+  public static final String CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD = "password";
+
+  /**
+   * Config property name ({@value #CONF_NESSIE_OAUTH2_GRANT_TYPE}) for the OAuth2 authentication
+   * provider. The grant type to use when authenticating against the OAuth2 server. Valid values
+   * are: {@value #CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS} (default) or {@value
+   * #CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD}. Required if using OAuth2 authentication, ignored
+   * otherwise.
+   *
+   * <p>When using the "client_credentials" grant type, the client ID and secret are used to
+   * authenticate the client against the OAuth2 server. The client must be configured to allow this
+   * grant type.
+   *
+   * <p>When using the "password" grant type, the client ID and secret are used to authenticate the
+   * client against the OAuth2 server, and the username and password are used to authenticate the
+   * user. The client must be configured to allow this grant type, and the user must be configured
+   * to allow the client to use this grant type.
+   */
+  public static final String CONF_NESSIE_OAUTH2_GRANT_TYPE =
+      "nessie.authentication.oauth2.grant-type";
+
+  /**
+   * Config property name ({@value #CONF_NESSIE_OAUTH2_CLIENT_ID}) for the OAuth2 authentication
+   * provider. The client ID to use when authenticating against the OAuth2 server. Required if using
+   * OAuth2 authentication, ignored otherwise.
+   */
+  public static final String CONF_NESSIE_OAUTH2_CLIENT_ID =
+      "nessie.authentication.oauth2.client-id";
+
+  /**
+   * Config property name ({@value #CONF_NESSIE_OAUTH2_CLIENT_SECRET}) for the OAuth2 authentication
+   * provider. The client secret to use when authenticating against the OAuth2 server. Required if
+   * using OAuth2 authentication, ignored otherwise.
+   */
+  public static final String CONF_NESSIE_OAUTH2_CLIENT_SECRET =
+      "nessie.authentication.oauth2.client-secret";
+
+  /**
+   * Config property name ({@value #CONF_NESSIE_OAUTH2_USERNAME}) for the OAuth2 authentication
+   * provider. The username to use when authenticating against the OAuth2 server. Required if using
+   * OAuth2 authentication and "password" grant type, ignored otherwise.
+   */
+  public static final String CONF_NESSIE_OAUTH2_USERNAME = "nessie.authentication.oauth2.username";
+
+  /**
+   * Config property name ({@value #CONF_NESSIE_OAUTH2_PASSWORD}) for the OAuth2 authentication
+   * provider. The user password to use when authenticating against the OAuth2 server. Required if
+   * using OAuth2 authentication and the "password" grant type, ignored otherwise.
+   */
+  public static final String CONF_NESSIE_OAUTH2_PASSWORD = "nessie.authentication.oauth2.password";
+
+  public static final String DEFAULT_DEFAULT_ACCESS_TOKEN_LIFESPAN = "PT1M";
+
+  /**
+   * Config property name ({@value #CONF_NESSIE_OAUTH2_DEFAULT_ACCESS_TOKEN_LIFESPAN}) for the
+   * OAuth2 authentication provider. The default access token lifespan; if the OAuth2 server returns
+   * an access token without specifying its expiration time, this value will be used. Optional,
+   * defaults to {@value #DEFAULT_DEFAULT_ACCESS_TOKEN_LIFESPAN}. Must be a valid <a
+   * href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO-8601 duration</a>.
+   */
+  public static final String CONF_NESSIE_OAUTH2_DEFAULT_ACCESS_TOKEN_LIFESPAN =
+      "nessie.authentication.oauth2.default-access-token-lifespan";
+
+  public static final String DEFAULT_DEFAULT_REFRESH_TOKEN_LIFESPAN = "PT30M";
+
+  /**
+   * Config property name ({@value #CONF_NESSIE_OAUTH2_DEFAULT_REFRESH_TOKEN_LIFESPAN}) for the
+   * OAuth2 authentication provider. The default refresh token lifespan; if the OAuth2 server
+   * returns an refresh token without specifying its expiration time, this value will be used.
+   * Optional, defaults to {@value #DEFAULT_DEFAULT_REFRESH_TOKEN_LIFESPAN}. Must be a valid <a
+   * href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO-8601 duration</a>.
+   */
+  public static final String CONF_NESSIE_OAUTH2_DEFAULT_REFRESH_TOKEN_LIFESPAN =
+      "nessie.authentication.oauth2.default-refresh-token-lifespan";
+
+  public static final String DEFAULT_REFRESH_SAFETY_WINDOW = "PT10S";
+
+  /**
+   * Config property name ({@value #CONF_NESSIE_OAUTH2_REFRESH_SAFETY_WINDOW}) for the OAuth2
+   * authentication provider. The refresh safety window to use; a new token will be fetched when the
+   * current token's remaining validity is less than this value. Optional, defaults to {@value
+   * #DEFAULT_REFRESH_SAFETY_WINDOW}. Must be a valid <a
+   * href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO-8601 duration</a>.
+   */
+  public static final String CONF_NESSIE_OAUTH2_REFRESH_SAFETY_WINDOW =
+      "nessie.authentication.oauth2.refresh-safety-window";
+
+  /**
+   * Config property name ({@value #CONF_NESSIE_OAUTH2_CLIENT_SCOPES}) for the OAuth2 authentication
+   * provider. Space-separated list of scopes to include in each request to the OAuth2 server.
+   * Optional, defaults to empty (no scopes).
+   *
+   * <p>The scope names will not be validated by the Nessie client; make sure they are valid
+   * according to <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-3.3">RFC 6749
+   * Section 3.3</a>.
+   */
+  public static final String CONF_NESSIE_OAUTH2_CLIENT_SCOPES =
+      "nessie.authentication.oauth2.client-scopes";
+
+  /**
+   * Config property name ({@value #CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED}) for the OAuth2
+   * authentication provider. If set to {@code true}, the Nessie client will attempt to exchange
+   * access tokens for refresh tokens whenever appropriate. This, however, can only work if the
+   * OAuth2 server supports token exchange. Optional, defaults to {@code true} (enabled).
+   *
+   * <p>Note that recent versions of Keycloak support token exchange, but it is disabled by default.
+   * See <a
+   * href="https://www.keycloak.org/docs/latest/securing_apps/index.html#internal-token-to-internal-token-exchange">Using
+   * token exchange</a> for more information and how to enable this feature.
+   */
+  public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED =
+      "nessie.authentication.oauth2.token-exchange-enabled";
+
   /**
    * Config property name ({@value #CONF_NESSIE_AWS_REGION}) for the region used for AWS
    * authentication.

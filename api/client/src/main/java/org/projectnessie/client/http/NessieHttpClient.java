@@ -15,8 +15,6 @@
  */
 package org.projectnessie.client.http;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -27,48 +25,18 @@ import org.projectnessie.api.v1.http.HttpDiffApi;
 import org.projectnessie.api.v1.http.HttpNamespaceApi;
 import org.projectnessie.api.v1.http.HttpRefLogApi;
 import org.projectnessie.api.v1.http.HttpTreeApi;
-import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.error.BaseNessieClientServerException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 final class NessieHttpClient extends NessieApiClient {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(NessieHttpClient.class);
-
-  private static final ObjectMapper MAPPER =
-      new ObjectMapper()
-          .enable(SerializationFeature.INDENT_OUTPUT)
-          .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+  private final HttpClient httpClient;
 
   /**
    * Create new HTTP Nessie client. All REST api endpoints are mapped here. This client should
    * support any JAX-RS implementation
-   *
-   * @param authentication authenticator to use
-   * @param enableTracing whether to enable tracing
-   * @param clientBuilder the client-builder to use
    */
-  NessieHttpClient(
-      HttpAuthentication authentication, boolean enableTracing, HttpClient.Builder clientBuilder) {
-    this(buildClient(authentication, enableTracing, clientBuilder));
-  }
-
-  static HttpClient buildClient(
-      HttpAuthentication authentication, boolean enableTracing, HttpClient.Builder clientBuilder) {
-    clientBuilder.setObjectMapper(MAPPER);
-    if (enableTracing) {
-      addTracing(clientBuilder);
-    }
-    if (authentication != null) {
-      authentication.applyToHttpClient(clientBuilder);
-    }
-    clientBuilder.addResponseFilter(new NessieHttpResponseFilter());
-    return clientBuilder.build();
-  }
-
   @SuppressWarnings("deprecation")
-  private NessieHttpClient(HttpClient client) {
+  NessieHttpClient(HttpClient client) {
     super(
         wrap(HttpConfigApi.class, new HttpConfigClient(client)),
         wrap(HttpTreeApi.class, new HttpTreeClient(client)),
@@ -76,15 +44,12 @@ final class NessieHttpClient extends NessieApiClient {
         wrap(HttpDiffApi.class, new HttpDiffClient(client)),
         wrap(HttpRefLogApi.class, new HttpRefLogClient(client)),
         wrap(HttpNamespaceApi.class, new HttpNamespaceClient(client)));
+    this.httpClient = client;
   }
 
-  private static void addTracing(HttpClient.Builder httpClient) {
-    try {
-      OpentelemetryTracing.addTracing(httpClient);
-    } catch (NoClassDefFoundError e) {
-      LOGGER.warn(
-          "Failed to initialize tracing, the opentracing libraries are probably missing.", e);
-    }
+  @Override
+  public void close() {
+    this.httpClient.close();
   }
 
   @SuppressWarnings("unchecked")

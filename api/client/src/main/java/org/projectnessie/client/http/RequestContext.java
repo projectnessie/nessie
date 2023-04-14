@@ -34,6 +34,10 @@ public interface RequestContext {
 
   Method getMethod();
 
+  Optional<String> getContentType();
+
+  boolean isFormEncoded();
+
   Optional<Object> getBody();
 
   /**

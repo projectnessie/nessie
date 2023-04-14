@@ -17,3 +17,4 @@ org.projectnessie.client.auth.BasicAuthenticationProvider
 org.projectnessie.client.auth.BearerAuthenticationProvider
 org.projectnessie.client.auth.AwsAuthenticationProvider
 org.projectnessie.client.auth.NoneAuthenticationProvider
+org.projectnessie.client.auth.oauth2.OAuth2AuthenticationProvider

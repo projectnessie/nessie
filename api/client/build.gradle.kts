@@ -77,6 +77,12 @@ dependencies {
   testFixturesApi(libs.undertow.core)
   testFixturesApi(libs.undertow.servlet)
   testFixturesImplementation(libs.logback.classic)
+
+  intTestImplementation(libs.testcontainers.testcontainers)
+  intTestImplementation(libs.testcontainers.junit)
+  intTestImplementation(libs.testcontainers.keycloak) {
+    exclude(group = "org.slf4j") // uses SLF4J 2.x, we are not ready yet
+  }
 }
 
 jandex { skipDefaultProcessing() }
