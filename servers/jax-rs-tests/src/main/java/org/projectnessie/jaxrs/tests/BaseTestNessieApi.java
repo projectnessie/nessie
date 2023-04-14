@@ -210,6 +210,13 @@ public abstract class BaseTestNessieApi {
   }
 
   @Test
+  @NessieApiVersions(versions = NessieApiVersion.V2)
+  public void specVersion() {
+    NessieConfiguration config = api().getConfig();
+    soft.assertThat(config.getSpecVersion()).isNotEmpty();
+  }
+
+  @Test
   public void references() throws Exception {
     Branch main = api().getDefaultBranch();
     soft.assertThat(api().getAllReferences().get().getReferences()).containsExactly(main);
