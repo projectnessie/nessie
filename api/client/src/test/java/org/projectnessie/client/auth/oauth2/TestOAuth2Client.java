@@ -238,7 +238,7 @@ class TestOAuth2Client {
             .satisfies(
                 r -> {
                   soft.assertThat(r.getErrorCode()).isEqualTo("invalid_request");
-                  soft.assertThat(r.getMessage()).isEqualTo("Unknown scope: invalid-scope");
+                  soft.assertThat(r.getMessage()).contains("Unknown scope: invalid-scope");
                 });
       }
     }

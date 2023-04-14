@@ -23,14 +23,24 @@ public class OAuth2Exception extends HttpClientException {
   private final Status status;
   private final String errorCode;
 
-  OAuth2Exception(Status status, ErrorResponse errorResponse) {
-    super(
-        errorResponse.getErrorDescription() == null
-            ? "OAuth2 server replied with HTTP status code 400 and error code: "
-                + errorResponse.getErrorCode()
-            : errorResponse.getErrorDescription());
+  public OAuth2Exception(Status status, ErrorResponse errorResponse) {
+    super(createMessage(status, errorResponse));
     this.status = status;
     this.errorCode = errorResponse.getErrorCode();
+  }
+
+  private static String createMessage(Status status, ErrorResponse errorResponse) {
+    StringBuilder builder =
+        new StringBuilder()
+            .append("OAuth2 server replied with HTTP status code ")
+            .append(status.getCode())
+            .append(" and error code \"")
+            .append(errorResponse.getErrorCode())
+            .append("\"");
+    if (errorResponse.getErrorDescription() != null) {
+      builder.append(": ").append(errorResponse.getErrorDescription());
+    }
+    return builder.toString();
   }
 
   public Status getStatus() {
