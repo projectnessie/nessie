@@ -115,7 +115,8 @@ class TestOAuth2AuthenticationProvider {
     RequestContext context = mock(RequestContext.class);
     assertThatThrownBy(() -> authentication.addAuthHeader(context))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("OAuth2 token type must be 'Bearer', but was: INVALID");
+        .hasMessage(
+            "OAuth2 token type returned from the authenticating server must be 'Bearer', but was: INVALID");
     verify(authenticator).authenticate();
     verify(context, Mockito.never()).putHeader(Mockito.any(), Mockito.any());
   }

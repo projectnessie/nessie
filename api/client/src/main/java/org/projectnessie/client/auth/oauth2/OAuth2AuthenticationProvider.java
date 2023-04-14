@@ -64,7 +64,8 @@ public class OAuth2AuthenticationProvider implements NessieAuthenticationProvide
       AccessToken token = authenticator.authenticate();
       if (!token.getTokenType().toLowerCase(Locale.ROOT).equals("bearer")) {
         throw new IllegalArgumentException(
-            "OAuth2 token type returned from the authenticating server must be 'Bearer', but was: " + token.getTokenType());
+            "OAuth2 token type returned from the authenticating server must be 'Bearer', but was: "
+                + token.getTokenType());
       }
       ctx.putHeader("Authorization", "Bearer " + token.getPayload());
     }
