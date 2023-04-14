@@ -48,7 +48,7 @@ interface TokensExchangeRequest extends TokensRequestBase {
   String GRANT_TYPE = "urn:ietf:params:oauth:grant-type:token-exchange";
 
   /**
-   * REQUIRED. The value urn:ietf:params:oauth2:grant-type:token-exchange indicates that a token
+   * REQUIRED. The value {@value #GRANT_TYPE} indicates that a token
    * exchange is being performed.
    */
   @Value.Default
