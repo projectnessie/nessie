@@ -135,9 +135,10 @@ preferred to this one.
 ## Authentication Type `OAUTH2`
 
 The `OAUTH2` Authentication Type is able to authenticate against an OAuth2 server and obtain a valid
-access token. The access token is then used to authenticate against Nessie. The client will
-automatically refresh the access token. This authentication type is recommended when the access
-token has a lifespan shorter than the Nessie client's session lifespan.
+access token. Only Bearer access tokens are currently supported. The access token is then used to
+authenticate against Nessie. The client will automatically refresh the access token. This
+authentication type is recommended when the access token has a lifespan shorter than the Nessie
+client's session lifespan.
 
 Note that the Nessie server must be configured to accept OAuth2 tokens from the same server. For
 example, if the OAuth2 server is Keycloak, this can be done by defining the following properties in
