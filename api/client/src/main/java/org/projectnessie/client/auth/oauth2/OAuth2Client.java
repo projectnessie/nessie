@@ -159,6 +159,8 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
       }
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
+    } finally {
+      tokenRefreshFuture = null;
     }
   }
 
