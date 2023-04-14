@@ -22,6 +22,8 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import javax.annotation.Nullable;
 
 /**
@@ -87,13 +89,7 @@ class JwtToken {
    */
   @Nullable
   public String getIssuer() {
-    return (String)
-        claims.computeIfAbsent(
-            ISS_CLAIM,
-            k ->
-                payload.has(ISS_CLAIM) && payload.get(ISS_CLAIM).isTextual()
-                    ? payload.get(ISS_CLAIM).asText()
-                    : null);
+    return (String) claims.computeIfAbsent(ISS_CLAIM, k -> payloadFieldValueTextual(ISS_CLAIM));
   }
 
   /**
@@ -105,13 +101,7 @@ class JwtToken {
    */
   @Nullable
   public String getSubject() {
-    return (String)
-        claims.computeIfAbsent(
-            SUB_CLAIM,
-            k ->
-                payload.has(SUB_CLAIM) && payload.get(SUB_CLAIM).isTextual()
-                    ? payload.get(SUB_CLAIM).asText()
-                    : null);
+    return (String) claims.computeIfAbsent(SUB_CLAIM, k -> payloadFieldValueTextual(SUB_CLAIM));
   }
 
   /**
@@ -126,13 +116,7 @@ class JwtToken {
    */
   @Nullable
   public String getAudience() {
-    return (String)
-        claims.computeIfAbsent(
-            AUD_CLAIM,
-            k ->
-                payload.has(AUD_CLAIM) && payload.get(AUD_CLAIM).isTextual()
-                    ? payload.get(AUD_CLAIM).asText()
-                    : null);
+    return (String) claims.computeIfAbsent(AUD_CLAIM, k -> payloadFieldValueTextual(AUD_CLAIM));
   }
 
   /**
@@ -147,13 +131,7 @@ class JwtToken {
    */
   @Nullable
   public Instant getExpirationTime() {
-    return (Instant)
-        claims.computeIfAbsent(
-            EXP_CLAIM,
-            k ->
-                payload.has(EXP_CLAIM) && payload.get(EXP_CLAIM).canConvertToLong()
-                    ? Instant.ofEpochSecond(payload.get(EXP_CLAIM).asLong())
-                    : null);
+    return (Instant) claims.computeIfAbsent(EXP_CLAIM, k -> payloadFieldValueInstant(EXP_CLAIM));
   }
 
   /**
@@ -165,13 +143,7 @@ class JwtToken {
    */
   @Nullable
   public Instant getNotBefore() {
-    return (Instant)
-        claims.computeIfAbsent(
-            NBF_CLAIM,
-            k ->
-                payload.has(NBF_CLAIM) && payload.get(NBF_CLAIM).canConvertToLong()
-                    ? Instant.ofEpochSecond(payload.get(NBF_CLAIM).asLong())
-                    : null);
+    return (Instant) claims.computeIfAbsent(NBF_CLAIM, k -> payloadFieldValueInstant(NBF_CLAIM));
   }
 
   /**
@@ -181,13 +153,7 @@ class JwtToken {
    */
   @Nullable
   public Instant getIssuedAt() {
-    return (Instant)
-        claims.computeIfAbsent(
-            IAT_CLAIM,
-            k ->
-                payload.has(IAT_CLAIM) && payload.get(IAT_CLAIM).canConvertToLong()
-                    ? Instant.ofEpochSecond(payload.get(IAT_CLAIM).asLong())
-                    : null);
+    return (Instant) claims.computeIfAbsent(IAT_CLAIM, k -> payloadFieldValueInstant(IAT_CLAIM));
   }
 
   /**
@@ -200,17 +166,29 @@ class JwtToken {
    */
   @Nullable
   public String getId() {
-    return (String)
-        claims.computeIfAbsent(
-            JTI_CLAIM,
-            k ->
-                payload.has(JTI_CLAIM) && payload.get(JTI_CLAIM).isTextual()
-                    ? payload.get(JTI_CLAIM).asText()
-                    : null);
+    return (String) claims.computeIfAbsent(JTI_CLAIM, k -> payloadFieldValueTextual(JTI_CLAIM));
   }
 
   @Override
   public String toString() {
     return "JwtToken" + payload;
+  }
+
+  private String payloadFieldValueTextual(String field) {
+    return payloadFieldValue(field, JsonNode::isTextual, JsonNode::asText);
+  }
+
+  private Instant payloadFieldValueInstant(String field) {
+    return payloadFieldValue(
+        field, JsonNode::canConvertToLong, node -> Instant.ofEpochSecond(node.asLong()));
+  }
+
+  private <T> T payloadFieldValue(
+      String field, Predicate<JsonNode> tester, Function<JsonNode, T> mapper) {
+    JsonNode value = payload.get(field);
+    if (value == null || value.isNull() || !tester.test(value)) {
+      return null;
+    }
+    return mapper.apply(value);
   }
 }
