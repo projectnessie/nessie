@@ -107,7 +107,7 @@ environment-specific prefixes for brevity. Nonetheless, in practice the property
 given appropriate prefixes (as in the example above) for them to be recognized by the tools and Nessie
 code.
 
-The value of the `nessie.authentication.type` property can be one of the following:
+The value of the `authentication.type` property can be one of the following:
 
 * `NONE` (default)
 * `BEARER`
@@ -117,14 +117,14 @@ The value of the `nessie.authentication.type` property can be one of the followi
 
 ## Authentication Type `NONE`
 
-For the Authentication Type `NONE` only the `nessie.authentication.type` property needs to be set.
+For the Authentication Type `NONE` only the `authentication.type` property needs to be set.
 
 This is also the default authentication type if nothing else is configured.
 
 ## Authentication Type `BEARER`
 
-For the `BEARER` Authentication Type the `nessie.authentication.token` property should be set to a
-valid [OpenID token](https://openid.net/specs/openid-connect-core-1_0.html).
+For the `BEARER` Authentication Type the `authentication.token` property should be set to a valid
+[OpenID token](https://openid.net/specs/openid-connect-core-1_0.html).
 
 This authentication type is recommended only when the issued access token has a lifespan large
 enough to cover the duration of the entire Nessie client's session. Once the token is expired, the
@@ -151,53 +151,52 @@ quarkus.oidc.auth-server-url=https://<keycloak-server>/realms/<realm-name>
 
 The following properties are available for the `OAUTH2` authentication type:
 
-* `nessie.authentication.oauth2.token-endpoint`: the URL of the OAuth2 token endpoint; this should
-  include not only the OAuth2 server's address, but also the path to the token REST resource, if
-  any. For Keycloak, this is typically
+* `authentication.oauth2.token-endpoint`: the URL of the OAuth2 token endpoint; this should include
+  not only the OAuth2 server's address, but also the path to the token REST resource, if any. For
+  Keycloak, this is typically
   `https://<keycloak-server>/realms/<realm-name>/protocol/openid-connect/token`. Required.
 
-* `nessie.authentication.oauth2.grant-type`: the grant type to use when authenticating against the
-  OAuth2 server. Valid values are: `client_credentials` or `password`. Optional, defaults to
+* `authentication.oauth2.grant-type`: the grant type to use when authenticating against the OAuth2
+  server. Valid values are: `client_credentials` or `password`. Optional, defaults to
   `client_credentials`. For both grant types, a client ID and secret must be provided and will be
   used to authenticate the client against the OAuth2 server. When using the "password" grant type, a
   username and password must also be provided, and are used to authenticate the user. Both client
   and user must be properly configured with appropriate permissions in the OAuth2 server for the
   authentication to succeed.
 
-* `nessie.authentication.oauth2.client-id`: the client ID to use when authenticating against the
+* `authentication.oauth2.client-id`: the client ID to use when authenticating against the OAuth2
+  server. Required.
+
+* `authentication.oauth2.client-secret`: the client secret to use when authenticating against the
   OAuth2 server. Required.
 
-* `nessie.authentication.oauth2.client-secret`: the client secret to use when authenticating 
-  against the OAuth2 server. Required.
+* `authentication.oauth2.username`: the username to use when authenticating against the OAuth2
+  server. Required if using the "password" grant type.
 
-* `nessie.authentication.oauth2.username`: the username to use when authenticating against the
-  OAuth2 server. Required if using the "password" grant type.
+* `authentication.oauth2.password`: the password to use when authenticating against the OAuth2
+  server. Required if using the "password" grant type.
 
-* `nessie.authentication.oauth2.password`: the password to use when authenticating against the
-  OAuth2 server. Required if using the "password" grant type.
+* `authentication.oauth2.default-access-token-lifespan`: the default access token lifespan; if the
+  OAuth2 server returns an access token without specifying its expiration time, this value will be
+  used. Optional, defaults to `PT1M` (1 minute). Must be a valid [ISO-8601 duration].
 
-* `nessie.authentication.oauth2.default-access-token-lifespan`: the default access token lifespan;
-  if the OAuth2 server returns an access token without specifying its expiration time, this value
-  will be used. Optional, defaults to `PT1M` (1 minute). Must be a valid [ISO-8601 duration].
-
-* `nessie.authentication.oauth2.default-refresh-token-lifespan`: the default refresh token lifespan;
+* `authentication.oauth2.default-refresh-token-lifespan`: the default refresh token lifespan;
   if the OAuth2 server returns a refresh token without specifying its expiration time, this value
   will be used. Optional, defaults to `PT30M` (30 minutes). Must be a valid [ISO-8601 duration].
 
-* `nessie.authentication.oauth2.refresh-safety-window`: the refresh safety window to use; a new
-  token will be fetched when the current token's remaining lifespan is less than this value.
-  Optional, defaults to `PT10S` (10 seconds). Must be a valid [ISO-8601 duration].
+* `authentication.oauth2.refresh-safety-window`: the refresh safety window to use; a new token will
+  be fetched when the current token's remaining lifespan is less than this value. Optional, defaults
+  to `PT10S` (10 seconds). Must be a valid [ISO-8601 duration].
 
-* `nessie.authentication.oauth2.client-scopes`: space-separated list of scopes to include in each
-  request to the OAuth2 server. Optional, defaults to empty (no scopes). The scope names will not be
-  validated by the Nessie client; make sure they are valid according to [RFC 6749 Section
-  3.3].
+* `authentication.oauth2.client-scopes`: space-separated list of scopes to include in each request
+  to the OAuth2 server. Optional, defaults to empty (no scopes). The scope names will not be
+  validated by the Nessie client; make sure they are valid according to [RFC 6749 Section 3.3].
 
-* `nessie.authentication.oauth2.token-exchange-enabled`: if set to `true`, the Nessie client will
-  attempt to exchange access tokens for refresh tokens whenever appropriate. This, however, can
-  only work if the OAuth2 server supports token exchange. Optional, defaults to `true` (enabled).
-  Note that recent versions of Keycloak support token exchange, but it is disabled by default.
-  See [Using token exchange] for more information and how to enable this feature.
+* `authentication.oauth2.token-exchange-enabled`: if set to `true`, the Nessie client will attempt
+  to exchange access tokens for refresh tokens whenever appropriate. This, however, can only work if
+  the OAuth2 server supports token exchange. Optional, defaults to `true` (enabled). Note that
+  recent versions of Keycloak support token exchange, but it is disabled by default. See [Using
+  token exchange] for more information and how to enable this feature.
 
 [ISO-8601 duration]: https://en.wikipedia.org/wiki/ISO_8601#Durations
 [RFC 6749 Section 3.3]: https://datatracker.ietf.org/doc/html/rfc6749#section-3.3
@@ -205,15 +204,15 @@ The following properties are available for the `OAUTH2` authentication type:
 
 ## Authentication Type `AWS`
 
-For the `AWS` Authentication Type the `nessie.authentication.aws.region` property should be set to the
+For the `AWS` Authentication Type the `authentication.aws.region` property should be set to the
 AWS region where the Nessie Server endpoint is located.
 
 Additional AWS authentication configuration should be provided via standard AWS configuration files. 
 
 ## Authentication Type `BASIC`
 
-For the `BASIC` Authentication Type the `nessie.authentication.username` and `nessie.authentication.password` 
-properties should be set.
+For the `BASIC` Authentication Type the `authentication.username` and `authentication.password` properties
+should be set.
 
 Note: the `BASIC` authentication type is considered insecure and Nessie Servers do not support it in production
 mode. This authentication type can only be used when the Nessie Server runs in test or "development" mode.
