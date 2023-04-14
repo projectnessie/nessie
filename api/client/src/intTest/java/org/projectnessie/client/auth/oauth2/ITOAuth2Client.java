@@ -292,7 +292,7 @@ public class ITOAuth2Client {
   }
 
   @Test
-  void testOAuth2ClientExpiredToken() throws InterruptedException {
+  void testOAuth2ClientExpiredToken() {
     OAuth2ClientParams params = clientParams("Client1").build();
     try (OAuth2Client client = new OAuth2Client(params);
         HttpClient validatingClient = validatingHttpClient("Client1").build()) {

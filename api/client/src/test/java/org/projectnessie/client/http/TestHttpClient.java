@@ -18,6 +18,10 @@ package org.projectnessie.client.http;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assumptions.assumeThat;
+import static org.assertj.core.api.Assumptions.assumeThatCode;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.projectnessie.client.util.HttpTestUtil.writeEmptyResponse;
 import static org.projectnessie.client.util.HttpTestUtil.writeResponseBody;
 
@@ -56,6 +60,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 import org.assertj.core.api.AbstractThrowableAssert;
 import org.assertj.core.api.SoftAssertions;
@@ -68,6 +73,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.client.http.impl.HttpRuntimeConfig;
+import org.projectnessie.client.http.impl.jdk8.UrlConnectionClient;
 import org.projectnessie.client.util.HttpTestServer;
 import org.projectnessie.model.CommitMeta;
 
@@ -599,6 +606,47 @@ public class TestHttpClient {
 
   static Stream<ExampleBean> testPostForm() {
     return Stream.of(new ExampleBean(), new ExampleBean("x", 1, NOW));
+  }
+
+  @Test
+  void testCloseJava11Client() throws Exception {
+    assumeThatCode(() -> Class.forName("java.net.http.HttpClient")).doesNotThrowAnyException();
+    HttpRuntimeConfig config = mock(HttpRuntimeConfig.class);
+    when(config.getConnectionTimeoutMillis()).thenReturn(100);
+    HttpClient client =
+        (HttpClient)
+            Class.forName("org.projectnessie.client.http.impl.jdk11.JavaHttpClient")
+                .getConstructor(HttpRuntimeConfig.class)
+                .newInstance(config);
+    client.close();
+    verify(config).close();
+  }
+
+  @Test
+  void testCloseJava8Client() {
+    HttpRuntimeConfig config = mock(HttpRuntimeConfig.class);
+    when(config.getConnectionTimeoutMillis()).thenReturn(100);
+    HttpClient client = new UrlConnectionClient(config);
+    client.close();
+    verify(config).close();
+  }
+
+  @Test
+  void testCloseHttpRuntimeConfig() throws Exception {
+    HttpAuthentication authentication = mock(HttpAuthentication.class);
+    HttpRuntimeConfig config =
+        HttpRuntimeConfig.builder()
+            .baseUri(URI.create("http://localhost:19120"))
+            .mapper(MAPPER)
+            .responseFactory((ctx, mapper) -> null)
+            .readTimeoutMillis(100)
+            .connectionTimeoutMillis(100)
+            .isDisableCompression(false)
+            .sslContext(SSLContext.getDefault())
+            .authentication(authentication)
+            .build();
+    config.close();
+    verify(authentication).close();
   }
 
   @SuppressWarnings("unused")
