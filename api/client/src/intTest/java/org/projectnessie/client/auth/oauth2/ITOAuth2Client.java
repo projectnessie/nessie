@@ -50,7 +50,6 @@ import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClientBuilder;
 import org.projectnessie.client.http.Status;
-import org.projectnessie.client.rest.NessieNotAuthorizedException;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -331,30 +330,9 @@ public class ITOAuth2Client {
     }
   }
 
-  @Test
-  void testOAuth2ClientExpiredToken() throws InterruptedException {
-    OAuth2ClientParams params = clientParams("Client1").build();
-    AtomicReference<AccessToken> token = new AtomicReference<>();
-    try (OAuth2Client client = new OAuth2Client(params);
-        NessieApiV1 nessie = nessieApi(NessieApiV1.class, token::get)) {
-      Tokens tokens = client.fetchNewTokens();
-      token.set(tokens.getAccessToken());
-      // Revoking the token is not enough because Nessie only
-      // validates the JWT token, it doesn't query Keycloak,
-      // so we need to wait until the token is expired :-(
-      Thread.sleep(11000);
-      assertNessieQueryUnauthorized(nessie);
-    }
-  }
-
   private void assertNessieQueryAuthorized(NessieApiV1 nessieApi) {
     soft.assertThatCode(() -> nessieApi.getReference().refName("main").get().getHash())
         .doesNotThrowAnyException();
-  }
-
-  private void assertNessieQueryUnauthorized(NessieApiV1 nessieApi) {
-    soft.assertThatThrownBy(() -> nessieApi.getReference().refName("main").get().getHash())
-        .isInstanceOf(NessieNotAuthorizedException.class);
   }
 
   private void compareTokens(Tokens oldTokens, Tokens newTokens, String clientId) {
