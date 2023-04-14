@@ -212,7 +212,7 @@ reference the `org.projectnessie.model` package.
           Full operation contents are sent separately as content-related events.
         <p>A <code>MERGE</code> event should trigger:</p>
         <ul>
-          <li>0-N content events (one for each global PUT/DELETE operation, excluding intermediary operations).</li>
+          <li>0-N content events (one for each PUT/DELETE operation, excluding intermediary operations).</li>
         </ul>
       </td>
     </tr>
@@ -231,7 +231,7 @@ reference the `org.projectnessie.model` package.
           Full operation contents are sent separately as content-related events.
         <p>A <code>TRANSPLANT</code> event should trigger:</p>
         <ul>
-          <li>0-N content events (one for each global PUT/DELETE operation, excluding intermediary operations).</li>
+          <li>0-N content events (one for each PUT/DELETE operation, excluding intermediary operations).</li>
         </ul>
       </td>
     </tr>
