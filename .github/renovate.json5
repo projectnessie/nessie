@@ -68,10 +68,14 @@
     {
       matchManagers: ["maven", "gradle"],
       matchPackageNames: [
-        "org.rocksdb:rocksdbjni",
         "com.google.guava:guava",
-        "io.quarkus:quarkus-bom",
+        "com.google.protobuf:protobuf-java",
+        "io.quarkus.platform:quarkus-bom",
         "io.quarkus.platform:quarkus-amazon-services-bom",
+        "org.jboss:jandex",
+        "org.projectnessie.buildsupport:reflection-config",
+        "org.projectnessie.cel:cel-bom",
+        "org.rocksdb:rocksdbjni",
       ],
       "labels": ["pr-native", "pr-docker"]
     },
