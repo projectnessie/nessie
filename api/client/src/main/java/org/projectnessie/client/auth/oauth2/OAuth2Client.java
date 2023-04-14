@@ -188,7 +188,16 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
         // try refreshing the current tokens
         .thenApply(this::refreshTokens)
         // if that fails, try fetching brand-new tokens
-        .exceptionally(error -> fetchNewTokens());
+        .exceptionally(error -> fetchNewTokens())
+        .whenComplete(this::log);
+  }
+
+  private void log(Tokens tokens, Throwable error) {
+    if (error != null) {
+      LOGGER.error("Failed to renew tokens", error);
+    } else {
+      LOGGER.debug("Successfully renewed tokens: {}", tokens);
+    }
   }
 
   Tokens fetchNewTokens() {
