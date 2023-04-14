@@ -129,7 +129,6 @@ public class ITOAuth2Client {
    * </ul>
    */
   @Test
-  @SuppressWarnings("CatchAndPrintStackTrace")
   void testOAuth2ClientWithBackgroundRefresh() throws Exception {
     OAuth2ClientParams params1 = clientParams("Client1").build();
     OAuth2ClientParams params2 = clientParams("Client2").grantType("password").build();
