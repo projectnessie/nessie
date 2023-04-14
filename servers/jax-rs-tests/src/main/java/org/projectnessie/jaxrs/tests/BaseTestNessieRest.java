@@ -77,7 +77,6 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
     RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
   }
 
-  @SuppressWarnings("JUnitMalformedDeclaration")
   @BeforeEach
   void setupRestUri(@NessieClientUri URI uri) {
     clientUri = uri;
@@ -143,6 +142,19 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
   private Branch createBranchV1(String name) {
     Branch test = ImmutableBranch.builder().name(name).build();
     return rest().body(test).post("trees/tree").then().statusCode(200).extract().as(Branch.class);
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "trees/not-there-using",
+        "contents/not-there-using",
+        "something/not-there-using",
+        ""
+      })
+  public void testNotFoundUrls(String path) {
+    rest().get(path).then().statusCode(404);
+    rest().head(path).then().statusCode(404);
   }
 
   @Test
@@ -513,7 +525,6 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
   }
 
   /** Dedicated test for human-readable references in URL paths. */
-  @SuppressWarnings("JUnitMalformedDeclaration")
   @NessieApiVersions(versions = {NessieApiVersion.V2})
   @Test
   void testBranchWithSlashInUrlPath(@NessieClientUri URI clientUri) throws IOException {
@@ -531,7 +542,7 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
 
     // The above request encodes `@` as `%40`, now try the same URL with a literal `@` char to
     // simulate handwritten `curl` requests.
-    URL url = new URL(clientUri + "/trees/test/branch/name1@");
+    URL url = clientUri.resolve(clientUri.getPath() + "/trees/test/branch/name1@").toURL();
     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
     assertThat(conn.getResponseCode()).isEqualTo(200);
     conn.disconnect();
