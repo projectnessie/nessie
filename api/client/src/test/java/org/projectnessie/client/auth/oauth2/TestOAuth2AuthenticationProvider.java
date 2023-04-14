@@ -119,4 +119,12 @@ class TestOAuth2AuthenticationProvider {
     verify(authenticator).authenticate();
     verify(context, Mockito.never()).putHeader(Mockito.any(), Mockito.any());
   }
+
+  @Test
+  void testCloseOAuth2Authentication() {
+    OAuth2Authenticator authenticator = mock(OAuth2Authenticator.class);
+    OAuth2Authentication authentication = new OAuth2Authentication(authenticator);
+    authentication.close();
+    verify(authenticator).close();
+  }
 }
