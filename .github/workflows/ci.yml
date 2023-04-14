@@ -454,10 +454,6 @@ jobs:
   native-quarkus:
     name: CI intTest Quarkus native
     runs-on: ubuntu-22.04
-    strategy:
-      max-parallel: 2
-      matrix:
-        java-version: ['11'] # Ideally also '17', but GH concurrent job limit ... :(
     needs:
       - determine-jobs
     if: needs.determine-jobs.outputs.native == 'true'
@@ -469,13 +465,9 @@ jobs:
           more-memory: 'true'
       - name: Setup Java, Gradle
         uses: ./.github/actions/dev-tool-java
-        with:
-          java-version: ${{ matrix.java-version }}
 
       - name: Prepare Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-prepare
-        with:
-          java-version: ${{ matrix.java-version }}
 
       - name: Gradle / intTest Quarkus native
         uses: gradle/gradle-build-action@v2
