@@ -17,6 +17,11 @@ package org.projectnessie.client.auth.oauth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.entry;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.projectnessie.client.auth.oauth2.OAuth2ClientParams.MIN_REFRESH_DELAY;
 import static org.projectnessie.client.util.HttpTestUtil.writeResponseBody;
 
@@ -25,6 +30,9 @@ import com.google.common.collect.ImmutableMap;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -45,6 +53,73 @@ class TestOAuth2Client {
   @InjectSoftAssertions protected SoftAssertions soft;
 
   @Test
+  void testBackgroundRefresh() throws Exception {
+
+    ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
+
+    // handle the call to fetchNewTokens() for the initial token fetch
+    doAnswer(
+            invocation -> {
+              Runnable runnable = invocation.getArgument(0);
+              runnable.run();
+              return null;
+            })
+        .when(executor)
+        .execute(any(Runnable.class));
+
+    AtomicReference<Runnable> currentRenewalTask = new AtomicReference<>();
+
+    // handle successive calls to scheduleTokensRenewal()
+    when(executor.schedule(any(Runnable.class), anyLong(), any()))
+        .thenAnswer(
+            invocation -> {
+              Runnable runnable = invocation.getArgument(0);
+              currentRenewalTask.set(runnable);
+              return mock(ScheduledFuture.class);
+            });
+
+    try (HttpTestServer server = new HttpTestServer(handler(), true)) {
+
+      ImmutableOAuth2ClientParams params = paramsBuilder(server).executor(executor).build();
+      params.getHttpClient().setSslContext(server.getSslContext());
+
+      try (OAuth2Client client = new OAuth2Client(params)) {
+
+        client.start();
+
+        // should fetch the initial token
+        AccessToken token = client.authenticate();
+        assertThat(token.getPayload()).isEqualTo("access-initial");
+        assertThat(client.getCurrentTokens()).isInstanceOf(ClientCredentialsTokensResponse.class);
+
+        // emulate executor running the scheduled renewal task
+        currentRenewalTask.get().run();
+
+        // should have exchanged the token
+        token = client.authenticate();
+        assertThat(token.getPayload()).isEqualTo("access-exchanged");
+        assertThat(client.getCurrentTokens()).isInstanceOf(TokensExchangeResponse.class);
+
+        // emulate executor running the scheduled renewal task
+        currentRenewalTask.get().run();
+
+        // should have refreshed the token
+        token = client.authenticate();
+        assertThat(token.getPayload()).isEqualTo("access-refreshed");
+        assertThat(client.getCurrentTokens()).isInstanceOf(RefreshTokensResponse.class);
+
+        // emulate executor running the scheduled renewal task
+        currentRenewalTask.get().run();
+
+        // should have refreshed the token again
+        token = client.authenticate();
+        assertThat(token.getPayload()).isEqualTo("access-refreshed");
+        assertThat(client.getCurrentTokens()).isInstanceOf(RefreshTokensResponse.class);
+      }
+    }
+  }
+
+  @Test
   void testClientCredentials() throws Exception {
 
     try (HttpTestServer server = new HttpTestServer(handler(), true)) {
@@ -55,7 +130,7 @@ class TestOAuth2Client {
       try (OAuth2Client client = new OAuth2Client(params)) {
         ClientCredentialsTokensResponse tokens =
             ((ClientCredentialsTokensResponse) client.fetchNewTokens());
-        checkInitialResponse(tokens);
+        checkInitialResponse(tokens, false);
       }
     }
   }
@@ -71,7 +146,7 @@ class TestOAuth2Client {
 
       try (OAuth2Client client = new OAuth2Client(params)) {
         PasswordTokensResponse tokens = ((PasswordTokensResponse) client.fetchNewTokens());
-        checkInitialResponse(tokens);
+        checkInitialResponse(tokens, true);
       }
     }
   }
@@ -85,7 +160,7 @@ class TestOAuth2Client {
       params.getHttpClient().setSslContext(server.getSslContext());
 
       try (OAuth2Client client = new OAuth2Client(params)) {
-        Tokens currentTokens = getClientCredentialsTokensResponse();
+        Tokens currentTokens = getPasswordTokensResponse();
         RefreshTokensResponse tokens =
             ((RefreshTokensResponse) client.refreshTokens(currentTokens));
         checkRefreshResponse(tokens);
@@ -119,7 +194,7 @@ class TestOAuth2Client {
 
       try (OAuth2Client client = new OAuth2Client(params)) {
         Tokens currentTokens =
-            getClientCredentialsTokensResponse()
+            getPasswordTokensResponse()
                 .withRefreshTokenExpirationTime(NOW.minus(Duration.ofSeconds(1)));
 
         soft.assertThatThrownBy(() -> client.refreshTokens(currentTokens))
@@ -186,7 +261,7 @@ class TestOAuth2Client {
         Arguments.of(
             now,
             ImmutableRefreshToken.builder()
-                .payload("cafebabe")
+                .payload("access-initial")
                 .expirationTime(customExpirationTime)
                 .build(),
             defaultLifespan,
@@ -283,14 +358,15 @@ class TestOAuth2Client {
         case RefreshTokensRequest.GRANT_TYPE:
           request = MAPPER.convertValue(data, RefreshTokensRequest.class);
           soft.assertThat(request.getScope()).isEqualTo("test");
-          soft.assertThat(((RefreshTokensRequest) request).getRefreshToken()).isEqualTo("12345678");
+          soft.assertThat(((RefreshTokensRequest) request).getRefreshToken())
+              .isIn("refresh-initial", "refresh-refreshed", "refresh-exchanged");
           response = getRefreshTokensResponse();
           break;
         case TokensExchangeRequest.GRANT_TYPE:
           request = MAPPER.convertValue(data, TokensExchangeRequest.class);
           soft.assertThat(request.getScope()).isEqualTo("test");
           soft.assertThat(((TokensExchangeRequest) request).getSubjectToken())
-              .isEqualTo("cafebabe");
+              .isEqualTo("access-initial");
           soft.assertThat(((TokensExchangeRequest) request).getSubjectTokenType())
               .isEqualTo(TokenTypeIdentifiers.ACCESS_TOKEN);
           soft.assertThat(((TokensExchangeRequest) request).getActorToken()).isNull();
@@ -309,10 +385,9 @@ class TestOAuth2Client {
   private static ImmutableClientCredentialsTokensResponse getClientCredentialsTokensResponse() {
     return ImmutableClientCredentialsTokensResponse.builder()
         .tokenType("bearer")
-        .accessTokenPayload("cafebabe")
+        .accessTokenPayload("access-initial")
         .accessTokenExpirationTime(NOW.plus(Duration.ofHours(1)))
-        .refreshTokenPayload("12345678")
-        .refreshTokenExpirationTime(NOW.plus(Duration.ofDays(1)))
+        // no refresh token
         .scope("test")
         .extraParameters(ImmutableMap.of("foo", "bar"))
         .build();
@@ -321,9 +396,9 @@ class TestOAuth2Client {
   private static ImmutablePasswordTokensResponse getPasswordTokensResponse() {
     return ImmutablePasswordTokensResponse.builder()
         .tokenType("bearer")
-        .accessTokenPayload("cafebabe")
+        .accessTokenPayload("access-initial")
         .accessTokenExpirationTime(NOW.plus(Duration.ofHours(1)))
-        .refreshTokenPayload("12345678")
+        .refreshTokenPayload("refresh-initial")
         .refreshTokenExpirationTime(NOW.plus(Duration.ofDays(1)))
         .scope("test")
         .extraParameters(ImmutableMap.of("foo", "bar"))
@@ -333,9 +408,9 @@ class TestOAuth2Client {
   private static ImmutableRefreshTokensResponse getRefreshTokensResponse() {
     return ImmutableRefreshTokensResponse.builder()
         .tokenType("bearer")
-        .accessTokenPayload("babecafe")
+        .accessTokenPayload("access-refreshed")
         .accessTokenExpirationTime(NOW.plus(Duration.ofHours(2)))
-        .refreshTokenPayload("90abcdef")
+        .refreshTokenPayload("refresh-refreshed")
         .refreshTokenExpirationTime(NOW.plus(Duration.ofDays(2)))
         .scope("test")
         .extraParameters(ImmutableMap.of("foo", "bar"))
@@ -346,37 +421,41 @@ class TestOAuth2Client {
     return ImmutableTokensExchangeResponse.builder()
         .issuedTokenType(TokenTypeIdentifiers.REFRESH_TOKEN)
         .tokenType("bearer")
-        .accessTokenPayload("babecafe")
-        .accessTokenExpirationTime(NOW.plus(Duration.ofHours(2)))
-        .refreshTokenPayload("90abcdef")
-        .refreshTokenExpirationTime(NOW.plus(Duration.ofDays(2)))
+        .accessTokenPayload("access-exchanged")
+        .accessTokenExpirationTime(NOW.plus(Duration.ofHours(3)))
+        .refreshTokenPayload("refresh-exchanged")
+        .refreshTokenExpirationTime(NOW.plus(Duration.ofDays(3)))
         .scope("test")
         .extraParameters(ImmutableMap.of("foo", "bar"))
         .build();
   }
 
-  private void checkInitialResponse(TokensResponseBase response) {
+  private void checkInitialResponse(TokensResponseBase response, boolean expectRefreshToken) {
     soft.assertThat(response.getAccessToken()).isNotNull();
-    soft.assertThat(response.getAccessToken().getPayload()).isEqualTo("cafebabe");
+    soft.assertThat(response.getAccessToken().getPayload()).isEqualTo("access-initial");
     soft.assertThat(response.getAccessToken().getTokenType()).isEqualTo("bearer");
     soft.assertThat(response.getAccessToken().getExpirationTime())
         .isAfterOrEqualTo(NOW.plus(Duration.ofHours(1)).minusSeconds(10));
-    assertThat(response.getRefreshToken()).isNotNull();
-    soft.assertThat(response.getRefreshToken().getPayload()).isEqualTo("12345678");
-    soft.assertThat(response.getRefreshToken().getExpirationTime())
-        .isAfterOrEqualTo(NOW.plus(Duration.ofDays(1)).minusSeconds(10));
+    if (expectRefreshToken) {
+      assertThat(response.getRefreshToken()).isNotNull();
+      soft.assertThat(response.getRefreshToken().getPayload()).isEqualTo("refresh-initial");
+      soft.assertThat(response.getRefreshToken().getExpirationTime())
+          .isAfterOrEqualTo(NOW.plus(Duration.ofDays(1)).minusSeconds(10));
+    } else {
+      assertThat(response.getRefreshToken()).isNull();
+    }
     soft.assertThat(response.getScope()).isEqualTo("test");
     soft.assertThat(response.getExtraParameters()).containsExactly(entry("foo", "bar"));
   }
 
   private void checkRefreshResponse(TokensResponseBase tokens) {
     assertThat(tokens.getAccessToken()).isNotNull();
-    soft.assertThat(tokens.getAccessToken().getPayload()).isEqualTo("babecafe");
+    soft.assertThat(tokens.getAccessToken().getPayload()).isEqualTo("access-refreshed");
     soft.assertThat(tokens.getAccessToken().getTokenType()).isEqualTo("bearer");
     soft.assertThat(tokens.getAccessToken().getExpirationTime())
         .isAfterOrEqualTo(NOW.plus(Duration.ofHours(2)).minusSeconds(10));
     assertThat(tokens.getRefreshToken()).isNotNull();
-    soft.assertThat(tokens.getRefreshToken().getPayload()).isEqualTo("90abcdef");
+    soft.assertThat(tokens.getRefreshToken().getPayload()).isEqualTo("refresh-refreshed");
     soft.assertThat(tokens.getRefreshToken().getExpirationTime())
         .isAfterOrEqualTo(NOW.plus(Duration.ofDays(2)).minusSeconds(10));
     soft.assertThat(tokens.getScope()).isEqualTo("test");
@@ -384,7 +463,17 @@ class TestOAuth2Client {
   }
 
   private void checkExchangeResponse(TokensExchangeResponse tokens) {
-    checkRefreshResponse(tokens);
+    assertThat(tokens.getAccessToken()).isNotNull();
+    soft.assertThat(tokens.getAccessToken().getPayload()).isEqualTo("access-exchanged");
+    soft.assertThat(tokens.getAccessToken().getTokenType()).isEqualTo("bearer");
+    soft.assertThat(tokens.getAccessToken().getExpirationTime())
+        .isAfterOrEqualTo(NOW.plus(Duration.ofHours(3)).minusSeconds(10));
+    assertThat(tokens.getRefreshToken()).isNotNull();
+    soft.assertThat(tokens.getRefreshToken().getPayload()).isEqualTo("refresh-exchanged");
+    soft.assertThat(tokens.getRefreshToken().getExpirationTime())
+        .isAfterOrEqualTo(NOW.plus(Duration.ofDays(3)).minusSeconds(10));
+    soft.assertThat(tokens.getScope()).isEqualTo("test");
+    soft.assertThat(tokens.getExtraParameters()).containsExactly(entry("foo", "bar"));
     soft.assertThat(tokens.getIssuedTokenType()).isEqualTo(TokenTypeIdentifiers.REFRESH_TOKEN);
   }
 

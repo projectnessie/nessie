@@ -290,10 +290,10 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
   private void checkErrorResponse(ResponseContext responseContext) {
     try {
       Status status = responseContext.getResponseCode();
-      if (!responseContext.isJsonCompatibleResponse()) {
-        throw genericError(status);
-      }
       if (status.getCode() >= 400) {
+        if (!responseContext.isJsonCompatibleResponse()) {
+          throw genericError(status);
+        }
         InputStream is = responseContext.getErrorStream();
         if (is != null) {
           try {
