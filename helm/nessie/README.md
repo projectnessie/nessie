@@ -8,7 +8,7 @@ helm-docs --chart-search-root=helm
 
 # Nessie Helm chart
 
-![Version: 0.57.0](https://img.shields.io/badge/Version-0.57.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
+![Version: 0.58.0](https://img.shields.io/badge/Version-0.58.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 
 A Helm chart for Nessie.
 
@@ -63,6 +63,10 @@ $ helm uninstall --namespace nessie-ns nessie
 | autoscaling.minReplicas | int | `1` | The minimum number of replicas to maintain. |
 | autoscaling.targetCPUUtilizationPercentage | int | `80` | Optional; set to zero or empty to disable. |
 | autoscaling.targetMemoryUtilizationPercentage | string | `nil` | Optional; set to zero or empty to disable. |
+| cassandra.auth | object | `{}` |  |
+| cassandra.contactPoints | string | `nil` |  |
+| cassandra.keyspace | string | `"nessie"` |  |
+| cassandra.localDatacenter | string | `nil` |  |
 | dynamodb.region | string | `"us-west-2"` | The AWS region to use. |
 | dynamodb.secret.awsAccessKeyId | string | `"aws_access_key_id"` | The secret key storing the AWS secret key id. |
 | dynamodb.secret.awsSecretAccessKey | string | `"aws_secret_access_key"` | The secret key storing the AWS secret access key. |
@@ -107,7 +111,7 @@ $ helm uninstall --namespace nessie-ns nessie
 | tracing.enabled | bool | `false` | Specifies whether tracing for the nessie server should be enabled. |
 | tracing.endpoint | string | `"http://otlp-collector:4317"` | The collector endpoint URL to connect to (required). The endpoint URL must have either the http:// or the https:// scheme. The collector must talk the OpenTelemetry protocol (OTLP) and the port must be its gRPC port (by default 4317). See https://quarkus.io/guides/opentelemetry for more information. |
 | tracing.sample | string | `"all"` | Which requests should be sampled. Valid values are: "all", "none", or a ratio between 0.0 and 1.0 (inclusive). E.g. 0.5 means that 50% of the requests will be sampled. |
-| versionStoreType | string | `"INMEMORY"` | Which type of version store to use: INMEMORY, ROCKS, DYNAMO, MONGO, TRANSACTIONAL. |
+| versionStoreType | string | `"IN_MEMORY"` | Which type of version store to use: IN_MEMORY, ROCKSDB, DYNAMODB, MONGODB, CASSANDRA, JDBC. (Legacy version store types are: INMEMORY, ROCKS, DYNAMO, MONGO, TRANSACTIONAL. If you are using one of these legacy version store types, migrate your existing repositories to the new version store types using the nessie-quarkus-cli tool's export/import functionality.) |
 
 ## Using secrets
 

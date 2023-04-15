@@ -2,6 +2,27 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.58.0 Release (April 15, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.58.0).
+
+* Renovate: let more dependency trigger Quarkus/native CI (#6596)
+* OAuth2 authentication provider for Nessie client (#6527)
+* Design document for Nessie events notification system (#6482)
+* JAX-RS: Properly "pass through" `WebApplicationException` (#6584)
+* CI: Make Quarkus/native job not a matrix job (#6589)
+* Quarkus: Fix HTTP compression parameters (#6581)
+* Remove direct use of hamcrest (#6583)
+* CI: Replace auto-labeler with changed-files checks (#6577)
+* CI: Use Java 20 in "newer-java" (#6582)
+* Update Helm template for new storage implementation. (#6580)
+* Gradle: eliminate some more `doFirst`/`doLast` script references (#6516)
+* CI: Remove `CI Success` job (#6572)
+* Align Quarkus dependencies (#6565)
+* CI: Skip Helm CI, if version is not available (fix) (#6559)
+* Revert "Update smartbear/swaggerhub-cli action to v0.7.1 (#6519)" (#6556)
+* Release-WF: Disable the Gradle cache (#6555)
+
 ## 0.57.0 Release (April 11, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.57.0).
