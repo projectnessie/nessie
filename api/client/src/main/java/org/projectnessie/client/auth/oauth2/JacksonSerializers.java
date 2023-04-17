@@ -54,8 +54,8 @@ class JacksonSerializers {
 
     @Override
     public Instant deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-      int seconds = p.getValueAsInt(0);
-      if (seconds > 0) {
+      if (p.currentToken().isNumeric()) {
+        int seconds = p.getValueAsInt();
         return Instant.now().plusSeconds(seconds);
       }
       return null;
