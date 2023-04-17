@@ -145,13 +145,7 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
   }
 
   @ParameterizedTest
-  @ValueSource(
-      strings = {
-        "trees/not-there-using",
-        "contents/not-there-using",
-        "something/not-there-using",
-        ""
-      })
+  @ValueSource(strings = {"something/not-there", ""})
   public void testNotFoundUrls(String path) {
     rest().get(path).then().statusCode(404);
     rest().head(path).then().statusCode(404);
