@@ -34,6 +34,10 @@ runs:
         cache-read-only: ${{ inputs.cache-read-only }}
         arguments: -h
 
+    - name: Who's Maven?
+      shell: bash
+      run: host repo.maven.apache.org
+
     - name: Download existing workflow artifacts
       uses: actions/download-artifact@v3
       # Just in case, don't know the exact inner workings of Gradle's build cache and whether
