@@ -17,6 +17,8 @@ package org.projectnessie.client.auth.oauth2;
 
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import dasniko.testcontainers.keycloak.KeycloakContainer;
@@ -28,8 +30,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -44,15 +44,13 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
-import org.projectnessie.client.api.NessieApi;
-import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.api.NessieApiV2;
+import org.projectnessie.client.auth.BasicAuthenticationProvider;
 import org.projectnessie.client.http.HttpAuthentication;
-import org.projectnessie.client.http.HttpClientBuilder;
+import org.projectnessie.client.http.HttpClient;
+import org.projectnessie.client.http.HttpClientException;
+import org.projectnessie.client.http.HttpRequest;
+import org.projectnessie.client.http.HttpResponse;
 import org.projectnessie.client.http.Status;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.Network;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -60,32 +58,12 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @ExtendWith(SoftAssertionsExtension.class)
 public class ITOAuth2Client {
 
-  static Network network = Network.newNetwork();
-
   @Container
   private static final KeycloakContainer KEYCLOAK =
-      new KeycloakContainer()
-          .withNetwork(network)
-          .withNetworkAliases("keycloak")
-          .withEnv("KC_HOSTNAME_URL", "http://keycloak:8080")
-          .withFeaturesEnabled("preview", "token-exchange");
-
-  @Container
-  @SuppressWarnings("resource")
-  private static final GenericContainer<?> NESSIE =
-      new GenericContainer<>("ghcr.io/projectnessie/nessie:latest")
-          .withNetwork(network)
-          .withExposedPorts(19120)
-          .withNetworkAliases("nessie")
-          .withEnv("NESSIE_SERVER_AUTHENTICATION_ENABLED", "true")
-          .withEnv("QUARKUS_OIDC_AUTH_SERVER_URL", "http://keycloak:8080/realms/master")
-          .waitingFor(Wait.forLogMessage(".*Nessie.*started.*Listening on.*", 1));
+      new KeycloakContainer().withFeaturesEnabled("preview", "token-exchange");
 
   private static RealmResource master;
   private static URI tokenEndpoint;
-
-  private static URI nessieApiV1Endpoint;
-  private static URI nessieApiV2Endpoint;
 
   @InjectSoftAssertions private SoftAssertions soft;
 
@@ -99,14 +77,10 @@ public class ITOAuth2Client {
     // Create 2 clients, one sending refresh tokens for client_credentials, the other one not
     createClient("Client1", false);
     createClient("Client2", true);
+    // Create a client that will act as a resource server attempting to validate access tokens
+    createClient("ResourceServer", false);
     // Create a user that will be used to obtain access tokens via password grant
     createUser();
-  }
-
-  @BeforeAll
-  static void setUpNessie() {
-    nessieApiV1Endpoint = URI.create("http://localhost:" + NESSIE.getMappedPort(19120) + "/api/v1");
-    nessieApiV2Endpoint = URI.create("http://localhost:" + NESSIE.getMappedPort(19120) + "/api/v2");
   }
 
   /**
@@ -114,7 +88,7 @@ public class ITOAuth2Client {
    * running.
    *
    * <p>For 20 seconds, 2 OAuth2 clients will strive to keep the access tokens valid; in the
-   * meantime, another thread will attempt to validate the obtained tokens by querying Nessie.
+   * meantime, another HTTP client will attempt to validate the obtained tokens.
    *
    * <p>This should be enough to exercise the OAuth2 client's background refresh logic with the 4
    * supported grant types / requests:
@@ -127,21 +101,20 @@ public class ITOAuth2Client {
    * </ul>
    */
   @Test
-  void testOAuth2ClientWithBackgroundRefresh() throws Exception {
+  void testOAuth2ClientWithBackgroundRefresh() throws InterruptedException {
     OAuth2ClientParams params1 = clientParams("Client1").build();
     OAuth2ClientParams params2 = clientParams("Client2").grantType("password").build();
     ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     try (OAuth2Client client1 = new OAuth2Client(params1);
         OAuth2Client client2 = new OAuth2Client(params2);
-        NessieApiV1 nessie1 = nessieApi(NessieApiV1.class, client1::authenticate);
-        NessieApiV2 nessie2 = nessieApi(NessieApiV2.class, client2::authenticate)) {
+        HttpClient validatingClient = validatingHttpClient("Client1").build()) {
       client1.start();
       client2.start();
       ScheduledFuture<?> future =
           executor.scheduleWithFixedDelay(
               () -> {
-                assertNessieQueryAuthorized(nessie1);
-                assertNessieQueryAuthorized(nessie2);
+                tryUseAccessToken(validatingClient, client1.getCurrentTokens().getAccessToken());
+                tryUseAccessToken(validatingClient, client2.getCurrentTokens().getAccessToken());
               },
               0,
               1,
@@ -172,21 +145,19 @@ public class ITOAuth2Client {
   @Test
   void testOAuth2ClientInitialRefreshToken() {
     OAuth2ClientParams params = clientParams("Client2").build();
-    AtomicReference<AccessToken> token = new AtomicReference<>();
     try (OAuth2Client client = new OAuth2Client(params);
-        NessieApiV1 nessie = nessieApi(NessieApiV1.class, token::get)) {
+        HttpClient validatingClient = validatingHttpClient("Client2").build()) {
+      client.start();
       // first request: client credentials grant
       Tokens firstTokens = client.fetchNewTokens();
       soft.assertThat(firstTokens).isInstanceOf(ClientCredentialsTokensResponse.class);
       soft.assertThat(firstTokens.getRefreshToken()).isNotNull();
-      token.set(firstTokens.getAccessToken());
-      assertNessieQueryAuthorized(nessie);
+      tryUseAccessToken(validatingClient, firstTokens.getAccessToken());
       // second request: refresh token grant
       Tokens refreshedTokens = client.refreshTokens(firstTokens);
       soft.assertThat(refreshedTokens).isInstanceOf(RefreshTokensResponse.class);
       soft.assertThat(refreshedTokens.getRefreshToken()).isNotNull();
-      token.set(refreshedTokens.getAccessToken());
-      assertNessieQueryAuthorized(nessie);
+      tryUseAccessToken(validatingClient, refreshedTokens.getAccessToken());
       compareTokens(firstTokens, refreshedTokens, "Client2");
     }
   }
@@ -206,28 +177,25 @@ public class ITOAuth2Client {
   @Test
   void testOAuth2ClientTokenExchange() {
     OAuth2ClientParams params = clientParams("Client1").build();
-    AtomicReference<AccessToken> token = new AtomicReference<>();
     try (OAuth2Client client = new OAuth2Client(params);
-        NessieApiV1 nessie = nessieApi(NessieApiV1.class, token::get)) {
+        HttpClient validatingClient = validatingHttpClient("Client1").build()) {
+      client.start();
       // first request: client credentials grant
       Tokens firstTokens = client.fetchNewTokens();
       soft.assertThat(firstTokens).isInstanceOf(ClientCredentialsTokensResponse.class);
       soft.assertThat(firstTokens.getRefreshToken()).isNull();
-      token.set(firstTokens.getAccessToken());
-      assertNessieQueryAuthorized(nessie);
+      tryUseAccessToken(validatingClient, firstTokens.getAccessToken());
       // second request: token exchange since no refresh token was sent
       Tokens exchangedTokens = client.refreshTokens(firstTokens);
       soft.assertThat(exchangedTokens).isInstanceOf(TokensExchangeResponse.class);
       soft.assertThat(exchangedTokens.getRefreshToken()).isNotNull();
-      token.set(exchangedTokens.getAccessToken());
-      assertNessieQueryAuthorized(nessie);
+      tryUseAccessToken(validatingClient, exchangedTokens.getAccessToken());
       compareTokens(firstTokens, exchangedTokens, "Client1");
       // third request: refresh token grant
       Tokens refreshedTokens = client.refreshTokens(exchangedTokens);
       soft.assertThat(refreshedTokens).isInstanceOf(RefreshTokensResponse.class);
       soft.assertThat(refreshedTokens.getRefreshToken()).isNotNull();
-      token.set(refreshedTokens.getAccessToken());
-      assertNessieQueryAuthorized(nessie);
+      tryUseAccessToken(validatingClient, refreshedTokens.getAccessToken());
       compareTokens(exchangedTokens, refreshedTokens, "Client1");
     }
   }
@@ -247,15 +215,14 @@ public class ITOAuth2Client {
   @Test
   void testOAuth2ClientNoRefreshToken() {
     OAuth2ClientParams params = clientParams("Client1").tokenExchangeEnabled(false).build();
-    AtomicReference<AccessToken> token = new AtomicReference<>();
     try (OAuth2Client client = new OAuth2Client(params);
-        NessieApiV1 nessie = nessieApi(NessieApiV1.class, token::get)) {
+        HttpClient validatingClient = validatingHttpClient("Client1").build()) {
+      client.start();
       // first request: client credentials grant
       Tokens firstTokens = client.fetchNewTokens();
       soft.assertThat(firstTokens).isInstanceOf(ClientCredentialsTokensResponse.class);
       soft.assertThat(firstTokens.getRefreshToken()).isNull();
-      token.set(firstTokens.getAccessToken());
-      assertNessieQueryAuthorized(nessie);
+      tryUseAccessToken(validatingClient, firstTokens.getAccessToken());
       // second request: another client credentials grant since no refresh token was sent
       // and token exchange is disabled – cannot call refreshTokens() tokens here
       soft.assertThatThrownBy(() -> client.refreshTokens(firstTokens))
@@ -263,8 +230,7 @@ public class ITOAuth2Client {
       Tokens nextTokens = client.fetchNewTokens();
       soft.assertThat(nextTokens).isInstanceOf(ClientCredentialsTokensResponse.class);
       soft.assertThat(nextTokens.getRefreshToken()).isNull();
-      token.set(nextTokens.getAccessToken());
-      assertNessieQueryAuthorized(nessie);
+      tryUseAccessToken(validatingClient, nextTokens.getAccessToken());
       compareTokens(firstTokens, nextTokens, "Client1");
     }
   }
@@ -283,21 +249,19 @@ public class ITOAuth2Client {
   @Test
   void testOAuth2ClientPasswordGrant() {
     OAuth2ClientParams params = clientParams("Client2").grantType("password").build();
-    AtomicReference<AccessToken> token = new AtomicReference<>();
     try (OAuth2Client client = new OAuth2Client(params);
-        NessieApiV1 nessie = nessieApi(NessieApiV1.class, token::get)) {
+        HttpClient validatingClient = validatingHttpClient("Client2").build()) {
+      client.start();
       // first request: password grant
       Tokens firstTokens = client.fetchNewTokens();
       soft.assertThat(firstTokens).isInstanceOf(PasswordTokensResponse.class);
       soft.assertThat(firstTokens.getRefreshToken()).isNotNull();
-      token.set(firstTokens.getAccessToken());
-      assertNessieQueryAuthorized(nessie);
+      tryUseAccessToken(validatingClient, firstTokens.getAccessToken());
       // second request: refresh token grant
       Tokens refreshedTokens = client.refreshTokens(firstTokens);
       soft.assertThat(refreshedTokens).isInstanceOf(RefreshTokensResponse.class);
       soft.assertThat(refreshedTokens.getRefreshToken()).isNotNull();
-      token.set(refreshedTokens.getAccessToken());
-      assertNessieQueryAuthorized(nessie);
+      tryUseAccessToken(validatingClient, refreshedTokens.getAccessToken());
       compareTokens(firstTokens, refreshedTokens, "Client2");
     }
   }
@@ -327,9 +291,52 @@ public class ITOAuth2Client {
     }
   }
 
-  private void assertNessieQueryAuthorized(NessieApiV1 nessieApi) {
-    soft.assertThatCode(() -> nessieApi.getReference().refName("main").get().getHash())
-        .doesNotThrowAnyException();
+  @Test
+  void testOAuth2ClientExpiredToken() {
+    OAuth2ClientParams params = clientParams("Client1").build();
+    try (OAuth2Client client = new OAuth2Client(params);
+        HttpClient validatingClient = validatingHttpClient("Client1").build()) {
+      Tokens tokens = client.fetchNewTokens();
+      // Emulate a token expiration; we don't want to wait 10 seconds just for the token to really
+      // expire.
+      revokeAccessToken(validatingClient, tokens.getAccessToken());
+      soft.assertThatThrownBy(() -> tryUseAccessToken(validatingClient, tokens.getAccessToken()))
+          .isInstanceOf(HttpClientException.class)
+          .hasMessageContaining("401");
+    }
+  }
+
+  /**
+   * Attempts to use the access token to obtain a UMA (User Management Access) ticket from Keycloak,
+   * authorizing the client represented by the token to access resources hosted by "ResourceServer".
+   */
+  private void tryUseAccessToken(HttpClient httpClient, AccessToken accessToken) {
+    HttpRequest request =
+        httpClient
+            .newRequest()
+            .path("realms/master/protocol/openid-connect/token")
+            .header("Authorization", "Bearer " + accessToken.getPayload());
+    HttpResponse response =
+        request.postForm(
+            ImmutableMap.of(
+                "grant_type",
+                "urn:ietf:params:oauth:grant-type:uma-ticket",
+                // audience: client ID of the resource server
+                "audience",
+                "ResourceServer"));
+    JsonNode entity = response.readEntity(JsonNode.class);
+    soft.assertThat(entity).isNotNull();
+    // should contain the Requesting Party Token (RPT) under access_token
+    soft.assertThat(entity.has("access_token")).isTrue();
+    JwtToken jwtToken = JwtToken.parse(entity.get("access_token").asText());
+    soft.assertThat(jwtToken).isNotNull();
+    soft.assertThat(jwtToken.getAudience()).isEqualTo("ResourceServer");
+  }
+
+  private void revokeAccessToken(HttpClient httpClient, AccessToken accessToken) {
+    HttpRequest request =
+        httpClient.newRequest().path("realms/master/protocol/openid-connect/revoke");
+    request.postForm(ImmutableMap.of("token", accessToken.getPayload()));
   }
 
   private void compareTokens(Tokens oldTokens, Tokens newTokens, String clientId) {
@@ -401,15 +408,15 @@ public class ITOAuth2Client {
     master.users().create(user);
   }
 
-  private static <T extends NessieApi> T nessieApi(Class<T> apiClass, Supplier<AccessToken> token) {
-    // Use a "dynamic" version of the Bearer auth provider
-    HttpAuthentication authentication =
-        c ->
-            c.addRequestFilter(
-                ctx -> ctx.putHeader("Authorization", "Bearer " + token.get().getPayload()));
-    return HttpClientBuilder.builder()
-        .withUri(apiClass.equals(NessieApiV1.class) ? nessieApiV1Endpoint : nessieApiV2Endpoint)
-        .withAuthentication(authentication)
-        .build(apiClass);
+  private static HttpClient.Builder validatingHttpClient(String clientId) {
+    @SuppressWarnings("resource")
+    HttpAuthentication authentication = BasicAuthenticationProvider.create(clientId, "s3cr3t");
+    HttpClient.Builder builder =
+        HttpClient.builder()
+            .setBaseUri(URI.create(KEYCLOAK.getAuthServerUrl()))
+            .setObjectMapper(new ObjectMapper())
+            .setDisableCompression(true);
+    authentication.applyToHttpClient(builder);
+    return builder;
   }
 }
