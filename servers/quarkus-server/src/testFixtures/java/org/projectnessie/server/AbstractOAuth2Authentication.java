@@ -99,7 +99,6 @@ public abstract class AbstractOAuth2Authentication extends BaseClientAuthTest {
           .put("quarkus.oidc.client-id", "quarkus-service-app")
           .put("quarkus.oidc.credentials", "secret")
           .put("quarkus.oidc.application-type", "service")
-          .put("keycloak.use.https", "false") // for integration tests
           .put("smallrye.jwt.sign.key.location", "privateKey.jwk") // for unit tests
           .build();
     }

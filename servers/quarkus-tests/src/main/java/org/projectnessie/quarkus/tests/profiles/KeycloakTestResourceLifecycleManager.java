@@ -66,7 +66,7 @@ public class KeycloakTestResourceLifecycleManager implements QuarkusTestResource
   private static final String KEYCLOAK_WEB_APP_CLIENT =
       System.getProperty("keycloak.web-app.client", "quarkus-web-app");
   private static final Boolean KEYCLOAK_USE_HTTPS =
-      Boolean.valueOf(System.getProperty("keycloak.use.https", "true"));
+      Boolean.valueOf(System.getProperty("keycloak.use.https", "false"));
   private static final String KEYCLOAK_VERSION = System.getProperty("keycloak.version");
   private static final String KEYCLOAK_DOCKER_IMAGE = System.getProperty("keycloak.docker.image");
 
