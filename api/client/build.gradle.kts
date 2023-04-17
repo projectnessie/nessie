@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import org.apache.tools.ant.taskdefs.condition.Os
+
 plugins {
   `java-library`
   jacoco
@@ -174,4 +176,9 @@ annotationStripper {
     annotationsToDrop("^jakarta[.].+".toRegex())
     unmodifiedClassesForJavaVersion.set(11)
   }
+}
+
+// Issue w/ testcontainers/podman in GH workflows :(
+if ((Os.isFamily(Os.FAMILY_MAC) || Os.isFamily(Os.FAMILY_WINDOWS)) && System.getenv("CI") != null) {
+  tasks.named<Test>("intTest") { this.enabled = false }
 }
