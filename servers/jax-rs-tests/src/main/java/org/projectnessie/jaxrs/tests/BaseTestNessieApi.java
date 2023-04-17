@@ -753,6 +753,29 @@ public abstract class BaseTestNessieApi {
   }
 
   @Test
+  @NessieApiVersions(versions = NessieApiVersion.V1)
+  public void contentsOnDefaultBranch() throws Exception {
+    Branch main = api().getDefaultBranch();
+    ContentKey key = ContentKey.of("test.key1");
+    Branch main1 =
+        prepCommit(main, "commit", Put.of(key, IcebergTable.of("loc111", 1, 2, 3, 4))).commit();
+    // Note: not specifying a reference name in API v1 means using the HEAD of the default branch.
+    IcebergTable created = (IcebergTable) api().getContent().key(key).get().get(key);
+    assertThat(created.getMetadataLocation()).isEqualTo("loc111");
+    prepCommit(
+            main1,
+            "commit",
+            Put.of(key, IcebergTable.builder().from(created).metadataLocation("loc222").build()))
+        .commit();
+    IcebergTable table2 = (IcebergTable) api().getContent().key(key).get().get(key);
+    assertThat(table2.getMetadataLocation()).isEqualTo("loc222");
+    // Note: not specifying a reference name for the default branch, but setting an older hash.
+    IcebergTable table1 =
+        (IcebergTable) api().getContent().hashOnRef(main1.getHash()).key(key).get().get(key);
+    assertThat(table1).isEqualTo(created);
+  }
+
+  @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
   public void contents() throws Exception {
     Branch main = api().getDefaultBranch();
