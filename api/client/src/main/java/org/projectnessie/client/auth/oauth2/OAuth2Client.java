@@ -195,7 +195,9 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
 
   private void log(Tokens tokens, Throwable error) {
     if (error != null) {
-      LOGGER.error("Failed to fetch or renew tokens", error);
+      LOGGER.error("Failed to renew tokens", error);
+    } else {
+      LOGGER.debug("Successfully renewed tokens");
     }
   }
 
