@@ -141,18 +141,6 @@ public class KeycloakTestResourceLifecycleManager implements QuarkusTestResource
     return realm;
   }
 
-  //  private static String getAdminAccessToken() {
-  //    return createRequestSpec()
-  //        .param("grant_type", "password")
-  //        .param("username", "admin")
-  //        .param("password", "admin")
-  //        .param("client_id", "admin-cli")
-  //        .when()
-  //        .post(keycloakServerUrl + "/realms/master/protocol/openid-connect/token")
-  //        .as(AccessTokenResponse.class)
-  //        .getToken();
-  //  }
-
   private static ClientRepresentation createServiceClient(String clientId) {
     ClientRepresentation client = new ClientRepresentation();
 
