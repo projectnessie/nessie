@@ -112,7 +112,6 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.KeyEntry;
 import org.projectnessie.versioned.MergeConflictException;
 import org.projectnessie.versioned.MergeResult;
-import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
@@ -557,16 +556,18 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       List<String> hashesToTransplant,
       String fromRefName,
       Boolean keepIndividualCommits,
-      Collection<MergeKeyBehavior> keyMergeTypes,
-      MergeBehavior defaultMergeType,
+      Collection<MergeKeyBehavior> keyMergeBehaviors,
+      MergeBehavior defaultMergeBehavior,
       Boolean dryRun,
       Boolean fetchAdditionalInfo,
       Boolean returnConflictAsResult)
       throws NessieNotFoundException, NessieConflictException {
     try {
-      if (hashesToTransplant.isEmpty()) {
-        throw new IllegalArgumentException("No hashes given to transplant.");
-      }
+      checkArgument(!hashesToTransplant.isEmpty(), "No hashes given to transplant.");
+
+      checkArgument(
+          defaultMergeBehavior != MergeBehavior.APPLY,
+          "MergeBehavior.APPLY is not applicable as the default merge behavior");
 
       BranchName targetBranch = BranchName.of(branchName);
       startAccessCheck()
@@ -596,8 +597,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                   transplants,
                   commitMetaUpdate(message),
                   Boolean.TRUE.equals(keepIndividualCommits),
-                  keyMergeTypes(keyMergeTypes),
-                  defaultMergeType(defaultMergeType),
+                  keyMergeBehaviors(keyMergeBehaviors),
+                  defaultMergeBehavior(defaultMergeBehavior),
                   Boolean.TRUE.equals(dryRun),
                   Boolean.TRUE.equals(fetchAdditionalInfo));
       return createResponse(fetchAdditionalInfo, result);
@@ -623,8 +624,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       String fromHash,
       Boolean keepIndividualCommits,
       @Nullable @jakarta.annotation.Nullable String message,
-      Collection<MergeKeyBehavior> keyMergeTypes,
-      MergeBehavior defaultMergeType,
+      Collection<MergeKeyBehavior> keyMergeBehaviors,
+      MergeBehavior defaultMergeBehavior,
       Boolean dryRun,
       Boolean fetchAdditionalInfo,
       Boolean returnConflictAsResult)
@@ -636,6 +637,10 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
           .canCommitChangeAgainstReference(targetBranch)
           .checkAndThrow();
 
+      checkArgument(
+          defaultMergeBehavior != MergeBehavior.APPLY,
+          "MergeBehavior.APPLY is not applicable as the default merge behavior");
+
       MergeResult<Commit> result =
           getStore()
               .merge(
@@ -644,8 +649,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                   toHash(expectedHash, true),
                   commitMetaUpdate(message),
                   Boolean.TRUE.equals(keepIndividualCommits),
-                  keyMergeTypes(keyMergeTypes),
-                  defaultMergeType(defaultMergeType),
+                  keyMergeBehaviors(keyMergeBehaviors),
+                  defaultMergeBehavior(defaultMergeBehavior),
                   Boolean.TRUE.equals(dryRun),
                   Boolean.TRUE.equals(fetchAdditionalInfo));
       return createResponse(fetchAdditionalInfo, result);
@@ -704,7 +709,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                   ImmutableContentKeyDetails.builder()
                       .key(ContentKey.of(key.getElements()))
                       .conflictType(ContentKeyConflict.valueOf(details.getConflictType().name()))
-                      .mergeBehavior(MergeBehavior.valueOf(details.getMergeType().name()));
+                      .mergeBehavior(MergeBehavior.valueOf(details.getMergeBehavior().name()))
+                      .sourceContent(details.getSourceContent())
+                      .targetContent(details.getTargetContent());
 
               convertCommitIds.accept(details.getSourceCommits(), keyDetails::addSourceCommits);
               convertCommitIds.accept(details.getTargetCommits(), keyDetails::addTargetCommits);
@@ -715,17 +722,15 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     return response.build();
   }
 
-  private static Map<ContentKey, MergeType> keyMergeTypes(Collection<MergeKeyBehavior> behaviors) {
+  private static Map<ContentKey, MergeKeyBehavior> keyMergeBehaviors(
+      Collection<MergeKeyBehavior> behaviors) {
     return behaviors != null
-        ? behaviors.stream()
-            .collect(
-                Collectors.toMap(
-                    MergeKeyBehavior::getKey, e -> MergeType.valueOf(e.getMergeBehavior().name())))
+        ? behaviors.stream().collect(Collectors.toMap(MergeKeyBehavior::getKey, e -> e))
         : Collections.emptyMap();
   }
 
-  private static MergeType defaultMergeType(MergeBehavior mergeBehavior) {
-    return mergeBehavior != null ? MergeType.valueOf(mergeBehavior.name()) : MergeType.NORMAL;
+  private static MergeBehavior defaultMergeBehavior(MergeBehavior mergeBehavior) {
+    return mergeBehavior != null ? mergeBehavior : MergeBehavior.NORMAL;
   }
 
   @Override

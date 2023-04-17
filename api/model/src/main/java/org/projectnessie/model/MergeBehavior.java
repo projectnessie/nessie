@@ -21,5 +21,7 @@ public enum MergeBehavior {
   /** Keys with this merge mode will be merged unconditionally, no conflict detection. */
   FORCE,
   /** Keys with this merge mode will not be merged. */
-  DROP
+  DROP,
+  /** Apply the {@link Content} value provided via {@link MergeKeyBehavior}. */
+  APPLY
 }

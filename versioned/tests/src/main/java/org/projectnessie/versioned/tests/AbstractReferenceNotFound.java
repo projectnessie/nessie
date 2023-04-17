@@ -26,10 +26,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
@@ -213,7 +213,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                         metadataRewriter,
                         false,
                         Collections.emptyMap(),
-                        MergeType.NORMAL,
+                        MergeBehavior.NORMAL,
                         false,
                         false)),
         new ReferenceNotFoundFunction("transplant/hash/empty")
@@ -228,7 +228,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                         metadataRewriter,
                         true,
                         Collections.emptyMap(),
-                        MergeType.NORMAL,
+                        MergeBehavior.NORMAL,
                         false,
                         false)),
         new ReferenceNotFoundFunction("transplant/empty/hash")
@@ -242,7 +242,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                         metadataRewriter,
                         false,
                         Collections.emptyMap(),
-                        MergeType.NORMAL,
+                        MergeBehavior.NORMAL,
                         false,
                         false)),
         // diff()
@@ -286,7 +286,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                         metadataRewriter,
                         true,
                         Collections.emptyMap(),
-                        MergeType.NORMAL,
+                        MergeBehavior.NORMAL,
                         false,
                         false)),
         new ReferenceNotFoundFunction("merge/empty/hash")
@@ -301,7 +301,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                         metadataRewriter,
                         true,
                         Collections.emptyMap(),
-                        MergeType.NORMAL,
+                        MergeBehavior.NORMAL,
                         false,
                         false)),
         new ReferenceNotFoundFunction("merge/hash/empty")
@@ -315,7 +315,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                         metadataRewriter,
                         false,
                         Collections.emptyMap(),
-                        MergeType.NORMAL,
+                        MergeBehavior.NORMAL,
                         false,
                         false)),
         new ReferenceNotFoundFunction("merge/empty/hash")
@@ -330,7 +330,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                         metadataRewriter,
                         false,
                         Collections.emptyMap(),
-                        MergeType.NORMAL,
+                        MergeBehavior.NORMAL,
                         false,
                         false)));
   }

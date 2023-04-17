@@ -19,7 +19,9 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
+import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.MergeBehavior;
 
 @Value.Immutable
 public interface MergeResult<COMMIT> {
@@ -75,7 +77,7 @@ public interface MergeResult<COMMIT> {
 
   @Value.Immutable
   interface KeyDetails {
-    MergeType getMergeType();
+    MergeBehavior getMergeBehavior();
 
     @Value.Default
     default ConflictType getConflictType() {
@@ -88,12 +90,20 @@ public interface MergeResult<COMMIT> {
     @Deprecated // for removal and replaced with something else
     List<Hash> getTargetCommits();
 
+    @Nullable
+    @jakarta.annotation.Nullable
+    Content getSourceContent();
+
+    @Nullable
+    @jakarta.annotation.Nullable
+    Content getTargetContent();
+
     static ImmutableKeyDetails.Builder builder() {
       return ImmutableKeyDetails.builder();
     }
 
-    static KeyDetails keyDetails(MergeType mergeType, ConflictType conflictType) {
-      return KeyDetails.builder().mergeType(mergeType).conflictType(conflictType).build();
+    static KeyDetails keyDetails(MergeBehavior mergeBehavior, ConflictType conflictType) {
+      return KeyDetails.builder().mergeBehavior(mergeBehavior).conflictType(conflictType).build();
     }
   }
 

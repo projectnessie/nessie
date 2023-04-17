@@ -35,10 +35,11 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.MergeBehavior;
+import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -161,7 +162,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             commitMetaModify,
             individualCommits,
             Collections.emptyMap(),
-            MergeType.NORMAL,
+            MergeBehavior.NORMAL,
             false,
             false);
     soft.assertThat(
@@ -204,7 +205,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             createMetadataRewriter(""),
             individualCommits,
             Collections.emptyMap(),
-            MergeType.NORMAL,
+            MergeBehavior.NORMAL,
             false,
             false);
     assertThat(
@@ -244,7 +245,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                         createMetadataRewriter(""),
                         individualCommits,
                         Collections.emptyMap(),
-                        MergeType.NORMAL,
+                        MergeBehavior.NORMAL,
                         false,
                         false))
         .isInstanceOf(ReferenceConflictException.class);
@@ -266,7 +267,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             createMetadataRewriter(""),
             individualCommits,
             Collections.emptyMap(),
-            MergeType.NORMAL,
+            MergeBehavior.NORMAL,
             false,
             false);
     soft.assertThat(
@@ -300,7 +301,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                         createMetadataRewriter(""),
                         individualCommits,
                         Collections.emptyMap(),
-                        MergeType.NORMAL,
+                        MergeBehavior.NORMAL,
                         false,
                         false))
         .isInstanceOf(ReferenceNotFoundException.class);
@@ -322,7 +323,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                         createMetadataRewriter(""),
                         individualCommits,
                         Collections.emptyMap(),
-                        MergeType.NORMAL,
+                        MergeBehavior.NORMAL,
                         false,
                         false))
         .isInstanceOf(ReferenceNotFoundException.class);
@@ -346,7 +347,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             createMetadataRewriter(""),
             individualCommits,
             Collections.emptyMap(),
-            MergeType.NORMAL,
+            MergeBehavior.NORMAL,
             false,
             false);
     soft.assertThat(
@@ -386,7 +387,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                         createMetadataRewriter(""),
                         individualCommits,
                         Collections.emptyMap(),
-                        MergeType.NORMAL,
+                        MergeBehavior.NORMAL,
                         false,
                         false));
   }
@@ -416,7 +417,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                         createMetadataRewriter(""),
                         individualCommits,
                         Collections.emptyMap(),
-                        MergeType.NORMAL,
+                        MergeBehavior.NORMAL,
                         false,
                         false))
         .isInstanceOf(ReferenceNotFoundException.class);
@@ -437,7 +438,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             createMetadataRewriter(""),
             individualCommits,
             Collections.emptyMap(),
-            MergeType.NORMAL,
+            MergeBehavior.NORMAL,
             false,
             false);
     soft.assertThat(
@@ -509,8 +510,12 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             Arrays.asList(source1, source2),
             createMetadataRewriter(", merge-drop"),
             individualCommits,
-            ImmutableMap.of(key1, MergeType.DROP, key2, MergeType.DROP),
-            MergeType.NORMAL,
+            ImmutableMap.of(
+                key1,
+                MergeKeyBehavior.of(key1, MergeBehavior.DROP),
+                key2,
+                MergeKeyBehavior.of(key2, MergeBehavior.DROP)),
+            MergeBehavior.NORMAL,
             false,
             false);
 

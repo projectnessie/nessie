@@ -34,6 +34,7 @@ import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
@@ -43,7 +44,6 @@ import org.projectnessie.versioned.MergeConflictException;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MergeResult.ConflictType;
 import org.projectnessie.versioned.MergeResult.KeyDetails;
-import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
@@ -446,7 +446,7 @@ public abstract class AbstractMergeTransplant {
 
       ImmutableKeyDetails.Builder details =
           KeyDetails.builder()
-              .mergeType(MergeType.NORMAL)
+              .mergeBehavior(MergeBehavior.NORMAL)
               .addAllSourceCommits(
                   expectedSourceCommits.stream()
                       .map(CommitLogEntry::getHash)
@@ -483,7 +483,7 @@ public abstract class AbstractMergeTransplant {
       ImmutableKeyDetails.Builder details =
           KeyDetails.builder()
               .conflictType(ConflictType.NONE)
-              .mergeType(MergeType.NORMAL)
+              .mergeBehavior(MergeBehavior.NORMAL)
               .addAllSourceCommits(
                   expectedSourceCommits.stream()
                       .map(CommitLogEntry::getHash)

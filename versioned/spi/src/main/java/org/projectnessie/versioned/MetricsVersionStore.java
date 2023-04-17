@@ -33,6 +33,8 @@ import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.MergeBehavior;
+import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.versioned.paging.PaginationIterator;
 
 /** A {@link VersionStore} wrapper that publishes metrics via Micrometer. */
@@ -97,8 +99,8 @@ public final class MetricsVersionStore implements VersionStore {
       List<Hash> sequenceToTransplant,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean keepIndividualCommits,
-      Map<ContentKey, MergeType> mergeTypes,
-      MergeType defaultMergeType,
+      Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors,
+      MergeBehavior defaultMergeBehavior,
       boolean dryRun,
       boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException, ReferenceConflictException {
@@ -112,8 +114,8 @@ public final class MetricsVersionStore implements VersionStore {
                     sequenceToTransplant,
                     updateCommitMetadata,
                     keepIndividualCommits,
-                    mergeTypes,
-                    defaultMergeType,
+                    mergeKeyBehaviors,
+                    defaultMergeBehavior,
                     dryRun,
                     fetchAdditionalInfo));
   }
@@ -125,8 +127,8 @@ public final class MetricsVersionStore implements VersionStore {
       Optional<Hash> expectedHash,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean keepIndividualCommits,
-      Map<ContentKey, MergeType> mergeTypes,
-      MergeType defaultMergeType,
+      Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors,
+      MergeBehavior defaultMergeBehavior,
       boolean dryRun,
       boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException, ReferenceConflictException {
@@ -140,8 +142,8 @@ public final class MetricsVersionStore implements VersionStore {
                     expectedHash,
                     updateCommitMetadata,
                     keepIndividualCommits,
-                    mergeTypes,
-                    defaultMergeType,
+                    mergeKeyBehaviors,
+                    defaultMergeBehavior,
                     dryRun,
                     fetchAdditionalInfo));
   }

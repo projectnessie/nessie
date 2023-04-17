@@ -33,13 +33,13 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MergeResult.KeyDetails;
-import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -72,7 +72,7 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
   MergeResult<Commit> squash(
       boolean dryRun,
       ImmutableMergeResult.Builder<Commit> mergeResult,
-      Function<ContentKey, MergeType> mergeTypeForKey,
+      Function<ContentKey, MergeKeyBehavior> mergeBehaviorForKey,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       SourceCommitsAndParent sourceCommits,
       @Nullable @jakarta.annotation.Nullable ObjId mergeFromId)
@@ -83,7 +83,7 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
 
     Map<ContentKey, KeyDetails> keyDetailsMap = new HashMap<>();
     CommitObj mergeCommit =
-        createMergeTransplantCommit(mergeTypeForKey, keyDetailsMap, createCommit);
+        createMergeTransplantCommit(mergeBehaviorForKey, keyDetailsMap, createCommit);
 
     // It's okay to do the fetchCommit() here and not complicate the surrounding logic (think:
     // local cache)

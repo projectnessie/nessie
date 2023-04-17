@@ -33,13 +33,13 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MergeResult.KeyDetails;
-import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -71,7 +71,7 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean dryRun,
       ImmutableMergeResult.Builder<Commit> mergeResult,
-      Function<ContentKey, MergeType> mergeTypeForKey,
+      Function<ContentKey, MergeKeyBehavior> mergeBehaviorForKey,
       SourceCommitsAndParent sourceCommits)
       throws RetryException, ReferenceNotFoundException, ReferenceConflictException {
     IndexesLogic indexesLogic = indexesLogic(persist);
@@ -88,7 +88,7 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
       verifyMergeTransplantCommitPolicies(targetParentIndex, sourceCommit);
 
       CommitObj newCommit =
-          createMergeTransplantCommit(mergeTypeForKey, keyDetailsMap, createCommit);
+          createMergeTransplantCommit(mergeBehaviorForKey, keyDetailsMap, createCommit);
 
       if (!indexesLogic.commitOperations(newCommit).iterator().hasNext()) {
         // No operations in this commit, skip it.

@@ -27,6 +27,8 @@ import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.MergeBehavior;
+import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.versioned.paging.PaginationIterator;
 
 /**
@@ -116,8 +118,8 @@ public interface VersionStore {
    *     metadata if {@code keepIndividualCommits} is {@code false}
    * @param keepIndividualCommits whether to keep the individual commits and do not squash the
    *     commits to transplant
-   * @param mergeTypes merge types per content key
-   * @param defaultMergeType default merge type for all keys not present in {@code mergeTypes}
+   * @param mergeKeyBehaviors merge types per content key
+   * @param defaultMergeBehavior default merge type for all keys not present in {@code mergeTypes}
    * @param dryRun whether to try the transplant, check for conflicts, but do not commit
    * @param fetchAdditionalInfo whether to fetch additional commit information like
    *     commit-operations and parent
@@ -133,8 +135,8 @@ public interface VersionStore {
       List<Hash> sequenceToTransplant,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean keepIndividualCommits,
-      Map<ContentKey, MergeType> mergeTypes,
-      MergeType defaultMergeType,
+      Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors,
+      MergeBehavior defaultMergeBehavior,
       boolean dryRun,
       boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException, ReferenceConflictException;
@@ -161,8 +163,8 @@ public interface VersionStore {
    *     metadata if {@code keepIndividualCommits} is {@code false}
    * @param keepIndividualCommits whether to keep the individual commits and do not squash the
    *     commits to merge
-   * @param mergeTypes merge types per content key
-   * @param defaultMergeType default merge type for all keys not present in {@code mergeTypes}
+   * @param mergeKeyBehaviors merge types per content key
+   * @param defaultMergeBehavior default merge type for all keys not present in {@code mergeTypes}
    * @param dryRun whether to try the merge, check for conflicts, but do not commit
    * @param fetchAdditionalInfo whether to fetch additional commit information like
    *     commit-operations and parent
@@ -178,8 +180,8 @@ public interface VersionStore {
       Optional<Hash> expectedHash,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean keepIndividualCommits,
-      Map<ContentKey, MergeType> mergeTypes,
-      MergeType defaultMergeType,
+      Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors,
+      MergeBehavior defaultMergeBehavior,
       boolean dryRun,
       boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException, ReferenceConflictException;
