@@ -15,6 +15,7 @@
  */
 package org.projectnessie.model.types;
 
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -51,6 +52,50 @@ public final class ContentTypes {
     return Registry.forName(name);
   }
 
+  static final class RegistryHelper implements ContentTypes.Registrar {
+
+    private final List<Content.Type> list = new ArrayList<>();
+    private final Map<String, Content.Type> names = new HashMap<>();
+
+    @Override
+    public void register(String name, Class<? extends Content> type) {
+      if (name == null || name.trim().isEmpty() || !name.trim().equals(name) || type == null) {
+        throw new IllegalArgumentException(
+            String.format("Illegal content-type registration: name=%s, type=%s", name, type));
+      }
+      Content.Type contentType = new ContentTypeImpl(name, type);
+
+      JsonTypeName jsonTypeName = type.getAnnotation(JsonTypeName.class);
+      if (jsonTypeName == null) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Content-type registration: name=%s, type=%s has no @JsonTypeName annotation",
+                name, type));
+      }
+      if (!name.equals(jsonTypeName.value())) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Content-type registration: name=%s, type=%s, value of @JsonTypeName %s must be %s",
+                name, type, jsonTypeName.value(), name));
+      }
+
+      Content.Type ex = names.get(name);
+      if (ex != null) {
+        throw new IllegalStateException(
+            String.format(
+                "Duplicate content type registration for %s/%s, existing: %s/%s",
+                name, type, ex.name(), ex.type()));
+      }
+
+      add(contentType);
+    }
+
+    void add(Content.Type unknownContentType) {
+      list.add(unknownContentType);
+      names.put(unknownContentType.name(), unknownContentType);
+    }
+  }
+
   /**
    * Internal class providing the actual registry. This is a separate class to implicitly use lazy
    * initialization.
@@ -61,40 +106,18 @@ public final class ContentTypes {
     private static final Map<String, Content.Type> byName;
 
     static {
-      List<Content.Type> list = new ArrayList<>();
-      Map<String, Content.Type> names = new HashMap<>();
+      RegistryHelper registryHelper = new RegistryHelper();
 
       // Add the "DEFAULT" type.
       Content.Type unknownContentType = new DefaultContentTypeImpl();
-      list.add(unknownContentType);
-      names.put(unknownContentType.name(), unknownContentType);
+      registryHelper.add(unknownContentType);
 
       for (ContentTypeBundle bundle : ServiceLoader.load(ContentTypeBundle.class)) {
-        bundle.register(
-            (name, type) -> {
-              if (name == null
-                  || name.trim().isEmpty()
-                  || !name.trim().equals(name)
-                  || type == null) {
-                throw new IllegalArgumentException(
-                    String.format(
-                        "Illegal content-type registration: name=%s, type=%s", name, type));
-              }
-              Content.Type contentType = new ContentTypeImpl(name, type);
-              Content.Type ex = names.get(name);
-              if (ex != null) {
-                throw new IllegalStateException(
-                    String.format(
-                        "Duplicate content type registration for %s/%s, existing: %s/%s",
-                        name, type, ex.name(), ex.type()));
-              }
-              list.add(contentType);
-              names.put(name, contentType);
-            });
+        bundle.register(registryHelper);
       }
 
-      byName = Collections.unmodifiableMap(names);
-      all = list.toArray(new Content.Type[0]);
+      byName = Collections.unmodifiableMap(registryHelper.names);
+      all = registryHelper.list.toArray(new Content.Type[0]);
     }
 
     private static Content.Type[] all() {
@@ -160,11 +183,6 @@ public final class ContentTypes {
     @Override
     public int hashCode() {
       return 0;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      return obj == this;
     }
 
     @Override

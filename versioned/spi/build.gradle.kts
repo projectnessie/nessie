@@ -51,6 +51,14 @@ dependencies {
   testCompileOnly(libs.jackson.annotations)
 
   testCompileOnly(libs.microprofile.openapi)
+  testCompileOnly(libs.immutables.value.annotations)
+  testAnnotationProcessor(libs.immutables.value.processor)
+  testCompileOnly(libs.jakarta.ws.rs.api)
+  testCompileOnly(libs.javax.ws.rs)
+  testCompileOnly(libs.jakarta.validation.api)
+  testCompileOnly(libs.javax.validation.api)
+  testCompileOnly(libs.jakarta.annotation.api)
+  testCompileOnly(libs.findbugs.jsr305)
 
   // Need a few things from Quarkus, but don't leak the dependencies
   compileOnly(libs.opentracing.api)

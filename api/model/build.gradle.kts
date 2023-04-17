@@ -49,6 +49,14 @@ dependencies {
   annotationProcessor(libs.immutables.value.processor)
 
   testCompileOnly(libs.microprofile.openapi)
+  testCompileOnly(libs.immutables.value.annotations)
+  testAnnotationProcessor(libs.immutables.value.processor)
+  testCompileOnly(libs.jakarta.ws.rs.api)
+  testCompileOnly(libs.javax.ws.rs)
+  testCompileOnly(libs.jakarta.validation.api)
+  testCompileOnly(libs.javax.validation.api)
+  testCompileOnly(libs.jakarta.annotation.api)
+  testCompileOnly(libs.findbugs.jsr305)
 
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
