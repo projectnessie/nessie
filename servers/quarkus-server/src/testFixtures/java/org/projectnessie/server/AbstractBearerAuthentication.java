@@ -28,13 +28,11 @@ import org.projectnessie.client.rest.NessieNotAuthorizedException;
 import org.projectnessie.server.authn.AuthenticationEnabledProfile;
 
 @SuppressWarnings("resource") // api() returns an AutoCloseable
-public abstract class AbstractOpenIdAuthentication extends BaseClientAuthTest {
+public abstract class AbstractBearerAuthentication extends BaseClientAuthTest {
 
-  private String getJwtToken() {
-    return Jwt.preferredUserName("test_user").issuer("https://server.example.com").sign();
-  }
+  protected abstract String getValidJwtToken();
 
-  private String getExpiredJwtToken() {
+  private String getInvalidJwtToken() {
     return Jwt.preferredUserName("expired")
         .issuer("https://server.example.com")
         .expiresAt(0)
@@ -42,16 +40,16 @@ public abstract class AbstractOpenIdAuthentication extends BaseClientAuthTest {
   }
 
   @Test
-  void testValidJwt() throws Exception {
+  void testValidJwtToken() throws Exception {
     withClientCustomizer(
-        b -> b.withAuthentication(BearerAuthenticationProvider.create(getJwtToken())));
+        b -> b.withAuthentication(BearerAuthenticationProvider.create(getValidJwtToken())));
     assertThat(api().getAllReferences().stream()).isNotEmpty();
   }
 
   @Test
-  void testExpiredToken() {
+  void testInvalidJwtToken() {
     withClientCustomizer(
-        b -> b.withAuthentication(BearerAuthenticationProvider.create(getExpiredJwtToken())));
+        b -> b.withAuthentication(BearerAuthenticationProvider.create(getInvalidJwtToken())));
     assertThatThrownBy(() -> api().getAllReferences().stream())
         .isInstanceOfSatisfying(
             NessieNotAuthorizedException.class,
@@ -72,9 +70,11 @@ public abstract class AbstractOpenIdAuthentication extends BaseClientAuthTest {
     public Map<String, String> getConfigOverrides() {
       return ImmutableMap.<String, String>builder()
           .putAll(AuthenticationEnabledProfile.AUTH_CONFIG_OVERRIDES)
-          .put("quarkus.oidc.client-id", getClass().getName())
           .put("quarkus.oidc.auth-server-url", "${keycloak.url}/realms/quarkus/")
-          .put("smallrye.jwt.sign.key.location", "privateKey.jwk")
+          .put("quarkus.oidc.client-id", "quarkus-service-app")
+          .put("quarkus.oidc.credentials", "secret")
+          .put("quarkus.oidc.application-type", "service")
+          .put("smallrye.jwt.sign.key.location", "privateKey.jwk") // for unit tests
           .build();
     }
   }
