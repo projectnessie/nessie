@@ -18,16 +18,18 @@ package org.projectnessie.server;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.TestProfile;
-import io.quarkus.test.oidc.server.OidcWiremockTestResource;
-import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
+import io.quarkus.test.keycloak.client.KeycloakTestClient;
+import org.projectnessie.quarkus.tests.profiles.KeycloakTestResourceLifecycleManager;
 
 @QuarkusIntegrationTest
-@QuarkusTestResource(OidcWiremockTestResource.class)
-@TestProfile(value = AbstractOpenIdAuthentication.Profile.class)
-@DisabledIfSystemProperty(
-    named = "quarkus.container-image.build",
-    matches = "true",
-    disabledReason =
-        "The OidcWiremock resource runs on the Docker host, which is not accessible when the tested "
-            + "Nessie server runs in a Docker container.")
-public class ITOpenIdAuthentication extends AbstractOpenIdAuthentication {}
+@QuarkusTestResource(KeycloakTestResourceLifecycleManager.class)
+@TestProfile(value = AbstractOAuth2Authentication.Profile.class)
+public class ITOAuth2Authentication extends AbstractOAuth2Authentication {
+
+  private final KeycloakTestClient keycloakClient = new KeycloakTestClient();
+
+  @Override
+  protected String tokenEndpoint() {
+    return keycloakClient.getAuthServerUrl() + "/protocol/openid-connect/token";
+  }
+}

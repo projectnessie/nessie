@@ -51,6 +51,10 @@ dependencies {
 
   implementation(platform(libs.quarkus.amazon.services.bom))
   implementation("io.quarkiverse.amazonservices:quarkus-amazon-dynamodb")
+
+  implementation(libs.testcontainers.keycloak) {
+    exclude(group = "org.slf4j") // uses SLF4J 2.x, we are not ready yet
+  }
 }
 
 buildForJava11()

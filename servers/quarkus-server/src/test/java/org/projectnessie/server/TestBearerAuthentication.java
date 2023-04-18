@@ -15,12 +15,23 @@
  */
 package org.projectnessie.server;
 
+import com.google.common.collect.ImmutableSet;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.oidc.server.OidcWiremockTestResource;
+import io.smallrye.jwt.build.Jwt;
 
 @QuarkusTest
 @QuarkusTestResource(OidcWiremockTestResource.class)
-@TestProfile(value = AbstractOpenIdAuthentication.Profile.class)
-public class TestOpenIdAuthentication extends AbstractOpenIdAuthentication {}
+@TestProfile(value = AbstractBearerAuthentication.Profile.class)
+public class TestBearerAuthentication extends AbstractBearerAuthentication {
+
+  @Override
+  protected String getValidJwtToken() {
+    return Jwt.preferredUserName("alice")
+        .groups(ImmutableSet.of("user"))
+        .issuer("https://server.example.com")
+        .sign();
+  }
+}

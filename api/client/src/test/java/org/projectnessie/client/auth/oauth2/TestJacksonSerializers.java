@@ -47,6 +47,18 @@ class TestJacksonSerializers {
             expected.getExpiresAt().minusSeconds(10), expected.getExpiresAt().plusSeconds(10));
   }
 
+  @Test
+  void testSerializeNull() throws JsonProcessingException {
+    String actual = new ObjectMapper().writeValueAsString(new MyBean());
+    assertThat(actual).isEqualTo("{\"expiresAt\":null}");
+  }
+
+  @Test
+  void testDeserializeNull() throws JsonProcessingException {
+    MyBean actual = new ObjectMapper().readValue("{\"expiresAt\":null}", MyBean.class);
+    assertThat(actual.getExpiresAt()).isNull();
+  }
+
   private static class MyBean {
 
     @JsonSerialize(using = JacksonSerializers.InstantToSecondsSerializer.class)

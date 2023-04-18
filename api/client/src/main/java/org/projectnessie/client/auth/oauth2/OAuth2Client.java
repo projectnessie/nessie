@@ -88,7 +88,8 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     executor = params.getExecutor().orElseGet(OAuth2Client::createDefaultExecutor);
     shouldCloseExecutor = !params.getExecutor().isPresent();
     objectMapper = params.getObjectMapper();
-    currentTokensStage = started.thenApplyAsync((v) -> fetchNewTokens(), executor);
+    currentTokensStage =
+        started.thenApplyAsync((v) -> fetchNewTokens(), executor).whenComplete(this::log);
     currentTokensStage.thenAccept(this::scheduleTokensRenewal);
   }
 
@@ -196,7 +197,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     if (error != null) {
       LOGGER.error("Failed to renew tokens", error);
     } else {
-      LOGGER.debug("Successfully renewed tokens: {}", tokens);
+      LOGGER.debug("Successfully renewed tokens");
     }
   }
 

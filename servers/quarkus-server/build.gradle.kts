@@ -105,6 +105,8 @@ dependencies {
 
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
+
+  intTestImplementation("io.quarkus:quarkus-test-keycloak-server")
 }
 
 buildForJava11()
@@ -150,6 +152,7 @@ tasks.withType<Test>().configureEach {
     "it.nessie.container.postgres.tag",
     System.getProperty("it.nessie.container.postgres.tag", libs.versions.postgresContainerTag.get())
   )
+  systemProperty("keycloak.version", libs.versions.keycloak.get())
 }
 
 // Expose runnable jar via quarkusRunner configuration for integration-tests that require the
