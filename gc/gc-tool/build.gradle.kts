@@ -15,6 +15,8 @@
  */
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.apache.tools.ant.taskdefs.condition.Os
+import org.apache.tools.ant.util.NullOutputStream
 
 plugins {
   `java-library`
@@ -154,3 +156,17 @@ shadowJar {
   manifest { attributes["Main-Class"] = mainClassName }
   finalizedBy(unixExecutable)
 }
+
+val execSmokeTest by
+  tasks.registering(Exec::class) {
+    description = "Verify that the generated nessie-gc executable works"
+    enabled = Os.isFamily(Os.FAMILY_UNIX)
+    val exec = buildDir.resolve("executable").resolve("nessie-gc")
+    inputs.file(exec).withPathSensitivity(PathSensitivity.RELATIVE)
+    dependsOn(unixExecutable)
+    executable(exec)
+    args("help")
+    standardOutput = NullOutputStream.INSTANCE
+  }
+
+tasks.named("check") { dependsOn(execSmokeTest) }
