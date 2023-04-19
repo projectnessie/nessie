@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.projectnessie.model.Conflict;
 import org.projectnessie.model.Conflict.ConflictType;
+import org.projectnessie.versioned.MergeResult.KeyDetails;
 
 /**
  * Special case of a {@link ReferenceConflictException} indicating that a non-dry-run merge or
@@ -38,9 +39,14 @@ public class MergeConflictException extends ReferenceConflictException {
   private static List<Conflict> asReferenceConflicts(MergeResult<?> mergeResult) {
     return mergeResult.getDetails().entrySet().stream()
         .map(
-            e ->
-                Conflict.conflict(
-                    ConflictType.KEY_CONFLICT, e.getKey(), e.getValue().getConflictType().name()))
+            e -> {
+              KeyDetails keyDetails = e.getValue();
+              Conflict conflict = keyDetails.getConflict();
+              return conflict != null
+                  ? conflict
+                  : Conflict.conflict(
+                      ConflictType.KEY_CONFLICT, e.getKey(), e.getValue().getConflictType().name());
+            })
         .collect(Collectors.toList());
   }
 

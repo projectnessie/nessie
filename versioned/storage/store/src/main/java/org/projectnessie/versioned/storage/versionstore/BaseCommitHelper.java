@@ -570,22 +570,23 @@ class BaseCommitHelper {
                 }
               }
               MergeKeyBehavior mergeKeyBehavior = mergeBehaviorForKey.apply(key);
-              switch (mergeKeyBehavior.getMergeBehavior()) {
+              checkArgument(
+                  mergeKeyBehavior.getResolvedContent() == null
+                      && mergeKeyBehavior.getExpectedTargetContent() == null,
+                  "Functionality for MergeKeyBehavior.resolvedContent and MergeKeyBehavior.expectedTargetContent are not yet implemented.");
+              MergeBehavior mergeBehavior = mergeKeyBehavior.getMergeBehavior();
+              switch (mergeBehavior) {
                 case NORMAL:
-                  keyDetailsMap.put(
-                      key, keyDetails(MergeBehavior.NORMAL, ConflictType.UNRESOLVABLE));
+                  keyDetailsMap.put(key, keyDetails(mergeBehavior, ConflictType.UNRESOLVABLE));
                   return ConflictResolution.IGNORE;
                 case FORCE:
-                  keyDetailsMap.put(key, keyDetails(MergeBehavior.FORCE, ConflictType.NONE));
+                  keyDetailsMap.put(key, keyDetails(mergeBehavior, ConflictType.NONE));
                   return ConflictResolution.IGNORE;
                 case DROP:
-                  keyDetailsMap.put(key, keyDetails(MergeBehavior.DROP, ConflictType.NONE));
+                  keyDetailsMap.put(key, keyDetails(mergeBehavior, ConflictType.NONE));
                   return ConflictResolution.DROP;
-                case APPLY:
-                  throw new IllegalStateException("Merge type APPLY not yet implemented.");
                 default:
-                  throw new IllegalStateException(
-                      "Unknown merge type " + mergeBehaviorForKey.apply(key));
+                  throw new IllegalStateException("Unknown merge behavior " + mergeBehavior);
               }
             }
             return ConflictResolution.IGNORE;

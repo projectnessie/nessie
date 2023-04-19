@@ -101,17 +101,12 @@ public interface MergeResponse {
     @Schema(deprecated = true, hidden = true)
     List<String> getTargetCommits();
 
+    /** {@link Conflict} details, if available. */
     @JsonInclude(Include.NON_NULL)
     @JsonView(Views.V2.class)
     @Nullable
     @jakarta.annotation.Nullable
-    Content getSourceContent();
-
-    @JsonInclude(Include.NON_NULL)
-    @JsonView(Views.V2.class)
-    @Nullable
-    @jakarta.annotation.Nullable
-    Content getTargetContent();
+    Conflict getConflict();
   }
 
   enum ContentKeyConflict {

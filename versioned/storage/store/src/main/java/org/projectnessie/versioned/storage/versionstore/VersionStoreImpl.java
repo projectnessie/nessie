@@ -611,7 +611,6 @@ public class VersionStoreImpl implements VersionStore {
                     fromHash,
                     updateCommitMetadata,
                     mergeBehaviorForKey(mergeKeyBehaviors, defaultMergeBehavior),
-                    defaultMergeBehavior,
                     dryRun));
 
     return mergeTransplantResponse(dryRun, mergeResult);

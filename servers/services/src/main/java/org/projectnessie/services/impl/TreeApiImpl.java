@@ -21,6 +21,7 @@ import static com.google.common.collect.Sets.newHashSetWithExpectedSize;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
+import static java.util.function.Function.identity;
 import static org.projectnessie.model.CommitResponse.AddedContent.addedContent;
 import static org.projectnessie.services.authz.Check.canReadContentKey;
 import static org.projectnessie.services.authz.Check.canReadEntries;
@@ -565,10 +566,6 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     try {
       checkArgument(!hashesToTransplant.isEmpty(), "No hashes given to transplant.");
 
-      checkArgument(
-          defaultMergeBehavior != MergeBehavior.APPLY,
-          "MergeBehavior.APPLY is not applicable as the default merge behavior");
-
       BranchName targetBranch = BranchName.of(branchName);
       startAccessCheck()
           .canViewReference(
@@ -636,10 +633,6 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
           .canViewReference(namedRefWithHashOrThrow(fromRefName, fromHash).getValue())
           .canCommitChangeAgainstReference(targetBranch)
           .checkAndThrow();
-
-      checkArgument(
-          defaultMergeBehavior != MergeBehavior.APPLY,
-          "MergeBehavior.APPLY is not applicable as the default merge behavior");
 
       MergeResult<Commit> result =
           getStore()
@@ -710,8 +703,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                       .key(ContentKey.of(key.getElements()))
                       .conflictType(ContentKeyConflict.valueOf(details.getConflictType().name()))
                       .mergeBehavior(MergeBehavior.valueOf(details.getMergeBehavior().name()))
-                      .sourceContent(details.getSourceContent())
-                      .targetContent(details.getTargetContent());
+                      .conflict(details.getConflict());
 
               convertCommitIds.accept(details.getSourceCommits(), keyDetails::addSourceCommits);
               convertCommitIds.accept(details.getTargetCommits(), keyDetails::addTargetCommits);
@@ -725,7 +717,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   private static Map<ContentKey, MergeKeyBehavior> keyMergeBehaviors(
       Collection<MergeKeyBehavior> behaviors) {
     return behaviors != null
-        ? behaviors.stream().collect(Collectors.toMap(MergeKeyBehavior::getKey, e -> e))
+        ? behaviors.stream().collect(Collectors.toMap(MergeKeyBehavior::getKey, identity()))
         : Collections.emptyMap();
   }
 

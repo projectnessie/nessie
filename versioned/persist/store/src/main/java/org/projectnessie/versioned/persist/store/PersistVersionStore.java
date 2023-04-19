@@ -244,8 +244,9 @@ public class PersistVersionStore implements VersionStore {
                 Map.Entry::getKey,
                 b -> {
                   checkArgument(
-                      b.getValue().getMergeBehavior() != MergeBehavior.APPLY,
-                      "MergeBehavior.APPLY not supported for this storage model");
+                      b.getValue().getResolvedContent() == null
+                          && b.getValue().getExpectedTargetContent() == null,
+                      "MergeKeyBehavior.resolvedContent and MergeKeyBehavior.expectedTargetContent are not supported for this storage model");
                   return MergeType.valueOf(b.getValue().getMergeBehavior().name());
                 }));
   }
