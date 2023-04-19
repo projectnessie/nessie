@@ -43,7 +43,7 @@ import org.projectnessie.model.types.ContentTypes;
     },
     discriminatorProperty = "type")
 @JsonTypeIdResolver(ContentTypeIdResolver.class)
-@JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "type")
+@JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "type", visible = true)
 public abstract class Content {
 
   @JsonDeserialize(using = Util.ContentTypeDeserializer.class)

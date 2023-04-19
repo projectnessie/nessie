@@ -19,7 +19,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.DatabindContext;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase;
-import com.fasterxml.jackson.databind.type.TypeFactory;
 import org.projectnessie.model.Content;
 
 /** Dynamic {@link Content} object (de)serialization for <em>Jackson</em>. */
@@ -59,10 +58,12 @@ public final class ContentTypeIdResolver extends TypeIdResolverBase {
 
   @Override
   public JavaType typeFromId(DatabindContext context, String id) {
-    Content.Type subType = ContentTypes.forName(id);
-    if (subType != null) {
-      return context.constructSpecializedType(baseType, subType.type());
+    Content.Type subType;
+    try {
+      subType = ContentTypes.forName(id);
+    } catch (IllegalArgumentException e) {
+      return context.constructSpecializedType(baseType, ContentUnknownType.class);
     }
-    return TypeFactory.unknownType();
+    return context.constructSpecializedType(baseType, subType.type());
   }
 }

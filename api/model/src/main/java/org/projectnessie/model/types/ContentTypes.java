@@ -20,8 +20,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.ServiceLoader;
+import javax.annotation.Nonnull;
 import org.projectnessie.model.Content;
 
 /**
@@ -45,6 +45,8 @@ public final class ContentTypes {
     return Registry.all();
   }
 
+  @Nonnull
+  @jakarta.annotation.Nonnull
   public static Content.Type forName(String name) {
     return Registry.forName(name);
   }
@@ -100,8 +102,11 @@ public final class ContentTypes {
     }
 
     private static Content.Type forName(String name) {
-      return Objects.requireNonNull(
-          byName.get(name), "No content type registered for name " + name);
+      Content.Type type = byName.get(name);
+      if (type == null) {
+        throw new IllegalArgumentException("No content type registered for name " + name);
+      }
+      return type;
     }
   }
 
