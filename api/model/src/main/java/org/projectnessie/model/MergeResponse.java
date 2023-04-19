@@ -15,6 +15,9 @@
  */
 package org.projectnessie.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
@@ -23,6 +26,7 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 import org.projectnessie.model.LogResponse.LogEntry;
+import org.projectnessie.model.ser.Views;
 
 @Schema(type = SchemaType.OBJECT, title = "Merge Response")
 @Value.Immutable
@@ -96,6 +100,13 @@ public interface MergeResponse {
     @Deprecated // for removal and replaced with something else
     @Schema(deprecated = true, hidden = true)
     List<String> getTargetCommits();
+
+    /** {@link Conflict} details, if available. */
+    @JsonInclude(Include.NON_NULL)
+    @JsonView(Views.V2.class)
+    @Nullable
+    @jakarta.annotation.Nullable
+    Conflict getConflict();
   }
 
   enum ContentKeyConflict {

@@ -18,7 +18,6 @@ package org.projectnessie.versioned.tests;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
-import static org.projectnessie.versioned.MergeType.NORMAL;
 import static org.projectnessie.versioned.tests.AbstractVersionStoreTestBase.METADATA_REWRITER;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
@@ -32,6 +31,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Put;
@@ -114,7 +114,7 @@ public abstract class AbstractNoNamespaceValidation {
                         METADATA_REWRITER,
                         individual,
                         emptyMap(),
-                        NORMAL,
+                        MergeBehavior.NORMAL,
                         false,
                         false);
               } else {
@@ -126,7 +126,7 @@ public abstract class AbstractNoNamespaceValidation {
                         METADATA_REWRITER,
                         individual,
                         emptyMap(),
-                        NORMAL,
+                        MergeBehavior.NORMAL,
                         false,
                         false);
               }

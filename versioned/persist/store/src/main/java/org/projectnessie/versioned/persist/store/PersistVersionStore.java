@@ -38,6 +38,8 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ImmutableCommitMeta;
+import org.projectnessie.model.MergeBehavior;
+import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
@@ -169,12 +171,13 @@ public class PersistVersionStore implements VersionStore {
       List<Hash> sequenceToTransplant,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean keepIndividualCommits,
-      Map<ContentKey, MergeType> mergeTypes,
-      MergeType defaultMergeType,
+      Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors,
+      MergeBehavior defaultMergeBehavior,
       boolean dryRun,
       boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
+      Map<ContentKey, MergeType> mergeTypes = mergeTypesForKeys(mergeKeyBehaviors);
       MergeResult<CommitLogEntry> adapterMergeResult =
           databaseAdapter.transplant(
               TransplantParams.builder()
@@ -184,7 +187,7 @@ public class PersistVersionStore implements VersionStore {
                   .updateCommitMetadata(updateCommitMetadataFunction(updateCommitMetadata))
                   .keepIndividualCommits(keepIndividualCommits)
                   .mergeTypes(mergeTypes)
-                  .defaultMergeType(defaultMergeType)
+                  .defaultMergeType(MergeType.valueOf(defaultMergeBehavior.name()))
                   .isDryRun(dryRun)
                   .build());
       return storeMergeResult(adapterMergeResult, fetchAdditionalInfo);
@@ -204,12 +207,13 @@ public class PersistVersionStore implements VersionStore {
       Optional<Hash> expectedHash,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean keepIndividualCommits,
-      Map<ContentKey, MergeType> mergeTypes,
-      MergeType defaultMergeType,
+      Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors,
+      MergeBehavior defaultMergeBehavior,
       boolean dryRun,
       boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
+      Map<ContentKey, MergeType> mergeTypes = mergeTypesForKeys(mergeKeyBehaviors);
       MergeResult<CommitLogEntry> adapterMergeResult =
           databaseAdapter.merge(
               MergeParams.builder()
@@ -219,7 +223,7 @@ public class PersistVersionStore implements VersionStore {
                   .updateCommitMetadata(updateCommitMetadataFunction(updateCommitMetadata))
                   .keepIndividualCommits(keepIndividualCommits)
                   .mergeTypes(mergeTypes)
-                  .defaultMergeType(defaultMergeType)
+                  .defaultMergeType(MergeType.valueOf(defaultMergeBehavior.name()))
                   .isDryRun(dryRun)
                   .build());
       return storeMergeResult(adapterMergeResult, fetchAdditionalInfo);
@@ -230,6 +234,21 @@ public class PersistVersionStore implements VersionStore {
       throw new MergeConflictException(
           mergeConflict.getMessage(), storeMergeResult(adapterMergeResult, fetchAdditionalInfo));
     }
+  }
+
+  private static Map<ContentKey, MergeType> mergeTypesForKeys(
+      Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviorMap) {
+    return mergeKeyBehaviorMap.entrySet().stream()
+        .collect(
+            Collectors.toMap(
+                Map.Entry::getKey,
+                b -> {
+                  checkArgument(
+                      b.getValue().getResolvedContent() == null
+                          && b.getValue().getExpectedTargetContent() == null,
+                      "MergeKeyBehavior.resolvedContent and MergeKeyBehavior.expectedTargetContent are not supported for this storage model");
+                  return MergeType.valueOf(b.getValue().getMergeBehavior().name());
+                }));
   }
 
   private MergeResult<Commit> storeMergeResult(

@@ -66,6 +66,8 @@ import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.MergeBehavior;
+import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Diff;
@@ -77,7 +79,6 @@ import org.projectnessie.versioned.KeyEntry;
 import org.projectnessie.versioned.MergeConflictException;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MergeResult.ConflictType;
-import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Operation;
@@ -588,8 +589,8 @@ public class VersionStoreImpl implements VersionStore {
       Optional<Hash> expectedHash,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean keepIndividualCommits,
-      Map<ContentKey, MergeType> mergeTypes,
-      MergeType defaultMergeType,
+      Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors,
+      MergeBehavior defaultMergeBehavior,
       boolean dryRun,
       boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException, ReferenceConflictException {
@@ -609,11 +610,18 @@ public class VersionStoreImpl implements VersionStore {
                     retryState,
                     fromHash,
                     updateCommitMetadata,
-                    mergeTypes,
-                    defaultMergeType,
+                    mergeBehaviorForKey(mergeKeyBehaviors, defaultMergeBehavior),
                     dryRun));
 
     return mergeTransplantResponse(dryRun, mergeResult);
+  }
+
+  private static Function<ContentKey, MergeKeyBehavior> mergeBehaviorForKey(
+      Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors, MergeBehavior defaultMergeBehavior) {
+    return key -> {
+      MergeKeyBehavior behavior = mergeKeyBehaviors.get(key);
+      return behavior != null ? behavior : MergeKeyBehavior.of(key, defaultMergeBehavior);
+    };
   }
 
   @Override
@@ -623,8 +631,8 @@ public class VersionStoreImpl implements VersionStore {
       List<Hash> sequenceToTransplant,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean keepIndividualCommits,
-      Map<ContentKey, MergeType> mergeTypes,
-      MergeType defaultMergeType,
+      Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors,
+      MergeBehavior defaultMergeBehavior,
       boolean dryRun,
       boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException, ReferenceConflictException {
@@ -644,8 +652,7 @@ public class VersionStoreImpl implements VersionStore {
                     retryState,
                     sequenceToTransplant,
                     updateCommitMetadata,
-                    mergeTypes,
-                    defaultMergeType,
+                    mergeBehaviorForKey(mergeKeyBehaviors, defaultMergeBehavior),
                     dryRun));
 
     return mergeTransplantResponse(dryRun, mergeResult);

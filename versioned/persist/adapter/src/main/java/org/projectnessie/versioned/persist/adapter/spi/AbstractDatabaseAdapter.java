@@ -81,6 +81,7 @@ import javax.annotation.Nonnull;
 import org.projectnessie.model.Conflict;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations;
 import org.projectnessie.versioned.BranchName;
@@ -526,7 +527,10 @@ public abstract class AbstractDatabaseAdapter<
     Function<ContentKey, ImmutableKeyDetails.Builder> keyDetails =
         key ->
             keyDetailsMap.computeIfAbsent(
-                key, x -> KeyDetails.builder().mergeType(mergeType.apply(key)));
+                key,
+                x ->
+                    KeyDetails.builder()
+                        .mergeBehavior(MergeBehavior.valueOf(mergeType.apply(key).name())));
 
     BiConsumer<Stream<CommitLogEntry>, BiConsumer<ImmutableKeyDetails.Builder, Iterable<Hash>>>
         keysFromCommitsToKeyDetails =

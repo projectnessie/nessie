@@ -203,7 +203,7 @@ public interface TreeService {
               message = Validation.REF_NAME_MESSAGE)
           String fromRefName,
       Boolean keepIndividualCommits,
-      Collection<MergeKeyBehavior> keyMergeTypes,
+      Collection<MergeKeyBehavior> keyMergeBehaviors,
       MergeBehavior defaultMergeType,
       @Nullable @jakarta.annotation.Nullable Boolean dryRun,
       @Nullable @jakarta.annotation.Nullable Boolean fetchAdditionalInfo,
@@ -249,7 +249,7 @@ public interface TreeService {
           String fromHash,
       @Nullable @jakarta.annotation.Nullable Boolean keepIndividualCommits,
       @Nullable @jakarta.annotation.Nullable String message,
-      Collection<MergeKeyBehavior> keyMergeTypes,
+      Collection<MergeKeyBehavior> keyMergeBehaviors,
       MergeBehavior defaultMergeType,
       @Nullable @jakarta.annotation.Nullable Boolean dryRun,
       @Nullable @jakarta.annotation.Nullable Boolean fetchAdditionalInfo,

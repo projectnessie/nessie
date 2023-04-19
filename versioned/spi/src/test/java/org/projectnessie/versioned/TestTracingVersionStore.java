@@ -46,6 +46,7 @@ import org.mockito.stubbing.Stubber;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.versioned.paging.PaginationIterator;
 import org.projectnessie.versioned.test.tracing.TestTracer;
 import org.projectnessie.versioned.test.tracing.TestedTraceingStoreInvocation;
@@ -141,7 +142,7 @@ class TestTracingVersionStore {
                             metadataRewriter,
                             true,
                             Collections.emptyMap(),
-                            MergeType.NORMAL,
+                            MergeBehavior.NORMAL,
                             false,
                             false),
                     () -> dummyMergeResult),

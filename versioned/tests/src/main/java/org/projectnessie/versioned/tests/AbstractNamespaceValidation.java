@@ -43,12 +43,12 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.model.Conflict;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.ReferenceConflicts;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.VersionStore;
@@ -318,7 +318,7 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
                         METADATA_REWRITER,
                         mode.individualCommits,
                         emptyMap(),
-                        MergeType.NORMAL,
+                        MergeBehavior.NORMAL,
                         false,
                         false)
             : () ->
@@ -330,7 +330,7 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
                         METADATA_REWRITER,
                         mode.individualCommits,
                         emptyMap(),
-                        MergeType.NORMAL,
+                        MergeBehavior.NORMAL,
                         false,
                         false);
 

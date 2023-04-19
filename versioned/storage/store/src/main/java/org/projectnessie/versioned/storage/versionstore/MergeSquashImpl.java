@@ -18,19 +18,18 @@ package org.projectnessie.versioned.storage.versionstore;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.hashToObjId;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objIdToHash;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.MergeResult;
-import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -57,8 +56,7 @@ final class MergeSquashImpl extends BaseMergeTransplantSquash implements Merge {
       Optional<?> retryState,
       Hash fromHash,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
-      Map<ContentKey, MergeType> mergeTypes,
-      MergeType defaultMergeType,
+      Function<ContentKey, MergeKeyBehavior> mergeBehaviorForKey,
       boolean dryRun)
       throws ReferenceNotFoundException, RetryException, ReferenceConflictException {
     ObjId fromId = hashToObjId(fromHash);
@@ -69,10 +67,7 @@ final class MergeSquashImpl extends BaseMergeTransplantSquash implements Merge {
     ImmutableMergeResult.Builder<Commit> mergeResult =
         prepareMergeResult().commonAncestor(objIdToHash(commonAncestorId));
 
-    Function<ContentKey, MergeType> mergeTypeForKey =
-        key -> mergeTypes.getOrDefault(key, defaultMergeType);
-
     return squash(
-        dryRun, mergeResult, mergeTypeForKey, updateCommitMetadata, sourceCommits, fromId);
+        dryRun, mergeResult, mergeBehaviorForKey, updateCommitMetadata, sourceCommits, fromId);
   }
 }

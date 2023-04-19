@@ -40,12 +40,13 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.MergeBehavior;
+import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.MergeResult;
-import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -177,7 +178,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             metadataRewriter,
             individualCommits,
             Collections.emptyMap(),
-            MergeType.NORMAL,
+            MergeBehavior.NORMAL,
             false,
             false);
     soft.assertThat(
@@ -214,7 +215,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 metadataRewriter,
                 individualCommits,
                 Collections.emptyMap(),
-                MergeType.NORMAL,
+                MergeBehavior.NORMAL,
                 true,
                 true);
 
@@ -237,7 +238,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 metadataRewriter,
                 individualCommits,
                 Collections.emptyMap(),
-                MergeType.NORMAL,
+                MergeBehavior.NORMAL,
                 false,
                 true);
 
@@ -305,7 +306,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             metadataRewriter,
             individualCommits,
             Collections.emptyMap(),
-            MergeType.NORMAL,
+            MergeBehavior.NORMAL,
             false,
             false);
     soft.assertThat(
@@ -397,7 +398,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 metadataRewriter,
                 individualCommits,
                 Collections.emptyMap(),
-                MergeType.NORMAL,
+                MergeBehavior.NORMAL,
                 false,
                 false);
 
@@ -493,7 +494,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 metadataRewriter,
                 individualCommits,
                 Collections.emptyMap(),
-                MergeType.NORMAL,
+                MergeBehavior.NORMAL,
                 false,
                 false);
     soft.assertThat(mergeResult1.getResultantTargetHash()).isEqualTo(etl1);
@@ -514,7 +515,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 metadataRewriter,
                 individualCommits,
                 Collections.emptyMap(),
-                MergeType.NORMAL,
+                MergeBehavior.NORMAL,
                 false,
                 false);
     soft.assertThat(mergeResult2.getResultantTargetHash()).isEqualTo(etl2);
@@ -540,7 +541,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             metadataRewriter,
             individualCommits,
             Collections.emptyMap(),
-            MergeType.NORMAL,
+            MergeBehavior.NORMAL,
             false,
             false);
     soft.assertThat(
@@ -633,7 +634,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 CommitMeta.fromMessage("commit 4"),
                 singletonList(Put.of(conflictingKey2, VALUE_4)));
 
-    // "Plain" merge attempt - all keys default to MergeType.NORMAL
+    // "Plain" merge attempt - all keys default to MergeBehavior.NORMAL
     soft.assertThatThrownBy(
             () ->
                 store()
@@ -644,7 +645,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         createMetadataRewriter(""),
                         individualCommits,
                         Collections.emptyMap(),
-                        MergeType.NORMAL,
+                        MergeBehavior.NORMAL,
                         false,
                         false))
         .isInstanceOf(ReferenceConflictException.class)
@@ -652,7 +653,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
         .hasMessageContaining(conflictingKey1.toString())
         .hasMessageContaining(conflictingKey2.toString());
 
-    // default to MergeType.NORMAL, but ignore conflictingKey1
+    // default to MergeBehavior.NORMAL, but ignore conflictingKey1
     soft.assertThatThrownBy(
             () ->
                 store()
@@ -662,8 +663,10 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         Optional.empty(),
                         createMetadataRewriter(""),
                         individualCommits,
-                        Collections.singletonMap(conflictingKey2, MergeType.DROP),
-                        MergeType.NORMAL,
+                        Collections.singletonMap(
+                            conflictingKey2,
+                            MergeKeyBehavior.of(conflictingKey2, MergeBehavior.DROP)),
+                        MergeBehavior.NORMAL,
                         false,
                         false))
         .isInstanceOf(ReferenceConflictException.class)
@@ -671,7 +674,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
         .hasMessageContaining(conflictingKey1.toString())
         .hasMessageNotContaining(conflictingKey2.toString());
 
-    // default to MergeType.DROP (don't merge keys by default), but include conflictingKey1
+    // default to MergeBehavior.DROP (don't merge keys by default), but include conflictingKey1
     soft.assertThatThrownBy(
             () ->
                 store()
@@ -681,8 +684,10 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         Optional.empty(),
                         createMetadataRewriter(""),
                         individualCommits,
-                        Collections.singletonMap(conflictingKey1, MergeType.NORMAL),
-                        MergeType.DROP,
+                        Collections.singletonMap(
+                            conflictingKey1,
+                            MergeKeyBehavior.of(conflictingKey1, MergeBehavior.NORMAL)),
+                        MergeBehavior.DROP,
                         false,
                         false))
         .isInstanceOf(ReferenceConflictException.class)
@@ -690,7 +695,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
         .hasMessageContaining(conflictingKey1.toString())
         .hasMessageNotContaining(conflictingKey2.toString());
 
-    // default to MergeType.NORMAL, but include conflictingKey1
+    // default to MergeBehavior.NORMAL, but include conflictingKey1
     soft.assertThatThrownBy(
             () ->
                 store()
@@ -700,8 +705,10 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         Optional.empty(),
                         createMetadataRewriter(""),
                         individualCommits,
-                        Collections.singletonMap(conflictingKey1, MergeType.FORCE),
-                        MergeType.NORMAL,
+                        Collections.singletonMap(
+                            conflictingKey1,
+                            MergeKeyBehavior.of(conflictingKey1, MergeBehavior.FORCE)),
+                        MergeBehavior.NORMAL,
                         false,
                         false))
         .isInstanceOf(ReferenceConflictException.class)
@@ -728,8 +735,12 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             Optional.empty(),
             createMetadataRewriter(", merge-force-1"),
             individualCommits,
-            ImmutableMap.of(conflictingKey1, MergeType.FORCE, conflictingKey2, MergeType.DROP),
-            MergeType.NORMAL,
+            ImmutableMap.of(
+                conflictingKey1,
+                MergeKeyBehavior.of(conflictingKey1, MergeBehavior.FORCE),
+                conflictingKey2,
+                MergeKeyBehavior.of(conflictingKey2, MergeBehavior.DROP)),
+            MergeBehavior.NORMAL,
             false,
             false);
     soft.assertThat(
@@ -754,7 +765,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             createMetadataRewriter(", merge-all-force"),
             individualCommits,
             Collections.emptyMap(),
-            MergeType.FORCE,
+            MergeBehavior.FORCE,
             false,
             false);
     soft.assertThat(
@@ -786,7 +797,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         createMetadataRewriter(""),
                         individualCommits,
                         Collections.emptyMap(),
-                        MergeType.NORMAL,
+                        MergeBehavior.NORMAL,
                         false,
                         false))
         .isInstanceOf(ReferenceConflictException.class);
@@ -806,7 +817,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         createMetadataRewriter(""),
                         individualCommits,
                         Collections.emptyMap(),
-                        MergeType.NORMAL,
+                        MergeBehavior.NORMAL,
                         false,
                         false))
         .isInstanceOf(ReferenceNotFoundException.class);
@@ -828,7 +839,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         createMetadataRewriter(""),
                         individualCommits,
                         Collections.emptyMap(),
-                        MergeType.NORMAL,
+                        MergeBehavior.NORMAL,
                         false,
                         false))
         .isInstanceOf(ReferenceNotFoundException.class);
@@ -890,8 +901,12 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             Optional.ofNullable(targetHead),
             createMetadataRewriter(", merge-drop"),
             individualCommits,
-            ImmutableMap.of(key1, MergeType.DROP, key2, MergeType.DROP),
-            MergeType.NORMAL,
+            ImmutableMap.of(
+                key1,
+                MergeKeyBehavior.of(key1, MergeBehavior.DROP),
+                key2,
+                MergeKeyBehavior.of(key2, MergeBehavior.DROP)),
+            MergeBehavior.NORMAL,
             false,
             false);
 
@@ -937,7 +952,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         createMetadataRewriter(""),
                         false,
                         emptyMap(),
-                        MergeType.NORMAL,
+                        MergeBehavior.NORMAL,
                         false,
                         false));
 
@@ -952,7 +967,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         createMetadataRewriter(""),
                         false,
                         emptyMap(),
-                        MergeType.NORMAL,
+                        MergeBehavior.NORMAL,
                         false,
                         false));
   }

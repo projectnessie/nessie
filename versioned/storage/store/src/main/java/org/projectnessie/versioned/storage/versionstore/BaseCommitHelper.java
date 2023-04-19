@@ -57,6 +57,8 @@ import org.agrona.collections.Object2IntHashMap;
 import org.projectnessie.model.Conflict;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.MergeBehavior;
+import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
@@ -65,7 +67,6 @@ import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MergeResult.ConflictType;
 import org.projectnessie.versioned.MergeResult.KeyDetails;
-import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
@@ -496,7 +497,7 @@ class BaseCommitHelper {
       ObjId fromId,
       CommitObj source,
       ImmutableMergeResult.Builder<Commit> result,
-      Function<ContentKey, MergeType> mergeTypeForKey)
+      Function<ContentKey, MergeKeyBehavior> mergeBehaviorForKey)
       throws RetryException {
     result.wasSuccessful(true);
 
@@ -506,7 +507,8 @@ class BaseCommitHelper {
       ContentKey key = storeKeyToKey(k);
       // Note: key==null, if not the "main universe" or not a "content" discriminator
       if (key != null) {
-        result.putDetails(key, keyDetails(mergeTypeForKey.apply(key), ConflictType.NONE));
+        result.putDetails(
+            key, keyDetails(mergeBehaviorForKey.apply(key).getMergeBehavior(), ConflictType.NONE));
       }
     }
 
@@ -541,7 +543,7 @@ class BaseCommitHelper {
   }
 
   CommitObj createMergeTransplantCommit(
-      Function<ContentKey, MergeType> mergeTypeForKey,
+      Function<ContentKey, MergeKeyBehavior> mergeBehaviorForKey,
       Map<ContentKey, KeyDetails> keyDetailsMap,
       CreateCommit createCommit)
       throws ReferenceNotFoundException {
@@ -567,20 +569,24 @@ class BaseCommitHelper {
                   return ConflictResolution.IGNORE;
                 }
               }
-              MergeType mergeType = mergeTypeForKey.apply(key);
-              switch (mergeType) {
+              MergeKeyBehavior mergeKeyBehavior = mergeBehaviorForKey.apply(key);
+              checkArgument(
+                  mergeKeyBehavior.getResolvedContent() == null
+                      && mergeKeyBehavior.getExpectedTargetContent() == null,
+                  "Functionality for MergeKeyBehavior.resolvedContent and MergeKeyBehavior.expectedTargetContent is not yet implemented.");
+              MergeBehavior mergeBehavior = mergeKeyBehavior.getMergeBehavior();
+              switch (mergeBehavior) {
                 case NORMAL:
-                  keyDetailsMap.put(key, keyDetails(mergeType, ConflictType.UNRESOLVABLE));
+                  keyDetailsMap.put(key, keyDetails(mergeBehavior, ConflictType.UNRESOLVABLE));
                   return ConflictResolution.IGNORE;
                 case FORCE:
-                  keyDetailsMap.put(key, keyDetails(mergeType, ConflictType.NONE));
+                  keyDetailsMap.put(key, keyDetails(mergeBehavior, ConflictType.NONE));
                   return ConflictResolution.IGNORE;
                 case DROP:
-                  keyDetailsMap.put(key, keyDetails(mergeType, ConflictType.NONE));
+                  keyDetailsMap.put(key, keyDetails(mergeBehavior, ConflictType.NONE));
                   return ConflictResolution.DROP;
                 default:
-                  throw new IllegalStateException(
-                      "Unknown merge type " + mergeTypeForKey.apply(key));
+                  throw new IllegalStateException("Unknown merge behavior " + mergeBehavior);
               }
             }
             return ConflictResolution.IGNORE;
@@ -590,8 +596,9 @@ class BaseCommitHelper {
             // Note: key==null, if not the "main universe" or not a "content"
             // discriminator
             if (key != null) {
-              MergeType mergeType = mergeTypeForKey.apply(key);
-              keyDetailsMap.putIfAbsent(key, keyDetails(mergeType, ConflictType.NONE));
+              MergeKeyBehavior mergeKeyBehavior = mergeBehaviorForKey.apply(key);
+              keyDetailsMap.putIfAbsent(
+                  key, keyDetails(mergeKeyBehavior.getMergeBehavior(), ConflictType.NONE));
             }
           });
     } catch (CommitConflictException conflict) {
