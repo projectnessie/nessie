@@ -62,6 +62,10 @@ final class JavaRequest extends BaseHttpRequest {
   interface HttpExchange<T> {
 
     /**
+     * Sends the given request using the underlying client, blocking if necessary to get the
+     * response. The returned {@link HttpResponse}{@code <T>} contains the response status, headers,
+     * and body (as handled by given response body handler).
+     *
      * @see HttpClient#send(HttpRequest, HttpResponse.BodyHandler)
      */
     HttpResponse<T> send(HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler)
