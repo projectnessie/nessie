@@ -19,18 +19,19 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.impl.ConfigApiImpl;
+import org.projectnessie.versioned.VersionStore;
 
 @ApplicationScoped
 @jakarta.enterprise.context.ApplicationScoped
 public class RestConfigService extends ConfigApiImpl {
   // Mandated by CDI 2.0
   public RestConfigService() {
-    this(null);
+    this(null, null);
   }
 
   @Inject
   @jakarta.inject.Inject
-  public RestConfigService(ServerConfig config) {
-    super(config);
+  public RestConfigService(ServerConfig config, VersionStore store) {
+    super(config, store);
   }
 }

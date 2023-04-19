@@ -25,6 +25,7 @@ import static org.projectnessie.versioned.storage.common.logic.DiffQuery.diffQue
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 import static org.projectnessie.versioned.storage.common.logic.PagingToken.fromString;
 import static org.projectnessie.versioned.storage.common.logic.PagingToken.pagingToken;
 import static org.projectnessie.versioned.storage.common.logic.ReferencesQuery.referencesQuery;
@@ -75,6 +76,7 @@ import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableReferenceInfo;
+import org.projectnessie.versioned.ImmutableRepositoryInformation;
 import org.projectnessie.versioned.KeyEntry;
 import org.projectnessie.versioned.MergeConflictException;
 import org.projectnessie.versioned.MergeResult;
@@ -89,6 +91,7 @@ import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceInfo.CommitsAheadBehind;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.RepositoryInformation;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.paging.FilteringPaginationIterator;
@@ -107,6 +110,7 @@ import org.projectnessie.versioned.storage.common.logic.IndexesLogic;
 import org.projectnessie.versioned.storage.common.logic.PagedResult;
 import org.projectnessie.versioned.storage.common.logic.PagingToken;
 import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
+import org.projectnessie.versioned.storage.common.logic.RepositoryDescription;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
@@ -125,6 +129,22 @@ public class VersionStoreImpl implements VersionStore {
 
   public VersionStoreImpl(Persist persist) {
     this.persist = persist;
+  }
+
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  @Override
+  public RepositoryInformation getRepositoryInformation() {
+    ImmutableRepositoryInformation.Builder repoInfo =
+        ImmutableRepositoryInformation.builder().noAncestorHash(noAncestorHash().asString());
+    RepositoryDescription desc = repositoryLogic(persist).fetchRepositoryDescription();
+    if (desc != null) {
+      repoInfo
+          .repositoryCreationTimestamp(desc.repositoryCreatedTime())
+          .oldestPossibleCommitTimestamp(desc.oldestPossibleCommitTime())
+          .defaultBranch(desc.defaultBranchName());
+    }
+    return repoInfo.build();
   }
 
   @Nonnull

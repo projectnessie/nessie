@@ -37,6 +37,10 @@ import org.projectnessie.versioned.paging.PaginationIterator;
  */
 public interface VersionStore {
 
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  RepositoryInformation getRepositoryInformation();
+
   /**
    * Verifies that the given {@code namedReference} exists and that {@code hashOnReference}, if
    * present, is reachable via that reference.

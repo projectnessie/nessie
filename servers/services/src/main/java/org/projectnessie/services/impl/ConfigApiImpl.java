@@ -19,12 +19,15 @@ import org.projectnessie.model.ImmutableNessieConfiguration;
 import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.spi.ConfigService;
+import org.projectnessie.versioned.VersionStore;
 
 public class ConfigApiImpl implements ConfigService {
 
+  private final VersionStore store;
   private final ServerConfig config;
 
-  public ConfigApiImpl(ServerConfig config) {
+  public ConfigApiImpl(ServerConfig config, VersionStore store) {
+    this.store = store;
     this.config = config;
   }
 

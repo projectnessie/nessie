@@ -33,6 +33,7 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
@@ -73,6 +74,14 @@ public class TracingVersionStore implements VersionStore {
    */
   public TracingVersionStore(VersionStore delegate) {
     this.delegate = delegate;
+  }
+
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  @Override
+  public RepositoryInformation getRepositoryInformation() {
+    return callWithNoException(
+        "RepositoryInformation", b -> {}, delegate::getRepositoryInformation);
   }
 
   @Override
@@ -307,6 +316,21 @@ public class TracingVersionStore implements VersionStore {
         Scope ignore = activeScope(span.get())) {
       try {
         return invoker.handle();
+      } catch (IllegalArgumentException e) {
+        // IllegalArgumentException is a special kind of exception that indicates a user-error.
+        throw e;
+      } catch (RuntimeException e) {
+        throw traceError(span.get(), e);
+      }
+    }
+  }
+
+  private static <R> R callWithNoException(
+      String spanName, Consumer<SpanBuilder> spanBuilder, Supplier<R> invoker) {
+    try (SpanHolder span = createSpan(spanName, spanBuilder);
+        Scope ignore = activeScope(span.get())) {
+      try {
+        return invoker.get();
       } catch (IllegalArgumentException e) {
         // IllegalArgumentException is a special kind of exception that indicates a user-error.
         throw e;
