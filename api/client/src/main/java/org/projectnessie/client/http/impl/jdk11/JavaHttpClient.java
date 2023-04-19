@@ -35,7 +35,7 @@ import org.projectnessie.client.http.impl.HttpRuntimeConfig;
 @SuppressWarnings("Since15") // IntelliJ warns about new APIs. 15 is misleading, it means 11
 public final class JavaHttpClient implements org.projectnessie.client.http.HttpClient {
   final HttpRuntimeConfig config;
-  final HttpClient client;
+  private HttpClient client;
 
   public JavaHttpClient(HttpRuntimeConfig config) {
     this.config = config;
@@ -65,7 +65,7 @@ public final class JavaHttpClient implements org.projectnessie.client.http.HttpC
 
   @Override
   public HttpRequest newRequest() {
-    return new JavaRequest(this);
+    return new JavaRequest(this.config, (req, handler) -> client.send(req, handler));
   }
 
   @Override
@@ -75,6 +75,7 @@ public final class JavaHttpClient implements org.projectnessie.client.http.HttpC
 
   @Override
   public void close() {
+    client = null;
     config.close();
   }
 }

@@ -45,6 +45,7 @@ import org.projectnessie.client.http.RequestContext;
 import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.impl.BaseHttpRequest;
 import org.projectnessie.client.http.impl.HttpHeaders.HttpHeader;
+import org.projectnessie.client.http.impl.HttpRuntimeConfig;
 import org.projectnessie.client.http.impl.RequestContextImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,13 +54,31 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings("Since15") // IntelliJ warns about new APIs. 15 is misleading, it means 11
 final class JavaRequest extends BaseHttpRequest {
 
+  /**
+   * A functional interface that is used to send an {@link HttpRequest} and return an {@link
+   * HttpResponse} without leaking the {@link HttpClient} instance.
+   */
+  @FunctionalInterface
+  interface HttpExchange<T> {
+
+    /**
+     * Sends the given request using the underlying client, blocking if necessary to get the
+     * response. The returned {@link HttpResponse}{@code <T>} contains the response status, headers,
+     * and body (as handled by given response body handler).
+     *
+     * @see HttpClient#send(HttpRequest, HttpResponse.BodyHandler)
+     */
+    HttpResponse<T> send(HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler)
+        throws IOException, InterruptedException;
+  }
+
   private static final Logger LOGGER = LoggerFactory.getLogger(JavaRequest.class);
 
-  private final HttpClient client;
+  private final HttpExchange<InputStream> exchange;
 
-  JavaRequest(JavaHttpClient client) {
-    super(client.config);
-    this.client = client.client;
+  JavaRequest(HttpRuntimeConfig config, HttpExchange<InputStream> exchange) {
+    super(config);
+    this.exchange = exchange;
   }
 
   @Override
@@ -88,7 +107,7 @@ final class JavaRequest extends BaseHttpRequest {
     try {
       try {
         LOGGER.debug("Sending {} request to {} ...", method, uri);
-        response = client.send(request.build(), BodyHandlers.ofInputStream());
+        response = exchange.send(request.build(), BodyHandlers.ofInputStream());
       } catch (HttpConnectTimeoutException e) {
         throw new HttpClientException(
             String.format(
