@@ -166,7 +166,7 @@ public abstract class AbstractEvents {
         KeyWithBytes.of(
             ContentKey.of("one-two"),
             ContentId.of("cid-events-assign"),
-            payloadForContent(OnRefOnly.ON_REF_ONLY),
+            (byte) payloadForContent(OnRefOnly.ON_REF_ONLY),
             DefaultStoreWorker.instance()
                 .toStoreOnReferenceState(OnRefOnly.onRef("foo", "cid-events-assign")));
 
@@ -213,7 +213,7 @@ public abstract class AbstractEvents {
         KeyWithBytes.of(
             ContentKey.of("one-two"),
             ContentId.of("cid-events-commit"),
-            payloadForContent(OnRefOnly.ON_REF_ONLY),
+            (byte) payloadForContent(OnRefOnly.ON_REF_ONLY),
             DefaultStoreWorker.instance()
                 .toStoreOnReferenceState(OnRefOnly.onRef("foo", "cid-events-commit")));
 
@@ -266,7 +266,7 @@ public abstract class AbstractEvents {
         KeyWithBytes.of(
             ContentKey.of("one-two"),
             ContentId.of("cid-events-merge"),
-            payloadForContent(OnRefOnly.ON_REF_ONLY),
+            (byte) payloadForContent(OnRefOnly.ON_REF_ONLY),
             DefaultStoreWorker.instance()
                 .toStoreOnReferenceState(OnRefOnly.onRef("foo", "cid-events-merge")));
 
@@ -338,7 +338,7 @@ public abstract class AbstractEvents {
         KeyWithBytes.of(
             ContentKey.of("one-two"),
             ContentId.of("cid-events-transplant"),
-            payloadForContent(OnRefOnly.ON_REF_ONLY),
+            (byte) payloadForContent(OnRefOnly.ON_REF_ONLY),
             DefaultStoreWorker.instance()
                 .toStoreOnReferenceState(OnRefOnly.onRef("foo", "cid-events-transplant")));
 

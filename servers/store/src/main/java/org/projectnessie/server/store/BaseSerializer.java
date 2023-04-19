@@ -27,13 +27,14 @@ import org.projectnessie.model.Namespace;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.nessie.relocated.protobuf.InvalidProtocolBufferException;
 import org.projectnessie.server.store.proto.ObjectTypes;
-import org.projectnessie.versioned.store.ContentSerializer;
+import org.projectnessie.versioned.store.LegacyContentSerializer;
 
 /**
  * Common content serialization functionality for Iceberg tables+views, Delta Lake tables +
  * namespaces.
  */
-abstract class BaseSerializer<C extends Content> implements ContentSerializer<C> {
+@SuppressWarnings("deprecation")
+abstract class BaseSerializer<C extends Content> implements LegacyContentSerializer<C> {
 
   @Override
   public ByteString toStoreOnReferenceState(C content) {
@@ -44,7 +45,7 @@ abstract class BaseSerializer<C extends Content> implements ContentSerializer<C>
 
   @Override
   public C valueFromStore(
-      byte payload, ByteString onReferenceValue, Supplier<ByteString> globalState) {
+      int payload, ByteString onReferenceValue, Supplier<ByteString> globalState) {
     ObjectTypes.Content content = parse(onReferenceValue);
     return valueFromStore(content, globalState);
   }

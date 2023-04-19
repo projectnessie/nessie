@@ -264,9 +264,9 @@ public abstract class AbstractMergeTransplant {
         ContentKey key = ContentKey.of("key-" + k);
         OnRefOnly value = OnRefOnly.newOnRef("value " + i + " for " + k);
         ByteString onRef = DefaultStoreWorker.instance().toStoreOnReferenceState(value);
-        keysAndValue.put(key, ContentAndState.of(payloadForContent(value), onRef));
+        keysAndValue.put(key, ContentAndState.of((byte) payloadForContent(value), onRef));
         commit.addPuts(
-            KeyWithBytes.of(key, ContentId.of("C" + k), payloadForContent(value), onRef));
+            KeyWithBytes.of(key, ContentId.of("C" + k), (byte) payloadForContent(value), onRef));
       }
       commits[i] = databaseAdapter.commit(commit.build());
     }
@@ -378,7 +378,7 @@ public abstract class AbstractMergeTransplant {
           KeyWithBytes.of(
               ContentKey.of("key-" + k),
               ContentId.of("C" + k),
-              payloadForContent(conflictValue),
+              (byte) payloadForContent(conflictValue),
               DefaultStoreWorker.instance().toStoreOnReferenceState(conflictValue)));
     }
     Hash conflictHead = databaseAdapter.commit(commit.build());

@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned.store;
 
-import java.util.function.Supplier;
 import org.projectnessie.model.Content;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 
@@ -26,19 +25,11 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 public interface ContentSerializer<C extends Content> {
   Content.Type contentType();
 
-  byte payload();
+  int payload();
 
   ByteString toStoreOnReferenceState(C content);
 
   C applyId(C content, String id);
 
-  default boolean requiresGlobalState(ByteString onReferenceValue) {
-    return false;
-  }
-
-  default Content.Type getType(ByteString onReferenceValue) {
-    return contentType();
-  }
-
-  C valueFromStore(byte payload, ByteString onReferenceValue, Supplier<ByteString> globalState);
+  C valueFromStore(ByteString onReferenceValue);
 }

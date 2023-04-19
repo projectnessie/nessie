@@ -36,11 +36,11 @@ public class DefaultStoreWorker implements StoreWorker {
     return Lazy.INSTANCE;
   }
 
-  public static byte payloadForContent(Content c) {
+  public static int payloadForContent(Content c) {
     return serializer(c).payload();
   }
 
-  public static byte payloadForContent(Content.Type contentType) {
+  public static int payloadForContent(Content.Type contentType) {
     return serializer(contentType).payload();
   }
 
@@ -114,7 +114,7 @@ public class DefaultStoreWorker implements StoreWorker {
   }
 
   private static @Nonnull @jakarta.annotation.Nonnull <C extends Content>
-      ContentSerializer<C> serializer(byte payload) {
+      ContentSerializer<C> serializer(int payload) {
     @SuppressWarnings("unchecked")
     ContentSerializer<C> serializer =
         payload >= 0 && payload < Registry.BY_PAYLOAD.length
@@ -137,18 +137,42 @@ public class DefaultStoreWorker implements StoreWorker {
   }
 
   @Override
+  public Content valueFromStore(int payload, ByteString onReferenceValue) {
+    ContentSerializer<Content> serializer = serializer(payload);
+    return serializer.valueFromStore(onReferenceValue);
+  }
+
+  @Override
+  @Deprecated
   public Content valueFromStore(
-      byte payload, ByteString onReferenceValue, Supplier<ByteString> globalState) {
-    return serializer(payload).valueFromStore(payload, onReferenceValue, globalState);
+      int payload, ByteString onReferenceValue, Supplier<ByteString> globalState) {
+    ContentSerializer<Content> serializer = serializer(payload);
+    if (!(serializer instanceof LegacyContentSerializer)) {
+      return serializer.valueFromStore(onReferenceValue);
+    }
+    LegacyContentSerializer<Content> legacy = (LegacyContentSerializer<Content>) serializer;
+    return legacy.valueFromStore(payload, onReferenceValue, globalState);
   }
 
   @Override
-  public boolean requiresGlobalState(byte payload, ByteString onReferenceValue) {
-    return serializer(payload).requiresGlobalState(onReferenceValue);
+  @Deprecated
+  public boolean requiresGlobalState(int payload, ByteString onReferenceValue) {
+    ContentSerializer<Content> serializer = serializer(payload);
+    if (!(serializer instanceof LegacyContentSerializer)) {
+      return false;
+    }
+    LegacyContentSerializer<Content> legacy = (LegacyContentSerializer<Content>) serializer;
+    return legacy.requiresGlobalState(onReferenceValue);
   }
 
   @Override
-  public Content.Type getType(byte payload, ByteString onReferenceValue) {
-    return serializer(payload).getType(onReferenceValue);
+  @Deprecated
+  public Content.Type getType(int payload, ByteString onReferenceValue) {
+    ContentSerializer<Content> serializer = serializer(payload);
+    if (!(serializer instanceof LegacyContentSerializer)) {
+      return serializer.contentType();
+    }
+    LegacyContentSerializer<Content> legacy = (LegacyContentSerializer<Content>) serializer;
+    return legacy.getType(onReferenceValue);
   }
 }

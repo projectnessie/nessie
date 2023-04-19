@@ -241,7 +241,7 @@ public class ITExportImport {
                     KeyWithBytes.of(
                         key.getParent(),
                         ContentId.of(namespaceId),
-                        payloadForContent(NAMESPACE),
+                        (byte) payloadForContent(NAMESPACE),
                         DefaultStoreWorker.instance()
                             .toStoreOnReferenceState(
                                 Namespace.builder()
@@ -251,7 +251,7 @@ public class ITExportImport {
                     KeyWithBytes.of(
                         key,
                         ContentId.of(tableId),
-                        payloadForContent(ICEBERG_TABLE),
+                        (byte) payloadForContent(ICEBERG_TABLE),
                         DefaultStoreWorker.instance()
                             .toStoreOnReferenceState(
                                 IcebergTable.of("meta", 42, 43, 44, 45, tableId))))
@@ -265,7 +265,7 @@ public class ITExportImport {
                 KeyWithBytes.of(
                     key,
                     ContentId.of("id123"),
-                    payloadForContent(ICEBERG_TABLE),
+                    (byte) payloadForContent(ICEBERG_TABLE),
                     DefaultStoreWorker.instance()
                         .toStoreOnReferenceState(
                             IcebergTable.of("meta2", 43, 43, 44, 45, "id123"))))

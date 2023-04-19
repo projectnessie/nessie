@@ -17,28 +17,14 @@ package org.projectnessie.versioned.testworker;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.function.Supplier;
 import org.projectnessie.model.Content;
-import org.projectnessie.model.types.ContentTypes;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.store.ContentSerializer;
 
 abstract class TestContentSerializer<C extends Content> implements ContentSerializer<C> {
 
   @Override
-  public Content.Type getType(ByteString onRefContent) {
-    String serialized = onRefContent.toStringUtf8();
-    int i = serialized.indexOf(':');
-    if (i == -1) {
-      return OnRefOnly.ON_REF_ONLY;
-    }
-    String typeString = serialized.substring(0, i);
-    return ContentTypes.forName(typeString);
-  }
-
-  @Override
-  public C valueFromStore(
-      byte payload, ByteString onReferenceValue, Supplier<ByteString> globalState) {
+  public C valueFromStore(ByteString onReferenceValue) {
     String serialized = onReferenceValue.toStringUtf8();
 
     int i = serialized.indexOf(':');
@@ -54,9 +40,8 @@ abstract class TestContentSerializer<C extends Content> implements ContentSerial
     i = serialized.indexOf(':');
     String onRef = serialized.substring(i + 1);
 
-    ByteString global = globalState.get();
-    return valueFromStore(contentId, onRef, global);
+    return valueFromStore(contentId, onRef);
   }
 
-  protected abstract C valueFromStore(String contentId, String onRef, ByteString global);
+  protected abstract C valueFromStore(String contentId, String onRef);
 }

@@ -188,7 +188,7 @@ public abstract class AbstractRefLog {
                       KeyWithBytes.of(
                           ContentKey.of("table-" + commit),
                           ContentId.of("c" + commit),
-                          payloadForContent(OnRefOnly.ON_REF_ONLY),
+                          (byte) payloadForContent(OnRefOnly.ON_REF_ONLY),
                           DefaultStoreWorker.instance()
                               .toStoreOnReferenceState(OnRefOnly.newOnRef("c" + commit))))
                   .build());

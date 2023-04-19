@@ -47,6 +47,7 @@ class TestStoreWorker {
   private final TableCommitMetaStoreWorker worker = new TableCommitMetaStoreWorker();
 
   @Test
+  @SuppressWarnings("deprecation")
   void tableMetadataLocationGlobalNotAvailable() {
     assertThatThrownBy(
             () ->
@@ -68,6 +69,7 @@ class TestStoreWorker {
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   void tableMetadataLocationGlobal() {
     Content value =
         worker.valueFromStore(
@@ -117,8 +119,7 @@ class TestStoreWorker {
                         .setSortOrderId(45)
                         .setMetadataLocation("metadata-location"))
                 .build()
-                .toByteString(),
-            () -> null);
+                .toByteString());
     assertThat(value)
         .isInstanceOf(IcebergTable.class)
         .asInstanceOf(InstanceOfAssertFactories.type(IcebergTable.class))
@@ -132,6 +133,7 @@ class TestStoreWorker {
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   void viewMetadataLocationGlobalNotAvailable() {
     assertThatThrownBy(
             () ->
@@ -149,6 +151,7 @@ class TestStoreWorker {
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   void viewMetadataLocationGlobal() {
     Content value =
         worker.valueFromStore(
@@ -229,6 +232,7 @@ class TestStoreWorker {
 
   @ParameterizedTest
   @MethodSource("requiresGlobalStateModelType")
+  @SuppressWarnings("deprecation")
   void requiresGlobalStateModelType(
       Content content,
       ObjectTypes.Content.Builder onRefBuilder,
@@ -259,8 +263,7 @@ class TestStoreWorker {
                         .setVersionId(42)
                         .setMetadataLocation("metadata-location"))
                 .build()
-                .toByteString(),
-            () -> null);
+                .toByteString());
     assertThat(value)
         .isInstanceOf(IcebergView.class)
         .asInstanceOf(InstanceOfAssertFactories.type(IcebergView.class))
@@ -271,8 +274,7 @@ class TestStoreWorker {
   @ParameterizedTest
   @MethodSource("provideDeserialization")
   void testDeserialization(Map.Entry<ByteString, Content> entry) {
-    Content actual =
-        worker.valueFromStore(payloadForContent(entry.getValue()), entry.getKey(), () -> null);
+    Content actual = worker.valueFromStore(payloadForContent(entry.getValue()), entry.getKey());
     assertThat(actual).isEqualTo(entry.getValue());
   }
 
@@ -287,10 +289,10 @@ class TestStoreWorker {
   @MethodSource("provideDeserialization")
   void testSerde(Map.Entry<ByteString, Content> entry) {
     ByteString actualBytes = worker.toStoreOnReferenceState(entry.getValue());
-    assertThat(worker.valueFromStore(payloadForContent(entry.getValue()), actualBytes, () -> null))
+    assertThat(worker.valueFromStore(payloadForContent(entry.getValue()), actualBytes))
         .isEqualTo(entry.getValue());
     Content actualContent =
-        worker.valueFromStore(payloadForContent(entry.getValue()), entry.getKey(), () -> null);
+        worker.valueFromStore(payloadForContent(entry.getValue()), entry.getKey());
     assertThat(worker.toStoreOnReferenceState(actualContent)).isEqualTo(entry.getKey());
   }
 

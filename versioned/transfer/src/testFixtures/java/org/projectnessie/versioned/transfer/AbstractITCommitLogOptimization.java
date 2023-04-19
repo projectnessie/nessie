@@ -239,7 +239,7 @@ public abstract class AbstractITCommitLogOptimization {
                 KeyWithBytes.of(
                     ContentKey.of("branch-" + branch + "-commit-" + commitSeq),
                     ContentId.of("cid-" + branch + "-" + commitSeq),
-                    DefaultStoreWorker.payloadForContent(Content.Type.ICEBERG_TABLE),
+                    (byte) DefaultStoreWorker.payloadForContent(Content.Type.ICEBERG_TABLE),
                     DefaultStoreWorker.instance()
                         .toStoreOnReferenceState(
                             IcebergTable.of(

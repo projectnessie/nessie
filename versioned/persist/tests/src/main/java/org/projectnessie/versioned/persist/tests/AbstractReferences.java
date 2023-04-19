@@ -146,7 +146,7 @@ public abstract class AbstractReferences {
                     KeyWithBytes.of(
                         ContentKey.of("foo"),
                         ContentId.of(hello.getId()),
-                        payloadForContent(hello),
+                        (byte) payloadForContent(hello),
                         hello.serialized()))
                 .build());
 
@@ -172,7 +172,7 @@ public abstract class AbstractReferences {
                                   KeyWithBytes.of(
                                       ContentKey.of("bar"),
                                       ContentId.of(noNo.getId()),
-                                      payloadForContent(noNo),
+                                      (byte) payloadForContent(noNo),
                                       noNo.serialized()))
                               .build());
                     })
@@ -218,7 +218,7 @@ public abstract class AbstractReferences {
                       KeyWithBytes.of(
                           ContentKey.of("bar-" + i),
                           ContentId.of(hello.getId()),
-                          payloadForContent(hello),
+                          (byte) payloadForContent(hello),
                           hello.serialized()))
                   .build());
     }
@@ -345,7 +345,7 @@ public abstract class AbstractReferences {
                           KeyWithBytes.of(
                               ContentKey.of("table-" + commit),
                               ContentId.of("c" + commit),
-                              payloadForContent(OnRefOnly.ON_REF_ONLY),
+                              (byte) payloadForContent(OnRefOnly.ON_REF_ONLY),
                               DefaultStoreWorker.instance()
                                   .toStoreOnReferenceState(OnRefOnly.newOnRef("c" + commit))))
                       .build());

@@ -133,7 +133,7 @@ public abstract class AbstractManyKeys {
               allKeys.add(key);
               OnRefOnly val = onRef("value " + i, "cid-" + i);
               return KeyWithBytes.of(
-                  key, ContentId.of(val.getId()), payloadForContent(val), val.serialized());
+                  key, ContentId.of(val.getId()), (byte) payloadForContent(val), val.serialized());
             })
         .forEach(kb -> commits.get(commitDist.incrementAndGet() % params.commits).addPuts(kb));
 
@@ -208,7 +208,7 @@ public abstract class AbstractManyKeys {
                       KeyWithBytes.of(
                           key,
                           ContentId.of("c" + i),
-                          payloadForContent(OnRefOnly.ON_REF_ONLY),
+                          (byte) payloadForContent(OnRefOnly.ON_REF_ONLY),
                           DefaultStoreWorker.instance()
                               .toStoreOnReferenceState(onRef("r" + i, "c" + i))))
                   .build());
@@ -267,7 +267,7 @@ public abstract class AbstractManyKeys {
                       KeyWithBytes.of(
                           key,
                           ContentId.of("c" + i),
-                          payloadForContent(OnRefOnly.ON_REF_ONLY),
+                          (byte) payloadForContent(OnRefOnly.ON_REF_ONLY),
                           DefaultStoreWorker.instance()
                               .toStoreOnReferenceState(onRef("pf" + i, "cpf" + i))))
                   .build());
@@ -335,7 +335,7 @@ public abstract class AbstractManyKeys {
                       KeyWithBytes.of(
                           keyGen.apply(keyNum),
                           ContentId.of(val.getId()),
-                          payloadForContent(val),
+                          (byte) payloadForContent(val),
                           val.serialized()))
                   .build());
     }
@@ -472,7 +472,7 @@ public abstract class AbstractManyKeys {
                   return KeyWithBytes.of(
                       keyGen.apply(i),
                       ContentId.of(val.getId()),
-                      payloadForContent(val),
+                      (byte) payloadForContent(val),
                       val.serialized());
                 })
             .collect(Collectors.toCollection(() -> new ArrayList<>(keyCount)));
@@ -603,7 +603,7 @@ public abstract class AbstractManyKeys {
                       KeyWithBytes.of(
                           key,
                           ContentId.of("id-" + name),
-                          payloadForContent(OnRefOnly.ON_REF_ONLY),
+                          (byte) payloadForContent(OnRefOnly.ON_REF_ONLY),
                           DefaultStoreWorker.instance()
                               .toStoreOnReferenceState(OnRefOnly.newOnRef("c" + name))))
                   .build());

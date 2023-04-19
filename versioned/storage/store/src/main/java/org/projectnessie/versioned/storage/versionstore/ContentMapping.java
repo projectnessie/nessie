@@ -85,8 +85,7 @@ public final class ContentMapping {
   }
 
   private static Content valueToContent(ContentValueObj contentValue) {
-    return STORE_WORKER.valueFromStore(
-        (byte) contentValue.payload(), contentValue.data(), () -> null);
+    return STORE_WORKER.valueFromStore((byte) contentValue.payload(), contentValue.data());
   }
 
   @Nonnull
