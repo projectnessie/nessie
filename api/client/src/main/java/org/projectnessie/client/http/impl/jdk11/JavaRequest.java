@@ -55,7 +55,7 @@ final class JavaRequest extends BaseHttpRequest {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JavaRequest.class);
 
-  private final HttpClient client;
+  private HttpClient client;
 
   JavaRequest(JavaHttpClient client) {
     super(client.config);
@@ -131,6 +131,7 @@ final class JavaRequest extends BaseHttpRequest {
       response = null;
       return config.responseFactory().make(responseContext, config.getMapper());
     } finally {
+      client = null;
       if (response != null) {
         try {
           LOGGER.debug(
