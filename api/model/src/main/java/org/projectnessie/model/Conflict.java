@@ -15,12 +15,15 @@
  */
 package org.projectnessie.model;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.io.IOException;
 import java.util.Locale;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
-import org.projectnessie.model.Util.ConflictTypeDeserializer;
 
 @Value.Immutable
 @JsonSerialize(as = ImmutableConflict.class)
@@ -29,7 +32,7 @@ public interface Conflict {
   @Value.Parameter(order = 1)
   @Nullable
   @jakarta.annotation.Nullable
-  @JsonDeserialize(using = ConflictTypeDeserializer.class)
+  @JsonDeserialize(using = ConflictType.Deserializer.class)
   ConflictType conflictType();
 
   @Value.Parameter(order = 2)
@@ -92,6 +95,15 @@ public interface Conflict {
         return null;
       } catch (IllegalArgumentException e) {
         return UNKNOWN;
+      }
+    }
+
+    public static final class Deserializer extends JsonDeserializer<ConflictType> {
+      @Override
+      public ConflictType deserialize(JsonParser p, DeserializationContext ctxt)
+          throws IOException {
+        String name = p.readValueAs(String.class);
+        return name != null ? ConflictType.parse(name) : null;
       }
     }
   }

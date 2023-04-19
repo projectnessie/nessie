@@ -15,6 +15,7 @@
  */
 package org.projectnessie.model;
 
+import java.util.Locale;
 import javax.annotation.Nullable;
 
 /**
@@ -49,5 +50,16 @@ public enum FetchOption {
   public static String getFetchOptionName(
       @Nullable @jakarta.annotation.Nullable FetchOption fetchOption) {
     return null == fetchOption ? FetchOption.MINIMAL.name() : fetchOption.name();
+  }
+
+  public static FetchOption parse(String fetchOption) {
+    try {
+      if (fetchOption != null) {
+        return FetchOption.valueOf(fetchOption.toUpperCase(Locale.ROOT));
+      }
+      return null;
+    } catch (IllegalArgumentException e) {
+      return ALL;
+    }
   }
 }

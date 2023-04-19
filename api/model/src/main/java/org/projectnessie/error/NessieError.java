@@ -53,6 +53,7 @@ public interface NessieError {
 
   /** Nessie-specific error code. */
   @Value.Default
+  @JsonDeserialize(using = ErrorCode.Deserializer.class)
   default ErrorCode getErrorCode() {
     return ErrorCode.UNKNOWN;
   }

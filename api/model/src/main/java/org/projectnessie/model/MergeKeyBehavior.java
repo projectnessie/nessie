@@ -31,6 +31,7 @@ public interface MergeKeyBehavior {
 
   ContentKey getKey();
 
+  @JsonDeserialize(using = MergeBehavior.Deserializer.class)
   MergeBehavior getMergeBehavior();
 
   /**

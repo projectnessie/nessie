@@ -22,6 +22,12 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import java.io.IOException;
+import java.util.Locale;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Pattern;
@@ -30,6 +36,7 @@ import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty;
 import org.immutables.value.Value;
+import org.projectnessie.model.Reference.ReferenceType.Deserializer;
 
 @Schema(
     type = SchemaType.OBJECT,
@@ -95,6 +102,7 @@ public interface Reference extends Base {
 
   @JsonIgnore
   @Value.Redacted
+  @JsonDeserialize(using = Deserializer.class)
   ReferenceType getType();
 
   default String toPathString() {
@@ -109,6 +117,26 @@ public interface Reference extends Base {
   @Schema(enumeration = {"branch", "tag"}) // Required to have lower-case values in OpenAPI
   enum ReferenceType {
     BRANCH,
-    TAG
+    TAG;
+
+    public static ReferenceType parse(String referenceType) {
+      try {
+        if (referenceType != null) {
+          return ReferenceType.valueOf(referenceType.toUpperCase(Locale.ROOT));
+        }
+        return null;
+      } catch (IllegalArgumentException e) {
+        return BRANCH;
+      }
+    }
+
+    static final class Deserializer extends JsonDeserializer<ReferenceType> {
+      @Override
+      public ReferenceType deserialize(JsonParser p, DeserializationContext ctxt)
+          throws IOException {
+        String name = p.readValueAs(String.class);
+        return name != null ? ReferenceType.parse(name) : null;
+      }
+    }
   }
 }
