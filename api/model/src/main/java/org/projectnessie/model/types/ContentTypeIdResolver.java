@@ -19,7 +19,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.DatabindContext;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase;
-import com.fasterxml.jackson.databind.type.TypeFactory;
 import org.projectnessie.model.Content;
 
 /** Dynamic {@link Content} object (de)serialization for <em>Jackson</em>. */
@@ -59,10 +58,23 @@ public final class ContentTypeIdResolver extends TypeIdResolverBase {
 
   @Override
   public JavaType typeFromId(DatabindContext context, String id) {
-    Content.Type subType = ContentTypes.forName(id);
-    if (subType != null) {
-      return context.constructSpecializedType(baseType, subType.type());
+    Content.Type subType;
+    try {
+      subType = ContentTypes.forName(id);
+    } catch (IllegalArgumentException e) {
+      return context.constructSpecializedType(baseType, GenericContent.class);
     }
-    return TypeFactory.unknownType();
+    Class<? extends Content> asType = subType.type();
+    if (baseType.getRawClass().isAssignableFrom(asType)) {
+      return context.constructSpecializedType(baseType, asType);
+    }
+
+    // This is rather a "test-only" code path, but it might happen in real life as well, when
+    // calling the ObjectMapper with a "too specific" type and not just Content.class.
+    // So we can get here for example, if the baseType (induced by the type passed to ObjectMapper),
+    // is ContentUnknownType.class, but the type is a "well known" type like IcebergTable.class.
+    @SuppressWarnings("unchecked")
+    Class<? extends Content> concrete = (Class<? extends Content>) baseType.getRawClass();
+    return context.constructSpecializedType(baseType, concrete);
   }
 }
