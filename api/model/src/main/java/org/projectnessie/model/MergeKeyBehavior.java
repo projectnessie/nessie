@@ -58,7 +58,7 @@ public interface MergeKeyBehavior {
    * the "legacy" storage model will result in an error.
    *
    * <p>This parameter is not supported when multiple commits will be generated, which means only
-   * "squashing" merge and transplant operations.
+   * merge operations.
    *
    * <p>It is mandatory to supply the {@link #getExpectedTargetContent() expected content value},
    */
