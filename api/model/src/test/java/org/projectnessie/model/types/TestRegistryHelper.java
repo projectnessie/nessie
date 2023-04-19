@@ -34,26 +34,26 @@ public class TestRegistryHelper {
     RegistryHelper registryHelper = new RegistryHelper();
 
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(() -> registryHelper.register("BLAH", Content.class))
+        .isThrownBy(() -> registryHelper.register(Content.class))
         .withMessage(
-            "Content-type registration: name=BLAH, type=class org.projectnessie.model.Content has no @JsonTypeName annotation");
+            "Content-type registration: org.projectnessie.model.Content has no @JsonTypeName annotation");
 
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(() -> registryHelper.register("BLAH", RegistryHelperNoJsonTypeName.class))
+        .isThrownBy(() -> registryHelper.register(RegistryHelperNoJsonTypeName.class))
         .withMessage(
-            "Content-type registration: name=BLAH, type=class org.projectnessie.model.types.TestRegistryHelper$RegistryHelperNoJsonTypeName has no @JsonTypeName annotation");
+            "Content-type registration: org.projectnessie.model.types.TestRegistryHelper$RegistryHelperNoJsonTypeName has no @JsonTypeName annotation");
 
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(() -> registryHelper.register("BLAH", RegistryHelperNameMismatch.class))
+        .isThrownBy(() -> registryHelper.register(RegistryHelperIllegalName.class))
         .withMessage(
-            "Content-type registration: name=BLAH, type=class org.projectnessie.model.types.TestRegistryHelper$RegistryHelperNameMismatch, value of @JsonTypeName JSON_TYPE_NAME must be BLAH");
+            "Illegal content-type registration: illegal name ' ILLEGAL ' for org.projectnessie.model.types.TestRegistryHelper$RegistryHelperIllegalName");
 
-    soft.assertThatCode(() -> registryHelper.register("DUPE", RegistryHelperGood.class))
+    soft.assertThatCode(() -> registryHelper.register(RegistryHelperGood.class))
         .doesNotThrowAnyException();
     soft.assertThatIllegalStateException()
-        .isThrownBy(() -> registryHelper.register("DUPE", RegistryHelperDupe.class))
+        .isThrownBy(() -> registryHelper.register(RegistryHelperDupe.class))
         .withMessage(
-            "Duplicate content type registration for DUPE/class org.projectnessie.model.types.TestRegistryHelper$RegistryHelperDupe, existing: DUPE/class org.projectnessie.model.types.TestRegistryHelper$RegistryHelperGood");
+            "Duplicate content type registration for DUPE/org.projectnessie.model.types.TestRegistryHelper$RegistryHelperDupe, existing: DUPE/org.projectnessie.model.types.TestRegistryHelper$RegistryHelperGood");
   }
 
   @Test
@@ -68,6 +68,15 @@ public class TestRegistryHelper {
     @Override
     public Type getType() {
       return ContentTypes.forName("JSON_TYPE_NAME");
+    }
+  }
+
+  @Value.Immutable
+  @JsonTypeName(" ILLEGAL ")
+  public abstract static class RegistryHelperIllegalName extends Content {
+    @Override
+    public Type getType() {
+      return ContentTypes.forName(" ILLEGAL ");
     }
   }
 

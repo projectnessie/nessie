@@ -15,9 +15,12 @@
  */
 package org.projectnessie.versioned.store;
 
-import java.util.function.Consumer;
-
-/** Implementations of this {@link java.util.ServiceLoader service} register content serializers. */
+/**
+ * Custom content serializers need to implement this interface and call {@link
+ * ContentSerializerRegistry#register(ContentSerializer)} for each serializer.
+ *
+ * <p>Instances of this class are loaded via Java's {@link java.util.ServiceLoader}.
+ */
 public interface ContentSerializerBundle {
-  void register(Consumer<ContentSerializer<?>> registry);
+  void register(ContentSerializerRegistry registry);
 }

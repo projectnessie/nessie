@@ -19,7 +19,6 @@ import org.projectnessie.model.DeltaLakeTable;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.Namespace;
-import org.projectnessie.model.types.ContentTypes.Registrar;
 
 /**
  * Provides the {@link org.projectnessie.model.Content.Type content types} for Iceberg table + view,
@@ -28,10 +27,10 @@ import org.projectnessie.model.types.ContentTypes.Registrar;
 public final class MainContentTypeBundle implements ContentTypeBundle {
 
   @Override
-  public void register(Registrar registrar) {
-    registrar.register("ICEBERG_TABLE", IcebergTable.class);
-    registrar.register("DELTA_LAKE_TABLE", DeltaLakeTable.class);
-    registrar.register("ICEBERG_VIEW", IcebergView.class);
-    registrar.register("NAMESPACE", Namespace.class);
+  public void register(ContentTypeRegistry contentTypeRegistry) {
+    contentTypeRegistry.register(IcebergTable.class);
+    contentTypeRegistry.register(DeltaLakeTable.class);
+    contentTypeRegistry.register(IcebergView.class);
+    contentTypeRegistry.register(Namespace.class);
   }
 }

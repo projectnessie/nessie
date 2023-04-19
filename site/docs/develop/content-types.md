@@ -39,7 +39,7 @@ Needs a resource file `META-INF/services/org.projectnessie.model.types.ContentTy
 which contains the class name(s) that implement the
 `org.projectnessie.model.types.ContentTypeBundle` interface.
 
-The `ContentTypeBundle.register(ContentTypes.Registrar registrar)` implementation
+The `ContentTypeBundle.register(ContentTypeRegistry contentTypeRegistry)` implementation
 must call the given `Registrar` with name of each content type and the model interface type that
 extends `org.projectnessie.model.Content`.
 
@@ -52,8 +52,9 @@ Needs a resource file `META-INF/services/org.projectnessie.versioned.store.Conte
 which contains the class name(s) that implement the
 `org.projectnessie.versioned.store.ContentSerializerBundle` interface.
 
-The `ContentSerializerBundle.register(Consumer<ContentSerializer<?>> registry)` implementation
-must call the given `Consumer` with the `ContentSerializer` implementation for each content type.
+The `ContentSerializerBundle.register(ContentSerializerRegistry registry)` implementation
+must call the given `ContentTypeRegistry` with the `ContentSerializer` implementation for each
+content type serializer.
 
 ### Distributing content type and serializer bundles
 

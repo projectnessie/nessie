@@ -23,8 +23,17 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
  * content type.
  */
 public interface ContentSerializer<C extends Content> {
+
+  /**
+   * Content type names are assigned via the projectnessie project, see the <a
+   * href="https://projectnessie.org/develop/content-types">project website</a>.
+   */
   Content.Type contentType();
 
+  /**
+   * Payload IDs are assigned via the projectnessie project, see the <a
+   * href="https://projectnessie.org/develop/content-types">project website</a>.
+   */
   int payload();
 
   ByteString toStoreOnReferenceState(C content);

@@ -16,12 +16,12 @@
 package org.projectnessie.versioned.testworker;
 
 import org.projectnessie.model.types.ContentTypeBundle;
-import org.projectnessie.model.types.ContentTypes.Registrar;
+import org.projectnessie.model.types.ContentTypeRegistry;
 
 public final class TestContentTypeBundle implements ContentTypeBundle {
 
   @Override
-  public void register(Registrar registrar) {
-    registrar.register("ON_REF_ONLY", OnRefOnly.class);
+  public void register(ContentTypeRegistry contentTypeRegistry) {
+    contentTypeRegistry.register(OnRefOnly.class);
   }
 }

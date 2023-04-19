@@ -33,14 +33,6 @@ import org.projectnessie.model.Content;
  */
 public final class ContentTypes {
 
-  /**
-   * An implementation of this interface is passed to {@link
-   * org.projectnessie.model.types.ContentTypeBundle}s.
-   */
-  public interface Registrar {
-    void register(String name, Class<? extends Content> type);
-  }
-
   /** Retrieve an array of all registered content types. */
   public static Content.Type[] all() {
     return Registry.all();
@@ -52,39 +44,37 @@ public final class ContentTypes {
     return Registry.forName(name);
   }
 
-  static final class RegistryHelper implements ContentTypes.Registrar {
+  static final class RegistryHelper implements ContentTypeRegistry {
 
     private final List<Content.Type> list = new ArrayList<>();
     private final Map<String, Content.Type> names = new HashMap<>();
 
     @Override
-    public void register(String name, Class<? extends Content> type) {
-      if (name == null || name.trim().isEmpty() || !name.trim().equals(name) || type == null) {
-        throw new IllegalArgumentException(
-            String.format("Illegal content-type registration: name=%s, type=%s", name, type));
-      }
-      Content.Type contentType = new ContentTypeImpl(name, type);
+    public void register(Class<? extends Content> type) {
+      Objects.requireNonNull(type, "Illegal content-type registration: type must not be null");
 
       JsonTypeName jsonTypeName = type.getAnnotation(JsonTypeName.class);
       if (jsonTypeName == null) {
         throw new IllegalArgumentException(
             String.format(
-                "Content-type registration: name=%s, type=%s has no @JsonTypeName annotation",
-                name, type));
+                "Content-type registration: %s has no @JsonTypeName annotation", type.getName()));
       }
-      if (!name.equals(jsonTypeName.value())) {
+
+      String name = jsonTypeName.value();
+      if (name == null || name.trim().isEmpty() || !name.trim().equals(name)) {
         throw new IllegalArgumentException(
             String.format(
-                "Content-type registration: name=%s, type=%s, value of @JsonTypeName %s must be %s",
-                name, type, jsonTypeName.value(), name));
+                "Illegal content-type registration: illegal name '%s' for %s",
+                name, type.getName()));
       }
+      Content.Type contentType = new ContentTypeImpl(name, type);
 
       Content.Type ex = names.get(name);
       if (ex != null) {
         throw new IllegalStateException(
             String.format(
                 "Duplicate content type registration for %s/%s, existing: %s/%s",
-                name, type, ex.name(), ex.type()));
+                name, type.getName(), ex.name(), ex.type().getName()));
       }
 
       add(contentType);

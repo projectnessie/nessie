@@ -15,13 +15,12 @@
  */
 package org.projectnessie.versioned.store.types;
 
-import java.util.function.Consumer;
-import org.projectnessie.versioned.store.ContentSerializer;
 import org.projectnessie.versioned.store.ContentSerializerBundle;
+import org.projectnessie.versioned.store.ContentSerializerRegistry;
 
 public class CustomTestContentSerializerBundle implements ContentSerializerBundle {
   @Override
-  public void register(Consumer<ContentSerializer<?>> registry) {
-    registry.accept(new CustomTestContentSerializer());
+  public void register(ContentSerializerRegistry registry) {
+    registry.register(new CustomTestContentSerializer());
   }
 }

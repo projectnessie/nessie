@@ -16,12 +16,12 @@
 package org.projectnessie.versioned.store.types;
 
 import org.projectnessie.model.types.ContentTypeBundle;
-import org.projectnessie.model.types.ContentTypes.Registrar;
+import org.projectnessie.model.types.ContentTypeRegistry;
 
 public class CustomTestContentTypeBundle implements ContentTypeBundle {
 
   @Override
-  public void register(Registrar registrar) {
-    registrar.register("TEST_CUSTOM_CONTENT_TYPE", CustomTestContent.class);
+  public void register(ContentTypeRegistry contentTypeRegistry) {
+    contentTypeRegistry.register(CustomTestContent.class);
   }
 }
