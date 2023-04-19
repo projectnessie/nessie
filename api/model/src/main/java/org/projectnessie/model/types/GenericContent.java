@@ -45,9 +45,9 @@ import org.projectnessie.model.Content;
  * error out.
  */
 @Value.Immutable
-@JsonSerialize(using = ContentUnknownType.ContentUnknownTypeSerializer.class)
-@JsonDeserialize(using = ContentUnknownType.ContentUnknownTypeDeserializer.class)
-public abstract class ContentUnknownType extends Content {
+@JsonSerialize(using = GenericContent.ContentUnknownTypeSerializer.class)
+@JsonDeserialize(using = GenericContent.ContentUnknownTypeDeserializer.class)
+public abstract class GenericContent extends Content {
 
   @Override
   @Value.Parameter(order = 1)
@@ -67,11 +67,11 @@ public abstract class ContentUnknownType extends Content {
   @JsonUnwrapped
   public abstract Map<String, Object> getAttributes();
 
-  static final class ContentUnknownTypeSerializer extends JsonSerializer<ContentUnknownType> {
+  static final class ContentUnknownTypeSerializer extends JsonSerializer<GenericContent> {
 
     @Override
     public void serializeWithType(
-        ContentUnknownType value,
+        GenericContent value,
         JsonGenerator gen,
         SerializerProvider serializers,
         TypeSerializer typeSer)
@@ -90,16 +90,15 @@ public abstract class ContentUnknownType extends Content {
     }
 
     @Override
-    public void serialize(
-        ContentUnknownType value, JsonGenerator gen, SerializerProvider serializers) {
+    public void serialize(GenericContent value, JsonGenerator gen, SerializerProvider serializers) {
       throw new UnsupportedOperationException();
     }
   }
 
-  static final class ContentUnknownTypeDeserializer extends JsonDeserializer<ContentUnknownType> {
+  static final class ContentUnknownTypeDeserializer extends JsonDeserializer<GenericContent> {
 
     @Override
-    public ContentUnknownType deserialize(JsonParser p, DeserializationContext ctxt)
+    public GenericContent deserialize(JsonParser p, DeserializationContext ctxt)
         throws IOException {
       @SuppressWarnings("unchecked")
       Map<String, Object> all = p.readValueAs(Map.class);
@@ -108,14 +107,13 @@ public abstract class ContentUnknownType extends Content {
       if (type == null) {
         type = "UNKNOWN_CONTENT_TYPE";
       }
-      return ContentUnknownType.contentUnknownType(
+      return GenericContent.contentUnknownType(
           type.toString(), id != null ? id.toString() : null, all);
     }
   }
 
-  public static ContentUnknownType contentUnknownType(
-      String type, String id, Map<String, Object> all) {
-    return ImmutableContentUnknownType.of(
+  public static GenericContent contentUnknownType(String type, String id, Map<String, Object> all) {
+    return ImmutableGenericContent.of(
         new Content.Type() {
           @Override
           public String name() {
@@ -124,7 +122,7 @@ public abstract class ContentUnknownType extends Content {
 
           @Override
           public Class<? extends Content> type() {
-            return ContentUnknownType.class;
+            return GenericContent.class;
           }
         },
         id,

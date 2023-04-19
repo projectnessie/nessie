@@ -36,7 +36,7 @@ import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.Namespace;
 
 @ExtendWith(SoftAssertionsExtension.class)
-public class TestContentUnknownType {
+public class TestGenericContent {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   @InjectSoftAssertions protected SoftAssertions soft;
@@ -121,9 +121,9 @@ public class TestContentUnknownType {
             jsonNode.get("sqlText"),
             jsonNode.get("dialect"));
 
-    Content deserialized = MAPPER.readValue(serialized, ContentUnknownType.class);
+    Content deserialized = MAPPER.readValue(serialized, GenericContent.class);
     soft.assertThat(deserialized)
         .extracting(c -> c.getType().name(), c -> c.getType().type(), Content::getId)
-        .containsExactly(content.getType().name(), ContentUnknownType.class, content.getId());
+        .containsExactly(content.getType().name(), GenericContent.class, content.getId());
   }
 }

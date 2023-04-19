@@ -62,7 +62,7 @@ public final class ContentTypeIdResolver extends TypeIdResolverBase {
     try {
       subType = ContentTypes.forName(id);
     } catch (IllegalArgumentException e) {
-      return context.constructSpecializedType(baseType, ContentUnknownType.class);
+      return context.constructSpecializedType(baseType, GenericContent.class);
     }
     Class<? extends Content> asType = subType.type();
     if (baseType.getRawClass().isAssignableFrom(asType)) {
