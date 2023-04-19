@@ -29,6 +29,7 @@ import static org.projectnessie.versioned.storage.common.logic.CommitRetry.commi
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
+import static org.projectnessie.versioned.storage.versionstore.RefMapping.commitConflictToConflict;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.referenceConflictException;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.referenceNotFound;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.hashToObjId;
@@ -89,6 +90,7 @@ import org.projectnessie.versioned.storage.common.logic.IndexesLogic;
 import org.projectnessie.versioned.storage.common.logic.PagedResult;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
+import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
@@ -545,12 +547,18 @@ class BaseCommitHelper {
   CommitObj createMergeTransplantCommit(
       Function<ContentKey, MergeKeyBehavior> mergeBehaviorForKey,
       Map<ContentKey, KeyDetails> keyDetailsMap,
-      CreateCommit createCommit)
+      CreateCommit createCommit,
+      Consumer<Obj> objsToStore)
       throws ReferenceNotFoundException {
     try {
       CommitLogic commitLogic = commitLogic(persist);
+      ContentMapping contentMapping = new ContentMapping(persist);
       return commitLogic.buildCommitObj(
           createCommit,
+          /*
+           * Conflict handling happens via this callback, which can decide how the conflict should
+           * be handled.
+           */
           conflict -> {
             ContentKey key = storeKeyToKey(conflict.key());
             // Note: key==null, if not the "main universe" or not a "content"
@@ -569,20 +577,30 @@ class BaseCommitHelper {
                   return ConflictResolution.IGNORE;
                 }
               }
+
               MergeKeyBehavior mergeKeyBehavior = mergeBehaviorForKey.apply(key);
-              checkArgument(
-                  mergeKeyBehavior.getResolvedContent() == null
-                      && mergeKeyBehavior.getExpectedTargetContent() == null,
-                  "Functionality for MergeKeyBehavior.resolvedContent and MergeKeyBehavior.expectedTargetContent is not yet implemented.");
               MergeBehavior mergeBehavior = mergeKeyBehavior.getMergeBehavior();
               switch (mergeBehavior) {
                 case NORMAL:
-                  keyDetailsMap.put(key, keyDetails(mergeBehavior, ConflictType.UNRESOLVABLE));
+                  keyDetailsMap.put(
+                      key,
+                      keyDetails(
+                          mergeBehavior,
+                          ConflictType.UNRESOLVABLE,
+                          commitConflictToConflict(conflict)));
                   return ConflictResolution.IGNORE;
                 case FORCE:
+                  checkArgument(
+                      mergeKeyBehavior.getResolvedContent() == null,
+                      "MergeKeyBehavior.resolvedContent must be null for MergeBehavior.FORCE for %s",
+                      key);
                   keyDetailsMap.put(key, keyDetails(mergeBehavior, ConflictType.NONE));
                   return ConflictResolution.IGNORE;
                 case DROP:
+                  checkArgument(
+                      mergeKeyBehavior.getResolvedContent() == null,
+                      "MergeKeyBehavior.resolvedContent must be null for MergeBehavior.DROP for %s",
+                      key);
                   keyDetailsMap.put(key, keyDetails(mergeBehavior, ConflictType.NONE));
                   return ConflictResolution.DROP;
                 default:
@@ -591,15 +609,71 @@ class BaseCommitHelper {
             }
             return ConflictResolution.IGNORE;
           },
-          (k, v) -> {
-            ContentKey key = storeKeyToKey(k);
-            // Note: key==null, if not the "main universe" or not a "content"
-            // discriminator
+          /*
+           * Callback from the commit-logic telling us the value-ObjId for a key.
+           */
+          (storeKey, valueId) -> {
+            ContentKey key = storeKeyToKey(storeKey);
+            // Note: key==null, if not the "main universe" or not a "content" discriminator
             if (key != null) {
               MergeKeyBehavior mergeKeyBehavior = mergeBehaviorForKey.apply(key);
               keyDetailsMap.putIfAbsent(
                   key, keyDetails(mergeKeyBehavior.getMergeBehavior(), ConflictType.NONE));
             }
+          },
+          /*
+           * Following callback implements the functionality to handle MergeKeyBehavior.expectedTargetContent,
+           * to explicitly validate the current value on the target branch/commit.
+           *
+           * This is mandatory, if MergeKeyBehavior.resolvedContent != null.
+           */
+          (storeKey, expectedValueId) -> {
+            // "replace" the ObjId expected for a commit-ADD action
+            ContentKey key = storeKeyToKey(storeKey);
+            // Note: key==null, if not the "main universe" or not a "content" discriminator
+            if (key == null) {
+              return expectedValueId;
+            }
+            Content expectedTarget = mergeBehaviorForKey.apply(key).getExpectedTargetContent();
+            // If there is an expected-target-content, we only need the ObjId for it to let the
+            // commit code perform the check. An object load is not needed.
+            return expectedTarget != null
+                ? contentMapping
+                    .buildContent(expectedTarget, payloadForContent(expectedTarget))
+                    .id()
+                : expectedValueId;
+          },
+          /*
+           * Following callback implements the functionality to handle MergeKeyBehavior.resolvedContent,
+           * so when a (squashing) merge-operation requests to explicitly use merge a different content
+           * object, to handle externally resolved conflicts.
+           *
+           * Non-squashing merges are prohibited to have a non-null MergeKeyBehavior.resolvedContent.
+           */
+          (storeKey, commitValueId) -> {
+            ContentKey key = storeKeyToKey(storeKey);
+            // Note: key==null, if not the "main universe" or not a "content" discriminator
+            if (key == null) {
+              return commitValueId;
+            }
+            MergeKeyBehavior mergeKeyBehavior = mergeBehaviorForKey.apply(key);
+            Content resolvedContent = mergeKeyBehavior.getResolvedContent();
+            if (resolvedContent == null) {
+              // Nothing to resolve, use the value from the source.
+              return commitValueId;
+            }
+
+            // Require the expectedTargetContent attribute with the resolvedContent attribute.
+            checkArgument(
+                mergeKeyBehavior.getExpectedTargetContent() != null,
+                "MergeKeyBehavior.resolvedContent requires setting MergeKeyBehavior.expectedTarget as well for key %s",
+                key);
+
+            // Build the "resolved" content value object and add it to the objects to persist.
+            ContentValueObj resolvedValue =
+                contentMapping.buildContent(resolvedContent, payloadForContent(resolvedContent));
+            objsToStore.accept(resolvedValue);
+            return resolvedValue.id();
           });
     } catch (CommitConflictException conflict) {
       // Data conflicts are handled, if we get here, it's an internal error OR unimplemented

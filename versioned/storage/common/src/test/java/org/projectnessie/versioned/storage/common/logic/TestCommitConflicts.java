@@ -33,6 +33,7 @@ import static org.projectnessie.versioned.storage.common.logic.CommitConflict.Co
 import static org.projectnessie.versioned.storage.common.logic.CommitConflict.ConflictType.PAYLOAD_DIFFERS;
 import static org.projectnessie.versioned.storage.common.logic.CommitConflict.ConflictType.VALUE_DIFFERS;
 import static org.projectnessie.versioned.storage.common.logic.CommitConflict.commitConflict;
+import static org.projectnessie.versioned.storage.common.logic.CommitLogic.ValueReplacement.NO_VALUE_REPLACEMENT;
 import static org.projectnessie.versioned.storage.common.logic.ConflictHandler.ConflictResolution.CONFLICT;
 import static org.projectnessie.versioned.storage.common.logic.ConflictHandler.ConflictResolution.DROP;
 import static org.projectnessie.versioned.storage.common.logic.ConflictHandler.ConflictResolution.IGNORE;
@@ -89,7 +90,8 @@ public class TestCommitConflicts {
       throws CommitConflictException, ObjNotFoundException {
     CreateCommit.Builder builder = stdCommit();
     builderConsumer.accept(builder);
-    commitLogic.buildCommitObj(builder.build(), c -> CONFLICT, (k, id) -> {});
+    commitLogic.buildCommitObj(
+        builder.build(), c -> CONFLICT, (k, id) -> {}, NO_VALUE_REPLACEMENT, NO_VALUE_REPLACEMENT);
   }
 
   @Test
@@ -457,7 +459,9 @@ public class TestCommitConflicts {
                 .addAdds(commitAdd(barKey, 0, barAddId, null, null))
                 .build(),
             c -> CONFLICT,
-            callbacks::put);
+            callbacks::put,
+            NO_VALUE_REPLACEMENT,
+            NO_VALUE_REPLACEMENT);
 
     soft.assertThat(callbacks)
         .hasSize(2)
@@ -479,7 +483,9 @@ public class TestCommitConflicts {
                 .addAdds(commitAdd(barKey, 0, barUpdateId, barAddId, null))
                 .build(),
             c -> CONFLICT,
-            callbacks::put);
+            callbacks::put,
+            NO_VALUE_REPLACEMENT,
+            NO_VALUE_REPLACEMENT);
 
     soft.assertThat(callbacks)
         .hasSize(2)
@@ -503,7 +509,9 @@ public class TestCommitConflicts {
             .addRemoves(commitRemove(barKey, 0, barUpdateId, null))
             .build(),
         c -> CONFLICT,
-        callbacks::put);
+        callbacks::put,
+        NO_VALUE_REPLACEMENT,
+        NO_VALUE_REPLACEMENT);
 
     soft.assertThat(callbacks).hasSize(1).containsEntry(barKey, null);
   }
@@ -537,7 +545,9 @@ public class TestCommitConflicts {
                       conflicts.add(c);
                       return CONFLICT;
                     },
-                    callbacks::put))
+                    callbacks::put,
+                    NO_VALUE_REPLACEMENT,
+                    NO_VALUE_REPLACEMENT))
         .isInstanceOf(CommitConflictException.class)
         .asInstanceOf(type(CommitConflictException.class))
         .extracting(CommitConflictException::conflicts, list(CommitConflict.class))
@@ -562,7 +572,9 @@ public class TestCommitConflicts {
               conflicts.add(c);
               return IGNORE;
             },
-            callbacks::put);
+            callbacks::put,
+            NO_VALUE_REPLACEMENT,
+            NO_VALUE_REPLACEMENT);
 
     soft.assertThat(callbacks).hasSize(1).containsEntry(barKey, barAddId);
     soft.assertThat(conflicts)
@@ -587,7 +599,9 @@ public class TestCommitConflicts {
               conflicts.add(c);
               return DROP;
             },
-            callbacks::put);
+            callbacks::put,
+            NO_VALUE_REPLACEMENT,
+            NO_VALUE_REPLACEMENT);
 
     soft.assertThat(callbacks).hasSize(1).containsEntry(barKey, barAddId);
     soft.assertThat(conflicts)

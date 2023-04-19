@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.storage.versionstore;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
 import static java.util.Objects.requireNonNull;
@@ -630,17 +631,28 @@ public class VersionStoreImpl implements VersionStore {
                     retryState,
                     fromHash,
                     updateCommitMetadata,
-                    mergeBehaviorForKey(mergeKeyBehaviors, defaultMergeBehavior),
+                    mergeBehaviorForKey(
+                        keepIndividualCommits, mergeKeyBehaviors, defaultMergeBehavior),
                     dryRun));
 
     return mergeTransplantResponse(dryRun, mergeResult);
   }
 
   private static Function<ContentKey, MergeKeyBehavior> mergeBehaviorForKey(
-      Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors, MergeBehavior defaultMergeBehavior) {
+      boolean individualCommits,
+      Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors,
+      MergeBehavior defaultMergeBehavior) {
     return key -> {
       MergeKeyBehavior behavior = mergeKeyBehaviors.get(key);
-      return behavior != null ? behavior : MergeKeyBehavior.of(key, defaultMergeBehavior);
+      if (behavior == null) {
+        return MergeKeyBehavior.of(key, defaultMergeBehavior);
+      }
+      checkArgument(
+          !individualCommits
+              || (behavior.getExpectedTargetContent() == null
+                  && behavior.getResolvedContent() == null),
+          "MergeKeyBehavior.expectedTargetContent and MergeKeyBehavior.resolvedContent are only supported for squashing merge/transplant operations.");
+      return behavior;
     };
   }
 
@@ -672,7 +684,8 @@ public class VersionStoreImpl implements VersionStore {
                     retryState,
                     sequenceToTransplant,
                     updateCommitMetadata,
-                    mergeBehaviorForKey(mergeKeyBehaviors, defaultMergeBehavior),
+                    mergeBehaviorForKey(
+                        keepIndividualCommits, mergeKeyBehaviors, defaultMergeBehavior),
                     dryRun));
 
     return mergeTransplantResponse(dryRun, mergeResult);
