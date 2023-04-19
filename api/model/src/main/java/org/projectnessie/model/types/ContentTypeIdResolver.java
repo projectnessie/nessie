@@ -64,6 +64,17 @@ public final class ContentTypeIdResolver extends TypeIdResolverBase {
     } catch (IllegalArgumentException e) {
       return context.constructSpecializedType(baseType, ContentUnknownType.class);
     }
-    return context.constructSpecializedType(baseType, subType.type());
+    Class<? extends Content> asType = subType.type();
+    if (baseType.getRawClass().isAssignableFrom(asType)) {
+      return context.constructSpecializedType(baseType, asType);
+    }
+
+    // This is rather a "test-only" code path, but it might happen in real life as well, when
+    // calling the ObjectMapper with a "too specific" type and not just Content.class.
+    // So we can get here for example, if the baseType (induced by the type passed to ObjectMapper),
+    // is ContentUnknownType.class, but the type is a "well known" type like IcebergTable.class.
+    @SuppressWarnings("unchecked")
+    Class<? extends Content> concrete = (Class<? extends Content>) baseType.getRawClass();
+    return context.constructSpecializedType(baseType, concrete);
   }
 }

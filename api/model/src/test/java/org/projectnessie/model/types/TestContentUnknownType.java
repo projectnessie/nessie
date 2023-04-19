@@ -15,11 +15,14 @@
  */
 package org.projectnessie.model.types;
 
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.util.TokenBuffer;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -28,6 +31,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.IcebergView;
+import org.projectnessie.model.Namespace;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestContentUnknownType {
@@ -73,5 +79,51 @@ public class TestContentUnknownType {
 
     JsonNode serializedAsJsonNode = MAPPER.readValue(serialized, JsonNode.class);
     soft.assertThat(serializedAsJsonNode).isEqualTo(candidate);
+  }
+
+  static Stream<Content> knownContentTypeAsUnknown() {
+    return Stream.of(
+        IcebergTable.of("meta", 1, 2, 3, 4),
+        IcebergTable.of("meta", 1, 2, 3, 4, "cid"),
+        IcebergView.of("meta", 1, 2, "awesome-db", "select what_i_want"),
+        IcebergView.of("cid", "meta", 1, 2, "awesome-db", "select what_i_want"),
+        Namespace.of("foo", "bar"),
+        Namespace.builder().from(Namespace.of("foo", "bar")).id("cid").build());
+  }
+
+  @ParameterizedTest
+  @MethodSource
+  void knownContentTypeAsUnknown(Content content) throws Exception {
+    TokenBuffer tokenBuffer = new TokenBuffer(MAPPER, false);
+    MAPPER.writeValue(tokenBuffer, content);
+    JsonNode jsonNode = tokenBuffer.asParser().readValueAsTree();
+
+    String jsonString = MAPPER.writeValueAsString(content);
+    Content meta = MAPPER.readValue(jsonString, Content.class);
+    soft.assertThat(meta).isEqualTo(content);
+
+    String serialized = MAPPER.writeValueAsString(meta);
+    JsonNode serializedAsJsonNode = MAPPER.readValue(serialized, JsonNode.class);
+    // Cannot "just" compare jsonNode + serializedAsJsonNode, because the integer values are added
+    // as 'int's for the one and as 'long's for the other, which makes comparing those impossible.
+    soft.assertThat(serializedAsJsonNode)
+        .asInstanceOf(type(JsonNode.class))
+        .extracting(
+            n -> n.get("type"),
+            n -> n.get("id"),
+            n -> n.get("metadataLocation"),
+            n -> n.get("sqlText"),
+            n -> n.get("dialect"))
+        .containsExactly(
+            jsonNode.get("type"),
+            jsonNode.get("id"),
+            jsonNode.get("metadataLocation"),
+            jsonNode.get("sqlText"),
+            jsonNode.get("dialect"));
+
+    Content deserialized = MAPPER.readValue(serialized, ContentUnknownType.class);
+    soft.assertThat(deserialized)
+        .extracting(c -> c.getType().name(), c -> c.getType().type(), Content::getId)
+        .containsExactly(content.getType().name(), ContentUnknownType.class, content.getId());
   }
 }
