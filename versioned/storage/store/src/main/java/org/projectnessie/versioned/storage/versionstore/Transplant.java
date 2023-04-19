@@ -20,7 +20,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
@@ -36,7 +35,6 @@ interface Transplant {
       List<Hash> sequenceToTransplant,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       Function<ContentKey, MergeKeyBehavior> mergeBehaviorForKey,
-      MergeBehavior defaultMergeBehavior,
       boolean dryRun)
       throws ReferenceNotFoundException, RetryException, ReferenceConflictException;
 }

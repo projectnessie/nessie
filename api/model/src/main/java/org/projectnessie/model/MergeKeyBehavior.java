@@ -37,7 +37,7 @@ public interface MergeKeyBehavior {
    * If present, the current content on the target branch will be compared against this value.
    *
    * <p>This parameter is not supported when multiple commits will be generated, which means only
-   * "squashing" merge and transplant operations.
+   * merge operations.
    *
    * <p>Supplying a {@link #getResolvedContent() resolved content} requires setting this attribute.
    * The merge operation will result in a "conflict", if current value on the target branch is

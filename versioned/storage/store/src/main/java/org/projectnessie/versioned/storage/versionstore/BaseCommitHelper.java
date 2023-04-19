@@ -573,7 +573,7 @@ class BaseCommitHelper {
               checkArgument(
                   mergeKeyBehavior.getResolvedContent() == null
                       && mergeKeyBehavior.getExpectedTargetContent() == null,
-                  "Functionality for MergeKeyBehavior.resolvedContent and MergeKeyBehavior.expectedTargetContent are not yet implemented.");
+                  "Functionality for MergeKeyBehavior.resolvedContent and MergeKeyBehavior.expectedTargetContent is not yet implemented.");
               MergeBehavior mergeBehavior = mergeKeyBehavior.getMergeBehavior();
               switch (mergeBehavior) {
                 case NORMAL:

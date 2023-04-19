@@ -22,7 +22,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
@@ -55,7 +54,6 @@ final class TransplantIndividualImpl extends BaseMergeTransplantIndividual imple
       List<Hash> sequenceToTransplant,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       Function<ContentKey, MergeKeyBehavior> mergeBehaviorForKey,
-      MergeBehavior defaultMergeBehavior,
       boolean dryRun)
       throws ReferenceNotFoundException, RetryException, ReferenceConflictException {
     SourceCommitsAndParent sourceCommits = loadSourceCommitsForTransplant(sequenceToTransplant);

@@ -653,7 +653,6 @@ public class VersionStoreImpl implements VersionStore {
                     sequenceToTransplant,
                     updateCommitMetadata,
                     mergeBehaviorForKey(mergeKeyBehaviors, defaultMergeBehavior),
-                    defaultMergeBehavior,
                     dryRun));
 
     return mergeTransplantResponse(dryRun, mergeResult);
