@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,35 +15,19 @@
  */
 package org.projectnessie.model;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.annotation.Nullable;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import javax.validation.constraints.NotEmpty;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.immutables.value.Value;
+import org.projectnessie.model.metadata.ContentMetadataResolver;
 
-@Value.Immutable
-@JsonSerialize(as = ImmutableContentMetadata.class)
-@JsonDeserialize(as = ImmutableContentMetadata.class)
+@Schema(type = SchemaType.OBJECT, title = "ContentMetadata", discriminatorProperty = "variant")
+@JsonTypeIdResolver(ContentMetadataResolver.class)
+@JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "variant", visible = true)
 public interface ContentMetadata {
 
   @NotEmpty
   @jakarta.validation.constraints.NotEmpty
-  @Value.Parameter(order = 1)
   String getVariant();
-
-  @Nullable
-  @jakarta.annotation.Nullable
-  @Schema(type = SchemaType.OBJECT)
-  @Value.Parameter(order = 2)
-  @JsonInclude(Include.NON_NULL)
-  JsonNode getMetadata();
-
-  static ContentMetadata of(String variant, JsonNode metadata) {
-    return ImmutableContentMetadata.of(variant, metadata);
-  }
 }
