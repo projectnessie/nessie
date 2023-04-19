@@ -100,6 +100,7 @@ public abstract class AbstractQuarkusSmoke {
                 }
               });
       api().close();
+      api = null;
     }
   }
 
