@@ -2,6 +2,19 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.58.1 Release (April 19, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.58.1).
+
+* Null out references to java.net.http.HttpClient (#6630)
+* Validate that the generated `nessie-gc` executable works (#6625)
+* Cleanup content-type code (#6617)
+* Add a test for getContent() on the default branch (API v1) (#6623)
+* Tests for the OAuth2 authentication provider in nessie-quarkus (#6597)
+* Add test for specVersion in API v2 (#6599)
+* Disable IT-Auth on WIn/Mac CI (#6615)
+* Docs for the new OAuth2 authentication provider (#6595)
+
 ## 0.58.0 Release (April 15, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.58.0).
