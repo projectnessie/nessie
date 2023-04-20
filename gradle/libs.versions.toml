@@ -23,6 +23,7 @@ logback = "1.2.11"
 maven = "3.9.1"
 mavenResolver = "1.9.8"
 micrometer = "1.10.6"
+mockito="4.11.0"
 nessieClientVersion = "0.51.1" # Must be in sync with Nessie version in the Iceberg release.
 opentelemetry = "1.25.0"
 opentelemetryAlpha = "1.25.0-alpha"
@@ -70,7 +71,7 @@ managed-slf4j = ["slf4j-jcl-over-slf4j", "slf4j-log4j-over-slf4j", "slf4j-jcl-ov
 managed-testcontainers = ["testcontainers-cockroachdb", "testcontainers-mongodb",
   "testcontainers-postgresql", "testcontainers-testcontainers"]
 
-junit-testing = ["assertj-core", "mockito-core", "junit-jupiter-api", "junit-jupiter-params"]
+junit-testing = ["assertj-core", "mockito-core", "mockito-junit-jupiter", "junit-jupiter-api", "junit-jupiter-params"]
 
 [libraries]
 agroal-pool = { module = "io.agroal:agroal-pool", version = "2.1" }
@@ -140,6 +141,8 @@ jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations
 jackson-core = { module = "com.fasterxml.jackson.core:jackson-core" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind" }
 jackson-dataformat-xml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml" }
+jackson-datatype-jdk8 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jdk8" }
+jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310" }
 jackson-jaxrs-json-provider = { module = "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider" }
 jackson-jaxrs-xml-provider = { module = "com.fasterxml.jackson.jaxrs:jackson-jaxrs-xml-provider" }
 jacoco-ant = { module = "org.jacoco:org.jacoco.ant", version.ref = "jacoco" }
@@ -175,7 +178,8 @@ maven-resolver-transport-file = { module = "org.apache.maven.resolver:maven-reso
 maven-resolver-transport-http = { module = "org.apache.maven.resolver:maven-resolver-transport-http", version.ref = "mavenResolver" }
 micrometer-core = { module = "io.micrometer:micrometer-core", version.ref = "micrometer" }
 microprofile-openapi = { module = "org.eclipse.microprofile.openapi:microprofile-openapi-api", version = "3.1" }
-mockito-core = { module = "org.mockito:mockito-core", version = "4.11.0" }
+mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
+mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
 mongodb-driver-sync = { module = "org.mongodb:mongodb-driver-sync", version = "4.9.1" }
 openapi-generator-cli = { module = "org.openapitools:openapi-generator-cli", version = "6.5.0" }
 opentelemetry-api = { module = "io.opentelemetry:opentelemetry-api" }
