@@ -86,9 +86,16 @@ public final class ClientSideCreateNamespace extends BaseCreateNamespaceBuilder 
     try {
       Branch branch = (Branch) contentsResponse.getEffectiveReference();
 
+      CommitMeta meta = commitMeta;
+      if (meta == null) {
+        meta = CommitMeta.fromMessage("create namespace " + key);
+      } else if (meta.getMessage().isEmpty()) {
+        meta = CommitMeta.builder().from(meta).message("update namespace " + key).build();
+      }
+
       CommitResponse committed =
           api.commitMultipleOperations()
-              .commitMeta(CommitMeta.fromMessage("create namespace " + namespace.name()))
+              .commitMeta(meta)
               .branch(branch)
               .operation(Put.of(key, content))
               .commitWithResponse();

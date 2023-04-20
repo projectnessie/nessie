@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nullable;
 import org.projectnessie.client.api.UpdateNamespaceBuilder;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Namespace;
 
 public abstract class BaseUpdateNamespaceBuilder implements UpdateNamespaceBuilder {
@@ -30,6 +31,13 @@ public abstract class BaseUpdateNamespaceBuilder implements UpdateNamespaceBuild
   protected Namespace namespace;
   protected String refName;
   protected String hashOnRef;
+  protected CommitMeta commitMeta;
+
+  @Override
+  public UpdateNamespaceBuilder commitMeta(CommitMeta commitMeta) {
+    this.commitMeta = commitMeta;
+    return this;
+  }
 
   @Override
   public UpdateNamespaceBuilder namespace(Namespace namespace) {
