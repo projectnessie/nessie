@@ -568,11 +568,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       validateCommitMeta(commitMeta);
 
       BranchName targetBranch = BranchName.of(branchName);
+      String lastHash = hashesToTransplant.get(hashesToTransplant.size() - 1);
       startAccessCheck()
-          .canViewReference(
-              namedRefWithHashOrThrow(
-                      fromRefName, hashesToTransplant.get(hashesToTransplant.size() - 1))
-                  .getValue())
+          .canViewReference(namedRefWithHashOrThrow(fromRefName, lastHash).getValue())
           .canCommitChangeAgainstReference(targetBranch)
           .checkAndThrow();
 
@@ -587,13 +585,24 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
         commitMeta = null;
       }
 
+      Optional<Hash> into = toHash(expectedHash, true);
+
       MergeResult<Commit> result =
           getStore()
               .transplant(
                   targetBranch,
-                  toHash(expectedHash, true),
+                  into,
                   transplants,
-                  commitMetaUpdate(commitMeta),
+                  commitMetaUpdate(
+                      commitMeta,
+                      numCommits ->
+                          String.format(
+                              "Transplanted %d commits from %s at %s into %s%s",
+                              numCommits,
+                              fromRefName,
+                              lastHash,
+                              branchName,
+                              into.map(h -> " at " + h.asString()).orElse(""))),
                   Boolean.TRUE.equals(keepIndividualCommits),
                   keyMergeBehaviors(keyMergeBehaviors),
                   defaultMergeBehavior(defaultMergeBehavior),
@@ -637,13 +646,25 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
           .canCommitChangeAgainstReference(targetBranch)
           .checkAndThrow();
 
+      Hash from = toHash(fromRefName, fromHash);
+      Optional<Hash> into = toHash(expectedHash, true);
+
       MergeResult<Commit> result =
           getStore()
               .merge(
                   toHash(fromRefName, fromHash),
                   targetBranch,
-                  toHash(expectedHash, true),
-                  commitMetaUpdate(commitMeta),
+                  into,
+                  commitMetaUpdate(
+                      commitMeta,
+                      numCommits ->
+                          String.format(
+                              "Merged %d commits from %s at %s into %s%s",
+                              numCommits,
+                              fromRefName,
+                              from.asString(),
+                              branchName,
+                              into.map(h -> " at " + h.asString()).orElse(""))),
                   Boolean.TRUE.equals(keepIndividualCommits),
                   keyMergeBehaviors(keyMergeBehaviors),
                   defaultMergeBehavior(defaultMergeBehavior),
@@ -924,7 +945,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
               .commit(
                   BranchName.of(branch),
                   Optional.ofNullable(expectedHash).map(Hash::of),
-                  commitMetaUpdate(null).rewriteSingle(commitMeta),
+                  commitMetaUpdate(null, numCommits -> null).rewriteSingle(commitMeta),
                   ops,
                   () -> null,
                   (key, cid) -> {

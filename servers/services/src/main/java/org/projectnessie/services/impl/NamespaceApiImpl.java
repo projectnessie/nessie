@@ -356,7 +356,8 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
         .commit(
             branch,
             Optional.empty(),
-            commitMetaUpdate(null).rewriteSingle(CommitMeta.fromMessage(commitMsg)),
+            commitMetaUpdate(null, numCommits -> null)
+                .rewriteSingle(CommitMeta.fromMessage(commitMsg)),
             Collections.singletonList(contentOperation),
             validator,
             (k, c) -> {});
