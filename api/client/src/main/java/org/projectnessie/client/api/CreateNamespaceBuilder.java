@@ -25,7 +25,7 @@ import org.projectnessie.model.Namespace;
  *
  * @since {@link NessieApiV1}
  */
-public interface CreateNamespaceBuilder extends OnNamespaceBuilder<CreateNamespaceBuilder> {
+public interface CreateNamespaceBuilder extends ModifyNamespaceBuilder<CreateNamespaceBuilder> {
 
   CreateNamespaceBuilder properties(Map<String, String> properties);
 

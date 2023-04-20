@@ -25,7 +25,7 @@ import org.projectnessie.model.Namespace;
  *
  * @since {@link NessieApiV1}
  */
-public interface DeleteNamespaceBuilder extends OnNamespaceBuilder<DeleteNamespaceBuilder> {
+public interface DeleteNamespaceBuilder extends ModifyNamespaceBuilder<DeleteNamespaceBuilder> {
 
   void delete()
       throws NessieNamespaceNotFoundException,

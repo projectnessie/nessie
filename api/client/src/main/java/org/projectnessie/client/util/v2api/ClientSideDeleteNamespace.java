@@ -100,10 +100,17 @@ public final class ClientSideDeleteNamespace extends BaseDeleteNamespaceBuilder 
     }
 
     try {
+      CommitMeta meta = commitMeta;
+      if (meta == null) {
+        meta = CommitMeta.fromMessage("delete namespace " + key);
+      } else if (meta.getMessage().isEmpty()) {
+        meta = CommitMeta.builder().from(meta).message("delete namespace " + key).build();
+      }
+
       CommitResponse commit =
           api.commitMultipleOperations()
               .branch((Branch) ref)
-              .commitMeta(CommitMeta.fromMessage("delete namespace " + key))
+              .commitMeta(meta)
               .operation(Delete.of(key))
               .commitWithResponse();
 

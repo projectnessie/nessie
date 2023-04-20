@@ -68,12 +68,19 @@ public final class ClientSideUpdateNamespace extends BaseUpdateNamespaceBuilder 
         expectedHash = api.getReference().refName(refName).get().getHash();
       }
 
+      CommitMeta meta = commitMeta;
+      if (meta == null) {
+        meta = CommitMeta.fromMessage("update namespace " + key);
+      } else if (meta.getMessage().isEmpty()) {
+        meta = CommitMeta.builder().from(meta).message("update namespace " + key).build();
+      }
+
       Namespace updatedNamespace = builder.build();
       CommitResponse commit =
           api.commitMultipleOperations()
               .branchName(refName)
               .hash(expectedHash)
-              .commitMeta(CommitMeta.fromMessage("update namespace " + key))
+              .commitMeta(meta)
               .operation(Put.of(key, updatedNamespace))
               .commitWithResponse();
 

@@ -21,6 +21,7 @@ import org.projectnessie.client.builder.BaseCreateNamespaceBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Namespace;
 
 final class HttpCreateNamespace extends BaseCreateNamespaceBuilder {
@@ -50,5 +51,10 @@ final class HttpCreateNamespace extends BaseCreateNamespaceBuilder {
   public CreateNamespaceResult createWithResponse() {
     throw new UnsupportedOperationException(
         "Extended commit response data is not available in API v1");
+  }
+
+  @Override
+  public HttpCreateNamespace commitMeta(CommitMeta commitMeta) {
+    throw new UnsupportedOperationException("Commit attributes are not available in API v1");
   }
 }

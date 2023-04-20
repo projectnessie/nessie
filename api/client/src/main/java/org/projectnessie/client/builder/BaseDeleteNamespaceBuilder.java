@@ -17,6 +17,7 @@ package org.projectnessie.client.builder;
 
 import javax.annotation.Nullable;
 import org.projectnessie.client.api.DeleteNamespaceBuilder;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Namespace;
 
 public abstract class BaseDeleteNamespaceBuilder implements DeleteNamespaceBuilder {
@@ -24,6 +25,13 @@ public abstract class BaseDeleteNamespaceBuilder implements DeleteNamespaceBuild
   protected Namespace namespace;
   protected String refName;
   protected String hashOnRef;
+  protected CommitMeta commitMeta;
+
+  @Override
+  public DeleteNamespaceBuilder commitMeta(CommitMeta commitMeta) {
+    this.commitMeta = commitMeta;
+    return this;
+  }
 
   @Override
   public DeleteNamespaceBuilder namespace(Namespace namespace) {

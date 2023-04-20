@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.Nullable;
 import org.projectnessie.client.api.CreateNamespaceBuilder;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Namespace;
 
 public abstract class BaseCreateNamespaceBuilder implements CreateNamespaceBuilder {
@@ -27,6 +28,13 @@ public abstract class BaseCreateNamespaceBuilder implements CreateNamespaceBuild
   protected String refName;
   protected String hashOnRef;
   protected final Map<String, String> properties = new HashMap<>();
+  protected CommitMeta commitMeta;
+
+  @Override
+  public CreateNamespaceBuilder commitMeta(CommitMeta commitMeta) {
+    this.commitMeta = commitMeta;
+    return this;
+  }
 
   @Override
   public CreateNamespaceBuilder namespace(Namespace namespace) {

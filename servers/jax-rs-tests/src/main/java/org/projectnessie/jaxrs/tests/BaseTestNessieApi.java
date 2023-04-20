@@ -20,6 +20,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
@@ -30,10 +31,13 @@ import static org.projectnessie.model.FetchOption.ALL;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hashing;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -917,10 +921,50 @@ public abstract class BaseTestNessieApi {
     Namespace namespace2WithId;
     Namespace namespace3WithId;
     Namespace namespace4WithId;
+
+    Function<String, CommitMeta> buildMeta =
+        msg ->
+            CommitMeta.builder()
+                .authorTime(Instant.EPOCH)
+                .author("NessieHerself")
+                .signedOffBy("Arctic")
+                .message(msg + " my namespace with commit meta")
+                .putProperties("property", "value")
+                .build();
+    BiConsumer<Reference, String> checkMeta =
+        (ref, msg) -> {
+          try (Stream<LogEntry> log = api().getCommitLog().reference(ref).maxRecords(1).stream()) {
+            soft.assertThat(log)
+                .first()
+                .extracting(LogEntry::getCommitMeta)
+                .extracting(
+                    CommitMeta::getMessage,
+                    CommitMeta::getAllAuthors,
+                    CommitMeta::getAuthorTime,
+                    CommitMeta::getAllSignedOffBy,
+                    CommitMeta::getProperties)
+                .containsExactly(
+                    msg + " my namespace with commit meta",
+                    singletonList("NessieHerself"),
+                    Instant.EPOCH,
+                    singletonList("Arctic"),
+                    singletonMap("property", "value"));
+          } catch (NessieNotFoundException e) {
+            throw new RuntimeException(e);
+          }
+        };
+
     if (isV2()) {
       CreateNamespaceResult resp1 =
-          api().createNamespace().refName(mainName).namespace(namespace1).createWithResponse();
+          api()
+              .createNamespace()
+              .refName(mainName)
+              .namespace(namespace1)
+              .commitMeta(buildMeta.apply("Create"))
+              .createWithResponse();
       soft.assertThat(resp1.getEffectiveBranch()).isNotNull().isNotEqualTo(main);
+      checkMeta.accept(resp1.getEffectiveBranch(), "Create");
+
       CreateNamespaceResult resp2 =
           api().createNamespace().refName(mainName).namespace(namespace2).createWithResponse();
       soft.assertThat(resp2.getEffectiveBranch())
@@ -1056,10 +1100,12 @@ public abstract class BaseTestNessieApi {
               .updateProperties()
               .refName(mainName)
               .namespace(namespace2)
+              .commitMeta(buildMeta.apply("Update"))
               .updateProperty("foo", "bar")
               .updateProperty("bar", "baz")
               .updateWithResponse();
       soft.assertThat(update.getEffectiveBranch()).isNotNull().isNotEqualTo(main);
+      checkMeta.accept(update.getEffectiveBranch(), "Update");
     } else {
       api()
           .updateProperties()
@@ -1138,8 +1184,14 @@ public abstract class BaseTestNessieApi {
     if (isV2()) {
       main = (Branch) api().getReference().refName(mainName).get();
       DeleteNamespaceResult response =
-          api().deleteNamespace().refName(mainName).namespace(namespace4).deleteWithResponse();
+          api()
+              .deleteNamespace()
+              .refName(mainName)
+              .namespace(namespace4)
+              .commitMeta(buildMeta.apply("Delete"))
+              .deleteWithResponse();
       soft.assertThat(response.getEffectiveBranch()).isNotNull().isNotEqualTo(main);
+      checkMeta.accept(response.getEffectiveBranch(), "Delete");
     } else {
       api().deleteNamespace().refName(mainName).namespace(namespace4).delete();
     }
