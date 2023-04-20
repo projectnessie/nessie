@@ -18,6 +18,7 @@ package org.projectnessie.client.builder;
 import java.util.HashMap;
 import java.util.Map;
 import org.projectnessie.client.api.OnBranchBuilder;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
@@ -33,10 +34,17 @@ public abstract class BaseMergeTransplantBuilder<B extends OnBranchBuilder<B>>
   protected MergeBehavior defaultMergeMode;
   protected Map<ContentKey, MergeKeyBehavior> mergeModes;
   protected String message;
+  protected CommitMeta commitMeta;
 
   @SuppressWarnings("unchecked")
   public B message(String message) {
     this.message = message;
+    return (B) this;
+  }
+
+  @SuppressWarnings("unchecked")
+  public B commitMeta(CommitMeta commitMeta) {
+    this.commitMeta = commitMeta;
     return (B) this;
   }
 

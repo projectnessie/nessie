@@ -276,7 +276,7 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
                         finalBranch.getName(),
                         finalBranch.getHash(),
                         false,
-                        "foo",
+                        CommitMeta.fromMessage("foo"),
                         emptyList(),
                         NORMAL,
                         false,

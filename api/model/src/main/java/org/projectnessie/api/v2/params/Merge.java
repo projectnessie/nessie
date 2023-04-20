@@ -23,6 +23,8 @@ import static org.projectnessie.api.v2.doc.ApiDoc.KEY_MERGE_MODES_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.RETURN_CONFLICTS_AS_RESULT_DESCRIPTION;
 import static org.projectnessie.model.Validation.validateHash;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import javax.annotation.Nullable;
@@ -32,6 +34,7 @@ import javax.validation.constraints.Size;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty;
 import org.immutables.value.Value;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Validation;
 
 @Schema(
@@ -73,7 +76,17 @@ public interface Merge extends BaseMergeTransplant {
   @jakarta.annotation.Nullable
   @Size
   @jakarta.validation.constraints.Size(min = 1)
+  @Deprecated
   String getMessage();
+
+  /**
+   * Optional: additional merge-commit attributes. If a commit message is specified in this
+   * attribute, {@link #getMessage()} will be ignored.
+   */
+  @Nullable
+  @jakarta.annotation.Nullable
+  @JsonInclude(Include.NON_NULL)
+  CommitMeta getCommitMeta();
 
   @NotBlank
   @jakarta.validation.constraints.NotBlank
