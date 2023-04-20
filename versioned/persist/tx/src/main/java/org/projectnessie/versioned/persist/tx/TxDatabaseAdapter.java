@@ -67,17 +67,26 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.nessie.relocated.protobuf.InvalidProtocolBufferException;
 import org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.CommitResult;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.ImmutableCommitResult;
 import org.projectnessie.versioned.ImmutableMergeResult;
+import org.projectnessie.versioned.ImmutableReferenceAssignedResult;
+import org.projectnessie.versioned.ImmutableReferenceCreatedResult;
+import org.projectnessie.versioned.ImmutableReferenceDeletedResult;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
+import org.projectnessie.versioned.ReferenceAssignedResult;
 import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceCreatedResult;
+import org.projectnessie.versioned.ReferenceDeletedResult;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
+import org.projectnessie.versioned.ResultType;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
@@ -236,7 +245,10 @@ public abstract class TxDatabaseAdapter
               (conn, currentHead) -> {
                 long timeInMicros = config.currentTimeInMicros();
 
-                ImmutableMergeResult.Builder<CommitLogEntry> mergeResult = MergeResult.builder();
+                ImmutableMergeResult.Builder<CommitLogEntry> mergeResult =
+                    MergeResult.<CommitLogEntry>builder()
+                        .resultType(ResultType.MERGE)
+                        .sourceBranch(mergeParams.getFromBranch());
                 mergeResultHolder.set(mergeResult);
 
                 List<CommitLogEntry> writtenCommits = new ArrayList<>();
@@ -248,6 +260,7 @@ public abstract class TxDatabaseAdapter
                         h -> {},
                         h -> {},
                         writtenCommits::add,
+                        mergeResult::addAddedCommits,
                         mergeParams,
                         mergeResult);
 
@@ -301,7 +314,11 @@ public abstract class TxDatabaseAdapter
               (conn, currentHead) -> {
                 long timeInMicros = config.currentTimeInMicros();
 
-                ImmutableMergeResult.Builder<CommitLogEntry> mergeResult = MergeResult.builder();
+                ImmutableMergeResult.Builder<CommitLogEntry> mergeResult =
+                    MergeResult.<CommitLogEntry>builder()
+                        .resultType(ResultType.TRANSPLANT)
+                        .sourceBranch(transplantParams.getFromBranch());
+
                 mergeResultHolder.set(mergeResult);
 
                 List<CommitLogEntry> writtenCommits = new ArrayList<>();
@@ -313,6 +330,7 @@ public abstract class TxDatabaseAdapter
                         h -> {},
                         h -> {},
                         writtenCommits::add,
+                        mergeResult::addAddedCommits,
                         transplantParams,
                         mergeResult);
 
@@ -347,15 +365,20 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  public Hash commit(CommitParams commitParams)
+  public CommitResult<CommitLogEntry> commit(CommitParams commitParams)
       throws ReferenceConflictException, ReferenceNotFoundException {
     try {
-      return opLoop(
+      AtomicReference<ImmutableCommitResult.Builder<CommitLogEntry>> commitResultHolder =
+          new AtomicReference<>();
+
+      opLoop(
           "commit",
           commitParams.getToBranch(),
           false,
           (conn, branchHead) -> {
             long timeInMicros = config.currentTimeInMicros();
+
+            ImmutableCommitResult.Builder<CommitLogEntry> commitResult = CommitResult.builder();
 
             CommitLogEntry newBranchCommit =
                 commitAttempt(conn, timeInMicros, branchHead, commitParams, h -> {});
@@ -363,6 +386,9 @@ public abstract class TxDatabaseAdapter
             Hash resultHash =
                 tryMoveNamedReference(
                     conn, commitParams.getToBranch(), branchHead, newBranchCommit.getHash());
+
+            commitResult.commit(newBranchCommit).targetBranch(commitParams.getToBranch());
+            commitResultHolder.set(commitResult);
 
             return opResult(
                 resultHash,
@@ -379,6 +405,12 @@ public abstract class TxDatabaseAdapter
           () ->
               commitConflictMessage(
                   "Retry-Failure", commitParams.getToBranch(), commitParams.getExpectedHead()));
+
+      ImmutableCommitResult.Builder<CommitLogEntry> commitResult =
+          Objects.requireNonNull(
+              commitResultHolder.get(), "Internal error, commit-result builder not set.");
+
+      return commitResult.build();
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
       throw e;
     } catch (Exception e) {
@@ -388,14 +420,21 @@ public abstract class TxDatabaseAdapter
 
   @SuppressWarnings("RedundantThrows")
   @Override
-  public Hash create(NamedRef ref, Hash target)
+  public ReferenceCreatedResult create(NamedRef ref, Hash target)
       throws ReferenceAlreadyExistsException, ReferenceNotFoundException {
     try {
-      return opLoop(
+      AtomicReference<ImmutableReferenceCreatedResult.Builder> resultHolder =
+          new AtomicReference<>();
+
+      opLoop(
           "createRef",
           ref,
           true,
           (conn, nullHead) -> {
+            ImmutableReferenceCreatedResult.Builder result =
+                ImmutableReferenceCreatedResult.builder().namedRef(ref);
+            resultHolder.set(result);
+
             if (checkNamedRefExistence(conn, ref.getName())) {
               throw referenceAlreadyExists(ref);
             }
@@ -419,10 +458,18 @@ public abstract class TxDatabaseAdapter
                 RefLogEntry.Operation.CREATE_REFERENCE,
                 emptyList());
 
+            result.hash(hash);
+
             return opResult(hash, () -> ReferenceCreatedEvent.builder().currentHash(hash).ref(ref));
           },
           () -> createConflictMessage("Conflict", ref, target),
           () -> createConflictMessage("Retry-Failure", ref, target));
+
+      ImmutableReferenceCreatedResult.Builder result =
+          Objects.requireNonNull(
+              resultHolder.get(), "Internal error, reference-result builder not set.");
+
+      return result.build();
     } catch (ReferenceAlreadyExistsException | ReferenceNotFoundException | RuntimeException e) {
       throw e;
     } catch (Exception e) {
@@ -431,14 +478,21 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  public Hash delete(NamedRef reference, Optional<Hash> expectedHead)
+  public ReferenceDeletedResult delete(NamedRef reference, Optional<Hash> expectedHead)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
-      return opLoop(
+      AtomicReference<ImmutableReferenceDeletedResult.Builder> resultHolder =
+          new AtomicReference<>();
+
+      opLoop(
           "deleteRef",
           reference,
           false,
           (conn, pointer) -> {
+            ImmutableReferenceDeletedResult.Builder result =
+                ImmutableReferenceDeletedResult.builder().namedRef(reference);
+            resultHolder.set(result);
+
             verifyExpectedHash(pointer, reference, expectedHead);
 
             Hash commitHash = fetchNamedRefHead(conn, reference);
@@ -461,12 +515,20 @@ public abstract class TxDatabaseAdapter
                 RefLogEntry.Operation.DELETE_REFERENCE,
                 emptyList());
 
+            result.hash(commitHash);
+
             return opResult(
                 pointer,
                 () -> ReferenceDeletedEvent.builder().currentHash(commitHash).ref(reference));
           },
           () -> deleteConflictMessage("Conflict", reference, expectedHead),
           () -> deleteConflictMessage("Retry-Failure", reference, expectedHead));
+
+      ImmutableReferenceDeletedResult.Builder result =
+          Objects.requireNonNull(
+              resultHolder.get(), "Internal error, reference-result builder not set.");
+
+      return result.build();
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
       throw e;
     } catch (Exception e) {
@@ -475,14 +537,22 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  public void assign(NamedRef assignee, Optional<Hash> expectedHead, Hash assignTo)
+  public ReferenceAssignedResult assign(
+      NamedRef assignee, Optional<Hash> expectedHead, Hash assignTo)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
+      AtomicReference<ImmutableReferenceAssignedResult.Builder> resultHolder =
+          new AtomicReference<>();
+
       opLoop(
           "assignRef",
           assignee,
           false,
           (conn, assigneeHead) -> {
+            ImmutableReferenceAssignedResult.Builder result =
+                ImmutableReferenceAssignedResult.builder().namedRef(assignee);
+            resultHolder.set(result);
+
             verifyExpectedHash(assigneeHead, assignee, expectedHead);
 
             validateHashExists(conn, assignTo);
@@ -497,6 +567,8 @@ public abstract class TxDatabaseAdapter
                 RefLogEntry.Operation.ASSIGN_REFERENCE,
                 Collections.singletonList(assigneeHead));
 
+            result.previousHash(assigneeHead).currentHash(assignTo);
+
             return opResult(
                 resultHash,
                 () ->
@@ -507,6 +579,12 @@ public abstract class TxDatabaseAdapter
           },
           () -> assignConflictMessage("Conflict", assignee, expectedHead, assignTo),
           () -> assignConflictMessage("Retry-Failure", assignee, expectedHead, assignTo));
+
+      ImmutableReferenceAssignedResult.Builder result =
+          Objects.requireNonNull(
+              resultHolder.get(), "Internal error, reference-result builder not set.");
+
+      return result.build();
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
       throw e;
     } catch (Exception e) {

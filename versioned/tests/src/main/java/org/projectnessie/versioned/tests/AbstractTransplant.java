@@ -17,6 +17,7 @@ package org.projectnessie.versioned.tests;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
 import com.google.common.collect.ImmutableMap;
@@ -40,7 +41,10 @@ import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
+import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.LazyPut;
+import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -52,6 +56,7 @@ import org.projectnessie.versioned.testworker.OnRefOnly;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public abstract class AbstractTransplant extends AbstractNestedVersionStore {
+
   @InjectSoftAssertions protected SoftAssertions soft;
 
   private static final String T_1 = "t1";
@@ -68,6 +73,8 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
   private static final OnRefOnly V_3_1 = newOnRef("v3_1");
   private static final OnRefOnly V_4_1 = newOnRef("v4_1");
   private static final OnRefOnly V_5_1 = newOnRef("v5_1");
+
+  private static final BranchName sourceBranch = BranchName.of("foo");
 
   protected AbstractTransplant(VersionStore store) {
     super(store);
@@ -98,15 +105,18 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
 
   @BeforeEach
   protected void setupCommits() throws VersionStoreException {
-    final BranchName branch = BranchName.of("foo");
-    store().create(branch, Optional.empty());
+    store().create(sourceBranch, Optional.empty());
 
-    initialHash = store().hashOnReference(branch, Optional.empty());
+    initialHash = store().hashOnReference(sourceBranch, Optional.empty());
 
     firstCommit =
-        commit("Initial Commit").put(T_1, V_1_1).put(T_2, V_2_1).put(T_3, V_3_1).toBranch(branch);
+        commit("Initial Commit")
+            .put(T_1, V_1_1)
+            .put(T_2, V_2_1)
+            .put(T_3, V_3_1)
+            .toBranch(sourceBranch);
 
-    Content t1 = store().getValue(branch, ContentKey.of("t1"));
+    Content t1 = store().getValue(sourceBranch, ContentKey.of("t1"));
 
     secondCommit =
         commit("Second Commit")
@@ -114,11 +124,11 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             .delete(T_2)
             .delete(T_3)
             .put(T_4, V_4_1)
-            .toBranch(branch);
+            .toBranch(sourceBranch);
 
-    thirdCommit = commit("Third Commit").put(T_2, V_2_2).unchanged(T_4).toBranch(branch);
+    thirdCommit = commit("Third Commit").put(T_2, V_2_2).unchanged(T_4).toBranch(sourceBranch);
 
-    commits = commitsList(branch, false);
+    commits = commitsList(sourceBranch, false);
   }
 
   @ParameterizedTest
@@ -153,19 +163,32 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
       MetadataRewriter<CommitMeta> commitMetaModify, boolean individualCommits)
       throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_1");
-    store().create(newBranch, Optional.empty());
+    Hash targetHead = store().create(newBranch, Optional.empty()).getHash();
 
-    store()
-        .transplant(
-            newBranch,
-            Optional.of(initialHash),
-            Arrays.asList(firstCommit, secondCommit, thirdCommit),
-            commitMetaModify,
-            individualCommits,
-            Collections.emptyMap(),
-            MergeBehavior.NORMAL,
-            false,
-            false);
+    MergeResult<Commit> result =
+        store()
+            .transplant(
+                sourceBranch,
+                newBranch,
+                Optional.of(initialHash),
+                Arrays.asList(firstCommit, secondCommit, thirdCommit),
+                commitMetaModify,
+                individualCommits,
+                Collections.emptyMap(),
+                MergeBehavior.NORMAL,
+                false,
+                false);
+
+    checkAddedCommits(individualCommits, targetHead, result);
+
+    if (individualCommits) {
+      // Since we fast-forwarded the target branch, the transplanted commits and the new target
+      // commits are identical.
+      soft.assertThat(result.getAddedCommits())
+          .hasSize(3)
+          .extracting(Commit::getHash)
+          .containsExactly(firstCommit, secondCommit, thirdCommit);
+    }
     soft.assertThat(
             contentsWithoutId(
                 store()
@@ -190,25 +213,152 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     return newBranch;
   }
 
+  private void checkAddedCommits(
+      boolean individualCommits, Hash targetHead, MergeResult<Commit> result) {
+    if (individualCommits) {
+      soft.assertThat(result.getAddedCommits())
+          .hasSize(3)
+          .satisfiesExactly(
+              c -> {
+                soft.assertThat(c.getParentHash()).isEqualTo(targetHead);
+                soft.assertThat(c.getCommitMeta().getMessage()).isEqualTo("Initial Commit");
+                soft.assertThat(c.getOperations())
+                    .hasSize(3)
+                    .satisfiesExactlyInAnyOrder(
+                        o -> {
+                          soft.assertThat(o).isInstanceOf(LazyPut.class);
+                          soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_1));
+                          soft.assertThat(contentWithoutId(((LazyPut) o).getValue()))
+                              .isEqualTo(V_1_1);
+                        },
+                        o -> {
+                          soft.assertThat(o).isInstanceOf(LazyPut.class);
+                          soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_2));
+                          soft.assertThat(contentWithoutId(((LazyPut) o).getValue()))
+                              .isEqualTo(V_2_1);
+                        },
+                        o -> {
+                          soft.assertThat(o).isInstanceOf(LazyPut.class);
+                          soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_3));
+                          soft.assertThat(contentWithoutId(((LazyPut) o).getValue()))
+                              .isEqualTo(V_3_1);
+                        });
+              },
+              c -> {
+                soft.assertThat(c.getParentHash())
+                    .isEqualTo(result.getAddedCommits().get(0).getHash());
+                soft.assertThat(c.getCommitMeta().getMessage()).isEqualTo("Second Commit");
+                soft.assertThat(c.getOperations())
+                    .hasSize(4)
+                    .satisfiesExactlyInAnyOrder(
+                        o -> {
+                          soft.assertThat(o).isInstanceOf(LazyPut.class);
+                          soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_1));
+                          soft.assertThat(contentWithoutId(((LazyPut) o).getValue()))
+                              .isEqualTo(V_1_2);
+                        },
+                        o ->
+                            soft.assertThat(o)
+                                .asInstanceOf(type(Delete.class))
+                                .extracting(Delete::getKey)
+                                .isEqualTo(ContentKey.of(T_2)),
+                        o ->
+                            soft.assertThat(o)
+                                .asInstanceOf(type(Delete.class))
+                                .extracting(Delete::getKey)
+                                .isEqualTo(ContentKey.of(T_3)),
+                        o -> {
+                          soft.assertThat(o).isInstanceOf(LazyPut.class);
+                          soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_4));
+                          soft.assertThat(contentWithoutId(((LazyPut) o).getValue()))
+                              .isEqualTo(V_4_1);
+                        });
+              },
+              c -> {
+                soft.assertThat(c.getParentHash())
+                    .isEqualTo(result.getAddedCommits().get(1).getHash());
+                soft.assertThat(c.getCommitMeta().getMessage()).isEqualTo("Third Commit");
+                soft.assertThat(c.getOperations())
+                    .hasSize(1)
+                    .satisfiesExactlyInAnyOrder(
+                        o -> {
+                          soft.assertThat(o).isInstanceOf(LazyPut.class);
+                          soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_2));
+                          soft.assertThat(contentWithoutId(((LazyPut) o).getValue()))
+                              .isEqualTo(V_2_2);
+                        }
+                        // Unchanged operation not retained
+                        );
+              });
+    } else {
+      soft.assertThat(result.getAddedCommits())
+          .singleElement()
+          .satisfies(
+              c -> {
+                soft.assertThat(c.getParentHash()).isEqualTo(targetHead);
+                soft.assertThat(c.getCommitMeta().getMessage())
+                    .contains("Initial Commit")
+                    .contains("Second Commit")
+                    .contains("Third Commit");
+                soft.assertThat(c.getOperations())
+                    // old storage model keeps the Delete operation when a key is Put then Deleted,
+                    // see https://github.com/projectnessie/nessie/pull/6472
+                    .hasSizeBetween(3, 4)
+                    .anySatisfy(
+                        o -> {
+                          if (c.getOperations().size() == 4) {
+                            soft.assertThat(o).isInstanceOf(Delete.class);
+                            soft.assertThat(o.getKey()).isEqualTo(ContentKey.of("t3"));
+                          }
+                        })
+                    .anySatisfy(
+                        o -> {
+                          soft.assertThat(o).isInstanceOf(LazyPut.class);
+                          soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_1));
+                          soft.assertThat(contentWithoutId(((LazyPut) o).getValue()))
+                              .isEqualTo(V_1_2);
+                        })
+                    .anySatisfy(
+                        o -> {
+                          soft.assertThat(o).isInstanceOf(LazyPut.class);
+                          soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_2));
+                          soft.assertThat(contentWithoutId(((LazyPut) o).getValue()))
+                              .isEqualTo(V_2_2);
+                        })
+                    .anySatisfy(
+                        o -> {
+                          soft.assertThat(o).isInstanceOf(LazyPut.class);
+                          soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_4));
+                          soft.assertThat(contentWithoutId(((LazyPut) o).getValue()))
+                              .isEqualTo(V_4_1);
+                        });
+              });
+    }
+  }
+
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   protected void checkTransplantWithPreviousCommit(boolean individualCommits)
       throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_2");
     store().create(newBranch, Optional.empty());
-    commit("Unrelated commit").put(T_5, V_5_1).toBranch(newBranch);
+    Hash targetHead = commit("Unrelated commit").put(T_5, V_5_1).toBranch(newBranch);
 
-    store()
-        .transplant(
-            newBranch,
-            Optional.of(initialHash),
-            Arrays.asList(firstCommit, secondCommit, thirdCommit),
-            createMetadataRewriter(""),
-            individualCommits,
-            Collections.emptyMap(),
-            MergeBehavior.NORMAL,
-            false,
-            false);
+    MergeResult<Commit> result =
+        store()
+            .transplant(
+                sourceBranch,
+                newBranch,
+                Optional.of(initialHash),
+                Arrays.asList(firstCommit, secondCommit, thirdCommit),
+                createMetadataRewriter(""),
+                individualCommits,
+                Collections.emptyMap(),
+                MergeBehavior.NORMAL,
+                false,
+                false);
+
+    checkAddedCommits(individualCommits, targetHead, result);
     assertThat(
             contentsWithoutId(
                 store()
@@ -246,6 +396,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             () ->
                 store()
                     .transplant(
+                        sourceBranch,
                         newBranch,
                         Optional.of(initialHash),
                         Arrays.asList(firstCommit, secondCommit, thirdCommit),
@@ -271,6 +422,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
 
     store()
         .transplant(
+            sourceBranch,
             newBranch,
             Optional.of(initialHash),
             Arrays.asList(firstCommit, secondCommit, thirdCommit),
@@ -311,6 +463,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             () ->
                 store()
                     .transplant(
+                        sourceBranch,
                         newBranch,
                         Optional.of(initialHash),
                         Arrays.asList(firstCommit, secondCommit, thirdCommit),
@@ -340,6 +493,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             () ->
                 store()
                     .transplant(
+                        sourceBranch,
                         newBranch,
                         Optional.of(initialHash),
                         Collections.singletonList(Hash.of("1234567890abcdef")),
@@ -365,6 +519,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
 
     store()
         .transplant(
+            sourceBranch,
             newBranch,
             Optional.empty(),
             Arrays.asList(firstCommit, secondCommit, thirdCommit),
@@ -410,6 +565,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             () ->
                 store()
                     .transplant(
+                        sourceBranch,
                         newBranch,
                         Optional.empty(),
                         Arrays.asList(secondCommit, firstCommit, thirdCommit),
@@ -447,6 +603,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             () ->
                 store()
                     .transplant(
+                        sourceBranch,
                         newBranch,
                         Optional.of(unrelatedCommit),
                         Arrays.asList(firstCommit, secondCommit, thirdCommit),
@@ -465,19 +622,46 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
   protected void transplantBasic(boolean individualCommits) throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_2");
     store().create(newBranch, Optional.empty());
-    commit("Unrelated commit").put(T_5, V_5_1).toBranch(newBranch);
+    Hash targetHead = commit("Unrelated commit").put(T_5, V_5_1).toBranch(newBranch);
 
-    store()
-        .transplant(
-            newBranch,
-            Optional.of(initialHash),
-            Arrays.asList(firstCommit, secondCommit),
-            createMetadataRewriter(""),
-            individualCommits,
-            Collections.emptyMap(),
-            MergeBehavior.NORMAL,
-            false,
-            false);
+    MergeResult<Commit> result =
+        store()
+            .transplant(
+                sourceBranch,
+                newBranch,
+                Optional.of(initialHash),
+                Arrays.asList(firstCommit, secondCommit),
+                createMetadataRewriter(""),
+                individualCommits,
+                Collections.emptyMap(),
+                MergeBehavior.NORMAL,
+                false,
+                false);
+
+    if (individualCommits) {
+      soft.assertThat(result.getAddedCommits())
+          .hasSize(2)
+          .satisfiesExactly(
+              c -> {
+                soft.assertThat(c.getParentHash()).isEqualTo(targetHead);
+                soft.assertThat(c.getCommitMeta().getMessage()).isEqualTo("Initial Commit");
+              },
+              c -> {
+                soft.assertThat(c.getParentHash())
+                    .isEqualTo(result.getAddedCommits().get(0).getHash());
+                soft.assertThat(c.getCommitMeta().getMessage()).isEqualTo("Second Commit");
+              });
+    } else {
+      soft.assertThat(result.getAddedCommits())
+          .singleElement()
+          .satisfies(
+              c -> {
+                soft.assertThat(c.getParentHash()).isEqualTo(targetHead);
+                soft.assertThat(c.getCommitMeta().getMessage())
+                    .contains("Initial Commit")
+                    .contains("Second Commit");
+              });
+    }
     soft.assertThat(
             contentsWithoutId(
                 store()
@@ -510,7 +694,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                 target,
                 Optional.empty(),
                 CommitMeta.fromMessage("target 1"),
-                singletonList(Put.of(key1, V_1_1)));
+                singletonList(Put.of(key1, V_1_1)))
+            .getCommit()
+            .getHash();
 
     targetHead =
         store()
@@ -518,7 +704,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                 target,
                 Optional.of(targetHead),
                 CommitMeta.fromMessage("target 2"),
-                singletonList(Put.of(key2, V_2_1)));
+                singletonList(Put.of(key2, V_2_1)))
+            .getCommit()
+            .getHash();
 
     // Add two commits to the source branch, with conflicting changes to key1 and key2
 
@@ -528,7 +716,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                 source,
                 Optional.empty(),
                 CommitMeta.fromMessage("source 1"),
-                singletonList(Put.of(key1, V_1_2)));
+                singletonList(Put.of(key1, V_1_2)))
+            .getCommit()
+            .getHash();
 
     Hash source2 =
         store()
@@ -536,12 +726,15 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                 source,
                 Optional.of(source1),
                 CommitMeta.fromMessage("source 2"),
-                singletonList(Put.of(key2, V_2_2)));
+                singletonList(Put.of(key2, V_2_2)))
+            .getCommit()
+            .getHash();
 
     // Transplant the source branch into the target branch, with a drop of key1 and key2
 
     store()
         .transplant(
+            source,
             target,
             Optional.of(targetHead),
             Arrays.asList(source1, source2),

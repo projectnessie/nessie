@@ -85,7 +85,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
   public void commitToBranch() throws Exception {
     final BranchName branch = BranchName.of("foo");
 
-    final Hash createHash = store().create(branch, Optional.empty());
+    final Hash createHash = store().create(branch, Optional.empty()).getHash();
     final Hash initialHash = store().hashOnReference(branch, Optional.empty());
     soft.assertThat(createHash).isEqualTo(initialHash);
 
@@ -95,7 +95,9 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                 branch,
                 Optional.of(initialHash),
                 CommitMeta.fromMessage("Some commit"),
-                Collections.emptyList());
+                Collections.emptyList())
+            .getCommit()
+            .getHash();
     final Hash commitHash = store().hashOnReference(branch, Optional.empty());
     soft.assertThat(commitHash).isEqualTo(commitHash0);
 
@@ -142,7 +144,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
   public void commitSomeOperations() throws Exception {
     BranchName branch = BranchName.of("foo");
 
-    Hash base = store().create(branch, Optional.empty());
+    Hash base = store().create(branch, Optional.empty()).getHash();
 
     Hash initialCommit =
         commit("Initial Commit")
@@ -251,7 +253,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
   public void commitNonConflictingOperations() throws Exception {
     BranchName branch = BranchName.of("foo");
 
-    Hash base = store().create(branch, Optional.empty());
+    Hash base = store().create(branch, Optional.empty()).getHash();
 
     Hash initialCommit =
         commit("Initial Commit")

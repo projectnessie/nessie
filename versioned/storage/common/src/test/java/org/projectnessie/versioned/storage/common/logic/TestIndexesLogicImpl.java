@@ -16,6 +16,8 @@
 package org.projectnessie.versioned.storage.common.logic;
 
 import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNull;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexElement.indexElement;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.newStoreIndex;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.key;
@@ -76,7 +78,7 @@ public class TestIndexesLogicImpl extends AbstractIndexesLogicTests {
     }
     ObjId secondaryHeadId = secondary.get(0);
     CommitObj secondaryHead = commitLogic.fetchCommit(secondaryHeadId);
-    soft.assertThat(secondaryHead).isNotNull();
+    assertThat(secondaryHead).isNotNull();
     soft.assertThatIllegalArgumentException()
         .isThrownBy(() -> indexesLogic.buildCompleteIndex(secondaryHead, Optional.empty()));
 
@@ -94,7 +96,7 @@ public class TestIndexesLogicImpl extends AbstractIndexesLogicTests {
 
     ObjId headId = tail.get(0);
     CommitObj head = commitLogic.fetchCommit(headId);
-    soft.assertThat(head).isNotNull();
+    assertThat(head).isNotNull();
     soft.assertThatIllegalArgumentException()
         .isThrownBy(() -> indexesLogic.buildCompleteIndex(head, Optional.empty()));
 
@@ -200,7 +202,7 @@ public class TestIndexesLogicImpl extends AbstractIndexesLogicTests {
       ObjId v = randomObjId();
       soft.assertThat(keyValue.put(k, v)).isNull();
 
-      headId =
+      CommitObj commit =
           commitLogic.doCommit(
               newCommitBuilder()
                   .parentCommitId(headId)
@@ -209,6 +211,7 @@ public class TestIndexesLogicImpl extends AbstractIndexesLogicTests {
                   .headers(EMPTY_COMMIT_HEADERS)
                   .build(),
               emptyList());
+      headId = requireNonNull(commit).id();
       tail.add(0, headId);
     }
 

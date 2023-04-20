@@ -42,6 +42,7 @@ import org.projectnessie.versioned.MergeResult.KeyDetails;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
 import org.projectnessie.versioned.storage.common.logic.CommitLogic;
@@ -103,8 +104,16 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
       if (!dryRun) {
         commitLogic.storeCommit(newCommit, objsToStore);
         newHead = newCommit.id();
+        try {
+          // We need to fetch the existing commit in order to return the correct object.
+          // The existing commit may have a different set of parents than the new commit.
+          newCommit = commitLogic.fetchCommit(newCommit.id());
+        } catch (ObjNotFoundException ignored) {
+          // cannot happen
+        }
       }
 
+      mergeResult.addAddedCommits(commitObjToCommit(newCommit));
       sourceParentIndex = indexesLogic.buildCompleteIndex(sourceCommit, Optional.empty());
       targetParentIndex = indexesLogic.buildCompleteIndex(newCommit, Optional.empty());
     }

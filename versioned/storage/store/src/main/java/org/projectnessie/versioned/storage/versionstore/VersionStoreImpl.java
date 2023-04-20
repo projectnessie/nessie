@@ -72,10 +72,14 @@ import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
+import org.projectnessie.versioned.CommitResult;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.ImmutableReferenceAssignedResult;
+import org.projectnessie.versioned.ImmutableReferenceCreatedResult;
+import org.projectnessie.versioned.ImmutableReferenceDeletedResult;
 import org.projectnessie.versioned.ImmutableReferenceInfo;
 import org.projectnessie.versioned.ImmutableRepositoryInformation;
 import org.projectnessie.versioned.KeyEntry;
@@ -87,7 +91,10 @@ import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.RefLogDetails;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
+import org.projectnessie.versioned.ReferenceAssignedResult;
 import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceCreatedResult;
+import org.projectnessie.versioned.ReferenceDeletedResult;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceInfo.CommitsAheadBehind;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -165,7 +172,7 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   @Override
-  public Hash create(NamedRef namedRef, Optional<Hash> targetHash)
+  public ReferenceCreatedResult create(NamedRef namedRef, Optional<Hash> targetHash)
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
     ReferenceLogic referenceLogic = referenceLogic(persist);
     try {
@@ -190,8 +197,11 @@ public class VersionStoreImpl implements VersionStore {
         // as the tag being created) already exists.
         throw referenceAlreadyExists(namedRef);
       } catch (RefNotFoundException good) {
-        return objIdToHash(
-            referenceLogic.createReference(namedRefToRefName(namedRef), objId).pointer());
+        Reference reference = referenceLogic.createReference(namedRefToRefName(namedRef), objId);
+        return ImmutableReferenceCreatedResult.builder()
+            .namedRef(namedRef)
+            .hash(objIdToHash(reference.pointer()))
+            .build();
       }
     } catch (RefAlreadyExistsException e) {
       throw referenceAlreadyExists(namedRef);
@@ -203,7 +213,8 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   @Override
-  public void assign(NamedRef namedRef, Optional<Hash> expectedHash, Hash targetHash)
+  public ReferenceAssignedResult assign(
+      NamedRef namedRef, Optional<Hash> expectedHash, Hash targetHash)
       throws ReferenceNotFoundException, ReferenceConflictException {
     String refName = namedRefToRefName(namedRef);
     ReferenceLogic referenceLogic = referenceLogic(persist);
@@ -228,6 +239,12 @@ public class VersionStoreImpl implements VersionStore {
       }
 
       referenceLogic.assignReference(expected, newPointer);
+      return ImmutableReferenceAssignedResult.builder()
+          .namedRef(namedRef)
+          .previousHash(objIdToHash(expected.pointer()))
+          .currentHash(objIdToHash(newPointer))
+          .build();
+
     } catch (RefNotFoundException e) {
       throw referenceNotFound(namedRef);
     } catch (RefConditionFailedException e) {
@@ -239,7 +256,7 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   @Override
-  public Hash delete(NamedRef namedRef, Optional<Hash> hash)
+  public ReferenceDeletedResult delete(NamedRef namedRef, Optional<Hash> hash)
       throws ReferenceNotFoundException, ReferenceConflictException {
     String refName = namedRefToRefName(namedRef);
     ReferenceLogic referenceLogic = referenceLogic(persist);
@@ -251,7 +268,11 @@ public class VersionStoreImpl implements VersionStore {
               ? hashToObjId(hash.get())
               : referenceLogic.getReference(refName).pointer();
       referenceLogic.deleteReference(refName, expected);
-      return objIdToHash(expected);
+      return ImmutableReferenceDeletedResult.builder()
+          .namedRef(namedRef)
+          .hash(objIdToHash(expected))
+          .build();
+
     } catch (RefNotFoundException e) {
       throw referenceNotFound(namedRef);
     } catch (RefConditionFailedException e) {
@@ -595,7 +616,7 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   @Override
-  public Hash commit(
+  public CommitResult<Commit> commit(
       @Nonnull @jakarta.annotation.Nonnull BranchName branch,
       @Nonnull @jakarta.annotation.Nonnull Optional<Hash> referenceHash,
       @Nonnull @jakarta.annotation.Nonnull CommitMeta metadata,
@@ -615,6 +636,7 @@ public class VersionStoreImpl implements VersionStore {
 
   @Override
   public MergeResult<Commit> merge(
+      BranchName fromBranch,
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
@@ -644,13 +666,20 @@ public class VersionStoreImpl implements VersionStore {
             persist,
             supplier,
             (merge, retryState) ->
-                merge.merge(retryState, fromHash, updateCommitMetadata, mergeBehaviors, dryRun));
+                merge.merge(
+                    retryState,
+                    fromBranch,
+                    fromHash,
+                    updateCommitMetadata,
+                    mergeBehaviors,
+                    dryRun));
 
     return mergeTransplantResponse(mergeResult);
   }
 
   @Override
   public MergeResult<Commit> transplant(
+      BranchName sourceBranch,
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
@@ -682,6 +711,7 @@ public class VersionStoreImpl implements VersionStore {
             (transplant, retryState) ->
                 transplant.transplant(
                     retryState,
+                    sourceBranch,
                     sequenceToTransplant,
                     updateCommitMetadata,
                     mergeBehaviors,

@@ -42,10 +42,11 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.quarkus.cli.ExportRepository.Format;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.CommitMetaSerializer;
-import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.CommitResult;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
@@ -232,7 +233,7 @@ public class ITExportImport {
     ContentKey key = ContentKey.of("namespace123", "table123");
     String namespaceId = UUID.randomUUID().toString();
     String tableId = UUID.randomUUID().toString();
-    Hash main =
+    CommitResult<CommitLogEntry> main =
         adapter.commit(
             ImmutableCommitParams.builder()
                 .toBranch(branchMain)
@@ -256,7 +257,7 @@ public class ITExportImport {
                             .toStoreOnReferenceState(
                                 IcebergTable.of("meta", 42, 43, 44, 45, tableId))))
                 .build());
-    adapter.create(branchFoo, main);
+    adapter.create(branchFoo, main.getCommit().getHash());
     adapter.commit(
         ImmutableCommitParams.builder()
             .toBranch(branchFoo)

@@ -115,13 +115,13 @@ public abstract class AbstractAssign extends AbstractNestedVersionStore {
     }
 
     BranchName testBranch = BranchName.of("testBranch");
-    Hash testBranchHash = store.create(testBranch, Optional.empty());
+    Hash testBranchHash = store.create(testBranch, Optional.empty()).getHash();
     store.assign(testBranch, Optional.of(testBranchHash), main.getHash());
     soft.assertThat(store.getNamedRef(testBranch.getName(), GetNamedRefsParams.DEFAULT).getHash())
         .isEqualTo(main.getHash());
 
     TagName testTag = TagName.of("testTag");
-    Hash testTagHash = store.create(testTag, Optional.empty());
+    Hash testTagHash = store.create(testTag, Optional.empty()).getHash();
     store.assign(testTag, Optional.of(testTagHash), main.getHash());
     soft.assertThat(store.getNamedRef(testTag.getName(), GetNamedRefsParams.DEFAULT).getHash())
         .isEqualTo(main.getHash());

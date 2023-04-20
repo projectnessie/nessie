@@ -89,7 +89,7 @@ public interface VersionStore {
    * @throws ReferenceNotFoundException if {@code branch} is not present in the store
    * @throws NullPointerException if one of the argument is {@code null}
    */
-  Hash commit(
+  CommitResult<Commit> commit(
       @Nonnull @jakarta.annotation.Nonnull BranchName branch,
       @Nonnull @jakarta.annotation.Nonnull Optional<Hash> referenceHash,
       @Nonnull @jakarta.annotation.Nonnull CommitMeta metadata,
@@ -98,7 +98,7 @@ public interface VersionStore {
       @Nonnull @jakarta.annotation.Nonnull BiConsumer<ContentKey, String> addedContents)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
-  default Hash commit(
+  default CommitResult<Commit> commit(
       @Nonnull @jakarta.annotation.Nonnull BranchName branch,
       @Nonnull @jakarta.annotation.Nonnull Optional<Hash> referenceHash,
       @Nonnull @jakarta.annotation.Nonnull CommitMeta metadata,
@@ -114,6 +114,7 @@ public interface VersionStore {
    * to concurrent readers/writers. The sequence to transplant must be contiguous, in order and
    * share a common ancestor with the target branch.
    *
+   * @param sourceBranch The branch we're transplanting from
    * @param targetBranch The branch we're transplanting to
    * @param referenceHash The hash to use as a reference for conflict detection. If not present, do
    *     not perform conflict detection
@@ -134,6 +135,7 @@ public interface VersionStore {
    *     sequenceToTransplant} is not present in the store.
    */
   MergeResult<Commit> transplant(
+      BranchName sourceBranch,
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
@@ -160,6 +162,7 @@ public interface VersionStore {
    *   <li>the expected branch hash does not match the actual branch hash
    * </ul>
    *
+   * @param fromBranch The branch we are merging from
    * @param fromHash The hash we are using to get additional commits
    * @param toBranch The branch that we are merging into
    * @param expectedHash The current head of the branch to validate before updating (optional).
@@ -179,6 +182,7 @@ public interface VersionStore {
    *     the store.
    */
   MergeResult<Commit> merge(
+      BranchName fromBranch,
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
@@ -201,12 +205,14 @@ public interface VersionStore {
    * @param expectedHash The current head of the NamedRef to validate before updating. If not
    *     present, force assignment.
    * @param targetHash The hash that this ref should refer to.
+   * @return A {@link ReferenceAssignedResult} containing the previous and current head of the
+   *     reference
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store or if {@code
    *     targetHash} is not present in the store
    * @throws ReferenceConflictException if {@code expectedHash} is not empty and its value doesn't
    *     match the stored hash for {@code ref}
    */
-  void assign(NamedRef ref, Optional<Hash> expectedHash, Hash targetHash)
+  ReferenceAssignedResult assign(NamedRef ref, Optional<Hash> expectedHash, Hash targetHash)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
@@ -216,11 +222,12 @@ public interface VersionStore {
    * @param ref The named ref we're assigning
    * @param targetHash The hash that this ref should refer to (optional). Otherwise will reference
    *     the beginning of time.
+   * @return A {@link ReferenceCreatedResult} containing the head of the created reference
    * @throws ReferenceNotFoundException if {@code targetHash} is not empty and not present in the
    *     store
    * @throws ReferenceAlreadyExistsException if {@code ref} already exists
    */
-  Hash create(NamedRef ref, Optional<Hash> targetHash)
+  ReferenceCreatedResult create(NamedRef ref, Optional<Hash> targetHash)
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException;
 
   /**
@@ -231,12 +238,12 @@ public interface VersionStore {
    * @param ref The NamedRef to be deleted.
    * @param hash An optional hash. If provided, this operation will only succeed if the branch is
    *     pointing at the provided
-   * @return head of deleted reference
+   * @return A {@link ReferenceDeletedResult} containing the head of the deleted reference
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    * @throws ReferenceConflictException if {@code hash} doesn't match the stored hash for {@code
    *     ref}
    */
-  Hash delete(NamedRef ref, Optional<Hash> hash)
+  ReferenceDeletedResult delete(NamedRef ref, Optional<Hash> hash)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**

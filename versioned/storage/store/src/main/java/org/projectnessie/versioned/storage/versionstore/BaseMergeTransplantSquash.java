@@ -40,6 +40,7 @@ import org.projectnessie.versioned.MergeResult.KeyDetails;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
 import org.projectnessie.versioned.storage.common.logic.CommitLogic;
@@ -106,8 +107,16 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
       CommitLogic commitLogic = commitLogic(persist);
       commitLogic.storeCommit(mergeCommit, objsToStore);
       newHead = mergeCommit.id();
+      try {
+        // We need to fetch the existing commit in order to return the correct object.
+        // The existing commit may have a different set of parents than the new commit.
+        mergeCommit = commitLogic.fetchCommit(mergeCommit.id());
+      } catch (ObjNotFoundException ignored) {
+        // cannot happen
+      }
     }
 
+    mergeResult.addAddedCommits(commitObjToCommit(mergeCommit));
     return finishMergeTransplant(false, mergeResult, newHead, dryRun, hasConflicts);
   }
 

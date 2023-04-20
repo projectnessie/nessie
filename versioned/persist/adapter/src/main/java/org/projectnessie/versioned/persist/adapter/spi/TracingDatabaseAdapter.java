@@ -26,13 +26,17 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
+import org.projectnessie.versioned.CommitResult;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
+import org.projectnessie.versioned.ReferenceAssignedResult;
 import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceCreatedResult;
+import org.projectnessie.versioned.ReferenceDeletedResult;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
@@ -131,7 +135,7 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
   }
 
   @Override
-  public Hash commit(CommitParams commitParams)
+  public CommitResult<CommitLogEntry> commit(CommitParams commitParams)
       throws ReferenceConflictException, ReferenceNotFoundException {
     try (Traced ignore = trace("commit").tag(TAG_REF, commitParams.getToBranch().getName())) {
       return delegate.commit(commitParams);
@@ -175,7 +179,7 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
   }
 
   @Override
-  public Hash create(NamedRef ref, Hash target)
+  public ReferenceCreatedResult create(NamedRef ref, Hash target)
       throws ReferenceAlreadyExistsException, ReferenceNotFoundException {
     try (Traced ignore =
         trace("create").tag(TAG_REF, ref.getName()).tag(TAG_HASH, target.asString())) {
@@ -184,7 +188,7 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
   }
 
   @Override
-  public Hash delete(NamedRef reference, Optional<Hash> expectedHead)
+  public ReferenceDeletedResult delete(NamedRef reference, Optional<Hash> expectedHead)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try (Traced ignore = trace("delete").tag(TAG_REF, reference.getName())) {
       return delegate.delete(reference, expectedHead);
@@ -192,11 +196,12 @@ public final class TracingDatabaseAdapter implements DatabaseAdapter {
   }
 
   @Override
-  public void assign(NamedRef assignee, Optional<Hash> expectedHead, Hash assignTo)
+  public ReferenceAssignedResult assign(
+      NamedRef assignee, Optional<Hash> expectedHead, Hash assignTo)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try (Traced ignore =
         trace("assign").tag(TAG_HASH, assignTo.asString()).tag(TAG_REF, assignee.getName())) {
-      delegate.assign(assignee, expectedHead, assignTo);
+      return delegate.assign(assignee, expectedHead, assignTo);
     }
   }
 

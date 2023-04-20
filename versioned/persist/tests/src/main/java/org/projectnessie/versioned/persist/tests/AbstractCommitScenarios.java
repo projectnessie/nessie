@@ -126,12 +126,15 @@ public abstract class AbstractCommitScenarios {
     IntFunction<Hash> performDummyCommit =
         i -> {
           try {
-            return databaseAdapter.commit(
-                ImmutableCommitParams.builder()
-                    .toBranch(branch)
-                    .commitMetaSerialized(ByteString.copyFromUtf8("dummy commit meta " + i))
-                    .addUnchanged(dummyKey)
-                    .build());
+            return databaseAdapter
+                .commit(
+                    ImmutableCommitParams.builder()
+                        .toBranch(branch)
+                        .commitMetaSerialized(ByteString.copyFromUtf8("dummy commit meta " + i))
+                        .addUnchanged(dummyKey)
+                        .build())
+                .getCommit()
+                .getHash();
           } catch (ReferenceNotFoundException | ReferenceConflictException e) {
             throw new RuntimeException(e);
           }
@@ -158,7 +161,7 @@ public abstract class AbstractCommitScenarios {
                     contentId,
                     payload,
                     DefaultStoreWorker.instance().toStoreOnReferenceState(initialContent)));
-    Hash hashInitial = databaseAdapter.commit(commit.build());
+    Hash hashInitial = databaseAdapter.commit(commit.build()).getCommit().getHash();
 
     List<Hash> beforeRename =
         IntStream.range(0, param.afterInitialCommits)
@@ -176,7 +179,7 @@ public abstract class AbstractCommitScenarios {
                     contentId,
                     payload,
                     DefaultStoreWorker.instance().toStoreOnReferenceState(renamContent)));
-    Hash hashRename = databaseAdapter.commit(commit.build());
+    Hash hashRename = databaseAdapter.commit(commit.build()).getCommit().getHash();
 
     List<Hash> beforeDelete =
         IntStream.range(0, param.afterRenameCommits)
@@ -188,7 +191,7 @@ public abstract class AbstractCommitScenarios {
             .toBranch(branch)
             .commitMetaSerialized(ByteString.copyFromUtf8("delete table"))
             .addDeletes(newKey);
-    Hash hashDelete = databaseAdapter.commit(commit.build());
+    Hash hashDelete = databaseAdapter.commit(commit.build()).getCommit().getHash();
 
     List<Hash> afterDelete =
         IntStream.range(0, param.afterDeleteCommits)
@@ -278,7 +281,7 @@ public abstract class AbstractCommitScenarios {
               (byte) payloadForContent(c),
               DefaultStoreWorker.instance().toStoreOnReferenceState(c)));
     }
-    Hash head = databaseAdapter.commit(commit.build());
+    Hash head = databaseAdapter.commit(commit.build()).getCommit().getHash();
 
     for (int commitNum = 0; commitNum < 3; commitNum++) {
       commit =
@@ -298,7 +301,7 @@ public abstract class AbstractCommitScenarios {
                 DefaultStoreWorker.instance().toStoreOnReferenceState(newContent)));
       }
 
-      Hash newHead = databaseAdapter.commit(commit.build());
+      Hash newHead = databaseAdapter.commit(commit.build()).getCommit().getHash();
       assertThat(newHead).isNotEqualTo(head);
       head = newHead;
     }
@@ -437,25 +440,35 @@ public abstract class AbstractCommitScenarios {
 
     Hash commitNation =
         mine.commit(
-            ImmutableCommitParams.builder()
-                .toBranch(branchName)
-                .expectedHead(Optional.of(head))
-                .commitMetaSerialized(ByteString.copyFromUtf8("commit nation"))
-                .addPuts(
-                    KeyWithBytes.of(
-                        keyNation, idNation, (byte) payloadForContent(onRefNation), stateNation))
-                .build());
+                ImmutableCommitParams.builder()
+                    .toBranch(branchName)
+                    .expectedHead(Optional.of(head))
+                    .commitMetaSerialized(ByteString.copyFromUtf8("commit nation"))
+                    .addPuts(
+                        KeyWithBytes.of(
+                            keyNation,
+                            idNation,
+                            (byte) payloadForContent(onRefNation),
+                            stateNation))
+                    .build())
+            .getCommit()
+            .getHash();
 
     Hash commitRegion =
         mine.commit(
-            ImmutableCommitParams.builder()
-                .toBranch(branchName)
-                .expectedHead(Optional.of(commitNation))
-                .commitMetaSerialized(ByteString.copyFromUtf8("commit region"))
-                .addPuts(
-                    KeyWithBytes.of(
-                        keyRegion, idRegion, (byte) payloadForContent(onRefRegion), stateRegion))
-                .build());
+                ImmutableCommitParams.builder()
+                    .toBranch(branchName)
+                    .expectedHead(Optional.of(commitNation))
+                    .commitMetaSerialized(ByteString.copyFromUtf8("commit region"))
+                    .addPuts(
+                        KeyWithBytes.of(
+                            keyRegion,
+                            idRegion,
+                            (byte) payloadForContent(onRefRegion),
+                            stateRegion))
+                    .build())
+            .getCommit()
+            .getHash();
 
     List<ContentKey> nonExistentKey = Collections.singletonList(ContentKey.of("non_existent"));
 

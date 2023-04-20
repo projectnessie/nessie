@@ -24,7 +24,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.MergeBehavior;
 
 @Value.Immutable
-public interface MergeResult<COMMIT> {
+public interface MergeResult<COMMIT> extends Result {
 
   /** Indicates whether the merge or transplant operation has been applied. */
   @Value.Default
@@ -47,6 +47,9 @@ public interface MergeResult<COMMIT> {
   @Nullable
   @jakarta.annotation.Nullable
   Hash getCommonAncestor();
+
+  /** Name of the source branch. */
+  BranchName getSourceBranch();
 
   /** Name of the target branch. */
   BranchName getTargetBranch();
@@ -71,6 +74,21 @@ public interface MergeResult<COMMIT> {
   @jakarta.annotation.Nullable
   @Deprecated // for removal and replaced with something else
   List<COMMIT> getTargetCommits();
+
+  /**
+   * List of commits that where added to the target branch, that is, all the commits between
+   * {@linkplain #getEffectiveTargetHash() the previous HEAD} (exclusive) and {@linkplain
+   * #getResultantTargetHash() the current HEAD} (inclusive).
+   *
+   * <p>The returned list will always be empty if the merge or transplant operation failed.
+   * Otherwise, if commits were squashed, it will contain exactly one element; otherwise, it will
+   * generally contain as many commits as there were {@linkplain #getSourceCommits() source commits}
+   * to rebase (unless some source commits were filtered out).
+   *
+   * <p>This list is currently not exposed via the REST API. It is intended to be used by the Nessie
+   * events notification system.
+   */
+  List<COMMIT> getAddedCommits();
 
   /** Details of all keys encountered during the merge or transplant operation. */
   Map<ContentKey, KeyDetails> getDetails();

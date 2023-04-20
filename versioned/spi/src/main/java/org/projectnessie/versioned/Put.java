@@ -20,7 +20,10 @@ import org.immutables.value.Value;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 
-/** Setting a new value. Can optionally declare whether the prior hash must match. */
+/**
+ * A PUT operation provided by the client in order to set a new value in a commit. Can optionally
+ * declare whether the prior hash must match.
+ */
 @Value.Immutable
 public interface Put extends Operation {
 

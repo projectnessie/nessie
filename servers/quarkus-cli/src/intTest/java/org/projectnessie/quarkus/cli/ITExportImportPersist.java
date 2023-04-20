@@ -50,8 +50,8 @@ import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
 import org.projectnessie.versioned.storage.common.logic.CommitLogic;
 import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
+import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
-import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.store.DefaultStoreWorker;
@@ -251,7 +251,7 @@ public class ITExportImportPersist {
 
     soft.assertThat(persist.storeObj(valueMain)).isTrue();
     StoreKey key = key("namespace123", "table123");
-    ObjId main =
+    CommitObj main =
         commitLogic.doCommit(
             newCommitBuilder()
                 .parentCommitId(EMPTY_OBJ_ID)
@@ -260,14 +260,14 @@ public class ITExportImportPersist {
                 .headers(EMPTY_COMMIT_HEADERS)
                 .build(),
             emptyList());
-    referenceLogic.assignReference(refMain, requireNonNull(main));
+    referenceLogic.assignReference(refMain, requireNonNull(main).id());
 
-    Reference refFoo = referenceLogic.createReference("refs/heads/branch-foo", main);
+    Reference refFoo = referenceLogic.createReference("refs/heads/branch-foo", main.id());
     soft.assertThat(persist.storeObj(valueFoo)).isTrue();
-    ObjId foo =
+    CommitObj foo =
         commitLogic.doCommit(
             newCommitBuilder()
-                .parentCommitId(main)
+                .parentCommitId(main.id())
                 .addAdds(
                     commitAdd(
                         key,
@@ -279,6 +279,6 @@ public class ITExportImportPersist {
                 .headers(EMPTY_COMMIT_HEADERS)
                 .build(),
             emptyList());
-    referenceLogic.assignReference(refFoo, requireNonNull(foo));
+    referenceLogic.assignReference(refFoo, requireNonNull(foo).id());
   }
 }

@@ -33,7 +33,6 @@ import static org.projectnessie.versioned.storage.versionstore.RefMapping.refere
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.referenceNotFound;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.fromCommitMeta;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.keyToStoreKey;
-import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objIdToHash;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
 import java.util.ArrayList;
@@ -55,8 +54,11 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.Commit;
+import org.projectnessie.versioned.CommitResult;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.ImmutableCommitResult;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -83,6 +85,8 @@ import org.projectnessie.versioned.storage.common.persist.Reference;
 class CommitImpl extends BaseCommitHelper {
   private final StoreIndex<CommitOp> headIndex;
   private final StoreIndex<CommitOp> expectedIndex;
+  private final ContentMapping contentMapping;
+  private final CommitLogic commitLogic;
 
   CommitImpl(
       @Nonnull @jakarta.annotation.Nonnull BranchName branch,
@@ -92,7 +96,8 @@ class CommitImpl extends BaseCommitHelper {
       @Nullable @jakarta.annotation.Nullable CommitObj head)
       throws ReferenceNotFoundException {
     super(branch, referenceHash, persist, reference, head);
-
+    commitLogic = commitLogic(persist);
+    contentMapping = new ContentMapping(persist);
     this.headIndex =
         lazyStoreIndex(
             () -> {
@@ -130,7 +135,7 @@ class CommitImpl extends BaseCommitHelper {
     final Map<ContentKey, String> generatedContentIds = new HashMap<>();
   }
 
-  Hash commit(
+  CommitResult<Commit> commit(
       @Nonnull @jakarta.annotation.Nonnull Optional<?> retryState,
       @Nonnull @jakarta.annotation.Nonnull CommitMeta metadata,
       @Nonnull @jakarta.annotation.Nonnull List<Operation> operations,
@@ -170,26 +175,28 @@ class CommitImpl extends BaseCommitHelper {
 
     fromCommitMeta(metadata, commit);
 
-    ObjId newHead;
     try {
-      CommitLogic commitLogic = commitLogic(persist);
-      newHead = commitLogic.doCommit(commit.build(), objectsToStore);
+      CommitObj newHead = commitLogic.doCommit(commit.build(), objectsToStore);
+
+      checkState(
+          newHead != null,
+          "Hash collision detected, a commit with the same parent commit, commit message, "
+              + "headers/commit-metadata and operations already exists");
+
+      bumpReferencePointer(newHead.id(), Optional.of(commitRetryState));
+
+      commitRetryState.generatedContentIds.forEach(addedContents);
+
+      return ImmutableCommitResult.<Commit>builder()
+          .commit(contentMapping.commitObjToCommit(true, newHead))
+          .targetBranch((BranchName) RefMapping.referenceToNamedRef(reference))
+          .build();
+
     } catch (CommitConflictException e) {
       throw referenceConflictException(e);
     } catch (ObjNotFoundException e) {
       throw referenceNotFound(e);
     }
-
-    checkState(
-        newHead != null,
-        "Hash collision detected, a commit with the same parent commit, commit message, "
-            + "headers/commit-metadata and operations already exists");
-
-    bumpReferencePointer(newHead, Optional.of(commitRetryState));
-
-    commitRetryState.generatedContentIds.forEach(addedContents);
-
-    return objIdToHash(newHead);
   }
 
   void commitAddOperations(
@@ -347,8 +354,6 @@ class CommitImpl extends BaseCommitHelper {
     UUID existingContentID;
     String expectedContentIDString;
 
-    ContentMapping contentMapping = new ContentMapping(persist);
-
     StoreIndexElement<CommitOp> existing = expectedIndex.get(storeKey);
     if (existing == null && putValueId != null) {
       // Check for a Delete-op in the same commit, representing a rename operation.
@@ -412,6 +417,6 @@ class CommitImpl extends BaseCommitHelper {
 
   private String contentIdFromContent(@Nonnull @jakarta.annotation.Nonnull ObjId contentValueId)
       throws ObjNotFoundException {
-    return new ContentMapping(persist).fetchContent(contentValueId).getId();
+    return contentMapping.fetchContent(contentValueId).getId();
   }
 }

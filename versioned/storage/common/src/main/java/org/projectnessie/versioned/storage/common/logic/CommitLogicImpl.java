@@ -280,14 +280,14 @@ final class CommitLogicImpl implements CommitLogic {
   @Nullable
   @jakarta.annotation.Nullable
   @Override
-  public ObjId doCommit(
+  public CommitObj doCommit(
       @Nonnull @jakarta.annotation.Nonnull CreateCommit createCommit,
       @Nonnull @jakarta.annotation.Nonnull List<Obj> additionalObjects)
       throws CommitConflictException, ObjNotFoundException {
     CommitObj commit =
         buildCommitObj(
             createCommit, c -> CONFLICT, (k, v) -> {}, NO_VALUE_REPLACEMENT, NO_VALUE_REPLACEMENT);
-    return storeCommit(commit, additionalObjects) ? commit.id() : null;
+    return storeCommit(commit, additionalObjects) ? commit : null;
   }
 
   @Override

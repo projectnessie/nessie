@@ -34,7 +34,7 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.ImmutableCommit;
-import org.projectnessie.versioned.Put;
+import org.projectnessie.versioned.LazyPut;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
@@ -132,7 +132,6 @@ public final class ContentMapping {
 
     if (fetchAdditionalInfo) {
       ContentKey key;
-      ContentMapping contentMapping = new ContentMapping(persist);
       IndexesLogic indexesLogic = indexesLogic(persist);
       for (StoreIndexElement<CommitOp> op : indexesLogic.commitOperations(commitObj)) {
         key = storeKeyToKey(op.key());
@@ -140,11 +139,10 @@ public final class ContentMapping {
         if (key != null) {
           CommitOp c = op.content();
           if (c.action().exists()) {
-            commit.addOperations(
-                Put.of(
-                    key,
-                    contentMapping.fetchContent(
-                        requireNonNull(c.value(), "Required value pointer is null"))));
+            ObjId objId = requireNonNull(c.value(), "Required value pointer is null");
+            ContentValueObj contentValue =
+                persist.fetchTypedObj(objId, VALUE, ContentValueObj.class);
+            commit.addOperations(LazyPut.of(key, contentValue.payload(), contentValue.data()));
           } else {
             commit.addOperations(Delete.of(key));
           }

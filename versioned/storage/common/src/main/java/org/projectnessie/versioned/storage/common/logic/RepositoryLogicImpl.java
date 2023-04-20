@@ -52,7 +52,6 @@ import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.CommitType;
 import org.projectnessie.versioned.storage.common.objtypes.Compression;
 import org.projectnessie.versioned.storage.common.objtypes.StringObj;
-import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 
@@ -196,15 +195,15 @@ final class RepositoryLogicImpl implements RepositoryLogic {
       commitEnhancer.accept(c);
 
       CommitLogic commitLogic = commitLogic(persist);
-      ObjId commitId;
+      CommitObj commit;
       try {
-        commitId = commitLogic.doCommit(c.build(), emptyList());
+        commit = commitLogic.doCommit(c.build(), emptyList());
       } catch (CommitConflictException | ObjNotFoundException e) {
         throw new RuntimeException(e);
       }
 
       try {
-        persist.addReference(reference(internalRef.name(), commitId, false));
+        persist.addReference(reference(internalRef.name(), commit.id(), false));
       } catch (RefAlreadyExistsException ignore) {
         // ignore an existing reference (theoretically possible race of two initialize() calls)
       }

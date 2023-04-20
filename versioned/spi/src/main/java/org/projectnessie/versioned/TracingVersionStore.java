@@ -111,7 +111,7 @@ public class TracingVersionStore implements VersionStore {
   }
 
   @Override
-  public Hash commit(
+  public CommitResult<Commit> commit(
       @Nonnull @jakarta.annotation.Nonnull BranchName branch,
       @Nonnull @jakarta.annotation.Nonnull Optional<Hash> referenceHash,
       @Nonnull @jakarta.annotation.Nonnull CommitMeta metadata,
@@ -120,20 +120,21 @@ public class TracingVersionStore implements VersionStore {
       @Nonnull @jakarta.annotation.Nonnull BiConsumer<ContentKey, String> addedContents)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return TracingVersionStore
-        .<Hash, ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
-            tracer,
-            "Commit",
-            b ->
-                b.setAttribute(TAG_BRANCH, safeRefName(branch))
-                    .setAttribute(TAG_HASH, safeToString(referenceHash))
-                    .setAttribute(TAG_NUM_OPS, safeSize(operations)),
-            () ->
-                delegate.commit(
-                    branch, referenceHash, metadata, operations, validator, addedContents));
+        .<CommitResult<Commit>, ReferenceNotFoundException, ReferenceConflictException>
+            callWithTwoExceptions(
+                tracer,"Commit",
+                b ->
+                    b.setAttribute(TAG_BRANCH, safeRefName(branch))
+                        .setAttribute(TAG_HASH, safeToString(referenceHash))
+                        .setAttribute(TAG_NUM_OPS, safeSize(operations)),
+                () ->
+                    delegate.commit(
+                        branch, referenceHash, metadata, operations, validator, addedContents));
   }
 
   @Override
   public MergeResult<Commit> transplant(
+      BranchName sourceBranch,
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
@@ -155,6 +156,7 @@ public class TracingVersionStore implements VersionStore {
                         .setAttribute(TAG_TRANSPLANTS, safeSize(sequenceToTransplant)),
                 () ->
                     delegate.transplant(
+                        sourceBranch,
                         targetBranch,
                         referenceHash,
                         sequenceToTransplant,
@@ -168,6 +170,7 @@ public class TracingVersionStore implements VersionStore {
 
   @Override
   public MergeResult<Commit> merge(
+      BranchName fromBranch,
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
@@ -189,6 +192,7 @@ public class TracingVersionStore implements VersionStore {
                         .setAttribute(TAG_EXPECTED_HASH, safeToString(expectedHash)),
                 () ->
                     delegate.merge(
+                        fromBranch,
                         fromHash,
                         toBranch,
                         expectedHash,
@@ -201,43 +205,42 @@ public class TracingVersionStore implements VersionStore {
   }
 
   @Override
-  public void assign(NamedRef ref, Optional<Hash> expectedHash, Hash targetHash)
+  public ReferenceAssignedResult assign(NamedRef ref, Optional<Hash> expectedHash, Hash targetHash)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    TracingVersionStore
-        .<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
-            tracer,
-            "Assign",
-            b ->
-                b.setAttribute(TAG_REF, safeToString(ref))
-                    .setAttribute(TracingVersionStore.TAG_EXPECTED_HASH, safeToString(expectedHash))
-                    .setAttribute(TAG_TARGET_HASH, safeToString(targetHash)),
-            () -> delegate.assign(ref, expectedHash, targetHash));
+    return TracingVersionStore
+        .<ReferenceAssignedResult, ReferenceNotFoundException, ReferenceConflictException>
+            callWithTwoExceptions(
+                tracer,"Assign",
+                b ->
+                    b.setAttribute(TAG_REF, safeToString(ref))
+                        .setAttribute(TracingVersionStore.TAG_EXPECTED_HASH, safeToString(expectedHash))
+                        .setAttribute(TAG_TARGET_HASH, safeToString(targetHash)),
+                () -> delegate.assign(ref, expectedHash, targetHash));
   }
 
   @Override
-  public Hash create(NamedRef ref, Optional<Hash> targetHash)
+  public ReferenceCreatedResult create(NamedRef ref, Optional<Hash> targetHash)
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
     return TracingVersionStore
-        .<Hash, ReferenceNotFoundException, ReferenceAlreadyExistsException>callWithTwoExceptions(
-            tracer,
-            "Create",
-            b ->
-                b.setAttribute(TAG_REF, safeToString(ref))
-                    .setAttribute(TAG_TARGET_HASH, safeToString(targetHash)),
-            () -> delegate.create(ref, targetHash));
+        .<ReferenceCreatedResult, ReferenceNotFoundException, ReferenceAlreadyExistsException>
+            callWithTwoExceptions(
+                tracer,"Create",
+                b ->
+                    b.setAttribute(TAG_REF, safeToString(ref))
+                        .setAttribute(TAG_TARGET_HASH, safeToString(targetHash)),
+                () -> delegate.create(ref, targetHash));
   }
 
   @Override
-  public Hash delete(NamedRef ref, Optional<Hash> hash)
+  public ReferenceDeletedResult delete(NamedRef ref, Optional<Hash> hash)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return TracingVersionStore
-        .<Hash, ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
-            tracer,
-            "Delete",
-            b ->
-                b.setAttribute(TAG_REF, safeToString(ref))
+        .<ReferenceDeletedResult, ReferenceNotFoundException, ReferenceConflictException>
+            callWithTwoExceptions(
+                tracer,"Delete",
+                b -> b.setAttribute(TAG_REF, safeToString(ref))
                     .setAttribute(TAG_HASH, safeToString(hash)),
-            () -> delegate.delete(ref, hash));
+                () -> delegate.delete(ref, hash));
   }
 
   @Override
@@ -375,25 +378,6 @@ public class TracingVersionStore implements VersionStore {
     }
   }
 
-  private static <E1 extends VersionStoreException, E2 extends VersionStoreException>
-      void callWithTwoExceptions(
-          Tracer tracer,
-          String spanName,
-          Consumer<SpanBuilder> spanBuilder,
-          InvokerWithTwoExceptions<E1, E2> invoker)
-          throws E1, E2 {
-    try (SpanHolder span = createSpan(tracer, spanName, spanBuilder)) {
-      try {
-        invoker.handle();
-      } catch (IllegalArgumentException e) {
-        // IllegalArgumentException is a special kind of exception that indicates a user-error.
-        throw e;
-      } catch (RuntimeException e) {
-        throw traceError(span.get(), e);
-      }
-    }
-  }
-
   private static <R, E1 extends VersionStoreException, E2 extends VersionStoreException>
       R callWithTwoExceptions(
           Tracer tracer,
@@ -416,12 +400,6 @@ public class TracingVersionStore implements VersionStore {
   @FunctionalInterface
   interface InvokerWithOneException<R, E1 extends VersionStoreException> {
     R handle() throws E1;
-  }
-
-  @FunctionalInterface
-  interface InvokerWithTwoExceptions<
-      E1 extends VersionStoreException, E2 extends VersionStoreException> {
-    void handle() throws E1, E2;
   }
 
   @FunctionalInterface

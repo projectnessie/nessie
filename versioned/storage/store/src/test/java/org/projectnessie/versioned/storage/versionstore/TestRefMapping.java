@@ -18,6 +18,7 @@ package org.projectnessie.versioned.storage.versionstore;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.key;
 import static org.projectnessie.versioned.storage.common.logic.CommitConflict.ConflictType.CONTENT_ID_DIFFERS;
@@ -265,7 +266,7 @@ public class TestRefMapping {
     ReferenceLogic referenceLogic = referenceLogic(persist);
     RefMapping refMapping = new RefMapping(persist);
 
-    ObjId commitId = generateCommit(EMPTY_OBJ_ID, "foo", 42);
+    ObjId commitId = generateCommit(EMPTY_OBJ_ID, "foo", 42).id();
 
     Reference branch = referenceLogic.createReference(REFS_HEADS + "branch", commitId);
     Reference tag = referenceLogic.createReference(REFS_TAGS + "tag", commitId);
@@ -357,20 +358,21 @@ public class TestRefMapping {
     ObjId head = EMPTY_OBJ_ID;
     List<ObjId> r = new ArrayList<>();
     for (int i = 0; i < 10; i++) {
-      head = generateCommit(head, msg, i);
+      head = generateCommit(head, msg, i).id();
       r.add(head);
     }
     return r;
   }
 
-  private ObjId generateCommit(ObjId head, String msg, int i) throws Exception {
-    return commitLogic(persist)
-        .doCommit(
-            newCommitBuilder()
-                .parentCommitId(head)
-                .message("commit " + msg + " " + i)
-                .headers(EMPTY_COMMIT_HEADERS)
-                .build(),
-            emptyList());
+  private CommitObj generateCommit(ObjId head, String msg, int i) throws Exception {
+    return requireNonNull(
+        commitLogic(persist)
+            .doCommit(
+                newCommitBuilder()
+                    .parentCommitId(head)
+                    .message("commit " + msg + " " + i)
+                    .headers(EMPTY_COMMIT_HEADERS)
+                    .build(),
+                emptyList()));
   }
 }

@@ -86,7 +86,7 @@ public final class MetricsVersionStore implements VersionStore {
   }
 
   @Override
-  public Hash commit(
+  public CommitResult<Commit> commit(
       @Nonnull @jakarta.annotation.Nonnull BranchName branch,
       @Nonnull @jakarta.annotation.Nonnull Optional<Hash> referenceHash,
       @Nonnull @jakarta.annotation.Nonnull CommitMeta metadata,
@@ -94,14 +94,17 @@ public final class MetricsVersionStore implements VersionStore {
       @Nonnull @jakarta.annotation.Nonnull Callable<Void> validator,
       @Nonnull @jakarta.annotation.Nonnull BiConsumer<ContentKey, String> addedContents)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    return this.<Hash, ReferenceNotFoundException, ReferenceConflictException>delegate2ExR(
-        "commit",
-        () ->
-            delegate.commit(branch, referenceHash, metadata, operations, validator, addedContents));
+    return this
+        .<CommitResult<Commit>, ReferenceNotFoundException, ReferenceConflictException>delegate2ExR(
+            "commit",
+            () ->
+                delegate.commit(
+                    branch, referenceHash, metadata, operations, validator, addedContents));
   }
 
   @Override
   public MergeResult<Commit> transplant(
+      BranchName sourceBranch,
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
@@ -117,6 +120,7 @@ public final class MetricsVersionStore implements VersionStore {
             "transplant",
             () ->
                 delegate.transplant(
+                    sourceBranch,
                     targetBranch,
                     referenceHash,
                     sequenceToTransplant,
@@ -130,6 +134,7 @@ public final class MetricsVersionStore implements VersionStore {
 
   @Override
   public MergeResult<Commit> merge(
+      BranchName fromBranch,
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
@@ -145,6 +150,7 @@ public final class MetricsVersionStore implements VersionStore {
             "merge",
             () ->
                 delegate.merge(
+                    fromBranch,
                     fromHash,
                     toBranch,
                     expectedHash,
@@ -157,24 +163,27 @@ public final class MetricsVersionStore implements VersionStore {
   }
 
   @Override
-  public void assign(NamedRef ref, Optional<Hash> expectedHash, Hash targetHash)
+  public ReferenceAssignedResult assign(NamedRef ref, Optional<Hash> expectedHash, Hash targetHash)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex(
-        "assign", () -> delegate.assign(ref, expectedHash, targetHash));
+    return this
+        .<ReferenceAssignedResult, ReferenceNotFoundException, ReferenceConflictException>
+            delegate2ExR("assign", () -> delegate.assign(ref, expectedHash, targetHash));
   }
 
   @Override
-  public Hash create(NamedRef ref, Optional<Hash> targetHash)
+  public ReferenceCreatedResult create(NamedRef ref, Optional<Hash> targetHash)
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
-    return this.<Hash, ReferenceNotFoundException, ReferenceAlreadyExistsException>delegate2ExR(
-        "create", () -> delegate.create(ref, targetHash));
+    return this
+        .<ReferenceCreatedResult, ReferenceNotFoundException, ReferenceAlreadyExistsException>
+            delegate2ExR("create", () -> delegate.create(ref, targetHash));
   }
 
   @Override
-  public Hash delete(NamedRef ref, Optional<Hash> hash)
+  public ReferenceDeletedResult delete(NamedRef ref, Optional<Hash> hash)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    return this.<Hash, ReferenceNotFoundException, ReferenceConflictException>delegate2ExR(
-        "delete", () -> delegate.delete(ref, hash));
+    return this
+        .<ReferenceDeletedResult, ReferenceNotFoundException, ReferenceConflictException>
+            delegate2ExR("delete", () -> delegate.delete(ref, hash));
   }
 
   @Override
@@ -312,23 +321,6 @@ public final class MetricsVersionStore implements VersionStore {
     return delegate2ExR(requestName, delegate::handle);
   }
 
-  private <E1 extends VersionStoreException, E2 extends VersionStoreException> void delegate2Ex(
-      String requestName, DelegateWith2<E1, E2> delegate) throws E1, E2 {
-    Sample sample = Timer.start(clock);
-    Exception failure = null;
-    try {
-      delegate.handle();
-    } catch (IllegalArgumentException e) {
-      // IllegalArgumentException indicates a user-error, not a server error
-      throw e;
-    } catch (RuntimeException e) {
-      failure = e;
-      throw e;
-    } finally {
-      measure(requestName, sample, failure);
-    }
-  }
-
   private <R, E1 extends VersionStoreException, E2 extends VersionStoreException> R delegate2ExR(
       String requestName, DelegateWith2R<R, E1, E2> delegate) throws E1, E2 {
     Sample sample = Timer.start(clock);
@@ -349,11 +341,6 @@ public final class MetricsVersionStore implements VersionStore {
   @FunctionalInterface
   interface DelegateWith1<R, E1 extends VersionStoreException> {
     R handle() throws E1;
-  }
-
-  @FunctionalInterface
-  interface DelegateWith2<E1 extends VersionStoreException, E2 extends VersionStoreException> {
-    void handle() throws E1, E2;
   }
 
   @FunctionalInterface

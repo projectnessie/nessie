@@ -65,7 +65,7 @@ public class TestVersionStoreImpl extends AbstractVersionStoreTests {
     VersionStore store = new VersionStoreImpl(persist);
 
     BranchName branch = BranchName.of("branch1");
-    Hash branch1 = store.create(branch, Optional.empty());
+    Hash branch1 = store.create(branch, Optional.empty()).getHash();
 
     AtomicInteger intercepted = new AtomicInteger();
 
@@ -119,7 +119,7 @@ public class TestVersionStoreImpl extends AbstractVersionStoreTests {
     VersionStore store = new VersionStoreImpl(persist);
 
     BranchName branch = BranchName.of("branch1");
-    Hash branch1 = store.create(branch, Optional.empty());
+    Hash branch1 = store.create(branch, Optional.empty()).getHash();
 
     AtomicBoolean intercepted = new AtomicBoolean();
 

@@ -111,6 +111,7 @@ import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.KeyEntry;
+import org.projectnessie.versioned.LazyPut;
 import org.projectnessie.versioned.MergeConflictException;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.NamedRef;
@@ -275,7 +276,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     check.checkAndThrow();
 
     try {
-      Hash hash = getStore().create(namedReference, toHash(targetHash, false));
+      Hash hash = getStore().create(namedReference, toHash(targetHash, false)).getHash();
       return RefUtil.toReference(namedReference, hash);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
@@ -346,7 +347,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
       startAccessCheck().canDeleteReference(ref).checkAndThrow();
 
-      Hash deletedAthash = getStore().delete(ref, toHash(expectedHash, true));
+      Hash deletedAthash = getStore().delete(ref, toHash(expectedHash, true)).getHash();
       return RefUtil.toReference(ref, deletedAthash);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
@@ -482,8 +483,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
             .forEach(
                 op -> {
                   ContentKey key = op.getKey();
-                  if (op instanceof Put) {
-                    Content content = ((Put) op).getValue();
+                  if (op instanceof LazyPut) {
+                    Content content = ((LazyPut) op).getValue();
                     logEntry.addOperations(Operation.Put.of(key, content));
                   }
                   if (op instanceof Delete) {
@@ -590,6 +591,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       MergeResult<Commit> result =
           getStore()
               .transplant(
+                  BranchName.of(fromRefName),
                   targetBranch,
                   into,
                   transplants,
@@ -652,6 +654,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       MergeResult<Commit> result =
           getStore()
               .merge(
+                  BranchName.of(fromRefName),
                   toHash(fromRefName, fromHash),
                   targetBranch,
                   into,
@@ -950,7 +953,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                   () -> null,
                   (key, cid) -> {
                     commitResponse.addAddedContents(addedContent(key, cid));
-                  });
+                  })
+              .getCommit()
+              .getHash();
 
       return commitResponse.targetBranch(Branch.of(branch, newHash.asString())).build();
     } catch (ReferenceNotFoundException e) {

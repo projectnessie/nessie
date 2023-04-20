@@ -33,6 +33,8 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.Commit;
+import org.projectnessie.versioned.CommitResult;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.VersionStore;
@@ -68,7 +70,7 @@ public abstract class AbstractNoNamespaceValidation {
     BranchName branch = BranchName.of("branch");
     store().create(root, Optional.empty());
 
-    Hash rootHead =
+    CommitResult<Commit> rootHead =
         store()
             .commit(
                 root,
@@ -76,7 +78,7 @@ public abstract class AbstractNoNamespaceValidation {
                 CommitMeta.fromMessage("common ancestor"),
                 singletonList(Put.of(ContentKey.of("dummy"), newOnRef("dummy"))));
 
-    store().create(branch, Optional.of(rootHead));
+    store().create(branch, Optional.of(rootHead.getCommit().getHash()));
 
     soft.assertThatCode(
             () ->
@@ -108,6 +110,7 @@ public abstract class AbstractNoNamespaceValidation {
               if (merge) {
                 store()
                     .merge(
+                        branch,
                         commit2,
                         root,
                         Optional.empty(),
@@ -120,6 +123,7 @@ public abstract class AbstractNoNamespaceValidation {
               } else {
                 store()
                     .transplant(
+                        branch,
                         root,
                         Optional.empty(),
                         asList(commit1, commit2),

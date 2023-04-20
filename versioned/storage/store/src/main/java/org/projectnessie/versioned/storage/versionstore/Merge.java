@@ -17,6 +17,7 @@ package org.projectnessie.versioned.storage.versionstore;
 
 import java.util.Optional;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.MergeResult;
@@ -28,6 +29,7 @@ import org.projectnessie.versioned.storage.common.logic.CommitRetry.RetryExcepti
 interface Merge {
   MergeResult<Commit> merge(
       Optional<?> retryState,
+      BranchName fromBranch,
       Hash fromHash,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       MergeBehaviors mergeBehaviors,

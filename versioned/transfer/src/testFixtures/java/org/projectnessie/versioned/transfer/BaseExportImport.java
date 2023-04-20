@@ -112,11 +112,11 @@ public abstract class BaseExportImport {
                   main = commit10(vs, 0, mainBranch, main);
 
                   BranchName branch = BranchName.of("a");
-                  Hash a = vs.create(branch, Optional.of(vs.noAncestorHash()));
+                  Hash a = vs.create(branch, Optional.of(vs.noAncestorHash())).getHash();
                   a = commit10(vs, 0, branch, a);
 
                   branch = BranchName.of("b");
-                  Hash b = vs.create(branch, Optional.of(vs.noAncestorHash()));
+                  Hash b = vs.create(branch, Optional.of(vs.noAncestorHash())).getHash();
                   b = commit10(vs, 0, branch, b);
 
                   headsAndForks.addHeads(main.asBytes());
@@ -134,11 +134,11 @@ public abstract class BaseExportImport {
                   main = commit10(vs, 0, mainBranch, main);
 
                   BranchName branch = BranchName.of("a");
-                  Hash a = vs.create(branch, Optional.of(vs.noAncestorHash()));
+                  Hash a = vs.create(branch, Optional.of(vs.noAncestorHash())).getHash();
                   a = commit10(vs, 0, branch, a);
 
                   branch = BranchName.of("b");
-                  Hash b = vs.create(branch, Optional.of(vs.noAncestorHash()));
+                  Hash b = vs.create(branch, Optional.of(vs.noAncestorHash())).getHash();
                   b = commit10(vs, 0, branch, b);
 
                   vs.delete(BranchName.of("a"), Optional.of(a));
@@ -161,13 +161,13 @@ public abstract class BaseExportImport {
                   main = commit10(vs, 0, mainBranch, main);
 
                   BranchName branch = BranchName.of("a");
-                  Hash a = vs.create(branch, Optional.of(main));
+                  Hash a = vs.create(branch, Optional.of(main)).getHash();
                   headsAndForks.addForkPoints(main.asBytes());
                   a = commit10(vs, 0, branch, a);
                   main = commit10(vs, 10, mainBranch, main);
 
                   branch = BranchName.of("b");
-                  Hash b = vs.create(branch, Optional.of(a));
+                  Hash b = vs.create(branch, Optional.of(a)).getHash();
                   headsAndForks.addForkPoints(a.asBytes());
                   b = commit10(vs, 0, branch, b);
                   a = commit10(vs, 10, BranchName.of("a"), a);
@@ -187,13 +187,14 @@ public abstract class BaseExportImport {
                   main = commit10(vs, 0, mainBranch, main);
 
                   BranchName branch = BranchName.of("a");
-                  Hash a = vs.create(branch, Optional.of(main));
+                  Hash a = vs.create(branch, Optional.of(main)).getHash();
 
                   headsAndForks.addForkPoints(main.asBytes());
                   a = commit10(vs, 0, branch, a);
                   main = commit10(vs, 10, mainBranch, main);
 
                   vs.merge(
+                      branch,
                       a,
                       mainBranch,
                       Optional.of(main),
@@ -329,19 +330,22 @@ public abstract class BaseExportImport {
     for (int i = 0; i < 10; i++) {
       int commit = offset + i;
       head =
-          versionStore.commit(
-              branch,
-              Optional.of(head),
-              CommitMeta.fromMessage("commit #" + commit + " " + branch),
-              Collections.singletonList(
-                  Put.of(
-                      ContentKey.of(branch.getName() + "-c-" + commit),
-                      IcebergTable.of(
-                          "meta+" + branch.getName() + "-c-" + commit + "-" + head.asString(),
-                          42,
-                          43,
-                          44,
-                          45))));
+          versionStore
+              .commit(
+                  branch,
+                  Optional.of(head),
+                  CommitMeta.fromMessage("commit #" + commit + " " + branch),
+                  Collections.singletonList(
+                      Put.of(
+                          ContentKey.of(branch.getName() + "-c-" + commit),
+                          IcebergTable.of(
+                              "meta+" + branch.getName() + "-c-" + commit + "-" + head.asString(),
+                              42,
+                              43,
+                              44,
+                              45))))
+              .getCommit()
+              .getHash();
     }
     return head;
   }

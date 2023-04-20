@@ -26,6 +26,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
+import org.projectnessie.versioned.CommitResult;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
@@ -33,7 +34,10 @@ import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
+import org.projectnessie.versioned.ReferenceAssignedResult;
 import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceCreatedResult;
+import org.projectnessie.versioned.ReferenceDeletedResult;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 
@@ -148,7 +152,7 @@ public interface DatabaseAdapter {
    *     branch due to a conflicting change or if the expected hash in {@link
    *     CommitParams#getToBranch()}is not its expected hEAD
    */
-  Hash commit(CommitParams commitParams)
+  CommitResult<CommitLogEntry> commit(CommitParams commitParams)
       throws ReferenceConflictException, ReferenceNotFoundException;
 
   /**
@@ -218,11 +222,11 @@ public interface DatabaseAdapter {
    * @param target The already existing named reference with an optional hash on that branch. This
    *     parameter can be {@code null} for the edge case when the default branch is re-created after
    *     it has been dropped.
-   * @return the current HEAD of the created branch or tag
+   * @return A {@link ReferenceCreatedResult} containing the head of the created reference
    * @throws ReferenceAlreadyExistsException if the reference {@code ref} already exists.
    * @throws ReferenceNotFoundException if {@code target} does not exist.
    */
-  Hash create(NamedRef ref, Hash target)
+  ReferenceCreatedResult create(NamedRef ref, Hash target)
       throws ReferenceAlreadyExistsException, ReferenceNotFoundException;
 
   /**
@@ -231,12 +235,12 @@ public interface DatabaseAdapter {
    * @param reference named-reference to delete. If a value for the hash is specified, it must be
    *     equal to the current HEAD.
    * @param expectedHead if present, {@code reference}'s current HEAD must be equal to this value
-   * @return head of deleted reference
+   * @return A {@link ReferenceDeletedResult} containing the head of the deleted reference
    * @throws ReferenceNotFoundException if the named reference in {@code reference} does not exist.
    * @throws ReferenceConflictException if the named reference's HEAD is not equal to the expected
    *     HEAD
    */
-  Hash delete(NamedRef reference, Optional<Hash> expectedHead)
+  ReferenceDeletedResult delete(NamedRef reference, Optional<Hash> expectedHead)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
@@ -245,13 +249,15 @@ public interface DatabaseAdapter {
    * @param assignee named reference to re-assign
    * @param expectedHead if present, {@code assignee}'s current HEAD must be equal to this value
    * @param assignTo commit to update {@code assignee}'s HEAD to
+   * @return A {@link ReferenceAssignedResult} containing the previous and current head of the
+   *     reference
    * @throws ReferenceNotFoundException if either the named reference in {@code assignTo} or the
    *     commit on that reference, if specified, does not exist or if the named reference specified
    *     in {@code assignee} does not exist.
    * @throws ReferenceConflictException if the HEAD of the named reference {@code assignee} is not
    *     equal to the expected HEAD
    */
-  void assign(NamedRef assignee, Optional<Hash> expectedHead, Hash assignTo)
+  ReferenceAssignedResult assign(NamedRef assignee, Optional<Hash> expectedHead, Hash assignTo)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**

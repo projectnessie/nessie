@@ -520,7 +520,7 @@ class BaseCommitHelper {
       CommitObj source,
       ImmutableMergeResult.Builder<Commit> result,
       MergeBehaviors mergeBehaviors)
-      throws RetryException {
+      throws RetryException, ReferenceNotFoundException {
     result.wasSuccessful(true);
 
     IndexesLogic indexesLogic = indexesLogic(persist);
@@ -538,6 +538,8 @@ class BaseCommitHelper {
       bumpReferencePointer(fromId, Optional.empty());
       result.wasApplied(true).resultantTargetHash(objIdToHash(fromId));
     }
+
+    result.addAddedCommits(commitObjToCommit(source));
 
     return result.build();
   }
@@ -733,5 +735,14 @@ class BaseCommitHelper {
     }
 
     return mergeResult.build();
+  }
+
+  Commit commitObjToCommit(CommitObj newCommit) throws ReferenceNotFoundException {
+    try {
+      ContentMapping contentMapping = new ContentMapping(persist);
+      return contentMapping.commitObjToCommit(true, newCommit);
+    } catch (ObjNotFoundException e) {
+      throw referenceNotFound(e);
+    }
   }
 }

@@ -69,12 +69,13 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
     soft.assertThat(hash).isNotNull();
 
     final BranchName anotherBranch = BranchName.of("bar");
-    final Hash createHash = store().create(anotherBranch, Optional.of(hash));
+    final Hash createHash = store().create(anotherBranch, Optional.of(hash)).getHash();
     final Hash commitHash = commit("Some Commit").toBranch(anotherBranch);
     soft.assertThat(commitHash).isNotEqualTo(createHash);
 
     final BranchName anotherAnotherBranch = BranchName.of("baz");
-    final Hash otherCreateHash = store().create(anotherAnotherBranch, Optional.of(commitHash));
+    final Hash otherCreateHash =
+        store().create(anotherAnotherBranch, Optional.of(commitHash)).getHash();
     soft.assertThat(otherCreateHash).isEqualTo(commitHash);
 
     List<ReferenceInfo<CommitMeta>> namedRefs;
@@ -177,7 +178,7 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
   @Test
   void getNamedRef() throws VersionStoreException {
     final BranchName branch = BranchName.of("getNamedRef");
-    Hash hashFromCreate = store().create(branch, Optional.empty());
+    Hash hashFromCreate = store().create(branch, Optional.empty()).getHash();
     soft.assertThat(store().hashOnReference(branch, Optional.empty())).isEqualTo(hashFromCreate);
 
     final Hash firstCommitHash = commit("First Commit").toBranch(branch);

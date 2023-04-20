@@ -29,6 +29,8 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.Commit;
+import org.projectnessie.versioned.CommitResult;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Put;
@@ -63,7 +65,7 @@ public abstract class AbstractContents extends AbstractNestedVersionStore {
     // commit just something to have a "real" common ancestor and not "beginning of time", which
     // means no-common-ancestor
     Content initialState = newOnRef("value");
-    Hash ancestor =
+    CommitResult<Commit> ancestor =
         store()
             .commit(
                 branch,
@@ -71,9 +73,10 @@ public abstract class AbstractContents extends AbstractNestedVersionStore {
                 CommitMeta.fromMessage("create table"),
                 singletonList(Put.of(key, initialState)));
     soft.assertThat(contentWithoutId(store().getValue(branch, key))).isEqualTo(initialState);
-    soft.assertThat(contentWithoutId(store().getValue(ancestor, key))).isEqualTo(initialState);
+    soft.assertThat(contentWithoutId(store().getValue(ancestor.getCommit().getHash(), key)))
+        .isEqualTo(initialState);
 
-    Hash delete =
+    CommitResult<Commit> delete =
         store()
             .commit(
                 branch,
@@ -81,10 +84,10 @@ public abstract class AbstractContents extends AbstractNestedVersionStore {
                 CommitMeta.fromMessage("drop table"),
                 ImmutableList.of(Delete.of(key)));
     soft.assertThat(store().getValue(branch, key)).isNull();
-    soft.assertThat(store().getValue(delete, key)).isNull();
+    soft.assertThat(store().getValue(delete.getCommit().getHash(), key)).isNull();
 
     Content recreateState = newOnRef("value");
-    Hash recreate =
+    CommitResult<Commit> recreate =
         store()
             .commit(
                 branch,
@@ -92,6 +95,7 @@ public abstract class AbstractContents extends AbstractNestedVersionStore {
                 CommitMeta.fromMessage("drop table"),
                 ImmutableList.of(Put.of(key, recreateState)));
     soft.assertThat(contentWithoutId(store().getValue(branch, key))).isEqualTo(recreateState);
-    soft.assertThat(contentWithoutId(store().getValue(recreate, key))).isEqualTo(recreateState);
+    soft.assertThat(contentWithoutId(store().getValue(recreate.getCommit().getHash(), key)))
+        .isEqualTo(recreateState);
   }
 }

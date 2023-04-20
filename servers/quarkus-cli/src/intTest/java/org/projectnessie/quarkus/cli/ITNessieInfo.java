@@ -54,11 +54,14 @@ class ITNessieInfo {
   public void testMainHash(QuarkusMainLauncher launcher, DatabaseAdapter adapter)
       throws ReferenceNotFoundException, ReferenceConflictException {
     Hash hash =
-        adapter.commit(
-            ImmutableCommitParams.builder()
-                .toBranch(BranchName.of("main"))
-                .commitMetaSerialized(ByteString.copyFrom(new byte[] {1, 2, 3}))
-                .build());
+        adapter
+            .commit(
+                ImmutableCommitParams.builder()
+                    .toBranch(BranchName.of("main"))
+                    .commitMetaSerialized(ByteString.copyFrom(new byte[] {1, 2, 3}))
+                    .build())
+            .getCommit()
+            .getHash();
 
     LaunchResult result = launcher.launch("info");
     assertThat(result.getOutput()).contains(hash.asString());

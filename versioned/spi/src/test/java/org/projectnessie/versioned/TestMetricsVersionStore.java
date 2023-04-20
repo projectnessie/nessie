@@ -112,10 +112,48 @@ class TestMetricsVersionStore {
           }
         };
 
+    CommitResult<Object> dummyCommitResult =
+        CommitResult.builder()
+            .targetBranch(BranchName.of("foo"))
+            .commit(
+                Commit.builder()
+                    .hash(Hash.of("cafebabe"))
+                    .commitMeta(CommitMeta.fromMessage("log#1")))
+            .build();
+
     MergeResult<Object> dummyMergeResult =
         MergeResult.builder()
+            .resultType(ResultType.MERGE)
+            .sourceBranch(BranchName.of("foo"))
+            .targetBranch(BranchName.of("bar"))
             .effectiveTargetHash(Hash.of("123456"))
-            .targetBranch(BranchName.of("foo"))
+            .build();
+
+    MergeResult<Object> dummyTransplantResult =
+        MergeResult.builder()
+            .resultType(ResultType.TRANSPLANT)
+            .sourceBranch(BranchName.of("foo"))
+            .targetBranch(BranchName.of("bar"))
+            .effectiveTargetHash(Hash.of("123456"))
+            .build();
+
+    ImmutableReferenceCreatedResult dummyRefCreatedResult =
+        ImmutableReferenceCreatedResult.builder()
+            .namedRef(BranchName.of("mock-branch"))
+            .hash(Hash.of("cafebabedeadbeef"))
+            .build();
+
+    ImmutableReferenceAssignedResult dummyRefAssignedResult =
+        ImmutableReferenceAssignedResult.builder()
+            .namedRef(BranchName.of("mock-branch"))
+            .previousHash(Hash.of("cafebabedeadbeef"))
+            .currentHash(Hash.of("12341234"))
+            .build();
+
+    ImmutableReferenceDeletedResult dummyRefDeletedResult =
+        ImmutableReferenceDeletedResult.builder()
+            .namedRef(BranchName.of("mock-branch"))
+            .hash(Hash.of("cafebabedeadbeef"))
             .build();
 
     // "Declare" test-invocations for all VersionStore functions with their respective outcomes
@@ -137,12 +175,13 @@ class TestMetricsVersionStore {
                         Collections.emptyList(),
                         () -> null,
                         (k, c) -> {}),
-                () -> Hash.of("cafebabedeadbeef"),
+                () -> dummyCommitResult,
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "transplant",
                 vs ->
                     vs.transplant(
+                        BranchName.of("source-branch"),
                         BranchName.of("mock-branch"),
                         Optional.empty(),
                         Collections.emptyList(),
@@ -152,12 +191,13 @@ class TestMetricsVersionStore {
                         MergeBehavior.NORMAL,
                         false,
                         false),
-                () -> dummyMergeResult,
+                () -> dummyTransplantResult,
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "merge",
                 vs ->
                     vs.merge(
+                        BranchName.of("source-branch"),
                         Hash.of("42424242"),
                         BranchName.of("mock-branch"),
                         Optional.empty(),
@@ -173,16 +213,17 @@ class TestMetricsVersionStore {
                 "assign",
                 vs ->
                     vs.assign(BranchName.of("mock-branch"), Optional.empty(), Hash.of("12341234")),
+                () -> dummyRefAssignedResult,
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "create",
                 vs -> vs.create(BranchName.of("mock-branch"), Optional.of(Hash.of("cafebabe"))),
-                () -> Hash.of("cafebabedeadbeef"),
+                () -> dummyRefCreatedResult,
                 refNotFoundAndRefAlreadyExistsThrows),
             new VersionStoreInvocation<>(
                 "delete",
                 vs -> vs.delete(BranchName.of("mock-branch"), Optional.of(Hash.of("cafebabe"))),
-                () -> Hash.of("cafebabedeadbeef"),
+                () -> dummyRefDeletedResult,
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "getcommits",
@@ -348,18 +389,6 @@ class TestMetricsVersionStore {
       this.opName = opName;
       this.function = function;
       this.result = result;
-      this.failures = failures;
-    }
-
-    VersionStoreInvocation(
-        String opName, ThrowingConsumer<VersionStore> function, List<Exception> failures) {
-      this.opName = opName;
-      this.function =
-          vs -> {
-            function.accept(vs);
-            return null;
-          };
-      this.result = null;
       this.failures = failures;
     }
   }

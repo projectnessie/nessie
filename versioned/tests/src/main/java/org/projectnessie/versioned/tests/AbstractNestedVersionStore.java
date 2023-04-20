@@ -33,6 +33,7 @@ import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableCommit;
+import org.projectnessie.versioned.LazyPut;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.Ref;
@@ -177,9 +178,10 @@ public abstract class AbstractNestedVersionStore {
     return operations.stream()
         .map(
             op -> {
-              if (op instanceof Put) {
-                Put put = (Put) op;
-                return Put.of(put.getKey(), contentWithoutId(put.getValue()));
+              if (op instanceof LazyPut) {
+                LazyPut put = (LazyPut) op;
+                Content content = put.getValue();
+                return Put.of(put.getKey(), contentWithoutId(content));
               }
               return op;
             })

@@ -47,8 +47,9 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.Commit;
+import org.projectnessie.versioned.CommitResult;
 import org.projectnessie.versioned.Delete;
-import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.VersionStore;
@@ -264,7 +265,7 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
 
     Namespace ns = Namespace.of("ns");
     Namespace ns2 = Namespace.of("ns2");
-    Hash rootHead =
+    CommitResult<Commit> rootHead =
         store()
             .commit(
                 root,
@@ -275,7 +276,7 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
                     : asList(Put.of(ns.toContentKey(), ns), Put.of(ns2.toContentKey(), ns2)));
 
     BranchName branch = BranchName.of("branch");
-    store().create(branch, Optional.of(rootHead));
+    store().create(branch, Optional.of(rootHead.getCommit().getHash()));
 
     if (mode.createNamespaceOnTarget) {
       store()
@@ -287,7 +288,7 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
     }
 
     ContentKey key = ContentKey.of(ns, "foo");
-    Hash commit1 =
+    CommitResult<Commit> commit1 =
         store()
             .commit(
                 branch,
@@ -295,7 +296,7 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
                 fromMessage("create table ns.foo"),
                 singletonList(Put.of(key, newOnRef("foo"))));
 
-    Hash commit2 =
+    CommitResult<Commit> commit2 =
         store()
             .commit(
                 branch,
@@ -315,6 +316,7 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
             ? () ->
                 store()
                     .merge(
+                        branch,
                         store().hashOnReference(branch, Optional.empty()),
                         root,
                         Optional.empty(),
@@ -327,9 +329,10 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
             : () ->
                 store()
                     .transplant(
+                        branch,
                         root,
                         Optional.empty(),
-                        asList(commit1, commit2),
+                        asList(commit1.getCommit().getHash(), commit2.getCommit().getHash()),
                         METADATA_REWRITER,
                         mode.individualCommits,
                         emptyMap(),
