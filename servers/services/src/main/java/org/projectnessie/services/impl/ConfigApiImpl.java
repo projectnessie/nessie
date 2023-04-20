@@ -19,6 +19,7 @@ import org.projectnessie.model.ImmutableNessieConfiguration;
 import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.spi.ConfigService;
+import org.projectnessie.versioned.RepositoryInformation;
 import org.projectnessie.versioned.VersionStore;
 
 public class ConfigApiImpl implements ConfigService {
@@ -35,10 +36,19 @@ public class ConfigApiImpl implements ConfigService {
 
   @Override
   public NessieConfiguration getConfig() {
+    RepositoryInformation info = store.getRepositoryInformation();
+    String defaultBranch = info.getDefaultBranch();
+    if (defaultBranch == null) {
+      defaultBranch = this.config.getDefaultBranch();
+    }
     return ImmutableNessieConfiguration.builder()
         .from(NessieConfiguration.getBuiltInConfig())
         .defaultBranch(this.config.getDefaultBranch())
         .actualApiVersion(actualApiVersion)
+        .noAncestorHash(info.getNoAncestorHash())
+        .repositoryCreationTimestamp(info.getRepositoryCreationTimestamp())
+        .oldestPossibleCommitTimestamp(info.getOldestPossibleCommitTimestamp())
+        .additionalProperties(info.getAdditionalProperties())
         .build();
   }
 }
