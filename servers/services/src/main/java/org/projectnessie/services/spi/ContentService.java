@@ -38,6 +38,8 @@ public interface ContentService {
       @Valid @jakarta.validation.Valid ContentKey key,
       @Valid
           @jakarta.validation.Valid
+          @Nullable
+          @jakarta.annotation.Nullable
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           @jakarta.validation.constraints.Pattern(
               regexp = Validation.REF_NAME_REGEX,
@@ -57,6 +59,8 @@ public interface ContentService {
   GetMultipleContentsResponse getMultipleContents(
       @Valid
           @jakarta.validation.Valid
+          @Nullable
+          @jakarta.annotation.Nullable
           @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           @jakarta.validation.constraints.Pattern(
               regexp = Validation.REF_NAME_REGEX,
