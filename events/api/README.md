@@ -26,10 +26,23 @@ The following concrete event implementations are defined:
 * `ContentStoredEvent` - This event is published when a content is stored (PUT).
 * `ContentRemovedEvent` - This event is published when a content is removed (DELETE).
 
-An OpenAPI specification for the events API is available in the `META-INF/openapi/openapi.yaml` file
-included in this module's artifact.
+## Contents
 
-## JSON serialization
+Contents in Nessie form a pluggable system. The `org.projectnessie.model.Content` class is the base
+class for all content types, but serialization and deserialization of content is done in a complex
+way. The `Content` interface in this package, on the other hand, is a simple interface that allows
+for easy serialization and deserialization of content.
+
+It can handle the following content types:
+
+* `org.projectnessie.events.api.IcebergTable`: Iceberg table content.
+* `org.projectnessie.events.api.IcebergView`: Iceberg view content.
+* `org.projectnessie.events.api.DeltaLakeTable`: Delta Lake table content.
+* `org.projectnessie.events.api.Namespace`: Namespace content.
+* `org.projectnessie.events.api.CustomContent`: a catch-all content type that will be used to
+  serialize and deserialize any content type that is not supported by the other content types above.
+
+## JSON serialization & deserialization
 
 The API exposes `Instant` and `Optional` types. Proper JSON serialization of the event types 
 requires the addition of 2 Jackson modules:

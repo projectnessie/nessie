@@ -44,27 +44,27 @@ class TestJsonSerde {
                     .authorTime(Instant.now())
                     .build())
             .build();
-    assertEquals(event, deserialize(serialize(event), CommitEvent.class));
+    assertEquals(event, deserialize(serialize(event), Event.class));
   }
 
   @Test
   void merge() throws Exception {
     MergeEvent event =
         committingAttributes(MergeEvent.builder()).commonAncestorHash("hash0").build();
-    assertEquals(event, deserialize(serialize(event), MergeEvent.class));
+    assertEquals(event, deserialize(serialize(event), Event.class));
   }
 
   @Test
   void transplant() throws Exception {
     TransplantEvent event = committingAttributes(TransplantEvent.builder()).build();
-    assertEquals(event, deserialize(serialize(event), TransplantEvent.class));
+    assertEquals(event, deserialize(serialize(event), Event.class));
   }
 
   @Test
   void referenceCreated() throws Exception {
     ReferenceCreatedEvent event =
         refAttributes(ReferenceCreatedEvent.builder()).hashAfter("hash2").build();
-    assertEquals(event, deserialize(serialize(event), ReferenceCreatedEvent.class));
+    assertEquals(event, deserialize(serialize(event), Event.class));
   }
 
   @Test
@@ -74,14 +74,14 @@ class TestJsonSerde {
             .hashBefore("hash1")
             .hashAfter("hash2")
             .build();
-    assertEquals(event, deserialize(serialize(event), ReferenceUpdatedEvent.class));
+    assertEquals(event, deserialize(serialize(event), Event.class));
   }
 
   @Test
   void referenceDeleted() throws Exception {
     ReferenceDeletedEvent event =
         refAttributes(ReferenceDeletedEvent.builder()).hashBefore("hash1").build();
-    assertEquals(event, deserialize(serialize(event), ReferenceDeletedEvent.class));
+    assertEquals(event, deserialize(serialize(event), Event.class));
   }
 
   @Test
@@ -98,13 +98,13 @@ class TestJsonSerde {
                     .sortOrderId(4)
                     .build())
             .build();
-    assertEquals(event, deserialize(serialize(event), ContentStoredEvent.class));
+    assertEquals(event, deserialize(serialize(event), Event.class));
   }
 
   @Test
   void contentRemoved() throws Exception {
     ContentRemovedEvent event = contentAttributes(ContentRemovedEvent.builder()).build();
-    assertEquals(event, deserialize(serialize(event), ContentRemovedEvent.class));
+    assertEquals(event, deserialize(serialize(event), Event.class));
   }
 
   @Test
@@ -120,7 +120,7 @@ class TestJsonSerde {
             .putAttribute("string", "foo")
             .putAttribute("number", 123)
             .build();
-    assertEquals(content, deserialize(serialize(content), IcebergTable.class));
+    assertEquals(content, deserialize(serialize(content), Content.class));
   }
 
   @Test
@@ -134,7 +134,7 @@ class TestJsonSerde {
             .putAttribute("string", "foo")
             .putAttribute("number", 123)
             .build();
-    assertEquals(content, deserialize(serialize(content), DeltaLakeTable.class));
+    assertEquals(content, deserialize(serialize(content), Content.class));
   }
 
   @Test
@@ -150,7 +150,7 @@ class TestJsonSerde {
             .putAttribute("string", "foo")
             .putAttribute("number", 123)
             .build();
-    assertEquals(content, deserialize(serialize(content), IcebergView.class));
+    assertEquals(content, deserialize(serialize(content), Content.class));
   }
 
   @Test
@@ -161,7 +161,7 @@ class TestJsonSerde {
             .putAttribute("string", "foo")
             .putAttribute("number", 123)
             .build();
-    assertEquals(content, deserialize(serialize(content), CustomContent.class));
+    assertEquals(content, deserialize(serialize(content), Content.class));
   }
 
   private Object deserialize(String json, Class<?> clazz) throws JsonProcessingException {
