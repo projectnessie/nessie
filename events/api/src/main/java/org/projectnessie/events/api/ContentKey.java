@@ -15,37 +15,40 @@
  */
 package org.projectnessie.events.api;
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import org.immutables.value.Value;
 
-/**
- * Event that is emitted when a content is stored. This event corresponds to a PUT operation in a
- * commit, merge or transplant. This event is emitted after the content has been stored.
- */
+/** Key for a {@link Content} object. */
 @Value.Immutable
-@JsonTypeName("CONTENT_STORED")
 @JsonSerialize
-@JsonDeserialize
-public interface ContentStoredEvent extends ContentEvent {
-  @Override
-  @Value.Default
-  default EventType getType() {
-    return EventType.CONTENT_STORED;
+@JsonDeserialize(as = ImmutableContentKey.class)
+public interface ContentKey {
+
+  static ContentKey of(String... elements) {
+    return ImmutableContentKey.of(Arrays.asList(elements));
   }
 
-  /** The content that was stored. */
-  Content getContent();
+  @Value.Parameter
+  List<String> getElements();
 
-  static ContentStoredEvent.Builder builder() {
-    return ImmutableContentStoredEvent.builder();
+  @Value.Lazy
+  @JsonIgnore
+  default String getName() {
+    return getElements().get(getElements().size() - 1);
   }
 
-  interface Builder extends ContentEvent.Builder<Builder, ContentStoredEvent> {
-
-    @CanIgnoreReturnValue
-    Builder content(Content content);
+  @Value.Lazy
+  @JsonIgnore
+  default Optional<ImmutableContentKey> getParent() {
+    List<String> elements = getElements();
+    if (elements.size() <= 1) {
+      return Optional.empty();
+    }
+    return Optional.of(ImmutableContentKey.of(elements.subList(0, elements.size() - 1)));
   }
 }

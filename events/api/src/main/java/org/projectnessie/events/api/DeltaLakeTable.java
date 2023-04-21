@@ -19,33 +19,43 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import java.util.List;
 import org.immutables.value.Value;
 
-/**
- * Event that is emitted when a content is stored. This event corresponds to a PUT operation in a
- * commit, merge or transplant. This event is emitted after the content has been stored.
- */
 @Value.Immutable
-@JsonTypeName("CONTENT_STORED")
+@JsonTypeName("DELTA_LAKE_TABLE")
 @JsonSerialize
 @JsonDeserialize
-public interface ContentStoredEvent extends ContentEvent {
+public interface DeltaLakeTable extends Content {
+
   @Override
   @Value.Default
-  default EventType getType() {
-    return EventType.CONTENT_STORED;
+  default ContentType getType() {
+    return ContentType.DELTA_LAKE_TABLE;
   }
 
-  /** The content that was stored. */
-  Content getContent();
+  List<String> getMetadataLocationHistory();
 
-  static ContentStoredEvent.Builder builder() {
-    return ImmutableContentStoredEvent.builder();
+  List<String> getCheckpointLocationHistory();
+
+  String getLastCheckpoint();
+
+  static DeltaLakeTable.Builder builder() {
+    return ImmutableDeltaLakeTable.builder();
   }
 
-  interface Builder extends ContentEvent.Builder<Builder, ContentStoredEvent> {
+  interface Builder extends Content.Builder<DeltaLakeTable.Builder, DeltaLakeTable> {
 
     @CanIgnoreReturnValue
-    Builder content(Content content);
+    Builder metadataLocationHistory(Iterable<String> metadataLocationHistory);
+
+    @CanIgnoreReturnValue
+    Builder checkpointLocationHistory(Iterable<String> checkpointLocationHistory);
+
+    @CanIgnoreReturnValue
+    Builder lastCheckpoint(String lastCheckpoint);
+
+    @Override
+    DeltaLakeTable build();
   }
 }

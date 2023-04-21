@@ -15,37 +15,48 @@
  */
 package org.projectnessie.events.api;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.immutables.value.Value;
 
-/**
- * Event that is emitted when a content is stored. This event corresponds to a PUT operation in a
- * commit, merge or transplant. This event is emitted after the content has been stored.
- */
 @Value.Immutable
-@JsonTypeName("CONTENT_STORED")
+@JsonTypeName("NAMESPACE")
 @JsonSerialize
 @JsonDeserialize
-public interface ContentStoredEvent extends ContentEvent {
+public interface Namespace extends Content {
+
   @Override
   @Value.Default
-  default EventType getType() {
-    return EventType.CONTENT_STORED;
+  default ContentType getType() {
+    return ContentType.NAMESPACE;
   }
 
-  /** The content that was stored. */
-  Content getContent();
-
-  static ContentStoredEvent.Builder builder() {
-    return ImmutableContentStoredEvent.builder();
+  @Value.Lazy
+  @JsonIgnore
+  default String getName() {
+    // see org.projectnessie.model.Util
+    return getElements().stream()
+        .map(element -> element.replace('.', '\u001D').replace('\u0000', '\u001D'))
+        .collect(Collectors.joining("."));
   }
 
-  interface Builder extends ContentEvent.Builder<Builder, ContentStoredEvent> {
+  List<String> getElements();
+
+  static Namespace.Builder builder() {
+    return ImmutableNamespace.builder();
+  }
+
+  interface Builder extends Content.Builder<Namespace.Builder, Namespace> {
 
     @CanIgnoreReturnValue
-    Builder content(Content content);
+    Builder elements(Iterable<String> elements);
+
+    @Override
+    Namespace build();
   }
 }

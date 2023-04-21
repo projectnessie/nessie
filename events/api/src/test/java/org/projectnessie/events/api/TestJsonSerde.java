@@ -26,7 +26,6 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.model.ImmutableIcebergTable;
 
 class TestJsonSerde {
 
@@ -92,6 +91,7 @@ class TestJsonSerde {
             .content(
                 ImmutableIcebergTable.builder()
                     .metadataLocation("metadataLocation")
+                    .id("id")
                     .snapshotId(1L)
                     .schemaId(2)
                     .specId(3)
@@ -107,9 +107,65 @@ class TestJsonSerde {
     assertEquals(event, deserialize(serialize(event), ContentRemovedEvent.class));
   }
 
-  private Object deserialize(String json, Class<? extends Event> eventClass)
-      throws JsonProcessingException {
-    return MAPPER.readValue(json, eventClass);
+  @Test
+  void icebergTable() throws Exception {
+    IcebergTable content =
+        ImmutableIcebergTable.builder()
+            .id("id")
+            .metadataLocation("metadataLocation")
+            .snapshotId(1L)
+            .schemaId(2)
+            .specId(3)
+            .sortOrderId(4)
+            .putAttribute("string", "foo")
+            .putAttribute("number", 123)
+            .build();
+    assertEquals(content, deserialize(serialize(content), IcebergTable.class));
+  }
+
+  @Test
+  void deltaLakeTable() throws Exception {
+    DeltaLakeTable content =
+        ImmutableDeltaLakeTable.builder()
+            .id("id")
+            .addCheckpointLocationHistory("checkpoint")
+            .addMetadataLocationHistory("metadata")
+            .lastCheckpoint("lastCheckpoint")
+            .putAttribute("string", "foo")
+            .putAttribute("number", 123)
+            .build();
+    assertEquals(content, deserialize(serialize(content), DeltaLakeTable.class));
+  }
+
+  @Test
+  void icebergView() throws Exception {
+    IcebergView content =
+        ImmutableIcebergView.builder()
+            .id("id")
+            .metadataLocation("metadataLocation")
+            .versionId(1L)
+            .schemaId(2)
+            .sqlText("sqlText")
+            .dialect("dialect")
+            .putAttribute("string", "foo")
+            .putAttribute("number", 123)
+            .build();
+    assertEquals(content, deserialize(serialize(content), IcebergView.class));
+  }
+
+  @Test
+  void customContent() throws Exception {
+    CustomContent content =
+        ImmutableCustomContent.builder()
+            .id("id")
+            .putAttribute("string", "foo")
+            .putAttribute("number", 123)
+            .build();
+    assertEquals(content, deserialize(serialize(content), CustomContent.class));
+  }
+
+  private Object deserialize(String json, Class<?> clazz) throws JsonProcessingException {
+    return MAPPER.readValue(json, clazz);
   }
 
   private String serialize(Object event) throws JsonProcessingException {

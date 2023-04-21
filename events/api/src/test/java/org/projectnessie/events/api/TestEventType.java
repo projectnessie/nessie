@@ -21,8 +21,6 @@ import static org.mockito.Mockito.mock;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.model.Content;
-import org.projectnessie.model.ContentKey;
 
 class TestEventType {
 

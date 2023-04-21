@@ -25,7 +25,6 @@ plugins {
 extra["maven.name"] = "Nessie - Events - API"
 
 dependencies {
-  implementation(project(":nessie-model"))
 
   // Immutables
   implementation(libs.immutables.builder)

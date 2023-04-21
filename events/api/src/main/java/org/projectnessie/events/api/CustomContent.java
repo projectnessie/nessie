@@ -18,34 +18,27 @@ package org.projectnessie.events.api;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.immutables.value.Value;
 
-/**
- * Event that is emitted when a content is stored. This event corresponds to a PUT operation in a
- * commit, merge or transplant. This event is emitted after the content has been stored.
- */
 @Value.Immutable
-@JsonTypeName("CONTENT_STORED")
+@JsonTypeName("CUSTOM")
 @JsonSerialize
 @JsonDeserialize
-public interface ContentStoredEvent extends ContentEvent {
+public interface CustomContent extends Content {
+
   @Override
   @Value.Default
-  default EventType getType() {
-    return EventType.CONTENT_STORED;
+  default ContentType getType() {
+    return ContentType.CUSTOM;
   }
 
-  /** The content that was stored. */
-  Content getContent();
-
-  static ContentStoredEvent.Builder builder() {
-    return ImmutableContentStoredEvent.builder();
+  static CustomContent.Builder builder() {
+    return ImmutableCustomContent.builder();
   }
 
-  interface Builder extends ContentEvent.Builder<Builder, ContentStoredEvent> {
+  interface Builder extends Content.Builder<CustomContent.Builder, CustomContent> {
 
-    @CanIgnoreReturnValue
-    Builder content(Content content);
+    @Override
+    CustomContent build();
   }
 }
