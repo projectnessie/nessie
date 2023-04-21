@@ -19,8 +19,10 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.DatabindContext;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase;
+import java.util.Locale;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.Detached;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Reference.ReferenceType;
 import org.projectnessie.model.Tag;
@@ -53,6 +55,9 @@ public final class ReferenceTypeIdResolver extends TypeIdResolverBase {
   }
 
   private String getId(Object value) {
+    if (value instanceof Detached) {
+      return "DETACHED";
+    }
     if (value instanceof Reference) {
       return ((Reference) value).getType().name();
     }
@@ -62,6 +67,13 @@ public final class ReferenceTypeIdResolver extends TypeIdResolverBase {
 
   @Override
   public JavaType typeFromId(DatabindContext context, String id) {
+    if (id == null) {
+      return null;
+    }
+    id = id.toUpperCase(Locale.ROOT);
+    if ("DETACHED".equals(id)) {
+      return context.constructSpecializedType(baseType, Detached.class);
+    }
     ReferenceType type = ReferenceType.parse(id);
     if (type == null) {
       throw new IllegalArgumentException("No type for reference");

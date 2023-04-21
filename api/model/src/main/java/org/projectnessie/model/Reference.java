@@ -125,7 +125,8 @@ public interface Reference extends Base {
     public static ReferenceType parse(String referenceType) {
       try {
         if (referenceType != null) {
-          return ReferenceType.valueOf(referenceType.toUpperCase(Locale.ROOT));
+          referenceType = referenceType.toUpperCase(Locale.ROOT);
+          return "DETACHED".equals(referenceType) ? null : ReferenceType.valueOf(referenceType);
         }
         return null;
       } catch (IllegalArgumentException e) {
