@@ -30,10 +30,13 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
  */
 public interface CommittingEvent extends Event {
 
-  /** The source branch where the committed operations come from. */
-  String getSourceBranch();
+  /**
+   * The source reference where the committed operations came from. This is usually a branch, but
+   * not always (e.g. it could be a detached reference).
+   */
+  String getSourceReference();
 
-  /** The target branch where the committed operations are applied to. */
+  /** The target branch where the committed operations were applied to. */
   String getTargetBranch();
 
   /** The hash on the {@linkplain #getTargetBranch() target branch} before the event. */
@@ -46,7 +49,7 @@ public interface CommittingEvent extends Event {
       extends Event.Builder<B, E> {
 
     @CanIgnoreReturnValue
-    B sourceBranch(String branchName);
+    B sourceReference(String refName);
 
     @CanIgnoreReturnValue
     B targetBranch(String branchName);

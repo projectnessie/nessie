@@ -93,7 +93,7 @@ class TestEventType {
       B committingAttributes(B builder) {
     return commonAttributes(
         builder
-            .sourceBranch("branch1")
+            .sourceReference("branch1")
             .targetBranch("branch2")
             .hashBefore("hash1")
             .hashAfter("hash2"));
