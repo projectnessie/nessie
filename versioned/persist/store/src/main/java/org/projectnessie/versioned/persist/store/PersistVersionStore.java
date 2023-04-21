@@ -183,7 +183,7 @@ public class PersistVersionStore implements VersionStore {
 
   @Override
   public MergeResult<Commit> transplant(
-      BranchName sourceBranch,
+      NamedRef sourceRef,
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
@@ -199,7 +199,7 @@ public class PersistVersionStore implements VersionStore {
       MergeResult<CommitLogEntry> adapterMergeResult =
           databaseAdapter.transplant(
               TransplantParams.builder()
-                  .fromBranch(sourceBranch)
+                  .fromRef(sourceRef)
                   .toBranch(targetBranch)
                   .expectedHead(referenceHash)
                   .sequenceToTransplant(sequenceToTransplant)
@@ -221,7 +221,7 @@ public class PersistVersionStore implements VersionStore {
 
   @Override
   public MergeResult<Commit> merge(
-      BranchName fromBranch,
+      NamedRef fromRef,
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
@@ -237,7 +237,7 @@ public class PersistVersionStore implements VersionStore {
       MergeResult<CommitLogEntry> adapterMergeResult =
           databaseAdapter.merge(
               MergeParams.builder()
-                  .fromBranch(fromBranch)
+                  .fromRef(fromRef)
                   .toBranch(toBranch)
                   .expectedHead(expectedHash)
                   .mergeFromHash(fromHash)
@@ -290,7 +290,7 @@ public class PersistVersionStore implements VersionStore {
     ImmutableMergeResult.Builder<Commit> storeResult =
         ImmutableMergeResult.<Commit>builder()
             .resultType(adapterMergeResult.getResultType())
-            .sourceBranch(adapterMergeResult.getSourceBranch())
+            .sourceRef(adapterMergeResult.getSourceRef())
             .targetBranch(adapterMergeResult.getTargetBranch())
             .effectiveTargetHash(adapterMergeResult.getEffectiveTargetHash())
             .commonAncestor(adapterMergeResult.getCommonAncestor())

@@ -28,6 +28,7 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MetadataRewriter;
+import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ResultType;
@@ -52,7 +53,7 @@ final class MergeSquashImpl extends BaseMergeTransplantSquash implements Merge {
   @Override
   public MergeResult<Commit> merge(
       Optional<?> retryState,
-      BranchName fromBranch,
+      NamedRef fromRef,
       Hash fromHash,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       MergeBehaviors mergeBehaviors,
@@ -66,7 +67,7 @@ final class MergeSquashImpl extends BaseMergeTransplantSquash implements Merge {
     ImmutableMergeResult.Builder<Commit> mergeResult =
         prepareMergeResult()
             .resultType(ResultType.MERGE)
-            .sourceBranch(fromBranch)
+            .sourceRef(fromRef)
             .commonAncestor(objIdToHash(commonAncestorId));
 
     return squash(dryRun, mergeResult, mergeBehaviors, updateCommitMetadata, sourceCommits, fromId);

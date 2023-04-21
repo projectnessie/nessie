@@ -104,7 +104,7 @@ public final class MetricsVersionStore implements VersionStore {
 
   @Override
   public MergeResult<Commit> transplant(
-      BranchName sourceBranch,
+      NamedRef sourceRef,
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
@@ -120,7 +120,7 @@ public final class MetricsVersionStore implements VersionStore {
             "transplant",
             () ->
                 delegate.transplant(
-                    sourceBranch,
+                    sourceRef,
                     targetBranch,
                     referenceHash,
                     sequenceToTransplant,
@@ -134,7 +134,7 @@ public final class MetricsVersionStore implements VersionStore {
 
   @Override
   public MergeResult<Commit> merge(
-      BranchName fromBranch,
+      NamedRef fromRef,
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
@@ -150,7 +150,7 @@ public final class MetricsVersionStore implements VersionStore {
             "merge",
             () ->
                 delegate.merge(
-                    fromBranch,
+                    fromRef,
                     fromHash,
                     toBranch,
                     expectedHash,

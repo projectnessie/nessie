@@ -26,6 +26,7 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MetadataRewriter;
+import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ResultType;
@@ -49,7 +50,7 @@ final class TransplantSquashImpl extends BaseMergeTransplantSquash implements Tr
   @Override
   public MergeResult<Commit> transplant(
       Optional<?> retryState,
-      BranchName sourceBranch,
+      NamedRef sourceRef,
       List<Hash> sequenceToTransplant,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       MergeBehaviors mergeBehaviors,
@@ -58,7 +59,7 @@ final class TransplantSquashImpl extends BaseMergeTransplantSquash implements Tr
     SourceCommitsAndParent sourceCommits = loadSourceCommitsForTransplant(sequenceToTransplant);
 
     ImmutableMergeResult.Builder<Commit> mergeResult =
-        prepareMergeResult().resultType(ResultType.TRANSPLANT).sourceBranch(sourceBranch);
+        prepareMergeResult().resultType(ResultType.TRANSPLANT).sourceRef(sourceRef);
 
     return squash(dryRun, mergeResult, mergeBehaviors, updateCommitMetadata, sourceCommits, null);
   }

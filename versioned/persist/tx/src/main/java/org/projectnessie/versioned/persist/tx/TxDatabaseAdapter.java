@@ -248,7 +248,7 @@ public abstract class TxDatabaseAdapter
                 ImmutableMergeResult.Builder<CommitLogEntry> mergeResult =
                     MergeResult.<CommitLogEntry>builder()
                         .resultType(ResultType.MERGE)
-                        .sourceBranch(mergeParams.getFromBranch());
+                        .sourceRef(mergeParams.getFromRef());
                 mergeResultHolder.set(mergeResult);
 
                 List<CommitLogEntry> writtenCommits = new ArrayList<>();
@@ -317,7 +317,7 @@ public abstract class TxDatabaseAdapter
                 ImmutableMergeResult.Builder<CommitLogEntry> mergeResult =
                     MergeResult.<CommitLogEntry>builder()
                         .resultType(ResultType.TRANSPLANT)
-                        .sourceBranch(transplantParams.getFromBranch());
+                        .sourceRef(transplantParams.getFromRef());
 
                 mergeResultHolder.set(mergeResult);
 

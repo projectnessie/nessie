@@ -118,7 +118,7 @@ class TestTracingVersionStore {
     MergeResult<Object> dummyMergeResult =
         MergeResult.builder()
             .resultType(ResultType.MERGE)
-            .sourceBranch(BranchName.of("foo"))
+            .sourceRef(BranchName.of("foo"))
             .targetBranch(BranchName.of("bar"))
             .effectiveTargetHash(Hash.of("123456"))
             .build();
@@ -126,7 +126,7 @@ class TestTracingVersionStore {
     MergeResult<Object> dummyTransplantResult =
         MergeResult.builder()
             .resultType(ResultType.TRANSPLANT)
-            .sourceBranch(BranchName.of("foo"))
+            .sourceRef(BranchName.of("foo"))
             .targetBranch(BranchName.of("bar"))
             .effectiveTargetHash(Hash.of("123456"))
             .build();

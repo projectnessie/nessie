@@ -135,7 +135,7 @@ class TestEventsVersionStore {
     boolean dryRun = true;
     MergeResult<Commit> expectedResult =
         MergeResult.<Commit>builder()
-            .sourceBranch(branch1)
+            .sourceRef(branch1)
             .targetBranch(branch2)
             .resultType(ResultType.TRANSPLANT)
             .effectiveTargetHash(hash1)
@@ -188,7 +188,7 @@ class TestEventsVersionStore {
     boolean dryRun = false;
     MergeResult<Commit> expectedResult =
         MergeResult.<Commit>builder()
-            .sourceBranch(branch1)
+            .sourceRef(branch1)
             .targetBranch(branch2)
             .resultType(ResultType.TRANSPLANT)
             .effectiveTargetHash(hash1)
@@ -289,7 +289,7 @@ class TestEventsVersionStore {
     boolean dryRun = true;
     MergeResult<Commit> expectedResult =
         MergeResult.<Commit>builder()
-            .sourceBranch(branch1)
+            .sourceRef(branch1)
             .targetBranch(branch2)
             .resultType(ResultType.MERGE)
             .effectiveTargetHash(hash1)
@@ -342,7 +342,7 @@ class TestEventsVersionStore {
     boolean dryRun = false;
     MergeResult<Commit> expectedResult =
         MergeResult.<Commit>builder()
-            .sourceBranch(branch1)
+            .sourceRef(branch1)
             .targetBranch(branch2)
             .resultType(ResultType.MERGE)
             .effectiveTargetHash(hash1)

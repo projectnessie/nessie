@@ -570,8 +570,10 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
       BranchName targetBranch = BranchName.of(branchName);
       String lastHash = hashesToTransplant.get(hashesToTransplant.size() - 1);
+      WithHash<NamedRef> namedRefWithHash = namedRefWithHashOrThrow(fromRefName, lastHash);
+
       startAccessCheck()
-          .canViewReference(namedRefWithHashOrThrow(fromRefName, lastHash).getValue())
+          .canViewReference(namedRefWithHash.getValue())
           .canCommitChangeAgainstReference(targetBranch)
           .checkAndThrow();
 
@@ -591,7 +593,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       MergeResult<Commit> result =
           getStore()
               .transplant(
-                  BranchName.of(fromRefName),
+                  namedRefWithHash.getValue(),
                   targetBranch,
                   into,
                   transplants,
@@ -643,8 +645,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       validateCommitMeta(commitMeta);
 
       BranchName targetBranch = BranchName.of(branchName);
+      WithHash<NamedRef> namedRefWithHash = namedRefWithHashOrThrow(fromRefName, fromHash);
       startAccessCheck()
-          .canViewReference(namedRefWithHashOrThrow(fromRefName, fromHash).getValue())
+          .canViewReference(namedRefWithHash.getValue())
           .canCommitChangeAgainstReference(targetBranch)
           .checkAndThrow();
 
@@ -654,7 +657,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       MergeResult<Commit> result =
           getStore()
               .merge(
-                  BranchName.of(fromRefName),
+                  namedRefWithHash.getValue(),
                   toHash(fromRefName, fromHash),
                   targetBranch,
                   into,

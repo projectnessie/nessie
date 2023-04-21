@@ -242,7 +242,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                 ImmutableMergeResult.Builder<CommitLogEntry> mergeResult =
                     MergeResult.<CommitLogEntry>builder()
                         .resultType(ResultType.MERGE)
-                        .sourceBranch(mergeParams.getFromBranch());
+                        .sourceRef(mergeParams.getFromRef());
                 mergeResultHolder.set(mergeResult);
 
                 Hash currentHead = Hash.of(refHead.getHash());
@@ -306,7 +306,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                 ImmutableMergeResult.Builder<CommitLogEntry> mergeResult =
                     MergeResult.<CommitLogEntry>builder()
                         .resultType(ResultType.TRANSPLANT)
-                        .sourceBranch(transplantParams.getFromBranch());
+                        .sourceRef(transplantParams.getFromRef());
                 mergeResultHolder.set(mergeResult);
 
                 Hash currentHead = Hash.of(refHead.getHash());

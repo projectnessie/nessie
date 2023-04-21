@@ -48,8 +48,8 @@ public interface MergeResult<COMMIT> extends Result {
   @jakarta.annotation.Nullable
   Hash getCommonAncestor();
 
-  /** Name of the source branch. */
-  BranchName getSourceBranch();
+  /** The source ref. */
+  NamedRef getSourceRef();
 
   /** Name of the target branch. */
   BranchName getTargetBranch();

@@ -88,7 +88,7 @@ public abstract class AbstractMergeTransplant {
         numCommits,
         (commitHashes, i) ->
             MergeParams.builder()
-                .fromBranch(sourceBranch)
+                .fromRef(sourceBranch)
                 .updateCommitMetadata(metadataUpdater)
                 .keepIndividualCommits(keepIndividualCommits)
                 .mergeFromHash(commitHashes[i]),
@@ -103,7 +103,7 @@ public abstract class AbstractMergeTransplant {
             () ->
                 databaseAdapter.merge(
                     MergeParams.builder()
-                        .fromBranch(sourceBranch)
+                        .fromRef(sourceBranch)
                         .toBranch(branch2)
                         .mergeFromHash(
                             databaseAdapter.hashOnReference(sourceBranch, Optional.empty()))
@@ -154,7 +154,7 @@ public abstract class AbstractMergeTransplant {
             numCommits,
             (commitHashes, i) ->
                 TransplantParams.builder()
-                    .fromBranch(sourceBranch)
+                    .fromRef(sourceBranch)
                     .updateCommitMetadata(metadataUpdater)
                     .keepIndividualCommits(keepIndividualCommits)
                     .sequenceToTransplant(Arrays.asList(commitHashes).subList(0, i + 1)),
@@ -171,7 +171,7 @@ public abstract class AbstractMergeTransplant {
         databaseAdapter
             .transplant(
                 TransplantParams.builder()
-                    .fromBranch(sourceBranch)
+                    .fromRef(sourceBranch)
                     .toBranch(conflict)
                     .expectedHead(Optional.of(noConflictHead))
                     .addSequenceToTransplant(commits)
@@ -188,7 +188,7 @@ public abstract class AbstractMergeTransplant {
         databaseAdapter
             .transplant(
                 TransplantParams.builder()
-                    .fromBranch(sourceBranch)
+                    .fromRef(sourceBranch)
                     .toBranch(conflict)
                     .addSequenceToTransplant(commits)
                     .updateCommitMetadata(metadataUpdater)
@@ -203,7 +203,7 @@ public abstract class AbstractMergeTransplant {
             () ->
                 databaseAdapter.transplant(
                     TransplantParams.builder()
-                        .fromBranch(sourceBranch)
+                        .fromRef(sourceBranch)
                         .toBranch(conflict)
                         .updateCommitMetadata(metadataUpdater)
                         .keepIndividualCommits(keepIndividualCommits)
@@ -348,7 +348,7 @@ public abstract class AbstractMergeTransplant {
           .isEqualTo(
               expectedMergeResult
                   .resultType(merge ? ResultType.MERGE : ResultType.TRANSPLANT)
-                  .sourceBranch(source)
+                  .sourceRef(source)
                   .targetBranch(target)
                   .resultantTargetHash(mainHead)
                   .addedCommits(mergeResult.getAddedCommits())
@@ -366,7 +366,7 @@ public abstract class AbstractMergeTransplant {
           .isEqualTo(
               expectedMergeResult
                   .resultType(merge ? ResultType.MERGE : ResultType.TRANSPLANT)
-                  .sourceBranch(source)
+                  .sourceRef(source)
                   .targetBranch(target)
                   .resultantTargetHash(targetHead)
                   .wasApplied(true)
@@ -475,7 +475,7 @@ public abstract class AbstractMergeTransplant {
         MergeResult.<CommitLogEntry>builder()
             .resultType(merge ? ResultType.MERGE : ResultType.TRANSPLANT)
             .resultantTargetHash(conflictHead)
-            .sourceBranch(BranchName.of("branch"))
+            .sourceRef(BranchName.of("branch"))
             .targetBranch(conflict)
             .effectiveTargetHash(conflictHead)
             .expectedHash(conflictBase)

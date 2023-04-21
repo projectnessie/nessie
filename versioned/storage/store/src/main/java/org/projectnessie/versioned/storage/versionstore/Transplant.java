@@ -18,11 +18,11 @@ package org.projectnessie.versioned.storage.versionstore;
 import java.util.List;
 import java.util.Optional;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MetadataRewriter;
+import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.storage.common.logic.CommitRetry.RetryException;
@@ -30,7 +30,7 @@ import org.projectnessie.versioned.storage.common.logic.CommitRetry.RetryExcepti
 interface Transplant {
   MergeResult<Commit> transplant(
       Optional<?> retryState,
-      BranchName sourceBranch,
+      NamedRef sourceRef,
       List<Hash> sequenceToTransplant,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       MergeBehaviors mergeBehaviors,

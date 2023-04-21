@@ -114,7 +114,7 @@ public interface VersionStore {
    * to concurrent readers/writers. The sequence to transplant must be contiguous, in order and
    * share a common ancestor with the target branch.
    *
-   * @param sourceBranch The branch we're transplanting from
+   * @param sourceRef The named ref we're transplanting from
    * @param targetBranch The branch we're transplanting to
    * @param referenceHash The hash to use as a reference for conflict detection. If not present, do
    *     not perform conflict detection
@@ -135,7 +135,7 @@ public interface VersionStore {
    *     sequenceToTransplant} is not present in the store.
    */
   MergeResult<Commit> transplant(
-      BranchName sourceBranch,
+      NamedRef sourceRef,
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
@@ -162,7 +162,7 @@ public interface VersionStore {
    *   <li>the expected branch hash does not match the actual branch hash
    * </ul>
    *
-   * @param fromBranch The branch we are merging from
+   * @param fromRef The named ref we are merging from
    * @param fromHash The hash we are using to get additional commits
    * @param toBranch The branch that we are merging into
    * @param expectedHash The current head of the branch to validate before updating (optional).
@@ -182,7 +182,7 @@ public interface VersionStore {
    *     the store.
    */
   MergeResult<Commit> merge(
-      BranchName fromBranch,
+      NamedRef fromRef,
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,

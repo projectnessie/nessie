@@ -19,14 +19,14 @@ import java.util.Map;
 import org.immutables.value.Value;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
-import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.MergeType;
 import org.projectnessie.versioned.MetadataRewriter;
+import org.projectnessie.versioned.NamedRef;
 
 public interface MetadataRewriteParams extends ToBranchParams {
 
-  /** Branch to merge or transplant from. */
-  BranchName getFromBranch();
+  /** Ref to merge or transplant from. */
+  NamedRef getFromRef();
 
   /** Whether to keep the individual commits and do not squash the commits to merge. */
   @Value.Default
@@ -51,7 +51,7 @@ public interface MetadataRewriteParams extends ToBranchParams {
 
   @SuppressWarnings({"override", "UnusedReturnValue"})
   interface Builder<B> extends ToBranchParams.Builder<B> {
-    B fromBranch(BranchName fromBranch);
+    B fromRef(NamedRef fromBranch);
 
     B keepIndividualCommits(boolean keepIndividualCommits);
 

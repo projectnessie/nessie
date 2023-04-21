@@ -68,7 +68,7 @@ public class EventsVersionStore implements VersionStore {
 
   @Override
   public MergeResult<Commit> transplant(
-      BranchName sourceBranch,
+      NamedRef sourceRef,
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
@@ -81,7 +81,7 @@ public class EventsVersionStore implements VersionStore {
       throws ReferenceNotFoundException, ReferenceConflictException {
     MergeResult<Commit> result =
         delegate.transplant(
-            sourceBranch,
+            sourceRef,
             targetBranch,
             referenceHash,
             sequenceToTransplant,
@@ -99,7 +99,7 @@ public class EventsVersionStore implements VersionStore {
 
   @Override
   public MergeResult<Commit> merge(
-      BranchName fromBranch,
+      NamedRef fromRef,
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
@@ -112,7 +112,7 @@ public class EventsVersionStore implements VersionStore {
       throws ReferenceNotFoundException, ReferenceConflictException {
     MergeResult<Commit> result =
         delegate.merge(
-            fromBranch,
+            fromRef,
             fromHash,
             toBranch,
             expectedHash,

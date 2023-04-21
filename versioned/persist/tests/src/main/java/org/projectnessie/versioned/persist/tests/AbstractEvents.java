@@ -298,7 +298,7 @@ public abstract class AbstractEvents {
         adapter.merge(
             MergeParams.builder()
                 .mergeFromHash(committed)
-                .fromBranch(source)
+                .fromRef(source)
                 .toBranch(main)
                 .updateCommitMetadata(updater)
                 .build());
@@ -375,7 +375,7 @@ public abstract class AbstractEvents {
             TransplantParams.builder()
                 .addSequenceToTransplant(committed)
                 .updateCommitMetadata(updater)
-                .fromBranch(source)
+                .fromRef(source)
                 .toBranch(main)
                 .build());
 

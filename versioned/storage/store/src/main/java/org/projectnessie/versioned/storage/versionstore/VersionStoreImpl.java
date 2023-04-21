@@ -636,7 +636,7 @@ public class VersionStoreImpl implements VersionStore {
 
   @Override
   public MergeResult<Commit> merge(
-      BranchName fromBranch,
+      NamedRef fromRef,
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
@@ -668,7 +668,7 @@ public class VersionStoreImpl implements VersionStore {
             (merge, retryState) ->
                 merge.merge(
                     retryState,
-                    fromBranch,
+                    fromRef,
                     fromHash,
                     updateCommitMetadata,
                     mergeBehaviors,
@@ -679,7 +679,7 @@ public class VersionStoreImpl implements VersionStore {
 
   @Override
   public MergeResult<Commit> transplant(
-      BranchName sourceBranch,
+      NamedRef sourceRef,
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
@@ -711,7 +711,7 @@ public class VersionStoreImpl implements VersionStore {
             (transplant, retryState) ->
                 transplant.transplant(
                     retryState,
-                    sourceBranch,
+                    sourceRef,
                     sequenceToTransplant,
                     updateCommitMetadata,
                     mergeBehaviors,

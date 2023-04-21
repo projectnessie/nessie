@@ -547,6 +547,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
         // compare "effective" merge-result with re-constructed merge-result
         .isEqualTo(
             MergeResult.<Commit>builder()
+                .resultType(ResultType.MERGE)
+                .sourceRef(sourceBranch)
                 .wasApplied(true)
                 .wasSuccessful(true)
                 .commonAncestor(initialHash)
