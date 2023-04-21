@@ -399,8 +399,7 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
                         .extract()
                         .as(NessieError.class)
                         .getMessage())
-                .contains(
-                    "Could not resolve type id 'FOOBAR' as a subtype of `org.projectnessie.model.Reference`"));
+                .contains("assignReference.expectedHash: must not be null"));
   }
 
   private Branch createBranchV2(String branchName) {
