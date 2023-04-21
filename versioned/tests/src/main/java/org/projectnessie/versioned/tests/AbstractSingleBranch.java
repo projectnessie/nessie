@@ -128,7 +128,7 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
           }
         }
 
-        parent = commitHash.getCommit().getHash();
+        parent = commitHash.getCommitHash();
 
         expectedValues.add(msg.hash(parent.asString()).build());
 

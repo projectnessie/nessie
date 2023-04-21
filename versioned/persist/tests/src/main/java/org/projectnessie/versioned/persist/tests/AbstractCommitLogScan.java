@@ -219,8 +219,7 @@ public abstract class AbstractCommitLogScan {
                               payload,
                               DefaultStoreWorker.instance().toStoreOnReferenceState(c)))
                       .build())
-              .getCommit()
-              .getHash();
+              .getCommitHash();
       committed.accept(head);
     }
     return head;

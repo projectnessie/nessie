@@ -96,8 +96,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                 Optional.of(initialHash),
                 CommitMeta.fromMessage("Some commit"),
                 Collections.emptyList())
-            .getCommit()
-            .getHash();
+            .getCommitHash();
     final Hash commitHash = store().hashOnReference(branch, Optional.empty());
     soft.assertThat(commitHash).isEqualTo(commitHash0);
 

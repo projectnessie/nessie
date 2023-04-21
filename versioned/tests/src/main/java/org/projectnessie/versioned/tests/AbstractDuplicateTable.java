@@ -62,8 +62,7 @@ public abstract class AbstractDuplicateTable extends AbstractNestedVersionStore 
                 Optional.empty(),
                 CommitMeta.fromMessage("initial commit"),
                 ImmutableList.of(Put.of(ContentKey.of("unrelated-table"), newOnRef("value"))))
-            .getCommit()
-            .getHash();
+            .getCommitHash();
 
     // Create a table with the same name on two branches.
     BranchName branch1 = BranchName.of("globalStateDuplicateTable-branch1");

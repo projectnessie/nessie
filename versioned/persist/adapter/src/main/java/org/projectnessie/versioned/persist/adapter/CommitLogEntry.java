@@ -21,13 +21,15 @@ import org.immutables.value.Value;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.Hashable;
 
 /** Represents a commit-log-entry stored in the database. */
 @Value.Immutable
-public interface CommitLogEntry {
+public interface CommitLogEntry extends Hashable {
   /** Creation timestamp in microseconds since epoch. */
   long getCreatedTime();
 
+  @Override
   Hash getHash();
 
   /**

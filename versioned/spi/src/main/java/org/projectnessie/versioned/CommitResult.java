@@ -18,7 +18,7 @@ package org.projectnessie.versioned;
 import org.immutables.value.Value;
 
 @Value.Immutable
-public interface CommitResult<COMMIT> extends Result {
+public interface CommitResult<COMMIT extends Hashable> extends Result {
 
   @Override
   default ResultType getResultType() {
@@ -29,7 +29,12 @@ public interface CommitResult<COMMIT> extends Result {
 
   BranchName getTargetBranch();
 
-  static <COMMIT> ImmutableCommitResult.Builder<COMMIT> builder() {
+  @Value.Derived
+  default Hash getCommitHash() {
+    return getCommit().getHash();
+  }
+
+  static <COMMIT extends Hashable> ImmutableCommitResult.Builder<COMMIT> builder() {
     return ImmutableCommitResult.builder();
   }
 }

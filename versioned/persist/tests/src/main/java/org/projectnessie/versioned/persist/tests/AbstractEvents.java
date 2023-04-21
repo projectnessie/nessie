@@ -180,8 +180,7 @@ public abstract class AbstractEvents {
                     .commitMetaSerialized(meta)
                     .addPuts(put)
                     .build())
-            .getCommit()
-            .getHash();
+            .getCommitHash();
 
     events.events.clear();
 
@@ -230,8 +229,7 @@ public abstract class AbstractEvents {
                     .commitMetaSerialized(meta)
                     .addPuts(put)
                     .build())
-            .getCommit()
-            .getHash();
+            .getCommitHash();
 
     assertThat(events.events)
         .hasSize(1)
@@ -288,8 +286,7 @@ public abstract class AbstractEvents {
                     .commitMetaSerialized(meta)
                     .addPuts(put)
                     .build())
-            .getCommit()
-            .getHash();
+            .getCommitHash();
 
     events.events.clear();
 
@@ -364,8 +361,7 @@ public abstract class AbstractEvents {
                     .commitMetaSerialized(meta)
                     .addPuts(put)
                     .build())
-            .getCommit()
-            .getHash();
+            .getCommitHash();
 
     events.events.clear();
 

@@ -400,8 +400,7 @@ public abstract class AbstractGetNamedReferences {
                         (byte) 42,
                         ByteString.copyFromUtf8("dummy content")))
                 .build())
-        .getCommit()
-        .getHash();
+        .getCommitHash();
   }
 
   private void verifyReferences(ExpectedNamedReference... references)

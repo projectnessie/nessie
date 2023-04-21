@@ -344,8 +344,7 @@ public abstract class BaseExportImport {
                               43,
                               44,
                               45))))
-              .getCommit()
-              .getHash();
+              .getCommitHash();
     }
     return head;
   }

@@ -279,7 +279,7 @@ public abstract class AbstractMergeTransplant {
         commit.addPuts(
             KeyWithBytes.of(key, ContentId.of("C" + k), (byte) payloadForContent(value), onRef));
       }
-      commits[i] = databaseAdapter.commit(commit.build()).getCommit().getHash();
+      commits[i] = databaseAdapter.commit(commit.build()).getCommitHash();
     }
 
     List<CommitLogEntry> commitLogEntries;
@@ -416,7 +416,7 @@ public abstract class AbstractMergeTransplant {
               (byte) payloadForContent(conflictValue),
               DefaultStoreWorker.instance().toStoreOnReferenceState(conflictValue)));
     }
-    Hash conflictHead = databaseAdapter.commit(commit.build()).getCommit().getHash();
+    Hash conflictHead = databaseAdapter.commit(commit.build()).getCommitHash();
 
     List<CommitLogEntry> expectedSourceCommits =
         commitLogEntries.subList(commits.length - 1 - 2, commits.length);

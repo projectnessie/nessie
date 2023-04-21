@@ -78,7 +78,7 @@ public abstract class AbstractNoNamespaceValidation {
                 CommitMeta.fromMessage("common ancestor"),
                 singletonList(Put.of(ContentKey.of("dummy"), newOnRef("dummy"))));
 
-    store().create(branch, Optional.of(rootHead.getCommit().getHash()));
+    store().create(branch, Optional.of(rootHead.getCommitHash()));
 
     soft.assertThatCode(
             () ->

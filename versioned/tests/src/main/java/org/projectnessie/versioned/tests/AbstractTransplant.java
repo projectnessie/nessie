@@ -685,8 +685,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                 Optional.empty(),
                 CommitMeta.fromMessage("target 1"),
                 singletonList(Put.of(key1, V_1_1)))
-            .getCommit()
-            .getHash();
+            .getCommitHash();
 
     targetHead =
         store()
@@ -695,8 +694,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                 Optional.of(targetHead),
                 CommitMeta.fromMessage("target 2"),
                 singletonList(Put.of(key2, V_2_1)))
-            .getCommit()
-            .getHash();
+            .getCommitHash();
 
     // Add two commits to the source branch, with conflicting changes to key1 and key2
 
@@ -707,8 +705,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                 Optional.empty(),
                 CommitMeta.fromMessage("source 1"),
                 singletonList(Put.of(key1, V_1_2)))
-            .getCommit()
-            .getHash();
+            .getCommitHash();
 
     Hash source2 =
         store()
@@ -717,8 +714,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                 Optional.of(source1),
                 CommitMeta.fromMessage("source 2"),
                 singletonList(Put.of(key2, V_2_2)))
-            .getCommit()
-            .getHash();
+            .getCommitHash();
 
     // Transplant the source branch into the target branch, with a drop of key1 and key2
 

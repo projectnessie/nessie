@@ -956,8 +956,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                   (key, cid) -> {
                     commitResponse.addAddedContents(addedContent(key, cid));
                   })
-              .getCommit()
-              .getHash();
+              .getCommitHash();
 
       return commitResponse.targetBranch(Branch.of(branch, newHash.asString())).build();
     } catch (ReferenceNotFoundException e) {

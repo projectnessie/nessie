@@ -276,7 +276,7 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
                     : asList(Put.of(ns.toContentKey(), ns), Put.of(ns2.toContentKey(), ns2)));
 
     BranchName branch = BranchName.of("branch");
-    store().create(branch, Optional.of(rootHead.getCommit().getHash()));
+    store().create(branch, Optional.of(rootHead.getCommitHash()));
 
     if (mode.createNamespaceOnTarget) {
       store()
@@ -332,7 +332,7 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
                         branch,
                         root,
                         Optional.empty(),
-                        asList(commit1.getCommit().getHash(), commit2.getCommit().getHash()),
+                        asList(commit1.getCommitHash(), commit2.getCommitHash()),
                         METADATA_REWRITER,
                         mode.individualCommits,
                         emptyMap(),

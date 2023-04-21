@@ -155,8 +155,7 @@ public abstract class AbstractReferences {
                             (byte) payloadForContent(hello),
                             hello.serialized()))
                     .build())
-            .getCommit()
-            .getHash();
+            .getCommitHash();
 
     assertAll(
         () ->
@@ -230,8 +229,7 @@ public abstract class AbstractReferences {
                               (byte) payloadForContent(hello),
                               hello.serialized()))
                       .build())
-              .getCommit()
-              .getHash();
+              .getCommitHash();
     }
 
     Hash expect = beginning;
@@ -363,8 +361,7 @@ public abstract class AbstractReferences {
                                   DefaultStoreWorker.instance()
                                       .toStoreOnReferenceState(OnRefOnly.newOnRef("c" + commit))))
                           .build())
-                  .getCommit()
-                  .getHash();
+                  .getCommitHash();
           refHeads.put(ref, newHead);
         }
       }

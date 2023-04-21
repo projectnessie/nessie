@@ -257,7 +257,7 @@ public class ITExportImport {
                             .toStoreOnReferenceState(
                                 IcebergTable.of("meta", 42, 43, 44, 45, tableId))))
                 .build());
-    adapter.create(branchFoo, main.getCommit().getHash());
+    adapter.create(branchFoo, main.getCommitHash());
     adapter.commit(
         ImmutableCommitParams.builder()
             .toBranch(branchFoo)

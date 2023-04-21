@@ -70,7 +70,7 @@ public abstract class AbstractDiff {
                 (byte) payloadForContent(c),
                 DefaultStoreWorker.instance().toStoreOnReferenceState(c)));
       }
-      commits[i] = databaseAdapter.commit(commit.build()).getCommit().getHash();
+      commits[i] = databaseAdapter.commit(commit.build()).getCommitHash();
     }
 
     try (Stream<Difference> diff =

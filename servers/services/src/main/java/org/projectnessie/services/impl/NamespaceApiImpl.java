@@ -366,7 +366,6 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
             Collections.singletonList(contentOperation),
             validator,
             (k, c) -> {})
-        .getCommit()
-        .getHash();
+        .getCommitHash();
   }
 }

@@ -133,8 +133,7 @@ public abstract class AbstractCommitScenarios {
                         .commitMetaSerialized(ByteString.copyFromUtf8("dummy commit meta " + i))
                         .addUnchanged(dummyKey)
                         .build())
-                .getCommit()
-                .getHash();
+                .getCommitHash();
           } catch (ReferenceNotFoundException | ReferenceConflictException e) {
             throw new RuntimeException(e);
           }
@@ -161,7 +160,7 @@ public abstract class AbstractCommitScenarios {
                     contentId,
                     payload,
                     DefaultStoreWorker.instance().toStoreOnReferenceState(initialContent)));
-    Hash hashInitial = databaseAdapter.commit(commit.build()).getCommit().getHash();
+    Hash hashInitial = databaseAdapter.commit(commit.build()).getCommitHash();
 
     List<Hash> beforeRename =
         IntStream.range(0, param.afterInitialCommits)
@@ -179,7 +178,7 @@ public abstract class AbstractCommitScenarios {
                     contentId,
                     payload,
                     DefaultStoreWorker.instance().toStoreOnReferenceState(renamContent)));
-    Hash hashRename = databaseAdapter.commit(commit.build()).getCommit().getHash();
+    Hash hashRename = databaseAdapter.commit(commit.build()).getCommitHash();
 
     List<Hash> beforeDelete =
         IntStream.range(0, param.afterRenameCommits)
@@ -191,7 +190,7 @@ public abstract class AbstractCommitScenarios {
             .toBranch(branch)
             .commitMetaSerialized(ByteString.copyFromUtf8("delete table"))
             .addDeletes(newKey);
-    Hash hashDelete = databaseAdapter.commit(commit.build()).getCommit().getHash();
+    Hash hashDelete = databaseAdapter.commit(commit.build()).getCommitHash();
 
     List<Hash> afterDelete =
         IntStream.range(0, param.afterDeleteCommits)
@@ -281,7 +280,7 @@ public abstract class AbstractCommitScenarios {
               (byte) payloadForContent(c),
               DefaultStoreWorker.instance().toStoreOnReferenceState(c)));
     }
-    Hash head = databaseAdapter.commit(commit.build()).getCommit().getHash();
+    Hash head = databaseAdapter.commit(commit.build()).getCommitHash();
 
     for (int commitNum = 0; commitNum < 3; commitNum++) {
       commit =
@@ -301,7 +300,7 @@ public abstract class AbstractCommitScenarios {
                 DefaultStoreWorker.instance().toStoreOnReferenceState(newContent)));
       }
 
-      Hash newHead = databaseAdapter.commit(commit.build()).getCommit().getHash();
+      Hash newHead = databaseAdapter.commit(commit.build()).getCommitHash();
       assertThat(newHead).isNotEqualTo(head);
       head = newHead;
     }
@@ -451,8 +450,7 @@ public abstract class AbstractCommitScenarios {
                             (byte) payloadForContent(onRefNation),
                             stateNation))
                     .build())
-            .getCommit()
-            .getHash();
+            .getCommitHash();
 
     Hash commitRegion =
         mine.commit(
@@ -467,8 +465,7 @@ public abstract class AbstractCommitScenarios {
                             (byte) payloadForContent(onRefRegion),
                             stateRegion))
                     .build())
-            .getCommit()
-            .getHash();
+            .getCommitHash();
 
     List<ContentKey> nonExistentKey = Collections.singletonList(ContentKey.of("non_existent"));
 

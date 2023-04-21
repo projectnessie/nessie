@@ -60,8 +60,7 @@ class ITNessieInfo {
                     .toBranch(BranchName.of("main"))
                     .commitMetaSerialized(ByteString.copyFrom(new byte[] {1, 2, 3}))
                     .build())
-            .getCommit()
-            .getHash();
+            .getCommitHash();
 
     LaunchResult result = launcher.launch("info");
     assertThat(result.getOutput()).contains(hash.asString());

@@ -112,13 +112,14 @@ class TestMetricsVersionStore {
           }
         };
 
-    CommitResult<Object> dummyCommitResult =
-        CommitResult.builder()
+    CommitResult<Commit> dummyCommitResult =
+        CommitResult.<Commit>builder()
             .targetBranch(BranchName.of("foo"))
             .commit(
                 Commit.builder()
                     .hash(Hash.of("cafebabe"))
-                    .commitMeta(CommitMeta.fromMessage("log#1")))
+                    .commitMeta(CommitMeta.fromMessage("log#1"))
+                    .build())
             .build();
 
     MergeResult<Object> dummyMergeResult =

@@ -212,8 +212,7 @@ public abstract class AbstractManyKeys {
                               DefaultStoreWorker.instance()
                                   .toStoreOnReferenceState(onRef("r" + i, "c" + i))))
                       .build())
-              .getCommit()
-              .getHash();
+              .getCommitHash();
       keyToCommit.put(key, hash);
     }
 
@@ -273,8 +272,7 @@ public abstract class AbstractManyKeys {
                               DefaultStoreWorker.instance()
                                   .toStoreOnReferenceState(onRef("pf" + i, "cpf" + i))))
                       .build())
-              .getCommit()
-              .getHash();
+              .getCommitHash();
       keyToCommit.put(key, hash);
     }
 
@@ -343,8 +341,7 @@ public abstract class AbstractManyKeys {
                               (byte) payloadForContent(val),
                               val.serialized()))
                       .build())
-              .getCommit()
-              .getHash();
+              .getCommitHash();
     }
 
     for (int i = 0; i < keyNum; i++) {
@@ -505,8 +502,7 @@ public abstract class AbstractManyKeys {
                       .toBranch(toBranch)
                       .commitMetaSerialized(ByteString.EMPTY)
                       .build())
-              .getCommit()
-              .getHash();
+              .getCommitHash();
     }
     Preconditions.checkNotNull(head);
     return head;
@@ -618,8 +614,7 @@ public abstract class AbstractManyKeys {
                               DefaultStoreWorker.instance()
                                   .toStoreOnReferenceState(OnRefOnly.newOnRef("c" + name))))
                       .build())
-              .getCommit()
-              .getHash();
+              .getCommitHash();
       activeKeys.add(key);
     }
 

@@ -134,7 +134,7 @@ public abstract class AbstractITCommitLogOptimization {
 
     Hash parent = databaseAdapter.noAncestorHash();
     for (; commitSeqMain <= commitsAtBeginningOfTime; commitSeqMain++) {
-      parent = addCommit(0, commitSeqMain).getCommit().getHash();
+      parent = addCommit(0, commitSeqMain).getCommitHash();
       totalCommits++;
     }
 
@@ -146,7 +146,7 @@ public abstract class AbstractITCommitLogOptimization {
       }
 
       for (int i = 0; i < ((branch == branches) ? commitsAtHead : commitsBetweenBranches); i++) {
-        parent = addCommit(0, commitSeqMain++).getCommit().getHash();
+        parent = addCommit(0, commitSeqMain++).getCommitHash();
         totalCommits++;
       }
     }

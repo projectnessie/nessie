@@ -73,7 +73,7 @@ public abstract class AbstractContents extends AbstractNestedVersionStore {
                 CommitMeta.fromMessage("create table"),
                 singletonList(Put.of(key, initialState)));
     soft.assertThat(contentWithoutId(store().getValue(branch, key))).isEqualTo(initialState);
-    soft.assertThat(contentWithoutId(store().getValue(ancestor.getCommit().getHash(), key)))
+    soft.assertThat(contentWithoutId(store().getValue(ancestor.getCommitHash(), key)))
         .isEqualTo(initialState);
 
     CommitResult<Commit> delete =
@@ -84,7 +84,7 @@ public abstract class AbstractContents extends AbstractNestedVersionStore {
                 CommitMeta.fromMessage("drop table"),
                 ImmutableList.of(Delete.of(key)));
     soft.assertThat(store().getValue(branch, key)).isNull();
-    soft.assertThat(store().getValue(delete.getCommit().getHash(), key)).isNull();
+    soft.assertThat(store().getValue(delete.getCommitHash(), key)).isNull();
 
     Content recreateState = newOnRef("value");
     CommitResult<Commit> recreate =
@@ -95,7 +95,7 @@ public abstract class AbstractContents extends AbstractNestedVersionStore {
                 CommitMeta.fromMessage("drop table"),
                 ImmutableList.of(Put.of(key, recreateState)));
     soft.assertThat(contentWithoutId(store().getValue(branch, key))).isEqualTo(recreateState);
-    soft.assertThat(contentWithoutId(store().getValue(recreate.getCommit().getHash(), key)))
+    soft.assertThat(contentWithoutId(store().getValue(recreate.getCommitHash(), key)))
         .isEqualTo(recreateState);
   }
 }

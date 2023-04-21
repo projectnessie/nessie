@@ -79,8 +79,7 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
       commitHashes[i] =
           store()
               .commit(branch, Optional.of(parent), msg.build(), ImmutableList.of(op))
-              .getCommit()
-              .getHash();
+              .getCommitHash();
 
       messages.add(
           msg.hash(commitHashes[i].asString()).addParentCommitHashes(parent.asString()).build());

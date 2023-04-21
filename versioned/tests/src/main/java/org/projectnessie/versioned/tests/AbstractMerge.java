@@ -890,7 +890,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 MergeBehavior.NORMAL,
                 false,
                 false);
-    soft.assertThat(mergeResult1.getResultantTargetHash()).isEqualTo(etl1);
+    soft.assertThat(mergeResult1.getResultantTargetHash()).isEqualTo(etl1.getCommitHash());
+    soft.assertThat(mergeResult1.getAddedCommits()).containsExactly(etl1.getCommit());
 
     Hash etl2 =
         store()
@@ -911,7 +912,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 MergeBehavior.NORMAL,
                 false,
                 false);
-    soft.assertThat(mergeResult2.getResultantTargetHash()).isEqualTo(etl2);
+    soft.assertThat(mergeResult2.getResultantTargetHash()).isEqualTo(etl2.getCommitHash());
+    soft.assertThat(mergeResult2.getAddedCommits()).containsExactly(etl2.getCommit());
 
     soft.assertThat(contentWithoutId(store().getValue(review, key))).isEqualTo(VALUE_2);
   }
@@ -1039,7 +1041,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             () ->
                 store()
                     .merge(
-                        mergeFromHash,
+                        sourceBranch,
+                        mergeFromHash.getCommitHash(),
                         mergeInto,
                         Optional.empty(),
                         createMetadataRewriter(""),
@@ -1061,7 +1064,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             () ->
                 store()
                     .merge(
-                        mergeFromHash,
+                        sourceBranch,
+                        mergeFromHash.getCommitHash(),
                         mergeInto,
                         Optional.empty(),
                         createMetadataRewriter(""),
@@ -1085,7 +1089,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             () ->
                 store()
                     .merge(
-                        mergeFromHash,
+                        sourceBranch,
+                        mergeFromHash.getCommitHash(),
                         mergeInto,
                         Optional.empty(),
                         createMetadataRewriter(""),
@@ -1109,7 +1114,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             () ->
                 store()
                     .merge(
-                        mergeFromHash,
+                        sourceBranch,
+                        mergeFromHash.getCommitHash(),
                         mergeInto,
                         Optional.empty(),
                         createMetadataRewriter(""),
@@ -1137,24 +1143,26 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
           }
         };
 
-    soft.assertThat(mergeIntoHeadSupplier.get()).isEqualTo(mergeIntoHead);
+    soft.assertThat(mergeIntoHeadSupplier.get()).isEqualTo(mergeIntoHead.getCommitHash());
 
     // Merge with force-merge of conflictingKey1 + drop of conflictingKey2
-    store()
-        .merge(
-            mergeFromHash,
-            mergeInto,
-            Optional.empty(),
-            createMetadataRewriter(", merge-force-1"),
-            individualCommits,
-            ImmutableMap.of(
-                conflictingKey1,
-                MergeKeyBehavior.of(conflictingKey1, MergeBehavior.FORCE),
-                conflictingKey2,
-                MergeKeyBehavior.of(conflictingKey2, MergeBehavior.DROP)),
-            MergeBehavior.NORMAL,
-            false,
-            false);
+    MergeResult<Commit> result =
+        store()
+            .merge(
+                sourceBranch,
+                mergeFromHash.getCommitHash(),
+                mergeInto,
+                Optional.empty(),
+                createMetadataRewriter(", merge-force-1"),
+                individualCommits,
+                ImmutableMap.of(
+                    conflictingKey1,
+                    MergeKeyBehavior.of(conflictingKey1, MergeBehavior.FORCE),
+                    conflictingKey2,
+                    MergeKeyBehavior.of(conflictingKey2, MergeBehavior.DROP)),
+                MergeBehavior.NORMAL,
+                false,
+                false);
     soft.assertThat(
             contentsWithoutId(
                 store.getValues(
@@ -1178,8 +1186,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                     .contains("commit 2, merge-force-1")
                     .contains("commit 4, merge-force-1");
               }
-              soft.assertThat(commit.getParentHash())
-                  .isEqualTo(mergeIntoHead.getCommit().getHash());
+              soft.assertThat(commit.getParentHash()).isEqualTo(mergeIntoHead.getCommitHash());
               soft.assertThat(commit.getOperations())
                   .satisfiesExactlyInAnyOrder(
                       op -> {
@@ -1193,20 +1200,22 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             });
 
     // reset merge-into branch
-    store().assign(mergeInto, Optional.empty(), mergeIntoHead);
+    store().assign(mergeInto, Optional.empty(), mergeIntoHead.getCommitHash());
 
     // Merge with force-merge of conflictingKey1 + drop of conflictingKey2
-    store()
-        .merge(
-            mergeFromHash,
-            mergeInto,
-            Optional.empty(),
-            createMetadataRewriter(", merge-all-force"),
-            individualCommits,
-            Collections.emptyMap(),
-            MergeBehavior.FORCE,
-            false,
-            false);
+    MergeResult<Commit> result2 =
+        store()
+            .merge(
+                sourceBranch,
+                mergeFromHash.getCommitHash(),
+                mergeInto,
+                Optional.empty(),
+                createMetadataRewriter(", merge-all-force"),
+                individualCommits,
+                Collections.emptyMap(),
+                MergeBehavior.FORCE,
+                false,
+                false);
     soft.assertThat(
             contentsWithoutId(
                 store.getValues(
@@ -1224,8 +1233,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
               commit -> {
                 soft.assertThat(commit.getCommitMeta().getMessage())
                     .isEqualTo("commit 2, merge-all-force");
-                soft.assertThat(commit.getParentHash())
-                    .isEqualTo(mergeIntoHead.getCommit().getHash());
+                soft.assertThat(commit.getParentHash()).isEqualTo(mergeIntoHead.getCommitHash());
                 soft.assertThat(commit.getOperations())
                     .satisfiesExactlyInAnyOrder(
                         op -> {
@@ -1261,8 +1269,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 soft.assertThat(commit.getCommitMeta().getMessage())
                     .contains("commit 2, merge-all-force")
                     .contains("commit 4, merge-all-force");
-                soft.assertThat(commit.getParentHash())
-                    .isEqualTo(mergeIntoHead.getCommit().getHash());
+                soft.assertThat(commit.getParentHash()).isEqualTo(mergeIntoHead.getCommitHash());
                 soft.assertThat(commit.getOperations())
                     .satisfiesExactlyInAnyOrder(
                         op -> {
@@ -1398,7 +1405,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 target,
                 Optional.empty(),
                 CommitMeta.fromMessage("target 1"),
-                singletonList(Put.of(key1, VALUE_1)));
+                singletonList(Put.of(key1, VALUE_1)))
+            .getCommitHash();
 
     targetHead =
         store()
@@ -1406,7 +1414,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 target,
                 Optional.of(targetHead),
                 CommitMeta.fromMessage("target 2"),
-                singletonList(Put.of(key2, VALUE_1)));
+                singletonList(Put.of(key2, VALUE_1)))
+            .getCommitHash();
 
     // Add two commits to the source branch, with conflicting changes to key1 and key2
 
@@ -1416,7 +1425,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 source,
                 Optional.empty(),
                 CommitMeta.fromMessage("source 1"),
-                singletonList(Put.of(key1, VALUE_2)));
+                singletonList(Put.of(key1, VALUE_2)))
+            .getCommitHash();
 
     sourceHead =
         store()
@@ -1424,7 +1434,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 source,
                 Optional.of(sourceHead),
                 CommitMeta.fromMessage("source 2"),
-                singletonList(Put.of(key2, VALUE_2)));
+                singletonList(Put.of(key2, VALUE_2)))
+            .getCommitHash();
 
     // Merge the source branch into the target branch, with a drop of key1 and key2
 
@@ -1466,7 +1477,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 branch,
                 Optional.empty(),
                 CommitMeta.fromMessage("commit 1"),
-                singletonList(Put.of(key1, VALUE_1)));
+                singletonList(Put.of(key1, VALUE_1)))
+            .getCommitHash();
 
     Hash commit2 =
         store()
@@ -1474,7 +1486,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 branch,
                 Optional.empty(),
                 CommitMeta.fromMessage("commit 2"),
-                singletonList(Put.of(key2, VALUE_2)));
+                singletonList(Put.of(key2, VALUE_2)))
+            .getCommitHash();
 
     soft.assertThatIllegalArgumentException()
         .isThrownBy(
