@@ -325,7 +325,7 @@ public class RestV2TreeResource implements HttpTreeApi {
     ParsedReference ref = resolveRef(branch);
 
     String msg = transplant.getMessage();
-    CommitMeta meta = CommitMeta.builder().message(msg == null ? "" : msg).build();
+    CommitMeta meta = CommitMeta.fromMessage(msg == null ? "" : msg);
 
     return tree()
         .transplantCommitsIntoBranch(
@@ -348,6 +348,7 @@ public class RestV2TreeResource implements HttpTreeApi {
       throws NessieNotFoundException, NessieConflictException {
     ParsedReference ref = resolveRef(branch);
 
+    @SuppressWarnings("deprecation")
     String msg = merge.getMessage();
 
     ImmutableCommitMeta.Builder meta = CommitMeta.builder();
