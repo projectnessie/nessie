@@ -35,6 +35,7 @@ import static org.projectnessie.versioned.storage.common.logic.CommitConflict.Co
 import static org.projectnessie.versioned.storage.common.logic.CommitConflict.ConflictType.VALUE_DIFFERS;
 import static org.projectnessie.versioned.storage.common.logic.CommitConflict.commitConflict;
 import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
+import static org.projectnessie.versioned.storage.common.logic.CommitLogic.ValueReplacement.NO_VALUE_REPLACEMENT;
 import static org.projectnessie.versioned.storage.common.logic.ConflictHandler.ConflictResolution.CONFLICT;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Add.commitAdd;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Remove.commitRemove;
@@ -285,11 +286,7 @@ final class CommitLogicImpl implements CommitLogic {
       throws CommitConflictException, ObjNotFoundException {
     CommitObj commit =
         buildCommitObj(
-            createCommit,
-            c -> CONFLICT,
-            (k, v) -> {},
-            (storeKey, currentId) -> currentId,
-            (storeKey, currentId) -> currentId);
+            createCommit, c -> CONFLICT, (k, v) -> {}, NO_VALUE_REPLACEMENT, NO_VALUE_REPLACEMENT);
     return storeCommit(commit, additionalObjects) ? commit.id() : null;
   }
 
