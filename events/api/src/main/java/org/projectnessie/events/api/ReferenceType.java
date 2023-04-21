@@ -15,12 +15,7 @@
  */
 package org.projectnessie.events.api;
 
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-
 /** An enum of all possible reference types. */
-@Schema(
-    description = "An enum of all possible reference types.",
-    enumeration = {"BRANCH", "TAG"})
 public enum ReferenceType {
   BRANCH,
   TAG

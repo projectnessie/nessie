@@ -23,7 +23,7 @@ public interface ReferenceEvent extends Event {
   /** The name of the reference, e.g. "branch1". */
   String getReferenceName();
 
-  /** The full name of the reference, e.g. "/refs/heads/branch1". */
+  /** The full name of the reference, e.g. "refs/heads/branch1". */
   String getFullReferenceName();
 
   /** The type of the reference. */

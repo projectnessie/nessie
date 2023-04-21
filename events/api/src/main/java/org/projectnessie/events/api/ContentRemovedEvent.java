@@ -18,20 +18,12 @@ package org.projectnessie.events.api;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
 /**
  * Event that is emitted when a content is removed. This event corresponds to a DELETE operation in
  * a commit, merge or transplant. This event is emitted after the content has been removed.
  */
-@Schema(
-    type = SchemaType.OBJECT,
-    description =
-        "An event that is emitted when a content is removed. "
-            + "This event corresponds to a DELETE operation in a commit, merge or transplant.  "
-            + "This event is emitted after the content has been removed.")
 @Value.Immutable
 @JsonTypeName("CONTENT_REMOVED")
 @JsonSerialize

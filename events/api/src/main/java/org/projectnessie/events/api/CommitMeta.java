@@ -23,12 +23,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
 /** Metadata about a commit. */
-@Schema(type = SchemaType.OBJECT, description = "Metadata about a commit.")
 @Value.Immutable
 @JsonSerialize(as = ImmutableCommitMeta.class)
 @JsonDeserialize(as = ImmutableCommitMeta.class)

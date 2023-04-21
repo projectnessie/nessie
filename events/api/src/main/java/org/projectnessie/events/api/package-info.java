@@ -18,26 +18,10 @@
  * API package for Nessie events.
  *
  * <p>The main API class is the {@link org.projectnessie.events.api.Event} interface.
- *
- * <p>Classes in this package have a Json schema that is published with this artifact.
  */
 @Value.Style(
     depluralize = true,
     get = {"get*", "is*"})
-@OpenAPIDefinition(
-    info =
-        @Info(
-            title = "Nessie Events API",
-            version = "${project.version}",
-            contact = @Contact(name = "Project Nessie", url = "https://projectnessie.org"),
-            license =
-                @License(
-                    name = "Apache 2.0",
-                    url = "https://www.apache.org/licenses/LICENSE-2.0.html")))
 package org.projectnessie.events.api;
 
-import org.eclipse.microprofile.openapi.annotations.OpenAPIDefinition;
-import org.eclipse.microprofile.openapi.annotations.info.Contact;
-import org.eclipse.microprofile.openapi.annotations.info.Info;
-import org.eclipse.microprofile.openapi.annotations.info.License;
 import org.immutables.value.Value;

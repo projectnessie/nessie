@@ -19,14 +19,9 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
 /** Event that is emitted after a reference is deleted. */
-@Schema(
-    type = SchemaType.OBJECT,
-    description = "An event that is emitted after a reference is deleted.")
 @Value.Immutable
 @JsonTypeName("REFERENCE_DELETED")
 @JsonSerialize

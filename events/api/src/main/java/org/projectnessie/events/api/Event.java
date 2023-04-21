@@ -23,9 +23,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
 /**
@@ -40,30 +37,6 @@ import org.immutables.value.Value;
  * @see ContentStoredEvent
  * @see ContentRemovedEvent
  */
-@Schema(
-    type = SchemaType.OBJECT,
-    description = "An event produced by Nessie.",
-    oneOf = {
-      CommitEvent.class,
-      MergeEvent.class,
-      TransplantEvent.class,
-      ReferenceCreatedEvent.class,
-      ReferenceUpdatedEvent.class,
-      ReferenceDeletedEvent.class,
-      ContentStoredEvent.class,
-      ContentRemovedEvent.class,
-    },
-    discriminatorProperty = "type",
-    discriminatorMapping = {
-      @DiscriminatorMapping(value = "COMMIT", schema = CommitEvent.class),
-      @DiscriminatorMapping(value = "MERGE", schema = MergeEvent.class),
-      @DiscriminatorMapping(value = "TRANSPLANT", schema = TransplantEvent.class),
-      @DiscriminatorMapping(value = "REFERENCE_CREATED", schema = ReferenceCreatedEvent.class),
-      @DiscriminatorMapping(value = "REFERENCE_UPDATED", schema = ReferenceUpdatedEvent.class),
-      @DiscriminatorMapping(value = "REFERENCE_DELETED", schema = ReferenceDeletedEvent.class),
-      @DiscriminatorMapping(value = "CONTENT_STORED", schema = ContentStoredEvent.class),
-      @DiscriminatorMapping(value = "CONTENT_REMOVED", schema = ContentRemovedEvent.class),
-    })
 @JsonSubTypes({
   @JsonSubTypes.Type(name = "COMMIT", value = ImmutableCommitEvent.class),
   @JsonSubTypes.Type(name = "MERGE", value = ImmutableMergeEvent.class),

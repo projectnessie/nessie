@@ -19,19 +19,12 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
 /**
  * Event that is emitted when a merge is performed. This event is emitted after the merge has been
  * persisted.
  */
-@Schema(
-    type = SchemaType.OBJECT,
-    description =
-        "An event that is emitted when a merge is performed. "
-            + "This event is emitted after the merge has been persisted.")
 @Value.Immutable
 @JsonTypeName("MERGE")
 @JsonSerialize

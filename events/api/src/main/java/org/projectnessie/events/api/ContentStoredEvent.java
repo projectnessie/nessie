@@ -19,8 +19,6 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 import org.projectnessie.model.Content;
 
@@ -28,12 +26,6 @@ import org.projectnessie.model.Content;
  * Event that is emitted when a content is stored. This event corresponds to a PUT operation in a
  * commit, merge or transplant. This event is emitted after the content has been stored.
  */
-@Schema(
-    type = SchemaType.OBJECT,
-    description =
-        "An event that is emitted when a content is stored. "
-            + "This event corresponds to a PUT operation in a commit, merge or transplant. "
-            + "This event is emitted after the content has been stored.")
 @Value.Immutable
 @JsonTypeName("CONTENT_STORED")
 @JsonSerialize
