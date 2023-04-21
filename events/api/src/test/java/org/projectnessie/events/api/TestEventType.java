@@ -109,7 +109,7 @@ class TestEventType {
   static <B extends ContentEvent.Builder<B, E>, E extends ContentEvent> B contentAttributes(
       B builder) {
     return commonAttributes(
-        builder.branch("branch1").hash("hash1").contentKey(ContentKey.of("key1", "key2")));
+        builder.branch("branch1").hash("hash1").contentKey(ContentKey.of("ns", "table1")));
   }
 
   static <B extends Event.Builder<B, E>, E extends Event> B commonAttributes(B builder) {
@@ -117,6 +117,7 @@ class TestEventType {
         .id(UUID.randomUUID())
         .repositoryId("repo1")
         .createdAt(Instant.now())
+        .createdBy("Alice")
         .sentBy("Nessie");
   }
 }
