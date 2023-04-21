@@ -642,17 +642,41 @@ public class VersionStoreImpl implements VersionStore {
       boolean individualCommits,
       Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors,
       MergeBehavior defaultMergeBehavior) {
+    // Require the resolvedContent and expectedTargetContent attributes.
+    mergeKeyBehaviors.forEach(
+        (key, mergeKeyBehavior) -> {
+          checkArgument(
+              !individualCommits
+                  || (mergeKeyBehavior.getExpectedTargetContent() == null
+                      && mergeKeyBehavior.getResolvedContent() == null),
+              "MergeKeyBehavior.expectedTargetContent and MergeKeyBehavior.resolvedContent are only supported for squashing merge/transplant operations.");
+
+          switch (mergeKeyBehavior.getMergeBehavior()) {
+            case NORMAL:
+              if (mergeKeyBehavior.getResolvedContent() != null) {
+                checkArgument(
+                    mergeKeyBehavior.getExpectedTargetContent() != null,
+                    "MergeKeyBehavior.resolvedContent requires setting MergeKeyBehavior.expectedTarget as well for key %s",
+                    key);
+              }
+              break;
+            case DROP:
+            case FORCE:
+              checkArgument(
+                  mergeKeyBehavior.getResolvedContent() == null,
+                  "MergeKeyBehavior.resolvedContent must be null for MergeBehavior.%s for %s",
+                  mergeKeyBehavior.getMergeBehavior(),
+                  key);
+              break;
+            default:
+              throw new IllegalArgumentException(
+                  "Unknown MergeBehavior " + mergeKeyBehavior.getMergeBehavior());
+          }
+        });
+
     return key -> {
       MergeKeyBehavior behavior = mergeKeyBehaviors.get(key);
-      if (behavior == null) {
-        return MergeKeyBehavior.of(key, defaultMergeBehavior);
-      }
-      checkArgument(
-          !individualCommits
-              || (behavior.getExpectedTargetContent() == null
-                  && behavior.getResolvedContent() == null),
-          "MergeKeyBehavior.expectedTargetContent and MergeKeyBehavior.resolvedContent are only supported for squashing merge/transplant operations.");
-      return behavior;
+      return behavior == null ? MergeKeyBehavior.of(key, defaultMergeBehavior) : behavior;
     };
   }
 

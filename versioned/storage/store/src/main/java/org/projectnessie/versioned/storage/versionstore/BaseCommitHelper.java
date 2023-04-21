@@ -590,17 +590,9 @@ class BaseCommitHelper {
                           commitConflictToConflict(conflict)));
                   return ConflictResolution.IGNORE;
                 case FORCE:
-                  checkArgument(
-                      mergeKeyBehavior.getResolvedContent() == null,
-                      "MergeKeyBehavior.resolvedContent must be null for MergeBehavior.FORCE for %s",
-                      key);
                   keyDetailsMap.put(key, keyDetails(mergeBehavior, ConflictType.NONE));
                   return ConflictResolution.IGNORE;
                 case DROP:
-                  checkArgument(
-                      mergeKeyBehavior.getResolvedContent() == null,
-                      "MergeKeyBehavior.resolvedContent must be null for MergeBehavior.DROP for %s",
-                      key);
                   keyDetailsMap.put(key, keyDetails(mergeBehavior, ConflictType.NONE));
                   return ConflictResolution.DROP;
                 default:
@@ -662,12 +654,6 @@ class BaseCommitHelper {
               // Nothing to resolve, use the value from the source.
               return commitValueId;
             }
-
-            // Require the expectedTargetContent attribute with the resolvedContent attribute.
-            checkArgument(
-                mergeKeyBehavior.getExpectedTargetContent() != null,
-                "MergeKeyBehavior.resolvedContent requires setting MergeKeyBehavior.expectedTarget as well for key %s",
-                key);
 
             // Build the "resolved" content value object and add it to the objects to persist.
             ContentValueObj resolvedValue =
