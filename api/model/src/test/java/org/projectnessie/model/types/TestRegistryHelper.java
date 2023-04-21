@@ -58,7 +58,7 @@ public class TestRegistryHelper {
 
   @Test
   void getUnknown() {
-    soft.assertThatNullPointerException()
+    soft.assertThatIllegalArgumentException()
         .isThrownBy(() -> ContentTypes.forName("NO_NO_NOT_THERE"))
         .withMessage("No content type registered for name NO_NO_NOT_THERE");
   }
