@@ -15,6 +15,8 @@
  */
 package org.projectnessie.model.types;
 
+import static java.util.Objects.requireNonNull;
+
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,7 +53,7 @@ public final class ContentTypes {
 
     @Override
     public void register(Class<? extends Content> type) {
-      Objects.requireNonNull(type, "Illegal content-type registration: type must not be null");
+      requireNonNull(type, "Illegal content-type registration: type must not be null");
 
       JsonTypeName jsonTypeName = type.getAnnotation(JsonTypeName.class);
       if (jsonTypeName == null) {
