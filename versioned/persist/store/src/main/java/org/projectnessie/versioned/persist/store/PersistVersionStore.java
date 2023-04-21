@@ -51,6 +51,7 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableCommit;
 import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.ImmutableRefLogDetails;
+import org.projectnessie.versioned.ImmutableRepositoryInformation;
 import org.projectnessie.versioned.KeyEntry;
 import org.projectnessie.versioned.MergeConflictException;
 import org.projectnessie.versioned.MergeResult;
@@ -66,6 +67,7 @@ import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.RepositoryInformation;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
@@ -97,6 +99,15 @@ public class PersistVersionStore implements VersionStore {
 
   public PersistVersionStore(DatabaseAdapter databaseAdapter) {
     this.databaseAdapter = databaseAdapter;
+  }
+
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  @Override
+  public RepositoryInformation getRepositoryInformation() {
+    return ImmutableRepositoryInformation.builder()
+        .noAncestorHash(noAncestorHash().asString())
+        .build();
   }
 
   @Override

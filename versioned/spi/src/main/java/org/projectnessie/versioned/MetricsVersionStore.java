@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
@@ -61,6 +62,13 @@ public final class MetricsVersionStore implements VersionStore {
 
   public MetricsVersionStore(VersionStore delegate) {
     this(delegate, Metrics.globalRegistry, Clock.SYSTEM);
+  }
+
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  @Override
+  public RepositoryInformation getRepositoryInformation() {
+    return delegate("repositoryInformation", delegate::getRepositoryInformation);
   }
 
   @Override
@@ -288,6 +296,14 @@ public final class MetricsVersionStore implements VersionStore {
     } catch (RuntimeException e) {
       measure(requestName, sample, e);
       throw e;
+    }
+  }
+
+  private <R> R delegate(String requestName, Supplier<R> delegate) {
+    try {
+      return delegate2ExR(requestName, delegate::get);
+    } catch (VersionStoreException e) {
+      throw new RuntimeException(e);
     }
   }
 

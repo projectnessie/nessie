@@ -30,8 +30,22 @@ import org.projectnessie.model.ImmutableNessieConfiguration;
 import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operation.Unchanged;
+import org.projectnessie.versioned.RepositoryInformation;
 
 public abstract class AbstractTestMisc extends BaseTestServiceImpl {
+
+  @Test
+  public void testRepositoryInformation() {
+    RepositoryInformation info = versionStore().getRepositoryInformation();
+    soft.assertThat(info).isNotNull();
+    soft.assertThat(info.getNoAncestorHash())
+        .isNotNull()
+        .isEqualTo(versionStore().noAncestorHash().asString());
+    if (versionStore().getClass().getName().endsWith("VersionStoreImpl")) {
+      soft.assertThat(info.getRepositoryCreationTimestamp()).isNotNull();
+      soft.assertThat(info.getOldestPossibleCommitTimestamp()).isNotNull();
+    }
+  }
 
   @Test
   public void testSupportedApiVersions() {

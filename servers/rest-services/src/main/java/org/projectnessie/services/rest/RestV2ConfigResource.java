@@ -23,6 +23,7 @@ import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.model.ser.Views;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.impl.ConfigApiImpl;
+import org.projectnessie.versioned.VersionStore;
 
 /** REST endpoint to retrieve server settings. */
 @RequestScoped
@@ -33,13 +34,13 @@ public class RestV2ConfigResource implements HttpConfigApi {
 
   // Mandated by CDI 2.0
   public RestV2ConfigResource() {
-    this(null);
+    this(null, null);
   }
 
   @Inject
   @jakarta.inject.Inject
-  public RestV2ConfigResource(ServerConfig config) {
-    this.config = new ConfigApiImpl(config);
+  public RestV2ConfigResource(ServerConfig config, VersionStore store) {
+    this.config = new ConfigApiImpl(config, store);
   }
 
   @Override
