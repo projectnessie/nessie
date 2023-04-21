@@ -30,14 +30,10 @@ public enum MergeBehavior {
   DROP;
 
   public static MergeBehavior parse(String mergeBehavior) {
-    try {
-      if (mergeBehavior != null) {
-        return MergeBehavior.valueOf(mergeBehavior.toUpperCase(Locale.ROOT));
-      }
-      return null;
-    } catch (IllegalArgumentException e) {
-      return NORMAL;
+    if (mergeBehavior != null) {
+      return MergeBehavior.valueOf(mergeBehavior.toUpperCase(Locale.ROOT));
     }
+    return null;
   }
 
   public static final class Deserializer extends JsonDeserializer<MergeBehavior> {

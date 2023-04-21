@@ -126,7 +126,7 @@ public interface Reference extends Base {
         }
         return null;
       } catch (IllegalArgumentException e) {
-        return BRANCH;
+        return TAG;
       }
     }
 
