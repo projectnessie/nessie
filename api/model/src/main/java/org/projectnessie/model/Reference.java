@@ -26,6 +26,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import java.io.IOException;
 import java.util.Locale;
 import javax.annotation.Nullable;
@@ -37,6 +38,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty;
 import org.immutables.value.Value;
 import org.projectnessie.model.Reference.ReferenceType.Deserializer;
+import org.projectnessie.model.types.ReferenceTypeIdResolver;
 
 @Schema(
     type = SchemaType.OBJECT,
@@ -59,6 +61,7 @@ import org.projectnessie.model.Reference.ReferenceType.Deserializer;
   @JsonSubTypes.Type(Tag.class),
   @JsonSubTypes.Type(Detached.class)
 })
+@JsonTypeIdResolver(ReferenceTypeIdResolver.class)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public interface Reference extends Base {
   /** Human-readable reference name. */
