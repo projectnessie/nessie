@@ -153,6 +153,13 @@ public class EventsVersionStore implements VersionStore {
     return result;
   }
 
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  @Override
+  public RepositoryInformation getRepositoryInformation() {
+    return delegate.getRepositoryInformation();
+  }
+
   @Override
   public Hash hashOnReference(NamedRef namedReference, Optional<Hash> hashOnReference)
       throws ReferenceNotFoundException {
