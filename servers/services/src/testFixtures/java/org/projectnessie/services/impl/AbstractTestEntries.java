@@ -17,6 +17,7 @@ package org.projectnessie.services.impl;
 
 import static com.google.common.collect.Maps.immutableEntry;
 import static java.util.stream.Collectors.toSet;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.api.Assumptions.abort;
 import static org.projectnessie.model.CommitMeta.fromMessage;
@@ -341,13 +342,36 @@ public abstract class AbstractTestEntries extends BaseTestServiceImpl {
             immutableEntry(ContentKey.of("a", "b", "fourthTable"), Content.Type.ICEBERG_TABLE),
             immutableEntry(ContentKey.of("a", "b", "c"), Content.Type.NAMESPACE));
 
-    entries = entries(reference, 4, "entry.namespace.matches('a\\\\.b\\\\.c(\\\\.|$)')");
+    String filterThatFindsTwoTables = "entry.namespace.matches('a\\\\.b\\\\.c(\\\\.|$)')";
+    entries = entries(reference, 4, filterThatFindsTwoTables);
     soft.assertThat(entries)
         .hasSize(2)
         .map(e -> immutableEntry(e.getName(), e.getType()))
         .containsExactlyInAnyOrder(
             immutableEntry(ContentKey.of("a", "b", "c", "secondTable"), Content.Type.ICEBERG_TABLE),
             immutableEntry(ContentKey.of("a", "b", "c", "firstTable"), Content.Type.ICEBERG_TABLE));
+
+    // namespaceDepth filter always returns contentId of real entries
+    entries = entries(reference.getName(), reference.getHash(), 4, filterThatFindsTwoTables, false);
+    soft.assertThat(entries)
+        .hasSize(2)
+        .allSatisfy(
+            entry -> {
+              assertThat(entry.getType()).isEqualTo(Content.Type.ICEBERG_TABLE);
+              assertThat(entry.getContentId()).isNotNull();
+              assertThat(entry.getContent()).isNull();
+            });
+
+    // namespaceDepth filter returns content of real entries if requested
+    entries = entries(reference.getName(), reference.getHash(), 4, filterThatFindsTwoTables, true);
+    soft.assertThat(entries)
+        .hasSize(2)
+        .allSatisfy(
+            entry -> {
+              assertThat(entry.getType()).isEqualTo(Content.Type.ICEBERG_TABLE);
+              assertThat(entry.getContentId()).isNotNull();
+              assertThat(entry.getContent()).isNotNull();
+            });
 
     entries = entries(reference, 5, "entry.namespace.matches('(\\\\.|$)')");
     soft.assertThat(entries).isEmpty();

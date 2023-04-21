@@ -776,11 +776,15 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
               continue;
             }
 
+            Content c = key.getContent();
             EntriesResponse.Entry entry =
-                EntriesResponse.Entry.entry(key.getKey(), key.getType(), key.getContentId());
+                c != null
+                    ? EntriesResponse.Entry.entry(key.getKey(), key.getType(), c)
+                    : EntriesResponse.Entry.entry(key.getKey(), key.getType(), key.getContentId());
 
-            entry = namespaceDepthMapping(entry, depth);
+            entry = maybeTruncateToDepth(entry, depth);
 
+            // add implicit namespace entries only once (single parent of multiple real entries)
             if (seen.add(entry.getName())) {
               if (!pagedResponseHandler.addEntry(entry)) {
                 pagedResponseHandler.hasMore(authz.tokenForCurrent());
@@ -815,12 +819,16 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     }
   }
 
-  private static EntriesResponse.Entry namespaceDepthMapping(
+  private static EntriesResponse.Entry maybeTruncateToDepth(
       EntriesResponse.Entry entry, int depth) {
-    Content.Type type =
-        entry.getName().getElementCount() > depth ? Content.Type.NAMESPACE : entry.getType();
-    ContentKey key = ContentKey.of(entry.getName().getElements().subList(0, depth));
-    return EntriesResponse.Entry.entry(key, type);
+    List<String> nameElements = entry.getName().getElements();
+    boolean truncateToNamespace = nameElements.size() > depth;
+    if (truncateToNamespace) {
+      // implicit namespace entry at target depth (virtual parent of real entry)
+      ContentKey namespaceKey = ContentKey.of(nameElements.subList(0, depth));
+      return EntriesResponse.Entry.entry(namespaceKey, Content.Type.NAMESPACE);
+    }
+    return entry;
   }
 
   /**
