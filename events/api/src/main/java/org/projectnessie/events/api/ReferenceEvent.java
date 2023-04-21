@@ -20,8 +20,11 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 /** Event that is emitted when a reference is created, updated or deleted. */
 public interface ReferenceEvent extends Event {
 
-  /** The name of the reference. */
+  /** The name of the reference, e.g. "branch1". */
   String getReferenceName();
+
+  /** The full name of the reference, e.g. "/refs/heads/branch1". */
+  String getFullReferenceName();
 
   /** The type of the reference. */
   ReferenceType getReferenceType();
@@ -30,6 +33,9 @@ public interface ReferenceEvent extends Event {
 
     @CanIgnoreReturnValue
     B referenceName(String referenceName);
+
+    @CanIgnoreReturnValue
+    B fullReferenceName(String fullReferenceName);
 
     @CanIgnoreReturnValue
     B referenceType(ReferenceType referenceType);
