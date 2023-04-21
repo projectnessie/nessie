@@ -15,8 +15,10 @@
  */
 package org.projectnessie.versioned;
 
+import java.util.Objects;
 import java.util.function.Supplier;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
@@ -28,7 +30,7 @@ import org.projectnessie.versioned.store.DefaultStoreWorker;
  * declare whether the prior hash must match.
  */
 @Value.Immutable
-public interface Put extends Operation {
+public abstract class Put implements Operation {
 
   /**
    * The value to store for this operation.
@@ -36,14 +38,14 @@ public interface Put extends Operation {
    * @return the value
    */
   @Value.Lazy
-  default Content getValue() {
+  public Content getValue() {
     return getValueSupplier().get();
   }
 
-  Supplier<Content> getValueSupplier();
+  protected abstract Supplier<Content> getValueSupplier();
 
   /**
-   * Creates a put-operation for the given key and value.
+   * Creates an (eagerly-evaluated) put-operation for the given key and value.
    *
    * <p>{@code value} with a {@code null} content ID is <em>required</em> when creating/adding new
    * content.
@@ -60,18 +62,27 @@ public interface Put extends Operation {
    */
   @Nonnull
   @jakarta.annotation.Nonnull
-  static Put of(
+  public static Put of(
       @Nonnull @jakarta.annotation.Nonnull ContentKey key,
       @Nonnull @jakarta.annotation.Nonnull Content value) {
     return ImmutablePut.builder().key(key).valueSupplier(() -> value).build();
   }
 
-  static Put of(ContentKey key, int payload, ByteString value) {
+  /** Creates a lazily-evaluated put-operation for the given key, payload and ByteString value. */
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  public static Put of(ContentKey key, int payload, ByteString value) {
     return of(key, payload, value, () -> null);
   }
 
+  /**
+   * Creates a lazily-evaluated put-operation for the given key, payload, ByteString value and
+   * global state supplier.
+   */
   @SuppressWarnings("deprecation")
-  static Put of(
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  public static Put of(
       ContentKey key, int payload, ByteString value, Supplier<ByteString> globalStateSupplier) {
     return ImmutablePut.builder()
         .key(key)
@@ -80,5 +91,24 @@ public interface Put extends Operation {
                 DefaultStoreWorker.instance()
                     .valueFromStore((byte) payload, value, globalStateSupplier))
         .build();
+  }
+
+  @Override
+  public boolean equals(@Nullable Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof Put)) {
+      return false;
+    }
+    Put that = (Put) o;
+    return this.shouldMatchHash() == that.shouldMatchHash()
+        && this.getKey().equals(that.getKey())
+        && this.getValue().equals(that.getValue());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(shouldMatchHash(), getKey(), getValue());
   }
 }
