@@ -604,7 +604,8 @@ final class CommitLogicImpl implements CommitLogic {
       StoreIndexElement<CommitOp> existing = existingFromIndex(fullIndex, key);
       CommitOp existingContent = existing != null ? existing.content() : null;
 
-      ObjId expectedValue = expectedValueReplacement.maybeReplaceValue(key, remove.expectedValue());
+      ObjId expectedValue =
+          expectedValueReplacement.maybeReplaceValue(false, key, remove.expectedValue());
       CommitOp op = commitOp(REMOVE, payload, expectedValue, contentId);
       if (contentId != null) {
         removes.put(contentId, op);
@@ -640,7 +641,7 @@ final class CommitLogicImpl implements CommitLogic {
       CommitOp existingContent = existingContentForCommit(fullIndex, key, reAdded);
 
       ObjId expectedValue =
-          expectedValueReplacement.maybeReplaceValue(key, unchanged.expectedValue());
+          expectedValueReplacement.maybeReplaceValue(false, key, unchanged.expectedValue());
       CommitConflict conflict =
           checkForConflict(key, contentId, payload, null, existingContent, expectedValue);
 
@@ -654,7 +655,7 @@ final class CommitLogicImpl implements CommitLogic {
       UUID contentId = add.contentId();
       int payload = add.payload();
 
-      ObjId addValue = committedValueReplacement.maybeReplaceValue(key, add.value());
+      ObjId addValue = committedValueReplacement.maybeReplaceValue(true, key, add.value());
       if (addValue != null && !addValue.equals(add.value())) {
         add = commitAdd(key, payload, addValue, add.expectedValue(), contentId);
       }
@@ -677,7 +678,8 @@ final class CommitLogicImpl implements CommitLogic {
         }
       }
 
-      ObjId expectedValue = expectedValueReplacement.maybeReplaceValue(key, add.expectedValue());
+      ObjId expectedValue =
+          expectedValueReplacement.maybeReplaceValue(true, key, add.expectedValue());
       if (conflict == null) {
         conflict = checkForConflict(key, contentId, payload, op, existingContent, expectedValue);
       }

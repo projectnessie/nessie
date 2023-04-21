@@ -17,12 +17,9 @@ package org.projectnessie.versioned.storage.versionstore;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
@@ -53,7 +50,7 @@ final class TransplantIndividualImpl extends BaseMergeTransplantIndividual imple
       Optional<?> retryState,
       List<Hash> sequenceToTransplant,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
-      Function<ContentKey, MergeKeyBehavior> mergeBehaviorForKey,
+      MergeBehaviors mergeBehaviors,
       boolean dryRun)
       throws ReferenceNotFoundException, RetryException, ReferenceConflictException {
     SourceCommitsAndParent sourceCommits = loadSourceCommitsForTransplant(sequenceToTransplant);
@@ -61,6 +58,6 @@ final class TransplantIndividualImpl extends BaseMergeTransplantIndividual imple
     ImmutableMergeResult.Builder<Commit> mergeResult = prepareMergeResult();
 
     return individualCommits(
-        updateCommitMetadata, dryRun, mergeResult, mergeBehaviorForKey, sourceCommits);
+        updateCommitMetadata, dryRun, mergeResult, mergeBehaviors, sourceCommits);
   }
 }

@@ -20,6 +20,7 @@ import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
@@ -54,6 +55,7 @@ import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.MergeConflictException;
 import org.projectnessie.versioned.MergeResult;
+import org.projectnessie.versioned.MergeResult.KeyDetails;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -146,9 +148,113 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
-  protected void mergeResolveConflict(boolean individualCommits) throws VersionStoreException {
-    // TODO assumeThat(store().getClass().getName()).doesNotEndWith("VersionStoreImpl");
+  protected void mergeKeyBehaviorValidation(boolean dryRun) throws Exception {
+    assumeThat(store().getClass().getName()).endsWith("VersionStoreImpl");
 
+    MetadataRewriter<CommitMeta> metadataRewriter = createMetadataRewriter("");
+    BranchName targetBranch = BranchName.of("mergeKeyBehaviorValidation");
+    store().create(targetBranch, Optional.of(firstCommit));
+
+    ContentKey keyNotUsed = ContentKey.of("not", "used");
+    ContentKey keyUnused = ContentKey.of("un", "used");
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(
+            () ->
+                store()
+                    .merge(
+                        thirdCommit,
+                        targetBranch,
+                        Optional.empty(),
+                        metadataRewriter,
+                        false,
+                        ImmutableMap.of(
+                            keyNotUsed, MergeKeyBehavior.of(keyNotUsed, MergeBehavior.DROP),
+                            keyUnused, MergeKeyBehavior.of(keyUnused, MergeBehavior.DROP)),
+                        MergeBehavior.NORMAL,
+                        dryRun,
+                        false))
+        .withMessage(
+            "Not all merge key behaviors specified in the request have been used. The following keys were not used: [not.used, un.used]");
+
+    ContentKey keyT3 = ContentKey.of("t3");
+    for (MergeBehavior mergeBehavior :
+        new MergeBehavior[] {MergeBehavior.DROP, MergeBehavior.FORCE}) {
+      soft.assertThatIllegalArgumentException()
+          .isThrownBy(
+              () ->
+                  store()
+                      .merge(
+                          thirdCommit,
+                          targetBranch,
+                          Optional.empty(),
+                          metadataRewriter,
+                          false,
+                          ImmutableMap.of(
+                              keyT3, MergeKeyBehavior.of(keyT3, mergeBehavior, V_3_1, V_1_1)),
+                          MergeBehavior.NORMAL,
+                          dryRun,
+                          false))
+          .withMessage(
+              "MergeKeyBehavior.resolvedContent must be null for MergeBehavior.%s for t3",
+              mergeBehavior);
+    }
+
+    Content c11 = store().getValue(firstCommit, ContentKey.of("t1"));
+
+    for (MergeBehavior mergeBehavior : MergeBehavior.values()) {
+      if (dryRun) {
+        soft.assertThat(
+                store()
+                    .merge(
+                        thirdCommit,
+                        targetBranch,
+                        Optional.empty(),
+                        metadataRewriter,
+                        false,
+                        ImmutableMap.of(
+                            keyT3, MergeKeyBehavior.of(keyT3, mergeBehavior, c11, null)),
+                        MergeBehavior.NORMAL,
+                        dryRun,
+                        false))
+            .describedAs("MergeBehavior.%s", mergeBehavior)
+            .extracting(
+                MergeResult::wasApplied, MergeResult::wasSuccessful, r -> r.getDetails().get(keyT3))
+            .containsExactly(
+                false,
+                false,
+                KeyDetails.keyDetails(
+                    mergeBehavior,
+                    MergeResult.ConflictType.UNRESOLVABLE,
+                    Conflict.conflict(
+                        ConflictType.VALUE_DIFFERS,
+                        keyT3,
+                        "values of existing and expected content for key 't3' are different")));
+      } else {
+        soft.assertThatThrownBy(
+                () ->
+                    store()
+                        .merge(
+                            thirdCommit,
+                            targetBranch,
+                            Optional.empty(),
+                            metadataRewriter,
+                            false,
+                            ImmutableMap.of(
+                                keyT3, MergeKeyBehavior.of(keyT3, mergeBehavior, c11, null)),
+                            MergeBehavior.NORMAL,
+                            dryRun,
+                            false))
+            .describedAs("MergeBehavior.%s", mergeBehavior)
+            .isInstanceOf(MergeConflictException.class)
+            .hasMessage("The following keys have been changed in conflict: 't3'");
+      }
+      soft.assertAll();
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  protected void mergeResolveConflict(boolean individualCommits) throws VersionStoreException {
     MetadataRewriter<CommitMeta> metadataRewriter = createMetadataRewriter("");
     BranchName sourceBranch = BranchName.of("mergeResolveConflict");
     store().create(sourceBranch, Optional.of(thirdCommit));

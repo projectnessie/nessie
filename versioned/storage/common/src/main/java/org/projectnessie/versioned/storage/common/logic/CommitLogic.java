@@ -185,11 +185,11 @@ public interface CommitLogic {
 
   @FunctionalInterface
   interface ValueReplacement {
-    ValueReplacement NO_VALUE_REPLACEMENT = (key, id) -> id;
+    ValueReplacement NO_VALUE_REPLACEMENT = (add, key, id) -> id;
 
     @Nullable
     @jakarta.annotation.Nullable
-    ObjId maybeReplaceValue(StoreKey storeKey, ObjId currentId);
+    ObjId maybeReplaceValue(boolean add, StoreKey storeKey, ObjId currentId);
   }
 
   @Nonnull

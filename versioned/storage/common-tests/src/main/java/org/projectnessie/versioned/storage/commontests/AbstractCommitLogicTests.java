@@ -650,7 +650,7 @@ public class AbstractCommitLogicTests {
                         .build(),
                     c -> CONFLICT,
                     (k, v) -> {},
-                    (storeKey, currentId) -> otherExpectedValue,
+                    (action, storeKey, currentId) -> otherExpectedValue,
                     NO_VALUE_REPLACEMENT))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: VALUE_DIFFERS:a")
@@ -674,7 +674,7 @@ public class AbstractCommitLogicTests {
                 .build(),
             c -> CONFLICT,
             (k, v) -> {},
-            (storeKey, currentId) -> correctValue,
+            (action, storeKey, currentId) -> correctValue,
             NO_VALUE_REPLACEMENT);
 
     soft.assertThat(indexesLogic.buildCompleteIndex(commit, Optional.empty()).get(key))
@@ -714,7 +714,7 @@ public class AbstractCommitLogicTests {
             c -> CONFLICT,
             (k, v) -> {},
             NO_VALUE_REPLACEMENT,
-            (storeKey, commitId) -> updateValue);
+            (action, storeKey, commitId) -> updateValue);
 
     soft.assertThat(indexesLogic.buildCompleteIndex(commit, Optional.empty()).get(key))
         .isNotNull()

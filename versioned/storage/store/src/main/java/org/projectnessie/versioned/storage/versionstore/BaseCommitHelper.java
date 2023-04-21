@@ -50,7 +50,6 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -499,7 +498,7 @@ class BaseCommitHelper {
       ObjId fromId,
       CommitObj source,
       ImmutableMergeResult.Builder<Commit> result,
-      Function<ContentKey, MergeKeyBehavior> mergeBehaviorForKey)
+      MergeBehaviors mergeBehaviors)
       throws RetryException {
     result.wasSuccessful(true);
 
@@ -509,8 +508,7 @@ class BaseCommitHelper {
       ContentKey key = storeKeyToKey(k);
       // Note: key==null, if not the "main universe" or not a "content" discriminator
       if (key != null) {
-        result.putDetails(
-            key, keyDetails(mergeBehaviorForKey.apply(key).getMergeBehavior(), ConflictType.NONE));
+        result.putDetails(key, keyDetails(mergeBehaviors.mergeBehavior(key), ConflictType.NONE));
       }
     }
 
@@ -545,7 +543,7 @@ class BaseCommitHelper {
   }
 
   CommitObj createMergeTransplantCommit(
-      Function<ContentKey, MergeKeyBehavior> mergeBehaviorForKey,
+      MergeBehaviors mergeBehaviors,
       Map<ContentKey, KeyDetails> keyDetailsMap,
       CreateCommit createCommit,
       Consumer<Obj> objsToStore)
@@ -578,9 +576,20 @@ class BaseCommitHelper {
                 }
               }
 
-              MergeKeyBehavior mergeKeyBehavior = mergeBehaviorForKey.apply(key);
-              MergeBehavior mergeBehavior = mergeKeyBehavior.getMergeBehavior();
+              MergeBehavior mergeBehavior = mergeBehaviors.mergeBehavior(key);
               switch (mergeBehavior) {
+                case FORCE:
+                case DROP:
+                  MergeKeyBehavior mergeKeyBe = mergeBehaviors.useKey(false, key);
+                  // Do not plain ignore (due to FORCE) or drop (DROP), when the caller provided an
+                  // expectedTargetContent.
+                  if (mergeKeyBe.getExpectedTargetContent() == null) {
+                    keyDetailsMap.put(key, keyDetails(mergeBehavior, ConflictType.NONE));
+                    return mergeBehavior == MergeBehavior.FORCE
+                        ? ConflictResolution.IGNORE
+                        : ConflictResolution.DROP;
+                  }
+                  // fall through
                 case NORMAL:
                   keyDetailsMap.put(
                       key,
@@ -589,12 +598,6 @@ class BaseCommitHelper {
                           ConflictType.UNRESOLVABLE,
                           commitConflictToConflict(conflict)));
                   return ConflictResolution.IGNORE;
-                case FORCE:
-                  keyDetailsMap.put(key, keyDetails(mergeBehavior, ConflictType.NONE));
-                  return ConflictResolution.IGNORE;
-                case DROP:
-                  keyDetailsMap.put(key, keyDetails(mergeBehavior, ConflictType.NONE));
-                  return ConflictResolution.DROP;
                 default:
                   throw new IllegalStateException("Unknown merge behavior " + mergeBehavior);
               }
@@ -608,9 +611,8 @@ class BaseCommitHelper {
             ContentKey key = storeKeyToKey(storeKey);
             // Note: key==null, if not the "main universe" or not a "content" discriminator
             if (key != null) {
-              MergeKeyBehavior mergeKeyBehavior = mergeBehaviorForKey.apply(key);
               keyDetailsMap.putIfAbsent(
-                  key, keyDetails(mergeKeyBehavior.getMergeBehavior(), ConflictType.NONE));
+                  key, keyDetails(mergeBehaviors.mergeBehavior(key), ConflictType.NONE));
             }
           },
           /*
@@ -619,14 +621,14 @@ class BaseCommitHelper {
            *
            * This is mandatory, if MergeKeyBehavior.resolvedContent != null.
            */
-          (storeKey, expectedValueId) -> {
+          (add, storeKey, expectedValueId) -> {
             // "replace" the ObjId expected for a commit-ADD action
             ContentKey key = storeKeyToKey(storeKey);
             // Note: key==null, if not the "main universe" or not a "content" discriminator
             if (key == null) {
               return expectedValueId;
             }
-            Content expectedTarget = mergeBehaviorForKey.apply(key).getExpectedTargetContent();
+            Content expectedTarget = mergeBehaviors.useKey(add, key).getExpectedTargetContent();
             // If there is an expected-target-content, we only need the ObjId for it to let the
             // commit code perform the check. An object load is not needed.
             return expectedTarget != null
@@ -642,13 +644,13 @@ class BaseCommitHelper {
            *
            * Non-squashing merges are prohibited to have a non-null MergeKeyBehavior.resolvedContent.
            */
-          (storeKey, commitValueId) -> {
+          (add, storeKey, commitValueId) -> {
             ContentKey key = storeKeyToKey(storeKey);
             // Note: key==null, if not the "main universe" or not a "content" discriminator
             if (key == null) {
               return commitValueId;
             }
-            MergeKeyBehavior mergeKeyBehavior = mergeBehaviorForKey.apply(key);
+            MergeKeyBehavior mergeKeyBehavior = mergeBehaviors.useKey(add, key);
             Content resolvedContent = mergeKeyBehavior.getResolvedContent();
             if (resolvedContent == null) {
               // Nothing to resolve, use the value from the source.

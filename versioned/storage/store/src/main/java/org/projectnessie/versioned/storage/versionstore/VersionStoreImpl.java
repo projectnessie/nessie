@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned.storage.versionstore;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
 import static java.util.Objects.requireNonNull;
@@ -619,6 +618,9 @@ public class VersionStoreImpl implements VersionStore {
     CommitterSupplier<Merge> supplier =
         keepIndividualCommits ? MergeIndividualImpl::new : MergeSquashImpl::new;
 
+    MergeBehaviors mergeBehaviors =
+        new MergeBehaviors(keepIndividualCommits, mergeKeyBehaviors, defaultMergeBehavior);
+
     MergeResult<Commit> mergeResult =
         committingOperation(
             "merge",
@@ -627,57 +629,9 @@ public class VersionStoreImpl implements VersionStore {
             persist,
             supplier,
             (merge, retryState) ->
-                merge.merge(
-                    retryState,
-                    fromHash,
-                    updateCommitMetadata,
-                    mergeBehaviorForKey(
-                        keepIndividualCommits, mergeKeyBehaviors, defaultMergeBehavior),
-                    dryRun));
+                merge.merge(retryState, fromHash, updateCommitMetadata, mergeBehaviors, dryRun));
 
     return mergeTransplantResponse(dryRun, mergeResult);
-  }
-
-  private static Function<ContentKey, MergeKeyBehavior> mergeBehaviorForKey(
-      boolean individualCommits,
-      Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors,
-      MergeBehavior defaultMergeBehavior) {
-    // Require the resolvedContent and expectedTargetContent attributes.
-    mergeKeyBehaviors.forEach(
-        (key, mergeKeyBehavior) -> {
-          checkArgument(
-              !individualCommits
-                  || (mergeKeyBehavior.getExpectedTargetContent() == null
-                      && mergeKeyBehavior.getResolvedContent() == null),
-              "MergeKeyBehavior.expectedTargetContent and MergeKeyBehavior.resolvedContent are only supported for squashing merge/transplant operations.");
-
-          switch (mergeKeyBehavior.getMergeBehavior()) {
-            case NORMAL:
-              if (mergeKeyBehavior.getResolvedContent() != null) {
-                checkArgument(
-                    mergeKeyBehavior.getExpectedTargetContent() != null,
-                    "MergeKeyBehavior.resolvedContent requires setting MergeKeyBehavior.expectedTarget as well for key %s",
-                    key);
-              }
-              break;
-            case DROP:
-            case FORCE:
-              checkArgument(
-                  mergeKeyBehavior.getResolvedContent() == null,
-                  "MergeKeyBehavior.resolvedContent must be null for MergeBehavior.%s for %s",
-                  mergeKeyBehavior.getMergeBehavior(),
-                  key);
-              break;
-            default:
-              throw new IllegalArgumentException(
-                  "Unknown MergeBehavior " + mergeKeyBehavior.getMergeBehavior());
-          }
-        });
-
-    return key -> {
-      MergeKeyBehavior behavior = mergeKeyBehaviors.get(key);
-      return behavior == null ? MergeKeyBehavior.of(key, defaultMergeBehavior) : behavior;
-    };
   }
 
   @Override
@@ -696,6 +650,9 @@ public class VersionStoreImpl implements VersionStore {
     CommitterSupplier<Transplant> supplier =
         keepIndividualCommits ? TransplantIndividualImpl::new : TransplantSquashImpl::new;
 
+    MergeBehaviors mergeBehaviors =
+        new MergeBehaviors(keepIndividualCommits, mergeKeyBehaviors, defaultMergeBehavior);
+
     MergeResult<Commit> mergeResult =
         committingOperation(
             "transplant",
@@ -708,8 +665,7 @@ public class VersionStoreImpl implements VersionStore {
                     retryState,
                     sequenceToTransplant,
                     updateCommitMetadata,
-                    mergeBehaviorForKey(
-                        keepIndividualCommits, mergeKeyBehaviors, defaultMergeBehavior),
+                    mergeBehaviors,
                     dryRun));
 
     return mergeTransplantResponse(dryRun, mergeResult);

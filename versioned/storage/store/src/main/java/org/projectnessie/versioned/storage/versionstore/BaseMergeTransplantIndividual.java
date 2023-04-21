@@ -29,12 +29,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
@@ -73,7 +71,7 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean dryRun,
       ImmutableMergeResult.Builder<Commit> mergeResult,
-      Function<ContentKey, MergeKeyBehavior> mergeBehaviorForKey,
+      MergeBehaviors mergeBehaviors,
       SourceCommitsAndParent sourceCommits)
       throws RetryException, ReferenceNotFoundException, ReferenceConflictException {
     IndexesLogic indexesLogic = indexesLogic(persist);
@@ -92,7 +90,7 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
       List<Obj> objsToStore = new ArrayList<>();
       CommitObj newCommit =
           createMergeTransplantCommit(
-              mergeBehaviorForKey, keyDetailsMap, createCommit, objsToStore::add);
+              mergeBehaviors, keyDetailsMap, createCommit, objsToStore::add);
 
       if (!indexesLogic.commitOperations(newCommit).iterator().hasNext()) {
         // No operations in this commit, skip it.
