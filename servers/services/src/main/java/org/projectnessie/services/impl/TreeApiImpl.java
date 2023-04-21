@@ -111,7 +111,6 @@ import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.KeyEntry;
-import org.projectnessie.versioned.LazyPut;
 import org.projectnessie.versioned.MergeConflictException;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.NamedRef;
@@ -483,8 +482,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
             .forEach(
                 op -> {
                   ContentKey key = op.getKey();
-                  if (op instanceof LazyPut) {
-                    Content content = ((LazyPut) op).getValue();
+                  if (op instanceof Put) {
+                    Content content = ((Put) op).getValue();
                     logEntry.addOperations(Operation.Put.of(key, content));
                   }
                   if (op instanceof Delete) {

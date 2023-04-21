@@ -34,7 +34,7 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.ImmutableCommit;
-import org.projectnessie.versioned.LazyPut;
+import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
@@ -142,7 +142,7 @@ public final class ContentMapping {
             ObjId objId = requireNonNull(c.value(), "Required value pointer is null");
             ContentValueObj contentValue =
                 persist.fetchTypedObj(objId, VALUE, ContentValueObj.class);
-            commit.addOperations(LazyPut.of(key, contentValue.payload(), contentValue.data()));
+            commit.addOperations(Put.of(key, contentValue.payload(), contentValue.data()));
           } else {
             commit.addOperations(Delete.of(key));
           }

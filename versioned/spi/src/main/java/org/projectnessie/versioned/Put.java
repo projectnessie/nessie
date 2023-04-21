@@ -15,10 +15,13 @@
  */
 package org.projectnessie.versioned;
 
+import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 import org.immutables.value.Value;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
+import org.projectnessie.versioned.store.DefaultStoreWorker;
 
 /**
  * A PUT operation provided by the client in order to set a new value in a commit. Can optionally
@@ -32,7 +35,12 @@ public interface Put extends Operation {
    *
    * @return the value
    */
-  Content getValue();
+  @Value.Lazy
+  default Content getValue() {
+    return getValueSupplier().get();
+  }
+
+  Supplier<Content> getValueSupplier();
 
   /**
    * Creates a put-operation for the given key and value.
@@ -55,6 +63,22 @@ public interface Put extends Operation {
   static Put of(
       @Nonnull @jakarta.annotation.Nonnull ContentKey key,
       @Nonnull @jakarta.annotation.Nonnull Content value) {
-    return ImmutablePut.builder().key(key).value(value).build();
+    return ImmutablePut.builder().key(key).valueSupplier(() -> value).build();
+  }
+
+  static Put of(ContentKey key, int payload, ByteString value) {
+    return of(key, payload, value, () -> null);
+  }
+
+  @SuppressWarnings("deprecation")
+  static Put of(
+      ContentKey key, int payload, ByteString value, Supplier<ByteString> globalStateSupplier) {
+    return ImmutablePut.builder()
+        .key(key)
+        .valueSupplier(
+            () ->
+                DefaultStoreWorker.instance()
+                    .valueFromStore((byte) payload, value, globalStateSupplier))
+        .build();
   }
 }

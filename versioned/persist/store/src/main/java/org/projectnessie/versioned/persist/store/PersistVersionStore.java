@@ -55,7 +55,6 @@ import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.ImmutableRefLogDetails;
 import org.projectnessie.versioned.ImmutableRepositoryInformation;
 import org.projectnessie.versioned.KeyEntry;
-import org.projectnessie.versioned.LazyPut;
 import org.projectnessie.versioned.MergeConflictException;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MergeType;
@@ -515,7 +514,7 @@ public class PersistVersionStore implements VersionStore {
           .forEach(
               put ->
                   commitBuilder.addOperations(
-                      LazyPut.of(
+                      Put.of(
                           put.getKey(),
                           put.getPayload(),
                           put.getValue(),

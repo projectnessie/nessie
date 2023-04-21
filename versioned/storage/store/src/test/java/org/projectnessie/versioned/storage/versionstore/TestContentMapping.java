@@ -50,7 +50,7 @@ import org.projectnessie.model.Namespace;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.ImmutableCommit;
-import org.projectnessie.versioned.LazyPut;
+import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
@@ -228,7 +228,7 @@ public class TestContentMapping {
             .commitMeta(referenceCommitMeta)
             .addOperations(
                 Delete.of(ContentKey.of("bar")),
-                LazyPut.of(ContentKey.of("foo"), tableObj.payload(), tableObj.data()))
+                Put.of(ContentKey.of("foo"), tableObj.payload(), tableObj.data()))
             .build();
 
     Commit c = contentMapping.commitObjToCommit(true, commitObj);
