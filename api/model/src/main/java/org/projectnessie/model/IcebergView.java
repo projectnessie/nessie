@@ -19,9 +19,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonView;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.util.Map;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -71,7 +71,7 @@ public abstract class IcebergView extends IcebergContent {
   @JsonView(Views.V1.class)
   // Left here in case an old Nessie client sends this piece of information.
   // To be removed when API v1 gets removed.
-  public abstract JsonNode getMetadata();
+  public abstract Map<String, Object> getMetadata();
 
   public static ImmutableIcebergView.Builder builder() {
     return ImmutableIcebergView.builder();
