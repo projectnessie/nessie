@@ -125,7 +125,7 @@ val npmInstall =
     inputs.property("node.modules.dir", project.projectDir)
     inputs.property("node.version", node.version)
     inputs.property("npm.version", node.npmVersion)
-    inputs.files("package.json", "package-lock.json").withPathSensitivity(PathSensitivity.RELATIVE)
+    outputs.files("package-lock.json")
     outputs.dir(shadowPackageJson)
     logging.captureStandardOutput(LogLevel.INFO)
     logging.captureStandardError(LogLevel.LIFECYCLE)
@@ -198,6 +198,7 @@ val npmBuild =
     outputs.dir(npmBuildDir)
     // Remove all previously generated output
     doFirst(DeleteFiles(fs, npmBuildTarget))
+    doLast(DeleteFiles(fs, nodeModulesDir.resolve(".cache")))
     args.set(listOf("run", "build"))
     environment.put("GENERATE_SOURCEMAP", "false")
     environment.put("DISABLE_ESLINT_PLUGIN", "false")
