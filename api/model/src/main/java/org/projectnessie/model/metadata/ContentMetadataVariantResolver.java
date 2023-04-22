@@ -22,11 +22,11 @@ import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase;
 import org.projectnessie.model.ContentMetadata;
 
 /** Dynamic {@link ContentMetadata} object (de)serialization for <em>Jackson</em>. */
-public final class ContentMetadataResolver extends TypeIdResolverBase {
+public final class ContentMetadataVariantResolver extends TypeIdResolverBase {
 
   private JavaType baseType;
 
-  public ContentMetadataResolver() {}
+  public ContentMetadataVariantResolver() {}
 
   @Override
   public void init(JavaType bt) {
@@ -58,11 +58,8 @@ public final class ContentMetadataResolver extends TypeIdResolverBase {
 
   @Override
   public JavaType typeFromId(DatabindContext context, String id) {
+    // Currently there are no specialized ContentMetadata implementations, so this one always
+    // returns GenericContentMetadata.
     return context.constructSpecializedType(baseType, GenericContentMetadata.class);
-    //    Content.Type subType = ContentTypes.forName(id);
-    //    if (subType != null) {
-    //      return context.constructSpecializedType(baseType, subType.type());
-    //    }
-    //    return TypeFactory.unknownType();
   }
 }
