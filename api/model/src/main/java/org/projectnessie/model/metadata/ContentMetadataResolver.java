@@ -58,7 +58,7 @@ public final class ContentMetadataResolver extends TypeIdResolverBase {
 
   @Override
   public JavaType typeFromId(DatabindContext context, String id) {
-    return context.constructSpecializedType(baseType, ContentMetadataUnknown.class);
+    return context.constructSpecializedType(baseType, GenericContentMetadata.class);
     //    Content.Type subType = ContentTypes.forName(id);
     //    if (subType != null) {
     //      return context.constructSpecializedType(baseType, subType.type());

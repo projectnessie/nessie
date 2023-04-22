@@ -29,11 +29,11 @@ import java.util.Map.Entry;
 public class GenericContentMetadataSerialization {
 
   static final class GenericContentMetadataSerializer
-      extends JsonSerializer<ContentMetadataUnknown> {
+      extends JsonSerializer<GenericContentMetadata> {
 
     @Override
     public void serializeWithType(
-        ContentMetadataUnknown value,
+        GenericContentMetadata value,
         JsonGenerator gen,
         SerializerProvider serializers,
         TypeSerializer typeSer)
@@ -49,16 +49,16 @@ public class GenericContentMetadataSerialization {
 
     @Override
     public void serialize(
-        ContentMetadataUnknown value, JsonGenerator gen, SerializerProvider serializers) {
+        GenericContentMetadata value, JsonGenerator gen, SerializerProvider serializers) {
       throw new UnsupportedOperationException();
     }
   }
 
   static final class GenericContentMetadataDeserializer
-      extends JsonDeserializer<ContentMetadataUnknown> {
+      extends JsonDeserializer<GenericContentMetadata> {
 
     @Override
-    public ContentMetadataUnknown deserialize(JsonParser p, DeserializationContext ctxt)
+    public GenericContentMetadata deserialize(JsonParser p, DeserializationContext ctxt)
         throws IOException {
       @SuppressWarnings("unchecked")
       Map<String, Object> all = p.readValueAs(Map.class);
@@ -66,7 +66,7 @@ public class GenericContentMetadataSerialization {
       if (variant == null) {
         variant = "UNKNOWN_VARIANT";
       }
-      return ContentMetadataUnknown.genericContentMetadata(variant.toString(), all);
+      return GenericContentMetadata.genericContentMetadata(variant.toString(), all);
     }
   }
 }

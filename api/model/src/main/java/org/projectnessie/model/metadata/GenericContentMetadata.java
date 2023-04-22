@@ -33,7 +33,7 @@ import org.projectnessie.model.metadata.GenericContentMetadataSerialization.Gene
 @Value.Immutable
 @JsonSerialize(using = GenericContentMetadataSerializer.class)
 @JsonDeserialize(using = GenericContentMetadataDeserializer.class)
-public interface ContentMetadataUnknown extends ContentMetadata {
+public interface GenericContentMetadata extends ContentMetadata {
 
   @Override
   @Value.Parameter(order = 1)
@@ -47,8 +47,8 @@ public interface ContentMetadataUnknown extends ContentMetadata {
   @JsonUnwrapped
   Map<String, Object> getAttributes();
 
-  static org.projectnessie.model.metadata.ContentMetadataUnknown genericContentMetadata(
+  static GenericContentMetadata genericContentMetadata(
       String variant, Map<String, Object> attributes) {
-    return ImmutableContentMetadataUnknown.of(variant, attributes);
+    return ImmutableGenericContentMetadata.of(variant, attributes);
   }
 }
