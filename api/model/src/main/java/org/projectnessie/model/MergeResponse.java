@@ -91,7 +91,6 @@ public interface MergeResponse {
   interface ContentKeyDetails {
     ContentKey getKey();
 
-    @JsonDeserialize(using = MergeBehavior.Deserializer.class)
     MergeBehavior getMergeBehavior();
 
     @Value.Default

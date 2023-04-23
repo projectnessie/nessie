@@ -133,45 +133,6 @@ public class TestEnums {
   }
 
   @Nested
-  public class TestMergeBehavior extends AbstractEnum<MergeBehavior> {
-    TestMergeBehavior() {
-      super(
-          MergeBehavior::parse,
-          null,
-          mapper -> {
-            try {
-              return mapper
-                  .readValue(
-                      "{"
-                          + "\"key\": { \"elements\": [\"a\"] },"
-                          + "\"mergeBehavior\": \"FOO_BAR\""
-                          + "}",
-                      MergeKeyBehavior.class)
-                  .getMergeBehavior();
-            } catch (JsonProcessingException e) {
-              throw new RuntimeException(e);
-            }
-          });
-    }
-
-    @ParameterizedTest
-    @EnumSource(value = MergeBehavior.class)
-    public void testConversion(MergeBehavior mergeBehavior) {
-      soft.assertThat(MergeBehavior.parse(mergeBehavior.name())).isSameAs(mergeBehavior);
-    }
-
-    @Test
-    public void testUnknownMergeBehavior() {
-      soft.assertThatIllegalArgumentException().isThrownBy(() -> MergeBehavior.parse("FOO_BAR"));
-    }
-
-    @Test
-    public void testNullMergeBehavior() {
-      soft.assertThat(MergeBehavior.parse(null)).isNull();
-    }
-  }
-
-  @Nested
   public class TestConflictType extends AbstractEnum<ConflictType> {
     TestConflictType() {
       super(
