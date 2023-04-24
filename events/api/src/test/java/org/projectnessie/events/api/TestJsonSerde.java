@@ -18,6 +18,7 @@ package org.projectnessie.events.api;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -28,7 +29,13 @@ import org.junit.jupiter.api.Test;
 class TestJsonSerde {
 
   static final ObjectMapper MAPPER =
-      new ObjectMapper().registerModule(new JavaTimeModule()).registerModule(new Jdk8Module());
+      new ObjectMapper()
+          .registerModule(new JavaTimeModule())
+          .registerModule(new Jdk8Module())
+          .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+          .enable(DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES)
+          .enable(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY)
+          .enable(DeserializationFeature.FAIL_ON_INVALID_SUBTYPE);
 
   @Test
   void commit() throws Exception {
