@@ -46,7 +46,10 @@ import org.immutables.value.Value;
   @JsonSubTypes.Type(name = "CONTENT_STORED", value = ImmutableContentStoredEvent.class),
   @JsonSubTypes.Type(name = "CONTENT_REMOVED", value = ImmutableContentRemovedEvent.class)
 })
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME,
+    include = JsonTypeInfo.As.EXISTING_PROPERTY,
+    property = "type")
 public interface Event {
 
   /** The type of the event. */

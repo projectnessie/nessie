@@ -18,7 +18,6 @@ package org.projectnessie.events.api;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.UUID;
-
 import org.junit.jupiter.api.Test;
 
 class TestNamespace {
@@ -29,9 +28,17 @@ class TestNamespace {
     assertThat(ns.getName()).isEqualTo("name");
     ns = ImmutableNamespace.builder().id(UUID.randomUUID()).addElements("name1", "name2").build();
     assertThat(ns.getName()).isEqualTo("name1.name2");
-    ns = ImmutableNamespace.builder().id(UUID.randomUUID()).addElements("name1", "name2", "name3").build();
+    ns =
+        ImmutableNamespace.builder()
+            .id(UUID.randomUUID())
+            .addElements("name1", "name2", "name3")
+            .build();
     assertThat(ns.getName()).isEqualTo("name1.name2.name3");
-    ns = ImmutableNamespace.builder().id(UUID.randomUUID()).addElements("na.me1", "na\u0000me2").build();
+    ns =
+        ImmutableNamespace.builder()
+            .id(UUID.randomUUID())
+            .addElements("na.me1", "na\u0000me2")
+            .build();
     assertThat(ns.getName()).isEqualTo("na\u001dme1.na\u001dme2");
   }
 }

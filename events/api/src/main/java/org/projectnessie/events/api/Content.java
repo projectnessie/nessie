@@ -20,7 +20,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
-
 import org.immutables.value.Value;
 
 /** An object stored in Nessie, such as a table or a view. */
@@ -31,7 +30,10 @@ import org.immutables.value.Value;
   @JsonSubTypes.Type(name = "DELTA_LAKE_TABLE", value = ImmutableDeltaLakeTable.class),
   @JsonSubTypes.Type(name = "CUSTOM", value = ImmutableCustomContent.class),
 })
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME,
+    include = JsonTypeInfo.As.EXISTING_PROPERTY,
+    property = "type")
 public interface Content {
 
   ContentType getType();

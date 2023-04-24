@@ -18,7 +18,6 @@ package org.projectnessie.events.api;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.UUID;
-
 import org.junit.jupiter.api.Test;
 
 class TestContentType {
@@ -47,7 +46,10 @@ class TestContentType {
   @Test
   void deltaLakeTable() {
     DeltaLakeTable content =
-        ImmutableDeltaLakeTable.builder().id(UUID.randomUUID()).lastCheckpoint("lastCheckpoint").build();
+        ImmutableDeltaLakeTable.builder()
+            .id(UUID.randomUUID())
+            .lastCheckpoint("lastCheckpoint")
+            .build();
     assertThat(content.getType()).isEqualTo(ContentType.DELTA_LAKE_TABLE);
   }
 
