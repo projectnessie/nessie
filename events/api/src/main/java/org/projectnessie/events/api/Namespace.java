@@ -19,7 +19,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.immutables.value.Value;

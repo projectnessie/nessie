@@ -64,9 +64,8 @@ class TestContentType {
 
   @Test
   void custom() {
-    CustomContent content = ImmutableCustomContent.builder().id("id")
-      .customType("customType")
-      .build();
+    CustomContent content =
+        ImmutableCustomContent.builder().id("id").customType("customType").build();
     assertEquals(ContentType.CUSTOM, content.getType());
   }
 }

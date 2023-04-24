@@ -18,7 +18,6 @@ package org.projectnessie.events.api;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.List;
 import org.immutables.value.Value;
 
@@ -39,5 +38,4 @@ public interface DeltaLakeTable extends Content {
   List<String> getCheckpointLocationHistory();
 
   String getLastCheckpoint();
-
 }
