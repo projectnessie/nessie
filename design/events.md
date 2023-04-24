@@ -377,8 +377,7 @@ the `EventSubscriber` interface are expected to respect the following requiremen
   immediately; it should not wait for read acknowledgements from remote systems.
 * The server COULD impose a (configurable) timeout after which the thread calling the `EventSubscriber` `onXyz()` method
   is interrupted and delivery is considered failed.
-* A `RuntimeException` MAY be thrown to indicate that event delivery wasn't possible, e.g. because the underlying
-  pub/sub system is unreachable. But in this case, the exception MUST be thrown immediately.
+* `onXyz()` methods SHOULD NOT throw any `RuntimeException`. If they do, Nessie will simply catch and log the error.
 * For increased resilience, a failed invocation of any `EventSubscriber` `onXyz()` method MAY be retried a configurable
   number of times, with exponential backoff. This is however not a requirement for the MVP.
 
