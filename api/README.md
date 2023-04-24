@@ -1,3 +1,10 @@
+# Nessie Specification
+
+The Nessie `ConfigApi` (v2) allows the caller to retrieve the server's 'specVersion', which is a semver string
+defining the behaviour of the Nessie Server.
+
+The currently define Nessie Specification is [2.0.0-beta.1](NESSIE-SPEC-2-0.md).
+
 # Nessie Model and API
 
 The `model` module contains java class that define the user-visible model for data exchanging data between Nessie
@@ -11,7 +18,7 @@ sections for details.
 The java classes in the `org.projectnessie.model` and `org.projectnessie.error` packages are meant to be used
 by java clients to communicate with Nessie Servers. These classes can be used to compile custom client-side code.
 
-The utilities provided by the `clients/client` module can help building Nessie clients in `java`.
+The utilities provided by the `client` module can help building Nessie clients in `java`.
 
 # Nessie API
 
