@@ -54,6 +54,13 @@ public abstract class AbstractNestedVersionStore {
     return store;
   }
 
+  protected StorageAssertions storageCheckpoint() {
+    if (store instanceof ValidatingVersionStore) {
+      return ((ValidatingVersionStore) store).storageCheckpoint();
+    }
+    return new StorageAssertions(); // non-validating
+  }
+
   protected List<Commit> commitsList(Ref ref, boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException {
     try (PaginationIterator<Commit> s = store().getCommits(ref, fetchAdditionalInfo)) {

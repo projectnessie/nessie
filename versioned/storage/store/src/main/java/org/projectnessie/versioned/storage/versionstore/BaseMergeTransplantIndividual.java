@@ -42,6 +42,8 @@ import org.projectnessie.versioned.MergeResult.KeyDetails;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.storage.batching.BatchingPersist;
+import org.projectnessie.versioned.storage.batching.WriteBatching;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
 import org.projectnessie.versioned.storage.common.logic.CommitLogic;
@@ -57,6 +59,8 @@ import org.projectnessie.versioned.storage.common.persist.Reference;
 
 class BaseMergeTransplantIndividual extends BaseCommitHelper {
 
+  final BatchingPersist persist;
+
   BaseMergeTransplantIndividual(
       @Nonnull @jakarta.annotation.Nonnull BranchName branch,
       @Nonnull @jakarta.annotation.Nonnull Optional<Hash> referenceHash,
@@ -64,7 +68,22 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
       @Nonnull @jakarta.annotation.Nonnull Reference reference,
       @Nullable @jakarta.annotation.Nullable CommitObj head)
       throws ReferenceNotFoundException {
+    this(branch, referenceHash, batching(persist), reference, head);
+  }
+
+  private BaseMergeTransplantIndividual(
+      @Nonnull @jakarta.annotation.Nonnull BranchName branch,
+      @Nonnull @jakarta.annotation.Nonnull Optional<Hash> referenceHash,
+      @Nonnull @jakarta.annotation.Nonnull BatchingPersist persist,
+      @Nonnull @jakarta.annotation.Nonnull Reference reference,
+      @Nullable @jakarta.annotation.Nullable CommitObj head)
+      throws ReferenceNotFoundException {
     super(branch, referenceHash, persist, reference, head);
+    this.persist = persist;
+  }
+
+  private static BatchingPersist batching(Persist persist) {
+    return WriteBatching.builder().persist(persist).batchSize(Integer.MAX_VALUE).build().create();
   }
 
   MergeResult<Commit> individualCommits(
@@ -79,7 +98,9 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
         indexesLogic.buildCompleteIndexOrEmpty(sourceCommits.sourceParent);
     StoreIndex<CommitOp> targetParentIndex = indexesLogic.buildCompleteIndexOrEmpty(head);
 
+    CommitLogic commitLogic = commitLogic(persist);
     ObjId newHead = headId();
+    boolean empty = true;
     Map<ContentKey, KeyDetails> keyDetailsMap = new HashMap<>();
     for (CommitObj sourceCommit : sourceCommits.sourceCommits) {
       CreateCommit createCommit =
@@ -97,19 +118,9 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
         continue;
       }
 
-      CommitLogic commitLogic = commitLogic(persist);
-      boolean committed = commitLogic.storeCommit(newCommit, objsToStore);
-
-      if (committed) {
-        newHead = newCommit.id();
-      } else {
-        // Commit has NOT been persisted, because it already exists.
-        //
-        // This MAY indicate a fast-forward merge.
-        // But it may also indicate that another request created the exact same commit, BUT that
-        // other commit does not necessarily need to be included in the current reference chain.
-        //
-        // TL;DR assuming that 'new_head == null' indicates a fast-forward is WRONG.
+      empty = false;
+      if (!dryRun) {
+        commitLogic.storeCommit(newCommit, objsToStore);
         newHead = newCommit.id();
       }
 
@@ -117,7 +128,13 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
       targetParentIndex = indexesLogic.buildCompleteIndex(newCommit, Optional.empty());
     }
 
-    return mergeTransplantSuccess(mergeResult, newHead, dryRun, keyDetailsMap);
+    boolean hasConflicts = recordKeyDetailsAndCheckConflicts(mergeResult, keyDetailsMap);
+
+    if (!dryRun && !hasConflicts) {
+      persist.flush();
+    }
+
+    return finishMergeTransplant(empty, mergeResult, newHead, dryRun, hasConflicts);
   }
 
   private CreateCommit cloneCommit(

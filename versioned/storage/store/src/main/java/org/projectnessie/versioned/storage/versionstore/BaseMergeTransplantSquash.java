@@ -91,32 +91,24 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
 
     mergeBehaviors.postValidate();
 
-    // TODO check keyDetailsMap for conflicts here - no need to persist the merge commit
+    boolean hasConflicts = recordKeyDetailsAndCheckConflicts(mergeResult, keyDetailsMap);
 
     IndexesLogic indexesLogic = indexesLogic(persist);
     if (!indexesLogic.commitOperations(mergeCommit).iterator().hasNext()) {
       // The squashed commit is empty, i.e. it doesn't contain any operations: don't persist it.
-      return mergeTransplantSuccess(mergeResult, headId(), dryRun, keyDetailsMap);
+      return finishMergeTransplant(true, mergeResult, headId(), dryRun, hasConflicts);
     }
-
-    CommitLogic commitLogic = commitLogic(persist);
-    boolean committed = commitLogic.storeCommit(mergeCommit, objsToStore);
 
     ObjId newHead;
-    if (committed) {
-      newHead = mergeCommit.id();
+    if (dryRun || hasConflicts) {
+      newHead = headId();
     } else {
-      // Commit has NOT been persisted, because it already exists.
-      //
-      // This MAY indicate a fast-forward merge.
-      // But it may also indicate that another request created the exact same commit, BUT that
-      // other commit does not necessarily need to be included in the current reference chain.
-      //
-      // TL;DR assuming that 'new_head == null' indicates a fast-forward is WRONG.
+      CommitLogic commitLogic = commitLogic(persist);
+      commitLogic.storeCommit(mergeCommit, objsToStore);
       newHead = mergeCommit.id();
     }
 
-    return mergeTransplantSuccess(mergeResult, newHead, dryRun, keyDetailsMap);
+    return finishMergeTransplant(false, mergeResult, newHead, dryRun, hasConflicts);
   }
 
   private CreateCommit createSquashCommit(

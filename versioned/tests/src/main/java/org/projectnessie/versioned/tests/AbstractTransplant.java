@@ -241,6 +241,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     store().create(newBranch, Optional.empty());
     commit("Another commit").put(T_1, V_1_4).toBranch(newBranch);
 
+    StorageAssertions checkpoint = storageCheckpoint();
     soft.assertThatThrownBy(
             () ->
                 store()
@@ -255,6 +256,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                         dryRun,
                         false))
         .isInstanceOf(ReferenceConflictException.class);
+    checkpoint.assertNoWrites();
   }
 
   @ParameterizedTest
@@ -302,6 +304,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
   })
   protected void checkTransplantOnNonExistingBranch(boolean individualCommits, boolean dryRun) {
     final BranchName newBranch = BranchName.of("bar_5");
+    StorageAssertions checkpoint = storageCheckpoint();
     soft.assertThatThrownBy(
             () ->
                 store()
@@ -316,6 +319,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                         dryRun,
                         false))
         .isInstanceOf(ReferenceNotFoundException.class);
+    checkpoint.assertNoWrites();
   }
 
   @ParameterizedTest
@@ -329,6 +333,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
       throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_6");
     store().create(newBranch, Optional.empty());
+    StorageAssertions checkpoint = storageCheckpoint();
     soft.assertThatThrownBy(
             () ->
                 store()
@@ -343,6 +348,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                         dryRun,
                         false))
         .isInstanceOf(ReferenceNotFoundException.class);
+    checkpoint.assertNoWrites();
   }
 
   @ParameterizedTest
@@ -434,6 +440,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     final BranchName newBranch = BranchName.of("bar_1");
     store().create(newBranch, Optional.empty());
 
+    StorageAssertions checkpoint = storageCheckpoint();
     soft.assertThatThrownBy(
             () ->
                 store()
@@ -448,6 +455,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                         dryRun,
                         false))
         .isInstanceOf(ReferenceNotFoundException.class);
+    checkpoint.assertNoWrites();
   }
 
   @ParameterizedTest

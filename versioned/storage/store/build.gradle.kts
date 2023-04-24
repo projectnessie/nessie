@@ -28,6 +28,7 @@ description = "VersionStore implementation relying on 'Persist'."
 
 dependencies {
   implementation(project(":nessie-versioned-storage-common"))
+  implementation(project(":nessie-versioned-storage-batching"))
   implementation(project(":nessie-model"))
   implementation(project(":nessie-versioned-spi"))
   implementation(libs.agrona)

@@ -105,7 +105,7 @@ public class TestRefMapping {
             ReferenceNotFoundException.class,
             "Commit '1234' not found"),
         arguments(
-            objectNotFound(objIdFromString("1234")),
+            objectNotFound(objIdFromString("1234"), new RuntimeException("test")),
             ReferenceNotFoundException.class,
             "Commit '1234' not found"),
         arguments(

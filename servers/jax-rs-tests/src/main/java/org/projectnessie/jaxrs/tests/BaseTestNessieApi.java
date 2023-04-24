@@ -23,6 +23,7 @@ import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
@@ -86,6 +87,7 @@ import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableReferenceMetadata;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
+import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.model.Operation;
@@ -98,7 +100,6 @@ import org.projectnessie.model.Tag;
 
 /** Nessie-API tests. */
 @NessieApiVersions // all versions
-@SuppressWarnings("resource")
 public abstract class BaseTestNessieApi {
 
   public static final String EMPTY = Hashing.sha256().hashString("empty", UTF_8).toString();
@@ -558,6 +559,57 @@ public abstract class BaseTestNessieApi {
                 .refName(main.getName())
                 .get())
         .containsKeys(ContentKey.of("a", "a"), ContentKey.of("b", "a"), ContentKey.of("b", "b"));
+  }
+
+  @Test
+  public void mergeTransplantDryRunWithConflictInResult() throws Exception {
+    Branch main0 =
+        prepCommit(api().getDefaultBranch(), "common ancestor", dummyPut("common")).commit();
+    Branch branch = createReference(Branch.of("branch", main0.getHash()), main0.getName());
+
+    branch =
+        prepCommit(branch, "branch", dummyPut("conflictingKey1"), dummyPut("branchKey")).commit();
+    Branch main =
+        prepCommit(main0, "main", dummyPut("conflictingKey1"), dummyPut("mainKey")).commit();
+
+    soft.assertThat(
+            api()
+                .mergeRefIntoBranch()
+                .fromRef(branch)
+                .branch(main)
+                .returnConflictAsResult(true) // adds coverage on top of AbstractMerge tests
+                .dryRun(true)
+                .merge()
+                .getDetails())
+        .extracting(
+            MergeResponse.ContentKeyDetails::getKey,
+            MergeResponse.ContentKeyDetails::getConflictType)
+        .contains(
+            tuple(ContentKey.of("branchKey"), MergeResponse.ContentKeyConflict.NONE),
+            tuple(ContentKey.of("conflictingKey1"), MergeResponse.ContentKeyConflict.UNRESOLVABLE));
+
+    // Assert no change to the ref HEAD
+    soft.assertThat(api().getReference().refName(main.getName()).get()).isEqualTo(main);
+
+    soft.assertThat(
+            api()
+                .transplantCommitsIntoBranch()
+                .fromRefName(branch.getName())
+                .hashesToTransplant(singletonList(branch.getHash()))
+                .branch(main0)
+                .returnConflictAsResult(true) // adds coverage on top of AbstractTransplant tests
+                .dryRun(true)
+                .transplant()
+                .getDetails())
+        .extracting(
+            MergeResponse.ContentKeyDetails::getKey,
+            MergeResponse.ContentKeyDetails::getConflictType)
+        .contains(
+            tuple(ContentKey.of("branchKey"), MergeResponse.ContentKeyConflict.NONE),
+            tuple(ContentKey.of("conflictingKey1"), MergeResponse.ContentKeyConflict.UNRESOLVABLE));
+
+    // Assert no change to the ref HEAD
+    soft.assertThat(api().getReference().refName(main.getName()).get()).isEqualTo(main);
   }
 
   @Test
