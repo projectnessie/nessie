@@ -101,11 +101,7 @@ class TestEventType {
 
   static <B extends ReferenceEvent.Builder<B, E>, E extends ReferenceEvent> B refAttributes(
       B builder) {
-    return commonAttributes(
-        builder
-            .referenceName("ref1")
-            .fullReferenceName("/refs/heads/ref1")
-            .referenceType(ReferenceType.BRANCH));
+    return commonAttributes(builder.referenceName("ref1").referenceType(ReferenceType.BRANCH));
   }
 
   static <B extends ContentEvent.Builder<B, E>, E extends ContentEvent> B contentAttributes(

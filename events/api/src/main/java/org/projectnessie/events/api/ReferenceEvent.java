@@ -15,7 +15,9 @@
  */
 package org.projectnessie.events.api;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import org.immutables.value.Value;
 
 /** Event that is emitted when a reference is created, updated or deleted. */
 public interface ReferenceEvent extends Event {
@@ -24,7 +26,11 @@ public interface ReferenceEvent extends Event {
   String getReferenceName();
 
   /** The full name of the reference, e.g. "refs/heads/branch1". */
-  String getFullReferenceName();
+  @Value.Lazy
+  @JsonIgnore
+  default String getFullReferenceName() {
+    return getReferenceType().getPrefix() + getReferenceName();
+  }
 
   /** The type of the reference. */
   ReferenceType getReferenceType();
@@ -33,9 +39,6 @@ public interface ReferenceEvent extends Event {
 
     @CanIgnoreReturnValue
     B referenceName(String referenceName);
-
-    @CanIgnoreReturnValue
-    B fullReferenceName(String fullReferenceName);
 
     @CanIgnoreReturnValue
     B referenceType(ReferenceType referenceType);

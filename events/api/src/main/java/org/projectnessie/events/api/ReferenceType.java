@@ -17,6 +17,32 @@ package org.projectnessie.events.api;
 
 /** An enum of all possible reference types. */
 public enum ReferenceType {
-  BRANCH,
-  TAG
+  BRANCH("refs/heads/"),
+  TAG("refs/tags/");
+
+  private final String prefix;
+
+  ReferenceType(String prefix) {
+    this.prefix = prefix;
+  }
+
+  /** The prefix of the reference type, e.g. "refs/heads/". */
+  public String getPrefix() {
+    return prefix;
+  }
+
+  /**
+   * Returns the {@link ReferenceType} for the given full reference name, e.g. {@code
+   * "refs/heads/branch1"} returns {@link ReferenceType#BRANCH}.
+   */
+  public static ReferenceType fromFullReferenceName(String fullName) {
+    if (fullName.startsWith(BRANCH.getPrefix())) {
+      return BRANCH;
+    } else if (fullName.startsWith(TAG.getPrefix())) {
+      return TAG;
+    } else {
+      throw new IllegalArgumentException(
+          "Full name does not correspond to a known reference type: " + fullName);
+    }
+  }
 }
