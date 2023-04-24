@@ -32,3 +32,14 @@ Refer to the Nessie API documentation (under the `model` module) for the meaning
   operations are not considered during merges and transplants, even when they were part of the original commit.
 * The server MAY consider `Unchanged` operations during the handling of plain commits and MAY raise commit conflicts
   if they clash with operations in the commits log since the `expected hash` provided by the client.
+
+## Related Server Configuration
+
+Note that setting the `nessie.version.store.advanced.validate-namespaces` configuration property to `false` will 
+make the server violate the Namespace existence validation rule (above). If the Nessie administration sets this
+property, a custom `NessieConfiguration.json` file must also be provided, which MUST NOT declare `2.0.0-beta.1` as
+the supported spec version.
+
+Similarly, if a Nessie repository is imported, the administrator is responsible for ensuring that the imported data
+has Namespace objects defined appropriately throughout the commit history (all HEADs) in order to claim support for
+spec version `2.0.0-beta.1`.
