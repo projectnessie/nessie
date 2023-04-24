@@ -32,13 +32,5 @@ public interface CustomContent extends Content {
     return ContentType.CUSTOM;
   }
 
-  static CustomContent.Builder builder() {
-    return ImmutableCustomContent.builder();
-  }
-
-  interface Builder extends Content.Builder<CustomContent.Builder, CustomContent> {
-
-    @Override
-    CustomContent build();
-  }
+  String getCustomType();
 }

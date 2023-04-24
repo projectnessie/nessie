@@ -50,29 +50,4 @@ public interface IcebergTable extends Content {
 
   /** Corresponds to Iceberg's {@code defaultSortOrderId}. */
   int getSortOrderId();
-
-  static IcebergTable.Builder builder() {
-    return ImmutableIcebergTable.builder();
-  }
-
-  interface Builder extends Content.Builder<IcebergTable.Builder, IcebergTable> {
-
-    @CanIgnoreReturnValue
-    Builder metadataLocation(String metadataLocation);
-
-    @CanIgnoreReturnValue
-    Builder snapshotId(long snapshotId);
-
-    @CanIgnoreReturnValue
-    Builder schemaId(int schemaId);
-
-    @CanIgnoreReturnValue
-    Builder specId(int specId);
-
-    @CanIgnoreReturnValue
-    Builder sortOrderId(int sortOrderId);
-
-    @Override
-    IcebergTable build();
-  }
 }

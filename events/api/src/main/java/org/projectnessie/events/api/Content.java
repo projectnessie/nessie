@@ -17,7 +17,6 @@ package org.projectnessie.events.api;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.Collections;
 import java.util.Map;
 import org.immutables.value.Value;
@@ -47,18 +46,5 @@ public interface Content {
   @Value.Default
   default Map<String, Object> getAttributes() {
     return Collections.emptyMap();
-  }
-
-  interface Builder<B extends Content.Builder<B, C>, C extends Content> {
-    @CanIgnoreReturnValue
-    B type(ContentType type);
-
-    @CanIgnoreReturnValue
-    B id(String id);
-
-    @CanIgnoreReturnValue
-    B attributes(Map<String, ?> properties);
-
-    C build();
   }
 }

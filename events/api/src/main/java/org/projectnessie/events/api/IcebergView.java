@@ -47,29 +47,4 @@ public interface IcebergView extends Content {
   String getSqlText();
 
   String getDialect();
-
-  static IcebergView.Builder builder() {
-    return ImmutableIcebergView.builder();
-  }
-
-  interface Builder extends Content.Builder<IcebergView.Builder, IcebergView> {
-
-    @CanIgnoreReturnValue
-    Builder metadataLocation(String metadataLocation);
-
-    @CanIgnoreReturnValue
-    Builder versionId(long snapshotId);
-
-    @CanIgnoreReturnValue
-    Builder schemaId(int schemaId);
-
-    @CanIgnoreReturnValue
-    Builder sqlText(String sqlText);
-
-    @CanIgnoreReturnValue
-    Builder dialect(String dialect);
-
-    @Override
-    IcebergView build();
-  }
 }

@@ -40,22 +40,4 @@ public interface DeltaLakeTable extends Content {
 
   String getLastCheckpoint();
 
-  static DeltaLakeTable.Builder builder() {
-    return ImmutableDeltaLakeTable.builder();
-  }
-
-  interface Builder extends Content.Builder<DeltaLakeTable.Builder, DeltaLakeTable> {
-
-    @CanIgnoreReturnValue
-    Builder metadataLocationHistory(Iterable<String> metadataLocationHistory);
-
-    @CanIgnoreReturnValue
-    Builder checkpointLocationHistory(Iterable<String> checkpointLocationHistory);
-
-    @CanIgnoreReturnValue
-    Builder lastCheckpoint(String lastCheckpoint);
-
-    @Override
-    DeltaLakeTable build();
-  }
 }

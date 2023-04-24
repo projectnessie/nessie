@@ -158,6 +158,7 @@ class TestJsonSerde {
     CustomContent content =
         ImmutableCustomContent.builder()
             .id("id")
+            .customType("customType")
             .putAttribute("string", "foo")
             .putAttribute("number", 123)
             .build();

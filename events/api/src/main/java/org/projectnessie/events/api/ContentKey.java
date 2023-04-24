@@ -33,6 +33,10 @@ public interface ContentKey {
     return ImmutableContentKey.of(Arrays.asList(elements));
   }
 
+  static ContentKey of(Iterable<String> elements) {
+    return ImmutableContentKey.of(elements);
+  }
+
   @Value.Parameter
   List<String> getElements();
 
@@ -44,11 +48,11 @@ public interface ContentKey {
 
   @Value.Lazy
   @JsonIgnore
-  default Optional<ImmutableContentKey> getParent() {
+  default Optional<ContentKey> getParent() {
     List<String> elements = getElements();
     if (elements.size() <= 1) {
       return Optional.empty();
     }
-    return Optional.of(ImmutableContentKey.of(elements.subList(0, elements.size() - 1)));
+    return Optional.of(ContentKey.of(elements.subList(0, elements.size() - 1)));
   }
 }

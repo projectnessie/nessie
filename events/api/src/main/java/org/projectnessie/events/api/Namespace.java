@@ -46,17 +46,4 @@ public interface Namespace extends Content {
   }
 
   List<String> getElements();
-
-  static Namespace.Builder builder() {
-    return ImmutableNamespace.builder();
-  }
-
-  interface Builder extends Content.Builder<Namespace.Builder, Namespace> {
-
-    @CanIgnoreReturnValue
-    Builder elements(Iterable<String> elements);
-
-    @Override
-    Namespace build();
-  }
 }
