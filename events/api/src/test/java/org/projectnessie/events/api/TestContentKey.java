@@ -15,9 +15,7 @@
  */
 package org.projectnessie.events.api;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 
@@ -25,18 +23,13 @@ class TestContentKey {
 
   @Test
   void getName() {
-    ContentKey contentKey = ContentKey.of("name");
-    assertEquals("name", contentKey.getName());
-    contentKey = ContentKey.of("parent", "name");
-    assertEquals("name", contentKey.getName());
+    assertThat(ContentKey.of("name").getName()).isEqualTo("name");
+    assertThat(ContentKey.of("parent", "name").getName()).isEqualTo("name");
   }
 
   @Test
   void getParent() {
-    ContentKey contentKey = ContentKey.of("name");
-    assertFalse(contentKey.getParent().isPresent());
-    contentKey = ContentKey.of("parent", "name");
-    assertTrue(contentKey.getParent().isPresent());
-    assertEquals(ContentKey.of("parent"), contentKey.getParent().get());
+    assertThat(ContentKey.of("name").getParent()).isNotPresent();
+    assertThat(ContentKey.of("parent", "name").getParent()).contains(ContentKey.of("parent"));
   }
 }

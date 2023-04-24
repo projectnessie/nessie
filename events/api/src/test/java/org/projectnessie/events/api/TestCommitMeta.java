@@ -15,7 +15,8 @@
  */
 package org.projectnessie.events.api;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -25,41 +26,31 @@ import org.junit.jupiter.api.Test;
 class TestCommitMeta {
 
   @Test
-  @SuppressWarnings("OptionalGetWithoutIsPresent")
   void getAuthor() {
-    CommitMeta commitMeta = getBuilder().addAuthors("author1", "author2").build();
-    assertEquals(2, commitMeta.getAuthors().size());
-    assertEquals("author1", commitMeta.getAuthors().get(0));
-    assertEquals("author2", commitMeta.getAuthors().get(1));
-    assertEquals("author1", commitMeta.getAuthor().get());
+    CommitMeta commitMeta = builder().addAuthors("author1", "author2").build();
+    assertThat(commitMeta.getAuthors()).containsExactly("author1", "author2");
+    assertThat(commitMeta.getAuthor()).contains("author1");
   }
 
   @Test
-  @SuppressWarnings("OptionalGetWithoutIsPresent")
   void getSignOff() {
-    CommitMeta commitMeta = getBuilder().addSignOffs("signOff1", "signOff2").build();
-    assertEquals(2, commitMeta.getSignOffs().size());
-    assertEquals("signOff1", commitMeta.getSignOffs().get(0));
-    assertEquals("signOff2", commitMeta.getSignOffs().get(1));
-    assertEquals("signOff1", commitMeta.getSignOff().get());
+    CommitMeta commitMeta = builder().addSignOffs("signOff1", "signOff2").build();
+    assertThat(commitMeta.getSignOffs()).containsExactly("signOff1", "signOff2");
+    assertThat(commitMeta.getSignOff()).contains("signOff1");
   }
 
   @Test
   void getProperties() {
     CommitMeta commitMeta =
-        getBuilder()
+        builder()
             .putMultiProperty("key1", Arrays.asList("value1a", "value1b"))
             .putMultiProperty("key2", Collections.singletonList("value2a"))
             .build();
-    assertEquals(2, commitMeta.getMultiProperties().size());
-    assertEquals(Arrays.asList("value1a", "value1b"), commitMeta.getMultiProperties().get("key1"));
-    assertEquals(Collections.singletonList("value2a"), commitMeta.getMultiProperties().get("key2"));
-    assertEquals(2, commitMeta.getProperties().size());
-    assertEquals("value1a", commitMeta.getProperties().get("key1"));
-    assertEquals("value2a", commitMeta.getProperties().get("key2"));
+    assertThat(commitMeta.getProperties())
+        .containsOnly(entry("key1", "value1a"), entry("key2", "value2a"));
   }
 
-  private static ImmutableCommitMeta.Builder getBuilder() {
+  private static ImmutableCommitMeta.Builder builder() {
     return ImmutableCommitMeta.builder()
         .committer("committer")
         .message("message")

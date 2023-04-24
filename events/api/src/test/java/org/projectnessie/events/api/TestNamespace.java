@@ -15,7 +15,7 @@
  */
 package org.projectnessie.events.api;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 
@@ -24,12 +24,12 @@ class TestNamespace {
   @Test
   void getName() {
     Namespace ns = ImmutableNamespace.builder().id("id").addElements("name").build();
-    assertEquals("name", ns.getName());
+    assertThat(ns.getName()).isEqualTo("name");
     ns = ImmutableNamespace.builder().id("id").addElements("name1", "name2").build();
-    assertEquals("name1.name2", ns.getName());
+    assertThat(ns.getName()).isEqualTo("name1.name2");
     ns = ImmutableNamespace.builder().id("id").addElements("name1", "name2", "name3").build();
-    assertEquals("name1.name2.name3", ns.getName());
+    assertThat(ns.getName()).isEqualTo("name1.name2.name3");
     ns = ImmutableNamespace.builder().id("id").addElements("na.me1", "na\u0000me2").build();
-    assertEquals("na\u001dme1.na\u001dme2", ns.getName());
+    assertThat(ns.getName()).isEqualTo("na\u001dme1.na\u001dme2");
   }
 }

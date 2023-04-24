@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.projectnessie.events.api;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.Test;
 
@@ -24,10 +24,11 @@ class TestReferenceType {
 
   @Test
   void fromFullReferenceName() {
-    assertEquals(ReferenceType.BRANCH, ReferenceType.fromFullReferenceName("refs/heads/branch1"));
-    assertEquals(ReferenceType.TAG, ReferenceType.fromFullReferenceName("refs/tags/tag1"));
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> ReferenceType.fromFullReferenceName("refs/other/branch1"));
+    assertThat(ReferenceType.fromFullReferenceName("refs/heads/branch1"))
+        .isEqualTo(ReferenceType.BRANCH);
+    assertThat(ReferenceType.fromFullReferenceName("refs/tags/tag1")).isEqualTo(ReferenceType.TAG);
+    assertThatThrownBy(() -> ReferenceType.fromFullReferenceName("refs/other/branch1"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Full name does not correspond to a known reference type: refs/other/branch1");
   }
 }

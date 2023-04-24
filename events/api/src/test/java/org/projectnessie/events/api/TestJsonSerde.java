@@ -15,7 +15,7 @@
  */
 package org.projectnessie.events.api;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.events.api.TestEventType.committingAttributes;
 import static org.projectnessie.events.api.TestEventType.contentAttributes;
 import static org.projectnessie.events.api.TestEventType.refAttributes;
@@ -44,27 +44,27 @@ class TestJsonSerde {
                     .authorTime(Instant.now())
                     .build())
             .build();
-    assertEquals(event, deserialize(serialize(event), Event.class));
+    assertThat(deserialize(serialize(event), Event.class)).isEqualTo(event);
   }
 
   @Test
   void merge() throws Exception {
     MergeEvent event =
         committingAttributes(MergeEvent.builder()).commonAncestorHash("hash0").build();
-    assertEquals(event, deserialize(serialize(event), Event.class));
+    assertThat(deserialize(serialize(event), Event.class)).isEqualTo(event);
   }
 
   @Test
   void transplant() throws Exception {
     TransplantEvent event = committingAttributes(TransplantEvent.builder()).build();
-    assertEquals(event, deserialize(serialize(event), Event.class));
+    assertThat(deserialize(serialize(event), Event.class)).isEqualTo(event);
   }
 
   @Test
   void referenceCreated() throws Exception {
     ReferenceCreatedEvent event =
         refAttributes(ReferenceCreatedEvent.builder()).hashAfter("hash2").build();
-    assertEquals(event, deserialize(serialize(event), Event.class));
+    assertThat(deserialize(serialize(event), Event.class)).isEqualTo(event);
   }
 
   @Test
@@ -74,14 +74,14 @@ class TestJsonSerde {
             .hashBefore("hash1")
             .hashAfter("hash2")
             .build();
-    assertEquals(event, deserialize(serialize(event), Event.class));
+    assertThat(deserialize(serialize(event), Event.class)).isEqualTo(event);
   }
 
   @Test
   void referenceDeleted() throws Exception {
     ReferenceDeletedEvent event =
         refAttributes(ReferenceDeletedEvent.builder()).hashBefore("hash1").build();
-    assertEquals(event, deserialize(serialize(event), Event.class));
+    assertThat(deserialize(serialize(event), Event.class)).isEqualTo(event);
   }
 
   @Test
@@ -98,13 +98,13 @@ class TestJsonSerde {
                     .sortOrderId(4)
                     .build())
             .build();
-    assertEquals(event, deserialize(serialize(event), Event.class));
+    assertThat(deserialize(serialize(event), Event.class)).isEqualTo(event);
   }
 
   @Test
   void contentRemoved() throws Exception {
     ContentRemovedEvent event = contentAttributes(ContentRemovedEvent.builder()).build();
-    assertEquals(event, deserialize(serialize(event), Event.class));
+    assertThat(deserialize(serialize(event), Event.class)).isEqualTo(event);
   }
 
   @Test
@@ -120,7 +120,7 @@ class TestJsonSerde {
             .putAttribute("string", "foo")
             .putAttribute("number", 123)
             .build();
-    assertEquals(content, deserialize(serialize(content), Content.class));
+    assertThat(deserialize(serialize(content), Content.class)).isEqualTo(content);
   }
 
   @Test
@@ -134,7 +134,7 @@ class TestJsonSerde {
             .putAttribute("string", "foo")
             .putAttribute("number", 123)
             .build();
-    assertEquals(content, deserialize(serialize(content), Content.class));
+    assertThat(deserialize(serialize(content), Content.class)).isEqualTo(content);
   }
 
   @Test
@@ -150,7 +150,7 @@ class TestJsonSerde {
             .putAttribute("string", "foo")
             .putAttribute("number", 123)
             .build();
-    assertEquals(content, deserialize(serialize(content), Content.class));
+    assertThat(deserialize(serialize(content), Content.class)).isEqualTo(content);
   }
 
   @Test
@@ -162,7 +162,7 @@ class TestJsonSerde {
             .putAttribute("string", "foo")
             .putAttribute("number", 123)
             .build();
-    assertEquals(content, deserialize(serialize(content), Content.class));
+    assertThat(deserialize(serialize(content), Content.class)).isEqualTo(content);
   }
 
   private Object deserialize(String json, Class<?> clazz) throws JsonProcessingException {

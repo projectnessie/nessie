@@ -15,7 +15,7 @@
  */
 package org.projectnessie.events.api;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 
@@ -24,7 +24,7 @@ class TestContentType {
   @Test
   void namespace() {
     Namespace content = ImmutableNamespace.builder().id("id").addElements("name").build();
-    assertEquals(ContentType.NAMESPACE, content.getType());
+    assertThat(content.getType()).isEqualTo(ContentType.NAMESPACE);
   }
 
   @Test
@@ -38,14 +38,14 @@ class TestContentType {
             .specId(3)
             .sortOrderId(4)
             .build();
-    assertEquals(ContentType.ICEBERG_TABLE, content.getType());
+    assertThat(content.getType()).isEqualTo(ContentType.ICEBERG_TABLE);
   }
 
   @Test
   void deltaLakeTable() {
     DeltaLakeTable content =
         ImmutableDeltaLakeTable.builder().id("id").lastCheckpoint("lastCheckpoint").build();
-    assertEquals(ContentType.DELTA_LAKE_TABLE, content.getType());
+    assertThat(content.getType()).isEqualTo(ContentType.DELTA_LAKE_TABLE);
   }
 
   @Test
@@ -59,13 +59,13 @@ class TestContentType {
             .sqlText("sqlText")
             .dialect("dialect")
             .build();
-    assertEquals(ContentType.ICEBERG_VIEW, content.getType());
+    assertThat(content.getType()).isEqualTo(ContentType.ICEBERG_VIEW);
   }
 
   @Test
   void custom() {
     CustomContent content =
         ImmutableCustomContent.builder().id("id").customType("customType").build();
-    assertEquals(ContentType.CUSTOM, content.getType());
+    assertThat(content.getType()).isEqualTo(ContentType.CUSTOM);
   }
 }

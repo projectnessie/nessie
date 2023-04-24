@@ -15,7 +15,7 @@
  */
 package org.projectnessie.events.api;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 import java.time.Instant;
@@ -36,27 +36,27 @@ class TestEventType {
                     .authorTime(Instant.now())
                     .build())
             .build();
-    assertEquals(EventType.COMMIT, event.getType());
+    assertThat(event.getType()).isEqualTo(EventType.COMMIT);
   }
 
   @Test
   void merge() {
     MergeEvent event =
         committingAttributes(MergeEvent.builder()).commonAncestorHash("hash0").build();
-    assertEquals(EventType.MERGE, event.getType());
+    assertThat(event.getType()).isEqualTo(EventType.MERGE);
   }
 
   @Test
   void transplant() {
     TransplantEvent event = committingAttributes(TransplantEvent.builder()).build();
-    assertEquals(EventType.TRANSPLANT, event.getType());
+    assertThat(event.getType()).isEqualTo(EventType.TRANSPLANT);
   }
 
   @Test
   void referenceCreated() {
     ReferenceCreatedEvent event =
         refAttributes(ReferenceCreatedEvent.builder()).hashAfter("hash2").build();
-    assertEquals(EventType.REFERENCE_CREATED, event.getType());
+    assertThat(event.getType()).isEqualTo(EventType.REFERENCE_CREATED);
   }
 
   @Test
@@ -66,27 +66,27 @@ class TestEventType {
             .hashBefore("hash1")
             .hashAfter("hash2")
             .build();
-    assertEquals(EventType.REFERENCE_UPDATED, event.getType());
+    assertThat(event.getType()).isEqualTo(EventType.REFERENCE_UPDATED);
   }
 
   @Test
   void referenceDeleted() {
     ReferenceDeletedEvent event =
         refAttributes(ReferenceDeletedEvent.builder()).hashBefore("hash1").build();
-    assertEquals(EventType.REFERENCE_DELETED, event.getType());
+    assertThat(event.getType()).isEqualTo(EventType.REFERENCE_DELETED);
   }
 
   @Test
   void contentStored() {
     ContentStoredEvent event =
         contentAttributes(ContentStoredEvent.builder()).content(mock(Content.class)).build();
-    assertEquals(EventType.CONTENT_STORED, event.getType());
+    assertThat(event.getType()).isEqualTo(EventType.CONTENT_STORED);
   }
 
   @Test
   void contentRemoved() {
     ContentRemovedEvent event = contentAttributes(ContentRemovedEvent.builder()).build();
-    assertEquals(EventType.CONTENT_REMOVED, event.getType());
+    assertThat(event.getType()).isEqualTo(EventType.CONTENT_REMOVED);
   }
 
   static <B extends CommittingEvent.Builder<B, E>, E extends CommittingEvent>
