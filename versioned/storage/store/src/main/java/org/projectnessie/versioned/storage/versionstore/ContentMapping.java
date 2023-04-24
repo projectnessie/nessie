@@ -25,6 +25,7 @@ import static org.projectnessie.versioned.storage.versionstore.TypeMapping.store
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.toCommitMeta;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
@@ -133,6 +134,7 @@ public final class ContentMapping {
     if (fetchAdditionalInfo) {
       ContentKey key;
       IndexesLogic indexesLogic = indexesLogic(persist);
+      Map<ObjId, ContentKey> objIds = new LinkedHashMap<>();
       for (StoreIndexElement<CommitOp> op : indexesLogic.commitOperations(commitObj)) {
         key = storeKeyToKey(op.key());
         // Note: key==null, if not the "main universe" or not a "content" discriminator
@@ -140,12 +142,20 @@ public final class ContentMapping {
           CommitOp c = op.content();
           if (c.action().exists()) {
             ObjId objId = requireNonNull(c.value(), "Required value pointer is null");
-            ContentValueObj contentValue =
-                persist.fetchTypedObj(objId, VALUE, ContentValueObj.class);
-            commit.addOperations(Put.of(key, contentValue.payload(), contentValue.data()));
+            objIds.put(objId, key);
           } else {
             commit.addOperations(Delete.of(key));
           }
+        }
+      }
+      if (!objIds.isEmpty()) {
+        Obj[] objs = persist.fetchObjs(objIds.keySet().toArray(new ObjId[0]));
+        for (int i = 0; i < objIds.size(); i++) {
+          Obj obj = objs[i];
+          assert obj instanceof ContentValueObj;
+          ContentValueObj contentValue = (ContentValueObj) obj;
+          key = objIds.get(obj.id());
+          commit.addOperations(Put.of(key, contentValue.payload(), contentValue.data()));
         }
       }
     }
