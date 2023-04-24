@@ -132,29 +132,28 @@ public final class ContentMapping {
     CommitMeta commitMeta = toCommitMeta(commitObj);
 
     if (fetchAdditionalInfo) {
-      ContentKey key;
       IndexesLogic indexesLogic = indexesLogic(persist);
-      Map<ObjId, ContentKey> objIds = new LinkedHashMap<>();
+      Map<ObjId, ContentKey> idsToKeys = new LinkedHashMap<>();
       for (StoreIndexElement<CommitOp> op : indexesLogic.commitOperations(commitObj)) {
-        key = storeKeyToKey(op.key());
+        ContentKey key = storeKeyToKey(op.key());
         // Note: key==null, if not the "main universe" or not a "content" discriminator
         if (key != null) {
           CommitOp c = op.content();
           if (c.action().exists()) {
             ObjId objId = requireNonNull(c.value(), "Required value pointer is null");
-            objIds.put(objId, key);
+            idsToKeys.put(objId, key);
           } else {
             commit.addOperations(Delete.of(key));
           }
         }
       }
-      if (!objIds.isEmpty()) {
-        Obj[] objs = persist.fetchObjs(objIds.keySet().toArray(new ObjId[0]));
-        for (int i = 0; i < objIds.size(); i++) {
-          Obj obj = objs[i];
+      if (!idsToKeys.isEmpty()) {
+        ObjId[] ids = idsToKeys.keySet().toArray(new ObjId[0]);
+        Obj[] objs = persist.fetchObjs(ids);
+        for (Obj obj : objs) {
           assert obj instanceof ContentValueObj;
           ContentValueObj contentValue = (ContentValueObj) obj;
-          key = objIds.get(obj.id());
+          ContentKey key = idsToKeys.get(obj.id());
           commit.addOperations(Put.of(key, contentValue.payload(), contentValue.data()));
         }
       }
