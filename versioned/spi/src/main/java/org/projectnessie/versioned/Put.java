@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned;
 
+import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.function.Supplier;
 import javax.annotation.Nonnull;
@@ -110,5 +111,15 @@ public abstract class Put implements Operation {
   @Override
   public int hashCode() {
     return Objects.hash(shouldMatchHash(), getKey(), getValue());
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper("Put")
+        .omitNullValues()
+        .add("shouldMatchHash", shouldMatchHash())
+        .add("key", getKey())
+        .add("value", getValue())
+        .toString();
   }
 }
