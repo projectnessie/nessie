@@ -51,6 +51,8 @@ import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
+import org.projectnessie.versioned.CommitResult;
+import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.MergeConflictException;
@@ -61,6 +63,7 @@ import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.ResultType;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.paging.PaginationIterator;
@@ -162,6 +165,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             () ->
                 store()
                     .merge(
+                        MAIN_BRANCH,
                         thirdCommit,
                         targetBranch,
                         Optional.empty(),
@@ -184,6 +188,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
               () ->
                   store()
                       .merge(
+                          MAIN_BRANCH,
                           thirdCommit,
                           targetBranch,
                           Optional.empty(),
@@ -207,6 +212,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
               () ->
                   store()
                       .merge(
+                          MAIN_BRANCH,
                           thirdCommit,
                           targetBranch,
                           Optional.empty(),
@@ -261,6 +267,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             () ->
                 store()
                     .merge(
+                        sourceBranch,
                         sourceHead,
                         MAIN_BRANCH,
                         Optional.empty(),
@@ -281,6 +288,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
               () ->
                   store()
                       .merge(
+                          sourceBranch,
                           sourceHead,
                           MAIN_BRANCH,
                           Optional.empty(),
@@ -307,6 +315,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
               () ->
                   store()
                       .merge(
+                          sourceBranch,
                           sourceHead,
                           MAIN_BRANCH,
                           Optional.empty(),
@@ -331,6 +340,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             () ->
                 store()
                     .merge(
+                        sourceBranch,
                         sourceHead,
                         MAIN_BRANCH,
                         Optional.empty(),
@@ -358,6 +368,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             () ->
                 store()
                     .merge(
+                        sourceBranch,
                         sourceHead,
                         MAIN_BRANCH,
                         Optional.empty(),
@@ -375,6 +386,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     MergeResult<Commit> result =
         store()
             .merge(
+                sourceBranch,
                 sourceHead,
                 MAIN_BRANCH,
                 Optional.empty(),
@@ -440,17 +452,21 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
       BranchName newBranch,
       MetadataRewriter<CommitMeta> metadataRewriter)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    store()
-        .merge(
-            thirdCommit,
-            newBranch,
-            Optional.of(initialHash),
-            metadataRewriter,
-            individualCommits,
-            Collections.emptyMap(),
-            MergeBehavior.NORMAL,
-            false,
-            false);
+    MergeResult<Commit> result =
+        store()
+            .merge(
+                MAIN_BRANCH,
+                thirdCommit,
+                newBranch,
+                Optional.of(initialHash),
+                metadataRewriter,
+                individualCommits,
+                Collections.emptyMap(),
+                MergeBehavior.NORMAL,
+                false,
+                false);
+
+    checkTargetCommits(individualCommits, initialHash, result);
     soft.assertThat(
             contentsWithoutId(
                 store()
@@ -555,7 +571,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                     .hasSizeBetween(3, 4)
                     .anySatisfy(
                         o -> {
-                          if (c.getOperations().size() == 4) {
+                          if (c.getOperations() != null && c.getOperations().size() == 4) {
                             soft.assertThat(o).isInstanceOf(Delete.class);
                             soft.assertThat(o.getKey()).isEqualTo(ContentKey.of("t3"));
                           }
@@ -595,6 +611,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     MergeResult<Commit> dryMergeResult =
         store()
             .merge(
+                MAIN_BRANCH,
                 firstCommit,
                 newBranch,
                 Optional.of(initialHash),
@@ -622,6 +639,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     MergeResult<Commit> mergeResult =
         store()
             .merge(
+                MAIN_BRANCH,
                 firstCommit,
                 newBranch,
                 Optional.of(initialHash),
@@ -655,6 +673,12 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                                 Put.of(ContentKey.of("t2"), V_2_1),
                                 Put.of(ContentKey.of("t3"), V_3_1)))));
     soft.assertThat(mergeResult.getTargetCommits()).isNull();
+    // The branch was fast-forwarded to firstCommit, so the only added commit is firstCommit
+    // itself
+    soft.assertThat(mergeResult.getAddedCommits())
+        .singleElement()
+        .extracting("hash")
+        .isEqualTo(firstCommit);
     soft.assertThat(mergeResult.getDetails())
         .containsKeys(ContentKey.of("t1"), ContentKey.of("t2"), ContentKey.of("t3"));
     soft.assertThat(mergeResult)
@@ -662,7 +686,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
         .isEqualTo(
             MergeResult.<Commit>builder()
                 .resultType(ResultType.MERGE)
-                .sourceRef(sourceBranch)
+                .sourceRef(MAIN_BRANCH)
                 .wasApplied(true)
                 .wasSuccessful(true)
                 .commonAncestor(initialHash)
@@ -671,6 +695,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 .effectiveTargetHash(initialHash)
                 .expectedHash(initialHash)
                 .addAllSourceCommits(mergeResult.getSourceCommits())
+                .addAllAddedCommits(mergeResult.getAddedCommits())
                 .putAllDetails(mergeResult.getDetails())
                 .build())
         // compare "effective" merge-result with dry-run merge-result
@@ -691,17 +716,19 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
     MetadataRewriter<CommitMeta> metadataRewriter = createMetadataRewriter("");
 
-    store()
-        .merge(
-            firstCommit,
-            newBranch,
-            Optional.of(initialHash),
-            metadataRewriter,
-            individualCommits,
-            Collections.emptyMap(),
-            MergeBehavior.NORMAL,
-            false,
-            false);
+    MergeResult<Commit> result =
+        store()
+            .merge(
+                MAIN_BRANCH,
+                firstCommit,
+                newBranch,
+                Optional.of(initialHash),
+                metadataRewriter,
+                individualCommits,
+                Collections.emptyMap(),
+                MergeBehavior.NORMAL,
+                false,
+                false);
     soft.assertThat(
             contentsWithoutId(
                 store()
@@ -720,6 +747,10 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
     // not modifying commit meta, will just "fast forward"
     soft.assertThat(store().hashOnReference(newBranch, Optional.empty())).isEqualTo(firstCommit);
+    soft.assertThat(result.getAddedCommits())
+        .singleElement()
+        .extracting(Commit::getParentHash, Commit::getHash)
+        .containsExactly(initialHash, firstCommit);
 
     List<Commit> mergedCommit = commitsList(newBranch, false).subList(0, 1);
     assertCommitMeta(soft, mergedCommit, commits.subList(2, 3), metadataRewriter);
@@ -785,6 +816,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     MergeResult<Commit> result =
         store()
             .merge(
+                MAIN_BRANCH,
                 thirdCommit,
                 newBranch,
                 Optional.empty(),
@@ -858,6 +890,30 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
               c3 -> assertThat(c3).extracting(Commit::getHash).isEqualTo(newCommit),
               c4 -> assertThat(c4).extracting(Commit::getHash).isEqualTo(initialHash));
     }
+    if (individualCommits) {
+      soft.assertThat(result.getAddedCommits())
+          .hasSize(3)
+          .satisfiesExactly(
+              commit -> {
+                soft.assertThat(commit.getParentHash()).isEqualTo(newCommit);
+                soft.assertThat(commit.getCommitMeta().getMessage()).isEqualTo("First Commit");
+              },
+              commit -> {
+                soft.assertThat(commit.getParentHash())
+                    .isEqualTo(result.getAddedCommits().get(0).getHash());
+                soft.assertThat(commit.getCommitMeta().getMessage()).isEqualTo("Second Commit");
+              },
+              commit -> {
+                soft.assertThat(commit.getParentHash())
+                    .isEqualTo(result.getAddedCommits().get(1).getHash());
+                soft.assertThat(commit.getCommitMeta().getMessage()).isEqualTo("Third Commit");
+              });
+    } else {
+      soft.assertThat(result.getAddedCommits())
+          .singleElement()
+          .extracting(Commit::getParentHash)
+          .isEqualTo(newCommit);
+    }
   }
 
   @ParameterizedTest
@@ -870,7 +926,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     store().create(review, Optional.of(initialHash));
 
     MetadataRewriter<CommitMeta> metadataRewriter = createMetadataRewriter("");
-    Hash etl1 =
+    CommitResult<Commit> etl1 =
         store()
             .commit(
                 etl,
@@ -881,6 +937,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     MergeResult<Commit> mergeResult1 =
         store()
             .merge(
+                etl,
                 store().hashOnReference(etl, Optional.empty()),
                 review,
                 Optional.empty(),
@@ -893,7 +950,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     soft.assertThat(mergeResult1.getResultantTargetHash()).isEqualTo(etl1.getCommitHash());
     soft.assertThat(mergeResult1.getAddedCommits()).containsExactly(etl1.getCommit());
 
-    Hash etl2 =
+    CommitResult<Commit> etl2 =
         store()
             .commit(
                 etl,
@@ -903,6 +960,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     MergeResult<Commit> mergeResult2 =
         store()
             .merge(
+                etl,
                 store().hashOnReference(etl, Optional.empty()),
                 review,
                 Optional.empty(),
@@ -928,17 +986,19 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
     MetadataRewriter<CommitMeta> metadataRewriter = createMetadataRewriter("");
 
-    store()
-        .merge(
-            thirdCommit,
-            newBranch,
-            Optional.empty(),
-            metadataRewriter,
-            individualCommits,
-            Collections.emptyMap(),
-            MergeBehavior.NORMAL,
-            false,
-            false);
+    MergeResult<Commit> result =
+        store()
+            .merge(
+                MAIN_BRANCH,
+                thirdCommit,
+                newBranch,
+                Optional.empty(),
+                metadataRewriter,
+                individualCommits,
+                Collections.emptyMap(),
+                MergeBehavior.NORMAL,
+                false,
+                false);
     soft.assertThat(
             contentsWithoutId(
                 store()
@@ -957,7 +1017,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 ContentKey.of("t4"), V_4_1,
                 ContentKey.of("t5"), V_5_1));
 
-    final List<Commit> commits = commitsList(newBranch, false);
+    final List<Commit> commits = commitsList(newBranch, true);
     if (individualCommits) {
       soft.assertThat(commits)
           .hasSize(5)
@@ -967,6 +1027,12 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
               c -> assertThat(c.getHash()).isEqualTo(newCommit),
               c -> assertThat(c.getHash()).isEqualTo(firstCommit),
               c -> assertThat(c.getHash()).isEqualTo(initialHash));
+      soft.assertThat(result.getAddedCommits())
+          .hasSize(2)
+          .satisfiesExactly(
+              c -> assertThat(c).isEqualTo(commits.get(1)),
+              c -> assertThat(c).isEqualTo(commits.get(0)));
+
     } else {
       soft.assertThat(commits)
           .hasSize(4)
@@ -977,6 +1043,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
               c -> assertThat(c.getHash()).isEqualTo(newCommit),
               c -> assertThat(c.getHash()).isEqualTo(firstCommit),
               c -> assertThat(c.getHash()).isEqualTo(initialHash));
+
+      soft.assertThat(result.getAddedCommits()).singleElement().isEqualTo(commits.get(0));
 
       soft.assertThat(commits)
           .first()
@@ -1026,14 +1094,16 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 mergeInto,
                 Optional.empty(),
                 CommitMeta.fromMessage("commit 3"),
-                Arrays.asList(Put.of(conflictingKey2, VALUE_3), Put.of(key4, VALUE_6)));
+                Arrays.asList(Put.of(conflictingKey2, VALUE_3), Put.of(key4, VALUE_6)))
+            .getCommitHash();
     Hash mergeFromHash =
         store()
             .commit(
                 mergeFrom,
                 Optional.empty(),
                 CommitMeta.fromMessage("commit 4"),
-                singletonList(Put.of(conflictingKey2, VALUE_4)));
+                singletonList(Put.of(conflictingKey2, VALUE_4)))
+            .getCommitHash();
 
     StorageAssertions checkpoint = storageCheckpoint();
     // "Plain" merge attempt - all keys default to MergeBehavior.NORMAL
@@ -1041,8 +1111,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             () ->
                 store()
                     .merge(
-                        sourceBranch,
-                        mergeFromHash.getCommitHash(),
+                        mergeFrom,
+                        mergeFromHash,
                         mergeInto,
                         Optional.empty(),
                         createMetadataRewriter(""),
@@ -1064,8 +1134,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             () ->
                 store()
                     .merge(
-                        sourceBranch,
-                        mergeFromHash.getCommitHash(),
+                        mergeFrom,
+                        mergeFromHash,
                         mergeInto,
                         Optional.empty(),
                         createMetadataRewriter(""),
@@ -1089,8 +1159,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             () ->
                 store()
                     .merge(
-                        sourceBranch,
-                        mergeFromHash.getCommitHash(),
+                        mergeFrom,
+                        mergeFromHash,
                         mergeInto,
                         Optional.empty(),
                         createMetadataRewriter(""),
@@ -1114,8 +1184,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             () ->
                 store()
                     .merge(
-                        sourceBranch,
-                        mergeFromHash.getCommitHash(),
+                        mergeFrom,
+                        mergeFromHash,
                         mergeInto,
                         Optional.empty(),
                         createMetadataRewriter(""),
@@ -1143,14 +1213,14 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
           }
         };
 
-    soft.assertThat(mergeIntoHeadSupplier.get()).isEqualTo(mergeIntoHead.getCommitHash());
+    soft.assertThat(mergeIntoHeadSupplier.get()).isEqualTo(mergeIntoHead);
 
     // Merge with force-merge of conflictingKey1 + drop of conflictingKey2
     MergeResult<Commit> result =
         store()
             .merge(
-                sourceBranch,
-                mergeFromHash.getCommitHash(),
+                mergeFrom,
+                mergeFromHash,
                 mergeInto,
                 Optional.empty(),
                 createMetadataRewriter(", merge-force-1"),
@@ -1186,7 +1256,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                     .contains("commit 2, merge-force-1")
                     .contains("commit 4, merge-force-1");
               }
-              soft.assertThat(commit.getParentHash()).isEqualTo(mergeIntoHead.getCommitHash());
+              soft.assertThat(commit.getParentHash()).isEqualTo(mergeIntoHead);
               soft.assertThat(commit.getOperations())
                   .satisfiesExactlyInAnyOrder(
                       op -> {
@@ -1200,14 +1270,14 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             });
 
     // reset merge-into branch
-    store().assign(mergeInto, Optional.empty(), mergeIntoHead.getCommitHash());
+    store().assign(mergeInto, Optional.empty(), mergeIntoHead);
 
     // Merge with force-merge of conflictingKey1 + drop of conflictingKey2
     MergeResult<Commit> result2 =
         store()
             .merge(
-                sourceBranch,
-                mergeFromHash.getCommitHash(),
+                mergeFrom,
+                mergeFromHash,
                 mergeInto,
                 Optional.empty(),
                 createMetadataRewriter(", merge-all-force"),
@@ -1233,7 +1303,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
               commit -> {
                 soft.assertThat(commit.getCommitMeta().getMessage())
                     .isEqualTo("commit 2, merge-all-force");
-                soft.assertThat(commit.getParentHash()).isEqualTo(mergeIntoHead.getCommitHash());
+                soft.assertThat(commit.getParentHash()).isEqualTo(mergeIntoHead);
                 soft.assertThat(commit.getOperations())
                     .satisfiesExactlyInAnyOrder(
                         op -> {
@@ -1269,7 +1339,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 soft.assertThat(commit.getCommitMeta().getMessage())
                     .contains("commit 2, merge-all-force")
                     .contains("commit 4, merge-all-force");
-                soft.assertThat(commit.getParentHash()).isEqualTo(mergeIntoHead.getCommitHash());
+                soft.assertThat(commit.getParentHash()).isEqualTo(mergeIntoHead);
                 soft.assertThat(commit.getOperations())
                     .satisfiesExactlyInAnyOrder(
                         op -> {
@@ -1309,6 +1379,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             () ->
                 store()
                     .merge(
+                        MAIN_BRANCH,
                         thirdCommit,
                         newBranch,
                         Optional.of(initialHash),
@@ -1338,6 +1409,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             () ->
                 store()
                     .merge(
+                        MAIN_BRANCH,
                         thirdCommit,
                         newBranch,
                         Optional.of(initialHash),
@@ -1367,6 +1439,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             () ->
                 store()
                     .merge(
+                        MAIN_BRANCH,
                         Hash.of("1234567890abcdef"),
                         newBranch,
                         Optional.of(initialHash),
@@ -1441,6 +1514,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
     store()
         .merge(
+            source,
             sourceHead,
             target,
             Optional.ofNullable(targetHead),
@@ -1494,6 +1568,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             () ->
                 store()
                     .merge(
+                        branch,
                         commit2,
                         branch,
                         Optional.of(commit1),
@@ -1509,6 +1584,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             () ->
                 store()
                     .merge(
+                        branch,
                         commit1,
                         branch,
                         Optional.of(commit2),

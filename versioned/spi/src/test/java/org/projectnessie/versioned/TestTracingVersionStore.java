@@ -116,16 +116,16 @@ class TestTracingVersionStore {
                     .build())
             .build();
 
-    MergeResult<Object> dummyMergeResult =
-        MergeResult.builder()
+    MergeResult<Commit> dummyMergeResult =
+        MergeResult.<Commit>builder()
             .resultType(ResultType.MERGE)
             .sourceRef(BranchName.of("foo"))
             .targetBranch(BranchName.of("bar"))
             .effectiveTargetHash(Hash.of("123456"))
             .build();
 
-    MergeResult<Object> dummyTransplantResult =
-        MergeResult.builder()
+    MergeResult<Commit> dummyTransplantResult =
+        MergeResult.<Commit>builder()
             .resultType(ResultType.TRANSPLANT)
             .sourceRef(BranchName.of("foo"))
             .targetBranch(BranchName.of("bar"))

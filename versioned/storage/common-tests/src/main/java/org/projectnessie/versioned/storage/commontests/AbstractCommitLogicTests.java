@@ -648,14 +648,15 @@ public class AbstractCommitLogicTests {
 
     ObjId tip =
         requireNonNull(
-            commitLogic.doCommit(
-                newCommitBuilder()
-                    .headers(EMPTY_COMMIT_HEADERS)
-                    .message("msg foo")
-                    .parentCommitId(EMPTY_OBJ_ID)
-                    .addAdds(commitAdd(key, 0, correctValue, null, null))
-                    .build(),
-                emptyList()));
+                commitLogic.doCommit(
+                    newCommitBuilder()
+                        .headers(EMPTY_COMMIT_HEADERS)
+                        .message("msg foo")
+                        .parentCommitId(EMPTY_OBJ_ID)
+                        .addAdds(commitAdd(key, 0, correctValue, null, null))
+                        .build(),
+                    emptyList()))
+            .id();
 
     // Put the correct expected value into the Commit-ADD operation, but "break" it in the callback
     // by adding a wrong expected value-ID.
@@ -714,14 +715,15 @@ public class AbstractCommitLogicTests {
 
     ObjId tip =
         requireNonNull(
-            commitLogic.doCommit(
-                newCommitBuilder()
-                    .headers(EMPTY_COMMIT_HEADERS)
-                    .message("msg foo")
-                    .parentCommitId(EMPTY_OBJ_ID)
-                    .addAdds(commitAdd(key, 0, initialValue, null, null))
-                    .build(),
-                emptyList()));
+                commitLogic.doCommit(
+                    newCommitBuilder()
+                        .headers(EMPTY_COMMIT_HEADERS)
+                        .message("msg foo")
+                        .parentCommitId(EMPTY_OBJ_ID)
+                        .addAdds(commitAdd(key, 0, initialValue, null, null))
+                        .build(),
+                    emptyList()))
+            .id();
 
     CommitObj commit =
         commitLogic.buildCommitObj(

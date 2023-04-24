@@ -220,11 +220,4 @@ public class EventsVersionStore implements VersionStore {
   public Stream<RefLogDetails> getRefLog(Hash refLogId) throws RefLogNotFoundException {
     return delegate.getRefLog(refLogId);
   }
-
-  @Nonnull
-  @jakarta.annotation.Nonnull
-  @Override
-  public RepositoryInformation getRepositoryInformation() {
-    return delegate.getRepositoryInformation();
-  }
 }

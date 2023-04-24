@@ -135,7 +135,7 @@ public interface MergeResult<COMMIT> extends Result {
     UNRESOLVABLE
   }
 
-  static <COMMIT> ImmutableMergeResult.Builder<COMMIT> builder() {
+  static <COMMIT extends Hashable> ImmutableMergeResult.Builder<COMMIT> builder() {
     return ImmutableMergeResult.builder();
   }
 }

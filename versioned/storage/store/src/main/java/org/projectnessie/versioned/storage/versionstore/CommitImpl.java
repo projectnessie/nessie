@@ -417,6 +417,8 @@ class CommitImpl extends BaseCommitHelper {
 
   private String contentIdFromContent(@Nonnull @jakarta.annotation.Nonnull ObjId contentValueId)
       throws ObjNotFoundException {
+    // TODO pre-load these objects, so they are bulk-loaded and in turn available via the cache
+    // https://github.com/projectnessie/nessie/issues/6673
     return contentMapping.fetchContent(contentValueId).getId();
   }
 }

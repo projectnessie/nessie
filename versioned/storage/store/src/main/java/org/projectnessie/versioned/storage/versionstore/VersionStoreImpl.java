@@ -667,12 +667,7 @@ public class VersionStoreImpl implements VersionStore {
             supplier,
             (merge, retryState) ->
                 merge.merge(
-                    retryState,
-                    fromRef,
-                    fromHash,
-                    updateCommitMetadata,
-                    mergeBehaviors,
-                    dryRun));
+                    retryState, fromRef, fromHash, updateCommitMetadata, mergeBehaviors, dryRun));
 
     return mergeTransplantResponse(mergeResult);
   }
