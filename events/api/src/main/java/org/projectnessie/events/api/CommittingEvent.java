@@ -15,8 +15,6 @@
  */
 package org.projectnessie.events.api;
 
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
-
 /**
  * Event that is emitted when a transaction is written to the catalog.
  *
@@ -44,20 +42,4 @@ public interface CommittingEvent extends Event {
 
   /** The hash on the {@linkplain #getTargetBranch() target branch} after the event. */
   String getHashAfter();
-
-  interface Builder<B extends CommittingEvent.Builder<B, E>, E extends CommittingEvent>
-      extends Event.Builder<B, E> {
-
-    @CanIgnoreReturnValue
-    B sourceReference(String refName);
-
-    @CanIgnoreReturnValue
-    B targetBranch(String branchName);
-
-    @CanIgnoreReturnValue
-    B hashBefore(String hash);
-
-    @CanIgnoreReturnValue
-    B hashAfter(String hash);
-  }
 }

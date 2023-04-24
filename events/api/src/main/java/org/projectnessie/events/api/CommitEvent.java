@@ -18,7 +18,6 @@ package org.projectnessie.events.api;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.immutables.value.Value;
 
 /**
@@ -39,14 +38,4 @@ public interface CommitEvent extends CommittingEvent {
 
   /** The commit metadata. */
   CommitMeta getCommitMeta();
-
-  static CommitEvent.Builder builder() {
-    return ImmutableCommitEvent.builder();
-  }
-
-  interface Builder extends CommittingEvent.Builder<Builder, CommitEvent> {
-
-    @CanIgnoreReturnValue
-    Builder commitMeta(CommitMeta commitMeta);
-  }
 }

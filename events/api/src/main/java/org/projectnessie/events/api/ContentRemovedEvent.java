@@ -35,10 +35,4 @@ public interface ContentRemovedEvent extends ContentEvent {
   default EventType getType() {
     return EventType.CONTENT_REMOVED;
   }
-
-  static ContentRemovedEvent.Builder builder() {
-    return ImmutableContentRemovedEvent.builder();
-  }
-
-  interface Builder extends ContentEvent.Builder<Builder, ContentRemovedEvent> {}
 }

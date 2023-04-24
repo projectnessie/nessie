@@ -15,8 +15,6 @@
  */
 package org.projectnessie.events.api;
 
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
-
 /**
  * Event that is emitted when a content is stored (PUT) or removed (DELETE).
  *
@@ -37,16 +35,4 @@ public interface ContentEvent extends Event {
 
   /** The key of the content that was stored or removed. */
   ContentKey getContentKey();
-
-  interface Builder<B extends Builder<B, E>, E extends ContentEvent> extends Event.Builder<B, E> {
-
-    @CanIgnoreReturnValue
-    B branch(String branchName);
-
-    @CanIgnoreReturnValue
-    B hash(String hash);
-
-    @CanIgnoreReturnValue
-    B contentKey(ContentKey key);
-  }
 }

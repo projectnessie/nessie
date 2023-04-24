@@ -35,10 +35,4 @@ public interface TransplantEvent extends CommittingEvent {
   default EventType getType() {
     return EventType.TRANSPLANT;
   }
-
-  static TransplantEvent.Builder builder() {
-    return ImmutableTransplantEvent.builder();
-  }
-
-  interface Builder extends CommittingEvent.Builder<Builder, TransplantEvent> {}
 }

@@ -27,7 +27,16 @@ class TestEventType {
   @Test
   void commit() {
     CommitEvent event =
-        committingAttributes(CommitEvent.builder())
+        ImmutableCommitEvent.builder()
+            .sourceReference("branch1")
+            .targetBranch("branch2")
+            .hashBefore("hash1")
+            .hashAfter("hash2")
+            .id(UUID.randomUUID())
+            .repositoryId("repo1")
+            .createdAt(Instant.now())
+            .createdBy("Alice")
+            .sentBy("Nessie")
             .commitMeta(
                 ImmutableCommitMeta.builder()
                     .commitTime(Instant.now())
@@ -42,27 +51,65 @@ class TestEventType {
   @Test
   void merge() {
     MergeEvent event =
-        committingAttributes(MergeEvent.builder()).commonAncestorHash("hash0").build();
+        ImmutableMergeEvent.builder()
+            .sourceReference("branch1")
+            .targetBranch("branch2")
+            .hashBefore("hash1")
+            .hashAfter("hash2")
+            .id(UUID.randomUUID())
+            .repositoryId("repo1")
+            .createdAt(Instant.now())
+            .createdBy("Alice")
+            .sentBy("Nessie")
+            .commonAncestorHash("hash0")
+            .build();
     assertThat(event.getType()).isEqualTo(EventType.MERGE);
   }
 
   @Test
   void transplant() {
-    TransplantEvent event = committingAttributes(TransplantEvent.builder()).build();
+    TransplantEvent event =
+        ImmutableTransplantEvent.builder()
+            .sourceReference("branch1")
+            .targetBranch("branch2")
+            .hashBefore("hash1")
+            .hashAfter("hash2")
+            .id(UUID.randomUUID())
+            .repositoryId("repo1")
+            .createdAt(Instant.now())
+            .createdBy("Alice")
+            .sentBy("Nessie")
+            .build();
     assertThat(event.getType()).isEqualTo(EventType.TRANSPLANT);
   }
 
   @Test
   void referenceCreated() {
     ReferenceCreatedEvent event =
-        refAttributes(ReferenceCreatedEvent.builder()).hashAfter("hash2").build();
+        ImmutableReferenceCreatedEvent.builder()
+            .referenceName("ref1")
+            .referenceType(ReferenceType.BRANCH)
+            .id(UUID.randomUUID())
+            .repositoryId("repo1")
+            .createdAt(Instant.now())
+            .createdBy("Alice")
+            .sentBy("Nessie")
+            .hashAfter("hash2")
+            .build();
     assertThat(event.getType()).isEqualTo(EventType.REFERENCE_CREATED);
   }
 
   @Test
   void referenceUpdated() {
     ReferenceUpdatedEvent event =
-        refAttributes(ReferenceUpdatedEvent.builder())
+        ImmutableReferenceUpdatedEvent.builder()
+            .referenceName("ref1")
+            .referenceType(ReferenceType.BRANCH)
+            .id(UUID.randomUUID())
+            .repositoryId("repo1")
+            .createdAt(Instant.now())
+            .createdBy("Alice")
+            .sentBy("Nessie")
             .hashBefore("hash1")
             .hashAfter("hash2")
             .build();
@@ -72,50 +119,49 @@ class TestEventType {
   @Test
   void referenceDeleted() {
     ReferenceDeletedEvent event =
-        refAttributes(ReferenceDeletedEvent.builder()).hashBefore("hash1").build();
+        ImmutableReferenceDeletedEvent.builder()
+            .referenceName("ref1")
+            .referenceType(ReferenceType.BRANCH)
+            .id(UUID.randomUUID())
+            .repositoryId("repo1")
+            .createdAt(Instant.now())
+            .createdBy("Alice")
+            .sentBy("Nessie")
+            .hashBefore("hash1")
+            .build();
     assertThat(event.getType()).isEqualTo(EventType.REFERENCE_DELETED);
   }
 
   @Test
   void contentStored() {
     ContentStoredEvent event =
-        contentAttributes(ContentStoredEvent.builder()).content(mock(Content.class)).build();
+        ImmutableContentStoredEvent.builder()
+            .branch("branch1")
+            .hash("hash1")
+            .contentKey(ContentKey.of("ns", "table1"))
+            .id(UUID.randomUUID())
+            .repositoryId("repo1")
+            .createdAt(Instant.now())
+            .createdBy("Alice")
+            .sentBy("Nessie")
+            .content(mock(Content.class))
+            .build();
     assertThat(event.getType()).isEqualTo(EventType.CONTENT_STORED);
   }
 
   @Test
   void contentRemoved() {
-    ContentRemovedEvent event = contentAttributes(ContentRemovedEvent.builder()).build();
+    ContentRemovedEvent event =
+        ImmutableContentRemovedEvent.builder()
+            .branch("branch1")
+            .hash("hash1")
+            .contentKey(ContentKey.of("ns", "table1"))
+            .id(UUID.randomUUID())
+            .repositoryId("repo1")
+            .createdAt(Instant.now())
+            .createdBy("Alice")
+            .sentBy("Nessie")
+            .build();
     assertThat(event.getType()).isEqualTo(EventType.CONTENT_REMOVED);
-  }
-
-  static <B extends CommittingEvent.Builder<B, E>, E extends CommittingEvent>
-      B committingAttributes(B builder) {
-    return commonAttributes(
-        builder
-            .sourceReference("branch1")
-            .targetBranch("branch2")
-            .hashBefore("hash1")
-            .hashAfter("hash2"));
-  }
-
-  static <B extends ReferenceEvent.Builder<B, E>, E extends ReferenceEvent> B refAttributes(
-      B builder) {
-    return commonAttributes(builder.referenceName("ref1").referenceType(ReferenceType.BRANCH));
-  }
-
-  static <B extends ContentEvent.Builder<B, E>, E extends ContentEvent> B contentAttributes(
-      B builder) {
-    return commonAttributes(
-        builder.branch("branch1").hash("hash1").contentKey(ContentKey.of("ns", "table1")));
-  }
-
-  static <B extends Event.Builder<B, E>, E extends Event> B commonAttributes(B builder) {
-    return builder
-        .id(UUID.randomUUID())
-        .repositoryId("repo1")
-        .createdAt(Instant.now())
-        .createdBy("Alice")
-        .sentBy("Nessie");
   }
 }

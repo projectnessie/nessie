@@ -18,7 +18,6 @@ package org.projectnessie.events.api;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.immutables.value.Value;
 
 /**
@@ -38,14 +37,4 @@ public interface ContentStoredEvent extends ContentEvent {
 
   /** The content that was stored. */
   Content getContent();
-
-  static ContentStoredEvent.Builder builder() {
-    return ImmutableContentStoredEvent.builder();
-  }
-
-  interface Builder extends ContentEvent.Builder<Builder, ContentStoredEvent> {
-
-    @CanIgnoreReturnValue
-    Builder content(Content content);
-  }
 }

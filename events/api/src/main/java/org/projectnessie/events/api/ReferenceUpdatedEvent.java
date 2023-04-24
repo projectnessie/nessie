@@ -18,7 +18,6 @@ package org.projectnessie.events.api;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.immutables.value.Value;
 
 /** Event that is emitted after a reference is updated. */
@@ -39,17 +38,4 @@ public interface ReferenceUpdatedEvent extends ReferenceEvent {
 
   /** The hash of the reference after the update. */
   String getHashAfter();
-
-  static ReferenceUpdatedEvent.Builder builder() {
-    return ImmutableReferenceUpdatedEvent.builder();
-  }
-
-  interface Builder extends ReferenceEvent.Builder<Builder, ReferenceUpdatedEvent> {
-
-    @CanIgnoreReturnValue
-    Builder hashBefore(String hashBefore);
-
-    @CanIgnoreReturnValue
-    Builder hashAfter(String hashAfter);
-  }
 }

@@ -18,7 +18,6 @@ package org.projectnessie.events.api;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.immutables.value.Value;
 
 /** Event that is emitted after a reference is deleted. */
@@ -36,14 +35,4 @@ public interface ReferenceDeletedEvent extends ReferenceEvent {
 
   /** The hash of the reference before the deletion. */
   String getHashBefore();
-
-  static ReferenceDeletedEvent.Builder builder() {
-    return ImmutableReferenceDeletedEvent.builder();
-  }
-
-  interface Builder extends ReferenceEvent.Builder<Builder, ReferenceDeletedEvent> {
-
-    @CanIgnoreReturnValue
-    Builder hashBefore(String hashBefore);
-  }
 }

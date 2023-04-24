@@ -18,7 +18,6 @@ package org.projectnessie.events.api;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.immutables.value.Value;
 
 /**
@@ -38,13 +37,4 @@ public interface MergeEvent extends CommittingEvent {
 
   /** The hash of the common ancestor of the two merged branches. */
   String getCommonAncestorHash();
-
-  static MergeEvent.Builder builder() {
-    return ImmutableMergeEvent.builder();
-  }
-
-  interface Builder extends CommittingEvent.Builder<Builder, MergeEvent> {
-    @CanIgnoreReturnValue
-    Builder commonAncestorHash(String commonAncestorHash);
-  }
 }

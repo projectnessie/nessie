@@ -16,15 +16,13 @@
 package org.projectnessie.events.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.projectnessie.events.api.TestEventType.committingAttributes;
-import static org.projectnessie.events.api.TestEventType.contentAttributes;
-import static org.projectnessie.events.api.TestEventType.refAttributes;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.Instant;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 class TestJsonSerde {
@@ -35,7 +33,16 @@ class TestJsonSerde {
   @Test
   void commit() throws Exception {
     CommitEvent event =
-        committingAttributes(CommitEvent.builder())
+        ImmutableCommitEvent.builder()
+            .sourceReference("branch1")
+            .targetBranch("branch2")
+            .hashBefore("hash1")
+            .hashAfter("hash2")
+            .id(UUID.randomUUID())
+            .repositoryId("repo1")
+            .createdAt(Instant.now())
+            .createdBy("Alice")
+            .sentBy("Nessie")
             .commitMeta(
                 ImmutableCommitMeta.builder()
                     .commitTime(Instant.now())
@@ -50,27 +57,65 @@ class TestJsonSerde {
   @Test
   void merge() throws Exception {
     MergeEvent event =
-        committingAttributes(MergeEvent.builder()).commonAncestorHash("hash0").build();
+        ImmutableMergeEvent.builder()
+            .sourceReference("branch1")
+            .targetBranch("branch2")
+            .hashBefore("hash1")
+            .hashAfter("hash2")
+            .id(UUID.randomUUID())
+            .repositoryId("repo1")
+            .createdAt(Instant.now())
+            .createdBy("Alice")
+            .sentBy("Nessie")
+            .commonAncestorHash("hash0")
+            .build();
     assertThat(deserialize(serialize(event), Event.class)).isEqualTo(event);
   }
 
   @Test
   void transplant() throws Exception {
-    TransplantEvent event = committingAttributes(TransplantEvent.builder()).build();
+    TransplantEvent event =
+        ImmutableTransplantEvent.builder()
+            .sourceReference("branch1")
+            .targetBranch("branch2")
+            .hashBefore("hash1")
+            .hashAfter("hash2")
+            .id(UUID.randomUUID())
+            .repositoryId("repo1")
+            .createdAt(Instant.now())
+            .createdBy("Alice")
+            .sentBy("Nessie")
+            .build();
     assertThat(deserialize(serialize(event), Event.class)).isEqualTo(event);
   }
 
   @Test
   void referenceCreated() throws Exception {
     ReferenceCreatedEvent event =
-        refAttributes(ReferenceCreatedEvent.builder()).hashAfter("hash2").build();
+        ImmutableReferenceCreatedEvent.builder()
+            .referenceName("ref1")
+            .referenceType(ReferenceType.BRANCH)
+            .id(UUID.randomUUID())
+            .repositoryId("repo1")
+            .createdAt(Instant.now())
+            .createdBy("Alice")
+            .sentBy("Nessie")
+            .hashAfter("hash2")
+            .build();
     assertThat(deserialize(serialize(event), Event.class)).isEqualTo(event);
   }
 
   @Test
   void referenceUpdated() throws Exception {
     ReferenceUpdatedEvent event =
-        refAttributes(ReferenceUpdatedEvent.builder())
+        ImmutableReferenceUpdatedEvent.builder()
+            .referenceName("ref1")
+            .referenceType(ReferenceType.BRANCH)
+            .id(UUID.randomUUID())
+            .repositoryId("repo1")
+            .createdAt(Instant.now())
+            .createdBy("Alice")
+            .sentBy("Nessie")
             .hashBefore("hash1")
             .hashAfter("hash2")
             .build();
@@ -80,14 +125,31 @@ class TestJsonSerde {
   @Test
   void referenceDeleted() throws Exception {
     ReferenceDeletedEvent event =
-        refAttributes(ReferenceDeletedEvent.builder()).hashBefore("hash1").build();
+        ImmutableReferenceDeletedEvent.builder()
+            .referenceName("ref1")
+            .referenceType(ReferenceType.BRANCH)
+            .id(UUID.randomUUID())
+            .repositoryId("repo1")
+            .createdAt(Instant.now())
+            .createdBy("Alice")
+            .sentBy("Nessie")
+            .hashBefore("hash1")
+            .build();
     assertThat(deserialize(serialize(event), Event.class)).isEqualTo(event);
   }
 
   @Test
   void contentStored() throws Exception {
     ContentStoredEvent event =
-        contentAttributes(ContentStoredEvent.builder())
+        ImmutableContentStoredEvent.builder()
+            .branch("branch1")
+            .hash("hash1")
+            .contentKey(ContentKey.of("ns", "table1"))
+            .id(UUID.randomUUID())
+            .repositoryId("repo1")
+            .createdAt(Instant.now())
+            .createdBy("Alice")
+            .sentBy("Nessie")
             .content(
                 ImmutableIcebergTable.builder()
                     .metadataLocation("metadataLocation")
@@ -103,7 +165,17 @@ class TestJsonSerde {
 
   @Test
   void contentRemoved() throws Exception {
-    ContentRemovedEvent event = contentAttributes(ContentRemovedEvent.builder()).build();
+    ContentRemovedEvent event =
+        ImmutableContentRemovedEvent.builder()
+            .branch("branch1")
+            .hash("hash1")
+            .contentKey(ContentKey.of("ns", "table1"))
+            .id(UUID.randomUUID())
+            .repositoryId("repo1")
+            .createdAt(Instant.now())
+            .createdBy("Alice")
+            .sentBy("Nessie")
+            .build();
     assertThat(deserialize(serialize(event), Event.class)).isEqualTo(event);
   }
 

@@ -17,7 +17,6 @@ package org.projectnessie.events.api;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
@@ -90,30 +89,5 @@ public interface Event {
   @Value.Default
   default Map<String, String> getProperties() {
     return Collections.emptyMap();
-  }
-
-  interface Builder<B extends Builder<B, E>, E extends Event> {
-    @CanIgnoreReturnValue
-    B type(EventType type);
-
-    @CanIgnoreReturnValue
-    B id(UUID id);
-
-    @CanIgnoreReturnValue
-    B repositoryId(String repositoryId);
-
-    @CanIgnoreReturnValue
-    B createdAt(Instant createdAt);
-
-    @CanIgnoreReturnValue
-    B sentBy(String sentBy);
-
-    @CanIgnoreReturnValue
-    B createdBy(String createdBy);
-
-    @CanIgnoreReturnValue
-    B properties(Map<String, ? extends String> properties);
-
-    E build();
   }
 }

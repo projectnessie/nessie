@@ -16,7 +16,6 @@
 package org.projectnessie.events.api;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.immutables.value.Value;
 
 /** Event that is emitted when a reference is created, updated or deleted. */
@@ -34,13 +33,4 @@ public interface ReferenceEvent extends Event {
 
   /** The type of the reference. */
   ReferenceType getReferenceType();
-
-  interface Builder<B extends Builder<B, E>, E extends ReferenceEvent> extends Event.Builder<B, E> {
-
-    @CanIgnoreReturnValue
-    B referenceName(String referenceName);
-
-    @CanIgnoreReturnValue
-    B referenceType(ReferenceType referenceType);
-  }
 }
