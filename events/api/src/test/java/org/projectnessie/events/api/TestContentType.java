@@ -17,13 +17,16 @@ package org.projectnessie.events.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.UUID;
+
 import org.junit.jupiter.api.Test;
 
 class TestContentType {
 
   @Test
   void namespace() {
-    Namespace content = ImmutableNamespace.builder().id("id").addElements("name").build();
+    Namespace content =
+        ImmutableNamespace.builder().id(UUID.randomUUID()).addElements("name").build();
     assertThat(content.getType()).isEqualTo(ContentType.NAMESPACE);
   }
 
@@ -31,7 +34,7 @@ class TestContentType {
   void icebergTable() {
     IcebergTable content =
         ImmutableIcebergTable.builder()
-            .id("id")
+            .id(UUID.randomUUID())
             .metadataLocation("metadataLocation")
             .snapshotId(1L)
             .schemaId(2)
@@ -44,7 +47,7 @@ class TestContentType {
   @Test
   void deltaLakeTable() {
     DeltaLakeTable content =
-        ImmutableDeltaLakeTable.builder().id("id").lastCheckpoint("lastCheckpoint").build();
+        ImmutableDeltaLakeTable.builder().id(UUID.randomUUID()).lastCheckpoint("lastCheckpoint").build();
     assertThat(content.getType()).isEqualTo(ContentType.DELTA_LAKE_TABLE);
   }
 
@@ -52,7 +55,7 @@ class TestContentType {
   void icebergView() {
     IcebergView content =
         ImmutableIcebergView.builder()
-            .id("id")
+            .id(UUID.randomUUID())
             .metadataLocation("metadataLocation")
             .versionId(1L)
             .schemaId(2)
@@ -65,7 +68,7 @@ class TestContentType {
   @Test
   void custom() {
     CustomContent content =
-        ImmutableCustomContent.builder().id("id").customType("customType").build();
+        ImmutableCustomContent.builder().id(UUID.randomUUID()).customType("customType").build();
     assertThat(content.getType()).isEqualTo(ContentType.CUSTOM);
   }
 }

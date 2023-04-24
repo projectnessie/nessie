@@ -19,6 +19,8 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
+
 import org.immutables.value.Value;
 
 /** An object stored in Nessie, such as a table or a view. */
@@ -40,7 +42,7 @@ public interface Content {
    * <p>This id is unique for the entire lifetime of this Content object and persists across
    * renames. Two content objects with the same key will have different ids.
    */
-  String getId();
+  UUID getId();
 
   /** A map of attributes that can be used to add additional information to the content object. */
   @Value.Default

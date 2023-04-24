@@ -153,7 +153,7 @@ class TestJsonSerde {
             .content(
                 ImmutableIcebergTable.builder()
                     .metadataLocation("metadataLocation")
-                    .id("id")
+                    .id(UUID.randomUUID())
                     .snapshotId(1L)
                     .schemaId(2)
                     .specId(3)
@@ -183,7 +183,7 @@ class TestJsonSerde {
   void icebergTable() throws Exception {
     IcebergTable content =
         ImmutableIcebergTable.builder()
-            .id("id")
+            .id(UUID.randomUUID())
             .metadataLocation("metadataLocation")
             .snapshotId(1L)
             .schemaId(2)
@@ -199,7 +199,7 @@ class TestJsonSerde {
   void deltaLakeTable() throws Exception {
     DeltaLakeTable content =
         ImmutableDeltaLakeTable.builder()
-            .id("id")
+            .id(UUID.randomUUID())
             .addCheckpointLocationHistory("checkpoint")
             .addMetadataLocationHistory("metadata")
             .lastCheckpoint("lastCheckpoint")
@@ -213,7 +213,7 @@ class TestJsonSerde {
   void icebergView() throws Exception {
     IcebergView content =
         ImmutableIcebergView.builder()
-            .id("id")
+            .id(UUID.randomUUID())
             .metadataLocation("metadataLocation")
             .versionId(1L)
             .schemaId(2)
@@ -229,7 +229,7 @@ class TestJsonSerde {
   void customContent() throws Exception {
     CustomContent content =
         ImmutableCustomContent.builder()
-            .id("id")
+            .id(UUID.randomUUID())
             .customType("customType")
             .putAttribute("string", "foo")
             .putAttribute("number", 123)
