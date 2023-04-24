@@ -17,9 +17,9 @@ easily serialize and deserialize events to and from JSON.
 
 The following concrete event implementations are defined:
 
-* `CommitEvent` - This event is published when a commit is created.
-* `MergeEvent` - This event is published when a merge is created.
-* `TransplantEvent` - This event is published when a transplant is created.
+* `CommitEvent` - This event is published when a commit is performed.
+* `MergeEvent` - This event is published when a merge is performed.
+* `TransplantEvent` - This event is published when a transplant is performed.
 * `ReferenceCreatedEvent` - This event is published when a reference is created.
 * `ReferenceUpdatedEvent` - This event is published when a reference is updated.
 * `ReferenceDeletedEvent` - This event is published when a reference is deleted.
