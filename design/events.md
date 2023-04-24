@@ -324,17 +324,16 @@ Event filters could be expressed using CEL, but that is not a requirement for th
 
 The tentative workflow is as follows: 
 
-1. The `EventSubscriber` interface is a typical Service Provider Interface (SPI) that subscribers must implement, then 
-   make available on the server's classpath via the `ServiceLoader` API. 
-2. Its (single) `register()` method takes an `EventListenerRegistrar` provided by Nessie. The implementation must 
-   register an `EventListener` and an (optional) `EventFilter` against the registrar.
-3. In exchange, the registrar will return an `EventSubscription` that the subscriber can store and then use to inspect 
-   the subscription status at any time.
-
-The `EventListener` interface is where events are handed over to subscribers. Each event type has a distinct method.
-Here is a tentative class diagram:
-
-![Event listener](./events/event_listener.png)
+1. The `EventSubscriber` interface is a typical Service Provider Interface (SPI) that subscribers must implement, then
+   make available on the server's classpath via the `ServiceLoader` API.
+2. This interface will be mostly composed of `onXyz(XyzEvent)` methods, one for each event type, e.g.
+   `onCommit(CommitEvent)`. Each method will take as a parameter the event object. These methods will be called by
+   Nessie when an event is emitted.
+3. Optionally, the subscriber can also override the method `getEventFilter()`. It will be called by Nessie at startup
+   time, in order to retrieve the event filter to apply. If the subscriber does not override the method (i.e., leave it
+   to its default implementation), then no filter will be applied.
+4. At startup, Nessie will invoke the `onSubscribe(EventSubscription)` method and pass to the subscriber an
+   `EventSubscription` instance that will contain useful information (to be determined) about the Nessie instance.
 
 ### 2.2.3. De-registration
 
@@ -368,19 +367,19 @@ The system does not provide any ordering guarantees. Events may be emitted in an
 
 ### 2.3.3. Delivery contract
 
-Event delivery is the act of handing over an event to the subscriber's `EventListener`. For optimal event delivery,
-implementers of the `EventListener` interface are expected to respect the following requirements:
+Event delivery is the act of handing over an event to the `EventSubscriber`. For optimal event delivery, implementers of
+the `EventSubscriber` interface are expected to respect the following requirements:
 
-* Methods in the `EventListener` interface MUST NOT block the calling thread. If required, implementers of the
-  `EventListener` interface should rather dispatch the calls to separate thread pools, if the underlying event
+* `onXyz()` methods in the `EventSubscriber` interface MUST NOT block the calling thread. If required, implementers of
+  the `EventSubscriber` interface should rather dispatch the calls to separate thread pools, if the underlying event
   processing requires blocking I/O.
-* Methods in the `EventListener` interface operate in fire and forget mode: the method MUST return as soon as the
-  should not wait for read acknowledgements.
-* The server COULD impose a (configurable) timeout after which the thread calling the `EventListener` method is
-  interrupted and delivery is considered failed.
+* `onXyz()` methods in the `EventSubscriber` interface operate in fire and forget mode: the method MUST return
+  immediately; it should not wait for read acknowledgements from remote systems.
+* The server COULD impose a (configurable) timeout after which the thread calling the `EventSubscriber` `onXyz()` method
+  is interrupted and delivery is considered failed.
 * A `RuntimeException` MAY be thrown to indicate that event delivery wasn't possible, e.g. because the underlying
   pub/sub system is unreachable. But in this case, the exception MUST be thrown immediately.
-* For increased resilience, a failed invocation of the subscriber's `EventListener` method MAY be retried a configurable
+* For increased resilience, a failed invocation of any `EventSubscriber` `onXyz()` method MAY be retried a configurable
   number of times, with exponential backoff. This is however not a requirement for the MVP.
 
 **This effectively makes the system provide best-effort delivery guarantees**. Subscribers must be prepared to miss
