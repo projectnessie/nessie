@@ -208,11 +208,11 @@ reference the `org.projectnessie.model` package.
           <li>Common ancestor hash</li>
         </ul>
       </td>
-      <td>Operations (PUTs and DELETEs) are not included, in order to avoid huge event payloads. 
-          Full operation contents are sent separately as content-related events.
+      <td>Details about commits and operations are not included, in order to avoid huge event 
+          payloads.
         <p>A <code>MERGE</code> event should trigger:</p>
         <ul>
-          <li>0-N content events (one for each PUT/DELETE operation, excluding intermediary operations).</li>
+          <li>0-N commit events (one for each commit added to the target branch).</li>
         </ul>
       </td>
     </tr>
@@ -227,11 +227,11 @@ reference the `org.projectnessie.model` package.
           <li>New target branch HEAD</li>
         </ul>
       </td>
-      <td>Operations (PUTs and DELETEs) are not included, in order to avoid huge event payloads. 
-          Full operation contents are sent separately as content-related events.
+      <td>Details about commits and operations are not included, in order to avoid huge event 
+          payloads.
         <p>A <code>TRANSPLANT</code> event should trigger:</p>
         <ul>
-          <li>0-N content events (one for each PUT/DELETE operation, excluding intermediary operations).</li>
+          <li>0-N commit events (one for each commit added to the target branch).</li>
         </ul>
       </td>
     </tr>
