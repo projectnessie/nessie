@@ -520,7 +520,7 @@ class BaseCommitHelper {
       CommitObj source,
       ImmutableMergeResult.Builder<Commit> result,
       MergeBehaviors mergeBehaviors)
-      throws RetryException, ReferenceNotFoundException {
+      throws RetryException {
     result.wasSuccessful(true);
 
     IndexesLogic indexesLogic = indexesLogic(persist);
@@ -737,12 +737,14 @@ class BaseCommitHelper {
     return mergeResult.build();
   }
 
-  Commit commitObjToCommit(CommitObj newCommit) throws ReferenceNotFoundException {
+  Commit commitObjToCommit(CommitObj newCommit) {
     try {
       ContentMapping contentMapping = new ContentMapping(persist);
       return contentMapping.commitObjToCommit(true, newCommit);
     } catch (ObjNotFoundException e) {
-      throw referenceNotFound(e);
+      // This should never happen, since we just created the commit object;
+      // if it does, it's a pretty serious state corruption.
+      throw new RuntimeException(e);
     }
   }
 }
