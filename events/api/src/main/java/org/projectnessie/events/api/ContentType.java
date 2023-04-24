@@ -22,9 +22,39 @@ package org.projectnessie.events.api;
  * important that SPI implementers be prepared to handle unknown enum values.
  */
 public enum ContentType {
+  /**
+   * The content is a namespace.
+   *
+   * @see Namespace
+   */
   NAMESPACE,
+
+  /**
+   * The content is an Iceberg table.
+   *
+   * @see IcebergTable
+   */
   ICEBERG_TABLE,
+
+  /**
+   * The content is an Iceberg view.
+   *
+   * @see IcebergView
+   */
   ICEBERG_VIEW,
+
+  /**
+   * The content is a Delta Lake table.
+   *
+   * @see DeltaLakeTable
+   */
   DELTA_LAKE_TABLE,
+
+  /**
+   * The content is a custom type. This type is a catch-all type for all other runtime types that
+   * are not one of the built-in types above.
+   *
+   * @see CustomContent
+   */
   CUSTOM,
 }

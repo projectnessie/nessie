@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.immutables.value.Value;
 
+/** A {@link Content} object that represents a namespace. */
 @Value.Immutable
 @JsonTypeName("NAMESPACE")
 @JsonSerialize
@@ -35,6 +36,12 @@ public interface Namespace extends Content {
     return ContentType.NAMESPACE;
   }
 
+  /**
+   * The name of the namespace.
+   *
+   * <p>The name is composed of the elements of the namespace, separated by dots. For example, the
+   * name of the namespace {@code ["a", "b", "c"]} is {@code "a.b.c"}.
+   */
   @Value.Lazy
   @JsonIgnore
   default String getName() {

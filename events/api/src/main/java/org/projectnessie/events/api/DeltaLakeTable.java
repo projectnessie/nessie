@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
 import org.immutables.value.Value;
 
+/** A {@link Content} object that represents a Delta Lake table. */
 @Value.Immutable
 @JsonTypeName("DELTA_LAKE_TABLE")
 @JsonSerialize

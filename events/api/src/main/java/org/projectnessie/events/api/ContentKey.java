@@ -37,9 +37,16 @@ public interface ContentKey {
     return ImmutableContentKey.of(elements);
   }
 
+  /** The elements of the key. */
   @Value.Parameter
   List<String> getElements();
 
+  /**
+   * The name of the key.
+   *
+   * <p>The key name is the last element of the key. For example, the name of the key {@code ["a",
+   * "b", "c"]} is {@code "c"}.
+   */
   @Value.Lazy
   @JsonIgnore
   default String getName() {

@@ -20,6 +20,15 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
+/**
+ * A custom content whose runtime type is not known.
+ *
+ * <p>Since contents are pluggable in Nessie, this specific {@link Content} implementation will be
+ * used for all content types other than the built-in ones.
+ *
+ * <p>All attributes of the original content object will be serialized in the {@link
+ * #getAttributes()} map.
+ */
 @Value.Immutable
 @JsonTypeName("CUSTOM")
 @JsonSerialize
@@ -32,5 +41,6 @@ public interface CustomContent extends Content {
     return ContentType.CUSTOM;
   }
 
+  /** The actual runtime type name of this content object. */
   String getCustomType();
 }
