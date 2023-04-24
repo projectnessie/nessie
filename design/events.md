@@ -243,7 +243,6 @@ reference the `org.projectnessie.model` package.
         <ul>
           <li>Branch name</li>
           <li>Commit Hash</li>
-          <li>Content type</li>
           <li>Content key</li>
           <li><code>Content</code> object</li>
         </ul>
@@ -258,7 +257,6 @@ reference the `org.projectnessie.model` package.
         <ul>
           <li>Branch name</li>
           <li>Commit Hash</li>
-          <li>Content type</li>
           <li>Content key</li>
         </ul>
       </td>
