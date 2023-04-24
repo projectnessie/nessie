@@ -26,6 +26,16 @@ public enum ReferenceType {
     this.prefix = prefix;
   }
 
+  /** Returns {@code true} if the reference is a branch, {@code false} otherwise. */
+  public boolean isBranch() {
+    return this == BRANCH;
+  }
+
+  /** Returns {@code true} if the reference is a tag, {@code false} otherwise. */
+  public boolean isTag() {
+    return this == TAG;
+  }
+
   /** The prefix of the reference type, e.g. "refs/heads/". */
   public String getPrefix() {
     return prefix;

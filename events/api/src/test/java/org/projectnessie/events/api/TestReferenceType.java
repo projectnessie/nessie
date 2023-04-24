@@ -21,6 +21,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.Test;
 
 class TestReferenceType {
+  @Test
+  void isBranch() {
+    assertThat(ReferenceType.BRANCH.isBranch()).isTrue();
+    assertThat(ReferenceType.TAG.isBranch()).isFalse();
+  }
+
+  @Test
+  void isTag() {
+    assertThat(ReferenceType.BRANCH.isTag()).isFalse();
+    assertThat(ReferenceType.TAG.isTag()).isTrue();
+  }
 
   @Test
   void fromFullReferenceName() {

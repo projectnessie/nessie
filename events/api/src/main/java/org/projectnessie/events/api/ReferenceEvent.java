@@ -33,4 +33,18 @@ public interface ReferenceEvent extends Event {
 
   /** The type of the reference. */
   ReferenceType getReferenceType();
+
+  /** Returns {@code true} if the reference is a branch, {@code false} otherwise. */
+  @Value.Derived
+  @JsonIgnore
+  default boolean isBranch() {
+    return getReferenceType().isBranch();
+  }
+
+  /** Returns {@code true} if the reference is a tag, {@code false} otherwise. */
+  @Value.Derived
+  @JsonIgnore
+  default boolean isTag() {
+    return getReferenceType().isTag();
+  }
 }
