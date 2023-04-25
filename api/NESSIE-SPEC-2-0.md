@@ -26,7 +26,7 @@ Refer to the Nessie API documentation (under the `model` module) for the meaning
 
 * Namespaces are expected to be created before they are referenced. Namespaces may be referenced within the same 
   commit that creates them. 
-* If a non-existent Namespace is referenced in a commit. The server should fail the corresponding change (commit 
+* If a non-existent Namespace is referenced in a commit, the server should fail the corresponding change (commit 
   / merge / transplant) with the `NAMESPACE_ABSENT` conflict type.
 * `Unchanged` Operations may be submitted in commits, but the server does not persist them. Consequently, `Unchanged`
   operations are not considered during merges and transplants, even when they were part of the original commit.
