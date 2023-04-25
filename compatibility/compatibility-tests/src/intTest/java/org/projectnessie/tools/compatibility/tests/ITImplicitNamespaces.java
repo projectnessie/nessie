@@ -17,10 +17,7 @@ package org.projectnessie.tools.compatibility.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.model.Branch;
@@ -35,7 +32,6 @@ import org.projectnessie.tools.compatibility.api.Version;
 import org.projectnessie.tools.compatibility.internal.NessieUpgradesExtension;
 
 @ExtendWith(NessieUpgradesExtension.class)
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @NessieServerProperty(name = "nessie.store.validate.namespaces", value = "false")
 public class ITImplicitNamespaces {
 
@@ -43,7 +39,6 @@ public class ITImplicitNamespaces {
   @NessieAPI NessieApiV1 api;
 
   @Test
-  @Order(101)
   void createTableWithImplicitNamespaceReference() throws Exception {
     Branch main = api.getDefaultBranch();
     Branch versionBranch = Branch.of("version-implicit-ns-" + version, main.getHash());
