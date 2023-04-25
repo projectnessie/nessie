@@ -30,7 +30,7 @@ public interface ConflictHandler {
     /** Raise the conflict as is. */
     CONFLICT,
     /** Ignore the conflict, add action to the commit. */
-    IGNORE,
+    ADD,
     /** Ignore the conflict, do not add the action to the commit. */
     DROP
   }
