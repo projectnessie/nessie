@@ -31,7 +31,7 @@ Refer to the Nessie API documentation (under the `model` module) for the meaning
 * `Unchanged` Operations may be submitted in commits, but the server does not persist them. Consequently, `Unchanged`
   operations are not considered during merges and transplants, even when they were part of the original commit.
 * The server MAY consider `Unchanged` operations during the handling of plain commits and MAY raise commit conflicts
-  if they clash with operations in the commits log since the `expected hash` provided by the client.
+  if those operations clash with operations in the commits log since the `expected hash` provided by the client.
 
 ## Related Server Configuration
 
