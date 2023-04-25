@@ -56,8 +56,7 @@ import org.gradle.kotlin.dsl.withType
  */
 fun Project.buildForJava11() {
   extensions.findByType<JavaPluginExtension>()!!.run {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    toolchain { languageVersion.set(JavaLanguageVersion.of(11)) }
   }
 }
 
