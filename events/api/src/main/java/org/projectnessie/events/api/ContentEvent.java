@@ -18,7 +18,7 @@ package org.projectnessie.events.api;
 /**
  * Event that is emitted when a content is stored (PUT) or removed (DELETE).
  *
- * <p>There are two concrete implementations of this interface:
+ * <p>This type has 2 child interfaces:
  *
  * <ul>
  *   <li>{@link ContentStoredEvent}: for PUT operations;

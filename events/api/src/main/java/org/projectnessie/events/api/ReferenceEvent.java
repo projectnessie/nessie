@@ -18,10 +18,23 @@ package org.projectnessie.events.api;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.immutables.value.Value;
 
-/** Event that is emitted when a reference is created, updated or deleted. */
+/**
+ * Event that is emitted when a reference is created, updated or deleted.
+ *
+ * <p>This type has 3 child interfaces:
+ *
+ * <ul>
+ *   <li>{@link ReferenceCreatedEvent}: for reference creations;
+ *   <li>{@link ReferenceUpdatedEvent}: for reference updates (reassignments);
+ *   <li>{@link ReferenceDeletedEvent}: for reference deletions.
+ * </ul>
+ */
 public interface ReferenceEvent extends Event {
 
+  /** The reference type name for branches. */
   String BRANCH = "BRANCH";
+
+  /** The reference type name for tags. */
   String TAG = "TAG";
 
   /** The name of the reference, e.g. "branch1". */

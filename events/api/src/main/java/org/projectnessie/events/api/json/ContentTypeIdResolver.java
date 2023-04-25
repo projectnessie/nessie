@@ -15,11 +15,32 @@
  */
 package org.projectnessie.events.api.json;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.DatabindContext;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase;
 import java.util.Locale;
 import org.projectnessie.events.api.Content;
 import org.projectnessie.events.api.ContentType;
 
-public final class ContentTypeIdResolver extends AbstractTypeIdResolver {
+public final class ContentTypeIdResolver extends TypeIdResolverBase {
+
+  private JavaType baseType;
+
+  @Override
+  public void init(JavaType bt) {
+    baseType = bt;
+  }
+
+  @Override
+  public JsonTypeInfo.Id getMechanism() {
+    return JsonTypeInfo.Id.CUSTOM;
+  }
+
+  @Override
+  public String idFromValueAndType(Object value, Class<?> suggestedType) {
+    return idFromValue(value);
+  }
 
   @Override
   public String idFromValue(Object value) {
@@ -30,11 +51,14 @@ public final class ContentTypeIdResolver extends AbstractTypeIdResolver {
   }
 
   @Override
-  protected Class<?> getSubtype(String id) {
+  public JavaType typeFromId(DatabindContext context, String id) {
+    Class<?> subtype;
     try {
-      return ContentType.valueOf(id.toUpperCase(Locale.ROOT)).getSubtype();
+      subtype = ContentType.valueOf(id.toUpperCase(Locale.ROOT)).getSubtype();
     } catch (Exception e) {
-      return ContentType.CUSTOM.getSubtype();
+      subtype = ContentType.CUSTOM.getSubtype();
     }
+    assert baseType.getRawClass().isAssignableFrom(subtype);
+    return context.constructSpecializedType(baseType, subtype);
   }
 }

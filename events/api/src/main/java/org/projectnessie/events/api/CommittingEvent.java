@@ -18,7 +18,7 @@ package org.projectnessie.events.api;
 /**
  * Event that is emitted when a transaction is written to the catalog.
  *
- * <p>There are three concrete implementations of this event:
+ * <p>This type has 3 child interfaces:
  *
  * <ul>
  *   <li>{@link CommitEvent}: for commits;
