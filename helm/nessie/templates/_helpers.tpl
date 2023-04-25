@@ -69,3 +69,17 @@ Convert a dict into a string formed by a comma-separated list of key-value pairs
 {{- end -}}
 {{ join "," $list }}
 {{- end -}}
+
+{{- define "nessie.propsToEnvVars" -}}
+{{- $map := first . -}}
+{{- $prefix := last . -}}
+{{- range $key, $val := $map -}}
+{{- $name := ternary $key (list $prefix $key | join "_") (eq $prefix "") -}}
+{{- if kindOf $val | eq "map" -}}
+{{- list $val $name | include "nessie.propsToEnvVars" -}}
+{{- else -}}
+- name: {{ $name | upper | replace "\"" "_" | replace "." "_"  | replace "-" "_" | quote }}
+  value: {{ $val | quote }}
+{{ end -}}
+{{- end -}}
+{{- end -}}
