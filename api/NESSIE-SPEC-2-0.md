@@ -12,7 +12,7 @@ server's behaviour.
 If a server returns a specific spec version via `NessieConfiguration.getSpecVersion()` it MUST comply with the
 specified behaviour (see sections below).
 
-Servers SHOULD return the spec version that defines its behaviour most completely.
+Servers SHOULD return the spec version that defines their behaviour most completely.
 
 A server SHOULD return `null` from `NessieConfiguration.getSpecVersion()`, when it behaves in a way that is not
 compatible with any known spec version.
