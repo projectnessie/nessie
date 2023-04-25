@@ -190,6 +190,8 @@ spec:
               value: {{ $v | quote }}
             {{- end }}
 
+            {{- toYaml .Values.extraEnv | nindent 12 }}
+
           ports:
             - name: nessie-server
               containerPort: 19120
