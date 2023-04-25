@@ -24,7 +24,7 @@ Refer to the Nessie API documentation (under the `model` module) for the meaning
 
 # 2.0.0-beta.1
 
-* Namespaces are expected to be created before they are referenced. Namespaces may be referenced withing the same 
+* Namespaces are expected to be created before they are referenced. Namespaces may be referenced within the same 
   commit that creates them. 
 * If a non-existent Namespace is referenced in a commit. The server should fail the corresponding change (commit 
   / merge / transplant) with the `NAMESPACE_ABSENT` conflict type.
