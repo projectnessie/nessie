@@ -189,8 +189,10 @@ spec:
             - name: {{ $k | upper | replace "\"" "_" | replace "." "_"  | replace "-" "_" }}
               value: {{ $v | quote }}
             {{- end }}
-
+            
+            {{- if .Values.extraEnv }}
             {{- toYaml .Values.extraEnv | nindent 12 }}
+            {{- end }}
 
           ports:
             - name: nessie-server
