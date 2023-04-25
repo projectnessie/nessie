@@ -1,7 +1,7 @@
 # Nessie Specification
 
 Nessie Specifications define the behaviour of Nessie Servers. The same behaviour can be expected to be observable
-via all supported API (unless noted otherwise).
+via all supported APIs (unless noted otherwise).
 
 [Semver](https://semver.org/spec/v2.0.0.html) principles are followed in bumping the Nessie spec version.
 For example, a major behaviour change will result in incrementing the major version number.
