@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned.storage.versionstore;
 
-import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Add.commitAdd;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Remove.commitRemove;
@@ -25,15 +24,15 @@ import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLog
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.fromCommitMeta;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.toCommitMeta;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
@@ -51,6 +50,7 @@ import org.projectnessie.versioned.storage.common.logic.CreateCommit;
 import org.projectnessie.versioned.storage.common.logic.IndexesLogic;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
+import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
@@ -71,7 +71,7 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       boolean dryRun,
       ImmutableMergeResult.Builder<Commit> mergeResult,
-      Function<ContentKey, MergeKeyBehavior> mergeBehaviorForKey,
+      MergeBehaviors mergeBehaviors,
       SourceCommitsAndParent sourceCommits)
       throws RetryException, ReferenceNotFoundException, ReferenceConflictException {
     IndexesLogic indexesLogic = indexesLogic(persist);
@@ -87,8 +87,10 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
 
       verifyMergeTransplantCommitPolicies(targetParentIndex, sourceCommit);
 
+      List<Obj> objsToStore = new ArrayList<>();
       CommitObj newCommit =
-          createMergeTransplantCommit(mergeBehaviorForKey, keyDetailsMap, createCommit);
+          createMergeTransplantCommit(
+              mergeBehaviors, keyDetailsMap, createCommit, objsToStore::add);
 
       if (!indexesLogic.commitOperations(newCommit).iterator().hasNext()) {
         // No operations in this commit, skip it.
@@ -96,7 +98,7 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
       }
 
       CommitLogic commitLogic = commitLogic(persist);
-      boolean committed = commitLogic.storeCommit(newCommit, emptyList());
+      boolean committed = commitLogic.storeCommit(newCommit, objsToStore);
 
       if (committed) {
         newHead = newCommit.id();

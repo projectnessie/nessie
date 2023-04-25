@@ -17,12 +17,9 @@ package org.projectnessie.versioned.storage.versionstore;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
@@ -53,14 +50,13 @@ final class TransplantSquashImpl extends BaseMergeTransplantSquash implements Tr
       Optional<?> retryState,
       List<Hash> sequenceToTransplant,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
-      Function<ContentKey, MergeKeyBehavior> mergeBehaviorForKey,
+      MergeBehaviors mergeBehaviors,
       boolean dryRun)
       throws ReferenceNotFoundException, RetryException, ReferenceConflictException {
     SourceCommitsAndParent sourceCommits = loadSourceCommitsForTransplant(sequenceToTransplant);
 
     ImmutableMergeResult.Builder<Commit> mergeResult = prepareMergeResult();
 
-    return squash(
-        dryRun, mergeResult, mergeBehaviorForKey, updateCommitMetadata, sourceCommits, null);
+    return squash(dryRun, mergeResult, mergeBehaviors, updateCommitMetadata, sourceCommits, null);
   }
 }

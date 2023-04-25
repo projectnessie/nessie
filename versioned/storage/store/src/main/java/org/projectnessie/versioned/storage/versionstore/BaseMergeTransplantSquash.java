@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned.storage.versionstore;
 
-import static java.util.Collections.emptyList;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.newCommitBuilder;
 import static org.projectnessie.versioned.storage.common.logic.DiffQuery.diffQuery;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
@@ -28,12 +27,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
@@ -53,6 +50,7 @@ import org.projectnessie.versioned.storage.common.logic.IndexesLogic;
 import org.projectnessie.versioned.storage.common.logic.PagedResult;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
+import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
@@ -72,7 +70,7 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
   MergeResult<Commit> squash(
       boolean dryRun,
       ImmutableMergeResult.Builder<Commit> mergeResult,
-      Function<ContentKey, MergeKeyBehavior> mergeBehaviorForKey,
+      MergeBehaviors mergeBehaviors,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       SourceCommitsAndParent sourceCommits,
       @Nullable @jakarta.annotation.Nullable ObjId mergeFromId)
@@ -82,13 +80,18 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
         createSquashCommit(updateCommitMetadata, sourceCommits, mergeFromId);
 
     Map<ContentKey, KeyDetails> keyDetailsMap = new HashMap<>();
+    List<Obj> objsToStore = new ArrayList<>();
     CommitObj mergeCommit =
-        createMergeTransplantCommit(mergeBehaviorForKey, keyDetailsMap, createCommit);
+        createMergeTransplantCommit(mergeBehaviors, keyDetailsMap, createCommit, objsToStore::add);
 
     // It's okay to do the fetchCommit() here and not complicate the surrounding logic (think:
     // local cache)
     StoreIndex<CommitOp> headIndex = indexesLogic(persist).buildCompleteIndexOrEmpty(head);
     verifyMergeTransplantCommitPolicies(headIndex, mergeCommit);
+
+    mergeBehaviors.postValidate();
+
+    // TODO check keyDetailsMap for conflicts here - no need to persist the merge commit
 
     IndexesLogic indexesLogic = indexesLogic(persist);
     if (!indexesLogic.commitOperations(mergeCommit).iterator().hasNext()) {
@@ -97,7 +100,7 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
     }
 
     CommitLogic commitLogic = commitLogic(persist);
-    boolean committed = commitLogic.storeCommit(mergeCommit, emptyList());
+    boolean committed = commitLogic.storeCommit(mergeCommit, objsToStore);
 
     ObjId newHead;
     if (committed) {

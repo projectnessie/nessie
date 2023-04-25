@@ -618,6 +618,9 @@ public class VersionStoreImpl implements VersionStore {
     CommitterSupplier<Merge> supplier =
         keepIndividualCommits ? MergeIndividualImpl::new : MergeSquashImpl::new;
 
+    MergeBehaviors mergeBehaviors =
+        new MergeBehaviors(keepIndividualCommits, mergeKeyBehaviors, defaultMergeBehavior);
+
     MergeResult<Commit> mergeResult =
         committingOperation(
             "merge",
@@ -626,22 +629,9 @@ public class VersionStoreImpl implements VersionStore {
             persist,
             supplier,
             (merge, retryState) ->
-                merge.merge(
-                    retryState,
-                    fromHash,
-                    updateCommitMetadata,
-                    mergeBehaviorForKey(mergeKeyBehaviors, defaultMergeBehavior),
-                    dryRun));
+                merge.merge(retryState, fromHash, updateCommitMetadata, mergeBehaviors, dryRun));
 
     return mergeTransplantResponse(dryRun, mergeResult);
-  }
-
-  private static Function<ContentKey, MergeKeyBehavior> mergeBehaviorForKey(
-      Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors, MergeBehavior defaultMergeBehavior) {
-    return key -> {
-      MergeKeyBehavior behavior = mergeKeyBehaviors.get(key);
-      return behavior != null ? behavior : MergeKeyBehavior.of(key, defaultMergeBehavior);
-    };
   }
 
   @Override
@@ -660,6 +650,9 @@ public class VersionStoreImpl implements VersionStore {
     CommitterSupplier<Transplant> supplier =
         keepIndividualCommits ? TransplantIndividualImpl::new : TransplantSquashImpl::new;
 
+    MergeBehaviors mergeBehaviors =
+        new MergeBehaviors(keepIndividualCommits, mergeKeyBehaviors, defaultMergeBehavior);
+
     MergeResult<Commit> mergeResult =
         committingOperation(
             "transplant",
@@ -672,7 +665,7 @@ public class VersionStoreImpl implements VersionStore {
                     retryState,
                     sequenceToTransplant,
                     updateCommitMetadata,
-                    mergeBehaviorForKey(mergeKeyBehaviors, defaultMergeBehavior),
+                    mergeBehaviors,
                     dryRun));
 
     return mergeTransplantResponse(dryRun, mergeResult);

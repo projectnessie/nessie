@@ -25,7 +25,9 @@ import org.projectnessie.versioned.storage.common.exceptions.CommitConflictExcep
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
+import org.projectnessie.versioned.storage.common.logic.ConflictHandler.ConflictResolution;
 import org.projectnessie.versioned.storage.common.logic.CreateCommit.Add;
+import org.projectnessie.versioned.storage.common.logic.CreateCommit.Builder;
 import org.projectnessie.versioned.storage.common.logic.CreateCommit.Remove;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObjReference;
@@ -34,7 +36,6 @@ import org.projectnessie.versioned.storage.common.objtypes.CommitType;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
-import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 
 /** Logic to read commits and perform commits including conflict checks. */
@@ -55,8 +56,56 @@ public interface CommitLogic {
   PagedResult<DiffEntry, StoreKey> diff(@Nonnull @jakarta.annotation.Nonnull DiffQuery diffQuery);
 
   /**
+   * Convenience method that combines {@link #buildCommitObj(CreateCommit, ConflictHandler,
+   * CommitOpHandler, ValueReplacement, ValueReplacement)} and {@link #storeCommit(CommitObj,
+   * List)}.
+   *
+   * @param createCommit parameters for {@link #buildCommitObj(CreateCommit, ConflictHandler,
+   *     CommitOpHandler, ValueReplacement, ValueReplacement)}
+   * @param additionalObjects additional {@link Obj}s to store, for example {@link ContentValueObj}
+   * @return the non-null object ID if the commit was stored as a new record or {@code null} if an
+   *     object with the same ID already exists.
+   */
+  @Nullable
+  @jakarta.annotation.Nullable
+  ObjId doCommit(
+      @Nonnull @jakarta.annotation.Nonnull CreateCommit createCommit,
+      @Nonnull @jakarta.annotation.Nonnull List<Obj> additionalObjects)
+      throws CommitConflictException, ObjNotFoundException;
+
+  /**
+   * Stores a new commit and handles storing the (external) {@link CommitObj#referenceIndex()
+   * reference index}, when the {@link CommitObj#incrementalIndex() incremental index} becomes too
+   * big.
+   *
+   * @param commit commit to store
+   * @param additionalObjects additional {@link Obj}s to store, for example {@link ContentValueObj}
+   * @return {@code true} if committed
+   * @see #doCommit(CreateCommit, List)
+   * @see #buildCommitObj(CreateCommit, ConflictHandler, CommitOpHandler, ValueReplacement,
+   *     ValueReplacement)
+   * @see #updateCommit(CommitObj)
+   */
+  boolean storeCommit(
+      @Nonnull @jakarta.annotation.Nonnull CommitObj commit,
+      @Nonnull @jakarta.annotation.Nonnull List<Obj> additionalObjects);
+
+  /**
+   * Updates an <em>existing</em> commit and handles storing the (external) {@link
+   * CommitObj#referenceIndex() reference index}, when the {@link CommitObj#incrementalIndex()
+   * incremental index} becomes too big.
+   *
+   * @param commit the commit to update
+   * @return the persisted commit, containing the updated incremental and reference indexes
+   */
+  CommitObj updateCommit(@Nonnull @jakarta.annotation.Nonnull CommitObj commit);
+
+  /**
    * Adds a new commit on top of its parent commit, performing checks of the existing vs expected
    * contents of the {@link CreateCommit#adds() adds} and {@link CreateCommit#removes() removes}.
+   *
+   * <p>Similar to {@link #doCommit(CreateCommit, List)}, but does not persist the {@link CommitObj}
+   * and allows conflict handling.
    *
    * <h3>{@link CommitObj#tail Parent tail}</h3>
    *
@@ -98,51 +147,28 @@ public interface CommitLogic {
    *
    * All checks and operations described above apply.
    *
-   * @param createCommit parameters for {@link #buildCommitObj(CreateCommit, ConflictHandler,
-   *     CommitOpHandler)}
-   * @param additionalObjects additional {@link Obj}s to store, for example {@link ContentValueObj}
-   * @return the non-null object ID if the commit was stored as a new record or {@code null} if an
-   *     object with the same ID already exists.
-   * @see #buildCommitObj(CreateCommit, ConflictHandler, CommitOpHandler)
-   * @see #storeCommit(CommitObj, List)
-   */
-  @Nullable
-  @jakarta.annotation.Nullable
-  ObjId doCommit(
-      @Nonnull @jakarta.annotation.Nonnull CreateCommit createCommit,
-      @Nonnull @jakarta.annotation.Nonnull List<Obj> additionalObjects)
-      throws CommitConflictException, ObjNotFoundException;
-
-  /**
-   * Stores a new commit and handles storing the (external) {@link CommitObj#referenceIndex()
-   * reference index}, when the {@link CommitObj#incrementalIndex() incremental index} becomes too
-   * big.
-   *
-   * @param commit commit to store
-   * @param additionalObjects additional {@link Obj}s to store, for example {@link ContentValueObj}
-   * @return commit ID, if the commit is new, or {@code null} - see {@link Persist#storeObj(Obj)}
-   * @see #doCommit(CreateCommit, List)
-   * @see #buildCommitObj(CreateCommit, ConflictHandler, CommitOpHandler)
-   * @see #updateCommit(CommitObj)
-   */
-  boolean storeCommit(
-      @Nonnull @jakarta.annotation.Nonnull CommitObj commit,
-      @Nonnull @jakarta.annotation.Nonnull List<Obj> additionalObjects);
-
-  /**
-   * Updates an <em>existing</em> commit and handles storing the (external) {@link
-   * CommitObj#referenceIndex() reference index}, when the {@link CommitObj#incrementalIndex()
-   * incremental index} becomes too big.
-   *
-   * @param commit the commit to update
-   * @return the persisted commit, containing the updated incremental and reference indexes
-   */
-  CommitObj updateCommit(@Nonnull @jakarta.annotation.Nonnull CommitObj commit);
-
-  /**
-   * Similar to {@link #doCommit(CreateCommit, List)}, but does not persist the {@link CommitObj}
-   * and allows conflict handling.
-   *
+   * @param createCommit Contains/describes the commit object to be committed.
+   * @param conflictHandler Callback that decides how a particular {@link CommitConflict} shall be
+   *     handled.
+   *     <p>The callback can decide among the simple resolutions {@link ConflictResolution#CONFLICT}
+   *     to propagate the conflict, {@link ConflictResolution#IGNORE} to commit the conflict and
+   *     {@link ConflictResolution#DROP} to not commit the conflict.
+   *     <p>Advanced conflict resolutions can be implemented via the {@code
+   *     expectedValueReplacement} and {@code committedValueReplacement} callbacks, which are
+   *     evaluated before conflict detection happens..
+   * @param commitOpHandler Callback telling the value's {@link ObjId} for a {@link StoreKey} in the
+   *     resulting commit.
+   * @param expectedValueReplacement The commit logic identifies the current {@link ObjId} for
+   *     {@link StoreKey} from the commit to commit against. If that value needs to be overridden,
+   *     this callback can be used to let the commit logic use a different {@link ObjId}.
+   *     <p>This is useful for (squashing) merge and transplant operations.
+   * @param committedValueReplacement The commit logic (naturally) retrieves the new {@link ObjId}
+   *     from the given {@link CreateCommit} object.
+   *     <p>Since merge operations usually calculate the {@link CreateCommit} from a {@link
+   *     #diffToCreateCommit(PagedResult, Builder) diff} operation, it is necessary to replace the
+   *     committed {@link ObjId} for the committed value, when not the result of the diff but an
+   *     externally resolved/created object shall be committed instead.
+   *     <p>This is useful for (squashing) merge and transplant operations.
    * @see #doCommit(CreateCommit, List)
    * @see #storeCommit(CommitObj, List)
    */
@@ -151,8 +177,19 @@ public interface CommitLogic {
   CommitObj buildCommitObj(
       @Nonnull @jakarta.annotation.Nonnull CreateCommit createCommit,
       @Nonnull @jakarta.annotation.Nonnull ConflictHandler conflictHandler,
-      CommitOpHandler commitOpHandler)
+      CommitOpHandler commitOpHandler,
+      @Nonnull @jakarta.annotation.Nonnull ValueReplacement expectedValueReplacement,
+      @Nonnull @jakarta.annotation.Nonnull ValueReplacement committedValueReplacement)
       throws CommitConflictException, ObjNotFoundException;
+
+  @FunctionalInterface
+  interface ValueReplacement {
+    ValueReplacement NO_VALUE_REPLACEMENT = (add, key, id) -> id;
+
+    @Nullable
+    @jakarta.annotation.Nullable
+    ObjId maybeReplaceValue(boolean add, StoreKey storeKey, ObjId currentId);
+  }
 
   @Nonnull
   @jakarta.annotation.Nonnull
