@@ -15,19 +15,18 @@
  */
 package org.projectnessie.server.store;
 
-import java.util.function.Consumer;
-import org.projectnessie.versioned.store.ContentSerializer;
 import org.projectnessie.versioned.store.ContentSerializerBundle;
+import org.projectnessie.versioned.store.ContentSerializerRegistry;
 
 /** Serializer bundle for Iceberg tables+views, Delta Lake tables + namespaces. */
 public class MainSerializerBundle implements ContentSerializerBundle {
 
   @Override
-  public void register(Consumer<ContentSerializer<?>> registry) {
-    registry.accept(new UnknownSerializer());
-    registry.accept(new IcebergTableSerializer());
-    registry.accept(new DeltaLakeTableSerializer());
-    registry.accept(new IcebergViewSerializer());
-    registry.accept(new NamespaceSerializer());
+  public void register(ContentSerializerRegistry registry) {
+    registry.register(new UnknownSerializer());
+    registry.register(new IcebergTableSerializer());
+    registry.register(new DeltaLakeTableSerializer());
+    registry.register(new IcebergViewSerializer());
+    registry.register(new NamespaceSerializer());
   }
 }

@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -34,7 +35,13 @@ import org.projectnessie.model.types.ContentTypes;
 @Schema(
     type = SchemaType.OBJECT,
     title = "Content",
-    oneOf = {IcebergTable.class, DeltaLakeTable.class, IcebergView.class, Namespace.class},
+    anyOf = {
+      IcebergTable.class,
+      DeltaLakeTable.class,
+      IcebergView.class,
+      Namespace.class,
+      Map.class
+    },
     discriminatorMapping = {
       @DiscriminatorMapping(value = "ICEBERG_TABLE", schema = IcebergTable.class),
       @DiscriminatorMapping(value = "DELTA_LAKE_TABLE", schema = DeltaLakeTable.class),
