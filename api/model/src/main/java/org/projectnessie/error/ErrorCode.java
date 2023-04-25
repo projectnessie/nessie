@@ -15,6 +15,11 @@
  */
 package org.projectnessie.error;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import java.io.IOException;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -59,5 +64,24 @@ public enum ErrorCode {
     return Optional.ofNullable(error.getErrorCode())
         .flatMap(e -> Optional.ofNullable(e.exceptionBuilder))
         .map(b -> b.apply(error));
+  }
+
+  public static ErrorCode parse(String errorCode) {
+    try {
+      if (errorCode != null) {
+        return ErrorCode.valueOf(errorCode.toUpperCase(Locale.ROOT));
+      }
+      return null;
+    } catch (IllegalArgumentException e) {
+      return UNKNOWN;
+    }
+  }
+
+  public static final class Deserializer extends JsonDeserializer<ErrorCode> {
+    @Override
+    public ErrorCode deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+      String name = p.readValueAs(String.class);
+      return name != null ? ErrorCode.parse(name) : null;
+    }
   }
 }

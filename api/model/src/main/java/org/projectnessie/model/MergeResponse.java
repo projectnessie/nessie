@@ -18,9 +18,14 @@ package org.projectnessie.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonView;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 import javax.annotation.Nullable;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -89,6 +94,7 @@ public interface MergeResponse {
     MergeBehavior getMergeBehavior();
 
     @Value.Default
+    @JsonDeserialize(using = ContentKeyConflict.Deserializer.class)
     default ContentKeyConflict getConflictType() {
       return ContentKeyConflict.NONE;
     }
@@ -111,6 +117,26 @@ public interface MergeResponse {
 
   enum ContentKeyConflict {
     NONE,
-    UNRESOLVABLE
+    UNRESOLVABLE;
+
+    public static ContentKeyConflict parse(String mergeBehavior) {
+      try {
+        if (mergeBehavior != null) {
+          return ContentKeyConflict.valueOf(mergeBehavior.toUpperCase(Locale.ROOT));
+        }
+        return null;
+      } catch (IllegalArgumentException e) {
+        return UNRESOLVABLE;
+      }
+    }
+
+    static final class Deserializer extends JsonDeserializer<ContentKeyConflict> {
+      @Override
+      public ContentKeyConflict deserialize(JsonParser p, DeserializationContext ctxt)
+          throws IOException {
+        String name = p.readValueAs(String.class);
+        return name != null ? ContentKeyConflict.parse(name) : null;
+      }
+    }
   }
 }
