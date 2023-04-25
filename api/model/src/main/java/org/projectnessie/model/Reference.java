@@ -37,7 +37,6 @@ import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty;
 import org.immutables.value.Value;
-import org.projectnessie.model.Reference.ReferenceType.Deserializer;
 import org.projectnessie.model.types.ReferenceTypeIdResolver;
 
 @Schema(
@@ -105,7 +104,7 @@ public interface Reference extends Base {
 
   @JsonIgnore
   @Value.Redacted
-  @JsonDeserialize(using = Deserializer.class)
+  @JsonDeserialize(using = ReferenceType.Deserializer.class)
   ReferenceType getType();
 
   default String toPathString() {

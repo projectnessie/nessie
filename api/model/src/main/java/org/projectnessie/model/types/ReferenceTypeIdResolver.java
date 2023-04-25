@@ -21,13 +21,12 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase;
 import java.util.Locale;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.Content;
 import org.projectnessie.model.Detached;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Reference.ReferenceType;
 import org.projectnessie.model.Tag;
 
-/** Dynamic {@link Content} object (de)serialization for <em>Jackson</em>. */
+/** Dynamic {@link ReferenceType} enum (de)serialization for <em>Jackson</em>. */
 public final class ReferenceTypeIdResolver extends TypeIdResolverBase {
 
   private JavaType baseType;
