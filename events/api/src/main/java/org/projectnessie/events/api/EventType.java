@@ -94,6 +94,7 @@ public enum EventType {
     this.subtype = subtype;
   }
 
+  /** Returns the subtype of {@link Event} that this enum value represents. */
   public Class<? extends Event> getSubtype() {
     return subtype;
   }

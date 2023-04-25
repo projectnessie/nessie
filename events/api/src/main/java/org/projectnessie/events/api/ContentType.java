@@ -65,6 +65,7 @@ public enum ContentType {
     this.subtype = subtype;
   }
 
+  /** Returns the subtype of {@link Content} that this enum value represents. */
   public Class<? extends Content> getSubtype() {
     return subtype;
   }
