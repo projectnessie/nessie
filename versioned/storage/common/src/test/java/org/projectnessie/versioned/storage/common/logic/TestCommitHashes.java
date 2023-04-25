@@ -20,8 +20,8 @@ import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.InstanceOfAssertFactories.BOOLEAN;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.key;
 import static org.projectnessie.versioned.storage.common.logic.CommitLogic.ValueReplacement.NO_VALUE_REPLACEMENT;
+import static org.projectnessie.versioned.storage.common.logic.ConflictHandler.ConflictResolution.ADD;
 import static org.projectnessie.versioned.storage.common.logic.ConflictHandler.ConflictResolution.CONFLICT;
-import static org.projectnessie.versioned.storage.common.logic.ConflictHandler.ConflictResolution.IGNORE;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Add.commitAdd;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Remove.commitRemove;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
@@ -98,11 +98,7 @@ public class TestCommitHashes {
 
       CommitObj c2 =
           commitLogic.buildCommitObj(
-              commit.build(),
-              c -> IGNORE,
-              (k, id) -> {},
-              NO_VALUE_REPLACEMENT,
-              NO_VALUE_REPLACEMENT);
+              commit.build(), c -> ADD, (k, id) -> {}, NO_VALUE_REPLACEMENT, NO_VALUE_REPLACEMENT);
       soft.assertThat(c2)
           .describedAs("modified commit: %s", c2)
           .isNotNull()
@@ -155,11 +151,7 @@ public class TestCommitHashes {
 
       CommitObj c2 =
           commitLogic.buildCommitObj(
-              commit.build(),
-              c -> IGNORE,
-              (k, id) -> {},
-              NO_VALUE_REPLACEMENT,
-              NO_VALUE_REPLACEMENT);
+              commit.build(), c -> ADD, (k, id) -> {}, NO_VALUE_REPLACEMENT, NO_VALUE_REPLACEMENT);
       soft.assertThat(c2)
           .describedAs("modified commit: %s", c2)
           .isNotNull()

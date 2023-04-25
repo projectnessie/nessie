@@ -36,7 +36,6 @@ import static org.projectnessie.versioned.storage.common.logic.CommitConflict.co
 import static org.projectnessie.versioned.storage.common.logic.CommitLogic.ValueReplacement.NO_VALUE_REPLACEMENT;
 import static org.projectnessie.versioned.storage.common.logic.ConflictHandler.ConflictResolution.CONFLICT;
 import static org.projectnessie.versioned.storage.common.logic.ConflictHandler.ConflictResolution.DROP;
-import static org.projectnessie.versioned.storage.common.logic.ConflictHandler.ConflictResolution.IGNORE;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Add.commitAdd;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Remove.commitRemove;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Unchanged.commitUnchanged;
@@ -570,7 +569,7 @@ public class TestCommitConflicts {
                 .build(),
             c -> {
               conflicts.add(c);
-              return IGNORE;
+              return ConflictHandler.ConflictResolution.ADD;
             },
             callbacks::put,
             NO_VALUE_REPLACEMENT,

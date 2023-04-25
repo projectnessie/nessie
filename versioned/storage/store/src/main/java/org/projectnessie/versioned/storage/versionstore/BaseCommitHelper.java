@@ -572,7 +572,7 @@ class BaseCommitHelper {
                     && ex != null
                     && op.payload() == ex.payload()
                     && contentTypeForPayload((byte) op.payload()) == NAMESPACE) {
-                  return ConflictResolution.IGNORE;
+                  return ConflictResolution.ADD;
                 }
               }
 
@@ -586,7 +586,7 @@ class BaseCommitHelper {
                   if (mergeKeyBe.getExpectedTargetContent() == null) {
                     keyDetailsMap.put(key, keyDetails(mergeBehavior, ConflictType.NONE));
                     return mergeBehavior == MergeBehavior.FORCE
-                        ? ConflictResolution.IGNORE
+                        ? ConflictResolution.ADD
                         : ConflictResolution.DROP;
                   }
                   // fall through
@@ -597,12 +597,12 @@ class BaseCommitHelper {
                           mergeBehavior,
                           ConflictType.UNRESOLVABLE,
                           commitConflictToConflict(conflict)));
-                  return ConflictResolution.IGNORE;
+                  return ConflictResolution.ADD;
                 default:
                   throw new IllegalStateException("Unknown merge behavior " + mergeBehavior);
               }
             }
-            return ConflictResolution.IGNORE;
+            return ConflictResolution.ADD;
           },
           /*
            * Callback from the commit-logic telling us the value-ObjId for a key.

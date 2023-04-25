@@ -803,7 +803,7 @@ final class CommitLogicImpl implements CommitLogic {
         conflicts.add(conflict);
         // Do not the conflicting action to the commit, report the conflict
         return true;
-      case IGNORE:
+      case ADD:
         // Add the conflicting action to the resulting commit, not reporting as a conflict
         return false;
       case DROP:
