@@ -202,52 +202,36 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     Content c11 = store().getValue(firstCommit, ContentKey.of("t1"));
 
     for (MergeBehavior mergeBehavior : MergeBehavior.values()) {
-      if (dryRun) {
-        soft.assertThat(
-                store()
-                    .merge(
-                        thirdCommit,
-                        targetBranch,
-                        Optional.empty(),
-                        metadataRewriter,
-                        false,
-                        ImmutableMap.of(
-                            keyT3, MergeKeyBehavior.of(keyT3, mergeBehavior, c11, null)),
-                        MergeBehavior.NORMAL,
-                        dryRun,
-                        false))
-            .describedAs("MergeBehavior.%s", mergeBehavior)
-            .extracting(
-                MergeResult::wasApplied, MergeResult::wasSuccessful, r -> r.getDetails().get(keyT3))
-            .containsExactly(
-                false,
-                false,
-                KeyDetails.keyDetails(
-                    mergeBehavior,
-                    MergeResult.ConflictType.UNRESOLVABLE,
-                    Conflict.conflict(
-                        ConflictType.VALUE_DIFFERS,
-                        keyT3,
-                        "values of existing and expected content for key 't3' are different")));
-      } else {
-        soft.assertThatThrownBy(
-                () ->
-                    store()
-                        .merge(
-                            thirdCommit,
-                            targetBranch,
-                            Optional.empty(),
-                            metadataRewriter,
-                            false,
-                            ImmutableMap.of(
-                                keyT3, MergeKeyBehavior.of(keyT3, mergeBehavior, c11, null)),
-                            MergeBehavior.NORMAL,
-                            dryRun,
-                            false))
-            .describedAs("MergeBehavior.%s", mergeBehavior)
-            .isInstanceOf(MergeConflictException.class)
-            .hasMessage("The following keys have been changed in conflict: 't3'");
-      }
+      soft.assertThatThrownBy(
+              () ->
+                  store()
+                      .merge(
+                          thirdCommit,
+                          targetBranch,
+                          Optional.empty(),
+                          metadataRewriter,
+                          false,
+                          ImmutableMap.of(
+                              keyT3, MergeKeyBehavior.of(keyT3, mergeBehavior, c11, null)),
+                          MergeBehavior.NORMAL,
+                          dryRun,
+                          false))
+          .describedAs("MergeBehavior.%s", mergeBehavior)
+          .hasMessage("The following keys have been changed in conflict: 't3'")
+          .asInstanceOf(type(MergeConflictException.class))
+          .extracting(MergeConflictException::getMergeResult)
+          .extracting(
+              MergeResult::wasApplied, MergeResult::wasSuccessful, r -> r.getDetails().get(keyT3))
+          .containsExactly(
+              false,
+              false,
+              KeyDetails.keyDetails(
+                  mergeBehavior,
+                  MergeResult.ConflictType.UNRESOLVABLE,
+                  Conflict.conflict(
+                      ConflictType.VALUE_DIFFERS,
+                      keyT3,
+                      "values of existing and expected content for key 't3' are different")));
       soft.assertAll();
     }
   }
