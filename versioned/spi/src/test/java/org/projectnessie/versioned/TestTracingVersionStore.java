@@ -15,20 +15,31 @@
  */
 package org.projectnessie.versioned;
 
+import static io.opentelemetry.api.common.AttributeKey.stringKey;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
-import com.google.common.collect.ImmutableMap;
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.common.CompletableResultCode;
+import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import io.opentelemetry.sdk.trace.data.SpanData;
+import io.opentelemetry.sdk.trace.data.StatusData;
+import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
+import io.opentelemetry.sdk.trace.export.SpanExporter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -36,7 +47,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.ThrowingConsumer;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -48,7 +58,6 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.versioned.paging.PaginationIterator;
-import org.projectnessie.versioned.test.tracing.TestTracer;
 import org.projectnessie.versioned.test.tracing.TestedTraceingStoreInvocation;
 
 class TestTracingVersionStore {
@@ -242,11 +251,6 @@ class TestTracingVersionStore {
     return TestedTraceingStoreInvocation.toArguments(versionStoreFunctions);
   }
 
-  @BeforeAll
-  static void setupGlobalTracer() {
-    TestTracer.registerGlobal();
-  }
-
   @ParameterizedTest
   @MethodSource("versionStoreInvocations")
   void versionStoreInvocation(
@@ -259,89 +263,125 @@ class TestTracingVersionStore {
             && !(expectedThrow instanceof IllegalArgumentException);
     String opNameTag = "nessie.version-store.operation";
 
-    @SuppressWarnings("resource")
-    TestTracer tracer = new TestTracer();
-    tracer.registerForCurrentTest();
+    List<SpanData> spanData = new ArrayList<>();
 
-    Object result = invocation.getResult() != null ? invocation.getResult().get() : null;
-
-    Stubber stubber;
-    if (expectedThrow != null) {
-      // The invocation expects an exception to be thrown
-      stubber = doThrow(expectedThrow);
-    } else if (result != null) {
-      // Non-void method
-      stubber = doReturn(result);
-    } else {
-      // void method
-      stubber = doNothing();
-    }
-
-    VersionStore mockedStore = mock(VersionStore.class);
-    invocation.getFunction().accept(stubber.when(mockedStore));
-    VersionStore store = new TracingVersionStore(mockedStore);
-
-    ThrowingConsumer<VersionStore> storeExec =
-        s -> {
-          Object r = invocation.getFunction().accept(s);
-          if (result != null) {
-            // non-void methods must return something
-            assertNotNull(r);
-          } else {
-            // void methods return nothing
-            assertNull(r);
+    SpanExporter spanExporter =
+        new SpanExporter() {
+          @Override
+          public CompletableResultCode export(Collection<SpanData> spans) {
+            spanData.addAll(spans);
+            return CompletableResultCode.ofSuccess();
           }
-          if (result instanceof Stream) {
-            // Stream-results shall be closed to indicate the "end" of an invocation
-            Stream<?> stream = (Stream<?>) r;
-            stream.forEach(ignore -> {});
-            stream.close();
+
+          @Override
+          public CompletableResultCode flush() {
+            return CompletableResultCode.ofSuccess();
           }
-          if (result instanceof PaginationIterator) {
-            // Stream-results shall be closed to indicate the "end" of an invocation
-            PaginationIterator<?> iter = (PaginationIterator<?>) r;
-            iter.forEachRemaining(ignore -> {});
-            iter.close();
+
+          @Override
+          public CompletableResultCode shutdown() {
+            return CompletableResultCode.ofSuccess();
           }
         };
+    try (OpenTelemetrySdk openTelemetrySdk =
+        OpenTelemetrySdk.builder()
+            .setTracerProvider(
+                SdkTracerProvider.builder()
+                    .addSpanProcessor(SimpleSpanProcessor.create(spanExporter))
+                    .build())
+            .build()) {
+      Tracer tracer = openTelemetrySdk.getTracer("testing");
 
-    if (expectedThrow == null) {
-      // No exception expected, just invoke the Store function
-      storeExec.accept(store);
-    } else {
-      // Surround the Store function with an 'assertThrows'
-      assertEquals(
-          expectedThrow.getMessage(),
-          assertThrows(expectedThrow.getClass(), () -> storeExec.accept(store)).getMessage());
+      Object result = invocation.getResult() != null ? invocation.getResult().get() : null;
+
+      Stubber stubber;
+      if (expectedThrow != null) {
+        // The invocation expects an exception to be thrown
+        stubber = doThrow(expectedThrow);
+      } else if (result != null) {
+        // Non-void method
+        stubber = doReturn(result);
+      } else {
+        // void method
+        stubber = doNothing();
+      }
+
+      VersionStore mockedStore = mock(VersionStore.class);
+      invocation.getFunction().accept(stubber.when(mockedStore));
+      VersionStore store = new TracingVersionStore(tracer, mockedStore);
+
+      ThrowingConsumer<VersionStore> storeExec =
+          s -> {
+            Object r = invocation.getFunction().accept(s);
+            if (result != null) {
+              // non-void methods must return something
+              assertNotNull(r);
+            } else {
+              // void methods return nothing
+              assertNull(r);
+            }
+            if (result instanceof Stream) {
+              // Stream-results shall be closed to indicate the "end" of an invocation
+              Stream<?> stream = (Stream<?>) r;
+              stream.forEach(ignore -> {});
+              stream.close();
+            }
+            if (result instanceof PaginationIterator) {
+              // Stream-results shall be closed to indicate the "end" of an invocation
+              PaginationIterator<?> iter = (PaginationIterator<?>) r;
+              iter.forEachRemaining(ignore -> {});
+              iter.close();
+            }
+          };
+
+      if (expectedThrow == null) {
+        // No exception expected, just invoke the Store function
+        storeExec.accept(store);
+      } else {
+        // Surround the Store function with an 'assertThrows'
+        assertEquals(
+            expectedThrow.getMessage(),
+            assertThrows(expectedThrow.getClass(), () -> storeExec.accept(store)).getMessage());
+      }
+
+      Map<AttributeKey<?>, Object> expectedAttributes = new HashMap<>();
+      expectedAttributes.put(stringKey(opNameTag), invocation.getOpName());
+
+      assertThat(spanData)
+          .hasSize(1)
+          .first()
+          .extracting(SpanData::getName, SpanData::getParentSpanId, SpanData::getStatus)
+          .containsExactly(
+              TracingVersionStore.makeSpanName(invocation.getOpName()),
+              "0000000000000000",
+              isServerError ? StatusData.error() : StatusData.unset());
+      assertThat(spanData.get(0).getAttributes().asMap()).containsAllEntriesOf(expectedAttributes);
+      if (isServerError) {
+        assertThat(spanData.get(0).getEvents()).hasSize(1);
+        Attributes eventData = spanData.get(0).getEvents().get(0).getAttributes();
+        assertThat(eventData.get(stringKey("exception.message")))
+            .isEqualTo(expectedThrow.getMessage());
+        assertThat(eventData.get(stringKey("exception.stacktrace")))
+            .startsWith(expectedThrow.toString());
+      }
+      //    assertAll(
+      //        () ->
+      //            assertEquals(
+      //                TracingVersionStore.makeSpanName(invocation.getOpName()),
+      // tracer.getOpName()),
+      //        () ->
+      //            assertEquals(
+      //                expectedLogs, tracer.getActiveSpan().getLogs(), "expected logs don't
+      // match"),
+      //        () ->
+      //            assertEquals(
+      //                new HashMap<>(expectedTags),
+      //                tracer.getActiveSpan().getTags(),
+      //                "expected tags don't match"),
+      //        () -> assertTrue(tracer.isParentSet(), "Span-parent not set"),
+      //        () -> assertTrue(tracer.isClosed(), "Scope not closed"),
+      //        () -> assertTrue(tracer.getActiveSpan().finished(), "Span did not finish"));
     }
-
-    List<Map<String, ?>> expectedLogs = new ArrayList<>(invocation.getLogs());
-    if (isServerError) {
-      expectedLogs.add(ImmutableMap.of("event", "error", "error.object", expectedThrow));
-    }
-
-    ImmutableMap.Builder<Object, Object> tagsBuilder =
-        ImmutableMap.builder().putAll(invocation.getTags());
-    if (isServerError) {
-      tagsBuilder.put("error", true);
-    }
-    Map<Object, Object> expectedTags = tagsBuilder.put(opNameTag, invocation.getOpName()).build();
-
-    assertAll(
-        () ->
-            assertEquals(
-                TracingVersionStore.makeSpanName(invocation.getOpName()), tracer.getOpName()),
-        () ->
-            assertEquals(
-                expectedLogs, tracer.getActiveSpan().getLogs(), "expected logs don't match"),
-        () ->
-            assertEquals(
-                new HashMap<>(expectedTags),
-                tracer.getActiveSpan().getTags(),
-                "expected tags don't match"),
-        () -> assertTrue(tracer.isParentSet(), "Span-parent not set"),
-        () -> assertTrue(tracer.isClosed(), "Scope not closed"),
-        () -> assertTrue(tracer.getActiveSpan().finished(), "Span did not finish"));
   }
 
   @Test

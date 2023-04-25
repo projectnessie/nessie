@@ -15,10 +15,8 @@
  */
 package org.projectnessie.versioned;
 
-import com.google.common.collect.ImmutableMap;
-import io.opentracing.Span;
-import io.opentracing.log.Fields;
-import io.opentracing.tag.Tags;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
 import java.util.Collection;
 
 /** Utility methods for tracing. */
@@ -37,15 +35,14 @@ public final class TracingUtil {
   }
 
   /**
-   * Set {@link Tags#ERROR} with {@link Fields#EVENT} + {@link Fields#ERROR_OBJECT}.
+   * Set {@link StatusCode#ERROR} using {@link Span#recordException(Throwable)}.
    *
    * @param span trace-span
    * @param e exception to trace
    * @return returns {@code e}
    */
   public static RuntimeException traceError(Span span, RuntimeException e) {
-    Tags.ERROR.set(
-        span.log(ImmutableMap.of(Fields.EVENT, Tags.ERROR.getKey(), Fields.ERROR_OBJECT, e)), true);
+    span.setStatus(StatusCode.ERROR).recordException(e);
     return e;
   }
 }

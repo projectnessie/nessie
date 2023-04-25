@@ -25,7 +25,7 @@ mavenResolver = "1.9.8"
 micrometer = "1.10.6"
 nessieClientVersion = "0.51.1" # Must be in sync with Nessie version in the Iceberg release.
 opentelemetry = "1.25.0"
-opentelemetryAlpha = "1.20.1-alpha"
+opentelemetryAlpha = "1.25.0-alpha"
 opentracing = "0.33.0"
 parquet = "1.13.0"
 picocli = "4.7.3"
@@ -180,9 +180,13 @@ mongodb-driver-sync = { module = "org.mongodb:mongodb-driver-sync", version = "4
 openapi-generator-cli = { module = "org.openapitools:openapi-generator-cli", version = "6.5.0" }
 opentelemetry-api = { module = "io.opentelemetry:opentelemetry-api" }
 opentelemetry-bom = { module = "io.opentelemetry:opentelemetry-bom", version.ref = "opentelemetry" }
+opentelemetry-bom-alpha = { module = "io.opentelemetry:opentelemetry-bom-alpha", version.ref = "opentelemetryAlpha" }
+opentelemetry-exporter-common = { module = "io.opentelemetry:opentelemetry-exporter-common" }
 opentelemetry-exporter-otlp = { module = "io.opentelemetry:opentelemetry-exporter-otlp" }
+opentelemetry-instrumentation-bom-alpha = { module = "io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom-alpha", version.ref = "opentelemetryAlpha" }
+opentelemetry-instrumentation-micrometer = { module = "io.opentelemetry.instrumentation:opentelemetry-micrometer-1.5" }
 opentelemetry-sdk = { module = "io.opentelemetry:opentelemetry-sdk" }
-opentelemetry-semconv = { module = "io.opentelemetry:opentelemetry-semconv", version.ref = "opentelemetryAlpha" }
+opentelemetry-semconv = { module = "io.opentelemetry:opentelemetry-semconv" }
 opentracing-api = { module = "io.opentracing:opentracing-api", version.ref = "opentracing" }
 opentracing-mock = { module = "io.opentracing:opentracing-mock", version.ref = "opentracing" }
 opentracing-util = { module = "io.opentracing:opentracing-util", version.ref = "opentracing" }

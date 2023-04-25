@@ -15,6 +15,7 @@
  */
 package org.projectnessie.quarkus.providers;
 
+import io.opentelemetry.api.trace.Tracer;
 import io.quarkus.runtime.Startup;
 import java.io.IOError;
 import javax.enterprise.context.ApplicationScoped;
@@ -48,6 +49,7 @@ public class ConfigurableVersionStoreFactory {
   private final VersionStoreConfig storeConfig;
   private final Instance<DatabaseAdapter> databaseAdapter;
   private final Instance<Persist> persist;
+  private final Instance<Tracer> opentelemetryTracer;
 
   /**
    * Configurable version store factory.
@@ -57,9 +59,11 @@ public class ConfigurableVersionStoreFactory {
   @Inject
   public ConfigurableVersionStoreFactory(
       VersionStoreConfig storeConfig,
+      @Any Instance<Tracer> opentelemetryTracer,
       @Any Instance<DatabaseAdapter> databaseAdapter,
       @Any Instance<Persist> persist) {
     this.storeConfig = storeConfig;
+    this.opentelemetryTracer = opentelemetryTracer;
     this.databaseAdapter = databaseAdapter;
     this.persist = persist;
   }
@@ -80,7 +84,13 @@ public class ConfigurableVersionStoreFactory {
       }
 
       if (storeConfig.isTracingEnabled()) {
-        versionStore = new TracingVersionStore(versionStore);
+        if (opentelemetryTracer.isUnsatisfied()) {
+          LOGGER.warn(
+              "OpenTelemetry is enabled, but not available, forgot to add quarkus-opentelemetry?");
+        } else {
+          Tracer t = opentelemetryTracer.get();
+          versionStore = new TracingVersionStore(t, versionStore);
+        }
       }
       if (storeConfig.isMetricsEnabled()) {
         versionStore = new MetricsVersionStore(versionStore);
