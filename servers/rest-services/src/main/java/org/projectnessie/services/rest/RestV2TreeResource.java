@@ -15,7 +15,6 @@
  */
 package org.projectnessie.services.rest;
 
-import static java.util.Collections.emptyList;
 import static org.projectnessie.api.v2.params.ReferenceResolver.resolveReferencePathElement;
 import static org.projectnessie.api.v2.params.ReferenceResolver.resolveReferencePathElementWithDefaultBranch;
 import static org.projectnessie.services.impl.RefUtil.toReference;
@@ -354,7 +353,7 @@ public class RestV2TreeResource implements HttpTreeApi {
     ImmutableCommitMeta.Builder meta = CommitMeta.builder();
     CommitMeta commitMeta = merge.getCommitMeta();
     if (commitMeta != null) {
-      meta.from(commitMeta).committer(null).commitTime(null).parentCommitHashes(emptyList());
+      meta.from(commitMeta);
       if (commitMeta.getMessage().isEmpty() && msg != null) {
         meta.message(msg);
       }
