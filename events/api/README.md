@@ -17,14 +17,16 @@ easily serialize and deserialize events to and from JSON.
 
 The following concrete event implementations are defined:
 
-* `CommitEvent` - This event is published when a commit is performed.
-* `MergeEvent` - This event is published when a merge is performed.
-* `TransplantEvent` - This event is published when a transplant is performed.
-* `ReferenceCreatedEvent` - This event is published when a reference is created.
-* `ReferenceUpdatedEvent` - This event is published when a reference is updated.
-* `ReferenceDeletedEvent` - This event is published when a reference is deleted.
-* `ContentStoredEvent` - This event is published when a content is stored (PUT).
-* `ContentRemovedEvent` - This event is published when a content is removed (DELETE).
+* `CommitEvent`: This event is published when a commit is performed.
+* `MergeEvent`: This event is published when a merge is performed.
+* `TransplantEvent`: This event is published when a transplant is performed.
+* `ReferenceCreatedEvent`: This event is published when a reference is created.
+* `ReferenceUpdatedEvent`: This event is published when a reference is updated.
+* `ReferenceDeletedEvent`: This event is published when a reference is deleted.
+* `ContentStoredEvent`: This event is published when a content is stored (PUT).
+* `ContentRemovedEvent`: This event is published when a content is removed (DELETE).
+* `CustomEvent`: a catch-all event type that will be used to serialize and deserialize any event 
+  type that is not supported by the other event types above.
 
 ## Contents
 
@@ -57,3 +59,40 @@ ObjectMapper mapper = new ObjectMapper()
   .registerModule(new JavaTimeModule())
   .registerModule(new Jdk8Module());
 ```
+
+Serializing and deserializing unknown event and content types is done using the `CustomEvent`
+and `CustomContent` types. 
+
+For example, the following JSON payload:
+
+```json
+{
+  "type": "UNKNOWN_EVENT",
+  "id": "e1b0a7a8-4f8e-4f1e-8a2e-2d9b8d9b9e5e",
+  "repositoryId": "repo1",
+  "createdAt": "2021-03-01T14:00:00Z",
+  "sentBy": "Nessie",
+  "createdBy": "user1",
+  "custom-payload": {
+    "foo": "bar"
+  }
+}
+```
+
+... would be deserialized into a `CustomEvent` instance:
+
+```java
+Event event = mapper.readValue(json, Event.class);
+assert event instanceof CustomEvent;
+CustomEvent customEvent = (CustomEvent) event;
+assert customEvent.getType() == EventType.CUSTOM;
+assert customEvent.getCustomType().equals("UNKNOWN_EVENT");
+assert customEvent.getRepositoryId().equals("repo1");
+assert customEvent.getCreatedAt().equals(Instant.parse("2021-03-01T14:00:00Z"));
+assert customEvent.getSentBy().equals("Nessie");
+assert customEvent.getCreatedBy().get().equals("user1");
+assert customEvent.getProperties().containsKey("custom-payload");
+```
+
+Any custom properties that are not part of the `Event` interface will be stored in the event's 
+`properties` map, like the `custom-payload` property in the example above.
