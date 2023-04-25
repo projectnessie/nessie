@@ -574,7 +574,7 @@ public abstract class AbstractDatabaseAdapter<
 
     mergeResult.wasSuccessful(!hasCollisions);
 
-    if (hasCollisions && !params.isDryRun()) {
+    if (hasCollisions) {
       MergeResult<CommitLogEntry> result = mergeResult.resultantTargetHash(toHead).build();
       throw new MergeConflictException(
           format(
@@ -588,7 +588,7 @@ public abstract class AbstractDatabaseAdapter<
           result);
     }
 
-    if (params.isDryRun() || hasCollisions) {
+    if (params.isDryRun()) {
       return toHead;
     }
 

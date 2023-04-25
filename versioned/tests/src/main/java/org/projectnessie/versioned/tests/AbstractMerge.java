@@ -37,9 +37,9 @@ import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Conflict;
@@ -491,6 +491,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     store().create(newBranch, Optional.of(initialHash));
     MetadataRewriter<CommitMeta> metadataRewriter = createMetadataRewriter("");
 
+    Hash origHead = store().getNamedRef(newBranch.getName(), GetNamedRefsParams.DEFAULT).getHash();
+
     MergeResult<Commit> dryMergeResult =
         store()
             .merge(
@@ -514,6 +516,10 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             MergeResult::getExpectedHash)
         .containsExactly(false, true, initialHash, newBranch, initialHash, initialHash);
 
+    // Dry merges should not advance HEAD
+    soft.assertThat(store().getNamedRef(newBranch.getName(), GetNamedRefsParams.DEFAULT).getHash())
+        .isEqualTo(origHead);
+
     MergeResult<Commit> mergeResult =
         store()
             .merge(
@@ -528,6 +534,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 true);
 
     Hash head = store().getNamedRef(newBranch.getName(), GetNamedRefsParams.DEFAULT).getHash();
+    soft.assertThat(head).isNotEqualTo(origHead);
 
     soft.assertThat(mergeResult.getSourceCommits())
         .satisfiesAnyOf(
@@ -878,8 +885,14 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
   }
 
   @ParameterizedTest
-  @ValueSource(booleans = {false, true})
-  protected void mergeWithConflictingKeys(boolean individualCommits) throws VersionStoreException {
+  @CsvSource({
+    "false,false",
+    "false,true",
+    "true,false",
+    "true,true",
+  })
+  protected void mergeWithConflictingKeys(boolean individualCommits, boolean dryRun)
+      throws VersionStoreException {
     final BranchName mergeInto = BranchName.of("foofoo");
     final BranchName mergeFrom = BranchName.of("barbar");
     store().create(mergeInto, Optional.of(this.initialHash));
@@ -931,7 +944,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         individualCommits,
                         Collections.emptyMap(),
                         MergeBehavior.NORMAL,
-                        false,
+                        dryRun,
                         false))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessageContaining("The following keys have been changed in conflict:")
@@ -952,7 +965,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                             conflictingKey2,
                             MergeKeyBehavior.of(conflictingKey2, MergeBehavior.DROP)),
                         MergeBehavior.NORMAL,
-                        false,
+                        dryRun,
                         false))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessageContaining("The following keys have been changed in conflict:")
@@ -973,7 +986,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                             conflictingKey1,
                             MergeKeyBehavior.of(conflictingKey1, MergeBehavior.NORMAL)),
                         MergeBehavior.DROP,
-                        false,
+                        dryRun,
                         false))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessageContaining("The following keys have been changed in conflict:")
@@ -994,7 +1007,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                             conflictingKey1,
                             MergeKeyBehavior.of(conflictingKey1, MergeBehavior.FORCE)),
                         MergeBehavior.NORMAL,
-                        false,
+                        dryRun,
                         false))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessageContaining("The following keys have been changed in conflict:")
@@ -1065,8 +1078,13 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
   }
 
   @ParameterizedTest
-  @ValueSource(booleans = {false, true})
-  protected void mergeIntoConflictingBranch(boolean individualCommits)
+  @CsvSource({
+    "false,false",
+    "false,true",
+    "true,false",
+    "true,true",
+  })
+  protected void mergeIntoConflictingBranch(boolean individualCommits, boolean dryRun)
       throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_3");
     store().create(newBranch, Optional.of(initialHash));
@@ -1083,14 +1101,19 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         individualCommits,
                         Collections.emptyMap(),
                         MergeBehavior.NORMAL,
-                        false,
+                        dryRun,
                         false))
         .isInstanceOf(ReferenceConflictException.class);
   }
 
   @ParameterizedTest
-  @ValueSource(booleans = {false, true})
-  protected void mergeIntoNonExistingBranch(boolean individualCommits) {
+  @CsvSource({
+    "false,false",
+    "false,true",
+    "true,false",
+    "true,true",
+  })
+  protected void mergeIntoNonExistingBranch(boolean individualCommits, boolean dryRun) {
     final BranchName newBranch = BranchName.of("bar_5");
     soft.assertThatThrownBy(
             () ->
@@ -1103,14 +1126,19 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         individualCommits,
                         Collections.emptyMap(),
                         MergeBehavior.NORMAL,
-                        false,
+                        dryRun,
                         false))
         .isInstanceOf(ReferenceNotFoundException.class);
   }
 
   @ParameterizedTest
-  @ValueSource(booleans = {false, true})
-  protected void mergeIntoNonExistingReference(boolean individualCommits)
+  @CsvSource({
+    "false,false",
+    "false,true",
+    "true,false",
+    "true,true",
+  })
+  protected void mergeIntoNonExistingReference(boolean individualCommits, boolean dryRun)
       throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_6");
     store().create(newBranch, Optional.of(initialHash));
@@ -1125,14 +1153,20 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         individualCommits,
                         Collections.emptyMap(),
                         MergeBehavior.NORMAL,
-                        false,
+                        dryRun,
                         false))
         .isInstanceOf(ReferenceNotFoundException.class);
   }
 
   @ParameterizedTest
-  @ValueSource(booleans = {false, true})
-  protected void mergeEmptyCommit(boolean individualCommits) throws VersionStoreException {
+  @CsvSource({
+    "false,false",
+    "false,true",
+    "true,false",
+    "true,true",
+  })
+  protected void mergeEmptyCommit(boolean individualCommits, boolean dryRun)
+      throws VersionStoreException {
     BranchName source = BranchName.of("source");
     BranchName target = BranchName.of("target");
     store().create(source, Optional.of(this.initialHash));
@@ -1192,7 +1226,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 key2,
                 MergeKeyBehavior.of(key2, MergeBehavior.DROP)),
             MergeBehavior.NORMAL,
-            false,
+            dryRun,
             false);
 
     // No new commit should have been created in the target branch
@@ -1202,8 +1236,9 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     }
   }
 
-  @Test
-  public void mergeFromAndIntoHead() throws Exception {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  public void mergeFromAndIntoHead(boolean dryRun) throws Exception {
     BranchName branch = BranchName.of("source");
     store().create(branch, Optional.of(this.initialHash));
 
@@ -1238,7 +1273,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         false,
                         emptyMap(),
                         MergeBehavior.NORMAL,
-                        false,
+                        dryRun,
                         false));
 
     soft.assertThatIllegalArgumentException()
@@ -1253,7 +1288,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         false,
                         emptyMap(),
                         MergeBehavior.NORMAL,
-                        false,
+                        dryRun,
                         false));
   }
 }

@@ -631,7 +631,7 @@ public class VersionStoreImpl implements VersionStore {
             (merge, retryState) ->
                 merge.merge(retryState, fromHash, updateCommitMetadata, mergeBehaviors, dryRun));
 
-    return mergeTransplantResponse(dryRun, mergeResult);
+    return mergeTransplantResponse(mergeResult);
   }
 
   @Override
@@ -668,12 +668,12 @@ public class VersionStoreImpl implements VersionStore {
                     mergeBehaviors,
                     dryRun));
 
-    return mergeTransplantResponse(dryRun, mergeResult);
+    return mergeTransplantResponse(mergeResult);
   }
 
-  private MergeResult<Commit> mergeTransplantResponse(
-      boolean dryRun, MergeResult<Commit> mergeResult) throws MergeConflictException {
-    if (!dryRun && !mergeResult.wasSuccessful()) {
+  private MergeResult<Commit> mergeTransplantResponse(MergeResult<Commit> mergeResult)
+      throws MergeConflictException {
+    if (!mergeResult.wasSuccessful()) {
       throw new MergeConflictException(
           String.format(
               "The following keys have been changed in conflict: %s",
