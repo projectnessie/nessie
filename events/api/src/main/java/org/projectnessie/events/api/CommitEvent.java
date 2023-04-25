@@ -26,8 +26,8 @@ import org.immutables.value.Value;
  */
 @Value.Immutable
 @JsonTypeName("COMMIT")
-@JsonSerialize
-@JsonDeserialize
+@JsonSerialize(as = ImmutableCommitEvent.class)
+@JsonDeserialize(as = ImmutableCommitEvent.class)
 public interface CommitEvent extends CommittingEvent {
 
   @Override

@@ -26,8 +26,8 @@ import org.immutables.value.Value;
  */
 @Value.Immutable
 @JsonTypeName("TRANSPLANT")
-@JsonSerialize
-@JsonDeserialize
+@JsonSerialize(as = ImmutableTransplantEvent.class)
+@JsonDeserialize(as = ImmutableTransplantEvent.class)
 public interface TransplantEvent extends CommittingEvent {
 
   @Override

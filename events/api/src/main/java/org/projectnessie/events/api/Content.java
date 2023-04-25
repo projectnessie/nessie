@@ -17,10 +17,12 @@ package org.projectnessie.events.api;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 import org.immutables.value.Value;
+import org.projectnessie.events.api.json.ContentTypeIdResolver;
 
 /** An object stored in Nessie, such as a table or a view. */
 @JsonSubTypes({
@@ -30,9 +32,11 @@ import org.immutables.value.Value;
   @JsonSubTypes.Type(name = "DELTA_LAKE_TABLE", value = ImmutableDeltaLakeTable.class),
   @JsonSubTypes.Type(name = "CUSTOM", value = ImmutableCustomContent.class),
 })
+@JsonTypeIdResolver(ContentTypeIdResolver.class)
 @JsonTypeInfo(
-    use = JsonTypeInfo.Id.NAME,
+    use = JsonTypeInfo.Id.CUSTOM,
     include = JsonTypeInfo.As.EXISTING_PROPERTY,
+    visible = true,
     property = "type")
 public interface Content {
 
@@ -48,7 +52,7 @@ public interface Content {
 
   /** A map of attributes that can be used to add additional information to the content object. */
   @Value.Default
-  default Map<String, Object> getAttributes() {
+  default Map<String, Object> getProperties() {
     return Collections.emptyMap();
   }
 }

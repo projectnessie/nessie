@@ -26,8 +26,8 @@ import org.immutables.value.Value;
 /** A {@link Content} object that represents a namespace. */
 @Value.Immutable
 @JsonTypeName("NAMESPACE")
-@JsonSerialize
-@JsonDeserialize
+@JsonSerialize(as = ImmutableNamespace.class)
+@JsonDeserialize(as = ImmutableNamespace.class)
 public interface Namespace extends Content {
 
   @Override

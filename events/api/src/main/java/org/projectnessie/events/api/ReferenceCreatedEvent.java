@@ -23,8 +23,8 @@ import org.immutables.value.Value;
 /** Event that is emitted after a reference is created. */
 @Value.Immutable
 @JsonTypeName("REFERENCE_CREATED")
-@JsonSerialize
-@JsonDeserialize
+@JsonSerialize(as = ImmutableReferenceCreatedEvent.class)
+@JsonDeserialize(as = ImmutableReferenceCreatedEvent.class)
 public interface ReferenceCreatedEvent extends ReferenceEvent {
 
   @Value.Default

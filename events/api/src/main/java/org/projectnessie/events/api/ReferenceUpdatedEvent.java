@@ -23,8 +23,8 @@ import org.immutables.value.Value;
 /** Event that is emitted after a reference is updated. */
 @Value.Immutable
 @JsonTypeName("REFERENCE_UPDATED")
-@JsonSerialize
-@JsonDeserialize
+@JsonSerialize(as = ImmutableReferenceUpdatedEvent.class)
+@JsonDeserialize(as = ImmutableReferenceUpdatedEvent.class)
 public interface ReferenceUpdatedEvent extends ReferenceEvent {
 
   @Value.Default

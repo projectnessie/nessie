@@ -27,28 +27,28 @@ public enum ContentType {
    *
    * @see Namespace
    */
-  NAMESPACE,
+  NAMESPACE(Namespace.class),
 
   /**
    * The content is an Iceberg table.
    *
    * @see IcebergTable
    */
-  ICEBERG_TABLE,
+  ICEBERG_TABLE(IcebergTable.class),
 
   /**
    * The content is an Iceberg view.
    *
    * @see IcebergView
    */
-  ICEBERG_VIEW,
+  ICEBERG_VIEW(IcebergView.class),
 
   /**
    * The content is a Delta Lake table.
    *
    * @see DeltaLakeTable
    */
-  DELTA_LAKE_TABLE,
+  DELTA_LAKE_TABLE(DeltaLakeTable.class),
 
   /**
    * The content is a custom type. This type is a catch-all type for all other runtime types that
@@ -56,5 +56,16 @@ public enum ContentType {
    *
    * @see CustomContent
    */
-  CUSTOM,
+  CUSTOM(CustomContent.class),
+  ;
+
+  private final Class<? extends Content> subtype;
+
+  ContentType(Class<? extends Content> subtype) {
+    this.subtype = subtype;
+  }
+
+  public Class<? extends Content> getSubtype() {
+    return subtype;
+  }
 }

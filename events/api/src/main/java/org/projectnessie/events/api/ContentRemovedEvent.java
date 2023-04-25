@@ -26,8 +26,8 @@ import org.immutables.value.Value;
  */
 @Value.Immutable
 @JsonTypeName("CONTENT_REMOVED")
-@JsonSerialize
-@JsonDeserialize
+@JsonSerialize(as = ImmutableContentRemovedEvent.class)
+@JsonDeserialize(as = ImmutableContentRemovedEvent.class)
 public interface ContentRemovedEvent extends ContentEvent {
 
   @Override

@@ -23,8 +23,8 @@ import org.immutables.value.Value;
 /** A {@link Content} object that represents an Iceberg table. */
 @Value.Immutable
 @JsonTypeName("ICEBERG_TABLE")
-@JsonSerialize
-@JsonDeserialize
+@JsonSerialize(as = ImmutableIcebergTable.class)
+@JsonDeserialize(as = ImmutableIcebergTable.class)
 public interface IcebergTable extends Content {
 
   @Override

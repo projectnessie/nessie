@@ -24,8 +24,8 @@ import org.immutables.value.Value;
 /** A {@link Content} object that represents a Delta Lake table. */
 @Value.Immutable
 @JsonTypeName("DELTA_LAKE_TABLE")
-@JsonSerialize
-@JsonDeserialize
+@JsonSerialize(as = ImmutableDeltaLakeTable.class)
+@JsonDeserialize(as = ImmutableDeltaLakeTable.class)
 public interface DeltaLakeTable extends Content {
 
   @Override

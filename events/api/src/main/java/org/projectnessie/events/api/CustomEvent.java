@@ -21,33 +21,32 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Map;
 import org.immutables.value.Value;
-import org.projectnessie.events.api.json.CustomContentDeserializer;
-import org.projectnessie.events.api.json.CustomContentSerializer;
+import org.projectnessie.events.api.json.CustomEventDeserializer;
+import org.projectnessie.events.api.json.CustomEventSerializer;
 
 /**
- * A custom {@link Content} whose runtime type is not known.
+ * A custom {@link Event} whose runtime type is not known.
  *
- * <p>This special content subtype is only used when deserializing unknown event types. Since
- * contents are pluggable in Nessie, this situation can happen when a custom content other than the
- * built-in ones is registered server-side, but the client deserializing the content does not have
- * the concrete class available on its classpath.
+ * <p>This special event subtype is only used when deserializing unknown event types. This situation
+ * can happen when a newer event subtype is present server-side, but the client deserializing the
+ * event has an older version of the Event API where that event subtype is not available.
  *
- * <p>All properties of the original content object will be deserialized in the {@link
+ * <p>All properties of the original event object will be deserialized in the {@link
  * #getProperties()} map.
  */
 @Value.Immutable
 @JsonTypeName("CUSTOM")
-@JsonSerialize(using = CustomContentSerializer.class)
-@JsonDeserialize(using = CustomContentDeserializer.class)
-public interface CustomContent extends Content {
+@JsonSerialize(using = CustomEventSerializer.class)
+@JsonDeserialize(using = CustomEventDeserializer.class)
+public interface CustomEvent extends Event {
 
   @Override
   @Value.Default
-  default ContentType getType() {
-    return ContentType.CUSTOM;
+  default EventType getType() {
+    return EventType.CUSTOM;
   }
 
-  /** The actual runtime type name of this content object. */
+  /** The actual runtime type name of this event object. */
   String getCustomType();
 
   /**

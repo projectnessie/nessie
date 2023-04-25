@@ -26,8 +26,8 @@ import org.immutables.value.Value;
  */
 @Value.Immutable
 @JsonTypeName("CONTENT_STORED")
-@JsonSerialize
-@JsonDeserialize
+@JsonSerialize(as = ImmutableContentStoredEvent.class)
+@JsonDeserialize(as = ImmutableContentStoredEvent.class)
 public interface ContentStoredEvent extends ContentEvent {
   @Override
   @Value.Default

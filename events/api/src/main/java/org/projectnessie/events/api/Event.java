@@ -17,12 +17,14 @@ package org.projectnessie.events.api;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.immutables.value.Value;
+import org.projectnessie.events.api.json.EventTypeIdResolver;
 
 /**
  * Base interface for all events produced by Nessie.
@@ -44,12 +46,11 @@ import org.immutables.value.Value;
   @JsonSubTypes.Type(name = "REFERENCE_UPDATED", value = ImmutableReferenceUpdatedEvent.class),
   @JsonSubTypes.Type(name = "REFERENCE_DELETED", value = ImmutableReferenceDeletedEvent.class),
   @JsonSubTypes.Type(name = "CONTENT_STORED", value = ImmutableContentStoredEvent.class),
-  @JsonSubTypes.Type(name = "CONTENT_REMOVED", value = ImmutableContentRemovedEvent.class)
+  @JsonSubTypes.Type(name = "CONTENT_REMOVED", value = ImmutableContentRemovedEvent.class),
+  @JsonSubTypes.Type(name = "CUSTOM", value = ImmutableCustomEvent.class),
 })
-@JsonTypeInfo(
-    use = JsonTypeInfo.Id.NAME,
-    include = JsonTypeInfo.As.EXISTING_PROPERTY,
-    property = "type")
+@JsonTypeIdResolver(EventTypeIdResolver.class)
+@JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "type", visible = true)
 public interface Event {
 
   /** The type of the event. */
@@ -90,7 +91,7 @@ public interface Event {
 
   /** A map of properties that can be used to add additional information to the event. */
   @Value.Default
-  default Map<String, String> getProperties() {
+  default Map<String, Object> getProperties() {
     return Collections.emptyMap();
   }
 }

@@ -23,8 +23,8 @@ import org.immutables.value.Value;
 /** Event that is emitted after a reference is deleted. */
 @Value.Immutable
 @JsonTypeName("REFERENCE_DELETED")
-@JsonSerialize
-@JsonDeserialize
+@JsonSerialize(as = ImmutableReferenceDeletedEvent.class)
+@JsonDeserialize(as = ImmutableReferenceDeletedEvent.class)
 public interface ReferenceDeletedEvent extends ReferenceEvent {
 
   @Value.Default

@@ -26,8 +26,8 @@ import org.immutables.value.Value;
  */
 @Value.Immutable
 @JsonTypeName("MERGE")
-@JsonSerialize
-@JsonDeserialize
+@JsonSerialize(as = ImmutableMergeEvent.class)
+@JsonDeserialize(as = ImmutableMergeEvent.class)
 public interface MergeEvent extends CommittingEvent {
   @Override
   @Value.Default

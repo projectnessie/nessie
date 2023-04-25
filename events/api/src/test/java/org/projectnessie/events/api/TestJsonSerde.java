@@ -196,8 +196,8 @@ class TestJsonSerde {
             .schemaId(2)
             .specId(3)
             .sortOrderId(4)
-            .putAttribute("string", "foo")
-            .putAttribute("number", 123)
+            .putProperty("string", "foo")
+            .putProperty("number", 123)
             .build();
     assertThat(deserialize(serialize(content), Content.class)).isEqualTo(content);
   }
@@ -210,8 +210,8 @@ class TestJsonSerde {
             .addCheckpointLocationHistory("checkpoint")
             .addMetadataLocationHistory("metadata")
             .lastCheckpoint("lastCheckpoint")
-            .putAttribute("string", "foo")
-            .putAttribute("number", 123)
+            .putProperty("string", "foo")
+            .putProperty("number", 123)
             .build();
     assertThat(deserialize(serialize(content), Content.class)).isEqualTo(content);
   }
@@ -226,10 +226,26 @@ class TestJsonSerde {
             .schemaId(2)
             .sqlText("sqlText")
             .dialect("dialect")
-            .putAttribute("string", "foo")
-            .putAttribute("number", 123)
+            .putProperty("string", "foo")
+            .putProperty("number", 123)
             .build();
     assertThat(deserialize(serialize(content), Content.class)).isEqualTo(content);
+  }
+
+  @Test
+  void customEvent() throws Exception {
+    CustomEvent event =
+        ImmutableCustomEvent.builder()
+            .id(UUID.fromString("7385d1e6-3deb-440b-9008-a383e2de6e6c"))
+            .customType("weird")
+            .repositoryId("repo1")
+            .createdAt(Instant.parse("2023-04-25T13:02:05Z"))
+            .sentBy("Nessie")
+            .putProperty("string", "foo")
+            .putProperty("number", 123)
+            .putProperty("boolean", true)
+            .build();
+    assertThat(deserialize(serialize(event), Event.class)).isEqualTo(event);
   }
 
   @Test
@@ -238,10 +254,110 @@ class TestJsonSerde {
         ImmutableCustomContent.builder()
             .id(UUID.randomUUID())
             .customType("customType")
-            .putAttribute("string", "foo")
-            .putAttribute("number", 123)
+            .putProperty("string", "foo")
+            .putProperty("number", 123)
             .build();
     assertThat(deserialize(serialize(content), Content.class)).isEqualTo(content);
+  }
+
+  @Test
+  void unknownEventSerialization() throws Exception {
+    CustomEvent event =
+        ImmutableCustomEvent.builder()
+            .id(UUID.fromString("7385d1e6-3deb-440b-9008-a383e2de6e6c"))
+            .customType("weird")
+            .repositoryId("repo1")
+            .createdAt(Instant.parse("2023-04-25T13:02:05Z"))
+            .sentBy("Nessie")
+            .putProperty("string", "foo")
+            .putProperty("number", 123)
+            .putProperty("boolean", true)
+            .build();
+    assertThat(serialize(event))
+        .isEqualTo(
+            "{"
+                + "\"id\":\"7385d1e6-3deb-440b-9008-a383e2de6e6c\","
+                + "\"type\":\"weird\","
+                + "\"repositoryId\":\"repo1\","
+                + "\"createdAt\":\"2023-04-25T13:02:05Z\","
+                + "\"sentBy\":\"Nessie\","
+                + "\"string\":\"foo\","
+                + "\"number\":123,"
+                + "\"boolean\":true"
+                + "}");
+  }
+
+  @Test
+  void unknownEventDeserialization() throws Exception {
+    CustomEvent event =
+        ImmutableCustomEvent.builder()
+            .id(UUID.fromString("7385d1e6-3deb-440b-9008-a383e2de6e6c"))
+            .customType("weird")
+            .repositoryId("repo1")
+            .createdAt(Instant.parse("2023-04-25T13:02:05Z"))
+            .sentBy("Nessie")
+            .putProperty("string", "foo")
+            .putProperty("number", 123)
+            .putProperty("boolean", true)
+            .build();
+    assertThat(
+            deserialize(
+                "{"
+                    + "\"id\":\"7385d1e6-3deb-440b-9008-a383e2de6e6c\","
+                    + "\"type\":\"weird\","
+                    + "\"repositoryId\":\"repo1\","
+                    + "\"createdAt\":\"2023-04-25T13:02:05Z\","
+                    + "\"sentBy\":\"Nessie\","
+                    + "\"string\":\"foo\","
+                    + "\"number\":123,"
+                    + "\"boolean\":true"
+                    + "}",
+                Event.class))
+        .isEqualTo(event);
+  }
+
+  @Test
+  void unknownContentSerialization() throws Exception {
+    CustomContent content =
+        ImmutableCustomContent.builder()
+            .id(UUID.fromString("7385d1e6-3deb-440b-9008-a383e2de6e6c"))
+            .customType("weird")
+            .putProperty("string", "foo")
+            .putProperty("number", 123)
+            .putProperty("boolean", true)
+            .build();
+    assertThat(serialize(content))
+        .isEqualTo(
+            "{"
+                + "\"id\":\"7385d1e6-3deb-440b-9008-a383e2de6e6c\","
+                + "\"type\":\"weird\","
+                + "\"string\":\"foo\","
+                + "\"number\":123,"
+                + "\"boolean\":true"
+                + "}");
+  }
+
+  @Test
+  void unknownContentDeserialization() throws Exception {
+    CustomContent content =
+        ImmutableCustomContent.builder()
+            .id(UUID.fromString("7385d1e6-3deb-440b-9008-a383e2de6e6c"))
+            .customType("weird")
+            .putProperty("string", "foo")
+            .putProperty("number", 123)
+            .putProperty("boolean", true)
+            .build();
+    assertThat(
+            deserialize(
+                "{"
+                    + "\"id\":\"7385d1e6-3deb-440b-9008-a383e2de6e6c\","
+                    + "\"type\":\"weird\","
+                    + "\"string\":\"foo\","
+                    + "\"number\":123,"
+                    + "\"boolean\":true"
+                    + "}",
+                Content.class))
+        .isEqualTo(content);
   }
 
   private Object deserialize(String json, Class<?> clazz) throws JsonProcessingException {
