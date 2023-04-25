@@ -54,6 +54,7 @@ class NessieJavaPlugin : Plugin<Project> {
 
       tasks.withType<JavaCompile>().configureEach {
         options.encoding = "UTF-8"
+        options.release.set(8)
         options.compilerArgs.add("-parameters")
 
         // Required to enable incremental compilation w/ immutables, see
