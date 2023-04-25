@@ -46,6 +46,7 @@ final class HttpMergeReference extends BaseMergeReferenceBuilder {
             .fromHash(fromHash)
             .fromRefName(fromRefName)
             .message(message)
+            .commitMeta(commitMeta)
             .isDryRun(dryRun)
             .isFetchAdditionalInfo(fetchAdditionalInfo)
             .isReturnConflictAsResult(returnConflictAsResult);

@@ -21,6 +21,7 @@ import org.projectnessie.client.builder.BaseMergeReferenceBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.MergeResponse;
 
 final class HttpMergeReference extends BaseMergeReferenceBuilder {
@@ -34,6 +35,12 @@ final class HttpMergeReference extends BaseMergeReferenceBuilder {
   @Override
   public MergeReferenceBuilder message(String message) {
     throw new UnsupportedOperationException("Merge message overrides are not supported in API v1.");
+  }
+
+  @Override
+  public MergeReferenceBuilder commitMeta(CommitMeta commitMeta) {
+    throw new UnsupportedOperationException(
+        "Merge commit-meta overrides are not supported in API v1.");
   }
 
   @Override

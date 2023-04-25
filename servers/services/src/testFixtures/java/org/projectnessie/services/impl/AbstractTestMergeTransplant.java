@@ -373,7 +373,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
                     source.getName(),
                     source.getHash(),
                     false,
-                    "test-message-override-123",
+                    CommitMeta.fromMessage("test-message-override-123"),
                     emptyList(),
                     NORMAL,
                     false,
@@ -411,7 +411,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
                 .transplantCommitsIntoBranch(
                     target.getName(),
                     target.getHash(),
-                    "test-message-override-123",
+                    CommitMeta.fromMessage("test-message-override-123"),
                     ImmutableList.of(
                         requireNonNull(committed1.getHash()), requireNonNull(committed2.getHash())),
                     source.getName(),
@@ -432,7 +432,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
                 .transplantCommitsIntoBranch(
                     target.getName(),
                     target.getHash(),
-                    "test-message-override-123",
+                    CommitMeta.fromMessage("test-message-override-123"),
                     ImmutableList.of(requireNonNull(committed1.getHash())),
                     source.getName(),
                     false,
@@ -452,7 +452,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
                 .transplantCommitsIntoBranch(
                     target.getName(),
                     target.getHash(),
-                    "ignored-message-override",
+                    CommitMeta.fromMessage("ignored-message-override"),
                     ImmutableList.of(
                         requireNonNull(committed1.getHash()), requireNonNull(committed2.getHash())),
                     source.getName(),

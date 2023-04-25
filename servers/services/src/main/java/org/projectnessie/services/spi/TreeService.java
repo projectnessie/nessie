@@ -26,6 +26,7 @@ import javax.validation.constraints.Pattern;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.FetchOption;
@@ -189,7 +190,7 @@ public interface TreeService {
               regexp = Validation.HASH_REGEX,
               message = Validation.HASH_MESSAGE)
           String expectedHash,
-      String message,
+      @Nullable @jakarta.annotation.Nullable CommitMeta commitMeta,
       List<String> hashesToTransplant,
       @Valid
           @jakarta.validation.Valid
@@ -248,7 +249,7 @@ public interface TreeService {
               message = Validation.HASH_MESSAGE)
           String fromHash,
       @Nullable @jakarta.annotation.Nullable Boolean keepIndividualCommits,
-      @Nullable @jakarta.annotation.Nullable String message,
+      @Nullable @jakarta.annotation.Nullable CommitMeta commitMeta,
       Collection<MergeKeyBehavior> keyMergeBehaviors,
       MergeBehavior defaultMergeType,
       @Nullable @jakarta.annotation.Nullable Boolean dryRun,
