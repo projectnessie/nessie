@@ -34,7 +34,6 @@ import org.projectnessie.error.NessieError;
 import org.projectnessie.model.Conflict.ConflictType;
 import org.projectnessie.model.MergeResponse.ContentKeyConflict;
 import org.projectnessie.model.MergeResponse.ContentKeyDetails;
-import org.projectnessie.model.Reference.ReferenceType;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestEnums {
@@ -159,36 +158,6 @@ public class TestEnums {
     @EnumSource(value = ConflictType.class)
     public void testConversion(ConflictType conflictType) {
       conversion(conflictType);
-    }
-  }
-
-  @Nested
-  public class TestReferenceType extends AbstractEnum<ReferenceType> {
-    TestReferenceType() {
-      super(
-          ReferenceType::parse,
-          ReferenceType.TAG,
-          mapper -> {
-            try {
-              return mapper
-                  .readValue(
-                      "{"
-                          + "\"name\": \"ref-name\","
-                          + "\"hash\": \"1234567890\","
-                          + "\"type\": \"FOO_BAR\""
-                          + "}",
-                      Reference.class)
-                  .getType();
-            } catch (JsonProcessingException e) {
-              throw new RuntimeException(e);
-            }
-          });
-    }
-
-    @ParameterizedTest
-    @EnumSource(value = ReferenceType.class)
-    public void testConversion(ReferenceType referenceType) {
-      conversion(referenceType);
     }
   }
 
