@@ -21,30 +21,32 @@ import org.immutables.value.Value;
 /** Event that is emitted when a reference is created, updated or deleted. */
 public interface ReferenceEvent extends Event {
 
+  String BRANCH = "BRANCH";
+  String TAG = "TAG";
+
   /** The name of the reference, e.g. "branch1". */
   String getReferenceName();
 
   /** The full name of the reference, e.g. "refs/heads/branch1". */
-  @Value.Lazy
-  @JsonIgnore
-  default String getFullReferenceName() {
-    return getReferenceType().getPrefix() + getReferenceName();
-  }
+  String getFullReferenceName();
 
-  /** The type of the reference. */
-  ReferenceType getReferenceType();
+  /**
+   * The type of the reference. This is usually either {@value #BRANCH} or {@value #TAG}, but more
+   * types may be added in the future.
+   */
+  String getReferenceType();
 
   /** Returns {@code true} if the reference is a branch, {@code false} otherwise. */
   @Value.Derived
   @JsonIgnore
   default boolean isBranch() {
-    return getReferenceType().isBranch();
+    return getReferenceType().equalsIgnoreCase(BRANCH);
   }
 
   /** Returns {@code true} if the reference is a tag, {@code false} otherwise. */
   @Value.Derived
   @JsonIgnore
   default boolean isTag() {
-    return getReferenceType().isTag();
+    return getReferenceType().equalsIgnoreCase(TAG);
   }
 }

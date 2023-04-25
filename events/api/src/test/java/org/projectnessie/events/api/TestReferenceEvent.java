@@ -32,10 +32,10 @@ class TestReferenceEvent {
             .createdAt(Instant.now())
             .sentBy("Nessie")
             .referenceName("branch1")
-            .referenceType(ReferenceType.BRANCH)
+            .fullReferenceName("fullRef1")
+            .referenceType(ReferenceEvent.BRANCH)
             .hashAfter("hash1")
             .build();
-    assertThat(event.getFullReferenceName()).isEqualTo("refs/heads/branch1");
     assertThat(event.isBranch()).isTrue();
     assertThat(event.isTag()).isFalse();
   }
@@ -49,10 +49,10 @@ class TestReferenceEvent {
             .createdAt(Instant.now())
             .sentBy("Nessie")
             .referenceName("tag1")
-            .referenceType(ReferenceType.TAG)
+            .fullReferenceName("fullRef1")
+            .referenceType(ReferenceEvent.TAG)
             .hashAfter("hash1")
             .build();
-    assertThat(event.getFullReferenceName()).isEqualTo("refs/tags/tag1");
     assertThat(event.isBranch()).isFalse();
     assertThat(event.isTag()).isTrue();
   }

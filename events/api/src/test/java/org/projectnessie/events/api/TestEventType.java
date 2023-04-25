@@ -88,7 +88,8 @@ class TestEventType {
     ReferenceCreatedEvent event =
         ImmutableReferenceCreatedEvent.builder()
             .referenceName("ref1")
-            .referenceType(ReferenceType.BRANCH)
+            .fullReferenceName("fullRef1")
+            .referenceType(ReferenceEvent.BRANCH)
             .id(UUID.randomUUID())
             .repositoryId("repo1")
             .createdAt(Instant.now())
@@ -104,7 +105,8 @@ class TestEventType {
     ReferenceUpdatedEvent event =
         ImmutableReferenceUpdatedEvent.builder()
             .referenceName("ref1")
-            .referenceType(ReferenceType.BRANCH)
+            .fullReferenceName("fullRef1")
+            .referenceType(ReferenceEvent.BRANCH)
             .id(UUID.randomUUID())
             .repositoryId("repo1")
             .createdAt(Instant.now())
@@ -121,7 +123,8 @@ class TestEventType {
     ReferenceDeletedEvent event =
         ImmutableReferenceDeletedEvent.builder()
             .referenceName("ref1")
-            .referenceType(ReferenceType.BRANCH)
+            .fullReferenceName("fullRef1")
+            .referenceType(ReferenceEvent.BRANCH)
             .id(UUID.randomUUID())
             .repositoryId("repo1")
             .createdAt(Instant.now())
