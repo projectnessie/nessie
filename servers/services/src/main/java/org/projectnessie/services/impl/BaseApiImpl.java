@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import org.projectnessie.error.NessieReferenceNotFoundException;
@@ -135,7 +136,8 @@ public abstract class BaseApiImpl {
   }
 
   protected MetadataRewriter<CommitMeta> commitMetaUpdate(
-      @Nullable @jakarta.annotation.Nullable CommitMeta commitMeta) {
+      @Nullable @jakarta.annotation.Nullable CommitMeta commitMeta,
+      IntFunction<String> squashMessage) {
     return new MetadataRewriter<CommitMeta>() {
       // Used for setting contextual commit properties during new and merge/transplant commits.
       // WARNING: ONLY SET PROPERTIES, WHICH APPLY COMMONLY TO ALL COMMIT TYPES.
@@ -184,7 +186,9 @@ public abstract class BaseApiImpl {
 
       @Override
       public CommitMeta squash(List<CommitMeta> metadata) {
-        if (metadata.size() == 1) {
+        Optional<String> msg = Optional.ofNullable(squashMessage.apply(metadata.size()));
+
+        if (metadata.size() == 1 && !msg.isPresent()) {
           return rewriteSingle(metadata.get(0));
         }
 
@@ -195,16 +199,18 @@ public abstract class BaseApiImpl {
 
         return buildCommitMeta(
             CommitMeta.builder().properties(newProperties),
-            () -> {
-              StringBuilder newMessage = new StringBuilder();
-              for (CommitMeta commitMeta : metadata) {
-                if (newMessage.length() > 0) {
-                  newMessage.append("\n---------------------------------------------\n");
-                }
-                newMessage.append(commitMeta.getMessage());
-              }
-              return newMessage.toString();
-            });
+            () ->
+                msg.orElseGet(
+                    () -> {
+                      StringBuilder newMessage = new StringBuilder();
+                      for (CommitMeta commitMeta : metadata) {
+                        if (newMessage.length() > 0) {
+                          newMessage.append("\n---------------------------------------------\n");
+                        }
+                        newMessage.append(commitMeta.getMessage());
+                      }
+                      return newMessage.toString();
+                    }));
       }
     };
   }

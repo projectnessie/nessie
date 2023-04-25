@@ -15,6 +15,7 @@
  */
 package org.projectnessie.services.impl;
 
+import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
@@ -98,18 +99,23 @@ public abstract class AbstractTestPrincipals extends BaseTestServiceImpl {
             false,
             false);
 
-    merge = (Branch) getReference(merge.getName());
+    Branch merged = (Branch) getReference(merge.getName());
 
     assertThat(commitLog(merge.getName()).stream().limit(1).collect(Collectors.toList()))
+        .first()
         .extracting(LogEntry::getCommitMeta)
-        .allSatisfy(
-            commitMeta -> {
-              assertThat(commitMeta.getCommitter()).isEqualTo("NessieHerself");
-              assertThat(commitMeta.getAuthor()).isEqualTo("NessieHerself");
-              assertThat(commitMeta.getMessage())
-                  .contains("with security")
-                  .contains("no security context");
-            });
+        .extracting(
+            CommitMeta::getCommitter,
+            CommitMeta::getAuthor,
+            CommitMeta::getMessage,
+            CommitMeta::getHash)
+        .containsExactly(
+            "NessieHerself",
+            "NessieHerself",
+            format(
+                "Merged 2 commits from %s at %s into %s at %s",
+                main.getName(), main.getHash(), merge.getName(), merge.getHash()),
+            merged.getHash());
   }
 
   @Test
