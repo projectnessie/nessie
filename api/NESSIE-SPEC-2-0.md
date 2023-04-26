@@ -30,7 +30,7 @@ Refer to the [Nessie API documentation](./README.md) for the meaning of Nessie-s
   / merge / transplant) with the `NAMESPACE_ABSENT` conflict type.
 * `Unchanged` Operations may be submitted in commits, but the server does not persist them. Consequently, `Unchanged`
   operations are not considered during merges and transplants, even when they were part of the original commit.
-* The server MAY consider `Unchanged` operations during the handling of plain commits and MAY raise commit conflicts
+* The server MUST consider `Unchanged` operations during the handling of plain commits and MUST raise commit conflicts
   if those operations clash with operations in the commits log since the `expected hash` provided by the client.
 
 ## Related Server Configuration
