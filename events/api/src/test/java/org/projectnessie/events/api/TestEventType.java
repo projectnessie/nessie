@@ -167,4 +167,19 @@ class TestEventType {
             .build();
     assertThat(event.getType()).isEqualTo(EventType.CONTENT_REMOVED);
   }
+
+  @Test
+  void custom() {
+    CustomEvent content =
+        ImmutableCustomEvent.builder()
+            .id(UUID.randomUUID())
+            .customType("customType")
+            .id(UUID.randomUUID())
+            .repositoryId("repo1")
+            .createdAt(Instant.now())
+            .createdBy("Alice")
+            .sentBy("Nessie")
+            .build();
+    assertThat(content.getType()).isEqualTo(EventType.CUSTOM);
+  }
 }
