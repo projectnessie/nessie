@@ -26,10 +26,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.store.DefaultStoreWorker;
 
-/**
- * A PUT operation provided by the client in order to set a new value in a commit. Can optionally
- * declare whether the prior hash must match.
- */
+/** Setting a new value. Can optionally declare whether the prior hash must match. */
 @Value.Immutable
 public abstract class Put implements Operation {
 
@@ -93,6 +90,9 @@ public abstract class Put implements Operation {
                     .valueFromStore((byte) payload, value, globalStateSupplier))
         .build();
   }
+
+  // Redefine equals() and hashCode() because even if getValue() is @Lazy,
+  // we want it in the computation, and not getValueSupplier().
 
   @Override
   public boolean equals(@Nullable Object o) {
