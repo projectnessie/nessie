@@ -28,7 +28,7 @@ used to generate the Nessie OpenAPI specification.
 However, `org.projectnessie.api` classes are not expected to be used for compiling client-side code outside the scope
 of this repository.
 
-Clients built in `java` should build against the API of the `clients/client` module.
+Clients built in `java` should build against the API of the `client` module.
 
 Clients build in other languages can generate language-specific bindings from the published OpenAPI specification of
 the Nessie API.
