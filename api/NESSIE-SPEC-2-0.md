@@ -20,7 +20,7 @@ compatible with any known spec version.
 Servers MAY show behaviours that are not covered by the spec, as long as those behaviours do not contradict the
 well-specified behaviours.
 
-Refer to the Nessie API documentation (under the `model` module) for the meaning of Nessie-specific terms.
+Refer to the [Nessie API documentation](./README.md) for the meaning of Nessie-specific terms.
 
 # 2.0.0-beta.1
 
