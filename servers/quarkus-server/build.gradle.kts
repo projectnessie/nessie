@@ -191,7 +191,12 @@ if (Os.isFamily(Os.FAMILY_WINDOWS)) {
   tasks.named<Test>("intTest") { this.enabled = false }
 }
 
-// Issue w/ testcontainers/podman in GH workflows :(
-if (Os.isFamily(Os.FAMILY_MAC) && System.getenv("CI") != null) {
-  tasks.named<Test>("intTest") { this.enabled = false }
+if (Os.isFamily(Os.FAMILY_MAC)) {
+  if (System.getenv("CI") != null) {
+    // Issue w/ testcontainers/podman in GH workflows :(
+    tasks.named<Test>("intTest") { this.enabled = false }
+  }
+
+  // Issue w/ ryuk on macOS (don't recall exactly)
+  tasks.named<Test>("intTest") { environment("TESTCONTAINERS_RYUK_DISABLED", "true") }
 }

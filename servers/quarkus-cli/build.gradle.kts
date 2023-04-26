@@ -141,3 +141,7 @@ if (Os.isFamily(Os.FAMILY_WINDOWS)) {
 if (Os.isFamily(Os.FAMILY_MAC) && System.getenv("CI") != null) {
   tasks.named<Test>("intTest") { this.enabled = false }
 }
+
+if (Os.isFamily(Os.FAMILY_MAC)) {
+  tasks.named<Test>("intTest") { environment("TESTCONTAINERS_RYUK_DISABLED", "true") }
+}
