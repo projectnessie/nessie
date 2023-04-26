@@ -163,7 +163,7 @@ class TestJsonSerde {
             .content(
                 ImmutableIcebergTable.builder()
                     .metadataLocation("metadataLocation")
-                    .id(UUID.randomUUID())
+                    .id("id")
                     .snapshotId(1L)
                     .schemaId(2)
                     .specId(3)
@@ -193,7 +193,7 @@ class TestJsonSerde {
   void icebergTable() throws Exception {
     IcebergTable content =
         ImmutableIcebergTable.builder()
-            .id(UUID.randomUUID())
+            .id("id")
             .metadataLocation("metadataLocation")
             .snapshotId(1L)
             .schemaId(2)
@@ -209,7 +209,7 @@ class TestJsonSerde {
   void deltaLakeTable() throws Exception {
     DeltaLakeTable content =
         ImmutableDeltaLakeTable.builder()
-            .id(UUID.randomUUID())
+            .id("id")
             .addCheckpointLocationHistory("checkpoint")
             .addMetadataLocationHistory("metadata")
             .lastCheckpoint("lastCheckpoint")
@@ -223,7 +223,7 @@ class TestJsonSerde {
   void icebergView() throws Exception {
     IcebergView content =
         ImmutableIcebergView.builder()
-            .id(UUID.randomUUID())
+            .id("id")
             .metadataLocation("metadataLocation")
             .versionId(1L)
             .schemaId(2)
@@ -255,7 +255,7 @@ class TestJsonSerde {
   void customContent() throws Exception {
     CustomContent content =
         ImmutableCustomContent.builder()
-            .id(UUID.randomUUID())
+            .id("id")
             .customType("customType")
             .putProperty("string", "foo")
             .putProperty("number", 123)
@@ -323,7 +323,7 @@ class TestJsonSerde {
   void unknownContentSerialization() throws Exception {
     CustomContent content =
         ImmutableCustomContent.builder()
-            .id(UUID.fromString("7385d1e6-3deb-440b-9008-a383e2de6e6c"))
+            .id("id")
             .customType("weird")
             .putProperty("string", "foo")
             .putProperty("number", 123)
@@ -332,7 +332,7 @@ class TestJsonSerde {
     assertThat(serialize(content))
         .isEqualTo(
             "{"
-                + "\"id\":\"7385d1e6-3deb-440b-9008-a383e2de6e6c\","
+                + "\"id\":\"id\","
                 + "\"type\":\"weird\","
                 + "\"string\":\"foo\","
                 + "\"number\":123,"
@@ -344,7 +344,7 @@ class TestJsonSerde {
   void unknownContentDeserialization() throws Exception {
     CustomContent content =
         ImmutableCustomContent.builder()
-            .id(UUID.fromString("7385d1e6-3deb-440b-9008-a383e2de6e6c"))
+            .id("id")
             .customType("weird")
             .putProperty("string", "foo")
             .putProperty("number", 123)
@@ -353,7 +353,7 @@ class TestJsonSerde {
     assertThat(
             deserialize(
                 "{"
-                    + "\"id\":\"7385d1e6-3deb-440b-9008-a383e2de6e6c\","
+                    + "\"id\":\"id\","
                     + "\"type\":\"weird\","
                     + "\"string\":\"foo\","
                     + "\"number\":123,"

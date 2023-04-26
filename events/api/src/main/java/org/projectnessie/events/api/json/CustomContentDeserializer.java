@@ -22,7 +22,6 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 import org.projectnessie.events.api.CustomContent;
 import org.projectnessie.events.api.ImmutableCustomContent;
 
@@ -41,7 +40,7 @@ public final class CustomContentDeserializer extends StdDeserializer<CustomConte
     Object id = Objects.requireNonNull(properties.remove("id"));
     Object customType = Objects.requireNonNull(properties.remove("type"));
     return ImmutableCustomContent.builder()
-        .id(UUID.fromString(id.toString()))
+        .id(id.toString())
         .customType(customType.toString())
         .properties(properties)
         .build();
