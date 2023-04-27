@@ -36,11 +36,28 @@ public interface Namespace extends Content {
     return ContentType.NAMESPACE;
   }
 
+  List<String> getElements();
+
   /**
-   * The name of the namespace.
+   * The simple name of the namespace.
    *
-   * <p>The name is composed of the elements of the namespace, separated by dots. For example, the
-   * name of the namespace {@code ["a", "b", "c"]} is {@code "a.b.c"}.
+   * <p>The simple name is the last element of the namespace. For example, the simple name of
+   * namespace {@code ["a", "b", "c"]} is {@code "c"}.
+   */
+  @Value.Lazy
+  @JsonIgnore
+  default String getSimpleName() {
+    return getElements().get(getElements().size() - 1);
+  }
+
+  /**
+   * The full name of the namespace.
+   *
+   * <p>The full name is composed of all the elements of the namespace, separated by dots. For
+   * example, the full name of the namespace {@code ["a", "b", "c"]} is {@code "a.b.c"}.
+   *
+   * <p>When an element contains a dot or the NUL character (unicode {@code U+0000}), it is replaced
+   * by the unicode character {@code U+001D}.
    */
   @Value.Lazy
   @JsonIgnore
@@ -50,6 +67,4 @@ public interface Namespace extends Content {
         .map(element -> element.replace('.', '\u001D').replace('\u0000', '\u001D'))
         .collect(Collectors.joining("."));
   }
-
-  List<String> getElements();
 }

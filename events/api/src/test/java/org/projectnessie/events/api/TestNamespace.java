@@ -23,13 +23,21 @@ class TestNamespace {
 
   @Test
   void getName() {
-    Namespace ns = ImmutableNamespace.builder().id("id").addElements("name").build();
-    assertThat(ns.getName()).isEqualTo("name");
-    ns = ImmutableNamespace.builder().id("id").addElements("name1", "name2").build();
-    assertThat(ns.getName()).isEqualTo("name1.name2");
-    ns = ImmutableNamespace.builder().id("id").addElements("name1", "name2", "name3").build();
-    assertThat(ns.getName()).isEqualTo("name1.name2.name3");
-    ns = ImmutableNamespace.builder().id("id").addElements("na.me1", "na\u0000me2").build();
-    assertThat(ns.getName()).isEqualTo("na\u001dme1.na\u001dme2");
+    assertThat(ns("name").getName()).isEqualTo("name");
+    assertThat(ns("name1", "name2").getName()).isEqualTo("name1.name2");
+    assertThat(ns("name1", "name2", "name3").getName()).isEqualTo("name1.name2.name3");
+    assertThat(ns("na.me1", "na\u0000me2").getName()).isEqualTo("na\u001dme1.na\u001dme2");
+  }
+
+  @Test
+  void getSimpleName() {
+    assertThat(ns("name").getSimpleName()).isEqualTo("name");
+    assertThat(ns("name1", "name2").getSimpleName()).isEqualTo("name2");
+    assertThat(ns("name1", "name2", "name3").getSimpleName()).isEqualTo("name3");
+    assertThat(ns("na.me1", "na\u0000me2").getSimpleName()).isEqualTo("na\u0000me2");
+  }
+
+  private static Namespace ns(String... elements) {
+    return ImmutableNamespace.builder().id("id").addElements(elements).build();
   }
 }

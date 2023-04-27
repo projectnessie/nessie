@@ -21,13 +21,14 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.immutables.value.Value;
 
 /** Key for a {@link Content} object. */
 @Value.Immutable
 @JsonSerialize
 @JsonDeserialize(as = ImmutableContentKey.class)
-public interface ContentKey {
+public interface ContentKey extends Comparable<ContentKey> {
 
   static ContentKey of(String... elements) {
     return ImmutableContentKey.of(Arrays.asList(elements));
@@ -42,17 +43,36 @@ public interface ContentKey {
   List<String> getElements();
 
   /**
-   * The name of the key.
+   * The simple name of the content key.
    *
-   * <p>The key name is the last element of the key. For example, the name of the key {@code ["a",
-   * "b", "c"]} is {@code "c"}.
+   * <p>The simple name is the last element of the content key. For example, the simple name of
+   * content key {@code ["a", "b", "c"]} is {@code "c"}.
+   */
+  @Value.Lazy
+  @JsonIgnore
+  default String getSimpleName() {
+    return getElements().get(getElements().size() - 1);
+  }
+
+  /**
+   * The full name of the content key.
+   *
+   * <p>The full name is composed of all the elements of the content key, separated by dots. For
+   * example, the full name of the content key {@code ["a", "b", "c"]} is {@code "a.b.c"}.
+   *
+   * <p>When an element contains a dot or the NUL character (unicode {@code U+0000}), it is replaced
+   * by the unicode character {@code U+001D}.
    */
   @Value.Lazy
   @JsonIgnore
   default String getName() {
-    return getElements().get(getElements().size() - 1);
+    // see org.projectnessie.model.Util
+    return getElements().stream()
+        .map(element -> element.replace('.', '\u001D').replace('\u0000', '\u001D'))
+        .collect(Collectors.joining("."));
   }
 
+  /** Returns the parent key of this content key. */
   @Value.Lazy
   @JsonIgnore
   default Optional<ContentKey> getParent() {
@@ -61,5 +81,19 @@ public interface ContentKey {
       return Optional.empty();
     }
     return Optional.of(ContentKey.of(elements.subList(0, elements.size() - 1)));
+  }
+
+  @Override
+  default int compareTo(ContentKey that) {
+    List<String> a = this.getElements();
+    List<String> b = that.getElements();
+    int max = Math.min(a.size(), b.size());
+    for (int i = 0; i < max; i++) {
+      int cmp = a.get(i).compareTo(b.get(i));
+      if (cmp != 0) {
+        return cmp;
+      }
+    }
+    return a.size() - b.size();
   }
 }
