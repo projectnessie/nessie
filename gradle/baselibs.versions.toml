@@ -2,7 +2,7 @@
 
 [versions]
 errorpronePlugin = "3.1.0"
-jandexPlugin = "1.87"
+jandexPlugin = "1.88"
 junit = "5.9.3"
 nessieBuildPlugins = "0.2.24"
 shadowPlugin = "8.1.1"
