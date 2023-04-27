@@ -31,6 +31,8 @@ public interface CommittingEvent extends Event {
   /**
    * The source reference where the committed operations came from. This is usually a branch, but
    * not always (e.g. it could be a tag or a detached reference).
+   *
+   * <p>For commits, this is always the same as the {@linkplain #getTargetBranch() target branch}.
    */
   String getSourceReference();
 
