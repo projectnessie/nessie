@@ -59,7 +59,7 @@ dependencies {
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
 
-  compileOnly(platform(libs.opentelemetry.bom))
+  compileOnly(platform(libs.opentelemetry.bom.alpha))
   compileOnly(libs.opentelemetry.api)
   compileOnly(libs.opentelemetry.semconv)
 
@@ -69,7 +69,7 @@ dependencies {
   // javax/jakarta
   testFixturesApi(libs.jakarta.annotation.api)
 
-  testFixturesApi(platform(libs.opentelemetry.bom))
+  testFixturesApi(platform(libs.opentelemetry.bom.alpha))
   testFixturesApi(libs.opentelemetry.api)
   testFixturesApi(libs.opentelemetry.sdk)
   testFixturesApi(libs.opentelemetry.semconv)

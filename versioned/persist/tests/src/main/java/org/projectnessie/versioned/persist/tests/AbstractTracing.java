@@ -68,51 +68,41 @@ public abstract class AbstractTracing extends AbstractNestedVersionStore {
                     .isEqualTo(
                         OperationHierarchy.create()
                             .child(
-                                "VersionStore.create",
-                                vsCreate ->
-                                    vsCreate.child(
-                                        "DatabaseAdapter.create",
-                                        dbCreate ->
-                                            dbCreate.child(
-                                                "DatabaseAdapter.try-loop.createRef",
-                                                tryLoop ->
-                                                    tryLoop
-                                                        .child(
-                                                            "DatabaseAdapter.fetchNamedReference",
-                                                            c ->
-                                                                c.add(
-                                                                    "DatabaseAdapter.fetchGlobalPointer"))
-                                                        .child(
-                                                            "DatabaseAdapter.createNamedReference",
-                                                            c ->
-                                                                c.add(
-                                                                    "DatabaseAdapter.fetchReferenceNames"))
-                                                        .add(
-                                                            "DatabaseAdapter.fetchRefLogParentsForReference")
-                                                        .add("DatabaseAdapter.writeRefLog")
-                                                        .add(
-                                                            "DatabaseAdapter.refLogParentsCas"))))),
+                                "DatabaseAdapter.create",
+                                dbCreate ->
+                                    dbCreate.child(
+                                        "DatabaseAdapter.try-loop.createRef",
+                                        tryLoop ->
+                                            tryLoop
+                                                .child(
+                                                    "DatabaseAdapter.fetchNamedReference",
+                                                    c ->
+                                                        c.add("DatabaseAdapter.fetchGlobalPointer"))
+                                                .child(
+                                                    "DatabaseAdapter.createNamedReference",
+                                                    c ->
+                                                        c.add(
+                                                            "DatabaseAdapter.fetchReferenceNames"))
+                                                .add(
+                                                    "DatabaseAdapter.fetchRefLogParentsForReference")
+                                                .add("DatabaseAdapter.writeRefLog")
+                                                .add("DatabaseAdapter.refLogParentsCas")))),
             // 2nd "satisfies()" - for transactional database adapters
             h ->
                 assertThat(h)
                     .isEqualTo(
                         OperationHierarchy.create()
                             .child(
-                                "VersionStore.create",
-                                vsCreate ->
-                                    vsCreate.child(
-                                        "DatabaseAdapter.create",
-                                        dbCreate ->
-                                            dbCreate.child(
-                                                "DatabaseAdapter.try-loop.createRef",
-                                                tryLoop ->
-                                                    tryLoop
-                                                        .add(
-                                                            "DatabaseAdapter.checkNamedRefExistence")
-                                                        .add("DatabaseAdapter.insertNewReference")
-                                                        .add("DatabaseAdapter.getRefLogHead")
-                                                        .add(
-                                                            "DatabaseAdapter.updateRefLogHead"))))));
+                                "DatabaseAdapter.create",
+                                dbCreate ->
+                                    dbCreate.child(
+                                        "DatabaseAdapter.try-loop.createRef",
+                                        tryLoop ->
+                                            tryLoop
+                                                .add("DatabaseAdapter.checkNamedRefExistence")
+                                                .add("DatabaseAdapter.insertNewReference")
+                                                .add("DatabaseAdapter.getRefLogHead")
+                                                .add("DatabaseAdapter.updateRefLogHead")))));
   }
 
   static class OperationHierarchy {

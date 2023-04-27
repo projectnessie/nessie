@@ -38,6 +38,13 @@ dependencies {
 
   implementation(libs.guava)
 
+  implementation(platform(libs.opentelemetry.instrumentation.bom.alpha))
+  implementation(libs.opentelemetry.api)
+  implementation(libs.opentelemetry.instrumentation.micrometer)
+  implementation(libs.micrometer.core)
+  testImplementation(libs.opentelemetry.exporter.common)
+  testImplementation(libs.opentelemetry.sdk)
+
   // javax/jakarta
   compileOnly(libs.jakarta.validation.api)
   compileOnly(libs.javax.validation.api)
@@ -59,12 +66,4 @@ dependencies {
   testCompileOnly(libs.javax.validation.api)
   testCompileOnly(libs.jakarta.annotation.api)
   testCompileOnly(libs.findbugs.jsr305)
-
-  // Need a few things from Quarkus, but don't leak the dependencies
-  compileOnly(libs.opentracing.api)
-  compileOnly(libs.opentracing.util)
-  compileOnly(libs.micrometer.core)
-  testImplementation(libs.opentracing.api)
-  testImplementation(libs.opentracing.util)
-  testImplementation(libs.micrometer.core)
 }

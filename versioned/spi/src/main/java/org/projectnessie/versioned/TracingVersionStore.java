@@ -20,11 +20,11 @@ import static org.projectnessie.versioned.TracingUtil.safeToString;
 import static org.projectnessie.versioned.TracingUtil.traceError;
 
 import com.google.common.annotations.VisibleForTesting;
-import io.opentracing.Scope;
-import io.opentracing.Span;
-import io.opentracing.Tracer;
-import io.opentracing.Tracer.SpanBuilder;
-import io.opentracing.util.GlobalTracer;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanBuilder;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Scope;
 import java.io.Closeable;
 import java.util.Collection;
 import java.util.List;
@@ -67,12 +67,19 @@ public class TracingVersionStore implements VersionStore {
 
   private final VersionStore delegate;
 
+  private final Tracer tracer;
+
   /**
    * Takes the {@link VersionStore} instance to trace.
    *
    * @param delegate backing/delegate {@link VersionStore}
    */
   public TracingVersionStore(VersionStore delegate) {
+    this(GlobalOpenTelemetry.getTracer("database-adapter"), delegate);
+  }
+
+  public TracingVersionStore(Tracer tracer, VersionStore delegate) {
+    this.tracer = tracer;
     this.delegate = delegate;
   }
 
@@ -81,17 +88,18 @@ public class TracingVersionStore implements VersionStore {
   @Override
   public RepositoryInformation getRepositoryInformation() {
     return callWithNoException(
-        "RepositoryInformation", b -> {}, delegate::getRepositoryInformation);
+        tracer, "RepositoryInformation", b -> {}, delegate::getRepositoryInformation);
   }
 
   @Override
   public Hash hashOnReference(NamedRef namedReference, Optional<Hash> hashOnReference)
       throws ReferenceNotFoundException {
     return callWithOneException(
+        tracer,
         "HashOnReference",
         b ->
-            b.withTag(TAG_REF, safeRefName(namedReference))
-                .withTag(TAG_HASH, safeToString(hashOnReference)),
+            b.setAttribute(TAG_REF, safeRefName(namedReference))
+                .setAttribute(TAG_HASH, safeToString(hashOnReference)),
         () -> delegate.hashOnReference(namedReference, hashOnReference));
   }
 
@@ -113,11 +121,12 @@ public class TracingVersionStore implements VersionStore {
       throws ReferenceNotFoundException, ReferenceConflictException {
     return TracingVersionStore
         .<Hash, ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
+            tracer,
             "Commit",
             b ->
-                b.withTag(TAG_BRANCH, safeRefName(branch))
-                    .withTag(TAG_HASH, safeToString(referenceHash))
-                    .withTag(TAG_NUM_OPS, safeSize(operations)),
+                b.setAttribute(TAG_BRANCH, safeRefName(branch))
+                    .setAttribute(TAG_HASH, safeToString(referenceHash))
+                    .setAttribute(TAG_NUM_OPS, safeSize(operations)),
             () ->
                 delegate.commit(
                     branch, referenceHash, metadata, operations, validator, addedContents));
@@ -138,11 +147,12 @@ public class TracingVersionStore implements VersionStore {
     return TracingVersionStore
         .<MergeResult<Commit>, ReferenceNotFoundException, ReferenceConflictException>
             callWithTwoExceptions(
+                tracer,
                 "Transplant",
                 b ->
-                    b.withTag(TAG_TARGET_BRANCH, safeRefName(targetBranch))
-                        .withTag(TAG_HASH, safeToString(referenceHash))
-                        .withTag(TAG_TRANSPLANTS, safeSize(sequenceToTransplant)),
+                    b.setAttribute(TAG_TARGET_BRANCH, safeRefName(targetBranch))
+                        .setAttribute(TAG_HASH, safeToString(referenceHash))
+                        .setAttribute(TAG_TRANSPLANTS, safeSize(sequenceToTransplant)),
                 () ->
                     delegate.transplant(
                         targetBranch,
@@ -171,11 +181,12 @@ public class TracingVersionStore implements VersionStore {
     return TracingVersionStore
         .<MergeResult<Commit>, ReferenceNotFoundException, ReferenceConflictException>
             callWithTwoExceptions(
+                tracer,
                 "Merge",
                 b ->
-                    b.withTag(TAG_FROM_HASH, safeToString(fromHash))
-                        .withTag(TAG_TO_BRANCH, safeRefName(toBranch))
-                        .withTag(TAG_EXPECTED_HASH, safeToString(expectedHash)),
+                    b.setAttribute(TAG_FROM_HASH, safeToString(fromHash))
+                        .setAttribute(TAG_TO_BRANCH, safeRefName(toBranch))
+                        .setAttribute(TAG_EXPECTED_HASH, safeToString(expectedHash)),
                 () ->
                     delegate.merge(
                         fromHash,
@@ -194,11 +205,12 @@ public class TracingVersionStore implements VersionStore {
       throws ReferenceNotFoundException, ReferenceConflictException {
     TracingVersionStore
         .<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
+            tracer,
             "Assign",
             b ->
-                b.withTag(TAG_REF, safeToString(ref))
-                    .withTag(TracingVersionStore.TAG_EXPECTED_HASH, safeToString(expectedHash))
-                    .withTag(TAG_TARGET_HASH, safeToString(targetHash)),
+                b.setAttribute(TAG_REF, safeToString(ref))
+                    .setAttribute(TracingVersionStore.TAG_EXPECTED_HASH, safeToString(expectedHash))
+                    .setAttribute(TAG_TARGET_HASH, safeToString(targetHash)),
             () -> delegate.assign(ref, expectedHash, targetHash));
   }
 
@@ -207,10 +219,11 @@ public class TracingVersionStore implements VersionStore {
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
     return TracingVersionStore
         .<Hash, ReferenceNotFoundException, ReferenceAlreadyExistsException>callWithTwoExceptions(
+            tracer,
             "Create",
             b ->
-                b.withTag(TAG_REF, safeToString(ref))
-                    .withTag(TAG_TARGET_HASH, safeToString(targetHash)),
+                b.setAttribute(TAG_REF, safeToString(ref))
+                    .setAttribute(TAG_TARGET_HASH, safeToString(targetHash)),
             () -> delegate.create(ref, targetHash));
   }
 
@@ -219,8 +232,11 @@ public class TracingVersionStore implements VersionStore {
       throws ReferenceNotFoundException, ReferenceConflictException {
     return TracingVersionStore
         .<Hash, ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions(
+            tracer,
             "Delete",
-            b -> b.withTag(TAG_REF, safeToString(ref)).withTag(TAG_HASH, safeToString(hash)),
+            b ->
+                b.setAttribute(TAG_REF, safeToString(ref))
+                    .setAttribute(TAG_HASH, safeToString(hash)),
             () -> delegate.delete(ref, hash));
   }
 
@@ -228,22 +244,26 @@ public class TracingVersionStore implements VersionStore {
   public ReferenceInfo<CommitMeta> getNamedRef(String ref, GetNamedRefsParams params)
       throws ReferenceNotFoundException {
     return callWithOneException(
-        "GetNamedRef", b -> b.withTag(TAG_REF, ref), () -> delegate.getNamedRef(ref, params));
+        tracer,
+        "GetNamedRef",
+        b -> b.setAttribute(TAG_REF, ref),
+        () -> delegate.getNamedRef(ref, params));
   }
 
   @Override
   public PaginationIterator<ReferenceInfo<CommitMeta>> getNamedRefs(
       GetNamedRefsParams params, String pagingToken) throws ReferenceNotFoundException {
     return callPaginationIterator(
-        "GetNamedRefs", b -> {}, () -> delegate.getNamedRefs(params, pagingToken));
+        tracer, "GetNamedRefs", b -> {}, () -> delegate.getNamedRefs(params, pagingToken));
   }
 
   @Override
   public PaginationIterator<Commit> getCommits(Ref ref, boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException {
     return callPaginationIterator(
+        tracer,
         "GetCommits",
-        b -> b.withTag(TAG_REF, safeToString(ref)),
+        b -> b.setAttribute(TAG_REF, safeToString(ref)),
         () -> delegate.getCommits(ref, fetchAdditionalInfo));
   }
 
@@ -251,16 +271,18 @@ public class TracingVersionStore implements VersionStore {
   public PaginationIterator<KeyEntry> getKeys(Ref ref, String pagingToken, boolean withContent)
       throws ReferenceNotFoundException {
     return callPaginationIterator(
+        tracer,
         "GetKeys",
-        b -> b.withTag(TAG_REF, safeToString(ref)),
+        b -> b.setAttribute(TAG_REF, safeToString(ref)),
         () -> delegate.getKeys(ref, pagingToken, withContent));
   }
 
   @Override
   public Content getValue(Ref ref, ContentKey key) throws ReferenceNotFoundException {
     return callWithOneException(
+        tracer,
         "GetValue",
-        b -> b.withTag(TAG_REF, safeToString(ref)).withTag(TAG_KEY, safeToString(key)),
+        b -> b.setAttribute(TAG_REF, safeToString(ref)).setAttribute(TAG_KEY, safeToString(key)),
         () -> delegate.getValue(ref, key));
   }
 
@@ -268,8 +290,9 @@ public class TracingVersionStore implements VersionStore {
   public Map<ContentKey, Content> getValues(Ref ref, Collection<ContentKey> keys)
       throws ReferenceNotFoundException {
     return callWithOneException(
+        tracer,
         "GetValues",
-        b -> b.withTag(TAG_REF, safeToString(ref)).withTag(TAG_KEYS, safeToString(keys)),
+        b -> b.setAttribute(TAG_REF, safeToString(ref)).setAttribute(TAG_KEYS, safeToString(keys)),
         () -> delegate.getValues(ref, keys));
   }
 
@@ -277,8 +300,9 @@ public class TracingVersionStore implements VersionStore {
   public PaginationIterator<Diff> getDiffs(Ref from, Ref to, String pagingToken)
       throws ReferenceNotFoundException {
     return callPaginationIterator(
+        tracer,
         "GetDiffs",
-        b -> b.withTag(TAG_FROM, safeToString(from)).withTag(TAG_TO, safeToString(to)),
+        b -> b.setAttribute(TAG_FROM, safeToString(from)).setAttribute(TAG_TO, safeToString(to)),
         () -> delegate.getDiffs(from, to, pagingToken));
   }
 
@@ -288,18 +312,12 @@ public class TracingVersionStore implements VersionStore {
     return delegate.getRefLog(refLogId);
   }
 
-  private static SpanHolder createSpan(String name, Consumer<SpanBuilder> spanBuilder) {
-    Tracer tracer = GlobalTracer.get();
+  private static SpanHolder createSpan(
+      Tracer tracer, String name, Consumer<SpanBuilder> spanBuilder) {
     String spanName = makeSpanName(name);
-    SpanBuilder builder =
-        tracer.buildSpan(spanName).asChildOf(tracer.activeSpan()).withTag(TAG_OPERATION, name);
+    SpanBuilder builder = tracer.spanBuilder(spanName).setAttribute(TAG_OPERATION, name);
     spanBuilder.accept(builder);
-    return new SpanHolder(builder.start());
-  }
-
-  private static Scope activeScope(Span span) {
-    Tracer tracer = GlobalTracer.get();
-    return tracer.activateSpan(span);
+    return new SpanHolder(builder.startSpan());
   }
 
   @VisibleForTesting
@@ -308,12 +326,12 @@ public class TracingVersionStore implements VersionStore {
   }
 
   private static <R, E1 extends VersionStoreException> PaginationIterator<R> callPaginationIterator(
+      Tracer tracer,
       String spanName,
       Consumer<SpanBuilder> spanBuilder,
       InvokerWithOneException<PaginationIterator<R>, E1> invoker)
       throws E1 {
-    try (SpanHolder span = createSpan(spanName + ".stream", spanBuilder);
-        Scope ignore = activeScope(span.get())) {
+    try (SpanHolder span = createSpan(tracer, spanName + ".stream", spanBuilder)) {
       try {
         return invoker.handle();
       } catch (IllegalArgumentException e) {
@@ -325,10 +343,9 @@ public class TracingVersionStore implements VersionStore {
     }
   }
 
-  private static <R> R callWithNoException(
-      String spanName, Consumer<SpanBuilder> spanBuilder, Supplier<R> invoker) {
-    try (SpanHolder span = createSpan(spanName, spanBuilder);
-        Scope ignore = activeScope(span.get())) {
+  private <R> R callWithNoException(
+      Tracer tracer, String spanName, Consumer<SpanBuilder> spanBuilder, Supplier<R> invoker) {
+    try (SpanHolder span = createSpan(tracer, spanName, spanBuilder)) {
       try {
         return invoker.get();
       } catch (IllegalArgumentException e) {
@@ -341,10 +358,12 @@ public class TracingVersionStore implements VersionStore {
   }
 
   private static <R, E1 extends VersionStoreException> R callWithOneException(
-      String spanName, Consumer<SpanBuilder> spanBuilder, InvokerWithOneException<R, E1> invoker)
+      Tracer tracer,
+      String spanName,
+      Consumer<SpanBuilder> spanBuilder,
+      InvokerWithOneException<R, E1> invoker)
       throws E1 {
-    try (SpanHolder span = createSpan(spanName, spanBuilder);
-        Scope ignore = activeScope(span.get())) {
+    try (SpanHolder span = createSpan(tracer, spanName, spanBuilder)) {
       try {
         return invoker.handle();
       } catch (IllegalArgumentException e) {
@@ -358,12 +377,12 @@ public class TracingVersionStore implements VersionStore {
 
   private static <E1 extends VersionStoreException, E2 extends VersionStoreException>
       void callWithTwoExceptions(
+          Tracer tracer,
           String spanName,
           Consumer<SpanBuilder> spanBuilder,
           InvokerWithTwoExceptions<E1, E2> invoker)
           throws E1, E2 {
-    try (SpanHolder span = createSpan(spanName, spanBuilder);
-        Scope ignore = activeScope(span.get())) {
+    try (SpanHolder span = createSpan(tracer, spanName, spanBuilder)) {
       try {
         invoker.handle();
       } catch (IllegalArgumentException e) {
@@ -377,12 +396,12 @@ public class TracingVersionStore implements VersionStore {
 
   private static <R, E1 extends VersionStoreException, E2 extends VersionStoreException>
       R callWithTwoExceptions(
+          Tracer tracer,
           String spanName,
           Consumer<SpanBuilder> spanBuilder,
           InvokerWithTwoExceptionsR<R, E1, E2> invoker)
           throws E1, E2 {
-    try (SpanHolder span = createSpan(spanName, spanBuilder);
-        Scope ignore = activeScope(span.get())) {
+    try (SpanHolder span = createSpan(tracer, spanName, spanBuilder)) {
       try {
         return invoker.handle();
       } catch (IllegalArgumentException e) {
@@ -417,9 +436,11 @@ public class TracingVersionStore implements VersionStore {
 
   private static class SpanHolder implements Closeable {
     private final Span span;
+    private final Scope scope;
 
     private SpanHolder(Span span) {
       this.span = span;
+      this.scope = span.makeCurrent();
     }
 
     private Span get() {
@@ -428,7 +449,11 @@ public class TracingVersionStore implements VersionStore {
 
     @Override
     public void close() {
-      span.finish();
+      try {
+        scope.close();
+      } finally {
+        span.end();
+      }
     }
   }
 }
