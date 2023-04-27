@@ -17,7 +17,6 @@ package org.projectnessie.versioned.storage.common.logic;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexElement.indexElement;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.newStoreIndex;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.key;
@@ -78,9 +77,10 @@ public class TestIndexesLogicImpl extends AbstractIndexesLogicTests {
     }
     ObjId secondaryHeadId = secondary.get(0);
     CommitObj secondaryHead = commitLogic.fetchCommit(secondaryHeadId);
-    assertThat(secondaryHead).isNotNull();
+    soft.assertThat(secondaryHead).isNotNull();
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(() -> indexesLogic.buildCompleteIndex(secondaryHead, Optional.empty()));
+        .isThrownBy(
+            () -> indexesLogic.buildCompleteIndex(requireNonNull(secondaryHead), Optional.empty()));
 
     // add incomplete commit, with a reference to a set of other incomplete commits,
     // simulating a merge
@@ -96,9 +96,9 @@ public class TestIndexesLogicImpl extends AbstractIndexesLogicTests {
 
     ObjId headId = tail.get(0);
     CommitObj head = commitLogic.fetchCommit(headId);
-    assertThat(head).isNotNull();
+    soft.assertThat(head).isNotNull();
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(() -> indexesLogic.buildCompleteIndex(head, Optional.empty()));
+        .isThrownBy(() -> indexesLogic.buildCompleteIndex(requireNonNull(head), Optional.empty()));
 
     soft.assertThat(indexesLogic.findCommitsWithIncompleteIndex(headId))
         .isEqualTo(tail.subList(0, 6));
