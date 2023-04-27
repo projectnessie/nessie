@@ -19,12 +19,9 @@ import static org.projectnessie.versioned.storage.versionstore.TypeMapping.hashT
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objIdToHash;
 
 import java.util.Optional;
-import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
@@ -56,7 +53,7 @@ final class MergeSquashImpl extends BaseMergeTransplantSquash implements Merge {
       Optional<?> retryState,
       Hash fromHash,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
-      Function<ContentKey, MergeKeyBehavior> mergeBehaviorForKey,
+      MergeBehaviors mergeBehaviors,
       boolean dryRun)
       throws ReferenceNotFoundException, RetryException, ReferenceConflictException {
     ObjId fromId = hashToObjId(fromHash);
@@ -67,7 +64,6 @@ final class MergeSquashImpl extends BaseMergeTransplantSquash implements Merge {
     ImmutableMergeResult.Builder<Commit> mergeResult =
         prepareMergeResult().commonAncestor(objIdToHash(commonAncestorId));
 
-    return squash(
-        dryRun, mergeResult, mergeBehaviorForKey, updateCommitMetadata, sourceCommits, fromId);
+    return squash(dryRun, mergeResult, mergeBehaviors, updateCommitMetadata, sourceCommits, fromId);
   }
 }

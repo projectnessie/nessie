@@ -29,6 +29,7 @@ import static org.projectnessie.versioned.storage.common.logic.CommitRetry.commi
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
+import static org.projectnessie.versioned.storage.versionstore.RefMapping.commitConflictToConflict;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.referenceConflictException;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.referenceNotFound;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.hashToObjId;
@@ -49,7 +50,6 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -89,6 +89,7 @@ import org.projectnessie.versioned.storage.common.logic.IndexesLogic;
 import org.projectnessie.versioned.storage.common.logic.PagedResult;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
+import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
@@ -497,7 +498,7 @@ class BaseCommitHelper {
       ObjId fromId,
       CommitObj source,
       ImmutableMergeResult.Builder<Commit> result,
-      Function<ContentKey, MergeKeyBehavior> mergeBehaviorForKey)
+      MergeBehaviors mergeBehaviors)
       throws RetryException {
     result.wasSuccessful(true);
 
@@ -507,8 +508,7 @@ class BaseCommitHelper {
       ContentKey key = storeKeyToKey(k);
       // Note: key==null, if not the "main universe" or not a "content" discriminator
       if (key != null) {
-        result.putDetails(
-            key, keyDetails(mergeBehaviorForKey.apply(key).getMergeBehavior(), ConflictType.NONE));
+        result.putDetails(key, keyDetails(mergeBehaviors.mergeBehavior(key), ConflictType.NONE));
       }
     }
 
@@ -543,14 +543,20 @@ class BaseCommitHelper {
   }
 
   CommitObj createMergeTransplantCommit(
-      Function<ContentKey, MergeKeyBehavior> mergeBehaviorForKey,
+      MergeBehaviors mergeBehaviors,
       Map<ContentKey, KeyDetails> keyDetailsMap,
-      CreateCommit createCommit)
+      CreateCommit createCommit,
+      Consumer<Obj> objsToStore)
       throws ReferenceNotFoundException {
     try {
       CommitLogic commitLogic = commitLogic(persist);
+      ContentMapping contentMapping = new ContentMapping(persist);
       return commitLogic.buildCommitObj(
           createCommit,
+          /*
+           * Conflict handling happens via this callback, which can decide how the conflict should
+           * be handled.
+           */
           conflict -> {
             ContentKey key = storeKeyToKey(conflict.key());
             // Note: key==null, if not the "main universe" or not a "content"
@@ -566,40 +572,96 @@ class BaseCommitHelper {
                     && ex != null
                     && op.payload() == ex.payload()
                     && contentTypeForPayload((byte) op.payload()) == NAMESPACE) {
-                  return ConflictResolution.IGNORE;
+                  return ConflictResolution.ADD;
                 }
               }
-              MergeKeyBehavior mergeKeyBehavior = mergeBehaviorForKey.apply(key);
-              checkArgument(
-                  mergeKeyBehavior.getResolvedContent() == null
-                      && mergeKeyBehavior.getExpectedTargetContent() == null,
-                  "Functionality for MergeKeyBehavior.resolvedContent and MergeKeyBehavior.expectedTargetContent is not yet implemented.");
-              MergeBehavior mergeBehavior = mergeKeyBehavior.getMergeBehavior();
+
+              MergeBehavior mergeBehavior = mergeBehaviors.mergeBehavior(key);
               switch (mergeBehavior) {
-                case NORMAL:
-                  keyDetailsMap.put(key, keyDetails(mergeBehavior, ConflictType.UNRESOLVABLE));
-                  return ConflictResolution.IGNORE;
                 case FORCE:
-                  keyDetailsMap.put(key, keyDetails(mergeBehavior, ConflictType.NONE));
-                  return ConflictResolution.IGNORE;
                 case DROP:
-                  keyDetailsMap.put(key, keyDetails(mergeBehavior, ConflictType.NONE));
-                  return ConflictResolution.DROP;
+                  MergeKeyBehavior mergeKeyBe = mergeBehaviors.useKey(false, key);
+                  // Do not plain ignore (due to FORCE) or drop (DROP), when the caller provided an
+                  // expectedTargetContent.
+                  if (mergeKeyBe.getExpectedTargetContent() == null) {
+                    keyDetailsMap.put(key, keyDetails(mergeBehavior, ConflictType.NONE));
+                    return mergeBehavior == MergeBehavior.FORCE
+                        ? ConflictResolution.ADD
+                        : ConflictResolution.DROP;
+                  }
+                  // fall through
+                case NORMAL:
+                  keyDetailsMap.put(
+                      key,
+                      keyDetails(
+                          mergeBehavior,
+                          ConflictType.UNRESOLVABLE,
+                          commitConflictToConflict(conflict)));
+                  return ConflictResolution.ADD;
                 default:
                   throw new IllegalStateException("Unknown merge behavior " + mergeBehavior);
               }
             }
-            return ConflictResolution.IGNORE;
+            return ConflictResolution.ADD;
           },
-          (k, v) -> {
-            ContentKey key = storeKeyToKey(k);
-            // Note: key==null, if not the "main universe" or not a "content"
-            // discriminator
+          /*
+           * Callback from the commit-logic telling us the value-ObjId for a key.
+           */
+          (storeKey, valueId) -> {
+            ContentKey key = storeKeyToKey(storeKey);
+            // Note: key==null, if not the "main universe" or not a "content" discriminator
             if (key != null) {
-              MergeKeyBehavior mergeKeyBehavior = mergeBehaviorForKey.apply(key);
               keyDetailsMap.putIfAbsent(
-                  key, keyDetails(mergeKeyBehavior.getMergeBehavior(), ConflictType.NONE));
+                  key, keyDetails(mergeBehaviors.mergeBehavior(key), ConflictType.NONE));
             }
+          },
+          /*
+           * Following callback implements the functionality to handle MergeKeyBehavior.expectedTargetContent,
+           * to explicitly validate the current value on the target branch/commit.
+           *
+           * This is mandatory, if MergeKeyBehavior.resolvedContent != null.
+           */
+          (add, storeKey, expectedValueId) -> {
+            // "replace" the ObjId expected for a commit-ADD action
+            ContentKey key = storeKeyToKey(storeKey);
+            // Note: key==null, if not the "main universe" or not a "content" discriminator
+            if (key == null) {
+              return expectedValueId;
+            }
+            Content expectedTarget = mergeBehaviors.useKey(add, key).getExpectedTargetContent();
+            // If there is an expected-target-content, we only need the ObjId for it to let the
+            // commit code perform the check. An object load is not needed.
+            return expectedTarget != null
+                ? contentMapping
+                    .buildContent(expectedTarget, payloadForContent(expectedTarget))
+                    .id()
+                : expectedValueId;
+          },
+          /*
+           * Following callback implements the functionality to handle MergeKeyBehavior.resolvedContent,
+           * so when a (squashing) merge-operation requests to explicitly use merge a different content
+           * object, to handle externally resolved conflicts.
+           *
+           * Non-squashing merges are prohibited to have a non-null MergeKeyBehavior.resolvedContent.
+           */
+          (add, storeKey, commitValueId) -> {
+            ContentKey key = storeKeyToKey(storeKey);
+            // Note: key==null, if not the "main universe" or not a "content" discriminator
+            if (key == null) {
+              return commitValueId;
+            }
+            MergeKeyBehavior mergeKeyBehavior = mergeBehaviors.useKey(add, key);
+            Content resolvedContent = mergeKeyBehavior.getResolvedContent();
+            if (resolvedContent == null) {
+              // Nothing to resolve, use the value from the source.
+              return commitValueId;
+            }
+
+            // Build the "resolved" content value object and add it to the objects to persist.
+            ContentValueObj resolvedValue =
+                contentMapping.buildContent(resolvedContent, payloadForContent(resolvedContent));
+            objsToStore.accept(resolvedValue);
+            return resolvedValue.id();
           });
     } catch (CommitConflictException conflict) {
       // Data conflicts are handled, if we get here, it's an internal error OR unimplemented

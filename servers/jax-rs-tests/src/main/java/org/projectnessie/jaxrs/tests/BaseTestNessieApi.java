@@ -479,9 +479,48 @@ public abstract class BaseTestNessieApi {
         .extracting(EntriesResponse.Entry::getName)
         .containsExactly(ContentKey.of("a"), ContentKey.of("b"));
 
-    api().mergeRefIntoBranch().fromRef(branch).branch(main).keepIndividualCommits(false).merge();
-    Reference main2 = api().getReference().refName(main.getName()).get();
-    soft.assertThat(api().getCommitLog().refName(main.getName()).get().getLogEntries()).hasSize(3);
+    Reference main2;
+    if (isV2()) {
+      api()
+          .mergeRefIntoBranch()
+          .fromRef(branch)
+          .branch(main)
+          .message("not the merge message")
+          .commitMeta(
+              CommitMeta.builder()
+                  .message("My custom merge message")
+                  .author("NessieHerself")
+                  .signedOffBy("Arctic")
+                  .authorTime(Instant.EPOCH)
+                  .putProperties("property", "value")
+                  .build())
+          .keepIndividualCommits(false)
+          .merge();
+      main2 = api().getReference().refName(main.getName()).get();
+      List<LogEntry> postMergeLog =
+          api().getCommitLog().refName(main.getName()).get().getLogEntries();
+      soft.assertThat(postMergeLog)
+          .hasSize(3)
+          .first()
+          .extracting(LogEntry::getCommitMeta)
+          .extracting(
+              CommitMeta::getMessage,
+              CommitMeta::getAllAuthors,
+              CommitMeta::getAllSignedOffBy,
+              CommitMeta::getAuthorTime,
+              CommitMeta::getProperties)
+          .containsExactly(
+              "My custom merge message",
+              singletonList("NessieHerself"),
+              singletonList("Arctic"),
+              Instant.EPOCH,
+              ImmutableMap.of("property", "value", "_merge_parent", branch.getHash()));
+    } else {
+      api().mergeRefIntoBranch().fromRef(branch).branch(main).keepIndividualCommits(false).merge();
+      main2 = api().getReference().refName(main.getName()).get();
+      soft.assertThat(api().getCommitLog().refName(main.getName()).get().getLogEntries())
+          .hasSize(3);
+    }
 
     soft.assertThat(api().getEntries().reference(main2).get().getEntries())
         .extracting(EntriesResponse.Entry::getName)

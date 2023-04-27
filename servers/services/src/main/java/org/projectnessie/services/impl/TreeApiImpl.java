@@ -553,7 +553,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   public MergeResponse transplantCommitsIntoBranch(
       String branchName,
       String expectedHash,
-      String message,
+      @Nullable @jakarta.annotation.Nullable CommitMeta commitMeta,
       List<String> hashesToTransplant,
       String fromRefName,
       Boolean keepIndividualCommits,
@@ -565,13 +565,12 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       throws NessieNotFoundException, NessieConflictException {
     try {
       checkArgument(!hashesToTransplant.isEmpty(), "No hashes given to transplant.");
+      validateCommitMeta(commitMeta);
 
       BranchName targetBranch = BranchName.of(branchName);
+      String lastHash = hashesToTransplant.get(hashesToTransplant.size() - 1);
       startAccessCheck()
-          .canViewReference(
-              namedRefWithHashOrThrow(
-                      fromRefName, hashesToTransplant.get(hashesToTransplant.size() - 1))
-                  .getValue())
+          .canViewReference(namedRefWithHashOrThrow(fromRefName, lastHash).getValue())
           .canCommitChangeAgainstReference(targetBranch)
           .checkAndThrow();
 
@@ -583,16 +582,27 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       if (Boolean.TRUE.equals(keepIndividualCommits) && transplants.size() > 1) {
         // Message overrides are not meaningful when transplanting more than one commit.
         // This matches old behaviour where `message` was ignored in all cases.
-        message = null;
+        commitMeta = null;
       }
+
+      Optional<Hash> into = toHash(expectedHash, true);
 
       MergeResult<Commit> result =
           getStore()
               .transplant(
                   targetBranch,
-                  toHash(expectedHash, true),
+                  into,
                   transplants,
-                  commitMetaUpdate(message),
+                  commitMetaUpdate(
+                      commitMeta,
+                      numCommits ->
+                          String.format(
+                              "Transplanted %d commits from %s at %s into %s%s",
+                              numCommits,
+                              fromRefName,
+                              lastHash,
+                              branchName,
+                              into.map(h -> " at " + h.asString()).orElse(""))),
                   Boolean.TRUE.equals(keepIndividualCommits),
                   keyMergeBehaviors(keyMergeBehaviors),
                   defaultMergeBehavior(defaultMergeBehavior),
@@ -620,7 +630,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       String fromRefName,
       String fromHash,
       Boolean keepIndividualCommits,
-      @Nullable @jakarta.annotation.Nullable String message,
+      @Nullable @jakarta.annotation.Nullable CommitMeta commitMeta,
       Collection<MergeKeyBehavior> keyMergeBehaviors,
       MergeBehavior defaultMergeBehavior,
       Boolean dryRun,
@@ -628,19 +638,33 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       Boolean returnConflictAsResult)
       throws NessieNotFoundException, NessieConflictException {
     try {
+      validateCommitMeta(commitMeta);
+
       BranchName targetBranch = BranchName.of(branchName);
       startAccessCheck()
           .canViewReference(namedRefWithHashOrThrow(fromRefName, fromHash).getValue())
           .canCommitChangeAgainstReference(targetBranch)
           .checkAndThrow();
 
+      Hash from = toHash(fromRefName, fromHash);
+      Optional<Hash> into = toHash(expectedHash, true);
+
       MergeResult<Commit> result =
           getStore()
               .merge(
                   toHash(fromRefName, fromHash),
                   targetBranch,
-                  toHash(expectedHash, true),
-                  commitMetaUpdate(message),
+                  into,
+                  commitMetaUpdate(
+                      commitMeta,
+                      numCommits ->
+                          String.format(
+                              "Merged %d commits from %s at %s into %s%s",
+                              numCommits,
+                              fromRefName,
+                              from.asString(),
+                              branchName,
+                              into.map(h -> " at " + h.asString()).orElse(""))),
                   Boolean.TRUE.equals(keepIndividualCommits),
                   keyMergeBehaviors(keyMergeBehaviors),
                   defaultMergeBehavior(defaultMergeBehavior),
@@ -658,6 +682,24 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       throw new NessieReferenceConflictException(e.getReferenceConflicts(), e.getMessage(), e);
     } catch (ReferenceConflictException e) {
       throw new NessieReferenceConflictException(e.getReferenceConflicts(), e.getMessage(), e);
+    }
+  }
+
+  private static void validateCommitMeta(CommitMeta commitMeta) {
+    if (commitMeta != null) {
+      checkArgument(
+          commitMeta.getCommitter() == null,
+          "Cannot set the committer on the client side. It is set by the server.");
+      checkArgument(
+          commitMeta.getCommitTime() == null,
+          "Cannot set the commit time on the client side. It is set by the server.");
+      checkArgument(
+          commitMeta.getHash() == null,
+          "Cannot set the commit hash on the client side. It is set by the server.");
+      checkArgument(
+          commitMeta.getParentCommitHashes() == null
+              || commitMeta.getParentCommitHashes().isEmpty(),
+          "Cannot set the parent commit hashes on the client side. It is set by the server.");
     }
   }
 
@@ -868,6 +910,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   public CommitResponse commitMultipleOperations(
       String branch, String expectedHash, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
+    CommitMeta commitMeta = operations.getCommitMeta();
+    validateCommitMeta(commitMeta);
+
     BranchName branchName = BranchName.of(branch);
     BatchAccessChecker check = startAccessCheck().canCommitChangeAgainstReference(branchName);
     operations
@@ -892,12 +937,6 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
             .map(TreeApiImpl::toOp)
             .collect(ImmutableList.toImmutableList());
 
-    CommitMeta commitMeta = operations.getCommitMeta();
-    if (commitMeta.getCommitter() != null) {
-      throw new IllegalArgumentException(
-          "Cannot set the committer on the client side. It is set by the server.");
-    }
-
     try {
       ImmutableCommitResponse.Builder commitResponse = ImmutableCommitResponse.builder();
 
@@ -906,7 +945,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
               .commit(
                   BranchName.of(branch),
                   Optional.ofNullable(expectedHash).map(Hash::of),
-                  commitMetaUpdate(null).rewriteSingle(commitMeta),
+                  commitMetaUpdate(null, numCommits -> null).rewriteSingle(commitMeta),
                   ops,
                   () -> null,
                   (key, cid) -> {

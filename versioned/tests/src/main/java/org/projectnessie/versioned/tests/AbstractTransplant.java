@@ -31,6 +31,7 @@ import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
@@ -228,8 +229,13 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
   }
 
   @ParameterizedTest
-  @ValueSource(booleans = {false, true})
-  protected void checkTransplantWitConflictingCommit(boolean individualCommits)
+  @CsvSource({
+    "false,false",
+    "false,true",
+    "true,false",
+    "true,true",
+  })
+  protected void checkTransplantWithConflictingCommit(boolean individualCommits, boolean dryRun)
       throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_3");
     store().create(newBranch, Optional.empty());
@@ -246,7 +252,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                         individualCommits,
                         Collections.emptyMap(),
                         MergeBehavior.NORMAL,
-                        false,
+                        dryRun,
                         false))
         .isInstanceOf(ReferenceConflictException.class);
   }
@@ -288,8 +294,13 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
   }
 
   @ParameterizedTest
-  @ValueSource(booleans = {false, true})
-  protected void checkTransplantOnNonExistingBranch(boolean individualCommits) {
+  @CsvSource({
+    "false,false",
+    "false,true",
+    "true,false",
+    "true,true",
+  })
+  protected void checkTransplantOnNonExistingBranch(boolean individualCommits, boolean dryRun) {
     final BranchName newBranch = BranchName.of("bar_5");
     soft.assertThatThrownBy(
             () ->
@@ -302,14 +313,19 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                         individualCommits,
                         Collections.emptyMap(),
                         MergeBehavior.NORMAL,
-                        false,
+                        dryRun,
                         false))
         .isInstanceOf(ReferenceNotFoundException.class);
   }
 
   @ParameterizedTest
-  @ValueSource(booleans = {false, true})
-  protected void checkTransplantWithNonExistingCommit(boolean individualCommits)
+  @CsvSource({
+    "false,false",
+    "false,true",
+    "true,false",
+    "true,true",
+  })
+  protected void checkTransplantWithNonExistingCommit(boolean individualCommits, boolean dryRun)
       throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_6");
     store().create(newBranch, Optional.empty());
@@ -324,7 +340,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                         individualCommits,
                         Collections.emptyMap(),
                         MergeBehavior.NORMAL,
-                        false,
+                        dryRun,
                         false))
         .isInstanceOf(ReferenceNotFoundException.class);
   }
@@ -370,8 +386,13 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
   }
 
   @ParameterizedTest
-  @ValueSource(booleans = {false, true})
-  protected void checkTransplantWithCommitsInWrongOrder(boolean individualCommits)
+  @CsvSource({
+    "false,false",
+    "false,true",
+    "true,false",
+    "true,true",
+  })
+  protected void checkTransplantWithCommitsInWrongOrder(boolean individualCommits, boolean dryRun)
       throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_8");
     store().create(newBranch, Optional.empty());
@@ -388,13 +409,19 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                         individualCommits,
                         Collections.emptyMap(),
                         MergeBehavior.NORMAL,
-                        false,
+                        dryRun,
                         false));
   }
 
   @ParameterizedTest
-  @ValueSource(booleans = {false, true})
-  protected void checkInvalidBranchHash(boolean individualCommits) throws VersionStoreException {
+  @CsvSource({
+    "false,false",
+    "false,true",
+    "true,false",
+    "true,true",
+  })
+  protected void checkInvalidBranchHash(boolean individualCommits, boolean dryRun)
+      throws VersionStoreException {
     final BranchName anotherBranch = BranchName.of("bar");
     store().create(anotherBranch, Optional.empty());
     final Hash unrelatedCommit =
@@ -418,7 +445,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                         individualCommits,
                         Collections.emptyMap(),
                         MergeBehavior.NORMAL,
-                        false,
+                        dryRun,
                         false))
         .isInstanceOf(ReferenceNotFoundException.class);
   }

@@ -18,10 +18,7 @@ package org.projectnessie.model.types;
 /**
  * Used to provide custom {@link org.projectnessie.model.Content} implementations via the Java
  * {@link java.util.ServiceLoader service loader} mechanism.
- *
- * <p><em>The functionality to actually use custom types is incomplete as long as ther is no
- * store-worker support for custom content. </em>
  */
 public interface ContentTypeBundle {
-  void register(ContentTypes.Registrar registrar);
+  void register(ContentTypeRegistry contentTypeRegistry);
 }

@@ -392,14 +392,19 @@ public abstract class AbstractMergeTransplant {
 
     // Merge/transplant w/ conflict / dry run
 
-    MergeResult<CommitLogEntry> mergeResult =
-        mergeOrTransplant.apply(
-            configurer
-                .apply(commits, 2)
-                .toBranch(conflict)
-                .expectedHead(Optional.of(conflictBase))
-                .isDryRun(true));
-    assertThat(mergeResult).isEqualTo(expectedMergeResult);
+    assertThatThrownBy(
+            () ->
+                mergeOrTransplant.apply(
+                    configurer
+                        .apply(commits, 2)
+                        .toBranch(conflict)
+                        .expectedHead(Optional.of(conflictBase))
+                        .isDryRun(true)))
+        .isInstanceOf(MergeConflictException.class)
+        .hasMessage("The following keys have been changed in conflict: 'key-0', 'key-1'")
+        .asInstanceOf(InstanceOfAssertFactories.throwable(MergeConflictException.class))
+        .extracting(MergeConflictException::getMergeResult)
+        .isEqualTo(expectedMergeResult);
 
     // Merge/transplant w/ conflict
 

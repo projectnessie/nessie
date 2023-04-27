@@ -15,6 +15,7 @@
  */
 package org.projectnessie.services.impl;
 
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
@@ -100,7 +101,9 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
                     NORMAL,
                     false,
                     false,
-                    returnConflictAsResult));
+                    returnConflictAsResult),
+        withDetachedCommit,
+        "Transplanted");
   }
 
   @ParameterizedTest
@@ -135,7 +138,9 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
                   false,
                   false,
                   returnConflictAsResult);
-        });
+        },
+        refMode == ReferenceMode.DETACHED,
+        "Merged");
   }
 
   @FunctionalInterface
@@ -150,7 +155,11 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
   }
 
   private void mergeTransplant(
-      boolean verifyAdditionalParents, boolean keepIndividualCommits, MergeTransplantActor actor)
+      boolean verifyAdditionalParents,
+      boolean keepIndividualCommits,
+      MergeTransplantActor actor,
+      boolean detached,
+      String mergedTransplanted)
       throws BaseNessieClientServerException {
     Branch root = createBranch("root");
 
@@ -221,8 +230,14 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
       soft.assertThat(log.stream().map(LogEntry::getCommitMeta).map(CommitMeta::getMessage))
           .hasSize(3)
           .first(InstanceOfAssertFactories.STRING)
-          .contains("test-branch2")
-          .contains("test-branch1");
+          .isEqualTo(
+              format(
+                  "%s 2 commits from %s at %s into %s at %s",
+                  mergedTransplanted,
+                  detached ? "DETACHED" : source.getName(),
+                  committed2.getHash(),
+                  target.getName(),
+                  target.getHash()));
     }
 
     // Verify that the commit-timestamp was updated
@@ -373,7 +388,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
                     source.getName(),
                     source.getHash(),
                     false,
-                    "test-message-override-123",
+                    CommitMeta.fromMessage("test-message-override-123"),
                     emptyList(),
                     NORMAL,
                     false,
@@ -384,23 +399,58 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
 
   @Test
   public void mergeMessageDefault() throws BaseNessieClientServerException {
-    testMergeTransplantMessage(
-        (target, source, committed1, committed2, returnConflictAsResult) ->
-            treeApi()
-                .mergeRefIntoBranch(
-                    target.getName(),
-                    target.getHash(),
-                    source.getName(),
-                    source.getHash(),
-                    false,
-                    null,
-                    emptyList(),
-                    NORMAL,
-                    false,
-                    false,
-                    returnConflictAsResult),
-        ImmutableList.of(
-            "test-commit-1\n---------------------------------------------\ntest-commit-2"));
+    Branch target = createBranch("merge-transplant-msg-target");
+
+    // Common ancestor
+    target =
+        commit(
+                target,
+                fromMessage("test-root"),
+                Put.of(
+                    ContentKey.of("irrelevant-to-this-test"),
+                    IcebergTable.of("something", 42, 43, 44, 45)))
+            .getTargetBranch();
+
+    Branch source = createBranch("merge-transplant-msg-source", target);
+
+    ContentKey key1 = ContentKey.of("test-key1");
+    ContentKey key2 = ContentKey.of("test-key2");
+
+    source =
+        commit(
+                source,
+                fromMessage("test-commit-1"),
+                Put.of(key1, IcebergTable.of("table1", 42, 43, 44, 45)))
+            .getTargetBranch();
+
+    source =
+        commit(
+                source,
+                fromMessage("test-commit-2"),
+                Put.of(key2, IcebergTable.of("table2", 42, 43, 44, 45)))
+            .getTargetBranch();
+
+    treeApi()
+        .mergeRefIntoBranch(
+            target.getName(),
+            target.getHash(),
+            source.getName(),
+            source.getHash(),
+            false,
+            null,
+            emptyList(),
+            NORMAL,
+            false,
+            false,
+            false);
+
+    soft.assertThat(commitLog(target.getName()).stream().limit(1))
+        .isNotEmpty()
+        .extracting(e -> e.getCommitMeta().getMessage())
+        .containsExactly(
+            format(
+                "Merged 2 commits from %s at %s into %s at %s",
+                source.getName(), source.getHash(), target.getName(), target.getHash()));
   }
 
   @Test
@@ -411,7 +461,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
                 .transplantCommitsIntoBranch(
                     target.getName(),
                     target.getHash(),
-                    "test-message-override-123",
+                    CommitMeta.fromMessage("test-message-override-123"),
                     ImmutableList.of(
                         requireNonNull(committed1.getHash()), requireNonNull(committed2.getHash())),
                     source.getName(),
@@ -432,7 +482,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
                 .transplantCommitsIntoBranch(
                     target.getName(),
                     target.getHash(),
-                    "test-message-override-123",
+                    CommitMeta.fromMessage("test-message-override-123"),
                     ImmutableList.of(requireNonNull(committed1.getHash())),
                     source.getName(),
                     false,
@@ -452,7 +502,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
                 .transplantCommitsIntoBranch(
                     target.getName(),
                     target.getHash(),
-                    "ignored-message-override",
+                    CommitMeta.fromMessage("ignored-message-override"),
                     ImmutableList.of(
                         requireNonNull(committed1.getHash()), requireNonNull(committed2.getHash())),
                     source.getName(),
@@ -577,9 +627,11 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
     List<LogEntry> log = commitLog(base.getName(), MINIMAL, base.getHash(), null, null);
     soft.assertThat(
             log.stream().map(LogEntry::getCommitMeta).map(CommitMeta::getMessage).findFirst())
-        .isPresent()
-        .hasValueSatisfying(v -> assertThat(v).contains("test-branch1"))
-        .hasValueSatisfying(v -> assertThat(v).contains("test-branch2"));
+        .get()
+        .isEqualTo(
+            format(
+                "Merged 4 commits from %s at %s into %s at %s",
+                fromRef.getName(), fromRef.getHash(), base.getName(), base.getHash()));
 
     soft.assertThat(
             withoutNamespaces(entries(base.getName(), null)).stream()

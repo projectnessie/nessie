@@ -18,6 +18,7 @@ package org.projectnessie.client.api;
 import javax.validation.constraints.NotBlank;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Reference;
 
@@ -31,13 +32,24 @@ public interface MergeReferenceBuilder extends MergeTransplantBuilder<MergeRefer
   /**
    * Sets a custom merge commit message. The message is auto-generated if not set.
    *
-   * <p>How the auto-generated message is constructed is not specified, but in general it will be
-   * based on the individual messages of the merged commits.
+   * <p>How the auto-generated message is constructed is not specified.
    *
    * @since {@link NessieApiV2}
+   * @see #commitMeta(CommitMeta)
    */
   @Override
   MergeReferenceBuilder message(String message);
+
+  /**
+   * Specify commit properties for the merge-commit, including the commit message, author(s), author
+   * timestamp, signed-off, properties.
+   *
+   * <p>If the given {@link CommitMeta} contains a non-empty message, the message specified via
+   * {@link #message(String)} will be ignored by the server.
+   *
+   * @since {@link NessieApiV2}
+   */
+  MergeReferenceBuilder commitMeta(CommitMeta commitMeta);
 
   MergeReferenceBuilder fromHash(
       @NotBlank @jakarta.validation.constraints.NotBlank String fromHash);

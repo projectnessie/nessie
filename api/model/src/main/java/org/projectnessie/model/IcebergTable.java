@@ -18,14 +18,17 @@ package org.projectnessie.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.util.Map;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
+import org.projectnessie.model.ser.Views;
 
 /**
  * Represents the state of an Iceberg table in Nessie. An Iceberg table is globally identified via
@@ -86,7 +89,10 @@ public abstract class IcebergTable extends IcebergContent {
   @Nullable
   @jakarta.annotation.Nullable
   @JsonInclude(Include.NON_NULL)
-  public abstract GenericMetadata getMetadata();
+  @JsonView(Views.V1.class)
+  // Left here in case an old Nessie client sends this piece of information.
+  // To be removed when API v1 gets removed.
+  public abstract Map<String, Object> getMetadata();
 
   public static ImmutableIcebergTable.Builder builder() {
     return ImmutableIcebergTable.builder();

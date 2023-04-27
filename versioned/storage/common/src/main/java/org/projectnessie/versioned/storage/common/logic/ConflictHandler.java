@@ -15,16 +15,22 @@
  */
 package org.projectnessie.versioned.storage.common.logic;
 
+import org.projectnessie.versioned.storage.common.logic.CommitLogic.ValueReplacement;
+
 @FunctionalInterface
 public interface ConflictHandler {
 
   ConflictResolution onConflict(CommitConflict conflict);
 
+  /**
+   * See also {@link CommitLogic#buildCommitObj(CreateCommit, ConflictHandler, CommitOpHandler,
+   * ValueReplacement, ValueReplacement)}.
+   */
   enum ConflictResolution {
     /** Raise the conflict as is. */
     CONFLICT,
     /** Ignore the conflict, add action to the commit. */
-    IGNORE,
+    ADD,
     /** Ignore the conflict, do not add the action to the commit. */
     DROP
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,29 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.model;
+package org.projectnessie.versioned.store.types;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.validation.constraints.NotEmpty;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.types.ContentTypes;
 
 @Value.Immutable
-@JsonSerialize(as = ImmutableGenericMetadata.class)
-@JsonDeserialize(as = ImmutableGenericMetadata.class)
-public interface GenericMetadata {
+@JsonSerialize(as = ImmutableCustomTestContent.class)
+@JsonDeserialize(as = ImmutableCustomTestContent.class)
+@JsonTypeName(CustomTestContent.TYPE)
+public abstract class CustomTestContent extends Content {
+  static final String TYPE = "TEST_CUSTOM_CONTENT_TYPE";
 
-  @NotEmpty
-  @jakarta.validation.constraints.NotEmpty
-  String getVariant();
+  public abstract long getSomeLong();
 
-  @Schema(type = SchemaType.OBJECT)
-  JsonNode getMetadata();
+  public abstract String getSomeString();
 
-  static GenericMetadata of(String variant, JsonNode metadata) {
-    return ImmutableGenericMetadata.builder().variant(variant).metadata(metadata).build();
+  @Override
+  public Type getType() {
+    return ContentTypes.forName(TYPE);
   }
 }

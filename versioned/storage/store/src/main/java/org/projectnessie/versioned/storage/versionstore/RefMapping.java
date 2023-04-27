@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import org.projectnessie.model.Conflict;
 import org.projectnessie.model.Conflict.ConflictType;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
@@ -44,6 +45,7 @@ import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundException;
+import org.projectnessie.versioned.storage.common.logic.CommitConflict;
 import org.projectnessie.versioned.storage.common.logic.CommitLogic;
 import org.projectnessie.versioned.storage.common.logic.PagedResult;
 import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
@@ -120,46 +122,46 @@ public class RefMapping {
   }
 
   public static ReferenceConflictException referenceConflictException(CommitConflictException e) {
+    return referenceConflictException(e.conflicts());
+  }
+
+  public static ReferenceConflictException referenceConflictException(
+      List<CommitConflict> conflicts) {
     return new ReferenceConflictException(
-        e.conflicts().stream()
-            .map(
-                conflict -> {
-                  ContentKey key = storeKeyToKey(conflict.key());
-                  String k =
-                      key != null ? "key '" + key + "'" : "store-key '" + conflict.key() + "'";
-                  String msg;
-                  ConflictType conflictType;
-                  switch (conflict.conflictType()) {
-                    case KEY_DOES_NOT_EXIST:
-                      conflictType = ConflictType.KEY_DOES_NOT_EXIST;
-                      msg = k + " does not exist";
-                      break;
-                    case KEY_EXISTS:
-                      conflictType = ConflictType.KEY_EXISTS;
-                      msg = k + " already exists";
-                      break;
-                    case PAYLOAD_DIFFERS:
-                      conflictType = ConflictType.PAYLOAD_DIFFERS;
-                      msg = "payload of existing and expected content for " + k + " are different";
-                      break;
-                    case CONTENT_ID_DIFFERS:
-                      conflictType = ConflictType.CONTENT_ID_DIFFERS;
-                      msg =
-                          "content IDs of existing and expected content for "
-                              + k
-                              + " are different";
-                      break;
-                    case VALUE_DIFFERS:
-                      conflictType = ConflictType.VALUE_DIFFERS;
-                      msg = "values of existing and expected content for " + k + " are different";
-                      break;
-                    default:
-                      conflictType = ConflictType.UNKNOWN;
-                      msg = conflict.toString();
-                  }
-                  return conflict(conflictType, key, msg);
-                })
-            .collect(Collectors.toList()));
+        conflicts.stream().map(RefMapping::commitConflictToConflict).collect(Collectors.toList()));
+  }
+
+  public static Conflict commitConflictToConflict(CommitConflict conflict) {
+    ContentKey key = storeKeyToKey(conflict.key());
+    String k = key != null ? "key '" + key + "'" : "store-key '" + conflict.key() + "'";
+    String msg;
+    ConflictType conflictType;
+    switch (conflict.conflictType()) {
+      case KEY_DOES_NOT_EXIST:
+        conflictType = ConflictType.KEY_DOES_NOT_EXIST;
+        msg = k + " does not exist";
+        break;
+      case KEY_EXISTS:
+        conflictType = ConflictType.KEY_EXISTS;
+        msg = k + " already exists";
+        break;
+      case PAYLOAD_DIFFERS:
+        conflictType = ConflictType.PAYLOAD_DIFFERS;
+        msg = "payload of existing and expected content for " + k + " are different";
+        break;
+      case CONTENT_ID_DIFFERS:
+        conflictType = ConflictType.CONTENT_ID_DIFFERS;
+        msg = "content IDs of existing and expected content for " + k + " are different";
+        break;
+      case VALUE_DIFFERS:
+        conflictType = ConflictType.VALUE_DIFFERS;
+        msg = "values of existing and expected content for " + k + " are different";
+        break;
+      default:
+        conflictType = ConflictType.UNKNOWN;
+        msg = conflict.toString();
+    }
+    return conflict(conflictType, key, msg);
   }
 
   public static ReferenceConflictException referenceConflictException(

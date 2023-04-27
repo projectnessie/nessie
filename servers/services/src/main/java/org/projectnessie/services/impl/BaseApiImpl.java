@@ -15,6 +15,8 @@
  */
 package org.projectnessie.services.impl;
 
+import static java.util.Collections.singletonList;
+
 import java.security.Principal;
 import java.time.Instant;
 import java.util.HashMap;
@@ -23,6 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import org.projectnessie.error.NessieReferenceNotFoundException;
@@ -133,7 +136,8 @@ public abstract class BaseApiImpl {
   }
 
   protected MetadataRewriter<CommitMeta> commitMetaUpdate(
-      @Nullable @jakarta.annotation.Nullable String messageOverride) {
+      @Nullable @jakarta.annotation.Nullable CommitMeta commitMeta,
+      IntFunction<String> squashMessage) {
     return new MetadataRewriter<CommitMeta>() {
       // Used for setting contextual commit properties during new and merge/transplant commits.
       // WARNING: ONLY SET PROPERTIES, WHICH APPLY COMMONLY TO ALL COMMIT TYPES.
@@ -141,52 +145,72 @@ public abstract class BaseApiImpl {
       private final String committer = principal == null ? "" : principal.getName();
       private final Instant now = Instant.now();
 
-      @Override
-      public CommitMeta rewriteSingle(CommitMeta metadata) {
-        ImmutableCommitMeta.Builder builder =
-            metadata.toBuilder()
-                .committer(committer)
-                .commitTime(now)
-                .author(metadata.getAuthor() == null ? committer : metadata.getAuthor())
-                .authorTime(metadata.getAuthorTime() == null ? now : metadata.getAuthorTime());
+      private CommitMeta buildCommitMeta(
+          ImmutableCommitMeta.Builder metadata, Supplier<String> defaultMessage) {
 
-        if (messageOverride != null) {
-          builder.message(messageOverride);
+        ImmutableCommitMeta pre = metadata.message("").build();
+
+        if (commitMeta != null && !commitMeta.getAllAuthors().isEmpty()) {
+          metadata.allAuthors(commitMeta.getAllAuthors());
+        } else if (pre.getAllAuthors().isEmpty()) {
+          metadata.allAuthors(singletonList(committer));
         }
 
-        return builder.build();
+        if (commitMeta != null && !commitMeta.getAllSignedOffBy().isEmpty()) {
+          metadata.allSignedOffBy(commitMeta.getAllSignedOffBy());
+        }
+
+        if (commitMeta != null && commitMeta.getAuthorTime() != null) {
+          metadata.authorTime(commitMeta.getAuthorTime());
+        } else if (pre.getAuthorTime() == null) {
+          metadata.authorTime(now);
+        }
+
+        if (commitMeta != null && !commitMeta.getAllProperties().isEmpty()) {
+          metadata.allProperties(commitMeta.getAllProperties());
+        }
+
+        if (commitMeta != null && !commitMeta.getMessage().isEmpty()) {
+          metadata.message(commitMeta.getMessage());
+        } else {
+          metadata.message(defaultMessage.get());
+        }
+
+        return metadata.committer(committer).commitTime(now).build();
+      }
+
+      @Override
+      public CommitMeta rewriteSingle(CommitMeta metadata) {
+        return buildCommitMeta(CommitMeta.builder().from(metadata), metadata::getMessage);
       }
 
       @Override
       public CommitMeta squash(List<CommitMeta> metadata) {
-        if (metadata.size() == 1) {
+        Optional<String> msg = Optional.ofNullable(squashMessage.apply(metadata.size()));
+
+        if (metadata.size() == 1 && !msg.isPresent()) {
           return rewriteSingle(metadata.get(0));
-        }
-
-        ImmutableCommitMeta.Builder newMeta =
-            CommitMeta.builder()
-                .committer(committer)
-                .commitTime(now)
-                .author(committer)
-                .authorTime(now);
-        StringBuilder newMessage = new StringBuilder();
-
-        if (messageOverride != null) {
-          newMessage.append(messageOverride);
         }
 
         Map<String, String> newProperties = new HashMap<>();
         for (CommitMeta commitMeta : metadata) {
           newProperties.putAll(commitMeta.getProperties());
-
-          if (messageOverride == null) {
-            if (newMessage.length() > 0) {
-              newMessage.append("\n---------------------------------------------\n");
-            }
-            newMessage.append(commitMeta.getMessage());
-          }
         }
-        return newMeta.putAllProperties(newProperties).message(newMessage.toString()).build();
+
+        return buildCommitMeta(
+            CommitMeta.builder().properties(newProperties),
+            () ->
+                msg.orElseGet(
+                    () -> {
+                      StringBuilder newMessage = new StringBuilder();
+                      for (CommitMeta commitMeta : metadata) {
+                        if (newMessage.length() > 0) {
+                          newMessage.append("\n---------------------------------------------\n");
+                        }
+                        newMessage.append(commitMeta.getMessage());
+                      }
+                      return newMessage.toString();
+                    }));
       }
     };
   }

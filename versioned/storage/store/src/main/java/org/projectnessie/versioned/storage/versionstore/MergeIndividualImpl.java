@@ -21,12 +21,9 @@ import static org.projectnessie.versioned.storage.versionstore.TypeMapping.hashT
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objIdToHash;
 
 import java.util.Optional;
-import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
@@ -59,7 +56,7 @@ final class MergeIndividualImpl extends BaseMergeTransplantIndividual implements
       Optional<?> retryState,
       Hash fromHash,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
-      Function<ContentKey, MergeKeyBehavior> mergeBehaviorForKey,
+      MergeBehaviors mergeBehaviors,
       boolean dryRun)
       throws ReferenceNotFoundException, RetryException, ReferenceConflictException {
     ObjId fromId = hashToObjId(fromHash);
@@ -81,12 +78,12 @@ final class MergeIndividualImpl extends BaseMergeTransplantIndividual implements
         //  Need to check whether the commit-metadata has changed as well.
         && source.directParent().equals(commonAncestorId)) {
 
-      return mergeSquashFastForward(dryRun, fromId, source, mergeResult, mergeBehaviorForKey);
+      return mergeSquashFastForward(dryRun, fromId, source, mergeResult, mergeBehaviors);
     }
 
     SourceCommitsAndParent sourceCommits = loadSourceCommitsForMerge(fromId, commonAncestorId);
 
     return individualCommits(
-        updateCommitMetadata, dryRun, mergeResult, mergeBehaviorForKey, sourceCommits);
+        updateCommitMetadata, dryRun, mergeResult, mergeBehaviors, sourceCommits);
   }
 }

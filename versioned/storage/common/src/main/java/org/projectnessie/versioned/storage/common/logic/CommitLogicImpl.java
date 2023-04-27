@@ -35,6 +35,7 @@ import static org.projectnessie.versioned.storage.common.logic.CommitConflict.Co
 import static org.projectnessie.versioned.storage.common.logic.CommitConflict.ConflictType.VALUE_DIFFERS;
 import static org.projectnessie.versioned.storage.common.logic.CommitConflict.commitConflict;
 import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
+import static org.projectnessie.versioned.storage.common.logic.CommitLogic.ValueReplacement.NO_VALUE_REPLACEMENT;
 import static org.projectnessie.versioned.storage.common.logic.ConflictHandler.ConflictResolution.CONFLICT;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Add.commitAdd;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Remove.commitRemove;
@@ -283,7 +284,9 @@ final class CommitLogicImpl implements CommitLogic {
       @Nonnull @jakarta.annotation.Nonnull CreateCommit createCommit,
       @Nonnull @jakarta.annotation.Nonnull List<Obj> additionalObjects)
       throws CommitConflictException, ObjNotFoundException {
-    CommitObj commit = buildCommitObj(createCommit, c -> CONFLICT, (k, v) -> {});
+    CommitObj commit =
+        buildCommitObj(
+            createCommit, c -> CONFLICT, (k, v) -> {}, NO_VALUE_REPLACEMENT, NO_VALUE_REPLACEMENT);
     return storeCommit(commit, additionalObjects) ? commit.id() : null;
   }
 
@@ -530,7 +533,9 @@ final class CommitLogicImpl implements CommitLogic {
   public CommitObj buildCommitObj(
       @Nonnull @jakarta.annotation.Nonnull CreateCommit createCommit,
       @Nonnull @jakarta.annotation.Nonnull ConflictHandler conflictHandler,
-      @Nonnull @jakarta.annotation.Nonnull CommitOpHandler commitOpHandler)
+      @Nonnull @jakarta.annotation.Nonnull CommitOpHandler commitOpHandler,
+      @Nonnull @jakarta.annotation.Nonnull ValueReplacement expectedValueReplacement,
+      @Nonnull @jakarta.annotation.Nonnull ValueReplacement committedValueReplacement)
       throws CommitConflictException, ObjNotFoundException {
     StoreConfig config = persist.config();
 
@@ -583,9 +588,9 @@ final class CommitLogicImpl implements CommitLogic {
     // Keys used in all "add", "unchanged" and "remove" actions.
     Set<StoreKey> keys =
         newHashSetWithExpectedSize(createCommit.adds().size() + createCommit.removes().size());
-    Set<StoreKey> readdedKeys = newHashSetWithExpectedSize(createCommit.removes().size());
+    Set<StoreKey> reAddedKeys = newHashSetWithExpectedSize(createCommit.removes().size());
 
-    preprocessCommitActions(createCommit, keys, readdedKeys);
+    preprocessCommitActions(createCommit, keys, reAddedKeys);
 
     // Results in a bulk-(pre)fetch of the requested index stripes
     fullIndex.loadIfNecessary(keys);
@@ -599,7 +604,8 @@ final class CommitLogicImpl implements CommitLogic {
       StoreIndexElement<CommitOp> existing = existingFromIndex(fullIndex, key);
       CommitOp existingContent = existing != null ? existing.content() : null;
 
-      ObjId expectedValue = remove.expectedValue();
+      ObjId expectedValue =
+          expectedValueReplacement.maybeReplaceValue(false, key, remove.expectedValue());
       CommitOp op = commitOp(REMOVE, payload, expectedValue, contentId);
       if (contentId != null) {
         removes.put(contentId, op);
@@ -631,10 +637,11 @@ final class CommitLogicImpl implements CommitLogic {
       UUID contentId = unchanged.contentId();
       int payload = unchanged.payload();
 
-      boolean readded = readdedKeys.contains(key);
-      CommitOp existingContent = existingContentForCommit(fullIndex, key, readded);
+      boolean reAdded = reAddedKeys.contains(key);
+      CommitOp existingContent = existingContentForCommit(fullIndex, key, reAdded);
 
-      ObjId expectedValue = unchanged.expectedValue();
+      ObjId expectedValue =
+          expectedValueReplacement.maybeReplaceValue(false, key, unchanged.expectedValue());
       CommitConflict conflict =
           checkForConflict(key, contentId, payload, null, existingContent, expectedValue);
 
@@ -648,13 +655,18 @@ final class CommitLogicImpl implements CommitLogic {
       UUID contentId = add.contentId();
       int payload = add.payload();
 
-      CommitOp op = commitOp(ADD, payload, add.value(), add.contentId());
+      ObjId addValue = committedValueReplacement.maybeReplaceValue(true, key, add.value());
+      if (addValue != null && !addValue.equals(add.value())) {
+        add = commitAdd(key, payload, addValue, add.expectedValue(), contentId);
+      }
+
+      CommitOp op = commitOp(ADD, payload, addValue, add.contentId());
       CommitConflict conflict = null;
 
-      boolean readded = readdedKeys.contains(key);
-      CommitOp existingContent = existingContentForCommit(fullIndex, key, readded);
+      boolean reAdded = reAddedKeys.contains(key);
+      CommitOp existingContent = existingContentForCommit(fullIndex, key, reAdded);
 
-      if (!readded) {
+      if (!reAdded) {
         // Check whether the content-ID has been removed above. If yes, check whether the content-ID
         // is being reused. If so, then the commit contains a rename-operation.
         CommitOp removeOp = removes.remove(contentId);
@@ -666,7 +678,8 @@ final class CommitLogicImpl implements CommitLogic {
         }
       }
 
-      ObjId expectedValue = add.expectedValue();
+      ObjId expectedValue =
+          expectedValueReplacement.maybeReplaceValue(true, key, add.expectedValue());
       if (conflict == null) {
         conflict = checkForConflict(key, contentId, payload, op, existingContent, expectedValue);
       }
@@ -701,7 +714,7 @@ final class CommitLogicImpl implements CommitLogic {
   }
 
   private static void preprocessCommitActions(
-      CreateCommit createCommit, Set<StoreKey> keys, Set<StoreKey> readdedKeys) {
+      CreateCommit createCommit, Set<StoreKey> keys, Set<StoreKey> reAddedKeys) {
     Set<StoreKey> removedKeys = newHashSetWithExpectedSize(createCommit.removes().size());
 
     // Collect the removed keys - both for "pure" deletes, renames and re-adds.
@@ -722,7 +735,7 @@ final class CommitLogicImpl implements CommitLogic {
       // key is _explicitly_ removed to be added with a different payload as a _new_ key.
       boolean unseenKey = keys.add(key);
       if (!unseenKey && removedKeys.remove(key)) {
-        readdedKeys.add(key);
+        reAddedKeys.add(key);
       } else {
         checkArgument(unseenKey, "Duplicate key: " + key);
       }
@@ -790,7 +803,7 @@ final class CommitLogicImpl implements CommitLogic {
         conflicts.add(conflict);
         // Do not the conflicting action to the commit, report the conflict
         return true;
-      case IGNORE:
+      case ADD:
         // Add the conflicting action to the resulting commit, not reporting as a conflict
         return false;
       case DROP:

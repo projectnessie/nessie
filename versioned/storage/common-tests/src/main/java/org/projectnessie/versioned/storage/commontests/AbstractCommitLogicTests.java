@@ -24,15 +24,21 @@ import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.assertj.core.api.InstanceOfAssertFactories.list;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.key;
+import static org.projectnessie.versioned.storage.common.logic.CommitConflict.ConflictType.VALUE_DIFFERS;
 import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
+import static org.projectnessie.versioned.storage.common.logic.CommitLogic.ValueReplacement.NO_VALUE_REPLACEMENT;
+import static org.projectnessie.versioned.storage.common.logic.ConflictHandler.ConflictResolution.CONFLICT;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Add.commitAdd;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Remove.commitRemove;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.newCommitBuilder;
 import static org.projectnessie.versioned.storage.common.logic.DiffEntry.diffEntry;
 import static org.projectnessie.versioned.storage.common.logic.DiffQuery.diffQuery;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
 import static org.projectnessie.versioned.storage.common.logic.PagingToken.emptyPagingToken;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.EMPTY_COMMIT_HEADERS;
@@ -45,6 +51,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -60,16 +67,21 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
+import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
+import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
+import org.projectnessie.versioned.storage.common.logic.CommitConflict;
 import org.projectnessie.versioned.storage.common.logic.CommitLogic;
 import org.projectnessie.versioned.storage.common.logic.CreateCommit;
 import org.projectnessie.versioned.storage.common.logic.DiffEntry;
 import org.projectnessie.versioned.storage.common.logic.HeadsAndForkPoints;
+import org.projectnessie.versioned.storage.common.logic.IndexesLogic;
 import org.projectnessie.versioned.storage.common.logic.PagedResult;
 import org.projectnessie.versioned.storage.common.logic.PagingToken;
 import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
+import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.TagObj;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
@@ -604,6 +616,111 @@ public class AbstractCommitLogicTests {
     Reference refNotFound = refLogic.createReference("not-found", randomObjId());
     soft.assertThatThrownBy(() -> commitLogic.headCommit(refNotFound))
         .isInstanceOf(ObjNotFoundException.class);
+  }
+
+  @Test
+  void commitWithModifiedExpectedValue() throws Exception {
+    CommitLogic commitLogic = commitLogic(persist);
+    IndexesLogic indexesLogic = indexesLogic(persist);
+
+    StoreKey key = key("a");
+    ObjId correctValue = randomObjId();
+    ObjId updateValue = randomObjId();
+    ObjId otherExpectedValue = randomObjId();
+
+    ObjId tip =
+        requireNonNull(
+            commitLogic.doCommit(
+                newCommitBuilder()
+                    .headers(EMPTY_COMMIT_HEADERS)
+                    .message("msg foo")
+                    .parentCommitId(EMPTY_OBJ_ID)
+                    .addAdds(commitAdd(key, 0, correctValue, null, null))
+                    .build(),
+                emptyList()));
+
+    // Put the correct expected value into the Commit-ADD operation, but "break" it in the callback
+    // by adding a wrong expected value-ID.
+    soft.assertThatThrownBy(
+            () ->
+                commitLogic.buildCommitObj(
+                    stdCommit()
+                        .parentCommitId(tip)
+                        .addAdds(commitAdd(key, 0, updateValue, correctValue, null))
+                        .build(),
+                    c -> CONFLICT,
+                    (k, v) -> {},
+                    (action, storeKey, currentId) -> otherExpectedValue,
+                    NO_VALUE_REPLACEMENT))
+        .isInstanceOf(CommitConflictException.class)
+        .hasMessage("Commit conflict: VALUE_DIFFERS:a")
+        .asInstanceOf(type(CommitConflictException.class))
+        .extracting(CommitConflictException::conflicts, list(CommitConflict.class))
+        .hasSize(1)
+        .first()
+        .extracting(
+            CommitConflict::conflictType,
+            CommitConflict::key,
+            c -> requireNonNull(c.existing()).value(),
+            c -> requireNonNull(c.op()).value())
+        .containsExactly(VALUE_DIFFERS, key, correctValue, updateValue);
+
+    // Put a wrong expected value into the Commit-ADD operation, but "fix" it in the callback.
+    CommitObj commit =
+        commitLogic.buildCommitObj(
+            stdCommit()
+                .parentCommitId(tip)
+                .addAdds(commitAdd(key, 0, updateValue, otherExpectedValue, null))
+                .build(),
+            c -> CONFLICT,
+            (k, v) -> {},
+            (action, storeKey, currentId) -> correctValue,
+            NO_VALUE_REPLACEMENT);
+
+    soft.assertThat(indexesLogic.buildCompleteIndex(commit, Optional.empty()).get(key))
+        .isNotNull()
+        .extracting(StoreIndexElement::content)
+        .extracting(CommitOp::value)
+        .isEqualTo(updateValue);
+  }
+
+  @Test
+  void commitWithModifiedCommittedValue() throws Exception {
+    CommitLogic commitLogic = commitLogic(persist);
+    IndexesLogic indexesLogic = indexesLogic(persist);
+
+    StoreKey key = key("a");
+    ObjId initialValue = randomObjId();
+    ObjId unusedUpdateValue = randomObjId();
+    ObjId updateValue = randomObjId();
+
+    ObjId tip =
+        requireNonNull(
+            commitLogic.doCommit(
+                newCommitBuilder()
+                    .headers(EMPTY_COMMIT_HEADERS)
+                    .message("msg foo")
+                    .parentCommitId(EMPTY_OBJ_ID)
+                    .addAdds(commitAdd(key, 0, initialValue, null, null))
+                    .build(),
+                emptyList()));
+
+    CommitObj commit =
+        commitLogic.buildCommitObj(
+            stdCommit()
+                .parentCommitId(tip)
+                .addAdds(commitAdd(key, 0, unusedUpdateValue, initialValue, null))
+                .build(),
+            c -> CONFLICT,
+            (k, v) -> {},
+            NO_VALUE_REPLACEMENT,
+            (action, storeKey, commitId) -> updateValue);
+
+    soft.assertThat(indexesLogic.buildCompleteIndex(commit, Optional.empty()).get(key))
+        .isNotNull()
+        .extracting(StoreIndexElement::content)
+        .extracting(CommitOp::value)
+        .isEqualTo(updateValue);
   }
 
   static Stream<Arguments> commitsAndBranches() {

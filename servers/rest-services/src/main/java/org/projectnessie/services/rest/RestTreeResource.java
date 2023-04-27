@@ -31,6 +31,7 @@ import org.projectnessie.api.v1.params.Transplant;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.ImmutableEntriesResponse;
 import org.projectnessie.model.ImmutableLogResponse;
@@ -219,7 +220,7 @@ public class RestTreeResource implements HttpTreeApi {
         .transplantCommitsIntoBranch(
             branchName,
             expectedHash,
-            message,
+            message != null ? CommitMeta.fromMessage(message) : null,
             transplant.getHashesToTransplant(),
             transplant.getFromRefName(),
             transplant.keepIndividualCommits(),

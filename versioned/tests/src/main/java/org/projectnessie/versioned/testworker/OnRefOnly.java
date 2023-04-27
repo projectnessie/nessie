@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.testworker;
 
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import org.immutables.value.Value;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.types.ContentTypes;
@@ -22,6 +23,7 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 
 /** Content with on-reference state only. */
 @Value.Immutable
+@JsonTypeName("ON_REF_ONLY")
 public abstract class OnRefOnly extends Content {
 
   public static final Content.Type ON_REF_ONLY = ContentTypes.forName("ON_REF_ONLY");

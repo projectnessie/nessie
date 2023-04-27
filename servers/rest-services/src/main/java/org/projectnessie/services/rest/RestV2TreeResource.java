@@ -35,6 +35,7 @@ import org.projectnessie.api.v2.params.ReferencesParams;
 import org.projectnessie.api.v2.params.Transplant;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
@@ -43,6 +44,7 @@ import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.GetMultipleContentsRequest;
 import org.projectnessie.model.GetMultipleContentsResponse;
+import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableDiffResponse;
 import org.projectnessie.model.ImmutableEntriesResponse;
 import org.projectnessie.model.ImmutableGetMultipleContentsRequest;
@@ -320,11 +322,15 @@ public class RestV2TreeResource implements HttpTreeApi {
   public MergeResponse transplantCommitsIntoBranch(String branch, Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
     ParsedReference ref = resolveRef(branch);
+
+    String msg = transplant.getMessage();
+    CommitMeta meta = CommitMeta.fromMessage(msg == null ? "" : msg);
+
     return tree()
         .transplantCommitsIntoBranch(
             ref.name(),
             ref.hash(),
-            transplant.getMessage(),
+            meta,
             transplant.getHashesToTransplant(),
             transplant.getFromRefName(),
             true,
@@ -340,6 +346,21 @@ public class RestV2TreeResource implements HttpTreeApi {
   public MergeResponse mergeRefIntoBranch(String branch, Merge merge)
       throws NessieNotFoundException, NessieConflictException {
     ParsedReference ref = resolveRef(branch);
+
+    @SuppressWarnings("deprecation")
+    String msg = merge.getMessage();
+
+    ImmutableCommitMeta.Builder meta = CommitMeta.builder();
+    CommitMeta commitMeta = merge.getCommitMeta();
+    if (commitMeta != null) {
+      meta.from(commitMeta);
+      if (commitMeta.getMessage().isEmpty() && msg != null) {
+        meta.message(msg);
+      }
+    } else {
+      meta.message(msg == null ? "" : msg);
+    }
+
     return tree()
         .mergeRefIntoBranch(
             ref.name(),
@@ -347,7 +368,7 @@ public class RestV2TreeResource implements HttpTreeApi {
             merge.getFromRefName(),
             merge.getFromHash(),
             false,
-            merge.getMessage(),
+            meta.build(),
             merge.getKeyMergeModes(),
             merge.getDefaultKeyMergeMode(),
             merge.isDryRun(),

@@ -17,10 +17,14 @@ package org.projectnessie.versioned.tests;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
+import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
@@ -33,23 +37,29 @@ import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Conflict;
+import org.projectnessie.model.Conflict.ConflictType;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
+import org.projectnessie.model.ReferenceConflicts;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.MergeConflictException;
 import org.projectnessie.versioned.MergeResult;
+import org.projectnessie.versioned.MergeResult.KeyDetails;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
@@ -58,6 +68,8 @@ import org.projectnessie.versioned.testworker.OnRefOnly;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public abstract class AbstractMerge extends AbstractNestedVersionStore {
+
+  public static final BranchName MAIN_BRANCH = BranchName.of("foo");
   @InjectSoftAssertions protected SoftAssertions soft;
 
   private static final OnRefOnly V_1_1 = newOnRef("v1_1");
@@ -86,8 +98,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
   @BeforeEach
   protected void setupCommits() throws VersionStoreException {
-    final BranchName branch = BranchName.of("foo");
-    store().create(branch, Optional.empty());
+    store().create(MAIN_BRANCH, Optional.empty());
 
     // The default common ancestor for all merge-tests.
     // The spec for 'VersionStore.merge' mentions "(...) until we arrive at a common ancestor",
@@ -95,23 +106,27 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     // common ancestor and did merge "everything" from the "merge-from" into "merge-to".
     // Note: "beginning-of-time" (aka creating a branch without specifying a "create-from")
     // creates a new commit-tree that is decoupled from other commit-trees.
-    initialHash = commit("Default common ancestor").toBranch(branch);
+    initialHash = commit("Default common ancestor").toBranch(MAIN_BRANCH);
 
     firstCommit =
-        commit("First Commit").put("t1", V_1_1).put("t2", V_2_1).put("t3", V_3_1).toBranch(branch);
+        commit("First Commit")
+            .put("t1", V_1_1)
+            .put("t2", V_2_1)
+            .put("t3", V_3_1)
+            .toBranch(MAIN_BRANCH);
 
-    Content t1 = store().getValue(branch, ContentKey.of("t1"));
+    Content t1 = store().getValue(MAIN_BRANCH, ContentKey.of("t1"));
 
     commit("Second Commit")
         .put("t1", V_1_2.withId(t1))
         .delete("t2")
         .delete("t3")
         .put("t4", V_4_1)
-        .toBranch(branch);
+        .toBranch(MAIN_BRANCH);
 
-    thirdCommit = commit("Third Commit").put("t2", V_2_2).unchanged("t4").toBranch(branch);
+    thirdCommit = commit("Third Commit").put("t2", V_2_2).unchanged("t4").toBranch(MAIN_BRANCH);
 
-    commits = commitsList(branch, false).subList(0, 3);
+    commits = commitsList(MAIN_BRANCH, false).subList(0, 3);
   }
 
   private MetadataRewriter<CommitMeta> createMetadataRewriter(String suffix) {
@@ -129,6 +144,260 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 .collect(Collectors.joining("\n-----------------------------------\n")));
       }
     };
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  protected void mergeKeyBehaviorValidation(boolean dryRun) throws Exception {
+    assumeThat(store().getClass().getName()).endsWith("VersionStoreImpl");
+
+    MetadataRewriter<CommitMeta> metadataRewriter = createMetadataRewriter("");
+    BranchName targetBranch = BranchName.of("mergeKeyBehaviorValidation");
+    store().create(targetBranch, Optional.of(firstCommit));
+
+    ContentKey keyNotUsed = ContentKey.of("not", "used");
+    ContentKey keyUnused = ContentKey.of("un", "used");
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(
+            () ->
+                store()
+                    .merge(
+                        thirdCommit,
+                        targetBranch,
+                        Optional.empty(),
+                        metadataRewriter,
+                        false,
+                        ImmutableMap.of(
+                            keyNotUsed, MergeKeyBehavior.of(keyNotUsed, MergeBehavior.DROP),
+                            keyUnused, MergeKeyBehavior.of(keyUnused, MergeBehavior.DROP)),
+                        MergeBehavior.NORMAL,
+                        dryRun,
+                        false))
+        .withMessage(
+            "Not all merge key behaviors specified in the request have been used. The following keys were not used: [not.used, un.used]");
+
+    ContentKey keyT3 = ContentKey.of("t3");
+    for (MergeBehavior mergeBehavior :
+        new MergeBehavior[] {MergeBehavior.DROP, MergeBehavior.FORCE}) {
+      soft.assertThatIllegalArgumentException()
+          .isThrownBy(
+              () ->
+                  store()
+                      .merge(
+                          thirdCommit,
+                          targetBranch,
+                          Optional.empty(),
+                          metadataRewriter,
+                          false,
+                          ImmutableMap.of(
+                              keyT3, MergeKeyBehavior.of(keyT3, mergeBehavior, V_3_1, V_1_1)),
+                          MergeBehavior.NORMAL,
+                          dryRun,
+                          false))
+          .withMessage(
+              "MergeKeyBehavior.resolvedContent must be null for MergeBehavior.%s for t3",
+              mergeBehavior);
+    }
+
+    Content c11 = store().getValue(firstCommit, ContentKey.of("t1"));
+
+    for (MergeBehavior mergeBehavior : MergeBehavior.values()) {
+      soft.assertThatThrownBy(
+              () ->
+                  store()
+                      .merge(
+                          thirdCommit,
+                          targetBranch,
+                          Optional.empty(),
+                          metadataRewriter,
+                          false,
+                          ImmutableMap.of(
+                              keyT3, MergeKeyBehavior.of(keyT3, mergeBehavior, c11, null)),
+                          MergeBehavior.NORMAL,
+                          dryRun,
+                          false))
+          .describedAs("MergeBehavior.%s", mergeBehavior)
+          .hasMessage("The following keys have been changed in conflict: 't3'")
+          .asInstanceOf(type(MergeConflictException.class))
+          .extracting(MergeConflictException::getMergeResult)
+          .extracting(
+              MergeResult::wasApplied, MergeResult::wasSuccessful, r -> r.getDetails().get(keyT3))
+          .containsExactly(
+              false,
+              false,
+              KeyDetails.keyDetails(
+                  mergeBehavior,
+                  MergeResult.ConflictType.UNRESOLVABLE,
+                  Conflict.conflict(
+                      ConflictType.VALUE_DIFFERS,
+                      keyT3,
+                      "values of existing and expected content for key 't3' are different")));
+      soft.assertAll();
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  protected void mergeResolveConflict(boolean individualCommits) throws VersionStoreException {
+    MetadataRewriter<CommitMeta> metadataRewriter = createMetadataRewriter("");
+    BranchName sourceBranch = BranchName.of("mergeResolveConflict");
+    store().create(sourceBranch, Optional.of(thirdCommit));
+
+    ContentKey key2 = ContentKey.of("t2");
+    Content contentT2 = store().getValue(MAIN_BRANCH, key2);
+
+    Hash targetHead =
+        commit("on-target-commit")
+            .put("t2", onRef("v2_2-target", contentT2.getId()))
+            .toBranch(MAIN_BRANCH);
+    Hash sourceHead =
+        commit("on-source-commit")
+            .put("t2", onRef("v2_2-source", contentT2.getId()))
+            .toBranch(sourceBranch);
+    contentT2 = store().getValue(MAIN_BRANCH, key2);
+
+    soft.assertThatThrownBy(
+            () ->
+                store()
+                    .merge(
+                        sourceHead,
+                        MAIN_BRANCH,
+                        Optional.empty(),
+                        metadataRewriter,
+                        individualCommits,
+                        emptyMap(),
+                        MergeBehavior.NORMAL,
+                        false,
+                        false))
+        .isInstanceOf(MergeConflictException.class);
+
+    Content resolvedContent = onRef("resolved", contentT2.getId());
+    Content wrongExpectedContent = onRef("wrong", contentT2.getId());
+
+    if (!store().getClass().getName().endsWith("VersionStoreImpl")) {
+      soft.assertThatIllegalArgumentException()
+          .isThrownBy(
+              () ->
+                  store()
+                      .merge(
+                          sourceHead,
+                          MAIN_BRANCH,
+                          Optional.empty(),
+                          metadataRewriter,
+                          individualCommits,
+                          singletonMap(
+                              key2,
+                              MergeKeyBehavior.of(
+                                  key2,
+                                  MergeBehavior.NORMAL,
+                                  wrongExpectedContent,
+                                  resolvedContent)),
+                          MergeBehavior.NORMAL,
+                          false,
+                          false))
+          .withMessage(
+              "MergeKeyBehavior.resolvedContent and MergeKeyBehavior.expectedTargetContent are not supported for this storage model");
+      return;
+    }
+
+    if (individualCommits) {
+      soft.assertThatIllegalArgumentException()
+          .isThrownBy(
+              () ->
+                  store()
+                      .merge(
+                          sourceHead,
+                          MAIN_BRANCH,
+                          Optional.empty(),
+                          metadataRewriter,
+                          individualCommits,
+                          singletonMap(
+                              key2,
+                              MergeKeyBehavior.of(
+                                  key2,
+                                  MergeBehavior.NORMAL,
+                                  wrongExpectedContent,
+                                  resolvedContent)),
+                          MergeBehavior.NORMAL,
+                          false,
+                          false))
+          .withMessage(
+              "MergeKeyBehavior.expectedTargetContent and MergeKeyBehavior.resolvedContent are only supported for squashing merge/transplant operations.");
+      return;
+    }
+
+    soft.assertThatThrownBy(
+            () ->
+                store()
+                    .merge(
+                        sourceHead,
+                        MAIN_BRANCH,
+                        Optional.empty(),
+                        metadataRewriter,
+                        individualCommits,
+                        singletonMap(
+                            key2,
+                            MergeKeyBehavior.of(
+                                key2, MergeBehavior.NORMAL, wrongExpectedContent, resolvedContent)),
+                        MergeBehavior.NORMAL,
+                        false,
+                        false))
+        .isInstanceOf(ReferenceConflictException.class)
+        .asInstanceOf(type(ReferenceConflictException.class))
+        .extracting(ReferenceConflictException::getReferenceConflicts)
+        .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
+        .containsExactly(
+            Conflict.conflict(
+                ConflictType.VALUE_DIFFERS,
+                key2,
+                "values of existing and expected content for key 't2' are different"));
+
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(
+            () ->
+                store()
+                    .merge(
+                        sourceHead,
+                        MAIN_BRANCH,
+                        Optional.empty(),
+                        metadataRewriter,
+                        individualCommits,
+                        singletonMap(
+                            key2,
+                            MergeKeyBehavior.of(key2, MergeBehavior.NORMAL, null, resolvedContent)),
+                        MergeBehavior.NORMAL,
+                        false,
+                        false))
+        .withMessage(
+            "MergeKeyBehavior.resolvedContent requires setting MergeKeyBehavior.expectedTarget as well for key t2");
+
+    MergeResult<Commit> result =
+        store()
+            .merge(
+                sourceHead,
+                MAIN_BRANCH,
+                Optional.empty(),
+                metadataRewriter,
+                individualCommits,
+                singletonMap(
+                    key2,
+                    MergeKeyBehavior.of(key2, MergeBehavior.NORMAL, contentT2, resolvedContent)),
+                MergeBehavior.NORMAL,
+                false,
+                false);
+    ReferenceInfo<CommitMeta> branch =
+        store().getNamedRef(MAIN_BRANCH.getName(), GetNamedRefsParams.DEFAULT);
+    soft.assertThat(result)
+        .extracting(
+            MergeResult::wasApplied,
+            MergeResult::wasSuccessful,
+            MergeResult::getResultantTargetHash,
+            MergeResult::getCommonAncestor,
+            MergeResult::getEffectiveTargetHash)
+        .containsExactly(true, true, branch.getHash(), thirdCommit, targetHead);
+
+    Content mergedContent = store().getValue(MAIN_BRANCH, key2);
+    soft.assertThat(mergedContent).isEqualTo(resolvedContent);
   }
 
   @ParameterizedTest
@@ -198,13 +467,15 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 ContentKey.of("t4"), V_4_1));
   }
 
-  @SuppressWarnings({"deprecation", "DataFlowIssue"})
+  @SuppressWarnings("deprecation")
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void compareDryAndEffectiveMergeResults(boolean individualCommits) throws VersionStoreException {
     final BranchName newBranch = BranchName.of("compareDryAndEffectiveMergeResults");
     store().create(newBranch, Optional.of(initialHash));
     MetadataRewriter<CommitMeta> metadataRewriter = createMetadataRewriter("");
+
+    Hash origHead = store().getNamedRef(newBranch.getName(), GetNamedRefsParams.DEFAULT).getHash();
 
     MergeResult<Commit> dryMergeResult =
         store()
@@ -229,6 +500,10 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             MergeResult::getExpectedHash)
         .containsExactly(false, true, initialHash, newBranch, initialHash, initialHash);
 
+    // Dry merges should not advance HEAD
+    soft.assertThat(store().getNamedRef(newBranch.getName(), GetNamedRefsParams.DEFAULT).getHash())
+        .isEqualTo(origHead);
+
     MergeResult<Commit> mergeResult =
         store()
             .merge(
@@ -243,6 +518,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 true);
 
     Hash head = store().getNamedRef(newBranch.getName(), GetNamedRefsParams.DEFAULT).getHash();
+    soft.assertThat(head).isNotEqualTo(origHead);
 
     soft.assertThat(mergeResult.getSourceCommits())
         .satisfiesAnyOf(
@@ -593,8 +869,14 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
   }
 
   @ParameterizedTest
-  @ValueSource(booleans = {false, true})
-  protected void mergeWithConflictingKeys(boolean individualCommits) throws VersionStoreException {
+  @CsvSource({
+    "false,false",
+    "false,true",
+    "true,false",
+    "true,true",
+  })
+  protected void mergeWithConflictingKeys(boolean individualCommits, boolean dryRun)
+      throws VersionStoreException {
     final BranchName mergeInto = BranchName.of("foofoo");
     final BranchName mergeFrom = BranchName.of("barbar");
     store().create(mergeInto, Optional.of(this.initialHash));
@@ -646,7 +928,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         individualCommits,
                         Collections.emptyMap(),
                         MergeBehavior.NORMAL,
-                        false,
+                        dryRun,
                         false))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessageContaining("The following keys have been changed in conflict:")
@@ -667,7 +949,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                             conflictingKey2,
                             MergeKeyBehavior.of(conflictingKey2, MergeBehavior.DROP)),
                         MergeBehavior.NORMAL,
-                        false,
+                        dryRun,
                         false))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessageContaining("The following keys have been changed in conflict:")
@@ -688,7 +970,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                             conflictingKey1,
                             MergeKeyBehavior.of(conflictingKey1, MergeBehavior.NORMAL)),
                         MergeBehavior.DROP,
-                        false,
+                        dryRun,
                         false))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessageContaining("The following keys have been changed in conflict:")
@@ -709,7 +991,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                             conflictingKey1,
                             MergeKeyBehavior.of(conflictingKey1, MergeBehavior.FORCE)),
                         MergeBehavior.NORMAL,
-                        false,
+                        dryRun,
                         false))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessageContaining("The following keys have been changed in conflict:")
@@ -780,8 +1062,13 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
   }
 
   @ParameterizedTest
-  @ValueSource(booleans = {false, true})
-  protected void mergeIntoConflictingBranch(boolean individualCommits)
+  @CsvSource({
+    "false,false",
+    "false,true",
+    "true,false",
+    "true,true",
+  })
+  protected void mergeIntoConflictingBranch(boolean individualCommits, boolean dryRun)
       throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_3");
     store().create(newBranch, Optional.of(initialHash));
@@ -798,14 +1085,19 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         individualCommits,
                         Collections.emptyMap(),
                         MergeBehavior.NORMAL,
-                        false,
+                        dryRun,
                         false))
         .isInstanceOf(ReferenceConflictException.class);
   }
 
   @ParameterizedTest
-  @ValueSource(booleans = {false, true})
-  protected void mergeIntoNonExistingBranch(boolean individualCommits) {
+  @CsvSource({
+    "false,false",
+    "false,true",
+    "true,false",
+    "true,true",
+  })
+  protected void mergeIntoNonExistingBranch(boolean individualCommits, boolean dryRun) {
     final BranchName newBranch = BranchName.of("bar_5");
     soft.assertThatThrownBy(
             () ->
@@ -818,14 +1110,19 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         individualCommits,
                         Collections.emptyMap(),
                         MergeBehavior.NORMAL,
-                        false,
+                        dryRun,
                         false))
         .isInstanceOf(ReferenceNotFoundException.class);
   }
 
   @ParameterizedTest
-  @ValueSource(booleans = {false, true})
-  protected void mergeIntoNonExistingReference(boolean individualCommits)
+  @CsvSource({
+    "false,false",
+    "false,true",
+    "true,false",
+    "true,true",
+  })
+  protected void mergeIntoNonExistingReference(boolean individualCommits, boolean dryRun)
       throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_6");
     store().create(newBranch, Optional.of(initialHash));
@@ -840,14 +1137,20 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         individualCommits,
                         Collections.emptyMap(),
                         MergeBehavior.NORMAL,
-                        false,
+                        dryRun,
                         false))
         .isInstanceOf(ReferenceNotFoundException.class);
   }
 
   @ParameterizedTest
-  @ValueSource(booleans = {false, true})
-  protected void mergeEmptyCommit(boolean individualCommits) throws VersionStoreException {
+  @CsvSource({
+    "false,false",
+    "false,true",
+    "true,false",
+    "true,true",
+  })
+  protected void mergeEmptyCommit(boolean individualCommits, boolean dryRun)
+      throws VersionStoreException {
     BranchName source = BranchName.of("source");
     BranchName target = BranchName.of("target");
     store().create(source, Optional.of(this.initialHash));
@@ -907,7 +1210,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 key2,
                 MergeKeyBehavior.of(key2, MergeBehavior.DROP)),
             MergeBehavior.NORMAL,
-            false,
+            dryRun,
             false);
 
     // No new commit should have been created in the target branch
@@ -917,8 +1220,9 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     }
   }
 
-  @Test
-  public void mergeFromAndIntoHead() throws Exception {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  public void mergeFromAndIntoHead(boolean dryRun) throws Exception {
     BranchName branch = BranchName.of("source");
     store().create(branch, Optional.of(this.initialHash));
 
@@ -953,7 +1257,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         false,
                         emptyMap(),
                         MergeBehavior.NORMAL,
-                        false,
+                        dryRun,
                         false));
 
     soft.assertThatIllegalArgumentException()
@@ -968,7 +1272,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         false,
                         emptyMap(),
                         MergeBehavior.NORMAL,
-                        false,
+                        dryRun,
                         false));
   }
 }
