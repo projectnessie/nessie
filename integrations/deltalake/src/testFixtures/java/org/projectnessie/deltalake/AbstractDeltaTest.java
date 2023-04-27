@@ -100,22 +100,27 @@ public class AbstractDeltaTest {
 
   @AfterEach
   void removeBranches() throws NessieConflictException, NessieNotFoundException {
-    Branch defaultBranch = api.getDefaultBranch();
-    api.getAllReferences().stream()
-        .forEach(
-            ref -> {
-              try {
-                if (ref instanceof Branch && !ref.getName().equals(defaultBranch.getName())) {
-                  api.deleteBranch().branch((Branch) ref).delete();
-                } else if (ref instanceof Tag) {
-                  api.deleteTag().tag((Tag) ref).delete();
-                }
-              } catch (NessieConflictException | NessieNotFoundException e) {
-                throw new RuntimeException(e);
-              }
-            });
-    api.close();
-    api = null;
+    if (api != null) {
+      try {
+        Branch defaultBranch = api.getDefaultBranch();
+        api.getAllReferences().stream()
+            .forEach(
+                ref -> {
+                  try {
+                    if (ref instanceof Branch && !ref.getName().equals(defaultBranch.getName())) {
+                      api.deleteBranch().branch((Branch) ref).delete();
+                    } else if (ref instanceof Tag) {
+                      api.deleteTag().tag((Tag) ref).delete();
+                    }
+                  } catch (NessieConflictException | NessieNotFoundException e) {
+                    throw new RuntimeException(e);
+                  }
+                });
+      } finally {
+        api.close();
+        api = null;
+      }
+    }
   }
 
   @AfterAll
