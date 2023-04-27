@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.collect.ImmutableMap;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -50,6 +51,11 @@ class TestJsonSerde {
             .createdAt(Instant.now())
             .createdBy("Alice")
             .sentBy("Nessie")
+            .putProperty("string", "foo")
+            .putProperty("number", 123)
+            .putProperty("boolean", true)
+            .putProperty(
+                "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
             .commitMeta(
                 ImmutableCommitMeta.builder()
                     .commitTime(Instant.now())
@@ -75,6 +81,11 @@ class TestJsonSerde {
             .createdBy("Alice")
             .sentBy("Nessie")
             .commonAncestorHash("hash0")
+            .putProperty("string", "foo")
+            .putProperty("number", 123)
+            .putProperty("boolean", true)
+            .putProperty(
+                "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
             .build();
     assertThat(deserialize(serialize(event), Event.class)).isEqualTo(event);
   }
@@ -92,6 +103,11 @@ class TestJsonSerde {
             .createdAt(Instant.now())
             .createdBy("Alice")
             .sentBy("Nessie")
+            .putProperty("string", "foo")
+            .putProperty("number", 123)
+            .putProperty("boolean", true)
+            .putProperty(
+                "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
             .build();
     assertThat(deserialize(serialize(event), Event.class)).isEqualTo(event);
   }
@@ -109,6 +125,11 @@ class TestJsonSerde {
             .createdBy("Alice")
             .sentBy("Nessie")
             .hashAfter("hash2")
+            .putProperty("string", "foo")
+            .putProperty("number", 123)
+            .putProperty("boolean", true)
+            .putProperty(
+                "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
             .build();
     assertThat(deserialize(serialize(event), Event.class)).isEqualTo(event);
   }
@@ -127,6 +148,11 @@ class TestJsonSerde {
             .sentBy("Nessie")
             .hashBefore("hash1")
             .hashAfter("hash2")
+            .putProperty("string", "foo")
+            .putProperty("number", 123)
+            .putProperty("boolean", true)
+            .putProperty(
+                "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
             .build();
     assertThat(deserialize(serialize(event), Event.class)).isEqualTo(event);
   }
@@ -144,6 +170,11 @@ class TestJsonSerde {
             .createdBy("Alice")
             .sentBy("Nessie")
             .hashBefore("hash1")
+            .putProperty("string", "foo")
+            .putProperty("number", 123)
+            .putProperty("boolean", true)
+            .putProperty(
+                "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
             .build();
     assertThat(deserialize(serialize(event), Event.class)).isEqualTo(event);
   }
@@ -160,6 +191,11 @@ class TestJsonSerde {
             .createdAt(Instant.now())
             .createdBy("Alice")
             .sentBy("Nessie")
+            .putProperty("string", "foo")
+            .putProperty("number", 123)
+            .putProperty("boolean", true)
+            .putProperty(
+                "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
             .content(
                 ImmutableIcebergTable.builder()
                     .metadataLocation("metadataLocation")
@@ -185,6 +221,11 @@ class TestJsonSerde {
             .createdAt(Instant.now())
             .createdBy("Alice")
             .sentBy("Nessie")
+            .putProperty("string", "foo")
+            .putProperty("number", 123)
+            .putProperty("boolean", true)
+            .putProperty(
+                "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
             .build();
     assertThat(deserialize(serialize(event), Event.class)).isEqualTo(event);
   }
@@ -201,6 +242,9 @@ class TestJsonSerde {
             .sortOrderId(4)
             .putProperty("string", "foo")
             .putProperty("number", 123)
+            .putProperty("boolean", true)
+            .putProperty(
+                "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
             .build();
     assertThat(deserialize(serialize(content), Content.class)).isEqualTo(content);
   }
@@ -215,6 +259,9 @@ class TestJsonSerde {
             .lastCheckpoint("lastCheckpoint")
             .putProperty("string", "foo")
             .putProperty("number", 123)
+            .putProperty("boolean", true)
+            .putProperty(
+                "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
             .build();
     assertThat(deserialize(serialize(content), Content.class)).isEqualTo(content);
   }
@@ -231,6 +278,9 @@ class TestJsonSerde {
             .dialect("dialect")
             .putProperty("string", "foo")
             .putProperty("number", 123)
+            .putProperty("boolean", true)
+            .putProperty(
+                "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
             .build();
     assertThat(deserialize(serialize(content), Content.class)).isEqualTo(content);
   }
@@ -244,6 +294,9 @@ class TestJsonSerde {
             .addElement("level2")
             .putProperty("string", "foo")
             .putProperty("number", 123)
+            .putProperty("boolean", true)
+            .putProperty(
+                "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
             .build();
     assertThat(deserialize(serialize(content), Content.class)).isEqualTo(content);
   }
@@ -260,6 +313,8 @@ class TestJsonSerde {
             .putProperty("string", "foo")
             .putProperty("number", 123)
             .putProperty("boolean", true)
+            .putProperty(
+                "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
             .build();
     assertThat(deserialize(serialize(event), Event.class)).isEqualTo(event);
   }
@@ -272,6 +327,9 @@ class TestJsonSerde {
             .customType("customType")
             .putProperty("string", "foo")
             .putProperty("number", 123)
+            .putProperty("boolean", true)
+            .putProperty(
+                "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
             .build();
     assertThat(deserialize(serialize(content), Content.class)).isEqualTo(content);
   }
@@ -288,6 +346,8 @@ class TestJsonSerde {
             .putProperty("string", "foo")
             .putProperty("number", 123)
             .putProperty("boolean", true)
+            .putProperty(
+                "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
             .build();
     assertThat(serialize(event))
         .isEqualTo(
@@ -299,7 +359,12 @@ class TestJsonSerde {
                 + "\"sentBy\":\"Nessie\","
                 + "\"string\":\"foo\","
                 + "\"number\":123,"
+                + "\"boolean\":true,"
+                + "\"complex\":{"
+                + "\"string\":\"foo\","
+                + "\"number\":123,"
                 + "\"boolean\":true"
+                + "}"
                 + "}");
   }
 
@@ -315,6 +380,8 @@ class TestJsonSerde {
             .putProperty("string", "foo")
             .putProperty("number", 123)
             .putProperty("boolean", true)
+            .putProperty(
+                "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
             .build();
     assertThat(
             deserialize(
@@ -326,7 +393,12 @@ class TestJsonSerde {
                     + "\"sentBy\":\"Nessie\","
                     + "\"string\":\"foo\","
                     + "\"number\":123,"
+                    + "\"boolean\":true,"
+                    + "\"complex\":{"
+                    + "\"string\":\"foo\","
+                    + "\"number\":123,"
                     + "\"boolean\":true"
+                    + "}"
                     + "}",
                 Event.class))
         .isEqualTo(event);
@@ -341,6 +413,8 @@ class TestJsonSerde {
             .putProperty("string", "foo")
             .putProperty("number", 123)
             .putProperty("boolean", true)
+            .putProperty(
+                "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
             .build();
     assertThat(serialize(content))
         .isEqualTo(
@@ -349,7 +423,12 @@ class TestJsonSerde {
                 + "\"type\":\"weird\","
                 + "\"string\":\"foo\","
                 + "\"number\":123,"
+                + "\"boolean\":true,"
+                + "\"complex\":{"
+                + "\"string\":\"foo\","
+                + "\"number\":123,"
                 + "\"boolean\":true"
+                + "}"
                 + "}");
   }
 
@@ -362,6 +441,8 @@ class TestJsonSerde {
             .putProperty("string", "foo")
             .putProperty("number", 123)
             .putProperty("boolean", true)
+            .putProperty(
+                "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
             .build();
     assertThat(
             deserialize(
@@ -370,7 +451,12 @@ class TestJsonSerde {
                     + "\"type\":\"weird\","
                     + "\"string\":\"foo\","
                     + "\"number\":123,"
+                    + "\"boolean\":true,"
+                    + "\"complex\":{"
+                    + "\"string\":\"foo\","
+                    + "\"number\":123,"
                     + "\"boolean\":true"
+                    + "}"
                     + "}",
                 Content.class))
         .isEqualTo(content);

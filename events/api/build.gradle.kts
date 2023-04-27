@@ -45,4 +45,5 @@ dependencies {
   testImplementation(libs.junit.jupiter.engine)
   testImplementation(libs.jackson.datatype.jdk8)
   testImplementation(libs.jackson.datatype.jsr310)
+  testImplementation(libs.guava)
 }
