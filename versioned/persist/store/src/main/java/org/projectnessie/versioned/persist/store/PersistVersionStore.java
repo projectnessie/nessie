@@ -514,7 +514,7 @@ public class PersistVersionStore implements VersionStore {
           .forEach(
               put ->
                   commitBuilder.addOperations(
-                      Put.of(
+                      Put.ofLazy(
                           put.getKey(),
                           put.getPayload(),
                           put.getValue(),

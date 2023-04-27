@@ -157,7 +157,7 @@ public final class ContentMapping {
           ContentKey key = keys.get(i);
           assert obj instanceof ContentValueObj;
           ContentValueObj contentValue = (ContentValueObj) obj;
-          commit.addOperations(Put.of(key, contentValue.payload(), contentValue.data()));
+          commit.addOperations(Put.ofLazy(key, contentValue.payload(), contentValue.data()));
         }
       }
     }

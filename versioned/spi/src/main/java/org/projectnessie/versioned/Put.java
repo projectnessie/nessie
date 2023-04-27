@@ -69,8 +69,8 @@ public abstract class Put implements Operation {
   /** Creates a lazily-evaluated put-operation for the given key, payload and ByteString value. */
   @Nonnull
   @jakarta.annotation.Nonnull
-  public static Put of(ContentKey key, int payload, ByteString value) {
-    return of(key, payload, value, () -> null);
+  public static Put ofLazy(ContentKey key, int payload, ByteString value) {
+    return ofLazy(key, payload, value, () -> null);
   }
 
   /**
@@ -80,7 +80,7 @@ public abstract class Put implements Operation {
   @SuppressWarnings("deprecation")
   @Nonnull
   @jakarta.annotation.Nonnull
-  public static Put of(
+  public static Put ofLazy(
       ContentKey key, int payload, ByteString value, Supplier<ByteString> globalStateSupplier) {
     return ImmutablePut.builder()
         .key(key)

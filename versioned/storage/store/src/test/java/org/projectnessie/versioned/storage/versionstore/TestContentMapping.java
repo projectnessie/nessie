@@ -228,7 +228,7 @@ public class TestContentMapping {
             .commitMeta(referenceCommitMeta)
             .addOperations(
                 Delete.of(ContentKey.of("bar")),
-                Put.of(ContentKey.of("foo"), tableObj.payload(), tableObj.data()))
+                Put.ofLazy(ContentKey.of("foo"), tableObj.payload(), tableObj.data()))
             .build();
 
     Commit c = contentMapping.commitObjToCommit(true, commitObj);
