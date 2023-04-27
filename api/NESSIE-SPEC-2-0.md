@@ -35,10 +35,11 @@ Refer to the [Nessie API documentation](./README.md) for the meaning of Nessie-s
 
 ## Related Server Configuration
 
-Note that setting the `nessie.version.store.advanced.validate-namespaces` configuration property to `false` will 
-make the server violate the Namespace existence validation rule (above). If the Nessie administration sets this
-property, a custom `NessieConfiguration.json` file must also be provided, which MUST NOT declare `2.0.0-beta.1` as
-the supported spec version.
+Note that setting the `nessie.version.store.advanced.validate-namespaces` or
+`nessie.version.store.persist.namespace-validation` configuration properties to `false` will 
+make the server violate the Namespace existence validation rule (above). Nessie Server administrators MUST NOT set those
+properties to `false` on pre-built servers published by Project Nessie. If the server is custom-built and namespace
+validation is disabled, `NessieConfiguration.getSpecVersion()` MUST NOT return `2.0.0-beta.1`.
 
 Similarly, if a Nessie repository is imported, the administrator is responsible for ensuring that the imported data
 has Namespace objects defined appropriately throughout the commit history (all HEADs) in order to claim support for
