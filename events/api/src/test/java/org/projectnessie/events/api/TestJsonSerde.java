@@ -236,6 +236,19 @@ class TestJsonSerde {
   }
 
   @Test
+  void namespace() throws Exception {
+    Namespace content =
+        ImmutableNamespace.builder()
+            .id("id")
+            .addElement("level1")
+            .addElement("level2")
+            .putProperty("string", "foo")
+            .putProperty("number", 123)
+            .build();
+    assertThat(deserialize(serialize(content), Content.class)).isEqualTo(content);
+  }
+
+  @Test
   void customEvent() throws Exception {
     CustomEvent event =
         ImmutableCustomEvent.builder()
