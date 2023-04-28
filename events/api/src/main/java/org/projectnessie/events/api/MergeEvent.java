@@ -15,7 +15,6 @@
  */
 package org.projectnessie.events.api;
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
@@ -25,7 +24,6 @@ import org.immutables.value.Value;
  * persisted.
  */
 @Value.Immutable
-@JsonTypeName("MERGE")
 @JsonSerialize(as = ImmutableMergeEvent.class)
 @JsonDeserialize(as = ImmutableMergeEvent.class)
 public interface MergeEvent extends CommittingEvent {

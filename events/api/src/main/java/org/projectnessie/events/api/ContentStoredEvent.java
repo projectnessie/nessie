@@ -15,7 +15,6 @@
  */
 package org.projectnessie.events.api;
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
@@ -25,7 +24,6 @@ import org.immutables.value.Value;
  * commit, merge or transplant. This event is emitted after the content has been stored.
  */
 @Value.Immutable
-@JsonTypeName("CONTENT_STORED")
 @JsonSerialize(as = ImmutableContentStoredEvent.class)
 @JsonDeserialize(as = ImmutableContentStoredEvent.class)
 public interface ContentStoredEvent extends ContentEvent {

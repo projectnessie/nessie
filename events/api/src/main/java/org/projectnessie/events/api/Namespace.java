@@ -16,7 +16,6 @@
 package org.projectnessie.events.api;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
@@ -25,7 +24,6 @@ import org.immutables.value.Value;
 
 /** A {@link Content} object that represents a namespace. */
 @Value.Immutable
-@JsonTypeName("NAMESPACE")
 @JsonSerialize(as = ImmutableNamespace.class)
 @JsonDeserialize(as = ImmutableNamespace.class)
 public interface Namespace extends Content {

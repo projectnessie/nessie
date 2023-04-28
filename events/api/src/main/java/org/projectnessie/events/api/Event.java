@@ -15,7 +15,6 @@
  */
 package org.projectnessie.events.api;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import java.time.Instant;
@@ -37,20 +36,10 @@ import org.projectnessie.events.api.json.EventTypeIdResolver;
  * @see ReferenceDeletedEvent
  * @see ContentStoredEvent
  * @see ContentRemovedEvent
+ * @see CustomEvent
  */
-@JsonSubTypes({
-  @JsonSubTypes.Type(name = "COMMIT", value = CommitEvent.class),
-  @JsonSubTypes.Type(name = "MERGE", value = MergeEvent.class),
-  @JsonSubTypes.Type(name = "TRANSPLANT", value = TransplantEvent.class),
-  @JsonSubTypes.Type(name = "REFERENCE_CREATED", value = ReferenceCreatedEvent.class),
-  @JsonSubTypes.Type(name = "REFERENCE_UPDATED", value = ReferenceUpdatedEvent.class),
-  @JsonSubTypes.Type(name = "REFERENCE_DELETED", value = ReferenceDeletedEvent.class),
-  @JsonSubTypes.Type(name = "CONTENT_STORED", value = ContentStoredEvent.class),
-  @JsonSubTypes.Type(name = "CONTENT_REMOVED", value = ContentRemovedEvent.class),
-  @JsonSubTypes.Type(name = "CUSTOM", value = CustomEvent.class),
-})
 @JsonTypeIdResolver(EventTypeIdResolver.class)
-@JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "type", visible = true)
+@JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, visible = true, property = "type")
 public interface Event {
 
   /** The type of the event. */

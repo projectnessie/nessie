@@ -15,7 +15,6 @@
  */
 package org.projectnessie.events.api;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import java.util.Collections;
@@ -24,19 +23,8 @@ import org.immutables.value.Value;
 import org.projectnessie.events.api.json.ContentTypeIdResolver;
 
 /** An object stored in Nessie, such as a table or a view. */
-@JsonSubTypes({
-  @JsonSubTypes.Type(name = "ICEBERG_TABLE", value = IcebergTable.class),
-  @JsonSubTypes.Type(name = "ICEBERG_VIEW", value = IcebergView.class),
-  @JsonSubTypes.Type(name = "NAMESPACE", value = Namespace.class),
-  @JsonSubTypes.Type(name = "DELTA_LAKE_TABLE", value = DeltaLakeTable.class),
-  @JsonSubTypes.Type(name = "CUSTOM", value = CustomContent.class),
-})
 @JsonTypeIdResolver(ContentTypeIdResolver.class)
-@JsonTypeInfo(
-    use = JsonTypeInfo.Id.CUSTOM,
-    include = JsonTypeInfo.As.EXISTING_PROPERTY,
-    visible = true,
-    property = "type")
+@JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, visible = true, property = "type")
 public interface Content {
 
   ContentType getType();

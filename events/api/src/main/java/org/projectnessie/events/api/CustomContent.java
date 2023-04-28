@@ -15,7 +15,6 @@
  */
 package org.projectnessie.events.api;
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
@@ -34,7 +33,6 @@ import org.projectnessie.events.api.json.CustomContentSerializer;
  * #getProperties()} map.
  */
 @Value.Immutable
-@JsonTypeName("CUSTOM")
 @JsonSerialize(using = CustomContentSerializer.class)
 @JsonDeserialize(using = CustomContentDeserializer.class)
 public interface CustomContent extends Content {

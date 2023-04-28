@@ -15,7 +15,6 @@
  */
 package org.projectnessie.events.api;
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
@@ -23,7 +22,6 @@ import org.immutables.value.Value;
 
 /** A {@link Content} object that represents a Delta Lake table. */
 @Value.Immutable
-@JsonTypeName("DELTA_LAKE_TABLE")
 @JsonSerialize(as = ImmutableDeltaLakeTable.class)
 @JsonDeserialize(as = ImmutableDeltaLakeTable.class)
 public interface DeltaLakeTable extends Content {

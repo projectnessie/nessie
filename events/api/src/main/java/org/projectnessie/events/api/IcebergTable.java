@@ -15,14 +15,12 @@
  */
 package org.projectnessie.events.api;
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
 /** A {@link Content} object that represents an Iceberg table. */
 @Value.Immutable
-@JsonTypeName("ICEBERG_TABLE")
 @JsonSerialize(as = ImmutableIcebergTable.class)
 @JsonDeserialize(as = ImmutableIcebergTable.class)
 public interface IcebergTable extends Content {

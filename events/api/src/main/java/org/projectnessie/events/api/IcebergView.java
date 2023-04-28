@@ -15,7 +15,6 @@
  */
 package org.projectnessie.events.api;
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Optional;
@@ -23,7 +22,6 @@ import org.immutables.value.Value;
 
 /** A {@link Content} object that represents an Iceberg view. */
 @Value.Immutable
-@JsonTypeName("ICEBERG_VIEW")
 @JsonSerialize(as = ImmutableIcebergView.class)
 @JsonDeserialize(as = ImmutableIcebergView.class)
 public interface IcebergView extends Content {
