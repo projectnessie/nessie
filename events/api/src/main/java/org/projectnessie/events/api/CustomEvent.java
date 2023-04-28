@@ -15,11 +15,9 @@
  */
 package org.projectnessie.events.api;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import java.util.Map;
 import org.immutables.value.Value;
 import org.projectnessie.events.api.json.CustomEventDeserializer;
 import org.projectnessie.events.api.json.CustomEventSerializer;
@@ -48,11 +46,4 @@ public interface CustomEvent extends Event {
 
   /** The actual runtime type name of this event object. */
   String getCustomType();
-
-  /**
-   * Since the runtime type is not known, all content properties will be deserialized into this map.
-   */
-  @JsonAnyGetter
-  @Override
-  Map<String, Object> getProperties();
 }

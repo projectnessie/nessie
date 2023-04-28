@@ -15,11 +15,9 @@
  */
 package org.projectnessie.events.api;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import java.util.Map;
 import org.immutables.value.Value;
 import org.projectnessie.events.api.json.CustomContentDeserializer;
 import org.projectnessie.events.api.json.CustomContentSerializer;
@@ -27,7 +25,7 @@ import org.projectnessie.events.api.json.CustomContentSerializer;
 /**
  * A custom {@link Content} whose runtime type is not known.
  *
- * <p>This special content subtype is only used when deserializing unknown event types. Since
+ * <p>This special content subtype is only used when deserializing unknown content types. Since
  * contents are pluggable in Nessie, this situation can happen when a custom content other than the
  * built-in ones is registered server-side, but the client deserializing the content does not have
  * the concrete class available on its classpath.
@@ -49,11 +47,4 @@ public interface CustomContent extends Content {
 
   /** The actual runtime type name of this content object. */
   String getCustomType();
-
-  /**
-   * Since the runtime type is not known, all content properties will be deserialized into this map.
-   */
-  @JsonAnyGetter
-  @Override
-  Map<String, Object> getProperties();
 }
