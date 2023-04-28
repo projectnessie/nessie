@@ -17,6 +17,7 @@ package org.projectnessie.quarkus.tests.profiles;
 
 import dasniko.testcontainers.keycloak.KeycloakContainer;
 import io.quarkus.runtime.configuration.ConfigurationException;
+import io.quarkus.test.common.DevServicesContext;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,6 +25,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -32,6 +34,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is a copy of, and a drop-in replacement for, the Keycloak test resource {@code
@@ -58,7 +62,10 @@ import org.keycloak.representations.idm.UserRepresentation;
  * this test resource.
  */
 @SuppressWarnings("SameParameterValue")
-public class KeycloakTestResourceLifecycleManager implements QuarkusTestResourceLifecycleManager {
+public class KeycloakTestResourceLifecycleManager
+    implements QuarkusTestResourceLifecycleManager, DevServicesContext.ContextAware {
+  private static final Logger LOGGER =
+      LoggerFactory.getLogger(KeycloakTestResourceLifecycleManager.class);
 
   private static final String KEYCLOAK_REALM = System.getProperty("keycloak.realm", "quarkus");
   private static final String KEYCLOAK_SERVICE_CLIENT =
@@ -78,6 +85,13 @@ public class KeycloakTestResourceLifecycleManager implements QuarkusTestResource
   private static KeycloakContainer keycloak;
   private static Keycloak keycloakAdminClient;
 
+  private Optional<String> containerNetworkId;
+
+  @Override
+  public void setIntegrationTestContext(DevServicesContext context) {
+    containerNetworkId = context.containerNetworkId();
+  }
+
   @Override
   public Map<String, String> start() {
     String keycloakDockerImage;
@@ -90,23 +104,53 @@ public class KeycloakTestResourceLifecycleManager implements QuarkusTestResource
           "Please set either 'keycloak.docker.image' or 'keycloak.version' system property");
     }
 
+    LOGGER.info("Using Keycloak image {}", keycloakDockerImage);
+
     keycloak =
-        new KeycloakContainer(keycloakDockerImage).withFeaturesEnabled("preview", "token-exchange");
+        new KeycloakContainer(keycloakDockerImage) {
+          @Override
+          public String getAuthServerUrl() {
+            String url = super.getAuthServerUrl();
+
+            if (containerNetworkId.isPresent()) {
+              int port = KEYCLOAK_USE_HTTPS ? getHttpsPort() : getHttpPort();
+              String hostPort = keycloak.getHost() + ':' + keycloak.getMappedPort(port);
+              String networkHostPort =
+                  keycloak.getCurrentContainerInfo().getConfig().getHostName() + ':' + port;
+              url = url.replace(hostPort, networkHostPort);
+            }
+
+            return url;
+          }
+        };
+    keycloak.withFeaturesEnabled("preview", "token-exchange");
+    containerNetworkId.ifPresent(keycloak::withNetworkMode);
 
     if (KEYCLOAK_USE_HTTPS) {
+      LOGGER.info("Enabling TLS for Keycloak");
       keycloak.useTls();
     }
 
+    LOGGER.info("Starting Keycloak (network-id: {}) ...", containerNetworkId);
+
     keycloak.start();
+
+    String keycloakServerUrl = keycloak.getAuthServerUrl();
+    String authServerUrl = keycloakServerUrl + "realms/" + KEYCLOAK_REALM;
+    LOGGER.info(
+        "Keycloak started with auth url {} (network-id: {})", authServerUrl, containerNetworkId);
+
+    LOGGER.info("Creating realm in Keycloak...");
 
     keycloakAdminClient = keycloak.getKeycloakAdminClient();
     RealmRepresentation realm = createRealm();
     keycloakAdminClient.realms().create(realm);
 
-    String keycloakServerUrl = keycloak.getAuthServerUrl();
+    LOGGER.info("Finished setting up Keycloak");
+
     Map<String, String> conf = new HashMap<>();
     conf.put("keycloak.url", keycloakServerUrl);
-    conf.put("quarkus.oidc.auth-server-url", keycloakServerUrl + "realms/" + KEYCLOAK_REALM);
+    conf.put("quarkus.oidc.auth-server-url", authServerUrl);
 
     return conf;
   }
