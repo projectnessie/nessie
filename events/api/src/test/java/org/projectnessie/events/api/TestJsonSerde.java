@@ -16,9 +16,11 @@
 package org.projectnessie.events.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -311,22 +313,7 @@ class TestJsonSerde {
   }
 
   @Test
-  void customContent() throws Exception {
-    CustomContent content =
-        ImmutableCustomContent.builder()
-            .id("id")
-            .customType("customType")
-            .putProperty("string", "foo")
-            .putProperty("number", 123)
-            .putProperty("boolean", true)
-            .putProperty(
-                "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
-            .build();
-    assertThat(deserialize(serialize(content), Content.class)).isEqualTo(content);
-  }
-
-  @Test
-  void unknownEventSerialization() throws Exception {
+  void customEventSerialization() throws Exception {
     CustomEvent event =
         ImmutableCustomEvent.builder()
             .id(UUID.fromString("7385d1e6-3deb-440b-9008-a383e2de6e6c"))
@@ -358,41 +345,22 @@ class TestJsonSerde {
   }
 
   @Test
-  void unknownEventDeserialization() throws Exception {
-    CustomEvent event =
-        ImmutableCustomEvent.builder()
-            .id(UUID.fromString("7385d1e6-3deb-440b-9008-a383e2de6e6c"))
-            .customType("weird")
-            .repositoryId("repo1")
-            .createdAt(Instant.parse("2023-04-25T13:02:05Z"))
+  void customContent() throws Exception {
+    CustomContent content =
+        ImmutableCustomContent.builder()
+            .id("id")
+            .customType("customType")
             .putProperty("string", "foo")
             .putProperty("number", 123)
             .putProperty("boolean", true)
             .putProperty(
                 "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
             .build();
-    assertThat(
-            deserialize(
-                "{"
-                    + "\"id\":\"7385d1e6-3deb-440b-9008-a383e2de6e6c\","
-                    + "\"type\":\"weird\","
-                    + "\"repositoryId\":\"repo1\","
-                    + "\"createdAt\":\"2023-04-25T13:02:05Z\","
-                    + "\"string\":\"foo\","
-                    + "\"number\":123,"
-                    + "\"boolean\":true,"
-                    + "\"complex\":{"
-                    + "\"string\":\"foo\","
-                    + "\"number\":123,"
-                    + "\"boolean\":true"
-                    + "}"
-                    + "}",
-                Event.class))
-        .isEqualTo(event);
+    assertThat(deserialize(serialize(content), Content.class)).isEqualTo(content);
   }
 
   @Test
-  void unknownContentSerialization() throws Exception {
+  void customContentSerialization() throws Exception {
     CustomContent content =
         ImmutableCustomContent.builder()
             .id("id")
@@ -420,17 +388,40 @@ class TestJsonSerde {
   }
 
   @Test
+  void unknownEventDeserialization() throws Exception {
+    assertThat(
+            deserialize(
+                "{"
+                    + "\"id\":\"7385d1e6-3deb-440b-9008-a383e2de6e6c\","
+                    + "\"type\":\"weird\","
+                    + "\"repositoryId\":\"repo1\","
+                    + "\"createdAt\":\"2023-04-25T13:02:05Z\","
+                    + "\"string\":\"foo\","
+                    + "\"number\":123,"
+                    + "\"boolean\":true,"
+                    + "\"complex\":{"
+                    + "\"string\":\"foo\","
+                    + "\"number\":123,"
+                    + "\"boolean\":true"
+                    + "}"
+                    + "}",
+                Event.class))
+        .isEqualTo(
+            ImmutableCustomEvent.builder()
+                .id(UUID.fromString("7385d1e6-3deb-440b-9008-a383e2de6e6c"))
+                .customType("weird")
+                .repositoryId("repo1")
+                .createdAt(Instant.parse("2023-04-25T13:02:05Z"))
+                .putProperty("string", "foo")
+                .putProperty("number", 123)
+                .putProperty("boolean", true)
+                .putProperty(
+                    "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
+                .build());
+  }
+
+  @Test
   void unknownContentDeserialization() throws Exception {
-    CustomContent content =
-        ImmutableCustomContent.builder()
-            .id("id")
-            .customType("weird")
-            .putProperty("string", "foo")
-            .putProperty("number", 123)
-            .putProperty("boolean", true)
-            .putProperty(
-                "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
-            .build();
     assertThat(
             deserialize(
                 "{"
@@ -446,7 +437,137 @@ class TestJsonSerde {
                     + "}"
                     + "}",
                 Content.class))
-        .isEqualTo(content);
+        .isEqualTo(
+            ImmutableCustomContent.builder()
+                .id("id")
+                .customType("weird")
+                .putProperty("string", "foo")
+                .putProperty("number", 123)
+                .putProperty("boolean", true)
+                .putProperty(
+                    "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
+                .build());
+  }
+
+  @Test
+  void deserializeKnownEventTypeToCustomSubtype() throws Exception {
+    assertThat(
+            deserialize(
+                "{"
+                    + "\"id\":\"7385d1e6-3deb-440b-9008-a383e2de6e6c\","
+                    + "\"type\":\"REFERENCE_CREATED\","
+                    + "\"repositoryId\":\"repo1\","
+                    + "\"createdAt\":\"2023-04-25T13:02:05Z\","
+                    + "\"hashAfter\":\"1234\","
+                    + "\"referenceName\":\"ref1\","
+                    + "\"fullReferenceName\":\"refs/heads/ref1\","
+                    + "\"referenceType\":\"BRANCH\","
+                    + "\"string\":\"foo\","
+                    + "\"number\":123,"
+                    + "\"boolean\":true,"
+                    + "\"complex\":{"
+                    + "\"string\":\"foo\","
+                    + "\"number\":123,"
+                    + "\"boolean\":true"
+                    + "}"
+                    + "}",
+                CustomEvent.class))
+        .isEqualTo(
+            ImmutableCustomEvent.builder()
+                .id(UUID.fromString("7385d1e6-3deb-440b-9008-a383e2de6e6c"))
+                .customType("REFERENCE_CREATED")
+                .repositoryId("repo1")
+                .createdAt(Instant.parse("2023-04-25T13:02:05Z"))
+                .putProperty("hashAfter", "1234")
+                .putProperty("referenceName", "ref1")
+                .putProperty("fullReferenceName", "refs/heads/ref1")
+                .putProperty("referenceType", "BRANCH")
+                .putProperty("string", "foo")
+                .putProperty("number", 123)
+                .putProperty("boolean", true)
+                .putProperty(
+                    "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
+                .build());
+  }
+
+  @Test
+  void deserializeKnownContentTypeToCustomSubtype() throws Exception {
+    assertThat(
+            deserialize(
+                "{"
+                    + "\"id\":\"id\","
+                    + "\"type\":\"ICEBERG_TABLE\","
+                    + "\"metadataLocation\":\"location\","
+                    + "\"snapshotId\":1,"
+                    + "\"schemaId\":2,"
+                    + "\"specId\":3,"
+                    + "\"sortOrderId\":4,"
+                    + "\"string\":\"foo\","
+                    + "\"number\":123,"
+                    + "\"boolean\":true,"
+                    + "\"complex\":{"
+                    + "\"string\":\"foo\","
+                    + "\"number\":123,"
+                    + "\"boolean\":true"
+                    + "}"
+                    + "}",
+                CustomContent.class))
+        .isEqualTo(
+            ImmutableCustomContent.builder()
+                .id("id")
+                .customType("ICEBERG_TABLE")
+                .putProperty("metadataLocation", "location")
+                .putProperty("snapshotId", 1)
+                .putProperty("schemaId", 2)
+                .putProperty("specId", 3)
+                .putProperty("sortOrderId", 4)
+                .putProperty("string", "foo")
+                .putProperty("number", 123)
+                .putProperty("boolean", true)
+                .putProperty(
+                    "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
+                .build());
+  }
+
+  @Test
+  void deserializeEventToIncompatibleSubtype() {
+    assertThatThrownBy(
+            () ->
+                deserialize(
+                    "{"
+                        + "\"id\":\"7385d1e6-3deb-440b-9008-a383e2de6e6c\","
+                        + "\"type\":\"REFERENCE_CREATED\","
+                        + "\"repositoryId\":\"repo1\","
+                        + "\"createdAt\":\"2023-04-25T13:02:05Z\","
+                        + "\"hashAfter\":\"1234\","
+                        + "\"referenceName\":\"ref1\","
+                        + "\"fullReferenceName\":\"refs/heads/ref1\","
+                        + "\"referenceType\":\"BRANCH\""
+                        + "}",
+                    ReferenceDeletedEvent.class))
+        .isInstanceOf(JsonMappingException.class)
+        .hasMessageContaining(
+            "Type id REFERENCE_CREATED is not convertible to interface org.projectnessie.events.api.ReferenceDeletedEvent");
+  }
+
+  @Test
+  void deserializeContentToIncompatibleSubtype() {
+    assertThatThrownBy(
+            () ->
+                deserialize(
+                    "{"
+                        + "\"id\":\"id\","
+                        + "\"type\":\"ICEBERG_TABLE\","
+                        + "\"metadataLocation\":\"location\","
+                        + "\"snapshotId\":1,"
+                        + "\"schemaId\":2,"
+                        + "\"specId\":3,"
+                        + "\"sortOrderId\":4"
+                        + "}",
+                    IcebergView.class))
+        .isInstanceOf(JsonMappingException.class)
+        .hasMessageContaining(
+            "Type id ICEBERG_TABLE is not convertible to interface org.projectnessie.events.api.IcebergView");
   }
 
   private Object deserialize(String json, Class<?> clazz) throws JsonProcessingException {

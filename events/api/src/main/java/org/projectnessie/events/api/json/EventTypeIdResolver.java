@@ -15,50 +15,25 @@
  */
 package org.projectnessie.events.api.json;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.DatabindContext;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase;
 import java.util.Locale;
+import org.projectnessie.events.api.CustomEvent;
 import org.projectnessie.events.api.Event;
 import org.projectnessie.events.api.EventType;
 
-public final class EventTypeIdResolver extends TypeIdResolverBase {
-
-  private JavaType baseType;
-
-  @Override
-  public void init(JavaType bt) {
-    baseType = bt;
-  }
-
-  @Override
-  public JsonTypeInfo.Id getMechanism() {
-    return JsonTypeInfo.Id.CUSTOM;
-  }
-
-  @Override
-  public String idFromValueAndType(Object value, Class<?> suggestedType) {
-    return idFromValue(value);
-  }
+public final class EventTypeIdResolver extends AbstractEnumBasedTypeIdResolver {
 
   @Override
   public String idFromValue(Object value) {
-    if (value instanceof Event) {
-      return ((Event) value).getType().name();
-    }
-    return null;
+    return ((Event) value).getType().name();
   }
 
   @Override
-  public JavaType typeFromId(DatabindContext context, String id) {
-    Class<?> subtype;
-    try {
-      subtype = EventType.valueOf(id.toUpperCase(Locale.ROOT)).getSubtype();
-    } catch (Exception e) {
-      subtype = EventType.CUSTOM.getSubtype();
-    }
-    assert baseType.getRawClass().isAssignableFrom(subtype);
-    return context.constructSpecializedType(baseType, subtype);
+  protected Class<?> subtypeFromId(String id) {
+    return EventType.valueOf(id.toUpperCase(Locale.ROOT)).getSubtype();
+  }
+
+  @Override
+  protected Class<?> customSubtype() {
+    return CustomEvent.class;
   }
 }

@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
@@ -36,13 +37,17 @@ public final class CustomContentDeserializer extends StdDeserializer<CustomConte
 
   @Override
   public CustomContent deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
-    Map<String, Object> properties = p.readValueAs(MAP_TYPE);
-    Object id = Objects.requireNonNull(properties.remove("id"));
-    Object customType = Objects.requireNonNull(properties.remove("type"));
-    return ImmutableCustomContent.builder()
-        .id(id.toString())
-        .customType(customType.toString())
-        .properties(properties)
-        .build();
+    try {
+      Map<String, Object> properties = p.readValueAs(MAP_TYPE);
+      Object id = Objects.requireNonNull(properties.remove("id"));
+      Object customType = Objects.requireNonNull(properties.remove("type"));
+      return ImmutableCustomContent.builder()
+          .id(id.toString())
+          .customType(customType.toString())
+          .properties(properties)
+          .build();
+    } catch (Exception e) {
+      throw InvalidDefinitionException.from(ctx, "Failed to deserialize CustomContent", e);
+    }
   }
 }

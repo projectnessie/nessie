@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Map;
@@ -39,19 +40,23 @@ public final class CustomEventDeserializer extends StdDeserializer<CustomEvent> 
 
   @Override
   public CustomEvent deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
-    Map<String, Object> properties = p.readValueAs(MAP_TYPE);
-    Object id = Objects.requireNonNull(properties.remove("id"));
-    Object customType = Objects.requireNonNull(properties.remove("type"));
-    Object repositoryId = Objects.requireNonNull(properties.remove("repositoryId"));
-    Object createdAt = Objects.requireNonNull(properties.remove("createdAt"));
-    Object createdBy = properties.remove("createdBy");
-    return ImmutableCustomEvent.builder()
-        .id(UUID.fromString(id.toString()))
-        .customType(customType.toString())
-        .repositoryId(repositoryId.toString())
-        .createdAt(Instant.parse(createdAt.toString()))
-        .createdBy(Optional.ofNullable(createdBy).map(Object::toString))
-        .properties(properties)
-        .build();
+    try {
+      Map<String, Object> properties = p.readValueAs(MAP_TYPE);
+      Object id = Objects.requireNonNull(properties.remove("id"));
+      Object customType = Objects.requireNonNull(properties.remove("type"));
+      Object repositoryId = Objects.requireNonNull(properties.remove("repositoryId"));
+      Object createdAt = Objects.requireNonNull(properties.remove("createdAt"));
+      Object createdBy = properties.remove("createdBy");
+      return ImmutableCustomEvent.builder()
+          .id(UUID.fromString(id.toString()))
+          .customType(customType.toString())
+          .repositoryId(repositoryId.toString())
+          .createdAt(Instant.parse(createdAt.toString()))
+          .createdBy(Optional.ofNullable(createdBy).map(Object::toString))
+          .properties(properties)
+          .build();
+    } catch (Exception e) {
+      throw InvalidDefinitionException.from(ctx, "Failed to deserialize CustomEvent", e);
+    }
   }
 }

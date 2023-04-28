@@ -43,7 +43,7 @@ public final class CustomContentSerializer extends StdSerializer<CustomContent> 
   public void serialize(CustomContent value, JsonGenerator gen, SerializerProvider serializers)
       throws IOException {
     gen.writeStartObject();
-    gen.writeStringField("id", value.getId().toString());
+    gen.writeStringField("id", value.getId());
     gen.writeStringField("type", value.getCustomType());
     for (Map.Entry<String, Object> entry : value.getProperties().entrySet()) {
       gen.writeFieldName(entry.getKey());
