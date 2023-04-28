@@ -53,9 +53,6 @@ import org.projectnessie.events.api.json.EventTypeIdResolver;
 @JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "type", visible = true)
 public interface Event {
 
-  /** The root, empty commit with no ancestor. */
-  String NO_ANCESTOR_HASH = "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d";
-
   /** The type of the event. */
   EventType getType();
 

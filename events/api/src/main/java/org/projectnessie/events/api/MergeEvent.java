@@ -15,7 +15,6 @@
  */
 package org.projectnessie.events.api;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -41,15 +40,7 @@ public interface MergeEvent extends CommittingEvent {
    * The hash of the common ancestor of the two merged branches.
    *
    * <p>If merging unrelated histories is allowed, and the two branches share no common history,
-   * this will be the so-called {@link #NO_ANCESTOR_HASH} hash. You can use the {@link
-   * #hasCommonAncestorHash()} method to check if the two branches share a common history.
+   * this will be the so-called "no-ancestor" hash.
    */
   String getCommonAncestorHash();
-
-  /** Returns {@code true} if the two branches share a common history, {@code false} otherwise. */
-  @Value.Derived
-  @JsonIgnore
-  default boolean hasCommonAncestorHash() {
-    return !NO_ANCESTOR_HASH.equals(getCommonAncestorHash());
-  }
 }
