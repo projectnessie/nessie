@@ -35,10 +35,23 @@ public interface Reference {
   /** The reference type name for tags. */
   String TAG = "TAG";
 
-  /** The name of the reference, e.g. "branch1". */
+  /**
+   * The simple name of the reference, e.g. "branch1".
+   *
+   * <p>Simple names are ambiguous, e.g. "main" could be a branch ("refs/heads/main") or a tag
+   * ("refs/tags/main"). Use {@link #getFullName()} to disambiguate simple names.
+   */
   String getSimpleName();
 
-  /** The full name of the reference, e.g. "refs/heads/branch1". */
+  /**
+   * The full name of the reference, e.g. "refs/heads/branch1".
+   *
+   * <p>Full names are unique across all reference types.
+   *
+   * <p>The reference type can be inferred from the full name; e.g. if the full name starts with
+   * "refs/heads/", then the reference is a branch. If the full name starts with "refs/tags/", then
+   * the reference is a tag.
+   */
   String getFullName();
 
   /**
