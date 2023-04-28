@@ -50,7 +50,6 @@ class TestJsonSerde {
             .repositoryId("repo1")
             .createdAt(Instant.now())
             .createdBy("Alice")
-            .sentBy("Nessie")
             .putProperty("string", "foo")
             .putProperty("number", 123)
             .putProperty("boolean", true)
@@ -79,7 +78,6 @@ class TestJsonSerde {
             .repositoryId("repo1")
             .createdAt(Instant.now())
             .createdBy("Alice")
-            .sentBy("Nessie")
             .commonAncestorHash("hash0")
             .putProperty("string", "foo")
             .putProperty("number", 123)
@@ -102,7 +100,6 @@ class TestJsonSerde {
             .repositoryId("repo1")
             .createdAt(Instant.now())
             .createdBy("Alice")
-            .sentBy("Nessie")
             .putProperty("string", "foo")
             .putProperty("number", 123)
             .putProperty("boolean", true)
@@ -123,7 +120,6 @@ class TestJsonSerde {
             .repositoryId("repo1")
             .createdAt(Instant.now())
             .createdBy("Alice")
-            .sentBy("Nessie")
             .hashAfter("hash2")
             .putProperty("string", "foo")
             .putProperty("number", 123)
@@ -145,7 +141,6 @@ class TestJsonSerde {
             .repositoryId("repo1")
             .createdAt(Instant.now())
             .createdBy("Alice")
-            .sentBy("Nessie")
             .hashBefore("hash1")
             .hashAfter("hash2")
             .putProperty("string", "foo")
@@ -168,7 +163,6 @@ class TestJsonSerde {
             .repositoryId("repo1")
             .createdAt(Instant.now())
             .createdBy("Alice")
-            .sentBy("Nessie")
             .hashBefore("hash1")
             .putProperty("string", "foo")
             .putProperty("number", 123)
@@ -190,7 +184,6 @@ class TestJsonSerde {
             .repositoryId("repo1")
             .createdAt(Instant.now())
             .createdBy("Alice")
-            .sentBy("Nessie")
             .putProperty("string", "foo")
             .putProperty("number", 123)
             .putProperty("boolean", true)
@@ -220,7 +213,6 @@ class TestJsonSerde {
             .repositoryId("repo1")
             .createdAt(Instant.now())
             .createdBy("Alice")
-            .sentBy("Nessie")
             .putProperty("string", "foo")
             .putProperty("number", 123)
             .putProperty("boolean", true)
@@ -309,7 +301,6 @@ class TestJsonSerde {
             .customType("weird")
             .repositoryId("repo1")
             .createdAt(Instant.parse("2023-04-25T13:02:05Z"))
-            .sentBy("Nessie")
             .putProperty("string", "foo")
             .putProperty("number", 123)
             .putProperty("boolean", true)
@@ -342,7 +333,6 @@ class TestJsonSerde {
             .customType("weird")
             .repositoryId("repo1")
             .createdAt(Instant.parse("2023-04-25T13:02:05Z"))
-            .sentBy("Nessie")
             .putProperty("string", "foo")
             .putProperty("number", 123)
             .putProperty("boolean", true)
@@ -356,7 +346,6 @@ class TestJsonSerde {
                 + "\"type\":\"weird\","
                 + "\"repositoryId\":\"repo1\","
                 + "\"createdAt\":\"2023-04-25T13:02:05Z\","
-                + "\"sentBy\":\"Nessie\","
                 + "\"string\":\"foo\","
                 + "\"number\":123,"
                 + "\"boolean\":true,"
@@ -376,7 +365,6 @@ class TestJsonSerde {
             .customType("weird")
             .repositoryId("repo1")
             .createdAt(Instant.parse("2023-04-25T13:02:05Z"))
-            .sentBy("Nessie")
             .putProperty("string", "foo")
             .putProperty("number", 123)
             .putProperty("boolean", true)
@@ -390,7 +378,6 @@ class TestJsonSerde {
                     + "\"type\":\"weird\","
                     + "\"repositoryId\":\"repo1\","
                     + "\"createdAt\":\"2023-04-25T13:02:05Z\","
-                    + "\"sentBy\":\"Nessie\","
                     + "\"string\":\"foo\","
                     + "\"number\":123,"
                     + "\"boolean\":true,"

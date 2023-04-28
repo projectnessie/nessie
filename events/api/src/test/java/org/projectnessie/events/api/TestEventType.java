@@ -36,7 +36,6 @@ class TestEventType {
             .repositoryId("repo1")
             .createdAt(Instant.now())
             .createdBy("Alice")
-            .sentBy("Nessie")
             .commitMeta(
                 ImmutableCommitMeta.builder()
                     .commitTime(Instant.now())
@@ -60,7 +59,6 @@ class TestEventType {
             .repositoryId("repo1")
             .createdAt(Instant.now())
             .createdBy("Alice")
-            .sentBy("Nessie")
             .commonAncestorHash("hash0")
             .build();
     assertThat(event.getType()).isEqualTo(EventType.MERGE);
@@ -78,7 +76,6 @@ class TestEventType {
             .repositoryId("repo1")
             .createdAt(Instant.now())
             .createdBy("Alice")
-            .sentBy("Nessie")
             .build();
     assertThat(event.getType()).isEqualTo(EventType.TRANSPLANT);
   }
@@ -94,7 +91,6 @@ class TestEventType {
             .repositoryId("repo1")
             .createdAt(Instant.now())
             .createdBy("Alice")
-            .sentBy("Nessie")
             .hashAfter("hash2")
             .build();
     assertThat(event.getType()).isEqualTo(EventType.REFERENCE_CREATED);
@@ -111,7 +107,6 @@ class TestEventType {
             .repositoryId("repo1")
             .createdAt(Instant.now())
             .createdBy("Alice")
-            .sentBy("Nessie")
             .hashBefore("hash1")
             .hashAfter("hash2")
             .build();
@@ -129,7 +124,6 @@ class TestEventType {
             .repositoryId("repo1")
             .createdAt(Instant.now())
             .createdBy("Alice")
-            .sentBy("Nessie")
             .hashBefore("hash1")
             .build();
     assertThat(event.getType()).isEqualTo(EventType.REFERENCE_DELETED);
@@ -146,7 +140,6 @@ class TestEventType {
             .repositoryId("repo1")
             .createdAt(Instant.now())
             .createdBy("Alice")
-            .sentBy("Nessie")
             .content(mock(Content.class))
             .build();
     assertThat(event.getType()).isEqualTo(EventType.CONTENT_STORED);
@@ -163,7 +156,6 @@ class TestEventType {
             .repositoryId("repo1")
             .createdAt(Instant.now())
             .createdBy("Alice")
-            .sentBy("Nessie")
             .build();
     assertThat(event.getType()).isEqualTo(EventType.CONTENT_REMOVED);
   }
@@ -178,7 +170,6 @@ class TestEventType {
             .repositoryId("repo1")
             .createdAt(Instant.now())
             .createdBy("Alice")
-            .sentBy("Nessie")
             .build();
     assertThat(content.getType()).isEqualTo(EventType.CUSTOM);
   }

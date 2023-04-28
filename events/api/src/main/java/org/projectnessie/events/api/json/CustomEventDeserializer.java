@@ -44,14 +44,12 @@ public final class CustomEventDeserializer extends StdDeserializer<CustomEvent> 
     Object customType = Objects.requireNonNull(properties.remove("type"));
     Object repositoryId = Objects.requireNonNull(properties.remove("repositoryId"));
     Object createdAt = Objects.requireNonNull(properties.remove("createdAt"));
-    Object sentBy = Objects.requireNonNull(properties.remove("sentBy"));
     Object createdBy = properties.remove("createdBy");
     return ImmutableCustomEvent.builder()
         .id(UUID.fromString(id.toString()))
         .customType(customType.toString())
         .repositoryId(repositoryId.toString())
         .createdAt(Instant.parse(createdAt.toString()))
-        .sentBy(sentBy.toString())
         .createdBy(Optional.ofNullable(createdBy).map(Object::toString))
         .properties(properties)
         .build();

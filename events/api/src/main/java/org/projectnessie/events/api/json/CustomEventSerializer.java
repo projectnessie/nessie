@@ -44,7 +44,6 @@ public final class CustomEventSerializer extends StdSerializer<CustomEvent> {
     gen.writeStringField("type", value.getCustomType());
     gen.writeStringField("repositoryId", value.getRepositoryId());
     gen.writeStringField("createdAt", value.getCreatedAt().toString());
-    gen.writeStringField("sentBy", value.getSentBy());
     if (value.getCreatedBy().isPresent()) {
       gen.writeStringField("createdBy", value.getCreatedBy().get());
     }

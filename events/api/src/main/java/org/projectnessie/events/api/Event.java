@@ -83,12 +83,6 @@ public interface Event {
    */
   Optional<String> getCreatedBy();
 
-  /**
-   * A distinctive identifier for the entity that emitted the event. This is configured on a per-
-   * instance basis and usually contains the host name and the deployed Nessie version.
-   */
-  String getSentBy();
-
   /** A map of properties that can be used to add additional information to the event. */
   @Value.Default
   default Map<String, Object> getProperties() {
