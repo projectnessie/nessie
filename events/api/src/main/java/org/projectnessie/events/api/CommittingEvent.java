@@ -34,10 +34,10 @@ public interface CommittingEvent extends Event {
    *
    * <p>For commits, this is always the same as the {@linkplain #getTargetBranch() target branch}.
    */
-  String getSourceReference();
+  Reference getSourceReference();
 
   /** The target branch where the committed operations were applied to. */
-  String getTargetBranch();
+  Reference getTargetBranch();
 
   /** The hash on the {@linkplain #getTargetBranch() target branch} before the event. */
   String getHashBefore();

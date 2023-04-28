@@ -15,9 +15,6 @@
  */
 package org.projectnessie.events.api;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.immutables.value.Value;
-
 /**
  * Event that is emitted when a reference is created, updated or deleted.
  *
@@ -31,35 +28,6 @@ import org.immutables.value.Value;
  */
 public interface ReferenceEvent extends Event {
 
-  /** The reference type name for branches. */
-  String BRANCH = "BRANCH";
-
-  /** The reference type name for tags. */
-  String TAG = "TAG";
-
   /** The name of the reference, e.g. "branch1". */
-  String getReferenceName();
-
-  /** The full name of the reference, e.g. "refs/heads/branch1". */
-  String getFullReferenceName();
-
-  /**
-   * The type of the reference. This is usually either {@value #BRANCH} or {@value #TAG}, but more
-   * types may be added in the future.
-   */
-  String getReferenceType();
-
-  /** Returns {@code true} if the reference is a branch, {@code false} otherwise. */
-  @Value.Derived
-  @JsonIgnore
-  default boolean isBranch() {
-    return getReferenceType().equalsIgnoreCase(BRANCH);
-  }
-
-  /** Returns {@code true} if the reference is a tag, {@code false} otherwise. */
-  @Value.Derived
-  @JsonIgnore
-  default boolean isTag() {
-    return getReferenceType().equalsIgnoreCase(TAG);
-  }
+  Reference getReference();
 }

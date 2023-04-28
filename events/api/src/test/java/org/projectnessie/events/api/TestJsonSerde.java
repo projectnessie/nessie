@@ -44,8 +44,18 @@ class TestJsonSerde {
   void commit() throws Exception {
     CommitEvent event =
         ImmutableCommitEvent.builder()
-            .sourceReference("branch1")
-            .targetBranch("branch2")
+            .sourceReference(
+                ImmutableReference.builder()
+                    .simpleName("branch1")
+                    .fullName("refs/heads/branch1")
+                    .type(Reference.BRANCH)
+                    .build())
+            .targetBranch(
+                ImmutableReference.builder()
+                    .simpleName("branch2")
+                    .fullName("refs/heads/branch2")
+                    .type(Reference.BRANCH)
+                    .build())
             .hashBefore("hash1")
             .hashAfter("hash2")
             .id(UUID.randomUUID())
@@ -72,8 +82,18 @@ class TestJsonSerde {
   void merge() throws Exception {
     MergeEvent event =
         ImmutableMergeEvent.builder()
-            .sourceReference("branch1")
-            .targetBranch("branch2")
+            .sourceReference(
+                ImmutableReference.builder()
+                    .simpleName("branch1")
+                    .fullName("refs/heads/branch1")
+                    .type(Reference.BRANCH)
+                    .build())
+            .targetBranch(
+                ImmutableReference.builder()
+                    .simpleName("branch2")
+                    .fullName("refs/heads/branch2")
+                    .type(Reference.BRANCH)
+                    .build())
             .hashBefore("hash1")
             .hashAfter("hash2")
             .id(UUID.randomUUID())
@@ -94,8 +114,18 @@ class TestJsonSerde {
   void transplant() throws Exception {
     TransplantEvent event =
         ImmutableTransplantEvent.builder()
-            .sourceReference("branch1")
-            .targetBranch("branch2")
+            .sourceReference(
+                ImmutableReference.builder()
+                    .simpleName("branch1")
+                    .fullName("refs/heads/branch1")
+                    .type(Reference.BRANCH)
+                    .build())
+            .targetBranch(
+                ImmutableReference.builder()
+                    .simpleName("branch2")
+                    .fullName("refs/heads/branch2")
+                    .type(Reference.BRANCH)
+                    .build())
             .hashBefore("hash1")
             .hashAfter("hash2")
             .id(UUID.randomUUID())
@@ -115,9 +145,12 @@ class TestJsonSerde {
   void referenceCreated() throws Exception {
     ReferenceCreatedEvent event =
         ImmutableReferenceCreatedEvent.builder()
-            .referenceName("ref1")
-            .fullReferenceName("fullRef1")
-            .referenceType(ReferenceEvent.BRANCH)
+            .reference(
+                ImmutableReference.builder()
+                    .simpleName("branch1")
+                    .fullName("refs/heads/branch1")
+                    .type(Reference.BRANCH)
+                    .build())
             .id(UUID.randomUUID())
             .repositoryId("repo1")
             .createdAt(Instant.now())
@@ -136,9 +169,12 @@ class TestJsonSerde {
   void referenceUpdated() throws Exception {
     ReferenceUpdatedEvent event =
         ImmutableReferenceUpdatedEvent.builder()
-            .referenceName("ref1")
-            .fullReferenceName("fullRef1")
-            .referenceType(ReferenceEvent.BRANCH)
+            .reference(
+                ImmutableReference.builder()
+                    .simpleName("branch1")
+                    .fullName("refs/heads/branch1")
+                    .type(Reference.BRANCH)
+                    .build())
             .id(UUID.randomUUID())
             .repositoryId("repo1")
             .createdAt(Instant.now())
@@ -158,9 +194,12 @@ class TestJsonSerde {
   void referenceDeleted() throws Exception {
     ReferenceDeletedEvent event =
         ImmutableReferenceDeletedEvent.builder()
-            .referenceName("ref1")
-            .fullReferenceName("fullRef1")
-            .referenceType(ReferenceEvent.BRANCH)
+            .reference(
+                ImmutableReference.builder()
+                    .simpleName("branch1")
+                    .fullName("refs/heads/branch1")
+                    .type(Reference.BRANCH)
+                    .build())
             .id(UUID.randomUUID())
             .repositoryId("repo1")
             .createdAt(Instant.now())
@@ -179,7 +218,12 @@ class TestJsonSerde {
   void contentStored() throws Exception {
     ContentStoredEvent event =
         ImmutableContentStoredEvent.builder()
-            .branch("branch1")
+            .branch(
+                ImmutableReference.builder()
+                    .simpleName("branch1")
+                    .fullName("refs/heads/branch1")
+                    .type(Reference.BRANCH)
+                    .build())
             .hash("hash1")
             .contentKey(ContentKey.of("ns", "table1"))
             .id(UUID.randomUUID())
@@ -208,7 +252,12 @@ class TestJsonSerde {
   void contentRemoved() throws Exception {
     ContentRemovedEvent event =
         ImmutableContentRemovedEvent.builder()
-            .branch("branch1")
+            .branch(
+                ImmutableReference.builder()
+                    .simpleName("branch1")
+                    .fullName("refs/heads/branch1")
+                    .type(Reference.BRANCH)
+                    .build())
             .hash("hash1")
             .contentKey(ContentKey.of("ns", "table1"))
             .id(UUID.randomUUID())
@@ -293,6 +342,17 @@ class TestJsonSerde {
                 "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
             .build();
     assertThat(deserialize(serialize(content), Content.class)).isEqualTo(content);
+  }
+
+  @Test
+  void reference() throws Exception {
+    Reference ref =
+        ImmutableReference.builder()
+            .simpleName("branch1")
+            .fullName("refs/heads/branch1")
+            .type(Reference.BRANCH)
+            .build();
+    assertThat(deserialize(serialize(ref), Reference.class)).isEqualTo(ref);
   }
 
   @Test

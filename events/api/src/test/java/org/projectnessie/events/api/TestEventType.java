@@ -24,12 +24,25 @@ import org.junit.jupiter.api.Test;
 
 class TestEventType {
 
+  private final Reference branch1 =
+      ImmutableReference.builder()
+          .simpleName("branch1")
+          .fullName("refs/heads/branch1")
+          .type(Reference.BRANCH)
+          .build();
+  private final Reference branch2 =
+      ImmutableReference.builder()
+          .simpleName("branch2")
+          .fullName("refs/heads/branch2")
+          .type(Reference.BRANCH)
+          .build();
+
   @Test
   void commit() {
     CommitEvent event =
         ImmutableCommitEvent.builder()
-            .sourceReference("branch1")
-            .targetBranch("branch2")
+            .sourceReference(branch1)
+            .targetBranch(branch2)
             .hashBefore("hash1")
             .hashAfter("hash2")
             .id(UUID.randomUUID())
@@ -51,8 +64,8 @@ class TestEventType {
   void merge() {
     MergeEvent event =
         ImmutableMergeEvent.builder()
-            .sourceReference("branch1")
-            .targetBranch("branch2")
+            .sourceReference(branch1)
+            .targetBranch(branch2)
             .hashBefore("hash1")
             .hashAfter("hash2")
             .id(UUID.randomUUID())
@@ -68,8 +81,8 @@ class TestEventType {
   void transplant() {
     TransplantEvent event =
         ImmutableTransplantEvent.builder()
-            .sourceReference("branch1")
-            .targetBranch("branch2")
+            .sourceReference(branch1)
+            .targetBranch(branch2)
             .hashBefore("hash1")
             .hashAfter("hash2")
             .id(UUID.randomUUID())
@@ -84,9 +97,7 @@ class TestEventType {
   void referenceCreated() {
     ReferenceCreatedEvent event =
         ImmutableReferenceCreatedEvent.builder()
-            .referenceName("ref1")
-            .fullReferenceName("fullRef1")
-            .referenceType(ReferenceEvent.BRANCH)
+            .reference(branch1)
             .id(UUID.randomUUID())
             .repositoryId("repo1")
             .createdAt(Instant.now())
@@ -100,9 +111,7 @@ class TestEventType {
   void referenceUpdated() {
     ReferenceUpdatedEvent event =
         ImmutableReferenceUpdatedEvent.builder()
-            .referenceName("ref1")
-            .fullReferenceName("fullRef1")
-            .referenceType(ReferenceEvent.BRANCH)
+            .reference(branch1)
             .id(UUID.randomUUID())
             .repositoryId("repo1")
             .createdAt(Instant.now())
@@ -117,9 +126,7 @@ class TestEventType {
   void referenceDeleted() {
     ReferenceDeletedEvent event =
         ImmutableReferenceDeletedEvent.builder()
-            .referenceName("ref1")
-            .fullReferenceName("fullRef1")
-            .referenceType(ReferenceEvent.BRANCH)
+            .reference(branch1)
             .id(UUID.randomUUID())
             .repositoryId("repo1")
             .createdAt(Instant.now())
@@ -133,7 +140,7 @@ class TestEventType {
   void contentStored() {
     ContentStoredEvent event =
         ImmutableContentStoredEvent.builder()
-            .branch("branch1")
+            .branch(branch1)
             .hash("hash1")
             .contentKey(ContentKey.of("ns", "table1"))
             .id(UUID.randomUUID())
@@ -149,7 +156,7 @@ class TestEventType {
   void contentRemoved() {
     ContentRemovedEvent event =
         ImmutableContentRemovedEvent.builder()
-            .branch("branch1")
+            .branch(branch1)
             .hash("hash1")
             .contentKey(ContentKey.of("ns", "table1"))
             .id(UUID.randomUUID())
