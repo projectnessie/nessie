@@ -22,7 +22,15 @@ import java.util.Map;
 import org.immutables.value.Value;
 import org.projectnessie.events.api.json.ContentTypeIdResolver;
 
-/** An object stored in Nessie, such as a table or a view. */
+/**
+ * An object stored in Nessie, such as a table or a view.
+ *
+ * @see Namespace
+ * @see IcebergTable
+ * @see IcebergView
+ * @see DeltaLakeTable
+ * @see GenericContent
+ */
 @JsonTypeIdResolver(ContentTypeIdResolver.class)
 @JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, visible = true, property = "type")
 public interface Content {

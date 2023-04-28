@@ -356,11 +356,11 @@ class TestJsonSerde {
   }
 
   @Test
-  void customEvent() throws Exception {
-    CustomEvent event =
-        ImmutableCustomEvent.builder()
+  void genericEvent() throws Exception {
+    GenericEvent event =
+        ImmutableGenericEvent.builder()
             .id(UUID.fromString("7385d1e6-3deb-440b-9008-a383e2de6e6c"))
-            .customType("weird")
+            .genericType("weird")
             .repositoryId("repo1")
             .createdAt(Instant.parse("2023-04-25T13:02:05Z"))
             .putProperty("string", "foo")
@@ -373,11 +373,11 @@ class TestJsonSerde {
   }
 
   @Test
-  void customEventSerialization() throws Exception {
-    CustomEvent event =
-        ImmutableCustomEvent.builder()
+  void genericEventSerialization() throws Exception {
+    GenericEvent event =
+        ImmutableGenericEvent.builder()
             .id(UUID.fromString("7385d1e6-3deb-440b-9008-a383e2de6e6c"))
-            .customType("weird")
+            .genericType("weird")
             .repositoryId("repo1")
             .createdAt(Instant.parse("2023-04-25T13:02:05Z"))
             .putProperty("string", "foo")
@@ -405,11 +405,11 @@ class TestJsonSerde {
   }
 
   @Test
-  void customContent() throws Exception {
-    CustomContent content =
-        ImmutableCustomContent.builder()
+  void genericContent() throws Exception {
+    GenericContent content =
+        ImmutableGenericContent.builder()
             .id("id")
-            .customType("customType")
+            .genericType("genericType")
             .putProperty("string", "foo")
             .putProperty("number", 123)
             .putProperty("boolean", true)
@@ -420,11 +420,11 @@ class TestJsonSerde {
   }
 
   @Test
-  void customContentSerialization() throws Exception {
-    CustomContent content =
-        ImmutableCustomContent.builder()
+  void genericContentSerialization() throws Exception {
+    GenericContent content =
+        ImmutableGenericContent.builder()
             .id("id")
-            .customType("weird")
+            .genericType("weird")
             .putProperty("string", "foo")
             .putProperty("number", 123)
             .putProperty("boolean", true)
@@ -467,9 +467,9 @@ class TestJsonSerde {
                     + "}",
                 Event.class))
         .isEqualTo(
-            ImmutableCustomEvent.builder()
+            ImmutableGenericEvent.builder()
                 .id(UUID.fromString("7385d1e6-3deb-440b-9008-a383e2de6e6c"))
-                .customType("weird")
+                .genericType("weird")
                 .repositoryId("repo1")
                 .createdAt(Instant.parse("2023-04-25T13:02:05Z"))
                 .putProperty("string", "foo")
@@ -498,9 +498,9 @@ class TestJsonSerde {
                     + "}",
                 Content.class))
         .isEqualTo(
-            ImmutableCustomContent.builder()
+            ImmutableGenericContent.builder()
                 .id("id")
-                .customType("weird")
+                .genericType("weird")
                 .putProperty("string", "foo")
                 .putProperty("number", 123)
                 .putProperty("boolean", true)
@@ -510,7 +510,7 @@ class TestJsonSerde {
   }
 
   @Test
-  void deserializeKnownEventTypeToCustomSubtype() throws Exception {
+  void deserializeKnownEventTypeToGenericSubtype() throws Exception {
     assertThat(
             deserialize(
                 "{"
@@ -531,11 +531,11 @@ class TestJsonSerde {
                     + "\"boolean\":true"
                     + "}"
                     + "}",
-                CustomEvent.class))
+                GenericEvent.class))
         .isEqualTo(
-            ImmutableCustomEvent.builder()
+            ImmutableGenericEvent.builder()
                 .id(UUID.fromString("7385d1e6-3deb-440b-9008-a383e2de6e6c"))
-                .customType("REFERENCE_CREATED")
+                .genericType("REFERENCE_CREATED")
                 .repositoryId("repo1")
                 .createdAt(Instant.parse("2023-04-25T13:02:05Z"))
                 .putProperty("hashAfter", "1234")
@@ -551,7 +551,7 @@ class TestJsonSerde {
   }
 
   @Test
-  void deserializeKnownContentTypeToCustomSubtype() throws Exception {
+  void deserializeKnownContentTypeToGenericSubtype() throws Exception {
     assertThat(
             deserialize(
                 "{"
@@ -571,11 +571,11 @@ class TestJsonSerde {
                     + "\"boolean\":true"
                     + "}"
                     + "}",
-                CustomContent.class))
+                GenericContent.class))
         .isEqualTo(
-            ImmutableCustomContent.builder()
+            ImmutableGenericContent.builder()
                 .id("id")
-                .customType("ICEBERG_TABLE")
+                .genericType("ICEBERG_TABLE")
                 .putProperty("metadataLocation", "location")
                 .putProperty("snapshotId", 1)
                 .putProperty("schemaId", 2)

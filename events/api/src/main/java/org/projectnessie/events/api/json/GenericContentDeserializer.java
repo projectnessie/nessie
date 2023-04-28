@@ -21,42 +21,33 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import java.io.IOException;
-import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
-import org.projectnessie.events.api.CustomEvent;
-import org.projectnessie.events.api.ImmutableCustomEvent;
+import org.projectnessie.events.api.GenericContent;
+import org.projectnessie.events.api.ImmutableGenericContent;
 
-public final class CustomEventDeserializer extends StdDeserializer<CustomEvent> {
+public final class GenericContentDeserializer extends StdDeserializer<GenericContent> {
 
   private static final TypeReference<Map<String, Object>> MAP_TYPE =
       new TypeReference<Map<String, Object>>() {};
 
-  public CustomEventDeserializer() {
-    super(CustomEvent.class);
+  public GenericContentDeserializer() {
+    super(GenericContent.class);
   }
 
   @Override
-  public CustomEvent deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
+  public GenericContent deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
     try {
       Map<String, Object> properties = p.readValueAs(MAP_TYPE);
       Object id = Objects.requireNonNull(properties.remove("id"));
-      Object customType = Objects.requireNonNull(properties.remove("type"));
-      Object repositoryId = Objects.requireNonNull(properties.remove("repositoryId"));
-      Object createdAt = Objects.requireNonNull(properties.remove("createdAt"));
-      Object createdBy = properties.remove("createdBy");
-      return ImmutableCustomEvent.builder()
-          .id(UUID.fromString(id.toString()))
-          .customType(customType.toString())
-          .repositoryId(repositoryId.toString())
-          .createdAt(Instant.parse(createdAt.toString()))
-          .createdBy(Optional.ofNullable(createdBy).map(Object::toString))
+      Object genericType = Objects.requireNonNull(properties.remove("type"));
+      return ImmutableGenericContent.builder()
+          .id(id.toString())
+          .genericType(genericType.toString())
           .properties(properties)
           .build();
     } catch (Exception e) {
-      throw JsonMappingException.from(ctx, "Failed to deserialize CustomEvent", e);
+      throw JsonMappingException.from(ctx, "Failed to deserialize GenericContent", e);
     }
   }
 }

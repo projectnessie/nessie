@@ -16,9 +16,9 @@
 package org.projectnessie.events.api.json;
 
 import java.util.Locale;
-import org.projectnessie.events.api.CustomEvent;
 import org.projectnessie.events.api.Event;
 import org.projectnessie.events.api.EventType;
+import org.projectnessie.events.api.GenericEvent;
 
 public final class EventTypeIdResolver extends AbstractEnumBasedTypeIdResolver {
 
@@ -33,7 +33,7 @@ public final class EventTypeIdResolver extends AbstractEnumBasedTypeIdResolver {
   }
 
   @Override
-  protected Class<?> customSubtype() {
-    return CustomEvent.class;
+  protected Class<?> genericSubtype() {
+    return GenericEvent.class;
   }
 }

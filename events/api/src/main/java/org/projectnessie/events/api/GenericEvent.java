@@ -18,11 +18,11 @@ package org.projectnessie.events.api;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
-import org.projectnessie.events.api.json.CustomEventDeserializer;
-import org.projectnessie.events.api.json.CustomEventSerializer;
+import org.projectnessie.events.api.json.GenericEventDeserializer;
+import org.projectnessie.events.api.json.GenericEventSerializer;
 
 /**
- * A custom {@link Event} whose runtime type is not known.
+ * A generic {@link Event} whose runtime type is not known.
  *
  * <p>This special event subtype is only used when deserializing unknown event types. This situation
  * can happen when a newer event subtype is present server-side, but the client deserializing the
@@ -32,16 +32,16 @@ import org.projectnessie.events.api.json.CustomEventSerializer;
  * #getProperties()} map.
  */
 @Value.Immutable
-@JsonSerialize(using = CustomEventSerializer.class)
-@JsonDeserialize(using = CustomEventDeserializer.class)
-public interface CustomEvent extends Event {
+@JsonSerialize(using = GenericEventSerializer.class)
+@JsonDeserialize(using = GenericEventDeserializer.class)
+public interface GenericEvent extends Event {
 
   @Override
   @Value.Default
   default EventType getType() {
-    return EventType.CUSTOM;
+    return EventType.GENERIC;
   }
 
   /** The actual runtime type name of this event object. */
-  String getCustomType();
+  String getGenericType();
 }

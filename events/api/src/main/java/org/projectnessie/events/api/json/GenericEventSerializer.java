@@ -21,30 +21,32 @@ import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import java.io.IOException;
 import java.util.Map;
-import org.projectnessie.events.api.CustomContent;
+import org.projectnessie.events.api.GenericEvent;
 
-public final class CustomContentSerializer extends StdSerializer<CustomContent> {
+public final class GenericEventSerializer extends StdSerializer<GenericEvent> {
 
-  public CustomContentSerializer() {
-    super(CustomContent.class);
+  public GenericEventSerializer() {
+    super(GenericEvent.class);
   }
 
   @Override
   public void serializeWithType(
-      CustomContent value,
-      JsonGenerator gen,
-      SerializerProvider serializers,
-      TypeSerializer typeSer)
+      GenericEvent value, JsonGenerator gen, SerializerProvider serializers, TypeSerializer typeSer)
       throws IOException {
     serialize(value, gen, serializers);
   }
 
   @Override
-  public void serialize(CustomContent value, JsonGenerator gen, SerializerProvider serializers)
+  public void serialize(GenericEvent value, JsonGenerator gen, SerializerProvider serializers)
       throws IOException {
     gen.writeStartObject();
-    gen.writeStringField("id", value.getId());
-    gen.writeStringField("type", value.getCustomType());
+    gen.writeStringField("id", value.getId().toString());
+    gen.writeStringField("type", value.getGenericType());
+    gen.writeStringField("repositoryId", value.getRepositoryId());
+    gen.writeStringField("createdAt", value.getCreatedAt().toString());
+    if (value.getCreatedBy().isPresent()) {
+      gen.writeStringField("createdBy", value.getCreatedBy().get());
+    }
     for (Map.Entry<String, Object> entry : value.getProperties().entrySet()) {
       gen.writeFieldName(entry.getKey());
       gen.writeObject(entry.getValue());

@@ -63,9 +63,9 @@ class TestContentType {
   }
 
   @Test
-  void custom() {
-    CustomContent content =
-        ImmutableCustomContent.builder().id("id").customType("customType").build();
-    assertThat(content.getType()).isEqualTo(ContentType.CUSTOM);
+  void generic() {
+    GenericContent content =
+        ImmutableGenericContent.builder().id("id").genericType("genericType").build();
+    assertThat(content.getType()).isEqualTo(ContentType.GENERIC);
   }
 }

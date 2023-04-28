@@ -18,11 +18,11 @@ package org.projectnessie.events.api;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
-import org.projectnessie.events.api.json.CustomContentDeserializer;
-import org.projectnessie.events.api.json.CustomContentSerializer;
+import org.projectnessie.events.api.json.GenericContentDeserializer;
+import org.projectnessie.events.api.json.GenericContentSerializer;
 
 /**
- * A custom {@link Content} whose runtime type is not known.
+ * A generic {@link Content} whose runtime type is not known.
  *
  * <p>This special content subtype is only used when deserializing unknown content types. Since
  * contents are pluggable in Nessie, this situation can happen when a custom content other than the
@@ -33,16 +33,16 @@ import org.projectnessie.events.api.json.CustomContentSerializer;
  * #getProperties()} map.
  */
 @Value.Immutable
-@JsonSerialize(using = CustomContentSerializer.class)
-@JsonDeserialize(using = CustomContentDeserializer.class)
-public interface CustomContent extends Content {
+@JsonSerialize(using = GenericContentSerializer.class)
+@JsonDeserialize(using = GenericContentDeserializer.class)
+public interface GenericContent extends Content {
 
   @Override
   @Value.Default
   default ContentType getType() {
-    return ContentType.CUSTOM;
+    return ContentType.GENERIC;
   }
 
   /** The actual runtime type name of this content object. */
-  String getCustomType();
+  String getGenericType();
 }

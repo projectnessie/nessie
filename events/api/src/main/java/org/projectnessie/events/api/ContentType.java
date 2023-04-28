@@ -51,12 +51,12 @@ public enum ContentType {
   DELTA_LAKE_TABLE(DeltaLakeTable.class),
 
   /**
-   * The content is a custom type. This type is a catch-all type for all other runtime types that
-   * are not one of the built-in types above.
+   * The content is of an unknown type. This type is a catch-all type for all other runtime types
+   * that are not one of the built-in types above.
    *
-   * @see CustomContent
+   * @see GenericContent
    */
-  CUSTOM(CustomContent.class),
+  GENERIC(GenericContent.class),
   ;
 
   private final Class<? extends Content> subtype;

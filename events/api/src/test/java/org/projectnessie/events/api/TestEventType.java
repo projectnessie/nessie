@@ -168,16 +168,16 @@ class TestEventType {
   }
 
   @Test
-  void custom() {
-    CustomEvent content =
-        ImmutableCustomEvent.builder()
+  void generic() {
+    GenericEvent content =
+        ImmutableGenericEvent.builder()
             .id(UUID.randomUUID())
-            .customType("customType")
+            .genericType("genericType")
             .id(UUID.randomUUID())
             .repositoryId("repo1")
             .createdAt(Instant.now())
             .createdBy("Alice")
             .build();
-    assertThat(content.getType()).isEqualTo(EventType.CUSTOM);
+    assertThat(content.getType()).isEqualTo(EventType.GENERIC);
   }
 }

@@ -36,7 +36,7 @@ import org.projectnessie.events.api.json.EventTypeIdResolver;
  * @see ReferenceDeletedEvent
  * @see ContentStoredEvent
  * @see ContentRemovedEvent
- * @see CustomEvent
+ * @see GenericEvent
  */
 @JsonTypeIdResolver(EventTypeIdResolver.class)
 @JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, visible = true, property = "type")

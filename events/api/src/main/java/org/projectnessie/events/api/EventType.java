@@ -80,12 +80,12 @@ public enum EventType {
   CONTENT_REMOVED(ContentRemovedEvent.class),
 
   /**
-   * The content is a custom (unknown) event. This type is a catch-all type for all other runtime
-   * event types that do not match any of the well-known types above.
+   * The event is of an unknown type. This type is a catch-all type for all other runtime event
+   * types that do not match any of the well-known types above.
    *
-   * @see CustomEvent
+   * @see GenericEvent
    */
-  CUSTOM(CustomEvent.class),
+  GENERIC(GenericEvent.class),
   ;
 
   private final Class<? extends Event> subtype;

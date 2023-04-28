@@ -49,18 +49,18 @@ public abstract class AbstractEnumBasedTypeIdResolver extends TypeIdResolverBase
       subtype = subtypeFromId(id);
     } catch (Exception e) {
       // Type id is not a valid enum value; this may mean that this client is older than the
-      // server, and the server has added a new event type. Try to convert to the custom subtype.
-      subtype = customSubtype();
+      // server, and the server has added a new event type. Try to convert to the generic subtype.
+      subtype = genericSubtype();
     }
     // Caller either requested the base type, or the requested subtype is compatible with the
     // actual subtype.
     if (targetType.getRawClass().isAssignableFrom(subtype)) {
       return context.constructSpecializedType(targetType, subtype);
     }
-    // Caller explicitly asked to convert to the special custom subtype, which is always
+    // Caller explicitly asked to convert to the special generic subtype, which is always
     // possible.
-    if (targetType.isTypeOrSubTypeOf(customSubtype())) {
-      return context.constructSpecializedType(targetType, customSubtype());
+    if (targetType.isTypeOrSubTypeOf(genericSubtype())) {
+      return context.constructSpecializedType(targetType, genericSubtype());
     }
     // Caller asked for a specific subtype, but that subtype is not assignable to the actual
     // subtype.
@@ -71,5 +71,5 @@ public abstract class AbstractEnumBasedTypeIdResolver extends TypeIdResolverBase
 
   protected abstract Class<?> subtypeFromId(String id);
 
-  protected abstract Class<?> customSubtype();
+  protected abstract Class<?> genericSubtype();
 }

@@ -18,7 +18,7 @@ package org.projectnessie.events.api.json;
 import java.util.Locale;
 import org.projectnessie.events.api.Content;
 import org.projectnessie.events.api.ContentType;
-import org.projectnessie.events.api.CustomContent;
+import org.projectnessie.events.api.GenericContent;
 
 public final class ContentTypeIdResolver extends AbstractEnumBasedTypeIdResolver {
 
@@ -33,7 +33,7 @@ public final class ContentTypeIdResolver extends AbstractEnumBasedTypeIdResolver
   }
 
   @Override
-  protected Class<?> customSubtype() {
-    return CustomContent.class;
+  protected Class<?> genericSubtype() {
+    return GenericContent.class;
   }
 }

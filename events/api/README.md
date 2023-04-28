@@ -41,7 +41,7 @@ It can handle the following content types:
 * `org.projectnessie.events.api.IcebergView`: Iceberg view content.
 * `org.projectnessie.events.api.DeltaLakeTable`: Delta Lake table content.
 * `org.projectnessie.events.api.Namespace`: Namespace content.
-* `org.projectnessie.events.api.CustomContent`: a catch-all content type that will be used to
+* `org.projectnessie.events.api.GenericContent`: a catch-all content type that will be used to
   serialize and deserialize any content type that is not supported by the other content types above.
 
 ## JSON serialization & deserialization
