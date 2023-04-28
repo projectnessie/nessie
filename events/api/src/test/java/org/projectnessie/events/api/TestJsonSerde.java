@@ -50,7 +50,7 @@ class TestJsonSerde {
                     .fullName("refs/heads/branch1")
                     .type(Reference.BRANCH)
                     .build())
-            .targetBranch(
+            .targetReference(
                 ImmutableReference.builder()
                     .simpleName("branch2")
                     .fullName("refs/heads/branch2")
@@ -88,7 +88,7 @@ class TestJsonSerde {
                     .fullName("refs/heads/branch1")
                     .type(Reference.BRANCH)
                     .build())
-            .targetBranch(
+            .targetReference(
                 ImmutableReference.builder()
                     .simpleName("branch2")
                     .fullName("refs/heads/branch2")
@@ -120,7 +120,7 @@ class TestJsonSerde {
                     .fullName("refs/heads/branch1")
                     .type(Reference.BRANCH)
                     .build())
-            .targetBranch(
+            .targetReference(
                 ImmutableReference.builder()
                     .simpleName("branch2")
                     .fullName("refs/heads/branch2")
@@ -218,7 +218,7 @@ class TestJsonSerde {
   void contentStored() throws Exception {
     ContentStoredEvent event =
         ImmutableContentStoredEvent.builder()
-            .branch(
+            .reference(
                 ImmutableReference.builder()
                     .simpleName("branch1")
                     .fullName("refs/heads/branch1")
@@ -252,7 +252,7 @@ class TestJsonSerde {
   void contentRemoved() throws Exception {
     ContentRemovedEvent event =
         ImmutableContentRemovedEvent.builder()
-            .branch(
+            .reference(
                 ImmutableReference.builder()
                     .simpleName("branch1")
                     .fullName("refs/heads/branch1")

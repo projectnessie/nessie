@@ -42,7 +42,7 @@ class TestEventType {
     CommitEvent event =
         ImmutableCommitEvent.builder()
             .sourceReference(branch1)
-            .targetBranch(branch2)
+            .targetReference(branch2)
             .hashBefore("hash1")
             .hashAfter("hash2")
             .id(UUID.randomUUID())
@@ -65,7 +65,7 @@ class TestEventType {
     MergeEvent event =
         ImmutableMergeEvent.builder()
             .sourceReference(branch1)
-            .targetBranch(branch2)
+            .targetReference(branch2)
             .hashBefore("hash1")
             .hashAfter("hash2")
             .id(UUID.randomUUID())
@@ -82,7 +82,7 @@ class TestEventType {
     TransplantEvent event =
         ImmutableTransplantEvent.builder()
             .sourceReference(branch1)
-            .targetBranch(branch2)
+            .targetReference(branch2)
             .hashBefore("hash1")
             .hashAfter("hash2")
             .id(UUID.randomUUID())
@@ -140,7 +140,7 @@ class TestEventType {
   void contentStored() {
     ContentStoredEvent event =
         ImmutableContentStoredEvent.builder()
-            .branch(branch1)
+            .reference(branch1)
             .hash("hash1")
             .contentKey(ContentKey.of("ns", "table1"))
             .id(UUID.randomUUID())
@@ -156,7 +156,7 @@ class TestEventType {
   void contentRemoved() {
     ContentRemovedEvent event =
         ImmutableContentRemovedEvent.builder()
-            .branch(branch1)
+            .reference(branch1)
             .hash("hash1")
             .contentKey(ContentKey.of("ns", "table1"))
             .id(UUID.randomUUID())

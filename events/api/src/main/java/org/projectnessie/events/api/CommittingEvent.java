@@ -32,16 +32,21 @@ public interface CommittingEvent extends Event {
    * The source reference where the committed operations came from. This is usually a branch, but
    * not always (e.g. it could be a tag or a detached reference).
    *
-   * <p>For commits, this is always the same as the {@linkplain #getTargetBranch() target branch}.
+   * <p>For commits, this is always the same as the {@linkplain #getTargetReference() target
+   * reference}.
    */
   Reference getSourceReference();
 
-  /** The target branch where the committed operations were applied to. */
-  Reference getTargetBranch();
+  /**
+   * The target reference where the committed operations were applied to.
+   *
+   * <p>For the time being, the target reference is guaranteed to be a branch.
+   */
+  Reference getTargetReference();
 
-  /** The hash on the {@linkplain #getTargetBranch() target branch} before the event. */
+  /** The hash on the {@linkplain #getTargetReference() target reference} before the event. */
   String getHashBefore();
 
-  /** The hash on the {@linkplain #getTargetBranch() target branch} after the event. */
+  /** The hash on the {@linkplain #getTargetReference() target reference} after the event. */
   String getHashAfter();
 }

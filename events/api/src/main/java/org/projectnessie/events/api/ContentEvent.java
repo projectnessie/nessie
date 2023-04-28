@@ -27,8 +27,12 @@ package org.projectnessie.events.api;
  */
 public interface ContentEvent extends Event {
 
-  /** The branch that the content was stored in or removed from. */
-  Reference getBranch();
+  /**
+   * The reference that the content was stored in or removed from.
+   *
+   * <p>For the time being, the reference is guaranteed to be a branch.
+   */
+  Reference getReference();
 
   /** The hash of the commit that the content was stored in or removed from. */
   String getHash();

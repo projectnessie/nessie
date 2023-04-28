@@ -28,6 +28,6 @@ package org.projectnessie.events.api;
  */
 public interface ReferenceEvent extends Event {
 
-  /** The name of the reference, e.g. "branch1". */
+  /** The reference affected by the event. */
   Reference getReference();
 }
