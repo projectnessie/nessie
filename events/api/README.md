@@ -25,7 +25,7 @@ The following concrete event implementations are defined:
 * `ReferenceDeletedEvent`: This event is published when a reference is deleted.
 * `ContentStoredEvent`: This event is published when a content is stored (PUT).
 * `ContentRemovedEvent`: This event is published when a content is removed (DELETE).
-* `CustomEvent`: a catch-all event type that will be used to serialize and deserialize any event 
+* `GenericEvent`: a catch-all event type that will be used to serialize and deserialize any event 
   type that is not supported by the other event types above.
 
 ## Contents
@@ -37,12 +37,12 @@ for easy serialization and deserialization of content.
 
 It can handle the following content types:
 
-* `org.projectnessie.events.api.IcebergTable`: Iceberg table content.
-* `org.projectnessie.events.api.IcebergView`: Iceberg view content.
-* `org.projectnessie.events.api.DeltaLakeTable`: Delta Lake table content.
-* `org.projectnessie.events.api.Namespace`: Namespace content.
-* `org.projectnessie.events.api.GenericContent`: a catch-all content type that will be used to
-  serialize and deserialize any content type that is not supported by the other content types above.
+* `IcebergTable`: Iceberg table content.
+* `IcebergView`: Iceberg view content.
+* `DeltaLakeTable`: Delta Lake table content.
+* `Namespace`: Namespace content.
+* `GenericContent`: a catch-all content type that will be used to serialize and deserialize any 
+  content type that is not supported by the other content types above.
 
 ## JSON serialization & deserialization
 
@@ -60,8 +60,8 @@ ObjectMapper mapper = new ObjectMapper()
   .registerModule(new Jdk8Module());
 ```
 
-Serializing and deserializing unknown event and content types is done using the `CustomEvent`
-and `CustomContent` types. 
+Serializing and deserializing unknown event and content types is done using the `GenericEvent`
+and `GenericContent` types. 
 
 For example, the following JSON payload:
 
@@ -70,28 +70,26 @@ For example, the following JSON payload:
   "type": "UNKNOWN_EVENT",
   "id": "e1b0a7a8-4f8e-4f1e-8a2e-2d9b8d9b9e5e",
   "repositoryId": "repo1",
-  "createdAt": "2021-03-01T14:00:00Z",
-  "sentBy": "Nessie",
-  "createdBy": "user1",
+  "eventCreationTimestamp": "2021-03-01T14:00:00Z",
+  "eventInitiator": "user1",
   "custom-payload": {
     "foo": "bar"
   }
 }
 ```
 
-... would be deserialized into a `CustomEvent` instance:
+... would be deserialized into a `GenericEvent` instance:
 
 ```java
 Event event = mapper.readValue(json, Event.class);
-assert event instanceof CustomEvent;
-CustomEvent customEvent = (CustomEvent) event;
-assert customEvent.getType() == EventType.CUSTOM;
-assert customEvent.getCustomType().equals("UNKNOWN_EVENT");
-assert customEvent.getRepositoryId().equals("repo1");
-assert customEvent.getCreatedAt().equals(Instant.parse("2021-03-01T14:00:00Z"));
-assert customEvent.getSentBy().equals("Nessie");
-assert customEvent.getCreatedBy().get().equals("user1");
-assert customEvent.getProperties().containsKey("custom-payload");
+assert event instanceof GenericEvent;
+GenericEvent genericEvent = (GenericEvent) event;
+assert genericEvent.getType() == EventType.GENERIC;
+assert genericEvent.getGenericType().equals("UNKNOWN_EVENT");
+assert genericEvent.getRepositoryId().equals("repo1");
+assert genericEvent.getEventCreationTimestamp().equals(Instant.parse("2021-03-01T14:00:00Z"));
+assert genericEvent.getEventInitiator().get().equals("user1");
+assert genericEvent.getProperties().containsKey("custom-payload");
 ```
 
 Any custom properties that are not part of the `Event` interface will be stored in the event's 
