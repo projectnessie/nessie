@@ -43,9 +43,9 @@ public final class GenericEventSerializer extends StdSerializer<GenericEvent> {
     gen.writeStringField("id", value.getId().toString());
     gen.writeStringField("type", value.getGenericType());
     gen.writeStringField("repositoryId", value.getRepositoryId());
-    gen.writeStringField("createdAt", value.getCreatedAt().toString());
-    if (value.getCreatedBy().isPresent()) {
-      gen.writeStringField("createdBy", value.getCreatedBy().get());
+    gen.writeStringField("eventCreationTimestamp", value.getEventCreationTimestamp().toString());
+    if (value.getEventInitiator().isPresent()) {
+      gen.writeStringField("eventInitiator", value.getEventInitiator().get());
     }
     for (Map.Entry<String, Object> entry : value.getProperties().entrySet()) {
       gen.writeFieldName(entry.getKey());

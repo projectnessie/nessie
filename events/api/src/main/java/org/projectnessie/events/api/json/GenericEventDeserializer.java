@@ -45,14 +45,15 @@ public final class GenericEventDeserializer extends StdDeserializer<GenericEvent
       Object id = Objects.requireNonNull(properties.remove("id"));
       Object genericType = Objects.requireNonNull(properties.remove("type"));
       Object repositoryId = Objects.requireNonNull(properties.remove("repositoryId"));
-      Object createdAt = Objects.requireNonNull(properties.remove("createdAt"));
-      Object createdBy = properties.remove("createdBy");
+      Object eventCreationTimestamp =
+          Objects.requireNonNull(properties.remove("eventCreationTimestamp"));
+      Object eventInitiator = properties.remove("eventInitiator");
       return ImmutableGenericEvent.builder()
           .id(UUID.fromString(id.toString()))
           .genericType(genericType.toString())
           .repositoryId(repositoryId.toString())
-          .createdAt(Instant.parse(createdAt.toString()))
-          .createdBy(Optional.ofNullable(createdBy).map(Object::toString))
+          .eventCreationTimestamp(Instant.parse(eventCreationTimestamp.toString()))
+          .eventInitiator(Optional.ofNullable(eventInitiator).map(Object::toString))
           .properties(properties)
           .build();
     } catch (Exception e) {

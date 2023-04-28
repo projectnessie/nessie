@@ -47,8 +47,8 @@ class TestEventType {
             .hashAfter("hash2")
             .id(UUID.randomUUID())
             .repositoryId("repo1")
-            .createdAt(Instant.now())
-            .createdBy("Alice")
+            .eventCreationTimestamp(Instant.now())
+            .eventInitiator("Alice")
             .commitMeta(
                 ImmutableCommitMeta.builder()
                     .commitTime(Instant.now())
@@ -70,8 +70,8 @@ class TestEventType {
             .hashAfter("hash2")
             .id(UUID.randomUUID())
             .repositoryId("repo1")
-            .createdAt(Instant.now())
-            .createdBy("Alice")
+            .eventCreationTimestamp(Instant.now())
+            .eventInitiator("Alice")
             .commonAncestorHash("hash0")
             .build();
     assertThat(event.getType()).isEqualTo(EventType.MERGE);
@@ -87,8 +87,8 @@ class TestEventType {
             .hashAfter("hash2")
             .id(UUID.randomUUID())
             .repositoryId("repo1")
-            .createdAt(Instant.now())
-            .createdBy("Alice")
+            .eventCreationTimestamp(Instant.now())
+            .eventInitiator("Alice")
             .build();
     assertThat(event.getType()).isEqualTo(EventType.TRANSPLANT);
   }
@@ -100,8 +100,8 @@ class TestEventType {
             .reference(branch1)
             .id(UUID.randomUUID())
             .repositoryId("repo1")
-            .createdAt(Instant.now())
-            .createdBy("Alice")
+            .eventCreationTimestamp(Instant.now())
+            .eventInitiator("Alice")
             .hashAfter("hash2")
             .build();
     assertThat(event.getType()).isEqualTo(EventType.REFERENCE_CREATED);
@@ -114,8 +114,8 @@ class TestEventType {
             .reference(branch1)
             .id(UUID.randomUUID())
             .repositoryId("repo1")
-            .createdAt(Instant.now())
-            .createdBy("Alice")
+            .eventCreationTimestamp(Instant.now())
+            .eventInitiator("Alice")
             .hashBefore("hash1")
             .hashAfter("hash2")
             .build();
@@ -129,8 +129,8 @@ class TestEventType {
             .reference(branch1)
             .id(UUID.randomUUID())
             .repositoryId("repo1")
-            .createdAt(Instant.now())
-            .createdBy("Alice")
+            .eventCreationTimestamp(Instant.now())
+            .eventInitiator("Alice")
             .hashBefore("hash1")
             .build();
     assertThat(event.getType()).isEqualTo(EventType.REFERENCE_DELETED);
@@ -145,8 +145,8 @@ class TestEventType {
             .contentKey(ContentKey.of("ns", "table1"))
             .id(UUID.randomUUID())
             .repositoryId("repo1")
-            .createdAt(Instant.now())
-            .createdBy("Alice")
+            .eventCreationTimestamp(Instant.now())
+            .eventInitiator("Alice")
             .content(mock(Content.class))
             .build();
     assertThat(event.getType()).isEqualTo(EventType.CONTENT_STORED);
@@ -161,8 +161,8 @@ class TestEventType {
             .contentKey(ContentKey.of("ns", "table1"))
             .id(UUID.randomUUID())
             .repositoryId("repo1")
-            .createdAt(Instant.now())
-            .createdBy("Alice")
+            .eventCreationTimestamp(Instant.now())
+            .eventInitiator("Alice")
             .build();
     assertThat(event.getType()).isEqualTo(EventType.CONTENT_REMOVED);
   }
@@ -175,8 +175,8 @@ class TestEventType {
             .genericType("genericType")
             .id(UUID.randomUUID())
             .repositoryId("repo1")
-            .createdAt(Instant.now())
-            .createdBy("Alice")
+            .eventCreationTimestamp(Instant.now())
+            .eventInitiator("Alice")
             .build();
     assertThat(content.getType()).isEqualTo(EventType.GENERIC);
   }

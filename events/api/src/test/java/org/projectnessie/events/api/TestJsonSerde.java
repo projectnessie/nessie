@@ -60,8 +60,8 @@ class TestJsonSerde {
             .hashAfter("hash2")
             .id(UUID.randomUUID())
             .repositoryId("repo1")
-            .createdAt(Instant.now())
-            .createdBy("Alice")
+            .eventCreationTimestamp(Instant.now())
+            .eventInitiator("Alice")
             .putProperty("string", "foo")
             .putProperty("number", 123)
             .putProperty("boolean", true)
@@ -98,8 +98,8 @@ class TestJsonSerde {
             .hashAfter("hash2")
             .id(UUID.randomUUID())
             .repositoryId("repo1")
-            .createdAt(Instant.now())
-            .createdBy("Alice")
+            .eventCreationTimestamp(Instant.now())
+            .eventInitiator("Alice")
             .commonAncestorHash("hash0")
             .putProperty("string", "foo")
             .putProperty("number", 123)
@@ -130,8 +130,8 @@ class TestJsonSerde {
             .hashAfter("hash2")
             .id(UUID.randomUUID())
             .repositoryId("repo1")
-            .createdAt(Instant.now())
-            .createdBy("Alice")
+            .eventCreationTimestamp(Instant.now())
+            .eventInitiator("Alice")
             .putProperty("string", "foo")
             .putProperty("number", 123)
             .putProperty("boolean", true)
@@ -153,8 +153,8 @@ class TestJsonSerde {
                     .build())
             .id(UUID.randomUUID())
             .repositoryId("repo1")
-            .createdAt(Instant.now())
-            .createdBy("Alice")
+            .eventCreationTimestamp(Instant.now())
+            .eventInitiator("Alice")
             .hashAfter("hash2")
             .putProperty("string", "foo")
             .putProperty("number", 123)
@@ -177,8 +177,8 @@ class TestJsonSerde {
                     .build())
             .id(UUID.randomUUID())
             .repositoryId("repo1")
-            .createdAt(Instant.now())
-            .createdBy("Alice")
+            .eventCreationTimestamp(Instant.now())
+            .eventInitiator("Alice")
             .hashBefore("hash1")
             .hashAfter("hash2")
             .putProperty("string", "foo")
@@ -202,8 +202,8 @@ class TestJsonSerde {
                     .build())
             .id(UUID.randomUUID())
             .repositoryId("repo1")
-            .createdAt(Instant.now())
-            .createdBy("Alice")
+            .eventCreationTimestamp(Instant.now())
+            .eventInitiator("Alice")
             .hashBefore("hash1")
             .putProperty("string", "foo")
             .putProperty("number", 123)
@@ -228,8 +228,8 @@ class TestJsonSerde {
             .contentKey(ContentKey.of("ns", "table1"))
             .id(UUID.randomUUID())
             .repositoryId("repo1")
-            .createdAt(Instant.now())
-            .createdBy("Alice")
+            .eventCreationTimestamp(Instant.now())
+            .eventInitiator("Alice")
             .putProperty("string", "foo")
             .putProperty("number", 123)
             .putProperty("boolean", true)
@@ -262,8 +262,8 @@ class TestJsonSerde {
             .contentKey(ContentKey.of("ns", "table1"))
             .id(UUID.randomUUID())
             .repositoryId("repo1")
-            .createdAt(Instant.now())
-            .createdBy("Alice")
+            .eventCreationTimestamp(Instant.now())
+            .eventInitiator("Alice")
             .putProperty("string", "foo")
             .putProperty("number", 123)
             .putProperty("boolean", true)
@@ -362,7 +362,8 @@ class TestJsonSerde {
             .id(UUID.fromString("7385d1e6-3deb-440b-9008-a383e2de6e6c"))
             .genericType("weird")
             .repositoryId("repo1")
-            .createdAt(Instant.parse("2023-04-25T13:02:05Z"))
+            .eventCreationTimestamp(Instant.parse("2023-04-25T13:02:05Z"))
+            .eventInitiator("Alice")
             .putProperty("string", "foo")
             .putProperty("number", 123)
             .putProperty("boolean", true)
@@ -379,7 +380,7 @@ class TestJsonSerde {
             .id(UUID.fromString("7385d1e6-3deb-440b-9008-a383e2de6e6c"))
             .genericType("weird")
             .repositoryId("repo1")
-            .createdAt(Instant.parse("2023-04-25T13:02:05Z"))
+            .eventCreationTimestamp(Instant.parse("2023-04-25T13:02:05Z"))
             .putProperty("string", "foo")
             .putProperty("number", 123)
             .putProperty("boolean", true)
@@ -392,7 +393,7 @@ class TestJsonSerde {
                 + "\"id\":\"7385d1e6-3deb-440b-9008-a383e2de6e6c\","
                 + "\"type\":\"weird\","
                 + "\"repositoryId\":\"repo1\","
-                + "\"createdAt\":\"2023-04-25T13:02:05Z\","
+                + "\"eventCreationTimestamp\":\"2023-04-25T13:02:05Z\","
                 + "\"string\":\"foo\","
                 + "\"number\":123,"
                 + "\"boolean\":true,"
@@ -455,7 +456,7 @@ class TestJsonSerde {
                     + "\"id\":\"7385d1e6-3deb-440b-9008-a383e2de6e6c\","
                     + "\"type\":\"weird\","
                     + "\"repositoryId\":\"repo1\","
-                    + "\"createdAt\":\"2023-04-25T13:02:05Z\","
+                    + "\"eventCreationTimestamp\":\"2023-04-25T13:02:05Z\","
                     + "\"string\":\"foo\","
                     + "\"number\":123,"
                     + "\"boolean\":true,"
@@ -471,7 +472,7 @@ class TestJsonSerde {
                 .id(UUID.fromString("7385d1e6-3deb-440b-9008-a383e2de6e6c"))
                 .genericType("weird")
                 .repositoryId("repo1")
-                .createdAt(Instant.parse("2023-04-25T13:02:05Z"))
+                .eventCreationTimestamp(Instant.parse("2023-04-25T13:02:05Z"))
                 .putProperty("string", "foo")
                 .putProperty("number", 123)
                 .putProperty("boolean", true)
@@ -517,7 +518,7 @@ class TestJsonSerde {
                     + "\"id\":\"7385d1e6-3deb-440b-9008-a383e2de6e6c\","
                     + "\"type\":\"REFERENCE_CREATED\","
                     + "\"repositoryId\":\"repo1\","
-                    + "\"createdAt\":\"2023-04-25T13:02:05Z\","
+                    + "\"eventCreationTimestamp\":\"2023-04-25T13:02:05Z\","
                     + "\"hashAfter\":\"1234\","
                     + "\"referenceName\":\"ref1\","
                     + "\"fullReferenceName\":\"refs/heads/ref1\","
@@ -537,7 +538,7 @@ class TestJsonSerde {
                 .id(UUID.fromString("7385d1e6-3deb-440b-9008-a383e2de6e6c"))
                 .genericType("REFERENCE_CREATED")
                 .repositoryId("repo1")
-                .createdAt(Instant.parse("2023-04-25T13:02:05Z"))
+                .eventCreationTimestamp(Instant.parse("2023-04-25T13:02:05Z"))
                 .putProperty("hashAfter", "1234")
                 .putProperty("referenceName", "ref1")
                 .putProperty("fullReferenceName", "refs/heads/ref1")
@@ -598,7 +599,7 @@ class TestJsonSerde {
                         + "\"id\":\"7385d1e6-3deb-440b-9008-a383e2de6e6c\","
                         + "\"type\":\"REFERENCE_CREATED\","
                         + "\"repositoryId\":\"repo1\","
-                        + "\"createdAt\":\"2023-04-25T13:02:05Z\","
+                        + "\"eventCreationTimestamp\":\"2023-04-25T13:02:05Z\","
                         + "\"hashAfter\":\"1234\","
                         + "\"referenceName\":\"ref1\","
                         + "\"fullReferenceName\":\"refs/heads/ref1\","
