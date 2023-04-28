@@ -25,11 +25,11 @@ import org.projectnessie.events.api.json.ContentTypeIdResolver;
 
 /** An object stored in Nessie, such as a table or a view. */
 @JsonSubTypes({
-  @JsonSubTypes.Type(name = "ICEBERG_TABLE", value = ImmutableIcebergTable.class),
-  @JsonSubTypes.Type(name = "ICEBERG_VIEW", value = ImmutableIcebergView.class),
-  @JsonSubTypes.Type(name = "NAMESPACE", value = ImmutableNamespace.class),
-  @JsonSubTypes.Type(name = "DELTA_LAKE_TABLE", value = ImmutableDeltaLakeTable.class),
-  @JsonSubTypes.Type(name = "CUSTOM", value = ImmutableCustomContent.class),
+  @JsonSubTypes.Type(name = "ICEBERG_TABLE", value = IcebergTable.class),
+  @JsonSubTypes.Type(name = "ICEBERG_VIEW", value = IcebergView.class),
+  @JsonSubTypes.Type(name = "NAMESPACE", value = Namespace.class),
+  @JsonSubTypes.Type(name = "DELTA_LAKE_TABLE", value = DeltaLakeTable.class),
+  @JsonSubTypes.Type(name = "CUSTOM", value = CustomContent.class),
 })
 @JsonTypeIdResolver(ContentTypeIdResolver.class)
 @JsonTypeInfo(

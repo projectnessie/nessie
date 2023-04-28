@@ -39,15 +39,15 @@ import org.projectnessie.events.api.json.EventTypeIdResolver;
  * @see ContentRemovedEvent
  */
 @JsonSubTypes({
-  @JsonSubTypes.Type(name = "COMMIT", value = ImmutableCommitEvent.class),
-  @JsonSubTypes.Type(name = "MERGE", value = ImmutableMergeEvent.class),
-  @JsonSubTypes.Type(name = "TRANSPLANT", value = ImmutableTransplantEvent.class),
-  @JsonSubTypes.Type(name = "REFERENCE_CREATED", value = ImmutableReferenceCreatedEvent.class),
-  @JsonSubTypes.Type(name = "REFERENCE_UPDATED", value = ImmutableReferenceUpdatedEvent.class),
-  @JsonSubTypes.Type(name = "REFERENCE_DELETED", value = ImmutableReferenceDeletedEvent.class),
-  @JsonSubTypes.Type(name = "CONTENT_STORED", value = ImmutableContentStoredEvent.class),
-  @JsonSubTypes.Type(name = "CONTENT_REMOVED", value = ImmutableContentRemovedEvent.class),
-  @JsonSubTypes.Type(name = "CUSTOM", value = ImmutableCustomEvent.class),
+  @JsonSubTypes.Type(name = "COMMIT", value = CommitEvent.class),
+  @JsonSubTypes.Type(name = "MERGE", value = MergeEvent.class),
+  @JsonSubTypes.Type(name = "TRANSPLANT", value = TransplantEvent.class),
+  @JsonSubTypes.Type(name = "REFERENCE_CREATED", value = ReferenceCreatedEvent.class),
+  @JsonSubTypes.Type(name = "REFERENCE_UPDATED", value = ReferenceUpdatedEvent.class),
+  @JsonSubTypes.Type(name = "REFERENCE_DELETED", value = ReferenceDeletedEvent.class),
+  @JsonSubTypes.Type(name = "CONTENT_STORED", value = ContentStoredEvent.class),
+  @JsonSubTypes.Type(name = "CONTENT_REMOVED", value = ContentRemovedEvent.class),
+  @JsonSubTypes.Type(name = "CUSTOM", value = CustomEvent.class),
 })
 @JsonTypeIdResolver(EventTypeIdResolver.class)
 @JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "type", visible = true)

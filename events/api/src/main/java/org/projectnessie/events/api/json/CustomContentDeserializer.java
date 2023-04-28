@@ -18,8 +18,8 @@ package org.projectnessie.events.api.json;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
@@ -47,7 +47,7 @@ public final class CustomContentDeserializer extends StdDeserializer<CustomConte
           .properties(properties)
           .build();
     } catch (Exception e) {
-      throw InvalidDefinitionException.from(ctx, "Failed to deserialize CustomContent", e);
+      throw JsonMappingException.from(ctx, "Failed to deserialize CustomContent", e);
     }
   }
 }
