@@ -50,7 +50,6 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -230,58 +229,51 @@ public abstract class NonTransactionalDatabaseAdapter<
     // Note: "beginning-of-time" (aka creating a branch without specifying a "create-from")
     // creates a new commit-tree that is decoupled from other commit-trees.
     try {
-      AtomicReference<ImmutableMergeResult.Builder<CommitLogEntry>> mergeResultHolder =
-          new AtomicReference<>();
+      return casOpLoop(
+          "merge",
+          mergeParams.getToBranch(),
+          CasOpVariant.MERGE,
+          (ctx, refHead, branchCommits, newKeyLists) -> {
+            ImmutableMergeResult.Builder<CommitLogEntry> mergeResult =
+                MergeResult.<CommitLogEntry>builder()
+                    .resultType(ResultType.MERGE)
+                    .sourceRef(mergeParams.getFromRef());
 
-      Hash result =
-          casOpLoop(
-              "merge",
-              mergeParams.getToBranch(),
-              CasOpVariant.COMMIT,
-              (ctx, refHead, branchCommits, newKeyLists) -> {
-                ImmutableMergeResult.Builder<CommitLogEntry> mergeResult =
-                    MergeResult.<CommitLogEntry>builder()
-                        .resultType(ResultType.MERGE)
-                        .sourceRef(mergeParams.getFromRef());
-                mergeResultHolder.set(mergeResult);
+            Hash currentHead = Hash.of(refHead.getHash());
 
-                Hash currentHead = Hash.of(refHead.getHash());
+            long timeInMicros = config.currentTimeInMicros();
 
-                long timeInMicros = config.currentTimeInMicros();
+            List<CommitLogEntry> writtenCommits = new ArrayList<>();
+            Hash newHead =
+                mergeAttempt(
+                    ctx,
+                    timeInMicros,
+                    currentHead,
+                    branchCommits,
+                    newKeyLists,
+                    writtenCommits::add,
+                    mergeResult::addAddedCommits,
+                    mergeParams,
+                    mergeResult);
 
-                List<CommitLogEntry> writtenCommits = new ArrayList<>();
-                Hash newHead =
-                    mergeAttempt(
-                        ctx,
-                        timeInMicros,
-                        currentHead,
-                        branchCommits,
-                        newKeyLists,
-                        writtenCommits::add,
-                        mergeResult::addAddedCommits,
-                        mergeParams,
-                        mergeResult);
+            if (!mergeParams.isDryRun()) {
+              mergeResult.wasApplied(true);
+            }
+            mergeResult.resultantTargetHash(newHead);
 
-                return casOpResult(
-                    refHead,
-                    newHead,
-                    null,
-                    () ->
-                        MergeEvent.builder()
-                            .previousHash(currentHead)
-                            .hash(newHead)
-                            .branch(mergeParams.getToBranch())
-                            .commits(writtenCommits));
-              },
-              () -> mergeConflictMessage("Retry-failure", mergeParams));
+            return casOpResult(
+                refHead,
+                mergeResult.build(),
+                null,
+                () ->
+                    MergeEvent.builder()
+                        .previousHash(currentHead)
+                        .hash(newHead)
+                        .branch(mergeParams.getToBranch())
+                        .commits(writtenCommits));
+          },
+          () -> mergeConflictMessage("Retry-failure", mergeParams));
 
-      ImmutableMergeResult.Builder<CommitLogEntry> mergeResult =
-          Objects.requireNonNull(
-              mergeResultHolder.get(), "Internal error, merge-result builder not set.");
-      if (!mergeParams.isDryRun()) {
-        mergeResult.wasApplied(true);
-      }
-      return mergeResult.resultantTargetHash(result).build();
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
       throw e;
     } catch (Exception e) {
@@ -294,58 +286,51 @@ public abstract class NonTransactionalDatabaseAdapter<
   public MergeResult<CommitLogEntry> transplant(TransplantParams transplantParams)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
-      AtomicReference<ImmutableMergeResult.Builder<CommitLogEntry>> mergeResultHolder =
-          new AtomicReference<>();
+      return casOpLoop(
+          "transplant",
+          transplantParams.getToBranch(),
+          CasOpVariant.MERGE,
+          (ctx, refHead, branchCommits, newKeyLists) -> {
+            ImmutableMergeResult.Builder<CommitLogEntry> mergeResult =
+                MergeResult.<CommitLogEntry>builder()
+                    .resultType(ResultType.TRANSPLANT)
+                    .sourceRef(transplantParams.getFromRef());
 
-      Hash result =
-          casOpLoop(
-              "transplant",
-              transplantParams.getToBranch(),
-              CasOpVariant.COMMIT,
-              (ctx, refHead, branchCommits, newKeyLists) -> {
-                ImmutableMergeResult.Builder<CommitLogEntry> mergeResult =
-                    MergeResult.<CommitLogEntry>builder()
-                        .resultType(ResultType.TRANSPLANT)
-                        .sourceRef(transplantParams.getFromRef());
-                mergeResultHolder.set(mergeResult);
+            Hash currentHead = Hash.of(refHead.getHash());
 
-                Hash currentHead = Hash.of(refHead.getHash());
+            long timeInMicros = config.currentTimeInMicros();
 
-                long timeInMicros = config.currentTimeInMicros();
+            List<CommitLogEntry> writtenCommits = new ArrayList<>();
+            Hash newHead =
+                transplantAttempt(
+                    ctx,
+                    timeInMicros,
+                    currentHead,
+                    branchCommits,
+                    newKeyLists,
+                    writtenCommits::add,
+                    mergeResult::addAddedCommits,
+                    transplantParams,
+                    mergeResult);
 
-                List<CommitLogEntry> writtenCommits = new ArrayList<>();
-                Hash newHead =
-                    transplantAttempt(
-                        ctx,
-                        timeInMicros,
-                        currentHead,
-                        branchCommits,
-                        newKeyLists,
-                        writtenCommits::add,
-                        mergeResult::addAddedCommits,
-                        transplantParams,
-                        mergeResult);
+            if (!transplantParams.isDryRun()) {
+              mergeResult.wasApplied(true);
+            }
+            mergeResult.resultantTargetHash(newHead);
 
-                return casOpResult(
-                    refHead,
-                    newHead,
-                    null,
-                    () ->
-                        TransplantEvent.builder()
-                            .previousHash(currentHead)
-                            .hash(newHead)
-                            .branch(transplantParams.getToBranch())
-                            .commits(writtenCommits));
-              },
-              () -> transplantConflictMessage("Retry-failure", transplantParams));
+            return casOpResult(
+                refHead,
+                mergeResult.build(),
+                null,
+                () ->
+                    TransplantEvent.builder()
+                        .previousHash(currentHead)
+                        .hash(newHead)
+                        .branch(transplantParams.getToBranch())
+                        .commits(writtenCommits));
+          },
+          () -> transplantConflictMessage("Retry-failure", transplantParams));
 
-      ImmutableMergeResult.Builder<CommitLogEntry> mergeResult =
-          Objects.requireNonNull(
-              mergeResultHolder.get(), "Internal error, merge-result builder not set.");
-      if (!transplantParams.isDryRun()) {
-        mergeResult.wasApplied(true);
-      }
-      return mergeResult.resultantTargetHash(result).build();
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
       throw e;
     } catch (Exception e) {
@@ -357,11 +342,7 @@ public abstract class NonTransactionalDatabaseAdapter<
   public CommitResult<CommitLogEntry> commit(CommitParams commitParams)
       throws ReferenceConflictException, ReferenceNotFoundException {
     try {
-
-      AtomicReference<ImmutableCommitResult.Builder<CommitLogEntry>> commitResultHolder =
-          new AtomicReference<>();
-
-      casOpLoop(
+      return casOpLoop(
           "commit",
           commitParams.getToBranch(),
           CasOpVariant.COMMIT,
@@ -379,11 +360,10 @@ public abstract class NonTransactionalDatabaseAdapter<
             branchCommits.accept(newHead);
 
             commitResult.targetBranch(commitParams.getToBranch()).commit(newBranchCommit);
-            commitResultHolder.set(commitResult);
 
             return casOpResult(
                 refHead,
-                newHead,
+                commitResult.build(),
                 null,
                 () ->
                     CommitEvent.builder()
@@ -395,12 +375,6 @@ public abstract class NonTransactionalDatabaseAdapter<
           () ->
               commitConflictMessage(
                   "Retry-Failure", commitParams.getToBranch(), commitParams.getExpectedHead()));
-
-      ImmutableCommitResult.Builder<CommitLogEntry> commitResult =
-          Objects.requireNonNull(
-              commitResultHolder.get(), "Internal error, commit-result builder not set.");
-
-      return commitResult.build();
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
       throw e;
     } catch (Exception e) {
@@ -412,17 +386,13 @@ public abstract class NonTransactionalDatabaseAdapter<
   public ReferenceCreatedResult create(NamedRef ref, Hash target)
       throws ReferenceAlreadyExistsException, ReferenceNotFoundException {
     try {
-      AtomicReference<ImmutableReferenceCreatedResult.Builder> resultHolder =
-          new AtomicReference<>();
-
-      casOpLoop(
+      return casOpLoop(
           "createRef",
           ref,
           CasOpVariant.CREATE_REF,
           (ctx, refHead, branchCommits, newKeyLists) -> {
             ImmutableReferenceCreatedResult.Builder result =
                 ImmutableReferenceCreatedResult.builder().namedRef(ref);
-            resultHolder.set(result);
 
             if (refHead != null) {
               throw referenceAlreadyExists(ref);
@@ -442,8 +412,8 @@ public abstract class NonTransactionalDatabaseAdapter<
             result.hash(newHead);
 
             return casOpResult(
-                refHead,
-                hash,
+                null,
+                result.build(),
                 refLog ->
                     refLog
                         .setRefName(ByteString.copyFromUtf8(ref.getName()))
@@ -454,12 +424,6 @@ public abstract class NonTransactionalDatabaseAdapter<
                 () -> ReferenceCreatedEvent.builder().currentHash(newHead).ref(ref));
           },
           () -> createConflictMessage("Retry-Failure", ref, target));
-
-      ImmutableReferenceCreatedResult.Builder result =
-          Objects.requireNonNull(
-              resultHolder.get(), "Internal error, reference-result builder not set.");
-
-      return result.build();
     } catch (ReferenceAlreadyExistsException | ReferenceNotFoundException | RuntimeException e) {
       throw e;
     } catch (Exception e) {
@@ -471,17 +435,13 @@ public abstract class NonTransactionalDatabaseAdapter<
   public ReferenceDeletedResult delete(NamedRef reference, Optional<Hash> expectedHead)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
-      AtomicReference<ImmutableReferenceDeletedResult.Builder> resultHolder =
-          new AtomicReference<>();
-
-      casOpLoop(
+      return casOpLoop(
           "deleteRef",
           reference,
           CasOpVariant.DELETE_REF,
           (ctx, refHead, branchCommits, newKeyLists) -> {
             ImmutableReferenceDeletedResult.Builder result =
                 ImmutableReferenceDeletedResult.builder().namedRef(reference);
-            resultHolder.set(result);
 
             Hash currentHead = Hash.of(refHead.getHash());
             verifyExpectedHash(currentHead, reference, expectedHead);
@@ -490,7 +450,7 @@ public abstract class NonTransactionalDatabaseAdapter<
 
             return casOpResult(
                 refHead,
-                currentHead,
+                result.build(),
                 refLog ->
                     refLog
                         .setRefName(ByteString.copyFromUtf8(reference.getName()))
@@ -501,12 +461,6 @@ public abstract class NonTransactionalDatabaseAdapter<
                 () -> ReferenceDeletedEvent.builder().currentHash(currentHead).ref(reference));
           },
           () -> deleteConflictMessage("Retry-Failure", reference, expectedHead));
-
-      ImmutableReferenceDeletedResult.Builder result =
-          Objects.requireNonNull(
-              resultHolder.get(), "Internal error, reference-result builder not set.");
-
-      return result.build();
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
       throw e;
     } catch (Exception e) {
@@ -519,17 +473,13 @@ public abstract class NonTransactionalDatabaseAdapter<
       NamedRef assignee, Optional<Hash> expectedHead, Hash assignTo)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
-      AtomicReference<ImmutableReferenceAssignedResult.Builder> resultHolder =
-          new AtomicReference<>();
-
-      casOpLoop(
+      return casOpLoop(
           "assignRef",
           assignee,
           CasOpVariant.REF_UPDATE,
           (ctx, refHead, branchCommits, newKeyLists) -> {
             ImmutableReferenceAssignedResult.Builder result =
                 ImmutableReferenceAssignedResult.builder().namedRef(assignee);
-            resultHolder.set(result);
 
             Hash beforeAssign = Hash.of(refHead.getHash());
             verifyExpectedHash(beforeAssign, assignee, expectedHead);
@@ -540,7 +490,7 @@ public abstract class NonTransactionalDatabaseAdapter<
 
             return casOpResult(
                 refHead,
-                assignTo,
+                result.build(),
                 refLog ->
                     refLog
                         .setRefName(ByteString.copyFromUtf8(assignee.getName()))
@@ -556,12 +506,6 @@ public abstract class NonTransactionalDatabaseAdapter<
                         .previousHash(beforeAssign));
           },
           () -> assignConflictMessage("Retry-Failure", assignee, expectedHead, assignTo));
-
-      ImmutableReferenceAssignedResult.Builder result =
-          Objects.requireNonNull(
-              resultHolder.get(), "Internal error, reference-result builder not set.");
-
-      return result.build();
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
       throw e;
     } catch (Exception e) {
@@ -663,7 +607,7 @@ public abstract class NonTransactionalDatabaseAdapter<
       throws ReferenceConflictException {
     NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
 
-    try (TryLoopState tryState =
+    try (TryLoopState<Hash> tryState =
         newTryLoopState(
             "updateRepositoryDescription",
             ts ->
@@ -793,7 +737,7 @@ public abstract class NonTransactionalDatabaseAdapter<
    * from the return value.
    */
   @FunctionalInterface
-  public interface CasOp {
+  public interface CasOp<R> {
     /**
      * Applies an operation within a CAS-loop. The implementation gets the current ref-pointer and
      * must return a {@link CasOpResult} with the reference's new HEAD and function to configure the
@@ -808,7 +752,7 @@ public abstract class NonTransactionalDatabaseAdapter<
      * @return "new value" that {@link #casOpLoop(String, NamedRef, CasOpVariant, CasOp, Supplier)}
      *     tries to apply
      */
-    CasOpResult apply(
+    CasOpResult<R> apply(
         NonTransactionalOperationContext ctx,
         RefPointer refPointer,
         Consumer<Hash> branchCommits,
@@ -816,35 +760,37 @@ public abstract class NonTransactionalDatabaseAdapter<
         throws VersionStoreException;
   }
 
-  protected static final class CasOpResult {
+  protected static final class CasOpResult<R> {
     final RefPointer currentHead;
-    final Hash newHead;
+    final R result;
     final Consumer<RefLogEntry.Builder> refLogEntry;
     final Supplier<? extends AdapterEvent.Builder<?, ?>> adapterEventBuilder;
 
     private CasOpResult(
         RefPointer currentHead,
-        Hash newHead,
+        R result,
         Consumer<RefLogEntry.Builder> refLogEntry,
         Supplier<? extends AdapterEvent.Builder<?, ?>> adapterEventBuilder) {
       this.currentHead = currentHead;
-      this.newHead = newHead;
+      this.result = result;
       this.refLogEntry = refLogEntry;
       this.adapterEventBuilder = adapterEventBuilder;
     }
 
-    public static CasOpResult casOpResult(
+    public static <R> CasOpResult<R> casOpResult(
         RefPointer currentHead,
-        Hash newHead,
+        R result,
         Consumer<RefLogEntry.Builder> refLogEntry,
         Supplier<? extends AdapterEvent.Builder<?, ?>> adapterEventBuilder) {
-      return new CasOpResult(currentHead, newHead, refLogEntry, adapterEventBuilder);
+      return new CasOpResult<>(currentHead, result, refLogEntry, adapterEventBuilder);
     }
   }
 
   enum CasOpVariant {
-    /** For commit/merge/transplant, which add one or more commits to that named reference. */
+    /** For commits, which add one commit to that named reference. */
     COMMIT(),
+    /** For merge/transplant, which add one or more commits to that named reference. */
+    MERGE(),
     /**
      * For {@link #assign(NamedRef, Optional, Hash)}, which only update the updates the HEAD of a
      * named reference, but does not add a commit.
@@ -866,16 +812,16 @@ public abstract class NonTransactionalDatabaseAdapter<
    * @param retryErrorMessage provides an error-message for a {@link ReferenceConflictException}
    *     when the CAS operation failed to complete within the configured time and number of retries.
    */
-  protected Hash casOpLoop(
+  protected <R> R casOpLoop(
       String opName,
       NamedRef ref,
       CasOpVariant opVariant,
-      CasOp casOp,
+      CasOp<R> casOp,
       Supplier<String> retryErrorMessage)
       throws VersionStoreException {
     NonTransactionalOperationContext ctx = NON_TRANSACTIONAL_OPERATION_CONTEXT;
 
-    try (TryLoopState tryState =
+    try (TryLoopState<R> tryState =
         newTryLoopState(
             opName,
             ts ->
@@ -896,7 +842,7 @@ public abstract class NonTransactionalDatabaseAdapter<
           // For all operations, except createReference, verify that the reference exists.
           throw referenceNotFound(ref);
         }
-        CasOpResult result =
+        CasOpResult<R> result =
             casOp.apply(
                 ctx,
                 refHead != null ? refHead.getRef() : null,
@@ -906,25 +852,48 @@ public abstract class NonTransactionalDatabaseAdapter<
         boolean casSuccess;
         switch (opVariant) {
           case CREATE_REF:
-            casSuccess = createNamedReference(ctx, ref, result.newHead);
+            ReferenceCreatedResult refCreatedResult = ((ReferenceCreatedResult) result.result);
+            casSuccess = createNamedReference(ctx, ref, refCreatedResult.getHash());
             break;
           case DELETE_REF:
             casSuccess = deleteNamedReference(ctx, ref, refHead.getRef());
             break;
           case REF_UPDATE:
-          case COMMIT:
-            if (refHead.getRef().getHash().equals(result.newHead.asBytes())) {
+            ReferenceAssignedResult refAssignedResult = (ReferenceAssignedResult) result.result;
+            if (refHead.getRef().getHash().equals(refAssignedResult.getCurrentHash().asBytes())) {
               // Target branch HEAD did not change
-              return tryState.success(result.newHead);
+              return tryState.success(result.result);
             }
-            casSuccess = updateNamedReference(ctx, ref, refHead.getRef(), result.newHead);
+            casSuccess =
+                updateNamedReference(
+                    ctx, ref, refHead.getRef(), refAssignedResult.getCurrentHash());
+            break;
+          case COMMIT:
+            CommitResult<?> commitResult = (CommitResult<?>) result.result;
+            if (refHead.getRef().getHash().equals(commitResult.getCommitHash().asBytes())) {
+              // Target branch HEAD did not change
+              return tryState.success(result.result);
+            }
+            casSuccess =
+                updateNamedReference(ctx, ref, refHead.getRef(), commitResult.getCommitHash());
+            break;
+          case MERGE:
+            MergeResult<?> mergeResult = ((MergeResult<?>) result.result);
+            Hash newHash = Objects.requireNonNull(mergeResult.getResultantTargetHash());
+            if (refHead.getRef().getHash().equals(newHash.asBytes())) {
+              // Target branch HEAD did not change
+              return tryState.success(result.result);
+            }
+            casSuccess =
+                updateNamedReference(
+                    ctx, ref, refHead.getRef(), mergeResult.getResultantTargetHash());
             break;
           default:
             throw new UnsupportedOperationException("Unknown opVariant " + opVariant);
         }
 
         if (!casSuccess) {
-          if (opVariant == CasOpVariant.COMMIT) {
+          if (opVariant == CasOpVariant.COMMIT || opVariant == CasOpVariant.MERGE) {
             cleanUpCommitCas(ctx, individualCommits, individualKeyLists);
           }
 
@@ -937,7 +906,7 @@ public abstract class NonTransactionalDatabaseAdapter<
         if (result.refLogEntry == null) {
           // No ref-log entry to be written
 
-          return tryState.success(result.newHead);
+          return tryState.success(result.result);
         } else {
           // CAS against branch-heads succeeded, now try to write the ref-log-entry
 
@@ -958,7 +927,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                 .forEach(newRefLogParents::addRefLogParentsInclHead);
 
             if (refLogParentsCas(ctx, stripe, refLogParents, newRefLogParents.build())) {
-              return tryState.success(result.newHead);
+              return tryState.success(result.result);
             }
 
             cleanUpRefLogWrite(ctx, Hash.of(newRefLog.getRefLogId()));

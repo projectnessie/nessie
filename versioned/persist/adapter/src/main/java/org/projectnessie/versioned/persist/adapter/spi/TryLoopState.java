@@ -21,12 +21,11 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 
 /** Retry-logic for attempts for compare-and-swap-like operations. */
-public class TryLoopState implements AutoCloseable {
+public class TryLoopState<R> implements AutoCloseable {
 
   private static final String TAG_ATTEMPT = "try-loop.attempt";
   private static final String TAG_RETRIES = "try-loop.retries";
@@ -38,8 +37,8 @@ public class TryLoopState implements AutoCloseable {
   private final long t0;
   private final long maxTime;
   private final int maxRetries;
-  private final Function<TryLoopState, String> retryErrorMessage;
-  private final BiConsumer<Boolean, TryLoopState> completionNotifier;
+  private final Function<TryLoopState<R>, String> retryErrorMessage;
+  private final BiConsumer<Boolean, TryLoopState<R>> completionNotifier;
   private final long maxSleep;
   private final long initialLowerBound;
   private final long initialUpperBound;
@@ -51,10 +50,10 @@ public class TryLoopState implements AutoCloseable {
 
   TryLoopState(
       String opName,
-      Function<TryLoopState, String> retryErrorMessage,
+      Function<TryLoopState<R>, String> retryErrorMessage,
       DatabaseAdapterConfig config,
       MonotonicClock monotonicClock,
-      BiConsumer<Boolean, TryLoopState> completionNotifier) {
+      BiConsumer<Boolean, TryLoopState<R>> completionNotifier) {
     this.opName = opName;
     this.retryErrorMessage = retryErrorMessage;
     this.maxTime = TimeUnit.MILLISECONDS.toNanos(config.getCommitTimeout());
@@ -68,12 +67,12 @@ public class TryLoopState implements AutoCloseable {
     start();
   }
 
-  public static TryLoopState newTryLoopState(
+  public static <R> TryLoopState<R> newTryLoopState(
       String opName,
-      Function<TryLoopState, String> retryErrorMessage,
-      BiConsumer<Boolean, TryLoopState> completionNotifier,
+      Function<TryLoopState<R>, String> retryErrorMessage,
+      BiConsumer<Boolean, TryLoopState<R>> completionNotifier,
       DatabaseAdapterConfig config) {
-    return new TryLoopState(
+    return new TryLoopState<>(
         "try-loop." + opName,
         retryErrorMessage,
         config,
@@ -101,7 +100,7 @@ public class TryLoopState implements AutoCloseable {
    * Called when the operation succeeded. The current implementation is rather a no-op, but can be
    * used to track/trace/monitor successes.
    */
-  public Hash success(Hash result) {
+  public R success(R result) {
     completionNotifier.accept(true, this);
     return result;
   }
