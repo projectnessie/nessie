@@ -185,16 +185,11 @@ spec:
             {{- end }}
             {{- end }}
 
-            {{- range $k, $v := .Values.advancedConfig }}
-            - name: {{ $k | upper | replace "\"" "_" | replace "." "_"  | replace "-" "_" }}
-              value: {{ $v | quote }}
-            {{- end }}
-            
+            {{ list .Values.advancedConfig "" | include "nessie.propsToEnvVars" | nindent 12 }}
+
             {{- if .Values.extraEnv }}
             {{- toYaml .Values.extraEnv | nindent 12 }}
             {{- end }}
-
-            {{ list .Values.advancedConfig "" | include "nessie.propsToEnvVars" | nindent 12 }}
           ports:
             - name: nessie-server
               containerPort: 19120
