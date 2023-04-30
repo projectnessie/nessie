@@ -122,7 +122,8 @@ public class TracingVersionStore implements VersionStore {
     return TracingVersionStore
         .<CommitResult<Commit>, ReferenceNotFoundException, ReferenceConflictException>
             callWithTwoExceptions(
-                tracer,"Commit",
+                tracer,
+                "Commit",
                 b ->
                     b.setAttribute(TAG_BRANCH, safeRefName(branch))
                         .setAttribute(TAG_HASH, safeToString(referenceHash))
@@ -210,10 +211,12 @@ public class TracingVersionStore implements VersionStore {
     return TracingVersionStore
         .<ReferenceAssignedResult, ReferenceNotFoundException, ReferenceConflictException>
             callWithTwoExceptions(
-                tracer,"Assign",
+                tracer,
+                "Assign",
                 b ->
                     b.setAttribute(TAG_REF, safeToString(ref))
-                        .setAttribute(TracingVersionStore.TAG_EXPECTED_HASH, safeToString(expectedHash))
+                        .setAttribute(
+                            TracingVersionStore.TAG_EXPECTED_HASH, safeToString(expectedHash))
                         .setAttribute(TAG_TARGET_HASH, safeToString(targetHash)),
                 () -> delegate.assign(ref, expectedHash, targetHash));
   }
@@ -224,7 +227,8 @@ public class TracingVersionStore implements VersionStore {
     return TracingVersionStore
         .<ReferenceCreatedResult, ReferenceNotFoundException, ReferenceAlreadyExistsException>
             callWithTwoExceptions(
-                tracer,"Create",
+                tracer,
+                "Create",
                 b ->
                     b.setAttribute(TAG_REF, safeToString(ref))
                         .setAttribute(TAG_TARGET_HASH, safeToString(targetHash)),
@@ -237,9 +241,11 @@ public class TracingVersionStore implements VersionStore {
     return TracingVersionStore
         .<ReferenceDeletedResult, ReferenceNotFoundException, ReferenceConflictException>
             callWithTwoExceptions(
-                tracer,"Delete",
-                b -> b.setAttribute(TAG_REF, safeToString(ref))
-                    .setAttribute(TAG_HASH, safeToString(hash)),
+                tracer,
+                "Delete",
+                b ->
+                    b.setAttribute(TAG_REF, safeToString(ref))
+                        .setAttribute(TAG_HASH, safeToString(hash)),
                 () -> delegate.delete(ref, hash));
   }
 
