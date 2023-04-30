@@ -59,7 +59,8 @@ abstract class AbstractCassandraBackendTestFactory implements BackendTestFactory
   public CassandraBackend createNewBackend() {
     CqlSession client = buildNewClient();
     maybeCreateKeyspace(client);
-    return new CassandraBackend(client, KEYSPACE_FOR_TEST, true);
+    return new CassandraBackend(
+        CassandraBackendConfig.builder().client(client).keyspace(KEYSPACE_FOR_TEST).build(), true);
   }
 
   public void maybeCreateKeyspace() {
