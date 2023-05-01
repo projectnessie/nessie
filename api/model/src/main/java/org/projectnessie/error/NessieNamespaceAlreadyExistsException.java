@@ -17,20 +17,32 @@ package org.projectnessie.error;
 
 /** This exception is thrown when the namespace with the same name already exists. */
 public class NessieNamespaceAlreadyExistsException extends NessieConflictException {
-  public NessieNamespaceAlreadyExistsException(String message, Throwable cause) {
+  private final ContentKeyErrorDetails contentKeyErrorDetails;
+
+  public NessieNamespaceAlreadyExistsException(
+      ContentKeyErrorDetails contentKeyErrorDetails, String message, Throwable cause) {
     super(message, cause);
+    this.contentKeyErrorDetails = contentKeyErrorDetails;
   }
 
-  public NessieNamespaceAlreadyExistsException(String message) {
+  public NessieNamespaceAlreadyExistsException(
+      ContentKeyErrorDetails contentKeyErrorDetails, String message) {
     super(message);
+    this.contentKeyErrorDetails = contentKeyErrorDetails;
   }
 
   public NessieNamespaceAlreadyExistsException(NessieError error) {
     super(error);
+    this.contentKeyErrorDetails = error.getErrorDetailsAsOrNull(ContentKeyErrorDetails.class);
   }
 
   @Override
   public ErrorCode getErrorCode() {
     return ErrorCode.NAMESPACE_ALREADY_EXISTS;
+  }
+
+  @Override
+  public ContentKeyErrorDetails getErrorDetails() {
+    return contentKeyErrorDetails;
   }
 }

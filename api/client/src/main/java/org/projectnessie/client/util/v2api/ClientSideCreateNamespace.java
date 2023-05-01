@@ -15,6 +15,8 @@
  */
 package org.projectnessie.client.util.v2api;
 
+import static org.projectnessie.error.ContentKeyErrorDetails.contentKeyErrorDetails;
+
 import java.util.Map;
 import org.projectnessie.client.api.CreateNamespaceResult;
 import org.projectnessie.client.api.NessieApiV2;
@@ -75,9 +77,11 @@ public final class ClientSideCreateNamespace extends BaseCreateNamespaceBuilder 
     if (existing != null) {
       if (existing instanceof Namespace) {
         throw new NessieNamespaceAlreadyExistsException(
+            contentKeyErrorDetails(key),
             String.format("Namespace '%s' already exists", key.toPathString()));
       } else {
         throw new NessieNamespaceAlreadyExistsException(
+            contentKeyErrorDetails(key),
             String.format(
                 "Another content object with name '%s' already exists", key.toPathString()));
       }

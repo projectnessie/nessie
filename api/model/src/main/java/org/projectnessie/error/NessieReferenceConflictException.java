@@ -15,9 +15,6 @@
  */
 package org.projectnessie.error;
 
-import org.projectnessie.model.NessieErrorDetails;
-import org.projectnessie.model.ReferenceConflicts;
-
 /**
  * This exception is thrown when the expected state of a reference (e.g. the hash of the HEAD of a
  * branch) does not match the hash provided by the caller or when the requested operation could not
@@ -43,9 +40,7 @@ public class NessieReferenceConflictException extends NessieConflictException {
 
   public NessieReferenceConflictException(NessieError error) {
     super(error);
-    NessieErrorDetails errorDetails = error.getErrorDetails();
-    this.referenceConflicts =
-        errorDetails instanceof ReferenceConflicts ? (ReferenceConflicts) errorDetails : null;
+    this.referenceConflicts = error.getErrorDetailsAsOrNull(ReferenceConflicts.class);
   }
 
   @Override

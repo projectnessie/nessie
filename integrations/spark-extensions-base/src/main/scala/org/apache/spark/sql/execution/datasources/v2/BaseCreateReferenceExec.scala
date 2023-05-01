@@ -21,7 +21,8 @@ import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.projectnessie.client.api.NessieApiV1
 import org.projectnessie.error.{
   NessieConflictException,
-  NessieNotFoundException
+  NessieNotFoundException,
+  NessieReferenceNotFoundException
 }
 import org.projectnessie.model._
 
@@ -46,7 +47,7 @@ abstract class BaseCreateReferenceExec(
           NessieUtils.getCurrentRef(api, currentCatalog, catalog)
         } catch {
           case e: NessieNotFoundException =>
-            throw new NessieNotFoundException(
+            throw new NessieReferenceNotFoundException(
               s"${e.getMessage} Use 'CREATE ${if (isBranch) "BRANCH" else "TAG"} ... FROM <existing-reference-name>'.",
               e
             )

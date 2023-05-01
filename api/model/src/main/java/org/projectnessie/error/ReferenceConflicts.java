@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.model;
+package org.projectnessie.error;
 
 import static java.util.Collections.singletonList;
 
@@ -24,12 +24,19 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
 import org.immutables.value.Value;
+import org.projectnessie.model.Conflict;
 
 @Value.Immutable
 @JsonSerialize(as = ImmutableReferenceConflicts.class)
 @JsonDeserialize(as = ImmutableReferenceConflicts.class)
-@JsonTypeName("REFERENCE_CONFLICTS")
+@JsonTypeName(ReferenceConflicts.TYPE)
 public interface ReferenceConflicts extends NessieErrorDetails {
+  String TYPE = "REFERENCE_CONFLICTS";
+
+  @Override
+  default String getType() {
+    return TYPE;
+  }
 
   @JsonInclude(Include.NON_EMPTY)
   @Value.Parameter(order = 1)

@@ -21,7 +21,10 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.projectnessie.client.StreamingUtil
 import org.projectnessie.client.api.NessieApiV1
 import org.projectnessie.client.http.HttpClientBuilder
-import org.projectnessie.error.NessieNotFoundException
+import org.projectnessie.error.{
+  NessieNotFoundException,
+  NessieReferenceNotFoundException
+}
 import org.projectnessie.model.Reference.ReferenceType
 import org.projectnessie.model.{
   Branch,
@@ -64,7 +67,7 @@ object NessieUtils {
           ZonedDateTime.parse(x).toInstant
         } catch {
           case e: DateTimeParseException =>
-            throw new NessieNotFoundException(
+            throw new NessieReferenceNotFoundException(
               String.format(
                 "Invalid timestamp provided: %s. You need to provide it with a zone info. For more info, see: https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html",
                 e.getMessage
@@ -97,7 +100,7 @@ object NessieUtils {
     val hash = commit match {
       case Some(value) => value
       case None =>
-        throw new NessieNotFoundException(
+        throw new NessieReferenceNotFoundException(
           String.format(
             "Cannot find requested hash %s on reference %s.",
             requestedHash,
@@ -133,7 +136,7 @@ object NessieUtils {
     val hash = commit match {
       case Some(value) => value
       case None =>
-        throw new NessieNotFoundException(
+        throw new NessieReferenceNotFoundException(
           String.format("Cannot find a hash before %s.", timestamp)
         )
     }
@@ -250,7 +253,7 @@ object NessieUtils {
       ref
     } catch {
       case e: NessieNotFoundException =>
-        throw new NessieNotFoundException(
+        throw new NessieReferenceNotFoundException(
           s"Could not find current reference $refName configured in spark configuration for catalog '${catalog
               .getOrElse(currentCatalog.name)}'.",
           e

@@ -17,21 +17,32 @@ package org.projectnessie.error;
 
 /** This exception is thrown when a requested Namespace is not present in the store. */
 public class NessieNamespaceNotFoundException extends NessieNotFoundException {
+  private final ContentKeyErrorDetails contentKeyErrorDetails;
 
-  public NessieNamespaceNotFoundException(String message) {
+  public NessieNamespaceNotFoundException(
+      ContentKeyErrorDetails contentKeyErrorDetails, String message) {
     super(message);
+    this.contentKeyErrorDetails = contentKeyErrorDetails;
   }
 
-  public NessieNamespaceNotFoundException(String message, Throwable cause) {
+  public NessieNamespaceNotFoundException(
+      ContentKeyErrorDetails contentKeyErrorDetails, String message, Throwable cause) {
     super(message, cause);
+    this.contentKeyErrorDetails = contentKeyErrorDetails;
   }
 
   public NessieNamespaceNotFoundException(NessieError error) {
     super(error);
+    this.contentKeyErrorDetails = error.getErrorDetailsAsOrNull(ContentKeyErrorDetails.class);
   }
 
   @Override
   public ErrorCode getErrorCode() {
     return ErrorCode.NAMESPACE_NOT_FOUND;
+  }
+
+  @Override
+  public ContentKeyErrorDetails getErrorDetails() {
+    return contentKeyErrorDetails;
   }
 }

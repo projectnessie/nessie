@@ -24,7 +24,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
-import org.projectnessie.model.NessieErrorDetails;
 
 /**
  * Represents Nessie-specific API error details.
@@ -68,6 +67,11 @@ public interface NessieError {
   @jakarta.annotation.Nullable
   @JsonInclude(Include.NON_NULL)
   NessieErrorDetails getErrorDetails();
+
+  default <T extends NessieErrorDetails> T getErrorDetailsAsOrNull(Class<T> type) {
+    NessieErrorDetails details = getErrorDetails();
+    return details != null && type.isAssignableFrom(details.getClass()) ? type.cast(details) : null;
+  }
 
   /** Server-side exception stack trace related to this error (if available). */
   @Nullable

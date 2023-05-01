@@ -21,7 +21,7 @@ import org.projectnessie.error.ErrorCode;
 import org.projectnessie.error.ErrorCodeAware;
 import org.projectnessie.error.ImmutableNessieError;
 import org.projectnessie.error.NessieError;
-import org.projectnessie.model.NessieErrorDetails;
+import org.projectnessie.error.NessieErrorDetails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

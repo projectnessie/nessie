@@ -30,14 +30,14 @@ import org.projectnessie.client.http.Status;
 import org.projectnessie.error.ErrorCode;
 import org.projectnessie.error.ImmutableNessieError;
 import org.projectnessie.error.NessieError;
+import org.projectnessie.error.NessieErrorDetails;
 
 public class ResponseCheckFilter {
 
   /**
    * Object mapper that ignores unknown properties and unknown subtypes, so it is able to process
-   * instances of {@link NessieError} and especially {@link
-   * org.projectnessie.model.NessieErrorDetails} with added/unknown properties or unknown subtypes
-   * of the latter.
+   * instances of {@link NessieError} and especially {@link NessieErrorDetails} with added/unknown
+   * properties or unknown subtypes of the latter.
    */
   private static final ObjectMapper MAPPER =
       new ObjectMapper().disable(FAIL_ON_UNKNOWN_PROPERTIES).disable(FAIL_ON_INVALID_SUBTYPE);

@@ -40,6 +40,7 @@ import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieNamespaceNotEmptyException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
 import org.projectnessie.error.NessieReferenceConflictException;
+import org.projectnessie.error.ReferenceConflicts;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Conflict;
@@ -51,7 +52,6 @@ import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
-import org.projectnessie.model.ReferenceConflicts;
 import org.projectnessie.services.impl.AbstractTestContents.ContentAndOperationType;
 
 public abstract class AbstractTestNamespace extends BaseTestServiceImpl {

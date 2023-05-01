@@ -46,6 +46,7 @@ import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceConflictException;
+import org.projectnessie.error.ReferenceConflicts;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Conflict;
@@ -60,7 +61,6 @@ import org.projectnessie.model.MergeResponse.ContentKeyDetails;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
-import org.projectnessie.model.ReferenceConflicts;
 
 public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
 

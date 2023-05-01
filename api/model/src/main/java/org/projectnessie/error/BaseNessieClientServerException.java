@@ -18,7 +18,8 @@ package org.projectnessie.error;
 import java.io.IOException;
 
 /** A caught exception that is thrown on the server and caught in the client. */
-public class BaseNessieClientServerException extends IOException implements ErrorCodeAware {
+public abstract class BaseNessieClientServerException extends IOException
+    implements ErrorCodeAware {
 
   private final String serverStackTrace;
 
@@ -28,7 +29,7 @@ public class BaseNessieClientServerException extends IOException implements Erro
    * @param message Message
    * @param cause The underlying cause.
    */
-  public BaseNessieClientServerException(String message, Throwable cause) {
+  protected BaseNessieClientServerException(String message, Throwable cause) {
     super(message, cause);
     this.serverStackTrace = null;
   }
@@ -38,7 +39,7 @@ public class BaseNessieClientServerException extends IOException implements Erro
    *
    * @param message Message
    */
-  public BaseNessieClientServerException(String message) {
+  protected BaseNessieClientServerException(String message) {
     super(message);
     this.serverStackTrace = null;
   }
@@ -48,7 +49,7 @@ public class BaseNessieClientServerException extends IOException implements Erro
    *
    * @param error The deserialized error object from the server.
    */
-  public BaseNessieClientServerException(NessieError error) {
+  protected BaseNessieClientServerException(NessieError error) {
     super(error.getMessage());
     this.serverStackTrace = error.getServerStackTrace();
   }

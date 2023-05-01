@@ -46,6 +46,7 @@ import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.client.ext.NessieClientUri;
 import org.projectnessie.error.ErrorCode;
 import org.projectnessie.error.NessieError;
+import org.projectnessie.error.ReferenceConflicts;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.CommitResponse;
@@ -64,7 +65,6 @@ import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
-import org.projectnessie.model.ReferenceConflicts;
 import org.projectnessie.model.SingleReferenceResponse;
 
 /** REST specific tests. */
