@@ -821,7 +821,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Skip remaining steps, if version is not available
+      # Skip remaining steps, if current Nessie release version is not available
       - name: Precheck
         run: |
           EXPECT_VERSION="$(cat helm/nessie/Chart.yaml | grep -E '^version: ')"
@@ -834,18 +834,28 @@ jobs:
         if: env.WF_EXEC != 'false'
         uses: azure/setup-helm@v3
         with:
-          version: v3.8.1
-      - uses: actions/setup-python@v4
+          # https://helm.sh/docs/topics/version_skew/
+          version: 'v3.11.3'
+
+      - name: Setup Python
         if: env.WF_EXEC != 'false'
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.8'
+          python-version: '3.11'
+
       - name: Set up chart-testing
         if: env.WF_EXEC != 'false'
         uses: helm/chart-testing-action@v2.4.0
+        with:
+          # https://github.com/adrienverge/yamllint/tags
+          # default is 1.27.1, but leads to Python install issues
+          yamllint_version: 1.31.0
+          # https://github.com/23andMe/Yamale/releases
+          # default is 3.0.4, just bump to current latest patch version
+          yamale_version: 3.0.8
 
       - name: Run chart-testing (list-changed)
         if: env.WF_EXEC != 'false'
-        id: list-changed
         run: |
           ct list-changed --target-branch ${{ github.event.repository.default_branch }}
 
@@ -857,6 +867,8 @@ jobs:
         if: env.WF_EXEC != 'false'
         uses: medyagh/setup-minikube@v0.0.13
         with:
+          # If required, use the matrix strategy against this option to test against multiple Kubernetes versions:
+          kubernetes-version: stable
           cache: false
 
       - name: Show pods
