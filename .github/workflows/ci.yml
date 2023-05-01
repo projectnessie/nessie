@@ -138,6 +138,16 @@ jobs:
         with:
           arguments: test -x :nessie-quarkus:test --scan
 
+      - name: Capture Test Reports
+        uses: actions/upload-artifact@v3
+        if: ${{ failure() }}
+        with:
+          name: ci-test-reports
+          path: |
+            **/build/reports/*
+            **/build/test-results/*
+          retention-days: 7
+
       - name: Save partial Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-save
         if: github.event_name == 'push'
@@ -170,6 +180,16 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           arguments: :nessie-quarkus:test --scan
+
+      - name: Capture Test Reports
+        uses: actions/upload-artifact@v3
+        if: ${{ failure() }}
+        with:
+          name: ci-test-quarkus-reports
+          path: |
+            **/build/reports/*
+            **/build/test-results/*
+          retention-days: 7
 
       - name: Save partial Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-save
@@ -222,6 +242,16 @@ jobs:
             $(cat ../spark-prjs.txt) \
             --scan
 
+      - name: Capture Test Reports
+        uses: actions/upload-artifact@v3
+        if: ${{ failure() }}
+        with:
+          name: ci-inttest-reports
+          path: |
+            **/build/reports/*
+            **/build/test-results/*
+          retention-days: 7
+
       - name: Save partial Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-save
         if: github.event_name == 'push'
@@ -262,6 +292,16 @@ jobs:
 
           ./gradlew $(cat ../persist-prjs.txt) $(cat ../storage-prjs.txt) --scan
 
+      - name: Capture Test Reports
+        uses: actions/upload-artifact@v3
+        if: ${{ failure() }}
+        with:
+          name: ci-inttest-stores-reports
+          path: |
+            **/build/reports/*
+            **/build/test-results/*
+          retention-days: 7
+
       - name: Save partial Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-save
         if: github.event_name == 'push'
@@ -291,6 +331,16 @@ jobs:
           echo "::endgroup::"
 
           ./gradlew :nessie-deltalake:intTest $(cat ../spark-prjs.txt) --scan
+
+      - name: Capture Test Reports
+        uses: actions/upload-artifact@v3
+        if: ${{ failure() }}
+        with:
+          name: ci-inttest-integrations-reports
+          path: |
+            **/build/reports/*
+            **/build/test-results/*
+          retention-days: 7
 
       - name: Save partial Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-save
@@ -323,6 +373,16 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           arguments: :nessie-quarkus:intTest :nessie-quarkus-cli:intTest --scan
+
+      - name: Capture Test Reports
+        uses: actions/upload-artifact@v3
+        if: ${{ failure() }}
+        with:
+          name: ci-inttest-quarkus-reports
+          path: |
+            **/build/reports/*
+            **/build/test-results/*
+          retention-days: 7
 
       - name: Save partial Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-save
@@ -473,6 +533,16 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           arguments: :nessie-quarkus:intTest -Pnative --scan
+
+      - name: Capture Test Reports
+        uses: actions/upload-artifact@v3
+        if: ${{ failure() }}
+        with:
+          name: ci-inttest-quarkus-native-reports
+          path: |
+            **/build/reports/*
+            **/build/test-results/*
+          retention-days: 7
 
       # A "native" build doesn't produce any meaningful build-cache artifacts that would not
       # be produced by other jobs in this workflow.
