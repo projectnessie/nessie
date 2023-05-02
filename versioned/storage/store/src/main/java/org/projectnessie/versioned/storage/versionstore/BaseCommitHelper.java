@@ -682,12 +682,8 @@ class BaseCommitHelper {
     }
   }
 
-  MergeResult<Commit> mergeTransplantSuccess(
-      ImmutableMergeResult.Builder<Commit> mergeResult,
-      ObjId newHead,
-      boolean dryRun,
-      Map<ContentKey, KeyDetails> keyDetailsMap)
-      throws RetryException {
+  boolean recordKeyDetailsAndCheckConflicts(
+      ImmutableMergeResult.Builder<Commit> mergeResult, Map<ContentKey, KeyDetails> keyDetailsMap) {
     boolean hasConflicts = false;
     for (Entry<ContentKey, KeyDetails> keyDetail : keyDetailsMap.entrySet()) {
       KeyDetails details = keyDetail.getValue();
@@ -696,6 +692,16 @@ class BaseCommitHelper {
       }
       mergeResult.putDetails(keyDetail.getKey(), details);
     }
+    return hasConflicts;
+  }
+
+  MergeResult<Commit> finishMergeTransplant(
+      boolean isEmpty,
+      ImmutableMergeResult.Builder<Commit> mergeResult,
+      ObjId newHead,
+      boolean dryRun,
+      boolean hasConflicts)
+      throws RetryException {
 
     if (!hasConflicts) {
       mergeResult.wasSuccessful(true);
@@ -705,8 +711,13 @@ class BaseCommitHelper {
       return mergeResult.build();
     }
 
-    bumpReferencePointer(newHead, Optional.empty());
+    mergeResult.resultantTargetHash(objIdToHash(newHead));
 
-    return mergeResult.resultantTargetHash(objIdToHash(newHead)).wasApplied(true).build();
+    if (!isEmpty) {
+      bumpReferencePointer(newHead, Optional.empty());
+      mergeResult.wasApplied(true);
+    }
+
+    return mergeResult.build();
   }
 }

@@ -93,14 +93,14 @@ public class RefMapping {
     return new ReferenceNotFoundException(format("Commit '%s' not found", hash.asString()));
   }
 
-  public static ReferenceNotFoundException objectNotFound(ObjId hash) {
-    return new ReferenceNotFoundException(format("Commit '%s' not found", hash));
+  public static ReferenceNotFoundException objectNotFound(ObjId hash, Throwable cause) {
+    return new ReferenceNotFoundException(format("Commit '%s' not found", hash), cause);
   }
 
   public static ReferenceNotFoundException objectNotFound(ObjNotFoundException e) {
     List<ObjId> ids = e.objIds();
     if (ids.size() == 1) {
-      return objectNotFound(e.objIds().get(0));
+      return objectNotFound(e.objIds().get(0), e);
     }
 
     return new ReferenceNotFoundException(
@@ -112,7 +112,7 @@ public class RefMapping {
   public static ReferenceNotFoundException referenceNotFound(ObjNotFoundException e) {
     List<ObjId> ids = e.objIds();
     if (ids.size() == 1) {
-      return objectNotFound(e.objIds().get(0));
+      return objectNotFound(e.objIds().get(0), e);
     }
 
     return new ReferenceNotFoundException(

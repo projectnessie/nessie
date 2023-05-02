@@ -202,6 +202,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     Content c11 = store().getValue(firstCommit, ContentKey.of("t1"));
 
     for (MergeBehavior mergeBehavior : MergeBehavior.values()) {
+      StorageAssertions checkpoint = storageCheckpoint();
       soft.assertThatThrownBy(
               () ->
                   store()
@@ -232,6 +233,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                       ConflictType.VALUE_DIFFERS,
                       keyT3,
                       "values of existing and expected content for key 't3' are different")));
+      checkpoint.assertNoWrites();
       soft.assertAll();
     }
   }
@@ -256,6 +258,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             .toBranch(sourceBranch);
     contentT2 = store().getValue(MAIN_BRANCH, key2);
 
+    StorageAssertions checkpoint = storageCheckpoint();
     soft.assertThatThrownBy(
             () ->
                 store()
@@ -270,6 +273,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         false,
                         false))
         .isInstanceOf(MergeConflictException.class);
+    checkpoint.assertNoWrites();
 
     Content resolvedContent = onRef("resolved", contentT2.getId());
     Content wrongExpectedContent = onRef("wrong", contentT2.getId());
@@ -297,6 +301,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                           false))
           .withMessage(
               "MergeKeyBehavior.resolvedContent and MergeKeyBehavior.expectedTargetContent are not supported for this storage model");
+      checkpoint.assertNoWrites();
       return;
     }
 
@@ -323,6 +328,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                           false))
           .withMessage(
               "MergeKeyBehavior.expectedTargetContent and MergeKeyBehavior.resolvedContent are only supported for squashing merge/transplant operations.");
+      checkpoint.assertNoWrites();
       return;
     }
 
@@ -351,6 +357,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 ConflictType.VALUE_DIFFERS,
                 key2,
                 "values of existing and expected content for key 't2' are different"));
+    checkpoint.assertNoWrites();
 
     soft.assertThatIllegalArgumentException()
         .isThrownBy(
@@ -370,6 +377,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         false))
         .withMessage(
             "MergeKeyBehavior.resolvedContent requires setting MergeKeyBehavior.expectedTarget as well for key t2");
+    checkpoint.assertNoWrites();
 
     MergeResult<Commit> result =
         store()
@@ -916,6 +924,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 CommitMeta.fromMessage("commit 4"),
                 singletonList(Put.of(conflictingKey2, VALUE_4)));
 
+    StorageAssertions checkpoint = storageCheckpoint();
     // "Plain" merge attempt - all keys default to MergeBehavior.NORMAL
     soft.assertThatThrownBy(
             () ->
@@ -934,6 +943,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
         .hasMessageContaining("The following keys have been changed in conflict:")
         .hasMessageContaining(conflictingKey1.toString())
         .hasMessageContaining(conflictingKey2.toString());
+    checkpoint.assertNoWrites();
 
     // default to MergeBehavior.NORMAL, but ignore conflictingKey1
     soft.assertThatThrownBy(
@@ -955,6 +965,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
         .hasMessageContaining("The following keys have been changed in conflict:")
         .hasMessageContaining(conflictingKey1.toString())
         .hasMessageNotContaining(conflictingKey2.toString());
+    checkpoint.assertNoWrites();
 
     // default to MergeBehavior.DROP (don't merge keys by default), but include conflictingKey1
     soft.assertThatThrownBy(
@@ -976,6 +987,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
         .hasMessageContaining("The following keys have been changed in conflict:")
         .hasMessageContaining(conflictingKey1.toString())
         .hasMessageNotContaining(conflictingKey2.toString());
+    checkpoint.assertNoWrites();
 
     // default to MergeBehavior.NORMAL, but include conflictingKey1
     soft.assertThatThrownBy(
@@ -997,6 +1009,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
         .hasMessageContaining("The following keys have been changed in conflict:")
         .hasMessageNotContaining(conflictingKey1.toString())
         .hasMessageContaining(conflictingKey2.toString());
+    checkpoint.assertNoWrites();
 
     Supplier<Hash> mergeIntoHeadSupplier =
         () -> {
@@ -1074,6 +1087,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     store().create(newBranch, Optional.of(initialHash));
     commit("Another commit").put("t1", V_1_4).toBranch(newBranch);
 
+    StorageAssertions checkpoint = storageCheckpoint();
     soft.assertThatThrownBy(
             () ->
                 store()
@@ -1088,6 +1102,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         dryRun,
                         false))
         .isInstanceOf(ReferenceConflictException.class);
+    checkpoint.assertNoWrites();
   }
 
   @ParameterizedTest
@@ -1099,6 +1114,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
   })
   protected void mergeIntoNonExistingBranch(boolean individualCommits, boolean dryRun) {
     final BranchName newBranch = BranchName.of("bar_5");
+    StorageAssertions checkpoint = storageCheckpoint();
     soft.assertThatThrownBy(
             () ->
                 store()
@@ -1113,6 +1129,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         dryRun,
                         false))
         .isInstanceOf(ReferenceNotFoundException.class);
+    checkpoint.assertNoWrites();
   }
 
   @ParameterizedTest
@@ -1126,6 +1143,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
       throws VersionStoreException {
     final BranchName newBranch = BranchName.of("bar_6");
     store().create(newBranch, Optional.of(initialHash));
+    StorageAssertions checkpoint = storageCheckpoint();
     soft.assertThatThrownBy(
             () ->
                 store()
@@ -1140,6 +1158,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                         dryRun,
                         false))
         .isInstanceOf(ReferenceNotFoundException.class);
+    checkpoint.assertNoWrites();
   }
 
   @ParameterizedTest
