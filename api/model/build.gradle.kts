@@ -20,11 +20,8 @@ import io.smallrye.openapi.gradleplugin.SmallryeOpenApiTask
 import org.apache.tools.ant.filters.ReplaceTokens
 
 plugins {
-  `java-library`
-  jacoco
-  `maven-publish`
-  signing
-  `nessie-conventions`
+  id("nessie-conventions-client")
+  id("nessie-jacoco")
   alias(libs.plugins.annotations.stripper)
   alias(libs.plugins.smallrye.openapi)
 }

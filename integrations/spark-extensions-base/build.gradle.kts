@@ -15,11 +15,8 @@
  */
 
 plugins {
-  jacoco
-  `maven-publish`
-  signing
-  scala
-  `nessie-conventions`
+  id("nessie-conventions-spark")
+  id("nessie-jacoco")
 }
 
 val sparkScala = getSparkScalaVersionsForProject()

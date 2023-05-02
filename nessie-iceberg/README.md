@@ -12,7 +12,6 @@ This Gradle build is **not** meant to be run as a "standalone" build, hence ther
 Necessary files that are equal to the ones in the main Nessie build are not copied but
 symlinked. Hint: when editing files in these files/directories, do it in the "original"
 location - otherwise it might confuse IDEs.
-* `buildSrc/*`
 * `codestyle/`
 * `gradle/`
 

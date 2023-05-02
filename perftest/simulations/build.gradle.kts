@@ -18,10 +18,8 @@ import com.google.common.collect.Maps
 import io.gatling.gradle.GatlingRunTask
 
 plugins {
-  `maven-publish`
-  signing
   alias(libs.plugins.gatling)
-  `nessie-conventions`
+  id("nessie-conventions-scala")
   alias(libs.plugins.nessie.run)
 }
 

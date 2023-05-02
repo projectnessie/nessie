@@ -18,11 +18,8 @@ import com.google.protobuf.gradle.GenerateProtoTask
 import com.google.protobuf.gradle.ProtobufExtension
 
 plugins {
-  `java-library`
-  `maven-publish`
-  signing
-  id("org.projectnessie.buildsupport.reflectionconfig")
-  `nessie-conventions`
+  alias(libs.plugins.nessie.reflectionconfig)
+  id("nessie-conventions-server")
   alias(libs.plugins.protobuf)
 }
 

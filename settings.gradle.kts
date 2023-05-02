@@ -16,12 +16,11 @@
 
 import java.util.Properties
 
+includeBuild("build-logic") { name = "nessie-build-logic" }
+
 if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_11)) {
   throw GradleException("Build requires Java 11")
 }
-
-// Needed by NesQuEIT's manageNessieProjectDependency() in its settings.gradle.kts
-System.setProperty("root-project.nessie-build", file(".").absolutePath)
 
 val baseVersion = file("version.txt").readText().trim()
 
@@ -135,8 +134,8 @@ if (gradle.parent != null && ideSyncActive) {
   }
 }
 
-// Cannot use isIntegrationsTestingEnabled() in buildSrc/src/main/kotlin/Utilities.kt, because
-// settings.gradle is evaluated before buildSrc.
+// Cannot use isIntegrationsTestingEnabled() in build-logic/src/main/kotlin/Utilities.kt, because
+// settings.gradle is evaluated before build-logic.
 if (!System.getProperty("nessie.integrationsTesting.enable").toBoolean()) {
   loadProjects("gradle/projects.iceberg.properties", groupIdIntegrations)
 

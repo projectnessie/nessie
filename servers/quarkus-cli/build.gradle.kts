@@ -18,11 +18,9 @@ import io.quarkus.gradle.tasks.QuarkusBuild
 import org.apache.tools.ant.taskdefs.condition.Os
 
 plugins {
-  `java-library`
-  `maven-publish`
-  signing
   alias(libs.plugins.quarkus)
-  `nessie-conventions`
+  id("nessie-conventions-quarkus")
+  id("nessie-jacoco")
 }
 
 extra["maven.name"] = "Nessie - Quarkus CLI"
@@ -92,8 +90,6 @@ dependencies {
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
 }
-
-buildForJava11()
 
 tasks.withType<ProcessResources>().configureEach {
   from("src/main/resources") {

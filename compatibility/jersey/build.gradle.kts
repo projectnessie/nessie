@@ -14,13 +14,7 @@
  * limitations under the License.
  */
 
-plugins {
-  `java-library`
-  jacoco
-  `maven-publish`
-  signing
-  `nessie-conventions`
-}
+plugins { id("nessie-conventions-server") }
 
 extra["maven.name"] = "Nessie - Backward Compatibility - Jersey"
 

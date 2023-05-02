@@ -17,15 +17,11 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
-  jacoco
-  `maven-publish`
-  signing
-  scala
   alias(libs.plugins.nessie.run)
-  `nessie-conventions`
+  id("nessie-conventions-spark")
+  id("nessie-jacoco")
+  id("nessie-shadow-jar")
 }
-
-apply<NessieShadowJarPlugin>()
 
 val sparkScala = useSparkScalaVersionsForProject("3.2")
 

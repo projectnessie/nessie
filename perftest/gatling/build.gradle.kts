@@ -14,12 +14,7 @@
  * limitations under the License.
  */
 
-plugins {
-  `maven-publish`
-  signing
-  scala
-  `nessie-conventions`
-}
+plugins { id("nessie-conventions-scala") }
 
 extra["maven.name"] = "Nessie - Perf Test - Gatling"
 

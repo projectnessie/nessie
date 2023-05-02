@@ -15,11 +15,8 @@
  */
 
 plugins {
-  `java-library`
-  `maven-publish`
-  signing
   antlr
-  `nessie-conventions`
+  id("nessie-conventions-client")
 }
 
 dependencies {

@@ -15,11 +15,8 @@
  */
 
 plugins {
-  `java-library`
-  jacoco
-  `maven-publish`
-  signing
-  `nessie-conventions`
+  id("nessie-conventions-iceberg")
+  id("nessie-jacoco")
 }
 
 extra["maven.name"] = "Nessie - GC - JDBC live-contents-set persistence"

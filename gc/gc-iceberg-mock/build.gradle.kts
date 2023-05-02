@@ -14,12 +14,7 @@
  * limitations under the License.
  */
 
-plugins {
-  `java-library`
-  `maven-publish`
-  signing
-  `nessie-conventions`
-}
+plugins { id("nessie-conventions-iceberg") }
 
 extra["maven.name"] = "Nessie - GC - Mocked Iceberg data for tests"
 

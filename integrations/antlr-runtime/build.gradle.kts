@@ -17,13 +17,9 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
-  `java-library`
-  `maven-publish`
-  signing
-  `nessie-conventions`
+  id("nessie-conventions-client")
+  id("nessie-shadow-jar")
 }
-
-apply<NessieShadowJarPlugin>()
 
 extra["maven.name"] = "Nessie - Antlr Runtime"
 

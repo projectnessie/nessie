@@ -18,7 +18,7 @@ plugins {
   `java-platform`
   `maven-publish`
   signing
-  `nessie-conventions`
+  id("nessie-common-base")
 }
 
 extra["maven.name"] = "Nessie - Bill of Materials (BOM)"

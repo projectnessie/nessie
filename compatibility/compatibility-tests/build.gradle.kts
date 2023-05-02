@@ -16,12 +16,7 @@
 
 import org.apache.tools.ant.taskdefs.condition.Os
 
-plugins {
-  `java-library`
-  `maven-publish`
-  signing
-  `nessie-conventions`
-}
+plugins { id("nessie-conventions-server") }
 
 extra["maven.name"] = "Nessie - Backward Compatibility - Tests"
 

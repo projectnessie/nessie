@@ -15,11 +15,9 @@
  */
 
 plugins {
-  `java-library`
-  `maven-publish`
-  signing
   alias(libs.plugins.quarkus)
-  `nessie-conventions`
+  id("nessie-conventions-quarkus")
+  id("nessie-jacoco")
 }
 
 extra["maven.name"] = "Nessie - Events - Quarkus"
@@ -60,8 +58,6 @@ dependencies {
   testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
   testCompileOnly(libs.microprofile.openapi)
 }
-
-buildForJava11()
 
 listOf("javadoc", "sourcesJar").forEach { name ->
   tasks.named(name) { dependsOn(tasks.named("compileQuarkusGeneratedSourcesJava")) }

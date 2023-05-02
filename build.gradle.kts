@@ -15,10 +15,8 @@
  */
 
 plugins {
-  `maven-publish`
-  signing
   eclipse
-  `nessie-conventions`
+  id("nessie-conventions-root")
   alias(libs.plugins.nexus.publish.plugin)
 }
 
@@ -105,8 +103,6 @@ publishingHelper {
 spotless {
   kotlinGradle {
     // Must be repeated :( - there's no "addTarget" or so
-    target("nessie-iceberg/*.gradle.kts", "*.gradle.kts", "buildSrc/*.gradle.kts")
+    target("nessie-iceberg/*.gradle.kts", "*.gradle.kts", "build-logic/*.gradle.kts")
   }
 }
-
-val listProjectsWithPrefix by tasks.registering(ListChildProjectsTask::class)
