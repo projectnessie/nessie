@@ -19,6 +19,7 @@ import static com.datastax.oss.driver.api.core.ConsistencyLevel.LOCAL_QUORUM;
 import static com.datastax.oss.driver.api.core.ConsistencyLevel.LOCAL_SERIAL;
 import static com.google.common.base.Preconditions.checkState;
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COLS_OBJS_ALL;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_OBJ_ID;
@@ -43,6 +44,7 @@ import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import com.datastax.oss.driver.api.core.metadata.Metadata;
 import com.datastax.oss.driver.api.core.metadata.schema.ColumnMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
@@ -79,19 +81,16 @@ final class CassandraBackend implements Backend {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CassandraBackend.class);
 
-  private final CqlSession session;
-  private final String keyspace;
+  private final CassandraBackendConfig config;
   private final boolean closeClient;
 
   private final Map<String, PreparedStatement> statements = new ConcurrentHashMap<>();
+  private final CqlSession session;
 
-  CassandraBackend(
-      @Nonnull @jakarta.annotation.Nonnull CqlSession session,
-      String keyspace,
-      boolean closeClient) {
-    this.session = session;
+  CassandraBackend(CassandraBackendConfig config, boolean closeClient) {
+    this.config = config;
+    this.session = requireNonNull(config.client());
     this.closeClient = closeClient;
-    this.keyspace = keyspace;
   }
 
   <K, R> BatchedQuery<K, R> newBatchedQuery(
@@ -292,12 +291,14 @@ final class CassandraBackend implements Backend {
     }
   }
 
-  PreparedStatement prepared(String cql) {
-    return statements.computeIfAbsent(cql, c -> session.prepare(format(c, keyspace)));
-  }
-
-  BoundStatement buildStatement(String cql, Object[] values) {
-    return prepared(cql).bind(values);
+  private BoundStatement buildStatement(String cql, Object[] values) {
+    PreparedStatement prepared =
+        statements.computeIfAbsent(cql, c -> session.prepare(format(c, config.keyspace())));
+    return prepared
+        .bind(values)
+        .setTimeout(config.dmlTimeout())
+        .setConsistencyLevel(LOCAL_QUORUM)
+        .setSerialConsistencyLevel(LOCAL_SERIAL);
   }
 
   boolean executeCas(String cql, Object... values) {
@@ -311,17 +312,11 @@ final class CassandraBackend implements Backend {
   }
 
   ResultSet execute(String cql, Object... values) {
-    return session.execute(
-        buildStatement(cql, values)
-            .setConsistencyLevel(LOCAL_QUORUM)
-            .setSerialConsistencyLevel(LOCAL_SERIAL));
+    return session.execute(buildStatement(cql, values));
   }
 
   CompletionStage<AsyncResultSet> executeAsync(String cql, Object... values) {
-    return session.executeAsync(
-        buildStatement(cql, values)
-            .setConsistencyLevel(LOCAL_QUORUM)
-            .setSerialConsistencyLevel(LOCAL_SERIAL));
+    return session.executeAsync(buildStatement(cql, values));
   }
 
   void handleDriverException(DriverException e) {
@@ -361,12 +356,12 @@ final class CassandraBackend implements Backend {
   @Override
   public void setupSchema() {
     Metadata metadata = session.getMetadata();
-    Optional<KeyspaceMetadata> keyspace = metadata.getKeyspace(this.keyspace);
+    Optional<KeyspaceMetadata> keyspace = metadata.getKeyspace(config.keyspace());
 
     checkState(
         keyspace.isPresent(),
         "Cassandra Keyspace '%s' must exist, but does not exist.",
-        this.keyspace);
+        config.keyspace());
 
     createTableIfNotExists(
         keyspace.get(),
@@ -429,11 +424,18 @@ final class CassandraBackend implements Backend {
       return;
     }
 
-    session.execute(createTable);
+    SimpleStatement stmt =
+        SimpleStatement.builder(createTable).setTimeout(config.ddlTimeout()).build();
+    session.execute(stmt);
   }
 
   @Override
   public String configInfo() {
-    return "keyspace: " + keyspace;
+    return "keyspace: "
+        + config.keyspace()
+        + " DDL timeout: "
+        + config.ddlTimeout()
+        + " DML timeout: "
+        + config.dmlTimeout();
   }
 }

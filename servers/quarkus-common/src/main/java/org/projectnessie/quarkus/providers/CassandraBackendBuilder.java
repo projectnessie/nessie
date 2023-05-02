@@ -16,8 +16,11 @@
 package org.projectnessie.quarkus.providers;
 
 import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.CASSANDRA;
+import static org.projectnessie.versioned.storage.cassandra.CassandraBackendConfig.DEFAULT_DDL_TIMEOUT;
+import static org.projectnessie.versioned.storage.cassandra.CassandraBackendConfig.DEFAULT_DML_TIMEOUT;
 
 import com.datastax.oss.quarkus.runtime.api.session.QuarkusCqlSession;
+import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import javax.enterprise.context.Dependent;
@@ -37,6 +40,18 @@ public class CassandraBackendBuilder implements BackendBuilder {
   @ConfigProperty(name = "quarkus.cassandra.keyspace")
   String keyspace;
 
+  @Inject
+  @ConfigProperty(
+      name = "nessie.version.store.cassandra.ddl-timeout",
+      defaultValue = DEFAULT_DDL_TIMEOUT)
+  Duration ddlTimeout;
+
+  @Inject
+  @ConfigProperty(
+      name = "nessie.version.store.cassandra.dml-timeout",
+      defaultValue = DEFAULT_DML_TIMEOUT)
+  Duration dmlTimeout;
+
   @Override
   public Backend buildBackend() {
     CassandraBackendFactory factory = new CassandraBackendFactory();
@@ -45,6 +60,8 @@ public class CassandraBackendBuilder implements BackendBuilder {
           CassandraBackendConfig.builder()
               .client(client.toCompletableFuture().get())
               .keyspace(keyspace)
+              .ddlTimeout(ddlTimeout)
+              .dmlTimeout(dmlTimeout)
               .build();
       return factory.buildBackend(c);
     } catch (InterruptedException | ExecutionException e) {

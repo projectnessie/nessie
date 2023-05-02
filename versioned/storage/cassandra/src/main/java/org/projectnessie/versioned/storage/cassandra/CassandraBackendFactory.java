@@ -41,6 +41,6 @@ public class CassandraBackendFactory implements BackendFactory<CassandraBackendC
   @jakarta.annotation.Nonnull
   public CassandraBackend buildBackend(
       @Nonnull @jakarta.annotation.Nonnull CassandraBackendConfig config) {
-    return new CassandraBackend(config.client(), config.keyspace(), false);
+    return new CassandraBackend(config, false);
   }
 }
