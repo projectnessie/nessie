@@ -901,7 +901,6 @@ jobs:
   site:
     name: CI Website
     runs-on: ubuntu-22.04
-    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v3.5.2
       - name: Setup Python
