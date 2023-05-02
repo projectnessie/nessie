@@ -21,7 +21,6 @@ import static java.util.Collections.binarySearch;
 import static java.util.Collections.singletonList;
 import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.unsafeWrap;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexElement.indexElement;
-import static org.projectnessie.versioned.storage.common.util.JdkSpecifics.JDK_SPECIFIC;
 import static org.projectnessie.versioned.storage.common.util.Ser.putVarInt;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -460,7 +459,7 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
     ByteBuffer keyBuf = key.serialize(serializationBuffer);
     int keyPos = keyBuf.position();
     if (previousKey != null) {
-      int mismatch = JDK_SPECIFIC.mismatch(previousKey, keyBuf);
+      int mismatch = previousKey.mismatch(keyBuf);
       checkState(mismatch != -1, "Previous and current keys must not be equal");
       int strip = previousKey.remaining() - mismatch;
       putVarInt(target, strip);
