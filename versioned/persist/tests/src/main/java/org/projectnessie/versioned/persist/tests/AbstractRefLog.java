@@ -61,6 +61,7 @@ public abstract class AbstractRefLog {
   protected AbstractRefLog(DatabaseAdapter databaseAdapter) {
     this.databaseAdapter = databaseAdapter;
   }
+
   /** Verify that increasing the number of ref-log stripes works. */
   @Test
   void increaseRefLogSplits(

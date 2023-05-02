@@ -123,6 +123,7 @@ public abstract class TxDatabaseAdapter
 
   /** Value for {@link SqlStatements#TABLE_NAMED_REFERENCES}.{@code ref_type} for a branch. */
   protected static final String REF_TYPE_BRANCH = "b";
+
   /** Value for {@link SqlStatements#TABLE_NAMED_REFERENCES}.{@code ref_type} for a tag. */
   protected static final String REF_TYPE_TAG = "t";
 
@@ -1226,14 +1227,17 @@ public abstract class TxDatabaseAdapter
 
   /** Deadlock error, returned by Postgres. */
   protected static final String DEADLOCK_SQL_STATE_POSTGRES = "40P01";
+
   /**
    * Cockroach "retry, write too old" * error, see <a
    * href="https://www.cockroachlabs.com/docs/v21.1/transaction-retry-error-reference.html#retry_write_too_old">Cockroach's
    * Transaction Retry Error Reference</a>, and Postgres may return a "deadlock" error.
    */
   protected static final String RETRY_SQL_STATE_COCKROACH = "40001";
+
   /** Postgres &amp; Cockroach integrity constraint violation. */
   protected static final String CONSTRAINT_VIOLATION_SQL_STATE = "23505";
+
   /** H2 integrity constraint violation. */
   protected static final int CONSTRAINT_VIOLATION_SQL_CODE = 23505;
 
