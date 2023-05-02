@@ -181,12 +181,22 @@ jobs:
         with:
           arguments: :nessie-quarkus:test --scan
 
+      - name: Dump quarkus.log
+        if: ${{ failure() }}
+        run: |
+          find . -path "**/build/quarkus.log" | while read ql ; do
+            echo "::group::Quarkus build log $ql"
+            cat $ql
+            echo "::endgroup::"
+          done
+
       - name: Capture Test Reports
         uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
           name: ci-test-quarkus-reports
           path: |
+            **/build/quarkus.log
             **/build/reports/*
             **/build/test-results/*
           retention-days: 7
@@ -374,12 +384,22 @@ jobs:
         with:
           arguments: :nessie-quarkus:intTest :nessie-quarkus-cli:intTest --scan
 
+      - name: Dump quarkus.log
+        if: ${{ failure() }}
+        run: |
+          find . -path "**/build/quarkus.log" | while read ql ; do
+            echo "::group::Quarkus build log $ql"
+            cat $ql
+            echo "::endgroup::"
+          done
+
       - name: Capture Test Reports
         uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
           name: ci-inttest-quarkus-reports
           path: |
+            **/build/quarkus.log
             **/build/reports/*
             **/build/test-results/*
           retention-days: 7
@@ -534,12 +554,22 @@ jobs:
         with:
           arguments: :nessie-quarkus:intTest -Pnative --scan
 
+      - name: Dump quarkus.log
+        if: ${{ failure() }}
+        run: |
+          find . -path "**/build/quarkus.log" | while read ql ; do
+            echo "::group::Quarkus build log $ql"
+            cat $ql
+            echo "::endgroup::"
+          done
+
       - name: Capture Test Reports
         uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
           name: ci-inttest-quarkus-native-reports
           path: |
+            **/build/quarkus.log
             **/build/reports/*
             **/build/test-results/*
           retention-days: 7
