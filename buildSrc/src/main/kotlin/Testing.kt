@@ -33,6 +33,7 @@ import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.provideDelegate
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
+import org.gradle.process.CommandLineArgumentProvider
 import org.gradle.testing.base.TestingExtension
 
 class NessieTestingPlugin : Plugin<Project> {
@@ -100,15 +101,23 @@ class NessieTestingPlugin : Plugin<Project> {
         systemProperty("user.language", "en")
         systemProperty("user.country", "US")
         systemProperty("user.variant", "")
-        systemProperty("test.log.level", testLogLevel())
+        jvmArgumentProviders.add(
+          CommandLineArgumentProvider { listOf("-Dtest.log.level=${testLogLevel()}") }
+        )
         environment("TESTCONTAINERS_REUSE_ENABLE", "true")
 
         if (plugins.hasPlugin("io.quarkus")) {
           jvmArgs("--add-opens=java.base/java.util=ALL-UNNAMED")
           // Log-levels are required to be able to parse the HTTP listen URL
-          systemProperty("quarkus.log.level", "INFO")
-          systemProperty("quarkus.log.console.level", "INFO")
-          systemProperty("http.access.log.level", testLogLevel())
+          jvmArgumentProviders.add(
+            CommandLineArgumentProvider {
+              listOf(
+                "-Dquarkus.log.level=${testLogLevel()}",
+                "-Dquarkus.log.console.level=${testLogLevel()}",
+                "-Dhttp.access.log.level=${testLogLevel()}"
+              )
+            }
+          )
 
           minHeapSize = if (testHeapSize != null) testHeapSize as String else "512m"
           maxHeapSize = if (testHeapSize != null) testHeapSize as String else "1536m"
