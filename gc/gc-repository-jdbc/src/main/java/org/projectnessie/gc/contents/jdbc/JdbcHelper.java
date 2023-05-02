@@ -136,8 +136,10 @@ public final class JdbcHelper {
     }
     return false;
   }
+
   /** Postgres &amp; Cockroach integrity constraint violation. */
   static final String CONSTRAINT_VIOLATION_SQL_STATE = "23505";
+
   /** H2 integrity constraint violation. */
   static final int CONSTRAINT_VIOLATION_SQL_CODE = 23505;
 }

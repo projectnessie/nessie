@@ -56,6 +56,7 @@ public class ITRollingUpgrades {
 
   public static final String NO_ANCESTOR =
       "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d";
+
   /** Nessie source version of the rolling upgrade. */
   @NessieVersion Version version;
 

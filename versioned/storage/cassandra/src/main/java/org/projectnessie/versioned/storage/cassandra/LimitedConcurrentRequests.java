@@ -31,11 +31,13 @@ final class LimitedConcurrentRequests implements AutoCloseable {
 
   /** Currently available "permits" for child queries. */
   final Semaphore permits;
+
   /** Holds the potential failure. */
   final Throwable[] failureHolder = new Throwable[1];
 
   /** Number of started queries. */
   volatile int started;
+
   /** Number of finished queries. */
   volatile int finished;
 

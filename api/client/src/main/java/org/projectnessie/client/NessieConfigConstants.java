@@ -23,6 +23,7 @@ import org.projectnessie.client.auth.NessieAuthenticationProvider;
 public final class NessieConfigConstants {
   /** Config property name ({@value #CONF_NESSIE_URI}) for the Nessie service URL. */
   public static final String CONF_NESSIE_URI = "nessie.uri";
+
   /**
    * Config property name ({@value #CONF_NESSIE_USERNAME}) for the user name used for (basic)
    * authentication.
@@ -31,6 +32,7 @@ public final class NessieConfigConstants {
    *     #CONF_NESSIE_AUTH_TOKEN} instead.
    */
   @Deprecated public static final String CONF_NESSIE_USERNAME = "nessie.authentication.username";
+
   /**
    * Config property name ({@value #CONF_NESSIE_PASSWORD}) for the password used for (basic)
    * authentication.
@@ -39,6 +41,7 @@ public final class NessieConfigConstants {
    *     #CONF_NESSIE_AUTH_TOKEN} instead.
    */
   @Deprecated public static final String CONF_NESSIE_PASSWORD = "nessie.authentication.password";
+
   /**
    * Config property name ({@value #CONF_NESSIE_AUTH_TOKEN}) for the token used for (bearer)
    * authentication.
@@ -179,11 +182,13 @@ public final class NessieConfigConstants {
    * authentication.
    */
   public static final String CONF_NESSIE_AWS_REGION = "nessie.authentication.aws.region";
+
   /**
    * Config property name ({@value #CONF_NESSIE_AWS_PROFILE}) for the profile name used for AWS
    * authentication (optional).
    */
   public static final String CONF_NESSIE_AWS_PROFILE = "nessie.authentication.aws.profile";
+
   /**
    * Config property name ({@value #CONF_NESSIE_AUTH_TYPE}) for the authentication provider ID.
    * Valid values are {@code BASIC}, {@code BEARER} and {@code AWS}.
@@ -194,38 +199,45 @@ public final class NessieConfigConstants {
    * <p>Note that "basic" HTTP authentication is not considered secure, use {@code BEARER} instead.
    */
   public static final String CONF_NESSIE_AUTH_TYPE = "nessie.authentication.type";
+
   /**
    * Config property name ({@value #CONF_NESSIE_REF}) for the nessie reference name used by clients,
    * recommended setting.
    */
   public static final String CONF_NESSIE_REF = "nessie.ref";
+
   /**
    * Config property name ({@value #CONF_NESSIE_REF_HASH}) for the nessie reference hash used by
    * clients, optional setting.
    */
   public static final String CONF_NESSIE_REF_HASH = "nessie.ref.hash";
+
   /**
    * Config property name ({@value #CONF_NESSIE_TRACING}) to enable adding the HTTP headers of an
    * active OpenTracing span to all Nessie requests. Valid values are {@code true} and {@code
    * false}.
    */
   public static final String CONF_NESSIE_TRACING = "nessie.tracing";
+
   /**
    * Config property name ({@value #CONF_READ_TIMEOUT}) for the network transport read-timeout,
    * default is {@value #DEFAULT_READ_TIMEOUT_MILLIS}.
    */
   public static final String CONF_READ_TIMEOUT = "nessie.transport.read-timeout";
+
   /**
    * Config property name ({@value #CONF_CONNECT_TIMEOUT}) for the network transport connect timeout
    * in milliseconds, default is {@value #DEFAULT_CONNECT_TIMEOUT_MILLIS}.
    */
   public static final String CONF_CONNECT_TIMEOUT = "nessie.transport.connect-timeout";
+
   /**
    * Config property name ({@value #CONF_NESSIE_DISABLE_COMPRESSION}) to disable compression on the
    * network layer, if set to {@code true}.
    */
   public static final String CONF_NESSIE_DISABLE_COMPRESSION =
       "nessie.transport.disable-compression";
+
   /**
    * Config property name ({@value #CONF_NESSIE_CLIENT_BUILDER_IMPL}) for custom client builder
    * class name.

@@ -220,13 +220,16 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
 
     /** Whether to merge (or transplant, if false). */
     final boolean merge;
+
     /** Whether the namespace shall be created on the target branch. */
     final boolean createNamespaceOnTarget;
+
     /**
      * Whether the namespace shall be deleted on the target branch to trigger an error by the
      * namespace-exists check.
      */
     final boolean deleteNamespaceOnTarget;
+
     /** Whether merge/transplant shall keep individual commits or "squash" those. */
     final boolean individualCommits;
 

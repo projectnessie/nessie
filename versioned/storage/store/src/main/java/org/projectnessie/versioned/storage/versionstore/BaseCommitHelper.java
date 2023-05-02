@@ -406,6 +406,7 @@ class BaseCommitHelper {
 
     /** Source commits in chronological order, most recent commit last. */
     final List<CommitObj> sourceCommits;
+
     /** Parent of the oldest commit. */
     final CommitObj sourceParent;
 
