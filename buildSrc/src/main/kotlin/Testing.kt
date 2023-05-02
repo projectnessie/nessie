@@ -112,8 +112,8 @@ class NessieTestingPlugin : Plugin<Project> {
           jvmArgumentProviders.add(
             CommandLineArgumentProvider {
               listOf(
-                "-Dquarkus.log.level=${testLogLevel()}",
-                "-Dquarkus.log.console.level=${testLogLevel()}",
+                "-Dquarkus.log.level=${testLogLevel("INFO")}",
+                "-Dquarkus.log.console.level=${testLogLevel("INFO")}",
                 "-Dhttp.access.log.level=${testLogLevel()}"
               )
             }

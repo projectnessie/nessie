@@ -30,6 +30,7 @@ import org.gradle.api.artifacts.ModuleDependency
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.file.FileTree
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.logging.LogLevel
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputFile
@@ -114,6 +115,15 @@ fun Project.libsRequiredVersion(name: String): String {
 }
 
 fun testLogLevel(): String = System.getProperty("test.log.level", "WARN")
+
+fun testLogLevel(minVerbose: String): String {
+  val requested = LogLevel.valueOf(testLogLevel().uppercase())
+  val minimum = LogLevel.valueOf(minVerbose.uppercase())
+  if (requested.ordinal > minimum.ordinal) {
+    return minimum.name
+  }
+  return requested.name
+}
 
 /** Check whether the current build is run in the context of integrations-testing. */
 fun isIntegrationsTestingEnabled() =
