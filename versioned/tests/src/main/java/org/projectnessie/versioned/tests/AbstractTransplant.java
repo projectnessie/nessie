@@ -256,7 +256,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                         dryRun,
                         false))
         .isInstanceOf(ReferenceConflictException.class);
-    checkpoint.assertNoWrites();
+    if (dryRun) {
+      checkpoint.assertNoWrites();
+    }
   }
 
   @ParameterizedTest

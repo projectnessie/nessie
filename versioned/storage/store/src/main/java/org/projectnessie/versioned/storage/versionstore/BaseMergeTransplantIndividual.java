@@ -42,8 +42,6 @@ import org.projectnessie.versioned.MergeResult.KeyDetails;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.storage.batching.BatchingPersist;
-import org.projectnessie.versioned.storage.batching.WriteBatching;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
 import org.projectnessie.versioned.storage.common.logic.CommitLogic;
@@ -59,8 +57,6 @@ import org.projectnessie.versioned.storage.common.persist.Reference;
 
 class BaseMergeTransplantIndividual extends BaseCommitHelper {
 
-  final BatchingPersist persist;
-
   BaseMergeTransplantIndividual(
       @Nonnull @jakarta.annotation.Nonnull BranchName branch,
       @Nonnull @jakarta.annotation.Nonnull Optional<Hash> referenceHash,
@@ -68,22 +64,7 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
       @Nonnull @jakarta.annotation.Nonnull Reference reference,
       @Nullable @jakarta.annotation.Nullable CommitObj head)
       throws ReferenceNotFoundException {
-    this(branch, referenceHash, batching(persist), reference, head);
-  }
-
-  private BaseMergeTransplantIndividual(
-      @Nonnull @jakarta.annotation.Nonnull BranchName branch,
-      @Nonnull @jakarta.annotation.Nonnull Optional<Hash> referenceHash,
-      @Nonnull @jakarta.annotation.Nonnull BatchingPersist persist,
-      @Nonnull @jakarta.annotation.Nonnull Reference reference,
-      @Nullable @jakarta.annotation.Nullable CommitObj head)
-      throws ReferenceNotFoundException {
     super(branch, referenceHash, persist, reference, head);
-    this.persist = persist;
-  }
-
-  private static BatchingPersist batching(Persist persist) {
-    return WriteBatching.builder().persist(persist).batchSize(Integer.MAX_VALUE).build().create();
   }
 
   MergeResult<Commit> individualCommits(
@@ -129,10 +110,6 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
     }
 
     boolean hasConflicts = recordKeyDetailsAndCheckConflicts(mergeResult, keyDetailsMap);
-
-    if (!dryRun && !hasConflicts) {
-      persist.flush();
-    }
 
     return finishMergeTransplant(empty, mergeResult, newHead, dryRun, hasConflicts);
   }
