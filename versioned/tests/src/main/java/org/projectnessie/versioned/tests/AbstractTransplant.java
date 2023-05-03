@@ -181,45 +181,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     if (individualCommits) {
       soft.assertThat(result.getAddedCommits()).isEmpty(); // fast-forward
     } else {
-      soft.assertThat(result.getAddedCommits())
-          .singleElement()
-          .satisfies(
-              c -> {
-                soft.assertThat(c.getParentHash()).isEqualTo(targetHead);
-                soft.assertThat(c.getCommitMeta().getMessage())
-                    .contains("Initial Commit")
-                    .contains("Second Commit")
-                    .contains("Third Commit");
-                soft.assertThat(c.getOperations())
-                    // old storage model keeps the Delete operation when a key is Put then Deleted,
-                    // see https://github.com/projectnessie/nessie/pull/6472
-                    .hasSizeBetween(3, 4)
-                    .anySatisfy(
-                        o -> {
-                          if (c.getOperations().size() == 4) {
-                            soft.assertThat(o).isInstanceOf(Delete.class);
-                            soft.assertThat(o.getKey()).isEqualTo(ContentKey.of("t3"));
-                          }
-                        })
-                    .anySatisfy(
-                        o -> {
-                          soft.assertThat(o).isInstanceOf(Put.class);
-                          soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_1));
-                          soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_1_2);
-                        })
-                    .anySatisfy(
-                        o -> {
-                          soft.assertThat(o).isInstanceOf(Put.class);
-                          soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_2));
-                          soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_2_2);
-                        })
-                    .anySatisfy(
-                        o -> {
-                          soft.assertThat(o).isInstanceOf(Put.class);
-                          soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_4));
-                          soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_4_1);
-                        });
-              });
+      checkSquashedCommit(targetHead, result);
     }
 
     soft.assertThat(
@@ -269,114 +231,9 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                 false);
 
     if (individualCommits) {
-      soft.assertThat(result.getAddedCommits())
-          .hasSize(3)
-          .satisfiesExactly(
-              c -> {
-                soft.assertThat(c.getParentHash()).isEqualTo(targetHead);
-                soft.assertThat(c.getCommitMeta().getMessage()).isEqualTo("Initial Commit");
-                soft.assertThat(c.getOperations())
-                    .hasSize(3)
-                    .satisfiesExactlyInAnyOrder(
-                        o -> {
-                          soft.assertThat(o).isInstanceOf(Put.class);
-                          soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_1));
-                          soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_1_1);
-                        },
-                        o -> {
-                          soft.assertThat(o).isInstanceOf(Put.class);
-                          soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_2));
-                          soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_2_1);
-                        },
-                        o -> {
-                          soft.assertThat(o).isInstanceOf(Put.class);
-                          soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_3));
-                          soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_3_1);
-                        });
-              },
-              c -> {
-                soft.assertThat(c.getParentHash())
-                    .isEqualTo(result.getAddedCommits().get(0).getHash());
-                soft.assertThat(c.getCommitMeta().getMessage()).isEqualTo("Second Commit");
-                soft.assertThat(c.getOperations())
-                    .hasSize(4)
-                    .satisfiesExactlyInAnyOrder(
-                        o -> {
-                          soft.assertThat(o).isInstanceOf(Put.class);
-                          soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_1));
-                          soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_1_2);
-                        },
-                        o ->
-                            soft.assertThat(o)
-                                .asInstanceOf(type(Delete.class))
-                                .extracting(Delete::getKey)
-                                .isEqualTo(ContentKey.of(T_2)),
-                        o ->
-                            soft.assertThat(o)
-                                .asInstanceOf(type(Delete.class))
-                                .extracting(Delete::getKey)
-                                .isEqualTo(ContentKey.of(T_3)),
-                        o -> {
-                          soft.assertThat(o).isInstanceOf(Put.class);
-                          soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_4));
-                          soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_4_1);
-                        });
-              },
-              c -> {
-                soft.assertThat(c.getParentHash())
-                    .isEqualTo(result.getAddedCommits().get(1).getHash());
-                soft.assertThat(c.getCommitMeta().getMessage()).isEqualTo("Third Commit");
-                soft.assertThat(c.getOperations())
-                    .hasSize(1)
-                    .satisfiesExactlyInAnyOrder(
-                        o -> {
-                          soft.assertThat(o).isInstanceOf(Put.class);
-                          soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_2));
-                          soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_2_2);
-                        }
-                        // Unchanged operation not retained
-                        );
-              });
+      checkRebasedCommits(targetHead, result); // no fast-forward
     } else {
-      soft.assertThat(result.getAddedCommits())
-          .singleElement()
-          .satisfies(
-              c -> {
-                soft.assertThat(c.getParentHash()).isEqualTo(targetHead);
-                soft.assertThat(c.getCommitMeta().getMessage())
-                    .contains("Initial Commit")
-                    .contains("Second Commit")
-                    .contains("Third Commit");
-                soft.assertThat(c.getOperations())
-                    // old storage model keeps the Delete operation when a key is Put then Deleted,
-                    // see https://github.com/projectnessie/nessie/pull/6472
-                    .hasSizeBetween(3, 4)
-                    .anySatisfy(
-                        o -> {
-                          if (c.getOperations().size() == 4) {
-                            soft.assertThat(o).isInstanceOf(Delete.class);
-                            soft.assertThat(o.getKey()).isEqualTo(ContentKey.of("t3"));
-                          }
-                        })
-                    .anySatisfy(
-                        o -> {
-                          soft.assertThat(o).isInstanceOf(Put.class);
-                          soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_1));
-                          soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_1_2);
-                        })
-                    .anySatisfy(
-                        o -> {
-                          soft.assertThat(o).isInstanceOf(Put.class);
-                          soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_2));
-                          soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_2_2);
-                        })
-                    .anySatisfy(
-                        o -> {
-                          soft.assertThat(o).isInstanceOf(Put.class);
-                          soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_4));
-                          soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_4_1);
-                        });
-              });
+      checkSquashedCommit(targetHead, result);
     }
     assertThat(
             contentsWithoutId(
@@ -395,6 +252,119 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                 ContentKey.of(T_2), V_2_2,
                 ContentKey.of(T_4), V_4_1,
                 ContentKey.of(T_5), V_5_1));
+  }
+
+  private void checkSquashedCommit(Hash targetHead, MergeResult<Commit> result) {
+    soft.assertThat(result.getAddedCommits())
+        .singleElement()
+        .satisfies(
+            c -> {
+              soft.assertThat(c.getParentHash()).isEqualTo(targetHead);
+              soft.assertThat(c.getCommitMeta().getMessage())
+                  .contains("Initial Commit")
+                  .contains("Second Commit")
+                  .contains("Third Commit");
+              soft.assertThat(c.getOperations())
+                  // old storage model keeps the Delete operation when a key is Put then Deleted,
+                  // see https://github.com/projectnessie/nessie/pull/6472
+                  .hasSizeBetween(3, 4)
+                  .anySatisfy(
+                      o -> {
+                        if (c.getOperations() != null && c.getOperations().size() == 4) {
+                          soft.assertThat(o).isInstanceOf(Delete.class);
+                          soft.assertThat(o.getKey()).isEqualTo(ContentKey.of("t3"));
+                        }
+                      })
+                  .anySatisfy(
+                      o -> {
+                        soft.assertThat(o).isInstanceOf(Put.class);
+                        soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_1));
+                        soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_1_2);
+                      })
+                  .anySatisfy(
+                      o -> {
+                        soft.assertThat(o).isInstanceOf(Put.class);
+                        soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_2));
+                        soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_2_2);
+                      })
+                  .anySatisfy(
+                      o -> {
+                        soft.assertThat(o).isInstanceOf(Put.class);
+                        soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_4));
+                        soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_4_1);
+                      });
+            });
+  }
+
+  private void checkRebasedCommits(Hash targetHead, MergeResult<Commit> result) {
+    soft.assertThat(result.getAddedCommits())
+        .hasSize(3)
+        .satisfiesExactly(
+            c -> {
+              soft.assertThat(c.getParentHash()).isEqualTo(targetHead);
+              soft.assertThat(c.getCommitMeta().getMessage()).isEqualTo("Initial Commit");
+              soft.assertThat(c.getOperations())
+                  .hasSize(3)
+                  .satisfiesExactlyInAnyOrder(
+                      o -> {
+                        soft.assertThat(o).isInstanceOf(Put.class);
+                        soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_1));
+                        soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_1_1);
+                      },
+                      o -> {
+                        soft.assertThat(o).isInstanceOf(Put.class);
+                        soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_2));
+                        soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_2_1);
+                      },
+                      o -> {
+                        soft.assertThat(o).isInstanceOf(Put.class);
+                        soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_3));
+                        soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_3_1);
+                      });
+            },
+            c -> {
+              soft.assertThat(c.getParentHash())
+                  .isEqualTo(result.getAddedCommits().get(0).getHash());
+              soft.assertThat(c.getCommitMeta().getMessage()).isEqualTo("Second Commit");
+              soft.assertThat(c.getOperations())
+                  .hasSize(4)
+                  .satisfiesExactlyInAnyOrder(
+                      o -> {
+                        soft.assertThat(o).isInstanceOf(Put.class);
+                        soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_1));
+                        soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_1_2);
+                      },
+                      o ->
+                          soft.assertThat(o)
+                              .asInstanceOf(type(Delete.class))
+                              .extracting(Delete::getKey)
+                              .isEqualTo(ContentKey.of(T_2)),
+                      o ->
+                          soft.assertThat(o)
+                              .asInstanceOf(type(Delete.class))
+                              .extracting(Delete::getKey)
+                              .isEqualTo(ContentKey.of(T_3)),
+                      o -> {
+                        soft.assertThat(o).isInstanceOf(Put.class);
+                        soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_4));
+                        soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_4_1);
+                      });
+            },
+            c -> {
+              soft.assertThat(c.getParentHash())
+                  .isEqualTo(result.getAddedCommits().get(1).getHash());
+              soft.assertThat(c.getCommitMeta().getMessage()).isEqualTo("Third Commit");
+              soft.assertThat(c.getOperations())
+                  .hasSize(1)
+                  .satisfiesExactlyInAnyOrder(
+                      o -> {
+                        soft.assertThat(o).isInstanceOf(Put.class);
+                        soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_2));
+                        soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_2_2);
+                      }
+                      // Unchanged operation not retained
+                      );
+            });
   }
 
   @ParameterizedTest
