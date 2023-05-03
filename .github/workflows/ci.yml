@@ -136,7 +136,7 @@ jobs:
       - name: Gradle / test
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: test -x :nessie-quarkus:test --scan
+          arguments: test :nessie-client:check -x :nessie-client:intTest -x :nessie-quarkus:test --scan
 
       - name: Capture Test Reports
         uses: actions/upload-artifact@v3
