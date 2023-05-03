@@ -125,7 +125,7 @@ public interface EventSubscriber extends AutoCloseable {
 
   /**
    * Called when the Nessie server is stopped. Subscribers should release any resources they hold in
-   * this method. The default implementation does nothing.
+   * this method.
    */
   @Override
   void close() throws Exception;
