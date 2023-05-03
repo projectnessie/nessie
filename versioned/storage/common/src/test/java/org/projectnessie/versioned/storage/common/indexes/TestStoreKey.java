@@ -25,7 +25,6 @@ import static org.assertj.core.api.InstanceOfAssertFactories.INTEGER;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.deserializeKey;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.key;
-import static org.projectnessie.versioned.storage.common.util.JdkSpecifics.JDK_SPECIFIC;
 import static org.projectnessie.versioned.storage.common.util.Util.STRING_100;
 import static org.projectnessie.versioned.storage.common.util.Util.asHex;
 
@@ -235,7 +234,7 @@ public class TestStoreKey {
     bufferFromString.put((byte) 0);
     bufferFromString.flip();
 
-    int mismatch = JDK_SPECIFIC.mismatch(bufferFromString, serToBufferFromString);
+    int mismatch = bufferFromString.mismatch(serToBufferFromString);
     if (mismatch != -1) {
       soft.assertThat(mismatch).describedAs("Mismatch at %d", mismatch).isEqualTo(-1);
     }
@@ -244,7 +243,7 @@ public class TestStoreKey {
     ByteBuffer b2 = ByteBuffer.allocate(serToBufferFromString.capacity());
     deser.serialize(b2);
 
-    mismatch = JDK_SPECIFIC.mismatch(serToBufferFromString, b2);
+    mismatch = serToBufferFromString.mismatch(b2);
     if (mismatch != -1) {
       soft.assertThat(mismatch).describedAs("Mismatch at %d", mismatch).isEqualTo(-1);
     }
