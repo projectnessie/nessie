@@ -46,7 +46,9 @@ import org.projectnessie.events.api.TransplantEvent;
 public interface EventSubscriber extends AutoCloseable {
 
   /** Called when the subscriber is registered by Nessie. */
-  void onSubscribe(EventSubscription subscription);
+  default void onSubscribe(EventSubscription subscription) {
+    // do nothing by default
+  }
 
   /**
    * Returns whether this subscriber is blocking, that is, whether it is expected to perform
