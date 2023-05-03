@@ -76,17 +76,18 @@ public interface MergeResult<COMMIT> extends Result {
   List<COMMIT> getTargetCommits();
 
   /**
-   * List of commits that where added to the target branch, that is, all the commits between
-   * {@linkplain #getEffectiveTargetHash() the previous HEAD} (exclusive) and {@linkplain
-   * #getResultantTargetHash() the current HEAD} (inclusive).
+   * List of new commits that where added to the target branch.
    *
-   * <p>The returned list will always be empty if the merge or transplant operation failed.
-   * Otherwise, if commits were squashed, it will contain exactly one element; otherwise, it will
-   * generally contain as many commits as there were {@linkplain #getSourceCommits() source commits}
-   * to rebase (unless some source commits were filtered out).
+   * <p>The returned list will always be empty if the merge or transplant operation failed. It will
+   * also always be empty in dry-run mode. Furthermore, it will also be empty if the operation
+   * resulted in a fast-forward merge or transplant, because no new commit is created in this case.
+   * Otherwise, if commits were squashed, the returned list will contain exactly one element: the
+   * squashed commit; conversely, if individual commits were preserved, the list will generally
+   * contain as many commits as there were {@linkplain #getSourceCommits() source commits} to rebase
+   * (unless some source commits were filtered out).
    *
-   * <p>This list is currently not exposed via the REST API. It is intended to be used by the Nessie
-   * events notification system.
+   * <p>The REST API does not expose this property currently; it is used by the Nessie events
+   * notification system.
    */
   List<COMMIT> getAddedCommits();
 
