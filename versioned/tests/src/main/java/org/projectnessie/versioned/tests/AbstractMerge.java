@@ -422,7 +422,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
     MetadataRewriter<CommitMeta> metadataRewriter = createMetadataRewriter("");
 
-    doMergeIntoEmpty(individualCommits, newBranch, metadataRewriter);
+    doMergeIntoEmpty(individualCommits, newBranch, metadataRewriter, true);
 
     if (individualCommits) {
       // not modifying commit meta, will just "fast forward"
@@ -450,7 +450,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
   private void doMergeIntoEmpty(
       boolean individualCommits,
       BranchName newBranch,
-      MetadataRewriter<CommitMeta> metadataRewriter)
+      MetadataRewriter<CommitMeta> metadataRewriter,
+      boolean expectFastForward)
       throws ReferenceNotFoundException, ReferenceConflictException {
     MergeResult<Commit> result =
         store()
@@ -466,7 +467,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 false,
                 false);
 
-    checkAddedCommits(individualCommits, initialHash, result);
+    checkAddedCommits(individualCommits, initialHash, result, expectFastForward);
+
     soft.assertThat(
             contentsWithoutId(
                 store()
@@ -485,9 +487,90 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
   }
 
   private void checkAddedCommits(
-      boolean individualCommits, Hash targetHead, MergeResult<Commit> result) {
+      boolean individualCommits,
+      Hash targetHead,
+      MergeResult<Commit> result,
+      boolean expectFastForward) {
     if (individualCommits) {
-      soft.assertThat(result.getAddedCommits()).isEmpty(); // fast-forward
+      if (expectFastForward) {
+        // FIXME assertion is failing for new storage model since BatchingPersist introduction
+        soft.assertThat(result.getAddedCommits()).isEmpty();
+      } else {
+        soft.assertThat(result.getAddedCommits())
+            .hasSize(3)
+            .satisfiesExactly(
+                c -> {
+                  soft.assertThat(c.getParentHash()).isEqualTo(targetHead);
+                  soft.assertThat(c.getCommitMeta().getMessage()).contains("First Commit");
+                  soft.assertThat(c.getOperations())
+                      .hasSize(3)
+                      .satisfiesExactlyInAnyOrder(
+                          o -> {
+                            soft.assertThat(o).isInstanceOf(Put.class);
+                            soft.assertThat(o.getKey()).isEqualTo(ContentKey.of("t1"));
+                            soft.assertThat(contentWithoutId(((Put) o).getValue()))
+                                .isEqualTo(V_1_1);
+                          },
+                          o -> {
+                            soft.assertThat(o).isInstanceOf(Put.class);
+                            soft.assertThat(o.getKey()).isEqualTo(ContentKey.of("t2"));
+                            soft.assertThat(contentWithoutId(((Put) o).getValue()))
+                                .isEqualTo(V_2_1);
+                          },
+                          o -> {
+                            soft.assertThat(o).isInstanceOf(Put.class);
+                            soft.assertThat(o.getKey()).isEqualTo(ContentKey.of("t3"));
+                            soft.assertThat(contentWithoutId(((Put) o).getValue()))
+                                .isEqualTo(V_3_1);
+                          });
+                },
+                c -> {
+                  soft.assertThat(c.getParentHash())
+                      .isEqualTo(result.getAddedCommits().get(0).getHash());
+                  soft.assertThat(c.getCommitMeta().getMessage()).contains("Second Commit");
+                  soft.assertThat(c.getOperations())
+                      .hasSize(4)
+                      .satisfiesExactlyInAnyOrder(
+                          o -> {
+                            soft.assertThat(o).isInstanceOf(Put.class);
+                            soft.assertThat(o.getKey()).isEqualTo(ContentKey.of("t1"));
+                            soft.assertThat(contentWithoutId(((Put) o).getValue()))
+                                .isEqualTo(V_1_2);
+                          },
+                          o ->
+                              soft.assertThat(o)
+                                  .asInstanceOf(type(Delete.class))
+                                  .extracting(Delete::getKey)
+                                  .isEqualTo(ContentKey.of("t2")),
+                          o ->
+                              soft.assertThat(o)
+                                  .asInstanceOf(type(Delete.class))
+                                  .extracting(Delete::getKey)
+                                  .isEqualTo(ContentKey.of("t3")),
+                          o -> {
+                            soft.assertThat(o).isInstanceOf(Put.class);
+                            soft.assertThat(o.getKey()).isEqualTo(ContentKey.of("t4"));
+                            soft.assertThat(contentWithoutId(((Put) o).getValue()))
+                                .isEqualTo(V_4_1);
+                          });
+                },
+                c -> {
+                  soft.assertThat(c.getParentHash())
+                      .isEqualTo(result.getAddedCommits().get(1).getHash());
+                  soft.assertThat(c.getCommitMeta().getMessage()).contains("Third Commit");
+                  soft.assertThat(c.getOperations())
+                      .hasSize(1)
+                      .satisfiesExactlyInAnyOrder(
+                          o -> {
+                            soft.assertThat(o).isInstanceOf(Put.class);
+                            soft.assertThat(o.getKey()).isEqualTo(ContentKey.of("t2"));
+                            soft.assertThat(contentWithoutId(((Put) o).getValue()))
+                                .isEqualTo(V_2_2);
+                          }
+                          // Unchanged operation not retained
+                          );
+                });
+      }
     } else {
       soft.assertThat(result.getAddedCommits())
           .singleElement()
@@ -698,7 +781,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
     MetadataRewriter<CommitMeta> metadataRewriter = createMetadataRewriter(", merged");
 
-    doMergeIntoEmpty(individualCommits, newBranch, metadataRewriter);
+    doMergeIntoEmpty(
+        individualCommits, newBranch, metadataRewriter, false /* because of metadata rewrite */);
 
     // modify the commit meta, will generate new commits and therefore new commit hashes
     soft.assertThat(store().hashOnReference(newBranch, Optional.empty())).isNotEqualTo(thirdCommit);
