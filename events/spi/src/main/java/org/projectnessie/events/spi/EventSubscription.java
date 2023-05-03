@@ -32,6 +32,6 @@ public interface EventSubscription {
   /** The unique identifier of this subscription. */
   UUID getId();
 
-  /** The configuration of the Nessie server that this subscription is connected to. */
-  NessieConfiguration getNessieConfiguration();
+  /** The system configuration of the Nessie server that this subscription is connected to. */
+  EventSystemConfiguration getSystemConfiguration();
 }

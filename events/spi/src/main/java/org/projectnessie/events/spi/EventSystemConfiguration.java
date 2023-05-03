@@ -18,9 +18,9 @@ package org.projectnessie.events.spi;
 import java.util.Map;
 import org.immutables.value.Value;
 
-/** Configuration of the Nessie server. */
+/** System-wide configuration of the Nessie server. */
 @Value.Immutable
-public interface NessieConfiguration {
+public interface EventSystemConfiguration {
 
   /** Semver version representing the behavior of the Nessie server. */
   String getSpecVersion();
