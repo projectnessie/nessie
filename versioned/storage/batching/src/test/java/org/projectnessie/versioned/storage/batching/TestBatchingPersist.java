@@ -204,6 +204,19 @@ public class TestBatchingPersist {
         .isInstanceOf(ObjTooLargeException.class);
   }
 
+  @ParameterizedTest
+  @MethodSource("allObjectTypeSamples")
+  void noFlush(Obj obj) throws Exception {
+    BatchingPersistImpl persist =
+        (BatchingPersistImpl) WriteBatching.builder().persist(base).batchSize(0).build().create();
+    persist.storeObj(obj);
+    Obj updated = updateObjChange(obj);
+    persist.upsertObj(updated);
+    persist.flush();
+    soft.assertThat(persist.pendingStores()).containsExactly(entry(obj.id(), obj));
+    soft.assertThat(persist.pendingUpserts()).containsExactly(entry(obj.id(), updated));
+  }
+
   private Persist base() {
     InmemoryBackendFactory factory = new InmemoryBackendFactory();
     @SuppressWarnings("resource")

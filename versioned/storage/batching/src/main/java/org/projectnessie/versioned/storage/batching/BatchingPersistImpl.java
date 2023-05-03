@@ -65,20 +65,22 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
 
   @Override
   public void flush() {
-    writeLock();
-    try {
-      if (!pendingStores.isEmpty()) {
-        delegate().storeObjs(pendingStores.values().toArray(new Obj[0]));
-        pendingStores.clear();
+    if (batching.batchSize() > 0) {
+      writeLock();
+      try {
+        if (!pendingStores.isEmpty()) {
+          delegate().storeObjs(pendingStores.values().toArray(new Obj[0]));
+          pendingStores.clear();
+        }
+        if (!pendingUpserts.isEmpty()) {
+          delegate().upsertObjs(pendingUpserts.values().toArray(new Obj[0]));
+          pendingUpserts.clear();
+        }
+      } catch (ObjTooLargeException e) {
+        throw new RuntimeException(e);
+      } finally {
+        writeUnlock();
       }
-      if (!pendingUpserts.isEmpty()) {
-        delegate().upsertObjs(pendingUpserts.values().toArray(new Obj[0]));
-        pendingUpserts.clear();
-      }
-    } catch (ObjTooLargeException e) {
-      throw new RuntimeException(e);
-    } finally {
-      writeUnlock();
     }
   }
 
@@ -103,9 +105,11 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
   }
 
   private void maybeFlush() {
-    if (pendingStores.size() > batching.batchSize()
-        || pendingUpserts.size() > batching.batchSize()) {
-      flush();
+    if (batching.batchSize() > 0) {
+      if (pendingStores.size() > batching.batchSize()
+          || pendingUpserts.size() > batching.batchSize()) {
+        flush();
+      }
     }
   }
 

@@ -29,6 +29,13 @@ public interface WriteBatching {
 
   Persist persist();
 
+  /**
+   * The maximum number of objects to be stored in a single batch.
+   *
+   * <p>A value of {@code 0} or fewer means "infinite batching" and effectively disables flushes,
+   * preventing all writes from being persisted. This can be useful for testing in dry-run mode, but
+   * should not be used in production.
+   */
   @Value.Default
   default int batchSize() {
     return DEFAULT_BATCH_SIZE;
@@ -41,7 +48,7 @@ public interface WriteBatching {
    * thing.
    *
    * <p><em>IMPORTANT NOTE:</em> there is currently no implementation that supports strict checks
-   * that would provide the same guarantees are live-production {@code Persist} implementations.
+   * that would provide the same guarantees as live-production {@code Persist} implementations.
    */
   @Value.Default
   default boolean optimistic() {
