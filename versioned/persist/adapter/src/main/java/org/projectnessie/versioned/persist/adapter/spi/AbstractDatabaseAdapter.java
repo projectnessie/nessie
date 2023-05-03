@@ -626,10 +626,10 @@ public abstract class AbstractDatabaseAdapter<
               newKeyLists,
               params.getUpdateCommitMetadata(),
               mergePredicate,
-              additionalParents);
+              additionalParents,
+              addedCommits);
 
       if (squashed != null) {
-        addedCommits.accept(squashed);
         if (!params.isDryRun()) {
           writtenCommits.accept(squashed);
           toHead = squashed.getHash();
@@ -2114,7 +2114,8 @@ public abstract class AbstractDatabaseAdapter<
       Consumer<Hash> newKeyLists,
       MetadataRewriter<ByteString> rewriteMetadata,
       Predicate<ContentKey> includeKeyPredicate,
-      Iterable<Hash> additionalParents)
+      Iterable<Hash> additionalParents,
+      Consumer<CommitLogEntry> addedCommits)
       throws ReferenceConflictException, ReferenceNotFoundException {
 
     List<ByteString> commitMeta = new ArrayList<>();
@@ -2188,6 +2189,7 @@ public abstract class AbstractDatabaseAdapter<
     }
 
     writeIndividualCommit(ctx, squashedCommit);
+    addedCommits.accept(squashedCommit);
 
     return squashedCommit;
   }
@@ -2268,13 +2270,13 @@ public abstract class AbstractDatabaseAdapter<
 
       if (!newEntry.getHash().equals(sourceCommit.getHash())) {
         commitsChronological.set(i, newEntry);
+        addedCommits.accept(newEntry);
       } else {
         // Newly built CommitLogEntry is equal to the CommitLogEntry to transplant.
         // This can happen, if the commit to transplant has NO_ANCESTOR as its parent.
         commitsChronological.remove(i);
       }
 
-      addedCommits.accept(newEntry);
       targetHead = newEntry.getHash();
     }
     return targetHead;

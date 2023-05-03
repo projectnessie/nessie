@@ -539,8 +539,6 @@ class BaseCommitHelper {
       result.wasApplied(true).resultantTargetHash(objIdToHash(fromId));
     }
 
-    result.addAddedCommits(commitObjToCommit(source));
-
     return result.build();
   }
 
