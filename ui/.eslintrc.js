@@ -166,7 +166,6 @@ module.exports = {
     indent: "off",
     "jsdoc/check-alignment": "error",
     "jsdoc/check-indentation": "error",
-    "jsdoc/newline-after-description": "error",
     "linebreak-style": "off",
     "max-classes-per-file": ["error", 1],
     "max-len": "off",
