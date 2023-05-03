@@ -36,8 +36,8 @@ import org.projectnessie.events.api.TransplantEvent;
  * META-INF/services/org.projectnessie.events.spi.EventSubscriber} file. They will be then
  * discovered and loaded by the ServiceLoader mechanism.
  *
- * <p>Implementations of this interface should preferably be non-blocking. If blocking I/O is
- * required, then the {@link #isBlocking()} method should return {@code true}.
+ * <p>Implementations of this interface must not block. If blocking I/O is required, then the {@link
+ * #isBlocking()} method should return {@code true}.
  *
  * <p>Please note that this interface may evolve in the future, and more methods may be added. These
  * will always be default methods, so that existing implementations will continue to work. But it is
