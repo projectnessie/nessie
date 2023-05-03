@@ -493,7 +493,6 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
       boolean expectFastForward) {
     if (individualCommits) {
       if (expectFastForward) {
-        // FIXME assertion is failing for new storage model since BatchingPersist introduction
         soft.assertThat(result.getAddedCommits()).isEmpty();
       } else {
         soft.assertThat(result.getAddedCommits())

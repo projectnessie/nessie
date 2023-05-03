@@ -179,7 +179,6 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                 false);
 
     if (individualCommits) {
-      // FIXME assertion is failing for new storage model since BatchingPersist introduction
       soft.assertThat(result.getAddedCommits()).isEmpty(); // fast-forward
     } else {
       soft.assertThat(result.getAddedCommits())
