@@ -33,6 +33,7 @@ import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ
 import static org.projectnessie.versioned.storage.common.persist.ObjType.COMMIT;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 import static org.projectnessie.versioned.storage.versionstore.BaseCommitHelper.committingOperation;
+import static org.projectnessie.versioned.storage.versionstore.BaseCommitHelper.dryRunCommitterSupplier;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.NO_ANCESTOR;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.asBranchName;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.asTagName;
@@ -618,6 +619,10 @@ public class VersionStoreImpl implements VersionStore {
     CommitterSupplier<Merge> supplier =
         keepIndividualCommits ? MergeIndividualImpl::new : MergeSquashImpl::new;
 
+    if (dryRun) {
+      supplier = dryRunCommitterSupplier(supplier);
+    }
+
     MergeBehaviors mergeBehaviors =
         new MergeBehaviors(keepIndividualCommits, mergeKeyBehaviors, defaultMergeBehavior);
 
@@ -649,6 +654,10 @@ public class VersionStoreImpl implements VersionStore {
 
     CommitterSupplier<Transplant> supplier =
         keepIndividualCommits ? TransplantIndividualImpl::new : TransplantSquashImpl::new;
+
+    if (dryRun) {
+      supplier = dryRunCommitterSupplier(supplier);
+    }
 
     MergeBehaviors mergeBehaviors =
         new MergeBehaviors(keepIndividualCommits, mergeKeyBehaviors, defaultMergeBehavior);

@@ -70,6 +70,8 @@ import org.projectnessie.versioned.MergeResult.KeyDetails;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
+import org.projectnessie.versioned.storage.batching.BatchingPersist;
+import org.projectnessie.versioned.storage.batching.WriteBatching;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
 import org.projectnessie.versioned.storage.common.exceptions.CommitWrappedException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
@@ -147,6 +149,25 @@ class BaseCommitHelper {
         @Nonnull @jakarta.annotation.Nonnull Reference reference,
         @Nullable @jakarta.annotation.Nullable CommitObj head)
         throws ReferenceNotFoundException;
+  }
+
+  /**
+   * Wraps a {@link CommitterSupplier} into another {@link CommitterSupplier} that operates in
+   * "dry-run" mode, i.e. it will not actually persist any changes.
+   */
+  public static <I> CommitterSupplier<I> dryRunCommitterSupplier(CommitterSupplier<I> supplier) {
+    return (b, hash, p, ref, head) -> supplier.newCommitter(b, hash, dryRunPersist(p), ref, head);
+  }
+
+  /**
+   * Wraps a {@link Persist} into another {@link Persist} that operates in "dry-run" mode, i.e. it
+   * will not actually persist any changes.
+   *
+   * @implSpec The returned {@link Persist} is a {@link BatchingPersist} with a batch size of -1
+   *     that never flushes, which effectively disables writes to the store.
+   */
+  public static Persist dryRunPersist(Persist persist) {
+    return WriteBatching.builder().persist(persist).batchSize(-1).build().create();
   }
 
   @FunctionalInterface
