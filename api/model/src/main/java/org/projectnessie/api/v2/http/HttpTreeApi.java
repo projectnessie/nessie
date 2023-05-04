@@ -77,7 +77,7 @@ import org.projectnessie.model.ser.Views;
 @jakarta.ws.rs.Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
 @Path("v2/trees")
 @jakarta.ws.rs.Path("v2/trees")
-@Tag(name = "v2-beta")
+@Tag(name = "v2")
 public interface HttpTreeApi extends TreeApi {
 
   @Override

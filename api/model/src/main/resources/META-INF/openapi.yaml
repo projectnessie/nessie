@@ -30,8 +30,8 @@ info:
 
 tags:
   - name: v1
-    description: End points from the legacy v1 API
-  - name: v2-beta
+    description: End points from the legacy v1 API, deprecated
+  - name: v2
     description: End points from the Nessie v2 API
 
 paths: {} # inferred from java annotations
@@ -48,7 +48,7 @@ components:
         defaultBranch: main
         minSupportedApiVersion: 1
         maxSupportedApiVersion: 2
-        specVersion: "2.0"
+        specVersion: "2.0.0"
 
     namespace:
       value: "a.b.c"
