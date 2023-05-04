@@ -16,20 +16,26 @@
 package org.projectnessie.versioned.tests;
 
 import static org.assertj.core.util.Streams.stream;
+import static org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions.BARE;
 import static org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions.BASE_REFERENCE_RELATED_AND_COMMIT_META;
+import static org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions.OMIT;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.assertj.core.util.Lists;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -223,5 +229,59 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
                             .build()))
         .isInstanceOf(ReferenceNotFoundException.class)
         .hasMessageContaining("'does-not-exist");
+  }
+
+  @Test
+  void listBranchesOrTags() throws Exception {
+    // Generate branches + tags with "interleaving" names
+    Set<NamedRef> branches = new HashSet<>();
+    Set<NamedRef> tags = new HashSet<>();
+    for (int i = 0; i < 10; i++) {
+      NamedRef r = BranchName.of((char) ('a' + i) + "-b");
+      store().create(r, Optional.empty());
+      branches.add(r);
+      r = TagName.of((char) ('a' + i) + "-t");
+      store().create(r, Optional.empty());
+      tags.add(r);
+    }
+
+    // Check branches (no tags)
+    try (PaginationIterator<ReferenceInfo<CommitMeta>> refs =
+        store()
+            .getNamedRefs(
+                GetNamedRefsParams.builder()
+                    .branchRetrieveOptions(BARE)
+                    .tagRetrieveOptions(OMIT)
+                    .build(),
+                null)) {
+      soft.assertThat(Lists.newArrayList(refs))
+          .extracting(ReferenceInfo::getNamedRef)
+          .hasSize(branches.size() + 1) // --> main branch
+          .containsAll(branches);
+    }
+
+    // Check tags (no branches)
+    try (PaginationIterator<ReferenceInfo<CommitMeta>> refs =
+        store()
+            .getNamedRefs(
+                GetNamedRefsParams.builder()
+                    .branchRetrieveOptions(OMIT)
+                    .tagRetrieveOptions(BARE)
+                    .build(),
+                null)) {
+      soft.assertThat(Lists.newArrayList(refs))
+          .extracting(ReferenceInfo::getNamedRef)
+          .containsExactlyInAnyOrderElementsOf(tags);
+    }
+
+    // Check branches + tags
+    try (PaginationIterator<ReferenceInfo<CommitMeta>> refs =
+        store().getNamedRefs(GetNamedRefsParams.DEFAULT, null)) {
+      soft.assertThat(Lists.newArrayList(refs))
+          .extracting(ReferenceInfo::getNamedRef)
+          .hasSize(branches.size() + tags.size() + 1) // --> main branch
+          .containsAll(branches)
+          .containsAll(tags);
+    }
   }
 }
