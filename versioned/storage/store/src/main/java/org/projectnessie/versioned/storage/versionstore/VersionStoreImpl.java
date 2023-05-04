@@ -307,8 +307,19 @@ public class VersionStoreImpl implements VersionStore {
 
     PagingToken token = pagingToken != null ? fromString(pagingToken) : null;
 
+    String prefix;
+    if (params.getBranchRetrieveOptions().isRetrieve()
+        && !params.getTagRetrieveOptions().isRetrieve()) {
+      prefix = RefMapping.REFS_HEADS;
+    } else if (!params.getBranchRetrieveOptions().isRetrieve()
+        && params.getTagRetrieveOptions().isRetrieve()) {
+      prefix = RefMapping.REFS_TAGS;
+    } else {
+      prefix = RefMapping.REFS;
+    }
+
     PagedResult<Reference, String> result =
-        referenceLogic.queryReferences(referencesQuery(token, RefMapping.REFS, false));
+        referenceLogic.queryReferences(referencesQuery(token, prefix, false));
 
     Optional<CommitObj> baseRefHead = headForBaseReference(refMapping, params);
 
