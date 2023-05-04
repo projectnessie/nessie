@@ -44,7 +44,6 @@ public interface ReferencesQuery extends PageableQuery {
     return referencesQuery(null, referencePrefix, false);
   }
 
-  // TODO update VersionStore to add support for paging
   static ReferencesQuery referencesQuery(
       PagingToken pagingToken, String referencePrefix, boolean prefetch) {
     return ImmutableReferencesQuery.of(
