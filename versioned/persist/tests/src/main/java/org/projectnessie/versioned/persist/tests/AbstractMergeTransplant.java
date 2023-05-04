@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.projectnessie.model.Conflict;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
@@ -458,7 +459,10 @@ public abstract class AbstractMergeTransplant {
                       .collect(Collectors.toList()));
 
       if (k < 2) {
-        details.conflictType(ConflictType.UNRESOLVABLE).addTargetCommits(conflictHead);
+        details
+            .conflict(Conflict.conflict(Conflict.ConflictType.UNKNOWN, key, "UNRESOLVABLE"))
+            .conflictType(ConflictType.UNRESOLVABLE)
+            .addTargetCommits(conflictHead);
       }
 
       expectedMergeResult.putDetails(key, details.build());

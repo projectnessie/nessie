@@ -80,6 +80,7 @@ public interface MergeResult<COMMIT> {
     @Value.Parameter(order = 1)
     MergeBehavior getMergeBehavior();
 
+    @Deprecated // for removal, #getConflict() is a proper replacement
     @Value.Default
     @Value.Parameter(order = 2)
     default ConflictType getConflictType() {
@@ -102,16 +103,15 @@ public interface MergeResult<COMMIT> {
       return ImmutableKeyDetails.builder();
     }
 
-    static KeyDetails keyDetails(MergeBehavior mergeBehavior, ConflictType conflictType) {
-      return keyDetails(mergeBehavior, conflictType, null);
-    }
-
-    static KeyDetails keyDetails(
-        MergeBehavior mergeBehavior, ConflictType conflictType, Conflict conflict) {
-      return ImmutableKeyDetails.of(mergeBehavior, conflictType, conflict);
+    static KeyDetails keyDetails(MergeBehavior mergeBehavior, Conflict conflict) {
+      return ImmutableKeyDetails.of(
+          mergeBehavior,
+          conflict != null ? ConflictType.UNRESOLVABLE : ConflictType.NONE,
+          conflict);
     }
   }
 
+  @Deprecated // for removal
   enum ConflictType {
     NONE,
     UNRESOLVABLE

@@ -73,12 +73,14 @@ public interface MergeResponse {
 
   @Deprecated // for removal and replaced with something else
   @Schema(deprecated = true, hidden = true)
+  @JsonView(Views.V1.class)
   List<LogEntry> getSourceCommits();
 
   @Nullable
   @jakarta.annotation.Nullable
   @Deprecated // for removal and replaced with something else
   @Schema(deprecated = true, hidden = true)
+  @JsonView(Views.V1.class)
   List<LogEntry> getTargetCommits();
 
   /** Details of all keys encountered during the merge or transplant operation. */
@@ -93,18 +95,23 @@ public interface MergeResponse {
 
     MergeBehavior getMergeBehavior();
 
+    @Deprecated // for removal, #getConflict() is a proper replacement
     @Value.Default
     @JsonDeserialize(using = ContentKeyConflict.Deserializer.class)
+    @Schema(deprecated = true, hidden = true)
+    @JsonView(Views.V1.class)
     default ContentKeyConflict getConflictType() {
       return ContentKeyConflict.NONE;
     }
 
     @Deprecated // for removal and replaced with something else
     @Schema(deprecated = true, hidden = true)
+    @JsonView(Views.V1.class)
     List<String> getSourceCommits();
 
     @Deprecated // for removal and replaced with something else
     @Schema(deprecated = true, hidden = true)
+    @JsonView(Views.V1.class)
     List<String> getTargetCommits();
 
     /** {@link Conflict} details, if available. */
@@ -115,6 +122,7 @@ public interface MergeResponse {
     Conflict getConflict();
   }
 
+  @Deprecated // for removal
   enum ContentKeyConflict {
     NONE,
     UNRESOLVABLE;

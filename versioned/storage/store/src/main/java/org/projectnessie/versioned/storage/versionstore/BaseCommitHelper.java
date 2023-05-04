@@ -65,7 +65,6 @@ import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.MergeResult;
-import org.projectnessie.versioned.MergeResult.ConflictType;
 import org.projectnessie.versioned.MergeResult.KeyDetails;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -530,7 +529,7 @@ class BaseCommitHelper {
       ContentKey key = storeKeyToKey(k);
       // Note: key==null, if not the "main universe" or not a "content" discriminator
       if (key != null) {
-        result.putDetails(key, keyDetails(mergeBehaviors.mergeBehavior(key), ConflictType.NONE));
+        result.putDetails(key, keyDetails(mergeBehaviors.mergeBehavior(key), null));
       }
     }
 
@@ -606,7 +605,7 @@ class BaseCommitHelper {
                   // Do not plain ignore (due to FORCE) or drop (DROP), when the caller provided an
                   // expectedTargetContent.
                   if (mergeKeyBe.getExpectedTargetContent() == null) {
-                    keyDetailsMap.put(key, keyDetails(mergeBehavior, ConflictType.NONE));
+                    keyDetailsMap.put(key, keyDetails(mergeBehavior, null));
                     return mergeBehavior == MergeBehavior.FORCE
                         ? ConflictResolution.ADD
                         : ConflictResolution.DROP;
@@ -614,11 +613,7 @@ class BaseCommitHelper {
                   // fall through
                 case NORMAL:
                   keyDetailsMap.put(
-                      key,
-                      keyDetails(
-                          mergeBehavior,
-                          ConflictType.UNRESOLVABLE,
-                          commitConflictToConflict(conflict)));
+                      key, keyDetails(mergeBehavior, commitConflictToConflict(conflict)));
                   return ConflictResolution.ADD;
                 default:
                   throw new IllegalStateException("Unknown merge behavior " + mergeBehavior);
@@ -633,8 +628,7 @@ class BaseCommitHelper {
             ContentKey key = storeKeyToKey(storeKey);
             // Note: key==null, if not the "main universe" or not a "content" discriminator
             if (key != null) {
-              keyDetailsMap.putIfAbsent(
-                  key, keyDetails(mergeBehaviors.mergeBehavior(key), ConflictType.NONE));
+              keyDetailsMap.putIfAbsent(key, keyDetails(mergeBehaviors.mergeBehavior(key), null));
             }
           },
           /*
@@ -709,9 +703,7 @@ class BaseCommitHelper {
     boolean hasConflicts = false;
     for (Entry<ContentKey, KeyDetails> keyDetail : keyDetailsMap.entrySet()) {
       KeyDetails details = keyDetail.getValue();
-      if (details.getConflictType() == ConflictType.UNRESOLVABLE) {
-        hasConflicts = true;
-      }
+      hasConflicts |= details.getConflict() != null;
       mergeResult.putDetails(keyDetail.getKey(), details);
     }
     return hasConflicts;
