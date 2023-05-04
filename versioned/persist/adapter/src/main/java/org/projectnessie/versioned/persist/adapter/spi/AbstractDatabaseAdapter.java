@@ -2046,7 +2046,12 @@ public abstract class AbstractDatabaseAdapter<
       removeKeyCollisionsForNamespaces(
           ctx, refHead, commitsChronological.get(0).getHash(), keyCollisions);
       if (!keyCollisions.isEmpty()) {
-        keyCollisions.forEach(key -> keyDetails.apply(key).conflictType(ConflictType.UNRESOLVABLE));
+        keyCollisions.forEach(
+            key ->
+                keyDetails
+                    .apply(key)
+                    .conflict(Conflict.conflict(Conflict.ConflictType.UNKNOWN, key, "UNRESOLVABLE"))
+                    .conflictType(ConflictType.UNRESOLVABLE));
         return true;
       }
     }

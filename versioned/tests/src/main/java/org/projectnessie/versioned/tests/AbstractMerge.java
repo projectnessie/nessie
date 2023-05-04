@@ -228,7 +228,6 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
               false,
               KeyDetails.keyDetails(
                   mergeBehavior,
-                  MergeResult.ConflictType.UNRESOLVABLE,
                   Conflict.conflict(
                       ConflictType.VALUE_DIFFERS,
                       keyT3,

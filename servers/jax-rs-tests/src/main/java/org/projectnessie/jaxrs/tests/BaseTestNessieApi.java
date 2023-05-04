@@ -44,6 +44,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.validation.constraints.NotNull;
 import org.assertj.core.api.AbstractThrowableAssert;
+import org.assertj.core.api.ListAssert;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -87,7 +88,8 @@ import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableReferenceMetadata;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
-import org.projectnessie.model.MergeResponse;
+import org.projectnessie.model.MergeResponse.ContentKeyConflict;
+import org.projectnessie.model.MergeResponse.ContentKeyDetails;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.model.Operation;
@@ -572,7 +574,8 @@ public abstract class BaseTestNessieApi {
     Branch main =
         prepCommit(main0, "main", dummyPut("conflictingKey1"), dummyPut("mainKey")).commit();
 
-    soft.assertThat(
+    ListAssert<ContentKeyDetails> mergeAssert =
+        soft.assertThat(
             api()
                 .mergeRefIntoBranch()
                 .fromRef(branch)
@@ -580,18 +583,27 @@ public abstract class BaseTestNessieApi {
                 .returnConflictAsResult(true) // adds coverage on top of AbstractMerge tests
                 .dryRun(true)
                 .merge()
-                .getDetails())
-        .extracting(
-            MergeResponse.ContentKeyDetails::getKey,
-            MergeResponse.ContentKeyDetails::getConflictType)
-        .contains(
-            tuple(ContentKey.of("branchKey"), MergeResponse.ContentKeyConflict.NONE),
-            tuple(ContentKey.of("conflictingKey1"), MergeResponse.ContentKeyConflict.UNRESOLVABLE));
+                .getDetails());
+    if (isV2()) {
+      mergeAssert
+          // old model returns "UNKNOWN" for Conflict.conflictType(), new model returns KEY_EXISTS
+          .extracting(ContentKeyDetails::getKey, d -> d.getConflict() != null)
+          .contains(
+              tuple(ContentKey.of("branchKey"), false),
+              tuple(ContentKey.of("conflictingKey1"), true));
+    } else {
+      mergeAssert
+          .extracting(ContentKeyDetails::getKey, ContentKeyDetails::getConflictType)
+          .contains(
+              tuple(ContentKey.of("branchKey"), ContentKeyConflict.NONE),
+              tuple(ContentKey.of("conflictingKey1"), ContentKeyConflict.UNRESOLVABLE));
+    }
 
     // Assert no change to the ref HEAD
     soft.assertThat(api().getReference().refName(main.getName()).get()).isEqualTo(main);
 
-    soft.assertThat(
+    mergeAssert =
+        soft.assertThat(
             api()
                 .transplantCommitsIntoBranch()
                 .fromRefName(branch.getName())
@@ -600,14 +612,21 @@ public abstract class BaseTestNessieApi {
                 .returnConflictAsResult(true) // adds coverage on top of AbstractTransplant tests
                 .dryRun(true)
                 .transplant()
-                .getDetails())
-        .extracting(
-            MergeResponse.ContentKeyDetails::getKey,
-            MergeResponse.ContentKeyDetails::getConflictType)
-        .contains(
-            tuple(ContentKey.of("branchKey"), MergeResponse.ContentKeyConflict.NONE),
-            tuple(ContentKey.of("conflictingKey1"), MergeResponse.ContentKeyConflict.UNRESOLVABLE));
-
+                .getDetails());
+    if (isV2()) {
+      mergeAssert
+          // old model returns "UNKNOWN" for Conflict.conflictType(), new model returns KEY_EXISTS
+          .extracting(ContentKeyDetails::getKey, d -> d.getConflict() != null)
+          .contains(
+              tuple(ContentKey.of("branchKey"), false),
+              tuple(ContentKey.of("conflictingKey1"), true));
+    } else {
+      mergeAssert
+          .extracting(ContentKeyDetails::getKey, ContentKeyDetails::getConflictType)
+          .contains(
+              tuple(ContentKey.of("branchKey"), ContentKeyConflict.NONE),
+              tuple(ContentKey.of("conflictingKey1"), ContentKeyConflict.UNRESOLVABLE));
+    }
     // Assert no change to the ref HEAD
     soft.assertThat(api().getReference().refName(main.getName()).get()).isEqualTo(main);
   }

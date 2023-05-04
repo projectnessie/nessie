@@ -44,8 +44,7 @@ public class MergeConflictException extends ReferenceConflictException {
               Conflict conflict = keyDetails.getConflict();
               return conflict != null
                   ? conflict
-                  : Conflict.conflict(
-                      ConflictType.KEY_CONFLICT, e.getKey(), e.getValue().getConflictType().name());
+                  : Conflict.conflict(ConflictType.KEY_CONFLICT, e.getKey(), "UNKNOWN");
             })
         .collect(Collectors.toList());
   }

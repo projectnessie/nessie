@@ -81,7 +81,6 @@ import org.projectnessie.versioned.ImmutableRepositoryInformation;
 import org.projectnessie.versioned.KeyEntry;
 import org.projectnessie.versioned.MergeConflictException;
 import org.projectnessie.versioned.MergeResult;
-import org.projectnessie.versioned.MergeResult.ConflictType;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Operation;
@@ -687,7 +686,7 @@ public class VersionStoreImpl implements VersionStore {
           String.format(
               "The following keys have been changed in conflict: %s",
               mergeResult.getDetails().entrySet().stream()
-                  .filter(e -> e.getValue().getConflictType() != ConflictType.NONE)
+                  .filter(e -> e.getValue().getConflict() != null)
                   .map(Map.Entry::getKey)
                   .sorted()
                   .map(key -> String.format("'%s'", key))
