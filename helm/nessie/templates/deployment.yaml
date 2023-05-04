@@ -184,7 +184,12 @@ spec:
             {{- end }}
             {{- end }}
             {{- end }}
+
             {{ list .Values.advancedConfig "" | include "nessie.propsToEnvVars" | nindent 12 }}
+
+            {{- if .Values.extraEnv }}
+            {{- toYaml .Values.extraEnv | nindent 12 }}
+            {{- end }}
           ports:
             - name: nessie-server
               containerPort: 19120

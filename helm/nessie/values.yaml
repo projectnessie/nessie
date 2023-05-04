@@ -93,6 +93,21 @@ advancedConfig:
 #      console.format: "%d{HH:mm:ss} %s%e%n"
 #      category."org.projectnessie".level: DEBUG
 
+# -- Advanced configuration via Environment Variables.
+# Extra environment variables to add to the Nessie server container.
+# You can pass here any valid EnvVar object:
+# https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#envvar-v1-core
+# This can be useful to get configuration values from Kubernetes secrets or config maps.
+extraEnv:
+  []
+#  - name: QUARKUS_MONGODB_APPLICATION_NAME
+#    value: my-app
+#  - name: QUARKUS_MONGODB_TLS
+#    valueFrom:
+#      configMapKeyRef:
+#        name: mongodb-config
+#        key: tls
+
 authentication:
   # -- Specifies whether authentication for the nessie server should be enabled.
   enabled: false
