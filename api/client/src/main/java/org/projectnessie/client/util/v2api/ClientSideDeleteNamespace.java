@@ -15,6 +15,8 @@
  */
 package org.projectnessie.client.util.v2api;
 
+import static org.projectnessie.error.ContentKeyErrorDetails.contentKeyErrorDetails;
+
 import org.projectnessie.client.api.DeleteNamespaceResult;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.builder.BaseDeleteNamespaceBuilder;
@@ -81,6 +83,7 @@ public final class ClientSideDeleteNamespace extends BaseDeleteNamespaceBuilder 
 
     if (!(existing instanceof Namespace)) {
       throw new NessieNamespaceNotFoundException(
+          contentKeyErrorDetails(key),
           String.format("Namespace '%s' does not exist", key.toPathString()));
     }
 
@@ -93,6 +96,7 @@ public final class ClientSideDeleteNamespace extends BaseDeleteNamespaceBuilder 
           .findAny()
           .isPresent()) {
         throw new NessieNamespaceNotEmptyException(
+            contentKeyErrorDetails(key),
             String.format("Namespace '%s' is not empty", key.toPathString()));
       }
     } catch (NessieNotFoundException e) {

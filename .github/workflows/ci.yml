@@ -746,7 +746,7 @@ jobs:
       ICEBERG_MAIN_REPOSITORY: apache/iceberg
       ICEBERG_MAIN_BRANCH: master
       ICEBERG_PATCH_REPOSITORY: snazy/iceberg
-      ICEBERG_PATCH_BRANCH: iceberg-nesqueit
+      ICEBERG_PATCH_BRANCH: iceberg-nesqueit-err
       SPARK_LOCAL_IP: localhost
     steps:
       - name: Prepare Git

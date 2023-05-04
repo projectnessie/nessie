@@ -16,12 +16,12 @@
 package org.projectnessie.versioned;
 
 import static java.util.Collections.singletonList;
-import static org.projectnessie.model.ReferenceConflicts.referenceConflicts;
+import static org.projectnessie.error.ReferenceConflicts.referenceConflicts;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import org.projectnessie.error.ReferenceConflicts;
 import org.projectnessie.model.Conflict;
-import org.projectnessie.model.ReferenceConflicts;
 
 /**
  * Exception thrown when the hash associated with a named reference does not match with the hash

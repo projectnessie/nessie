@@ -17,6 +17,7 @@ package org.projectnessie.services.impl;
 
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.StreamSupport.stream;
+import static org.projectnessie.error.ContentKeyErrorDetails.contentKeyErrorDetails;
 import static org.projectnessie.services.impl.RefUtil.toReference;
 
 import com.google.common.base.Preconditions;
@@ -324,23 +325,27 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
   private static NessieNamespaceAlreadyExistsException namespaceAlreadyExistsException(
       Namespace namespace) {
     return new NessieNamespaceAlreadyExistsException(
+        contentKeyErrorDetails(namespace.toContentKey()),
         String.format("Namespace '%s' already exists", namespace));
   }
 
   private static NessieNamespaceAlreadyExistsException otherContentAlreadyExistsException(
       Namespace namespace) {
     return new NessieNamespaceAlreadyExistsException(
+        contentKeyErrorDetails(namespace.toContentKey()),
         String.format("Another content object with name '%s' already exists", namespace));
   }
 
   private static NessieNamespaceNotFoundException namespaceDoesNotExistException(
       Namespace namespace) {
     return new NessieNamespaceNotFoundException(
+        contentKeyErrorDetails(namespace.toContentKey()),
         String.format("Namespace '%s' does not exist", namespace));
   }
 
   private static NessieNamespaceNotEmptyException namespaceNotEmptyException(Namespace namespace) {
     return new NessieNamespaceNotEmptyException(
+        contentKeyErrorDetails(namespace.toContentKey()),
         String.format("Namespace '%s' is not empty", namespace));
   }
 

@@ -23,17 +23,17 @@ package org.projectnessie.error;
  * and thrown on the client side to represent cases when the server responded with the HTTP {@code
  * Conflict} status code, but no fine-grained error information was available.
  */
-public class NessieConflictException extends BaseNessieClientServerException {
+public abstract class NessieConflictException extends BaseNessieClientServerException {
 
-  public NessieConflictException(String message, Throwable cause) {
+  protected NessieConflictException(String message, Throwable cause) {
     super(message, cause);
   }
 
-  public NessieConflictException(String message) {
+  protected NessieConflictException(String message) {
     super(message);
   }
 
-  public NessieConflictException(NessieError error) {
+  protected NessieConflictException(NessieError error) {
     super(error);
   }
 }

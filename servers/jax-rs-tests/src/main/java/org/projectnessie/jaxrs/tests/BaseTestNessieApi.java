@@ -62,12 +62,15 @@ import org.projectnessie.client.ext.NessieApiVersion;
 import org.projectnessie.client.ext.NessieApiVersions;
 import org.projectnessie.client.ext.NessieClientFactory;
 import org.projectnessie.error.BaseNessieClientServerException;
+import org.projectnessie.error.ContentKeyErrorDetails;
 import org.projectnessie.error.NessieBadRequestException;
 import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieNamespaceNotEmptyException;
 import org.projectnessie.error.NessieNamespaceNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceConflictException;
+import org.projectnessie.error.ReferenceConflicts;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.CommitResponse;
@@ -96,7 +99,6 @@ import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
-import org.projectnessie.model.ReferenceConflicts;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.Tag;
 
@@ -926,11 +928,20 @@ public abstract class BaseTestNessieApi {
     soft.assertThat(resp.getEffectiveReference()).isEqualTo(main);
     soft.assertThat(resp.toContentsMap()).containsOnlyKeys(allKeys).hasSize(allKeys.size());
 
+    String mainName = main.getName();
     ContentKey key = ContentKey.of("b.b", "c", "1");
-    soft.assertThat(api().getContent().refName(main.getName()).getSingle(key))
+    soft.assertThat(api().getContent().refName(mainName).getSingle(key))
         .isEqualTo(
             ContentResponse.of(
                 IcebergTable.of("foo", 1, 2, 3, 4, committed.toAddedContentsMap().get(key)), main));
+
+    ContentKey nonExisting = ContentKey.of("not", "there");
+    soft.assertThatThrownBy(() -> api().getContent().refName(mainName).getSingle(nonExisting))
+        .isInstanceOf(NessieContentNotFoundException.class)
+        .asInstanceOf(type(NessieContentNotFoundException.class))
+        .extracting(NessieContentNotFoundException::getErrorDetails)
+        .extracting(ContentKeyErrorDetails::contentKey)
+        .isEqualTo(nonExisting);
   }
 
   @Test
@@ -1288,7 +1299,11 @@ public abstract class BaseTestNessieApi {
     if (isV2()) {
       soft.assertThatThrownBy(
               () -> api().deleteNamespace().refName(mainName).namespace(namespace2).delete())
-          .isInstanceOf(NessieNamespaceNotEmptyException.class);
+          .isInstanceOf(NessieNamespaceNotEmptyException.class)
+          .asInstanceOf(type(NessieNamespaceNotEmptyException.class))
+          .extracting(NessieNamespaceNotEmptyException::getErrorDetails)
+          .extracting(ContentKeyErrorDetails::contentKey)
+          .isEqualTo(namespace2.toContentKey());
     }
 
     if (isV2()) {
@@ -1311,7 +1326,11 @@ public abstract class BaseTestNessieApi {
 
     soft.assertThatThrownBy(
             () -> api().getNamespace().refName(mainName).namespace(namespace4).get())
-        .isInstanceOf(NessieNamespaceNotFoundException.class);
+        .isInstanceOf(NessieNamespaceNotFoundException.class)
+        .asInstanceOf(type(NessieNamespaceNotFoundException.class))
+        .extracting(NessieNamespaceNotFoundException::getErrorDetails)
+        .extracting(ContentKeyErrorDetails::contentKey)
+        .isEqualTo(namespace4.toContentKey());
 
     soft.assertThatThrownBy(
             () -> api().deleteNamespace().refName(mainName).namespace(namespace4).delete())

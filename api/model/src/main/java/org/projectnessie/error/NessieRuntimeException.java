@@ -16,11 +16,11 @@
 package org.projectnessie.error;
 
 /** Represents unchecked exceptions raised by Nessie API endpoints. */
-public class NessieRuntimeException extends RuntimeException implements ErrorCodeAware {
+public abstract class NessieRuntimeException extends RuntimeException implements ErrorCodeAware {
 
   private final NessieError error;
 
-  public NessieRuntimeException(NessieError error) {
+  protected NessieRuntimeException(NessieError error) {
     super(error.getFullMessage());
     this.error = error;
   }

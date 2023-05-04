@@ -13,22 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.model;
+package org.projectnessie.error;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.immutables.value.Value;
 
 @Schema(
     type = SchemaType.OBJECT,
     title = "NessieErrorDetails",
     oneOf = {ReferenceConflicts.class},
     discriminatorMapping = {
-      @DiscriminatorMapping(value = "REFERENCE_CONFLICTS", schema = ReferenceConflicts.class)
+      @DiscriminatorMapping(value = ReferenceConflicts.TYPE, schema = ReferenceConflicts.class),
+      @DiscriminatorMapping(
+          value = ContentKeyErrorDetails.TYPE,
+          schema = ContentKeyErrorDetails.class)
     },
     discriminatorProperty = "type")
-@JsonSubTypes({@JsonSubTypes.Type(ReferenceConflicts.class)})
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public interface NessieErrorDetails {}
+@JsonTypeIdResolver(NessieErrorDetailsTypeIdResolver.class)
+@JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "type", visible = true)
+public interface NessieErrorDetails {
+  @Value.Redacted
+  @JsonIgnore
+  String getType();
+}

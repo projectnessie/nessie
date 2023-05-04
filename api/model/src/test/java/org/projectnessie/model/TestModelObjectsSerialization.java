@@ -32,6 +32,7 @@ import java.util.function.Consumer;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.error.ReferenceConflicts;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.ser.Views;
 

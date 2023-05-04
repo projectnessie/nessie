@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned;
 
-import static org.projectnessie.model.ReferenceConflicts.referenceConflicts;
+import static org.projectnessie.error.ReferenceConflicts.referenceConflicts;
 
 import java.util.List;
 import java.util.stream.Collectors;

@@ -15,6 +15,8 @@
  */
 package org.projectnessie.client.util.v2api;
 
+import static org.projectnessie.error.ContentKeyErrorDetails.contentKeyErrorDetails;
+
 import org.projectnessie.client.api.GetNamespaceResult;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.builder.BaseGetNamespaceBuilder;
@@ -55,11 +57,13 @@ public final class ClientSideGetNamespace extends BaseGetNamespaceBuilder {
       Content c = contentResponse.getContent();
       if (!(c instanceof Namespace)) {
         throw new NessieNamespaceNotFoundException(
+            contentKeyErrorDetails(key),
             String.format("Namespace '%s' does not exist", key.toPathString()));
       }
       return GetNamespaceResult.of((Namespace) c, contentResponse.getEffectiveReference());
     } catch (NessieContentNotFoundException e) {
       throw new NessieNamespaceNotFoundException(
+          contentKeyErrorDetails(key),
           String.format("Namespace '%s' does not exist", key.toPathString()));
     } catch (NessieNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);

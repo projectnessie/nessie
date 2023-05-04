@@ -23,17 +23,17 @@ package org.projectnessie.error;
  * and thrown on the client side to represent cases when the server responded with the HTTP {@code
  * Not Found} status code, but no fine-grained error information was available.
  */
-public class NessieNotFoundException extends BaseNessieClientServerException {
+public abstract class NessieNotFoundException extends BaseNessieClientServerException {
 
-  public NessieNotFoundException(String message, Throwable cause) {
+  protected NessieNotFoundException(String message, Throwable cause) {
     super(message, cause);
   }
 
-  public NessieNotFoundException(String message) {
+  protected NessieNotFoundException(String message) {
     super(message);
   }
 
-  public NessieNotFoundException(NessieError error) {
+  protected NessieNotFoundException(NessieError error) {
     super(error);
   }
 }

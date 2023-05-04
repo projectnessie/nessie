@@ -15,21 +15,31 @@
  */
 package org.projectnessie.error;
 
+import static org.projectnessie.error.ContentKeyErrorDetails.contentKeyErrorDetails;
+
 import org.projectnessie.model.ContentKey;
 
 /** This exception is thrown when the requested content object is not present in the store. */
 public class NessieContentNotFoundException extends NessieNotFoundException {
+  private final ContentKeyErrorDetails contentKeyErrorDetails;
 
   public NessieContentNotFoundException(ContentKey key, String ref) {
     super(String.format("Could not find content for key '%s' in reference '%s'.", key, ref));
+    this.contentKeyErrorDetails = contentKeyErrorDetails(key);
   }
 
   public NessieContentNotFoundException(NessieError error) {
     super(error);
+    this.contentKeyErrorDetails = error.getErrorDetailsAsOrNull(ContentKeyErrorDetails.class);
   }
 
   @Override
   public ErrorCode getErrorCode() {
     return ErrorCode.CONTENT_NOT_FOUND;
+  }
+
+  @Override
+  public ContentKeyErrorDetails getErrorDetails() {
+    return contentKeyErrorDetails;
   }
 }

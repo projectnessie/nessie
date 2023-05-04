@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
-import static org.projectnessie.model.ReferenceConflicts.referenceConflicts;
+import static org.projectnessie.error.ReferenceConflicts.referenceConflicts;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -60,10 +60,10 @@ import org.projectnessie.error.NessieForbiddenException;
 import org.projectnessie.error.NessieReferenceConflictException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.error.NessieUnsupportedMediaTypeException;
+import org.projectnessie.error.ReferenceConflicts;
 import org.projectnessie.model.Conflict;
 import org.projectnessie.model.Conflict.ConflictType;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.ReferenceConflicts;
 import software.amazon.awssdk.utils.StringInputStream;
 
 @ExtendWith(SoftAssertionsExtension.class)
