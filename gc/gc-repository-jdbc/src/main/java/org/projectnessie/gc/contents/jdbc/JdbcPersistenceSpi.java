@@ -21,6 +21,7 @@ import static org.projectnessie.gc.contents.jdbc.SqlDmlDdl.DELETE_FILE_DELETIONS
 import static org.projectnessie.gc.contents.jdbc.SqlDmlDdl.DELETE_LIVE_CONTENTS;
 import static org.projectnessie.gc.contents.jdbc.SqlDmlDdl.DELETE_LIVE_CONTENT_SET;
 import static org.projectnessie.gc.contents.jdbc.SqlDmlDdl.DELETE_LIVE_SET_LOCATIONS;
+import static org.projectnessie.gc.contents.jdbc.SqlDmlDdl.ERROR_LENGTH;
 import static org.projectnessie.gc.contents.jdbc.SqlDmlDdl.FINISH_EXPIRE;
 import static org.projectnessie.gc.contents.jdbc.SqlDmlDdl.FINISH_IDENTIFY;
 import static org.projectnessie.gc.contents.jdbc.SqlDmlDdl.INSERT_CONTENT_LOCATION;
@@ -116,7 +117,7 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
           stmt.setTimestamp(1, Timestamp.from(finished));
           if (failure != null) {
             stmt.setString(2, LiveContentSet.Status.IDENTIFY_FAILED.name());
-            stmt.setString(3, failure.toString());
+            stmt.setString(3, trimError(failure.toString()));
           } else {
             stmt.setString(2, LiveContentSet.Status.IDENTIFY_SUCCESS.name());
             stmt.setNull(3, Types.VARCHAR);
@@ -153,7 +154,7 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
           stmt.setTimestamp(1, Timestamp.from(finished));
           if (failure != null) {
             stmt.setString(2, LiveContentSet.Status.EXPIRY_FAILED.name());
-            stmt.setString(3, failure.toString());
+            stmt.setString(3, trimError(failure.toString()));
           } else {
             stmt.setString(2, LiveContentSet.Status.EXPIRY_SUCCESS.name());
             stmt.setNull(3, Types.VARCHAR);
@@ -164,6 +165,13 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
           return currentLiveSet(conn, liveSetId);
         },
         true);
+  }
+
+  static String trimError(String s) {
+    if (s.length() <= ERROR_LENGTH) {
+      return s;
+    }
+    return s.substring(0, ERROR_LENGTH - " ... (truncated)".length()) + " ... (truncated)";
   }
 
   private void verifyStatusUpdate(

@@ -24,6 +24,8 @@ final class SqlDmlDdl {
 
   private SqlDmlDdl() {}
 
+  static final int ERROR_LENGTH = 2000;
+
   @Language("SQL")
   static final String CREATE_LIVE_SETS =
       "CREATE TABLE gc_live_sets (\n"
@@ -33,7 +35,9 @@ final class SqlDmlDdl {
           + "    identify_finished TIMESTAMP, \n"
           + "    expire_started TIMESTAMP, \n"
           + "    expire_finished TIMESTAMP, \n"
-          + "    error_message VARCHAR(2000), \n"
+          + "    error_message VARCHAR("
+          + ERROR_LENGTH
+          + "), \n"
           + "    PRIMARY KEY (live_set_id))";
 
   @Language("SQL")
@@ -44,7 +48,7 @@ final class SqlDmlDdl {
           + "    commit_id VARCHAR(100), \n"
           + "    content_key VARCHAR(500), \n"
           + "    content_type VARCHAR(40), \n"
-          + "    metadata_location VARCHAR(500), \n"
+          + "    metadata_location VARCHAR(1000), \n"
           + "    snapshot_id BIGINT, \n"
           + "    PRIMARY KEY(live_set_id, content_id, commit_id))";
 
