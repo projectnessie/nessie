@@ -94,7 +94,7 @@ bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk15on", version.ref 
 cassandra-driver-bom = { module = "com.datastax.oss:java-driver-bom", version.ref = "cassandraDriver" }
 cassandra-driver-core = { module = "com.datastax.oss:java-driver-core" }
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "2.9.3" }
-cel-bom = { module = "org.projectnessie.cel:cel-bom", version = "0.3.15" }
+cel-bom = { module = "org.projectnessie.cel:cel-bom", version = "0.3.16" }
 cel-jackson = { module = "org.projectnessie.cel:cel-jackson" }
 cel-tools = { module = "org.projectnessie.cel:cel-tools" }
 checkstyle = { module = "com.puppycrawl.tools:checkstyle", version.ref = "checkstyle" }
