@@ -27,7 +27,7 @@ repositories {
 }
 
 def nessieVersion = file("../version.txt").text.trim()
-def versionMavenResolver = "1.9.8"
+def versionMavenResolver = "1.9.10"
 def versionMaven = "3.9.1"
 
 dependencies {
