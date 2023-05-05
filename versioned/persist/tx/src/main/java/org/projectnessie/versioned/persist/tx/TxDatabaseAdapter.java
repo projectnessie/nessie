@@ -56,7 +56,6 @@ import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -67,17 +66,26 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.nessie.relocated.protobuf.InvalidProtocolBufferException;
 import org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.CommitResult;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.ImmutableCommitResult;
 import org.projectnessie.versioned.ImmutableMergeResult;
+import org.projectnessie.versioned.ImmutableReferenceAssignedResult;
+import org.projectnessie.versioned.ImmutableReferenceCreatedResult;
+import org.projectnessie.versioned.ImmutableReferenceDeletedResult;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
+import org.projectnessie.versioned.ReferenceAssignedResult;
 import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceCreatedResult;
+import org.projectnessie.versioned.ReferenceDeletedResult;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
+import org.projectnessie.versioned.ResultType;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
@@ -225,59 +233,56 @@ public abstract class TxDatabaseAdapter
     // Note: "beginning-of-time" (aka creating a branch without specifying a "create-from")
     // creates a new commit-tree that is decoupled from other commit-trees.
     try {
-      AtomicReference<ImmutableMergeResult.Builder<CommitLogEntry>> mergeResultHolder =
-          new AtomicReference<>();
+      return opLoop(
+          "merge",
+          mergeParams.getToBranch(),
+          false,
+          (conn, currentHead) -> {
+            long timeInMicros = config.currentTimeInMicros();
 
-      Hash result =
-          opLoop(
-              "merge",
-              mergeParams.getToBranch(),
-              false,
-              (conn, currentHead) -> {
-                long timeInMicros = config.currentTimeInMicros();
+            ImmutableMergeResult.Builder<CommitLogEntry> result =
+                MergeResult.<CommitLogEntry>builder()
+                    .resultType(ResultType.MERGE)
+                    .sourceRef(mergeParams.getFromRef());
 
-                ImmutableMergeResult.Builder<CommitLogEntry> mergeResult = MergeResult.builder();
-                mergeResultHolder.set(mergeResult);
+            List<CommitLogEntry> writtenCommits = new ArrayList<>();
+            Hash toHead =
+                mergeAttempt(
+                    conn,
+                    timeInMicros,
+                    currentHead,
+                    h -> {},
+                    h -> {},
+                    writtenCommits::add,
+                    result::addCreatedCommits,
+                    mergeParams,
+                    result);
 
-                List<CommitLogEntry> writtenCommits = new ArrayList<>();
-                Hash toHead =
-                    mergeAttempt(
-                        conn,
-                        timeInMicros,
-                        currentHead,
-                        h -> {},
-                        h -> {},
-                        writtenCommits::add,
-                        mergeParams,
-                        mergeResult);
+            Hash resultHash =
+                toHead.equals(currentHead)
+                    ? currentHead // nothing done
+                    : tryMoveNamedReference(conn, mergeParams.getToBranch(), currentHead, toHead);
+            if (resultHash == null) {
+              return opResult(null, null);
+            }
+            result.resultantTargetHash(resultHash);
 
-                if (toHead.equals(currentHead)) {
-                  // nothing done
-                  return opResult(currentHead, null);
-                }
+            if (!mergeParams.isDryRun()) {
+              result.wasApplied(true);
+            }
 
-                Hash resultHash =
-                    tryMoveNamedReference(conn, mergeParams.getToBranch(), currentHead, toHead);
+            return opResult(
+                result.build(),
+                () ->
+                    MergeEvent.builder()
+                        .previousHash(currentHead)
+                        .hash(resultHash)
+                        .branch(mergeParams.getToBranch())
+                        .commits(writtenCommits));
+          },
+          () -> mergeConflictMessage("Conflict", mergeParams),
+          () -> mergeConflictMessage("Retry-failure", mergeParams));
 
-                return opResult(
-                    resultHash,
-                    () ->
-                        MergeEvent.builder()
-                            .previousHash(currentHead)
-                            .hash(resultHash)
-                            .branch(mergeParams.getToBranch())
-                            .commits(writtenCommits));
-              },
-              () -> mergeConflictMessage("Conflict", mergeParams),
-              () -> mergeConflictMessage("Retry-failure", mergeParams));
-
-      ImmutableMergeResult.Builder<CommitLogEntry> mergeResult =
-          Objects.requireNonNull(
-              mergeResultHolder.get(), "Internal error, merge-result builder not set.");
-      if (!mergeParams.isDryRun()) {
-        mergeResult.wasApplied(true);
-      }
-      return mergeResult.resultantTargetHash(result).build();
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
       throw e;
     } catch (Exception e) {
@@ -290,55 +295,55 @@ public abstract class TxDatabaseAdapter
   public MergeResult<CommitLogEntry> transplant(TransplantParams transplantParams)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
-      AtomicReference<ImmutableMergeResult.Builder<CommitLogEntry>> mergeResultHolder =
-          new AtomicReference<>();
+      return opLoop(
+          "transplant",
+          transplantParams.getToBranch(),
+          false,
+          (conn, currentHead) -> {
+            long timeInMicros = config.currentTimeInMicros();
 
-      Hash result =
-          opLoop(
-              "transplant",
-              transplantParams.getToBranch(),
-              false,
-              (conn, currentHead) -> {
-                long timeInMicros = config.currentTimeInMicros();
+            ImmutableMergeResult.Builder<CommitLogEntry> result =
+                MergeResult.<CommitLogEntry>builder()
+                    .resultType(ResultType.TRANSPLANT)
+                    .sourceRef(transplantParams.getFromRef());
 
-                ImmutableMergeResult.Builder<CommitLogEntry> mergeResult = MergeResult.builder();
-                mergeResultHolder.set(mergeResult);
+            List<CommitLogEntry> writtenCommits = new ArrayList<>();
+            Hash targetHead =
+                transplantAttempt(
+                    conn,
+                    timeInMicros,
+                    currentHead,
+                    h -> {},
+                    h -> {},
+                    writtenCommits::add,
+                    result::addCreatedCommits,
+                    transplantParams,
+                    result);
 
-                List<CommitLogEntry> writtenCommits = new ArrayList<>();
-                Hash targetHead =
-                    transplantAttempt(
-                        conn,
-                        timeInMicros,
-                        currentHead,
-                        h -> {},
-                        h -> {},
-                        writtenCommits::add,
-                        transplantParams,
-                        mergeResult);
+            Hash resultHash =
+                tryMoveNamedReference(
+                    conn, transplantParams.getToBranch(), currentHead, targetHead);
+            if (resultHash == null) {
+              return opResult(null, null);
+            }
+            result.resultantTargetHash(resultHash);
 
-                Hash resultHash =
-                    tryMoveNamedReference(
-                        conn, transplantParams.getToBranch(), currentHead, targetHead);
+            if (!transplantParams.isDryRun()) {
+              result.wasApplied(true);
+            }
 
-                return opResult(
-                    resultHash,
-                    () ->
-                        TransplantEvent.builder()
-                            .previousHash(currentHead)
-                            .hash(resultHash)
-                            .branch(transplantParams.getToBranch())
-                            .commits(writtenCommits));
-              },
-              () -> transplantConflictMessage("Conflict", transplantParams),
-              () -> transplantConflictMessage("Retry-failure", transplantParams));
+            return opResult(
+                result.build(),
+                () ->
+                    TransplantEvent.builder()
+                        .previousHash(currentHead)
+                        .hash(resultHash)
+                        .branch(transplantParams.getToBranch())
+                        .commits(writtenCommits));
+          },
+          () -> transplantConflictMessage("Conflict", transplantParams),
+          () -> transplantConflictMessage("Retry-failure", transplantParams));
 
-      ImmutableMergeResult.Builder<CommitLogEntry> mergeResult =
-          Objects.requireNonNull(
-              mergeResultHolder.get(), "Internal error, merge-result builder not set.");
-      if (!transplantParams.isDryRun()) {
-        mergeResult.wasApplied(true);
-      }
-      return mergeResult.resultantTargetHash(result).build();
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
       throw e;
     } catch (Exception e) {
@@ -347,7 +352,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  public Hash commit(CommitParams commitParams)
+  public CommitResult<CommitLogEntry> commit(CommitParams commitParams)
       throws ReferenceConflictException, ReferenceNotFoundException {
     try {
       return opLoop(
@@ -357,6 +362,8 @@ public abstract class TxDatabaseAdapter
           (conn, branchHead) -> {
             long timeInMicros = config.currentTimeInMicros();
 
+            ImmutableCommitResult.Builder<CommitLogEntry> result = CommitResult.builder();
+
             CommitLogEntry newBranchCommit =
                 commitAttempt(conn, timeInMicros, branchHead, commitParams, h -> {});
 
@@ -364,8 +371,14 @@ public abstract class TxDatabaseAdapter
                 tryMoveNamedReference(
                     conn, commitParams.getToBranch(), branchHead, newBranchCommit.getHash());
 
+            if (resultHash == null) {
+              return opResult(null, null);
+            }
+
+            result.commit(newBranchCommit).targetBranch(commitParams.getToBranch());
+
             return opResult(
-                resultHash,
+                result.build(),
                 () ->
                     CommitEvent.builder()
                         .previousHash(branchHead)
@@ -388,7 +401,7 @@ public abstract class TxDatabaseAdapter
 
   @SuppressWarnings("RedundantThrows")
   @Override
-  public Hash create(NamedRef ref, Hash target)
+  public ReferenceCreatedResult create(NamedRef ref, Hash target)
       throws ReferenceAlreadyExistsException, ReferenceNotFoundException {
     try {
       return opLoop(
@@ -396,6 +409,9 @@ public abstract class TxDatabaseAdapter
           ref,
           true,
           (conn, nullHead) -> {
+            ImmutableReferenceCreatedResult.Builder result =
+                ImmutableReferenceCreatedResult.builder().namedRef(ref);
+
             if (checkNamedRefExistence(conn, ref.getName())) {
               throw referenceAlreadyExists(ref);
             }
@@ -419,7 +435,10 @@ public abstract class TxDatabaseAdapter
                 RefLogEntry.Operation.CREATE_REFERENCE,
                 emptyList());
 
-            return opResult(hash, () -> ReferenceCreatedEvent.builder().currentHash(hash).ref(ref));
+            result.hash(hash);
+
+            return opResult(
+                result.build(), () -> ReferenceCreatedEvent.builder().currentHash(hash).ref(ref));
           },
           () -> createConflictMessage("Conflict", ref, target),
           () -> createConflictMessage("Retry-Failure", ref, target));
@@ -431,7 +450,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  public Hash delete(NamedRef reference, Optional<Hash> expectedHead)
+  public ReferenceDeletedResult delete(NamedRef reference, Optional<Hash> expectedHead)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
       return opLoop(
@@ -439,6 +458,9 @@ public abstract class TxDatabaseAdapter
           reference,
           false,
           (conn, pointer) -> {
+            ImmutableReferenceDeletedResult.Builder result =
+                ImmutableReferenceDeletedResult.builder().namedRef(reference);
+
             verifyExpectedHash(pointer, reference, expectedHead);
 
             Hash commitHash = fetchNamedRefHead(conn, reference);
@@ -449,7 +471,7 @@ public abstract class TxDatabaseAdapter
               ps.setString(2, reference.getName());
               ps.setString(3, pointer.asString());
               if (ps.executeUpdate() != 1) {
-                return null;
+                return opResult(null, null);
               }
             }
 
@@ -461,8 +483,10 @@ public abstract class TxDatabaseAdapter
                 RefLogEntry.Operation.DELETE_REFERENCE,
                 emptyList());
 
+            result.hash(commitHash);
+
             return opResult(
-                pointer,
+                result.build(),
                 () -> ReferenceDeletedEvent.builder().currentHash(commitHash).ref(reference));
           },
           () -> deleteConflictMessage("Conflict", reference, expectedHead),
@@ -475,19 +499,26 @@ public abstract class TxDatabaseAdapter
   }
 
   @Override
-  public void assign(NamedRef assignee, Optional<Hash> expectedHead, Hash assignTo)
+  public ReferenceAssignedResult assign(
+      NamedRef assignee, Optional<Hash> expectedHead, Hash assignTo)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
-      opLoop(
+      return opLoop(
           "assignRef",
           assignee,
           false,
           (conn, assigneeHead) -> {
+            ImmutableReferenceAssignedResult.Builder result =
+                ImmutableReferenceAssignedResult.builder().namedRef(assignee);
+
             verifyExpectedHash(assigneeHead, assignee, expectedHead);
 
             validateHashExists(conn, assignTo);
 
             Hash resultHash = tryMoveNamedReference(conn, assignee, assigneeHead, assignTo);
+            if (resultHash == null) {
+              return opResult(null, null);
+            }
 
             commitRefLog(
                 conn,
@@ -497,8 +528,10 @@ public abstract class TxDatabaseAdapter
                 RefLogEntry.Operation.ASSIGN_REFERENCE,
                 Collections.singletonList(assigneeHead));
 
+            result.previousHash(assigneeHead).currentHash(assignTo);
+
             return opResult(
-                resultHash,
+                result.build(),
                 () ->
                     ReferenceAssignedEvent.builder()
                         .currentHash(assignTo)
@@ -507,6 +540,7 @@ public abstract class TxDatabaseAdapter
           },
           () -> assignConflictMessage("Conflict", assignee, expectedHead, assignTo),
           () -> assignConflictMessage("Retry-Failure", assignee, expectedHead, assignTo));
+
     } catch (ReferenceNotFoundException | ReferenceConflictException | RuntimeException e) {
       throw e;
     } catch (Exception e) {
@@ -711,7 +745,7 @@ public abstract class TxDatabaseAdapter
   }
 
   @FunctionalInterface
-  public interface LoopOp {
+  public interface LoopOp<R> {
     /**
      * Applies an operation within a CAS-loop. The implementation gets the current global-state and
      * must return an updated global-state with a different global-id.
@@ -729,23 +763,22 @@ public abstract class TxDatabaseAdapter
      * @throws VersionStoreException any other version-store exception
      * @see #opLoop(String, NamedRef, boolean, LoopOp, Supplier, Supplier)
      */
-    OpResult apply(ConnectionWrapper conn, Hash targetRefHead)
+    OpResult<R> apply(ConnectionWrapper conn, Hash targetRefHead)
         throws VersionStoreException, SQLException;
   }
 
-  static final class OpResult {
-    final Hash head;
+  static final class OpResult<R> {
+    final R result;
     final Supplier<? extends AdapterEvent.Builder<?, ?>> adapterEventBuilder;
 
-    private OpResult(
-        Hash head, Supplier<? extends AdapterEvent.Builder<?, ?>> adapterEventBuilder) {
-      this.head = head;
+    private OpResult(R result, Supplier<? extends AdapterEvent.Builder<?, ?>> adapterEventBuilder) {
+      this.result = result;
       this.adapterEventBuilder = adapterEventBuilder;
     }
 
-    public static OpResult opResult(
-        Hash head, Supplier<? extends AdapterEvent.Builder<?, ?>> adapterEventBuilder) {
-      return new OpResult(head, adapterEventBuilder);
+    public static <R> OpResult<R> opResult(
+        R result, Supplier<? extends AdapterEvent.Builder<?, ?>> adapterEventBuilder) {
+      return new OpResult<>(result, adapterEventBuilder);
     }
   }
 
@@ -778,16 +811,16 @@ public abstract class TxDatabaseAdapter
    * @param retryErrorMessage message producer to represent that no more retries will happen
    * @see LoopOp#apply(ConnectionWrapper, Hash)
    */
-  protected Hash opLoop(
+  protected <R> R opLoop(
       String opName,
       NamedRef namedReference,
       boolean createRef,
-      LoopOp loopOp,
+      LoopOp<R> loopOp,
       Supplier<String> conflictErrorMessage,
       Supplier<String> retryErrorMessage)
       throws VersionStoreException {
     try (ConnectionWrapper conn = borrowConnection();
-        TryLoopState tryState =
+        TryLoopState<R> tryState =
             newTryLoopState(
                 opName,
                 ts ->
@@ -802,14 +835,14 @@ public abstract class TxDatabaseAdapter
         Hash pointer = createRef ? null : fetchNamedRefHead(conn, namedReference);
 
         try {
-          OpResult opResult = loopOp.apply(conn, pointer);
+          OpResult<R> opResult = loopOp.apply(conn, pointer);
 
           repositoryEvent(opResult.adapterEventBuilder);
 
-          // The operation succeeded, if it returns a non-null hash value.
-          if (opResult.head != null) {
+          // The operation succeeded, if it returns a non-null result.
+          if (opResult.result != null) {
             conn.commit();
-            return tryState.success(opResult.head);
+            return tryState.success(opResult.result);
           }
         } catch (RetryTransactionException e) {
           conn.rollback();

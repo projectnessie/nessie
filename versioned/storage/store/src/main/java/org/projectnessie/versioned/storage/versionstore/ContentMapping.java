@@ -24,7 +24,9 @@ import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objId
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.storeKeyToKey;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.toCommitMeta;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
@@ -131,23 +133,31 @@ public final class ContentMapping {
     CommitMeta commitMeta = toCommitMeta(commitObj);
 
     if (fetchAdditionalInfo) {
-      ContentKey key;
-      ContentMapping contentMapping = new ContentMapping(persist);
       IndexesLogic indexesLogic = indexesLogic(persist);
+      List<ObjId> ids = new ArrayList<>();
+      List<ContentKey> keys = new ArrayList<>();
       for (StoreIndexElement<CommitOp> op : indexesLogic.commitOperations(commitObj)) {
-        key = storeKeyToKey(op.key());
+        ContentKey key = storeKeyToKey(op.key());
         // Note: key==null, if not the "main universe" or not a "content" discriminator
         if (key != null) {
           CommitOp c = op.content();
           if (c.action().exists()) {
-            commit.addOperations(
-                Put.of(
-                    key,
-                    contentMapping.fetchContent(
-                        requireNonNull(c.value(), "Required value pointer is null"))));
+            ObjId objId = requireNonNull(c.value(), "Required value pointer is null");
+            ids.add(objId);
+            keys.add(key);
           } else {
             commit.addOperations(Delete.of(key));
           }
+        }
+      }
+      if (!ids.isEmpty()) {
+        Obj[] objs = persist.fetchObjs(ids.toArray(new ObjId[0]));
+        for (int i = 0; i < objs.length; i++) {
+          Obj obj = objs[i];
+          ContentKey key = keys.get(i);
+          assert obj instanceof ContentValueObj;
+          ContentValueObj contentValue = (ContentValueObj) obj;
+          commit.addOperations(Put.ofLazy(key, contentValue.payload(), contentValue.data()));
         }
       }
     }

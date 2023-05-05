@@ -226,7 +226,9 @@ public class TestContentMapping {
             .hash(objIdToHash(id))
             .parentHash(objIdToHash(EMPTY_OBJ_ID))
             .commitMeta(referenceCommitMeta)
-            .addOperations(Delete.of(ContentKey.of("bar")), Put.of(ContentKey.of("foo"), table))
+            .addOperations(
+                Delete.of(ContentKey.of("bar")),
+                Put.ofLazy(ContentKey.of("foo"), tableObj.payload(), tableObj.data()))
             .build();
 
     Commit c = contentMapping.commitObjToCommit(true, commitObj);

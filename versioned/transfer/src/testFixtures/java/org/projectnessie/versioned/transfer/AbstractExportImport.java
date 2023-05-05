@@ -43,6 +43,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.ImmutableReferenceCreatedResult;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
@@ -229,7 +230,10 @@ public abstract class AbstractExportImport {
                         assertThat(hash).isEqualTo(intToHash(refNum));
                         assertThat(createdReferences.get(refNum)).isFalse();
                         createdReferences.set(refNum);
-                        return hash;
+                        return ImmutableReferenceCreatedResult.builder()
+                            .namedRef(ref)
+                            .hash(hash)
+                            .build();
                       }
                     default:
                       throw new UnsupportedOperationException(method.toString());

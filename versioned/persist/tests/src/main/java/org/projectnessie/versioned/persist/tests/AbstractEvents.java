@@ -173,12 +173,14 @@ public abstract class AbstractEvents {
     ByteString meta = ByteString.copyFromUtf8("foo bar baz");
 
     Hash committed =
-        adapter.commit(
-            ImmutableCommitParams.builder()
-                .toBranch(branch)
-                .commitMetaSerialized(meta)
-                .addPuts(put)
-                .build());
+        adapter
+            .commit(
+                ImmutableCommitParams.builder()
+                    .toBranch(branch)
+                    .commitMetaSerialized(meta)
+                    .addPuts(put)
+                    .build())
+            .getCommitHash();
 
     events.events.clear();
 
@@ -220,12 +222,14 @@ public abstract class AbstractEvents {
     ByteString meta = ByteString.copyFromUtf8("foo bar baz");
 
     Hash committed =
-        adapter.commit(
-            ImmutableCommitParams.builder()
-                .toBranch(branch)
-                .commitMetaSerialized(meta)
-                .addPuts(put)
-                .build());
+        adapter
+            .commit(
+                ImmutableCommitParams.builder()
+                    .toBranch(branch)
+                    .commitMetaSerialized(meta)
+                    .addPuts(put)
+                    .build())
+            .getCommitHash();
 
     assertThat(events.events)
         .hasSize(1)
@@ -275,12 +279,14 @@ public abstract class AbstractEvents {
     BranchName source = BranchName.of("events-merge");
     adapter.create(source, adapter.noAncestorHash());
     Hash committed =
-        adapter.commit(
-            ImmutableCommitParams.builder()
-                .toBranch(source)
-                .commitMetaSerialized(meta)
-                .addPuts(put)
-                .build());
+        adapter
+            .commit(
+                ImmutableCommitParams.builder()
+                    .toBranch(source)
+                    .commitMetaSerialized(meta)
+                    .addPuts(put)
+                    .build())
+            .getCommitHash();
 
     events.events.clear();
 
@@ -289,6 +295,7 @@ public abstract class AbstractEvents {
         adapter.merge(
             MergeParams.builder()
                 .mergeFromHash(committed)
+                .fromRef(source)
                 .toBranch(main)
                 .updateCommitMetadata(updater)
                 .build());
@@ -347,12 +354,14 @@ public abstract class AbstractEvents {
     BranchName source = BranchName.of("events-transplant");
     adapter.create(source, adapter.noAncestorHash());
     Hash committed =
-        adapter.commit(
-            ImmutableCommitParams.builder()
-                .toBranch(source)
-                .commitMetaSerialized(meta)
-                .addPuts(put)
-                .build());
+        adapter
+            .commit(
+                ImmutableCommitParams.builder()
+                    .toBranch(source)
+                    .commitMetaSerialized(meta)
+                    .addPuts(put)
+                    .build())
+            .getCommitHash();
 
     events.events.clear();
 
@@ -362,6 +371,7 @@ public abstract class AbstractEvents {
             TransplantParams.builder()
                 .addSequenceToTransplant(committed)
                 .updateCommitMetadata(updater)
+                .fromRef(source)
                 .toBranch(main)
                 .build());
 

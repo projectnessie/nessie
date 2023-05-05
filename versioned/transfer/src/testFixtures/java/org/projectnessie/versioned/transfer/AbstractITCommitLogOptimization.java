@@ -35,6 +35,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.CommitMetaSerializer;
+import org.projectnessie.versioned.CommitResult;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceInfo;
@@ -133,7 +134,7 @@ public abstract class AbstractITCommitLogOptimization {
 
     Hash parent = databaseAdapter.noAncestorHash();
     for (; commitSeqMain <= commitsAtBeginningOfTime; commitSeqMain++) {
-      parent = addCommit(0, commitSeqMain);
+      parent = addCommit(0, commitSeqMain).getCommitHash();
       totalCommits++;
     }
 
@@ -145,7 +146,7 @@ public abstract class AbstractITCommitLogOptimization {
       }
 
       for (int i = 0; i < ((branch == branches) ? commitsAtHead : commitsBetweenBranches); i++) {
-        parent = addCommit(0, commitSeqMain++);
+        parent = addCommit(0, commitSeqMain++).getCommitHash();
         totalCommits++;
       }
     }
@@ -231,7 +232,7 @@ public abstract class AbstractITCommitLogOptimization {
     }
   }
 
-  Hash addCommit(int branch, int commitSeq) throws Exception {
+  CommitResult<CommitLogEntry> addCommit(int branch, int commitSeq) throws Exception {
     return databaseAdapter.commit(
         ImmutableCommitParams.builder()
             .toBranch(branch == 0 ? BranchName.of("main") : BranchName.of("branch-" + branch))

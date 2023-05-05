@@ -101,8 +101,11 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
 
       empty = false;
       if (!dryRun) {
-        commitLogic.storeCommit(newCommit, objsToStore);
         newHead = newCommit.id();
+        boolean committed = commitLogic.storeCommit(newCommit, objsToStore);
+        if (committed) {
+          mergeResult.addCreatedCommits(commitObjToCommit(newCommit));
+        }
       }
 
       sourceParentIndex = indexesLogic.buildCompleteIndex(sourceCommit, Optional.empty());

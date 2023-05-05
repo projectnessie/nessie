@@ -275,7 +275,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     check.checkAndThrow();
 
     try {
-      Hash hash = getStore().create(namedReference, toHash(targetHash, false));
+      Hash hash = getStore().create(namedReference, toHash(targetHash, false)).getHash();
       return RefUtil.toReference(namedReference, hash);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
@@ -346,7 +346,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
       startAccessCheck().canDeleteReference(ref).checkAndThrow();
 
-      Hash deletedAthash = getStore().delete(ref, toHash(expectedHash, true));
+      Hash deletedAthash = getStore().delete(ref, toHash(expectedHash, true)).getHash();
       return RefUtil.toReference(ref, deletedAthash);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
@@ -569,8 +569,10 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
       BranchName targetBranch = BranchName.of(branchName);
       String lastHash = hashesToTransplant.get(hashesToTransplant.size() - 1);
+      WithHash<NamedRef> namedRefWithHash = namedRefWithHashOrThrow(fromRefName, lastHash);
+
       startAccessCheck()
-          .canViewReference(namedRefWithHashOrThrow(fromRefName, lastHash).getValue())
+          .canViewReference(namedRefWithHash.getValue())
           .canCommitChangeAgainstReference(targetBranch)
           .checkAndThrow();
 
@@ -590,6 +592,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       MergeResult<Commit> result =
           getStore()
               .transplant(
+                  namedRefWithHash.getValue(),
                   targetBranch,
                   into,
                   transplants,
@@ -641,8 +644,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       validateCommitMeta(commitMeta);
 
       BranchName targetBranch = BranchName.of(branchName);
+      WithHash<NamedRef> namedRefWithHash = namedRefWithHashOrThrow(fromRefName, fromHash);
       startAccessCheck()
-          .canViewReference(namedRefWithHashOrThrow(fromRefName, fromHash).getValue())
+          .canViewReference(namedRefWithHash.getValue())
           .canCommitChangeAgainstReference(targetBranch)
           .checkAndThrow();
 
@@ -652,6 +656,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       MergeResult<Commit> result =
           getStore()
               .merge(
+                  namedRefWithHash.getValue(),
                   toHash(fromRefName, fromHash),
                   targetBranch,
                   into,
@@ -950,7 +955,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                   () -> null,
                   (key, cid) -> {
                     commitResponse.addAddedContents(addedContent(key, cid));
-                  });
+                  })
+              .getCommitHash();
 
       return commitResponse.targetBranch(Branch.of(branch, newHash.asString())).build();
     } catch (ReferenceNotFoundException e) {

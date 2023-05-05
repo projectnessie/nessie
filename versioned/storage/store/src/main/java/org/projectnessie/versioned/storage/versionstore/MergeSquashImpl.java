@@ -28,8 +28,10 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MetadataRewriter;
+import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.ResultType;
 import org.projectnessie.versioned.storage.common.logic.CommitRetry.RetryException;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
@@ -51,6 +53,7 @@ final class MergeSquashImpl extends BaseMergeTransplantSquash implements Merge {
   @Override
   public MergeResult<Commit> merge(
       Optional<?> retryState,
+      NamedRef fromRef,
       Hash fromHash,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       MergeBehaviors mergeBehaviors,
@@ -62,7 +65,10 @@ final class MergeSquashImpl extends BaseMergeTransplantSquash implements Merge {
     SourceCommitsAndParent sourceCommits = loadSourceCommitsForMerge(fromId, commonAncestorId);
 
     ImmutableMergeResult.Builder<Commit> mergeResult =
-        prepareMergeResult().commonAncestor(objIdToHash(commonAncestorId));
+        prepareMergeResult()
+            .resultType(ResultType.MERGE)
+            .sourceRef(fromRef)
+            .commonAncestor(objIdToHash(commonAncestorId));
 
     return squash(dryRun, mergeResult, mergeBehaviors, updateCommitMetadata, sourceCommits, fromId);
   }

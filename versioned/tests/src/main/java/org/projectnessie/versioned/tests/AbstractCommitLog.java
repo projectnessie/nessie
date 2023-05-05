@@ -56,7 +56,7 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
   @Test
   public void commitLogPaging() throws Exception {
     BranchName branch = BranchName.of("commitLogPaging");
-    Hash createHash = store().create(branch, Optional.empty());
+    Hash createHash = store().create(branch, Optional.empty()).getHash();
 
     int commits = 95; // this should be enough
     Hash[] commitHashes = new Hash[commits];
@@ -77,7 +77,9 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
       Put op = value != null ? Put.of(key, onRef(str, value.getId())) : Put.of(key, newOnRef(str));
 
       commitHashes[i] =
-          store().commit(branch, Optional.of(parent), msg.build(), ImmutableList.of(op));
+          store()
+              .commit(branch, Optional.of(parent), msg.build(), ImmutableList.of(op))
+              .getCommitHash();
 
       messages.add(
           msg.hash(commitHashes[i].asString()).addParentCommitHashes(parent.asString()).build());
@@ -119,7 +121,7 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
   @Test
   public void commitLogExtended() throws Exception {
     BranchName branch = BranchName.of("commitLogExtended");
-    Hash firstParent = store().create(branch, Optional.empty());
+    Hash firstParent = store().create(branch, Optional.empty()).getHash();
 
     int numCommits = 10;
 

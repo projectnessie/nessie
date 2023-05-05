@@ -155,7 +155,7 @@ public abstract class AbstractCommitLogScan {
 
     for (int branchNum = 0; branchNum < numBranches; branchNum++) {
       BranchName branchName = branch.apply(branchNum);
-      Hash head = databaseAdapter.create(branchName, root);
+      Hash head = databaseAdapter.create(branchName, root).getHash();
       head = addCommits(numCommits, branchName, head, committed);
       setRefHead.accept(branchName, head);
 
@@ -199,25 +199,27 @@ public abstract class AbstractCommitLogScan {
       byte payload = (byte) payloadForContent(c);
 
       head =
-          databaseAdapter.commit(
-              ImmutableCommitParams.builder()
-                  .toBranch(branchName)
-                  .expectedHead(Optional.of(head))
-                  .commitMetaSerialized(
-                      ByteString.copyFromUtf8(
-                          "commit #"
-                              + commitNum
-                              + " in "
-                              + branchName.getName()
-                              + " of "
-                              + numCommits))
-                  .addPuts(
-                      KeyWithBytes.of(
-                          key,
-                          cid,
-                          payload,
-                          DefaultStoreWorker.instance().toStoreOnReferenceState(c)))
-                  .build());
+          databaseAdapter
+              .commit(
+                  ImmutableCommitParams.builder()
+                      .toBranch(branchName)
+                      .expectedHead(Optional.of(head))
+                      .commitMetaSerialized(
+                          ByteString.copyFromUtf8(
+                              "commit #"
+                                  + commitNum
+                                  + " in "
+                                  + branchName.getName()
+                                  + " of "
+                                  + numCommits))
+                      .addPuts(
+                          KeyWithBytes.of(
+                              key,
+                              cid,
+                              payload,
+                              DefaultStoreWorker.instance().toStoreOnReferenceState(c)))
+                      .build())
+              .getCommitHash();
       committed.accept(head);
     }
     return head;

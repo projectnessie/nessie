@@ -63,12 +63,12 @@ public interface CommitLogic {
    * @param createCommit parameters for {@link #buildCommitObj(CreateCommit, ConflictHandler,
    *     CommitOpHandler, ValueReplacement, ValueReplacement)}
    * @param additionalObjects additional {@link Obj}s to store, for example {@link ContentValueObj}
-   * @return the non-null object ID if the commit was stored as a new record or {@code null} if an
+   * @return the non-null commit, if the commit was stored as a new record, or {@code null} if an
    *     object with the same ID already exists.
    */
   @Nullable
   @jakarta.annotation.Nullable
-  ObjId doCommit(
+  CommitObj doCommit(
       @Nonnull @jakarta.annotation.Nonnull CreateCommit createCommit,
       @Nonnull @jakarta.annotation.Nonnull List<Obj> additionalObjects)
       throws CommitConflictException, ObjNotFoundException;

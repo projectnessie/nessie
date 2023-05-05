@@ -51,7 +51,9 @@ public abstract class AbstractDiff {
     BranchName branch = BranchName.of("branch");
 
     Hash initialHash =
-        databaseAdapter.create(branch, databaseAdapter.hashOnReference(main, Optional.empty()));
+        databaseAdapter
+            .create(branch, databaseAdapter.hashOnReference(main, Optional.empty()))
+            .getHash();
 
     Hash[] commits = new Hash[3];
     for (int i = 0; i < commits.length; i++) {
@@ -68,7 +70,7 @@ public abstract class AbstractDiff {
                 (byte) payloadForContent(c),
                 DefaultStoreWorker.instance().toStoreOnReferenceState(c)));
       }
-      commits[i] = databaseAdapter.commit(commit.build());
+      commits[i] = databaseAdapter.commit(commit.build()).getCommitHash();
     }
 
     try (Stream<Difference> diff =

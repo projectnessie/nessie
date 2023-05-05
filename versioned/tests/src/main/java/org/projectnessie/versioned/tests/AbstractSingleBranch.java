@@ -35,6 +35,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
+import org.projectnessie.versioned.CommitResult;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
@@ -96,7 +97,7 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
     int numCommits = 20;
 
     Hash[] hashesKnownByUser = new Hash[numUsers];
-    Hash createHash = store().create(branch, Optional.empty());
+    Hash createHash = store().create(branch, Optional.empty()).getHash();
     Arrays.fill(hashesKnownByUser, createHash);
 
     List<CommitMeta> expectedValues = new ArrayList<>();
@@ -114,7 +115,7 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
         List<Operation> ops =
             singleBranchManyUsersOps(branch, commitNum, user, hashKnownByUser, key);
 
-        Hash commitHash;
+        CommitResult<Commit> commitHash;
         try {
           commitHash = store().commit(branch, Optional.of(hashKnownByUser), msg.build(), ops);
         } catch (ReferenceConflictException inconsistentValueException) {
@@ -127,13 +128,13 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
           }
         }
 
-        parent = commitHash;
+        parent = commitHash.getCommitHash();
 
-        expectedValues.add(msg.hash(commitHash.asString()).build());
+        expectedValues.add(msg.hash(parent.asString()).build());
 
         assertNotEquals(hashKnownByUser, commitHash);
 
-        hashesKnownByUser[user] = commitHash;
+        hashesKnownByUser[user] = parent;
       }
     }
 

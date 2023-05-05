@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.common.logic;
 
 import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexElement.indexElement;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.newStoreIndex;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.key;
@@ -78,7 +79,8 @@ public class TestIndexesLogicImpl extends AbstractIndexesLogicTests {
     CommitObj secondaryHead = commitLogic.fetchCommit(secondaryHeadId);
     soft.assertThat(secondaryHead).isNotNull();
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(() -> indexesLogic.buildCompleteIndex(secondaryHead, Optional.empty()));
+        .isThrownBy(
+            () -> indexesLogic.buildCompleteIndex(requireNonNull(secondaryHead), Optional.empty()));
 
     // add incomplete commit, with a reference to a set of other incomplete commits,
     // simulating a merge
@@ -96,7 +98,7 @@ public class TestIndexesLogicImpl extends AbstractIndexesLogicTests {
     CommitObj head = commitLogic.fetchCommit(headId);
     soft.assertThat(head).isNotNull();
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(() -> indexesLogic.buildCompleteIndex(head, Optional.empty()));
+        .isThrownBy(() -> indexesLogic.buildCompleteIndex(requireNonNull(head), Optional.empty()));
 
     soft.assertThat(indexesLogic.findCommitsWithIncompleteIndex(headId))
         .isEqualTo(tail.subList(0, 6));
@@ -200,7 +202,7 @@ public class TestIndexesLogicImpl extends AbstractIndexesLogicTests {
       ObjId v = randomObjId();
       soft.assertThat(keyValue.put(k, v)).isNull();
 
-      headId =
+      CommitObj commit =
           commitLogic.doCommit(
               newCommitBuilder()
                   .parentCommitId(headId)
@@ -209,6 +211,7 @@ public class TestIndexesLogicImpl extends AbstractIndexesLogicTests {
                   .headers(EMPTY_COMMIT_HEADERS)
                   .build(),
               emptyList());
+      headId = requireNonNull(commit).id();
       tail.add(0, headId);
     }
 

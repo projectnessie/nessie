@@ -44,11 +44,13 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.CommitMetaSerializer;
+import org.projectnessie.versioned.CommitResult;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableCommit;
+import org.projectnessie.versioned.ImmutableCommitResult;
 import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.ImmutableRefLogDetails;
 import org.projectnessie.versioned.ImmutableRepositoryInformation;
@@ -64,7 +66,10 @@ import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.RefLogDetails;
 import org.projectnessie.versioned.RefLogNotFoundException;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
+import org.projectnessie.versioned.ReferenceAssignedResult;
 import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceCreatedResult;
+import org.projectnessie.versioned.ReferenceDeletedResult;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.RepositoryInformation;
@@ -124,13 +129,13 @@ public class PersistVersionStore implements VersionStore {
   }
 
   @Override
-  public Hash commit(
+  public CommitResult<Commit> commit(
       @Nonnull @jakarta.annotation.Nonnull BranchName branch,
       @Nonnull @jakarta.annotation.Nonnull Optional<Hash> expectedHead,
       @Nonnull @jakarta.annotation.Nonnull CommitMeta metadata,
       @Nonnull @jakarta.annotation.Nonnull List<Operation> operations,
       @Nonnull @jakarta.annotation.Nonnull Callable<Void> validator,
-      BiConsumer<ContentKey, String> addedContents)
+      @Nonnull @jakarta.annotation.Nonnull BiConsumer<ContentKey, String> addedContents)
       throws ReferenceNotFoundException, ReferenceConflictException {
 
     ImmutableCommitParams.Builder commitAttempt =
@@ -172,11 +177,12 @@ public class PersistVersionStore implements VersionStore {
       }
     }
 
-    return databaseAdapter.commit(commitAttempt.build());
+    return storeCommitResult(databaseAdapter.commit(commitAttempt.build()));
   }
 
   @Override
   public MergeResult<Commit> transplant(
+      NamedRef sourceRef,
       BranchName targetBranch,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant,
@@ -192,6 +198,7 @@ public class PersistVersionStore implements VersionStore {
       MergeResult<CommitLogEntry> adapterMergeResult =
           databaseAdapter.transplant(
               TransplantParams.builder()
+                  .fromRef(sourceRef)
                   .toBranch(targetBranch)
                   .expectedHead(referenceHash)
                   .sequenceToTransplant(sequenceToTransplant)
@@ -213,6 +220,7 @@ public class PersistVersionStore implements VersionStore {
 
   @Override
   public MergeResult<Commit> merge(
+      NamedRef fromRef,
       Hash fromHash,
       BranchName toBranch,
       Optional<Hash> expectedHash,
@@ -228,6 +236,7 @@ public class PersistVersionStore implements VersionStore {
       MergeResult<CommitLogEntry> adapterMergeResult =
           databaseAdapter.merge(
               MergeParams.builder()
+                  .fromRef(fromRef)
                   .toBranch(toBranch)
                   .expectedHead(expectedHash)
                   .mergeFromHash(fromHash)
@@ -262,10 +271,25 @@ public class PersistVersionStore implements VersionStore {
                 }));
   }
 
+  private CommitResult<Commit> storeCommitResult(CommitResult<CommitLogEntry> adapterCommitResult) {
+    CommitLogEntry logEntry = adapterCommitResult.getCommit();
+    ImmutableCommit.Builder commit =
+        Commit.builder().hash(logEntry.getHash()).commitMeta(commitMetaFromLogEntry(logEntry));
+    logEntry.getParents().stream().findFirst().ifPresent(commit::parentHash);
+    enhancerForCommitLog(true).accept(commit, logEntry);
+    ImmutableCommitResult.Builder<Commit> storeResult =
+        ImmutableCommitResult.<Commit>builder()
+            .targetBranch(adapterCommitResult.getTargetBranch())
+            .commit(commit.build());
+    return storeResult.build();
+  }
+
   private MergeResult<Commit> storeMergeResult(
       MergeResult<CommitLogEntry> adapterMergeResult, boolean fetchAdditionalInfo) {
     ImmutableMergeResult.Builder<Commit> storeResult =
         ImmutableMergeResult.<Commit>builder()
+            .resultType(adapterMergeResult.getResultType())
+            .sourceRef(adapterMergeResult.getSourceRef())
             .targetBranch(adapterMergeResult.getTargetBranch())
             .effectiveTargetHash(adapterMergeResult.getEffectiveTargetHash())
             .commonAncestor(adapterMergeResult.getCommonAncestor())
@@ -275,28 +299,45 @@ public class PersistVersionStore implements VersionStore {
             .wasSuccessful(adapterMergeResult.wasSuccessful())
             .details(adapterMergeResult.getDetails());
 
-    BiConsumer<ImmutableCommit.Builder, CommitLogEntry> enhancer =
-        enhancerForCommitLog(fetchAdditionalInfo);
+    {
+      BiConsumer<ImmutableCommit.Builder, CommitLogEntry> enhancer =
+          enhancerForCommitLog(fetchAdditionalInfo);
 
-    Function<CommitLogEntry, Commit> mapper =
-        logEntry -> {
-          ImmutableCommit.Builder commit = Commit.builder();
-          commit.hash(logEntry.getHash()).commitMeta(commitMetaFromLogEntry(logEntry));
-          enhancer.accept(commit, logEntry);
-          return commit.build();
-        };
+      Function<CommitLogEntry, Commit> mapper =
+          logEntry -> {
+            ImmutableCommit.Builder commit = Commit.builder();
+            commit.hash(logEntry.getHash()).commitMeta(commitMetaFromLogEntry(logEntry));
+            enhancer.accept(commit, logEntry);
+            return commit.build();
+          };
 
-    if (adapterMergeResult.getSourceCommits() != null) {
-      adapterMergeResult.getSourceCommits().stream()
-          .map(mapper)
-          .forEach(storeResult::addSourceCommits);
+      if (adapterMergeResult.getSourceCommits() != null) {
+        adapterMergeResult.getSourceCommits().stream()
+            .map(mapper)
+            .forEach(storeResult::addSourceCommits);
+      }
+      if (adapterMergeResult.getTargetCommits() != null) {
+        adapterMergeResult.getTargetCommits().stream()
+            .map(mapper)
+            .forEach(storeResult::addTargetCommits);
+      }
     }
-    if (adapterMergeResult.getTargetCommits() != null) {
-      adapterMergeResult.getTargetCommits().stream()
-          .map(mapper)
-          .forEach(storeResult::addTargetCommits);
-    }
+    {
+      BiConsumer<ImmutableCommit.Builder, CommitLogEntry> enhancer = enhancerForCommitLog(true);
 
+      adapterMergeResult.getCreatedCommits().stream()
+          .map(
+              logEntry -> {
+                ImmutableCommit.Builder commit =
+                    Commit.builder()
+                        .hash(logEntry.getHash())
+                        .commitMeta(commitMetaFromLogEntry(logEntry));
+                logEntry.getParents().stream().findFirst().ifPresent(commit::parentHash);
+                enhancer.accept(commit, logEntry);
+                return commit.build();
+              })
+          .forEach(storeResult::addCreatedCommits);
+    }
     return storeResult.build();
   }
 
@@ -320,19 +361,19 @@ public class PersistVersionStore implements VersionStore {
   }
 
   @Override
-  public void assign(NamedRef ref, Optional<Hash> expectedHash, Hash targetHash)
+  public ReferenceAssignedResult assign(NamedRef ref, Optional<Hash> expectedHash, Hash targetHash)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    databaseAdapter.assign(ref, expectedHash, targetHash);
+    return databaseAdapter.assign(ref, expectedHash, targetHash);
   }
 
   @Override
-  public Hash create(NamedRef ref, Optional<Hash> targetHash)
+  public ReferenceCreatedResult create(NamedRef ref, Optional<Hash> targetHash)
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
     return databaseAdapter.create(ref, targetHash.orElseGet(databaseAdapter::noAncestorHash));
   }
 
   @Override
-  public Hash delete(NamedRef ref, Optional<Hash> hash)
+  public ReferenceDeletedResult delete(NamedRef ref, Optional<Hash> hash)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return databaseAdapter.delete(ref, hash);
   }
@@ -473,12 +514,11 @@ public class PersistVersionStore implements VersionStore {
           .forEach(
               put ->
                   commitBuilder.addOperations(
-                      Put.of(
+                      Put.ofLazy(
                           put.getKey(),
-                          STORE_WORKER.valueFromStore(
-                              put.getPayload(),
-                              put.getValue(),
-                              () -> getGlobalContents.apply(put)))));
+                          put.getPayload(),
+                          put.getValue(),
+                          () -> getGlobalContents.apply(put))));
     };
   }
 

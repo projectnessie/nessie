@@ -46,7 +46,6 @@ import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.Actio
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.commitOp;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
-import static org.projectnessie.versioned.storage.common.persist.ObjType.COMMIT;
 import static org.projectnessie.versioned.storage.commontests.AbstractCommitLogicTests.stdCommit;
 
 import java.util.ArrayList;
@@ -101,16 +100,18 @@ public class TestCommitConflicts {
     ObjId addObjId = objIdFromString("0000");
     ObjId otherObjId = objIdFromString("0001");
 
-    ObjId tip =
+    CommitObj tip =
         commitLogic.doCommit(
             stdCommit().addAdds(commitAdd(key, 0, addObjId, null, null)).build(), emptyList());
-    soft.assertThat(tip).isNotNull();
+    assertThat(tip).isNotNull();
 
     soft.assertThatThrownBy(
             () ->
                 buildCommit(
                     commitLogic,
-                    b -> b.parentCommitId(tip).addAdds(commitAdd(key, 0, addObjId, null, null))))
+                    b ->
+                        b.parentCommitId(tip.id())
+                            .addAdds(commitAdd(key, 0, addObjId, null, null))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: KEY_EXISTS:hello")
         .asInstanceOf(type(CommitConflictException.class))
@@ -123,7 +124,9 @@ public class TestCommitConflicts {
             () ->
                 buildCommit(
                     commitLogic,
-                    b -> b.parentCommitId(tip).addAdds(commitAdd(key, 0, otherObjId, null, null))))
+                    b ->
+                        b.parentCommitId(tip.id())
+                            .addAdds(commitAdd(key, 0, otherObjId, null, null))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: KEY_EXISTS:hello")
         .asInstanceOf(type(CommitConflictException.class))
@@ -137,10 +140,13 @@ public class TestCommitConflicts {
 
     // remove, try again
 
-    ObjId tip2 = removeAndTryAgain(commitLogic, key, addObjId, tip);
+    CommitObj tip2 = removeAndTryAgain(commitLogic, key, addObjId, tip.id());
 
     commitLogic.doCommit(
-        stdCommit().parentCommitId(tip2).addAdds(commitAdd(key, 0, addObjId, null, null)).build(),
+        stdCommit()
+            .parentCommitId(tip2.id())
+            .addAdds(commitAdd(key, 0, addObjId, null, null))
+            .build(),
         emptyList());
 
     // verify key index
@@ -162,17 +168,17 @@ public class TestCommitConflicts {
     ObjId wrongObjId = objIdFromString("0001");
     ObjId replaceObjId = objIdFromString("0002");
 
-    ObjId tip =
+    CommitObj tip =
         commitLogic.doCommit(
             stdCommit().addAdds(commitAdd(key, 0, addObjId, null, null)).build(), emptyList());
-    soft.assertThat(tip).isNotNull();
+    assertThat(tip).isNotNull();
 
     soft.assertThatThrownBy(
             () ->
                 buildCommit(
                     commitLogic,
                     b ->
-                        b.parentCommitId(tip)
+                        b.parentCommitId(tip.id())
                             .addAdds(commitAdd(key, 0, replaceObjId, wrongObjId, null))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: VALUE_DIFFERS:hello")
@@ -188,7 +194,7 @@ public class TestCommitConflicts {
                     commitLogic,
                     b ->
                         b.message("hello")
-                            .parentCommitId(tip)
+                            .parentCommitId(tip.id())
                             .addRemoves(commitRemove(key, 0, wrongObjId, null))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: VALUE_DIFFERS:hello")
@@ -203,7 +209,7 @@ public class TestCommitConflicts {
                 buildCommit(
                     commitLogic,
                     b ->
-                        b.parentCommitId(tip)
+                        b.parentCommitId(tip.id())
                             .addUnchanged(commitUnchanged(key, 0, wrongObjId, null))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: VALUE_DIFFERS:hello")
@@ -218,7 +224,7 @@ public class TestCommitConflicts {
                 buildCommit(
                     commitLogic,
                     b ->
-                        b.parentCommitId(tip)
+                        b.parentCommitId(tip.id())
                             .addAdds(commitAdd(key, 0, replaceObjId, wrongObjId, randomUUID()))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: CONTENT_ID_DIFFERS:hello")
@@ -233,7 +239,7 @@ public class TestCommitConflicts {
                 buildCommit(
                     commitLogic,
                     b ->
-                        b.parentCommitId(tip)
+                        b.parentCommitId(tip.id())
                             .addUnchanged(commitUnchanged(key, 0, replaceObjId, randomUUID()))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: CONTENT_ID_DIFFERS:hello")
@@ -248,7 +254,7 @@ public class TestCommitConflicts {
                 buildCommit(
                     commitLogic,
                     b ->
-                        b.parentCommitId(tip)
+                        b.parentCommitId(tip.id())
                             .addRemoves(commitRemove(key, 0, wrongObjId, randomUUID()))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: CONTENT_ID_DIFFERS:hello")
@@ -270,17 +276,17 @@ public class TestCommitConflicts {
     ObjId addObjId = objIdFromString("0000");
     ObjId replaceObjId = objIdFromString("0002");
 
-    ObjId tip =
+    CommitObj tip =
         commitLogic.doCommit(
             stdCommit().addAdds(commitAdd(key, 0, addObjId, null, null)).build(), emptyList());
-    soft.assertThat(tip).isNotNull();
+    assertThat(tip).isNotNull();
 
     soft.assertThatThrownBy(
             () ->
                 buildCommit(
                     commitLogic,
                     b ->
-                        b.parentCommitId(tip)
+                        b.parentCommitId(tip.id())
                             .addAdds(commitAdd(key, 1, replaceObjId, addObjId, null))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: PAYLOAD_DIFFERS:hello")
@@ -294,7 +300,9 @@ public class TestCommitConflicts {
             () ->
                 buildCommit(
                     commitLogic,
-                    b -> b.parentCommitId(tip).addRemoves(commitRemove(key, 1, addObjId, null))))
+                    b ->
+                        b.parentCommitId(tip.id())
+                            .addRemoves(commitRemove(key, 1, addObjId, null))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: PAYLOAD_DIFFERS:hello")
         .asInstanceOf(type(CommitConflictException.class))
@@ -308,7 +316,7 @@ public class TestCommitConflicts {
                 buildCommit(
                     commitLogic,
                     b ->
-                        b.parentCommitId(tip)
+                        b.parentCommitId(tip.id())
                             .addUnchanged(commitUnchanged(key, 1, addObjId, null))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: PAYLOAD_DIFFERS:hello")
@@ -331,17 +339,17 @@ public class TestCommitConflicts {
     ObjId addObjId = objIdFromString("0000");
     ObjId replaceObjId = objIdFromString("0002");
 
-    ObjId tip =
+    CommitObj tip =
         commitLogic.doCommit(
             stdCommit().addAdds(commitAdd(key, 0, addObjId, null, null)).build(), emptyList());
-    soft.assertThat(tip).isNotNull();
+    assertThat(tip).isNotNull();
 
     soft.assertThatThrownBy(
             () ->
                 buildCommit(
                     commitLogic,
                     b ->
-                        b.parentCommitId(tip)
+                        b.parentCommitId(tip.id())
                             .addAdds(commitAdd(nonExistingKey, 1, replaceObjId, addObjId, null))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: KEY_DOES_NOT_EXIST:non-existing")
@@ -356,7 +364,7 @@ public class TestCommitConflicts {
                 buildCommit(
                     commitLogic,
                     b ->
-                        b.parentCommitId(tip)
+                        b.parentCommitId(tip.id())
                             .addRemoves(commitRemove(nonExistingKey, 0, addObjId, null))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: KEY_DOES_NOT_EXIST:non-existing")
@@ -370,13 +378,15 @@ public class TestCommitConflicts {
     verifyKeyIndex(key, addObjId, tip);
 
     // remove added, try remove again
-    ObjId tip2 = removeAndTryAgain(commitLogic, key, addObjId, tip);
+    CommitObj tip2 = removeAndTryAgain(commitLogic, key, addObjId, tip.id());
 
     soft.assertThatThrownBy(
             () ->
                 buildCommit(
                     commitLogic,
-                    b -> b.parentCommitId(tip2).addRemoves(commitRemove(key, 0, addObjId, null))))
+                    b ->
+                        b.parentCommitId(tip2.id())
+                            .addRemoves(commitRemove(key, 0, addObjId, null))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: KEY_DOES_NOT_EXIST:hello")
         .asInstanceOf(type(CommitConflictException.class))
@@ -390,7 +400,7 @@ public class TestCommitConflicts {
                 buildCommit(
                     commitLogic,
                     b ->
-                        b.parentCommitId(tip2)
+                        b.parentCommitId(tip2.id())
                             .addUnchanged(commitUnchanged(key, 0, addObjId, null))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: KEY_DOES_NOT_EXIST:hello")
@@ -405,9 +415,10 @@ public class TestCommitConflicts {
     return indexesLogic(persist).buildCompleteIndex(c, Optional.empty());
   }
 
-  private ObjId removeAndTryAgain(CommitLogic commitLogic, StoreKey key, ObjId addObjId, ObjId tip)
+  private CommitObj removeAndTryAgain(
+      CommitLogic commitLogic, StoreKey key, ObjId addObjId, ObjId tip)
       throws CommitConflictException, ObjNotFoundException {
-    ObjId tip2 =
+    CommitObj tip2 =
         requireNonNull(
             commitLogic.doCommit(
                 stdCommit()
@@ -417,7 +428,7 @@ public class TestCommitConflicts {
                 emptyList()));
 
     // verify key index
-    soft.assertThat(persist.fetchTypedObj(tip2, COMMIT, CommitObj.class))
+    soft.assertThat(tip2)
         .extracting(this::buildCompleteIndex)
         .satisfies(i -> assertThat(i.elementCount()).isEqualTo(1))
         .satisfies(i -> assertThat(existingFromIndex(i, key)).isNull())
@@ -427,8 +438,8 @@ public class TestCommitConflicts {
     return tip2;
   }
 
-  private void verifyKeyIndex(StoreKey key, ObjId addObjId, ObjId tip) throws ObjNotFoundException {
-    soft.assertThat(persist.fetchTypedObj(tip, COMMIT, CommitObj.class))
+  private void verifyKeyIndex(StoreKey key, ObjId addObjId, CommitObj tip) {
+    soft.assertThat(tip)
         .extracting(this::buildCompleteIndex)
         .satisfies(i -> assertThat(i.elementCount()).isEqualTo(1))
         .extracting(i -> existingFromIndex(i, key))
@@ -631,14 +642,14 @@ public class TestCommitConflicts {
     ObjId addObjId = objIdFromString("0000");
     ObjId replaceObjId = objIdFromString("0002");
 
-    ObjId tip =
+    CommitObj tip =
         requireNonNull(
             commitLogic.doCommit(
                 stdCommit().addAdds(commitAdd(key, payload1, addObjId, null, contentId1)).build(),
                 emptyList()));
 
     StoreIndex<CommitOp> index =
-        indexesLogic(persist).buildCompleteIndexOrEmpty(commitLogic.fetchCommit(tip));
+        indexesLogic(persist).buildCompleteIndexOrEmpty(commitLogic.fetchCommit(tip.id()));
     soft.assertThat(index.get(key))
         .extracting(
             e -> e.content().payload(),
@@ -652,21 +663,21 @@ public class TestCommitConflicts {
                 buildCommit(
                     commitLogic,
                     b ->
-                        b.parentCommitId(tip)
+                        b.parentCommitId(tip.id())
                             .addAdds(commitAdd(key, payload2, replaceObjId, null, contentId2))))
         .isInstanceOf(CommitConflictException.class);
 
-    ObjId tip2 =
+    CommitObj tip2 =
         requireNonNull(
             commitLogic.doCommit(
                 stdCommit()
-                    .parentCommitId(tip)
+                    .parentCommitId(tip.id())
                     .addRemoves(commitRemove(key, payload1, addObjId, contentId1))
                     .addAdds(commitAdd(key, payload2, replaceObjId, null, contentId2))
                     .build(),
                 emptyList()));
 
-    index = indexesLogic(persist).buildCompleteIndexOrEmpty(commitLogic.fetchCommit(tip2));
+    index = indexesLogic(persist).buildCompleteIndexOrEmpty(commitLogic.fetchCommit(tip2.id()));
     soft.assertThat(index.get(key))
         .extracting(
             e -> e.content().payload(),
@@ -689,14 +700,14 @@ public class TestCommitConflicts {
     StoreKey key1 = key("base");
     StoreKey key2 = key("rename-to");
 
-    ObjId tip =
+    CommitObj tip =
         requireNonNull(
             commitLogic.doCommit(
                 stdCommit().addAdds(commitAdd(key1, payload1, addObjId, null, contentId)).build(),
                 emptyList()));
 
     StoreIndex<CommitOp> index =
-        indexesLogic(persist).buildCompleteIndexOrEmpty(commitLogic.fetchCommit(tip));
+        indexesLogic(persist).buildCompleteIndexOrEmpty(commitLogic.fetchCommit(tip.id()));
     soft.assertThat(index.get(key1))
         .extracting(
             e -> e.content().payload(),
@@ -710,7 +721,7 @@ public class TestCommitConflicts {
             () ->
                 commitLogic.doCommit(
                     stdCommit()
-                        .parentCommitId(tip)
+                        .parentCommitId(tip.id())
                         .addRemoves(commitRemove(key1, payload1, addObjId, contentId))
                         // rename
                         .addAdds(commitAdd(key2, payload1, addObjId, null, contentId))
@@ -724,7 +735,7 @@ public class TestCommitConflicts {
             () ->
                 commitLogic.doCommit(
                     stdCommit()
-                        .parentCommitId(tip)
+                        .parentCommitId(tip.id())
                         .addRemoves(commitRemove(key1, payload1, addObjId, contentId))
                         // rename
                         .addAdds(commitAdd(key2, payload1, addObjId, addObjId, contentId))
@@ -756,14 +767,14 @@ public class TestCommitConflicts {
     StoreKey key1 = key("rename-from");
     StoreKey key2 = key("rename-to");
 
-    ObjId tip =
+    CommitObj tip =
         requireNonNull(
             commitLogic.doCommit(
                 stdCommit().addAdds(commitAdd(key1, payload, addObjId, null, contentId)).build(),
                 emptyList()));
 
     StoreIndex<CommitOp> index =
-        indexesLogic(persist).buildCompleteIndexOrEmpty(commitLogic.fetchCommit(tip));
+        indexesLogic(persist).buildCompleteIndexOrEmpty(commitLogic.fetchCommit(tip.id()));
     soft.assertThat(index.get(key1))
         .extracting(
             e -> e.content().payload(),
@@ -772,17 +783,17 @@ public class TestCommitConflicts {
             e -> e.content().contentId())
         .containsExactly(payload, addObjId, ADD, contentId);
 
-    ObjId tip2 =
+    CommitObj tip2 =
         requireNonNull(
             commitLogic.doCommit(
                 stdCommit()
-                    .parentCommitId(tip)
+                    .parentCommitId(tip.id())
                     .addRemoves(commitRemove(key1, payload, addObjId, contentId))
                     .addAdds(commitAdd(key2, payload, addObjId, expectedValue, contentId))
                     .build(),
                 emptyList()));
 
-    index = indexesLogic(persist).buildCompleteIndexOrEmpty(commitLogic.fetchCommit(tip2));
+    index = indexesLogic(persist).buildCompleteIndexOrEmpty(commitLogic.fetchCommit(tip2.id()));
     soft.assertThat(index.get(key1))
         .extracting(
             e -> e.content().payload(),
@@ -823,14 +834,14 @@ public class TestCommitConflicts {
     StoreKey key1 = key("rename-from");
     StoreKey key2 = key("rename-to");
 
-    ObjId tip =
+    CommitObj tip =
         requireNonNull(
             commitLogic.doCommit(
                 stdCommit().addAdds(commitAdd(key1, payload, addObjId, null, contentId)).build(),
                 emptyList()));
 
     StoreIndex<CommitOp> index =
-        indexesLogic(persist).buildCompleteIndexOrEmpty(commitLogic.fetchCommit(tip));
+        indexesLogic(persist).buildCompleteIndexOrEmpty(commitLogic.fetchCommit(tip.id()));
     soft.assertThat(index.get(key1))
         .extracting(
             e -> e.content().payload(),
@@ -843,7 +854,7 @@ public class TestCommitConflicts {
             () ->
                 commitLogic.doCommit(
                     stdCommit()
-                        .parentCommitId(tip)
+                        .parentCommitId(tip.id())
                         .addRemoves(commitRemove(key1, payload, addObjId, contentId))
                         .addAdds(commitAdd(key2, payload, addObjId, expectedValue, contentId))
                         .build(),

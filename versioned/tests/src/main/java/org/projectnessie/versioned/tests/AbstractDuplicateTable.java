@@ -61,13 +61,14 @@ public abstract class AbstractDuplicateTable extends AbstractNestedVersionStore 
                 branch0,
                 Optional.empty(),
                 CommitMeta.fromMessage("initial commit"),
-                ImmutableList.of(Put.of(ContentKey.of("unrelated-table"), newOnRef("value"))));
+                ImmutableList.of(Put.of(ContentKey.of("unrelated-table"), newOnRef("value"))))
+            .getCommitHash();
 
     // Create a table with the same name on two branches.
     BranchName branch1 = BranchName.of("globalStateDuplicateTable-branch1");
     BranchName branch2 = BranchName.of("globalStateDuplicateTable-branch2");
-    soft.assertThat(store().create(branch1, Optional.of(ancestor))).isEqualTo(ancestor);
-    soft.assertThat(store().create(branch2, Optional.of(ancestor))).isEqualTo(ancestor);
+    soft.assertThat(store().create(branch1, Optional.of(ancestor)).getHash()).isEqualTo(ancestor);
+    soft.assertThat(store().create(branch2, Optional.of(ancestor)).getHash()).isEqualTo(ancestor);
 
     List<Operation> putForBranch1;
     List<Operation> putForBranch2;

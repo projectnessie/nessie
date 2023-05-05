@@ -109,8 +109,8 @@ public abstract class AbstractRepositories {
     Hash fooMain = foo.hashOnReference(main, Optional.empty());
     Hash barMain = bar.hashOnReference(main, Optional.empty());
 
-    Hash fooBranch = foo.create(fooBranchName, fooMain);
-    Hash barBranch = bar.create(barBranchName, barMain);
+    Hash fooBranch = foo.create(fooBranchName, fooMain).getHash();
+    Hash barBranch = bar.create(barBranchName, barMain).getHash();
 
     assertThat(fooMain).isNotEqualTo(barMain).isEqualTo(fooBranch);
     assertThat(barMain).isNotEqualTo(fooMain).isEqualTo(barBranch);

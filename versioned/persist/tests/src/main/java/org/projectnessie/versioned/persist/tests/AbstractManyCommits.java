@@ -84,7 +84,7 @@ public abstract class AbstractManyCommits {
                       fixed,
                       payload,
                       DefaultStoreWorker.instance().toStoreOnReferenceState(c)));
-      Hash hash = databaseAdapter.commit(commit.build());
+      Hash hash = databaseAdapter.commit(commit.build()).getCommitHash();
       commits[i] = hash;
     }
 

@@ -30,8 +30,10 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MetadataRewriter;
+import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.ResultType;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.logic.CommitRetry.RetryException;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
@@ -54,6 +56,7 @@ final class MergeIndividualImpl extends BaseMergeTransplantIndividual implements
   @Override
   public MergeResult<Commit> merge(
       Optional<?> retryState,
+      NamedRef fromRef,
       Hash fromHash,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       MergeBehaviors mergeBehaviors,
@@ -70,7 +73,10 @@ final class MergeIndividualImpl extends BaseMergeTransplantIndividual implements
     }
 
     ImmutableMergeResult.Builder<Commit> mergeResult =
-        prepareMergeResult().commonAncestor(objIdToHash(commonAncestorId));
+        prepareMergeResult()
+            .resultType(ResultType.MERGE)
+            .sourceRef(fromRef)
+            .commonAncestor(objIdToHash(commonAncestorId));
 
     // Fast-forward, if possible
     if (commonAncestorId.equals(headId())

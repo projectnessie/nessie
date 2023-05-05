@@ -365,6 +365,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
                 .rewriteSingle(CommitMeta.fromMessage(commitMsg)),
             Collections.singletonList(contentOperation),
             validator,
-            (k, c) -> {});
+            (k, c) -> {})
+        .getCommitHash();
   }
 }

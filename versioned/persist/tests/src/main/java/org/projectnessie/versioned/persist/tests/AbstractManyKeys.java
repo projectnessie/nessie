@@ -201,17 +201,18 @@ public abstract class AbstractManyKeys {
       ContentKey key = ContentKey.of("k" + i + "-" + longString);
       Hash hash =
           da.commit(
-              ImmutableCommitParams.builder()
-                  .toBranch(branch)
-                  .commitMetaSerialized(meta)
-                  .addPuts(
-                      KeyWithBytes.of(
-                          key,
-                          ContentId.of("c" + i),
-                          (byte) payloadForContent(OnRefOnly.ON_REF_ONLY),
-                          DefaultStoreWorker.instance()
-                              .toStoreOnReferenceState(onRef("r" + i, "c" + i))))
-                  .build());
+                  ImmutableCommitParams.builder()
+                      .toBranch(branch)
+                      .commitMetaSerialized(meta)
+                      .addPuts(
+                          KeyWithBytes.of(
+                              key,
+                              ContentId.of("c" + i),
+                              (byte) payloadForContent(OnRefOnly.ON_REF_ONLY),
+                              DefaultStoreWorker.instance()
+                                  .toStoreOnReferenceState(onRef("r" + i, "c" + i))))
+                      .build())
+              .getCommitHash();
       keyToCommit.put(key, hash);
     }
 
@@ -260,17 +261,18 @@ public abstract class AbstractManyKeys {
       ContentKey key = ContentKey.of("pre-fix-" + i);
       Hash hash =
           da.commit(
-              ImmutableCommitParams.builder()
-                  .toBranch(branch)
-                  .commitMetaSerialized(meta)
-                  .addPuts(
-                      KeyWithBytes.of(
-                          key,
-                          ContentId.of("c" + i),
-                          (byte) payloadForContent(OnRefOnly.ON_REF_ONLY),
-                          DefaultStoreWorker.instance()
-                              .toStoreOnReferenceState(onRef("pf" + i, "cpf" + i))))
-                  .build());
+                  ImmutableCommitParams.builder()
+                      .toBranch(branch)
+                      .commitMetaSerialized(meta)
+                      .addPuts(
+                          KeyWithBytes.of(
+                              key,
+                              ContentId.of("c" + i),
+                              (byte) payloadForContent(OnRefOnly.ON_REF_ONLY),
+                              DefaultStoreWorker.instance()
+                                  .toStoreOnReferenceState(onRef("pf" + i, "cpf" + i))))
+                      .build())
+              .getCommitHash();
       keyToCommit.put(key, hash);
     }
 
@@ -327,17 +329,19 @@ public abstract class AbstractManyKeys {
         keyNum++, estimatedTotalKeyLength -= assumedKeyEntryLen) {
       OnRefOnly val = valueGen.apply(keyNum);
       head =
-          databaseAdapter.commit(
-              ImmutableCommitParams.builder()
-                  .toBranch(branch)
-                  .commitMetaSerialized(ByteString.EMPTY)
-                  .addPuts(
-                      KeyWithBytes.of(
-                          keyGen.apply(keyNum),
-                          ContentId.of(val.getId()),
-                          (byte) payloadForContent(val),
-                          val.serialized()))
-                  .build());
+          databaseAdapter
+              .commit(
+                  ImmutableCommitParams.builder()
+                      .toBranch(branch)
+                      .commitMetaSerialized(ByteString.EMPTY)
+                      .addPuts(
+                          KeyWithBytes.of(
+                              keyGen.apply(keyNum),
+                              ContentId.of(val.getId()),
+                              (byte) payloadForContent(val),
+                              val.serialized()))
+                      .build())
+              .getCommitHash();
     }
 
     for (int i = 0; i < keyNum; i++) {
@@ -492,11 +496,13 @@ public abstract class AbstractManyKeys {
     Hash head = null;
     for (int i = 0; i < commitCount; i++) {
       head =
-          databaseAdapter.commit(
-              ImmutableCommitParams.builder()
-                  .toBranch(toBranch)
-                  .commitMetaSerialized(ByteString.EMPTY)
-                  .build());
+          databaseAdapter
+              .commit(
+                  ImmutableCommitParams.builder()
+                      .toBranch(toBranch)
+                      .commitMetaSerialized(ByteString.EMPTY)
+                      .build())
+              .getCommitHash();
     }
     Preconditions.checkNotNull(head);
     return head;
@@ -594,19 +600,21 @@ public abstract class AbstractManyKeys {
     for (String name : names) {
       ContentKey key = ContentKey.of(name);
       head =
-          databaseAdapter.commit(
-              ImmutableCommitParams.builder()
-                  .toBranch(main)
-                  .commitMetaSerialized(ByteString.copyFromUtf8("foo"))
-                  .expectedHead(Optional.of(head))
-                  .addPuts(
-                      KeyWithBytes.of(
-                          key,
-                          ContentId.of("id-" + name),
-                          (byte) payloadForContent(OnRefOnly.ON_REF_ONLY),
-                          DefaultStoreWorker.instance()
-                              .toStoreOnReferenceState(OnRefOnly.newOnRef("c" + name))))
-                  .build());
+          databaseAdapter
+              .commit(
+                  ImmutableCommitParams.builder()
+                      .toBranch(main)
+                      .commitMetaSerialized(ByteString.copyFromUtf8("foo"))
+                      .expectedHead(Optional.of(head))
+                      .addPuts(
+                          KeyWithBytes.of(
+                              key,
+                              ContentId.of("id-" + name),
+                              (byte) payloadForContent(OnRefOnly.ON_REF_ONLY),
+                              DefaultStoreWorker.instance()
+                                  .toStoreOnReferenceState(OnRefOnly.newOnRef("c" + name))))
+                      .build())
+              .getCommitHash();
       activeKeys.add(key);
     }
 

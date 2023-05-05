@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,27 +15,19 @@
  */
 package org.projectnessie.versioned;
 
-import java.util.List;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
-import org.projectnessie.model.CommitMeta;
 
 @Value.Immutable
-public interface Commit extends Hashable {
-  static ImmutableCommit.Builder builder() {
-    return ImmutableCommit.builder();
-  }
+public interface ReferenceAssignedResult extends Result {
 
   @Override
-  Hash getHash();
+  default ResultType getResultType() {
+    return ResultType.REFERENCE_ASSIGNED;
+  }
 
-  CommitMeta getCommitMeta();
+  NamedRef getNamedRef();
 
-  @Nullable
-  @jakarta.annotation.Nullable
-  Hash getParentHash();
+  Hash getPreviousHash();
 
-  @Nullable
-  @jakarta.annotation.Nullable
-  List<Operation> getOperations();
+  Hash getCurrentHash();
 }

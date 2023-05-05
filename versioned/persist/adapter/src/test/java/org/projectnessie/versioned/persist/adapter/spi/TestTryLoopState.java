@@ -34,6 +34,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentMatcher;
 import org.mockito.InOrder;
+import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
 import org.projectnessie.versioned.persist.adapter.spi.TryLoopState.MonotonicClock;
@@ -53,8 +54,8 @@ class TestTryLoopState {
 
     long lower = initialLower;
     long upper = initialUpper;
-    TryLoopState tryLoopState =
-        new TryLoopState(
+    TryLoopState<Hash> tryLoopState =
+        new TryLoopState<>(
             "test",
             this::retryErrorMessage,
             mockedConfig(retries, Long.MAX_VALUE, 1, upper, maxSleep),
@@ -130,8 +131,8 @@ class TestTryLoopState {
     Arrays.fill(times, 0L);
     MonotonicClock clock = mockedClock(0L, times);
 
-    TryLoopState tryLoopState =
-        new TryLoopState(
+    TryLoopState<Hash> tryLoopState =
+        new TryLoopState<>(
             "test",
             this::retryErrorMessage,
             mockedConfig(retries, 42L),
@@ -156,8 +157,8 @@ class TestTryLoopState {
     Arrays.fill(times, 0L);
     MonotonicClock clock = mockedClock(0L, times);
 
-    TryLoopState tryLoopState =
-        new TryLoopState(
+    TryLoopState<Hash> tryLoopState =
+        new TryLoopState<>(
             "test",
             this::retryErrorMessage,
             mockedConfig(retries, 42L),
@@ -188,8 +189,8 @@ class TestTryLoopState {
     Arrays.fill(times, 0L);
     MonotonicClock clock = mockedClock(0L, times);
 
-    TryLoopState tryLoopState =
-        new TryLoopState(
+    TryLoopState<Hash> tryLoopState =
+        new TryLoopState<>(
             "test",
             this::retryErrorMessage,
             mockedConfig(retries - 1, 42L),
@@ -221,8 +222,8 @@ class TestTryLoopState {
     // Must be "big" enough so that the upper/lower sleep-time-bounds doubling exceed this value
     long timeoutMillis = 42L;
 
-    TryLoopState tryLoopState =
-        new TryLoopState(
+    TryLoopState<Hash> tryLoopState =
+        new TryLoopState<>(
             "test",
             this::retryErrorMessage,
             mockedConfig(retries, timeoutMillis),
@@ -273,8 +274,8 @@ class TestTryLoopState {
     times[retries - 1] = TimeUnit.MILLISECONDS.toNanos(43L);
     MonotonicClock clock = mockedClock(0L, times);
 
-    TryLoopState tryLoopState =
-        new TryLoopState(
+    TryLoopState<Hash> tryLoopState =
+        new TryLoopState<>(
             "test",
             this::retryErrorMessage,
             mockedConfig(retries, 42L),

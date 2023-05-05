@@ -38,7 +38,7 @@ import org.projectnessie.versioned.storage.common.exceptions.CommitConflictExcep
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.RefConditionFailedException;
 import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundException;
-import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 
 @QuarkusMainTest
@@ -71,7 +71,7 @@ class ITNessieInfoPersist {
           ObjNotFoundException,
           RefNotFoundException,
           RefConditionFailedException {
-    ObjId head =
+    CommitObj head =
         commitLogic(persist)
             .doCommit(
                 newCommitBuilder()
@@ -81,12 +81,13 @@ class ITNessieInfoPersist {
                     .build(),
                 emptyList());
     referenceLogic(persist)
-        .assignReference(reference("refs/heads/main", EMPTY_OBJ_ID, false), requireNonNull(head));
+        .assignReference(
+            reference("refs/heads/main", EMPTY_OBJ_ID, false), requireNonNull(head).id());
 
     LaunchResult result = launcher.launch("info");
     assertThat(result.getOutput())
         .contains("Repository created:")
-        .contains("Default branch head commit ID:     " + head)
+        .contains("Default branch head commit ID:     " + head.id())
         .contains("Default branch commit count:       1")
         .contains("Version-store type:                " + MONGODB.name())
         .contains("Default branch:                    main")

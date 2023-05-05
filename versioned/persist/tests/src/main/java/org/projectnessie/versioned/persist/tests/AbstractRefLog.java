@@ -167,7 +167,7 @@ public abstract class AbstractRefLog {
     for (int i = 0; i < 50; i++) {
       NamedRef ref = refGen.apply(i);
 
-      assertThat(databaseAdapter.create(ref, databaseAdapter.noAncestorHash()))
+      assertThat(databaseAdapter.create(ref, databaseAdapter.noAncestorHash()).getHash())
           .isEqualTo(databaseAdapter.noAncestorHash());
 
       refLogOpsPerRef

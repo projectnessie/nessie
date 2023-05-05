@@ -521,18 +521,18 @@ final class ReferenceLogicImpl implements ReferenceLogic {
 
   private static void commitReferenceChange(Persist p, Reference refRefs, CreateCommit c)
       throws CommitConflictException, RetryException {
-    ObjId commitId;
+    CommitObj commit;
     try {
-      commitId = commitLogic(p).doCommit(c, emptyList());
+      commit = commitLogic(p).doCommit(c, emptyList());
     } catch (ObjNotFoundException e) {
       throw new RuntimeException("Internal error committing to log of references", e);
     }
 
-    checkState(commitId != null);
+    checkState(commit != null);
 
     // Commit to REF_REFS
     try {
-      p.updateReferencePointer(refRefs, commitId);
+      p.updateReferencePointer(refRefs, commit.id());
     } catch (RefConditionFailedException e) {
       throw new RetryException();
     } catch (RefNotFoundException e) {

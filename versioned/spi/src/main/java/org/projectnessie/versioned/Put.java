@@ -15,24 +15,35 @@
  */
 package org.projectnessie.versioned;
 
+import com.google.common.base.MoreObjects;
+import java.util.Objects;
+import java.util.function.Supplier;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
+import org.projectnessie.versioned.store.DefaultStoreWorker;
 
 /** Setting a new value. Can optionally declare whether the prior hash must match. */
 @Value.Immutable
-public interface Put extends Operation {
+public abstract class Put implements Operation {
 
   /**
    * The value to store for this operation.
    *
    * @return the value
    */
-  Content getValue();
+  @Value.Lazy
+  public Content getValue() {
+    return getValueSupplier().get();
+  }
+
+  protected abstract Supplier<Content> getValueSupplier();
 
   /**
-   * Creates a put-operation for the given key and value.
+   * Creates an (eagerly-evaluated) put-operation for the given key and value.
    *
    * <p>{@code value} with a {@code null} content ID is <em>required</em> when creating/adding new
    * content.
@@ -49,9 +60,66 @@ public interface Put extends Operation {
    */
   @Nonnull
   @jakarta.annotation.Nonnull
-  static Put of(
+  public static Put of(
       @Nonnull @jakarta.annotation.Nonnull ContentKey key,
       @Nonnull @jakarta.annotation.Nonnull Content value) {
-    return ImmutablePut.builder().key(key).value(value).build();
+    return ImmutablePut.builder().key(key).valueSupplier(() -> value).build();
+  }
+
+  /** Creates a lazily-evaluated put-operation for the given key, payload and ByteString value. */
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  public static Put ofLazy(ContentKey key, int payload, ByteString value) {
+    return ofLazy(key, payload, value, () -> null);
+  }
+
+  /**
+   * Creates a lazily-evaluated put-operation for the given key, payload, ByteString value and
+   * global state supplier.
+   */
+  @SuppressWarnings("deprecation")
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  public static Put ofLazy(
+      ContentKey key, int payload, ByteString value, Supplier<ByteString> globalStateSupplier) {
+    return ImmutablePut.builder()
+        .key(key)
+        .valueSupplier(
+            () ->
+                DefaultStoreWorker.instance()
+                    .valueFromStore((byte) payload, value, globalStateSupplier))
+        .build();
+  }
+
+  // Redefine equals() and hashCode() because even if getValue() is @Lazy,
+  // we want it in the computation, and not getValueSupplier().
+
+  @Override
+  public boolean equals(@Nullable Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof Put)) {
+      return false;
+    }
+    Put that = (Put) o;
+    return this.shouldMatchHash() == that.shouldMatchHash()
+        && this.getKey().equals(that.getKey())
+        && this.getValue().equals(that.getValue());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(shouldMatchHash(), getKey(), getValue());
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper("Put")
+        .omitNullValues()
+        .add("shouldMatchHash", shouldMatchHash())
+        .add("key", getKey())
+        .add("value", getValue())
+        .toString();
   }
 }

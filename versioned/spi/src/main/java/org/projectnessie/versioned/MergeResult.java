@@ -24,7 +24,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.MergeBehavior;
 
 @Value.Immutable
-public interface MergeResult<COMMIT> {
+public interface MergeResult<COMMIT> extends Result {
 
   /** Indicates whether the merge or transplant operation has been applied. */
   @Value.Default
@@ -47,6 +47,9 @@ public interface MergeResult<COMMIT> {
   @Nullable
   @jakarta.annotation.Nullable
   Hash getCommonAncestor();
+
+  /** The source ref. */
+  NamedRef getSourceRef();
 
   /** Name of the target branch. */
   BranchName getTargetBranch();
@@ -71,6 +74,22 @@ public interface MergeResult<COMMIT> {
   @jakarta.annotation.Nullable
   @Deprecated // for removal and replaced with something else
   List<COMMIT> getTargetCommits();
+
+  /**
+   * List of new commits that where created and added to the target branch.
+   *
+   * <p>The returned list will always be empty if the merge or transplant operation failed. It will
+   * also always be empty in dry-run mode. Furthermore, it will also be empty if the operation
+   * resulted in a fast-forward merge or transplant, because no new commit is created in this case.
+   * Otherwise, if commits were squashed, the returned list will contain exactly one element: the
+   * squashed commit; conversely, if individual commits were preserved, the list will generally
+   * contain as many commits as there were {@linkplain #getSourceCommits() source commits} to rebase
+   * (unless some source commits were filtered out).
+   *
+   * <p>The REST API does not expose this property currently; it is used by the Nessie events
+   * notification system.
+   */
+  List<COMMIT> getCreatedCommits();
 
   /** Details of all keys encountered during the merge or transplant operation. */
   Map<ContentKey, KeyDetails> getDetails();
@@ -117,7 +136,7 @@ public interface MergeResult<COMMIT> {
     UNRESOLVABLE
   }
 
-  static <COMMIT> ImmutableMergeResult.Builder<COMMIT> builder() {
+  static <COMMIT extends Hashable> ImmutableMergeResult.Builder<COMMIT> builder() {
     return ImmutableMergeResult.builder();
   }
 }

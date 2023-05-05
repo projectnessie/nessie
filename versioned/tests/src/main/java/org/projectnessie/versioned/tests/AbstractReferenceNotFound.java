@@ -207,6 +207,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
             .function(
                 s ->
                     s.transplant(
+                        BranchName.of("source"),
                         BranchName.of("this-one-should-not-exist"),
                         Optional.empty(),
                         singletonList(s.hashOnReference(BranchName.of("main"), Optional.empty())),
@@ -222,6 +223,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
             .function(
                 s ->
                     s.transplant(
+                        BranchName.of("source"),
                         BranchName.of("main"),
                         Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
                         singletonList(Hash.of("12341234123412341234123412341234123412341234")),
@@ -236,6 +238,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
             .function(
                 s ->
                     s.transplant(
+                        BranchName.of("source"),
                         BranchName.of("main"),
                         Optional.empty(),
                         singletonList(Hash.of("12341234123412341234123412341234123412341234")),
@@ -280,6 +283,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
             .function(
                 s ->
                     s.merge(
+                        BranchName.of("source"),
                         Hash.of("12341234123412341234123412341234123412341234"),
                         BranchName.of("main"),
                         Optional.empty(),
@@ -295,6 +299,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
             .function(
                 s ->
                     s.merge(
+                        BranchName.of("source"),
                         s.noAncestorHash(),
                         BranchName.of("main"),
                         Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
@@ -309,6 +314,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
             .function(
                 s ->
                     s.merge(
+                        BranchName.of("source"),
                         Hash.of("12341234123412341234123412341234123412341234"),
                         BranchName.of("main"),
                         Optional.empty(),
@@ -324,6 +330,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
             .function(
                 s ->
                     s.merge(
+                        BranchName.of("source"),
                         s.noAncestorHash(),
                         BranchName.of("main"),
                         Optional.of(Hash.of("12341234123412341234123412341234123412341234")),

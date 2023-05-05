@@ -162,7 +162,7 @@ public class CommitBuilder {
         fromLatest
             ? Optional.of(store.hashOnReference(branchName, Optional.empty()))
             : referenceHash;
-    Hash commitHash = store.commit(branchName, reference, metadata, operations);
+    Hash commitHash = store.commit(branchName, reference, metadata, operations).getCommitHash();
     Hash storeHash = store.hashOnReference(branchName, Optional.empty());
     Assertions.assertEquals(storeHash, commitHash);
     return commitHash;

@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.function.ThrowingConsumer;
 import org.junit.jupiter.params.provider.Arguments;
 
 /**
@@ -31,7 +30,7 @@ import org.junit.jupiter.params.provider.Arguments;
  *
  * @param <S> store type
  */
-public class TestedTraceingStoreInvocation<S> {
+public class TestedTracingStoreInvocation<S> {
   final String opName;
   Map<String, Object> tags = new HashMap<>();
   List<Map<String, String>> logs = new ArrayList<>();
@@ -39,18 +38,13 @@ public class TestedTraceingStoreInvocation<S> {
   Supplier<?> result;
   final List<Exception> failures;
 
-  public TestedTraceingStoreInvocation(String opName, List<Exception> failures) {
+  public TestedTracingStoreInvocation(String opName, List<Exception> failures) {
     this.opName = opName;
     this.failures = failures;
   }
 
-  public TestedTraceingStoreInvocation<S> tag(String tag, Object value) {
+  public TestedTracingStoreInvocation<S> tag(String tag, Object value) {
     this.tags.put(tag, value);
-    return this;
-  }
-
-  public TestedTraceingStoreInvocation<S> log(Map<String, String> log) {
-    this.logs.add(log);
     return this;
   }
 
@@ -62,7 +56,7 @@ public class TestedTraceingStoreInvocation<S> {
    * @param <R> result type
    * @return {@code this}
    */
-  public <R> TestedTraceingStoreInvocation<S> function(
+  public <R> TestedTracingStoreInvocation<S> function(
       ThrowingFunction<R, S> function, Supplier<R> result) {
     this.function = function;
     this.result = result;
@@ -70,32 +64,17 @@ public class TestedTraceingStoreInvocation<S> {
   }
 
   /**
-   * The method (function returning {@code void}) to be tested.
-   *
-   * @param method method to be tested
-   * @return {@code this}
-   */
-  public TestedTraceingStoreInvocation<S> method(ThrowingConsumer<S> method) {
-    this.function =
-        store -> {
-          method.accept(store);
-          return null;
-        };
-    return this;
-  }
-
-  /**
-   * Convert a stream of {@link TestedTraceingStoreInvocation}s to a stream of {@link Arguments},
-   * which are pairs of {@link TestedTraceingStoreInvocation} plus {@link Exception}, which are the
+   * Convert a stream of {@link TestedTracingStoreInvocation}s to a stream of {@link Arguments},
+   * which are pairs of {@link TestedTracingStoreInvocation} plus {@link Exception}, which are the
    * arguments for the parameterized tests.
    *
-   * @param versionStoreFunctions stream of {@link TestedTraceingStoreInvocation}s
+   * @param versionStoreFunctions stream of {@link TestedTracingStoreInvocation}s
    * @param <S> store type, a {@code Store} or {@code VersionStore}
-   * @return Stream of {@link Arguments} (pairs of {@link TestedTraceingStoreInvocation} plus {@link
+   * @return Stream of {@link Arguments} (pairs of {@link TestedTracingStoreInvocation} plus {@link
    *     Exception});
    */
   public static <S> Stream<Arguments> toArguments(
-      Stream<TestedTraceingStoreInvocation<S>> versionStoreFunctions) {
+      Stream<TestedTracingStoreInvocation<S>> versionStoreFunctions) {
     // flatten all "normal executions" + "throws XYZ"
     return versionStoreFunctions.flatMap(
         invocation -> {

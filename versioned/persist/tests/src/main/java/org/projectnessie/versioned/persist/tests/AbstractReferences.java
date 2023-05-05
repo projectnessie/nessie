@@ -83,7 +83,9 @@ public abstract class AbstractReferences {
         .isInstanceOf(ReferenceNotFoundException.class);
 
     Hash createHash =
-        databaseAdapter.create(create, databaseAdapter.hashOnReference(branch, Optional.empty()));
+        databaseAdapter
+            .create(create, databaseAdapter.hashOnReference(branch, Optional.empty()))
+            .getHash();
     assertThat(createHash).isEqualTo(mainHash);
 
     try (Stream<ReferenceInfo<ByteString>> refs =
@@ -115,7 +117,8 @@ public abstract class AbstractReferences {
     assertThatThrownBy(() -> databaseAdapter.delete(opposite, Optional.of(createHash)))
         .isInstanceOf(ReferenceNotFoundException.class);
 
-    assertThat(databaseAdapter.delete(create, Optional.of(createHash))).isEqualTo(createHash);
+    assertThat(databaseAdapter.delete(create, Optional.of(createHash)).getHash())
+        .isEqualTo(createHash);
 
     assertThatThrownBy(() -> databaseAdapter.hashOnReference(create, Optional.empty()))
         .isInstanceOf(ReferenceNotFoundException.class);
@@ -134,21 +137,25 @@ public abstract class AbstractReferences {
 
     databaseAdapter.create(unreachable, databaseAdapter.hashOnReference(main, Optional.empty()));
     Hash helperHead =
-        databaseAdapter.create(helper, databaseAdapter.hashOnReference(main, Optional.empty()));
+        databaseAdapter
+            .create(helper, databaseAdapter.hashOnReference(main, Optional.empty()))
+            .getHash();
 
     OnRefOnly hello = onRef("hello", "contentId");
     Hash unreachableHead =
-        databaseAdapter.commit(
-            ImmutableCommitParams.builder()
-                .toBranch(unreachable)
-                .commitMetaSerialized(ByteString.copyFromUtf8("commit meta"))
-                .addPuts(
-                    KeyWithBytes.of(
-                        ContentKey.of("foo"),
-                        ContentId.of(hello.getId()),
-                        (byte) payloadForContent(hello),
-                        hello.serialized()))
-                .build());
+        databaseAdapter
+            .commit(
+                ImmutableCommitParams.builder()
+                    .toBranch(unreachable)
+                    .commitMetaSerialized(ByteString.copyFromUtf8("commit meta"))
+                    .addPuts(
+                        KeyWithBytes.of(
+                            ContentKey.of("foo"),
+                            ContentId.of(hello.getId()),
+                            (byte) payloadForContent(hello),
+                            hello.serialized()))
+                    .build())
+            .getCommitHash();
 
     assertAll(
         () ->
@@ -210,17 +217,19 @@ public abstract class AbstractReferences {
     for (int i = 0; i < commits.length; i++) {
       OnRefOnly hello = onRef("hello " + i, "contentId-" + i);
       commits[i] =
-          databaseAdapter.commit(
-              ImmutableCommitParams.builder()
-                  .toBranch(main)
-                  .commitMetaSerialized(ByteString.copyFromUtf8("commit meta " + i))
-                  .addPuts(
-                      KeyWithBytes.of(
-                          ContentKey.of("bar-" + i),
-                          ContentId.of(hello.getId()),
-                          (byte) payloadForContent(hello),
-                          hello.serialized()))
-                  .build());
+          databaseAdapter
+              .commit(
+                  ImmutableCommitParams.builder()
+                      .toBranch(main)
+                      .commitMetaSerialized(ByteString.copyFromUtf8("commit meta " + i))
+                      .addPuts(
+                          KeyWithBytes.of(
+                              ContentKey.of("bar-" + i),
+                              ContentId.of(hello.getId()),
+                              (byte) payloadForContent(hello),
+                              hello.serialized()))
+                      .build())
+              .getCommitHash();
     }
 
     Hash expect = beginning;
@@ -252,7 +261,7 @@ public abstract class AbstractReferences {
 
     BranchName main = BranchName.of("main");
     Hash mainHead = databaseAdapter.hashOnReference(main, Optional.empty());
-    assertThat(databaseAdapter.delete(main, Optional.of(mainHead))).isEqualTo(mainHead);
+    assertThat(databaseAdapter.delete(main, Optional.of(mainHead)).getHash()).isEqualTo(mainHead);
 
     assertThatThrownBy(() -> databaseAdapter.hashOnReference(main, Optional.empty()))
         .isInstanceOf(ReferenceNotFoundException.class);
@@ -276,10 +285,12 @@ public abstract class AbstractReferences {
     databaseAdapter.create(delete3, mainHead);
     databaseAdapter.create(delete4, mainHead);
 
-    assertThat(databaseAdapter.delete(delete1, Optional.of(mainHead))).isEqualTo(mainHead);
-    assertThat(databaseAdapter.delete(delete2, Optional.of(mainHead))).isEqualTo(mainHead);
-    assertThat(databaseAdapter.delete(delete3, Optional.empty())).isEqualTo(mainHead);
-    assertThat(databaseAdapter.delete(delete4, Optional.empty())).isEqualTo(mainHead);
+    assertThat(databaseAdapter.delete(delete1, Optional.of(mainHead)).getHash())
+        .isEqualTo(mainHead);
+    assertThat(databaseAdapter.delete(delete2, Optional.of(mainHead)).getHash())
+        .isEqualTo(mainHead);
+    assertThat(databaseAdapter.delete(delete3, Optional.empty()).getHash()).isEqualTo(mainHead);
+    assertThat(databaseAdapter.delete(delete4, Optional.empty()).getHash()).isEqualTo(mainHead);
 
     assertThatThrownBy(() -> databaseAdapter.hashOnReference(delete1, Optional.empty()))
         .isInstanceOf(ReferenceNotFoundException.class);
@@ -310,7 +321,7 @@ public abstract class AbstractReferences {
     for (int i = 0; i < 50; i++) {
       NamedRef ref = refGen.apply(i);
 
-      assertThat(databaseAdapter.create(ref, databaseAdapter.noAncestorHash()))
+      assertThat(databaseAdapter.create(ref, databaseAdapter.noAncestorHash()).getHash())
           .isEqualTo(databaseAdapter.noAncestorHash());
 
       refHeads.put(ref, databaseAdapter.noAncestorHash());
@@ -336,19 +347,21 @@ public abstract class AbstractReferences {
         NamedRef ref = refGen.apply(i);
         if (ref instanceof BranchName) {
           Hash newHead =
-              databaseAdapter.commit(
-                  ImmutableCommitParams.builder()
-                      .toBranch((BranchName) ref)
-                      .commitMetaSerialized(ByteString.copyFromUtf8("foo on " + ref.getName()))
-                      .expectedHead(Optional.of(refHeads.get(ref)))
-                      .addPuts(
-                          KeyWithBytes.of(
-                              ContentKey.of("table-" + commit),
-                              ContentId.of("c" + commit),
-                              (byte) payloadForContent(OnRefOnly.ON_REF_ONLY),
-                              DefaultStoreWorker.instance()
-                                  .toStoreOnReferenceState(OnRefOnly.newOnRef("c" + commit))))
-                      .build());
+              databaseAdapter
+                  .commit(
+                      ImmutableCommitParams.builder()
+                          .toBranch((BranchName) ref)
+                          .commitMetaSerialized(ByteString.copyFromUtf8("foo on " + ref.getName()))
+                          .expectedHead(Optional.of(refHeads.get(ref)))
+                          .addPuts(
+                              KeyWithBytes.of(
+                                  ContentKey.of("table-" + commit),
+                                  ContentId.of("c" + commit),
+                                  (byte) payloadForContent(OnRefOnly.ON_REF_ONLY),
+                                  DefaultStoreWorker.instance()
+                                      .toStoreOnReferenceState(OnRefOnly.newOnRef("c" + commit))))
+                          .build())
+                  .getCommitHash();
           refHeads.put(ref, newHead);
         }
       }

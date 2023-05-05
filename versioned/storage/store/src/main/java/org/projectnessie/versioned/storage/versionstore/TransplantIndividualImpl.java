@@ -26,8 +26,10 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MetadataRewriter;
+import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.ResultType;
 import org.projectnessie.versioned.storage.common.logic.CommitRetry.RetryException;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.persist.Persist;
@@ -48,6 +50,7 @@ final class TransplantIndividualImpl extends BaseMergeTransplantIndividual imple
   @Override
   public MergeResult<Commit> transplant(
       Optional<?> retryState,
+      NamedRef sourceRef,
       List<Hash> sequenceToTransplant,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       MergeBehaviors mergeBehaviors,
@@ -55,7 +58,8 @@ final class TransplantIndividualImpl extends BaseMergeTransplantIndividual imple
       throws ReferenceNotFoundException, RetryException, ReferenceConflictException {
     SourceCommitsAndParent sourceCommits = loadSourceCommitsForTransplant(sequenceToTransplant);
 
-    ImmutableMergeResult.Builder<Commit> mergeResult = prepareMergeResult();
+    ImmutableMergeResult.Builder<Commit> mergeResult =
+        prepareMergeResult().resultType(ResultType.TRANSPLANT).sourceRef(sourceRef);
 
     return individualCommits(
         updateCommitMetadata, dryRun, mergeResult, mergeBehaviors, sourceCommits);

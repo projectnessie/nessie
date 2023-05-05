@@ -349,6 +349,7 @@ public abstract class AbstractDatabaseAdapter<
       Consumer<Hash> branchCommits,
       Consumer<Hash> newKeyLists,
       Consumer<CommitLogEntry> writtenCommits,
+      Consumer<CommitLogEntry> addedCommits,
       MergeParams mergeParams,
       ImmutableMergeResult.Builder<CommitLogEntry> mergeResult)
       throws ReferenceNotFoundException, ReferenceConflictException {
@@ -411,6 +412,7 @@ public abstract class AbstractDatabaseAdapter<
         mergeParams,
         mergeResult,
         writtenCommits,
+        addedCommits,
         singletonList(commitsToMergeChronological.get(0).getHash()));
   }
 
@@ -430,6 +432,7 @@ public abstract class AbstractDatabaseAdapter<
       Consumer<Hash> branchCommits,
       Consumer<Hash> newKeyLists,
       Consumer<CommitLogEntry> writtenCommits,
+      Consumer<CommitLogEntry> addedCommits,
       TransplantParams transplantParams,
       ImmutableMergeResult.Builder<CommitLogEntry> mergeResult)
       throws ReferenceNotFoundException, ReferenceConflictException {
@@ -499,6 +502,7 @@ public abstract class AbstractDatabaseAdapter<
         transplantParams,
         mergeResult,
         writtenCommits,
+        addedCommits,
         emptyList());
   }
 
@@ -513,6 +517,7 @@ public abstract class AbstractDatabaseAdapter<
       MetadataRewriteParams params,
       ImmutableMergeResult.Builder<CommitLogEntry> mergeResult,
       Consumer<CommitLogEntry> writtenCommits,
+      Consumer<CommitLogEntry> addedCommits,
       List<Hash> additionalParents)
       throws ReferenceConflictException, ReferenceNotFoundException {
 
@@ -602,7 +607,8 @@ public abstract class AbstractDatabaseAdapter<
               commitsToMergeChronological,
               newKeyLists,
               params.getUpdateCommitMetadata(),
-              mergePredicate);
+              mergePredicate,
+              addedCommits);
 
       // Write commits
 
@@ -621,7 +627,8 @@ public abstract class AbstractDatabaseAdapter<
               newKeyLists,
               params.getUpdateCommitMetadata(),
               mergePredicate,
-              additionalParents);
+              additionalParents,
+              addedCommits);
 
       if (squashed != null) {
         writtenCommits.accept(squashed);
@@ -2106,7 +2113,8 @@ public abstract class AbstractDatabaseAdapter<
       Consumer<Hash> newKeyLists,
       MetadataRewriter<ByteString> rewriteMetadata,
       Predicate<ContentKey> includeKeyPredicate,
-      Iterable<Hash> additionalParents)
+      Iterable<Hash> additionalParents,
+      Consumer<CommitLogEntry> addedCommits)
       throws ReferenceConflictException, ReferenceNotFoundException {
 
     List<ByteString> commitMeta = new ArrayList<>();
@@ -2180,6 +2188,7 @@ public abstract class AbstractDatabaseAdapter<
     }
 
     writeIndividualCommit(ctx, squashedCommit);
+    addedCommits.accept(squashedCommit);
 
     return squashedCommit;
   }
@@ -2192,7 +2201,8 @@ public abstract class AbstractDatabaseAdapter<
       List<CommitLogEntry> commitsChronological,
       Consumer<Hash> newKeyLists,
       MetadataRewriter<ByteString> rewriteMetadata,
-      Predicate<ContentKey> includeKeyPredicate)
+      Predicate<ContentKey> includeKeyPredicate,
+      Consumer<CommitLogEntry> addedCommits)
       throws ReferenceNotFoundException, ReferenceConflictException {
     int parentsPerCommit = config.getParentsPerCommit();
 
@@ -2259,6 +2269,7 @@ public abstract class AbstractDatabaseAdapter<
 
       if (!newEntry.getHash().equals(sourceCommit.getHash())) {
         commitsChronological.set(i, newEntry);
+        addedCommits.accept(newEntry);
       } else {
         // Newly built CommitLogEntry is equal to the CommitLogEntry to transplant.
         // This can happen, if the commit to transplant has NO_ANCESTOR as its parent.

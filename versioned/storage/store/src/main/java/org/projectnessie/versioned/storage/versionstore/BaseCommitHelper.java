@@ -734,4 +734,15 @@ class BaseCommitHelper {
 
     return mergeResult.build();
   }
+
+  Commit commitObjToCommit(CommitObj newCommit) {
+    try {
+      ContentMapping contentMapping = new ContentMapping(persist);
+      return contentMapping.commitObjToCommit(true, newCommit);
+    } catch (ObjNotFoundException e) {
+      // This should never happen, since we just created the commit object;
+      // if it does, it's a pretty serious state corruption.
+      throw new RuntimeException(e);
+    }
+  }
 }

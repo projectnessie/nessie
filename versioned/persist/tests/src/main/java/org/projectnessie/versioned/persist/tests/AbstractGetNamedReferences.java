@@ -287,9 +287,9 @@ public abstract class AbstractGetNamedReferences {
 
     Hash main10 = mainHash;
     Hash branch2Parent = mainParent;
-    Hash branch2Hash = databaseAdapter.create(branch2, main10);
+    Hash branch2Hash = databaseAdapter.create(branch2, main10).getHash();
     Hash tag2Parent = mainParent;
-    Hash tag2Hash = databaseAdapter.create(tag2, main10);
+    Hash tag2Hash = databaseAdapter.create(tag2, main10).getHash();
 
     // same expectations as above, but include branch2 + tag2
     // - common ancestor of branch2 + tag2 is the 100th commit on 'main'
@@ -350,9 +350,9 @@ public abstract class AbstractGetNamedReferences {
     // Create branch2+tag3 at branch2
 
     Hash branch2plus42 = branch2Hash;
-    Hash branch3Hash = databaseAdapter.create(branch3, branch2plus42);
+    Hash branch3Hash = databaseAdapter.create(branch3, branch2plus42).getHash();
     Hash branch3Parent = branch2Parent;
-    Hash tag3Hash = databaseAdapter.create(tag3, branch2plus42);
+    Hash tag3Hash = databaseAdapter.create(tag3, branch2plus42).getHash();
     Hash tag3Parent = branch2Parent;
 
     // Add 42 commits to branch3
@@ -387,18 +387,20 @@ public abstract class AbstractGetNamedReferences {
   }
 
   private Hash dummyCommit(BranchName branch, Hash expectedHash, int num) throws Exception {
-    return databaseAdapter.commit(
-        ImmutableCommitParams.builder()
-            .commitMetaSerialized(commitMetaFor(branch, num))
-            .toBranch(branch)
-            .expectedHead(Optional.of(expectedHash))
-            .addPuts(
-                KeyWithBytes.of(
-                    SOME_KEY,
-                    ContentId.of(SOME_CONTENT_ID),
-                    (byte) 42,
-                    ByteString.copyFromUtf8("dummy content")))
-            .build());
+    return databaseAdapter
+        .commit(
+            ImmutableCommitParams.builder()
+                .commitMetaSerialized(commitMetaFor(branch, num))
+                .toBranch(branch)
+                .expectedHead(Optional.of(expectedHash))
+                .addPuts(
+                    KeyWithBytes.of(
+                        SOME_KEY,
+                        ContentId.of(SOME_CONTENT_ID),
+                        (byte) 42,
+                        ByteString.copyFromUtf8("dummy content")))
+                .build())
+        .getCommitHash();
   }
 
   private void verifyReferences(ExpectedNamedReference... references)
