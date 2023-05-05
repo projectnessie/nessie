@@ -252,7 +252,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                     branchCommits,
                     newKeyLists,
                     writtenCommits::add,
-                    mergeResult::addAddedCommits,
+                    mergeResult::addCreatedCommits,
                     mergeParams,
                     mergeResult);
 
@@ -309,7 +309,7 @@ public abstract class NonTransactionalDatabaseAdapter<
                     branchCommits,
                     newKeyLists,
                     writtenCommits::add,
-                    mergeResult::addAddedCommits,
+                    mergeResult::addCreatedCommits,
                     transplantParams,
                     mergeResult);
 

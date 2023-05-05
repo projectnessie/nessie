@@ -351,7 +351,7 @@ public abstract class AbstractMergeTransplant {
                   .sourceRef(source)
                   .targetBranch(target)
                   .resultantTargetHash(mainHead)
-                  .addedCommits(mergeResult.getAddedCommits())
+                  .createdCommits(mergeResult.getCreatedCommits())
                   .build());
 
       // Merge/transplant
@@ -370,13 +370,13 @@ public abstract class AbstractMergeTransplant {
                   .targetBranch(target)
                   .resultantTargetHash(targetHead)
                   .wasApplied(true)
-                  .addedCommits(mergeResult.getAddedCommits())
+                  .createdCommits(mergeResult.getCreatedCommits())
                   .build());
 
       if (individualCommits) {
-        assertThat(mergeResult.getAddedCommits()).hasSize(expectedSourceCommits.size());
+        assertThat(mergeResult.getCreatedCommits()).hasSize(expectedSourceCommits.size());
       } else {
-        assertThat(mergeResult.getAddedCommits()).hasSize(1);
+        assertThat(mergeResult.getCreatedCommits()).hasSize(1);
       }
 
       // Briefly check commit log

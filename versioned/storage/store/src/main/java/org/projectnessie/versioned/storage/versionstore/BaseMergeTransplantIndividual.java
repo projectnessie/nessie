@@ -104,7 +104,7 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
         newHead = newCommit.id();
         boolean committed = commitLogic.storeCommit(newCommit, objsToStore);
         if (committed) {
-          mergeResult.addAddedCommits(commitObjToCommit(newCommit));
+          mergeResult.addCreatedCommits(commitObjToCommit(newCommit));
         }
       }
 

@@ -325,7 +325,7 @@ public class PersistVersionStore implements VersionStore {
     {
       BiConsumer<ImmutableCommit.Builder, CommitLogEntry> enhancer = enhancerForCommitLog(true);
 
-      adapterMergeResult.getAddedCommits().stream()
+      adapterMergeResult.getCreatedCommits().stream()
           .map(
               logEntry -> {
                 ImmutableCommit.Builder commit =
@@ -336,7 +336,7 @@ public class PersistVersionStore implements VersionStore {
                 enhancer.accept(commit, logEntry);
                 return commit.build();
               })
-          .forEach(storeResult::addAddedCommits);
+          .forEach(storeResult::addCreatedCommits);
     }
     return storeResult.build();
   }

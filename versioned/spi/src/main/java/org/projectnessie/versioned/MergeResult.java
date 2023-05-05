@@ -76,7 +76,7 @@ public interface MergeResult<COMMIT> extends Result {
   List<COMMIT> getTargetCommits();
 
   /**
-   * List of new commits that where added to the target branch.
+   * List of new commits that where created and added to the target branch.
    *
    * <p>The returned list will always be empty if the merge or transplant operation failed. It will
    * also always be empty in dry-run mode. Furthermore, it will also be empty if the operation
@@ -89,7 +89,7 @@ public interface MergeResult<COMMIT> extends Result {
    * <p>The REST API does not expose this property currently; it is used by the Nessie events
    * notification system.
    */
-  List<COMMIT> getAddedCommits();
+  List<COMMIT> getCreatedCommits();
 
   /** Details of all keys encountered during the merge or transplant operation. */
   Map<ContentKey, KeyDetails> getDetails();

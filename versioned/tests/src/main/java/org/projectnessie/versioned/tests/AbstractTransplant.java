@@ -179,7 +179,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                 false);
 
     if (individualCommits) {
-      soft.assertThat(result.getAddedCommits()).isEmpty(); // fast-forward
+      soft.assertThat(result.getCreatedCommits()).isEmpty(); // fast-forward
     } else {
       checkSquashedCommit(targetHead, result);
     }
@@ -255,7 +255,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
   }
 
   private void checkSquashedCommit(Hash targetHead, MergeResult<Commit> result) {
-    soft.assertThat(result.getAddedCommits())
+    soft.assertThat(result.getCreatedCommits())
         .singleElement()
         .satisfies(
             c -> {
@@ -297,7 +297,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
   }
 
   private void checkRebasedCommits(Hash targetHead, MergeResult<Commit> result) {
-    soft.assertThat(result.getAddedCommits())
+    soft.assertThat(result.getCreatedCommits())
         .hasSize(3)
         .satisfiesExactly(
             c -> {
@@ -324,7 +324,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             },
             c -> {
               soft.assertThat(c.getParentHash())
-                  .isEqualTo(result.getAddedCommits().get(0).getHash());
+                  .isEqualTo(result.getCreatedCommits().get(0).getHash());
               soft.assertThat(c.getCommitMeta().getMessage()).isEqualTo("Second Commit");
               soft.assertThat(c.getOperations())
                   .hasSize(4)
@@ -352,7 +352,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             },
             c -> {
               soft.assertThat(c.getParentHash())
-                  .isEqualTo(result.getAddedCommits().get(1).getHash());
+                  .isEqualTo(result.getCreatedCommits().get(1).getHash());
               soft.assertThat(c.getCommitMeta().getMessage()).isEqualTo("Third Commit");
               soft.assertThat(c.getOperations())
                   .hasSize(1)
@@ -628,7 +628,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                 false);
 
     if (individualCommits) {
-      soft.assertThat(result.getAddedCommits())
+      soft.assertThat(result.getCreatedCommits())
           .hasSize(2)
           .satisfiesExactly(
               c -> {
@@ -637,11 +637,11 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
               },
               c -> {
                 soft.assertThat(c.getParentHash())
-                    .isEqualTo(result.getAddedCommits().get(0).getHash());
+                    .isEqualTo(result.getCreatedCommits().get(0).getHash());
                 soft.assertThat(c.getCommitMeta().getMessage()).isEqualTo("Second Commit");
               });
     } else {
-      soft.assertThat(result.getAddedCommits())
+      soft.assertThat(result.getCreatedCommits())
           .singleElement()
           .satisfies(
               c -> {

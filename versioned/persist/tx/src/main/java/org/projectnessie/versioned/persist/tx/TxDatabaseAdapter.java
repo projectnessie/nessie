@@ -254,7 +254,7 @@ public abstract class TxDatabaseAdapter
                     h -> {},
                     h -> {},
                     writtenCommits::add,
-                    result::addAddedCommits,
+                    result::addCreatedCommits,
                     mergeParams,
                     result);
 
@@ -316,7 +316,7 @@ public abstract class TxDatabaseAdapter
                     h -> {},
                     h -> {},
                     writtenCommits::add,
-                    result::addAddedCommits,
+                    result::addCreatedCommits,
                     transplantParams,
                     result);
 
