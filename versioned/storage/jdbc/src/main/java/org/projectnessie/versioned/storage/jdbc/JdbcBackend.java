@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.jdbc;
 
 import static com.google.common.base.Preconditions.checkState;
+import static org.projectnessie.versioned.storage.jdbc.AbstractJdbcPersist.sqlSelectMultiple;
 import static org.projectnessie.versioned.storage.jdbc.JdbcColumnType.NAME;
 import static org.projectnessie.versioned.storage.jdbc.JdbcColumnType.OBJ_ID;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COLS_OBJS_ALL;
@@ -26,11 +27,14 @@ import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REFS_POI
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REPO_ID;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.CREATE_TABLE_OBJS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.CREATE_TABLE_REFS;
+import static org.projectnessie.versioned.storage.jdbc.SqlConstants.ERASE_OBJS;
+import static org.projectnessie.versioned.storage.jdbc.SqlConstants.ERASE_REFS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.TABLE_OBJS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.TABLE_REFS;
 
 import com.google.common.collect.ImmutableMap;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -62,6 +66,10 @@ final class JdbcBackend implements Backend {
     this.dataSource = config.dataSource();
     this.databaseSpecific = databaseSpecific;
     this.closeDataSource = closeDataSource;
+  }
+
+  static RuntimeException unhandledSQLException(SQLException e) {
+    return new RuntimeException("Unhandled SQL exception", e);
   }
 
   DatabaseSpecific databaseSpecific() {
@@ -202,5 +210,35 @@ final class JdbcBackend implements Backend {
       info.append("schema: ").append(s);
     }
     return info.toString();
+  }
+
+  @Override
+  public void eraseRepositories(Set<String> repositoryIds) {
+    if (repositoryIds == null || repositoryIds.isEmpty()) {
+      return;
+    }
+
+    try (Connection conn = borrowConnection()) {
+
+      try (PreparedStatement ps =
+          conn.prepareStatement(sqlSelectMultiple(ERASE_REFS, repositoryIds.size()))) {
+        int i = 1;
+        for (String repositoryId : repositoryIds) {
+          ps.setString(i++, repositoryId);
+        }
+        ps.executeUpdate();
+      }
+      try (PreparedStatement ps =
+          conn.prepareStatement(sqlSelectMultiple(ERASE_OBJS, repositoryIds.size()))) {
+        int i = 1;
+        for (String repositoryId : repositoryIds) {
+          ps.setString(i++, repositoryId);
+        }
+        ps.executeUpdate();
+      }
+      conn.commit();
+    } catch (SQLException e) {
+      throw unhandledSQLException(e);
+    }
   }
 }

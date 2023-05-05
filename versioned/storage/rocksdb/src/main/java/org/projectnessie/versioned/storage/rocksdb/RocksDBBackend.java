@@ -27,9 +27,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.PersistFactory;
@@ -39,6 +41,7 @@ import org.rocksdb.ColumnFamilyOptions;
 import org.rocksdb.DBOptions;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
+import org.rocksdb.RocksIterator;
 import org.rocksdb.TransactionDB;
 import org.rocksdb.TransactionDBOptions;
 
@@ -160,5 +163,51 @@ final class RocksDBBackend implements Backend {
 
   RocksDBRepo repo(StoreConfig config) {
     return repositories.computeIfAbsent(config.repositoryId(), r -> new RocksDBRepo());
+  }
+
+  @Override
+  public void eraseRepositories(Set<String> repositoryIds) {
+    if (repositoryIds == null || repositoryIds.isEmpty()) {
+      return;
+    }
+
+    // erase() does not use any lock, it's use is rare, taking the risk of having a corrupted,
+    // erased repo
+
+    @SuppressWarnings("resource")
+    TransactionDB db = db();
+
+    List<ByteString> prefixed =
+        repositoryIds.stream().map(RocksDBBackend::keyPrefix).collect(Collectors.toList());
+
+    all()
+        .forEach(
+            cf -> {
+              try (RocksIterator iter = db.newIterator(cf)) {
+                List<ByteString> deletes = new ArrayList<>();
+                for (iter.seekToFirst(); iter.isValid(); iter.next()) {
+                  ByteString key = ByteString.copyFrom(iter.key());
+                  if (prefixed.stream().anyMatch(key::startsWith)) {
+                    deletes.add(key);
+                  }
+                }
+                deletes.forEach(
+                    key -> {
+                      try {
+                        db.delete(cf, key.toByteArray());
+                      } catch (RocksDBException e) {
+                        throw rocksDbException(e);
+                      }
+                    });
+              }
+            });
+  }
+
+  static RuntimeException rocksDbException(RocksDBException e) {
+    throw new RuntimeException("Unhandled RocksDB exception", e);
+  }
+
+  static ByteString keyPrefix(String repositoryId) {
+    return ByteString.copyFromUtf8(repositoryId + ':');
   }
 }

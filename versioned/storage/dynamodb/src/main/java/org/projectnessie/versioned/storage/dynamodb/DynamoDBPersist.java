@@ -18,6 +18,7 @@ package org.projectnessie.versioned.storage.dynamodb;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.emptyListIterator;
+import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
 import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.unsafeWrap;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.keyFromString;
@@ -32,8 +33,9 @@ import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stri
 import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
+import static org.projectnessie.versioned.storage.dynamodb.DynamoDBBackend.condition;
+import static org.projectnessie.versioned.storage.dynamodb.DynamoDBBackend.keyPrefix;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.BATCH_GET_LIMIT;
-import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.BATCH_WRITE_MAX_REQUESTS;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_COMMIT;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_COMMIT_CREATED;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.COL_COMMIT_HEADERS;
@@ -101,7 +103,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.agrona.collections.Hashing;
@@ -134,14 +135,12 @@ import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.BatchGetItemResponse;
-import software.amazon.awssdk.services.dynamodb.model.ComparisonOperator;
 import software.amazon.awssdk.services.dynamodb.model.Condition;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.KeysAndAttributes;
 import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
-import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 
 public class DynamoDBPersist implements Persist {
 
@@ -154,7 +153,7 @@ public class DynamoDBPersist implements Persist {
   DynamoDBPersist(DynamoDBBackend backend, StoreConfig config) {
     this.backend = backend;
     this.config = config;
-    this.keyPrefix = config.repositoryId() + ':';
+    this.keyPrefix = keyPrefix(config.repositoryId());
   }
 
   @Nonnull
@@ -522,7 +521,7 @@ public class DynamoDBPersist implements Persist {
 
   @Override
   public void deleteObjs(@Nonnull @jakarta.annotation.Nonnull ObjId[] ids) {
-    try (BatchWrite batchWrite = new BatchWrite(TABLE_OBJS)) {
+    try (BatchWrite batchWrite = new BatchWrite(backend, TABLE_OBJS)) {
       for (ObjId id : ids) {
         batchWrite.addDelete(objKey(id));
       }
@@ -552,7 +551,7 @@ public class DynamoDBPersist implements Persist {
   public void upsertObjs(@Nonnull @jakarta.annotation.Nonnull Obj[] objs)
       throws ObjTooLargeException {
     // DynamoDB does not support "PUT IF NOT EXISTS" in a BatchWriteItemRequest/PutItem
-    try (BatchWrite batchWrite = new BatchWrite(TABLE_OBJS)) {
+    try (BatchWrite batchWrite = new BatchWrite(backend, TABLE_OBJS)) {
       for (Obj obj : objs) {
         ObjId id = obj.id();
         checkArgument(id != null, "Obj to store must have a non-null ID");
@@ -574,25 +573,7 @@ public class DynamoDBPersist implements Persist {
 
   @Override
   public void erase() {
-    Stream.of(TABLE_REFS, TABLE_OBJS)
-        .forEach(
-            table -> {
-              try (BatchWrite batchWrite = new BatchWrite(table)) {
-                backend
-                    .client()
-                    .scanPaginator(
-                        b ->
-                            b.tableName(table)
-                                .scanFilter(
-                                    singletonMap(
-                                        KEY_NAME, condition(BEGINS_WITH, fromS(keyPrefix)))))
-                    .forEach(
-                        r ->
-                            r.items().stream()
-                                .map(attrs -> attrs.get(KEY_NAME))
-                                .forEach(batchWrite::addDelete));
-              }
-            });
+    backend.eraseRepositories(singleton(config().repositoryId()));
   }
 
   private ObjType objTypeFromItem(Map<String, AttributeValue> item) {
@@ -945,44 +926,6 @@ public class DynamoDBPersist implements Persist {
     return fromL(stripeAttr);
   }
 
-  private final class BatchWrite implements AutoCloseable {
-    private final String tableName;
-    private final List<WriteRequest> requestItems = new ArrayList<>();
-
-    BatchWrite(String tableName) {
-      this.tableName = tableName;
-    }
-
-    private void addRequest(WriteRequest.Builder request) {
-      requestItems.add(request.build());
-      if (requestItems.size() == BATCH_WRITE_MAX_REQUESTS) {
-        flush();
-      }
-    }
-
-    void addDelete(AttributeValue key) {
-      addRequest(WriteRequest.builder().deleteRequest(b -> b.key(singletonMap(KEY_NAME, key))));
-    }
-
-    public void addPut(Map<String, AttributeValue> item) {
-      addRequest(WriteRequest.builder().putRequest(b -> b.item(item)));
-    }
-
-    // close() is actually a flush, implementing AutoCloseable for easier use of BatchDelete using
-    // try-with-resources.
-    @Override
-    public void close() {
-      if (!requestItems.isEmpty()) {
-        flush();
-      }
-    }
-
-    private void flush() {
-      backend.client().batchWriteItem(b -> b.requestItems(singletonMap(tableName, requestItems)));
-      requestItems.clear();
-    }
-  }
-
   private static boolean checkItemSizeExceeded(AwsErrorDetails errorDetails) {
     return "DynamoDb".equals(errorDetails.serviceName())
         && "ValidationException".equals(errorDetails.errorCode())
@@ -1095,10 +1038,6 @@ public class DynamoDBPersist implements Persist {
 
   private static void bytesAttribute(Map<String, AttributeValue> i, String n, ByteString b) {
     i.put(n, fromB(fromByteBuffer(b.asReadOnlyByteBuffer())));
-  }
-
-  private static Condition condition(ComparisonOperator operator, AttributeValue... values) {
-    return Condition.builder().comparisonOperator(operator).attributeValueList(values).build();
   }
 
   private class ScanAllObjectsIterator extends AbstractIterator<Obj>

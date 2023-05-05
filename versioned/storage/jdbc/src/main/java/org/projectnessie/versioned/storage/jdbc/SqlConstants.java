@@ -22,8 +22,10 @@ final class SqlConstants {
   static final String TABLE_REFS = "refs";
   static final String TABLE_OBJS = "objs";
   static final String COL_REPO_ID = "repo";
-  static final String ERASE_OBJS = "DELETE FROM " + TABLE_OBJS + " WHERE " + COL_REPO_ID + " = ?";
-  static final String ERASE_REFS = "DELETE FROM " + TABLE_REFS + " WHERE " + COL_REPO_ID + " = ?";
+  static final String ERASE_OBJS =
+      "DELETE FROM " + TABLE_OBJS + " WHERE " + COL_REPO_ID + " IN (?)";
+  static final String ERASE_REFS =
+      "DELETE FROM " + TABLE_REFS + " WHERE " + COL_REPO_ID + " IN (?)";
   static final String COL_OBJ_ID = "obj_id";
   static final String DELETE_OBJ =
       "DELETE FROM " + TABLE_OBJS + " WHERE " + COL_REPO_ID + "=? AND " + COL_OBJ_ID + "=?";

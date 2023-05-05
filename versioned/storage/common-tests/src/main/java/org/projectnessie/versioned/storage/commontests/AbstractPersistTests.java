@@ -38,4 +38,8 @@ public abstract class AbstractPersistTests {
   @Nested
   @SuppressWarnings("ClassCanBeStatic")
   public class RepositoryLogicTests extends AbstractRepositoryLogicTests {}
+
+  @Nested
+  @SuppressWarnings("ClassCanBeStatic")
+  public class BackendRepositoryTests extends AbstractBackendRepositoryTests {}
 }

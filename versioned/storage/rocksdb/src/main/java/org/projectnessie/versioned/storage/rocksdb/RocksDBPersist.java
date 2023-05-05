@@ -16,7 +16,10 @@
 package org.projectnessie.versioned.storage.rocksdb;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Collections.singleton;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
+import static org.projectnessie.versioned.storage.rocksdb.RocksDBBackend.keyPrefix;
+import static org.projectnessie.versioned.storage.rocksdb.RocksDBBackend.rocksDbException;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializeObj;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializeObjId;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.deserializeReference;
@@ -61,7 +64,7 @@ class RocksDBPersist implements Persist {
     this.backend = backend;
     this.repo = repo;
     this.config = config;
-    this.keyPrefix = ByteString.copyFromUtf8(config.repositoryId() + ':');
+    this.keyPrefix = keyPrefix(config.repositoryId());
   }
 
   private byte[] dbKey(ByteString key) {
@@ -74,10 +77,6 @@ class RocksDBPersist implements Persist {
 
   private byte[] dbKey(ObjId id) {
     return dbKey(id.asBytes());
-  }
-
-  private RuntimeException rocksDbException(RocksDBException e) {
-    throw new RuntimeException("Unhandled RocksDB exception", e);
   }
 
   @Nonnull
@@ -462,33 +461,7 @@ class RocksDBPersist implements Persist {
 
   @Override
   public void erase() {
-    // erase() does not use any lock, it's use is rare, taking the risk of having a corrupted,
-    // erased repo
-
-    RocksDBBackend b = backend;
-    TransactionDB db = b.db();
-
-    b.all()
-        .forEach(
-            cf -> {
-              try (RocksIterator iter = db.newIterator(cf)) {
-                List<ByteString> deletes = new ArrayList<>();
-                for (iter.seekToFirst(); iter.isValid(); iter.next()) {
-                  ByteString key = ByteString.copyFrom(iter.key());
-                  if (key.startsWith(keyPrefix)) {
-                    deletes.add(key);
-                  }
-                }
-                deletes.forEach(
-                    key -> {
-                      try {
-                        db.delete(cf, key.toByteArray());
-                      } catch (RocksDBException e) {
-                        throw rocksDbException(e);
-                      }
-                    });
-              }
-            });
+    backend.eraseRepositories(singleton(config().repositoryId()));
   }
 
   @Nonnull

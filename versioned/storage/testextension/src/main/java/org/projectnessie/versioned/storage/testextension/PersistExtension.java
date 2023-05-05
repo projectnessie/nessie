@@ -49,7 +49,9 @@ import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.platform.commons.util.ExceptionUtils;
 import org.junit.platform.commons.util.ReflectionUtils;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
+import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.common.persist.PersistFactory;
 
 /**
  * JUnit extension to supply {@link Persist} to test classes.
@@ -161,20 +163,30 @@ public class PersistExtension implements BeforeAllCallback, BeforeEachCallback, 
       boolean canReinit,
       Consumer<Persist> newPersist) {
 
+    boolean wantsPersist = Persist.class.isAssignableFrom(type);
+    boolean wantsPersistFactory = PersistFactory.class.isAssignableFrom(type);
+    boolean wantsBackend = Backend.class.isAssignableFrom(type);
+
+    checkState(
+        wantsPersist || wantsPersistFactory || wantsBackend,
+        "Cannot assign to %s",
+        annotatedElement);
+
+    if (wantsBackend || wantsPersistFactory) {
+      ClassPersistInstances classPersistInstances = classPersistInstances(context);
+      if (wantsBackend) {
+        return classPersistInstances.backend();
+      }
+      return classPersistInstances.persistFactory();
+    }
+
     Persist persist = createPersist(nessiePersist, annotatedElement, context);
 
     if (canReinit) {
       reinit(persist, nessiePersist.initializeRepo());
     }
 
-    checkState(Persist.class.isAssignableFrom(type), "Cannot assign to %s", annotatedElement);
-
     newPersist.accept(persist);
-
-    if (!type.isAssignableFrom(persist.getClass())) {
-      throw new IllegalStateException(
-          String.format("Cannot assign %s to %s", persist.getClass(), annotatedElement));
-    }
 
     return persist;
   }
@@ -200,6 +212,10 @@ public class PersistExtension implements BeforeAllCallback, BeforeEachCallback, 
         .collect(Collectors.toMap(NessieStoreConfig::name, NessieStoreConfig::value));
   }
 
+  static ClassPersistInstances classPersistInstances(ExtensionContext context) {
+    return context.getStore(NAMESPACE).get(KEY_STATICS, ClassPersistInstances.class);
+  }
+
   static Persist createPersist(
       NessiePersist persistAnnotation,
       AnnotatedElement annotatedElement,
@@ -214,10 +230,7 @@ public class PersistExtension implements BeforeAllCallback, BeforeEachCallback, 
 
     config = config.withClock(UniqueMicrosClock.SHARED_INSTANCE);
 
-    return context
-        .getStore(NAMESPACE)
-        .get(KEY_STATICS, ClassPersistInstances.class)
-        .newPersist(config);
+    return classPersistInstances(context).newPersist(config);
   }
 
   private static Function<StoreConfig.Adjustable, StoreConfig.Adjustable>
@@ -266,7 +279,9 @@ public class PersistExtension implements BeforeAllCallback, BeforeEachCallback, 
   }
 
   private void assertValidFieldCandidate(Field field) {
-    if (!field.getType().isAssignableFrom(Persist.class)) {
+    if (!field.getType().isAssignableFrom(Persist.class)
+        && !field.getType().isAssignableFrom(PersistFactory.class)
+        && !field.getType().isAssignableFrom(Backend.class)) {
       throw new ExtensionConfigurationException(
           "Can only resolve fields of type "
               + Persist.class.getName()
