@@ -29,6 +29,7 @@ import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
+import org.projectnessie.versioned.ReferenceAssignedResult;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -58,8 +59,16 @@ public abstract class AbstractAssign extends AbstractNestedVersionStore {
     store().create(TagName.of("tag3"), Optional.of(commit));
 
     final Hash anotherCommit = commit("Another commit").toBranch(branch);
-    store().assign(TagName.of("tag2"), Optional.of(commit), anotherCommit);
-    store().assign(TagName.of("tag3"), Optional.empty(), anotherCommit);
+    ReferenceAssignedResult referenceAssignedResult =
+        store().assign(TagName.of("tag2"), Optional.of(commit), anotherCommit);
+    soft.assertThat(referenceAssignedResult.getPreviousHash()).isEqualTo(commit);
+    soft.assertThat(referenceAssignedResult.getCurrentHash()).isEqualTo(anotherCommit);
+    soft.assertThat(referenceAssignedResult.getNamedRef()).isEqualTo(TagName.of("tag2"));
+
+    referenceAssignedResult = store().assign(TagName.of("tag3"), Optional.empty(), anotherCommit);
+    soft.assertThat(referenceAssignedResult.getPreviousHash()).isEqualTo(commit);
+    soft.assertThat(referenceAssignedResult.getCurrentHash()).isEqualTo(anotherCommit);
+    soft.assertThat(referenceAssignedResult.getNamedRef()).isEqualTo(TagName.of("tag3"));
 
     soft.assertThatThrownBy(
             () -> store().assign(BranchName.of("baz"), Optional.empty(), anotherCommit))
@@ -116,13 +125,22 @@ public abstract class AbstractAssign extends AbstractNestedVersionStore {
 
     BranchName testBranch = BranchName.of("testBranch");
     Hash testBranchHash = store.create(testBranch, Optional.empty()).getHash();
-    store.assign(testBranch, Optional.of(testBranchHash), main.getHash());
+    ReferenceAssignedResult referenceAssignedResult =
+        store.assign(testBranch, Optional.of(testBranchHash), main.getHash());
+    soft.assertThat(referenceAssignedResult.getPreviousHash()).isEqualTo(main.getHash());
+    soft.assertThat(referenceAssignedResult.getCurrentHash()).isEqualTo(testBranchHash);
+    soft.assertThat(referenceAssignedResult.getNamedRef()).isEqualTo(testBranch);
+
     soft.assertThat(store.getNamedRef(testBranch.getName(), GetNamedRefsParams.DEFAULT).getHash())
         .isEqualTo(main.getHash());
 
     TagName testTag = TagName.of("testTag");
     Hash testTagHash = store.create(testTag, Optional.empty()).getHash();
-    store.assign(testTag, Optional.of(testTagHash), main.getHash());
+    referenceAssignedResult = store.assign(testTag, Optional.of(testTagHash), main.getHash());
+    soft.assertThat(referenceAssignedResult.getPreviousHash()).isEqualTo(main.getHash());
+    soft.assertThat(referenceAssignedResult.getCurrentHash()).isEqualTo(testTagHash);
+    soft.assertThat(referenceAssignedResult.getNamedRef()).isEqualTo(testTag);
+
     soft.assertThat(store.getNamedRef(testTag.getName(), GetNamedRefsParams.DEFAULT).getHash())
         .isEqualTo(main.getHash());
   }

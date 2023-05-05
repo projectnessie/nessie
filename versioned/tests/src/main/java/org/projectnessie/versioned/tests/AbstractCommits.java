@@ -41,6 +41,8 @@ import org.projectnessie.model.Conflict.ConflictType;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.Commit;
+import org.projectnessie.versioned.CommitResult;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
@@ -89,24 +91,33 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
     final Hash initialHash = store().hashOnReference(branch, Optional.empty());
     soft.assertThat(createHash).isEqualTo(initialHash);
 
-    final Hash commitHash0 =
+    CommitResult<Commit> result =
         store()
             .commit(
                 branch,
                 Optional.of(initialHash),
                 CommitMeta.fromMessage("Some commit"),
-                Collections.emptyList())
-            .getCommitHash();
+                Collections.emptyList());
+    soft.assertThat(result.getCommit().getParentHash()).isEqualTo(initialHash);
+    soft.assertThat(result.getCommit().getOperations()).isNullOrEmpty();
+    soft.assertThat(result.getTargetBranch()).isEqualTo(branch);
+
+    final Hash commitHash0 = result.getCommitHash();
     final Hash commitHash = store().hashOnReference(branch, Optional.empty());
     soft.assertThat(commitHash).isEqualTo(commitHash0);
 
     soft.assertThat(commitHash).isNotEqualTo(initialHash);
-    store()
-        .commit(
-            branch,
-            Optional.of(initialHash),
-            CommitMeta.fromMessage("Another commit"),
-            Collections.emptyList());
+    result =
+        store()
+            .commit(
+                branch,
+                Optional.of(initialHash),
+                CommitMeta.fromMessage("Another commit"),
+                Collections.emptyList());
+    soft.assertThat(result.getCommit().getParentHash()).isEqualTo(commitHash);
+    soft.assertThat(result.getCommit().getOperations()).isNullOrEmpty();
+    soft.assertThat(result.getTargetBranch()).isEqualTo(branch);
+
     final Hash anotherCommitHash = store().hashOnReference(branch, Optional.empty());
 
     soft.assertThat(commitsList(branch, false))
