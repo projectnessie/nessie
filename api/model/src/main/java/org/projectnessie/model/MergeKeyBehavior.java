@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.util.List;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.model.ser.Views;
@@ -68,7 +69,14 @@ public interface MergeKeyBehavior {
   @jakarta.annotation.Nullable
   Content getResolvedContent();
 
-  // TODO add metadata list from https://github.com/projectnessie/nessie/pull/6616
+  /**
+   * Additional information about the operation and/or content object. If and how a Nessie server
+   * uses and handles the information depends on the server version and type of metadata (called
+   * variant).
+   */
+  @JsonInclude(Include.NON_EMPTY)
+  @JsonView(Views.V2.class)
+  List<ContentMetadata> getMetadata();
 
   static ImmutableMergeKeyBehavior.Builder builder() {
     return ImmutableMergeKeyBehavior.builder();
