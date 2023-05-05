@@ -193,6 +193,7 @@ class TestEventsVersionStore {
             .resultType(ResultType.TRANSPLANT)
             .effectiveTargetHash(hash1)
             .resultantTargetHash(hash2)
+            .wasApplied(true)
             .build();
     when(delegate.transplant(
             branch1,
@@ -347,6 +348,7 @@ class TestEventsVersionStore {
             .resultType(ResultType.MERGE)
             .effectiveTargetHash(hash1)
             .resultantTargetHash(hash2)
+            .wasApplied(true)
             .build();
     when(delegate.merge(
             branch1,
