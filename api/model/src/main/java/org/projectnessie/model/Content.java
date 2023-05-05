@@ -40,13 +40,15 @@ import org.projectnessie.model.types.ContentTypes;
       DeltaLakeTable.class,
       IcebergView.class,
       Namespace.class,
+      UDF.class,
       Map.class
     },
     discriminatorMapping = {
       @DiscriminatorMapping(value = "ICEBERG_TABLE", schema = IcebergTable.class),
       @DiscriminatorMapping(value = "DELTA_LAKE_TABLE", schema = DeltaLakeTable.class),
       @DiscriminatorMapping(value = "ICEBERG_VIEW", schema = IcebergView.class),
-      @DiscriminatorMapping(value = "NAMESPACE", schema = Namespace.class)
+      @DiscriminatorMapping(value = "NAMESPACE", schema = Namespace.class),
+      @DiscriminatorMapping(value = "UDF", schema = UDF.class)
     },
     discriminatorProperty = "type")
 @JsonTypeIdResolver(ContentTypeIdResolver.class)
@@ -59,7 +61,7 @@ public abstract class Content {
       type = SchemaType.STRING,
       description =
           "Declares the type of a Nessie content object, which is currently one of "
-              + "ICEBERG_TABLE, DELTA_LAKE_TABLE, ICEBERG_VIEW or NAMESPACE, which are the "
+              + "ICEBERG_TABLE, DELTA_LAKE_TABLE, ICEBERG_VIEW, NAMESPACE or UDF, which are the "
               + "discriminator mapping values of the 'Content' type.")
   public interface Type {
     Content.Type UNKNOWN = ContentTypes.forName("UNKNOWN");
@@ -67,6 +69,7 @@ public abstract class Content {
     Content.Type DELTA_LAKE_TABLE = ContentTypes.forName("DELTA_LAKE_TABLE");
     Content.Type ICEBERG_VIEW = ContentTypes.forName("ICEBERG_VIEW");
     Content.Type NAMESPACE = ContentTypes.forName("NAMESPACE");
+    Content.Type UDF = ContentTypes.forName("UDF");
 
     /** The name of the content-type. */
     String name();

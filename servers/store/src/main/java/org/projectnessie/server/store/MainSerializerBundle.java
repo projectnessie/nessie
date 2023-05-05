@@ -28,5 +28,6 @@ public class MainSerializerBundle implements ContentSerializerBundle {
     registry.register(new DeltaLakeTableSerializer());
     registry.register(new IcebergViewSerializer());
     registry.register(new NamespaceSerializer());
+    registry.register(new UDFSerializer());
   }
 }

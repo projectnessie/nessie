@@ -34,6 +34,7 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.Namespace;
+import org.projectnessie.model.UDF;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestGenericContent {
@@ -87,6 +88,8 @@ public class TestGenericContent {
         IcebergTable.of("meta", 1, 2, 3, 4, "cid"),
         IcebergView.of("meta", 1, 2, "awesome-db", "select what_i_want"),
         IcebergView.of("cid", "meta", 1, 2, "awesome-db", "select what_i_want"),
+        UDF.of("awesome-db", "select what_i_want"),
+        UDF.of("cid", "awesome-db", "select what_i_want"),
         Namespace.of("foo", "bar"),
         Namespace.builder().from(Namespace.of("foo", "bar")).id("cid").build());
   }

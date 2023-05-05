@@ -94,6 +94,9 @@ public final class UnknownSerializer extends BaseSerializer<Content> {
       case NAMESPACE:
         return valueFromStoreNamespace(content);
 
+      case UDF:
+        return valueFromStoreUDF(content);
+
       case OBJECTTYPE_NOT_SET:
       default:
         throw new IllegalArgumentException("Unknown type " + content.getObjectTypeCase());

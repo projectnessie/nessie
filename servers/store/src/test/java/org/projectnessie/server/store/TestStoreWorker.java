@@ -35,6 +35,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.Namespace;
+import org.projectnessie.model.UDF;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.server.store.proto.ObjectTypes;
 import org.projectnessie.server.store.proto.ObjectTypes.IcebergMetadataPointer;
@@ -178,6 +179,14 @@ class TestStoreWorker {
 
   static Stream<Arguments> requiresGlobalStateModelType() {
     return Stream.of(
+        Arguments.of(
+            UDF.of(CID, "dialect", "sqlText"),
+            ObjectTypes.Content.newBuilder()
+                .setId(CID)
+                .setUdf(ObjectTypes.UDF.newBuilder().setDialect("dialect").setSqlText("sqlText")),
+            null,
+            Content.Type.UDF),
+        //
         Arguments.of(
             withId(Namespace.of("foo")),
             ObjectTypes.Content.newBuilder()

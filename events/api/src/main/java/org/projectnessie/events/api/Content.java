@@ -29,6 +29,7 @@ import org.projectnessie.events.api.json.ContentTypeIdResolver;
  * @see IcebergTable
  * @see IcebergView
  * @see DeltaLakeTable
+ * @see UDF
  * @see GenericContent
  */
 @JsonTypeIdResolver(ContentTypeIdResolver.class)
