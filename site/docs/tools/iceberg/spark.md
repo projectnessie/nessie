@@ -150,143 +150,9 @@ The following properties are **required** in Spark when creating the Nessie Cata
     An example of configuring Spark with Iceberg and an S3 bucket for the `warehouse` location is available in the
     [Guides](../../guides/spark-s3.md) section.
 
-## Writing
-
-Spark support is constantly evolving and the differences in Spark3 vs Spark2.4 are considerable. See the
-[iceberg](https://iceberg.apache.org/spark-writes/) docs for an up-to-date support table.
-
-### Spark2
-
-Spark2.4 supports reads, appends, overwrites in Iceberg. Nessie tables in iceberg can be written via the Nessie Iceberg
-Catalog instantiated above. Iceberg in Spark2.4 has no ability to create tables so before a table can be appended to or
-overwritten the table must be first created via an Iceberg Catalog. This is straightforward in Java but requires
-addressing jvm objects directly in Python (until the python library for iceberg is released).
-
-=== "Java"
-    ``` java linenums="11"
-    // first instantiate the catalog
-    NessieCatalog catalog = new NessieCatalog();
-    catalog.setConf(sc.hadoopConfiguration());
-    // other catalog properties can be added based on the requirement. For example, "io-impl","authentication.type", etc.
-    catalog.initialize("nessie", ImmutableMap.of(
-        "ref", ref,
-        "uri", url,
-        "warehouse", pathToWarehouse));
-
-    // Creating table by first creating a table name with namespace
-    TableIdentifier region_name = TableIdentifier.parse("testing.region");
-
-    // next create the schema
-    Schema region_schema = Schema([
-      Types.NestedField.optional(1, "R_REGIONKEY", Types.LongType.get()),
-      Types.NestedField.optional(2, "R_NAME", Types.StringType.get()),
-      Types.NestedField.optional(3, "R_COMMENT", Types.StringType.get()),
-    ]);
-
-    // and the partition
-    PartitionSpec region_spec = PartitionSpec.unpartitioned();
-
-    // finally create the table
-    catalog.createTable(region_name, region_schema, region_spec);
-
-    ```
-=== "Python"
-    ``` python linenums="1"
-    sc = spark.sparkContext
-    jvm = sc._gateway.jvm
-
-    # import jvm libraries for iceberg catalogs and schemas
-    java_import(jvm, "org.projectnessie.iceberg.NessieCatalog")
-    java_import(jvm, "org.apache.iceberg.catalog.TableIdentifier")
-    java_import(jvm, "org.apache.iceberg.Schema")
-    java_import(jvm, "org.apache.iceberg.types.Types")
-    java_import(jvm, "org.apache.iceberg.PartitionSpec")
-
-    # first instantiate the catalog
-    catalog = jvm.NessieCatalog()
-    catalog.setConf(sc._jsc.hadoopConfiguration())
-    # other catalog properties can be added based on the requirement. For example, "io-impl","authentication.type", etc.
-    catalog.initialize("nessie", {"ref": ref,
-        "uri": url,
-        "warehouse": pathToWarehouse})
-
-    # Creating table by first creating a table name with namespace
-    region_name = jvm.TableIdentifier.parse("testing.region")
-
-    # next create the schema
-    region_schema = jvm.Schema([
-      jvm.Types.NestedField.optional(
-        1, "R_REGIONKEY", jvm.Types.LongType.get()
-      ),
-      jvm.Types.NestedField.optional(
-        2, "R_NAME", jvm.Types.StringType.get()
-      ),
-      jvm.Types.NestedField.optional(
-        3, "R_COMMENT", jvm.Types.StringType.get()
-      ),
-    ])
-
-    # and the partition
-    region_spec = jvm.PartitionSpec.unpartitioned()
-
-    # finally create the table
-    region_table = catalog.createTable(region_name, region_schema, region_spec)
-    ```
-
-When looking at the Python code above, lines 1-11 are importing jvm objects into pyspark. Lines 12-25 create the table name, schema and partition spec. These
-actions will be familiar to seasoned iceberg users and are wholly iceberg operations. Line 29 is where our initial
-iceberg metadata is finally written to disk and a commit takes place on Nessie.
-
-Now that we have created an Iceberg table in nessie we can write to it. The iceberg `DataSourceV2` allows for either
-`overwrite` or `append` mode in a standard `spark.write`.
-
-=== "Java"
-    ``` java
-    regionDf = spark.read().load("data/region.parquet");
-    regionDf.write().format("iceberg").mode("overwrite")
-        .save("nessie.testing.region");
-    ```
-=== "Python"
-    ``` python
-    region_df = spark.read.load("data/region.parquet")
-    region_df.write.format("iceberg").mode("overwrite") \
-        .save("nessie.testing.region")
-    ```
-
-Here we simply read a file from the default filesystem and write it to an existing nessie iceberg table. This will
-trigger a commit on current context's branch.
-
-For the examples above we have performed commits on the branch specified when we set our spark configuration. Had we not
-specified the context in our spark configuration all operations would have defaulted to the default branch defined by
-the server. This is a strong pattern for a spark job which is for example writing data as part of a wider ETL job. It
-will only ever need one context or branch to write to. If however you are running an interactive session and would like
-to write to a specific branch you would have to create a new Spark Conf.
-
-=== "Java"
-    ``` java
-    sparkDev = spark.newSession();
-    sparkDev.conf.set("spark.sql.catalog.nessie.ref", "dev");
-    regionDf = sparkDev.read().load("data/region.parquet");
-    regionDf.write().format("iceberg").mode("overwrite")
-        .save("nessie.testing.region");
-    ```
-=== "Python"
-    ``` python
-    spark_dev = spark.newSession()
-    spark_dev.conf.set("spark.sql.catalog.nessie.ref", "dev")
-    region_df = spark_dev.read.load("data/region.parquet")
-    region_df.write.format("iceberg").mode("overwrite") \
-        .save("nessie.testing.region")
-    ```
-
-Note the extra `option` clause in the write command. This will ensure the commit happens on the `dev` branch rather than
-the default branch.
-
 ### Spark3
 
-The write path for Spark3 is slightly different and easier to work with. These changes haven't made it to pyspark yet so
-writing dataframes looks much the same there, including having to create the table. Spark3 table creation/insertion is as
-follows:
+Spark3 table creation/insertion is as follows:
 
 === "Java"
     ``` java
@@ -300,7 +166,6 @@ follows:
     ```
 === "Python"
     ``` python
-    # same code as the spark2 section above to create the testing.region table
     region_df = spark.read.load("data/region.parquet")
     region_df.write.format("iceberg").mode("overwrite") \
         .save("nessie.testing.region")
@@ -320,30 +185,22 @@ supports the Nessie Iceberg Catalog also supports.
 
 ## Reading
 
-Reading is more straightforward between spark 2 and spark 3. We will look at both versions together in this section. To
-read a Nessie table in iceberg simply:
+To read a Nessie table in iceberg simply:
 
 === "Java"
     ``` java
-    // Spark2:
-    regionDf = spark.read().format("iceberg")
-        .load("nessie.testing.region");
-
-    // Spark3:
     regionDf = spark.table("nessie.testing.region");
     ```
 === "Python"
     ``` python
-    # same code as above to create the testing.region table
     region_df = spark.read.format("iceberg").load("nessie.testing.region")
     ```
 === "SQL"
     ``` sql
-    -- Spark3 only
     SELECT * FROM nessie.testing.city
     ```
     ``` sql
-    -- Spark3 only, read from the `etl` branch
+    -- Read from the `etl` branch
     SELECT * FROM nessie.testing.`city@etl`
     ```
 
