@@ -19,12 +19,17 @@ import static java.time.ZoneOffset.UTC;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableMap;
+import java.security.Principal;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
-import org.junit.jupiter.api.Test;
+import java.util.stream.Stream;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.events.api.Content;
 import org.projectnessie.events.api.ContentKey;
 import org.projectnessie.events.api.Event;
@@ -103,17 +108,18 @@ class TestEventFactory {
         }
       };
 
-  @Test
-  void newCommitEvent() {
+  @ParameterizedTest
+  @MethodSource("principals")
+  void newCommitEvent(Principal user, String expectedInitiator) {
     EventFactory ef = new EventFactory(config);
-    Event actual = ef.newCommitEvent(commit, BranchName.of("branch1"), "repo1", () -> "alice");
+    Event actual = ef.newCommitEvent(commit, BranchName.of("branch1"), "repo1", user);
     assertThat(actual)
         .isEqualTo(
             ImmutableCommitEvent.builder()
                 .id(uuid)
+                .eventInitiator(Optional.ofNullable(expectedInitiator))
                 .repositoryId("repo1")
                 .eventCreationTimestamp(now)
-                .eventInitiator("alice")
                 .putProperty("key", "value")
                 .hashBefore(Hash.of("1234").asString())
                 .hashAfter(Hash.of("5678").asString())
@@ -129,8 +135,9 @@ class TestEventFactory {
                 .build());
   }
 
-  @Test
-  void newMergeEvent() {
+  @ParameterizedTest
+  @MethodSource("principals")
+  void newMergeEvent(Principal user, String expectedInitiator) {
     EventFactory ef = new EventFactory(config);
     MergeResult<Commit> result =
         ImmutableMergeResult.<Commit>builder()
@@ -142,14 +149,14 @@ class TestEventFactory {
             .commonAncestor(Hash.of("0000"))
             .addCreatedCommits(commit)
             .build();
-    Event actual = ef.newMergeEvent(result, "repo1", () -> "alice");
+    Event actual = ef.newMergeEvent(result, "repo1", user);
     assertThat(actual)
         .isEqualTo(
             ImmutableMergeEvent.builder()
                 .id(uuid)
+                .eventInitiator(Optional.ofNullable(expectedInitiator))
                 .repositoryId("repo1")
                 .eventCreationTimestamp(now)
-                .eventInitiator("alice")
                 .putProperty("key", "value")
                 .commonAncestorHash(Hash.of("0000").asString())
                 .hashBefore(Hash.of("1234").asString())
@@ -159,8 +166,9 @@ class TestEventFactory {
                 .build());
   }
 
-  @Test
-  void newTransplantEvent() {
+  @ParameterizedTest
+  @MethodSource("principals")
+  void newTransplantEvent(Principal user, String expectedInitiator) {
     EventFactory ef = new EventFactory(config);
     MergeResult<Commit> result =
         ImmutableMergeResult.<Commit>builder()
@@ -171,14 +179,14 @@ class TestEventFactory {
             .resultantTargetHash(Hash.of("5678")) // hash after
             .addCreatedCommits(commit)
             .build();
-    Event actual = ef.newTransplantEvent(result, "repo1", () -> "alice");
+    Event actual = ef.newTransplantEvent(result, "repo1", user);
     assertThat(actual)
         .isEqualTo(
             ImmutableTransplantEvent.builder()
                 .id(uuid)
+                .eventInitiator(Optional.ofNullable(expectedInitiator))
                 .repositoryId("repo1")
                 .eventCreationTimestamp(now)
-                .eventInitiator("alice")
                 .putProperty("key", "value")
                 .hashBefore(Hash.of("1234").asString())
                 .hashAfter(Hash.of("5678").asString())
@@ -187,30 +195,32 @@ class TestEventFactory {
                 .build());
   }
 
-  @Test
-  void newReferenceCreatedEvent() {
+  @ParameterizedTest
+  @MethodSource("principals")
+  void newReferenceCreatedEvent(Principal user, String expectedInitiator) {
     EventFactory ef = new EventFactory(config);
     ReferenceCreatedResult result =
         ImmutableReferenceCreatedResult.builder()
             .namedRef(BranchName.of("branch1"))
             .hash(Hash.of("1234"))
             .build();
-    Event actual = ef.newReferenceCreatedEvent(result, "repo1", () -> "alice");
+    Event actual = ef.newReferenceCreatedEvent(result, "repo1", user);
     assertThat(actual)
         .isEqualTo(
             ImmutableReferenceCreatedEvent.builder()
                 .id(uuid)
+                .eventInitiator(Optional.ofNullable(expectedInitiator))
                 .repositoryId("repo1")
                 .eventCreationTimestamp(now)
-                .eventInitiator("alice")
                 .putProperty("key", "value")
                 .reference(branch1)
                 .hashAfter(Hash.of("1234").asString())
                 .build());
   }
 
-  @Test
-  void newReferenceUpdatedEvent() {
+  @ParameterizedTest
+  @MethodSource("principals")
+  void newReferenceUpdatedEvent(Principal user, String expectedInitiator) {
     EventFactory ef = new EventFactory(config);
     ReferenceAssignedResult result =
         ImmutableReferenceAssignedResult.builder()
@@ -218,14 +228,14 @@ class TestEventFactory {
             .previousHash(Hash.of("1234"))
             .currentHash(Hash.of("5678"))
             .build();
-    Event actual = ef.newReferenceUpdatedEvent(result, "repo1", () -> "alice");
+    Event actual = ef.newReferenceUpdatedEvent(result, "repo1", user);
     assertThat(actual)
         .isEqualTo(
             ImmutableReferenceUpdatedEvent.builder()
                 .id(uuid)
+                .eventInitiator(Optional.ofNullable(expectedInitiator))
                 .repositoryId("repo1")
                 .eventCreationTimestamp(now)
-                .eventInitiator("alice")
                 .putProperty("key", "value")
                 .reference(branch1)
                 .hashBefore(Hash.of("1234").asString())
@@ -233,30 +243,32 @@ class TestEventFactory {
                 .build());
   }
 
-  @Test
-  void newReferenceDeletedEvent() {
+  @ParameterizedTest
+  @MethodSource("principals")
+  void newReferenceDeletedEvent(Principal user, String expectedInitiator) {
     EventFactory ef = new EventFactory(config);
     ReferenceDeletedResult result =
         ImmutableReferenceDeletedResult.builder()
             .namedRef(BranchName.of("branch1"))
             .hash(Hash.of("1234"))
             .build();
-    Event actual = ef.newReferenceDeletedEvent(result, "repo1", () -> "alice");
+    Event actual = ef.newReferenceDeletedEvent(result, "repo1", user);
     assertThat(actual)
         .isEqualTo(
             ImmutableReferenceDeletedEvent.builder()
                 .id(uuid)
+                .eventInitiator(Optional.ofNullable(expectedInitiator))
                 .repositoryId("repo1")
                 .eventCreationTimestamp(now)
-                .eventInitiator("alice")
                 .putProperty("key", "value")
                 .reference(branch1)
                 .hashBefore(Hash.of("1234").asString())
                 .build());
   }
 
-  @Test
-  void newContentStoredEvent() {
+  @ParameterizedTest
+  @MethodSource("principals")
+  void newContentStoredEvent(Principal user, String expectedInitiator) {
     EventFactory ef = new EventFactory(config);
     Content table =
         ImmutableContent.builder()
@@ -276,14 +288,14 @@ class TestEventFactory {
             ContentKey.of("foo.bar.table1"),
             table,
             "repo1",
-            () -> "alice");
+            user);
     assertThat(actual)
         .isEqualTo(
             ImmutableContentStoredEvent.builder()
                 .id(uuid)
+                .eventInitiator(Optional.ofNullable(expectedInitiator))
                 .repositoryId("repo1")
                 .eventCreationTimestamp(now)
-                .eventInitiator("alice")
                 .putProperty("key", "value")
                 .reference(branch1)
                 .hash(Hash.of("1234").asString())
@@ -293,8 +305,9 @@ class TestEventFactory {
                 .build());
   }
 
-  @Test
-  void newContentRemovedEvent() {
+  @ParameterizedTest
+  @MethodSource("principals")
+  void newContentRemovedEvent(Principal user, String expectedInitiator) {
     EventFactory ef = new EventFactory(config);
     Event actual =
         ef.newContentRemovedEvent(
@@ -303,19 +316,35 @@ class TestEventFactory {
             now,
             ContentKey.of("foo.bar.table1"),
             "repo1",
-            () -> "alice");
+            user);
     assertThat(actual)
         .isEqualTo(
             ImmutableContentRemovedEvent.builder()
                 .id(uuid)
+                .eventInitiator(Optional.ofNullable(expectedInitiator))
                 .repositoryId("repo1")
                 .eventCreationTimestamp(now)
-                .eventInitiator("alice")
                 .putProperty("key", "value")
                 .reference(branch1)
                 .hash(Hash.of("1234").asString())
                 .commitCreationTimestamp(now)
                 .contentKey(ContentKey.of("foo.bar.table1"))
                 .build());
+  }
+
+  public static Stream<Arguments> principals() {
+    // When auth is disabled, Quarkus will create a Principal with an empty name,
+    // see io.quarkus.security.runtime.AnonymousIdentityProvider.
+    // Here we test that the event factory can handle this, and also:
+    // a Principal with a null name, and a null Principal.
+    return Stream.of(
+        // auth enabled: normal non-null principal with non-empty name
+        Arguments.of((Principal) () -> "alice", "alice"),
+        // auth disabled: principal with empty name
+        Arguments.of((Principal) () -> "", null),
+        // auth disabled: principal with null name
+        Arguments.of((Principal) () -> null, null),
+        // null Principal
+        Arguments.of(null, null));
   }
 }

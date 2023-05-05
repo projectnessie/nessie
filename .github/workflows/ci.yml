@@ -127,7 +127,7 @@ jobs:
       - name: Gradle / test
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: test :nessie-client:check -x :nessie-client:intTest -x :nessie-quarkus:test --scan
+          arguments: test :nessie-client:check -x :nessie-client:intTest -x :nessie-quarkus:test -x :nessie-events-quarkus:test --scan
 
       - name: Capture Test Reports
         uses: actions/upload-artifact@v3
@@ -170,7 +170,7 @@ jobs:
       - name: Gradle / Test Quarkus
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: :nessie-quarkus:test --scan
+          arguments: :nessie-quarkus:test :nessie-events-quarkus:test --scan
 
       - name: Dump quarkus.log
         if: ${{ failure() }}

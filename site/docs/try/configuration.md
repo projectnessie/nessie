@@ -32,6 +32,7 @@ docker run \
 | `nessie.version.store.type`           | `IN_MEMORY`    | `VersionStoreType` | Sets which type of version store to use by Nessie. Possible values are: `IN_MEMORY`, `ROCKSDB`, `DYNAMODB`, `MONGODB`, `CASSANDRA`, `JDBC`. <br/><br/> The legacy types `DYNAMO`, `INMEMORY`, `ROCKS`, `MONGO`, `TRANSACTIONAL` are deprecated and will be removed in a future release. |
 | `nessie.version.store.trace.enable`   | `true`         | `boolean`          | Sets whether calls against the version-store are traced with OpenTracing/OpenTelemetry (Jaeger).                                                                                                                                                                                        |
 | `nessie.version.store.metrics.enable` | `true`         | `boolean`          | Sets whether metrics for the version-store are enabled.                                                                                                                                                                                                                                 |
+| `nessie.version.store.events.enable`  | `true`         | `boolean`          | Sets whether events for the version-store are enabled.                                                                                                                                                                                                                                  |
 
 #### JDBC Version Store Settings
 

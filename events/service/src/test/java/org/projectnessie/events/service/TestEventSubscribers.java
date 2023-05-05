@@ -49,7 +49,17 @@ class TestEventSubscribers {
   }
 
   @Test
-  void start() {
+  void startSuccess() {
+    EventSubscribers subscribers = new EventSubscribers(subscriber1, subscriber2);
+    subscribers.start(s -> mock(EventSubscription.class));
+    assertThat(subscribers.getSubscriptions().values())
+        .containsExactlyInAnyOrder(subscriber1, subscriber2);
+    verify(subscriber1).onSubscribe(any());
+    verify(subscriber1).onSubscribe(any());
+  }
+
+  @Test
+  void startFailure() {
     EventSubscribers subscribers = new EventSubscribers(subscriber1, subscriber2);
     doThrow(new RuntimeException("subscriber1")).when(subscriber1).onSubscribe(any());
     assertThatThrownBy(() -> subscribers.start(s -> mock(EventSubscription.class)))
