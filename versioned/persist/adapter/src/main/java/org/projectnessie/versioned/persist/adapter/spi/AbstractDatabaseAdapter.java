@@ -593,9 +593,13 @@ public abstract class AbstractDatabaseAdapter<
           result);
     }
 
+    if (params.isDryRun()) {
+      return toHead;
+    }
+
     if (params.keepIndividualCommits()) {
       // re-apply commits in 'sequenceToTransplant' onto 'targetBranch'
-      Hash newHead =
+      toHead =
           copyCommits(
               ctx,
               timeInMicros,
@@ -606,16 +610,13 @@ public abstract class AbstractDatabaseAdapter<
               mergePredicate,
               addedCommits);
 
-      if (!params.isDryRun()) {
-        // Write commits
-        writeMultipleCommits(ctx, commitsToMergeChronological);
-        commitsToMergeChronological.stream()
-            .peek(writtenCommits)
-            .map(CommitLogEntry::getHash)
-            .forEach(branchCommits);
-        toHead = newHead;
-      }
+      // Write commits
 
+      writeMultipleCommits(ctx, commitsToMergeChronological);
+      commitsToMergeChronological.stream()
+          .peek(writtenCommits)
+          .map(CommitLogEntry::getHash)
+          .forEach(branchCommits);
     } else {
       CommitLogEntry squashed =
           squashCommits(
@@ -630,10 +631,8 @@ public abstract class AbstractDatabaseAdapter<
               addedCommits);
 
       if (squashed != null) {
-        if (!params.isDryRun()) {
-          writtenCommits.accept(squashed);
-          toHead = squashed.getHash();
-        }
+        writtenCommits.accept(squashed);
+        toHead = squashed.getHash();
       }
     }
     return toHead;

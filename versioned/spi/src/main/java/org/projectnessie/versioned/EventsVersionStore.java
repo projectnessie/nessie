@@ -91,7 +91,7 @@ public class EventsVersionStore implements VersionStore {
             defaultMergeBehavior,
             dryRun,
             fetchAdditionalInfo);
-    if (!dryRun) {
+    if (result.wasApplied()) {
       resultSink.accept(result);
     }
     return result;
@@ -122,7 +122,7 @@ public class EventsVersionStore implements VersionStore {
             defaultMergeBehavior,
             dryRun,
             fetchAdditionalInfo);
-    if (!dryRun) {
+    if (result.wasApplied()) {
       resultSink.accept(result);
     }
     return result;
