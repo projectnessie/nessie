@@ -29,7 +29,12 @@ import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.C
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_REPO_ID;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.CREATE_TABLE_OBJS;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.CREATE_TABLE_REFS;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.ERASE_OBJ;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.ERASE_OBJS_SCAN;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.ERASE_REF;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.ERASE_REFS_SCAN;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.MAX_CONCURRENT_BATCH_READS;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.MAX_CONCURRENT_DELETES;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.SELECT_BATCH_SIZE;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.TABLE_OBJS;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.TABLE_REFS;
@@ -437,5 +442,39 @@ final class CassandraBackend implements Backend {
         + config.ddlTimeout()
         + " DML timeout: "
         + config.dmlTimeout();
+  }
+
+  @Override
+  public void eraseRepositories(Set<String> repositoryIds) {
+    if (repositoryIds == null || repositoryIds.isEmpty()) {
+      return;
+    }
+
+    ArrayList<String> repoIdList = new ArrayList<>(repositoryIds);
+
+    try (LimitedConcurrentRequests requests =
+        new LimitedConcurrentRequests(MAX_CONCURRENT_DELETES)) {
+      for (Row row : execute(ERASE_REFS_SCAN, repoIdList)) {
+        String repoId = row.getString(0);
+        String ref = row.getString(1);
+        requests.submitted(executeAsync(ERASE_REF, repoId, ref));
+      }
+
+      for (Row row : execute(ERASE_OBJS_SCAN, repoIdList)) {
+        String repoId = row.getString(0);
+        String objId = row.getString(1);
+        requests.submitted(executeAsync(ERASE_OBJ, repoId, objId));
+      }
+    }
+    // We must ensure that the system clock advances a little, so that C*'s next write-timestamp
+    // does not collide with the write-timestamps of the DELETE statements above. Otherwise, the
+    // above DELETEs will silently "overrule" a following INSERT/UPDATE statement. In C*, if a
+    // DELETE and another INSERT/UPDATE have the same write-timestamp, the DELETE wins. This makes
+    // Nessie tests fail on machines that are "fast enough".
+    try {
+      Thread.sleep(2L);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
   }
 }

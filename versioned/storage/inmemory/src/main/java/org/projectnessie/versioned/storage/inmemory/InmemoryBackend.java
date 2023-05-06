@@ -15,8 +15,12 @@
  */
 package org.projectnessie.versioned.storage.inmemory;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.Obj;
@@ -26,6 +30,10 @@ import org.projectnessie.versioned.storage.common.persist.Reference;
 public final class InmemoryBackend implements Backend {
   final Map<String, Reference> references = new ConcurrentHashMap<>();
   final Map<String, Obj> objects = new ConcurrentHashMap<>();
+
+  static String compositeKeyRepo(String repoId) {
+    return repoId + ':';
+  }
 
   @Override
   @Nonnull
@@ -46,5 +54,21 @@ public final class InmemoryBackend implements Backend {
   @Override
   public String configInfo() {
     return "";
+  }
+
+  @Override
+  public void eraseRepositories(Set<String> repositoryIds) {
+    if (repositoryIds == null || repositoryIds.isEmpty()) {
+      return;
+    }
+
+    List<String> prefixed =
+        repositoryIds.stream().map(InmemoryBackend::compositeKeyRepo).collect(Collectors.toList());
+
+    Consumer<Map<String, ?>> cleaner =
+        m -> m.keySet().removeIf(k -> prefixed.stream().anyMatch(k::startsWith));
+
+    cleaner.accept(references);
+    cleaner.accept(objects);
   }
 }

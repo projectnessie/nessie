@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.storage.mongodb;
 
+import static com.mongodb.client.model.Filters.in;
+import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.ID_REPO_PATH;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.TABLE_OBJS;
 import static org.projectnessie.versioned.storage.mongodb.MongoDBConstants.TABLE_REFS;
 
@@ -22,8 +24,11 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 
 class MongoDBBackend implements Backend {
@@ -87,5 +92,15 @@ class MongoDBBackend implements Backend {
   @Override
   public String configInfo() {
     return "database name: " + config.databaseName();
+  }
+
+  @Override
+  public void eraseRepositories(Set<String> repositoryIds) {
+    if (repositoryIds == null || repositoryIds.isEmpty()) {
+      return;
+    }
+
+    Bson repoIdFilter = in(ID_REPO_PATH, repositoryIds);
+    Stream.of(refs(), objs()).forEach(coll -> coll.deleteMany(repoIdFilter));
   }
 }

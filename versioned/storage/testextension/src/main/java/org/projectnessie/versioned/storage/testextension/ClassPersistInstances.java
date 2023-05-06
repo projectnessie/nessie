@@ -35,6 +35,7 @@ final class ClassPersistInstances {
 
   private final List<Persist> persistInstances = new ArrayList<>();
   private final CacheBackend cacheBackend;
+  private final Backend backend;
   private final PersistFactory persistFactory;
 
   ClassPersistInstances(ExtensionContext context) {
@@ -48,12 +49,19 @@ final class ClassPersistInstances {
     cacheBackend =
         nessiePersistCache != null ? PersistCaches.newBackend(nessiePersistCache.capacity()) : null;
 
-    @SuppressWarnings("resource")
-    Backend backend = reusableTestBackend.backend(context);
+    backend = reusableTestBackend.backend(context);
 
     backend.setupSchema();
 
     persistFactory = backend.createFactory();
+  }
+
+  PersistFactory persistFactory() {
+    return persistFactory;
+  }
+
+  Backend backend() {
+    return backend;
   }
 
   void registerPersist(Persist persist) {

@@ -253,20 +253,24 @@ final class CassandraConstants {
 
   static final String ERASE_OBJS_SCAN =
       "SELECT "
+          + COL_REPO_ID
+          + ", "
           + COL_OBJ_ID
           + " FROM %s."
           + TABLE_OBJS
           + " WHERE "
           + COL_REPO_ID
-          + "=? ALLOW FILTERING";
+          + " IN ? ALLOW FILTERING";
   static final String ERASE_REFS_SCAN =
       "SELECT "
+          + COL_REPO_ID
+          + ", "
           + COL_REFS_NAME
           + " FROM %s."
           + TABLE_REFS
           + " WHERE "
           + COL_REPO_ID
-          + "=? ALLOW FILTERING";
+          + " IN ? ALLOW FILTERING";
 
   static final String ERASE_OBJ = DELETE_OBJ;
   static final String ERASE_REF =
