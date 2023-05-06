@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.inmemory;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Collections.singleton;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 
 import com.google.common.collect.AbstractIterator;
@@ -24,7 +25,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import javax.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
@@ -51,7 +51,7 @@ class InmemoryPersist implements ValidatingPersist {
   }
 
   private String compositeKeyRepo() {
-    return config.repositoryId() + ':';
+    return InmemoryBackend.compositeKeyRepo(config.repositoryId());
   }
 
   private String compositeKey(String id) {
@@ -306,12 +306,7 @@ class InmemoryPersist implements ValidatingPersist {
 
   @Override
   public void erase() {
-    String prefix = compositeKeyRepo();
-
-    Consumer<Map<String, ?>> cleaner = m -> m.keySet().removeIf(k -> k.startsWith(prefix));
-
-    cleaner.accept(inmemory.references);
-    cleaner.accept(inmemory.objects);
+    inmemory.eraseRepositories(singleton(config().repositoryId()));
   }
 
   @Nonnull

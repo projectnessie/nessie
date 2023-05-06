@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.storage.common.persist;
 
+import java.util.Set;
 import javax.annotation.Nonnull;
 
 public interface Backend extends AutoCloseable {
@@ -26,4 +27,6 @@ public interface Backend extends AutoCloseable {
   PersistFactory createFactory();
 
   String configInfo();
+
+  void eraseRepositories(Set<String> repositoryIds);
 }

@@ -17,6 +17,7 @@ package org.projectnessie.versioned.storage.cassandra;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.unsafeWrap;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.ADD_REFERENCE;
@@ -49,10 +50,6 @@ import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.C
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_VALUE_DATA;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_VALUE_PAYLOAD;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.DELETE_OBJ;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.ERASE_OBJ;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.ERASE_OBJS_SCAN;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.ERASE_REF;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.ERASE_REFS_SCAN;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.FETCH_OBJ_TYPE;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.FIND_OBJS;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.FIND_OBJS_TYPED;
@@ -65,7 +62,6 @@ import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.I
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_TAG;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.INSERT_OBJ_VALUE;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.MARK_REFERENCE_AS_DELETED;
-import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.MAX_CONCURRENT_DELETES;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.MAX_CONCURRENT_STORES;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.PURGE_REFERENCE;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.SCAN_OBJS;
@@ -509,29 +505,7 @@ public class CassandraPersist implements Persist {
 
   @Override
   public void erase() {
-    try (LimitedConcurrentRequests requests =
-        new LimitedConcurrentRequests(MAX_CONCURRENT_DELETES)) {
-      String repoId = config.repositoryId();
-      for (Row row : backend.execute(ERASE_REFS_SCAN, repoId)) {
-        String ref = row.getString(0);
-        requests.submitted(backend.executeAsync(ERASE_REF, repoId, ref));
-      }
-
-      for (Row row : backend.execute(ERASE_OBJS_SCAN, repoId)) {
-        String objId = row.getString(0);
-        requests.submitted(backend.executeAsync(ERASE_OBJ, repoId, objId));
-      }
-    }
-    // We must ensure that the system clock advances a little, so that C*'s next write-timestamp
-    // does not collide with the write-timestamps of the DELETE statements above. Otherwise, the
-    // above DELETEs will silently "overrule" a following INSERT/UPDATE statement. In C*, if a
-    // DELETE and another INSERT/UPDATE have the same write-timestamp, the DELETE wins. This makes
-    // Nessie tests fail on machines that are "fast enough".
-    try {
-      Thread.sleep(2L);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-    }
+    backend.eraseRepositories(singleton(config().repositoryId()));
   }
 
   @Override

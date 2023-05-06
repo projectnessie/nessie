@@ -15,6 +15,9 @@
  */
 package org.projectnessie.versioned.storage.jdbc;
 
+import static java.util.Collections.singleton;
+import static org.projectnessie.versioned.storage.jdbc.JdbcBackend.unhandledSQLException;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Set;
@@ -259,7 +262,7 @@ class JdbcPersist extends AbstractJdbcPersist {
 
   @Override
   public void erase() {
-    withConnectionVoid(super::erase);
+    backend.eraseRepositories(singleton(config().repositoryId()));
   }
 
   @Nonnull

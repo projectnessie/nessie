@@ -23,6 +23,7 @@ import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.in;
 import static com.mongodb.client.model.Updates.set;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 import static org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations.unsafeWrap;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.keyFromString;
@@ -109,7 +110,6 @@ import javax.annotation.Nonnull;
 import org.agrona.collections.Hashing;
 import org.agrona.collections.Object2IntHashMap;
 import org.bson.Document;
-import org.bson.conversions.Bson;
 import org.bson.types.Binary;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
@@ -637,8 +637,7 @@ public class MongoDBPersist implements Persist {
 
   @Override
   public void erase() {
-    Bson repoIdFilter = eq(ID_REPO_PATH, config.repositoryId());
-    Stream.of(backend.refs(), backend.objs()).forEach(coll -> coll.deleteMany(repoIdFilter));
+    backend.eraseRepositories(singleton(config.repositoryId()));
   }
 
   private Obj docToObj(Document doc) {

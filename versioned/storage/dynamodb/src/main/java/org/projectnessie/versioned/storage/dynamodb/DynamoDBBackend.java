@@ -20,6 +20,9 @@ import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.TAB
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBConstants.TABLE_REFS;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.PersistFactory;
@@ -27,7 +30,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.BillingMode;
+import software.amazon.awssdk.services.dynamodb.model.ComparisonOperator;
+import software.amazon.awssdk.services.dynamodb.model.Condition;
 import software.amazon.awssdk.services.dynamodb.model.DescribeTableRequest;
 import software.amazon.awssdk.services.dynamodb.model.DescribeTableResponse;
 import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
@@ -129,5 +135,40 @@ final class DynamoDBBackend implements Backend {
   @Override
   public String configInfo() {
     return "";
+  }
+
+  @Override
+  public void eraseRepositories(Set<String> repositoryIds) {
+    if (repositoryIds == null || repositoryIds.isEmpty()) {
+      return;
+    }
+
+    List<String> prefixed =
+        repositoryIds.stream().map(DynamoDBBackend::keyPrefix).collect(Collectors.toList());
+
+    @SuppressWarnings("resource")
+    DynamoDbClient c = client();
+
+    Stream.of(TABLE_REFS, TABLE_OBJS)
+        .forEach(
+            table -> {
+              try (BatchWrite batchWrite = new BatchWrite(this, table)) {
+                c.scanPaginator(b -> b.tableName(table))
+                    .forEach(
+                        r ->
+                            r.items().stream()
+                                .map(attrs -> attrs.get(KEY_NAME))
+                                .filter(key -> prefixed.stream().anyMatch(key.s()::startsWith))
+                                .forEach(batchWrite::addDelete));
+              }
+            });
+  }
+
+  static String keyPrefix(String repositoryId) {
+    return repositoryId + ':';
+  }
+
+  static Condition condition(ComparisonOperator operator, AttributeValue... values) {
+    return Condition.builder().comparisonOperator(operator).attributeValueList(values).build();
   }
 }

@@ -31,6 +31,7 @@ import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 import static org.projectnessie.versioned.storage.common.util.Closing.closeMultiple;
+import static org.projectnessie.versioned.storage.jdbc.JdbcBackend.unhandledSQLException;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.ADD_REFERENCE;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_COMMIT_CREATED;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_COMMIT_HEADERS;
@@ -61,8 +62,6 @@ import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_VALUE_CO
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_VALUE_DATA;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_VALUE_PAYLOAD;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.DELETE_OBJ;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.ERASE_OBJS;
-import static org.projectnessie.versioned.storage.jdbc.SqlConstants.ERASE_REFS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.FETCH_OBJ_TYPE;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.FIND_OBJS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.FIND_OBJS_TYPED;
@@ -597,21 +596,6 @@ abstract class AbstractJdbcPersist implements Persist {
     }
   }
 
-  protected final void erase(@Nonnull @jakarta.annotation.Nonnull Connection conn) {
-    try (PreparedStatement ps = conn.prepareStatement(ERASE_REFS)) {
-      ps.setString(1, config.repositoryId());
-      ps.executeUpdate();
-    } catch (SQLException e) {
-      throw unhandledSQLException(e);
-    }
-    try (PreparedStatement ps = conn.prepareStatement(ERASE_OBJS)) {
-      ps.setString(1, config.repositoryId());
-      ps.executeUpdate();
-    } catch (SQLException e) {
-      throw unhandledSQLException(e);
-    }
-  }
-
   protected CloseableIterator<Obj> scanAllObjects(Connection conn, Set<ObjType> returnedObjTypes) {
     return new ScanAllObjectsIterator(conn, returnedObjTypes);
   }
@@ -1082,10 +1066,6 @@ abstract class AbstractJdbcPersist implements Persist {
     }
     marks.append(')').append(sql, idx + 3, sql.length());
     return marks.toString();
-  }
-
-  RuntimeException unhandledSQLException(SQLException e) {
-    return new RuntimeException("Unhandled SQL exception", e);
   }
 
   @FunctionalInterface
