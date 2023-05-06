@@ -17,15 +17,20 @@ package org.projectnessie.events.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.projectnessie.events.api.EventType;
 import org.projectnessie.events.spi.EventSubscriber;
+import org.projectnessie.events.spi.EventSubscription;
 import org.projectnessie.versioned.ResultType;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,21 +41,26 @@ class TestEventSubscribers {
 
   @Test
   void loadSubscribers() {
-    EventSubscribers subscribers = new EventSubscribers();
-    assertThat(subscribers.getSubscribers())
-        .hasSize(1)
-        .singleElement()
-        .isInstanceOf(MockEventSubscriber.class);
+    List<EventSubscriber> subscribers = EventSubscribers.loadSubscribers();
+    assertThat(subscribers).hasSize(1).singleElement().isInstanceOf(MockEventSubscriber.class);
   }
 
   @Test
-  void getSubscribers() {
-    EventSubscribers subscribers = new EventSubscribers(Collections.emptyList());
-    assertThat(subscribers.getSubscribers()).isEmpty();
-    subscribers = new EventSubscribers(subscriber1);
-    assertThat(subscribers.getSubscribers()).containsExactly(subscriber1);
-    subscribers = new EventSubscribers(subscriber1, subscriber2);
-    assertThat(subscribers.getSubscribers()).containsExactly(subscriber1, subscriber2);
+  void start() {
+    EventSubscribers subscribers = new EventSubscribers(subscriber1, subscriber2);
+    doThrow(new RuntimeException("subscriber1")).when(subscriber1).onSubscribe(any());
+    subscribers.start(s -> mock(EventSubscription.class));
+    verify(subscriber1).onSubscribe(any());
+    verify(subscriber2).onSubscribe(any());
+  }
+
+  @Test
+  void close() throws Exception {
+    EventSubscribers subscribers = new EventSubscribers(subscriber1, subscriber2);
+    doThrow(new RuntimeException("subscriber1")).when(subscriber1).close();
+    subscribers.close();
+    verify(subscriber1).close();
+    verify(subscriber2).close();
   }
 
   @Test
@@ -67,6 +77,7 @@ class TestEventSubscribers {
               EventType eventType = invocation.getArgument(0);
               return eventType == EventType.MERGE;
             });
+    @SuppressWarnings("resource")
     EventSubscribers subscribers = new EventSubscribers(Collections.emptyList());
     for (EventType eventType : EventType.values()) {
       assertThat(subscribers.hasSubscribersFor(eventType)).isFalse();
@@ -96,6 +107,7 @@ class TestEventSubscribers {
               EventType eventType = invocation.getArgument(0);
               return eventType == EventType.CONTENT_STORED;
             });
+    @SuppressWarnings("resource")
     EventSubscribers subscribers = new EventSubscribers(Collections.emptyList());
     for (ResultType resultType : ResultType.values()) {
       assertThat(subscribers.hasSubscribersFor(resultType)).isFalse();

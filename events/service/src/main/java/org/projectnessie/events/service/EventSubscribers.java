@@ -17,16 +17,20 @@ package org.projectnessie.events.service;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.projectnessie.events.api.EventType;
 import org.projectnessie.events.spi.EventSubscriber;
+import org.projectnessie.events.spi.EventSubscription;
 import org.projectnessie.versioned.ResultType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Loads and holds all {@link EventSubscriber}s.
@@ -37,7 +41,9 @@ import org.projectnessie.versioned.ResultType;
  *
  * <p>This class is meant to be used as a singleton, or in CDI Dependent pseudo-scope.
  */
-public class EventSubscribers {
+public class EventSubscribers implements AutoCloseable {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(EventSubscribers.class);
 
   /** Load all {@link EventSubscriber}s via {@link ServiceLoader}. */
   public static List<EventSubscriber> loadSubscribers() {
@@ -48,14 +54,16 @@ public class EventSubscribers {
     return subscribers;
   }
 
-  private final List<EventSubscriber> subscribers;
+  // Visible for testing
+  final List<EventSubscriber> subscribers;
 
-  private final BitSet eventTypeMask;
-  private final BitSet resultTypeMask;
+  private final EnumSet<EventType> acceptedEventTypes;
+  private final EnumSet<ResultType> acceptedResultTypes;
 
-  public EventSubscribers() {
-    this(loadSubscribers());
-  }
+  // guarded by this
+  private boolean started;
+  // guarded by this
+  private boolean closed;
 
   public EventSubscribers(EventSubscriber... subscribers) {
     this(Arrays.asList(subscribers));
@@ -65,62 +73,82 @@ public class EventSubscribers {
     this.subscribers =
         Collections.unmodifiableList(
             StreamSupport.stream(subscribers.spliterator(), false).collect(Collectors.toList()));
-    eventTypeMask = new BitSet(EventType.values().length);
-    for (EventType eventType : EventType.values()) {
-      this.subscribers.stream()
-          .filter(s -> s.accepts(eventType))
-          .findAny()
-          .ifPresent(s -> eventTypeMask.set(eventType.ordinal()));
-    }
-    resultTypeMask = new BitSet(ResultType.values().length);
-    for (ResultType resultType : ResultType.values()) {
-      this.subscribers.stream()
-          .filter(s -> map(resultType).anyMatch(s::accepts))
-          .findAny()
-          .ifPresent(s -> resultTypeMask.set(resultType.ordinal()));
+    acceptedEventTypes =
+        Arrays.stream(EventType.values())
+            .filter(t -> this.subscribers.stream().anyMatch(s -> s.accepts(t)))
+            .collect(Collectors.toCollection(() -> EnumSet.noneOf(EventType.class)));
+    acceptedResultTypes =
+        acceptedEventTypes.stream()
+            .flatMap(EventSubscribers::map)
+            .collect(Collectors.toCollection(() -> EnumSet.noneOf(ResultType.class)));
+  }
+
+  public void start(Function<EventSubscriber, EventSubscription> subscriptionFactory) {
+    if (!started) {
+      LOGGER.info("Starting subscribers...");
+      for (EventSubscriber subscriber : subscribers) {
+        try {
+          EventSubscription subscription = subscriptionFactory.apply(subscriber);
+          subscriber.onSubscribe(subscription);
+        } catch (Exception e) {
+          LOGGER.error("Error starting subscriber", e);
+        }
+      }
+      LOGGER.info("Done starting subscribers.");
+      started = true;
     }
   }
 
-  /** Returns an unmodifiable list of all {@link EventSubscriber}s. */
-  public List<EventSubscriber> getSubscribers() {
-    return subscribers;
+  @Override
+  public void close() {
+    if (!closed) {
+      LOGGER.info("Closing subscribers...");
+      for (EventSubscriber subscriber : subscribers) {
+        try {
+          subscriber.close();
+        } catch (Exception e) {
+          LOGGER.error("Error closing subscriber", e);
+        }
+      }
+      LOGGER.info("Done closing subscribers.");
+      closed = true;
+    }
   }
 
   /** Returns {@code true} if there are any subscribers for the given {@link EventType}. */
   public boolean hasSubscribersFor(EventType type) {
-    return eventTypeMask.get(type.ordinal());
+    return acceptedEventTypes.contains(type);
   }
 
   /** Returns {@code true} if there are any subscribers for the given {@link ResultType}. */
   public boolean hasSubscribersFor(ResultType resultType) {
-    return resultTypeMask.get(resultType.ordinal());
+    return acceptedResultTypes.contains(resultType);
   }
 
   /**
    * Maps a {@link ResultType} to all {@link EventType}s that could be emitted for a result of that
    * type.
    */
-  private static Stream<EventType> map(ResultType resultType) {
+  private static Stream<ResultType> map(EventType resultType) {
     switch (resultType) {
-      case REFERENCE_CREATED:
-        return Stream.of(EventType.REFERENCE_CREATED);
-      case REFERENCE_ASSIGNED:
-        return Stream.of(EventType.REFERENCE_UPDATED);
-      case REFERENCE_DELETED:
-        return Stream.of(EventType.REFERENCE_DELETED);
       case COMMIT:
-        return Stream.of(EventType.COMMIT, EventType.CONTENT_STORED, EventType.CONTENT_REMOVED);
+      case CONTENT_STORED:
+      case CONTENT_REMOVED:
+        return Stream.of(ResultType.COMMIT, ResultType.MERGE, ResultType.TRANSPLANT);
       case MERGE:
-        return Stream.of(
-            EventType.MERGE, EventType.COMMIT, EventType.CONTENT_STORED, EventType.CONTENT_REMOVED);
+        return Stream.of(ResultType.MERGE);
       case TRANSPLANT:
-        return Stream.of(
-            EventType.TRANSPLANT,
-            EventType.COMMIT,
-            EventType.CONTENT_STORED,
-            EventType.CONTENT_REMOVED);
+        return Stream.of(ResultType.TRANSPLANT);
+      case REFERENCE_CREATED:
+        return Stream.of(ResultType.REFERENCE_CREATED);
+      case REFERENCE_UPDATED:
+        return Stream.of(ResultType.REFERENCE_ASSIGNED);
+      case REFERENCE_DELETED:
+        return Stream.of(ResultType.REFERENCE_DELETED);
+      case GENERIC:
+        return Stream.of(); // event never emitted
       default:
-        throw new IllegalArgumentException("Unknown result type: " + resultType);
+        throw new IllegalArgumentException("Unknown event type: " + resultType);
     }
   }
 }

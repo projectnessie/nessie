@@ -16,7 +16,6 @@
 package org.projectnessie.events.service;
 
 import java.time.Clock;
-import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
@@ -57,46 +56,5 @@ public interface EventConfig {
   /** The clock used to generate timestamps for events. */
   default Clock getClock() {
     return Clock.systemUTC();
-  }
-
-  /** Retry configuration for event deliveries. */
-  default RetryConfig getRetryConfig() {
-    return new RetryConfig() {};
-  }
-
-  interface RetryConfig {
-
-    int DEFAULT_MAX_RETRIES = 3;
-    Duration DEFAULT_INITIAL_DELAY = Duration.ofSeconds(1);
-    Duration DEFAULT_MAX_DELAY = Duration.ofSeconds(5);
-
-    /** The maximum number of retries for an event delivery. */
-    default int getMaxRetries() {
-      return DEFAULT_MAX_RETRIES;
-    }
-
-    /** The initial delay for the first retry of a failed event delivery. */
-    default Duration getInitialDelay() {
-      return DEFAULT_INITIAL_DELAY;
-    }
-
-    /** The maximum delay for a retry of a failed event delivery. */
-    default Duration getMaxDelay() {
-      return DEFAULT_MAX_DELAY;
-    }
-
-    /**
-     * Computes the next delay for a retry of a failed event.
-     *
-     * @implSpec The default implementation doubles the previous delay, but does not exceed the
-     *     {@linkplain #getMaxDelay() maximum delay}.
-     * @param previous the previous delay
-     * @return the next delay
-     */
-    default Duration getNextDelay(Duration previous) {
-      Duration next = previous.multipliedBy(2);
-      Duration max = getMaxDelay();
-      return next.compareTo(max) > 0 ? max : next;
-    }
   }
 }
