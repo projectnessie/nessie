@@ -34,17 +34,17 @@ class TestCommitMeta {
 
   @Test
   void getSignOff() {
-    CommitMeta commitMeta = builder().addSignOffs("signOff1", "signOff2").build();
-    assertThat(commitMeta.getSignOffs()).containsExactly("signOff1", "signOff2");
-    assertThat(commitMeta.getSignOff()).contains("signOff1");
+    CommitMeta commitMeta = builder().addAllSignedOffBy("signOff1", "signOff2").build();
+    assertThat(commitMeta.getAllSignedOffBy()).containsExactly("signOff1", "signOff2");
+    assertThat(commitMeta.getSignedOffBy()).contains("signOff1");
   }
 
   @Test
   void getProperties() {
     CommitMeta commitMeta =
         builder()
-            .putMultiProperty("key1", Arrays.asList("value1a", "value1b"))
-            .putMultiProperty("key2", Collections.singletonList("value2a"))
+            .putAllProperty("key1", Arrays.asList("value1a", "value1b"))
+            .putAllProperty("key2", Collections.singletonList("value2a"))
             .build();
     assertThat(commitMeta.getProperties())
         .containsOnly(entry("key1", "value1a"), entry("key2", "value2a"));
