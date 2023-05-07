@@ -22,7 +22,9 @@ import io.quarkus.test.keycloak.client.KeycloakTestClient;
 import org.projectnessie.quarkus.tests.profiles.KeycloakTestResourceLifecycleManager;
 
 @QuarkusIntegrationTest
-@QuarkusTestResource(KeycloakTestResourceLifecycleManager.class)
+@QuarkusTestResource(
+    restrictToAnnotatedClass = true,
+    value = KeycloakTestResourceLifecycleManager.class)
 @TestProfile(value = AbstractOAuth2Authentication.Profile.class)
 public class ITOAuth2Authentication extends AbstractOAuth2Authentication {
 
