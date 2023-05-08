@@ -18,6 +18,7 @@ package org.projectnessie.events.api;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.util.Optional;
 import org.immutables.value.Value;
 
 /**
@@ -46,13 +47,14 @@ public interface Reference {
   /**
    * The full name of the reference, e.g. "refs/heads/branch1".
    *
-   * <p>Full names are unique across all reference types.
+   * <p>Full names are unique across all reference types. If the reference was detached however,
+   * this will return empty.
    *
    * <p>The reference type can be inferred from the full name; e.g. if the full name starts with
    * "refs/heads/", then the reference is a branch. If the full name starts with "refs/tags/", then
    * the reference is a tag.
    */
-  String getFullName();
+  Optional<String> getFullName();
 
   /**
    * The type of the reference. This is usually either {@value #BRANCH} or {@value #TAG}, but more
