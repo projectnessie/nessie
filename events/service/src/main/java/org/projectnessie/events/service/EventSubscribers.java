@@ -83,15 +83,16 @@ public class EventSubscribers implements AutoCloseable {
             .collect(Collectors.toCollection(() -> EnumSet.noneOf(ResultType.class)));
   }
 
-  public void start(Function<EventSubscriber, EventSubscription> subscriptionFactory) {
+  public synchronized void start(Function<EventSubscriber, EventSubscription> subscriptionFactory) {
     if (!started) {
       LOGGER.info("Starting subscribers...");
       for (EventSubscriber subscriber : subscribers) {
         try {
           EventSubscription subscription = subscriptionFactory.apply(subscriber);
           subscriber.onSubscribe(subscription);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
           LOGGER.error("Error starting subscriber", e);
+          throw e;
         }
       }
       LOGGER.info("Done starting subscribers.");
@@ -100,18 +101,29 @@ public class EventSubscribers implements AutoCloseable {
   }
 
   @Override
-  public void close() {
+  public synchronized void close() throws Exception {
     if (!closed) {
       LOGGER.info("Closing subscribers...");
-      for (EventSubscriber subscriber : subscribers) {
-        try {
-          subscriber.close();
-        } catch (Exception e) {
-          LOGGER.error("Error closing subscriber", e);
+      Exception error = null;
+      try {
+        for (EventSubscriber subscriber : subscribers) {
+          try {
+            subscriber.close();
+          } catch (Exception e) {
+            LOGGER.error("Error closing subscriber", e);
+            if (error != null) {
+              e.addSuppressed(error);
+            }
+            error = e;
+          }
+        }
+      } finally {
+        LOGGER.info("Done closing subscribers.");
+        closed = true;
+        if (error != null) {
+          throw error;
         }
       }
-      LOGGER.info("Done closing subscribers.");
-      closed = true;
     }
   }
 
@@ -148,7 +160,7 @@ public class EventSubscribers implements AutoCloseable {
       case GENERIC:
         return Stream.of(); // event never emitted
       default:
-        throw new IllegalArgumentException("Unknown event type: " + resultType);
+        throw new IllegalArgumentException("Unknown result type: " + resultType);
     }
   }
 }

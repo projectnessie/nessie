@@ -16,9 +16,11 @@
 package org.projectnessie.events.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,6 +40,7 @@ class TestEventSubscribers {
 
   @Mock private EventSubscriber subscriber1;
   @Mock private EventSubscriber subscriber2;
+  @Mock private EventSubscriber subscriber3;
 
   @Test
   void loadSubscribers() {
@@ -49,18 +52,25 @@ class TestEventSubscribers {
   void start() {
     EventSubscribers subscribers = new EventSubscribers(subscriber1, subscriber2);
     doThrow(new RuntimeException("subscriber1")).when(subscriber1).onSubscribe(any());
-    subscribers.start(s -> mock(EventSubscription.class));
+    assertThatThrownBy(() -> subscribers.start(s -> mock(EventSubscription.class)))
+        .isInstanceOf(RuntimeException.class)
+        .hasMessage("subscriber1");
     verify(subscriber1).onSubscribe(any());
-    verify(subscriber2).onSubscribe(any());
+    verify(subscriber2, never()).onSubscribe(any());
   }
 
   @Test
   void close() throws Exception {
-    EventSubscribers subscribers = new EventSubscribers(subscriber1, subscriber2);
+    EventSubscribers subscribers = new EventSubscribers(subscriber1, subscriber2, subscriber3);
     doThrow(new RuntimeException("subscriber1")).when(subscriber1).close();
-    subscribers.close();
+    doThrow(new RuntimeException("subscriber2")).when(subscriber2).close();
+    assertThatThrownBy(subscribers::close)
+        .isInstanceOf(RuntimeException.class)
+        .hasMessage("subscriber2")
+        .hasSuppressedException(new RuntimeException("subscriber1"));
     verify(subscriber1).close();
     verify(subscriber2).close();
+    verify(subscriber3).close();
   }
 
   @Test

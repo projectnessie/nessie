@@ -17,10 +17,11 @@ package org.projectnessie.events.service;
 
 import jakarta.annotation.Nullable;
 import java.security.Principal;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import org.projectnessie.events.api.CommitEvent;
 import org.projectnessie.events.api.Content;
 import org.projectnessie.events.api.ContentKey;
@@ -71,7 +72,11 @@ public class EventService implements AutoCloseable {
   protected final EventConfig config;
   protected final EventFactory factory;
   protected final EventSubscribers subscribers;
-  private final Map<EventSubscription, EventSubscriber> subscriptions = new ConcurrentHashMap<>();
+
+  private volatile boolean started;
+  private Map<String, EventSubscriber> subscriptions;
+  private boolean hasContentSubscribers;
+  private boolean hasCommitSubscribers;
 
   public EventService(EventConfig config, EventFactory factory, EventSubscribers subscribers) {
     this.config = config;
@@ -81,23 +86,32 @@ public class EventService implements AutoCloseable {
 
   /** Starts event delivery by activating the subscribers. */
   public synchronized void start() {
-    subscribers.start(this::createSubscription);
+    if (!started) {
+      Map<String, EventSubscriber> subscriptions = new HashMap<>();
+      subscribers.start(
+          subscriber -> {
+            EventSubscription subscription =
+                ImmutableEventSubscription.builder()
+                    .id(config.getIdGenerator().get())
+                    .systemConfiguration(config.getSystemConfiguration())
+                    .build();
+            subscriptions.put(subscription.getId().toString(), subscriber);
+            return subscription;
+          });
+      this.subscriptions = Collections.unmodifiableMap(subscriptions);
+      hasContentSubscribers =
+          subscribers.hasSubscribersFor(EventType.CONTENT_STORED)
+              || subscribers.hasSubscribersFor(EventType.CONTENT_REMOVED);
+      hasCommitSubscribers =
+          hasContentSubscribers || subscribers.hasSubscribersFor(EventType.COMMIT);
+      started = true;
+    }
   }
 
   /** Closes the event service by deactivating the subscribers. */
   @Override
-  public synchronized void close() {
+  public synchronized void close() throws Exception {
     subscribers.close();
-  }
-
-  protected EventSubscription createSubscription(EventSubscriber subscriber) {
-    EventSubscription subscription =
-        ImmutableEventSubscription.builder()
-            .id(config.getIdGenerator().get())
-            .systemConfiguration(config.getSystemConfiguration())
-            .build();
-    subscriptions.put(subscription, subscriber);
-    return subscription;
   }
 
   /**
@@ -115,6 +129,9 @@ public class EventService implements AutoCloseable {
    */
   @SuppressWarnings("unchecked")
   public void onVersionStoreEvent(VersionStoreEvent event) {
+    if (!started) {
+      return;
+    }
     Result result = event.getResult();
     Principal user = event.getUser().orElse(null);
     String repositoryId = event.getRepositoryId();
@@ -181,7 +198,7 @@ public class EventService implements AutoCloseable {
   private void fireCommitEvent(
       Commit commit, BranchName targetBranch, String repositoryId, @Nullable Principal user) {
     fireEvent(factory.newCommitEvent(commit, targetBranch, repositoryId, user));
-    if (hasContentSubscribers()) {
+    if (hasContentSubscribers) {
       fireContentEvents(commit, targetBranch, repositoryId, user);
     }
   }
@@ -189,7 +206,7 @@ public class EventService implements AutoCloseable {
   private void fireMergeEvent(
       MergeResult<Commit> result, String repositoryId, @Nullable Principal user) {
     fireEvent(factory.newMergeEvent(result, repositoryId, user));
-    if (hasCommitSubscribers()) {
+    if (hasCommitSubscribers) {
       for (Commit commit : result.getCreatedCommits()) {
         fireCommitEvent(commit, result.getTargetBranch(), repositoryId, user);
       }
@@ -199,7 +216,7 @@ public class EventService implements AutoCloseable {
   private void fireTransplantEvent(
       MergeResult<Commit> result, String repositoryId, @Nullable Principal user) {
     fireEvent(factory.newTransplantEvent(result, repositoryId, user));
-    if (hasCommitSubscribers()) {
+    if (hasCommitSubscribers) {
       for (Commit commit : result.getCreatedCommits()) {
         fireCommitEvent(commit, result.getTargetBranch(), repositoryId, user);
       }
@@ -227,15 +244,6 @@ public class EventService implements AutoCloseable {
     }
   }
 
-  private boolean hasContentSubscribers() {
-    return subscribers.hasSubscribersFor(EventType.CONTENT_STORED)
-        || subscribers.hasSubscribersFor(EventType.CONTENT_REMOVED);
-  }
-
-  private boolean hasCommitSubscribers() {
-    return subscribers.hasSubscribersFor(EventType.COMMIT) || hasContentSubscribers();
-  }
-
   /**
    * Forwards the event to all subscribers.
    *
@@ -245,16 +253,15 @@ public class EventService implements AutoCloseable {
    */
   protected void fireEvent(Event event) {
     LOGGER.debug("Firing {} event: {}", event.getType(), event);
-    for (Map.Entry<EventSubscription, EventSubscriber> entry : subscriptions.entrySet()) {
-      EventSubscription subscription = entry.getKey();
+    for (Map.Entry<String, EventSubscriber> entry : subscriptions.entrySet()) {
+      String subscriptionId = entry.getKey();
       EventSubscriber subscriber = entry.getValue();
-      deliverEvent(event, subscription, subscriber);
+      deliverEvent(event, subscriptionId, subscriber);
     }
   }
 
-  protected void deliverEvent(
-      Event event, EventSubscription subscription, EventSubscriber subscriber) {
-    MDC.put(SUBSCRIPTION_ID_MDC_KEY, subscription.getId().toString());
+  protected void deliverEvent(Event event, String subscriptionId, EventSubscriber subscriber) {
+    MDC.put(SUBSCRIPTION_ID_MDC_KEY, subscriptionId);
     try {
       if (subscriber.accepts(event)) {
         LOGGER.debug("Delivering event to subscriber {}: {}", subscriber, event);
