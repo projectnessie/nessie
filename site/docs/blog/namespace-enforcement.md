@@ -9,6 +9,5 @@ Namespaces can be created using any of these options:
 * Using [Iceberg Catalog API](https://github.com/apache/iceberg/blob/3ab00171b48bb793a3b71845eb12d5077ba892f1/nessie/src/main/java/org/apache/iceberg/nessie/NessieCatalog.java#L262).  
 * Using [content generator tool](https://github.com/projectnessie/nessie/blob/main/tools/content-generator/README.md) to batch create the missing namespaces with `create-missing-namespaces` option.
 
-[more info from the spec](https://github.com/projectnessie/nessie/blob/main/api/NESSIE-SPEC-2-0.md#200-beta1)
-[Issue background](https://github.com/projectnessie/nessie/issues/6244)  
-
+[More info from the spec](https://github.com/projectnessie/nessie/blob/main/api/NESSIE-SPEC-2-0.md#200-beta1).   
+[Issue background](https://github.com/projectnessie/nessie/issues/6244).
