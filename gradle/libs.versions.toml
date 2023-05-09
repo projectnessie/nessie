@@ -236,4 +236,4 @@ nexus-publish-plugin = { id = "io.github.gradle-nexus.publish-plugin", version =
 node-gradle = { id = "com.github.node-gradle.node", version = "4.0.0" }
 protobuf = { id = "com.google.protobuf", version = "0.9.3" }
 quarkus = { id = "io.quarkus", version.ref = "quarkus" }
-smallrye-openapi = { id = "io.smallrye.openapi", version = "3.3.3" }
+smallrye-openapi = { id = "io.smallrye.openapi", version = "3.3.4" }
