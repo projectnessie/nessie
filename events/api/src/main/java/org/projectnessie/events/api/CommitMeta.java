@@ -50,12 +50,12 @@ public interface CommitMeta {
    */
   @Value.Derived
   @JsonIgnore
-  default Optional<String> getSignOff() {
-    return getSignOffs().stream().findFirst();
+  default Optional<String> getSignedOffBy() {
+    return getAllSignedOffBy().stream().findFirst();
   }
 
   /** The commit sign-offs. */
-  List<String> getSignOffs();
+  List<String> getAllSignedOffBy();
 
   /** The commit message. */
   String getMessage();
@@ -70,11 +70,11 @@ public interface CommitMeta {
   @Value.Lazy
   @JsonIgnore
   default Map<String, String> getProperties() {
-    return getMultiProperties().entrySet().stream()
+    return getAllProperties().entrySet().stream()
         .filter(e -> !e.getValue().isEmpty())
         .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().get(0)));
   }
 
   /** Multivalued properties of this commit. */
-  Map<String, List<String>> getMultiProperties();
+  Map<String, List<String>> getAllProperties();
 }
