@@ -329,6 +329,12 @@ class TestJsonSerde {
   }
 
   @Test
+  void udf() throws Exception {
+    UDF content = ImmutableUDF.builder().id("id").sqlText("sqlText").dialect("dialect").build();
+    assertThat(deserialize(serialize(content), Content.class)).isEqualTo(content);
+  }
+
+  @Test
   void namespace() throws Exception {
     Namespace content =
         ImmutableNamespace.builder()

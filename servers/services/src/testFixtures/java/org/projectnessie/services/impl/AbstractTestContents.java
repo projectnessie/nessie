@@ -47,6 +47,7 @@ import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operation.Unchanged;
+import org.projectnessie.model.UDF;
 
 public abstract class AbstractTestContents extends BaseTestServiceImpl {
 
@@ -92,6 +93,9 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
                 ContentKey.of("a", "view"),
                 IcebergView.of("/iceberg/view", 1, 1, "dial", "SELECT foo FROM table"))),
         new ContentAndOperationType(
+            Content.Type.UDF,
+            Put.of(ContentKey.of("a", "udf"), UDF.of("dial", "SELECT foo FROM table"))),
+        new ContentAndOperationType(
             Content.Type.DELTA_LAKE_TABLE,
             Put.of(
                 ContentKey.of("c", "delta"),
@@ -112,6 +116,10 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
                 ContentKey.of("a", "iceberg_unchanged"),
                 IcebergTable.of("/iceberg/table", 42, 42, 42, 42))),
         new ContentAndOperationType(
+            Content.Type.UDF,
+            Delete.of(ContentKey.of("a", "udf_delete")),
+            Put.of(ContentKey.of("a", "udf_delete"), UDF.of("dial", "sql"))),
+        new ContentAndOperationType(
             Content.Type.ICEBERG_VIEW,
             Delete.of(ContentKey.of("a", "view_delete")),
             Put.of(
@@ -123,6 +131,10 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
             Put.of(
                 ContentKey.of("a", "view_unchanged"),
                 IcebergView.of("/iceberg/view", 42, 42, "dial", "sql"))),
+        new ContentAndOperationType(
+            Content.Type.UDF,
+            Unchanged.of(ContentKey.of("a", "udf_unchanged")),
+            Put.of(ContentKey.of("a", "udf_unchanged"), UDF.of("dial", "sql"))),
         new ContentAndOperationType(
             Content.Type.DELTA_LAKE_TABLE,
             Delete.of(ContentKey.of("a", "delta_delete")),

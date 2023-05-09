@@ -22,6 +22,7 @@ the Java services mechanism, that provide serialization code via instances of
 | 2          | `DELTA_LAKE_TABLE` | `org.projectnessie.model.DeltaLakeTable` | Delta Lake tables.                               | Project Nessie |
 | 3          | `ICEBERG_VIEW`     | `org.projectnessie.model.IcebergView`    | Iceberg views.                                   | Project Nessie |
 | 4          | `NAMESPACE`        | `org.projectnessie.model.Namespace`      | Namespaces.                                      | Project Nessie |
+| 5          | `UDF`              | `org.projectnessie.model.UDF`            | UDFs.                                            | Project Nessie |
 
 Since the ID values for payloads and the namespace for content types must be globally unique,
 please register your Payload ID and Content Type via an

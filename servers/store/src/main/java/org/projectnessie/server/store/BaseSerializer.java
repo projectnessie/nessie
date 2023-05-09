@@ -22,8 +22,8 @@ import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.model.ImmutableIcebergView;
-import org.projectnessie.model.ImmutableNamespace;
 import org.projectnessie.model.Namespace;
+import org.projectnessie.model.UDF;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.nessie.relocated.protobuf.InvalidProtocolBufferException;
 import org.projectnessie.server.store.proto.ObjectTypes;
@@ -66,7 +66,12 @@ abstract class BaseSerializer<C extends Content> implements LegacyContentSeriali
     return builder.build();
   }
 
-  static ImmutableNamespace valueFromStoreNamespace(ObjectTypes.Content content) {
+  static UDF valueFromStoreUDF(ObjectTypes.Content content) {
+    ObjectTypes.UDF udf = content.getUdf();
+    return UDF.of(content.getId(), udf.getDialect(), udf.getSqlText());
+  }
+
+  static Namespace valueFromStoreNamespace(ObjectTypes.Content content) {
     ObjectTypes.Namespace namespace = content.getNamespace();
     return Namespace.builder()
         .id(content.getId())
@@ -75,7 +80,7 @@ abstract class BaseSerializer<C extends Content> implements LegacyContentSeriali
         .build();
   }
 
-  static ImmutableIcebergTable valueFromStoreIcebergTable(
+  static IcebergTable valueFromStoreIcebergTable(
       ObjectTypes.Content content, Supplier<String> metadataPointerSupplier) {
     ObjectTypes.IcebergRefState table = content.getIcebergRefState();
     String metadataLocation =
@@ -93,7 +98,7 @@ abstract class BaseSerializer<C extends Content> implements LegacyContentSeriali
     return tableBuilder.build();
   }
 
-  static ImmutableIcebergView valueFromStoreIcebergView(
+  static IcebergView valueFromStoreIcebergView(
       ObjectTypes.Content content, Supplier<String> metadataPointerSupplier) {
     ObjectTypes.IcebergViewState view = content.getIcebergViewState();
     // If the (protobuf) view has the metadataLocation attribute set, use that one, otherwise

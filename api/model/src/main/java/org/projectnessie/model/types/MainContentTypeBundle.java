@@ -19,6 +19,7 @@ import org.projectnessie.model.DeltaLakeTable;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.Namespace;
+import org.projectnessie.model.UDF;
 
 /**
  * Provides the {@link org.projectnessie.model.Content.Type content types} for Iceberg table + view,
@@ -32,5 +33,6 @@ public final class MainContentTypeBundle implements ContentTypeBundle {
     contentTypeRegistry.register(DeltaLakeTable.class);
     contentTypeRegistry.register(IcebergView.class);
     contentTypeRegistry.register(Namespace.class);
+    contentTypeRegistry.register(UDF.class);
   }
 }

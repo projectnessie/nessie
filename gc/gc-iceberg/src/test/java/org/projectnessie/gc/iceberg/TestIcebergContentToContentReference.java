@@ -29,6 +29,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.Namespace;
+import org.projectnessie.model.UDF;
 
 public class TestIcebergContentToContentReference {
 
@@ -36,6 +37,7 @@ public class TestIcebergContentToContentReference {
     return Stream.of(
         ImmutableDeltaLakeTable.builder().id("123").lastCheckpoint("lc").build(),
         IcebergView.of("cid", "meta", 42, 43, "dialect", "sql"),
+        UDF.of("dialect", "sql"),
         Namespace.of("foo", "bar"));
   }
 

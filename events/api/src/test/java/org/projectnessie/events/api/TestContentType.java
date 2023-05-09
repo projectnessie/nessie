@@ -63,6 +63,12 @@ class TestContentType {
   }
 
   @Test
+  void udf() {
+    UDF content = ImmutableUDF.builder().id("id").sqlText("sqlText").dialect("dialect").build();
+    assertThat(content.getType()).isEqualTo(ContentType.UDF);
+  }
+
+  @Test
   void generic() {
     GenericContent content =
         ImmutableGenericContent.builder().id("id").genericType("genericType").build();

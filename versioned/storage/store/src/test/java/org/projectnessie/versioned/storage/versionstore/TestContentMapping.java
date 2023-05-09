@@ -47,6 +47,7 @@ import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.Namespace;
+import org.projectnessie.model.UDF;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.ImmutableCommit;
@@ -72,6 +73,7 @@ public class TestContentMapping {
     return Stream.of(
         IcebergTable.of("/dev/null", 42, 43, 44, 45),
         IcebergView.of("/dev/null", 42, 43, "dial", "sql"),
+        UDF.of("dial", "sql"),
         Namespace.of("foo", "bar"),
         OnRefOnly.newOnRef("value"),
         ImmutableDeltaLakeTable.builder()

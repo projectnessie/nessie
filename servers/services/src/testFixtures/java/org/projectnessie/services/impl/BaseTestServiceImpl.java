@@ -68,6 +68,7 @@ import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
+import org.projectnessie.model.UDF;
 import org.projectnessie.services.authz.AbstractBatchAccessChecker;
 import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.Authorizer;
@@ -576,6 +577,10 @@ public abstract class BaseTestServiceImpl {
           t.getSchemaId(),
           t.getDialect(),
           t.getSqlText());
+    }
+    if (content instanceof UDF) {
+      UDF t = (UDF) content;
+      return UDF.of(t.getDialect(), t.getSqlText());
     }
     if (content instanceof DeltaLakeTable) {
       DeltaLakeTable t = (DeltaLakeTable) content;

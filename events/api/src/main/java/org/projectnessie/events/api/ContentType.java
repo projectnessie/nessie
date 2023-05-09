@@ -51,6 +51,13 @@ public enum ContentType {
   DELTA_LAKE_TABLE(DeltaLakeTable.class),
 
   /**
+   * The content is a UDF.
+   *
+   * @see UDF
+   */
+  UDF(UDF.class),
+
+  /**
    * The content is of an unknown type. This type is a catch-all type for all other runtime types
    * that are not one of the built-in types above.
    *
