@@ -72,11 +72,11 @@ public class EventFactory {
                 ImmutableCommitMeta.builder()
                     .committer(Objects.requireNonNull(commitMeta.getCommitter()))
                     .authors(commitMeta.getAllAuthors())
-                    .signOffs(commitMeta.getAllSignedOffBy())
+                    .allSignedOffBy(commitMeta.getAllSignedOffBy())
                     .message(commitMeta.getMessage())
                     .commitTime(Objects.requireNonNull(commitMeta.getCommitTime()))
                     .authorTime(Objects.requireNonNull(commitMeta.getAuthorTime()))
-                    .multiProperties(commitMeta.getAllProperties())
+                    .allProperties(commitMeta.getAllProperties())
                     .build());
     if (user != null) {
       builder.eventInitiator(user.getName());

@@ -139,6 +139,10 @@ class TestEventSubscribers {
 
   /** Expected to be loaded by ServiceLoader. */
   public static class MockEventSubscriber implements EventSubscriber {
+
+    @Override
+    public void onSubscribe(EventSubscription subscription) {}
+
     @Override
     public void close() {}
   }
