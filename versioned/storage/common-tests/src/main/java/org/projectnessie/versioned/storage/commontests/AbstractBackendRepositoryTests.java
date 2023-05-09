@@ -17,6 +17,7 @@ package org.projectnessie.versioned.storage.commontests;
 
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
@@ -29,8 +30,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.logic.RepositoryLogic;
+import org.projectnessie.versioned.storage.common.objtypes.Compression;
+import org.projectnessie.versioned.storage.common.objtypes.StringObj;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
 import org.projectnessie.versioned.storage.common.persist.Obj;
@@ -49,12 +53,36 @@ public class AbstractBackendRepositoryTests {
   @NessiePersist protected PersistFactory persistFactory;
 
   @Test
-  public void createEraseRepoViaPersist() {
+  public void createEraseRepoViaPersist() throws Exception {
     Persist repo1 = newRepo();
 
     RepositoryLogic repositoryLogic = repositoryLogic(repo1);
     repositoryLogic.initialize("foo-main");
     soft.assertThat(repositoryLogic.repositoryExists()).isTrue();
+
+    int objs = 250;
+    soft.assertThat(
+            repo1.storeObjs(
+                IntStream.range(0, objs)
+                    .mapToObj(
+                        x ->
+                            StringObj.stringData(
+                                "content-type",
+                                Compression.NONE,
+                                "file-" + x,
+                                Collections.emptyList(),
+                                ByteString.copyFromUtf8("text-" + x)))
+                    .toArray(Obj[]::new)))
+        .hasSize(objs)
+        .doesNotContain(false);
+    try (CloseableIterator<Obj> scan = repo1.scanAllObjects(EnumSet.allOf(ObjType.class))) {
+      soft.assertThat(scan)
+          .toIterable()
+          .filteredOn(
+              o -> o instanceof StringObj && ((StringObj) o).contentType().equals("content-type"))
+          .hasSize(objs);
+    }
+
     repo1.erase();
     soft.assertThat(repositoryLogic.repositoryExists()).isFalse();
     try (CloseableIterator<Obj> scan = repo1.scanAllObjects(EnumSet.allOf(ObjType.class))) {
