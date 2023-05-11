@@ -37,7 +37,7 @@ quarkusLoggingSentry = "2.0.1"
 quarkusNativeBuilderImage = "quay.io/quarkus/ubi-quarkus-mandrel-builder-image:22.3-java17"
 rocksdb = "8.1.1.1"
 slf4j = "1.7.36"
-testcontainers = "1.18.0"
+testcontainers = "1.18.1"
 undertow = "2.2.19.Final"
 
 [bundles]
