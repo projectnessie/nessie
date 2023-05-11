@@ -94,23 +94,27 @@ A complete set of MongoDB configuration options for Quarkus can be found on [qua
 
 ### Version Store Advanced Settings
 
-The following configurations are advanced configurations for version stores to configure how Nessie will store the data into the configured data store:
+The following configurations are advanced configurations for version stores to configure how Nessie will store the data
+into the configured data store:
 
-| Property                                                        | Default values      | Type      | Description                                                                                                                                     |
-|-----------------------------------------------------------------|---------------------|-----------|-------------------------------------------------------------------------------------------------------------------------------------------------|
-| `nessie.version.store.persist.repository-id`                    |                     | `String`  | Sets Nessie repository ID (optional). This ID can be used to distinguish multiple Nessie repositories that reside in the same storage instance. |
-| `nessie.version.store.persist.parents-per-commit`               | `20`                | `int`     | Sets the number of parent-commit-hashes stored in Nessie store.                                                                                 |
-| `nessie.version.store.persist.commit-timeout-millis`            | `5000`              | `int`     | Sets the timeout for CAS-like operations in milliseconds.                                                                                       |
-| `nessie.version.store.persist.commit-retries`                   | `Integer.MAX_VALUE` | `int`     | Sets the maximum retries for CAS-like operations.                                                                                               |
-| `nessie.version.store.persist.retry-initial-sleep-millis-lower` | `5`                 | `int`     | Configures the initial lower-bound sleep time in milliseconds of the exponential backoff when retrying commit operations.                       |
-| `nessie.version.store.persist.retry-initial-sleep-millis-upper` | `25`                | `int`     | Configures the initial upper-bound sleep time in milliseconds of the exponential backoff when retrying commit operations.                       |
-| `nessie.version.store.persist.retry-max-sleep-millis`           | `250`               | `int`     | Configures the max sleep time in milliseconds of the exponential backoff when retrying commit operations.                                       |
-| `nessie.version.store.persist.max-incremental-index-size`       | `50 * 1024`         | `int`     | Maximum serialized size of key indexes stored inside commit objects.                                                                            |
-| `nessie.version.store.persist.max-serialized-index-size`        | `200 * 1024`        | `int`     | Maximum serialized size of key indexes stored as separate objects.                                                                              |
-| `nessie.version.store.persist.max-reference-stripes-per-commit` | `50`                | `int`     | Maximum number of referenced index objects stored inside commit objects.                                                                        |
-| `nessie.version.store.persist.assumed-wall-clock-drift-micros`  | `5_000_000`         | `long`    | Sets the assumed wall-clock drift between multiple Nessie instances, in microseconds.                                                           |
-| `nessie.version.store.persist.namespace-validation`             | `true`              | `boolean` | Whether namespace validation is enabled.                                                                                                        |
-| `nessie.version.store.persist.cache-capacity-mb`                | `64`                | `int`     | Amount of heap used to cache objects.                                                                                                           |
+Usually, only the cache-capacity should be adjusted to the amount of the Java heap "available" for the cache. The
+default is conservative, bumping the cache size is recommended.
+
+| Property                                                        | Default values      | Type      | Description                                                                                                                                                                     |
+|-----------------------------------------------------------------|---------------------|-----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `nessie.version.store.persist.repository-id`                    |                     | `String`  | Sets Nessie repository ID (optional). This ID can be used to distinguish multiple Nessie repositories that reside in the same storage instance.                                 |
+| `nessie.version.store.persist.parents-per-commit`               | `20`                | `int`     | Sets the number of parent-commit-hashes stored in Nessie store.                                                                                                                 |
+| `nessie.version.store.persist.commit-timeout-millis`            | `5000`              | `int`     | Sets the timeout for CAS-like operations in milliseconds.                                                                                                                       |
+| `nessie.version.store.persist.commit-retries`                   | `Integer.MAX_VALUE` | `int`     | Sets the maximum retries for CAS-like operations.                                                                                                                               |
+| `nessie.version.store.persist.retry-initial-sleep-millis-lower` | `5`                 | `int`     | Configures the initial lower-bound sleep time in milliseconds of the exponential backoff when retrying commit operations.                                                       |
+| `nessie.version.store.persist.retry-initial-sleep-millis-upper` | `25`                | `int`     | Configures the initial upper-bound sleep time in milliseconds of the exponential backoff when retrying commit operations.                                                       |
+| `nessie.version.store.persist.retry-max-sleep-millis`           | `250`               | `int`     | Configures the max sleep time in milliseconds of the exponential backoff when retrying commit operations.                                                                       |
+| `nessie.version.store.persist.max-incremental-index-size`       | `50 * 1024`         | `int`     | Maximum serialized size of key indexes stored inside commit objects. Trade off: bigger incremental indexes reduce the amount of reads, at the expense of "bigger" read results. |
+| `nessie.version.store.persist.max-serialized-index-size`        | `200 * 1024`        | `int`     | Maximum serialized size of key indexes stored as separate objects.  Trade off: bigger incremental indexes reduce the amount of reads, at the expense of "bigger" read results.  |
+| `nessie.version.store.persist.max-reference-stripes-per-commit` | `50`                | `int`     | Maximum number of referenced index objects stored inside commit objects.                                                                                                        |
+| `nessie.version.store.persist.assumed-wall-clock-drift-micros`  | `5_000_000`         | `long`    | Sets the assumed wall-clock drift between multiple Nessie instances, in microseconds.                                                                                           |
+| `nessie.version.store.persist.namespace-validation`             | `true`              | `boolean` | Whether namespace validation is enabled, changing this to `false` will break the Nessie specification!                                                                          |
+| `nessie.version.store.persist.cache-capacity-mb`                | `64`                | `int`     | Amount of heap used to cache objects.                                                                                                                                           |
 
 #### Legacy version store configuration
 
