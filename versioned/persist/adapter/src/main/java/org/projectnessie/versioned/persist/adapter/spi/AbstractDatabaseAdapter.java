@@ -87,7 +87,6 @@ import org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.GetNamedRefsParams;
-import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableKeyDetails;
 import org.projectnessie.versioned.ImmutableMergeResult;
@@ -831,7 +830,8 @@ public abstract class AbstractDatabaseAdapter<
             return ref;
           }
 
-          RetrieveOptions retrieveOptions = namedRefsRetrieveOptionsForReference(params, ref);
+          GetNamedRefsParams.RetrieveOptions retrieveOptions =
+              namedRefsRetrieveOptionsForReference(params, ref);
 
           ReferenceInfo<ByteString> updated =
               namedRefsRequiresBaseReference(retrieveOptions)

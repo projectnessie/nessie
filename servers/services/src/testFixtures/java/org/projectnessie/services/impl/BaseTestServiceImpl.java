@@ -54,7 +54,6 @@ import org.projectnessie.model.DeltaLakeTable;
 import org.projectnessie.model.Detached;
 import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.model.EntriesResponse;
-import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.GetMultipleContentsResponse.ContentWithKey;
 import org.projectnessie.model.IcebergTable;
@@ -229,7 +228,7 @@ public abstract class BaseTestServiceImpl {
         .getAllReferences(fetchOption, filter, null, new UnlimitedListResponseHandler<>());
   }
 
-  protected List<Entry> withoutNamespaces(List<Entry> entries) {
+  protected List<EntriesResponse.Entry> withoutNamespaces(List<EntriesResponse.Entry> entries) {
     return entries.stream()
         .filter(e -> e.getType() != Content.Type.NAMESPACE)
         .collect(Collectors.toList());
@@ -434,7 +433,9 @@ public abstract class BaseTestServiceImpl {
   protected Branch ensureNamespacesForKeysExist(Branch targetBranch, ContentKey... keysToCheck)
       throws NessieConflictException, NessieNotFoundException {
     Set<ContentKey> existingKeys =
-        entries(targetBranch).stream().map(Entry::getName).collect(Collectors.toSet());
+        entries(targetBranch).stream()
+            .map(EntriesResponse.Entry::getName)
+            .collect(Collectors.toSet());
 
     Put[] nsToCreate =
         Arrays.stream(keysToCheck)

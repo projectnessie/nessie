@@ -82,7 +82,6 @@ import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
 import org.projectnessie.versioned.storage.common.logic.CommitLogic;
-import org.projectnessie.versioned.storage.common.logic.CommitRetry;
 import org.projectnessie.versioned.storage.common.logic.CommitRetry.RetryException;
 import org.projectnessie.versioned.storage.common.logic.ConflictHandler.ConflictResolution;
 import org.projectnessie.versioned.storage.common.logic.CreateCommit;
@@ -692,7 +691,7 @@ class BaseCommitHelper {
     try {
       persist.updateReferencePointer(reference, newHead);
     } catch (RefConditionFailedException e) {
-      throw new CommitRetry.RetryException(retryState);
+      throw new RetryException(retryState);
     } catch (RefNotFoundException e) {
       throw new RuntimeException("Internal reference not found", e);
     }

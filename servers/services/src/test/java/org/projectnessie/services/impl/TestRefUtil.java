@@ -73,7 +73,7 @@ class TestRefUtil {
                       }
 
                       @Override
-                      public ReferenceType getType() {
+                      public Reference.ReferenceType getType() {
                         return null;
                       }
                     }))

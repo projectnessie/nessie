@@ -36,7 +36,6 @@ import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
-import org.projectnessie.model.Reference.ReferenceType;
 import org.projectnessie.model.Validation;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.WithHash;
@@ -121,7 +120,7 @@ public interface TreeService {
       throws NessieNotFoundException, NessieConflictException;
 
   Reference deleteReference(
-      ReferenceType referenceType,
+      Reference.ReferenceType referenceType,
       @Valid
           @jakarta.validation.Valid
           @NotNull

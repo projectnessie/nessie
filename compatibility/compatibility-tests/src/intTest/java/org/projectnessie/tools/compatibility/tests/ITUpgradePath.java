@@ -61,10 +61,8 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.LogResponse;
-import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
-import org.projectnessie.model.RefLogResponse;
 import org.projectnessie.model.RefLogResponse.RefLogResponseEntry;
 import org.projectnessie.model.Reference;
 import org.projectnessie.tools.compatibility.api.NessieAPI;
@@ -132,8 +130,8 @@ public class ITUpgradePath {
   }
 
   @SuppressWarnings("deprecation")
-  Stream<RefLogResponse.RefLogResponseEntry> refLog(
-      Function<GetRefLogBuilder, GetRefLogBuilder> configurer) throws NessieNotFoundException {
+  Stream<RefLogResponseEntry> refLog(Function<GetRefLogBuilder, GetRefLogBuilder> configurer)
+      throws NessieNotFoundException {
     if (version.isGreaterThan(Version.parseVersion("0.30.0"))) {
       return configurer.apply(api.getRefLog()).stream();
     } else {
@@ -221,7 +219,7 @@ public class ITUpgradePath {
               String commitMessage = "hello world " + versionFromRef;
               assertThat(commitLog)
                   .hasSize(1)
-                  .map(LogEntry::getCommitMeta)
+                  .map(LogResponse.LogEntry::getCommitMeta)
                   .map(CommitMeta::getMessage)
                   .containsExactly(commitMessage);
             })

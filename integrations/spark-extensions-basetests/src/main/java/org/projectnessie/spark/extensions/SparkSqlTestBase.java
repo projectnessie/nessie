@@ -51,8 +51,6 @@ import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation;
-import org.projectnessie.model.Operation.Delete;
-import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
@@ -107,13 +105,14 @@ public abstract class SparkSqlTestBase {
           api.commitMultipleOperations()
               .branch(initialDefaultBranch)
               .commitMeta(CommitMeta.fromMessage("INFRA: initial commit"))
-              .operation(Put.of(ContentKey.of("dummy"), IcebergTable.of("foo", 1, 2, 3, 4)))
+              .operation(
+                  Operation.Put.of(ContentKey.of("dummy"), IcebergTable.of("foo", 1, 2, 3, 4)))
               .commit();
       initialDefaultBranch =
           api.commitMultipleOperations()
               .branch(initialDefaultBranch)
               .commitMeta(CommitMeta.fromMessage("INFRA: common ancestor"))
-              .operation(Delete.of(ContentKey.of("dummy")))
+              .operation(Operation.Delete.of(ContentKey.of("dummy")))
               .commit();
       first = false;
     }

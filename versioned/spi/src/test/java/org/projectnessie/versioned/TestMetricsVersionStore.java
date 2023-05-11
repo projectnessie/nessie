@@ -426,7 +426,7 @@ class TestMetricsVersionStore {
     List<Long> recorded = new ArrayList<>();
 
     TestTimer(
-        Id id,
+        Meter.Id id,
         Clock clock,
         DistributionStatisticConfig distributionStatisticConfig,
         PauseDetector pauseDetector,

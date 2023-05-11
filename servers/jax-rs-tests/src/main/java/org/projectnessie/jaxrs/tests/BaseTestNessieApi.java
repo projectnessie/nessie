@@ -83,7 +83,6 @@ import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.DiffResponse;
 import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.model.EntriesResponse;
-import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.GetNamespacesResponse;
 import org.projectnessie.model.IcebergTable;
@@ -1371,7 +1370,7 @@ public abstract class BaseTestNessieApi {
         branch = prepCommit(branch, "c-" + i, dummyPut("c", Integer.toString(i))).commit();
       }
     }
-    List<LogResponse.LogEntry> log =
+    List<LogEntry> log =
         api().getCommitLog().hashOnRef(branch.getHash()).stream().collect(Collectors.toList());
     // Verifying size is sufficient to make sure the right log was retrieved
     assertThat(log).hasSize(5);
@@ -1440,7 +1439,8 @@ public abstract class BaseTestNessieApi {
             .operation(Put.of(b, tb))
             .commitMeta(CommitMeta.fromMessage("commit 1"))
             .commit();
-    List<Entry> entries = api().getEntries().hashOnRef(branch.getHash()).get().getEntries();
+    List<EntriesResponse.Entry> entries =
+        api().getEntries().hashOnRef(branch.getHash()).get().getEntries();
     soft.assertThat(entries)
         .map(e -> immutableEntry(e.getName(), e.getType()))
         .containsExactlyInAnyOrder(

@@ -41,7 +41,6 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
-import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeResponse;
@@ -88,8 +87,7 @@ public abstract class AbstractCompatibilityTests {
   }
 
   @SuppressWarnings("deprecation")
-  Stream<LogResponse.LogEntry> commitLog(
-      Function<GetCommitLogBuilder, GetCommitLogBuilder> configurer)
+  Stream<LogEntry> commitLog(Function<GetCommitLogBuilder, GetCommitLogBuilder> configurer)
       throws NessieNotFoundException {
     if (getClientVersion().isGreaterThanOrEqual(Version.CLIENT_RESULTS_NATIVE_STREAM)) {
       return configurer.apply(api.getCommitLog()).stream();

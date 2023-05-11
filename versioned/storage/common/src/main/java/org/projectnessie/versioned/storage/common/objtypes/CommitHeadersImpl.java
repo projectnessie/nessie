@@ -43,13 +43,13 @@ final class CommitHeadersImpl implements CommitHeaders {
     }
 
     @Override
-    public Builder add(String name, String value) {
+    public CommitHeaders.Builder add(String name, String value) {
       nameList(name).add(value);
       return this;
     }
 
     @Override
-    public Builder from(CommitHeaders headers) {
+    public CommitHeaders.Builder from(CommitHeaders headers) {
       CommitHeadersImpl h = (CommitHeadersImpl) headers;
       for (Entry<String, List<String>> e : h.map.entrySet()) {
         nameList(e.getKey()).addAll(e.getValue());

@@ -48,7 +48,6 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.MergeBehavior;
-import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferenceMetadata;
@@ -220,7 +219,7 @@ public abstract class AbstractTestReferences extends BaseTestServiceImpl {
                     .message("common-merge-ancestor")
                     .properties(ImmutableMap.of("prop1", "val1", "prop2", "val2"))
                     .build(),
-                Operation.Put.of(ContentKey.of("meep"), meta))
+                Put.of(ContentKey.of("meep"), meta))
             .getTargetBranch();
     String someHash = main.getHash();
 

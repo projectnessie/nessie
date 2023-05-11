@@ -211,7 +211,7 @@ class TestSerialization {
             ProtoSerialization::toProto,
             v -> {
               try {
-                return AdapterTypes.RepoProps.parseFrom(v);
+                return RepoProps.parseFrom(v);
               } catch (InvalidProtocolBufferException e) {
                 throw new RuntimeException(e);
               }
@@ -326,7 +326,7 @@ class TestSerialization {
       props.put(key, value);
       repoDescription.putProperties(key, value);
     }
-    AdapterTypes.RepoProps repoProps = toProto(repoDescription.build());
+    RepoProps repoProps = toProto(repoDescription.build());
 
     List<AdapterTypes.Entry> expected =
         props.entrySet().stream()

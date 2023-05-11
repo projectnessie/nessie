@@ -39,7 +39,6 @@ import org.apache.iceberg.avro.AvroSchemaUtil;
 import org.apache.iceberg.io.FileAppender;
 import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.types.Types;
-import org.apache.iceberg.types.Types.StructType;
 import org.immutables.value.Value;
 
 @Value.Immutable
@@ -143,7 +142,7 @@ public abstract class MockManifestFile implements IndexedRecord {
     MockPartitionSpec mockPartitionSpec = mockTableMeta.partitionSpec(0);
     org.apache.iceberg.Schema icebergSchema = mockTableMeta.schema(0).toSchema();
     PartitionSpec partitionSpec = mockPartitionSpec.toPartitionSpec(icebergSchema);
-    StructType partitionType = partitionSpec.partitionType();
+    Types.StructType partitionType = partitionSpec.partitionType();
 
     return IntStream.range(0, numEntries())
         .mapToObj(
@@ -164,7 +163,7 @@ public abstract class MockManifestFile implements IndexedRecord {
     MockPartitionSpec mockPartitionSpec = mockTableMeta.partitionSpec(0);
     org.apache.iceberg.Schema icebergSchema = mockTableMeta.schema(0).toSchema();
     PartitionSpec partitionSpec = mockPartitionSpec.toPartitionSpec(icebergSchema);
-    StructType partitionType = partitionSpec.partitionType();
+    Types.StructType partitionType = partitionSpec.partitionType();
 
     try {
       String partitionSpecJson = PartitionSpecParser.toJson(partitionSpec);

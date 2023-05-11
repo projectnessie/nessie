@@ -24,7 +24,6 @@ import org.apache.avro.generic.IndexedRecord;
 import org.apache.iceberg.BridgeToIceberg;
 import org.apache.iceberg.avro.AvroSchemaUtil;
 import org.apache.iceberg.types.Types;
-import org.apache.iceberg.types.Types.StructType;
 import org.immutables.value.Value;
 
 @Value.Immutable
@@ -51,7 +50,7 @@ public abstract class MockManifestEntry implements IndexedRecord {
 
   public abstract String filePath();
 
-  public abstract StructType partitionType();
+  public abstract Types.StructType partitionType();
 
   // ids for data-file columns are assigned from 1000
   static final Types.NestedField STATUS = required(0, "status", Types.IntegerType.get());

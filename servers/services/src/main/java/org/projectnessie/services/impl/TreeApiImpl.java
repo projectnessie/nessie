@@ -76,7 +76,6 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Detached;
 import org.projectnessie.model.EntriesResponse;
-import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableCommitResponse;
@@ -92,7 +91,6 @@ import org.projectnessie.model.MergeResponse.ContentKeyConflict;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
-import org.projectnessie.model.Reference.ReferenceType;
 import org.projectnessie.model.ReferenceMetadata;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Validation;
@@ -327,7 +325,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
   @Override
   public Reference deleteReference(
-      ReferenceType referenceType, String referenceName, String expectedHash)
+      Reference.ReferenceType referenceType, String referenceName, String expectedHash)
       throws NessieConflictException, NessieNotFoundException {
     try {
       ReferenceInfo<CommitMeta> resolved =
@@ -780,7 +778,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       String filter,
       String pagingToken,
       boolean withContent,
-      PagedResponseHandler<R, Entry> pagedResponseHandler,
+      PagedResponseHandler<R, EntriesResponse.Entry> pagedResponseHandler,
       Consumer<WithHash<NamedRef>> effectiveReference)
       throws NessieNotFoundException {
     WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(namedRef, hashOnRef);
