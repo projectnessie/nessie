@@ -258,7 +258,6 @@ class TestNessieCompatibilityExtensions {
     }
 
     @Nested
-    @SuppressWarnings("ClassCanBeStatic")
     class Inner {
       @NessieVersion Version innerVersion;
 

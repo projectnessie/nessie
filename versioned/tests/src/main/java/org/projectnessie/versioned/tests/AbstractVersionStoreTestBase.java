@@ -90,7 +90,6 @@ public abstract class AbstractVersionStoreTestBase {
   }
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class SingleBranch extends AbstractSingleBranch {
     public SingleBranch() {
       super(AbstractVersionStoreTestBase.this.store());
@@ -98,7 +97,6 @@ public abstract class AbstractVersionStoreTestBase {
   }
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class DuplicateTable extends AbstractDuplicateTable {
     public DuplicateTable() {
       super(AbstractVersionStoreTestBase.this.store());
@@ -106,7 +104,6 @@ public abstract class AbstractVersionStoreTestBase {
   }
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class NamespaceValidation extends AbstractNamespaceValidation {
     public NamespaceValidation() {
       super(AbstractVersionStoreTestBase.this.store());
