@@ -16,6 +16,7 @@
 package org.projectnessie.gc.tool.cli.options;
 
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.stream.Stream;
 import picocli.CommandLine.IDefaultValueProvider;
 import picocli.CommandLine.Model.ArgSpec;
@@ -38,7 +39,7 @@ public class EnvironmentDefaultProvider implements IDefaultValueProvider {
       OptionSpec optionSpec = (OptionSpec) argSpec;
       return Arrays.stream(optionSpec.names())
           .filter(name -> name.startsWith("--"))
-          .map(name -> "NESSIE_GC_" + name.substring(2).replace('-', '_').toUpperCase())
+          .map(name -> "NESSIE_GC_" + name.substring(2).replace('-', '_').toUpperCase(Locale.ROOT))
           .flatMap(
               name -> {
                 String envVal = System.getenv(name);
