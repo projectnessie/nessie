@@ -53,7 +53,8 @@ public interface ContentService {
           @jakarta.validation.constraints.Pattern(
               regexp = Validation.HASH_REGEX,
               message = Validation.HASH_MESSAGE)
-          String hashOnRef)
+          String hashOnRef,
+      boolean withDocumentation)
       throws NessieNotFoundException;
 
   GetMultipleContentsResponse getMultipleContents(
@@ -76,6 +77,7 @@ public interface ContentService {
               message = Validation.HASH_MESSAGE)
           String hashOnRef,
       @Valid @jakarta.validation.Valid @Size @jakarta.validation.constraints.Size(min = 1)
-          List<ContentKey> keys)
+          List<ContentKey> keys,
+      boolean withDocumentation)
       throws NessieNotFoundException;
 }

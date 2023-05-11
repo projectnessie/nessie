@@ -23,6 +23,7 @@ import static org.projectnessie.api.v2.doc.ApiDoc.KEY_PARAMETER_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.PAGING_INFO;
 import static org.projectnessie.api.v2.doc.ApiDoc.REF_NAME_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.REF_PARAMETER_DESCRIPTION;
+import static org.projectnessie.api.v2.doc.ApiDoc.WITH_DOC_PARAMETER_DESCRIPTION;
 import static org.projectnessie.model.Validation.REF_NAME_PATH_ELEMENT_REGEX;
 
 import com.fasterxml.jackson.annotation.JsonView;
@@ -519,7 +520,11 @@ public interface HttpTreeApi extends TreeApi {
               })
           @PathParam("ref")
           @jakarta.ws.rs.PathParam("ref")
-          String ref)
+          String ref,
+      @Parameter(description = WITH_DOC_PARAMETER_DESCRIPTION)
+          @QueryParam("with-doc")
+          @jakarta.ws.rs.QueryParam("with-doc")
+          boolean withDocumentation)
       throws NessieNotFoundException;
 
   @GET
@@ -569,7 +574,11 @@ public interface HttpTreeApi extends TreeApi {
       @Parameter(description = KEY_PARAMETER_DESCRIPTION)
           @QueryParam("key")
           @jakarta.ws.rs.QueryParam("key")
-          List<String> keys)
+          List<String> keys,
+      @Parameter(description = WITH_DOC_PARAMETER_DESCRIPTION)
+          @QueryParam("with-doc")
+          @jakarta.ws.rs.QueryParam("with-doc")
+          boolean withDocumentation)
       throws NessieNotFoundException;
 
   @Override
@@ -624,7 +633,11 @@ public interface HttpTreeApi extends TreeApi {
       @RequestBody(
               description = "Keys to retrieve.",
               content = @Content(examples = @ExampleObject(ref = "multiGetRequest")))
-          GetMultipleContentsRequest request)
+          GetMultipleContentsRequest request,
+      @Parameter(description = WITH_DOC_PARAMETER_DESCRIPTION)
+          @QueryParam("with-doc")
+          @jakarta.ws.rs.QueryParam("with-doc")
+          boolean withDocumentation)
       throws NessieNotFoundException;
 
   @Override

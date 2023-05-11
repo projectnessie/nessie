@@ -70,6 +70,42 @@ public interface MergeKeyBehavior {
   Content getResolvedContent();
 
   /**
+   * If present, the current documentation on the target branch will be compared against this value.
+   *
+   * <p>This parameter is not supported when multiple commits will be generated, which means only
+   * merge operations.
+   *
+   * <p>Supplying a {@link #getResolvedDocumentation() resolved documentation} requires setting this
+   * attribute. The merge operation will result in a "conflict", if current value on the target
+   * branch is different from this value.
+   */
+  @JsonInclude(Include.NON_NULL)
+  @JsonView(Views.V2.class)
+  @Nullable
+  @jakarta.annotation.Nullable
+  Documentation getExpectedTargetDocumentation();
+
+  /**
+   * Clients can provide a "resolved" documentation object, which will then automatically be
+   * persisted via the merge operation instead of detecting and potentially raising a
+   * merge-conflict, assuming the content-type is the same.
+   *
+   * <p>This functionality is not implemented for the "legacy" storage model, using this option with
+   * the "legacy" storage model will result in an error.
+   *
+   * <p>This parameter is not supported when multiple commits will be generated, which means only
+   * merge operations.
+   *
+   * <p>It is mandatory to supply the {@link #getExpectedTargetDocumentation() expected
+   * documentation value},
+   */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @JsonView(Views.V2.class)
+  @Nullable
+  @jakarta.annotation.Nullable
+  Documentation getResolvedDocumentation();
+
+  /**
    * Additional information about the operation and/or content object. If and how a Nessie server
    * uses and handles the information depends on the server version and type of metadata (called
    * variant).

@@ -56,7 +56,8 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
   }
 
   @Override
-  public ContentResponse getContent(ContentKey key, String namedRef, String hashOnRef)
+  public ContentResponse getContent(
+      ContentKey key, String namedRef, String hashOnRef, boolean withDocumentation)
       throws NessieNotFoundException {
     WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
     startAccessCheck().canReadEntityValue(ref.getValue(), key, null).checkAndThrow();
@@ -73,7 +74,7 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
 
   @Override
   public GetMultipleContentsResponse getMultipleContents(
-      String namedRef, String hashOnRef, List<ContentKey> externalKeys)
+      String namedRef, String hashOnRef, List<ContentKey> externalKeys, boolean withDocumentation)
       throws NessieNotFoundException {
     try {
       WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,50 +16,48 @@
 package org.projectnessie.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
-import org.projectnessie.model.ser.Views;
 
+/** Represents documentation for a content object in Nessie. */
 @Value.Immutable
-@JsonSerialize(as = ImmutableContentResponse.class)
-@JsonDeserialize(as = ImmutableContentResponse.class)
-public interface ContentResponse {
-
-  static ImmutableContentResponse.Builder builder() {
-    return ImmutableContentResponse.builder();
+@JsonSerialize(as = ImmutableDocumentation.class)
+@JsonDeserialize(as = ImmutableDocumentation.class)
+public interface Documentation {
+  static ImmutableDocumentation.Builder builder() {
+    return ImmutableDocumentation.builder();
   }
 
+  /** Mime type of the documentation. */
   @NotNull
   @jakarta.validation.constraints.NotNull
   @Value.Parameter(order = 1)
-  Content getContent();
+  String getMimeType();
 
-  /**
-   * The effective reference (for example a branch or tag) including the commit ID from which the
-   * entries were fetched.
-   */
+  /** URI of the documentation. If present, {@link #getText()} must not be specified. */
   @Nullable
   @jakarta.annotation.Nullable
-  @Value.Parameter(order = 2)
-  Reference getEffectiveReference();
-
-  @Nullable
-  @jakarta.annotation.Nullable
-  @JsonView(Views.V2.class)
+  @Value.Parameter(order = 1)
   @JsonInclude(JsonInclude.Include.NON_NULL)
-  @Value.Parameter(order = 3)
-  Documentation getDocumentation();
+  String getLocation();
 
-  static ContentResponse of(Content content, Reference effectiveReference) {
-    return of(content, effectiveReference, null);
-  }
+  /** Documentation text. If present, {@link #getLocation()} must not be specified. */
+  @Nullable
+  @jakarta.annotation.Nullable
+  @Value.Parameter(order = 1)
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  String getText();
 
-  static ContentResponse of(
-      Content content, Reference effectiveReference, Documentation documentation) {
-    return ImmutableContentResponse.of(content, effectiveReference, documentation);
+  @Value.Check
+  default void check() {
+    boolean locationNull = getLocation() == null;
+    boolean textNull = getText() == null;
+    if (locationNull == textNull) {
+      throw new IllegalStateException(
+          "Either 'location' or 'test' must be specified, but not both.");
+    }
   }
 }

@@ -103,8 +103,17 @@ public interface Operation {
     @JsonView(Views.V2.class)
     List<ContentMetadata> getMetadata();
 
+    @Nullable
+    @jakarta.annotation.Nullable
+    @JsonView(Views.V2.class)
+    Documentation getDocumentation();
+
     static Put of(ContentKey key, Content content) {
       return ImmutablePut.builder().key(key).content(content).build();
+    }
+
+    static Put of(ContentKey key, Content content, Documentation documentation) {
+      return ImmutablePut.builder().key(key).content(content).documentation(documentation).build();
     }
 
     @Deprecated // for removal

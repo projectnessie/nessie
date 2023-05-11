@@ -15,6 +15,7 @@
  */
 package org.projectnessie.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -66,14 +67,27 @@ public interface GetMultipleContentsResponse {
 
     @NotNull
     @jakarta.validation.constraints.NotNull
+    @Value.Parameter(order = 1)
     ContentKey getKey();
 
     @NotNull
     @jakarta.validation.constraints.NotNull
+    @Value.Parameter(order = 2)
     Content getContent();
 
+    @Nullable
+    @jakarta.annotation.Nullable
+    @JsonView(Views.V2.class)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Value.Parameter(order = 3)
+    Documentation getDocumentation();
+
     static ContentWithKey of(ContentKey key, Content content) {
-      return ImmutableContentWithKey.builder().key(key).content(content).build();
+      return of(key, content, null);
+    }
+
+    static ContentWithKey of(ContentKey key, Content content, Documentation documentation) {
+      return ImmutableContentWithKey.of(key, content, documentation);
     }
   }
 }

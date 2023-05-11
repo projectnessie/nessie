@@ -54,7 +54,9 @@ public abstract class AbstractTestInvalidRefs extends BaseTestServiceImpl {
                 "Could not find commit '%s' in reference '%s'.", invalidHash, branch.getName()));
 
     assertThatThrownBy(
-            () -> contentApi().getContent(ContentKey.of("table0"), branch.getName(), invalidHash))
+            () ->
+                contentApi()
+                    .getContent(ContentKey.of("table0"), branch.getName(), invalidHash, false))
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessageContaining(
             String.format(
