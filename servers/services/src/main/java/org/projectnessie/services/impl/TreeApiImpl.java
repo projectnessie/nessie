@@ -91,6 +91,7 @@ import org.projectnessie.model.MergeResponse.ContentKeyConflict;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.Reference.ReferenceType;
 import org.projectnessie.model.ReferenceMetadata;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Validation;
@@ -247,11 +248,11 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
   @Override
   public Reference createReference(
-      String refName, Reference.ReferenceType type, String targetHash, String sourceRefName)
+      String refName, ReferenceType type, String targetHash, String sourceRefName)
       throws NessieNotFoundException, NessieConflictException {
     Validation.validateForbiddenReferenceName(refName);
     NamedRef namedReference = toNamedRef(type, refName);
-    if (type == Reference.ReferenceType.TAG && targetHash == null) {
+    if (type == ReferenceType.TAG && targetHash == null) {
       throw new IllegalArgumentException(
           "Tag-creation requires a target named-reference and hash.");
     }
@@ -264,7 +265,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       // If the default-branch does not exist and hashOnRef points to the "beginning of time",
       // then do not throw a NessieNotFoundException, but re-create the default branch. In all
       // cases, re-throw the exception.
-      if (!(Reference.ReferenceType.BRANCH.equals(type)
+      if (!(ReferenceType.BRANCH.equals(type)
           && refName.equals(getConfig().getDefaultBranch())
           && (null == targetHash || getStore().noAncestorHash().asString().equals(targetHash)))) {
         throw e;
@@ -291,10 +292,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
   @Override
   public Reference assignReference(
-      Reference.ReferenceType referenceType,
-      String referenceName,
-      String expectedHash,
-      Reference assignTo)
+      ReferenceType referenceType, String referenceName, String expectedHash, Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
     try {
       ReferenceInfo<CommitMeta> resolved =
@@ -325,7 +323,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
   @Override
   public Reference deleteReference(
-      Reference.ReferenceType referenceType, String referenceName, String expectedHash)
+      ReferenceType referenceType, String referenceName, String expectedHash)
       throws NessieConflictException, NessieNotFoundException {
     try {
       ReferenceInfo<CommitMeta> resolved =

@@ -38,7 +38,7 @@ import org.apache.iceberg.avro.Avro;
 import org.apache.iceberg.avro.AvroSchemaUtil;
 import org.apache.iceberg.io.FileAppender;
 import org.apache.iceberg.io.OutputFile;
-import org.apache.iceberg.types.Types;
+import org.apache.iceberg.types.Types.StructType;
 import org.immutables.value.Value;
 
 @Value.Immutable
@@ -142,7 +142,7 @@ public abstract class MockManifestFile implements IndexedRecord {
     MockPartitionSpec mockPartitionSpec = mockTableMeta.partitionSpec(0);
     org.apache.iceberg.Schema icebergSchema = mockTableMeta.schema(0).toSchema();
     PartitionSpec partitionSpec = mockPartitionSpec.toPartitionSpec(icebergSchema);
-    Types.StructType partitionType = partitionSpec.partitionType();
+    StructType partitionType = partitionSpec.partitionType();
 
     return IntStream.range(0, numEntries())
         .mapToObj(
@@ -163,7 +163,7 @@ public abstract class MockManifestFile implements IndexedRecord {
     MockPartitionSpec mockPartitionSpec = mockTableMeta.partitionSpec(0);
     org.apache.iceberg.Schema icebergSchema = mockTableMeta.schema(0).toSchema();
     PartitionSpec partitionSpec = mockPartitionSpec.toPartitionSpec(icebergSchema);
-    Types.StructType partitionType = partitionSpec.partitionType();
+    StructType partitionType = partitionSpec.partitionType();
 
     try {
       String partitionSpecJson = PartitionSpecParser.toJson(partitionSpec);
@@ -192,11 +192,11 @@ public abstract class MockManifestFile implements IndexedRecord {
     }
   }
 
-  static org.apache.iceberg.Schema entrySchema(Types.StructType partitionType) {
+  static org.apache.iceberg.Schema entrySchema(StructType partitionType) {
     return wrapFileSchema(fileType(partitionType));
   }
 
-  static org.apache.iceberg.Schema wrapFileSchema(Types.StructType fileSchema) {
+  static org.apache.iceberg.Schema wrapFileSchema(StructType fileSchema) {
     // this is used to build projection schemas
     return new org.apache.iceberg.Schema(
         MockManifestEntry.STATUS,
@@ -205,8 +205,8 @@ public abstract class MockManifestFile implements IndexedRecord {
         required(MockManifestEntry.DATA_FILE_ID, "data_file", fileSchema));
   }
 
-  static Types.StructType fileType(Types.StructType partitionType) {
-    return Types.StructType.of(
+  static StructType fileType(StructType partitionType) {
+    return StructType.of(
         DataFile.CONTENT.asRequired(),
         DataFile.FILE_PATH,
         DataFile.FILE_FORMAT,

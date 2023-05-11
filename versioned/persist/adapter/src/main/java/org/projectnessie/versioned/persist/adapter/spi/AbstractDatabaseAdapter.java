@@ -87,6 +87,7 @@ import org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.GetNamedRefsParams;
+import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableKeyDetails;
 import org.projectnessie.versioned.ImmutableMergeResult;
@@ -746,8 +747,7 @@ public abstract class AbstractDatabaseAdapter<
         || namedRefsRequiresBaseReference(params.getTagRetrieveOptions());
   }
 
-  protected static boolean namedRefsRequiresBaseReference(
-      GetNamedRefsParams.RetrieveOptions retrieveOptions) {
+  protected static boolean namedRefsRequiresBaseReference(RetrieveOptions retrieveOptions) {
     return retrieveOptions.isComputeAheadBehind() || retrieveOptions.isComputeCommonAncestor();
   }
 
@@ -756,12 +756,12 @@ public abstract class AbstractDatabaseAdapter<
         || params.getTagRetrieveOptions().isRetrieve();
   }
 
-  protected static GetNamedRefsParams.RetrieveOptions namedRefsRetrieveOptionsForReference(
+  protected static RetrieveOptions namedRefsRetrieveOptionsForReference(
       GetNamedRefsParams params, ReferenceInfo<ByteString> ref) {
     return namedRefsRetrieveOptionsForReference(params, ref.getNamedRef());
   }
 
-  protected static GetNamedRefsParams.RetrieveOptions namedRefsRetrieveOptionsForReference(
+  protected static RetrieveOptions namedRefsRetrieveOptionsForReference(
       GetNamedRefsParams params, NamedRef ref) {
     if (ref instanceof BranchName) {
       return params.getBranchRetrieveOptions();
@@ -830,8 +830,7 @@ public abstract class AbstractDatabaseAdapter<
             return ref;
           }
 
-          GetNamedRefsParams.RetrieveOptions retrieveOptions =
-              namedRefsRetrieveOptionsForReference(params, ref);
+          RetrieveOptions retrieveOptions = namedRefsRetrieveOptionsForReference(params, ref);
 
           ReferenceInfo<ByteString> updated =
               namedRefsRequiresBaseReference(retrieveOptions)
