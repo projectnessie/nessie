@@ -56,7 +56,7 @@ const BranchesDropdown = ({
       {branches.map((branch) => {
         return (
           <ExploreLink
-            toRef={branch.name}
+            toRef={encodeURIComponent(branch.name)}
             path={path}
             type={type}
             key={branch.name}
@@ -80,7 +80,12 @@ const BranchesDropdown = ({
       <NavDropdown.Item disabled>Tags</NavDropdown.Item>
       {tags.map((tag) => {
         return (
-          <ExploreLink toRef={tag.name} path={path} type={type} key={tag.name}>
+          <ExploreLink
+            toRef={encodeURIComponent(tag.name)}
+            path={path}
+            type={type}
+            key={tag.name}
+          >
             <NavDropdown.Item as={"button"} key={tag.name}>
               {tag.name}
             </NavDropdown.Item>
@@ -129,7 +134,7 @@ const TreeTableHead = ({
       </div>
       <Nav.Item className="tableHead__rightContentWrapper">
         <ExploreLink
-          toRef={currentRef}
+          toRef={encodeURIComponent(currentRef)}
           path={path || []}
           type="COMMIT"
           className="nav-link"
@@ -155,7 +160,7 @@ const PathTableHead = ({
 }: PathTableHeadProps): React.ReactElement => {
   return (
     <Nav.Item className="nav-link">
-      <ExploreLink toRef={currentRef}>nessie</ExploreLink>
+      <ExploreLink toRef={encodeURIComponent(currentRef)}>nessie</ExploreLink>
       {path.map((p, index) => {
         return (
           <Fragment key={`path${index}`}>
@@ -164,7 +169,7 @@ const PathTableHead = ({
             </span>
             <ExploreLink
               key={index}
-              toRef={currentRef}
+              toRef={encodeURIComponent(currentRef)}
               path={(path || []).slice(0, index + 1)}
             >
               {p}
@@ -182,9 +187,9 @@ const PathCommitTableHead = ({
 }: PathTableHeadProps): React.ReactElement => {
   return (
     <Nav.Item className="nav-link">
-      <ExploreLink toRef={currentRef}>nessie</ExploreLink>
+      <ExploreLink toRef={encodeURIComponent(currentRef)}>nessie</ExploreLink>
       <span style={{ paddingLeft: "0.5em", paddingRight: "0.5em" }}>/</span>
-      <ExploreLink toRef={currentRef} type={"COMMIT"}>
+      <ExploreLink toRef={encodeURIComponent(currentRef)} type={"COMMIT"}>
         commits
       </ExploreLink>
       {path.map((p, index) => {
@@ -195,7 +200,7 @@ const PathCommitTableHead = ({
             </span>
             <ExploreLink
               key={index}
-              toRef={currentRef}
+              toRef={encodeURIComponent(currentRef)}
               path={(path || []).slice(0, index + 1)}
               type={"COMMIT"}
             >

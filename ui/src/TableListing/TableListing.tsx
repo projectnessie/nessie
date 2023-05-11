@@ -33,7 +33,7 @@ const groupItem = (
   return (
     <ListGroupItem key={key.name}>
       <ExploreLink
-        toRef={ref}
+        toRef={encodeURIComponent(ref)}
         path={path.concat(key.name)}
         type={key.type === "CONTAINER" ? "CONTAINER" : "OBJECT"}
       >
