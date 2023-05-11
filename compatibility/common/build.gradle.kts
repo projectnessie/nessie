@@ -37,7 +37,7 @@ dependencies {
   implementation(platform(libs.jersey.bom))
   api(libs.slf4j.api)
   api(libs.logback.classic)
-  implementation("org.apache.maven:maven-core:3.9.1")
+  implementation("org.apache.maven:maven-core:3.9.2")
   implementation(libs.maven.resolver.provider)
   implementation(libs.maven.resolver.connector.basic)
   implementation(libs.maven.resolver.transport.file)
