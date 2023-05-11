@@ -47,6 +47,7 @@ public class CustomTestContentSerializer implements ContentSerializer<CustomTest
   }
 
   @Override
+  @SuppressWarnings("StringSplitter")
   public CustomTestContent valueFromStore(ByteString onReferenceValue) {
     String[] arr = onReferenceValue.toStringUtf8().split("\\|");
     ImmutableCustomTestContent.Builder b =

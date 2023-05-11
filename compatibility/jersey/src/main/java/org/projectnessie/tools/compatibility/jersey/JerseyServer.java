@@ -150,10 +150,10 @@ public class JerseyServer implements AutoCloseable {
       return new AuthorizerExtension().setAccessCheckerSupplier(this::createNewChecker);
     } catch (NoClassDefFoundError e) {
       try {
-        return (Extension)
-            Class.forName("org.projectnessie.services.authz.AccessCheckerExtension")
-                .getConstructor()
-                .newInstance();
+        return Class.forName("org.projectnessie.services.authz.AccessCheckerExtension")
+            .asSubclass(Extension.class)
+            .getConstructor()
+            .newInstance();
       } catch (InstantiationException
           | IllegalAccessException
           | InvocationTargetException

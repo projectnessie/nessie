@@ -614,10 +614,10 @@ public class TestHttpClient {
     HttpRuntimeConfig config = mock(HttpRuntimeConfig.class);
     when(config.getConnectionTimeoutMillis()).thenReturn(100);
     HttpClient client =
-        (HttpClient)
-            Class.forName("org.projectnessie.client.http.impl.jdk11.JavaHttpClient")
-                .getConstructor(HttpRuntimeConfig.class)
-                .newInstance(config);
+        Class.forName("org.projectnessie.client.http.impl.jdk11.JavaHttpClient")
+            .asSubclass(HttpClient.class)
+            .getConstructor(HttpRuntimeConfig.class)
+            .newInstance(config);
     client.close();
     verify(config).close();
   }

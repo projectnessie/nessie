@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 
 public class TestJdbcPersistenceUnit {
   @Test
+  @SuppressWarnings("InlineMeInliner")
   void failureTextTrim() {
     assertThat(trimError("foo")).isEqualTo("foo");
     String s2000 = repeat("x", ERROR_LENGTH);
