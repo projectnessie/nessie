@@ -21,8 +21,10 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.util.{ArrayBasedMapData, MapData}
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
+import org.apache.spark.sql.execution.datasources.v2.NessieUtils.unquoteRefName
 import org.apache.spark.unsafe.types.UTF8String
 import org.projectnessie.client.api.NessieApiV1
+
 import scala.collection.JavaConverters._
 
 abstract class BaseShowLogExec(
@@ -35,9 +37,11 @@ abstract class BaseShowLogExec(
   override protected def runInternal(
       api: NessieApiV1
   ): Seq[InternalRow] = {
-    val refName = branch.getOrElse(
-      NessieUtils.getCurrentRef(api, currentCatalog, catalog).getName
-    )
+    val refName = branch
+      .map(unquoteRefName)
+      .getOrElse(
+        NessieUtils.getCurrentRef(api, currentCatalog, catalog).getName
+      )
     val stream = api.getCommitLog.refName(refName).stream()
 
     stream.iterator.asScala
@@ -57,7 +61,7 @@ abstract class BaseShowLogExec(
   }
 
   override def simpleString(maxFields: Int): String = {
-    s"ShowLogExec ${catalog.getOrElse(currentCatalog.name())} ${branch} "
+    s"ShowLogExec ${catalog.getOrElse(currentCatalog.name())} ${branch.map(unquoteRefName)} "
   }
 
   private def convert(input: String): UTF8String = {

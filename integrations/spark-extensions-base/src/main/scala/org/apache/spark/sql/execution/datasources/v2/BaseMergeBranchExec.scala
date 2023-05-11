@@ -18,6 +18,7 @@ package org.apache.spark.sql.execution.datasources.v2
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
+import org.apache.spark.sql.execution.datasources.v2.NessieUtils.unquoteRefName
 import org.apache.spark.unsafe.types.UTF8String
 import org.projectnessie.client.api.NessieApiV1
 
@@ -34,15 +35,20 @@ abstract class BaseMergeBranchExec(
   ): Seq[InternalRow] = {
     val from = api.getReference
       .refName(
-        branch.getOrElse(
-          NessieUtils.getCurrentRef(api, currentCatalog, catalog).getName
-        )
+        branch
+          .map(unquoteRefName)
+          .getOrElse(
+            NessieUtils.getCurrentRef(api, currentCatalog, catalog).getName
+          )
       )
     api
       .mergeRefIntoBranch()
-      .branchName(toRefName.getOrElse(api.getDefaultBranch.getName))
+      .branchName(
+        toRefName.map(unquoteRefName).getOrElse(api.getDefaultBranch.getName)
+      )
       .hash(
         toRefName
+          .map(unquoteRefName)
           .map(r => api.getReference.refName(r).get.getHash)
           .getOrElse(api.getDefaultBranch.getHash)
       )
@@ -50,7 +56,7 @@ abstract class BaseMergeBranchExec(
       .merge()
 
     val ref = api.getReference.refName(
-      toRefName.getOrElse(api.getDefaultBranch.getName)
+      toRefName.map(unquoteRefName).getOrElse(api.getDefaultBranch.getName)
     )
 
     Seq(
@@ -62,6 +68,6 @@ abstract class BaseMergeBranchExec(
   }
 
   override def simpleString(maxFields: Int): String = {
-    s"MergeBranchExec ${catalog.getOrElse(currentCatalog.name())} ${branch} "
+    s"MergeBranchExec ${catalog.getOrElse(currentCatalog.name())} ${branch.map(unquoteRefName)} "
   }
 }

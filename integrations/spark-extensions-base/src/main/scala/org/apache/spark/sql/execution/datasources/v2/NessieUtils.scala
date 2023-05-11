@@ -46,18 +46,26 @@ object NessieUtils {
   val TAG: String = "Tag"
   val HASH: String = "Hash"
 
+  def unquoteRefName(branch: String): String = if (
+    branch.startsWith("`") && branch.endsWith("`")
+  ) {
+    branch.substring(1, branch.length - 1)
+  } else branch
+
   def calculateRef(
       branch: String,
       tsOrHash: Option[String],
       api: NessieApiV1
   ): Reference = {
+    val refName = unquoteRefName(branch)
+
     val hash = tsOrHash
       .map(x => x.replaceAll("`", ""))
       .filter(x => Validation.isValidHash(x))
       .orNull
 
     if (null != hash) {
-      return findReferenceFromHash(branch, hash, api)
+      return findReferenceFromHash(refName, hash, api)
     }
 
     val timestamp = tsOrHash
@@ -78,9 +86,9 @@ object NessieUtils {
       .orNull
 
     if (timestamp == null) {
-      api.getReference.refName(branch).get
+      api.getReference.refName(refName).get
     } else {
-      findReferenceFromTimestamp(branch, api, timestamp)
+      findReferenceFromTimestamp(refName, api, timestamp)
     }
   }
 

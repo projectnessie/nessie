@@ -18,6 +18,7 @@ package org.apache.spark.sql.execution.datasources.v2
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
+import org.apache.spark.sql.execution.datasources.v2.NessieUtils.unquoteRefName
 import org.projectnessie.client.api.NessieApiV1
 import org.projectnessie.model.{Branch, Tag}
 
@@ -34,10 +35,12 @@ abstract class BaseAssignReferenceExec(
   override protected def runInternal(
       api: NessieApiV1
   ): Seq[InternalRow] = {
-    val currentHash = api.getReference().refName(refNameToAssign).get().getHash
+    val refNameAssign = unquoteRefName(refNameToAssign)
+    val currentHash = api.getReference().refName(refNameAssign).get().getHash
 
     val toRef =
-      if (toRefName.isDefined) api.getReference.refName(toRefName.get).get()
+      if (toRefName.isDefined)
+        api.getReference.refName(toRefName.map(unquoteRefName).get).get()
       else NessieUtils.getCurrentRef(api, currentCatalog, catalog)
 
     val assignToHash = toHash.getOrElse(toRef.getHash)
@@ -49,22 +52,22 @@ abstract class BaseAssignReferenceExec(
     if (isBranch) {
       api
         .assignBranch()
-        .branch(Branch.of(refNameToAssign, currentHash))
+        .branch(Branch.of(refNameAssign, currentHash))
         .assignTo(assignTo)
         .assign()
     } else {
       api
         .assignTag()
-        .tag(Tag.of(refNameToAssign, currentHash))
+        .tag(Tag.of(refNameAssign, currentHash))
         .assignTo(assignTo)
         .assign()
     }
-    val ref = api.getReference().refName(refNameToAssign).get()
+    val ref = api.getReference().refName(refNameAssign).get()
 
     singleRowForRef(ref)
   }
 
   override def simpleString(maxFields: Int): String = {
-    s"AssignReferenceExec ${catalog.getOrElse(currentCatalog.name())} ${refNameToAssign} "
+    s"AssignReferenceExec ${catalog.getOrElse(currentCatalog.name())} ${unquoteRefName(refNameToAssign)} "
   }
 }

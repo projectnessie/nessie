@@ -18,6 +18,7 @@ package org.apache.spark.sql.execution.datasources.v2
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
+import org.apache.spark.sql.execution.datasources.v2.NessieUtils.unquoteRefName
 import org.projectnessie.client.api.NessieApiV1
 import org.projectnessie.error.{
   NessieConflictException,
@@ -41,7 +42,7 @@ abstract class BaseCreateReferenceExec(
   ): Seq[InternalRow] = {
     val sourceRef =
       if (createdFrom.isDefined) {
-        api.getReference.refName(createdFrom.get).get()
+        api.getReference.refName(createdFrom.map(unquoteRefName).get).get()
       } else {
         try {
           NessieUtils.getCurrentRef(api, currentCatalog, catalog)
@@ -53,9 +54,10 @@ abstract class BaseCreateReferenceExec(
             )
         }
       }
+    val refName = unquoteRefName(branch)
     val ref =
-      if (isBranch) Branch.of(branch, sourceRef.getHash)
-      else Tag.of(branch, sourceRef.getHash)
+      if (isBranch) Branch.of(refName, sourceRef.getHash)
+      else Tag.of(refName, sourceRef.getHash)
     try {
       api.createReference
         .reference(ref)
@@ -74,7 +76,7 @@ abstract class BaseCreateReferenceExec(
 
   override def simpleString(maxFields: Int): String = {
     s"CreateReferenceExec ${catalog.getOrElse(currentCatalog.name())} ${if (isBranch) "BRANCH"
-      else "TAG"} ${branch} " +
-      s"${createdFrom}"
+      else "TAG"} ${unquoteRefName(branch)} " +
+      s"${createdFrom.map(unquoteRefName)}"
   }
 }

@@ -38,6 +38,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNamespaceAlreadyExistsException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -71,6 +72,23 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
             + "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions");
   }
 
+  @ValueSource(strings = {"backquoted", "back/quoted"})
+  @ParameterizedTest
+  public void backquotedRefName(String branchName) throws NessieNotFoundException {
+    assertThat(
+            sql("CREATE BRANCH `%s` IN nessie FROM %s", branchName, initialDefaultBranch.getName()))
+        .containsExactly(row("Branch", branchName, defaultHash()));
+    Reference ref = api.getReference().refName(branchName).get();
+
+    assertThat(sql("USE REFERENCE `%s` IN nessie", branchName))
+        .hasSize(1)
+        .containsExactly(row("Branch", branchName, ref.getHash()));
+
+    assertThat(sql("SHOW LOG `%s` IN nessie", branchName)).isNotEmpty();
+
+    assertThat(sql("DROP BRANCH `%s` IN nessie", branchName)).hasSize(1).containsExactly(row("OK"));
+  }
+
   @Test
   public void testRefreshAfterMergeWithIcebergTableCaching()
       throws NessieNotFoundException, NessieNamespaceAlreadyExistsException {
@@ -86,7 +104,7 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
     sql("INSERT INTO nessie.db.tbl select 23, \"test\"");
     assertThat(sql("SELECT * FROM nessie.db.tbl")).hasSize(1).containsExactly(row(23, "test"));
 
-    sql("MERGE BRANCH %s INTO %s in nessie", refName, defaultBranch());
+    sql("MERGE BRANCH `%s` INTO `%s` in nessie", refName, defaultBranch());
     assertThat(sql("SELECT * FROM nessie.db.`tbl@main`"))
         .hasSize(1)
         .containsExactly(row(23, "test"));
