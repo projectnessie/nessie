@@ -20,54 +20,41 @@ import org.junit.jupiter.api.Nested;
 public abstract class BaseTestApis {
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class AssignTests extends AbstractTestAssign {}
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class CommitsTests extends AbstractTestCommits {}
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class CommitLogTests extends AbstractTestCommitLog {}
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class ContentsTests extends AbstractTestContents {}
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class DiffTests extends AbstractTestDiff {}
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class EntriesTests extends AbstractTestEntries {}
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class InvalidRefsTests extends AbstractTestInvalidRefs {}
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class MergeTransplantTests extends AbstractTestMergeTransplant {}
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class MiscTests extends AbstractTestMisc {}
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class NamespaceTests extends AbstractTestNamespace {}
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class ReferencesTests extends AbstractTestReferences {}
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class AccessChecks extends AbstractTestAccessChecks {}
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class Principals extends AbstractTestPrincipals {}
 }

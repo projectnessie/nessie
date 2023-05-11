@@ -43,7 +43,6 @@ public abstract class AbstractDatabaseAdapterVersionStoreTest extends AbstractVe
   }
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class Tracing extends AbstractTracing {
     public Tracing() {
       super(AbstractDatabaseAdapterVersionStoreTest.store);
@@ -51,7 +50,6 @@ public abstract class AbstractDatabaseAdapterVersionStoreTest extends AbstractVe
   }
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class NoNamespaceValidation extends AbstractNoNamespaceValidation {
 
     @NessieDbAdapter(withTracing = true)

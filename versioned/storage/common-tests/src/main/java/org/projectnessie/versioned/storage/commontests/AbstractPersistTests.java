@@ -20,26 +20,20 @@ import org.junit.jupiter.api.Nested;
 /** Groups base and logic tests. */
 public abstract class AbstractPersistTests {
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class BaseTests extends AbstractBasePersistTests {}
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class CommitLogicTests extends AbstractCommitLogicTests {}
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class IndexesLogicTests extends AbstractIndexesLogicTests {}
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class ReferencesLogicTests extends AbstractReferenceLogicTests {}
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class RepositoryLogicTests extends AbstractRepositoryLogicTests {}
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class BackendRepositoryTests extends AbstractBackendRepositoryTests {}
 }

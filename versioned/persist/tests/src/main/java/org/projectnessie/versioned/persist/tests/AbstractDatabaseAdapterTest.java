@@ -38,7 +38,6 @@ public abstract class AbstractDatabaseAdapterTest {
   }
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class CommitLogScan extends AbstractCommitLogScan {
     CommitLogScan() {
       super(databaseAdapter);
@@ -46,15 +45,12 @@ public abstract class AbstractDatabaseAdapterTest {
   }
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class Events extends AbstractEvents {}
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class Repositories extends AbstractRepositories {}
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class RepoDescription extends AbstractRepoDescription {
     RepoDescription() {
       super(databaseAdapter);
@@ -62,7 +58,6 @@ public abstract class AbstractDatabaseAdapterTest {
   }
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class CommitScenarios extends AbstractCommitScenarios {
     CommitScenarios() {
       super(databaseAdapter);
@@ -70,7 +65,6 @@ public abstract class AbstractDatabaseAdapterTest {
   }
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class ManyCommits extends AbstractManyCommits {
     ManyCommits() {
       super(databaseAdapter);
@@ -78,7 +72,6 @@ public abstract class AbstractDatabaseAdapterTest {
   }
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class WriteUpdateCommits extends AbstractWriteUpdateCommits {
     WriteUpdateCommits() {
       super(databaseAdapter, commitWritesValidated());
@@ -86,7 +79,6 @@ public abstract class AbstractDatabaseAdapterTest {
   }
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class ManyKeys extends AbstractManyKeys {
     ManyKeys() {
       super(databaseAdapter);
@@ -94,7 +86,6 @@ public abstract class AbstractDatabaseAdapterTest {
   }
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class Concurrency extends AbstractConcurrency {
     Concurrency() {
       super(databaseAdapter);
@@ -102,7 +93,6 @@ public abstract class AbstractDatabaseAdapterTest {
   }
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class RefLog extends AbstractRefLog {
     RefLog() {
       super(databaseAdapter);
@@ -110,7 +100,6 @@ public abstract class AbstractDatabaseAdapterTest {
   }
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class MergeTransplant extends AbstractMergeTransplant {
     MergeTransplant() {
       super(databaseAdapter);
@@ -118,7 +107,6 @@ public abstract class AbstractDatabaseAdapterTest {
   }
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class References extends AbstractReferences {
     References() {
       super(databaseAdapter);
@@ -126,7 +114,6 @@ public abstract class AbstractDatabaseAdapterTest {
   }
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class GetNamedReferences extends AbstractGetNamedReferences {
     GetNamedReferences() {
       super(databaseAdapter);
@@ -134,7 +121,6 @@ public abstract class AbstractDatabaseAdapterTest {
   }
 
   @Nested
-  @SuppressWarnings("ClassCanBeStatic")
   public class Diff extends AbstractDiff {
     Diff() {
       super(databaseAdapter);
