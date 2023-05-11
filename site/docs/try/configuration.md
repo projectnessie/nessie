@@ -1,3 +1,4 @@
+
 # Configuration
 
 The Nessie server is configurable via properties as listed in
@@ -26,44 +27,48 @@ docker run \
 
 ### Version Store Settings
 
-| Property                              | Default values | Type               | Description                                                                                                                      |
-|---------------------------------------|----------------|--------------------|----------------------------------------------------------------------------------------------------------------------------------|
-| `nessie.version.store.type`           | `INMEMORY`     | `VersionStoreType` | Sets which type of version store to use by Nessie. Possible values are: `DYNAMO`, `INMEMORY`, `ROCKS`, `MONGO`, `TRANSACTIONAL`. |
-| `nessie.version.store.trace.enable`   | `true`         | `boolean`          | Sets whether calls against the version-store are traced with OpenTracing/OpenTelemetry (Jaeger).                                 |
-| `nessie.version.store.metrics.enable` | `true`         | `boolean`          | Sets whether metrics for the version-store are enabled.                                                                          |
+| Property                              | Default values | Type               | Description                                                                                                                                                                                                                                                                             |
+|---------------------------------------|----------------|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `nessie.version.store.type`           | `IN_MEMORY`    | `VersionStoreType` | Sets which type of version store to use by Nessie. Possible values are: `IN_MEMORY`, `ROCKSDB`, `DYNAMODB`, `MONGODB`, `CASSANDRA`, `JDBC`. <br/><br/> The legacy types `DYNAMO`, `INMEMORY`, `ROCKS`, `MONGO`, `TRANSACTIONAL` are deprecated and will be removed in a future release. |
+| `nessie.version.store.trace.enable`   | `true`         | `boolean`          | Sets whether calls against the version-store are traced with OpenTracing/OpenTelemetry (Jaeger).                                                                                                                                                                                        |
+| `nessie.version.store.metrics.enable` | `true`         | `boolean`          | Sets whether metrics for the version-store are enabled.                                                                                                                                                                                                                                 |
 
-#### Transactional Version Store Settings (Since Nessie 0.25.0)
+#### JDBC Version Store Settings
 
-When setting `nessie.version.store.type=TRANSACTIONAL` which enables transactional/RDBMS as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
+When setting `nessie.version.store.type=JDBC` which enables transactional/RDBMS as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
 
 !!! info
-    A complete set of JDBC configuration options for Quarkus can be found on [quarkus.io](https://quarkus.io/guides/datasource)
+A complete set of JDBC configuration options for Quarkus can be found on [quarkus.io](https://quarkus.io/guides/datasource)
 
 #### RocksDB Version Store Settings
 
-When setting `nessie.version.store.type=ROCKS` which enables RocksDB as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
+When setting `nessie.version.store.type=ROCKSDB` which enables RocksDB as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
 
 | Property                             | Default values        | Type     | Description                                          |
 |--------------------------------------|-----------------------|----------|------------------------------------------------------|
 | `nessie.version.store.rocks.db-path` | `/tmp/nessie-rocksdb` | `String` | Sets RocksDB storage path, e.g: `/tmp/rocks-nessie`. |
 
+#### Cassandra Version Store Settings
 
-#### MongoDB Version Store Settings
+When setting `nessie.version.store.type=CASSANDRA` which enables Apache Cassandra or ScyllaDB as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
 
-When setting `nessie.version.store.type=MONGO` which enables MongoDB as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
-
-| Property                            | Default values | Type     | Description                     |
-|-------------------------------------|----------------|----------|---------------------------------|
-| `quarkus.mongodb.database`          |                | `String` | Sets MongoDB database name.     |
-| `quarkus.mongodb.connection-string` |                | `String` | Sets MongoDB connection string. |
+| Property                                     | Default values | Type      | Description                                                                                                                          |
+|----------------------------------------------|----------------|-----------|--------------------------------------------------------------------------------------------------------------------------------------|
+| `quarkus.cassandra.keyspace`                 |                | `String`  | The Cassandra keyspace to use.                                                                                                       |
+| `quarkus.cassandra.contact-points`           |                | `String`  | The Cassandra contact points, see [Quarkus docs](https://quarkus.io/guides/cassandra#connecting-to-the-cassandra-database).          | 
+| `quarkus.cassandra.local-datacenter`         |                | `String`  | The Cassandra local datacenter to use, see [Quarkus docs](https://quarkus.io/guides/cassandra#connecting-to-the-cassandra-database). |
+| `quarkus.cassandra.auth.username`            |                | `String`  | Cassandra authentication username, see [Quarkus docs](https://quarkus.io/guides/cassandra#connecting-to-the-cassandra-database).     |
+| `quarkus.cassandra.auth.password`            |                | `String`  | Cassandra authentication password, see [Quarkus docs](https://quarkus.io/guides/cassandra#connecting-to-the-cassandra-database).     |
+| `quarkus.cassandra.health.enabled`           | `false`        | `boolean` | See Quarkus docs.                                                                                                                    |
+| `nessie.version.store.cassandra.ddl-timeout` | `PT5S`         | `String`  | DDL statement timeout for DDL.                                                                                                       |  
+| `nessie.version.store.cassandra.dml-timeout` | `PT3S`         | `String`  | DML statement timeout for DDL.                                                                                                       |
 
 !!! info
-    A complete set of MongoDB configuration options for Quarkus can be found on [quarkus.io](https://quarkus.io/guides/all-config#quarkus-mongodb-client_quarkus-mongodb-client-mongodb-client)
-
+A complete set of the Quarkus Cassandra extension configuration options can be found on [quarkus.io/guides/cassandra](https://quarkus.io/guides/cassandra#connecting-to-the-cassandra-database)
 
 #### DynamoDB Version Store Settings
 
-When setting `nessie.version.store.type=DYNAMO` which enables DynamoDB as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
+When setting `nessie.version.store.type=DYNAMODB` which enables DynamoDB as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
 
 | Property                                | Default values | Type          | Description                                                                                                                                         |
 |-----------------------------------------|----------------|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -73,11 +78,58 @@ When setting `nessie.version.store.type=DYNAMO` which enables DynamoDB as the ve
 | `quarkus.dynamodb.sync-client.type`     | `url`          | `url, apache` | Sets the type of the sync HTTP client implementation                                                                                                |
 
 !!! info
-    A complete set of DynamoDB configuration options for Quarkus can be found on [quarkiverse.github.io](https://quarkiverse.github.io/quarkiverse-docs/quarkus-amazon-services/dev/amazon-dynamodb.html#_configuration_reference)
+A complete set of DynamoDB configuration options for Quarkus can be found on [quarkiverse.github.io](https://quarkiverse.github.io/quarkiverse-docs/quarkus-amazon-services/dev/amazon-dynamodb.html#_configuration_reference)
+
+#### MongoDB Version Store Settings
+
+When setting `nessie.version.store.type=MONGODB` which enables MongoDB as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`:
+
+| Property                            | Default values | Type     | Description                     |
+|-------------------------------------|----------------|----------|---------------------------------|
+| `quarkus.mongodb.database`          |                | `String` | Sets MongoDB database name.     |
+| `quarkus.mongodb.connection-string` |                | `String` | Sets MongoDB connection string. |
+
+!!! info
+A complete set of MongoDB configuration options for Quarkus can be found on [quarkus.io](https://quarkus.io/guides/all-config#quarkus-mongodb-client_quarkus-mongodb-client-mongodb-client)
 
 ### Version Store Advanced Settings
 
-The following configurations are advanced configurations to configure how Nessie will store the data into the configured data store:
+The following configurations are advanced configurations for version stores to configure how Nessie will store the data
+into the configured data store:
+
+Usually, only the cache-capacity should be adjusted to the amount of the Java heap "available" for the cache. The
+default is conservative, bumping the cache size is recommended.
+
+| Property                                                        | Default values      | Type      | Description                                                                                                                                                                     |
+|-----------------------------------------------------------------|---------------------|-----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `nessie.version.store.persist.repository-id`                    |                     | `String`  | Sets Nessie repository ID (optional). This ID can be used to distinguish multiple Nessie repositories that reside in the same storage instance.                                 |
+| `nessie.version.store.persist.parents-per-commit`               | `20`                | `int`     | Sets the number of parent-commit-hashes stored in Nessie store.                                                                                                                 |
+| `nessie.version.store.persist.commit-timeout-millis`            | `5000`              | `int`     | Sets the timeout for CAS-like operations in milliseconds.                                                                                                                       |
+| `nessie.version.store.persist.commit-retries`                   | `Integer.MAX_VALUE` | `int`     | Sets the maximum retries for CAS-like operations.                                                                                                                               |
+| `nessie.version.store.persist.retry-initial-sleep-millis-lower` | `5`                 | `int`     | Configures the initial lower-bound sleep time in milliseconds of the exponential backoff when retrying commit operations.                                                       |
+| `nessie.version.store.persist.retry-initial-sleep-millis-upper` | `25`                | `int`     | Configures the initial upper-bound sleep time in milliseconds of the exponential backoff when retrying commit operations.                                                       |
+| `nessie.version.store.persist.retry-max-sleep-millis`           | `250`               | `int`     | Configures the max sleep time in milliseconds of the exponential backoff when retrying commit operations.                                                                       |
+| `nessie.version.store.persist.max-incremental-index-size`       | `50 * 1024`         | `int`     | Maximum serialized size of key indexes stored inside commit objects. Trade off: bigger incremental indexes reduce the amount of reads, at the expense of "bigger" read results. |
+| `nessie.version.store.persist.max-serialized-index-size`        | `200 * 1024`        | `int`     | Maximum serialized size of key indexes stored as separate objects.  Trade off: bigger incremental indexes reduce the amount of reads, at the expense of "bigger" read results.  |
+| `nessie.version.store.persist.max-reference-stripes-per-commit` | `50`                | `int`     | Maximum number of referenced index objects stored inside commit objects.                                                                                                        |
+| `nessie.version.store.persist.assumed-wall-clock-drift-micros`  | `5_000_000`         | `long`    | Sets the assumed wall-clock drift between multiple Nessie instances, in microseconds.                                                                                           |
+| `nessie.version.store.persist.namespace-validation`             | `true`              | `boolean` | Whether namespace validation is enabled, changing this to `false` will break the Nessie specification!                                                                          |
+| `nessie.version.store.persist.cache-capacity-mb`                | `64`                | `int`     | Amount of heap used to cache objects.                                                                                                                                           |
+
+#### Legacy version store configuration
+
+**The version store types `ROCKS`, `MONGO`, `DYNAMO`, `TRANSACTIONAL` and `INMEMORY` are deprecated and subject to removal!**
+
+If you are using one of these version types migrate to one of the supported version store type mentioned above.
+
+Migration steps:
+1. shutdown Nessie
+2. export the Nessie repository using the `nessie-quarkus-cli` tool's export functionality using the old repository settings
+3. configure Nessie to use one of the new version store types
+4. export the Nessie repository using the `nessie-quarkus-cli` tool's import functionality using the new repository settings
+5. startup Nessie
+
+The following configurations are advanced configurations needed for **legacy** version stores to configure how Nessie will store the data into the configured data store:
 
 | Property                                                        | Default values      | Type     | Description                                                                                                                                                                                                             |
 |-----------------------------------------------------------------|---------------------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
