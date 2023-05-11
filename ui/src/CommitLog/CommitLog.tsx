@@ -77,7 +77,7 @@ const CommitLog = ({
           <div>
             <Nav.Item>
               <ExploreLink
-                toRef={branch}
+                toRef={encodeURIComponent(branch)}
                 path={(hash ?? "#").split("/")}
                 type="COMMIT"
                 className="commitLog__messageLink"
@@ -103,7 +103,7 @@ const CommitLog = ({
                 </Button>
               </Tooltip>
               <ExploreLink
-                toRef={branch}
+                toRef={encodeURIComponent(branch)}
                 path={(hash ?? "#").split("/")}
                 type="COMMIT"
                 className="commitLog__hashBtn rightBtnHover"

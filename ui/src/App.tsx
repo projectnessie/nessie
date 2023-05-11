@@ -155,7 +155,7 @@ const updateRef = (
   const view = locationParts[0];
 
   if (view === "commits" || view === "tree" || view === "content") {
-    const branch = locationParts[1];
+    const branch = decodeURIComponent(locationParts[1]);
     const slug =
       locationParts.length > 2 ? locationParts.slice(2).join("/") : "";
 
