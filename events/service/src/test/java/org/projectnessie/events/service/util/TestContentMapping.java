@@ -34,6 +34,7 @@ import org.projectnessie.events.api.ImmutableGenericContent;
 import org.projectnessie.events.api.ImmutableIcebergTable;
 import org.projectnessie.events.api.ImmutableIcebergView;
 import org.projectnessie.events.api.ImmutableNamespace;
+import org.projectnessie.events.api.ImmutableUDF;
 import org.projectnessie.model.CommitMeta;
 
 class TestContentMapping {
@@ -98,6 +99,22 @@ class TestContentMapping {
                 .dialect("dialect")
                 .build()),
         Arguments.of(
+            org.projectnessie.model.ImmutableIcebergView.builder()
+                .id("id")
+                .metadataLocation("metadataLocation")
+                .versionId(1L)
+                .schemaId(2)
+                .sqlText("sqlText")
+                // no dialect
+                .build(),
+            ImmutableIcebergView.builder()
+                .id("id")
+                .metadataLocation("metadataLocation")
+                .versionId(1L)
+                .schemaId(2)
+                .sqlText("sqlText")
+                .build()),
+        Arguments.of(
             org.projectnessie.model.ImmutableDeltaLakeTable.builder()
                 .id("id")
                 .addCheckpointLocationHistory("checkpoint")
@@ -110,6 +127,20 @@ class TestContentMapping {
                 .addMetadataLocationHistory("metadata")
                 .lastCheckpoint("lastCheckpoint")
                 .build()),
+        Arguments.of(
+            org.projectnessie.model.ImmutableUDF.builder()
+                .id("id")
+                .sqlText("sqlText")
+                .dialect("dialect")
+                .build(),
+            ImmutableUDF.builder().id("id").sqlText("sqlText").dialect("dialect").build()),
+        Arguments.of(
+            org.projectnessie.model.ImmutableUDF.builder()
+                .id("id")
+                .sqlText("sqlText")
+                // no dialect
+                .build(),
+            ImmutableUDF.builder().id("id").sqlText("sqlText").build()),
         Arguments.of(
             org.projectnessie.model.types.ImmutableGenericContent.builder()
                 .id("id")

@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import org.projectnessie.events.api.Content;
 import org.projectnessie.events.api.ContentKey;
 import org.projectnessie.events.api.ImmutableDeltaLakeTable;
@@ -26,9 +27,11 @@ import org.projectnessie.events.api.ImmutableGenericContent;
 import org.projectnessie.events.api.ImmutableIcebergTable;
 import org.projectnessie.events.api.ImmutableIcebergView;
 import org.projectnessie.events.api.ImmutableNamespace;
+import org.projectnessie.events.api.ImmutableUDF;
 import org.projectnessie.model.DeltaLakeTable;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
+import org.projectnessie.model.UDF;
 import org.projectnessie.model.types.GenericContent;
 
 public final class ContentMapping {
@@ -65,7 +68,7 @@ public final class ContentMapping {
           .versionId(view.getVersionId())
           .schemaId(view.getSchemaId())
           .sqlText(view.getSqlText())
-          .dialect(view.getDialect())
+          .dialect(Optional.ofNullable(view.getDialect()))
           .build();
     } else if (type == org.projectnessie.model.Content.Type.DELTA_LAKE_TABLE) {
       DeltaLakeTable table = (DeltaLakeTable) content;
@@ -74,6 +77,13 @@ public final class ContentMapping {
           .metadataLocationHistory(table.getMetadataLocationHistory())
           .lastCheckpoint(table.getLastCheckpoint())
           .checkpointLocationHistory(table.getCheckpointLocationHistory())
+          .build();
+    } else if (type == org.projectnessie.model.Content.Type.UDF) {
+      UDF udf = (UDF) content;
+      return ImmutableUDF.builder()
+          .id(Objects.requireNonNull(content.getId()))
+          .sqlText(udf.getSqlText())
+          .dialect(Optional.ofNullable(udf.getDialect()))
           .build();
     } else if (content instanceof GenericContent) {
       GenericContent genericContent = (GenericContent) content;
