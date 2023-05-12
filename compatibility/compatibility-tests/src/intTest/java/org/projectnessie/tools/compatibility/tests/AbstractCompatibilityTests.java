@@ -50,7 +50,6 @@ import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
 import org.projectnessie.tools.compatibility.api.NessieAPI;
-import org.projectnessie.tools.compatibility.api.NessieApiBuilderProperty;
 import org.projectnessie.tools.compatibility.api.NessieVersion;
 import org.projectnessie.tools.compatibility.api.Version;
 import org.projectnessie.tools.compatibility.api.VersionCondition;
@@ -58,14 +57,8 @@ import org.projectnessie.tools.compatibility.api.VersionCondition;
 @VersionCondition(maxVersion = Version.NOT_CURRENT_STRING)
 public abstract class AbstractCompatibilityTests {
 
-  @NessieAPI
-  @NessieApiBuilderProperty(name = "nessie.enable-api-compatibility-check", value = "false")
-  protected NessieApiV1 api;
-
-  @NessieAPI
-  @NessieApiBuilderProperty(name = "nessie.enable-api-compatibility-check", value = "false")
-  protected NessieApiV2 apiV2;
-
+  @NessieAPI protected NessieApiV1 api;
+  @NessieAPI protected NessieApiV2 apiV2;
   @NessieVersion Version version;
 
   abstract Version getClientVersion();

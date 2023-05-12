@@ -201,49 +201,40 @@ class TestNessieHttpClient {
   @Test
   void testApiCompatibility() {
     // Good cases
-    assertThatCode(() -> testConfig(NessieApiV1.class, 1, 1, null, true))
-        .doesNotThrowAnyException();
-    assertThatCode(() -> testConfig(NessieApiV1.class, 1, 2, null, true))
-        .doesNotThrowAnyException();
-    assertThatCode(() -> testConfig(NessieApiV2.class, 1, 2, "2.0.0", true))
-        .doesNotThrowAnyException();
-    assertThatCode(() -> testConfig(NessieApiV2.class, 2, 2, "2.0.0", true))
-        .doesNotThrowAnyException();
-    assertThatCode(() -> testConfig(NessieApiV2.class, 2, 3, "3.0.0", true))
-        .doesNotThrowAnyException();
+    assertThatCode(() -> testConfig(NessieApiV1.class, 1, 1, 1, true)).doesNotThrowAnyException();
+    assertThatCode(() -> testConfig(NessieApiV1.class, 1, 2, 1, true)).doesNotThrowAnyException();
+    assertThatCode(() -> testConfig(NessieApiV2.class, 1, 2, 2, true)).doesNotThrowAnyException();
+    assertThatCode(() -> testConfig(NessieApiV2.class, 2, 2, 2, true)).doesNotThrowAnyException();
+    assertThatCode(() -> testConfig(NessieApiV2.class, 2, 3, 2, true)).doesNotThrowAnyException();
     // Bad cases
     // 1. v1 client called a server that doesn't support v1
-    assertThatThrownBy(() -> testConfig(NessieApiV1.class, 2, 2, "2.0.0", true))
-        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> testConfig(NessieApiV1.class, 2, 2, 2, true))
+        .isInstanceOf(NessieApiCompatibilityException.class);
     // 2. v2 client called a server that doesn't support v2
-    assertThatThrownBy(() -> testConfig(NessieApiV2.class, 1, 1, null, true))
-        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> testConfig(NessieApiV2.class, 1, 1, 1, true))
+        .isInstanceOf(NessieApiCompatibilityException.class);
     // 3. v1 client called a v2 endpoint
-    assertThatThrownBy(() -> testConfig(NessieApiV1.class, 1, 2, "2.0.0", true))
-        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> testConfig(NessieApiV1.class, 1, 2, 2, true))
+        .isInstanceOf(NessieApiCompatibilityException.class);
     // 4. v2 client called a v1 endpoint
-    assertThatThrownBy(() -> testConfig(NessieApiV2.class, 1, 2, null, true))
-        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> testConfig(NessieApiV2.class, 1, 2, 1, true))
+        .isInstanceOf(NessieApiCompatibilityException.class);
     // Bad cases with compatibility check disabled
     // 1. v1 client called a server that doesn't support v1
-    assertThatCode(() -> testConfig(NessieApiV1.class, 2, 2, "2.0.0", false))
-        .doesNotThrowAnyException();
+    assertThatCode(() -> testConfig(NessieApiV1.class, 2, 2, 2, false)).doesNotThrowAnyException();
     // 2. v2 client called a server that doesn't support v2
-    assertThatCode(() -> testConfig(NessieApiV2.class, 1, 1, null, false))
-        .doesNotThrowAnyException();
+    assertThatCode(() -> testConfig(NessieApiV2.class, 1, 1, 1, false)).doesNotThrowAnyException();
     // 3. v1 client called a v2 endpoint
-    assertThatCode(() -> testConfig(NessieApiV1.class, 1, 2, "2.0.0", false))
-        .doesNotThrowAnyException();
+    assertThatCode(() -> testConfig(NessieApiV1.class, 1, 2, 2, false)).doesNotThrowAnyException();
     // 4. v2 client called a v1 endpoint
-    assertThatCode(() -> testConfig(NessieApiV2.class, 1, 2, null, false))
-        .doesNotThrowAnyException();
+    assertThatCode(() -> testConfig(NessieApiV2.class, 1, 2, 1, false)).doesNotThrowAnyException();
   }
 
   @SuppressWarnings("EmptyTryBlock")
   private void testConfig(
-      Class<? extends NessieApi> apiClass, int min, int max, String spec, boolean check)
+      Class<? extends NessieApi> apiClass, int min, int max, int actual, boolean check)
       throws Exception {
-    try (HttpTestServer server = forConfig(min, max, spec);
+    try (HttpTestServer server = forConfig(min, max, actual);
         NessieApi ignored =
             HttpClientBuilder.builder()
                 .withUri(server.getUri())
@@ -283,24 +274,32 @@ class TestNessieHttpClient {
       receiver.set(req.getHeader(headerName));
       req.getInputStream().close();
       resp.addHeader("Content-Type", "application/json");
-      HttpTestUtil.writeResponseBody(resp, "{\"maxSupportedApiVersion\":1}");
+      HttpTestUtil.writeResponseBody(
+          resp, "{\"maxSupportedApiVersion\":1,\"defaultBranch\":\"main\"}");
     };
   }
 
-  static HttpTestServer forConfig(int minApiVersion, int maxApiVersion, String specVersion)
+  static HttpTestServer forConfig(int minApiVersion, int maxApiVersion, int actual)
       throws Exception {
     return new HttpTestServer(
         (req, resp) -> {
           req.getInputStream().close();
-          resp.addHeader("Content-Type", "application/json");
-          StringBuilder json = new StringBuilder("{");
-          json.append("\"minSupportedApiVersion\":").append(minApiVersion).append(",");
-          json.append("\"maxSupportedApiVersion\":").append(maxApiVersion);
-          if (specVersion != null) {
-            json.append(",\"specVersion\":\"").append(specVersion).append("\"");
+          if (req.getRequestURI().endsWith("/config")) {
+            resp.addHeader("Content-Type", "application/json");
+            String json =
+                "{\"minSupportedApiVersion\":"
+                    + minApiVersion
+                    + ",\"maxSupportedApiVersion\":"
+                    + maxApiVersion
+                    + ",\"defaultBranch\":\"main\"}";
+            HttpTestUtil.writeResponseBody(resp, json);
+          } else if (req.getRequestURI().endsWith("/trees/tree/main")) {
+            if (actual == 1) {
+              resp.setStatus(200);
+            } else {
+              resp.sendError(404);
+            }
           }
-          json.append("}");
-          HttpTestUtil.writeResponseBody(resp, json.toString());
         });
   }
 }

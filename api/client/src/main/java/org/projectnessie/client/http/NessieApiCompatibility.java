@@ -15,9 +15,7 @@
  */
 package org.projectnessie.client.http;
 
-import org.projectnessie.client.api.NessieApi;
-import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.api.NessieApiV2;
+import org.projectnessie.client.rest.NessieServiceException;
 import org.projectnessie.model.NessieConfiguration;
 
 public class NessieApiCompatibility {
@@ -25,34 +23,43 @@ public class NessieApiCompatibility {
   /**
    * Checks if the API version of the client is compatible with the server's.
    *
-   * @param api the client API to check, can be either {@link NessieApiV1} or {@link NessieApiV2}
-   *     currently.
-   * @throws IllegalArgumentException if the API version is not compatible
+   * @param clientApiVersion the API version of the client
+   * @param httpClient the underlying HTTP client.
+   * @throws NessieApiCompatibilityException if the API version is not compatible.
    */
-  public static void checkApiCompatibility(NessieApi api) {
-    int clientApiVersion = api instanceof NessieApiV2 ? 2 : 1;
-    NessieConfiguration config = ((NessieApiV1) api).getConfig();
+  public static void check(int clientApiVersion, HttpClient httpClient)
+      throws NessieApiCompatibilityException {
+    NessieConfiguration config = fetchConfig(httpClient);
     int minServerApiVersion = config.getMinSupportedApiVersion();
     int maxServerApiVersion = config.getMaxSupportedApiVersion();
-    String specVersion = config.getSpecVersion();
-    // First, check if the API version is supported by the server.
-    if (minServerApiVersion > clientApiVersion || maxServerApiVersion < clientApiVersion) {
-      throw new IllegalArgumentException(
-          String.format(
-              "API version %s is not supported by the server. "
-                  + "The server supports API versions from %d to %d inclusive.",
-              clientApiVersion, minServerApiVersion, maxServerApiVersion));
+    if (clientApiVersion < minServerApiVersion || clientApiVersion > maxServerApiVersion) {
+      throw new NessieApiCompatibilityException(
+          clientApiVersion, minServerApiVersion, maxServerApiVersion);
     }
-    // Next, if the client is a V2 API, check that the URI prefix is indeed a V2 API root.
-    // Spec version is only returned in V2+, so we can use that as a heuristic.
-    // FIXME we need a better way to detect API vs URI prefix mismatches.
-    int serverApiVersion = specVersion != null && !specVersion.isEmpty() ? 2 : 1;
-    if (clientApiVersion != serverApiVersion) {
-      throw new IllegalArgumentException(
-          String.format(
-              "Server supports API version %d but replied with API version %d. "
-                  + "Is the client configured with the wrong URI prefix?",
-              clientApiVersion, serverApiVersion));
+    int actualServerApiVersion = fetchActualServerApiVersion(httpClient, config);
+    if (clientApiVersion != actualServerApiVersion) {
+      throw new NessieApiCompatibilityException(
+          clientApiVersion, minServerApiVersion, maxServerApiVersion, actualServerApiVersion);
+    }
+  }
+
+  private static NessieConfiguration fetchConfig(HttpClient httpClient) {
+    return httpClient.newRequest().path("config").get().readEntity(NessieConfiguration.class);
+  }
+
+  private static int fetchActualServerApiVersion(
+      HttpClient httpClient, NessieConfiguration config) {
+    try {
+      httpClient
+          .newRequest()
+          .path("trees/tree/{branch}")
+          .resolveTemplate("branch", config.getDefaultBranch())
+          .get();
+      return 1;
+    } catch (NessieServiceException e) {
+      // In theory, we could test if the status code is 404; but unfortunately on Jersey,
+      // the 404 error arrives wrapped in a status code 500.
+      return 2;
     }
   }
 }

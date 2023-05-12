@@ -142,7 +142,8 @@ public class TestHttpClientBuilder {
     return (req, resp) -> {
       receiver.set(req.getHeader(headerName));
       req.getInputStream().close();
-      HttpTestUtil.writeResponseBody(resp, "{\"maxSupportedApiVersion\":1}");
+      HttpTestUtil.writeResponseBody(
+          resp, "{\"maxSupportedApiVersion\":1,\"defaultBranch\":\"main\"}");
     };
   }
 }

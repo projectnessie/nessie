@@ -324,6 +324,7 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
     return this;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public <API extends NessieApi> API build(Class<API> apiVersion) {
     Objects.requireNonNull(apiVersion, "API version class must be non-null");
@@ -333,31 +334,22 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
       builder.addTracing();
     }
 
-    API api = buildNessieApi(apiVersion);
-
-    if (enableApiCompatibilityCheck) {
-      NessieApiCompatibility.checkApiCompatibility(api);
-    }
-
-    return api;
-  }
-
-  private <API extends NessieApi> API buildNessieApi(Class<API> apiVersion) {
-
     if (apiVersion.isAssignableFrom(HttpApiV1.class)) {
       builder.setJsonView(Views.V1.class);
       HttpClient httpClient = builder.build();
-      @SuppressWarnings("unchecked")
-      API api = (API) new HttpApiV1(new NessieHttpClient(httpClient));
-      return api;
+      if (enableApiCompatibilityCheck) {
+        NessieApiCompatibility.check(1, httpClient);
+      }
+      return (API) new HttpApiV1(new NessieHttpClient(httpClient));
     }
 
     if (apiVersion.isAssignableFrom(HttpApiV2.class)) {
       builder.setJsonView(Views.V2.class);
       HttpClient httpClient = builder.build();
-      @SuppressWarnings("unchecked")
-      API api = (API) new HttpApiV2(httpClient);
-      return api;
+      if (enableApiCompatibilityCheck) {
+        NessieApiCompatibility.check(2, httpClient);
+      }
+      return (API) new HttpApiV2(httpClient);
     }
 
     throw new IllegalArgumentException(

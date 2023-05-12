@@ -80,6 +80,8 @@ dependencies {
   testFixturesApi(libs.undertow.servlet)
   testFixturesImplementation(libs.logback.classic)
 
+  testImplementation(libs.wiremock)
+
   intTestImplementation(libs.testcontainers.testcontainers)
   intTestImplementation(libs.testcontainers.junit)
   intTestImplementation(libs.testcontainers.keycloak) {

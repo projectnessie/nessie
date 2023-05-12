@@ -102,7 +102,10 @@ abstract class AbstractNessieApiHolder implements CloseableResource {
   @Override
   public void close() {
     LOGGER.info("Closing Nessie client for version {}", clientKey.getVersion());
-    getApiInstance().close();
+    NessieApi api = getApiInstance();
+    if (api != null) {
+      api.close();
+    }
   }
 
   public abstract NessieApi getApiInstance();
@@ -140,7 +143,16 @@ abstract class AbstractNessieApiHolder implements CloseableResource {
       }
 
       Method buildMethod = builderInstance.getClass().getMethod("build", Class.class);
-      Object apiInstance = buildMethod.invoke(builderInstance, targetClass);
+      Object apiInstance = null;
+      try {
+        apiInstance = buildMethod.invoke(builderInstance, targetClass);
+      } catch (InvocationTargetException e) {
+        // Let the test continue with a null instance, if the Nessie API is not compatible.
+        // Test methods must check for nulls and skip the test if necessary.
+        if (!isNessieApiCompatibilityException(e)) {
+          throw e;
+        }
+      }
 
       LOGGER.info(
           "Created Nessie client for version {} for {}",
@@ -153,5 +165,10 @@ abstract class AbstractNessieApiHolder implements CloseableResource {
     } catch (Exception e) {
       throw throwUnchecked(e);
     }
+  }
+
+  private static boolean isNessieApiCompatibilityException(InvocationTargetException e) {
+    return e.getCause() != null
+        && e.getCause().getClass().getSimpleName().equals("NessieApiCompatibilityException");
   }
 }
