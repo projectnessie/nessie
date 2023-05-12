@@ -395,7 +395,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
    */
   @Test
   public void commitConflictingOperationsLegacy() throws Exception {
-    assumeThat(store().getClass().getName()).doesNotEndWith("VersionStoreImpl");
+    assumeThat(isNewStorageModel()).isFalse();
 
     BranchName branch = BranchName.of("foo");
 
@@ -475,7 +475,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
    */
   @Test
   public void commitConflictingOperations() throws Exception {
-    assumeThat(store().getClass().getName()).endsWith("VersionStoreImpl");
+    assumeThat(isNewStorageModel()).isTrue();
 
     BranchName branch = BranchName.of("foo");
 
