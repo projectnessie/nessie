@@ -39,8 +39,8 @@ public class NessieOptions {
   @CommandLine.Option(
       names = {"-u", "--uri"},
       scope = CommandLine.ScopeType.INHERIT,
-      description = "Nessie API endpoint URI, defaults to http://localhost:19120/api/v2.")
-  URI nessieUri = URI.create("http://localhost:19120/api/v2");
+      description = "Nessie API endpoint URI, defaults to http://localhost:19120/api/v1.")
+  URI nessieUri = URI.create("http://localhost:19120/api/v1");
 
   @CommandLine.Option(
       names = "--nessie-option",
