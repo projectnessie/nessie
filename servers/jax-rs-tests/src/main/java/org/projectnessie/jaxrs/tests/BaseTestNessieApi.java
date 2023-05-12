@@ -83,6 +83,7 @@ import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.DiffResponse;
 import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.model.EntriesResponse;
+import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.GetNamespacesResponse;
 import org.projectnessie.model.IcebergTable;
@@ -470,7 +471,7 @@ public abstract class BaseTestNessieApi {
         .hasSize(4);
 
     soft.assertThat(api().getEntries().reference(branch).get().getEntries())
-        .extracting(EntriesResponse.Entry::getName)
+        .extracting(Entry::getName)
         .containsExactlyInAnyOrder(
             ContentKey.of("a"),
             ContentKey.of("b"),
@@ -480,7 +481,7 @@ public abstract class BaseTestNessieApi {
 
     soft.assertThat(api().getCommitLog().refName(main.getName()).get().getLogEntries()).hasSize(2);
     soft.assertThat(api().getEntries().reference(main).get().getEntries())
-        .extracting(EntriesResponse.Entry::getName)
+        .extracting(Entry::getName)
         .containsExactly(ContentKey.of("a"), ContentKey.of("b"));
 
     Reference main2;
@@ -527,7 +528,7 @@ public abstract class BaseTestNessieApi {
     }
 
     soft.assertThat(api().getEntries().reference(main2).get().getEntries())
-        .extracting(EntriesResponse.Entry::getName)
+        .extracting(Entry::getName)
         .containsExactlyInAnyOrder(
             ContentKey.of("a"),
             ContentKey.of("b"),
@@ -536,7 +537,7 @@ public abstract class BaseTestNessieApi {
             ContentKey.of("b", "b"));
 
     soft.assertThat(api().getEntries().reference(otherBranch).get().getEntries())
-        .extracting(EntriesResponse.Entry::getName)
+        .extracting(Entry::getName)
         .containsExactly(ContentKey.of("a"), ContentKey.of("b"));
     api()
         .transplantCommitsIntoBranch()
@@ -545,7 +546,7 @@ public abstract class BaseTestNessieApi {
         .branch(otherBranch)
         .transplant();
     soft.assertThat(api().getEntries().refName(otherBranch.getName()).get().getEntries())
-        .extracting(EntriesResponse.Entry::getName)
+        .extracting(Entry::getName)
         .containsExactlyInAnyOrder(
             ContentKey.of("a"),
             ContentKey.of("b"),
@@ -961,15 +962,15 @@ public abstract class BaseTestNessieApi {
     if (isV2()) {
       soft.assertThat(response.getEffectiveReference()).isEqualTo(main);
       soft.assertThat(response.getEntries())
-          .extracting(EntriesResponse.Entry::getContent)
+          .extracting(Entry::getContent)
           .doesNotContainNull()
           .isNotEmpty();
     }
-    List<EntriesResponse.Entry> notPaged = response.getEntries();
+    List<Entry> notPaged = response.getEntries();
     soft.assertThat(notPaged).hasSize(10);
 
     if (pagingSupported(api().getEntries())) {
-      List<EntriesResponse.Entry> all = new ArrayList<>();
+      List<Entry> all = new ArrayList<>();
       String token = null;
       for (int i = 0; i < 10; i++) {
         EntriesResponse resp =
@@ -1439,8 +1440,7 @@ public abstract class BaseTestNessieApi {
             .operation(Put.of(b, tb))
             .commitMeta(CommitMeta.fromMessage("commit 1"))
             .commit();
-    List<EntriesResponse.Entry> entries =
-        api().getEntries().hashOnRef(branch.getHash()).get().getEntries();
+    List<Entry> entries = api().getEntries().hashOnRef(branch.getHash()).get().getEntries();
     soft.assertThat(entries)
         .map(e -> immutableEntry(e.getName(), e.getType()))
         .containsExactlyInAnyOrder(

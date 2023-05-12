@@ -75,7 +75,7 @@ import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Detached;
-import org.projectnessie.model.EntriesResponse;
+import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableCommitResponse;
@@ -776,7 +776,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       String filter,
       String pagingToken,
       boolean withContent,
-      PagedResponseHandler<R, EntriesResponse.Entry> pagedResponseHandler,
+      PagedResponseHandler<R, Entry> pagedResponseHandler,
       Consumer<WithHash<NamedRef>> effectiveReference)
       throws NessieNotFoundException {
     WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(namedRef, hashOnRef);
@@ -820,10 +820,10 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
             }
 
             Content c = key.getContent();
-            EntriesResponse.Entry entry =
+            Entry entry =
                 c != null
-                    ? EntriesResponse.Entry.entry(key.getKey(), key.getType(), c)
-                    : EntriesResponse.Entry.entry(key.getKey(), key.getType(), key.getContentId());
+                    ? Entry.entry(key.getKey(), key.getType(), c)
+                    : Entry.entry(key.getKey(), key.getType(), key.getContentId());
 
             entry = maybeTruncateToDepth(entry, depth);
 
@@ -844,10 +844,10 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
             }
 
             Content c = key.getContent();
-            EntriesResponse.Entry entry =
+            Entry entry =
                 c != null
-                    ? EntriesResponse.Entry.entry(key.getKey(), key.getType(), c)
-                    : EntriesResponse.Entry.entry(key.getKey(), key.getType(), key.getContentId());
+                    ? Entry.entry(key.getKey(), key.getType(), c)
+                    : Entry.entry(key.getKey(), key.getType(), key.getContentId());
 
             if (!pagedResponseHandler.addEntry(entry)) {
               pagedResponseHandler.hasMore(authz.tokenForCurrent());
@@ -862,14 +862,13 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     }
   }
 
-  private static EntriesResponse.Entry maybeTruncateToDepth(
-      EntriesResponse.Entry entry, int depth) {
+  private static Entry maybeTruncateToDepth(Entry entry, int depth) {
     List<String> nameElements = entry.getName().getElements();
     boolean truncateToNamespace = nameElements.size() > depth;
     if (truncateToNamespace) {
       // implicit namespace entry at target depth (virtual parent of real entry)
       ContentKey namespaceKey = ContentKey.of(nameElements.subList(0, depth));
-      return EntriesResponse.Entry.entry(namespaceKey, Content.Type.NAMESPACE);
+      return Entry.entry(namespaceKey, Content.Type.NAMESPACE);
     }
     return entry;
   }
