@@ -471,7 +471,7 @@ public abstract class BaseTestNessieApi {
         .hasSize(4);
 
     soft.assertThat(api().getEntries().reference(branch).get().getEntries())
-        .extracting(EntriesResponse.Entry::getName)
+        .extracting(Entry::getName)
         .containsExactlyInAnyOrder(
             ContentKey.of("a"),
             ContentKey.of("b"),
@@ -481,7 +481,7 @@ public abstract class BaseTestNessieApi {
 
     soft.assertThat(api().getCommitLog().refName(main.getName()).get().getLogEntries()).hasSize(2);
     soft.assertThat(api().getEntries().reference(main).get().getEntries())
-        .extracting(EntriesResponse.Entry::getName)
+        .extracting(Entry::getName)
         .containsExactly(ContentKey.of("a"), ContentKey.of("b"));
 
     Reference main2;
@@ -528,7 +528,7 @@ public abstract class BaseTestNessieApi {
     }
 
     soft.assertThat(api().getEntries().reference(main2).get().getEntries())
-        .extracting(EntriesResponse.Entry::getName)
+        .extracting(Entry::getName)
         .containsExactlyInAnyOrder(
             ContentKey.of("a"),
             ContentKey.of("b"),
@@ -537,7 +537,7 @@ public abstract class BaseTestNessieApi {
             ContentKey.of("b", "b"));
 
     soft.assertThat(api().getEntries().reference(otherBranch).get().getEntries())
-        .extracting(EntriesResponse.Entry::getName)
+        .extracting(Entry::getName)
         .containsExactly(ContentKey.of("a"), ContentKey.of("b"));
     api()
         .transplantCommitsIntoBranch()
@@ -546,7 +546,7 @@ public abstract class BaseTestNessieApi {
         .branch(otherBranch)
         .transplant();
     soft.assertThat(api().getEntries().refName(otherBranch.getName()).get().getEntries())
-        .extracting(EntriesResponse.Entry::getName)
+        .extracting(Entry::getName)
         .containsExactlyInAnyOrder(
             ContentKey.of("a"),
             ContentKey.of("b"),
@@ -962,15 +962,15 @@ public abstract class BaseTestNessieApi {
     if (isV2()) {
       soft.assertThat(response.getEffectiveReference()).isEqualTo(main);
       soft.assertThat(response.getEntries())
-          .extracting(EntriesResponse.Entry::getContent)
+          .extracting(Entry::getContent)
           .doesNotContainNull()
           .isNotEmpty();
     }
-    List<EntriesResponse.Entry> notPaged = response.getEntries();
+    List<Entry> notPaged = response.getEntries();
     soft.assertThat(notPaged).hasSize(10);
 
     if (pagingSupported(api().getEntries())) {
-      List<EntriesResponse.Entry> all = new ArrayList<>();
+      List<Entry> all = new ArrayList<>();
       String token = null;
       for (int i = 0; i < 10; i++) {
         EntriesResponse resp =
@@ -1371,7 +1371,7 @@ public abstract class BaseTestNessieApi {
         branch = prepCommit(branch, "c-" + i, dummyPut("c", Integer.toString(i))).commit();
       }
     }
-    List<LogResponse.LogEntry> log =
+    List<LogEntry> log =
         api().getCommitLog().hashOnRef(branch.getHash()).stream().collect(Collectors.toList());
     // Verifying size is sufficient to make sure the right log was retrieved
     assertThat(log).hasSize(5);

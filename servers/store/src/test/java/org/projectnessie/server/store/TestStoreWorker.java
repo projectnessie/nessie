@@ -57,7 +57,7 @@ class TestStoreWorker {
                     ObjectTypes.Content.newBuilder()
                         .setId(CID)
                         .setIcebergRefState(
-                            ObjectTypes.IcebergRefState.newBuilder()
+                            IcebergRefState.newBuilder()
                                 .setSnapshotId(42)
                                 .setSchemaId(43)
                                 .setSpecId(44)
@@ -200,7 +200,7 @@ class TestStoreWorker {
             ObjectTypes.Content.newBuilder()
                 .setId(CID)
                 .setIcebergRefState(
-                    ObjectTypes.IcebergRefState.newBuilder()
+                    IcebergRefState.newBuilder()
                         .setSnapshotId(42)
                         .setSchemaId(43)
                         .setSpecId(44)

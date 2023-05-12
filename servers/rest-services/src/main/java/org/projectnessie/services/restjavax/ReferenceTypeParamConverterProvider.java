@@ -21,12 +21,11 @@ import java.util.Locale;
 import javax.ws.rs.ext.ParamConverter;
 import javax.ws.rs.ext.ParamConverterProvider;
 import javax.ws.rs.ext.Provider;
-import org.projectnessie.model.Reference;
 import org.projectnessie.model.Reference.ReferenceType;
 
 /**
  * Provider for {@link ReferenceTypeParamConverter}, to convert between lower-case representations
- * of {@link Reference.ReferenceType} in REST paths and upper-case in the Java enum..
+ * of {@link ReferenceType} in REST paths and upper-case in the Java enum..
  */
 @Provider
 public class ReferenceTypeParamConverterProvider implements ParamConverterProvider {
@@ -37,7 +36,7 @@ public class ReferenceTypeParamConverterProvider implements ParamConverterProvid
   @Override
   public <T> ParamConverter<T> getConverter(
       Class<T> rawType, Type genericType, Annotation[] annotations) {
-    if (rawType == Reference.ReferenceType.class) {
+    if (rawType == ReferenceType.class) {
       @SuppressWarnings("unchecked")
       ParamConverter<T> r = (ParamConverter<T>) REFERENCE_TYPE_PARAM_CONVERTER;
       return r;

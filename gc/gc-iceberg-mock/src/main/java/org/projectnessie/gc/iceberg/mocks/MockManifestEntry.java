@@ -63,7 +63,7 @@ public abstract class MockManifestEntry implements IndexedRecord {
   @Override
   @Value.Auxiliary
   public Schema getSchema() {
-    Types.StructType fileSchema = MockManifestFile.fileType(partitionType());
+    StructType fileSchema = MockManifestFile.fileType(partitionType());
     return AvroSchemaUtil.convert(
         new org.apache.iceberg.Schema(
             STATUS, SNAPSHOT_ID, SEQUENCE_NUMBER, required(DATA_FILE_ID, "data_file", fileSchema)),

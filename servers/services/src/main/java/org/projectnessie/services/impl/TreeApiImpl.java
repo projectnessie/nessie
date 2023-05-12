@@ -75,7 +75,6 @@ import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Detached;
-import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.ImmutableCommitMeta;
@@ -249,11 +248,11 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
   @Override
   public Reference createReference(
-      String refName, Reference.ReferenceType type, String targetHash, String sourceRefName)
+      String refName, ReferenceType type, String targetHash, String sourceRefName)
       throws NessieNotFoundException, NessieConflictException {
     Validation.validateForbiddenReferenceName(refName);
     NamedRef namedReference = toNamedRef(type, refName);
-    if (type == Reference.ReferenceType.TAG && targetHash == null) {
+    if (type == ReferenceType.TAG && targetHash == null) {
       throw new IllegalArgumentException(
           "Tag-creation requires a target named-reference and hash.");
     }
@@ -266,7 +265,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       // If the default-branch does not exist and hashOnRef points to the "beginning of time",
       // then do not throw a NessieNotFoundException, but re-create the default branch. In all
       // cases, re-throw the exception.
-      if (!(Reference.ReferenceType.BRANCH.equals(type)
+      if (!(ReferenceType.BRANCH.equals(type)
           && refName.equals(getConfig().getDefaultBranch())
           && (null == targetHash || getStore().noAncestorHash().asString().equals(targetHash)))) {
         throw e;
@@ -293,10 +292,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
   @Override
   public Reference assignReference(
-      Reference.ReferenceType referenceType,
-      String referenceName,
-      String expectedHash,
-      Reference assignTo)
+      ReferenceType referenceType, String referenceName, String expectedHash, Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
     try {
       ReferenceInfo<CommitMeta> resolved =
@@ -824,10 +820,10 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
             }
 
             Content c = key.getContent();
-            EntriesResponse.Entry entry =
+            Entry entry =
                 c != null
-                    ? EntriesResponse.Entry.entry(key.getKey(), key.getType(), c)
-                    : EntriesResponse.Entry.entry(key.getKey(), key.getType(), key.getContentId());
+                    ? Entry.entry(key.getKey(), key.getType(), c)
+                    : Entry.entry(key.getKey(), key.getType(), key.getContentId());
 
             entry = maybeTruncateToDepth(entry, depth);
 
@@ -848,10 +844,10 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
             }
 
             Content c = key.getContent();
-            EntriesResponse.Entry entry =
+            Entry entry =
                 c != null
-                    ? EntriesResponse.Entry.entry(key.getKey(), key.getType(), c)
-                    : EntriesResponse.Entry.entry(key.getKey(), key.getType(), key.getContentId());
+                    ? Entry.entry(key.getKey(), key.getType(), c)
+                    : Entry.entry(key.getKey(), key.getType(), key.getContentId());
 
             if (!pagedResponseHandler.addEntry(entry)) {
               pagedResponseHandler.hasMore(authz.tokenForCurrent());
@@ -866,14 +862,13 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     }
   }
 
-  private static EntriesResponse.Entry maybeTruncateToDepth(
-      EntriesResponse.Entry entry, int depth) {
+  private static Entry maybeTruncateToDepth(Entry entry, int depth) {
     List<String> nameElements = entry.getName().getElements();
     boolean truncateToNamespace = nameElements.size() > depth;
     if (truncateToNamespace) {
       // implicit namespace entry at target depth (virtual parent of real entry)
       ContentKey namespaceKey = ContentKey.of(nameElements.subList(0, depth));
-      return EntriesResponse.Entry.entry(namespaceKey, Content.Type.NAMESPACE);
+      return Entry.entry(namespaceKey, Content.Type.NAMESPACE);
     }
     return entry;
   }

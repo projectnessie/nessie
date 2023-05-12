@@ -747,8 +747,7 @@ public abstract class AbstractDatabaseAdapter<
         || namedRefsRequiresBaseReference(params.getTagRetrieveOptions());
   }
 
-  protected static boolean namedRefsRequiresBaseReference(
-      GetNamedRefsParams.RetrieveOptions retrieveOptions) {
+  protected static boolean namedRefsRequiresBaseReference(RetrieveOptions retrieveOptions) {
     return retrieveOptions.isComputeAheadBehind() || retrieveOptions.isComputeCommonAncestor();
   }
 
@@ -757,12 +756,12 @@ public abstract class AbstractDatabaseAdapter<
         || params.getTagRetrieveOptions().isRetrieve();
   }
 
-  protected static GetNamedRefsParams.RetrieveOptions namedRefsRetrieveOptionsForReference(
+  protected static RetrieveOptions namedRefsRetrieveOptionsForReference(
       GetNamedRefsParams params, ReferenceInfo<ByteString> ref) {
     return namedRefsRetrieveOptionsForReference(params, ref.getNamedRef());
   }
 
-  protected static GetNamedRefsParams.RetrieveOptions namedRefsRetrieveOptionsForReference(
+  protected static RetrieveOptions namedRefsRetrieveOptionsForReference(
       GetNamedRefsParams params, NamedRef ref) {
     if (ref instanceof BranchName) {
       return params.getBranchRetrieveOptions();

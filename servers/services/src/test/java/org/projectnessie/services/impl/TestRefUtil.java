@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.Detached;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.Reference.ReferenceType;
 import org.projectnessie.model.ReferenceMetadata;
 import org.projectnessie.model.Tag;
 import org.projectnessie.versioned.BranchName;
@@ -84,10 +85,9 @@ class TestRefUtil {
 
   @Test
   void toNamedRefTyped() {
-    assertThat(RefUtil.toNamedRef(Reference.ReferenceType.BRANCH, REF_NAME))
+    assertThat(RefUtil.toNamedRef(ReferenceType.BRANCH, REF_NAME))
         .isEqualTo(BranchName.of(REF_NAME));
-    assertThat(RefUtil.toNamedRef(Reference.ReferenceType.TAG, REF_NAME))
-        .isEqualTo(TagName.of(REF_NAME));
+    assertThat(RefUtil.toNamedRef(ReferenceType.TAG, REF_NAME)).isEqualTo(TagName.of(REF_NAME));
   }
 
   @Test

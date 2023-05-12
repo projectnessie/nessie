@@ -53,7 +53,6 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.DeltaLakeTable;
 import org.projectnessie.model.Detached;
 import org.projectnessie.model.DiffResponse.DiffEntry;
-import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.GetMultipleContentsResponse.ContentWithKey;
@@ -235,22 +234,20 @@ public abstract class BaseTestServiceImpl {
         .collect(Collectors.toList());
   }
 
-  protected List<EntriesResponse.Entry> entries(Reference reference)
-      throws NessieNotFoundException {
+  protected List<Entry> entries(Reference reference) throws NessieNotFoundException {
     return entries(reference.getName(), reference.getHash(), null, null, false);
   }
 
-  protected List<EntriesResponse.Entry> entries(String refName, String hashOnRef)
-      throws NessieNotFoundException {
+  protected List<Entry> entries(String refName, String hashOnRef) throws NessieNotFoundException {
     return entries(refName, hashOnRef, null, null, false);
   }
 
-  protected List<EntriesResponse.Entry> entries(
-      Reference reference, Integer namespaceDepth, String filter) throws NessieNotFoundException {
+  protected List<Entry> entries(Reference reference, Integer namespaceDepth, String filter)
+      throws NessieNotFoundException {
     return entries(reference.getName(), reference.getHash(), namespaceDepth, filter, false);
   }
 
-  protected List<EntriesResponse.Entry> entries(
+  protected List<Entry> entries(
       String refName, String hashOnRef, Integer namespaceDepth, String filter, boolean withContent)
       throws NessieNotFoundException {
     return treeApi()
@@ -340,7 +337,7 @@ public abstract class BaseTestServiceImpl {
     return completeLog;
   }
 
-  protected List<EntriesResponse.Entry> pagedEntries(
+  protected List<Entry> pagedEntries(
       Reference ref,
       String filter,
       int pageSize,
@@ -349,11 +346,11 @@ public abstract class BaseTestServiceImpl {
       boolean withContent)
       throws NessieNotFoundException {
 
-    List<EntriesResponse.Entry> completeLog = new ArrayList<>();
+    List<Entry> completeLog = new ArrayList<>();
     String token = null;
     for (int i = 0; ; i++) {
       AtomicReference<String> nextToken = new AtomicReference<>();
-      List<EntriesResponse.Entry> page =
+      List<Entry> page =
           treeApi()
               .getEntries(
                   ref.getName(),

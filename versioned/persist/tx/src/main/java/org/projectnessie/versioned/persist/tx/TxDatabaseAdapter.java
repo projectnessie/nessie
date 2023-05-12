@@ -116,7 +116,6 @@ import org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.spi.Traced;
 import org.projectnessie.versioned.persist.adapter.spi.TryLoopState;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry;
-import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogEntry.Operation;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefLogParents;
 import org.projectnessie.versioned.persist.serialize.AdapterTypes.RefType;
 
@@ -1673,7 +1672,7 @@ public abstract class TxDatabaseAdapter
       NamedRef ref,
       RefLogHead refLogHead,
       Hash commitHash,
-      Operation operation,
+      RefLogEntry.Operation operation,
       long timeInMicros,
       List<Hash> sourceHashes)
       throws ReferenceConflictException {

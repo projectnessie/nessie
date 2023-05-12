@@ -47,7 +47,7 @@ public final class RefUtil {
   }
 
   public static NamedRef toNamedRef(
-      @Nonnull @jakarta.annotation.Nonnull Reference.ReferenceType referenceType,
+      @Nonnull @jakarta.annotation.Nonnull ReferenceType referenceType,
       @Nonnull @jakarta.annotation.Nonnull String referenceName) {
     Objects.requireNonNull(referenceType, "referenceType must not be null");
     switch (referenceType) {

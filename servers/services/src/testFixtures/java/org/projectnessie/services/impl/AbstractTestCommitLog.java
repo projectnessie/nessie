@@ -46,7 +46,6 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
-import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operation.Delete;
@@ -210,7 +209,7 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
 
     String currentHash = branch.getHash();
     createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
-    List<LogResponse.LogEntry> log = commitLog(branch.getName());
+    List<LogEntry> log = commitLog(branch.getName());
     soft.assertThat(log).hasSize(expectedTotalSize);
 
     Instant initialCommitTime = log.get(log.size() - 1).getCommitMeta().getCommitTime();
@@ -272,7 +271,7 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
 
     String currentHash = branch.getHash();
     createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
-    List<LogResponse.LogEntry> log = commitLog(branch.getName());
+    List<LogEntry> log = commitLog(branch.getName());
     soft.assertThat(log).hasSize(numAuthors * commitsPerAuthor);
 
     log = commitLog(branch.getName(), null, "commit.properties['prop1'] == 'val1'");
@@ -294,13 +293,13 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
 
     String currentHash = branch.getHash();
     createCommits(branch, 1, numCommits, currentHash);
-    List<LogResponse.LogEntry> entireLog = commitLog(branch.getName());
+    List<LogEntry> entireLog = commitLog(branch.getName());
     soft.assertThat(entireLog).hasSize(numCommits);
 
     // if startHash > endHash, then we return all commits starting from startHash
     String startHash = entireLog.get(numCommits / 2).getCommitMeta().getHash();
     String endHash = entireLog.get(0).getCommitMeta().getHash();
-    List<LogResponse.LogEntry> log =
+    List<LogEntry> log =
         treeApi()
             .getCommitLog(
                 branch.getName(),
@@ -341,7 +340,7 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
     int expectedTotalSize = numAuthors * commits;
 
     createCommits(branch, numAuthors, commits, branch.getHash());
-    List<LogResponse.LogEntry> log = commitLog(branch.getName());
+    List<LogEntry> log = commitLog(branch.getName());
     soft.assertThat(log).hasSize(expectedTotalSize);
 
     String author = "author-1";
@@ -522,7 +521,7 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
   public void commitLogForNamelessReference() throws BaseNessieClientServerException {
     Branch branch = createBranch("commitLogForNamelessReference");
     String head = createCommits(branch, 1, 5, branch.getHash());
-    List<LogResponse.LogEntry> log = commitLog(DetachedRef.REF_NAME, MINIMAL, null, head, null);
+    List<LogEntry> log = commitLog(DetachedRef.REF_NAME, MINIMAL, null, head, null);
     // Verifying size is sufficient to make sure the right log was retrieved
     assertThat(log).hasSize(5);
   }

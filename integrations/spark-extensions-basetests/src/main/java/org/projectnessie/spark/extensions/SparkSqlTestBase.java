@@ -50,7 +50,6 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.Namespace;
-import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operations;
@@ -299,14 +298,13 @@ public abstract class SparkSqlTestBase {
         content != null
             ? ImmutableOperations.builder()
                 .addOperations(
-                    Operation.Put.of(
-                        key, IcebergTable.of("foo", 42, 42, 42, 42, content.getId()), content))
+                    Put.of(key, IcebergTable.of("foo", 42, 42, 42, 42, content.getId()), content))
                 .commitMeta(cm1)
                 .build()
             : ImmutableOperations.builder()
                 .addOperations(
-                    Operation.Put.of(ContentKey.of("table"), Namespace.of("table")),
-                    Operation.Put.of(key, IcebergTable.of("foo", 42, 42, 42, 42)))
+                    Put.of(ContentKey.of("table"), Namespace.of("table")),
+                    Put.of(key, IcebergTable.of("foo", 42, 42, 42, 42)))
                 .commitMeta(cm1)
                 .build();
 
@@ -323,8 +321,7 @@ public abstract class SparkSqlTestBase {
     Operations ops2 =
         ImmutableOperations.builder()
             .addOperations(
-                Operation.Put.of(
-                    key, IcebergTable.of("bar", 42, 42, 42, 42, content.getId()), content))
+                Put.of(key, IcebergTable.of("bar", 42, 42, 42, 42, content.getId()), content))
             .commitMeta(cm2)
             .build();
 
@@ -341,8 +338,7 @@ public abstract class SparkSqlTestBase {
     Operations ops3 =
         ImmutableOperations.builder()
             .addOperations(
-                Operation.Put.of(
-                    key, IcebergTable.of("baz", 42, 42, 42, 42, content.getId()), content))
+                Put.of(key, IcebergTable.of("baz", 42, 42, 42, 42, content.getId()), content))
             .commitMeta(cm3)
             .build();
 

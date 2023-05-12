@@ -82,7 +82,7 @@ public interface TreeService {
               regexp = Validation.REF_NAME_REGEX,
               message = Validation.REF_NAME_MESSAGE)
           String refName,
-      Reference.ReferenceType type,
+      ReferenceType type,
       @Valid
           @jakarta.validation.Valid
           @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
@@ -100,7 +100,7 @@ public interface TreeService {
       throws NessieNotFoundException, NessieConflictException;
 
   Reference assignReference(
-      Reference.ReferenceType referenceType,
+      ReferenceType referenceType,
       @Valid
           @jakarta.validation.Valid
           @NotNull
