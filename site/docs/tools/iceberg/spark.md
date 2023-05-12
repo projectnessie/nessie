@@ -8,6 +8,8 @@ To access Nessie on Iceberg from a spark cluster make sure the `spark.jars` spar
 | | `iceberg-spark-runtime` *(required)* | `nessie-spark-extensions` *(optional)* |
 |---|:---:|:---:|
 {%- for (sparkver, scalaver) in [
+  ('3.4', '2.12'),
+  ('3.4', '2.13'),
   ('3.3', '2.12'),
   ('3.3', '2.13'),
   ('3.2', '2.12'),

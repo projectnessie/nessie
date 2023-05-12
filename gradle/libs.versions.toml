@@ -78,11 +78,15 @@ iceberg-spark-extensions32-scala212 = { module = "org.apache.iceberg:iceberg-spa
 iceberg-spark-extensions32-scala213 = { module = "org.apache.iceberg:iceberg-spark-extensions-3.2_2.13", version.ref = "iceberg" }
 iceberg-spark-extensions33-scala212 = { module = "org.apache.iceberg:iceberg-spark-extensions-3.3_2.12", version.ref = "iceberg" }
 iceberg-spark-extensions33-scala213 = { module = "org.apache.iceberg:iceberg-spark-extensions-3.3_2.13", version.ref = "iceberg" }
+iceberg-spark-extensions34-scala212 = { module = "org.apache.iceberg:iceberg-spark-extensions-3.4_2.12", version.ref = "iceberg" }
+iceberg-spark-extensions34-scala213 = { module = "org.apache.iceberg:iceberg-spark-extensions-3.4_2.13", version.ref = "iceberg" }
 iceberg-spark31-scala212 = { module = "org.apache.iceberg:iceberg-spark-3.1_2.12", version.ref = "iceberg" }
 iceberg-spark32-scala212 = { module = "org.apache.iceberg:iceberg-spark-3.2_2.12", version.ref = "iceberg" }
 iceberg-spark32-scala213 = { module = "org.apache.iceberg:iceberg-spark-3.2_2.13", version.ref = "iceberg" }
 iceberg-spark33-scala212 = { module = "org.apache.iceberg:iceberg-spark-3.3_2.12", version.ref = "iceberg" }
 iceberg-spark33-scala213 = { module = "org.apache.iceberg:iceberg-spark-3.3_2.13", version.ref = "iceberg" }
+iceberg-spark34-scala212 = { module = "org.apache.iceberg:iceberg-spark-3.4_2.12", version.ref = "iceberg" }
+iceberg-spark34-scala213 = { module = "org.apache.iceberg:iceberg-spark-3.4_2.13", version.ref = "iceberg" }
 immutables-builder = { module = "org.immutables:builder", version.ref = "immutables" }
 immutables-value-annotations = { module = "org.immutables:value-annotations", version.ref = "immutables" }
 immutables-value-fixture = { module = "org.immutables:value-fixture", version.ref = "immutables" }
@@ -150,6 +154,8 @@ spark-sql-v32-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { s
 spark-sql-v32-v213 = { module = "org.apache.spark:spark-sql_2_13", version = { strictly = "[3.2, 3.3[", prefer = "3.2.4"}}
 spark-sql-v33-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { strictly = "[3.3, 3.4[", prefer = "3.3.2"}}
 spark-sql-v33-v213 = { module = "org.apache.spark:spark-sql_2_13", version = { strictly = "[3.3, 3.4[", prefer = "3.3.2"}}
+spark-sql-v34-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { strictly = "[3.4, 3.4[", prefer = "3.4.0"}}
+spark-sql-v34-v213 = { module = "org.apache.spark:spark-sql_2_13", version = { strictly = "[3.4, 3.4[", prefer = "3.4.0"}}
 testcontainers-cassandra = { module = "org.testcontainers:cassandra", version.ref = "testcontainers" }
 testcontainers-cockroachdb = { module = "org.testcontainers:cockroachdb", version.ref = "testcontainers" }
 testcontainers-junit = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
