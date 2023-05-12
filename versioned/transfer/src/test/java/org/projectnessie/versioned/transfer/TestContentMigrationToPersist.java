@@ -92,7 +92,6 @@ public class TestContentMigrationToPersist {
     NessieExporter exporter =
         NessieExporter.builder()
             .databaseAdapter(databaseAdapter)
-            .clock(databaseAdapter.getConfig().getClock())
             .versionStore(srcStore)
             .contentsFromBranch(branchName)
             .contentsBatchSize(batchSize)

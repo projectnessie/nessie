@@ -85,8 +85,6 @@ public abstract class NessieExporter {
 
     Builder contentsBatchSize(int batchSize);
 
-    Builder clock(Clock clock);
-
     NessieExporter build();
   }
 
@@ -98,9 +96,23 @@ public abstract class NessieExporter {
   @jakarta.annotation.Nullable
   abstract Persist persist();
 
+  @Nullable
   abstract VersionStore versionStore();
 
-  abstract Clock clock();
+  @Value.Lazy
+  Clock clock() {
+    DatabaseAdapter databaseAdapter = databaseAdapter();
+    if (databaseAdapter != null) {
+      return databaseAdapter.getConfig().getClock();
+    }
+
+    Persist persist = persist();
+    if (persist != null) {
+      return persist.config().clock();
+    }
+
+    throw new IllegalStateException("Neither DatabaseAdapter nor Persist are set.");
+  }
 
   @Value.Check
   void check() {

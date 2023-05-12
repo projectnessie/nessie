@@ -102,8 +102,6 @@ public class TestExportImportV1 extends BaseExportImport {
     NessieExporter exporter =
         NessieExporter.builder()
             .databaseAdapter(adapterExport)
-            .clock(adapterExport.getConfig().getClock())
-            .versionStore(storeExport)
             .fullScan(fullScan)
             .exportFileSupplier(FileExporter.builder().targetDirectory(dir).build())
             .build();

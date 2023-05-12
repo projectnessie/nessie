@@ -96,8 +96,6 @@ public class TestMigrationToPersist extends BaseExportImport {
     NessieExporter exporter =
         NessieExporter.builder()
             .databaseAdapter(databaseAdapter)
-            .clock(databaseAdapter.getConfig().getClock())
-            .versionStore(daVersionStore)
             .fullScan(fullScan)
             .exportFileSupplier(FileExporter.builder().targetDirectory(dir).build())
             .build();

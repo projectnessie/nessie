@@ -117,7 +117,6 @@ public class ExportRepository extends BaseCommand {
     return export(
         b -> {
           b.databaseAdapter(databaseAdapter);
-          b.clock(databaseAdapter.getConfig().getClock());
           b.versionStore(new PersistVersionStore(databaseAdapter));
         });
   }
@@ -127,7 +126,6 @@ public class ExportRepository extends BaseCommand {
     return export(
         b -> {
           b.persist(persist);
-          b.clock(persist.config().clock());
           b.versionStore(new VersionStoreImpl(persist));
         });
   }
