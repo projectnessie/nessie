@@ -312,6 +312,10 @@ public final class NessieConfigConstants {
   public static final String CONF_FORCE_URL_CONNECTION_CLIENT =
       "nessie.force-url-connection-client";
 
+  /** Enables API compatibility check when creating the Nessie client. The default is {@code true}. */
+  public static final String CONF_ENABLE_API_COMPATIBILITY_CHECK =
+      "nessie.enable-api-compatibility-check";
+
   public static final int DEFAULT_READ_TIMEOUT_MILLIS = 25000;
   public static final int DEFAULT_CONNECT_TIMEOUT_MILLIS = 5000;
 
