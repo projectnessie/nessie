@@ -195,7 +195,9 @@ if (!System.getProperty("nessie.integrationsTesting.enable").toBoolean()) {
 
   projectPathToGroupId[":pom-relocations"] = "org.projectnessie"
   allLoadedProjects
-    .filter { !it.name.startsWith("nessie-versioned-storage") }
+    .filter {
+      !it.name.startsWith("nessie-versioned-storage") && !it.name.startsWith("nessie-events")
+    }
     .forEach { projectDescriptor ->
       val projectDir = "pom-relocations/${projectDescriptor.name}"
       val projectPath = ":pom-relocations:${projectDescriptor.name}"
