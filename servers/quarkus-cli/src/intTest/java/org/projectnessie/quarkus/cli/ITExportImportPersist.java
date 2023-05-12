@@ -17,9 +17,9 @@ package org.projectnessie.quarkus.cli;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
+import static org.assertj.core.groups.Tuple.tuple;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 import static org.projectnessie.quarkus.cli.ImportRepository.ERASE_BEFORE_IMPORT;
-import static org.projectnessie.versioned.storage.common.indexes.StoreKey.key;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Add.commitAdd;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.newCommitBuilder;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
@@ -27,6 +27,7 @@ import static org.projectnessie.versioned.storage.common.logic.Logics.referenceL
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.EMPTY_COMMIT_HEADERS;
 import static org.projectnessie.versioned.storage.common.objtypes.ContentValueObj.contentValue;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
+import static org.projectnessie.versioned.storage.versionstore.TypeMapping.keyToStoreKey;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
 import io.quarkus.test.junit.TestProfile;
@@ -43,9 +44,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.api.NessieVersion;
+import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.quarkus.cli.ExportRepository.Format;
+import org.projectnessie.versioned.GetNamedRefsParams;
+import org.projectnessie.versioned.KeyEntry;
+import org.projectnessie.versioned.ReferenceInfo;
+import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
 import org.projectnessie.versioned.storage.common.logic.CommitLogic;
@@ -54,6 +62,7 @@ import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.versionstore.VersionStoreImpl;
 import org.projectnessie.versioned.store.DefaultStoreWorker;
 
 @QuarkusMainTest
@@ -195,6 +204,17 @@ public class ITExportImportPersist {
         .contains("Importing into a MONGODB version store...")
         .contains("Imported Nessie repository, 2 commits, 2 named references.")
         .contains("Import finalization finished, total duration: ");
+
+    checkValues(
+        persist,
+        "main",
+        ContentKey.of("namespace123", "table123"),
+        IcebergTable.of("meta", 42, 43, 44, 45, "id123"));
+    checkValues(
+        persist,
+        "branch-foo",
+        ContentKey.of("namespace123", "table123"),
+        IcebergTable.of("meta2", 43, 43, 44, 45, "id123"));
   }
 
   @Test
@@ -230,6 +250,65 @@ public class ITExportImportPersist {
         .contains("Importing into a MONGODB version store...")
         .contains("Imported Nessie repository, 2 commits, 2 named references.")
         .contains("Import finalization finished, total duration: ");
+
+    checkValues(
+        persist,
+        "main",
+        ContentKey.of("namespace123", "table123"),
+        IcebergTable.of("meta", 42, 43, 44, 45, "id123"));
+    checkValues(
+        persist,
+        "branch-foo",
+        ContentKey.of("namespace123", "table123"),
+        IcebergTable.of("meta2", 43, 43, 44, 45, "id123"));
+  }
+
+  @Test
+  public void onlyContentExportToZip(
+      QuarkusMainLauncher launcher, Persist persist, @TempDir Path tempDir) throws Exception {
+    populateRepository(persist);
+
+    Path zipFile = tempDir.resolve("export.zip");
+    LaunchResult result =
+        launcher.launch(
+            "export",
+            "--only-contents-from-branch",
+            "main",
+            ExportRepository.PATH,
+            zipFile.toString());
+    soft.assertThat(result.exitCode()).isEqualTo(0);
+    soft.assertThat(result.getOutput())
+        .contains("Exporting from a MONGODB version store...")
+        .contains(
+            "Exported Nessie repository, 1 commits into 1 files, 1 named references into 1 files.");
+    soft.assertThat(zipFile).isRegularFile();
+
+    result =
+        launcher.launch("import", ERASE_BEFORE_IMPORT, ImportRepository.PATH, zipFile.toString());
+    soft.assertThat(result.exitCode()).isEqualTo(0);
+    soft.assertThat(result.getOutput())
+        .contains("Export was created by Nessie version " + NessieVersion.NESSIE_VERSION + " on ")
+        .containsPattern(
+            "containing [0-9]+ named references \\(in [0-9]+ files\\) and [0-9]+ commits \\(in [0-9]+ files\\)")
+        .contains("Importing into a MONGODB version store...")
+        .contains("Imported Nessie repository, 1 commits, 1 named references.")
+        .contains("Import finalization finished, total duration: ");
+
+    checkValues(
+        persist,
+        "main",
+        ContentKey.of("namespace123", "table123"),
+        IcebergTable.of("meta", 42, 43, 44, 45, "id123"));
+  }
+
+  private void checkValues(Persist persist, String ref, ContentKey key, Content value)
+      throws ReferenceNotFoundException {
+    VersionStoreImpl store = new VersionStoreImpl(persist);
+    ReferenceInfo<CommitMeta> main = store.getNamedRef(ref, GetNamedRefsParams.DEFAULT);
+    soft.assertThat(store.getKeys(main.getHash(), null, true))
+        .toIterable()
+        .extracting(KeyEntry::getKey, KeyEntry::getContent)
+        .containsExactly(tuple(key, value));
   }
 
   private void populateRepository(Persist persist) throws Exception {
@@ -250,7 +329,7 @@ public class ITExportImportPersist {
     ContentValueObj valueFoo = contentValue(contentId.toString(), payload, contentFoo);
 
     soft.assertThat(persist.storeObj(valueMain)).isTrue();
-    StoreKey key = key("namespace123", "table123");
+    StoreKey key = keyToStoreKey(ContentKey.of("namespace123", "table123"));
     CommitObj main =
         commitLogic.doCommit(
             newCommitBuilder()

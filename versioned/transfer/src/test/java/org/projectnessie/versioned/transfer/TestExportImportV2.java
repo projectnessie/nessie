@@ -92,6 +92,8 @@ public class TestExportImportV2 extends BaseExportImport {
     NessieExporter exporter =
         NessieExporter.builder()
             .persist(persistExport)
+            .clock(persistExport.config().clock())
+            .versionStore(sourceVersionStore())
             .fullScan(fullScan)
             .exportFileSupplier(FileExporter.builder().targetDirectory(dir).build())
             .build();

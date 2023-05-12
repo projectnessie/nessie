@@ -20,9 +20,11 @@ import static org.projectnessie.versioned.transfer.ExportImportConstants.DEFAULT
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.time.Clock;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.StoreWorker;
+import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.store.DefaultStoreWorker;
@@ -46,6 +48,8 @@ public abstract class NessieExporter {
 
     /** Specify the {@code Persist} to use. */
     Builder persist(Persist persist);
+
+    Builder versionStore(VersionStore store);
 
     /** Optional, specify a custom {@link ObjectMapper}. */
     Builder objectMapper(ObjectMapper objectMapper);
@@ -77,6 +81,12 @@ public abstract class NessieExporter {
 
     Builder fullScan(boolean fullScan);
 
+    Builder contentsFromBranch(String branchName);
+
+    Builder contentsBatchSize(int batchSize);
+
+    Builder clock(Clock clock);
+
     NessieExporter build();
   }
 
@@ -87,6 +97,10 @@ public abstract class NessieExporter {
   @Nullable
   @jakarta.annotation.Nullable
   abstract Persist persist();
+
+  abstract VersionStore versionStore();
+
+  abstract Clock clock();
 
   @Value.Check
   void check() {
@@ -103,6 +117,17 @@ public abstract class NessieExporter {
   @Value.Default
   boolean fullScan() {
     return false;
+  }
+
+  @Value.Default
+  @Nullable
+  String contentsFromBranch() {
+    return null;
+  }
+
+  @Value.Default
+  int contentsBatchSize() {
+    return 100;
   }
 
   @Value.Default
@@ -141,6 +166,10 @@ public abstract class NessieExporter {
     ExportFileSupplier exportFiles = exportFileSupplier();
 
     exportFiles.preValidate();
+
+    if (contentsFromBranch() != null) {
+      return new ExportContents(exportFiles, this).exportRepo();
+    }
 
     if (databaseAdapter() != null) {
       return new ExportDatabaseAdapter(exportFiles, this).exportRepo();

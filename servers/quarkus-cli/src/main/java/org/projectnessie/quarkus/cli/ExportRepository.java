@@ -21,6 +21,8 @@ import java.nio.file.Path;
 import java.util.Locale;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
+import org.projectnessie.versioned.persist.store.PersistVersionStore;
+import org.projectnessie.versioned.storage.versionstore.VersionStoreImpl;
 import org.projectnessie.versioned.transfer.ExportImportConstants;
 import org.projectnessie.versioned.transfer.NessieExporter;
 import org.projectnessie.versioned.transfer.ProgressEvent;
@@ -95,14 +97,39 @@ public class ExportRepository extends BaseCommand {
       })
   private boolean fullScan;
 
+  @CommandLine.Option(
+      names = {"--only-contents-from-branch"},
+      paramLabel = "<branch-name>",
+      description = {"Export only the most recent contents from the specified branch."})
+  private String contentsFromBranch;
+
+  @CommandLine.Option(
+      names = {"--contents-batch-size"},
+      paramLabel = "<number>",
+      description = {
+        "Group the specified number of content objects into each commit at export time. "
+            + "This option is ignored unless --only-contents-from-branch is set. The default value is 100."
+      })
+  private Integer contentsBatchSize;
+
   @Override
   protected Integer callWithDatabaseAdapter() throws Exception {
-    return export(b -> b.databaseAdapter(databaseAdapter));
+    return export(
+        b -> {
+          b.databaseAdapter(databaseAdapter);
+          b.clock(databaseAdapter.getConfig().getClock());
+          b.versionStore(new PersistVersionStore(databaseAdapter));
+        });
   }
 
   @Override
   protected Integer callWithPersist() throws Exception {
-    return export(b -> b.persist(persist));
+    return export(
+        b -> {
+          b.persist(persist);
+          b.clock(persist.config().clock());
+          b.versionStore(new VersionStoreImpl(persist));
+        });
   }
 
   Integer export(Consumer<NessieExporter.Builder> builderConsumer) throws Exception {
@@ -114,7 +141,10 @@ public class ExportRepository extends BaseCommand {
 
     try (ExportFileSupplier exportFileSupplier = createExportFileSupplier()) {
       NessieExporter.Builder builder =
-          NessieExporter.builder().exportFileSupplier(exportFileSupplier).fullScan(fullScan);
+          NessieExporter.builder()
+              .exportFileSupplier(exportFileSupplier)
+              .fullScan(fullScan)
+              .contentsFromBranch(contentsFromBranch);
       builderConsumer.accept(builder);
       if (maxFileSize != null) {
         builder.maxFileSize(maxFileSize);
@@ -124,6 +154,9 @@ public class ExportRepository extends BaseCommand {
       }
       if (outputBufferSize != null) {
         builder.outputBufferSize(outputBufferSize);
+      }
+      if (contentsBatchSize != null) {
+        builder.contentsBatchSize(contentsBatchSize);
       }
 
       PrintWriter out = spec.commandLine().getOut();
