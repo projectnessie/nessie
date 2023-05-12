@@ -53,10 +53,9 @@ class TestReferenceMapping {
                 .build()),
         Arguments.of(
             DetachedRef.INSTANCE,
-            ImmutableReference.builder()
-                .type("DETACHED")
-                .fullName("refs/???/DETACHED")
-                .simpleName("DETACHED")
-                .build()));
+            ImmutableReference.builder().type("DETACHED").simpleName("DETACHED").build()),
+        Arguments.of(
+            (NamedRef) () -> "weird",
+            ImmutableReference.builder().type("UNKNOWN").simpleName("weird").build()));
   }
 }

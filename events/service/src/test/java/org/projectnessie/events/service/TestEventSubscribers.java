@@ -54,7 +54,8 @@ class TestEventSubscribers {
     doThrow(new RuntimeException("subscriber1")).when(subscriber1).onSubscribe(any());
     assertThatThrownBy(() -> subscribers.start(s -> mock(EventSubscription.class)))
         .isInstanceOf(RuntimeException.class)
-        .hasMessage("subscriber1");
+        .hasMessage("Error starting subscriber")
+        .hasCause(new RuntimeException("subscriber1"));
     verify(subscriber1).onSubscribe(any());
     verify(subscriber2, never()).onSubscribe(any());
   }
@@ -66,7 +67,8 @@ class TestEventSubscribers {
     doThrow(new RuntimeException("subscriber2")).when(subscriber2).close();
     assertThatThrownBy(subscribers::close)
         .isInstanceOf(RuntimeException.class)
-        .hasMessage("subscriber2")
+        .hasMessage("Error closing at least one subscriber")
+        .hasSuppressedException(new RuntimeException("subscriber2"))
         .hasSuppressedException(new RuntimeException("subscriber1"));
     verify(subscriber1).close();
     verify(subscriber2).close();

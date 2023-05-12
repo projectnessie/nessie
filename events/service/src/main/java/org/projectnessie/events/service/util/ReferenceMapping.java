@@ -15,6 +15,7 @@
  */
 package org.projectnessie.events.service.util;
 
+import java.util.Optional;
 import org.projectnessie.events.api.ImmutableReference;
 import org.projectnessie.events.api.Reference;
 import org.projectnessie.versioned.BranchName;
@@ -41,9 +42,9 @@ public final class ReferenceMapping {
     else return "UNKNOWN";
   }
 
-  private static String getFullReferenceName(NamedRef ref) {
-    if (ref instanceof BranchName) return "refs/heads/" + ref.getName();
-    if (ref instanceof TagName) return "refs/tags/" + ref.getName();
-    else return "refs/???/" + ref.getName();
+  private static Optional<String> getFullReferenceName(NamedRef ref) {
+    if (ref instanceof BranchName) return Optional.of("refs/heads/" + ref.getName());
+    if (ref instanceof TagName) return Optional.of("refs/tags/" + ref.getName());
+    else return Optional.empty();
   }
 }

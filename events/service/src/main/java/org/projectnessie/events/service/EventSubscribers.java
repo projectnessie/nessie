@@ -90,9 +90,8 @@ public class EventSubscribers implements AutoCloseable {
         try {
           EventSubscription subscription = subscriptionFactory.apply(subscriber);
           subscriber.onSubscribe(subscription);
-        } catch (RuntimeException e) {
-          LOGGER.error("Error starting subscriber", e);
-          throw e;
+        } catch (Exception e) {
+          throw new RuntimeException("Error starting subscriber", e);
         }
       }
       LOGGER.info("Done starting subscribers.");
@@ -101,29 +100,24 @@ public class EventSubscribers implements AutoCloseable {
   }
 
   @Override
-  public synchronized void close() throws Exception {
+  public synchronized void close() {
     if (!closed) {
       LOGGER.info("Closing subscribers...");
-      Exception error = null;
-      try {
-        for (EventSubscriber subscriber : subscribers) {
-          try {
-            subscriber.close();
-          } catch (Exception e) {
-            LOGGER.error("Error closing subscriber", e);
-            if (error != null) {
-              e.addSuppressed(error);
-            }
-            error = e;
-          }
-        }
-      } finally {
-        LOGGER.info("Done closing subscribers.");
-        closed = true;
-        if (error != null) {
-          throw error;
+      List<Exception> errors = new ArrayList<>();
+      for (EventSubscriber subscriber : subscribers) {
+        try {
+          subscriber.close();
+        } catch (Exception e) {
+          errors.add(e);
         }
       }
+      if (!errors.isEmpty()) {
+        RuntimeException e = new RuntimeException("Error closing at least one subscriber");
+        errors.forEach(e::addSuppressed);
+        throw e;
+      }
+      LOGGER.info("Done closing subscribers.");
+      closed = true;
     }
   }
 
