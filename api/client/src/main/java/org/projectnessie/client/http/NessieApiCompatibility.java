@@ -30,12 +30,12 @@ public class NessieApiCompatibility {
    * @throws IllegalArgumentException if the API version is not compatible
    */
   public static void checkApiCompatibility(NessieApi api) {
-    // First, check if the API version is supported by the server.
     int clientApiVersion = api instanceof NessieApiV2 ? 2 : 1;
     NessieConfiguration config = ((NessieApiV1) api).getConfig();
     int minServerApiVersion = config.getMinSupportedApiVersion();
     int maxServerApiVersion = config.getMaxSupportedApiVersion();
     String specVersion = config.getSpecVersion();
+    // First, check if the API version is supported by the server.
     if (minServerApiVersion > clientApiVersion || maxServerApiVersion < clientApiVersion) {
       throw new IllegalArgumentException(
           String.format(
