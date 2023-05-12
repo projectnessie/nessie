@@ -152,7 +152,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   protected void mergeKeyBehaviorValidation(boolean dryRun) throws Exception {
-    assumeThat(store().getClass().getName()).endsWith("VersionStoreImpl");
+    assumeThat(isNewStorageModel()).isTrue();
 
     MetadataRewriter<CommitMeta> metadataRewriter = createMetadataRewriter("");
     BranchName targetBranch = BranchName.of("mergeKeyBehaviorValidation");
@@ -282,7 +282,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     Content resolvedContent = onRef("resolved", contentT2.getId());
     Content wrongExpectedContent = onRef("wrong", contentT2.getId());
 
-    if (!store().getClass().getName().endsWith("VersionStoreImpl")) {
+    if (!isNewStorageModel()) {
       soft.assertThatIllegalArgumentException()
           .isThrownBy(
               () ->
