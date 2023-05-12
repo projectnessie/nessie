@@ -312,7 +312,9 @@ public final class NessieConfigConstants {
   public static final String CONF_FORCE_URL_CONNECTION_CLIENT =
       "nessie.force-url-connection-client";
 
-  /** Enables API compatibility check when creating the Nessie client. The default is {@code true}. */
+  /**
+   * Enables API compatibility check when creating the Nessie client. The default is {@code true}.
+   */
   public static final String CONF_ENABLE_API_COMPATIBILITY_CHECK =
       "nessie.enable-api-compatibility-check";
 
