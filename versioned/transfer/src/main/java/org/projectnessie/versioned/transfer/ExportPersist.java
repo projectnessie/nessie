@@ -184,9 +184,7 @@ final class ExportPersist extends ExportCommon {
                       requireNonNull(exporter.persist())
                           .fetchTypedObj(valueId, VALUE, ContentValueObj.class);
                   Content modelContent =
-                      exporter
-                          .storeWorker()
-                          .valueFromStore((byte) content.payload(), value.data(), () -> null);
+                      exporter.storeWorker().valueFromStore((byte) content.payload(), value.data());
                   byte[] modelContentBytes =
                       exporter.objectMapper().writeValueAsBytes(modelContent);
                   opBuilder
