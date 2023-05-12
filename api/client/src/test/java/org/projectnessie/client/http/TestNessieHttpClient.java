@@ -241,17 +241,13 @@ class TestNessieHttpClient {
 
   @SuppressWarnings("EmptyTryBlock")
   private void testConfig(
-      Class<? extends NessieApi> apiClass,
-      int min,
-      int max,
-      String spec,
-      boolean enableApiCompatCheck)
+      Class<? extends NessieApi> apiClass, int min, int max, String spec, boolean check)
       throws Exception {
     try (HttpTestServer server = forConfig(min, max, spec);
         NessieApi ignored =
             HttpClientBuilder.builder()
                 .withUri(server.getUri())
-                .withEnableApiCompatibilityCheck(enableApiCompatCheck)
+                .withEnableApiCompatibilityCheck(check)
                 .build(apiClass)) {
       // no-op
     }
