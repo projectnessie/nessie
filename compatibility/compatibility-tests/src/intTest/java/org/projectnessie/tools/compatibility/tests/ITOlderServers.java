@@ -15,9 +15,7 @@
  */
 package org.projectnessie.tools.compatibility.tests;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.tools.compatibility.api.Version;
 import org.projectnessie.tools.compatibility.internal.OlderNessieServersExtension;
 
@@ -27,11 +25,5 @@ public class ITOlderServers extends AbstractCompatibilityTests {
   @Override
   Version getClientVersion() {
     return Version.CURRENT;
-  }
-
-  @Override
-  @Test
-  public void mergeBehavior() throws BaseNessieClientServerException {
-    super.mergeBehavior();
   }
 }
