@@ -18,7 +18,6 @@ package org.projectnessie.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
 
@@ -31,33 +30,25 @@ public interface Documentation {
     return ImmutableDocumentation.builder();
   }
 
-  /** Mime type of the documentation. */
+  /**
+   * Mime type of the documentation.
+   *
+   * <p>Clients <em>must</em> interpret this value and <em>must not</em> assume a specific mime
+   * type.
+   */
   @NotNull
   @jakarta.validation.constraints.NotNull
   @Value.Parameter(order = 1)
   String getMimeType();
 
-  /** URI of the documentation. If present, {@link #getText()} must not be specified. */
-  @Nullable
-  @jakarta.annotation.Nullable
-  @Value.Parameter(order = 1)
-  @JsonInclude(JsonInclude.Include.NON_NULL)
-  String getLocation();
-
-  /** Documentation text. If present, {@link #getLocation()} must not be specified. */
-  @Nullable
-  @jakarta.annotation.Nullable
-  @Value.Parameter(order = 1)
+  /** Documentation text, format according to {@link #getMimeType()}. */
+  @NotNull
+  @jakarta.validation.constraints.NotNull
+  @Value.Parameter(order = 2)
   @JsonInclude(JsonInclude.Include.NON_NULL)
   String getText();
 
-  @Value.Check
-  default void check() {
-    boolean locationNull = getLocation() == null;
-    boolean textNull = getText() == null;
-    if (locationNull == textNull) {
-      throw new IllegalStateException(
-          "Either 'location' or 'test' must be specified, but not both.");
-    }
+  static Documentation of(String mimeType, String text) {
+    return ImmutableDocumentation.of(mimeType, text);
   }
 }

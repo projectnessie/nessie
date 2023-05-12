@@ -99,7 +99,7 @@ public interface MergeKeyBehavior {
    * <p>It is mandatory to supply the {@link #getExpectedTargetDocumentation() expected
    * documentation value},
    */
-  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @JsonInclude(Include.NON_NULL)
   @JsonView(Views.V2.class)
   @Nullable
   @jakarta.annotation.Nullable
