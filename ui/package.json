@@ -9,7 +9,7 @@
     "@mui/icons-material": "^5.11.16",
     "@mui/lab": "^5.0.0-alpha.129",
     "@mui/material": "^5.12.3",
-    "@svgr/webpack": "7.0.0",
+    "@svgr/webpack": "8.0.1",
     "@types/bootstrap": "^5.2.6",
     "@types/material-ui": "^0.21.12",
     "@types/ramda": "^0.29.1",
