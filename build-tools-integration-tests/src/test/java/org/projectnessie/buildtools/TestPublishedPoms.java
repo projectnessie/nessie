@@ -91,7 +91,6 @@ public class TestPublishedPoms {
     "nessie-jaxrs",
     "nessie-jaxrs-testextension",
     "nessie-jaxrs-tests",
-    "nessie-lambda",
     "nessie-model",
     "nessie-quarkus",
     "nessie-quarkus-cli",
