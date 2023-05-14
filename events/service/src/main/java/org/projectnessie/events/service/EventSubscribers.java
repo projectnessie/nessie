@@ -1,0 +1,160 @@
+/*
+ * Copyright (C) 2023 Dremio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.projectnessie.events.service;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.ServiceLoader;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+import org.projectnessie.events.api.EventType;
+import org.projectnessie.events.spi.EventSubscriber;
+import org.projectnessie.events.spi.EventSubscription;
+import org.projectnessie.versioned.ResultType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Loads and holds all {@link EventSubscriber}s.
+ *
+ * <p>The main purpose of this class is to provide a single point of access to all subscribers, and
+ * also to provide a bit-mask of all event types that subscribers are subscribed to, for a fast and
+ * efficient type-based event filtering.
+ *
+ * <p>This class is meant to be used as a singleton, or in CDI Dependent pseudo-scope.
+ */
+public class EventSubscribers implements AutoCloseable {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(EventSubscribers.class);
+
+  /** Load all {@link EventSubscriber}s via {@link ServiceLoader}. */
+  public static List<EventSubscriber> loadSubscribers() {
+    List<EventSubscriber> subscribers = new ArrayList<>();
+    for (EventSubscriber subscriber : ServiceLoader.load(EventSubscriber.class)) {
+      subscribers.add(subscriber);
+    }
+    return subscribers;
+  }
+
+  // Visible for testing
+  final List<EventSubscriber> subscribers;
+
+  private final EnumSet<EventType> acceptedEventTypes;
+  private final EnumSet<ResultType> acceptedResultTypes;
+
+  // guarded by this
+  private boolean started;
+  // guarded by this
+  private boolean closed;
+
+  public EventSubscribers(EventSubscriber... subscribers) {
+    this(Arrays.asList(subscribers));
+  }
+
+  public EventSubscribers(Iterable<EventSubscriber> subscribers) {
+    this.subscribers =
+        Collections.unmodifiableList(
+            StreamSupport.stream(subscribers.spliterator(), false).collect(Collectors.toList()));
+    acceptedEventTypes =
+        Arrays.stream(EventType.values())
+            .filter(t -> this.subscribers.stream().anyMatch(s -> s.accepts(t)))
+            .collect(Collectors.toCollection(() -> EnumSet.noneOf(EventType.class)));
+    acceptedResultTypes =
+        acceptedEventTypes.stream()
+            .flatMap(EventSubscribers::map)
+            .collect(Collectors.toCollection(() -> EnumSet.noneOf(ResultType.class)));
+  }
+
+  public synchronized void start(Function<EventSubscriber, EventSubscription> subscriptionFactory) {
+    if (!started) {
+      LOGGER.info("Starting subscribers...");
+      for (EventSubscriber subscriber : subscribers) {
+        try {
+          EventSubscription subscription = subscriptionFactory.apply(subscriber);
+          subscriber.onSubscribe(subscription);
+        } catch (Exception e) {
+          throw new RuntimeException("Error starting subscriber", e);
+        }
+      }
+      LOGGER.info("Done starting subscribers.");
+      started = true;
+    }
+  }
+
+  @Override
+  public synchronized void close() {
+    if (!closed) {
+      LOGGER.info("Closing subscribers...");
+      List<Exception> errors = new ArrayList<>();
+      for (EventSubscriber subscriber : subscribers) {
+        try {
+          subscriber.close();
+        } catch (Exception e) {
+          errors.add(e);
+        }
+      }
+      if (!errors.isEmpty()) {
+        RuntimeException e = new RuntimeException("Error closing at least one subscriber");
+        errors.forEach(e::addSuppressed);
+        throw e;
+      }
+      LOGGER.info("Done closing subscribers.");
+      closed = true;
+    }
+  }
+
+  /** Returns {@code true} if there are any subscribers for the given {@link EventType}. */
+  public boolean hasSubscribersFor(EventType type) {
+    return acceptedEventTypes.contains(type);
+  }
+
+  /** Returns {@code true} if there are any subscribers for the given {@link ResultType}. */
+  public boolean hasSubscribersFor(ResultType resultType) {
+    return acceptedResultTypes.contains(resultType);
+  }
+
+  /**
+   * Maps a {@link ResultType} to all {@link EventType}s that could be emitted for a result of that
+   * type.
+   */
+  private static Stream<ResultType> map(EventType resultType) {
+    switch (resultType) {
+      case COMMIT:
+      case CONTENT_STORED:
+      case CONTENT_REMOVED:
+        return Stream.of(ResultType.COMMIT, ResultType.MERGE, ResultType.TRANSPLANT);
+      case MERGE:
+        return Stream.of(ResultType.MERGE);
+      case TRANSPLANT:
+        return Stream.of(ResultType.TRANSPLANT);
+      case REFERENCE_CREATED:
+        return Stream.of(ResultType.REFERENCE_CREATED);
+      case REFERENCE_UPDATED:
+        return Stream.of(ResultType.REFERENCE_ASSIGNED);
+      case REFERENCE_DELETED:
+        return Stream.of(ResultType.REFERENCE_DELETED);
+      case GENERIC:
+        return Stream.of(); // event never emitted
+      default:
+        throw new IllegalArgumentException("Unknown result type: " + resultType);
+    }
+  }
+}
