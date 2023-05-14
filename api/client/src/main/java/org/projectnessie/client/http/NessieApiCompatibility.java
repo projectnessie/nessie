@@ -15,10 +15,12 @@
  */
 package org.projectnessie.client.http;
 
-import org.projectnessie.client.rest.NessieServiceException;
-import org.projectnessie.model.NessieConfiguration;
+import com.fasterxml.jackson.databind.JsonNode;
 
 public class NessieApiCompatibility {
+
+  private static final String MIN_API_VERSION = "minSupportedApiVersion";
+  private static final String MAX_API_VERSION = "maxSupportedApiVersion";
 
   /**
    * Checks if the API version of the client is compatible with the server's.
@@ -29,37 +31,18 @@ public class NessieApiCompatibility {
    */
   public static void check(int clientApiVersion, HttpClient httpClient)
       throws NessieApiCompatibilityException {
-    NessieConfiguration config = fetchConfig(httpClient);
-    int minServerApiVersion = config.getMinSupportedApiVersion();
-    int maxServerApiVersion = config.getMaxSupportedApiVersion();
+    JsonNode config = httpClient.newRequest().path("config").get().readEntity(JsonNode.class);
+    int minServerApiVersion =
+        config.hasNonNull(MIN_API_VERSION) ? config.get(MIN_API_VERSION).asInt() : 1;
+    int maxServerApiVersion = config.get(MAX_API_VERSION).asInt();
     if (clientApiVersion < minServerApiVersion || clientApiVersion > maxServerApiVersion) {
       throw new NessieApiCompatibilityException(
           clientApiVersion, minServerApiVersion, maxServerApiVersion);
     }
-    int actualServerApiVersion = fetchActualServerApiVersion(httpClient, config);
+    int actualServerApiVersion = config.hasNonNull(MIN_API_VERSION) ? 2 : 1;
     if (clientApiVersion != actualServerApiVersion) {
       throw new NessieApiCompatibilityException(
           clientApiVersion, minServerApiVersion, maxServerApiVersion, actualServerApiVersion);
-    }
-  }
-
-  private static NessieConfiguration fetchConfig(HttpClient httpClient) {
-    return httpClient.newRequest().path("config").get().readEntity(NessieConfiguration.class);
-  }
-
-  private static int fetchActualServerApiVersion(
-      HttpClient httpClient, NessieConfiguration config) {
-    try {
-      httpClient
-          .newRequest()
-          .path("trees/tree/{branch}")
-          .resolveTemplate("branch", config.getDefaultBranch())
-          .get();
-      return 1;
-    } catch (NessieServiceException e) {
-      // In theory, we could test if the status code is 404; but unfortunately on Jersey,
-      // the 404 error arrives wrapped in a status code 500.
-      return 2;
     }
   }
 }
