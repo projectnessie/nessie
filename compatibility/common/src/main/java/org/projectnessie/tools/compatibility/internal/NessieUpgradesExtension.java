@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
+import org.junit.jupiter.api.condition.OS;
+import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.projectnessie.tools.compatibility.api.TargetVersion;
 import org.projectnessie.tools.compatibility.api.Version;
@@ -40,6 +42,15 @@ import org.projectnessie.tools.compatibility.api.Version;
  * proxies, model classes are re-serialized.
  */
 public class NessieUpgradesExtension extends AbstractMultiVersionExtension {
+
+  @Override
+  public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
+    if (OS.MAC.isCurrentOs()) {
+      return ConditionEvaluationResult.disabled(
+          "Disabled on macOS due to SIGSEV issues with RocksDB");
+    }
+    return super.evaluateExecutionCondition(context);
+  }
 
   @Override
   public void beforeAll(ExtensionContext context) {
