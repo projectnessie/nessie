@@ -141,8 +141,8 @@ class TestNessieCompatibilityExtensions {
 
   @Test
   @DisabledOnOs(
-    value = OS.MAC,
-    disabledReason = "Uses NessieUpgradesExtension, which is not compatible with macOS")
+      value = OS.MAC,
+      disabledReason = "Uses NessieUpgradesExtension, which is not compatible with macOS")
   void upgrade() {
     EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
         .configurationParameter("nessie.versions", "0.42.0,current")
