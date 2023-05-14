@@ -179,6 +179,6 @@ annotationStripper {
 }
 
 // Issue w/ testcontainers/podman in GH workflows :(
-if ((Os.isFamily(Os.FAMILY_MAC) || Os.isFamily(Os.FAMILY_WINDOWS)) && System.getenv("CI") != null) {
+if (Os.isFamily(Os.FAMILY_WINDOWS) && System.getenv("CI") != null) {
   tasks.named<Test>("intTest") { this.enabled = false }
 }

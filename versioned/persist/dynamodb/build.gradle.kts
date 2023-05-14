@@ -60,8 +60,3 @@ dependencies {
 if (Os.isFamily(Os.FAMILY_WINDOWS)) {
   tasks.named<Test>("intTest") { this.enabled = false }
 }
-
-// Issue w/ testcontainers/podman in GH workflows :(
-if (Os.isFamily(Os.FAMILY_MAC) && System.getenv("CI") != null) {
-  tasks.named<Test>("intTest") { this.enabled = false }
-}

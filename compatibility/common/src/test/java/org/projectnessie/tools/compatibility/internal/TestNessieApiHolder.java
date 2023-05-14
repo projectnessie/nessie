@@ -73,7 +73,6 @@ class TestNessieApiHolder {
   }
 
   @Test
-  @DisabledOnOs(OS.MAC)
   void oldVersionServer() {
     ExtensionValuesStore valuesStore = new ExtensionValuesStore(null);
     try {

@@ -44,7 +44,6 @@ import org.projectnessie.tools.compatibility.api.Version;
 import org.projectnessie.tools.compatibility.api.VersionCondition;
 
 @ExtendWith(SoftAssertionsExtension.class)
-@DisabledOnOs(OS.MAC)
 class TestNessieCompatibilityExtensions {
   @InjectSoftAssertions protected SoftAssertions soft;
 

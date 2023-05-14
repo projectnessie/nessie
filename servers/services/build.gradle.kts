@@ -109,11 +109,6 @@ dependencies {
   testCompileOnly(libs.jackson.annotations)
 }
 
-// Issue w/ testcontainers/podman in GH workflows :(
-if (Os.isFamily(Os.FAMILY_MAC) && System.getenv("CI") != null) {
-  tasks.withType<Test>().configureEach { this.enabled = false }
-}
-
 annotationStripper {
   registerDefault().configure {
     annotationsToDrop("^jakarta[.].+".toRegex())
