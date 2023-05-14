@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import org.apache.tools.ant.taskdefs.condition.Os
-
 plugins {
   `java-library`
   jacoco
