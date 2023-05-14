@@ -47,6 +47,7 @@ final class MinioContainer extends GenericContainer<MinioContainer>
 
   private static final String DEFAULT_STORAGE_DIRECTORY = "/data";
   private static final String HEALTH_ENDPOINT = "/minio/health/ready";
+  private static final String MINIO_DOMAIN_NIP = "minio.127-0-0-1.nip.io";
 
   private final String accessKey;
   private final String secretKey;
@@ -74,7 +75,7 @@ final class MinioContainer extends GenericContainer<MinioContainer>
     withEnv(MINIO_ACCESS_KEY, this.accessKey);
     withEnv(MINIO_SECRET_KEY, this.secretKey);
     // S3 SDK encodes bucket names in host names - need to tell Minio which domain to use
-    withEnv(MINIO_DOMAIN, "localhost");
+    withEnv(MINIO_DOMAIN, MINIO_DOMAIN_NIP);
     withCommand("server", DEFAULT_STORAGE_DIRECTORY);
     setWaitStrategy(
         new HttpWaitStrategy()
@@ -149,7 +150,7 @@ final class MinioContainer extends GenericContainer<MinioContainer>
   public void start() {
     super.start();
 
-    this.hostPort = getHost() + ":" + getMappedPort(DEFAULT_PORT);
+    this.hostPort = MINIO_DOMAIN_NIP + ":" + getMappedPort(DEFAULT_PORT);
     this.s3endpoint = String.format("http://%s/", hostPort);
     this.bucketBaseUri = URI.create(String.format("s3://%s/", bucket()));
 
