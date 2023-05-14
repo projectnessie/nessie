@@ -15,6 +15,7 @@
  */
 package org.projectnessie.tools.compatibility.internal;
 
+import static org.junit.jupiter.api.extension.ConditionEvaluationResult.disabled;
 import static org.projectnessie.tools.compatibility.internal.AbstractNessieApiHolder.apiInstanceForField;
 import static org.projectnessie.tools.compatibility.internal.AnnotatedFields.populateNessieApiFields;
 import static org.projectnessie.tools.compatibility.internal.GlobalForClass.globalForClass;
@@ -46,8 +47,7 @@ public class NessieUpgradesExtension extends AbstractMultiVersionExtension {
   @Override
   public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
     if (OS.MAC.isCurrentOs()) {
-      return ConditionEvaluationResult.disabled(
-          "Disabled on macOS due to SIGSEV issues with RocksDB");
+      return disabled("Disabled on macOS due to SIGSEGV issues with RocksDB");
     }
     return super.evaluateExecutionCondition(context);
   }
