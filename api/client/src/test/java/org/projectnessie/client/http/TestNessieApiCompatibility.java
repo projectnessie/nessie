@@ -16,14 +16,15 @@
 package org.projectnessie.client.http;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.notFound;
-import static com.github.tomakehurst.wiremock.client.WireMock.ok;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static java.net.HttpURLConnection.HTTP_OK;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
@@ -33,8 +34,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.projectnessie.client.rest.NessieHttpResponseFilter;
-import org.projectnessie.model.ImmutableNessieConfiguration;
-import org.projectnessie.model.NessieConfiguration;
 
 @ExtendWith(MockitoExtension.class)
 @WireMockTest
@@ -50,11 +49,11 @@ class TestNessieApiCompatibility {
   @ParameterizedTest
   @CsvSource(
       value = {
-        "1, 1, 1, 1, OK",
+        "1, 1, 1, 0, OK",
         "1, 1, 2, 1, OK",
         "1, 1, 2, 2, MISMATCH", // v2 endpoint mistakenly called with v1 client
-        "1, 2, 2, 0, TOO_OLD",
-        "2, 1, 1, 0, TOO_NEW",
+        "1, 2, 2, 2, TOO_OLD",
+        "2, 1, 1, 1, TOO_NEW",
         "2, 1, 2, 1, MISMATCH", // v1 endpoint mistakenly called with v2 client
         "2, 1, 2, 2, OK",
         "2, 2, 2, 2, OK",
@@ -67,15 +66,20 @@ class TestNessieApiCompatibility {
       Expectation expectation,
       WireMockRuntimeInfo wireMock) {
 
-    NessieConfiguration config =
-        ImmutableNessieConfiguration.builder()
-            .minSupportedApiVersion(serverMin)
-            .maxSupportedApiVersion(serverMax)
-            .defaultBranch("main")
-            .build();
+    ObjectNode config = JsonNodeFactory.instance.objectNode();
+    config.set("minSupportedApiVersion", JsonNodeFactory.instance.numberNode(serverMin));
+    config.set("maxSupportedApiVersion", JsonNodeFactory.instance.numberNode(serverMax));
+    if (serverActual > 0) {
+      config.set("actualApiVersion", JsonNodeFactory.instance.numberNode(serverActual));
+    }
 
-    stubFor(get("/config").willReturn(ResponseDefinitionBuilder.okForJson(config)));
-    stubFor(get("/trees/tree/main").willReturn(serverActual == 1 ? ok() : notFound()));
+    stubFor(
+        get("/config")
+            .willReturn(
+                ResponseDefinitionBuilder.responseDefinition()
+                    .withStatus(HTTP_OK)
+                    .withBody(config.toString())
+                    .withHeader("Content-Type", "application/json")));
 
     try (HttpClient httpClient =
         HttpClient.builder()

@@ -201,8 +201,9 @@ class TestNessieHttpClient {
   @Test
   void testApiCompatibility() {
     // Good cases
-    assertThatCode(() -> testConfig(NessieApiV1.class, 1, 1, 1, true)).doesNotThrowAnyException();
-    assertThatCode(() -> testConfig(NessieApiV1.class, 1, 2, 1, true)).doesNotThrowAnyException();
+    assertThatCode(() -> testConfig(NessieApiV1.class, 1, 1, 0, true)).doesNotThrowAnyException();
+    assertThatCode(() -> testConfig(NessieApiV1.class, 1, 2, 0, true)).doesNotThrowAnyException();
+    assertThatCode(() -> testConfig(NessieApiV2.class, 1, 2, 0, true)).doesNotThrowAnyException();
     assertThatCode(() -> testConfig(NessieApiV2.class, 1, 2, 2, true)).doesNotThrowAnyException();
     assertThatCode(() -> testConfig(NessieApiV2.class, 2, 2, 2, true)).doesNotThrowAnyException();
     assertThatCode(() -> testConfig(NessieApiV2.class, 2, 3, 2, true)).doesNotThrowAnyException();
@@ -284,22 +285,18 @@ class TestNessieHttpClient {
     return new HttpTestServer(
         (req, resp) -> {
           req.getInputStream().close();
-          if (req.getRequestURI().endsWith("/config")) {
-            resp.addHeader("Content-Type", "application/json");
-            String json =
-                "{\"minSupportedApiVersion\":"
-                    + minApiVersion
-                    + ",\"maxSupportedApiVersion\":"
-                    + maxApiVersion
-                    + ",\"defaultBranch\":\"main\"}";
-            HttpTestUtil.writeResponseBody(resp, json);
-          } else if (req.getRequestURI().endsWith("/trees/tree/main")) {
-            if (actual == 1) {
-              resp.setStatus(200);
-            } else {
-              resp.sendError(404);
-            }
+          resp.addHeader("Content-Type", "application/json");
+          StringBuilder json =
+              new StringBuilder()
+                  .append("{\"minSupportedApiVersion\":")
+                  .append(minApiVersion)
+                  .append(",\"maxSupportedApiVersion\":")
+                  .append(maxApiVersion);
+          if (actual > 0) {
+            json.append(",\"actualApiVersion\":").append(actual);
           }
+          json.append("}");
+          HttpTestUtil.writeResponseBody(resp, json.toString());
         });
   }
 }

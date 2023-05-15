@@ -114,7 +114,7 @@ public abstract class BaseTestServiceImpl {
   private Principal principal;
 
   protected final ConfigApiImpl configApi() {
-    return new ConfigApiImpl(config(), versionStore());
+    return new ConfigApiImpl(config(), versionStore(), 1);
   }
 
   protected final TreeApiImpl treeApi() {

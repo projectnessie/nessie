@@ -21,6 +21,7 @@ public class NessieApiCompatibility {
 
   private static final String MIN_API_VERSION = "minSupportedApiVersion";
   private static final String MAX_API_VERSION = "maxSupportedApiVersion";
+  private static final String ACTUAL_API_VERSION = "actualApiVersion";
 
   /**
    * Checks if the API version of the client is compatible with the server's.
@@ -35,12 +36,11 @@ public class NessieApiCompatibility {
     int minServerApiVersion =
         config.hasNonNull(MIN_API_VERSION) ? config.get(MIN_API_VERSION).asInt() : 1;
     int maxServerApiVersion = config.get(MAX_API_VERSION).asInt();
-    if (clientApiVersion < minServerApiVersion || clientApiVersion > maxServerApiVersion) {
-      throw new NessieApiCompatibilityException(
-          clientApiVersion, minServerApiVersion, maxServerApiVersion);
-    }
-    int actualServerApiVersion = config.hasNonNull(MIN_API_VERSION) ? 2 : 1;
-    if (clientApiVersion != actualServerApiVersion) {
+    int actualServerApiVersion =
+        config.hasNonNull(ACTUAL_API_VERSION) ? config.get(ACTUAL_API_VERSION).asInt() : 0;
+    if (clientApiVersion < minServerApiVersion
+        || clientApiVersion > maxServerApiVersion
+        || (actualServerApiVersion > 0 && clientApiVersion != actualServerApiVersion)) {
       throw new NessieApiCompatibilityException(
           clientApiVersion, minServerApiVersion, maxServerApiVersion, actualServerApiVersion);
     }

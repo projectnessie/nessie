@@ -23,11 +23,6 @@ public class NessieApiCompatibilityException extends RuntimeException {
   private final int actualServerApiVersion;
 
   public NessieApiCompatibilityException(
-      int clientApiVersion, int minServerApiVersion, int maxServerApiVersion) {
-    this(clientApiVersion, minServerApiVersion, maxServerApiVersion, 0);
-  }
-
-  public NessieApiCompatibilityException(
       int clientApiVersion,
       int minServerApiVersion,
       int maxServerApiVersion,
@@ -61,18 +56,25 @@ public class NessieApiCompatibilityException extends RuntimeException {
         clientApiVersion, actualServerApiVersion);
   }
 
+  /** The client's API version. */
   public int getClientApiVersion() {
     return clientApiVersion;
   }
 
+  /** The minimum API version supported by the server. */
   public int getMinServerApiVersion() {
     return minServerApiVersion;
   }
 
+  /** The maximum API version supported by the server. */
   public int getMaxServerApiVersion() {
     return maxServerApiVersion;
   }
 
+  /**
+   * The actual API version used by the server, or zero if the server does not report its actual API
+   * version.
+   */
   public int getActualServerApiVersion() {
     return actualServerApiVersion;
   }

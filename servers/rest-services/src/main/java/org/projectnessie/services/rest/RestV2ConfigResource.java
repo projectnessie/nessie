@@ -40,7 +40,7 @@ public class RestV2ConfigResource implements HttpConfigApi {
   @Inject
   @jakarta.inject.Inject
   public RestV2ConfigResource(ServerConfig config, VersionStore store) {
-    this.config = new ConfigApiImpl(config, store);
+    this.config = new ConfigApiImpl(config, store, 2);
   }
 
   @Override

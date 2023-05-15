@@ -23,10 +23,10 @@ class TestNessieApiCompatibilityException {
 
   @Test
   void testMessages() {
-    NessieApiCompatibilityException e = new NessieApiCompatibilityException(1, 2, 3);
+    NessieApiCompatibilityException e = new NessieApiCompatibilityException(1, 2, 3, 3);
     assertThat(e.getMessage())
         .isEqualTo("API version 1 is too old for server (minimum supported version is 2)");
-    e = new NessieApiCompatibilityException(5, 3, 4);
+    e = new NessieApiCompatibilityException(5, 3, 4, 4);
     assertThat(e.getMessage())
         .isEqualTo("API version 5 is too new for server (maximum supported version is 4)");
     e = new NessieApiCompatibilityException(3, 2, 4, 2);
