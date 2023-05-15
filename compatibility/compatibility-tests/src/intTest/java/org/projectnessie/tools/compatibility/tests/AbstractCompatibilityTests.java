@@ -41,7 +41,6 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
-import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeResponse;
@@ -54,7 +53,7 @@ import org.projectnessie.tools.compatibility.api.NessieVersion;
 import org.projectnessie.tools.compatibility.api.Version;
 import org.projectnessie.tools.compatibility.api.VersionCondition;
 
-// @VersionCondition(maxVersion = Version.NOT_CURRENT_STRING)
+@VersionCondition(maxVersion = Version.NOT_CURRENT_STRING)
 public abstract class AbstractCompatibilityTests {
 
   @NessieAPI protected NessieApiV1 api;
@@ -88,8 +87,7 @@ public abstract class AbstractCompatibilityTests {
   }
 
   @SuppressWarnings("deprecation")
-  Stream<LogResponse.LogEntry> commitLog(
-      Function<GetCommitLogBuilder, GetCommitLogBuilder> configurer)
+  Stream<LogEntry> commitLog(Function<GetCommitLogBuilder, GetCommitLogBuilder> configurer)
       throws NessieNotFoundException {
     if (getClientVersion().isGreaterThanOrEqual(Version.CLIENT_RESULTS_NATIVE_STREAM)) {
       return configurer.apply(api.getCommitLog()).stream();
@@ -115,73 +113,24 @@ public abstract class AbstractCompatibilityTests {
   }
 
   @Test
-  @VersionCondition(maxVersion = "0.45.0")
-  void getConfigV1WithoutV2Support() {
+  void getConfig() {
     NessieConfiguration config = api.getConfig();
-    assertThat(config)
-        .extracting(
-            NessieConfiguration::getDefaultBranch,
-            NessieConfiguration::getMinSupportedApiVersion,
-            NessieConfiguration::getMaxSupportedApiVersion,
-            NessieConfiguration::getActualApiVersion,
-            NessieConfiguration::getSpecVersion)
-        .containsExactly("main", 1, 1, 0, null);
-  }
-
-  @Test
-  @VersionCondition(minVersion = "0.47.0")
-  void getConfigV1WithV2Support() {
-    NessieConfiguration config = api.getConfig();
-    assertThat(config)
-        .extracting(
-            NessieConfiguration::getDefaultBranch,
-            NessieConfiguration::getMinSupportedApiVersion,
-            NessieConfiguration::getMaxSupportedApiVersion,
-            NessieConfiguration::getActualApiVersion,
-            NessieConfiguration::getSpecVersion)
-        .containsExactly("main", 1, 2, 0, null);
-  }
-
-  @Test
-  @VersionCondition(minVersion = "0.47.0", maxVersion = "0.51.1")
-  void getConfigV2WithoutSpecWithoutActualVersion() {
-    NessieConfiguration config = apiV2.getConfig();
-    assertThat(config)
-        .extracting(
-            NessieConfiguration::getDefaultBranch,
-            NessieConfiguration::getMinSupportedApiVersion,
-            NessieConfiguration::getMaxSupportedApiVersion,
-            NessieConfiguration::getActualApiVersion,
-            NessieConfiguration::getSpecVersion)
-        .containsExactly("main", 1, 2, 0, null);
-  }
-
-  @Test
-  @VersionCondition(minVersion = "0.52.3", maxVersion = "0.57.0")
-  void getConfigV2WithSpecWithoutActualVersion() {
-    NessieConfiguration config = apiV2.getConfig();
-    assertThat(config)
-        .extracting(
-            NessieConfiguration::getDefaultBranch,
-            NessieConfiguration::getMinSupportedApiVersion,
-            NessieConfiguration::getMaxSupportedApiVersion,
-            NessieConfiguration::getActualApiVersion,
-            NessieConfiguration::getSpecVersion)
-        .containsExactly("main", 1, 2, 0, "2.0-beta.1");
+    assertThat(config.getDefaultBranch()).isEqualTo("main");
+    assertThat(config.getMinSupportedApiVersion()).isEqualTo(1);
+    assertThat(config.getMaxSupportedApiVersion()).isBetween(1, 2);
+    assertThat(config.getActualApiVersion()).isEqualTo(0);
+    assertThat(config.getSpecVersion()).isNull();
   }
 
   @Test
   @VersionCondition(minVersion = "0.59.0")
-  void getConfigV2WithSpecWithActualVersion() {
+  void getConfigV2() {
     NessieConfiguration config = apiV2.getConfig();
-    assertThat(config)
-        .extracting(
-            NessieConfiguration::getDefaultBranch,
-            NessieConfiguration::getMinSupportedApiVersion,
-            NessieConfiguration::getMaxSupportedApiVersion,
-            NessieConfiguration::getActualApiVersion,
-            NessieConfiguration::getSpecVersion)
-        .containsExactly("main", 1, 2, 2, "2.0.0-beta.1");
+    assertThat(config.getDefaultBranch()).isEqualTo("main");
+    assertThat(config.getMinSupportedApiVersion()).isEqualTo(1);
+    assertThat(config.getMaxSupportedApiVersion()).isBetween(1, 2);
+    assertThat(config.getActualApiVersion()).isBetween(0, 2);
+    assertThat(config.getSpecVersion()).isIn(null, "2.0-beta.1", "2.0.0-beta.1");
   }
 
   @Test

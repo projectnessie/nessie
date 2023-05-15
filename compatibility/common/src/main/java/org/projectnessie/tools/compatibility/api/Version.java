@@ -35,11 +35,15 @@ public class Version implements Comparable<Version> {
   // CLIENT_LOG4J_UNDECLARED_* is the version range where :nessie-client uses log4j without
   // declaring an explicit dependency in its POM.
   public static final Version CLIENT_LOG4J_UNDECLARED_LOW = Version.parseVersion("0.46.0");
+  public static final Version API_V2 = Version.parseVersion("0.46.0");
   public static final Version CLIENT_LOG4J_UNDECLARED_HIGH = Version.parseVersion("0.47.1");
   // COMPAT_COMMON_DEPENDENCIES_START is the version where dependency declarations for
   // "compatibility" tests moved to :nessie-compatibility-common
   public static final Version COMPAT_COMMON_DEPENDENCIES_START = Version.parseVersion("0.48.2");
   public static final Version OLD_GROUP_IDS = Version.parseVersion("0.50.0");
+  public static final Version SPEC_VERSION_IN_CONFIG_V2 = Version.parseVersion("0.55.0");
+  public static final Version SPEC_VERSION_IN_CONFIG_V2_SEMVER = Version.parseVersion("0.57.0");
+  public static final Version ACTUAL_VERSION_IN_CONFIG_V2 = Version.parseVersion("0.59.0");
 
   public static final String CURRENT_STRING = "current";
   public static final String NOT_CURRENT_STRING = "not-current";
