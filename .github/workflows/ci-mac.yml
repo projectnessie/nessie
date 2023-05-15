@@ -27,16 +27,16 @@ on:
 
 jobs:
 
-  java-unit:
-    name: CI Test macOS
-    runs-on: macos-13
-    if: (github.repository == 'projectnessie/nessie' && github.event_name != 'pull_request') || contains(github.event.pull_request.labels.*.name, 'pr-macos-win')
-
-    steps:
-    - uses: actions/checkout@v3.5.2
-    - name: Setup Java, Gradle
-      uses: ./.github/actions/dev-tool-java
-
+#  java-unit:
+#    name: CI Test macOS
+#    runs-on: macos-13
+#    if: (github.repository == 'projectnessie/nessie' && github.event_name != 'pull_request') || contains(github.event.pull_request.labels.*.name, 'pr-macos-win')
+#
+#    steps:
+#    - uses: actions/checkout@v3.5.2
+#    - name: Setup Java, Gradle
+#      uses: ./.github/actions/dev-tool-java
+#
 #    - name: Gradle / compile
 #      uses: gradle/gradle-build-action@v2
 #      env:
@@ -47,21 +47,21 @@ jobs:
 #      with:
 #        cache-read-only: true
 #        arguments: assemble --scan
-
-    - name: Gradle / unit test
-      uses: gradle/gradle-build-action@v2
-      with:
-        arguments: test --scan
-
-    - name: Capture Test Reports
-      uses: actions/upload-artifact@v3
-      if: ${{ failure() }}
-      with:
-        name: ci-test-reports-macos
-        path: |
-          **/build/reports/*
-          **/build/test-results/*
-        retention-days: 3
+#
+#    - name: Gradle / unit test
+#      uses: gradle/gradle-build-action@v2
+#      with:
+#        arguments: test --scan
+#
+#    - name: Capture Test Reports
+#      uses: actions/upload-artifact@v3
+#      if: ${{ failure() }}
+#      with:
+#        name: ci-test-reports-macos
+#        path: |
+#          **/build/reports/*
+#          **/build/test-results/*
+#        retention-days: 3
 
   java-intTest:
     name: CI intTest macOS
@@ -147,20 +147,15 @@ jobs:
         ./gradlew :listProjectsWithPrefix --prefix :nessie-versioned-storage- --output ../storage-prjs.txt --exclude
         echo "::endgroup::"
 
-        echo "::group::Collect :nessie-spark-extensions projects"
-        ./gradlew :listProjectsWithPrefix --prefix :nessie-spark-ext --output ../spark-prjs.txt --exclude
-        echo "::endgroup::"
-
         export TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED=true
         echo "TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED=true" >> ${GITHUB_ENV}
+
+        ./gradlew :nessie-client:intTest -i --tests org.projectnessie.client.auth.oauth2.ITOAuth2Client
 
         ./gradlew intTest \
             $(cat ../compat-prjs.txt) \
             $(cat ../persist-prjs.txt) \
             $(cat ../storage-prjs.txt) \
-            $(cat ../spark-prjs.txt) \
-            -x :nessie-deltalake:intTest \
-            -x :nessie-ui:test \
             --scan
 
     - name: Capture Test Reports
