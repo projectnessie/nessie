@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.storage.versionstore;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.ObjType.COMMIT;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.referenceNotFound;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.hashToObjId;
@@ -55,7 +57,7 @@ final class MergeIndividualImpl extends BaseMergeTransplantIndividual implements
   public MergeResult<Commit> merge(Optional<?> retryState, MergeOp mergeOp)
       throws ReferenceNotFoundException, RetryException, ReferenceConflictException {
     ObjId fromId = hashToObjId(mergeOp.fromHash());
-    ObjId commonAncestorId = identifyCommonAncestor(fromId);
+    ObjId commonAncestorId = identifyMergeBase(fromId).id();
 
     CommitObj source;
     try {
@@ -80,6 +82,15 @@ final class MergeIndividualImpl extends BaseMergeTransplantIndividual implements
     }
 
     SourceCommitsAndParent sourceCommits = loadSourceCommitsForMerge(fromId, commonAncestorId);
+
+    checkArgument(
+        !sourceCommits.sourceCommits.isEmpty(),
+        "No hashes to merge from %s onto %s @ %s using common ancestor %s, expected commit ID from request was %s.",
+        fromId,
+        head != null ? head.id() : EMPTY_OBJ_ID,
+        branch.getName(),
+        commonAncestorId,
+        referenceHash.map(Hash::asString).orElse("not specified"));
 
     return individualCommits(mergeOp, mergeResult, sourceCommits);
   }

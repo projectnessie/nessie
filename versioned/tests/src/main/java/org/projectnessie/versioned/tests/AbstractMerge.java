@@ -1505,30 +1505,53 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 singletonList(Put.of(key2, VALUE_2)))
             .getCommitHash();
 
-    soft.assertThatIllegalArgumentException()
-        .isThrownBy(
-            () ->
-                store()
-                    .merge(
-                        MergeOp.builder()
-                            .fromRef(branch)
-                            .fromHash(commit2)
-                            .toBranch(branch)
-                            .expectedHash(Optional.of(commit1))
-                            .dryRun(dryRun)
-                            .build()));
+    if (isNewStorageModel()) {
+      // New storage model allows "merging the same branch again". If nothing changed, it returns a
+      // successful, but not-applied merge-response. This request is a merge without any commits to
+      // merge, reported as "successful".
+      soft.assertThat(
+              store()
+                  .merge(
+                      MergeOp.builder()
+                          .fromRef(branch)
+                          .fromHash(commit2)
+                          .toBranch(branch)
+                          .expectedHash(Optional.of(commit1))
+                          .dryRun(dryRun)
+                          .build()))
+          .extracting(
+              MergeResult::wasApplied,
+              MergeResult::wasSuccessful,
+              MergeResult::getResultantTargetHash,
+              MergeResult::getCommonAncestor,
+              MergeResult::getEffectiveTargetHash)
+          .containsExactly(false, true, commit2, commit2, commit2);
+    } else {
+      soft.assertThatIllegalArgumentException()
+          .isThrownBy(
+              () ->
+                  store()
+                      .merge(
+                          MergeOp.builder()
+                              .fromRef(branch)
+                              .fromHash(commit2)
+                              .toBranch(branch)
+                              .expectedHash(Optional.of(commit1))
+                              .dryRun(dryRun)
+                              .build()));
 
-    soft.assertThatIllegalArgumentException()
-        .isThrownBy(
-            () ->
-                store()
-                    .merge(
-                        MergeOp.builder()
-                            .fromRef(branch)
-                            .fromHash(commit1)
-                            .toBranch(branch)
-                            .expectedHash(Optional.of(commit2))
-                            .dryRun(dryRun)
-                            .build()));
+      soft.assertThatIllegalArgumentException()
+          .isThrownBy(
+              () ->
+                  store()
+                      .merge(
+                          MergeOp.builder()
+                              .fromRef(branch)
+                              .fromHash(commit1)
+                              .toBranch(branch)
+                              .expectedHash(Optional.of(commit2))
+                              .dryRun(dryRun)
+                              .build()));
+    }
   }
 }

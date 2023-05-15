@@ -513,15 +513,6 @@ class BaseCommitHelper {
       commits.add(commit);
     }
 
-    checkArgument(
-        !commits.isEmpty(),
-        "No hashes to merge from %s onto %s @ %s using common ancestor %s, expected commit ID from request was %s.",
-        startCommitId,
-        head != null ? head.id() : EMPTY_OBJ_ID,
-        branch.getName(),
-        endCommitId,
-        referenceHash.map(Hash::asString).orElse("not specified"));
-
     // Ends here, if 'endCommitId' is NO_ANCESTOR (parent == null)
     Collections.reverse(commits);
     return new SourceCommitsAndParent(commits, parent);
@@ -566,15 +557,13 @@ class BaseCommitHelper {
     return mergeResult;
   }
 
-  ObjId identifyCommonAncestor(ObjId fromId) throws ReferenceNotFoundException {
+  CommitObj identifyMergeBase(ObjId fromId) throws ReferenceNotFoundException {
     CommitLogic commitLogic = commitLogic(persist);
-    ObjId commonAncestorId;
     try {
-      commonAncestorId = commitLogic.findCommonAncestor(headId(), fromId);
+      return commitLogic.findMergeBase(headId(), fromId);
     } catch (NoSuchElementException notFound) {
       throw new ReferenceNotFoundException(notFound.getMessage());
     }
-    return commonAncestorId;
   }
 
   CommitObj createMergeTransplantCommit(

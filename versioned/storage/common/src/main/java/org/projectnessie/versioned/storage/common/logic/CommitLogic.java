@@ -151,8 +151,8 @@ public interface CommitLogic {
    * @param conflictHandler Callback that decides how a particular {@link CommitConflict} shall be
    *     handled.
    *     <p>The callback can decide among the simple resolutions {@link ConflictResolution#CONFLICT}
-   *     to propagate the conflict, {@link ConflictResolution#IGNORE} to commit the conflict and
-   *     {@link ConflictResolution#DROP} to not commit the conflict.
+   *     to propagate the conflict, {@link ConflictResolution#ADD} to commit the conflict and {@link
+   *     ConflictResolution#DROP} to not commit the conflict.
    *     <p>Advanced conflict resolutions can be implemented via the {@code
    *     expectedValueReplacement} and {@code committedValueReplacement} callbacks, which are
    *     evaluated before conflict detection happens..
@@ -193,9 +193,16 @@ public interface CommitLogic {
 
   @Nonnull
   @jakarta.annotation.Nonnull
-  ObjId findCommonAncestor(
-      @Nonnull @jakarta.annotation.Nonnull ObjId headId,
-      @Nonnull @jakarta.annotation.Nonnull ObjId otherId)
+  CommitObj findCommonAncestor(
+      @Nonnull @jakarta.annotation.Nonnull ObjId targetId,
+      @Nonnull @jakarta.annotation.Nonnull ObjId sourceId)
+      throws NoSuchElementException;
+
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  CommitObj findMergeBase(
+      @Nonnull @jakarta.annotation.Nonnull ObjId targetId,
+      @Nonnull @jakarta.annotation.Nonnull ObjId sourceId)
       throws NoSuchElementException;
 
   /** Retrieves the {@link CommitObj commit object} referenced by {@code commitId}. */

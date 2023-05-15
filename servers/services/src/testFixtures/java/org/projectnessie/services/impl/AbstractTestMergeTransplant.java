@@ -210,19 +210,34 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
 
     // try again --> conflict
 
-    soft.assertThatThrownBy(() -> actor.act(target, source, committed1, committed2, false))
-        .isInstanceOf(NessieReferenceConflictException.class)
-        .hasMessageContaining("keys have been changed in conflict")
-        .asInstanceOf(type(NessieReferenceConflictException.class))
-        .extracting(NessieReferenceConflictException::getErrorDetails)
-        .isNotNull()
-        .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
-        .hasSizeGreaterThan(0);
+    if (isNewStorageModel() && !keepIndividualCommits && "Merged".equals(mergedTransplanted)) {
+      // New storage model allows "merging the same branch again". If nothing changed, it returns a
+      // successful, but not-applied merge-response. This request is effectively a merge without any
+      // commits to merge, reported as "successful".
+      soft.assertThat(actor.act(target, source, committed1, committed2, false))
+          .extracting(
+              MergeResponse::getCommonAncestor,
+              MergeResponse::getEffectiveTargetHash,
+              MergeResponse::getResultantTargetHash,
+              MergeResponse::wasApplied,
+              MergeResponse::wasSuccessful)
+          .containsExactly(committed2.getHash(), newHead.getHash(), newHead.getHash(), false, true);
+      ;
+    } else {
+      soft.assertThatThrownBy(() -> actor.act(target, source, committed1, committed2, false))
+          .isInstanceOf(NessieReferenceConflictException.class)
+          .hasMessageContaining("keys have been changed in conflict")
+          .asInstanceOf(type(NessieReferenceConflictException.class))
+          .extracting(NessieReferenceConflictException::getErrorDetails)
+          .isNotNull()
+          .extracting(ReferenceConflicts::conflicts, list(Conflict.class))
+          .hasSizeGreaterThan(0);
 
-    // try again --> conflict, but return information
+      // try again --> conflict, but return information
 
-    conflictExceptionReturnedAsMergeResult(
-        actor, target, source, key1, committed1, committed2, newHead);
+      conflictExceptionReturnedAsMergeResult(
+          actor, target, source, key1, committed1, committed2, newHead);
+    }
 
     List<LogEntry> log = commitLog(target.getName(), MINIMAL, target.getHash(), null, null);
     if (keepIndividualCommits) {
