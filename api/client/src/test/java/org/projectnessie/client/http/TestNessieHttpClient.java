@@ -275,8 +275,7 @@ class TestNessieHttpClient {
       receiver.set(req.getHeader(headerName));
       req.getInputStream().close();
       resp.addHeader("Content-Type", "application/json");
-      HttpTestUtil.writeResponseBody(
-          resp, "{\"maxSupportedApiVersion\":1,\"defaultBranch\":\"main\"}");
+      HttpTestUtil.writeResponseBody(resp, "{\"maxSupportedApiVersion\":1}");
     };
   }
 
