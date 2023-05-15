@@ -50,6 +50,7 @@ jobs:
         echo "::endgroup::"
 
         echo "::group::Initializing Podman"
+        sudo podman-mac-helper install
         podman machine init
         echo "::endgroup::"
 
@@ -74,7 +75,7 @@ jobs:
         ln -s /usr/local/bin/podman /usr/local/bin/docker
         echo "::endgroup::"
 
-        export DOCKER_HOST="unix:///${HOME}/.local/share/containers/podman/machine/podman-machine-default/podman.sock"
+        export DOCKER_HOST="unix:///${HOME}/.local/share/containers/podman/machine/qemu/podman.sock"
         echo "DOCKER_HOST=$DOCKER_HOST" >> ${GITHUB_ENV}
 
         # See https://www.testcontainers.org/supported_docker_environment/
@@ -99,12 +100,12 @@ jobs:
         cache-read-only: true
         arguments: assemble --scan
 
-    - name: Gradle / unit test
-      uses: gradle/gradle-build-action@v2
-      env:
-        SPARK_LOCAL_IP: localhost
-      with:
-        arguments: test --scan
+#    - name: Gradle / unit test
+#      uses: gradle/gradle-build-action@v2
+#      env:
+#        SPARK_LOCAL_IP: localhost
+#      with:
+#        arguments: test --scan
 
     - name: Gradle / check incl. integ-test
       uses: gradle/gradle-build-action@v2
