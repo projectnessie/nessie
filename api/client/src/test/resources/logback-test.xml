@@ -24,7 +24,7 @@
     </encoder>
   </appender>
   <root>
-    <level value="${test.log.level:-DEBUG}"/>
+    <level value="${test.log.level:-INFO}"/>
     <appender-ref ref="console"/>
   </root>
 </configuration>

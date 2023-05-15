@@ -77,9 +77,9 @@ jobs:
         echo "::group::Update Brew"
         brew update
         echo "::endgroup::"
-        echo "::group::Brew Upgrade"
-        brew upgrade || true
-        echo "::endgroup::"
+#        echo "::group::Brew Upgrade"
+#        brew upgrade || true
+#        echo "::endgroup::"
 
     - name: Prepare Podman
       run: |
@@ -150,7 +150,7 @@ jobs:
         export TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED=true
         echo "TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED=true" >> ${GITHUB_ENV}
 
-        ./gradlew :nessie-client:intTest -i --tests org.projectnessie.client.auth.oauth2.ITOAuth2Client
+#        ./gradlew :nessie-client:intTest -i --tests org.projectnessie.client.auth.oauth2.ITOAuth2Client
 
         ./gradlew intTest \
             $(cat ../compat-prjs.txt) \

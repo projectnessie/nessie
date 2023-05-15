@@ -60,7 +60,10 @@ public class ITOAuth2Client {
 
   @Container
   private static final KeycloakContainer KEYCLOAK =
-      new KeycloakContainer().withFeaturesEnabled("preview", "token-exchange");
+      new KeycloakContainer()
+          .withFeaturesEnabled("preview", "token-exchange")
+          .withStartupTimeout(Duration.ofMinutes(5)) // for CI
+      ;
 
   private static RealmResource master;
   private static URI tokenEndpoint;
