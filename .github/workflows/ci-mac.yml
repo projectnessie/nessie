@@ -122,17 +122,6 @@ jobs:
     - name: Setup Java, Gradle
       uses: ./.github/actions/dev-tool-java
 
-#    - name: Gradle / compile
-#      uses: gradle/gradle-build-action@v2
-#      env:
-#        # Same as for ci.yml
-#        GRADLE_BUILD_ACTION_CACHE_KEY_ENVIRONMENT: java-11
-#        GRADLE_BUILD_ACTION_CACHE_KEY_JOB: nessie-ci
-#        GRADLE_BUILD_ACTION_CACHE_KEY_JOB_INSTANCE: ci
-#      with:
-#        cache-read-only: true
-#        arguments: assemble --scan
-
     - name: Gradle / intTest
       run: |
         echo "::group::Collect :nessie-compatibility projects"
@@ -149,8 +138,6 @@ jobs:
 
         export TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED=true
         echo "TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED=true" >> ${GITHUB_ENV}
-
-#        ./gradlew :nessie-client:intTest -i --tests org.projectnessie.client.auth.oauth2.ITOAuth2Client
 
         ./gradlew intTest \
             $(cat ../compat-prjs.txt) \
