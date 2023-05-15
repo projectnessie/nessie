@@ -334,15 +334,6 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
       builder.addTracing();
     }
 
-    if (apiVersion.isAssignableFrom(HttpApiV2.class)) {
-      builder.setJsonView(Views.V2.class);
-      HttpClient httpClient = builder.build();
-      if (enableApiCompatibilityCheck) {
-        NessieApiCompatibility.check(2, httpClient);
-      }
-      return (API) new HttpApiV2(httpClient);
-    }
-
     if (apiVersion.isAssignableFrom(HttpApiV1.class)) {
       builder.setJsonView(Views.V1.class);
       HttpClient httpClient = builder.build();
@@ -350,6 +341,15 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
         NessieApiCompatibility.check(1, httpClient);
       }
       return (API) new HttpApiV1(new NessieHttpClient(httpClient));
+    }
+
+    if (apiVersion.isAssignableFrom(HttpApiV2.class)) {
+      builder.setJsonView(Views.V2.class);
+      HttpClient httpClient = builder.build();
+      if (enableApiCompatibilityCheck) {
+        NessieApiCompatibility.check(2, httpClient);
+      }
+      return (API) new HttpApiV2(httpClient);
     }
 
     throw new IllegalArgumentException(
