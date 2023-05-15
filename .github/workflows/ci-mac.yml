@@ -138,6 +138,9 @@ jobs:
 
         export TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED=true
         echo "TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED=true" >> ${GITHUB_ENV}
+        
+        export TESTCONTAINERS_PULL_PAUSE_TIMEOUT=60
+        echo "TESTCONTAINERS_PULL_PAUSE_TIMEOUT=60" >> ${GITHUB_ENV}
 
         ./gradlew intTest \
             $(cat ../compat-prjs.txt) \
