@@ -60,7 +60,7 @@ final class MergeSquashImpl extends BaseMergeTransplantSquash implements Merge {
       boolean dryRun)
       throws ReferenceNotFoundException, RetryException, ReferenceConflictException {
     ObjId fromId = hashToObjId(fromHash);
-    ObjId commonAncestorId = identifyCommonAncestor(fromId);
+    ObjId commonAncestorId = identifyCommonAncestor(fromId).id();
 
     SourceCommitsAndParent sourceCommits = loadSourceCommitsForMerge(fromId, commonAncestorId);
 

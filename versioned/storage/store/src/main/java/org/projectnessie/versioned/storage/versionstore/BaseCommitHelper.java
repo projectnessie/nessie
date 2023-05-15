@@ -551,15 +551,13 @@ class BaseCommitHelper {
     return mergeResult;
   }
 
-  ObjId identifyCommonAncestor(ObjId fromId) throws ReferenceNotFoundException {
+  CommitObj identifyCommonAncestor(ObjId fromId) throws ReferenceNotFoundException {
     CommitLogic commitLogic = commitLogic(persist);
-    ObjId commonAncestorId;
     try {
-      commonAncestorId = commitLogic.findCommonAncestor(headId(), fromId);
+      return commitLogic.findCommonAncestor(headId(), fromId);
     } catch (NoSuchElementException notFound) {
       throw new ReferenceNotFoundException(notFound.getMessage());
     }
-    return commonAncestorId;
   }
 
   CommitObj createMergeTransplantCommit(

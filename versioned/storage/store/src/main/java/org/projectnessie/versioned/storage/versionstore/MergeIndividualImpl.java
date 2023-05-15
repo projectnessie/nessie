@@ -63,7 +63,7 @@ final class MergeIndividualImpl extends BaseMergeTransplantIndividual implements
       boolean dryRun)
       throws ReferenceNotFoundException, RetryException, ReferenceConflictException {
     ObjId fromId = hashToObjId(fromHash);
-    ObjId commonAncestorId = identifyCommonAncestor(fromId);
+    ObjId commonAncestorId = identifyCommonAncestor(fromId).id();
 
     CommitObj source;
     try {

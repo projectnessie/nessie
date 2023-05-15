@@ -34,7 +34,6 @@ import static org.projectnessie.versioned.storage.common.logic.CommitConflict.Co
 import static org.projectnessie.versioned.storage.common.logic.CommitConflict.ConflictType.PAYLOAD_DIFFERS;
 import static org.projectnessie.versioned.storage.common.logic.CommitConflict.ConflictType.VALUE_DIFFERS;
 import static org.projectnessie.versioned.storage.common.logic.CommitConflict.commitConflict;
-import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
 import static org.projectnessie.versioned.storage.common.logic.CommitLogic.ValueReplacement.NO_VALUE_REPLACEMENT;
 import static org.projectnessie.versioned.storage.common.logic.ConflictHandler.ConflictResolution.CONFLICT;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Add.commitAdd;
@@ -73,7 +72,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import org.agrona.collections.ObjectHashSet;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
@@ -160,10 +158,13 @@ final class CommitLogicImpl implements CommitLogic {
           try {
             b = batch = Arrays.asList(persist.fetchObjs(n.toArray(new ObjId[0]))).iterator();
           } catch (ObjNotFoundException e) {
+            List<ObjId> ids = e.objIds();
             throw new NoSuchElementException(
-                "Commit(s) "
-                    + e.objIds().stream().map(ObjId::toString).collect(Collectors.joining(", "))
-                    + " not found");
+                ids.size() == 1
+                    ? "Commit '" + e.objIds().get(0) + "' not found"
+                    : "Commit(s) "
+                        + e.objIds().stream().map(ObjId::toString).collect(Collectors.joining(", "))
+                        + " not found");
           }
         }
 
@@ -823,59 +824,31 @@ final class CommitLogicImpl implements CommitLogic {
   @Nonnull
   @jakarta.annotation.Nonnull
   @Override
-  public ObjId findCommonAncestor(
+  public CommitObj findCommonAncestor(
       @Nonnull @jakarta.annotation.Nonnull ObjId headId,
       @Nonnull @jakarta.annotation.Nonnull ObjId otherId)
       throws NoSuchElementException {
-    PagedResult<ObjId, ObjId> log1 = commitIdLog(commitLogQuery(headId));
-    PagedResult<ObjId, ObjId> log2 = commitIdLog(commitLogQuery(otherId));
-
-    ObjectHashSet<ObjId> commits1 = new ObjectHashSet<>();
-    ObjectHashSet<ObjId> commits2 = new ObjectHashSet<>();
-
-    if (!log2.hasNext() && !EMPTY_OBJ_ID.equals(otherId)) {
-      // this is a race, commit deleted in the meantime
-      throw commonAncestorCommitNotFound(otherId);
-    }
-    if (!log1.hasNext() && !EMPTY_OBJ_ID.equals(headId)) {
-      // this is a race, commit deleted in the meantime
-      throw commonAncestorCommitNotFound(headId);
-    }
-
-    while (true) {
-      ObjId current1 = log1.hasNext() ? log1.next() : EMPTY_OBJ_ID;
-      ObjId current2 = log2.hasNext() ? log2.next() : EMPTY_OBJ_ID;
-
-      boolean eol1 = current1.equals(EMPTY_OBJ_ID);
-      boolean eol2 = current2.equals(EMPTY_OBJ_ID);
-
-      if (eol1 && eol2) {
-        throw noCommonAncestor(headId, otherId);
-      }
-
-      if (!eol1) {
-        if (commits2.contains(current1)) {
-          return current1;
-        }
-        commits1.add(current1);
-      }
-
-      if (!eol2) {
-        if (commits1.contains(current2)) {
-          return current2;
-        }
-        commits2.add(current2);
-      }
-    }
+    return MergeBase.builder()
+        .commitLogic(this)
+        .addHeads(headId, otherId)
+        .respectMergeParents(false)
+        .build()
+        .identifyMergeBase();
   }
 
-  private static NoSuchElementException commonAncestorCommitNotFound(ObjId id) {
-    return new NoSuchElementException("Commit '" + id + "' not found");
-  }
-
-  private static NoSuchElementException noCommonAncestor(ObjId headId, ObjId otherId) {
-    return new NoSuchElementException(
-        NO_COMMON_ANCESTOR_IN_PARENTS_OF + headId + " and " + otherId);
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  @Override
+  public CommitObj findMergeBase(
+      @Nonnull @jakarta.annotation.Nonnull ObjId headId,
+      @Nonnull @jakarta.annotation.Nonnull ObjId otherId)
+      throws NoSuchElementException {
+    return MergeBase.builder()
+        .commitLogic(this)
+        .addHeads(headId, otherId)
+        .respectMergeParents(true)
+        .build()
+        .identifyMergeBase();
   }
 
   @Nullable
