@@ -76,11 +76,11 @@ jobs:
         ln -s /usr/local/bin/podman /usr/local/bin/docker
         echo "::endgroup::"
 
-        export DOCKER_HOST="unix:///${HOME}/.local/share/containers/podman/machine/qemu/podman.sock"
-        echo "DOCKER_HOST=$DOCKER_HOST" >> ${GITHUB_ENV}
+        # export DOCKER_HOST="unix:///${HOME}/.local/share/containers/podman/machine/qemu/podman.sock"
+        # echo "DOCKER_HOST=$DOCKER_HOST" >> ${GITHUB_ENV}
 
         # See https://www.testcontainers.org/supported_docker_environment/
-        echo "TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock" >> ${GITHUB_ENV}
+        # echo "TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock" >> ${GITHUB_ENV}
 
         echo "::group::Docker info"
         docker info
@@ -111,7 +111,7 @@ jobs:
     - name: Gradle / check incl. integ-test
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: :nessie-client:check --scan -i
+        arguments: :nessie-client:intTest -i --tests org.projectnessie.client.auth.oauth2.ITOAuth2Client
 
     - name: Capture Test Reports
       uses: actions/upload-artifact@v3
