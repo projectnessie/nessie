@@ -81,6 +81,9 @@ jobs:
 
         # See https://www.testcontainers.org/supported_docker_environment/
         # echo "TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock" >> ${GITHUB_ENV}
+        
+        export TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED=true
+        echo "TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED=true" >> ${GITHUB_ENV}
 
         echo "::group::Docker info"
         docker info
