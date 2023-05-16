@@ -77,14 +77,14 @@ jobs:
         echo "::group::Update Brew"
         brew update
         echo "::endgroup::"
-#        echo "::group::Brew Upgrade"
-#        brew upgrade || true
-#        echo "::endgroup::"
+        echo "::group::Brew Upgrade"
+        brew upgrade || true
+        echo "::endgroup::"
 
     - name: Prepare Podman
       run: |
         echo "::group::Install Podman"
-        brew install podman
+        HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=true brew install podman
         echo "::endgroup::"
 
         echo "::group::Initializing Podman"
