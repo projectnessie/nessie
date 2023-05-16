@@ -9,7 +9,7 @@
 #
 #
 ###
-FROM registry.access.redhat.com/ubi8/ubi-minimal:8.7-1107
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.8-860
 WORKDIR /work/
 RUN chown 1001 /work \
     && chmod "g+rwX" /work \
