@@ -16,7 +16,6 @@
 package org.projectnessie.client.http;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatCode;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
@@ -28,9 +27,13 @@ import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.context.Scope;
 import java.util.concurrent.atomic.AtomicReference;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.client.api.NessieApi;
@@ -46,7 +49,10 @@ import org.projectnessie.client.util.HttpTestUtil;
 import org.projectnessie.client.util.JaegerTestTracer;
 import org.projectnessie.model.Branch;
 
+@ExtendWith(SoftAssertionsExtension.class)
 class TestNessieHttpClient {
+
+  @InjectSoftAssertions SoftAssertions soft;
 
   static final String W3C_PROPAGATION_HEADER_NAME = "traceparent";
 
@@ -201,34 +207,44 @@ class TestNessieHttpClient {
   @Test
   void testApiCompatibility() {
     // Good cases
-    assertThatCode(() -> testConfig(NessieApiV1.class, 1, 1, 0, true)).doesNotThrowAnyException();
-    assertThatCode(() -> testConfig(NessieApiV1.class, 1, 2, 0, true)).doesNotThrowAnyException();
-    assertThatCode(() -> testConfig(NessieApiV2.class, 1, 2, 0, true)).doesNotThrowAnyException();
-    assertThatCode(() -> testConfig(NessieApiV2.class, 1, 2, 2, true)).doesNotThrowAnyException();
-    assertThatCode(() -> testConfig(NessieApiV2.class, 2, 2, 2, true)).doesNotThrowAnyException();
-    assertThatCode(() -> testConfig(NessieApiV2.class, 2, 3, 2, true)).doesNotThrowAnyException();
+    soft.assertThatCode(() -> testConfig(NessieApiV1.class, 1, 1, 0, true))
+        .doesNotThrowAnyException();
+    soft.assertThatCode(() -> testConfig(NessieApiV1.class, 1, 2, 0, true))
+        .doesNotThrowAnyException();
+    soft.assertThatCode(() -> testConfig(NessieApiV2.class, 1, 2, 0, true))
+        .doesNotThrowAnyException();
+    soft.assertThatCode(() -> testConfig(NessieApiV2.class, 1, 2, 2, true))
+        .doesNotThrowAnyException();
+    soft.assertThatCode(() -> testConfig(NessieApiV2.class, 2, 2, 2, true))
+        .doesNotThrowAnyException();
+    soft.assertThatCode(() -> testConfig(NessieApiV2.class, 2, 3, 2, true))
+        .doesNotThrowAnyException();
     // Bad cases
     // 1. v1 client called a server that doesn't support v1
-    assertThatThrownBy(() -> testConfig(NessieApiV1.class, 2, 2, 2, true))
+    soft.assertThatThrownBy(() -> testConfig(NessieApiV1.class, 2, 2, 2, true))
         .isInstanceOf(NessieApiCompatibilityException.class);
     // 2. v2 client called a server that doesn't support v2
-    assertThatThrownBy(() -> testConfig(NessieApiV2.class, 1, 1, 1, true))
+    soft.assertThatThrownBy(() -> testConfig(NessieApiV2.class, 1, 1, 1, true))
         .isInstanceOf(NessieApiCompatibilityException.class);
     // 3. v1 client called a v2 endpoint
-    assertThatThrownBy(() -> testConfig(NessieApiV1.class, 1, 2, 2, true))
+    soft.assertThatThrownBy(() -> testConfig(NessieApiV1.class, 1, 2, 2, true))
         .isInstanceOf(NessieApiCompatibilityException.class);
     // 4. v2 client called a v1 endpoint
-    assertThatThrownBy(() -> testConfig(NessieApiV2.class, 1, 2, 1, true))
+    soft.assertThatThrownBy(() -> testConfig(NessieApiV2.class, 1, 2, 1, true))
         .isInstanceOf(NessieApiCompatibilityException.class);
     // Bad cases with compatibility check disabled
     // 1. v1 client called a server that doesn't support v1
-    assertThatCode(() -> testConfig(NessieApiV1.class, 2, 2, 2, false)).doesNotThrowAnyException();
+    soft.assertThatCode(() -> testConfig(NessieApiV1.class, 2, 2, 2, false))
+        .doesNotThrowAnyException();
     // 2. v2 client called a server that doesn't support v2
-    assertThatCode(() -> testConfig(NessieApiV2.class, 1, 1, 1, false)).doesNotThrowAnyException();
+    soft.assertThatCode(() -> testConfig(NessieApiV2.class, 1, 1, 1, false))
+        .doesNotThrowAnyException();
     // 3. v1 client called a v2 endpoint
-    assertThatCode(() -> testConfig(NessieApiV1.class, 1, 2, 2, false)).doesNotThrowAnyException();
+    soft.assertThatCode(() -> testConfig(NessieApiV1.class, 1, 2, 2, false))
+        .doesNotThrowAnyException();
     // 4. v2 client called a v1 endpoint
-    assertThatCode(() -> testConfig(NessieApiV2.class, 1, 2, 1, false)).doesNotThrowAnyException();
+    soft.assertThatCode(() -> testConfig(NessieApiV2.class, 1, 2, 1, false))
+        .doesNotThrowAnyException();
   }
 
   @SuppressWarnings("EmptyTryBlock")
