@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableMap;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
@@ -28,13 +29,8 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.events.api.Content;
 import org.projectnessie.events.api.ContentKey;
+import org.projectnessie.events.api.ImmutableContent;
 import org.projectnessie.events.api.ImmutableContentKey;
-import org.projectnessie.events.api.ImmutableDeltaLakeTable;
-import org.projectnessie.events.api.ImmutableGenericContent;
-import org.projectnessie.events.api.ImmutableIcebergTable;
-import org.projectnessie.events.api.ImmutableIcebergView;
-import org.projectnessie.events.api.ImmutableNamespace;
-import org.projectnessie.events.api.ImmutableUDF;
 import org.projectnessie.model.CommitMeta;
 
 class TestContentMapping {
@@ -63,7 +59,11 @@ class TestContentMapping {
                 .id("id")
                 .addElements("foo", "bar")
                 .build(),
-            ImmutableNamespace.builder().id("id").addElements("foo", "bar").build()),
+            ImmutableContent.builder()
+                .id("id")
+                .type("NAMESPACE")
+                .putProperty("elements", Arrays.asList("foo", "bar"))
+                .build()),
         Arguments.of(
             org.projectnessie.model.ImmutableIcebergTable.builder()
                 .id("id")
@@ -73,13 +73,14 @@ class TestContentMapping {
                 .specId(3)
                 .sortOrderId(4)
                 .build(),
-            ImmutableIcebergTable.builder()
+            ImmutableContent.builder()
                 .id("id")
-                .metadataLocation("metadataLocation")
-                .snapshotId(1L)
-                .schemaId(2)
-                .specId(3)
-                .sortOrderId(4)
+                .type("ICEBERG_TABLE")
+                .putProperty("metadataLocation", "metadataLocation")
+                .putProperty("snapshotId", 1L)
+                .putProperty("schemaId", 2)
+                .putProperty("specId", 3)
+                .putProperty("sortOrderId", 4)
                 .build()),
         Arguments.of(
             org.projectnessie.model.ImmutableIcebergView.builder()
@@ -90,13 +91,14 @@ class TestContentMapping {
                 .sqlText("sqlText")
                 .dialect("dialect")
                 .build(),
-            ImmutableIcebergView.builder()
+            ImmutableContent.builder()
                 .id("id")
-                .metadataLocation("metadataLocation")
-                .versionId(1L)
-                .schemaId(2)
-                .sqlText("sqlText")
-                .dialect("dialect")
+                .type("ICEBERG_VIEW")
+                .putProperty("metadataLocation", "metadataLocation")
+                .putProperty("versionId", 1L)
+                .putProperty("schemaId", 2)
+                .putProperty("sqlText", "sqlText")
+                .putProperty("dialect", "dialect")
                 .build()),
         Arguments.of(
             org.projectnessie.model.ImmutableIcebergView.builder()
@@ -107,12 +109,13 @@ class TestContentMapping {
                 .sqlText("sqlText")
                 // no dialect
                 .build(),
-            ImmutableIcebergView.builder()
+            ImmutableContent.builder()
                 .id("id")
-                .metadataLocation("metadataLocation")
-                .versionId(1L)
-                .schemaId(2)
-                .sqlText("sqlText")
+                .type("ICEBERG_VIEW")
+                .putProperty("metadataLocation", "metadataLocation")
+                .putProperty("versionId", 1L)
+                .putProperty("schemaId", 2)
+                .putProperty("sqlText", "sqlText")
                 .build()),
         Arguments.of(
             org.projectnessie.model.ImmutableDeltaLakeTable.builder()
@@ -121,11 +124,12 @@ class TestContentMapping {
                 .addMetadataLocationHistory("metadata")
                 .lastCheckpoint("lastCheckpoint")
                 .build(),
-            ImmutableDeltaLakeTable.builder()
+            ImmutableContent.builder()
                 .id("id")
-                .addCheckpointLocationHistory("checkpoint")
-                .addMetadataLocationHistory("metadata")
-                .lastCheckpoint("lastCheckpoint")
+                .type("DELTA_LAKE_TABLE")
+                .putProperty("checkpointLocationHistory", Collections.singletonList("checkpoint"))
+                .putProperty("metadataLocationHistory", Collections.singletonList("metadata"))
+                .putProperty("lastCheckpoint", "lastCheckpoint")
                 .build()),
         Arguments.of(
             org.projectnessie.model.ImmutableUDF.builder()
@@ -133,14 +137,23 @@ class TestContentMapping {
                 .sqlText("sqlText")
                 .dialect("dialect")
                 .build(),
-            ImmutableUDF.builder().id("id").sqlText("sqlText").dialect("dialect").build()),
+            ImmutableContent.builder()
+                .id("id")
+                .type("UDF")
+                .putProperty("sqlText", "sqlText")
+                .putProperty("dialect", "dialect")
+                .build()),
         Arguments.of(
             org.projectnessie.model.ImmutableUDF.builder()
                 .id("id")
                 .sqlText("sqlText")
                 // no dialect
                 .build(),
-            ImmutableUDF.builder().id("id").sqlText("sqlText").build()),
+            ImmutableContent.builder()
+                .id("id")
+                .type("UDF")
+                .putProperty("sqlText", "sqlText")
+                .build()),
         Arguments.of(
             org.projectnessie.model.types.ImmutableGenericContent.builder()
                 .id("id")
@@ -160,18 +173,18 @@ class TestContentMapping {
                 .putAttributes("number", 123)
                 .putAttributes("boolean", true)
                 .build(),
-            ImmutableGenericContent.builder()
+            ImmutableContent.builder()
                 .id("id")
-                .genericType("GENERIC")
+                .type("GENERIC")
                 .putProperty("text", "foo")
                 .putProperty("number", 123)
                 .putProperty("boolean", true)
                 .build()),
         Arguments.of(
             new MyCustomContent(),
-            ImmutableGenericContent.builder()
+            ImmutableContent.builder()
                 .id("id")
-                .genericType("MY_CONTENT")
+                .type("MY_CONTENT")
                 .putProperty("text", "foo")
                 .putProperty("number", 123)
                 .putProperty("boolean", true)

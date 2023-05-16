@@ -25,14 +25,14 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.events.api.Content;
 import org.projectnessie.events.api.ContentKey;
 import org.projectnessie.events.api.Event;
-import org.projectnessie.events.api.IcebergTable;
 import org.projectnessie.events.api.ImmutableCommitEvent;
 import org.projectnessie.events.api.ImmutableCommitMeta;
+import org.projectnessie.events.api.ImmutableContent;
 import org.projectnessie.events.api.ImmutableContentRemovedEvent;
 import org.projectnessie.events.api.ImmutableContentStoredEvent;
-import org.projectnessie.events.api.ImmutableIcebergTable;
 import org.projectnessie.events.api.ImmutableMergeEvent;
 import org.projectnessie.events.api.ImmutableReference;
 import org.projectnessie.events.api.ImmutableReferenceCreatedEvent;
@@ -259,14 +259,15 @@ class TestEventFactory {
   @Test
   void newContentStoredEvent() {
     EventFactory ef = new EventFactory(config);
-    IcebergTable table =
-        ImmutableIcebergTable.builder()
+    Content table =
+        ImmutableContent.builder()
             .id("table1")
-            .metadataLocation("location")
-            .schemaId(1)
-            .specId(2)
-            .sortOrderId(3)
-            .snapshotId(4)
+            .type("ICEBERG_TABLE")
+            .putProperty("metadataLocation", "location")
+            .putProperty("schemaId", 1)
+            .putProperty("specId", 2)
+            .putProperty("sortOrderId", 3)
+            .putProperty("snapshotId", 4)
             .build();
     Event actual =
         ef.newContentStoredEvent(
