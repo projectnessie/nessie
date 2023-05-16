@@ -260,8 +260,10 @@ public class ITExportImport {
     LaunchResult result =
         launcher.launch(
             "export",
-            "--only-contents-from-branch=main",
-            "--contents-batch-size=10",
+            ExportRepository.SINGLE_BRANCH,
+            "main",
+            ExportRepository.CONTENT_BATCH_SIZE,
+            "10",
             ExportRepository.PATH,
             zipFile.toString());
     soft.assertThat(result.exitCode()).isEqualTo(0);

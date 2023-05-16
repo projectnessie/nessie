@@ -45,6 +45,8 @@ public class ExportRepository extends BaseCommand {
   static final String MAX_FILE_SIZE = "--max-file-size";
   static final String EXPECTED_COMMIT_COUNT = "--expected-commit-count";
   static final String OUTPUT_BUFFER_SIZE = "--output-buffer-size";
+  static final String SINGLE_BRANCH = "--single-branch-current-content";
+  static final String CONTENT_BATCH_SIZE = "--content-batch-size";
 
   enum Format {
     ZIP,
@@ -98,17 +100,19 @@ public class ExportRepository extends BaseCommand {
   private boolean fullScan;
 
   @CommandLine.Option(
-      names = {"--only-contents-from-branch"},
+      names = {SINGLE_BRANCH},
       paramLabel = "<branch-name>",
       description = {"Export only the most recent contents from the specified branch."})
   private String contentsFromBranch;
 
   @CommandLine.Option(
-      names = {"--contents-batch-size"},
+      names = {CONTENT_BATCH_SIZE},
       paramLabel = "<number>",
       description = {
         "Group the specified number of content objects into each commit at export time. "
-            + "This option is ignored unless --only-contents-from-branch is set. The default value is 100."
+            + "This option is ignored unless "
+            + SINGLE_BRANCH
+            + " is set. The default value is 100."
       })
   private Integer contentsBatchSize;
 

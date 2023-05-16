@@ -98,7 +98,10 @@ final class ExportContents extends ExportCommon {
 
         ByteString meta =
             CommitMetaSerializer.METADATA_SERIALIZER.toBytes(
-                CommitMeta.fromMessage("Export " + seq));
+                CommitMeta.fromMessage(
+                    String.format(
+                        "Single branch export from '%s', part %d",
+                        ref.getNamedRef().getName(), seq + 1)));
         long micros = TimeUnit.MILLISECONDS.toMicros(currentTimestampMillis());
 
         Hasher hasher = Hashes.newHasher();

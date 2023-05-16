@@ -73,7 +73,7 @@ public class TestContentMigrationToPersist {
   @TempDir Path dir;
 
   private VersionStore prepareTargetRepo() {
-    // Initialize repository w/o a default branch
+    // Erase and re-initialize repository
     persist.erase();
     repositoryLogic(persist).initialize("main", false, b -> {});
     return new VersionStoreImpl(persist);

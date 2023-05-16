@@ -272,7 +272,7 @@ public class ITExportImportPersist {
     LaunchResult result =
         launcher.launch(
             "export",
-            "--only-contents-from-branch",
+            ExportRepository.SINGLE_BRANCH,
             "main",
             ExportRepository.PATH,
             zipFile.toString());
