@@ -15,10 +15,13 @@
  */
 package org.projectnessie.tools.compatibility.tests;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.projectnessie.error.BaseNessieClientServerException;
+import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.tools.compatibility.api.Version;
+import org.projectnessie.tools.compatibility.api.VersionCondition;
 import org.projectnessie.tools.compatibility.internal.OlderNessieServersExtension;
 
 @ExtendWith(OlderNessieServersExtension.class)
@@ -29,9 +32,40 @@ public class ITOlderServers extends AbstractCompatibilityTests {
     return Version.CURRENT;
   }
 
-  @Override
   @Test
-  public void mergeBehavior() throws BaseNessieClientServerException {
-    super.mergeBehavior();
+  @Override
+  void getConfigV1() {
+    NessieConfiguration config = api.getConfig();
+    assertThat(config.getDefaultBranch()).isEqualTo("main");
+    assertThat(config.getMinSupportedApiVersion()).isEqualTo(1);
+    if (version.isLessThan(Version.API_V2)) {
+      assertThat(config.getMaxSupportedApiVersion()).isEqualTo(1);
+    } else {
+      assertThat(config.getMaxSupportedApiVersion()).isEqualTo(2);
+    }
+    assertThat(config.getActualApiVersion()).isEqualTo(0);
+    assertThat(config.getSpecVersion()).isNull();
+  }
+
+  @Test
+  @VersionCondition(minVersion = "0.47.0")
+  @Override
+  void getConfigV2() {
+    NessieConfiguration config = apiV2.getConfig();
+    assertThat(config.getDefaultBranch()).isEqualTo("main");
+    assertThat(config.getMinSupportedApiVersion()).isEqualTo(1);
+    assertThat(config.getMaxSupportedApiVersion()).isEqualTo(2);
+    if (version.isLessThan(Version.ACTUAL_VERSION_IN_CONFIG_V2)) {
+      assertThat(config.getActualApiVersion()).isEqualTo(0);
+    } else {
+      assertThat(config.getActualApiVersion()).isEqualTo(2);
+    }
+    if (version.isLessThan(Version.SPEC_VERSION_IN_CONFIG_V2)) {
+      assertThat(config.getSpecVersion()).isNull();
+    } else if (version.isLessThan(Version.SPEC_VERSION_IN_CONFIG_V2_SEMVER)) {
+      assertThat(config.getSpecVersion()).isEqualTo("2.0-beta.1");
+    } else {
+      assertThat(config.getSpecVersion()).isEqualTo("2.0.0-beta.1");
+    }
   }
 }

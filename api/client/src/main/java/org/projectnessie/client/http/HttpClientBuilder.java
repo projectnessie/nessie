@@ -16,6 +16,7 @@
 package org.projectnessie.client.http;
 
 import static org.projectnessie.client.NessieConfigConstants.CONF_CONNECT_TIMEOUT;
+import static org.projectnessie.client.NessieConfigConstants.CONF_ENABLE_API_COMPATIBILITY_CHECK;
 import static org.projectnessie.client.NessieConfigConstants.CONF_FORCE_URL_CONNECTION_CLIENT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_DISABLE_COMPRESSION;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_HTTP_2;
@@ -66,6 +67,8 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
           .addResponseFilter(new NessieHttpResponseFilter());
 
   private boolean tracing;
+
+  private boolean enableApiCompatibilityCheck = true;
 
   protected HttpClientBuilder() {}
 
@@ -172,6 +175,11 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
     s = configuration.apply(CONF_FORCE_URL_CONNECTION_CLIENT);
     if (s != null) {
       withForceUrlConnectionClient(Boolean.parseBoolean(s.trim()));
+    }
+
+    s = configuration.apply(CONF_ENABLE_API_COMPATIBILITY_CHECK);
+    if (s != null) {
+      withEnableApiCompatibilityCheck(Boolean.parseBoolean(s));
     }
 
     return this;
@@ -305,6 +313,12 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
   }
 
   @CanIgnoreReturnValue
+  public HttpClientBuilder withEnableApiCompatibilityCheck(boolean enable) {
+    enableApiCompatibilityCheck = enable;
+    return this;
+  }
+
+  @CanIgnoreReturnValue
   public HttpClientBuilder withResponseFactory(HttpResponseFactory responseFactory) {
     builder.setResponseFactory(responseFactory);
     return this;
@@ -323,12 +337,18 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
     if (apiVersion.isAssignableFrom(HttpApiV1.class)) {
       builder.setJsonView(Views.V1.class);
       HttpClient httpClient = builder.build();
+      if (enableApiCompatibilityCheck) {
+        NessieApiCompatibility.check(1, httpClient);
+      }
       return (API) new HttpApiV1(new NessieHttpClient(httpClient));
     }
 
     if (apiVersion.isAssignableFrom(HttpApiV2.class)) {
       builder.setJsonView(Views.V2.class);
       HttpClient httpClient = builder.build();
+      if (enableApiCompatibilityCheck) {
+        NessieApiCompatibility.check(2, httpClient);
+      }
       return (API) new HttpApiV2(httpClient);
     }
 

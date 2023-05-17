@@ -20,8 +20,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.google.common.collect.ImmutableMap;
 import java.lang.reflect.Proxy;
-import java.util.Collections;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -57,7 +57,9 @@ class TestNessieApiHolder {
                   Version.CURRENT,
                   "org.projectnessie.client.http.HttpClientBuilder",
                   NessieApiV1.class,
-                  Collections.singletonMap("nessie.uri", "http://127.42.42.42:19120")));
+                  ImmutableMap.of(
+                      "nessie.uri", "http://127.42.42.42:19120",
+                      "nessie.enable-api-compatibility-check", "false")));
       try {
         soft.assertThat(apiHolder)
             .extracting(AbstractNessieApiHolder::getApiInstance)
@@ -90,7 +92,9 @@ class TestNessieApiHolder {
                   Version.parseVersion("0.42.0"),
                   "org.projectnessie.client.http.HttpClientBuilder",
                   NessieApiV1.class,
-                  Collections.singletonMap("nessie.uri", "http://127.42.42.42:19120")));
+                  ImmutableMap.of(
+                      "nessie.uri", "http://127.42.42.42:19120",
+                      "nessie.enable-api-compatibility-check", "false")));
       try {
         soft.assertThat(apiHolder)
             .satisfies(

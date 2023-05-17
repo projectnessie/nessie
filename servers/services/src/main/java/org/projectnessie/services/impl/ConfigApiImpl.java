@@ -25,10 +25,12 @@ public class ConfigApiImpl implements ConfigService {
 
   private final VersionStore store;
   private final ServerConfig config;
+  private final int actualApiVersion;
 
-  public ConfigApiImpl(ServerConfig config, VersionStore store) {
+  public ConfigApiImpl(ServerConfig config, VersionStore store, int actualApiVersion) {
     this.store = store;
     this.config = config;
+    this.actualApiVersion = actualApiVersion;
   }
 
   @Override
@@ -36,6 +38,7 @@ public class ConfigApiImpl implements ConfigService {
     return ImmutableNessieConfiguration.builder()
         .from(NessieConfiguration.getBuiltInConfig())
         .defaultBranch(this.config.getDefaultBranch())
+        .actualApiVersion(actualApiVersion)
         .build();
   }
 }

@@ -113,9 +113,24 @@ public abstract class AbstractCompatibilityTests {
   }
 
   @Test
-  void getConfig() {
+  void getConfigV1() {
     NessieConfiguration config = api.getConfig();
-    assertThat(config).extracting(NessieConfiguration::getDefaultBranch).isEqualTo("main");
+    assertThat(config.getDefaultBranch()).isEqualTo("main");
+    assertThat(config.getMinSupportedApiVersion()).isEqualTo(1);
+    assertThat(config.getMaxSupportedApiVersion()).isBetween(1, 2);
+    assertThat(config.getActualApiVersion()).isEqualTo(0);
+    assertThat(config.getSpecVersion()).isNull();
+  }
+
+  @Test
+  @VersionCondition(minVersion = "0.59.0")
+  void getConfigV2() {
+    NessieConfiguration config = apiV2.getConfig();
+    assertThat(config.getDefaultBranch()).isEqualTo("main");
+    assertThat(config.getMinSupportedApiVersion()).isEqualTo(1);
+    assertThat(config.getMaxSupportedApiVersion()).isBetween(1, 2);
+    assertThat(config.getActualApiVersion()).isBetween(0, 2);
+    assertThat(config.getSpecVersion()).isIn(null, "2.0-beta.1", "2.0.0-beta.1");
   }
 
   @Test

@@ -114,6 +114,7 @@ public class TestModelObjectsSerialization {
                     .defaultBranch("default-branch")
                     .minSupportedApiVersion(11)
                     .maxSupportedApiVersion(42)
+                    .actualApiVersion(42)
                     .specVersion("42.1.2")
                     .build())
             .jsonNode(
@@ -121,6 +122,7 @@ public class TestModelObjectsSerialization {
                     o.put("defaultBranch", "default-branch")
                         .put("minSupportedApiVersion", 11)
                         .put("maxSupportedApiVersion", 42)
+                        .put("actualApiVersion", 42)
                         .put("specVersion", "42.1.2")),
         new Case(Branch.class)
             .obj(Branch.of(branchName, HASH))

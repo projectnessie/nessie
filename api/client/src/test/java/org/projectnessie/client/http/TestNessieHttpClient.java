@@ -27,11 +27,16 @@ import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.context.Scope;
 import java.util.concurrent.atomic.AtomicReference;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.http.v1api.HttpApiV1;
@@ -44,7 +49,10 @@ import org.projectnessie.client.util.HttpTestUtil;
 import org.projectnessie.client.util.JaegerTestTracer;
 import org.projectnessie.model.Branch;
 
+@ExtendWith(SoftAssertionsExtension.class)
 class TestNessieHttpClient {
+
+  @InjectSoftAssertions SoftAssertions soft;
 
   static final String W3C_PROPAGATION_HEADER_NAME = "traceparent";
 
@@ -65,6 +73,7 @@ class TestNessieHttpClient {
             HttpClientBuilder.builder()
                 .withUri(server.getUri())
                 .withTracing(true)
+                .withEnableApiCompatibilityCheck(false)
                 .build(NessieApiV1.class)) {
       assertThatThrownBy(api::getDefaultBranch)
           .isInstanceOf(NessieBadResponseException.class)
@@ -94,6 +103,7 @@ class TestNessieHttpClient {
             HttpClientBuilder.builder()
                 .withUri(server.getUri())
                 .withTracing(true)
+                .withEnableApiCompatibilityCheck(false)
                 .build(NessieApiV1.class)) {
       api.getDefaultBranch();
     }
@@ -158,6 +168,7 @@ class TestNessieHttpClient {
         NessieApiV1 api =
             HttpClientBuilder.builder()
                 .withUri(server.getUri().resolve("/unknownPath"))
+                .withEnableApiCompatibilityCheck(false)
                 .build(NessieApiV1.class)) {
       assertThatThrownBy(api::getConfig)
           .isInstanceOf(RuntimeException.class)
@@ -171,6 +182,7 @@ class TestNessieHttpClient {
         NessieApiV1 api =
             HttpClientBuilder.builder()
                 .withUri(server.getUri().resolve("/broken"))
+                .withEnableApiCompatibilityCheck(false)
                 .build(NessieApiV1.class)) {
       assertThatThrownBy(api::getConfig)
           .isInstanceOf(NessieInternalServerException.class)
@@ -184,10 +196,68 @@ class TestNessieHttpClient {
         NessieApiV1 api =
             HttpClientBuilder.builder()
                 .withUri(server.getUri().resolve("/unauthorized"))
+                .withEnableApiCompatibilityCheck(false)
                 .build(NessieApiV1.class)) {
       assertThatThrownBy(api::getConfig)
           .isInstanceOf(NessieNotAuthorizedException.class)
           .hasMessageContaining("Unauthorized");
+    }
+  }
+
+  @Test
+  void testApiCompatibility() {
+    // Good cases
+    soft.assertThatCode(() -> testConfig(NessieApiV1.class, 1, 1, 0, true))
+        .doesNotThrowAnyException();
+    soft.assertThatCode(() -> testConfig(NessieApiV1.class, 1, 2, 0, true))
+        .doesNotThrowAnyException();
+    soft.assertThatCode(() -> testConfig(NessieApiV2.class, 1, 2, 0, true))
+        .doesNotThrowAnyException();
+    soft.assertThatCode(() -> testConfig(NessieApiV2.class, 1, 2, 2, true))
+        .doesNotThrowAnyException();
+    soft.assertThatCode(() -> testConfig(NessieApiV2.class, 2, 2, 2, true))
+        .doesNotThrowAnyException();
+    soft.assertThatCode(() -> testConfig(NessieApiV2.class, 2, 3, 2, true))
+        .doesNotThrowAnyException();
+    // Bad cases
+    // 1. v1 client called a server that doesn't support v1
+    soft.assertThatThrownBy(() -> testConfig(NessieApiV1.class, 2, 2, 2, true))
+        .isInstanceOf(NessieApiCompatibilityException.class);
+    // 2. v2 client called a server that doesn't support v2
+    soft.assertThatThrownBy(() -> testConfig(NessieApiV2.class, 1, 1, 1, true))
+        .isInstanceOf(NessieApiCompatibilityException.class);
+    // 3. v1 client called a v2 endpoint
+    soft.assertThatThrownBy(() -> testConfig(NessieApiV1.class, 1, 2, 2, true))
+        .isInstanceOf(NessieApiCompatibilityException.class);
+    // 4. v2 client called a v1 endpoint
+    soft.assertThatThrownBy(() -> testConfig(NessieApiV2.class, 1, 2, 1, true))
+        .isInstanceOf(NessieApiCompatibilityException.class);
+    // Bad cases with compatibility check disabled
+    // 1. v1 client called a server that doesn't support v1
+    soft.assertThatCode(() -> testConfig(NessieApiV1.class, 2, 2, 2, false))
+        .doesNotThrowAnyException();
+    // 2. v2 client called a server that doesn't support v2
+    soft.assertThatCode(() -> testConfig(NessieApiV2.class, 1, 1, 1, false))
+        .doesNotThrowAnyException();
+    // 3. v1 client called a v2 endpoint
+    soft.assertThatCode(() -> testConfig(NessieApiV1.class, 1, 2, 2, false))
+        .doesNotThrowAnyException();
+    // 4. v2 client called a v1 endpoint
+    soft.assertThatCode(() -> testConfig(NessieApiV2.class, 1, 2, 1, false))
+        .doesNotThrowAnyException();
+  }
+
+  @SuppressWarnings("EmptyTryBlock")
+  private void testConfig(
+      Class<? extends NessieApi> apiClass, int min, int max, int actual, boolean check)
+      throws Exception {
+    try (HttpTestServer server = forConfig(min, max, actual);
+        NessieApi ignored =
+            HttpClientBuilder.builder()
+                .withUri(server.getUri())
+                .withEnableApiCompatibilityCheck(check)
+                .build(apiClass)) {
+      // no-op
     }
   }
 
@@ -223,5 +293,25 @@ class TestNessieHttpClient {
       resp.addHeader("Content-Type", "application/json");
       HttpTestUtil.writeResponseBody(resp, "{\"maxSupportedApiVersion\":1}");
     };
+  }
+
+  static HttpTestServer forConfig(int minApiVersion, int maxApiVersion, int actual)
+      throws Exception {
+    return new HttpTestServer(
+        (req, resp) -> {
+          req.getInputStream().close();
+          resp.addHeader("Content-Type", "application/json");
+          StringBuilder json =
+              new StringBuilder()
+                  .append("{\"minSupportedApiVersion\":")
+                  .append(minApiVersion)
+                  .append(",\"maxSupportedApiVersion\":")
+                  .append(maxApiVersion);
+          if (actual > 0) {
+            json.append(",\"actualApiVersion\":").append(actual);
+          }
+          json.append("}");
+          HttpTestUtil.writeResponseBody(resp, json.toString());
+        });
   }
 }

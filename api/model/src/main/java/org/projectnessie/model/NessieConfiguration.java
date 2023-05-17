@@ -69,6 +69,19 @@ public abstract class NessieConfiguration {
    */
   public abstract int getMaxSupportedApiVersion();
 
+  /**
+   * The actual API version that was used to handle the REST request to the configuration endpoint.
+   *
+   * <p>If this value is 0, then the server does not support returning the actual API version.
+   * Otherwise, this value is guaranteed to be between {@link #getMinSupportedApiVersion()} and
+   * {@link #getMaxSupportedApiVersion()} (inclusive).
+   */
+  @JsonView(Views.V2.class)
+  @Value.Default
+  public int getActualApiVersion() {
+    return 0;
+  }
+
   /** Semver version representing the behavior of the Nessie server. */
   @JsonView(Views.V2.class)
   @Nullable
