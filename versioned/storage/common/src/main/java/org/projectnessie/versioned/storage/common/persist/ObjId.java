@@ -99,8 +99,8 @@ public abstract class ObjId {
   }
 
   /**
-   * Creates an {@link ObjId} from its bytes representation, assuming that all remaining data in
-   * {@code bytes} belongs to the object id.
+   * Creates an {@link ObjId} from its bytes representation, assuming that all data in {@code bytes}
+   * belongs to the object id.
    *
    * @param bytes the serialized representation of the object id
    * @return a {@link ObjId} instance
@@ -119,8 +119,8 @@ public abstract class ObjId {
   }
 
   /**
-   * Creates an {@link ObjId} from its bytes representation, assuming that all remaining data in
-   * {@code bytes} belongs to the object id.
+   * Creates an {@link ObjId} from its bytes representation, assuming that all data in {@code bytes}
+   * belongs to the object id.
    *
    * @param bytes the serialized representation of the object id
    * @return a {@link ObjId} instance
@@ -131,7 +131,7 @@ public abstract class ObjId {
   }
 
   /**
-   * Creates an {@link ObjId} from its bytes representation, assuming that all remaining data in
+   * Creates an {@link ObjId} from its bytes representation, assuming that all (remaining) data in
    * {@code bytes} belongs to the object id.
    *
    * @param bytes the serialized representation of the object id
