@@ -293,6 +293,7 @@ public interface TreeApi {
    *
    * @param key the {@link ContentKey}s to retrieve
    * @param ref named-reference to retrieve the content for
+   * @param withDocumentation whether to return the documentation, if it exists.
    * @return list of {@link GetMultipleContentsResponse.ContentWithKey}s
    * @throws NessieNotFoundException if {@code ref} or {@code hashOnRef} does not exist
    */
@@ -306,13 +307,15 @@ public interface TreeApi {
           @jakarta.validation.constraints.Pattern(
               regexp = Validation.REF_NAME_PATH_REGEX,
               message = Validation.REF_NAME_PATH_MESSAGE)
-          String ref)
+          String ref,
+      boolean withDocumentation)
       throws NessieNotFoundException;
 
   /**
-   * Similar to {@link #getContent(ContentKey, String)}, but takes multiple {@link ContentKey}s and
-   * returns the {@link Content} for the one or more {@link ContentKey}s in a named-reference (a
-   * {@link org.projectnessie.model.Branch} or {@link org.projectnessie.model.Tag}).
+   * Similar to {@link #getContent(ContentKey, String, boolean)}, but takes multiple {@link
+   * ContentKey}s and returns the {@link Content} for the one or more {@link ContentKey}s in a
+   * named-reference (a {@link org.projectnessie.model.Branch} or {@link
+   * org.projectnessie.model.Tag}).
    *
    * <p>If the table-metadata is tracked globally (Iceberg), Nessie returns a {@link Content}
    * object, that contains the most up-to-date part for the globally tracked part (Iceberg:
@@ -321,6 +324,7 @@ public interface TreeApi {
    *
    * @param ref named-reference to retrieve the content for
    * @param request the {@link ContentKey}s to retrieve
+   * @param withDocumentation whether to return the documentation, if it exists.
    * @return list of {@link GetMultipleContentsResponse.ContentWithKey}s
    * @throws NessieNotFoundException if {@code ref} or {@code hashOnRef} does not exist
    */
@@ -335,6 +339,7 @@ public interface TreeApi {
               message = Validation.REF_NAME_PATH_MESSAGE)
           String ref,
       @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
-          GetMultipleContentsRequest request)
+          GetMultipleContentsRequest request,
+      boolean withDocumentation)
       throws NessieNotFoundException;
 }

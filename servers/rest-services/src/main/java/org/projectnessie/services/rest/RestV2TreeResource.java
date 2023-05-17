@@ -294,27 +294,30 @@ public class RestV2TreeResource implements HttpTreeApi {
 
   @JsonView(Views.V2.class)
   @Override
-  public ContentResponse getContent(ContentKey key, String ref) throws NessieNotFoundException {
+  public ContentResponse getContent(ContentKey key, String ref, boolean withDocumentation)
+      throws NessieNotFoundException {
     ParsedReference reference = resolveRef(ref);
-    return content().getContent(key, reference.name(), reference.hash());
+    return content().getContent(key, reference.name(), reference.hash(), withDocumentation);
   }
 
   @JsonView(Views.V2.class)
   @Override
-  public GetMultipleContentsResponse getSeveralContents(String ref, List<String> keys)
-      throws NessieNotFoundException {
+  public GetMultipleContentsResponse getSeveralContents(
+      String ref, List<String> keys, boolean withDocumentation) throws NessieNotFoundException {
     ImmutableGetMultipleContentsRequest.Builder request = GetMultipleContentsRequest.builder();
     keys.forEach(k -> request.addRequestedKeys(ContentKey.fromPathString(k)));
-    return getMultipleContents(ref, request.build());
+    return getMultipleContents(ref, request.build(), withDocumentation);
   }
 
   @JsonView(Views.V2.class)
   @Override
   public GetMultipleContentsResponse getMultipleContents(
-      String ref, GetMultipleContentsRequest request) throws NessieNotFoundException {
+      String ref, GetMultipleContentsRequest request, boolean withDocumentation)
+      throws NessieNotFoundException {
     ParsedReference reference = resolveRef(ref);
     return content()
-        .getMultipleContents(reference.name(), reference.hash(), request.getRequestedKeys());
+        .getMultipleContents(
+            reference.name(), reference.hash(), request.getRequestedKeys(), withDocumentation);
   }
 
   @JsonView(Views.V2.class)

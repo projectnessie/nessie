@@ -15,11 +15,14 @@
  */
 package org.projectnessie.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
+import org.projectnessie.model.ser.Views;
 
 @Value.Immutable
 @JsonSerialize(as = ImmutableContentResponse.class)
@@ -44,7 +47,19 @@ public interface ContentResponse {
   @Value.Parameter(order = 2)
   Reference getEffectiveReference();
 
+  @Nullable
+  @jakarta.annotation.Nullable
+  @JsonView(Views.V2.class)
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @Value.Parameter(order = 3)
+  Documentation getDocumentation();
+
   static ContentResponse of(Content content, Reference effectiveReference) {
-    return ImmutableContentResponse.of(content, effectiveReference);
+    return of(content, effectiveReference, null);
+  }
+
+  static ContentResponse of(
+      Content content, Reference effectiveReference, Documentation documentation) {
+    return ImmutableContentResponse.of(content, effectiveReference, documentation);
   }
 }

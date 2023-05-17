@@ -94,6 +94,9 @@ public interface ApiDoc {
           + "\n"
           + FULL_REF_INFO;
 
+  String WITH_DOC_PARAMETER_DESCRIPTION =
+      "Whether to return the documentation, if it exists. Default is to not return the documentation.";
+
   String CHECKED_REF_DESCRIPTION =
       "Specifies a named branch or tag reference with its expected HEAD 'hash' value.\n"
           + "\n"

@@ -85,7 +85,10 @@ public interface Conflict {
     UNEXPECTED_HASH,
 
     /** Generic key conflict, reported for merges and transplants. */
-    KEY_CONFLICT;
+    KEY_CONFLICT,
+
+    /** Values of existing and expected documentation differs. */
+    DOCUMENTATION_DIFFERS;
 
     public static ConflictType parse(String conflictType) {
       try {
