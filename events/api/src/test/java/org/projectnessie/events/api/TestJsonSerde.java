@@ -236,13 +236,14 @@ class TestJsonSerde {
             .putProperty(
                 "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
             .content(
-                ImmutableIcebergTable.builder()
-                    .metadataLocation("metadataLocation")
+                ImmutableContent.builder()
                     .id("id")
-                    .snapshotId(1L)
-                    .schemaId(2)
-                    .specId(3)
-                    .sortOrderId(4)
+                    .type("MY_CONTENT")
+                    .putProperty("string", "foo")
+                    .putProperty("number", 123)
+                    .putProperty("boolean", true)
+                    .putProperty(
+                        "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
                     .build())
             .build();
     assertThat(deserialize(serialize(event), Event.class)).isEqualTo(event);
@@ -271,83 +272,6 @@ class TestJsonSerde {
                 "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
             .build();
     assertThat(deserialize(serialize(event), Event.class)).isEqualTo(event);
-  }
-
-  @Test
-  void icebergTable() throws Exception {
-    IcebergTable content =
-        ImmutableIcebergTable.builder()
-            .id("id")
-            .metadataLocation("metadataLocation")
-            .snapshotId(1L)
-            .schemaId(2)
-            .specId(3)
-            .sortOrderId(4)
-            .putProperty("string", "foo")
-            .putProperty("number", 123)
-            .putProperty("boolean", true)
-            .putProperty(
-                "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
-            .build();
-    assertThat(deserialize(serialize(content), Content.class)).isEqualTo(content);
-  }
-
-  @Test
-  void deltaLakeTable() throws Exception {
-    DeltaLakeTable content =
-        ImmutableDeltaLakeTable.builder()
-            .id("id")
-            .addCheckpointLocationHistory("checkpoint")
-            .addMetadataLocationHistory("metadata")
-            .lastCheckpoint("lastCheckpoint")
-            .putProperty("string", "foo")
-            .putProperty("number", 123)
-            .putProperty("boolean", true)
-            .putProperty(
-                "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
-            .build();
-    assertThat(deserialize(serialize(content), Content.class)).isEqualTo(content);
-  }
-
-  @Test
-  void icebergView() throws Exception {
-    IcebergView content =
-        ImmutableIcebergView.builder()
-            .id("id")
-            .metadataLocation("metadataLocation")
-            .versionId(1L)
-            .schemaId(2)
-            .sqlText("sqlText")
-            .dialect("dialect")
-            .putProperty("string", "foo")
-            .putProperty("number", 123)
-            .putProperty("boolean", true)
-            .putProperty(
-                "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
-            .build();
-    assertThat(deserialize(serialize(content), Content.class)).isEqualTo(content);
-  }
-
-  @Test
-  void udf() throws Exception {
-    UDF content = ImmutableUDF.builder().id("id").sqlText("sqlText").dialect("dialect").build();
-    assertThat(deserialize(serialize(content), Content.class)).isEqualTo(content);
-  }
-
-  @Test
-  void namespace() throws Exception {
-    Namespace content =
-        ImmutableNamespace.builder()
-            .id("id")
-            .addElement("level1")
-            .addElement("level2")
-            .putProperty("string", "foo")
-            .putProperty("number", 123)
-            .putProperty("boolean", true)
-            .putProperty(
-                "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
-            .build();
-    assertThat(deserialize(serialize(content), Content.class)).isEqualTo(content);
   }
 
   @Test
@@ -412,49 +336,6 @@ class TestJsonSerde {
   }
 
   @Test
-  void genericContent() throws Exception {
-    GenericContent content =
-        ImmutableGenericContent.builder()
-            .id("id")
-            .genericType("genericType")
-            .putProperty("string", "foo")
-            .putProperty("number", 123)
-            .putProperty("boolean", true)
-            .putProperty(
-                "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
-            .build();
-    assertThat(deserialize(serialize(content), Content.class)).isEqualTo(content);
-  }
-
-  @Test
-  void genericContentSerialization() throws Exception {
-    GenericContent content =
-        ImmutableGenericContent.builder()
-            .id("id")
-            .genericType("weird")
-            .putProperty("string", "foo")
-            .putProperty("number", 123)
-            .putProperty("boolean", true)
-            .putProperty(
-                "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
-            .build();
-    assertThat(serialize(content))
-        .isEqualTo(
-            "{"
-                + "\"id\":\"id\","
-                + "\"type\":\"weird\","
-                + "\"string\":\"foo\","
-                + "\"number\":123,"
-                + "\"boolean\":true,"
-                + "\"complex\":{"
-                + "\"string\":\"foo\","
-                + "\"number\":123,"
-                + "\"boolean\":true"
-                + "}"
-                + "}");
-  }
-
-  @Test
   void unknownEventDeserialization() throws Exception {
     assertThat(
             deserialize(
@@ -479,35 +360,6 @@ class TestJsonSerde {
                 .genericType("weird")
                 .repositoryId("repo1")
                 .eventCreationTimestamp(Instant.parse("2023-04-25T13:02:05Z"))
-                .putProperty("string", "foo")
-                .putProperty("number", 123)
-                .putProperty("boolean", true)
-                .putProperty(
-                    "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
-                .build());
-  }
-
-  @Test
-  void unknownContentDeserialization() throws Exception {
-    assertThat(
-            deserialize(
-                "{"
-                    + "\"id\":\"id\","
-                    + "\"type\":\"weird\","
-                    + "\"string\":\"foo\","
-                    + "\"number\":123,"
-                    + "\"boolean\":true,"
-                    + "\"complex\":{"
-                    + "\"string\":\"foo\","
-                    + "\"number\":123,"
-                    + "\"boolean\":true"
-                    + "}"
-                    + "}",
-                Content.class))
-        .isEqualTo(
-            ImmutableGenericContent.builder()
-                .id("id")
-                .genericType("weird")
                 .putProperty("string", "foo")
                 .putProperty("number", 123)
                 .putProperty("boolean", true)
@@ -558,45 +410,6 @@ class TestJsonSerde {
   }
 
   @Test
-  void deserializeKnownContentTypeToGenericSubtype() throws Exception {
-    assertThat(
-            deserialize(
-                "{"
-                    + "\"id\":\"id\","
-                    + "\"type\":\"ICEBERG_TABLE\","
-                    + "\"metadataLocation\":\"location\","
-                    + "\"snapshotId\":1,"
-                    + "\"schemaId\":2,"
-                    + "\"specId\":3,"
-                    + "\"sortOrderId\":4,"
-                    + "\"string\":\"foo\","
-                    + "\"number\":123,"
-                    + "\"boolean\":true,"
-                    + "\"complex\":{"
-                    + "\"string\":\"foo\","
-                    + "\"number\":123,"
-                    + "\"boolean\":true"
-                    + "}"
-                    + "}",
-                GenericContent.class))
-        .isEqualTo(
-            ImmutableGenericContent.builder()
-                .id("id")
-                .genericType("ICEBERG_TABLE")
-                .putProperty("metadataLocation", "location")
-                .putProperty("snapshotId", 1)
-                .putProperty("schemaId", 2)
-                .putProperty("specId", 3)
-                .putProperty("sortOrderId", 4)
-                .putProperty("string", "foo")
-                .putProperty("number", 123)
-                .putProperty("boolean", true)
-                .putProperty(
-                    "complex", ImmutableMap.of("string", "foo", "number", 123, "boolean", true))
-                .build());
-  }
-
-  @Test
   void deserializeEventToIncompatibleSubtype() {
     assertThatThrownBy(
             () ->
@@ -615,26 +428,6 @@ class TestJsonSerde {
         .isInstanceOf(JsonMappingException.class)
         .hasMessageContaining(
             "Type id REFERENCE_CREATED is not convertible to interface org.projectnessie.events.api.ReferenceDeletedEvent");
-  }
-
-  @Test
-  void deserializeContentToIncompatibleSubtype() {
-    assertThatThrownBy(
-            () ->
-                deserialize(
-                    "{"
-                        + "\"id\":\"id\","
-                        + "\"type\":\"ICEBERG_TABLE\","
-                        + "\"metadataLocation\":\"location\","
-                        + "\"snapshotId\":1,"
-                        + "\"schemaId\":2,"
-                        + "\"specId\":3,"
-                        + "\"sortOrderId\":4"
-                        + "}",
-                    IcebergView.class))
-        .isInstanceOf(JsonMappingException.class)
-        .hasMessageContaining(
-            "Type id ICEBERG_TABLE is not convertible to interface org.projectnessie.events.api.IcebergView");
   }
 
   private Object deserialize(String json, Class<?> clazz) throws JsonProcessingException {

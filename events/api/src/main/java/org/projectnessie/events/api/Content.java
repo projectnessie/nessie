@@ -15,28 +15,37 @@
  */
 package org.projectnessie.events.api;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Collections;
 import java.util.Map;
 import org.immutables.value.Value;
-import org.projectnessie.events.api.json.ContentTypeIdResolver;
 
-/**
- * An object stored in Nessie, such as a table or a view.
- *
- * @see Namespace
- * @see IcebergTable
- * @see IcebergView
- * @see DeltaLakeTable
- * @see UDF
- * @see GenericContent
- */
-@JsonTypeIdResolver(ContentTypeIdResolver.class)
-@JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, visible = true, property = "type")
+/** An object stored in Nessie, such as a table or a view. */
+@Value.Immutable
+@JsonSerialize(as = ImmutableContent.class)
+@JsonDeserialize(as = ImmutableContent.class)
 public interface Content {
 
-  ContentType getType();
+  /**
+   * Returns the type for this object.
+   *
+   * <p>Values returned here match the JSON type name used for serializing the original content
+   * object.
+   *
+   * <p>The currently-known built-in content types are:
+   *
+   * <ul>
+   *   <li>{@code ICEBERG_TABLE};
+   *   <li>{@code ICEBERG_VIEW};
+   *   <li>{@code NAMESPACE};
+   *   <li>{@code UDF};
+   *   <li>{@code DELTA_LAKE_TABLE}.
+   * </ul>
+   *
+   * Other content types may be added in the future, or registered by end users.
+   */
+  String getType();
 
   /**
    * Unique id for this object.
