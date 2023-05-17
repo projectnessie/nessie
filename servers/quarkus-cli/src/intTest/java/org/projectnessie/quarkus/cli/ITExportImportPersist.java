@@ -305,7 +305,7 @@ public class ITExportImportPersist {
       throws ReferenceNotFoundException {
     VersionStoreImpl store = new VersionStoreImpl(persist);
     ReferenceInfo<CommitMeta> main = store.getNamedRef(ref, GetNamedRefsParams.DEFAULT);
-    soft.assertThat(store.getKeys(main.getHash(), null, true))
+    soft.assertThat(store.getKeys(main.getHash(), null, false, null, null, null, null))
         .toIterable()
         .extracting(KeyEntry::getKey, KeyEntry::getContent)
         .containsExactly(tuple(key, value));
