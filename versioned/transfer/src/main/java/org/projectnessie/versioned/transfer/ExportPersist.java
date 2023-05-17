@@ -59,11 +59,6 @@ final class ExportPersist extends ExportCommon {
   }
 
   @Override
-  long currentTimestampMillis() {
-    return requireNonNull(exporter.persist()).config().clock().millis();
-  }
-
-  @Override
   ExportVersion getExportVersion() {
     return ExportVersion.V2;
   }

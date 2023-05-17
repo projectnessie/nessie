@@ -53,11 +53,6 @@ final class ExportDatabaseAdapter extends ExportCommon {
   }
 
   @Override
-  long currentTimestampMillis() {
-    return requireNonNull(exporter.databaseAdapter()).getConfig().getClock().millis();
-  }
-
-  @Override
   ExportVersion getExportVersion() {
     return ExportVersion.V1;
   }

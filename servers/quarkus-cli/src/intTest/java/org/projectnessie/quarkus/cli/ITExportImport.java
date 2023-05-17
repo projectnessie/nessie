@@ -15,6 +15,7 @@
  */
 package org.projectnessie.quarkus.cli;
 
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 import static org.projectnessie.model.Content.Type.NAMESPACE;
 import static org.projectnessie.quarkus.cli.ImportRepository.ERASE_BEFORE_IMPORT;
@@ -26,6 +27,8 @@ import io.quarkus.test.junit.main.QuarkusMainLauncher;
 import io.quarkus.test.junit.main.QuarkusMainTest;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.Map;
 import java.util.UUID;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -43,13 +46,17 @@ import org.projectnessie.quarkus.cli.ExportRepository.Format;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.CommitMetaSerializer;
 import org.projectnessie.versioned.CommitResult;
+import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
+import org.projectnessie.versioned.persist.adapter.ContentAndState;
 import org.projectnessie.versioned.persist.adapter.ContentId;
 import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
 import org.projectnessie.versioned.persist.adapter.ImmutableCommitParams;
+import org.projectnessie.versioned.persist.adapter.KeyFilterPredicate;
 import org.projectnessie.versioned.persist.adapter.KeyWithBytes;
 import org.projectnessie.versioned.store.DefaultStoreWorker;
 
@@ -185,6 +192,17 @@ public class ITExportImport {
             "containing [0-9]+ named references \\(in [0-9]+ files\\) and [0-9]+ commits \\(in [0-9]+ files\\)")
         .contains("Imported Nessie repository, 2 commits, 2 named references.")
         .contains("Finished commit log optimization.");
+
+    checkValues(
+        adapter,
+        "main",
+        ContentKey.of("namespace123", "table123"),
+        IcebergTable.of("meta", 42L, 43, 44, 45));
+    checkValues(
+        adapter,
+        "branch-foo",
+        ContentKey.of("namespace123", "table123"),
+        IcebergTable.of("meta2", 43L, 43, 44, 45));
   }
 
   @Test
@@ -219,6 +237,82 @@ public class ITExportImport {
             "containing [0-9]+ named references \\(in [0-9]+ files\\) and [0-9]+ commits \\(in [0-9]+ files\\)")
         .contains("Imported Nessie repository, 2 commits, 2 named references.")
         .contains("Finished commit log optimization.");
+
+    checkValues(
+        adapter,
+        "main",
+        ContentKey.of("namespace123", "table123"),
+        IcebergTable.of("meta", 42L, 43, 44, 45));
+    checkValues(
+        adapter,
+        "branch-foo",
+        ContentKey.of("namespace123", "table123"),
+        IcebergTable.of("meta2", 43L, 43, 44, 45));
+  }
+
+  @Test
+  public void onlyContentExportToZip(
+      QuarkusMainLauncher launcher, DatabaseAdapter adapter, @TempDir Path tempDir)
+      throws Exception {
+    populateRepository(adapter);
+
+    Path zipFile = tempDir.resolve("export.zip");
+    LaunchResult result =
+        launcher.launch(
+            "export",
+            ExportRepository.SINGLE_BRANCH,
+            "main",
+            ExportRepository.CONTENT_BATCH_SIZE,
+            "10",
+            ExportRepository.PATH,
+            zipFile.toString());
+    soft.assertThat(result.exitCode()).isEqualTo(0);
+    soft.assertThat(result.getOutput())
+        .contains(
+            "Exported Nessie repository, 1 commits into 1 files, 1 named references into 1 files.");
+    soft.assertThat(zipFile).isRegularFile();
+
+    result =
+        launcher.launch("import", ERASE_BEFORE_IMPORT, ImportRepository.PATH, zipFile.toString());
+    soft.assertThat(result.exitCode()).isEqualTo(0);
+    soft.assertThat(result.getOutput())
+        .contains("Export was created by Nessie version " + NessieVersion.NESSIE_VERSION + " on ")
+        .containsPattern(
+            "containing [0-9]+ named references \\(in [0-9]+ files\\) and [0-9]+ commits \\(in [0-9]+ files\\)")
+        .contains("Imported Nessie repository, 1 commits, 1 named references.")
+        .contains("Finished commit log optimization.");
+
+    checkValues(
+        adapter,
+        "main",
+        ContentKey.of("namespace123", "table123"),
+        IcebergTable.of("meta", 42L, 43, 44, 45));
+  }
+
+  private void checkValues(
+      DatabaseAdapter adapter, String ref, ContentKey key, IcebergTable expected)
+      throws ReferenceNotFoundException {
+    ReferenceInfo<ByteString> main = adapter.namedRef(ref, GetNamedRefsParams.DEFAULT);
+    Map<ContentKey, ContentAndState> values =
+        adapter.values(
+            main.getHash(), Collections.singletonList(key), KeyFilterPredicate.ALLOW_ALL);
+    soft.assertThat(values).containsKey(key);
+    soft.assertThat(
+            DefaultStoreWorker.instance()
+                .valueFromStore(values.get(key).getPayload(), values.get(key).getRefState()))
+        .asInstanceOf(type(IcebergTable.class))
+        .extracting(
+            IcebergTable::getMetadataLocation,
+            IcebergTable::getSnapshotId,
+            IcebergTable::getSchemaId,
+            IcebergTable::getSpecId,
+            IcebergTable::getSortOrderId)
+        .containsExactly(
+            expected.getMetadataLocation(),
+            expected.getSnapshotId(),
+            expected.getSchemaId(),
+            expected.getSpecId(),
+            expected.getSortOrderId());
   }
 
   private static void populateRepository(DatabaseAdapter adapter)

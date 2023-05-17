@@ -42,16 +42,16 @@ abstract class ExportCommon {
     try {
       exporter.progressListener().progress(ProgressEvent.STARTED);
 
-      exporter.progressListener().progress(ProgressEvent.START_NAMED_REFERENCES);
-      exportReferences(exportContext);
-      exportContext.namedReferenceOutput.finishCurrentFile();
-      exporter.progressListener().progress(ProgressEvent.END_NAMED_REFERENCES);
-
       exporter.progressListener().progress(ProgressEvent.START_COMMITS);
       HeadsAndForks headsAndForks = exportCommits(exportContext);
       exportContext.commitOutput.finishCurrentFile();
       writeHeadsAndForks(headsAndForks);
       exporter.progressListener().progress(ProgressEvent.END_COMMITS);
+
+      exporter.progressListener().progress(ProgressEvent.START_NAMED_REFERENCES);
+      exportReferences(exportContext);
+      exportContext.namedReferenceOutput.finishCurrentFile();
+      exporter.progressListener().progress(ProgressEvent.END_NAMED_REFERENCES);
 
       exporter.progressListener().progress(ProgressEvent.START_META);
       writeRepositoryDescription();
@@ -68,7 +68,9 @@ abstract class ExportCommon {
     }
   }
 
-  abstract long currentTimestampMillis();
+  final long currentTimestampMillis() {
+    return exporter.clock().millis();
+  }
 
   ExportContext createExportContext(ExportVersion exportVersion) {
     return new ExportContext(

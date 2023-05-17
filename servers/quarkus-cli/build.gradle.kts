@@ -37,6 +37,7 @@ dependencies {
   implementation(project(":nessie-versioned-transfer-proto"))
   implementation(project(":nessie-model"))
 
+  implementation(project(":nessie-versioned-persist-store"))
   implementation(project(":nessie-versioned-persist-non-transactional"))
   implementation(project(":nessie-versioned-persist-in-memory"))
   implementation(project(":nessie-versioned-persist-dynamodb"))
@@ -44,6 +45,7 @@ dependencies {
   implementation(project(":nessie-versioned-persist-rocks"))
   implementation(project(":nessie-versioned-persist-transactional"))
 
+  implementation(project(":nessie-versioned-storage-store"))
   implementation(project(":nessie-versioned-storage-cache"))
   implementation(project(":nessie-versioned-storage-cassandra"))
   implementation(project(":nessie-versioned-storage-common"))
