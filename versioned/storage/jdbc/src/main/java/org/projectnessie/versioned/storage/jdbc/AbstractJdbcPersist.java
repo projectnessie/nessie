@@ -28,6 +28,7 @@ import static org.projectnessie.versioned.storage.common.objtypes.IndexStripe.in
 import static org.projectnessie.versioned.storage.common.objtypes.RefObj.ref;
 import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
 import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
+import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromByteBuffer;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 import static org.projectnessie.versioned.storage.common.util.Closing.closeMultiple;
@@ -719,7 +720,7 @@ abstract class AbstractJdbcPersist implements Persist {
                           indexStripe(
                               keyFromString(s.getFirstKey()),
                               keyFromString(s.getLastKey()),
-                              ObjId.objIdFromByteArray(s.getSegment().toByteArray())))
+                              objIdFromByteBuffer(s.getSegment().asReadOnlyByteBuffer())))
                   .forEach(b::addReferenceIndexStripes);
             } catch (IOException e) {
               throw new RuntimeException(e);
@@ -837,7 +838,7 @@ abstract class AbstractJdbcPersist implements Persist {
                               indexStripe(
                                   keyFromString(s.getFirstKey()),
                                   keyFromString(s.getLastKey()),
-                                  ObjId.objIdFromByteArray(s.getSegment().toByteArray())))
+                                  objIdFromByteBuffer(s.getSegment().asReadOnlyByteBuffer())))
                       .collect(Collectors.toList());
               return indexSegments(id, stripeList);
             } catch (IOException e) {

@@ -31,6 +31,7 @@ import static org.projectnessie.versioned.storage.common.objtypes.IndexStripe.in
 import static org.projectnessie.versioned.storage.common.objtypes.RefObj.ref;
 import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
 import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
+import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromByteBuffer;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 import static org.projectnessie.versioned.storage.dynamodb.DynamoDBBackend.condition;
@@ -987,7 +988,7 @@ public class DynamoDBPersist implements Persist {
       Map<String, AttributeValue> i, String n, Consumer<ObjId> receiver) {
     AttributeValue v = i.get(n);
     if (v != null) {
-      v.l().stream().map(el -> ObjId.objIdFromByteArray(el.b().asByteArray())).forEach(receiver);
+      v.l().stream().map(el -> objIdFromByteBuffer(el.b().asByteBuffer())).forEach(receiver);
     }
   }
 
@@ -1015,7 +1016,7 @@ public class DynamoDBPersist implements Persist {
   }
 
   private static ObjId attributeToObjId(AttributeValue v) {
-    return v == null ? null : ObjId.objIdFromByteArray(v.b().asByteArray());
+    return v == null ? null : objIdFromByteBuffer(v.b().asByteBuffer());
   }
 
   private static void objIdToAttribute(Map<String, AttributeValue> i, String n, ObjId id) {
