@@ -98,6 +98,14 @@ public abstract class ObjId {
     }
   }
 
+  /**
+   * Creates an {@link ObjId} from its bytes representation, assuming that all data in {@code bytes}
+   * belongs to the object id.
+   *
+   * @param bytes the serialized representation of the object id
+   * @return a {@link ObjId} instance
+   * @throws NullPointerException if {@code bytes} is {@code null}
+   */
   public static ObjId objIdFromBytes(ByteString bytes) {
     int len = bytes.size();
     switch (len) {
@@ -110,8 +118,29 @@ public abstract class ObjId {
     }
   }
 
+  /**
+   * Creates an {@link ObjId} from its bytes representation, assuming that all data in {@code bytes}
+   * belongs to the object id.
+   *
+   * @param bytes the serialized representation of the object id
+   * @return a {@link ObjId} instance
+   * @throws NullPointerException if {@code bytes} is {@code null}
+   */
   public static ObjId objIdFromByteArray(byte[] bytes) {
     return fromBytes(bytes.length, ByteBuffer.wrap(bytes));
+  }
+
+  /**
+   * Creates an {@link ObjId} from its bytes representation, assuming that all (remaining) data in
+   * {@code bytes} belongs to the object id.
+   *
+   * @param bytes the serialized representation of the object id
+   * @return a {@link ObjId} instance
+   * @throws NullPointerException if {@code bytes} is {@code null}
+   */
+  public static ObjId objIdFromByteBuffer(@Nonnull @jakarta.annotation.Nonnull ByteBuffer bytes) {
+    int len = bytes.remaining();
+    return fromBytes(len, bytes);
   }
 
   public static ObjId randomObjId() {
@@ -119,11 +148,13 @@ public abstract class ObjId {
   }
 
   /**
-   * Creates a hash instance from its bytes' representation.
+   * Creates an {@link ObjId} instance from its bytes' representation, deserializing the var-int
+   * encoded length from {@code bytes} first.
    *
-   * @param bytes the bytes' representation of the hash
-   * @return a {@code Hash} instance
-   * @throws NullPointerException if {@code hash} is {@code null}
+   * @param bytes the serialized representation of the object id, represented by the var-int encoded
+   *     length and the actual object id
+   * @return a {@link ObjId} instance
+   * @throws NullPointerException if {@code bytes} is {@code null}
    */
   public static ObjId deserializeObjId(@Nonnull @jakarta.annotation.Nonnull ByteBuffer bytes) {
     int len = readVarInt(bytes);
