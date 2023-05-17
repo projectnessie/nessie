@@ -34,7 +34,7 @@ public class ITOlderServers extends AbstractCompatibilityTests {
 
   @Test
   @Override
-  void getConfig() {
+  void getConfigV1() {
     NessieConfiguration config = api.getConfig();
     assertThat(config.getDefaultBranch()).isEqualTo("main");
     assertThat(config.getMinSupportedApiVersion()).isEqualTo(1);

@@ -43,7 +43,20 @@ class TestNessieApiCompatibility {
     OK,
     TOO_OLD,
     TOO_NEW,
-    MISMATCH
+    MISMATCH;
+
+    public String expectedErrorMessage() {
+      switch (this) {
+        case TOO_OLD:
+          return "too old";
+        case TOO_NEW:
+          return "too new";
+        case MISMATCH:
+          return "mismatch";
+        default:
+          return null;
+      }
+    }
   }
 
   @ParameterizedTest
@@ -96,10 +109,7 @@ class TestNessieApiCompatibility {
       } else {
 
         assertThatThrownBy(() -> NessieApiCompatibility.check(client, httpClient))
-            .hasMessageContaining(
-                expectation == Expectation.MISMATCH
-                    ? "mismatch"
-                    : expectation == Expectation.TOO_OLD ? "too old" : "too new")
+            .hasMessageContaining(expectation.expectedErrorMessage())
             .asInstanceOf(type(NessieApiCompatibilityException.class))
             .extracting(
                 NessieApiCompatibilityException::getClientApiVersion,
