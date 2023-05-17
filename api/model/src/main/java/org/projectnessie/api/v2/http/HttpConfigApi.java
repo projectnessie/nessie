@@ -33,7 +33,7 @@ import org.projectnessie.model.ser.Views;
 
 @Path("v2/config")
 @jakarta.ws.rs.Path("v2/config")
-@Tag(name = "v2-beta")
+@Tag(name = "v2")
 public interface HttpConfigApi extends ConfigApi {
 
   @Override
