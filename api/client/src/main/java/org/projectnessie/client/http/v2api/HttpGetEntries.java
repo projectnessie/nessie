@@ -18,7 +18,9 @@ package org.projectnessie.client.http.v2api;
 import org.projectnessie.api.v2.params.EntriesParams;
 import org.projectnessie.client.builder.BaseGetEntriesBuilder;
 import org.projectnessie.client.http.HttpClient;
+import org.projectnessie.client.http.HttpRequest;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.Reference;
 
@@ -35,6 +37,10 @@ final class HttpGetEntries extends BaseGetEntriesBuilder<EntriesParams> {
   protected EntriesParams params() {
     return EntriesParams.builder() // TODO: namespace, derive prefix
         .filter(filter)
+        .minKey(minKey)
+        .maxKey(maxKey)
+        .prefixKey(prefixKey)
+        .requestedKeys(keys)
         .maxRecords(maxRecords)
         .withContent(withContent)
         .build();
@@ -42,16 +48,28 @@ final class HttpGetEntries extends BaseGetEntriesBuilder<EntriesParams> {
 
   @Override
   protected EntriesResponse get(EntriesParams p) throws NessieNotFoundException {
-    return client
-        .newRequest()
-        .path("trees/{ref}/entries")
-        .resolveTemplate("ref", Reference.toPathString(refName, hashOnRef))
-        .queryParam("filter", p.filter())
-        .queryParam("content", p.withContent() ? "true" : null)
-        .queryParam("page-token", p.pageToken())
-        .queryParam("max-records", p.maxRecords())
-        .unwrap(NessieNotFoundException.class)
-        .get()
-        .readEntity(EntriesResponse.class);
+    HttpRequest req =
+        client
+            .newRequest()
+            .path("trees/{ref}/entries")
+            .resolveTemplate("ref", Reference.toPathString(refName, hashOnRef))
+            .queryParam("filter", p.filter())
+            .queryParam("content", p.withContent() ? "true" : null)
+            .queryParam("page-token", p.pageToken())
+            .queryParam("max-records", p.maxRecords());
+    p.getRequestedKeys().forEach(k -> req.queryParam("key", k.toPathString()));
+    ContentKey k = p.minKey();
+    if (k != null) {
+      req.queryParam("min-key", k.toPathString());
+    }
+    k = p.maxKey();
+    if (k != null) {
+      req.queryParam("max-key", k.toPathString());
+    }
+    k = p.prefixKey();
+    if (k != null) {
+      req.queryParam("prefix-key", k.toPathString());
+    }
+    return req.unwrap(NessieNotFoundException.class).get().readEntity(EntriesResponse.class);
   }
 }

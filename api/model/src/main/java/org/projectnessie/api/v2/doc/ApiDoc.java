@@ -112,11 +112,36 @@ public interface ApiDoc {
           + "'type' parameter may be used to ensure the operation is performed on the same object that the user "
           + "expects.\n";
 
-  String KEY_PARAMETER_DESCRIPTION =
-      "The key to a content object.\n"
-          + "\n"
-          + "Key components (namespaces) are separated by the dot ('.') character. Dot ('.') characters that are not "
+  String KEY_ELEMENTS_DESCRIPTION =
+      "Key components (namespaces) are separated by the dot ('.') character. Dot ('.') characters that are not "
           + "Nessie namespace separators must be encoded as the 'group separator' ASCII character (0x1D).\n";
+
+  String KEY_PARAMETER_DESCRIPTION = "The key to a content object.\n\n" + KEY_ELEMENTS_DESCRIPTION;
+
+  String REQUESTED_KEY_PARAMETER_DESCRIPTION =
+      "Restrict the result to one or more keys.\n\n"
+          + "Can be combined with min/max-key and prefix-key parameters, however both predicates must match. "
+          + "This means that keys specified via this parameter that do not match a given min/max-key or prefix-key will not be returned.\n\n"
+          + KEY_ELEMENTS_DESCRIPTION;
+
+  String KEY_MIN_PARAMETER_DESCRIPTION =
+      "The lower bound of the content key range to retrieve (inclusive). "
+          + "The content keys of all returned entries will be greater than or equal to the min-value. "
+          + "Content-keys are compared as a 'whole', unlike prefix-keys.\n\n"
+          + KEY_ELEMENTS_DESCRIPTION;
+
+  String KEY_MAX_PARAMETER_DESCRIPTION =
+      "The upper bound of the content key range to retrieve (inclusive). "
+          + "The content keys of all returned entries will be less than or equal to the max-value. "
+          + "Content-keys are compared as a 'whole', unlike prefix-keys.\n\n"
+          + KEY_ELEMENTS_DESCRIPTION;
+
+  String KEY_PREFIX_PARAMETER_DESCRIPTION =
+      "The content key prefix to retrieve (inclusive). "
+          + "A content key matches a given prefix, a content key's elements starts with all elements of the prefix-key. "
+          + "Key prefixes exactly match key-element boundaries.\n\n"
+          + "Must not be combined with min/max-key parameters.\n\n"
+          + KEY_ELEMENTS_DESCRIPTION;
 
   String DEFAULT_KEY_MERGE_MODE_DESCRIPTION =
       "The default merge mode. If not set, `NORMAL` is assumed.\n"

@@ -777,25 +777,53 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       String pagingToken,
       boolean withContent,
       PagedResponseHandler<R, Entry> pagedResponseHandler,
-      Consumer<WithHash<NamedRef>> effectiveReference)
+      Consumer<WithHash<NamedRef>> effectiveReference,
+      ContentKey minKey,
+      ContentKey maxKey,
+      ContentKey prefixKey,
+      List<ContentKey> requestedKeys)
       throws NessieNotFoundException {
     WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(namedRef, hashOnRef);
 
     effectiveReference.accept(refWithHash);
 
-    // TODO Implement paging. At the moment, we do not expect that many keys/entries to be returned.
-    //  So the size of the whole result is probably reasonable and unlikely to "kill" either the
-    //  server or client. We have to figure out _how_ to implement paging for keys/entries, i.e.
-    //  whether we shall just do the whole computation for a specific hash for every page or have
-    //  a more sophisticated approach, potentially with support from the (tiered-)version-store.
-    //  note currently we are filtering types at the REST level. This could in theory be pushed down
-    // to the store though
-    //  all existing VersionStore implementations have to read all keys anyways so we don't get much
     try {
+      Predicate<ContentKey> contentKeyPredicate = null;
+      if (requestedKeys != null && !requestedKeys.isEmpty()) {
+        contentKeyPredicate = new HashSet<>(requestedKeys)::contains;
+        if (prefixKey == null) {
+          // Populate minKey/maxKey if not set or if those would query "more" keys.
+          ContentKey minRequested = null;
+          ContentKey maxRequested = null;
+          for (ContentKey requestedKey : requestedKeys) {
+            if (minRequested == null || requestedKey.compareTo(minRequested) < 0) {
+              minRequested = requestedKey;
+            }
+            if (maxRequested == null || requestedKey.compareTo(maxRequested) > 0) {
+              maxRequested = requestedKey;
+            }
+          }
+          if (minKey == null || minKey.compareTo(minRequested) < 0) {
+            minKey = minRequested;
+          }
+          if (maxKey == null || maxKey.compareTo(maxRequested) > 0) {
+            maxKey = maxRequested;
+          }
+        }
+      }
+
       Predicate<KeyEntry> filterPredicate = filterEntries(filter);
 
       try (PaginationIterator<KeyEntry> entries =
-          getStore().getKeys(refWithHash.getHash(), pagingToken, withContent)) {
+          getStore()
+              .getKeys(
+                  refWithHash.getHash(),
+                  pagingToken,
+                  withContent,
+                  minKey,
+                  maxKey,
+                  prefixKey,
+                  contentKeyPredicate)) {
 
         AuthzPaginationIterator<KeyEntry> authz =
             new AuthzPaginationIterator<KeyEntry>(
@@ -997,7 +1025,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
           refWithHash.getHash().asString(),
           fetchMetadata ? extractReferenceMetadata(refWithHash) : null);
     } else {
-      throw new UnsupportedOperationException("only converting tags or branches"); // todo
+      throw new UnsupportedOperationException("only converting tags or branches");
     }
   }
 

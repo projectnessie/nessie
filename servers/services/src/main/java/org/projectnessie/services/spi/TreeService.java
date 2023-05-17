@@ -28,6 +28,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.CommitResponse;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.LogResponse.LogEntry;
@@ -281,7 +282,11 @@ public interface TreeService {
       @Nullable @jakarta.annotation.Nullable String pagingToken,
       boolean withContent,
       PagedResponseHandler<R, Entry> pagedResponseHandler,
-      Consumer<WithHash<NamedRef>> effectiveReference)
+      Consumer<WithHash<NamedRef>> effectiveReference,
+      @Nullable @jakarta.annotation.Nullable ContentKey minKey,
+      @Nullable @jakarta.annotation.Nullable ContentKey maxKey,
+      ContentKey prefixKey,
+      List<ContentKey> requestedKeys)
       throws NessieNotFoundException;
 
   CommitResponse commitMultipleOperations(

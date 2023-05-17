@@ -15,11 +15,15 @@
  */
 package org.projectnessie.client.builder;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.api.GetEntriesBuilder;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.EntriesResponse.Entry;
 
@@ -30,6 +34,10 @@ public abstract class BaseGetEntriesBuilder<PARAMS>
   private String pageToken;
 
   protected Integer maxRecords;
+  protected final List<ContentKey> keys = new ArrayList<>();
+  protected ContentKey minKey;
+  protected ContentKey maxKey;
+  protected ContentKey prefixKey;
   protected String filter;
   protected Integer namespaceDepth;
   protected boolean withContent;
@@ -47,6 +55,36 @@ public abstract class BaseGetEntriesBuilder<PARAMS>
   @Override
   public GetEntriesBuilder pageToken(String pageToken) {
     this.pageToken = pageToken;
+    return this;
+  }
+
+  @Override
+  public GetEntriesBuilder key(ContentKey key) {
+    this.keys.add(key);
+    return this;
+  }
+
+  @Override
+  public GetEntriesBuilder keys(Collection<ContentKey> keys) {
+    this.keys.addAll(keys);
+    return this;
+  }
+
+  @Override
+  public GetEntriesBuilder minKey(ContentKey minKey) {
+    this.minKey = minKey;
+    return this;
+  }
+
+  @Override
+  public GetEntriesBuilder maxKey(ContentKey maxKey) {
+    this.maxKey = maxKey;
+    return this;
+  }
+
+  @Override
+  public GetEntriesBuilder prefixKey(ContentKey prefixKey) {
+    this.prefixKey = prefixKey;
     return this;
   }
 

@@ -197,7 +197,11 @@ public class RestV2TreeResource implements HttpTreeApi {
                 builder.isHasMore(true).token(pagingToken);
               }
             },
-            h -> builder.effectiveReference(toReference(h)));
+            h -> builder.effectiveReference(toReference(h)),
+            params.minKey(),
+            params.maxKey(),
+            params.prefixKey(),
+            params.getRequestedKeys());
   }
 
   @JsonView(Views.V2.class)
@@ -268,7 +272,12 @@ public class RestV2TreeResource implements HttpTreeApi {
               }
             },
             h -> builder.effectiveFromReference(toReference(h)),
-            h -> builder.effectiveToReference(toReference(h)));
+            h -> builder.effectiveToReference(toReference(h)),
+            params.minKey(),
+            params.maxKey(),
+            params.prefixKey(),
+            params.getRequestedKeys(),
+            params.getFilter());
   }
 
   @JsonView(Views.V2.class)

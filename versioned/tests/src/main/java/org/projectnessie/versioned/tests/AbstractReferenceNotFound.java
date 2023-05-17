@@ -139,16 +139,40 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
         // getKeys()
         new ReferenceNotFoundFunction("getKeys/branch")
             .msg("Named reference 'this-one-should-not-exist' not found")
-            .function(s -> s.getKeys(BranchName.of("this-one-should-not-exist"), null, false)),
+            .function(
+                s ->
+                    s.getKeys(
+                        BranchName.of("this-one-should-not-exist"),
+                        null,
+                        false,
+                        null,
+                        null,
+                        null,
+                        null)),
         new ReferenceNotFoundFunction("getKeys/tag")
             .msg("Named reference 'this-one-should-not-exist' not found")
-            .function(s -> s.getKeys(TagName.of("this-one-should-not-exist"), null, false)),
+            .function(
+                s ->
+                    s.getKeys(
+                        TagName.of("this-one-should-not-exist"),
+                        null,
+                        false,
+                        null,
+                        null,
+                        null,
+                        null)),
         new ReferenceNotFoundFunction("getKeys/hash")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")
             .function(
                 s ->
                     s.getKeys(
-                        Hash.of("12341234123412341234123412341234123412341234"), null, false)),
+                        Hash.of("12341234123412341234123412341234123412341234"),
+                        null,
+                        false,
+                        null,
+                        null,
+                        null,
+                        null)),
         // assign()
         new ReferenceNotFoundFunction("assign/branch/ok")
             .msg("Named reference 'this-one-should-not-exist' not found")
@@ -256,13 +280,23 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                     s.getDiffs(
                         Hash.of("12341234123412341234123412341234123412341234"),
                         BranchName.of("main"),
+                        null,
+                        null,
+                        null,
+                        null,
                         null)),
         new ReferenceNotFoundFunction("diff/to-branch")
             .msg("Named reference 'this-one-should-not-exist' not found")
             .function(
                 s ->
                     s.getDiffs(
-                        BranchName.of("main"), BranchName.of("this-one-should-not-exist"), null)),
+                        BranchName.of("main"),
+                        BranchName.of("this-one-should-not-exist"),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null)),
         new ReferenceNotFoundFunction("diff/from-hash")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")
             .function(
@@ -270,13 +304,23 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
                     s.getDiffs(
                         Hash.of("12341234123412341234123412341234123412341234"),
                         BranchName.of("main"),
+                        null,
+                        null,
+                        null,
+                        null,
                         null)),
         new ReferenceNotFoundFunction("diff/from-branch")
             .msg("Named reference 'this-one-should-not-exist' not found")
             .function(
                 s ->
                     s.getDiffs(
-                        BranchName.of("this-one-should-not-exist"), BranchName.of("main"), null)),
+                        BranchName.of("this-one-should-not-exist"),
+                        BranchName.of("main"),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null)),
         // merge()
         new ReferenceNotFoundFunction("merge/hash/empty")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")

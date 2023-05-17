@@ -19,7 +19,6 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
 import static java.util.Objects.requireNonNull;
 import static org.projectnessie.nessie.relocated.protobuf.ByteString.copyFromUtf8;
-import static org.projectnessie.versioned.storage.common.indexes.StoreKey.keyFromString;
 import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
 import static org.projectnessie.versioned.storage.common.logic.DiffQuery.diffQuery;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
@@ -34,6 +33,7 @@ import static org.projectnessie.versioned.storage.common.persist.ObjType.COMMIT;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 import static org.projectnessie.versioned.storage.versionstore.BaseCommitHelper.committingOperation;
 import static org.projectnessie.versioned.storage.versionstore.BaseCommitHelper.dryRunCommitterSupplier;
+import static org.projectnessie.versioned.storage.versionstore.KeyRanges.keyRanges;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.NO_ANCESTOR;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.asBranchName;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.asTagName;
@@ -44,8 +44,11 @@ import static org.projectnessie.versioned.storage.versionstore.RefMapping.refere
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.referenceNotFound;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.referenceToNamedRef;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.verifyExpectedHash;
+import static org.projectnessie.versioned.storage.versionstore.TypeMapping.CONTENT_DISCRIMINATOR;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.hashToObjId;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.keyToStoreKey;
+import static org.projectnessie.versioned.storage.versionstore.TypeMapping.keyToStoreKeyMin;
+import static org.projectnessie.versioned.storage.versionstore.TypeMapping.keyToStoreKeyNoVariant;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objIdToHash;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.storeKeyToKey;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.toCommitMeta;
@@ -62,6 +65,7 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -481,8 +485,17 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   @Override
-  public PaginationIterator<KeyEntry> getKeys(Ref ref, String pagingToken, boolean withContent)
+  public PaginationIterator<KeyEntry> getKeys(
+      Ref ref,
+      String pagingToken,
+      boolean withContent,
+      ContentKey minKey,
+      ContentKey maxKey,
+      ContentKey prefixKey,
+      Predicate<ContentKey> contentKeyPredicate)
       throws ReferenceNotFoundException {
+    KeyRanges keyRanges = keyRanges(pagingToken, minKey, maxKey, prefixKey);
+
     RefMapping refMapping = new RefMapping(persist);
     CommitObj head = refMapping.resolveRefHead(ref);
     if (head == null) {
@@ -491,14 +504,31 @@ public class VersionStoreImpl implements VersionStore {
     IndexesLogic indexesLogic = indexesLogic(persist);
     StoreIndex<CommitOp> index = indexesLogic.buildCompleteIndex(head, Optional.empty());
 
-    StoreKey begin =
-        pagingToken != null && !pagingToken.isEmpty()
-            ? keyFromString(fromString(pagingToken).token().toStringUtf8())
-            : null;
-    StoreKey end = null;
-
-    Iterator<StoreIndexElement<CommitOp>> result = index.iterator(begin, end, false);
+    Iterator<StoreIndexElement<CommitOp>> result =
+        index.iterator(keyRanges.beginStoreKey(), keyRanges.endStoreKey(), false);
     ContentMapping contentMapping = new ContentMapping(persist);
+
+    Predicate<StoreIndexElement<CommitOp>> keyPredicate =
+        indexElement ->
+            indexElement.content().action().exists()
+                && indexElement.key().endsWithElement(CONTENT_DISCRIMINATOR);
+    if (contentKeyPredicate != null) {
+      keyPredicate =
+          keyPredicate.and(
+              indexElement -> {
+                ContentKey key = storeKeyToKey(indexElement.key());
+                // Note: key==null, if not the "main universe" or not a "content" discriminator
+                return key != null && contentKeyPredicate.test(key);
+              });
+    }
+
+    Predicate<StoreIndexElement<CommitOp>> stopPredicate;
+    if (prefixKey != null) {
+      StoreKey prefix = keyToStoreKeyNoVariant(prefixKey);
+      stopPredicate = indexElement -> !indexElement.key().startsWithElementsOrParts(prefix);
+    } else {
+      stopPredicate = x -> false;
+    }
 
     return new FilteringPaginationIterator<StoreIndexElement<CommitOp>, KeyEntry>(
         result,
@@ -524,10 +554,8 @@ public class VersionStoreImpl implements VersionStore {
             throw new RuntimeException("Could not fetch or map content", e);
           }
         },
-        indexElement ->
-            indexElement.content().action().exists()
-                // Note: key==null, if not the "main universe" or not a "content" discriminator
-                && storeKeyToKey(indexElement.key()) != null) {
+        keyPredicate,
+        stopPredicate) {
       @Override
       protected String computeTokenForCurrent() {
         StoreIndexElement<CommitOp> c = current();
@@ -734,8 +762,17 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   @Override
-  public PaginationIterator<Diff> getDiffs(Ref from, Ref to, String pagingToken)
+  public PaginationIterator<Diff> getDiffs(
+      Ref from,
+      Ref to,
+      String pagingToken,
+      ContentKey minKey,
+      ContentKey maxKey,
+      ContentKey prefixKey,
+      Predicate<ContentKey> contentKeyPredicate)
       throws ReferenceNotFoundException {
+    KeyRanges keyRanges = keyRanges(pagingToken, minKey, maxKey, prefixKey);
+
     RefMapping refMapping = new RefMapping(persist);
 
     CommitObj fromCommit = refMapping.resolveRefHead(from);
@@ -748,15 +785,34 @@ public class VersionStoreImpl implements VersionStore {
       emptyOrNotFound(to, null);
     }
 
-    PagingToken token = pagingToken != null ? fromString(pagingToken) : null;
-    StoreKey start = token != null ? keyFromString(token.token().toStringUtf8()) : null;
-    StoreKey end = null;
-
     CommitLogic commitLogic = commitLogic(persist);
     PagedResult<DiffEntry, StoreKey> diffIter =
-        commitLogic.diff(diffQuery(token, fromCommit, toCommit, start, end, true));
+        commitLogic.diff(
+            diffQuery(
+                keyRanges.pagingTokenObj(),
+                fromCommit,
+                toCommit,
+                keyRanges.beginStoreKey(),
+                keyRanges.endStoreKey(),
+                true));
 
     ContentMapping contentMapping = new ContentMapping(persist);
+
+    Predicate<DiffEntry> keyPred =
+        contentKeyPredicate != null
+            ? d -> {
+              ContentKey key = storeKeyToKey(d.key());
+              return key != null && contentKeyPredicate.test(key);
+            }
+            : x -> true;
+
+    Predicate<DiffEntry> stopPredicate;
+    if (prefixKey != null) {
+      StoreKey prefix = keyToStoreKeyNoVariant(prefixKey);
+      stopPredicate = d -> !d.key().startsWithElementsOrParts(prefix);
+    } else {
+      stopPredicate = x -> false;
+    }
 
     return new FilteringPaginationIterator<DiffEntry, Diff>(
         diffIter,
@@ -774,7 +830,8 @@ public class VersionStoreImpl implements VersionStore {
               Optional.ofNullable(d.fromId()).map(contentFetcher),
               Optional.ofNullable(d.toId()).map(contentFetcher));
         },
-        d -> storeKeyToKey(d.key()) != null) {
+        keyPred,
+        stopPredicate) {
       @Override
       protected String computeTokenForCurrent() {
         DiffEntry c = current();
@@ -783,7 +840,7 @@ public class VersionStoreImpl implements VersionStore {
 
       @Override
       public String tokenForEntry(Diff entry) {
-        return tokenFor(keyToStoreKey(entry.getKey()));
+        return tokenFor(keyToStoreKeyMin(entry.getKey()));
       }
 
       private String tokenFor(StoreKey storeKey) {

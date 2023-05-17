@@ -18,7 +18,9 @@ package org.projectnessie.client.http.v2api;
 import org.projectnessie.api.v2.params.DiffParams;
 import org.projectnessie.client.builder.BaseGetDiffBuilder;
 import org.projectnessie.client.http.HttpClient;
+import org.projectnessie.client.http.HttpRequest;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.DiffResponse;
 import org.projectnessie.model.Reference;
 
@@ -36,20 +38,38 @@ final class HttpGetDiff extends BaseGetDiffBuilder<DiffParams> {
         .fromRef(Reference.toPathString(fromRefName, fromHashOnRef))
         .toRef(Reference.toPathString(toRefName, toHashOnRef))
         .maxRecords(maxRecords)
+        .minKey(minKey)
+        .maxKey(maxKey)
+        .prefixKey(prefixKey)
+        .filter(filter)
+        .requestedKeys(keys)
         .build();
   }
 
   @Override
   public DiffResponse get(DiffParams params) throws NessieNotFoundException {
-    return client
-        .newRequest()
-        .path("trees/{from}/diff/{to}")
-        .resolveTemplate("from", params.getFromRef())
-        .resolveTemplate("to", params.getToRef())
-        .queryParam("max-records", params.maxRecords())
-        .queryParam("page-token", params.pageToken())
-        .unwrap(NessieNotFoundException.class)
-        .get()
-        .readEntity(DiffResponse.class);
+    HttpRequest req =
+        client
+            .newRequest()
+            .path("trees/{from}/diff/{to}")
+            .resolveTemplate("from", params.getFromRef())
+            .resolveTemplate("to", params.getToRef())
+            .queryParam("max-records", params.maxRecords())
+            .queryParam("page-token", params.pageToken())
+            .queryParam("filter", params.getFilter());
+    params.getRequestedKeys().forEach(k -> req.queryParam("key", k.toPathString()));
+    ContentKey k = params.minKey();
+    if (k != null) {
+      req.queryParam("min-key", k.toPathString());
+    }
+    k = params.maxKey();
+    if (k != null) {
+      req.queryParam("max-key", k.toPathString());
+    }
+    k = params.prefixKey();
+    if (k != null) {
+      req.queryParam("prefix-key", k.toPathString());
+    }
+    return req.unwrap(NessieNotFoundException.class).get().readEntity(DiffResponse.class);
   }
 }

@@ -24,6 +24,7 @@ import static java.lang.Character.toCodePoint;
 import com.google.common.annotations.VisibleForTesting;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -241,5 +242,33 @@ public final class StoreKey implements Comparable<StoreKey> {
 
   public boolean startsWith(StoreKey prefix) {
     return key.startsWith(prefix.key);
+  }
+
+  public boolean startsWithElementsOrParts(StoreKey prefix) {
+    int m = CharBuffer.wrap(key).mismatch(CharBuffer.wrap(prefix.key));
+    if (m == -1) {
+      // equal
+      return true;
+    }
+    if (m < prefix.key.length()) {
+      // prefix does not match at all
+      return false;
+    }
+    // check for element or part border
+    char c = key.charAt(m);
+    return c == (char) 0 || c == (char) 1;
+  }
+
+  /** Tests whether this store key ends with the given element. */
+  public boolean endsWithElement(String element) {
+    int elLen = element.length();
+    int len = key.length();
+    if (len < elLen + 1) {
+      if (len == elLen) {
+        return key.equals(element);
+      }
+      return false;
+    }
+    return key.charAt(len - elLen - 1) == (char) 0 && key.endsWith(element);
   }
 }

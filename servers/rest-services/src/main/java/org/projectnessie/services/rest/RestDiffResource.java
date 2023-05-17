@@ -86,6 +86,11 @@ public class RestDiffResource implements HttpDiffApi {
               }
             },
             h -> builder.effectiveFromReference(toReference(h)),
-            h -> builder.effectiveToReference(toReference(h)));
+            h -> builder.effectiveToReference(toReference(h)),
+            null,
+            null,
+            null,
+            null,
+            null);
   }
 }

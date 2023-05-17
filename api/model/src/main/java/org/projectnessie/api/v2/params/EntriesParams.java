@@ -15,11 +15,15 @@
  */
 package org.projectnessie.api.v2.params;
 
+import static org.projectnessie.api.v2.doc.ApiDoc.REQUESTED_KEY_PARAMETER_DESCRIPTION;
+
+import java.util.List;
 import javax.annotation.Nullable;
 import javax.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.immutables.builder.Builder.Constructor;
+import org.projectnessie.model.ContentKey;
 
 /**
  * The purpose of this class is to include optional parameters that can be passed to {@code
@@ -28,7 +32,12 @@ import org.immutables.builder.Builder.Constructor;
  * <p>For easier usage of this class, there is {@link EntriesParams#builder()}, which allows
  * configuring/setting the different parameters.
  */
-public class EntriesParams extends AbstractParams<EntriesParams> {
+public class EntriesParams extends KeyRangeParams<EntriesParams> {
+
+  @Parameter(description = REQUESTED_KEY_PARAMETER_DESCRIPTION)
+  @QueryParam("key")
+  @jakarta.ws.rs.QueryParam("key")
+  private List<ContentKey> requestedKeys;
 
   @Nullable
   @jakarta.annotation.Nullable
@@ -58,11 +67,16 @@ public class EntriesParams extends AbstractParams<EntriesParams> {
   EntriesParams(
       @Nullable @jakarta.annotation.Nullable Integer maxRecords,
       @Nullable @jakarta.annotation.Nullable String pageToken,
+      @Nullable @jakarta.annotation.Nullable ContentKey minKey,
+      @Nullable @jakarta.annotation.Nullable ContentKey maxKey,
+      @Nullable @jakarta.annotation.Nullable ContentKey prefixKey,
+      @Nullable @jakarta.annotation.Nullable List<ContentKey> requestedKeys,
       @Nullable @jakarta.annotation.Nullable String filter,
       @Nullable @jakarta.annotation.Nullable Boolean withContent) {
-    super(maxRecords, pageToken);
+    super(maxRecords, pageToken, minKey, maxKey, prefixKey);
     this.filter = filter;
     this.withContent = withContent;
+    this.requestedKeys = requestedKeys;
   }
 
   public static EntriesParamsBuilder builder() {
@@ -71,6 +85,10 @@ public class EntriesParams extends AbstractParams<EntriesParams> {
 
   public static EntriesParams empty() {
     return builder().build();
+  }
+
+  public List<ContentKey> getRequestedKeys() {
+    return requestedKeys;
   }
 
   @Nullable
@@ -85,6 +103,14 @@ public class EntriesParams extends AbstractParams<EntriesParams> {
 
   @Override
   public EntriesParams forNextPage(String pageToken) {
-    return new EntriesParams(maxRecords(), pageToken, filter, withContent);
+    return new EntriesParams(
+        maxRecords(),
+        pageToken,
+        minKey(),
+        maxKey(),
+        prefixKey(),
+        requestedKeys,
+        filter,
+        withContent);
   }
 }

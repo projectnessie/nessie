@@ -15,12 +15,14 @@
  */
 package org.projectnessie.client.http.v1api;
 
+import java.util.Collection;
 import org.projectnessie.api.v1.params.DiffParams;
 import org.projectnessie.api.v1.params.DiffParamsBuilder;
 import org.projectnessie.client.api.GetDiffBuilder;
 import org.projectnessie.client.builder.BaseGetDiffBuilder;
 import org.projectnessie.client.http.NessieApiClient;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.DiffResponse;
 
 final class HttpGetDiff extends BaseGetDiffBuilder<DiffParams> {
@@ -44,6 +46,38 @@ final class HttpGetDiff extends BaseGetDiffBuilder<DiffParams> {
   @Override
   public GetDiffBuilder maxRecords(int maxRecords) {
     throw new UnsupportedOperationException(PAGINATION_ERROR_MESSAGE);
+  }
+
+  @Override
+  public GetDiffBuilder key(ContentKey key) {
+    throw new UnsupportedOperationException(
+        "Requesting individual keys is not supported in API v1.");
+  }
+
+  @Override
+  public GetDiffBuilder keys(Collection<ContentKey> keys) {
+    throw new UnsupportedOperationException(
+        "Requesting individual keys is not supported in API v1.");
+  }
+
+  @Override
+  public GetDiffBuilder minKey(ContentKey minKey) {
+    throw new UnsupportedOperationException("Requesting key ranges is not supported in API v1.");
+  }
+
+  @Override
+  public GetDiffBuilder maxKey(ContentKey maxKey) {
+    throw new UnsupportedOperationException("Requesting key ranges is not supported in API v1.");
+  }
+
+  @Override
+  public GetDiffBuilder prefixKey(ContentKey prefixKey) {
+    throw new UnsupportedOperationException("Requesting key prefix is not supported in API v1.");
+  }
+
+  @Override
+  public GetDiffBuilder filter(String filter) {
+    throw new UnsupportedOperationException("CEL key filter is not supported in API v1.");
   }
 
   @Override

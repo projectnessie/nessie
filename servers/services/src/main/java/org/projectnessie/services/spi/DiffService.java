@@ -17,11 +17,13 @@ package org.projectnessie.services.spi;
 
 import static org.projectnessie.api.v1.params.DiffParams.HASH_OPTIONAL_REGEX;
 
+import java.util.List;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.model.Validation;
 import org.projectnessie.versioned.NamedRef;
@@ -66,6 +68,11 @@ public interface DiffService {
       @Nullable @jakarta.annotation.Nullable String pagingToken,
       PagedResponseHandler<R, DiffEntry> pagedResponseHandler,
       Consumer<WithHash<NamedRef>> fromReference,
-      Consumer<WithHash<NamedRef>> toReference)
+      Consumer<WithHash<NamedRef>> toReference,
+      @Nullable @jakarta.annotation.Nullable ContentKey minKey,
+      @Nullable @jakarta.annotation.Nullable ContentKey maxKey,
+      ContentKey prefixKey,
+      @Nullable @jakarta.annotation.Nullable List<ContentKey> requestedKeys,
+      @Nullable @jakarta.annotation.Nullable String filter)
       throws NessieNotFoundException;
 }

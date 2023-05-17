@@ -89,7 +89,8 @@ final class ExportContents extends ExportCommon {
     long startMicors = TimeUnit.MILLISECONDS.toMicros(currentTimestampMillis());
 
     long seq = 0;
-    try (PaginationIterator<KeyEntry> entries = store.getKeys(ref.getNamedRef(), null, false)) {
+    try (PaginationIterator<KeyEntry> entries =
+        store.getKeys(ref.getNamedRef(), null, false, null, null, null, null)) {
       while (true) {
         List<KeyEntry> batch = take(exporter.contentsBatchSize(), entries);
         if (batch.isEmpty()) {

@@ -254,7 +254,7 @@ class TestTracingVersionStore {
             new TestedTracingStoreInvocation<VersionStore>("GetKeys.stream", refNotFoundThrows)
                 .tag("nessie.version-store.ref", "Hash cafe4242")
                 .function(
-                    vs -> vs.getKeys(Hash.of("cafe4242"), null, false),
+                    vs -> vs.getKeys(Hash.of("cafe4242"), null, false, null, null, null, null),
                     () -> PaginationIterator.of(ContentKey.of("hello", "world"))),
             new TestedTracingStoreInvocation<VersionStore>("GetNamedRefs.stream", runtimeThrows)
                 .function(
@@ -286,7 +286,13 @@ class TestTracingVersionStore {
                 .function(
                     vs ->
                         vs.getDiffs(
-                            BranchName.of("mock-branch"), BranchName.of("foo-branch"), null),
+                            BranchName.of("mock-branch"),
+                            BranchName.of("foo-branch"),
+                            null,
+                            null,
+                            null,
+                            null,
+                            null),
                     PaginationIterator::empty));
 
     return TestedTracingStoreInvocation.toArguments(versionStoreFunctions);

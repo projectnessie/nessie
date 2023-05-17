@@ -19,7 +19,6 @@ import static java.lang.Character.isSurrogate;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.InstanceOfAssertFactories.INTEGER;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
@@ -96,18 +95,54 @@ public class TestStoreKey {
   @ParameterizedTest
   @MethodSource("compare")
   void compare(StoreKey a, StoreKey b, int expectedCompare) {
-    assertThat(a)
+    soft.assertThat(a)
         .describedAs("Compare of %s to %s expect %d", a, b, expectedCompare)
         .extracting(k -> Integer.signum(k.compareTo(b)))
         .asInstanceOf(INTEGER)
         .isEqualTo(expectedCompare);
+    soft.assertThat(a)
+        .describedAs("Reverse compare of %s to %s expect %d", a, b, expectedCompare)
+        .extracting(k -> Integer.signum(b.compareTo(k)))
+        .asInstanceOf(INTEGER)
+        .isEqualTo(-expectedCompare);
   }
 
   static Stream<Arguments> compare() {
     return Stream.of(
+        arguments(key("M", "k2\u0001k3", "C"), key("M", "k2\u0001πa", "C"), -1), // UNICODE CHAR
         arguments(key("a"), key("a"), 0),
+        arguments(key("a"), key("aa"), -1),
+        arguments(key("a", "a"), key("a"), 1),
+        arguments(key("a", "a"), key("a", "aa"), -1),
+        arguments(key("a", "a"), key("a", "a", "a"), -1),
+        arguments(key("a", "a", "a"), key("a", "aa", "a"), -1),
+        arguments(key("a\u0001a"), key("a\u0001a"), 0),
+        arguments(key("a\u0001a"), key("aa\u0001a"), -1),
+        arguments(key("a\u0001a"), key("a\u0001a"), 0),
+        arguments(key("a\u0001a"), key("aa\u0001aa"), -1),
+        arguments(key("aπ\u0001a"), key("aπ\u0001a"), 0), // UNICODE CHAR
+        arguments(key("aπ\u0001a"), key("aπa\u0001a"), -1), // UNICODE CHAR
+        arguments(key("aπ\u0001a"), key("aπ\u0001a"), 0), // UNICODE CHAR
+        arguments(key("aπ\u0001a"), key("aπa\u0001aa"), -1), // UNICODE CHAR
+        arguments(key("aa\u0001a"), key("aπ\u0001a"), -1), // UNICODE CHAR
+        arguments(key("aa\u0001a"), key("aπa\u0001a"), -1), // UNICODE CHAR
+        arguments(key("aa\u0001a"), key("aπ\u0001a"), -1), // UNICODE CHAR
+        arguments(key("aa\u0001a"), key("aπa\u0001aa"), -1), // UNICODE CHAR
+        arguments(key("a", "a"), key("a"), 1),
+        arguments(key("a", "a"), key("a", "aa"), -1),
+        arguments(key("a", "a"), key("a", "a", "a"), -1),
+        arguments(key("a", "a", "a"), key("a", "aa", "a"), -1),
+        arguments(key("a"), key("aa"), -1),
+        arguments(key("a", "πa"), key("a"), 1), // UNICODE CHAR
+        arguments(key("a", "πa"), key("a", "πaa"), -1), // UNICODE CHAR
+        arguments(key("a", "aπ"), key("a", "aπ", "a"), -1), // UNICODE CHAR
+        arguments(key("a", "aπ", "π"), key("a", "aπ", "πa"), -1), // UNICODE CHAR
+        arguments(key("a", "aπ"), key("a", "aπ", "πa"), -1), // UNICODE CHAR
+        arguments(key("a", "aπ", "a"), key("a", "aπa", "a"), -1), // UNICODE CHAR
         arguments(key("a"), key("a", "b"), -1),
         arguments(key("a"), key("a", "a"), -1),
+        arguments(key("a"), key("aπ", "a"), -1), // UNICODE CHAR
+        arguments(key("aa"), key("aπ"), -1), // UNICODE CHAR
         arguments(key("a", "a"), key("a"), 1),
         arguments(key("a"), key("abcdef"), -1),
         arguments(key("abcdef"), key("a"), 1),
@@ -116,11 +151,53 @@ public class TestStoreKey {
         arguments(key("0"), key("0123", "123", "123"), -1),
         arguments(key("abcdef", "abc", "abc"), key("a"), 1),
         arguments(key("key.0"), key("key.1"), -1),
-        arguments(key("key.1"), key("key.0"), 1),
         arguments(key("key.42"), key("key.42"), 0),
         arguments(key("key", "0"), key("key", "1"), -1),
-        arguments(key("key", "1"), key("key", "0"), 1),
         arguments(key("key", "42"), key("key", "42"), 0));
+  }
+
+  @Test
+  void keyEndsWithElement() {
+    soft.assertThat(key("a").endsWithElement("a")).isTrue();
+    soft.assertThat(key("a", "a").endsWithElement("a")).isTrue();
+    soft.assertThat(key("a").endsWithElement("A")).isFalse();
+    soft.assertThat(key("a", "b").endsWithElement("a")).isFalse();
+    soft.assertThat(key("a", "b").endsWithElement("b")).isTrue();
+  }
+
+  @Test
+  void keyStartsWithElementsOrParts() {
+    soft.assertThat(key("a").startsWithElementsOrParts(key("a"))).isTrue();
+    soft.assertThat(key("b").startsWithElementsOrParts(key("a"))).isFalse();
+    soft.assertThat(key("b", "a").startsWithElementsOrParts(key("a"))).isFalse();
+    soft.assertThat(key("a", "b").startsWithElementsOrParts(key("a"))).isTrue();
+    soft.assertThat(key("a", "b").startsWithElementsOrParts(key("a", "b"))).isTrue();
+    soft.assertThat(key("a", "b", "c").startsWithElementsOrParts(key("a", "b"))).isTrue();
+    soft.assertThat(key("a", "b\u0001b", "c").startsWithElementsOrParts(key("a", "b"))).isTrue();
+    soft.assertThat(key("a", "b\u0001b", "c").startsWithElementsOrParts(key("a", "b\u0001b")))
+        .isTrue();
+    soft.assertThat(
+            key("a", "b\u0001b\u0001b", "c").startsWithElementsOrParts(key("a", "b\u0001b")))
+        .isTrue();
+    soft.assertThat(key("a", "bb\u0001b", "c").startsWithElementsOrParts(key("a", "b"))).isFalse();
+    soft.assertThat(key("a", "bb", "c").startsWithElementsOrParts(key("a", "b"))).isFalse();
+    soft.assertThat(key("a", "a\u0001b", "c").startsWithElementsOrParts(key("a", "b"))).isFalse();
+    soft.assertThat(key("a", "bπ\u0001b", "c").startsWithElementsOrParts(key("a", "b")))
+        .isFalse(); // UNICODE CHAR
+    soft.assertThat(key("a", "bπ", "c").startsWithElementsOrParts(key("a", "b")))
+        .isFalse(); // UNICODE CHAR
+    soft.assertThat(key("a", "bπ\u0001b", "c").startsWithElementsOrParts(key("a", "bπ")))
+        .isTrue(); // UNICODE CHAR
+    soft.assertThat(key("a", "bπ", "c").startsWithElementsOrParts(key("a", "bπ")))
+        .isTrue(); // UNICODE CHAR
+    soft.assertThat(key("a", "πb\u0001b", "c").startsWithElementsOrParts(key("a", "π")))
+        .isFalse(); // UNICODE CHAR
+    soft.assertThat(key("a", "πb", "c").startsWithElementsOrParts(key("a", "π")))
+        .isFalse(); // UNICODE CHAR
+    soft.assertThat(key("a", "πb\u0001b", "c").startsWithElementsOrParts(key("a", "πb")))
+        .isTrue(); // UNICODE CHAR
+    soft.assertThat(key("a", "πb", "c").startsWithElementsOrParts(key("a", "πb")))
+        .isTrue(); // UNICODE CHAR
   }
 
   @Test

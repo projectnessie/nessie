@@ -31,6 +31,7 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -391,7 +392,7 @@ public class PersistVersionStore implements VersionStore {
   @Override
   public PaginationIterator<ReferenceInfo<CommitMeta>> getNamedRefs(
       GetNamedRefsParams params, String pagingToken) throws ReferenceNotFoundException {
-    checkArgument(pagingToken == null, "Paging not supported");
+    checkArgument(pagingToken == null, "Paging not supported by the storage model in use");
 
     @SuppressWarnings("MustBeClosedChecker")
     Stream<ReferenceInfo<ByteString>> source = databaseAdapter.namedRefs(params);
@@ -401,12 +402,12 @@ public class PersistVersionStore implements VersionStore {
         namedRef -> namedRef.withUpdatedCommitMeta(commitMetaFromReference(namedRef))) {
       @Override
       protected String computeTokenForCurrent() {
-        throw new IllegalArgumentException("Paging not supported");
+        throw new IllegalArgumentException("Paging not supported by the storage model in use");
       }
 
       @Override
       public String tokenForEntry(ReferenceInfo<CommitMeta> entry) {
-        throw new IllegalArgumentException("Paging not supported");
+        throw new IllegalArgumentException("Paging not supported by the storage model in use");
       }
 
       @Override
@@ -523,9 +524,19 @@ public class PersistVersionStore implements VersionStore {
   }
 
   @Override
-  public PaginationIterator<KeyEntry> getKeys(Ref ref, String pagingToken, boolean withContent)
+  public PaginationIterator<KeyEntry> getKeys(
+      Ref ref,
+      String pagingToken,
+      boolean withContent,
+      ContentKey minKey,
+      ContentKey maxKey,
+      ContentKey prefixKey,
+      Predicate<ContentKey> contentKeyPredicate)
       throws ReferenceNotFoundException {
-    checkArgument(pagingToken == null, "Paging not supported");
+    checkArgument(pagingToken == null, "Paging not supported by the storage model in use");
+    checkArgument(
+        minKey == null && maxKey == null && prefixKey == null,
+        "Key ranges not supported by the storage model in use");
     Hash hash = refToHash(ref);
 
     @SuppressWarnings("MustBeClosedChecker")
@@ -559,12 +570,12 @@ public class PersistVersionStore implements VersionStore {
         }) {
       @Override
       protected String computeTokenForCurrent() {
-        throw new IllegalArgumentException("Paging not supported");
+        throw new IllegalArgumentException("Paging not supported by the storage model in use");
       }
 
       @Override
       public String tokenForEntry(KeyEntry entry) {
-        throw new IllegalArgumentException("Paging not supported");
+        throw new IllegalArgumentException("Paging not supported by the storage model in use");
       }
 
       @Override
@@ -592,15 +603,27 @@ public class PersistVersionStore implements VersionStore {
   }
 
   @Override
-  public PaginationIterator<Diff> getDiffs(Ref from, Ref to, String pagingToken)
+  public PaginationIterator<Diff> getDiffs(
+      Ref from,
+      Ref to,
+      String pagingToken,
+      ContentKey minKey,
+      ContentKey maxKey,
+      ContentKey prefixKey,
+      Predicate<ContentKey> contentKeyPredicate)
       throws ReferenceNotFoundException {
-    checkArgument(pagingToken == null, "Paging not supported");
+    checkArgument(pagingToken == null, "Paging not supported by the storage model in use");
+    checkArgument(
+        minKey == null && maxKey == null && prefixKey == null,
+        "Key ranges not supported by the storage model in use");
     Hash fromHash = refToHash(from);
     Hash toHash = refToHash(to);
 
     @SuppressWarnings("MustBeClosedChecker")
     Stream<Difference> source =
         databaseAdapter.diff(fromHash, toHash, KeyFilterPredicate.ALLOW_ALL);
+
+    Predicate<ContentKey> keyPred = contentKeyPredicate != null ? contentKeyPredicate : x -> true;
 
     return new FilteringPaginationIterator<Difference, Diff>(
         source.iterator(),
@@ -616,15 +639,16 @@ public class PersistVersionStore implements VersionStore {
                     .map(
                         v ->
                             STORE_WORKER.valueFromStore(
-                                d.getPayload(), v, () -> d.getGlobal().orElse(null))))) {
+                                d.getPayload(), v, () -> d.getGlobal().orElse(null)))),
+        d -> keyPred.test(d.getKey())) {
       @Override
       protected String computeTokenForCurrent() {
-        throw new IllegalArgumentException("Paging not supported");
+        throw new IllegalArgumentException("Paging not supported by the storage model in use");
       }
 
       @Override
       public String tokenForEntry(Diff entry) {
-        throw new IllegalArgumentException("Paging not supported");
+        throw new IllegalArgumentException("Paging not supported by the storage model in use");
       }
 
       @Override

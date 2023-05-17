@@ -16,7 +16,15 @@
 package org.projectnessie.services.impl;
 
 import static java.util.Collections.singletonList;
+import static org.projectnessie.services.cel.CELUtil.CONTAINER;
+import static org.projectnessie.services.cel.CELUtil.CONTENT_KEY_DECLARATIONS;
+import static org.projectnessie.services.cel.CELUtil.CONTENT_KEY_TYPES;
+import static org.projectnessie.services.cel.CELUtil.SCRIPT_HOST;
+import static org.projectnessie.services.cel.CELUtil.VAR_KEY;
+import static org.projectnessie.services.cel.CELUtil.forCel;
 
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
 import java.security.Principal;
 import java.time.Instant;
 import java.util.HashMap;
@@ -26,10 +34,14 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.IntFunction;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
+import org.projectnessie.cel.tools.Script;
+import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.BatchAccessChecker;
@@ -62,6 +74,37 @@ public abstract class BaseApiImpl {
     this.store = store;
     this.authorizer = authorizer;
     this.principal = principal;
+  }
+
+  /**
+   * Produces the filter predicate for content-key filtering.
+   *
+   * @param filter The content-key filter expression, if not empty
+   */
+  static Predicate<ContentKey> filterOnContentKey(String filter) {
+    if (Strings.isNullOrEmpty(filter)) {
+      return x -> true;
+    }
+
+    final Script script;
+    try {
+      script =
+          SCRIPT_HOST
+              .buildScript(filter)
+              .withContainer(CONTAINER)
+              .withDeclarations(CONTENT_KEY_DECLARATIONS)
+              .withTypes(CONTENT_KEY_TYPES)
+              .build();
+    } catch (ScriptException e) {
+      throw new IllegalArgumentException(e);
+    }
+    return key -> {
+      try {
+        return script.execute(Boolean.class, ImmutableMap.of(VAR_KEY, forCel(key)));
+      } catch (ScriptException e) {
+        throw new RuntimeException(e);
+      }
+    };
   }
 
   WithHash<NamedRef> namedRefWithHashOrThrow(

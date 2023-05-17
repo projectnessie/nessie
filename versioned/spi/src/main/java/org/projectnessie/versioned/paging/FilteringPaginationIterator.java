@@ -28,6 +28,7 @@ public abstract class FilteringPaginationIterator<S, T> extends AbstractIterator
   private final Function<S, T> mapper;
 
   private final Predicate<S> sourcePredicate;
+  private final Predicate<S> stopPredicate;
   private S current;
 
   public FilteringPaginationIterator(Iterator<S> base, Function<S, T> mapper) {
@@ -36,9 +37,18 @@ public abstract class FilteringPaginationIterator<S, T> extends AbstractIterator
 
   public FilteringPaginationIterator(
       Iterator<S> base, Function<S, T> mapper, Predicate<S> sourcePredicate) {
+    this(base, mapper, sourcePredicate, x -> false);
+  }
+
+  public FilteringPaginationIterator(
+      Iterator<S> base,
+      Function<S, T> mapper,
+      Predicate<S> sourcePredicate,
+      Predicate<S> stopPredicate) {
     this.base = base;
     this.mapper = mapper;
     this.sourcePredicate = sourcePredicate;
+    this.stopPredicate = stopPredicate;
   }
 
   @Override
@@ -50,6 +60,10 @@ public abstract class FilteringPaginationIterator<S, T> extends AbstractIterator
         return null;
       }
       S source = base.next();
+      if (stopPredicate.test(source)) {
+        endOfData();
+        return null;
+      }
       if (!sourcePredicate.test(source)) {
         continue;
       }

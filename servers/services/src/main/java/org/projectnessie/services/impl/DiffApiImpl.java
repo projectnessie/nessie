@@ -19,10 +19,14 @@ import static java.util.Collections.singleton;
 import static org.projectnessie.services.authz.Check.canReadContentKey;
 import static org.projectnessie.services.authz.Check.canViewReference;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import java.security.Principal;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
@@ -61,7 +65,12 @@ public class DiffApiImpl extends BaseApiImpl implements DiffService {
       String pagingToken,
       PagedResponseHandler<R, DiffEntry> pagedResponseHandler,
       Consumer<WithHash<NamedRef>> fromReference,
-      Consumer<WithHash<NamedRef>> toReference)
+      Consumer<WithHash<NamedRef>> toReference,
+      ContentKey minKey,
+      ContentKey maxKey,
+      ContentKey prefixKey,
+      List<ContentKey> requestedKeys,
+      String filter)
       throws NessieNotFoundException {
     WithHash<NamedRef> from = namedRefWithHashOrThrow(fromRef, fromHash);
     WithHash<NamedRef> to = namedRefWithHashOrThrow(toRef, toHash);
@@ -73,8 +82,28 @@ public class DiffApiImpl extends BaseApiImpl implements DiffService {
     startAccessCheck().canViewReference(fromNamedRef).canViewReference(toNamedRef).checkAndThrow();
 
     try {
+      Predicate<ContentKey> contentKeyPredicate = null;
+      if (requestedKeys != null && !requestedKeys.isEmpty()) {
+        contentKeyPredicate = new HashSet<>(requestedKeys)::contains;
+      }
+      if (!Strings.isNullOrEmpty(filter)) {
+        Predicate<ContentKey> filterPredicate = filterOnContentKey(filter);
+        contentKeyPredicate =
+            contentKeyPredicate != null
+                ? contentKeyPredicate.and(filterPredicate)
+                : filterPredicate;
+      }
+
       try (PaginationIterator<Diff> diffs =
-          getStore().getDiffs(from.getHash(), to.getHash(), pagingToken)) {
+          getStore()
+              .getDiffs(
+                  from.getHash(),
+                  to.getHash(),
+                  pagingToken,
+                  minKey,
+                  maxKey,
+                  prefixKey,
+                  contentKeyPredicate)) {
 
         AuthzPaginationIterator<Diff> authz =
             new AuthzPaginationIterator<Diff>(
@@ -109,6 +138,7 @@ public class DiffApiImpl extends BaseApiImpl implements DiffService {
         while (authz.hasNext()) {
           Diff diff = authz.next();
           ContentKey key = ContentKey.of(diff.getKey().getElements());
+
           DiffEntry entry =
               DiffEntry.diffEntry(
                   key, diff.getFromValue().orElse(null), diff.getToValue().orElse(null));
