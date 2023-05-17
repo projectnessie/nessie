@@ -38,7 +38,7 @@ quarkusNativeBuilderImage = "quay.io/quarkus/ubi-quarkus-mandrel-builder-image:2
 rocksdb = "8.1.1.1"
 slf4j = "1.7.36"
 testcontainers = "1.18.1"
-undertow = "2.2.19.Final"
+undertow = "2.3.6.Final"
 
 [bundles]
 # Bundles serve two purposes:
