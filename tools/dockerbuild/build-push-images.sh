@@ -18,19 +18,15 @@
 #
 # Helper script to generate all Docker images for a release (and snapshot publishing).
 # The produced Docker images are:
-#   native linux/amd64
-#     with tags: <version>-native, latest-native
 #   Java (Quarkus fast-jar) multiplatform
 #     with tags: <version>-java, <version>, latest-java, latest
 # The list if generated images is placed into the file passed in via the -i option.
-# The generated native binary is placed into the directory passed in via the -r option.
 #
 
 set -e
 
 IMAGE_NAME=""
 GITHUB=0
-NATIVE=0
 ARTIFACTS=""
 GRADLE_PROJECT=""
 PROJECT_DIR=""
@@ -46,8 +42,7 @@ function usage() {
       -g | --gradle-project <project>   Gradle project name, for example :nessie-quarkus
       -p | --project-dir <dir>          Directory of the Gradle project
       -gh | --github                    GitHub actions mode
-      -n | --native                     Build the Docker native image
-      -a | --artifacts-dir <dir>        Directory to place native binaries and uber-jars in
+      -a | --artifacts-dir <dir>        Directory to place uber-jars in
 
   GitHub mode is automatically enabled, when GITHUB_ENV is present. -a is mandatory in GitHub mode.
 
@@ -81,9 +76,6 @@ while [[ $# -gt 0 ]]; do
   -a | --artifacts-dir)
     ARTIFACTS="$2"
     shift
-    ;;
-  -n | --native)
-    NATIVE=1
     ;;
   -gh | --github)
     GITHUB=1
@@ -149,36 +141,6 @@ gh_endgroup
 gh_group "Docker buildx info"
 docker buildx inspect
 gh_endgroup
-
-#
-# Native amd64 image
-#
-
-if [[ ${NATIVE} == 1 ]] ; then
-  gh_group "Build native image"
-  ./gradlew "${GRADLE_PROJECT}:clean" "${GRADLE_PROJECT}:quarkusBuild" -Pnative
-  # Save the native runner binary in case we're publishing it
-  cp "${PROJECT_DIR}"/build/*-runner "${ARTIFACTS}"
-  gh_endgroup
-
-  gh_group "Docker buildx build"
-  NATIVE_PLATFORM="linux/amd64"
-  docker buildx build \
-    -f "${BASE_DIR}/tools/dockerbuild/docker/Dockerfile-native" \
-    --platform "${NATIVE_PLATFORM}" \
-    -t "${IMAGE_NAME}:latest-native" \
-    -t "${IMAGE_NAME}:${IMAGE_TAG_BASE}-native" \
-    "${BASE_DIR}/${PROJECT_DIR}" \
-    --push \
-    --provenance=false --sbom=false \
-    --output type=registry
-    # Note: '--output type=registry' is needed to be able to push to a local registry (e.g. localhost:5000)
-    # Note: '--provenance=false --sbom=false' work around UI issues in ghcr + quay showing 'unknown/unknown' architectures
-  gh_summary "## Native image tags, built for ${NATIVE_PLATFORM}"
-  gh_summary "* \`docker pull ${IMAGE_NAME}:latest-native\`"
-  gh_summary "* \`docker pull ${IMAGE_NAME}:${IMAGE_TAG_BASE}-native\`"
-  gh_endgroup
-fi
 
 #
 # Java multiplatform image

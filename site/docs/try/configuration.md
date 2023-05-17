@@ -235,11 +235,7 @@ Quarkus specific settings are passed using the standard Java `-D` option to set 
 
 ## Nessie Docker image types
 
-Nessie publishes a Java based multiplatform (for amd64, arm64, ppc64le, s390x) image running on
-OpenJDK 17 and a native binary image (amd64 only). The native binary image should only be used when
-the Nessie server is run for a very short time, when the longer startup time of a Java application
-is a real issue (Lambda-ish architectures with nearly no keep-alive time). Otherwise, always prefer
-the Java images.
+Nessie publishes a Java based multiplatform (for amd64, arm64, ppc64le, s390x) image running on OpenJDK 17.
 
 ## Advanced Docker image tuning (Java images only)
 

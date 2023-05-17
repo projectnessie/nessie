@@ -85,8 +85,6 @@ jobs:
         ref: refs/tags/${{ github.event.inputs.releaseTag }}
     - name: Setup runner
       uses: ./.github/actions/setup-runner
-      with:
-        more-memory: 'true'
     - name: Setup Java, Gradle
       uses: ./.github/actions/dev-tool-java
       with:
@@ -144,7 +142,6 @@ jobs:
 
         echo "QUARKUS_UBER_JAR=${ARTIFACTS}/nessie-quarkus-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
         echo "CLI_UBER_JAR=${ARTIFACTS}/nessie-quarkus-cli-${RELEASE_VERSION}-runner.jar" >> ${GITHUB_ENV}
-        echo "QUARKUS_NATIVE_BINARY=${ARTIFACTS}/nessie-quarkus-${RELEASE_VERSION}-runner" >> ${GITHUB_ENV}
         echo "GC_EXEC=gc/gc-tool/build/executable/nessie-gc-${RELEASE_VERSION}" >> ${GITHUB_ENV}
         echo "NESSIE_OPENAPI=api/model/build/nessie-openapi-${RELEASE_VERSION}.yaml" >> ${GITHUB_ENV}
 
@@ -210,7 +207,6 @@ jobs:
 
         git log --perl-regexp --author '^(?!.*renovate|.*nessie-release-workflow).*$' --format='format:* %s' ${LAST_TAG}..${GIT_TAG} | grep -v '^\* \[release\] .*$' > ${DIR}/release-log
 
-        Q_NATIVE_URL="https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-quarkus-${RELEASE_VERSION}-runner"
         Q_GC_EXEC="https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-gc-${RELEASE_VERSION}"
         Q_UBER_URL="https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-quarkus-${RELEASE_VERSION}-runner.jar"
         Q_HELM_CHART_URL="https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-helm-${RELEASE_VERSION}.tgz"
@@ -222,15 +218,11 @@ jobs:
         * ${NUM_COMMITS} commits since ${LAST_TAG#nessie-}
         * Maven Central: https://search.maven.org/search?q=g:org.projectnessie+v:${RELEASE_VERSION}
         * Docker images: https://github.com/projectnessie/nessie/pkgs/container/nessie and https://quay.io/repository/projectnessie/nessie?tab=tags
-          * Multiplatform Java image (amd64, arm64, ppc64le, s390x): \`docker pull ghcr.io/projectnessie/nessie:${RELEASE_VERSION}-java\`
-          * Image with native amd64 binary: \`docker pull ghcr.io/projectnessie/nessie:${RELEASE_VERSION}-native\`
-            (only recommended for short running Nessie instances, amd64 only)
+          It is a multiplatform Java image (amd64, arm64, ppc64le, s390x): \`docker pull ghcr.io/projectnessie/nessie:${RELEASE_VERSION}-java\`
         * PyPI: https://pypi.org/project/pynessie/${RELEASE_VERSION}/
         * Helm Chart repo: https://charts.projectnessie.org/
 
         ## Try it
-
-        The attached executable file [\`nessie-quarkus-${RELEASE_VERSION}-runner\`](${Q_NATIVE_URL}) is a x86-64 native binary image and only works on compatible Linux environments.
 
         The attached [\`nessie-quarkus-${RELEASE_VERSION}-runner.jar\`](${Q_UBER_URL}) is a standalone uber-jar file that runs on Java 11 or newer and it is also available via [Maven Central](${Q_MC_URL}). Download and run it (requires Java 11):
         \`\`\`
@@ -261,7 +253,6 @@ jobs:
         gh release create ${GIT_TAG} \
           --notes-file ${{ env.NOTES_FILE }} \
           --title "Nessie ${RELEASE_VERSION}" \
-          "${QUARKUS_NATIVE_BINARY}" \
           "${QUARKUS_UBER_JAR}" \
           "${CLI_UBER_JAR}" \
           "${GC_EXEC}" \

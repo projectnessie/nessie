@@ -118,14 +118,9 @@ val pullOpenApiSpec by
   }
 
 val openApiSpecDir = buildDir.resolve("openapi-extra")
-val useNative = project.hasProperty("native")
 
 quarkus {
   quarkusBuildProperties.put("quarkus.package.type", quarkusPackageType())
-  quarkusBuildProperties.put(
-    "quarkus.native.builder-image",
-    libs.versions.quarkusNativeBuilderImage.get()
-  )
   quarkusBuildProperties.put(
     "quarkus.smallrye-openapi.store-schema-directory",
     buildDir.resolve("openapi").toString()
@@ -145,9 +140,6 @@ val quarkusBuild =
   }
 
 tasks.withType<Test>().configureEach {
-  if (project.hasProperty("native")) {
-    systemProperty("native.image.path", quarkusBuild.get().nativeRunner)
-  }
   systemProperty(
     "it.nessie.container.postgres.tag",
     System.getProperty("it.nessie.container.postgres.tag", libs.versions.postgresContainerTag.get())

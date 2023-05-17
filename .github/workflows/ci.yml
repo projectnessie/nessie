@@ -421,7 +421,6 @@ jobs:
     outputs:
       # Each "conditional" job has a mapped output here, also a "non-PR" case and a "PR" case
       # with label and globs (at the end of the script).
-      native: ${{ steps.determine.outputs.native }}
       docker: ${{ steps.determine.outputs.docker }}
       nesqueit: ${{ steps.determine.outputs.nesqueit }}
       helm: ${{ steps.determine.outputs.helm }}
@@ -492,7 +491,6 @@ jobs:
               core.info("Not a pull-request, enabling all jobs.");
 
               // Yield default values for all event payload types, except pull_request
-              core.setOutput('native', true);
               core.setOutput('docker', true);
               core.setOutput('nesqueit', false); // handled in a scheduled job
               core.setOutput('helm', true);
@@ -510,12 +508,6 @@ jobs:
 
             // Retrieves the full list of changed files for the PR.
             const changedFiles = await getChangedFiles(pr);
-
-            core.startGroup('PR job check / Quarkus intTest native');
-            core.setOutput('native', checkLabelOrGlobs(pr, changedFiles,
-              'pr-native',
-              ['gradle/wrapper/**', 'servers/**', '.github/**']));
-            core.endGroup();
 
             core.startGroup('PR job check / Docker');
             core.setOutput('docker', checkLabelOrGlobs(pr, changedFiles,
@@ -535,52 +527,6 @@ jobs:
               ['helm/**', '.github/**']));
             core.endGroup();
 
-  native-quarkus:
-    name: CI intTest Quarkus native
-    runs-on: ubuntu-22.04
-    needs:
-      - determine-jobs
-    if: needs.determine-jobs.outputs.native == 'true'
-    steps:
-      - uses: actions/checkout@v3.5.2
-      - name: Setup runner
-        uses: ./.github/actions/setup-runner
-        with:
-          more-memory: 'true'
-      - name: Setup Java, Gradle
-        uses: ./.github/actions/dev-tool-java
-
-      - name: Prepare Gradle build cache
-        uses: ./.github/actions/ci-incr-build-cache-prepare
-
-      - name: Gradle / intTest Quarkus native
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: :nessie-quarkus:intTest -Pnative --scan
-
-      - name: Dump quarkus.log
-        if: ${{ failure() }}
-        run: |
-          find . -path "**/build/quarkus.log" | while read ql ; do
-            echo "::group::Quarkus build log $ql"
-            cat $ql
-            echo "::endgroup::"
-          done
-
-      - name: Capture Test Reports
-        uses: actions/upload-artifact@v3
-        if: ${{ failure() }}
-        with:
-          name: ci-inttest-quarkus-native-reports
-          path: |
-            **/build/quarkus.log
-            **/build/reports/*
-            **/build/test-results/*
-          retention-days: 7
-
-      # A "native" build doesn't produce any meaningful build-cache artifacts that would not
-      # be produced by other jobs in this workflow.
-
   docker-testing:
     name: CI Docker build and publishing
     runs-on: ubuntu-22.04
@@ -594,8 +540,6 @@ jobs:
           fetch-depth: 0
       - name: Setup runner
         uses: ./.github/actions/setup-runner
-        with:
-          more-memory: 'true'
       - name: Setup Java, Gradle
         uses: ./.github/actions/dev-tool-java
 
@@ -654,7 +598,6 @@ jobs:
             -a "${ARTIFACTS}" \
             -g ":nessie-quarkus" \
             -p "servers/quarkus-server" \
-            -n \
             ${DOCKER_IMAGE}
           rm -rf "${ARTIFACTS}"
 
@@ -667,9 +610,7 @@ jobs:
         run: |
           docker pull ${DOCKER_IMAGE}:latest
           docker pull ${DOCKER_IMAGE}:latest-java
-          docker pull ${DOCKER_IMAGE}:latest-native
           docker pull ${DOCKER_IMAGE}:${DOCKER_VERSION}
-          docker pull ${DOCKER_IMAGE}:${DOCKER_VERSION}-native
           docker pull ${DOCKER_IMAGE}:${DOCKER_VERSION}-java
           cat <<! >> $GITHUB_STEP_SUMMARY
           ## Docker images
@@ -678,31 +619,6 @@ jobs:
           $(docker images)
           \`\`\`
           !
-
-      - name: Check if Docker native image works
-        run: |
-          docker run --detach --name nessie ${DOCKER_IMAGE}:latest-native
-          echo "Let native Nessie Docker image run for one minute (to make sure it starts up fine)..."
-          for i in {1..60}; do
-            STATUS="$(docker container inspect nessie | jq -r '.[0].State.Status')"
-            if [[ ${STATUS} != "running" ]] ; then
-              echo "Nessie native Docker image stopped on its own ... a bug?" > /dev/stderr
-              docker logs nessie
-              cat <<! >> $GITHUB_STEP_SUMMARY
-              ## Nessie native Docker image FAILED
-
-              \`\`\`
-              $(docker logs nessie)
-              \`\`\`
-          !
-              exit 1
-            fi
-            sleep 1
-          done
-          echo "## Nessie native Docker image smoke test: PASSED" >> $GITHUB_STEP_SUMMARY  
-          echo "Nessie native Docker image smoke test: PASSED"
-          docker stop nessie
-          docker rm nessie
 
       - name: Check if Docker Java image works
         run: |
@@ -970,7 +886,7 @@ jobs:
     if: github.event_name == 'push'
     needs:
       # Only include jobs that use Nessie's Gradle cache, especially excluding NesQuEIT, which
-      # is a "very special" citizen and also not run for "main" CI, and Quarkus/native, which does
+      # is a "very special" citizen and also not run for "main" CI, which does
       # not add anything to the Gradle cache that's not already produced by other jobs.
       - code-checks
       - test
