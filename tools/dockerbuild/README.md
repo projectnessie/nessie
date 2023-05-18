@@ -22,7 +22,6 @@ example (see local Docker registry notes below):
 tools/dockerbuild/build-push-images.sh \
   -g :nessie-quarkus \
   -p servers/quarkus-server \
-  -n \
   localhost:5000/projectnessie/nessie-local
 ```
 
