@@ -109,13 +109,13 @@ Nessie Iceberg's integration is compatible with Iceberg as in the following tabl
 
 | Nessie version | Iceberg version | Spark version                                                        | Hive version | Flink version          | Presto version        |
 |----------------|-----------------|----------------------------------------------------------------------|--------------|------------------------|-----------------------|
-| 0.58.1         | 1.2.0           | 3.1.x (Scala 2.12), 3.2.x (Scala 2.12+2.13), 3.3.x (Scala 2.12+2.13) | n/a          | 1.14.x, 1.15.x, 1.16.x | 0.277, 0.278.x, 0.279 |
+| 0.59.0         | 1.2.0           | 3.1.x (Scala 2.12), 3.2.x (Scala 2.12+2.13), 3.3.x (Scala 2.12+2.13) | n/a          | 1.14.x, 1.15.x, 1.16.x | 0.277, 0.278.x, 0.279 |
 
 Nessie Delta Lake's integration is compatible with Delta Lake as in the following table:
 
 | Nessie version | Delta Lake version              | Spark version | 
 |----------------|---------------------------------|---------------|
-| 0.58.1         | [Custom](#delta-lake-artifacts) | 3.2.X         |
+| 0.59.0         | [Custom](#delta-lake-artifacts) | 3.2.X         |
 
 #### Delta Lake artifacts
 

@@ -2,6 +2,11 @@
 History
 =======
 
+0.59.0 (2023-05-18)
+-------------------
+
+* See release notes and changelog on GitHub: https://github.com/projectnessie/nessie/releases/tag/nessie-0.59.0
+
 0.58.1 (2023-04-19)
 -------------------
 
