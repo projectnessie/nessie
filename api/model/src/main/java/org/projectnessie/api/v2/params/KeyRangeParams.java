@@ -32,6 +32,7 @@ public abstract class KeyRangeParams<IMPL extends KeyRangeParams<IMPL>>
       description = KEY_MIN_PARAMETER_DESCRIPTION,
       examples = @ExampleObject(ref = "ContentKeyGet"))
   @QueryParam("min-key")
+  @jakarta.ws.rs.QueryParam("min-key")
   @Nullable
   @jakarta.annotation.Nullable
   private ContentKey minKey;
@@ -40,6 +41,7 @@ public abstract class KeyRangeParams<IMPL extends KeyRangeParams<IMPL>>
       description = KEY_MAX_PARAMETER_DESCRIPTION,
       examples = @ExampleObject(ref = "ContentKeyGet"))
   @QueryParam("max-key")
+  @jakarta.ws.rs.QueryParam("max-key")
   @Nullable
   @jakarta.annotation.Nullable
   private ContentKey maxKey;
@@ -48,6 +50,7 @@ public abstract class KeyRangeParams<IMPL extends KeyRangeParams<IMPL>>
       description = KEY_PREFIX_PARAMETER_DESCRIPTION,
       examples = @ExampleObject(ref = "ContentKeyGet"))
   @QueryParam("prefix-key")
+  @jakarta.ws.rs.QueryParam("prefix-key")
   @Nullable
   @jakarta.annotation.Nullable
   private ContentKey prefixKey;
