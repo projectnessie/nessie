@@ -94,10 +94,6 @@ val allLoadedProjects = mutableListOf<ProjectDescriptor>()
 gradle.beforeProject {
   version = baseVersion
   group = checkNotNull(projectPathToGroupId[path]) { "No groupId for project $path" }
-
-  if (path.startsWith(":pom-relocations")) {
-    setupRelocationProject(this)
-  }
 }
 
 fun nessieProject(name: String, groupId: String, directory: File): ProjectDescriptor {
@@ -193,71 +189,11 @@ if (!System.getProperty("nessie.integrationsTesting.enable").toBoolean()) {
     }
   }
 
-  projectPathToGroupId[":pom-relocations"] = "org.projectnessie"
-  allLoadedProjects
-    .filter {
-      !it.name.startsWith("nessie-versioned-storage") && !it.name.startsWith("nessie-events")
-    }
-    .forEach { projectDescriptor ->
-      val projectDir = "pom-relocations/${projectDescriptor.name}"
-      val projectPath = ":pom-relocations:${projectDescriptor.name}"
-      include(projectPath)
-      val p = project(projectPath)
-      p.name = projectDescriptor.name
-      p.projectDir = rootDir.resolve(projectDir)
-
-      projectPathToGroupId[projectPath] = "org.projectnessie"
-    }
-
   gradle.beforeProject {
     if (noSourceChecksProjects.contains(this.path)) {
       project.extra["duplicated-project-sources"] = true
     }
   }
 }
-
-/** Setup projects to create relocation-poms. */
-fun setupRelocationProject(project: Project) =
-  project.run {
-    val newProjectPath = if (project.name == "pom-relocations") ":" else ":${project.name}"
-
-    apply<MavenPublishPlugin>()
-    apply<SigningPlugin>()
-    configure<PublishingExtension> {
-      publications {
-        register<MavenPublication>("maven") {
-          groupId = "org.projectnessie"
-          if (project.name == "pom-relocations") {
-            artifactId = "nessie"
-          }
-          version = project.version.toString()
-
-          pom {
-            withXml {
-              asNode().appendNode("parent").run {
-                appendNode("groupId", groupIdMain)
-                appendNode("artifactId", "nessie")
-                appendNode("version", project.version.toString())
-              }
-            }
-
-            distributionManagement {
-              relocation { groupId.set(projectPathToGroupId[newProjectPath]!!) }
-            }
-          }
-        }
-      }
-    }
-
-    if (project.hasProperty("release")) {
-      configure<SigningExtension> {
-        val signingKey: String? by project
-        val signingPassword: String? by project
-        useInMemoryPgpKeys(signingKey, signingPassword)
-        val publishing = project.extensions.getByType(PublishingExtension::class.java)
-        afterEvaluate { sign(publishing.publications.getByName("maven")) }
-      }
-    }
-  }
 
 rootProject.name = "nessie"
