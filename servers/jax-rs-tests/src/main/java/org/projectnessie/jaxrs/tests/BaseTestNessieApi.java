@@ -213,6 +213,10 @@ public abstract class BaseTestNessieApi {
             NessieConfiguration::getDefaultBranch, NessieConfiguration::getMaxSupportedApiVersion)
         .containsExactly("main", 2);
 
+    if (isV2()) {
+      soft.assertThat(config.getNoAncestorHash()).isNotNull();
+    }
+
     soft.assertThat(api().getDefaultBranch())
         .extracting(Branch::getName, Branch::getHash)
         .containsExactly(config.getDefaultBranch(), EMPTY);
