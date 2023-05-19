@@ -19,7 +19,7 @@ runs:
         echo "Available storage:"
         df -h
         echo
-    - name: Add 8G more swap for native-image build
+    - name: Add 8G more swap
       if: ${{ inputs.more-memory != 'false' }}
       shell: bash
       run: |

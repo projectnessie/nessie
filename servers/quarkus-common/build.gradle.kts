@@ -66,8 +66,6 @@ dependencies {
   compileOnly(libs.jakarta.validation.api)
   compileOnly(libs.javax.validation.api)
 
-  compileOnly(libs.graalvm.nativeimage.svm)
-
   compileOnly(platform(libs.jackson.bom))
   compileOnly(libs.jackson.annotations)
 

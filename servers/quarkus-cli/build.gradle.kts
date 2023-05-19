@@ -102,8 +102,7 @@ tasks.withType<ProcessResources>().configureEach {
   }
 }
 
-// nessie-quarkus-cli module needs to be adopted before we can generate a native runner
-val packageType = quarkusNonNativePackageType()
+val packageType = quarkusPackageType()
 
 quarkus { quarkusBuildProperties.put("quarkus.package.type", packageType) }
 

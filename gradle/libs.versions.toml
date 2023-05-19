@@ -34,7 +34,6 @@ postgresContainerTag = "14"
 protobuf = "3.23.1"
 quarkus = "2.16.7.Final"
 quarkusLoggingSentry = "2.0.1"
-quarkusNativeBuilderImage = "quay.io/quarkus/ubi-quarkus-mandrel-builder-image:22.3-java17"
 rocksdb = "8.1.1.1"
 slf4j = "1.7.36"
 testcontainers = "1.18.1"
@@ -107,7 +106,6 @@ errorprone-slf4j = { module = "jp.skypencil.errorprone.slf4j:errorprone-slf4j", 
 findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version = "3.0.2" }
 gatling-charts-highcharts = { module = "io.gatling.highcharts:gatling-charts-highcharts", version.ref = "gatling" }
 google-java-format = { module = "com.google.googlejavaformat:google-java-format", version.ref = "googleJavaFormat" }
-graalvm-nativeimage-svm = { module = "org.graalvm.nativeimage:svm", version = "22.3.2" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
 h2 = { module = "com.h2database:h2", version = "2.1.214" }
 hadoop-aws = { module = "org.apache.hadoop:hadoop-aws", version.ref = "hadoop" }

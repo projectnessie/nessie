@@ -65,21 +65,11 @@ jobs:
       with:
         arguments: buildToolsIntegrationTest
 
-    - name: Gradle / integration test native
-      uses: gradle/gradle-build-action@v2
-      with:
-        arguments: |
-          --no-daemon
-          :nessie-quarkus:quarkusBuild
-          :nessie-quarkus:intTest
-          -Pnative
-          --scan
-
     - name: Capture Test Reports
       uses: actions/upload-artifact@v3
       if: ${{ failure() }}
       with:
-        name: test-results-native
+        name: test-results
         path: |
           **/build/reports/*
           **/build/test-results/*

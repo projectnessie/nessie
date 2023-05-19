@@ -89,9 +89,9 @@ which exposes a set of [REST APIs](../develop/rest.md) and a simple browser UI. 
 libraries to expose Nessie's version control capabilities to common data management technologies.
 
 Nessie was built as a Cloud native technology and is designed to be highly scalable, 
-[performant](../develop/kernel.md) and resilient. Built 
-on Java and leveraging [Quarkus](https://quarkus.io/), it is compiled to a GraalVM native image 
-that starts in less than 20ms. This makes Nessie work very well in Docker and FaaS environments. 
+[performant](../develop/kernel.md) and resilient. It is built 
+on Java and leveraging [Quarkus](https://quarkus.io/).
+This makes Nessie work very well in Docker and FaaS environments. 
 Nessie has a pluggable storage backend and comes pre-packaged with support for DynamoDB and local 
 storage.
 

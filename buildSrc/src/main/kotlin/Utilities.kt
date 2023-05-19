@@ -200,11 +200,7 @@ private class NessieProjects {
 /** Utility method to check whether a Quarkus build shall produce the uber-jar. */
 fun Project.quarkusFatJar(): Boolean = hasProperty("uber-jar") || isIntegrationsTestingEnabled()
 
-fun Project.quarkusPackageType(): String =
-  if (quarkusFatJar()) "uber-jar" else if (hasProperty("native")) "native" else "fast-jar"
-
-fun Project.quarkusNonNativePackageType(): String =
-  if (quarkusFatJar() || hasProperty("native")) "uber-jar" else "fast-jar"
+fun Project.quarkusPackageType(): String = if (quarkusFatJar()) "uber-jar" else "fast-jar"
 
 /** Just load [Properties] from a [File]. */
 fun loadProperties(file: File): Properties {

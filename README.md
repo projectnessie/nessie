@@ -149,15 +149,6 @@ build a docker image for testing purposes, simply run the following command:
 docker build -f ./tools/dockerbuild/docker/Dockerfile-jvm -t nessie-unstable:latest ./servers/quarkus-server 
 ```
 
-If you prefer to build a native docker image instead, add `-Pnative` and use a dedicated Dockerfile:
-
-```shell
-./gradlew :nessie-quarkus:clean :nessie-quarkus:quarkusBuild -Pnative
-docker build -f ./tools/dockerbuild/docker/Dockerfile-native -t nessie-unstable:latest ./servers/quarkus-server 
-```
-
-Warning: building native images this way may not work properly on macOS with Apple Silicon processors.
-
 Check that your image is available locally:
 
 ```shell
