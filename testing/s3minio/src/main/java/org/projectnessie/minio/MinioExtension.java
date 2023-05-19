@@ -55,10 +55,7 @@ public class MinioExtension
       // Disable tests on GitHub Actions
       return enabled("Running on macOS locally");
     }
-    return disabled(
-        format(
-            "Disabled on %s, because it doesn't support wildcard localhost FQDNs.",
-            OS.current().name()));
+    return disabled(format("Disabled on %s", OS.current().name()));
   }
 
   @Override
