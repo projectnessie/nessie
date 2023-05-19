@@ -19,15 +19,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.IdentifiedContentKey;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.versioned.paging.PaginationIterator;
@@ -58,7 +57,7 @@ public class EventsVersionStore implements VersionStore {
       @Nonnull @jakarta.annotation.Nonnull Optional<Hash> referenceHash,
       @Nonnull @jakarta.annotation.Nonnull CommitMeta metadata,
       @Nonnull @jakarta.annotation.Nonnull List<Operation> operations,
-      @Nonnull @jakarta.annotation.Nonnull Callable<Void> validator,
+      @Nonnull @jakarta.annotation.Nonnull CommitValidator validator,
       @Nonnull @jakarta.annotation.Nonnull BiConsumer<ContentKey, String> addedContents)
       throws ReferenceNotFoundException, ReferenceConflictException {
     CommitResult<Commit> result =
@@ -207,12 +206,18 @@ public class EventsVersionStore implements VersionStore {
   }
 
   @Override
-  public Content getValue(Ref ref, ContentKey key) throws ReferenceNotFoundException {
+  public List<IdentifiedContentKey> getIdentifiedKeys(Ref ref, Collection<ContentKey> keys)
+      throws ReferenceNotFoundException {
+    return delegate.getIdentifiedKeys(ref, keys);
+  }
+
+  @Override
+  public ContentResult getValue(Ref ref, ContentKey key) throws ReferenceNotFoundException {
     return delegate.getValue(ref, key);
   }
 
   @Override
-  public Map<ContentKey, Content> getValues(Ref ref, Collection<ContentKey> keys)
+  public Map<ContentKey, ContentResult> getValues(Ref ref, Collection<ContentKey> keys)
       throws ReferenceNotFoundException {
     return delegate.getValues(ref, keys);
   }

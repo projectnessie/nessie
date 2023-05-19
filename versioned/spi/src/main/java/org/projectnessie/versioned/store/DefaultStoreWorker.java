@@ -44,7 +44,7 @@ public class DefaultStoreWorker implements StoreWorker {
     return serializer(contentType).payload();
   }
 
-  public static Content.Type contentTypeForPayload(byte payload) {
+  public static Content.Type contentTypeForPayload(int payload) {
     Content.Type contentType =
         payload >= 0 && payload < Registry.BY_PAYLOAD.length
             ? Registry.BY_PAYLOAD[payload].contentType()

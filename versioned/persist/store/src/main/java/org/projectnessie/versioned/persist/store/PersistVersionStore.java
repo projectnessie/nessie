@@ -18,6 +18,9 @@ package org.projectnessie.versioned.persist.store;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
+import static org.projectnessie.model.IdentifiedContentKey.identifiedContentKeyFromContent;
+import static org.projectnessie.versioned.ContentResult.contentResult;
+import static org.projectnessie.versioned.store.DefaultStoreWorker.contentTypeForPayload;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
 import com.google.errorprone.annotations.MustBeClosed;
@@ -28,16 +31,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.IdentifiedContentKey;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
@@ -46,12 +50,15 @@ import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.CommitMetaSerializer;
 import org.projectnessie.versioned.CommitResult;
+import org.projectnessie.versioned.CommitValidation;
+import org.projectnessie.versioned.ContentResult;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableCommit;
 import org.projectnessie.versioned.ImmutableCommitResult;
+import org.projectnessie.versioned.ImmutableCommitValidation;
 import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.ImmutableRefLogDetails;
 import org.projectnessie.versioned.ImmutableRepositoryInformation;
@@ -77,6 +84,7 @@ import org.projectnessie.versioned.RepositoryInformation;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.paging.FilteringPaginationIterator;
 import org.projectnessie.versioned.paging.PaginationIterator;
 import org.projectnessie.versioned.persist.adapter.CommitLogEntry;
@@ -135,7 +143,7 @@ public class PersistVersionStore implements VersionStore {
       @Nonnull @jakarta.annotation.Nonnull Optional<Hash> expectedHead,
       @Nonnull @jakarta.annotation.Nonnull CommitMeta metadata,
       @Nonnull @jakarta.annotation.Nonnull List<Operation> operations,
-      @Nonnull @jakarta.annotation.Nonnull Callable<Void> validator,
+      @Nonnull @jakarta.annotation.Nonnull CommitValidator validator,
       @Nonnull @jakarta.annotation.Nonnull BiConsumer<ContentKey, String> addedContents)
       throws ReferenceNotFoundException, ReferenceConflictException {
 
@@ -143,8 +151,9 @@ public class PersistVersionStore implements VersionStore {
         ImmutableCommitParams.builder()
             .toBranch(branch)
             .expectedHead(expectedHead)
-            .commitMetaSerialized(serializeMetadata(metadata))
-            .validator(validator);
+            .commitMetaSerialized(serializeMetadata(metadata));
+
+    ImmutableCommitValidation.Builder commitValidation = CommitValidation.builder();
 
     for (Operation operation : operations) {
       if (operation instanceof Put) {
@@ -169,13 +178,29 @@ public class PersistVersionStore implements VersionStore {
                 contentId,
                 (byte) payload,
                 STORE_WORKER.toStoreOnReferenceState(content)));
+
+        commitValidation.addOperations(
+            CommitValidation.CommitOperation.commitOperation(
+                identifiedContentKeyFromContent(
+                    op.getKey(), contentTypeForPayload(payload), contentId.getId(), x -> null),
+                operation));
       } else if (operation instanceof Delete) {
         commitAttempt.addDeletes(operation.getKey());
+        commitValidation.addOperations(
+            CommitValidation.CommitOperation.commitOperation(
+                identifiedContentKeyFromContent(operation.getKey(), null, null, x -> null),
+                operation));
       } else if (operation instanceof Unchanged) {
         commitAttempt.addUnchanged(operation.getKey());
       } else {
         throw new IllegalArgumentException(String.format("Unknown operation type '%s'", operation));
       }
+    }
+
+    try {
+      validator.validate(commitValidation.build());
+    } catch (BaseNessieClientServerException | VersionStoreException e) {
+      throw new RuntimeException(e);
     }
 
     return storeCommitResult(databaseAdapter.commit(commitAttempt.build()));
@@ -553,20 +578,22 @@ public class PersistVersionStore implements VersionStore {
                           hash, Collections.singleton(entry.getKey()), KeyFilterPredicate.ALLOW_ALL)
                       .get(entry.getKey());
               if (cs != null) {
-                Content content = mapContentAndState(cs);
+                ContentResult content = mapContentAndState(entry.getKey(), cs);
                 return KeyEntry.of(
-                    DefaultStoreWorker.contentTypeForPayload(entry.getPayload()),
-                    entry.getKey(),
-                    content);
+                    identifiedContentKeyFromContent(
+                        entry.getKey(), content.content(), elements -> null),
+                    content.content());
               }
             } catch (ReferenceNotFoundException e) {
               throw new IllegalStateException("Reference no longer exists", e);
             }
           }
           return KeyEntry.of(
-              DefaultStoreWorker.contentTypeForPayload(entry.getPayload()),
-              entry.getKey(),
-              entry.getContentId().getId());
+              identifiedContentKeyFromContent(
+                  entry.getKey(),
+                  contentTypeForPayload(entry.getPayload()),
+                  entry.getContentId().getId(),
+                  elements -> null));
         }) {
       @Override
       protected String computeTokenForCurrent() {
@@ -586,20 +613,34 @@ public class PersistVersionStore implements VersionStore {
   }
 
   @Override
-  public Content getValue(Ref ref, ContentKey key) throws ReferenceNotFoundException {
+  public List<IdentifiedContentKey> getIdentifiedKeys(Ref ref, Collection<ContentKey> keys) {
+    // NOTE: this is only used for access-checks of the operations in commits. Since
+    // `IdentifiedContentKey` is not
+    // fully supported with the old storage model, this implementation is "good enough".
+    return keys.stream()
+        .map(key -> identifiedContentKeyFromContent(key, null, null, x -> null))
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public ContentResult getValue(Ref ref, ContentKey key) throws ReferenceNotFoundException {
     return getValues(ref, Collections.singletonList(key)).get(key);
   }
 
   @Override
-  public Map<ContentKey, Content> getValues(Ref ref, Collection<ContentKey> keys)
+  public Map<ContentKey, ContentResult> getValues(Ref ref, Collection<ContentKey> keys)
       throws ReferenceNotFoundException {
     Hash hash = refToHash(ref);
     return databaseAdapter.values(hash, keys, KeyFilterPredicate.ALLOW_ALL).entrySet().stream()
-        .collect(Collectors.toMap(Map.Entry::getKey, e -> mapContentAndState(e.getValue())));
+        .collect(
+            Collectors.toMap(Map.Entry::getKey, e -> mapContentAndState(e.getKey(), e.getValue())));
   }
 
-  private Content mapContentAndState(ContentAndState cs) {
-    return STORE_WORKER.valueFromStore(cs.getPayload(), cs.getRefState(), cs::getGlobalState);
+  private ContentResult mapContentAndState(ContentKey key, ContentAndState cs) {
+    Content content =
+        STORE_WORKER.valueFromStore(cs.getPayload(), cs.getRefState(), cs::getGlobalState);
+    return contentResult(
+        identifiedContentKeyFromContent(key, content, elements -> null), content, null);
   }
 
   @Override
@@ -627,19 +668,35 @@ public class PersistVersionStore implements VersionStore {
 
     return new FilteringPaginationIterator<Difference, Diff>(
         source.iterator(),
-        d ->
-            Diff.of(
-                d.getKey(),
-                d.getFromValue()
-                    .map(
-                        v ->
-                            STORE_WORKER.valueFromStore(
-                                d.getPayload(), v, () -> d.getGlobal().orElse(null))),
-                d.getToValue()
-                    .map(
-                        v ->
-                            STORE_WORKER.valueFromStore(
-                                d.getPayload(), v, () -> d.getGlobal().orElse(null)))),
+        d -> {
+          Content fromContent =
+              d.getFromValue()
+                  .map(
+                      v ->
+                          STORE_WORKER.valueFromStore(
+                              d.getPayload(), v, () -> d.getGlobal().orElse(null)))
+                  .orElse(null);
+          Content toContent =
+              d.getToValue()
+                  .map(
+                      v ->
+                          STORE_WORKER.valueFromStore(
+                              d.getPayload(), v, () -> d.getGlobal().orElse(null)))
+                  .orElse(null);
+
+          IdentifiedContentKey fromKey =
+              fromContent != null
+                  ? identifiedContentKeyFromContent(
+                      d.getKey(), fromContent.getType(), fromContent.getId(), elements -> null)
+                  : null;
+          IdentifiedContentKey toKey =
+              toContent != null
+                  ? identifiedContentKeyFromContent(
+                      d.getKey(), toContent.getType(), toContent.getId(), elements -> null)
+                  : null;
+          return Diff.of(
+              fromKey, toKey, Optional.ofNullable(fromContent), Optional.ofNullable(toContent));
+        },
         d -> keyPred.test(d.getKey())) {
       @Override
       protected String computeTokenForCurrent() {

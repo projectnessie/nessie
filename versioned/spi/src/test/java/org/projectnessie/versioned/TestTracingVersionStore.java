@@ -26,6 +26,8 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.projectnessie.model.IdentifiedContentKey.identifiedContentKeyFromContent;
+import static org.projectnessie.versioned.ContentResult.contentResult;
 
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
@@ -54,6 +56,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.stubbing.Stubber;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.MergeBehavior;
@@ -173,7 +176,7 @@ class TestTracingVersionStore {
                             Optional.empty(),
                             CommitMeta.fromMessage("metadata"),
                             Collections.emptyList(),
-                            () -> null,
+                            x -> {},
                             (k, c) -> {}),
                     () -> dummyCommitResult),
             new TestedTracingStoreInvocation<VersionStore>(
@@ -270,7 +273,14 @@ class TestTracingVersionStore {
                 .tag("nessie.version-store.key", "some.key")
                 .function(
                     vs -> vs.getValue(BranchName.of("mock-branch"), ContentKey.of("some", "key")),
-                    () -> IcebergTable.of("meta", 42, 43, 44, 45)),
+                    () -> {
+                      Content content = IcebergTable.of("meta", 42, 43, 44, 45);
+                      return contentResult(
+                          identifiedContentKeyFromContent(
+                              ContentKey.of("some", "key"), content, x -> null),
+                          content,
+                          null);
+                    }),
             new TestedTracingStoreInvocation<VersionStore>("GetValues", refNotFoundThrows)
                 .tag("nessie.version-store.ref", "BranchName{name=mock-branch}")
                 .tag("nessie.version-store.keys", "[some.key]")

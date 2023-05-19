@@ -35,11 +35,11 @@ import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
+import org.projectnessie.versioned.ContentResult;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Put;
@@ -67,14 +67,17 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
 
       ContentKey key = ContentKey.of("table");
       Hash parent = i == 0 ? createHash : commitHashes[i - 1];
-      Content value =
+      ContentResult value =
           store()
               .getValue(
                   store()
                       .hashOnReference(
                           branch, Optional.of(i == 0 ? createHash : commitHashes[i - 1])),
                   key);
-      Put op = value != null ? Put.of(key, onRef(str, value.getId())) : Put.of(key, newOnRef(str));
+      Put op =
+          value != null
+              ? Put.of(key, onRef(str, value.content().getId()))
+              : Put.of(key, newOnRef(str));
 
       commitHashes[i] =
           store()

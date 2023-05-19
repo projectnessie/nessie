@@ -65,7 +65,6 @@ import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.Spliterators.AbstractSpliterator;
-import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -251,18 +250,6 @@ public abstract class AbstractDatabaseAdapter<
       Consumer<Hash> newKeyLists)
       throws ReferenceNotFoundException, ReferenceConflictException {
     List<String> mismatches = new ArrayList<>();
-
-    Callable<Void> validator = commitParams.getValidator();
-    if (validator != null) {
-      try {
-        validator.call();
-      } catch (RuntimeException e) {
-        // just propagate the RuntimeException up
-        throw e;
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
-    }
 
     checkContentKeysUnique(commitParams);
 

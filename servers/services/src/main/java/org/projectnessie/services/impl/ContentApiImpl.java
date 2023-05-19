@@ -16,7 +16,6 @@
 package org.projectnessie.services.impl;
 
 import java.security.Principal;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -25,7 +24,6 @@ import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.Detached;
@@ -38,6 +36,7 @@ import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.spi.ContentService;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.ContentResult;
 import org.projectnessie.versioned.DetachedRef;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -60,12 +59,14 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
       ContentKey key, String namedRef, String hashOnRef, boolean withDocumentation)
       throws NessieNotFoundException {
     WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
-    startAccessCheck().canReadEntityValue(ref.getValue(), key, null).checkAndThrow();
     try {
-      Content obj = getStore().getValue(ref.getHash(), key);
+      ContentResult obj = getStore().getValue(ref.getHash(), key);
+      BatchAccessChecker accessCheck = startAccessCheck();
       if (obj != null) {
-        return ContentResponse.of(obj, makeReference(ref));
+        accessCheck.canReadEntityValue(ref.getValue(), obj.identifiedKey()).checkAndThrow();
+        return ContentResponse.of(obj.content(), makeReference(ref), null);
       }
+      accessCheck.canViewReference(ref.getValue()).checkAndThrow();
       throw new NessieContentNotFoundException(key, namedRef);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
@@ -74,24 +75,25 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
 
   @Override
   public GetMultipleContentsResponse getMultipleContents(
-      String namedRef, String hashOnRef, List<ContentKey> externalKeys, boolean withDocumentation)
+      String namedRef, String hashOnRef, List<ContentKey> keys, boolean withDocumentation)
       throws NessieNotFoundException {
     try {
       WithHash<NamedRef> ref = namedRefWithHashOrThrow(namedRef, hashOnRef);
 
-      BatchAccessChecker check = startAccessCheck();
-      List<ContentKey> internalKeys = new ArrayList<>(externalKeys.size());
-      for (ContentKey externalKey : externalKeys) {
-        check.canReadEntityValue(ref.getValue(), externalKey, null);
-        internalKeys.add(externalKey);
-      }
-      check.checkAndThrow();
+      BatchAccessChecker check = startAccessCheck().canViewReference(ref.getValue());
 
-      Map<ContentKey, Content> values = getStore().getValues(ref.getHash(), internalKeys);
+      Map<ContentKey, ContentResult> values = getStore().getValues(ref.getHash(), keys);
       List<ContentWithKey> output =
           values.entrySet().stream()
-              .map(e -> ContentWithKey.of(e.getKey(), e.getValue()))
+              .map(
+                  e -> {
+                    check.canReadEntityValue(ref.getValue(), e.getValue().identifiedKey());
+                    return ContentWithKey.of(
+                        e.getKey(), e.getValue().content(), e.getValue().documentation());
+                  })
               .collect(Collectors.toList());
+
+      check.checkAndThrow();
 
       return GetMultipleContentsResponse.of(output, makeReference(ref));
     } catch (ReferenceNotFoundException ex) {

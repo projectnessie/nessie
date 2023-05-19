@@ -19,8 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
@@ -49,8 +47,4 @@ public interface CommitParams extends ToBranchParams {
 
   /** Serialized commit-metadata. */
   ByteString getCommitMetaSerialized();
-
-  @Nullable
-  @jakarta.annotation.Nullable
-  Callable<Void> getValidator();
 }
