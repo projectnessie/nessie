@@ -44,7 +44,6 @@ import org.projectnessie.tools.compatibility.api.Version;
 import org.projectnessie.tools.compatibility.api.VersionCondition;
 
 @ExtendWith(SoftAssertionsExtension.class)
-@DisabledOnOs(OS.MAC)
 class TestNessieCompatibilityExtensions {
   @InjectSoftAssertions protected SoftAssertions soft;
 
@@ -63,6 +62,9 @@ class TestNessieCompatibilityExtensions {
   }
 
   @Test
+  @DisabledOnOs(
+      value = OS.MAC,
+      disabledReason = "Uses NessieUpgradesExtension, which is not compatible with macOS")
   void tooManyExtensions() {
     soft.assertThat(
             Stream.of(
@@ -138,6 +140,9 @@ class TestNessieCompatibilityExtensions {
   }
 
   @Test
+  @DisabledOnOs(
+      value = OS.MAC,
+      disabledReason = "Uses NessieUpgradesExtension, which is not compatible with macOS")
   void upgrade() {
     EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
         .configurationParameter("nessie.versions", "0.42.0,current")
