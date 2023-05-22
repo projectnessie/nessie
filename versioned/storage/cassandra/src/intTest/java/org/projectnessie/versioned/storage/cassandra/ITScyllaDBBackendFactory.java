@@ -15,6 +15,13 @@
  */
 package org.projectnessie.versioned.storage.cassandra;
 
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+
+@DisabledOnOs(
+    value = OS.MAC,
+    disabledReason =
+        "ScyllaDB fails to start, see https://github.com/scylladb/scylladb/issues/10135")
 public class ITScyllaDBBackendFactory extends AbstractTestCassandraBackendFactory {
   @Override
   protected AbstractCassandraBackendTestFactory testFactory() {

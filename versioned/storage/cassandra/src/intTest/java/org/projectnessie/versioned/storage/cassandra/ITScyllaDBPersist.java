@@ -15,8 +15,14 @@
  */
 package org.projectnessie.versioned.storage.cassandra;
 
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.projectnessie.versioned.storage.commontests.AbstractPersistTests;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
 
+@DisabledOnOs(
+    value = OS.MAC,
+    disabledReason =
+        "ScyllaDB fails to start, see https://github.com/scylladb/scylladb/issues/10135")
 @NessieBackend(ScyllaDBBackendTestFactory.class)
 public class ITScyllaDBPersist extends AbstractPersistTests {}
