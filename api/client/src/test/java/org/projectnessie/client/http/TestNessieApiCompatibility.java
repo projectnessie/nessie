@@ -15,8 +15,10 @@
  */
 package org.projectnessie.client.http;
 
+import static com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder.responseDefinition;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -25,13 +27,13 @@ import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.net.URI;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.projectnessie.client.rest.NessieHttpResponseFilter;
 
@@ -89,7 +91,7 @@ class TestNessieApiCompatibility {
     stubFor(
         get("/config")
             .willReturn(
-                ResponseDefinitionBuilder.responseDefinition()
+                responseDefinition()
                     .withStatus(HTTP_OK)
                     .withBody(config.toString())
                     .withHeader("Content-Type", "application/json")));
@@ -118,6 +120,24 @@ class TestNessieApiCompatibility {
                 NessieApiCompatibilityException::getActualServerApiVersion)
             .containsExactly(client, serverMin, serverMax, serverActual);
       }
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {1, 2})
+  void testSkipApiCompatibilityCheck(int clientApiVersion, WireMockRuntimeInfo wireMock) {
+
+    stubFor(get("/config").willReturn(responseDefinition().withStatus(HTTP_NOT_FOUND)));
+
+    try (HttpClient httpClient =
+        HttpClient.builder()
+            .setBaseUri(URI.create(wireMock.getHttpBaseUrl()))
+            .setObjectMapper(new ObjectMapper())
+            .addResponseFilter(new NessieHttpResponseFilter())
+            .build()) {
+
+      assertThatCode(() -> NessieApiCompatibility.check(clientApiVersion, httpClient))
+          .doesNotThrowAnyException();
     }
   }
 }
