@@ -338,7 +338,9 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
       builder.setJsonView(Views.V1.class);
       HttpClient httpClient = builder.build();
       if (enableApiCompatibilityCheck) {
-        NessieApiCompatibility.check(1, httpClient);
+        try (HttpClient testClient = builder.clearRequestFilters().clearResponseFilters().build()) {
+          NessieApiCompatibility.check(1, testClient);
+        }
       }
       return (API) new HttpApiV1(new NessieHttpClient(httpClient));
     }
@@ -347,7 +349,9 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
       builder.setJsonView(Views.V2.class);
       HttpClient httpClient = builder.build();
       if (enableApiCompatibilityCheck) {
-        NessieApiCompatibility.check(2, httpClient);
+        try (HttpClient testClient = builder.clearRequestFilters().clearResponseFilters().build()) {
+          NessieApiCompatibility.check(2, testClient);
+        }
       }
       return (API) new HttpApiV2(httpClient);
     }
