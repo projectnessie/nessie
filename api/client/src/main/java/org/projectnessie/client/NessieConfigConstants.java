@@ -314,6 +314,9 @@ public final class NessieConfigConstants {
 
   /**
    * Enables API compatibility check when creating the Nessie client. The default is {@code true}.
+   *
+   * <p>You can also control this setting by setting the system property {@code
+   * nessie.client.enable-api-compatibility-check} to {@code true} or {@code false}.
    */
   public static final String CONF_ENABLE_API_COMPATIBILITY_CHECK =
       "nessie.enable-api-compatibility-check";

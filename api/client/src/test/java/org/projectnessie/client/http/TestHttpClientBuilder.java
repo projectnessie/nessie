@@ -17,7 +17,9 @@ package org.projectnessie.client.http;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.projectnessie.client.http.HttpClientBuilder.ENABLE_API_COMPATIBILITY_CHECK_SYSTEM_PROPERTY;
 
 import java.net.URI;
 import java.util.Arrays;
@@ -31,6 +33,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.client.NessieConfigConstants;
 import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.auth.BasicAuthenticationProvider;
 import org.projectnessie.client.auth.NessieAuthentication;
 import org.projectnessie.client.util.HttpTestServer;
@@ -135,6 +138,32 @@ public class TestHttpClientBuilder {
                 + new String(
                     Base64.getUrlEncoder().encode("my_username:very_secret".getBytes(UTF_8)),
                     UTF_8));
+  }
+
+  @Test
+  void testApiCompatibilityCheckDisabled() {
+    assertThatCode(
+            () ->
+                HttpClientBuilder.builder()
+                    .withUri(URI.create("http://non-existent-host"))
+                    .withEnableApiCompatibilityCheck(false)
+                    .build(NessieApiV2.class))
+        .doesNotThrowAnyException();
+  }
+
+  @Test
+  void testApiCompatibilityCheckDisabledWithSystemProperties() {
+    System.setProperty(ENABLE_API_COMPATIBILITY_CHECK_SYSTEM_PROPERTY, "false");
+    try {
+      assertThatCode(
+              () ->
+                  HttpClientBuilder.builder()
+                      .withUri(URI.create("http://non-existent-host"))
+                      .build(NessieApiV2.class))
+          .doesNotThrowAnyException();
+    } finally {
+      System.clearProperty(ENABLE_API_COMPATIBILITY_CHECK_SYSTEM_PROPERTY);
+    }
   }
 
   static HttpTestServer.RequestHandler handlerForHeaderTest(

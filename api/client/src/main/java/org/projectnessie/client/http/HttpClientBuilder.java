@@ -56,6 +56,9 @@ import org.projectnessie.model.ser.Views;
  */
 public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder> {
 
+  public static final String ENABLE_API_COMPATIBILITY_CHECK_SYSTEM_PROPERTY =
+      "nessie.client.enable-api-compatibility-check";
+
   private static final ObjectMapper MAPPER =
       new ObjectMapper()
           .enable(SerializationFeature.INDENT_OUTPUT)
@@ -68,7 +71,9 @@ public class HttpClientBuilder implements NessieClientBuilder<HttpClientBuilder>
 
   private boolean tracing;
 
-  private boolean enableApiCompatibilityCheck = true;
+  private boolean enableApiCompatibilityCheck =
+      Boolean.parseBoolean(
+          System.getProperty(ENABLE_API_COMPATIBILITY_CHECK_SYSTEM_PROPERTY, "true"));
 
   protected HttpClientBuilder() {}
 
