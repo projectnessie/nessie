@@ -26,11 +26,11 @@ extra["maven.name"] = "Nessie - JUnit Jupyter Test Extension for Client-Side Tes
 
 dependencies {
   api(platform(libs.junit.bom))
-  api(libs.junit.jupiter.api)
+  api("org.junit.jupiter:junit-jupiter-api")
 
   implementation(project(":nessie-client"))
   implementation(project(":nessie-multi-env-test-engine"))
-  compileOnly(libs.junit.jupiter.engine)
+  compileOnly("org.junit.jupiter:junit-jupiter-engine")
 
   // javax/jakarta
   compileOnly(libs.jakarta.annotation.api)

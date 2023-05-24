@@ -77,15 +77,15 @@ dependencies {
 
   intTestRuntimeOnly(libs.hadoop.client)
   intTestRuntimeOnly(libs.hadoop.aws)
-  intTestRuntimeOnly(libs.awssdk.sts)
+  intTestRuntimeOnly("software.amazon.awssdk:sts")
 
   intTestImplementation(platform(libs.awssdk.bom))
-  intTestImplementation(libs.awssdk.s3)
-  intTestRuntimeOnly(libs.awssdk.url.connection.client)
+  intTestImplementation("software.amazon.awssdk:s3")
+  runtimeOnly("software.amazon.awssdk:url-connection-client")
   // TODO those are needed, because Spark serializes some configuration stuff (Spark broadcast)
-  intTestRuntimeOnly(libs.awssdk.dynamodb)
-  intTestRuntimeOnly(libs.awssdk.glue)
-  intTestRuntimeOnly(libs.awssdk.kms)
+  intTestRuntimeOnly("software.amazon.awssdk:dynamodb")
+  intTestRuntimeOnly("software.amazon.awssdk:glue")
+  intTestRuntimeOnly("software.amazon.awssdk:kms")
 
   intTestCompileOnly(libs.immutables.builder)
   intTestCompileOnly(libs.immutables.value.annotations)

@@ -31,8 +31,8 @@ plugins {
 
 dependencies {
   implementation(platform(libs.jackson.bom))
-  implementation(libs.jackson.databind)
-  implementation(libs.jackson.annotations)
+  implementation("com.fasterxml.jackson.core:jackson-databind")
+  implementation("com.fasterxml.jackson.core:jackson-annotations")
 
   // javax/jakarta
   compileOnly(libs.jakarta.ws.rs.api)

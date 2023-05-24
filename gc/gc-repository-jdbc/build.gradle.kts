@@ -50,7 +50,7 @@ dependencies {
   compileOnly(libs.findbugs.jsr305)
 
   compileOnly(platform(libs.jackson.bom))
-  compileOnly(libs.jackson.annotations)
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   testImplementation(project(":nessie-gc-base-tests"))
 
@@ -59,7 +59,7 @@ dependencies {
   testImplementation(libs.guava)
 
   testImplementation(platform(libs.jackson.bom))
-  testCompileOnly(libs.jackson.annotations)
+  testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   testCompileOnly(libs.microprofile.openapi)
 

@@ -31,8 +31,8 @@ dependencies {
   implementation(project(":nessie-events-spi"))
 
   implementation(platform(libs.jackson.bom))
-  implementation(libs.jackson.core)
-  implementation(libs.jackson.databind)
+  implementation("com.fasterxml.jackson.core:jackson-core")
+  implementation("com.fasterxml.jackson.core:jackson-databind")
 
   implementation(libs.slf4j.api)
 

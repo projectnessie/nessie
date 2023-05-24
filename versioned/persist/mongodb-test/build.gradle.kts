@@ -33,5 +33,5 @@ dependencies {
   implementation(libs.testcontainers.mongodb)
 
   implementation(platform(libs.junit.bom))
-  implementation(libs.junit.jupiter.api)
+  implementation("org.junit.jupiter:junit-jupiter-api")
 }

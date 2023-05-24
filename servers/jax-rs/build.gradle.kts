@@ -58,8 +58,8 @@ dependencies {
   compileOnly(libs.hibernate.validator.cdi)
 
   api(platform(libs.jackson.bom))
-  api(libs.jackson.databind)
-  compileOnly(libs.jackson.annotations)
+  api("com.fasterxml.jackson.core:jackson-databind")
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 }
 
 annotationStripper {

@@ -32,14 +32,13 @@ dependencies {
 
   implementation(libs.guava)
   implementation(platform(libs.jackson.bom))
-  implementation(libs.jackson.annotations)
-  implementation(libs.jackson.databind)
+  implementation("com.fasterxml.jackson.core:jackson-annotations")
+  implementation("com.fasterxml.jackson.core:jackson-databind")
   compileOnly(libs.avro)
 
   implementation(libs.slf4j.api)
 
   compileOnly(libs.microprofile.openapi)
-  compileOnly(libs.jackson.annotations)
 
   // javax/jakarta
   compileOnly(libs.jakarta.validation.api)

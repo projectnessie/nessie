@@ -36,8 +36,8 @@ dependencies {
   implementation(project(":nessie-versioned-storage-store"))
 
   implementation(platform(libs.jackson.bom))
-  implementation(libs.jackson.databind)
-  implementation(libs.jackson.annotations)
+  implementation("com.fasterxml.jackson.core:jackson-databind")
+  implementation("com.fasterxml.jackson.core:jackson-annotations")
 
   compileOnly(libs.microprofile.openapi)
   compileOnly(libs.errorprone.annotations)
@@ -54,7 +54,7 @@ dependencies {
   annotationProcessor(libs.immutables.value.processor)
 
   testFixturesImplementation(platform(libs.jackson.bom))
-  testFixturesImplementation(libs.jackson.databind)
+  testFixturesImplementation("com.fasterxml.jackson.core:jackson-databind")
   testFixturesImplementation(libs.guava)
   testFixturesApi(libs.jakarta.annotation.api)
   testFixturesApi(project(":nessie-client"))

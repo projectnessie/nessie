@@ -37,7 +37,7 @@ dependencies {
   compileOnly(libs.findbugs.jsr305)
 
   compileOnly(platform(libs.jackson.bom))
-  compileOnly(libs.jackson.annotations)
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   compileOnly(libs.microprofile.openapi)
 }

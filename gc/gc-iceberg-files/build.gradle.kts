@@ -63,13 +63,13 @@ dependencies {
   testFixturesRuntimeOnly(libs.logback.classic)
 
   testFixturesCompileOnly(platform(libs.jackson.bom))
-  testFixturesCompileOnly(libs.jackson.annotations)
+  testFixturesCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   testFixturesCompileOnly(libs.microprofile.openapi)
 
   testFixturesApi(platform(libs.awssdk.bom))
-  testFixturesApi(libs.awssdk.s3)
-  testFixturesRuntimeOnly(libs.awssdk.sts)
+  testFixturesApi("software.amazon.awssdk:s3")
+  testFixturesRuntimeOnly("software.amazon.awssdk:sts")
   testFixturesRuntimeOnly(libs.hadoop.aws)
 
   testFixturesApi(platform(libs.junit.bom))

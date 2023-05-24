@@ -32,6 +32,6 @@ dependencies {
   implementation(libs.opentracing.mock)
 
   implementation(platform(libs.junit.bom))
-  implementation(libs.junit.jupiter.api)
-  implementation(libs.junit.jupiter.params)
+  implementation("org.junit.jupiter:junit-jupiter-api")
+  implementation("org.junit.jupiter:junit-jupiter-params")
 }

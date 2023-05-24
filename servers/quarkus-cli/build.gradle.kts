@@ -68,8 +68,8 @@ dependencies {
   compileOnly(libs.microprofile.openapi)
 
   implementation(platform(libs.jackson.bom))
-  implementation(libs.jackson.databind)
-  implementation(libs.jackson.annotations)
+  implementation("com.fasterxml.jackson.core:jackson-databind")
+  implementation("com.fasterxml.jackson.core:jackson-annotations")
 
   implementation(libs.agroal.pool)
   implementation(libs.h2)

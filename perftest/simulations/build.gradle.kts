@@ -42,7 +42,7 @@ dependencies {
   gatling(libs.microprofile.openapi)
 
   gatling(platform(libs.jackson.bom))
-  gatling(libs.jackson.annotations)
+  gatling("com.fasterxml.jackson.core:jackson-annotations")
 
   nessieQuarkusServer(project(":nessie-quarkus", "quarkusRunner"))
 }

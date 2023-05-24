@@ -64,7 +64,7 @@ dependencies {
   testFixturesImplementation(libs.delta.core)
 
   testFixturesImplementation(platform(libs.jackson.bom))
-  testFixturesImplementation(libs.jackson.databind)
+  testFixturesImplementation("com.fasterxml.jackson.core:jackson-databind")
   testFixturesApi(libs.microprofile.openapi)
   testFixturesImplementation(libs.logback.classic)
   testFixturesImplementation(libs.slf4j.log4j.over.slf4j)

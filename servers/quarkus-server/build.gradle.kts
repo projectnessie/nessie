@@ -63,8 +63,8 @@ dependencies {
   implementation("io.micrometer:micrometer-registry-prometheus")
 
   implementation(platform(libs.cel.bom))
-  implementation(libs.cel.tools)
-  implementation(libs.cel.jackson)
+  implementation("org.projectnessie.cel:cel-tools")
+  implementation("org.projectnessie.cel:cel-jackson")
 
   if (project.hasProperty("k8s")) {
     /*
@@ -95,7 +95,7 @@ dependencies {
   testFixturesImplementation(project(":nessie-versioned-storage-common"))
   testFixturesImplementation(project(":nessie-versioned-storage-testextension"))
   testFixturesApi(enforcedPlatform(libs.quarkus.bom))
-  testFixturesImplementation(libs.jackson.annotations)
+  testFixturesImplementation("com.fasterxml.jackson.core:jackson-annotations")
   testFixturesApi("io.quarkus:quarkus-rest-client")
   testFixturesApi("io.quarkus:quarkus-test-security")
   testFixturesApi("io.quarkus:quarkus-test-oidc-server")
@@ -144,7 +144,7 @@ tasks.withType<Test>().configureEach {
     "it.nessie.container.postgres.tag",
     System.getProperty("it.nessie.container.postgres.tag", libs.versions.postgresContainerTag.get())
   )
-  systemProperty("keycloak.version", libs.versions.keycloak.get())
+  systemProperty("keycloak.version", libs.versions.keycloakContainerTag.get())
 }
 
 // Expose runnable jar via quarkusRunner configuration for integration-tests that require the

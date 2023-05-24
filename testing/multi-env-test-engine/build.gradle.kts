@@ -28,10 +28,10 @@ dependencies {
   api(libs.slf4j.api)
 
   implementation(platform(libs.junit.bom))
-  api(libs.junit.jupiter.api)
-  compileOnly(libs.junit.jupiter.engine)
-  implementation(libs.junit.platform.launcher)
+  api("org.junit.jupiter:junit-jupiter-api")
+  compileOnly("org.junit.jupiter:junit-jupiter-engine")
+  implementation("org.junit.platform:junit-platform-launcher")
 
-  testImplementation(libs.junit.platform.testkit)
-  testCompileOnly(libs.junit.jupiter.engine)
+  testImplementation("org.junit.platform:junit-platform-testkit")
+  testCompileOnly("org.junit.jupiter:junit-jupiter-engine")
 }

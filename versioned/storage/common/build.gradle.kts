@@ -45,8 +45,8 @@ dependencies {
   annotationProcessor(libs.immutables.value.processor)
 
   implementation(platform(libs.jackson.bom))
-  implementation(libs.jackson.databind)
-  implementation(libs.jackson.annotations)
+  implementation("com.fasterxml.jackson.core:jackson-databind")
+  implementation("com.fasterxml.jackson.core:jackson-annotations")
 
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)

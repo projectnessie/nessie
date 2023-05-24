@@ -33,8 +33,8 @@ dependencies {
 
   // Jackson
   implementation(platform(libs.jackson.bom))
-  implementation(libs.jackson.annotations)
-  implementation(libs.jackson.databind)
+  implementation("com.fasterxml.jackson.core:jackson-annotations")
+  implementation("com.fasterxml.jackson.core:jackson-databind")
 
   // ErrorProne
   implementation(libs.errorprone.annotations)
@@ -42,7 +42,7 @@ dependencies {
   // Testing
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
-  testImplementation(libs.jackson.datatype.jdk8)
-  testImplementation(libs.jackson.datatype.jsr310)
+  testImplementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
+  testImplementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
   testImplementation(libs.guava)
 }

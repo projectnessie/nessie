@@ -63,8 +63,8 @@ dependencies {
   implementation(libs.jaxb.impl)
 
   implementation(platform(libs.awssdk.bom))
-  runtimeOnly(libs.awssdk.s3)
-  runtimeOnly(libs.awssdk.url.connection.client)
+  runtimeOnly("software.amazon.awssdk:s3")
+  runtimeOnly("software.amazon.awssdk:url-connection-client")
 
   implementation(libs.picocli)
   annotationProcessor(libs.picocli.codegen)
@@ -73,7 +73,7 @@ dependencies {
   runtimeOnly(libs.logback.classic)
 
   compileOnly(libs.microprofile.openapi)
-  compileOnly(libs.jackson.annotations)
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   // javax/jakarta
   compileOnly(libs.jakarta.validation.api)
@@ -95,7 +95,7 @@ dependencies {
   testCompileOnly(libs.immutables.value.annotations)
   testAnnotationProcessor(libs.immutables.value.processor)
 
-  testCompileOnly(libs.jackson.annotations)
+  testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
   testCompileOnly(libs.microprofile.openapi)
 
   testImplementation(platform(libs.junit.bom))

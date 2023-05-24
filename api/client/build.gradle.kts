@@ -31,9 +31,9 @@ dependencies {
   api(project(":nessie-model"))
 
   implementation(platform(libs.jackson.bom))
-  implementation(libs.jackson.core)
-  implementation(libs.jackson.databind)
-  implementation(libs.jackson.annotations)
+  implementation("com.fasterxml.jackson.core:jackson-core")
+  implementation("com.fasterxml.jackson.core:jackson-databind")
+  implementation("com.fasterxml.jackson.core:jackson-annotations")
   implementation(libs.microprofile.openapi)
 
   // javax/jakarta
@@ -60,22 +60,22 @@ dependencies {
   testFixturesApi(libs.bundles.junit.testing)
 
   compileOnly(platform(libs.opentelemetry.bom.alpha))
-  compileOnly(libs.opentelemetry.api)
-  compileOnly(libs.opentelemetry.semconv)
+  compileOnly("io.opentelemetry:opentelemetry-api")
+  compileOnly("io.opentelemetry:opentelemetry-semconv")
 
   compileOnly(platform(libs.awssdk.bom))
-  compileOnly(libs.awssdk.auth)
+  compileOnly("software.amazon.awssdk:auth")
 
   // javax/jakarta
   testFixturesApi(libs.jakarta.annotation.api)
 
   testFixturesApi(platform(libs.opentelemetry.bom.alpha))
-  testFixturesApi(libs.opentelemetry.api)
-  testFixturesApi(libs.opentelemetry.sdk)
-  testFixturesApi(libs.opentelemetry.semconv)
-  testFixturesApi(libs.opentelemetry.exporter.otlp)
+  testFixturesApi("io.opentelemetry:opentelemetry-api")
+  testFixturesApi("io.opentelemetry:opentelemetry-sdk")
+  testFixturesApi("io.opentelemetry:opentelemetry-semconv")
+  testFixturesApi("io.opentelemetry:opentelemetry-exporter-otlp")
   testFixturesApi(platform(libs.awssdk.bom))
-  testFixturesApi(libs.awssdk.auth)
+  testFixturesApi("software.amazon.awssdk:auth")
   testFixturesApi(libs.undertow.core)
   testFixturesApi(libs.undertow.servlet)
   testFixturesImplementation(libs.logback.classic)

@@ -47,8 +47,8 @@ dependencies {
   compileOnly(libs.microprofile.openapi)
 
   implementation(platform(libs.jackson.bom))
-  implementation(libs.jackson.databind)
-  compileOnly(libs.jackson.annotations)
+  implementation("com.fasterxml.jackson.core:jackson-databind")
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   // javax/jakarta
   testImplementation(libs.jakarta.validation.api)

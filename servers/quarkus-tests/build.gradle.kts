@@ -47,7 +47,9 @@ dependencies {
   implementation(libs.docker.java.api)
 
   implementation(platform(libs.awssdk.bom))
-  implementation(libs.awssdk.dynamodb) { exclude("software.amazon.awssdk", "apache-client") }
+  implementation("software.amazon.awssdk:dynamodb") {
+    exclude("software.amazon.awssdk", "apache-client")
+  }
 
   implementation(platform(libs.quarkus.amazon.services.bom))
   implementation("io.quarkiverse.amazonservices:quarkus-amazon-dynamodb")

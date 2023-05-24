@@ -31,7 +31,7 @@ dependencies {
   api(project(":nessie-client-testextension"))
 
   api(platform(libs.junit.bom))
-  api(libs.junit.jupiter.api)
+  api("org.junit.jupiter:junit-jupiter-api")
 
   api(libs.slf4j.api)
   api(libs.assertj.core)

@@ -37,7 +37,7 @@ dependencies {
   implementation(platform(libs.jersey.bom))
   api(libs.slf4j.api)
   api(libs.logback.classic)
-  implementation("org.apache.maven:maven-core:3.9.2")
+  implementation(libs.maven.core)
   implementation(libs.maven.resolver.provider)
   implementation(libs.maven.resolver.connector.basic)
   implementation(libs.maven.resolver.transport.file)
@@ -51,11 +51,11 @@ dependencies {
   compileOnly(libs.microprofile.openapi)
 
   implementation(platform(libs.jackson.bom))
-  implementation(libs.jackson.annotations)
+  implementation("com.fasterxml.jackson.core:jackson-annotations")
 
   implementation(platform(libs.junit.bom))
-  api(libs.junit.jupiter.api)
-  compileOnly(libs.junit.jupiter.engine)
+  api("org.junit.jupiter:junit-jupiter-api")
+  compileOnly("org.junit.jupiter:junit-jupiter-engine")
 
   testImplementation(libs.mockito.core)
   testImplementation(libs.guava)
@@ -68,10 +68,10 @@ dependencies {
 
   testCompileOnly(libs.microprofile.openapi)
 
-  testImplementation(libs.junit.platform.testkit)
-  testImplementation(libs.junit.jupiter.params)
-  testImplementation(libs.junit.jupiter.engine)
-  testImplementation(libs.junit.platform.launcher)
+  testImplementation("org.junit.platform:junit-platform-testkit")
+  testImplementation("org.junit.jupiter:junit-jupiter-params")
+  testImplementation("org.junit.jupiter:junit-jupiter-engine")
+  testImplementation("org.junit.platform:junit-platform-launcher")
 }
 
 tasks.withType<Test>().configureEach {
