@@ -16,9 +16,12 @@
 package org.projectnessie.client.http;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class NessieApiCompatibility {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(NessieApiCompatibility.class);
   private static final String MIN_API_VERSION = "minSupportedApiVersion";
   private static final String MAX_API_VERSION = "maxSupportedApiVersion";
   private static final String ACTUAL_API_VERSION = "actualApiVersion";
@@ -32,7 +35,15 @@ public class NessieApiCompatibility {
    */
   public static void check(int clientApiVersion, HttpClient httpClient)
       throws NessieApiCompatibilityException {
-    JsonNode config = httpClient.newRequest().path("config").get().readEntity(JsonNode.class);
+    JsonNode config;
+    try {
+      config = httpClient.newRequest().path("config").get().readEntity(JsonNode.class);
+    } catch (Exception e) {
+      LOGGER.warn(
+          "API compatibility check: failed to contact config endpoint, proceeding without check",
+          e);
+      return;
+    }
     int minServerApiVersion =
         config.hasNonNull(MIN_API_VERSION) ? config.get(MIN_API_VERSION).asInt() : 1;
     int maxServerApiVersion = config.get(MAX_API_VERSION).asInt();

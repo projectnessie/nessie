@@ -99,14 +99,21 @@ public interface NessieError {
     StringBuilder sb = new StringBuilder();
     sb.append(getReason()).append(" (HTTP/").append(getStatus()).append(')');
     sb.append(": ");
-    sb.append(getMessage());
+    String serverMessage = getMessage();
+    if (serverMessage == null) {
+      serverMessage = "[no error message found in HTTP response]";
+    }
+    sb.append(serverMessage);
 
     if (getServerStackTrace() != null) {
       sb.append("\n").append(getServerStackTrace());
     }
 
     if (getClientProcessingException() != null) {
-      StringWriter sw = new StringWriter();
+      StringWriter sw =
+          new StringWriter()
+              .append(
+                  "\nAdditionally, the client-side exception below was caught while decoding the HTTP response:\n");
       getClientProcessingException().printStackTrace(new PrintWriter(sw));
       sb.append("\n").append(sw);
     }
