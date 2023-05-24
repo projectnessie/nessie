@@ -6,7 +6,7 @@ jandexPlugin = "1.88"
 junit = "5.9.3"
 nessieBuildPlugins = "0.2.24"
 shadowPlugin = "8.1.1"
-spotlessPlugin = "6.18.0"
+spotlessPlugin = "6.19.0"
 
 [libraries]
 assertj-core = { module = "org.assertj:assertj-core", version = "3.24.2" }
