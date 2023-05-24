@@ -193,6 +193,18 @@ public interface HttpClient extends AutoCloseable {
       return this;
     }
 
+    @CanIgnoreReturnValue
+    Builder clearRequestFilters() {
+      requestFilters.clear();
+      return this;
+    }
+
+    @CanIgnoreReturnValue
+    Builder clearResponseFilters() {
+      responseFilters.clear();
+      return this;
+    }
+
     /**
      * Add tracing to the client. This will load the opentracing libraries. It is not possible to
      * remove tracing once it is added.
