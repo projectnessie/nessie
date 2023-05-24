@@ -16,13 +16,16 @@
 package org.projectnessie.minio;
 
 import com.google.common.base.Preconditions;
+import java.net.InetAddress;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
@@ -37,6 +40,8 @@ import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 final class MinioContainer extends GenericContainer<MinioContainer>
     implements MinioAccess, CloseableResource {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(MinioContainer.class);
+
   private static final int DEFAULT_PORT = 9000;
   private static final String DEFAULT_IMAGE = "quay.io/minio/minio";
   private static final String DEFAULT_TAG = "latest";
@@ -47,7 +52,27 @@ final class MinioContainer extends GenericContainer<MinioContainer>
 
   private static final String DEFAULT_STORAGE_DIRECTORY = "/data";
   private static final String HEALTH_ENDPOINT = "/minio/health/ready";
+  private static final String MINIO_DOMAIN_NAME;
   private static final String MINIO_DOMAIN_NIP = "minio.127-0-0-1.nip.io";
+
+  static boolean canRunOnMacOs() {
+    return MINIO_DOMAIN_NAME.equals(MINIO_DOMAIN_NIP);
+  }
+
+  static {
+    String name;
+    try {
+      InetAddress.getByName(MINIO_DOMAIN_NIP);
+      name = MINIO_DOMAIN_NIP;
+    } catch (UnknownHostException e) {
+      LOGGER.warn(
+          "Could not resolve '{}', falling back to 'localhost'. "
+              + "This usually happens when your router or DNS provider is unable to resolve the nip.io addresses.",
+          MINIO_DOMAIN_NIP);
+      name = "localhost";
+    }
+    MINIO_DOMAIN_NAME = name;
+  }
 
   private final String accessKey;
   private final String secretKey;
@@ -75,7 +100,7 @@ final class MinioContainer extends GenericContainer<MinioContainer>
     withEnv(MINIO_ACCESS_KEY, this.accessKey);
     withEnv(MINIO_SECRET_KEY, this.secretKey);
     // S3 SDK encodes bucket names in host names - need to tell Minio which domain to use
-    withEnv(MINIO_DOMAIN, MINIO_DOMAIN_NIP);
+    withEnv(MINIO_DOMAIN, MINIO_DOMAIN_NAME);
     withCommand("server", DEFAULT_STORAGE_DIRECTORY);
     setWaitStrategy(
         new HttpWaitStrategy()
@@ -150,7 +175,7 @@ final class MinioContainer extends GenericContainer<MinioContainer>
   public void start() {
     super.start();
 
-    this.hostPort = MINIO_DOMAIN_NIP + ":" + getMappedPort(DEFAULT_PORT);
+    this.hostPort = MINIO_DOMAIN_NAME + ":" + getMappedPort(DEFAULT_PORT);
     this.s3endpoint = String.format("http://%s/", hostPort);
     this.bucketBaseUri = URI.create(String.format("s3://%s/", bucket()));
 
