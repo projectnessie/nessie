@@ -45,8 +45,8 @@ dependencies {
   runtimeOnly(libs.slf4j.api)
 
   implementation(platform(libs.jackson.bom))
-  implementation(libs.jackson.annotations)
-  implementation(libs.jackson.databind)
+  implementation("com.fasterxml.jackson.core:jackson-annotations")
+  implementation("com.fasterxml.jackson.core:jackson-databind")
 
   compileOnly(libs.immutables.builder)
   compileOnly(libs.immutables.value.annotations)
@@ -60,7 +60,7 @@ dependencies {
   testFixturesApi(libs.microprofile.openapi)
   testFixturesCompileOnly(libs.picocli)
   testFixturesCompileOnly(platform(libs.jackson.bom))
-  testFixturesCompileOnly(libs.jackson.annotations)
+  testFixturesCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   testImplementation(project(":nessie-jaxrs-testextension"))
 

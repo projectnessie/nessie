@@ -44,9 +44,11 @@ dependencies {
   implementation(libs.slf4j.api)
 
   implementation(platform(libs.awssdk.bom))
-  implementation(libs.awssdk.dynamodb) { exclude("software.amazon.awssdk", "apache-client") }
-  implementation(libs.awssdk.netty.nio.client)
-  implementation(libs.awssdk.url.connection.client)
+  implementation("software.amazon.awssdk:dynamodb") {
+    exclude("software.amazon.awssdk", "apache-client")
+  }
+  implementation("software.amazon.awssdk:netty-nio-client")
+  implementation("software.amazon.awssdk:url-connection-client")
 
   compileOnly(libs.testcontainers.testcontainers)
   compileOnly(libs.docker.java.api)

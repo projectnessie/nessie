@@ -44,7 +44,7 @@ dependencies {
   implementation(libs.slf4j.api)
 
   implementation(platform(libs.cassandra.driver.bom))
-  implementation(libs.cassandra.driver.core)
+  implementation("com.datastax.oss:java-driver-core")
 
   compileOnly(libs.testcontainers.cassandra) {
     exclude("com.datastax.cassandra", "cassandra-driver-core")

@@ -35,7 +35,7 @@ dependencies {
 
   implementation(libs.guava)
   implementation(platform(libs.opentelemetry.bom))
-  implementation(libs.opentelemetry.api)
+  implementation("io.opentelemetry:opentelemetry-api")
 
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)

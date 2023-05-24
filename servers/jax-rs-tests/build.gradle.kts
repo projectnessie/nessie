@@ -41,12 +41,12 @@ dependencies {
 
   api(libs.assertj.core)
   api(platform(libs.junit.bom))
-  api(libs.junit.jupiter.api)
-  api(libs.junit.jupiter.params)
+  api("org.junit.jupiter:junit-jupiter-api")
+  api("org.junit.jupiter:junit-jupiter-params")
 
   implementation(platform(libs.jackson.bom))
-  implementation(libs.jackson.databind)
-  compileOnly(libs.jackson.annotations)
+  implementation("com.fasterxml.jackson.core:jackson-databind")
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   testImplementation(project(":nessie-versioned-persist-in-memory"))
   testImplementation(project(":nessie-versioned-persist-in-memory-test"))

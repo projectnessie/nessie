@@ -33,8 +33,8 @@ dependencies {
   implementation(libs.slf4j.api)
 
   implementation(platform(libs.cel.bom))
-  implementation(libs.cel.tools)
-  implementation(libs.cel.jackson)
+  implementation("org.projectnessie.cel:cel-tools")
+  implementation("org.projectnessie.cel:cel-jackson")
 
   compileOnly(libs.immutables.builder)
   compileOnly(libs.immutables.value.annotations)
@@ -48,7 +48,7 @@ dependencies {
   compileOnly(libs.findbugs.jsr305)
 
   compileOnly(platform(libs.jackson.bom))
-  compileOnly(libs.jackson.annotations)
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   compileOnly(libs.microprofile.openapi)
 
@@ -104,9 +104,9 @@ dependencies {
   testCompileOnly(libs.microprofile.openapi)
 
   testFixturesCompileOnly(platform(libs.jackson.bom))
-  testFixturesCompileOnly(libs.jackson.annotations)
+  testFixturesCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
   testCompileOnly(platform(libs.jackson.bom))
-  testCompileOnly(libs.jackson.annotations)
+  testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
 }
 
 // Issue w/ testcontainers/podman in GH workflows :(

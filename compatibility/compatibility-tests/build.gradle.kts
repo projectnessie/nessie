@@ -34,7 +34,7 @@ dependencies {
   implementation(libs.microprofile.openapi)
 
   implementation(platform(libs.jackson.bom))
-  implementation(libs.jackson.annotations)
+  implementation("com.fasterxml.jackson.core:jackson-annotations")
 
   intTestImplementation(libs.guava)
   intTestImplementation(project(":nessie-versioned-persist-adapter"))

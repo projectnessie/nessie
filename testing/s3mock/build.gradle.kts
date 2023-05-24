@@ -53,11 +53,11 @@ dependencies {
   implementation(libs.guava)
 
   implementation(platform(libs.jackson.bom))
-  implementation(libs.jackson.annotations)
-  implementation(libs.jackson.databind)
-  implementation(libs.jackson.dataformat.xml)
-  implementation(libs.jackson.jaxrs.json.provider)
-  implementation(libs.jackson.jaxrs.xml.provider)
+  implementation("com.fasterxml.jackson.core:jackson-annotations")
+  implementation("com.fasterxml.jackson.core:jackson-databind")
+  implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml")
+  implementation("com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider")
+  implementation("com.fasterxml.jackson.jaxrs:jackson-jaxrs-xml-provider")
 
   compileOnly(libs.avro)
 
@@ -66,8 +66,8 @@ dependencies {
   testRuntimeOnly(libs.logback.classic)
 
   testImplementation(platform(libs.awssdk.bom))
-  testImplementation(libs.awssdk.s3)
-  testImplementation(libs.awssdk.url.connection.client)
+  testImplementation("software.amazon.awssdk:s3")
+  testImplementation("software.amazon.awssdk:url-connection-client")
 
   testCompileOnly(libs.immutables.value.annotations)
   testAnnotationProcessor(libs.immutables.value.processor)

@@ -46,7 +46,7 @@ dependencies {
   compileOnly(libs.findbugs.jsr305)
 
   compileOnly(platform(libs.jackson.bom))
-  compileOnly(libs.jackson.annotations)
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   testImplementation(project(":nessie-gc-base-tests"))
   testImplementation(project(":nessie-jaxrs-testextension"))
@@ -66,7 +66,7 @@ dependencies {
   testAnnotationProcessor(libs.immutables.value.processor)
 
   testCompileOnly(platform(libs.jackson.bom))
-  testCompileOnly(libs.jackson.annotations)
+  testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)

@@ -27,23 +27,23 @@ extra["maven.name"] = "Nessie - Versioned Store SPI"
 dependencies {
   implementation(project(":nessie-model"))
   api(project(path = ":nessie-protobuf-relocated", configuration = "shadow"))
-  implementation(libs.jackson.databind)
+  implementation("com.fasterxml.jackson.core:jackson-databind")
   compileOnly(libs.immutables.builder)
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
   compileOnly(libs.microprofile.openapi)
 
   implementation(platform(libs.jackson.bom))
-  compileOnly(libs.jackson.annotations)
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   implementation(libs.guava)
 
   implementation(platform(libs.opentelemetry.instrumentation.bom.alpha))
-  implementation(libs.opentelemetry.api)
-  implementation(libs.opentelemetry.instrumentation.micrometer)
+  implementation("io.opentelemetry:opentelemetry-api")
+  implementation("io.opentelemetry.instrumentation:opentelemetry-micrometer-1.5")
   implementation(libs.micrometer.core)
-  testImplementation(libs.opentelemetry.exporter.common)
-  testImplementation(libs.opentelemetry.sdk)
+  testImplementation("io.opentelemetry:opentelemetry-exporter-common")
+  testImplementation("io.opentelemetry:opentelemetry-sdk")
 
   // javax/jakarta
   compileOnly(libs.jakarta.validation.api)
@@ -55,7 +55,7 @@ dependencies {
   testImplementation(libs.bundles.junit.testing)
 
   testCompileOnly(platform(libs.jackson.bom))
-  testCompileOnly(libs.jackson.annotations)
+  testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   testCompileOnly(libs.microprofile.openapi)
   testCompileOnly(libs.immutables.value.annotations)

@@ -38,7 +38,7 @@ dependencies {
   implementation(libs.guava)
 
   compileOnly(platform(libs.jackson.bom))
-  compileOnly(libs.jackson.annotations)
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
   compileOnly(libs.microprofile.openapi)
 
   // javax/jakarta
@@ -52,7 +52,7 @@ dependencies {
 
   // hadoop-common brings Jackson in ancient versions, pulling in the Jackson BOM to avoid that
   testImplementation(platform(libs.jackson.bom))
-  testCompileOnly(libs.jackson.annotations)
+  testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
   testCompileOnly(libs.microprofile.openapi)
 
   testImplementation(platform(libs.junit.bom))

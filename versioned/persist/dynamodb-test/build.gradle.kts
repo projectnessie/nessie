@@ -32,7 +32,9 @@ dependencies {
   implementation(project(":nessie-versioned-persist-non-transactional-test"))
 
   implementation(platform(libs.awssdk.bom))
-  implementation(libs.awssdk.dynamodb) { exclude("software.amazon.awssdk", "apache-client") }
+  implementation("software.amazon.awssdk:dynamodb") {
+    exclude("software.amazon.awssdk", "apache-client")
+  }
 
   implementation(libs.testcontainers.testcontainers)
   implementation(libs.docker.java.api)

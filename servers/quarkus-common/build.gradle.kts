@@ -56,18 +56,20 @@ dependencies {
   implementation("io.quarkus:quarkus-agroal")
   implementation("io.quarkus:quarkus-jdbc-postgresql")
   implementation("io.quarkiverse.amazonservices:quarkus-amazon-dynamodb")
-  implementation(libs.awssdk.apache.client) { exclude("commons-logging", "commons-logging") }
+  implementation("software.amazon.awssdk:apache-client") {
+    exclude("commons-logging", "commons-logging")
+  }
   implementation("io.quarkus:quarkus-mongodb-client")
   implementation("com.datastax.oss.quarkus:cassandra-quarkus-client")
   implementation("org.jboss.slf4j:slf4j-jboss-logmanager")
-  implementation(libs.opentelemetry.api)
+  implementation("io.opentelemetry:opentelemetry-api")
 
   // javax/jakarta
   compileOnly(libs.jakarta.validation.api)
   compileOnly(libs.javax.validation.api)
 
   compileOnly(platform(libs.jackson.bom))
-  compileOnly(libs.jackson.annotations)
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   compileOnly(libs.microprofile.openapi)
 }

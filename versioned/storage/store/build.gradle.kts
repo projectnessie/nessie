@@ -50,7 +50,7 @@ dependencies {
   annotationProcessor(libs.immutables.value.processor)
 
   compileOnly(platform(libs.jackson.bom))
-  compileOnly(libs.jackson.annotations)
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   testImplementation(project(":nessie-server-store"))
   testImplementation(project(":nessie-versioned-storage-common-tests"))
@@ -60,7 +60,7 @@ dependencies {
   testImplementation(libs.bundles.junit.testing)
 
   testCompileOnly(platform(libs.jackson.bom))
-  testCompileOnly(libs.jackson.annotations)
+  testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   // javax/jakarta
   testCompileOnly(libs.jakarta.validation.api)

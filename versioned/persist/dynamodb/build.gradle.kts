@@ -40,9 +40,11 @@ dependencies {
   compileOnly(libs.findbugs.jsr305)
 
   implementation(platform(libs.awssdk.bom))
-  implementation(libs.awssdk.dynamodb) { exclude("software.amazon.awssdk", "apache-client") }
-  implementation(libs.awssdk.netty.nio.client)
-  implementation(libs.awssdk.url.connection.client)
+  implementation("software.amazon.awssdk:dynamodb") {
+    exclude("software.amazon.awssdk", "apache-client")
+  }
+  implementation("software.amazon.awssdk:netty-nio-client")
+  implementation("software.amazon.awssdk:url-connection-client")
 
   intTestImplementation(project(":nessie-model"))
   intTestImplementation(project(":nessie-versioned-tests"))

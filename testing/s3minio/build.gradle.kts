@@ -29,15 +29,15 @@ dependencies {
   implementation(libs.testcontainers.testcontainers)
 
   implementation(platform(libs.awssdk.bom))
-  implementation(libs.awssdk.s3)
-  implementation(libs.awssdk.url.connection.client)
+  implementation("software.amazon.awssdk:s3")
+  implementation("software.amazon.awssdk:url-connection-client")
 
   // hadoop-common brings Jackson in ancient versions, pulling in the Jackson BOM to avoid that
   implementation(platform(libs.jackson.bom))
   compileOnly(libs.hadoop.common)
 
   implementation(platform(libs.junit.bom))
-  implementation(libs.junit.jupiter.api)
+  implementation("org.junit.jupiter:junit-jupiter-api")
 
   compileOnly(libs.errorprone.annotations)
 

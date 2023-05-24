@@ -32,8 +32,8 @@ dependencies {
   implementation(libs.guava)
 
   implementation(platform(libs.jackson.bom))
-  implementation(libs.jackson.databind)
-  compileOnly(libs.jackson.annotations)
+  implementation("com.fasterxml.jackson.core:jackson-databind")
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   compileOnly(libs.microprofile.openapi)
 
@@ -45,7 +45,7 @@ dependencies {
   testCompileOnly(libs.microprofile.openapi)
 
   testCompileOnly(platform(libs.jackson.bom))
-  testCompileOnly(libs.jackson.annotations)
+  testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
