@@ -150,6 +150,90 @@ The following properties are **required** in Spark when creating the Nessie Cata
     An example of configuring Spark with Iceberg and an S3 bucket for the `warehouse` location is available in the
     [Guides](../../guides/spark-s3.md) section.
 
+## Writing
+
+Iceberg Catalog APIs can be used for creating the table as follows:
+
+=== "Java"
+    ``` java linenums="11"
+    // first instantiate the catalog
+    NessieCatalog catalog = new NessieCatalog();
+    catalog.setConf(sc.hadoopConfiguration());
+    // other catalog properties can be added based on the requirement. For example, "io-impl","authentication.type", etc.
+    catalog.initialize("nessie", ImmutableMap.of(
+        "ref", ref,
+        "uri", url,
+        "warehouse", pathToWarehouse));
+
+    // Creating table by first creating a table name with namespace
+    TableIdentifier region_name = TableIdentifier.parse("testing.region");
+
+    // next create the schema
+    Schema region_schema = Schema([
+      Types.NestedField.optional(1, "R_REGIONKEY", Types.LongType.get()),
+      Types.NestedField.optional(2, "R_NAME", Types.StringType.get()),
+      Types.NestedField.optional(3, "R_COMMENT", Types.StringType.get()),
+    ]);
+
+    // and the partition
+    PartitionSpec region_spec = PartitionSpec.unpartitioned();
+
+    // finally create the table
+    catalog.createTable(region_name, region_schema, region_spec);
+
+    ```
+=== "Python"
+    ``` python linenums="1"
+    sc = spark.sparkContext
+    jvm = sc._gateway.jvm
+
+    # import jvm libraries for iceberg catalogs and schemas
+    java_import(jvm, "org.projectnessie.iceberg.NessieCatalog")
+    java_import(jvm, "org.apache.iceberg.catalog.TableIdentifier")
+    java_import(jvm, "org.apache.iceberg.Schema")
+    java_import(jvm, "org.apache.iceberg.types.Types")
+    java_import(jvm, "org.apache.iceberg.PartitionSpec")
+
+    # first instantiate the catalog
+    catalog = jvm.NessieCatalog()
+    catalog.setConf(sc._jsc.hadoopConfiguration())
+    # other catalog properties can be added based on the requirement. For example, "io-impl","authentication.type", etc.
+    catalog.initialize("nessie", {"ref": ref,
+        "uri": url,
+        "warehouse": pathToWarehouse})
+
+    # Creating table by first creating a table name with namespace
+    region_name = jvm.TableIdentifier.parse("testing.region")
+
+    # next create the schema
+    region_schema = jvm.Schema([
+      jvm.Types.NestedField.optional(
+        1, "R_REGIONKEY", jvm.Types.LongType.get()
+      ),
+      jvm.Types.NestedField.optional(
+        2, "R_NAME", jvm.Types.StringType.get()
+      ),
+      jvm.Types.NestedField.optional(
+        3, "R_COMMENT", jvm.Types.StringType.get()
+      ),
+    ])
+
+    # and the partition
+    region_spec = jvm.PartitionSpec.unpartitioned()
+
+    # finally create the table
+    region_table = catalog.createTable(region_name, region_schema, region_spec)
+    ```
+
+When looking at the Python code above, lines 1-11 are importing jvm objects into pyspark. Lines 12-25 create the table name, schema and partition spec. These
+actions will be familiar to seasoned iceberg users and are wholly iceberg operations. Line 29 is where our initial
+iceberg metadata is finally written to disk and a commit takes place on Nessie.
+
+Now that we have created an Iceberg table in nessie we can write to it. The iceberg `DataSourceV2` allows for either
+`overwrite` or `append` mode in a standard `spark.write`.
+
+Spark support is constantly evolving. See the [iceberg](https://iceberg.apache.org/spark-writes/) docs for an up-to-date support table.
+
 ### Spark3
 
 Spark3 table creation/insertion is as follows:
