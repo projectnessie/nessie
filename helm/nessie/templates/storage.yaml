@@ -1,4 +1,4 @@
-{{- if eq .Values.versionStoreType "ROCKS" }}
+{{- if or (eq .Values.versionStoreType "ROCKS") (eq .Values.versionStoreType "ROCKSDB") }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
