@@ -50,6 +50,5 @@ jobs:
             -a "${ARTIFACTS}" \
             -g ":nessie-quarkus" \
             -p "servers/quarkus-server" \
-            -n \
             ghcr.io/projectnessie/nessie-unstable
           rm -rf "${ARTIFACTS}"
