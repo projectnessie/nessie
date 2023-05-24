@@ -1,22 +1,14 @@
 # Dependencies needed by buildSrc/
 
-[versions]
-errorpronePlugin = "3.1.0"
-jandexPlugin = "1.88"
-junit = "5.9.3"
-nessieBuildPlugins = "0.2.24"
-shadowPlugin = "8.1.1"
-spotlessPlugin = "6.19.0"
-
 [libraries]
 assertj-core = { module = "org.assertj:assertj-core", version = "3.24.2" }
-errorprone = { module = "net.ltgt.gradle:gradle-errorprone-plugin", version.ref = "errorpronePlugin" }
+errorprone = { module = "net.ltgt.gradle:gradle-errorprone-plugin", version = "3.1.0" }
 idea-ext = { module = "gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext", version = "1.1.7" }
-jandex = { module = "com.github.vlsi.gradle:jandex-plugin", version.ref = "jandexPlugin" }
-junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+jandex = { module = "com.github.vlsi.gradle:jandex-plugin", version = "1.88" }
+junit-bom = { module = "org.junit:junit-bom", version = "5.9.3" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine" }
 junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params" }
-nessie-buildsupport-reflectionconfig = { module = "org.projectnessie.buildsupport:reflection-config", version.ref = "nessieBuildPlugins" }
-shadow = { module = "com.github.johnrengelman:shadow", version.ref = "shadowPlugin" }
-spotless = { module = "com.diffplug.spotless:spotless-plugin-gradle", version.ref = "spotlessPlugin" }
+nessie-buildsupport-reflectionconfig = { module = "org.projectnessie.buildsupport:reflection-config", version = "0.2.24" }
+shadow = { module = "com.github.johnrengelman:shadow", version = "8.1.1" }
+spotless = { module = "com.diffplug.spotless:spotless-plugin-gradle", version = "6.19.0" }
