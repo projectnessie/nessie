@@ -421,18 +421,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     ImmutableLogEntry.Builder newLogEntry =
         ImmutableLogEntry.builder().from(logEntry).operations(emptyList());
 
-    ContentKey minKey = null;
-    ContentKey maxKey = null;
     Map<ContentKey, IdentifiedContentKey> identifiedKeys = new HashMap<>();
-    for (Operation operation : operations) {
-      ContentKey key = operation.getKey();
-      if (minKey == null || minKey.compareTo(key) > 0) {
-        minKey = key;
-      }
-      if (maxKey == null || maxKey.compareTo(key) < 0) {
-        maxKey = key;
-      }
-    }
 
     try {
       getStore()
