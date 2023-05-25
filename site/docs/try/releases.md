@@ -2,6 +2,12 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.60.1 Release (May 25, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.60.1).
+
+* Release-publish: fix after removed native images (#6898)
+
 ## 0.60.0 Release (May 25, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.60.0).
