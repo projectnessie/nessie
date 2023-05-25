@@ -36,7 +36,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.http.v1api.HttpApiV1;
@@ -247,17 +246,16 @@ class TestNessieHttpClient {
         .doesNotThrowAnyException();
   }
 
-  @SuppressWarnings("EmptyTryBlock")
   private void testConfig(
-      Class<? extends NessieApi> apiClass, int min, int max, int actual, boolean check)
+      Class<? extends NessieApiV1> apiClass, int min, int max, int actual, boolean check)
       throws Exception {
     try (HttpTestServer server = forConfig(min, max, actual);
-        NessieApi ignored =
+        NessieApiV1 api =
             HttpClientBuilder.builder()
                 .withUri(server.getUri())
                 .withEnableApiCompatibilityCheck(check)
                 .build(apiClass)) {
-      // no-op
+      api.getConfig();
     }
   }
 

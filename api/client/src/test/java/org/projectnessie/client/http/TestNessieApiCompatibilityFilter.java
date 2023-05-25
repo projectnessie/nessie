@@ -39,7 +39,7 @@ import org.projectnessie.client.rest.NessieHttpResponseFilter;
 
 @ExtendWith(MockitoExtension.class)
 @WireMockTest
-class TestNessieApiCompatibility {
+class TestNessieApiCompatibilityFilter {
 
   enum Expectation {
     OK,
@@ -96,30 +96,27 @@ class TestNessieApiCompatibility {
                     .withBody(config.toString())
                     .withHeader("Content-Type", "application/json")));
 
-    try (HttpClient httpClient =
+    HttpClient.Builder builder =
         HttpClient.builder()
             .setBaseUri(URI.create(wireMock.getHttpBaseUrl()))
-            .setObjectMapper(new ObjectMapper())
-            .addResponseFilter(new NessieHttpResponseFilter())
-            .build()) {
+            .setObjectMapper(new ObjectMapper());
 
-      if (expectation == Expectation.OK) {
+    if (expectation == Expectation.OK) {
 
-        assertThatCode(() -> NessieApiCompatibility.check(client, httpClient))
-            .doesNotThrowAnyException();
+      assertThatCode(() -> new NessieApiCompatibilityFilter(builder, client).filter(null))
+          .doesNotThrowAnyException();
 
-      } else {
+    } else {
 
-        assertThatThrownBy(() -> NessieApiCompatibility.check(client, httpClient))
-            .hasMessageContaining(expectation.expectedErrorMessage())
-            .asInstanceOf(type(NessieApiCompatibilityException.class))
-            .extracting(
-                NessieApiCompatibilityException::getClientApiVersion,
-                NessieApiCompatibilityException::getMinServerApiVersion,
-                NessieApiCompatibilityException::getMaxServerApiVersion,
-                NessieApiCompatibilityException::getActualServerApiVersion)
-            .containsExactly(client, serverMin, serverMax, serverActual);
-      }
+      assertThatThrownBy(() -> new NessieApiCompatibilityFilter(builder, client).filter(null))
+          .hasMessageContaining(expectation.expectedErrorMessage())
+          .asInstanceOf(type(NessieApiCompatibilityException.class))
+          .extracting(
+              NessieApiCompatibilityException::getClientApiVersion,
+              NessieApiCompatibilityException::getMinServerApiVersion,
+              NessieApiCompatibilityException::getMaxServerApiVersion,
+              NessieApiCompatibilityException::getActualServerApiVersion)
+          .containsExactly(client, serverMin, serverMax, serverActual);
     }
   }
 
@@ -136,7 +133,7 @@ class TestNessieApiCompatibility {
             .addResponseFilter(new NessieHttpResponseFilter())
             .build()) {
 
-      assertThatCode(() -> NessieApiCompatibility.check(clientApiVersion, httpClient))
+      assertThatCode(() -> NessieApiCompatibilityFilter.check(clientApiVersion, httpClient))
           .doesNotThrowAnyException();
     }
   }

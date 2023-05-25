@@ -53,6 +53,10 @@ public interface HttpClient extends AutoCloseable {
     return new Builder();
   }
 
+  static Builder copyBuilder(Builder other) {
+    return new Builder(other);
+  }
+
   URI getBaseUri();
 
   @Override
@@ -84,6 +88,25 @@ public interface HttpClient extends AutoCloseable {
     private int clientSpec = 2;
 
     private Builder() {}
+
+    private Builder(Builder other) {
+      this.baseUri = other.baseUri;
+      this.mapper = other.mapper;
+      this.jsonView = other.jsonView;
+      this.responseFactory = other.responseFactory;
+      this.sslContext = other.sslContext;
+      this.sslParameters = other.sslParameters;
+      this.authentication = other.authentication;
+      this.readTimeoutMillis = other.readTimeoutMillis;
+      this.connectionTimeoutMillis = other.connectionTimeoutMillis;
+      this.disableCompression = other.disableCompression;
+      this.requestFilters.addAll(other.requestFilters);
+      this.responseFilters.addAll(other.responseFilters);
+      this.http2Upgrade = other.http2Upgrade;
+      this.followRedirects = other.followRedirects;
+      this.forceUrlConnectionClient = other.forceUrlConnectionClient;
+      this.clientSpec = other.clientSpec;
+    }
 
     public URI getBaseUri() {
       return baseUri;
