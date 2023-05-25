@@ -794,7 +794,8 @@ public class VersionStoreImpl implements VersionStore {
                 toCommit,
                 keyRanges.beginStoreKey(),
                 keyRanges.endStoreKey(),
-                true));
+                true,
+                null));
 
     ContentMapping contentMapping = new ContentMapping(persist);
 

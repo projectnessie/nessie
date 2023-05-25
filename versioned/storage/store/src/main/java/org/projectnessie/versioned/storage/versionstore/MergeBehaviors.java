@@ -49,12 +49,11 @@ final class MergeBehaviors {
         "Not all merge key behaviors specified in the request have been used. The following keys were not used: %s",
         remainingKeys);
     mergeKeyBehaviors.forEach(
-        (key, mergeKeyBehavior) -> {
-          checkArgument(
-              mergeKeyBehavior.getResolvedContent() == null || keysUsedForCommit.contains(key),
-              "The merge behavior for key %s has an unused resolvedContent attribute.",
-              key);
-        });
+        (key, mergeKeyBehavior) ->
+            checkArgument(
+                mergeKeyBehavior.getResolvedContent() == null || keysUsedForCommit.contains(key),
+                "The merge behavior for key %s has an unused resolvedContent attribute.",
+                key));
   }
 
   MergeBehavior mergeBehavior(ContentKey key) {

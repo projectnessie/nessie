@@ -55,6 +55,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
@@ -96,6 +97,8 @@ public class AbstractCommitLogicTests {
   static final String NO_COMMON_ANCESTOR_IN_PARENTS_OF = "No common ancestor in parents of ";
 
   public static final String STD_MESSAGE = "foo";
+  public static final StoreKey KEY_ONE = key("one");
+  public static final StoreKey KEY_AAA = key("aaa");
 
   @InjectSoftAssertions protected SoftAssertions soft;
 
@@ -406,36 +409,60 @@ public class AbstractCommitLogicTests {
     ObjId id2 = randomObjId();
     UUID cid1 = randomUUID();
     return Stream.of(
-        arguments(stdCommit().message("commit 1"), stdCommit().message("commit 2"), emptyList()),
+        arguments(
+            stdCommit().message("commit 1"), stdCommit().message("commit 2"), emptyList(), null),
         // single ADD in "from"
         arguments(
-            stdCommit().addAdds(commitAdd(key("one"), 0, id1, null, cid1)),
+            stdCommit().addAdds(commitAdd(KEY_ONE, 0, id1, null, cid1)),
             stdCommit(),
-            singletonList(diffEntry(key("one"), id1, 0, cid1, null, 0, null))),
+            singletonList(diffEntry(KEY_ONE, id1, 0, cid1, null, 0, null)),
+            null),
+        // single ADD in "from" w/ filter
+        arguments(
+            stdCommit().addAdds(commitAdd(KEY_ONE, 0, id1, null, cid1)),
+            stdCommit(),
+            emptyList(),
+            (Predicate<StoreKey>) k -> !KEY_ONE.equals(k)),
         // single ADD in "to"
         arguments(
             stdCommit(),
-            stdCommit().addAdds(commitAdd(key("one"), 0, id1, null, cid1)),
-            singletonList(diffEntry(key("one"), null, 0, null, id1, 0, cid1))),
+            stdCommit().addAdds(commitAdd(KEY_ONE, 0, id1, null, cid1)),
+            singletonList(diffEntry(KEY_ONE, null, 0, null, id1, 0, cid1)),
+            null),
         // ADD in "from" + "to" / same key
         arguments(
-            stdCommit().addAdds(commitAdd(key("one"), 1, id1, null, cid1)),
-            stdCommit().addAdds(commitAdd(key("one"), 2, id2, null, cid1)),
-            singletonList(diffEntry(key("one"), id1, 1, cid1, id2, 2, cid1))),
+            stdCommit().addAdds(commitAdd(KEY_ONE, 1, id1, null, cid1)),
+            stdCommit().addAdds(commitAdd(KEY_ONE, 2, id2, null, cid1)),
+            singletonList(diffEntry(KEY_ONE, id1, 1, cid1, id2, 2, cid1)),
+            null),
+        // ADD in "from" + "to" / same key w/ filter
+        arguments(
+            stdCommit().addAdds(commitAdd(KEY_ONE, 1, id1, null, cid1)),
+            stdCommit().addAdds(commitAdd(KEY_ONE, 2, id2, null, cid1)),
+            emptyList(),
+            (Predicate<StoreKey>) k -> !KEY_ONE.equals(k)),
         // ADD in "from" + "to" / key in commit 1 "lower"
         arguments(
-            stdCommit().addAdds(commitAdd(key("aaa"), 1, id1, null, cid1)),
-            stdCommit().addAdds(commitAdd(key("one"), 2, id2, null, cid1)),
+            stdCommit().addAdds(commitAdd(KEY_AAA, 1, id1, null, cid1)),
+            stdCommit().addAdds(commitAdd(KEY_ONE, 2, id2, null, cid1)),
             asList(
-                diffEntry(key("aaa"), id1, 1, cid1, null, 0, null),
-                diffEntry(key("one"), null, 0, null, id2, 2, cid1))),
+                diffEntry(KEY_AAA, id1, 1, cid1, null, 0, null),
+                diffEntry(KEY_ONE, null, 0, null, id2, 2, cid1)),
+            null),
+        // ADD in "from" + "to" / key in commit 1 "lower" w/ filter
+        arguments(
+            stdCommit().addAdds(commitAdd(KEY_AAA, 1, id1, null, cid1)),
+            stdCommit().addAdds(commitAdd(KEY_ONE, 2, id2, null, cid1)),
+            singletonList(diffEntry(KEY_ONE, null, 0, null, id2, 2, cid1)),
+            (Predicate<StoreKey>) k -> !KEY_AAA.equals(k)),
         // ADD in "from" + "to" / key in commit 2 "lower"
         arguments(
-            stdCommit().addAdds(commitAdd(key("one"), 1, id1, null, cid1)),
-            stdCommit().addAdds(commitAdd(key("aaa"), 2, id2, null, cid1)),
+            stdCommit().addAdds(commitAdd(KEY_ONE, 1, id1, null, cid1)),
+            stdCommit().addAdds(commitAdd(KEY_AAA, 2, id2, null, cid1)),
             asList(
-                diffEntry(key("aaa"), null, 0, null, id2, 2, cid1),
-                diffEntry(key("one"), id1, 1, cid1, null, 0, null))));
+                diffEntry(KEY_AAA, null, 0, null, id2, 2, cid1),
+                diffEntry(KEY_ONE, id1, 1, cid1, null, 0, null)),
+            null));
   }
 
   @ParameterizedTest
@@ -443,7 +470,8 @@ public class AbstractCommitLogicTests {
   public void diff(
       CreateCommit.Builder commitBuilder1,
       CreateCommit.Builder commitBuilder2,
-      List<DiffEntry> diff)
+      List<DiffEntry> diff,
+      Predicate<StoreKey> filter)
       throws Exception {
     CommitLogic commitLogic = commitLogic(persist);
 
@@ -454,43 +482,50 @@ public class AbstractCommitLogicTests {
     CommitObj commit1 = commitLogic.fetchCommit(commitId1);
     CommitObj commit2 = commitLogic.fetchCommit(commitId2);
 
-    soft.assertThat(commitLogic.diff(diffQuery(commit1, commit2, false)))
+    soft.assertThat(commitLogic.diff(diffQuery(commit1, commit2, false, filter)))
         .toIterable()
         .containsExactlyElementsOf(diff);
 
-    soft.assertThat(commitLogic.diff(diffQuery(null, commit1, commit2, null, key("000"), false)))
-        .toIterable()
-        .isEmpty();
-
-    soft.assertThat(commitLogic.diff(diffQuery(null, commit1, commit2, key("zzz"), null, false)))
+    soft.assertThat(
+            commitLogic.diff(diffQuery(null, commit1, commit2, null, key("000"), false, filter)))
         .toIterable()
         .isEmpty();
 
     soft.assertThat(
-            commitLogic.diff(diffQuery(null, commit1, commit2, key("bbb"), key("nnn"), false)))
+            commitLogic.diff(diffQuery(null, commit1, commit2, key("zzz"), null, false, filter)))
         .toIterable()
         .isEmpty();
 
-    soft.assertThat(commitLogic.diff(diffQuery(null, commit1, commit2, null, key("bbb"), false)))
+    soft.assertThat(
+            commitLogic.diff(
+                diffQuery(null, commit1, commit2, key("bbb"), key("nnn"), false, filter)))
         .toIterable()
-        .containsExactlyElementsOf(
-            diff.stream().filter(e -> e.key().equals(key("aaa"))).collect(Collectors.toList()));
+        .isEmpty();
 
     soft.assertThat(
-            commitLogic.diff(diffQuery(null, commit1, commit2, key("a"), key("bbb"), false)))
+            commitLogic.diff(diffQuery(null, commit1, commit2, null, key("bbb"), false, filter)))
         .toIterable()
         .containsExactlyElementsOf(
-            diff.stream().filter(e -> e.key().equals(key("aaa"))).collect(Collectors.toList()));
+            diff.stream().filter(e -> e.key().equals(KEY_AAA)).collect(Collectors.toList()));
 
-    soft.assertThat(commitLogic.diff(diffQuery(null, commit1, commit2, key("o"), null, false)))
+    soft.assertThat(
+            commitLogic.diff(
+                diffQuery(null, commit1, commit2, key("a"), key("bbb"), false, filter)))
         .toIterable()
         .containsExactlyElementsOf(
-            diff.stream().filter(e -> e.key().equals(key("one"))).collect(Collectors.toList()));
+            diff.stream().filter(e -> e.key().equals(KEY_AAA)).collect(Collectors.toList()));
 
-    soft.assertThat(commitLogic.diff(diffQuery(null, commit1, commit2, key("o"), key("p"), false)))
+    soft.assertThat(
+            commitLogic.diff(diffQuery(null, commit1, commit2, key("o"), null, false, filter)))
         .toIterable()
         .containsExactlyElementsOf(
-            diff.stream().filter(e -> e.key().equals(key("one"))).collect(Collectors.toList()));
+            diff.stream().filter(e -> e.key().equals(KEY_ONE)).collect(Collectors.toList()));
+
+    soft.assertThat(
+            commitLogic.diff(diffQuery(null, commit1, commit2, key("o"), key("p"), false, filter)))
+        .toIterable()
+        .containsExactlyElementsOf(
+            diff.stream().filter(e -> e.key().equals(KEY_ONE)).collect(Collectors.toList()));
   }
 
   @Test
@@ -513,7 +548,7 @@ public class AbstractCommitLogicTests {
         requireNonNull(
                 commitLogic.doCommit(
                     stdCommit()
-                        .addAdds(commitAdd(key("aaa"), 0, idAaa, null, cidAaa))
+                        .addAdds(commitAdd(KEY_AAA, 0, idAaa, null, cidAaa))
                         .addAdds(commitAdd(key("ccc"), 0, idCcc, null, cidCcc))
                         .addAdds(commitAdd(key("eee"), 0, idEee, null, cidEee))
                         .build(),
@@ -534,18 +569,19 @@ public class AbstractCommitLogicTests {
 
     List<DiffEntry> diffs =
         asList(
-            diffEntry(key("aaa"), idAaa, 0, cidAaa, null, 0, null),
+            diffEntry(KEY_AAA, idAaa, 0, cidAaa, null, 0, null),
             diffEntry(key("bbb"), null, 0, null, idBbb, 0, cidBbb),
             diffEntry(key("ccc"), idCcc, 0, cidCcc, null, 0, null),
             diffEntry(key("ddd"), null, 0, null, idDdd, 0, cidDdd),
             diffEntry(key("eee"), idEee, 0, cidEee, null, 0, null),
             diffEntry(key("fff"), null, 0, null, idFff, 0, cidFff));
 
-    soft.assertThat(commitLogic.diff(diffQuery(commit1, commit2, false)))
+    soft.assertThat(commitLogic.diff(diffQuery(commit1, commit2, false, null)))
         .toIterable()
         .containsExactlyElementsOf(diffs);
 
-    PagedResult<DiffEntry, StoreKey> iter = commitLogic.diff(diffQuery(commit1, commit2, false));
+    PagedResult<DiffEntry, StoreKey> iter =
+        commitLogic.diff(diffQuery(commit1, commit2, false, null));
     soft.assertThat(iter.tokenForKey(null)).isEqualTo(emptyPagingToken());
     for (int offset = 0; iter.hasNext(); offset++) {
       DiffEntry entry = iter.next();
@@ -553,7 +589,7 @@ public class AbstractCommitLogicTests {
 
       PagingToken token = iter.tokenForKey(entry.key());
       soft.assertThat(token).isNotEqualTo(emptyPagingToken());
-      soft.assertThat(commitLogic.diff(diffQuery(token, commit1, commit2, null, null, false)))
+      soft.assertThat(commitLogic.diff(diffQuery(token, commit1, commit2, null, null, false, null)))
           .toIterable()
           .containsExactlyElementsOf(diffs.subList(offset, diffs.size()));
     }
@@ -572,7 +608,7 @@ public class AbstractCommitLogicTests {
         requireNonNull(
                 commitLogic.doCommit(
                     stdCommit()
-                        .addAdds(commitAdd(key("aaa"), 0, idAaa, null, null))
+                        .addAdds(commitAdd(KEY_AAA, 0, idAaa, null, null))
                         .addAdds(commitAdd(key("bbb"), 0, idBbb, null, null))
                         .addAdds(commitAdd(key("ccc"), 0, idCcc, null, null))
                         .build(),
@@ -596,7 +632,7 @@ public class AbstractCommitLogicTests {
     CreateCommit.Builder createCommit = stdCommit();
     soft.assertThat(
             commitLogic.diffToCreateCommit(
-                commitLogic.diff(diffQuery(commit1, commit2, false)), createCommit))
+                commitLogic.diff(diffQuery(commit1, commit2, false, null)), createCommit))
         .isSameAs(createCommit);
 
     soft.assertThat(createCommit.build())

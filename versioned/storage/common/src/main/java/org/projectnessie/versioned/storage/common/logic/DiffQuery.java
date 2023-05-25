@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.common.logic;
 
 import java.util.Optional;
+import java.util.function.Predicate;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
@@ -71,6 +72,11 @@ public interface DiffQuery extends PageableQuery {
   @Value.Parameter(order = 6)
   boolean prefetch();
 
+  @Nullable
+  @jakarta.annotation.Nullable
+  @Value.Parameter(order = 7)
+  Predicate<StoreKey> filter();
+
   @Nonnull
   @jakarta.annotation.Nonnull
   static DiffQuery diffQuery(
@@ -79,9 +85,10 @@ public interface DiffQuery extends PageableQuery {
       @Nullable @jakarta.annotation.Nullable CommitObj toCommit,
       @Nullable @jakarta.annotation.Nullable StoreKey start,
       @Nullable @jakarta.annotation.Nullable StoreKey end,
-      boolean prefetch) {
+      boolean prefetch,
+      @Nullable @jakarta.annotation.Nullable Predicate<StoreKey> filter) {
     return ImmutableDiffQuery.of(
-        Optional.ofNullable(pagingToken), fromCommit, toCommit, start, end, prefetch);
+        Optional.ofNullable(pagingToken), fromCommit, toCommit, start, end, prefetch, filter);
   }
 
   @Nonnull
@@ -89,7 +96,8 @@ public interface DiffQuery extends PageableQuery {
   static DiffQuery diffQuery(
       @Nullable @jakarta.annotation.Nullable CommitObj fromCommit,
       @Nullable @jakarta.annotation.Nullable CommitObj toCommit,
-      boolean prefetch) {
-    return diffQuery(null, fromCommit, toCommit, null, null, prefetch);
+      boolean prefetch,
+      @Nullable @jakarta.annotation.Nullable Predicate<StoreKey> filter) {
+    return diffQuery(null, fromCommit, toCommit, null, null, prefetch, filter);
   }
 }
