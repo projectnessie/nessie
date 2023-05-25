@@ -31,7 +31,7 @@ testcontainers = "1.18.1"
 undertow = "2.2.24.Final"
 
 # Docker image tags
-keycloakContainerTag = "21.1"
+keycloakContainerTag = "21.0.2"
 postgresContainerTag = "14"
 
 [bundles]
