@@ -19,10 +19,11 @@ To generate a fresh pair of a key and a (self-signed) certificate:
 
 ```shell
 openssl req -new -subj "/CN=Nessie" -addext "subjectAltName = DNS:nessie.local" \
-  -newkey rsa:2048 -keyout nessie-key.pem -out nessie.crt -noenc
+  -newkey rsa:2048 -keyout nessie-key.pem -out nessie.crt -x509 -nodes
 ```
 
-Note the `-noenc` option. It is used only for the sake of simplicity of this example deployment. 
+Note the `-nodes` option. It is used only for the sake of simplicity of this example deployment. Also, newer `openssl`
+versions deprecated it in favour of `-noenc`.
 
 Add the new certificate to the local set of CA certificates on the client host (where the Nessie clients,
 such as Nessie CLI / `curl` / browser, are going to run).
