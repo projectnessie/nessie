@@ -230,6 +230,21 @@ class CommitImpl extends BaseCommitHelper {
     Map<ContentKey, Content> newContent = new HashMap<>();
     Object2IntHashMap<ContentKey> deletedKeysAndPayload =
         new Object2IntHashMap<>(operations.size() * 2, DEFAULT_LOAD_FACTOR, -1);
+    // Must handle delete operations before put operations
+    for (int i = 0; i < operations.size(); i++) {
+      Operation operation = operations.get(i);
+      StoreKey storeKey = storeKeys.get(i);
+
+      if (operation instanceof Delete) {
+        commitAddDelete(
+            expectedIndex(),
+            commit,
+            operation.getKey(),
+            storeKey,
+            deleted,
+            deletedKeysAndPayload::put);
+      }
+    }
     for (int i = 0; i < operations.size(); i++) {
       Operation operation = operations.get(i);
       StoreKey storeKey = storeKeys.get(i);
@@ -245,15 +260,12 @@ class CommitImpl extends BaseCommitHelper {
             deleted,
             newContent::put);
       } else if (operation instanceof Delete) {
-        commitAddDelete(
-            expectedIndex(),
-            commit,
-            operation.getKey(),
-            storeKey,
-            deleted,
-            deletedKeysAndPayload::put);
+        // handled above
       } else if (operation instanceof Unchanged) {
         commitAddUnchanged(headIndex(), expectedIndex(), commit, storeKey);
+      } else {
+        throw new IllegalArgumentException(
+            "Unknown operation type " + operation.getClass().getSimpleName());
       }
     }
 
