@@ -36,6 +36,7 @@ import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.CommitResult;
+import org.projectnessie.versioned.ContentResult;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
@@ -149,11 +150,12 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
       BranchName branch, int commitNum, int user, Hash hashKnownByUser, ContentKey key)
       throws ReferenceNotFoundException {
     List<Operation> ops;
-    Content existing =
+    ContentResult existing =
         store().getValue(store.hashOnReference(branch, Optional.of(hashKnownByUser)), key);
     Content value =
         existing != null
-            ? onRef(String.format("data_file_%03d_%03d", user, commitNum), existing.getId())
+            ? onRef(
+                String.format("data_file_%03d_%03d", user, commitNum), existing.content().getId())
             : newOnRef(String.format("data_file_%03d_%03d", user, commitNum));
     ops = ImmutableList.of(Put.of(key, value));
     return ops;

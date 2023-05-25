@@ -15,21 +15,62 @@
  */
 package org.projectnessie.versioned;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
+
 import java.util.Optional;
-import org.immutables.value.Value.Immutable;
+import javax.annotation.Nullable;
+import org.immutables.value.Value;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.IdentifiedContentKey;
 
-@Immutable
+@Value.Immutable
 public interface Diff {
 
-  ContentKey getKey();
+  @Value.Parameter(order = 1)
+  @Nullable
+  @jakarta.annotation.Nullable
+  IdentifiedContentKey getFromKey();
 
+  @Value.Parameter(order = 2)
+  @Nullable
+  @jakarta.annotation.Nullable
+  IdentifiedContentKey getToKey();
+
+  @Value.Parameter(order = 3)
   Optional<Content> getFromValue();
 
+  @Value.Parameter(order = 4)
   Optional<Content> getToValue();
 
-  static Diff of(ContentKey key, Optional<Content> from, Optional<Content> to) {
-    return ImmutableDiff.builder().key(key).fromValue(from).toValue(to).build();
+  @Value.NonAttribute
+  default ContentKey contentKey() {
+    IdentifiedContentKey k = getFromKey();
+    if (k == null) {
+      k = getToKey();
+    }
+    return requireNonNull(k).contentKey();
+  }
+
+  @Value.Check
+  default void check() {
+    IdentifiedContentKey from = getFromKey();
+    IdentifiedContentKey to = getToKey();
+    if (from != null && to != null) {
+      checkArgument(
+          from.contentKey().equals(to.contentKey()),
+          "ContentKeys for from (%s) and to (%s) keys must be equal",
+          from.contentKey(),
+          to.contentKey());
+    }
+  }
+
+  static Diff of(
+      IdentifiedContentKey fromKey,
+      IdentifiedContentKey toKey,
+      Optional<Content> from,
+      Optional<Content> to) {
+    return ImmutableDiff.of(fromKey, toKey, from, to);
   }
 }

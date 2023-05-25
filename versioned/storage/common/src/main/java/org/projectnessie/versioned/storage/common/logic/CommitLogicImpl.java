@@ -903,7 +903,7 @@ final class CommitLogicImpl implements CommitLogic {
   @Nonnull
   @jakarta.annotation.Nonnull
   @Override
-  public PagedResult<DiffEntry, StoreKey> diff(
+  public DiffPagedResult<DiffEntry, StoreKey> diff(
       @Nonnull @jakarta.annotation.Nonnull DiffQuery diffQuery) {
     IndexesLogic indexesLogic = indexesLogic(persist);
 
@@ -922,11 +922,11 @@ final class CommitLogicImpl implements CommitLogic {
     Iterator<StoreIndexElement<CommitOp>> toIter =
         toIndex.iterator(start, end, diffQuery.prefetch());
 
-    return new DiffEntryIter(fromIter, toIter, diffQuery.filter());
+    return new DiffEntryIter(fromIndex, toIndex, fromIter, toIter, diffQuery.filter());
   }
 
   private static final class DiffEntryIter extends AbstractIterator<DiffEntry>
-      implements PagedResult<DiffEntry, StoreKey> {
+      implements DiffPagedResult<DiffEntry, StoreKey> {
     private final Iterator<StoreIndexElement<CommitOp>> fromIter;
     private final Iterator<StoreIndexElement<CommitOp>> toIter;
     private final Predicate<StoreKey> filter;
@@ -934,13 +934,30 @@ final class CommitLogicImpl implements CommitLogic {
     private StoreIndexElement<CommitOp> fromElement;
     private StoreIndexElement<CommitOp> toElement;
 
+    private final StoreIndex<CommitOp> fromIndex;
+    private final StoreIndex<CommitOp> toIndex;
+
     DiffEntryIter(
+        StoreIndex<CommitOp> fromIndex,
+        StoreIndex<CommitOp> toIndex,
         Iterator<StoreIndexElement<CommitOp>> fromIter,
         Iterator<StoreIndexElement<CommitOp>> toIter,
         Predicate<StoreKey> filter) {
+      this.fromIndex = fromIndex;
+      this.toIndex = toIndex;
       this.fromIter = fromIter;
       this.toIter = toIter;
       this.filter = filter != null ? filter : x -> true;
+    }
+
+    @Override
+    public StoreIndex<CommitOp> fromIndex() {
+      return fromIndex;
+    }
+
+    @Override
+    public StoreIndex<CommitOp> toIndex() {
+      return toIndex;
     }
 
     @Override

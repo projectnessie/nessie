@@ -591,7 +591,7 @@ class BaseCommitHelper {
                 if (op != null
                     && ex != null
                     && op.payload() == ex.payload()
-                    && contentTypeForPayload((byte) op.payload()) == NAMESPACE) {
+                    && contentTypeForPayload(op.payload()) == NAMESPACE) {
                   return ConflictResolution.ADD;
                 }
               }

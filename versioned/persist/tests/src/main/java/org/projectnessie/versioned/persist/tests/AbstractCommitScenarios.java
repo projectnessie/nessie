@@ -26,7 +26,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
@@ -40,7 +39,6 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.BranchName;
-import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -304,60 +302,6 @@ public abstract class AbstractCommitScenarios {
       assertThat(newHead).isNotEqualTo(head);
       head = newHead;
     }
-  }
-
-  @Test
-  void commitWithValidation() throws Exception {
-    BranchName branch = BranchName.of("main");
-    ContentKey key = ContentKey.of("my", "table0");
-    Hash branchHead =
-        databaseAdapter.namedRef(branch.getName(), GetNamedRefsParams.DEFAULT).getHash();
-    String cid = "cid-0";
-
-    RuntimeException exception = new ArithmeticException("Whatever");
-    assertThatThrownBy(
-            () ->
-                doCommitWithValidation(
-                    branch,
-                    cid,
-                    key,
-                    () -> {
-                      // do some operations here
-                      databaseAdapter.globalContent(ContentId.of(cid));
-                      assertThat(
-                              databaseAdapter.values(
-                                  branchHead,
-                                  Collections.singleton(key),
-                                  KeyFilterPredicate.ALLOW_ALL))
-                          .isEmpty();
-
-                      // let the custom commit-validation fail
-                      throw exception;
-                    }))
-        .isSameAs(exception);
-
-    assertThat(databaseAdapter.namedRef(branch.getName(), GetNamedRefsParams.DEFAULT).getHash())
-        .isEqualTo(branchHead);
-    assertThat(databaseAdapter.globalContent(ContentId.of(cid))).isEmpty();
-  }
-
-  void doCommitWithValidation(
-      BranchName branch, String cid, ContentKey key, Callable<Void> validator) throws Exception {
-    OnRefOnly c = OnRefOnly.onRef("initial commit content", cid);
-
-    ImmutableCommitParams.Builder commit =
-        ImmutableCommitParams.builder()
-            .toBranch(branch)
-            .commitMetaSerialized(ByteString.copyFromUtf8("initial commit meta"))
-            .addPuts(
-                KeyWithBytes.of(
-                    key,
-                    ContentId.of(cid),
-                    (byte) payloadForContent(c),
-                    DefaultStoreWorker.instance().toStoreOnReferenceState(c)))
-            .putExpectedStates(ContentId.of(cid), Optional.empty())
-            .validator(validator);
-    databaseAdapter.commit(commit.build());
   }
 
   @Test

@@ -32,10 +32,10 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.ContentResult;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Put;
@@ -133,7 +133,7 @@ public class TestContentMigrationToPersist {
               .getCommitHash();
     }
 
-    Map<ContentKey, Content> values = srcStore.getValues(head, keys);
+    Map<ContentKey, ContentResult> values = srcStore.getValues(head, keys);
 
     ExportMeta exportMeta = exportRepo(branch.getName(), batchSize);
     soft.assertThat(exportMeta.getNamedReferencesCount()).isEqualTo(1);

@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned;
+package org.projectnessie.versioned.storage.common.logic;
 
-public enum ResultType {
-  REFERENCE_ASSIGNED,
-  REFERENCE_DELETED,
-  REFERENCE_CREATED,
-  COMMIT,
-  MERGE,
-  TRANSPLANT,
-  CONTENT_RESULT
+import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
+import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
+
+public interface DiffPagedResult<E, K> extends PagedResult<E, K> {
+  StoreIndex<CommitOp> fromIndex();
+
+  StoreIndex<CommitOp> toIndex();
 }

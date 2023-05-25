@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,31 +15,29 @@
  */
 package org.projectnessie.versioned;
 
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
+import java.util.List;
 import org.immutables.value.Value;
-import org.projectnessie.model.Content;
 import org.projectnessie.model.IdentifiedContentKey;
 
 @Value.Immutable
-public interface KeyEntry {
+public interface CommitValidation {
+  List<CommitOperation> operations();
 
-  IdentifiedContentKey getKey();
-
-  @Nullable
-  @jakarta.annotation.Nullable
-  Content getContent();
-
-  static ImmutableKeyEntry.Builder builder() {
-    return ImmutableKeyEntry.builder();
+  static ImmutableCommitValidation.Builder builder() {
+    return ImmutableCommitValidation.builder();
   }
 
-  static KeyEntry of(IdentifiedContentKey key) {
-    return builder().key(key).build();
-  }
+  @Value.Immutable
+  interface CommitOperation {
+    @Value.Parameter(order = 1)
+    IdentifiedContentKey identifiedKey();
 
-  static KeyEntry of(
-      IdentifiedContentKey key, @NotNull @jakarta.validation.constraints.NotNull Content content) {
-    return builder().key(key).content(content).build();
+    @Value.Parameter(order = 2)
+    Operation operation();
+
+    static CommitOperation commitOperation(
+        IdentifiedContentKey identifiedKey, Operation operation) {
+      return ImmutableCommitOperation.of(identifiedKey, operation);
+    }
   }
 }

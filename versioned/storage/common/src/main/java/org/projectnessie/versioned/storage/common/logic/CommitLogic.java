@@ -53,7 +53,8 @@ public interface CommitLogic {
 
   @Nonnull
   @jakarta.annotation.Nonnull
-  PagedResult<DiffEntry, StoreKey> diff(@Nonnull @jakarta.annotation.Nonnull DiffQuery diffQuery);
+  DiffPagedResult<DiffEntry, StoreKey> diff(
+      @Nonnull @jakarta.annotation.Nonnull DiffQuery diffQuery);
 
   /**
    * Convenience method that combines {@link #buildCommitObj(CreateCommit, ConflictHandler,

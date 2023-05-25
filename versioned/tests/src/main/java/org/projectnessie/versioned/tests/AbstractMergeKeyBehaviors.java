@@ -251,7 +251,8 @@ public abstract class AbstractMergeKeyBehaviors extends AbstractNestedVersionSto
         store().getValues(target, allKeys).entrySet().stream()
             .collect(
                 Collectors.toMap(
-                    Map.Entry::getKey, e -> ((ImmutableIcebergTable) e.getValue()).withId(null)));
+                    Map.Entry::getKey,
+                    e -> ((ImmutableIcebergTable) e.getValue().content()).withId(null)));
     soft.assertThat(contentsOnTargetAfter)
         .containsExactlyInAnyOrderEntriesOf(expectedContentsAfter);
   }

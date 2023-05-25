@@ -42,13 +42,13 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
+import org.projectnessie.versioned.ContentResult;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.KeyEntry;
@@ -291,10 +291,12 @@ public abstract class BaseExportImport {
             List<KeyEntry> targetKeyEntries = keys(targetVersionStore(), c);
             soft.assertThat(targetKeyEntries).containsExactlyInAnyOrderElementsOf(sourceKeyEntries);
             Set<ContentKey> keys =
-                targetKeyEntries.stream().map(KeyEntry::getKey).collect(Collectors.toSet());
+                targetKeyEntries.stream()
+                    .map(e -> e.getKey().contentKey())
+                    .collect(Collectors.toSet());
             try {
-              Map<ContentKey, Content> targetValues = targetVersionStore().getValues(c, keys);
-              Map<ContentKey, Content> sourceValues = sourceVersionStore().getValues(c, keys);
+              Map<ContentKey, ContentResult> targetValues = targetVersionStore().getValues(c, keys);
+              Map<ContentKey, ContentResult> sourceValues = sourceVersionStore().getValues(c, keys);
               soft.assertThat(targetValues).containsExactlyInAnyOrderEntriesOf(sourceValues);
             } catch (ReferenceNotFoundException e) {
               throw new RuntimeException(e);

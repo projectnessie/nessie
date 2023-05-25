@@ -64,11 +64,10 @@ public class TestBatchAccessChecker {
 
   @Test
   public void doubleChecks() {
-    Check checkRefLog = Check.builder(CheckType.VIEW_REFLOG).build();
+    Check checkRefLog = Check.check(CheckType.VIEW_REFLOG);
     String msgRefLog = "no, you must not";
 
-    Check checkListTagCommits =
-        Check.builder(CheckType.LIST_COMMIT_LOG).ref(TagName.of("bar")).build();
+    Check checkListTagCommits = Check.check(CheckType.LIST_COMMIT_LOG, TagName.of("bar"));
     String msgListTagCommits = "don't look into bar";
 
     BatchAccessChecker checker =
@@ -142,7 +141,7 @@ public class TestBatchAccessChecker {
         checker.canReadEntries(c.ref());
         break;
       case READ_CONTENT_KEY:
-        checker.canReadContentKey(c.ref(), c.key(), c.contentId());
+        checker.canReadContentKey(c.ref(), c.identifiedKey());
         break;
       case ASSIGN_REFERENCE_TO_HASH:
         checker.canAssignRefToHash(c.ref());
@@ -154,13 +153,13 @@ public class TestBatchAccessChecker {
         checker.canCommitChangeAgainstReference(c.ref());
         break;
       case READ_ENTITY_VALUE:
-        checker.canReadEntityValue(c.ref(), c.key(), c.contentId());
+        checker.canReadEntityValue(c.ref(), c.identifiedKey());
         break;
       case UPDATE_ENTITY:
-        checker.canUpdateEntity(c.ref(), c.key(), c.contentId(), c.contentType());
+        checker.canUpdateEntity(c.ref(), c.identifiedKey());
         break;
       case DELETE_ENTITY:
-        checker.canDeleteEntity(c.ref(), c.key(), c.contentId());
+        checker.canDeleteEntity(c.ref(), c.identifiedKey());
         break;
       case VIEW_REFLOG:
         checker.canViewRefLog();

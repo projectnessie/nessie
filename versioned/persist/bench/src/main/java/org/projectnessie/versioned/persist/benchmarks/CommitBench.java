@@ -42,9 +42,9 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.ContentResult;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
@@ -233,13 +233,13 @@ public class CommitBench {
       List<ContentKey> keys,
       Map<ContentKey, String> contentIds)
       throws Exception {
-    Map<ContentKey, Content> contentByKey = bp.versionStore.getValues(branch, keys);
+    Map<ContentKey, ContentResult> contentByKey = bp.versionStore.getValues(branch, keys);
 
     try {
       List<Operation> operations = new ArrayList<>(bp.tablesPerCommit);
       for (int i = 0; i < bp.tablesPerCommit; i++) {
         ContentKey key = keys.get(i);
-        Content value = contentByKey.get(key);
+        ContentResult value = contentByKey.get(key);
         if (value == null) {
           throw new RuntimeException("no value for key " + key + " in " + branch);
         }

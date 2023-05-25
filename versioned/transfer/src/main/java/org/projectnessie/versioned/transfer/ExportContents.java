@@ -28,6 +28,7 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.CommitMetaSerializer;
+import org.projectnessie.versioned.ContentResult;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.KeyEntry;
 import org.projectnessie.versioned.ReferenceInfo;
@@ -118,11 +119,12 @@ final class ExportContents extends ExportCommon {
                 .setCreatedTimeMicros(micros)
                 .setParentCommitId(lastCommitId);
 
-        Map<ContentKey, Content> values =
+        Map<ContentKey, ContentResult> values =
             store.getValues(
-                ref.getHash(), batch.stream().map(KeyEntry::getKey).collect(Collectors.toList()));
-        for (Map.Entry<ContentKey, Content> entry : values.entrySet()) {
-          Operation op = putOperationFromCommit(entry.getKey(), entry.getValue()).build();
+                ref.getHash(),
+                batch.stream().map(e -> e.getKey().contentKey()).collect(Collectors.toList()));
+        for (Map.Entry<ContentKey, ContentResult> entry : values.entrySet()) {
+          Operation op = putOperationFromCommit(entry.getKey(), entry.getValue().content()).build();
           hasher.putBytes(op.toByteArray());
           commitBuilder.addOperations(op);
         }

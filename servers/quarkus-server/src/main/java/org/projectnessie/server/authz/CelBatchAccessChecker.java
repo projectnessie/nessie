@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 import org.projectnessie.cel.tools.ScriptException;
+import org.projectnessie.model.Content;
 import org.projectnessie.services.authz.AbstractBatchAccessChecker;
 import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.BatchAccessChecker;
@@ -72,10 +73,11 @@ final class CelBatchAccessChecker extends AbstractBatchAccessChecker {
 
   private void canPerformOpOnReference(Check check, Map<Check, String> failed) {
     String roleName = getRoleName();
+    String refName = check.ref().getName();
     ImmutableMap<String, Object> arguments =
         ImmutableMap.of(
             "ref",
-            check.ref().getName(),
+            refName,
             "role",
             roleName,
             "op",
@@ -89,30 +91,32 @@ final class CelBatchAccessChecker extends AbstractBatchAccessChecker {
         () ->
             String.format(
                 "'%s' is not allowed for role '%s' on reference '%s'",
-                check.type(), roleName, check.ref().getName());
+                check.type(), roleName, refName);
     canPerformOp(arguments, check, errorMsgSupplier, failed);
   }
 
   private void canPerformOpOnPath(Check check, Map<Check, String> failed) {
     String roleName = getRoleName();
+    Content.Type contentType = check.contentType();
+    String contentKeyPathString = check.key().toPathString();
     ImmutableMap<String, Object> arguments =
         ImmutableMap.of(
             "ref",
             check.ref().getName(),
             "path",
-            check.key().toPathString(),
+            contentKeyPathString,
             "role",
             roleName,
             "op",
             check.type().name(),
             "contentType",
-            check.contentType() != null ? check.contentType().name() : "");
+            contentType != null ? contentType.name() : "");
 
     Supplier<String> errorMsgSupplier =
         () ->
             String.format(
                 "'%s' is not allowed for role '%s' on content '%s'",
-                check.type(), roleName, check.key().toPathString());
+                check.type(), roleName, contentKeyPathString);
 
     canPerformOp(arguments, check, errorMsgSupplier, failed);
   }

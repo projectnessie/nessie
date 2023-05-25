@@ -15,10 +15,13 @@
  */
 package org.projectnessie.versioned.storage.versionstore;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
 import static java.util.Objects.requireNonNull;
+import static org.projectnessie.model.IdentifiedContentKey.identifiedContentKeyFromContent;
 import static org.projectnessie.nessie.relocated.protobuf.ByteString.copyFromUtf8;
+import static org.projectnessie.versioned.ContentResult.contentResult;
 import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
 import static org.projectnessie.versioned.storage.common.logic.DiffQuery.diffQuery;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
@@ -60,9 +63,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -72,11 +75,13 @@ import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.IdentifiedContentKey;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.CommitResult;
+import org.projectnessie.versioned.ContentResult;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
@@ -117,6 +122,7 @@ import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
 import org.projectnessie.versioned.storage.common.logic.CommitLogic;
 import org.projectnessie.versioned.storage.common.logic.DiffEntry;
+import org.projectnessie.versioned.storage.common.logic.DiffPagedResult;
 import org.projectnessie.versioned.storage.common.logic.IndexesLogic;
 import org.projectnessie.versioned.storage.common.logic.PagedResult;
 import org.projectnessie.versioned.storage.common.logic.PagingToken;
@@ -485,6 +491,38 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   @Override
+  public List<IdentifiedContentKey> getIdentifiedKeys(Ref ref, Collection<ContentKey> keys)
+      throws ReferenceNotFoundException {
+    RefMapping refMapping = new RefMapping(persist);
+    CommitObj head = refMapping.resolveRefHead(ref);
+    if (head == null) {
+      return emptyList();
+    }
+    IndexesLogic indexesLogic = indexesLogic(persist);
+    StoreIndex<CommitOp> index = indexesLogic.buildCompleteIndex(head, Optional.empty());
+
+    return keys.stream()
+        .map(
+            key -> {
+              StoreKey storeKey = keyToStoreKey(key);
+              StoreIndexElement<CommitOp> indexElement = index.get(storeKey);
+              if (indexElement == null || !indexElement.content().action().exists()) {
+                return null;
+              }
+              CommitOp content = indexElement.content();
+              UUID contentId = content.contentId();
+
+              return buildIdentifiedKey(
+                  key,
+                  index,
+                  contentTypeForPayload(content.payload()),
+                  contentId != null ? contentId.toString() : null);
+            })
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
+  }
+
+  @Override
   public PaginationIterator<KeyEntry> getKeys(
       Ref ref,
       String pagingToken,
@@ -536,20 +574,20 @@ public class VersionStoreImpl implements VersionStore {
           try {
             ContentKey key = storeKeyToKey(indexElement.key());
             CommitOp commitOp = indexElement.content();
-            Content.Type contentType = contentTypeForPayload((byte) commitOp.payload());
+            Content.Type contentType = contentTypeForPayload(commitOp.payload());
 
             if (withContent) {
               Content c =
                   contentMapping.fetchContent(
                       requireNonNull(
                           indexElement.content().value(), "Required value pointer is null"));
-              return KeyEntry.of(contentType, key, c);
+              return KeyEntry.of(buildIdentifiedKey(key, index, c), c);
             }
 
             UUID contentId = commitOp.contentId();
             String contentIdString =
                 contentId != null ? contentId.toString() : contentIdFromContent(commitOp);
-            return KeyEntry.of(contentType, key, contentIdString);
+            return KeyEntry.of(buildIdentifiedKey(key, index, contentType, contentIdString));
           } catch (ObjNotFoundException e) {
             throw new RuntimeException("Could not fetch or map content", e);
           }
@@ -564,7 +602,7 @@ public class VersionStoreImpl implements VersionStore {
 
       @Override
       public String tokenForEntry(KeyEntry entry) {
-        return token(keyToStoreKey(entry.getKey()));
+        return token(keyToStoreKey(entry.getKey().contentKey()));
       }
 
       private String token(StoreKey storeKey) {
@@ -580,7 +618,7 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   @Override
-  public Content getValue(Ref ref, ContentKey key) throws ReferenceNotFoundException {
+  public ContentResult getValue(Ref ref, ContentKey key) throws ReferenceNotFoundException {
     RefMapping refMapping = new RefMapping(persist);
     CommitObj head = refMapping.resolveRefHead(ref);
     if (head == null) {
@@ -600,15 +638,41 @@ public class VersionStoreImpl implements VersionStore {
       }
 
       ContentMapping contentMapping = new ContentMapping(persist);
-      return contentMapping.fetchContent(
-          requireNonNull(indexElement.content().value(), "Required value pointer is null"));
+      Content content =
+          contentMapping.fetchContent(
+              requireNonNull(indexElement.content().value(), "Required value pointer is null"));
+
+      IdentifiedContentKey identifiedKey = buildIdentifiedKey(key, index, content);
+
+      return contentResult(identifiedKey, content, null);
     } catch (ObjNotFoundException e) {
       throw objectNotFound(e);
     }
   }
 
+  static IdentifiedContentKey buildIdentifiedKey(
+      ContentKey key, StoreIndex<CommitOp> index, Content content) {
+    return buildIdentifiedKey(key, index, content.getType(), content.getId());
+  }
+
+  static IdentifiedContentKey buildIdentifiedKey(
+      ContentKey key, StoreIndex<CommitOp> index, Content.Type contentType, String contentId) {
+    return identifiedContentKeyFromContent(
+        key,
+        contentType,
+        contentId,
+        path -> {
+          StoreIndexElement<CommitOp> pathIndexElement = index.get(keyToStoreKey(path));
+          UUID id = null;
+          if (pathIndexElement != null && pathIndexElement.content().action().exists()) {
+            id = pathIndexElement.content().contentId();
+          }
+          return id != null ? id.toString() : null;
+        });
+  }
+
   @Override
-  public Map<ContentKey, Content> getValues(Ref ref, Collection<ContentKey> keys)
+  public Map<ContentKey, ContentResult> getValues(Ref ref, Collection<ContentKey> keys)
       throws ReferenceNotFoundException {
     RefMapping refMapping = new RefMapping(persist);
     CommitObj head = refMapping.resolveRefHead(ref);
@@ -637,7 +701,15 @@ public class VersionStoreImpl implements VersionStore {
       }
 
       ContentMapping contentMapping = new ContentMapping(persist);
-      return contentMapping.fetchContents(idsToKeys);
+      return contentMapping.fetchContents(idsToKeys).entrySet().stream()
+          .collect(
+              Collectors.toMap(
+                  Map.Entry::getKey,
+                  e ->
+                      contentResult(
+                          buildIdentifiedKey(e.getKey(), index, e.getValue()),
+                          e.getValue(),
+                          null)));
     } catch (ObjNotFoundException e) {
       throw objectNotFound(e);
     }
@@ -649,7 +721,7 @@ public class VersionStoreImpl implements VersionStore {
       @Nonnull @jakarta.annotation.Nonnull Optional<Hash> referenceHash,
       @Nonnull @jakarta.annotation.Nonnull CommitMeta metadata,
       @Nonnull @jakarta.annotation.Nonnull List<Operation> operations,
-      @Nonnull @jakarta.annotation.Nonnull Callable<Void> validator,
+      @Nonnull @jakarta.annotation.Nonnull CommitValidator validator,
       @Nonnull @jakarta.annotation.Nonnull BiConsumer<ContentKey, String> addedContents)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return committingOperation(
@@ -786,7 +858,7 @@ public class VersionStoreImpl implements VersionStore {
     }
 
     CommitLogic commitLogic = commitLogic(persist);
-    PagedResult<DiffEntry, StoreKey> diffIter =
+    DiffPagedResult<DiffEntry, StoreKey> diffIter =
         commitLogic.diff(
             diffQuery(
                 keyRanges.pagingTokenObj(),
@@ -826,8 +898,35 @@ public class VersionStoreImpl implements VersionStore {
                   throw new RuntimeException(e.getMessage());
                 }
               };
+          ContentKey contentKey = storeKeyToKey(d.key());
+
+          IdentifiedContentKey fromKey =
+              d.fromId() != null
+                  ? buildIdentifiedKey(
+                      contentKey,
+                      diffIter.fromIndex(),
+                      contentTypeForPayload(d.fromPayload()),
+                      d.fromContentId() != null
+                          ? requireNonNull(d.fromContentId()).toString()
+                          : null)
+                  : null;
+
+          IdentifiedContentKey toKey =
+              d.toId() != null
+                  ? (Objects.equals(d.fromContentId(), d.toContentId())
+                      ? fromKey
+                      : buildIdentifiedKey(
+                          contentKey,
+                          diffIter.toIndex(),
+                          contentTypeForPayload(d.toPayload()),
+                          d.toContentId() != null
+                              ? requireNonNull(d.toContentId()).toString()
+                              : null))
+                  : null;
+
           return Diff.of(
-              storeKeyToKey(d.key()),
+              fromKey,
+              toKey,
               Optional.ofNullable(d.fromId()).map(contentFetcher),
               Optional.ofNullable(d.toId()).map(contentFetcher));
         },
@@ -841,7 +940,7 @@ public class VersionStoreImpl implements VersionStore {
 
       @Override
       public String tokenForEntry(Diff entry) {
-        return tokenFor(keyToStoreKeyMin(entry.getKey()));
+        return tokenFor(keyToStoreKeyMin(entry.contentKey()));
       }
 
       private String tokenFor(StoreKey storeKey) {

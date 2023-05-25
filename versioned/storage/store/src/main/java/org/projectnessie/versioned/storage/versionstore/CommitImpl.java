@@ -20,6 +20,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Sets.newHashSetWithExpectedSize;
 import static java.util.Objects.requireNonNull;
 import static org.agrona.collections.Hashing.DEFAULT_LOAD_FACTOR;
+import static org.projectnessie.versioned.CommitValidation.CommitOperation.commitOperation;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.lazyStoreIndex;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Add.commitAdd;
 import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Remove.commitRemove;
@@ -33,6 +34,8 @@ import static org.projectnessie.versioned.storage.versionstore.RefMapping.refere
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.referenceNotFound;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.fromCommitMeta;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.keyToStoreKey;
+import static org.projectnessie.versioned.storage.versionstore.VersionStoreImpl.buildIdentifiedKey;
+import static org.projectnessie.versioned.store.DefaultStoreWorker.contentTypeForPayload;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
 import java.util.ArrayList;
@@ -43,27 +46,31 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.ObjIntConsumer;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.agrona.collections.Object2IntHashMap;
+import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.CommitResult;
+import org.projectnessie.versioned.CommitValidation;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableCommitResult;
+import org.projectnessie.versioned.ImmutableCommitValidation;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.Unchanged;
+import org.projectnessie.versioned.VersionStore.CommitValidator;
+import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
@@ -139,21 +146,12 @@ class CommitImpl extends BaseCommitHelper {
       @Nonnull @jakarta.annotation.Nonnull Optional<?> retryState,
       @Nonnull @jakarta.annotation.Nonnull CommitMeta metadata,
       @Nonnull @jakarta.annotation.Nonnull List<Operation> operations,
-      @Nonnull @jakarta.annotation.Nonnull Callable<Void> validator,
+      @Nonnull @jakarta.annotation.Nonnull CommitValidator validator,
       @Nonnull @jakarta.annotation.Nonnull BiConsumer<ContentKey, String> addedContents)
       throws ReferenceNotFoundException,
           ReferenceConflictException,
           RetryException,
           ObjTooLargeException {
-    try {
-      validator.call();
-    } catch (RuntimeException e) {
-      // just propagate the RuntimeException up
-      throw e;
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-
     CreateCommit.Builder commit = newCommitBuilder().parentCommitId(headId());
     List<Obj> objectsToStore = new ArrayList<>(operations.size());
 
@@ -167,10 +165,18 @@ class CommitImpl extends BaseCommitHelper {
           }
         };
 
+    ImmutableCommitValidation.Builder commitValidation = CommitValidation.builder();
+
     try {
-      commitAddOperations(operations, commit, valueConsumer, commitRetryState);
+      commitAddOperations(operations, commit, valueConsumer, commitRetryState, commitValidation);
     } catch (ObjNotFoundException e) {
       throw new IllegalStateException("Content value objects not found", e);
+    }
+
+    try {
+      validator.validate(commitValidation.build());
+    } catch (BaseNessieClientServerException | VersionStoreException e) {
+      throw new RuntimeException(e);
     }
 
     fromCommitMeta(metadata, commit);
@@ -203,7 +209,8 @@ class CommitImpl extends BaseCommitHelper {
       List<Operation> operations,
       CreateCommit.Builder commit,
       Consumer<Obj> contentToStore,
-      CommitRetryState commitRetryState)
+      CommitRetryState commitRetryState,
+      ImmutableCommitValidation.Builder commitValidation)
       throws ObjNotFoundException, ReferenceConflictException {
     Set<ContentKey> allKeys = new HashSet<>();
 
@@ -239,10 +246,11 @@ class CommitImpl extends BaseCommitHelper {
         commitAddDelete(
             expectedIndex(),
             commit,
-            operation.getKey(),
+            (Delete) operation,
             storeKey,
             deleted,
-            deletedKeysAndPayload::put);
+            deletedKeysAndPayload::put,
+            commitValidation);
       }
     }
     for (int i = 0; i < operations.size(); i++) {
@@ -258,7 +266,8 @@ class CommitImpl extends BaseCommitHelper {
             contentToStore,
             commitRetryState,
             deleted,
-            newContent::put);
+            newContent::put,
+            commitValidation);
       } else if (operation instanceof Delete) {
         // handled above
       } else if (operation instanceof Unchanged) {
@@ -309,10 +318,11 @@ class CommitImpl extends BaseCommitHelper {
   private void commitAddDelete(
       StoreIndex<CommitOp> expectedIndex,
       CreateCommit.Builder commit,
-      ContentKey contentKey,
+      Delete operation,
       StoreKey storeKey,
       Map<UUID, StoreKey> deleted,
-      ObjIntConsumer<ContentKey> deletedKeys) {
+      ObjIntConsumer<ContentKey> deletedKeys,
+      ImmutableCommitValidation.Builder commitValidation) {
     StoreIndexElement<CommitOp> existingElement = expectedIndex.get(storeKey);
 
     int payload = 0;
@@ -332,7 +342,18 @@ class CommitImpl extends BaseCommitHelper {
         existingContentID = content.contentId();
         deleted.put(existingContentID, storeKey);
 
+        ContentKey contentKey = operation.getKey();
+
         deletedKeys.accept(contentKey, payload);
+
+        commitValidation.addOperations(
+            commitOperation(
+                buildIdentifiedKey(
+                    contentKey,
+                    expectedIndex,
+                    contentTypeForPayload(payload),
+                    existingContentID != null ? existingContentID.toString() : null),
+                operation));
       }
     }
 
@@ -355,7 +376,8 @@ class CommitImpl extends BaseCommitHelper {
       Consumer<Obj> contentToStore,
       CommitRetryState commitRetryState,
       Map<UUID, StoreKey> deleted,
-      BiConsumer<ContentKey, Content> newContent)
+      BiConsumer<ContentKey, Content> newContent,
+      ImmutableCommitValidation.Builder commitValidation)
       throws ObjNotFoundException {
     Content putValue = put.getValue();
     ContentKey putKey = put.getKey();
@@ -402,6 +424,7 @@ class CommitImpl extends BaseCommitHelper {
         exists = true;
       }
     }
+
     if (!exists) {
       checkArgument(
           putValueId == null, "New value for key '%s' must not have a content ID", putKey);
@@ -425,6 +448,15 @@ class CommitImpl extends BaseCommitHelper {
     // any string value. If it's a UUID, use it, otherwise ignore it down the road.
     UUID contentId = contentIdMaybe(putValueId);
     commit.addAdds(commitAdd(storeKey, payload, valueId, existingValue, contentId));
+
+    commitValidation.addOperations(
+        commitOperation(
+            buildIdentifiedKey(
+                putKey,
+                expectedIndex,
+                contentTypeForPayload(payload),
+                contentId != null ? contentId.toString() : null),
+            put));
   }
 
   private String contentIdFromContent(@Nonnull @jakarta.annotation.Nonnull ObjId contentValueId)

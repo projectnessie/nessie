@@ -16,11 +16,10 @@
 package org.projectnessie.services.authz;
 
 import java.util.Map;
-import javax.annotation.Nullable;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Detached;
+import org.projectnessie.model.IdentifiedContentKey;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Tag;
 import org.projectnessie.versioned.NamedRef;
@@ -49,7 +48,7 @@ public interface BatchAccessChecker {
   /**
    * Checks the recorded checks.
    *
-   * @return set of failed checks or an empty collection, if all checks passed
+   * @return map of failed checks or an empty collection, if all checks passed
    */
   Map<Check, String> check();
 
@@ -122,12 +121,9 @@ public interface BatchAccessChecker {
    * <p>Adds an implicit {@link #canViewReference(NamedRef)}.
    *
    * @param ref current reference
-   * @param key content key to check
-   * @param contentId content id to check, may be {@code null}, for example, for {@link
-   *     Operation.Delete} from {@link Operation}s in the commit log.
+   * @param identifiedKey content key / ID / type to check
    */
-  BatchAccessChecker canReadContentKey(
-      NamedRef ref, ContentKey key, @Nullable @jakarta.annotation.Nullable String contentId);
+  BatchAccessChecker canReadContentKey(NamedRef ref, IdentifiedContentKey identifiedKey);
 
   /**
    * Checks whether the given role/principal is allowed to list the commit log for the given {@link
@@ -156,29 +152,21 @@ public interface BatchAccessChecker {
    * <p>Adds an implicit {@link #canViewReference(NamedRef)}.
    *
    * @param ref The {@link NamedRef} to check
-   * @param key The {@link ContentKey} to check
-   * @param contentId The ID of the {@link Content} object. See the <a
-   *     href="https://projectnessie.org/features/metadata_authorization/#contentid">ContentId
-   *     docs</a> for how to use this.
+   * @param identifiedKey content key / ID / type to check
    */
-  BatchAccessChecker canReadEntityValue(NamedRef ref, ContentKey key, String contentId);
+  BatchAccessChecker canReadEntityValue(NamedRef ref, IdentifiedContentKey identifiedKey);
 
   /**
    * Checks whether the given role/principal is allowed to update an entity value as defined by the
-   * {@link ContentKey} for the given {@link Branch}, called for a {@link Operation.Put} operation
-   * in a commit.
+   * {@link IdentifiedContentKey} for the given {@link Branch}, called for a {@link Operation.Put}
+   * operation in a commit.
    *
    * <p>Adds an implicit {@link #canViewReference(NamedRef)}.
    *
    * @param ref The {@link NamedRef} to check
-   * @param key The {@link ContentKey} to check
-   * @param contentId The ID of the {@link Content} object. See the <a
-   *     href="https://projectnessie.org/features/metadata_authorization/#contentid">ContentId
-   *     docs</a> for how to use this.
-   * @param contentType the {@link Content.Type} of the entity value.
+   * @param identifiedKey content key / ID / type to check
    */
-  BatchAccessChecker canUpdateEntity(
-      NamedRef ref, ContentKey key, String contentId, Content.Type contentType);
+  BatchAccessChecker canUpdateEntity(NamedRef ref, IdentifiedContentKey identifiedKey);
 
   /**
    * Checks whether the given role/principal is allowed to delete an entity value as defined by the
@@ -188,12 +176,9 @@ public interface BatchAccessChecker {
    * <p>Adds an implicit {@link #canViewReference(NamedRef)}.
    *
    * @param ref The {@link NamedRef} to check
-   * @param key The {@link ContentKey} to check
-   * @param contentId The ID of the {@link Content} object. See the <a
-   *     href="https://projectnessie.org/features/metadata_authorization/#contentid">ContentId
-   *     docs</a> for how to use this.
+   * @param identifiedKey content key / ID / type to check
    */
-  BatchAccessChecker canDeleteEntity(NamedRef ref, ContentKey key, String contentId);
+  BatchAccessChecker canDeleteEntity(NamedRef ref, IdentifiedContentKey identifiedKey);
 
   /** Checks whether the given role/principal is allowed to view the reflog entries. */
   BatchAccessChecker canViewRefLog();

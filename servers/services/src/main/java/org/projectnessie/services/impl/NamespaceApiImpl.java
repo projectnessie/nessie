@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -51,9 +50,11 @@ import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.services.authz.Authorizer;
+import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.spi.NamespaceService;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.ContentResult;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.KeyEntry;
 import org.projectnessie.versioned.NamedRef;
@@ -81,23 +82,24 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
 
     WithHash<NamedRef> refWithHash = namedRefWithHashOrThrow(refName, null);
     try {
-      Callable<Void> validator =
-          () -> {
-            Optional<Content> explicitlyCreatedNamespace =
-                getExplicitlyCreatedNamespace(namespace, refWithHash.getHash());
-            if (explicitlyCreatedNamespace.isPresent()) {
-              Namespace ignored =
-                  explicitlyCreatedNamespace
-                      .get()
-                      .unwrap(Namespace.class)
-                      .orElseThrow(() -> otherContentAlreadyExistsException(namespace));
-              throw namespaceAlreadyExistsException(namespace);
-            }
-            if (getImplicitlyCreatedNamespace(namespace, refWithHash.getHash()).isPresent()) {
-              throw namespaceAlreadyExistsException(namespace);
-            }
-            return null;
-          };
+
+      try {
+        Optional<Content> explicitlyCreatedNamespace =
+            getExplicitlyCreatedNamespace(namespace, refWithHash.getHash());
+        if (explicitlyCreatedNamespace.isPresent()) {
+          Namespace ignored =
+              explicitlyCreatedNamespace
+                  .get()
+                  .unwrap(Namespace.class)
+                  .orElseThrow(() -> otherContentAlreadyExistsException(namespace));
+          throw namespaceAlreadyExistsException(namespace);
+        }
+        if (getImplicitlyCreatedNamespace(namespace, refWithHash.getHash()).isPresent()) {
+          throw namespaceAlreadyExistsException(namespace);
+        }
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
 
       ContentKey key = namespace.toContentKey();
       Put put = Put.of(key, namespace);
@@ -105,8 +107,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
           commit(
               BranchName.of(refWithHash.getValue().getName()),
               "create namespace " + namespace.name(),
-              TreeApiImpl.toOp(put),
-              validator);
+              TreeApiImpl.toOp(put));
 
       Content content = getExplicitlyCreatedNamespace(namespace, hash).orElse(null);
 
@@ -130,26 +131,24 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
       Namespace namespace = getNamespace(namespaceToDelete, refWithHash.getHash());
       Delete delete = Delete.of(namespace.toContentKey());
 
-      Callable<Void> validator =
-          () -> {
-            try (PaginationIterator<KeyEntry> keys =
-                getStore().getKeys(refWithHash.getHash(), null, false, null, null, null, null)) {
-              while (keys.hasNext()) {
-                KeyEntry k = keys.next();
-                if (Namespace.of(k.getKey().getElements()).isSameOrSubElementOf(namespaceToDelete)
-                    && !k.getType().equals(Content.Type.NAMESPACE)) {
-                  throw namespaceNotEmptyException(namespaceToDelete);
-                }
-              }
-            }
-            return null;
-          };
+      try (PaginationIterator<KeyEntry> keys =
+          getStore().getKeys(refWithHash.getHash(), null, false, null, null, null, null)) {
+        while (keys.hasNext()) {
+          KeyEntry k = keys.next();
+          if (Namespace.of(k.getKey().contentKey().getElements())
+                  .isSameOrSubElementOf(namespaceToDelete)
+              && !Content.Type.NAMESPACE.equals(k.getKey().type())) {
+            throw namespaceNotEmptyException(namespaceToDelete);
+          }
+        }
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
 
       commit(
           BranchName.of(refWithHash.getValue().getName()),
           "delete namespace " + namespace.name(),
-          TreeApiImpl.toOp(delete),
-          validator);
+          TreeApiImpl.toOp(delete));
     } catch (ReferenceNotFoundException | ReferenceConflictException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
@@ -208,8 +207,8 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
           getNamespacesKeyStream(namespace, refWithHash.getHash(), k -> true)) {
         stream.forEach(
             namespaceKeyWithType -> {
-              if (namespaceKeyWithType.getType().equals(Content.Type.NAMESPACE)) {
-                explicitNamespaceKeys.add(namespaceKeyWithType.getKey());
+              if (Content.Type.NAMESPACE.equals(namespaceKeyWithType.getKey().type())) {
+                explicitNamespaceKeys.add(namespaceKeyWithType.getKey().contentKey());
               } else {
                 Namespace implicitNamespace = namespaceFromType(namespaceKeyWithType);
                 if (!implicitNamespace.isEmpty()) {
@@ -227,9 +226,10 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
       // namespaces, add those to the response and the implicitly created `Namespace` for the
       // same key.
       if (!explicitNamespaceKeys.isEmpty()) {
-        Map<ContentKey, Content> namespaceValues =
+        Map<ContentKey, ContentResult> namespaceValues =
             getStore().getValues(refWithHash.getHash(), explicitNamespaceKeys);
         namespaceValues.values().stream()
+            .map(ContentResult::content)
             .filter(Namespace.class::isInstance)
             .map(Namespace.class::cast)
             .peek(explicitNamespace -> implicitNamespaces.remove(explicitNamespace.getElements()))
@@ -271,8 +271,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
       commit(
           BranchName.of(refWithHash.getValue().getName()),
           "update properties for namespace " + updatedNamespace.name(),
-          TreeApiImpl.toOp(put),
-          () -> null);
+          TreeApiImpl.toOp(put));
 
     } catch (ReferenceNotFoundException | ReferenceConflictException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
@@ -304,8 +303,8 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
    * @return A {@link Namespace} instance.
    */
   private static Namespace namespaceFromType(KeyEntry withType) {
-    List<String> elements = withType.getKey().getElements();
-    if (!Content.Type.NAMESPACE.equals(withType.getType())) {
+    List<String> elements = withType.getKey().contentKey().getElements();
+    if (!Content.Type.NAMESPACE.equals(withType.getKey().type())) {
       elements = elements.subList(0, elements.size() - 1);
     }
     return Namespace.of(elements);
@@ -313,7 +312,8 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
 
   private Optional<Content> getExplicitlyCreatedNamespace(Namespace namespace, Hash hash)
       throws ReferenceNotFoundException {
-    return Optional.ofNullable(getStore().getValue(hash, namespace.toContentKey()));
+    return Optional.ofNullable(getStore().getValue(hash, namespace.toContentKey()))
+        .map(ContentResult::content);
   }
 
   private Optional<Namespace> getImplicitlyCreatedNamespace(Namespace namespace, Hash hash)
@@ -355,8 +355,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
     return new NessieReferenceNotFoundException(e.getMessage(), e);
   }
 
-  private Hash commit(
-      BranchName branch, String commitMsg, Operation contentOperation, Callable<Void> validator)
+  private Hash commit(BranchName branch, String commitMsg, Operation contentOperation)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return getStore()
         .commit(
@@ -365,7 +364,20 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
             commitMetaUpdate(null, numCommits -> null)
                 .rewriteSingle(CommitMeta.fromMessage(commitMsg)),
             Collections.singletonList(contentOperation),
-            validator,
+            validation -> {
+              BatchAccessChecker check = startAccessCheck().canCommitChangeAgainstReference(branch);
+              validation
+                  .operations()
+                  .forEach(
+                      op -> {
+                        if (op.operation() instanceof org.projectnessie.versioned.Put) {
+                          check.canUpdateEntity(branch, op.identifiedKey());
+                        } else {
+                          check.canDeleteEntity(branch, op.identifiedKey());
+                        }
+                      });
+              check.checkAndThrow();
+            },
             (k, c) -> {})
         .getCommitHash();
   }

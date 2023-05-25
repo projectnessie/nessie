@@ -138,6 +138,13 @@ public final class TypeMapping {
 
   @Nonnull
   @jakarta.annotation.Nonnull
+  public static StoreKey keyToStoreKey(
+      @Nonnull @jakarta.annotation.Nonnull List<String> keyElements) {
+    return keyToStoreKeyVariant(keyElements, CONTENT_DISCRIMINATOR);
+  }
+
+  @Nonnull
+  @jakarta.annotation.Nonnull
   public static StoreKey keyToStoreKeyNoVariant(
       @Nonnull @jakarta.annotation.Nonnull ContentKey key) {
     return StoreKey.keyFromString(keyToStoreKeyPrepare(key).toString());
@@ -147,7 +154,14 @@ public final class TypeMapping {
   @jakarta.annotation.Nonnull
   public static StoreKey keyToStoreKeyVariant(
       @Nonnull @jakarta.annotation.Nonnull ContentKey key, String discriminator) {
-    StringBuilder sb = keyToStoreKeyPrepare(key);
+    return keyToStoreKeyVariant(key.getElements(), discriminator);
+  }
+
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  public static StoreKey keyToStoreKeyVariant(
+      @Nonnull @jakarta.annotation.Nonnull List<String> keyElements, String discriminator) {
+    StringBuilder sb = keyToStoreKeyPrepare(keyElements);
     sb.append((char) 0).append(discriminator);
     return StoreKey.keyFromString(sb.toString());
   }
@@ -172,20 +186,26 @@ public final class TypeMapping {
   @jakarta.annotation.Nonnull
   private static StringBuilder keyToStoreKeyPrepare(
       @Nonnull @jakarta.annotation.Nonnull ContentKey key) {
+    return keyToStoreKeyPrepare(key.getElements());
+  }
+
+  @Nonnull
+  @jakarta.annotation.Nonnull
+  private static StringBuilder keyToStoreKeyPrepare(
+      @Nonnull @jakarta.annotation.Nonnull List<String> keyElements) {
     // Note: the relative values of outer and inner (key elements) separators affect the correctness
     // of StoreKey comparisons WRT to ContentKey comparisons. The inner separator must be greater
     // than the outer separator because longer ContentKeys are greater than shorter ContentKeys.
     StringBuilder sb = new StringBuilder();
     sb.append(MAIN_UNIVERSE);
-    List<String> elements = key.getElements();
-    int num = elements.size();
+    int num = keyElements.size();
     if (num > 0) {
       sb.append((char) 0);
       for (int i = 0; i < num; i++) {
         if (i > 0) {
           sb.append((char) 1);
         }
-        sb.append(elements.get(i));
+        sb.append(keyElements.get(i));
       }
     }
     return sb;

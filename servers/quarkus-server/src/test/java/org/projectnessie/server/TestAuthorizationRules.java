@@ -182,7 +182,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
             api()
                     .commitMultipleOperations()
                     .branchName("main")
-                    .hash("11223344556677")
+                    .hash("2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d")
                     .operation(Delete.of(ContentKey.of("testKey")))
                     .commitMeta(CommitMeta.fromMessage("test commit"))
                 ::commit)
@@ -223,29 +223,20 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   }
 
   @Test
-  // test_user2 has all permissions on a Branch, but not permissions on a Key
+  // test_user2 has all permissions on a Branch, but no permissions to READ_ENTITY_VALUE
   @TestSecurity(user = "test_user2")
-  void testCanCommitButNotUpdateOrDeleteEntity() throws BaseNessieClientServerException {
+  void testCanCommitButNotReadEntity() throws BaseNessieClientServerException {
     String role = "test_user2";
     ContentKey key = ContentKey.of("allowed-some");
     String branchName = "allowedBranchForTestUser2";
-    createBranch(Branch.of(branchName, null));
+    Branch branch = createBranch(Branch.of(branchName, null));
 
-    final Branch branch = retrieveBranch(branchName);
-
-    assertThatThrownBy(
-            () ->
-                api()
-                    .commitMultipleOperations()
-                    .branch(branch)
-                    .commitMeta(CommitMeta.fromMessage("add stuff"))
-                    .operation(Put.of(key, IcebergTable.of("foo", 42, 42, 42, 42, "cid-foo")))
-                    .commit())
-        .isInstanceOf(NessieForbiddenException.class)
-        .hasMessageContaining(
-            String.format(
-                "'UPDATE_ENTITY' is not allowed for role '%s' on content '%s'",
-                role, key.toPathString()));
+    api()
+        .commitMultipleOperations()
+        .branch(branch)
+        .commitMeta(CommitMeta.fromMessage("add stuff"))
+        .operation(Put.of(key, IcebergTable.of("foo", 42, 42, 42, 42)))
+        .commit();
 
     assertThatThrownBy(() -> api().getContent().refName(branchName).key(key).get())
         .isInstanceOf(NessieForbiddenException.class)
@@ -253,8 +244,23 @@ class TestAuthorizationRules extends BaseClientAuthTest {
             String.format(
                 "'READ_ENTITY_VALUE' is not allowed for role '%s' on content '%s'",
                 role, key.toPathString()));
+  }
 
-    final Branch b = retrieveBranch(branchName);
+  @Test
+  // test_user3 has all permissions on a Branch, but not permissions to DELETE_ENTITY
+  @TestSecurity(user = "test_user3")
+  void testCanCommitButNotDeleteEntity() throws BaseNessieClientServerException {
+    String role = "test_user3";
+    ContentKey key = ContentKey.of("allowed-some");
+    Branch branch = createBranch(Branch.of("allowedBranchForTestUser3", null));
+
+    Branch b =
+        api()
+            .commitMultipleOperations()
+            .branch(branch)
+            .commitMeta(CommitMeta.fromMessage("add stuff"))
+            .operation(Put.of(key, IcebergTable.of("foo", 42, 42, 42, 42)))
+            .commit();
 
     assertThatThrownBy(
             () ->
@@ -272,15 +278,36 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   }
 
   @Test
+  // test_user3 has all permissions on a Branch, but not permissions to DELETE_ENTITY
+  @TestSecurity(user = "test_user4")
+  void testCanCommitButNotUpdateEntity() throws BaseNessieClientServerException {
+    String role = "test_user4";
+    ContentKey key = ContentKey.of("allowed-some");
+    Branch branch = createBranch(Branch.of("allowedBranchForTestUser4", null));
+
+    assertThatThrownBy(
+            () ->
+                api()
+                    .commitMultipleOperations()
+                    .branch(branch)
+                    .commitMeta(CommitMeta.fromMessage("add stuff"))
+                    .operation(Put.of(key, IcebergTable.of("foo", 42, 42, 42, 42)))
+                    .commit())
+        .isInstanceOf(NessieForbiddenException.class)
+        .hasMessageContaining(
+            String.format(
+                "'UPDATE_ENTITY' is not allowed for role '%s' on content '%s'",
+                role, key.toPathString()));
+  }
+
+  @Test
   @TestSecurity(user = "admin_user")
   void testCanReadTargetBranchDuringAssign() throws BaseNessieClientServerException {
     String branchName = "adminCanReadWhenAssigning";
     String targetBranchName = "targetBranchForAssign";
-    createBranch(Branch.of(branchName, null));
-    Branch branch = retrieveBranch(branchName);
+    Branch branch = createBranch(Branch.of(branchName, null));
 
-    createBranch(Branch.of(targetBranchName, null));
-    Branch targetBranch = retrieveBranch(targetBranchName);
+    Branch targetBranch = createBranch(Branch.of(targetBranchName, null));
 
     addContent(
         targetBranch, Put.of(ContentKey.of("allowed-x"), IcebergTable.of("foo", 42, 42, 42, 42)));
@@ -302,11 +329,9 @@ class TestAuthorizationRules extends BaseClientAuthTest {
 
     String branchName = "adminCanReadWhenMerging";
     String targetBranchName = "targetBranchForMerge";
-    createBranch(Branch.of(branchName, main.getHash()));
-    Branch branch = retrieveBranch(branchName);
+    Branch branch = createBranch(Branch.of(branchName, main.getHash()));
 
-    createBranch(Branch.of(targetBranchName, main.getHash()));
-    Branch targetBranch = retrieveBranch(targetBranchName);
+    Branch targetBranch = createBranch(Branch.of(targetBranchName, main.getHash()));
 
     addContent(branch, Put.of(ContentKey.of("allowed-x"), IcebergTable.of("foo", 42, 42, 42, 42)));
     branch = retrieveBranch(branchName);
@@ -323,11 +348,9 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   void testCanReadTargetBranchDuringTransplant() throws BaseNessieClientServerException {
     String branchName = "adminCanReadWhenTransplanting";
     String targetBranchName = "targetBranchForTransplant";
-    createBranch(Branch.of(branchName, null));
-    Branch branch = retrieveBranch(branchName);
+    Branch branch = createBranch(Branch.of(branchName, null));
 
-    createBranch(Branch.of(targetBranchName, null));
-    Branch targetBranch = retrieveBranch(targetBranchName);
+    Branch targetBranch = createBranch(Branch.of(targetBranchName, null));
 
     addContent(branch, Put.of(ContentKey.of("allowed-x"), IcebergTable.of("foo", 42, 42, 42, 42)));
     branch = retrieveBranch(branchName);
@@ -352,11 +375,9 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   void testCannotReadTargetBranch() throws BaseNessieClientServerException {
     String role = "user1";
     String branchName = "allowedBranchForUser1";
-    createBranch(Branch.of(branchName, null));
+    Branch branch = createBranch(Branch.of(branchName, null));
     String disallowedBranch = "disallowedBranchForUser1";
     createBranch(Branch.of(disallowedBranch, null));
-
-    final Branch branch = retrieveBranch(branchName);
 
     String errorMessage =
         String.format(
@@ -398,8 +419,8 @@ class TestAuthorizationRules extends BaseClientAuthTest {
     return (Branch) api().getReference().refName(branchName).get();
   }
 
-  private void createBranch(Branch branch) throws BaseNessieClientServerException {
-    api().createReference().sourceRefName("main").reference(branch).create();
+  private Branch createBranch(Branch branch) throws BaseNessieClientServerException {
+    return (Branch) api().createReference().sourceRefName("main").reference(branch).create();
   }
 
   private void addContent(Branch branch, Put put) throws BaseNessieClientServerException {

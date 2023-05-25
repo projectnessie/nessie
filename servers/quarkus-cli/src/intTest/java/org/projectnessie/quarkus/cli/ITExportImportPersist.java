@@ -307,7 +307,7 @@ public class ITExportImportPersist {
     ReferenceInfo<CommitMeta> main = store.getNamedRef(ref, GetNamedRefsParams.DEFAULT);
     soft.assertThat(store.getKeys(main.getHash(), null, true, null, null, null, null))
         .toIterable()
-        .extracting(KeyEntry::getKey, KeyEntry::getContent)
+        .extracting(e -> e.getKey().contentKey(), KeyEntry::getContent)
         .containsExactly(tuple(key, value));
   }
 

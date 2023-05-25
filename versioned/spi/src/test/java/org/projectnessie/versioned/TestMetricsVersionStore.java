@@ -25,6 +25,8 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.projectnessie.model.IdentifiedContentKey.identifiedContentKeyFromContent;
+import static org.projectnessie.versioned.ContentResult.contentResult;
 
 import io.micrometer.core.instrument.AbstractTimer;
 import io.micrometer.core.instrument.Clock;
@@ -61,6 +63,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.stubbing.Stubber;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.MergeBehavior;
@@ -174,7 +177,7 @@ class TestMetricsVersionStore {
                         Optional.empty(),
                         CommitMeta.fromMessage("metadata"),
                         Collections.emptyList(),
-                        () -> null,
+                        x -> {},
                         (k, c) -> {}),
                 () -> dummyCommitResult,
                 refNotFoundAndRefConflictThrows),
@@ -262,7 +265,14 @@ class TestMetricsVersionStore {
             new VersionStoreInvocation<>(
                 "getvalue",
                 vs -> vs.getValue(BranchName.of("mock-branch"), ContentKey.of("some", "key")),
-                () -> IcebergTable.of("meta", 42, 43, 44, 45),
+                () -> {
+                  Content content = IcebergTable.of("meta", 42, 43, 44, 45);
+                  return contentResult(
+                      identifiedContentKeyFromContent(
+                          ContentKey.of("some", "key"), content, x -> null),
+                      content,
+                      null);
+                },
                 refNotFoundThrows),
             new VersionStoreInvocation<>(
                 "getvalues",

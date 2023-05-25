@@ -22,6 +22,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static org.projectnessie.model.IdentifiedContentKey.identifiedContentKeyFromContent;
+import static org.projectnessie.versioned.ContentResult.contentResult;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
@@ -29,7 +31,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -40,10 +41,10 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.MergeBehavior;
+import org.projectnessie.versioned.VersionStore.CommitValidator;
 import org.projectnessie.versioned.paging.PaginationIterator;
 
 @ExtendWith(MockitoExtension.class)
@@ -69,7 +70,7 @@ class TestEventsVersionStore {
   IcebergTable table1 = IcebergTable.of("somewhere", 42, 42, 42, 42, "table1");
   IcebergTable table2 = IcebergTable.of("somewhere", 42, 42, 42, 42, "table2");
   List<Operation> operations = Collections.singletonList(Put.of(key1, table1));
-  Callable<Void> validator = () -> null;
+  CommitValidator validator = x -> {};
   BiConsumer<ContentKey, String> addedContents = (k, v) -> {};
 
   @Test
@@ -598,20 +599,28 @@ class TestEventsVersionStore {
 
   @Test
   void testGetValue() throws Exception {
-    when(delegate.getValue(branch1, key1)).thenReturn(table1);
+    ContentResult contentResult =
+        contentResult(identifiedContentKeyFromContent(key1, table1, x -> null), table1, null);
+    when(delegate.getValue(branch1, key1)).thenReturn(contentResult);
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
-    Content result = versionStore.getValue(branch1, key1);
-    assertThat(result).isEqualTo(table1);
+    ContentResult result = versionStore.getValue(branch1, key1);
+    assertThat(result).isEqualTo(contentResult);
     verifyNoMoreInteractions(delegate);
     verifyNoInteractions(sink);
   }
 
   @Test
   void testGetValues() throws Exception {
-    Map<ContentKey, Content> expected = ImmutableMap.of(key1, table1, key2, table2);
+    ContentResult contentResult1 =
+        contentResult(identifiedContentKeyFromContent(key1, table1, x -> null), table1, null);
+    ContentResult contentResult2 =
+        contentResult(identifiedContentKeyFromContent(key2, table2, x -> null), table2, null);
+    Map<ContentKey, ContentResult> expected =
+        ImmutableMap.of(key1, contentResult1, key2, contentResult2);
     when(delegate.getValues(branch1, Arrays.asList(key1, key2))).thenReturn(expected);
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
-    Map<ContentKey, Content> result = versionStore.getValues(branch1, Arrays.asList(key1, key2));
+    Map<ContentKey, ContentResult> result =
+        versionStore.getValues(branch1, Arrays.asList(key1, key2));
     assertThat(result).isEqualTo(expected);
     verifyNoMoreInteractions(delegate);
     verifyNoInteractions(sink);

@@ -48,6 +48,7 @@ import com.google.common.collect.ImmutableMap;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +78,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Detached;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.FetchOption;
+import org.projectnessie.model.IdentifiedContentKey;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableCommitResponse;
 import org.projectnessie.model.ImmutableContentKeyDetails;
@@ -419,14 +421,24 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     ImmutableLogEntry.Builder newLogEntry =
         ImmutableLogEntry.builder().from(logEntry).operations(emptyList());
 
+    Map<ContentKey, IdentifiedContentKey> identifiedKeys = new HashMap<>();
+
+    try {
+      getStore()
+          .getIdentifiedKeys(
+              endRef.getHash(),
+              operations.stream().map(Operation::getKey).collect(Collectors.toList()))
+          .forEach(entry -> identifiedKeys.put(entry.contentKey(), entry));
+    } catch (ReferenceNotFoundException e) {
+      throw new RuntimeException(e);
+    }
+
     Set<Check> checks = newHashSetWithExpectedSize(operations.size());
     for (Operation op : operations) {
       if (op instanceof Operation.Put) {
-        Operation.Put put = (Operation.Put) op;
-        checks.add(canReadContentKey(endRef.getValue(), put.getKey(), put.getContent().getId()));
+        checks.add(canReadContentKey(endRef.getValue(), identifiedKeys.get(op.getKey())));
       } else if (op instanceof Operation.Delete) {
-        Operation.Delete delete = (Operation.Delete) op;
-        checks.add(canReadContentKey(endRef.getValue(), delete.getKey(), null));
+        checks.add(canReadContentKey(endRef.getValue(), identifiedKeys.get(op.getKey())));
       } else {
         throw new IllegalStateException("Unknown operation " + op);
       }
@@ -445,11 +457,9 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     for (Operation op : operations) {
       Check check;
       if (op instanceof Operation.Put) {
-        Operation.Put put = (Operation.Put) op;
-        check = canReadContentKey(endRef.getValue(), put.getKey(), put.getContent().getId());
+        check = canReadContentKey(endRef.getValue(), identifiedKeys.get(op.getKey()));
       } else if (op instanceof Operation.Delete) {
-        Operation.Delete delete = (Operation.Delete) op;
-        check = canReadContentKey(endRef.getValue(), delete.getKey(), null);
+        check = canReadContentKey(endRef.getValue(), identifiedKeys.get(op.getKey()));
       } else {
         throw new IllegalStateException("Unknown operation " + op);
       }
@@ -830,15 +840,13 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                 entries, super::startAccessCheck, ACCESS_CHECK_BATCH_SIZE) {
               @Override
               protected Set<Check> checksForEntry(KeyEntry entry) {
-                return singleton(
-                    canReadContentKey(
-                        refWithHash.getValue(), entry.getKey(), entry.getContentId()));
+                return singleton(canReadContentKey(refWithHash.getValue(), entry.getKey()));
               }
             }.initialCheck(canReadEntries(refWithHash.getValue()));
 
         if (namespaceDepth != null && namespaceDepth > 0) {
           int depth = namespaceDepth;
-          filterPredicate = filterPredicate.and(e -> e.getKey().getElementCount() >= depth);
+          filterPredicate = filterPredicate.and(e -> e.getKey().elements().size() >= depth);
           Set<ContentKey> seen = new HashSet<>();
           while (authz.hasNext()) {
             KeyEntry key = authz.next();
@@ -850,8 +858,11 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
             Content c = key.getContent();
             Entry entry =
                 c != null
-                    ? Entry.entry(key.getKey(), key.getType(), c)
-                    : Entry.entry(key.getKey(), key.getType(), key.getContentId());
+                    ? Entry.entry(key.getKey().contentKey(), key.getKey().type(), c)
+                    : Entry.entry(
+                        key.getKey().contentKey(),
+                        key.getKey().type(),
+                        key.getKey().lastElement().contentId());
 
             entry = maybeTruncateToDepth(entry, depth);
 
@@ -874,8 +885,11 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
             Content c = key.getContent();
             Entry entry =
                 c != null
-                    ? Entry.entry(key.getKey(), key.getType(), c)
-                    : Entry.entry(key.getKey(), key.getType(), key.getContentId());
+                    ? Entry.entry(key.getKey().contentKey(), key.getKey().type(), c)
+                    : Entry.entry(
+                        key.getKey().contentKey(),
+                        key.getKey().type(),
+                        key.getKey().lastElement().contentId());
 
             if (!pagedResponseHandler.addEntry(entry)) {
               pagedResponseHandler.hasMore(authz.tokenForCurrent());
@@ -938,27 +952,10 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   public CommitResponse commitMultipleOperations(
       String branch, String expectedHash, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
+    BranchName branchName = BranchName.of(branch);
+
     CommitMeta commitMeta = operations.getCommitMeta();
     validateCommitMeta(commitMeta);
-
-    BranchName branchName = BranchName.of(branch);
-    BatchAccessChecker check = startAccessCheck().canCommitChangeAgainstReference(branchName);
-    operations
-        .getOperations()
-        .forEach(
-            op -> {
-              if (op instanceof Operation.Delete) {
-                check.canDeleteEntity(branchName, op.getKey(), null);
-              } else if (op instanceof Operation.Put) {
-                Operation.Put putOp = (Operation.Put) op;
-                check.canUpdateEntity(
-                    branchName,
-                    op.getKey(),
-                    putOp.getContent().getId(),
-                    putOp.getContent().getType());
-              }
-            });
-    check.checkAndThrow();
 
     List<org.projectnessie.versioned.Operation> ops =
         operations.getOperations().stream()
@@ -975,7 +972,21 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                   Optional.ofNullable(expectedHash).map(Hash::of),
                   commitMetaUpdate(null, numCommits -> null).rewriteSingle(commitMeta),
                   ops,
-                  () -> null,
+                  validation -> {
+                    BatchAccessChecker check =
+                        startAccessCheck().canCommitChangeAgainstReference(branchName);
+                    validation
+                        .operations()
+                        .forEach(
+                            op -> {
+                              if (op.operation() instanceof Put) {
+                                check.canUpdateEntity(branchName, op.identifiedKey());
+                              } else {
+                                check.canDeleteEntity(branchName, op.identifiedKey());
+                              }
+                            });
+                    check.checkAndThrow();
+                  },
                   (key, cid) -> {
                     commitResponse.addAddedContents(addedContent(key, cid));
                   })

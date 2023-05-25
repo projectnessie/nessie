@@ -207,12 +207,12 @@ public final class CELUtil {
 
     @Override
     protected ContentKey key() {
-      return entry.getKey();
+      return entry.getKey().contentKey();
     }
 
     @Override
     public String getContentType() {
-      return entry.getType().name();
+      return entry.getKey().type().name();
     }
 
     @Override

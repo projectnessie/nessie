@@ -118,7 +118,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             .put("t3", V_3_1)
             .toBranch(MAIN_BRANCH);
 
-    Content t1 = store().getValue(MAIN_BRANCH, ContentKey.of("t1"));
+    Content t1 = store().getValue(MAIN_BRANCH, ContentKey.of("t1")).content();
 
     commit("Second Commit")
         .put("t1", V_1_2.withId(t1))
@@ -204,7 +204,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
               mergeBehavior);
     }
 
-    Content c11 = store().getValue(firstCommit, ContentKey.of("t1"));
+    Content c11 = store().getValue(firstCommit, ContentKey.of("t1")).content();
 
     for (MergeBehavior mergeBehavior :
         new MergeBehavior[] {MergeBehavior.NORMAL, MergeBehavior.FORCE}) {
@@ -252,7 +252,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     store().create(sourceBranch, Optional.of(thirdCommit));
 
     ContentKey key2 = ContentKey.of("t2");
-    Content contentT2 = store().getValue(MAIN_BRANCH, key2);
+    Content contentT2 = store().getValue(MAIN_BRANCH, key2).content();
 
     Hash targetHead =
         commit("on-target-commit")
@@ -262,7 +262,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
         commit("on-source-commit")
             .put("t2", onRef("v2_2-source", contentT2.getId()))
             .toBranch(sourceBranch);
-    contentT2 = store().getValue(MAIN_BRANCH, key2);
+    contentT2 = store().getValue(MAIN_BRANCH, key2).content();
 
     soft.assertThatThrownBy(
             () ->
@@ -410,7 +410,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             MergeResult::getEffectiveTargetHash)
         .containsExactly(true, true, branch.getHash(), thirdCommit, targetHead);
 
-    Content mergedContent = store().getValue(MAIN_BRANCH, key2);
+    Content mergedContent = store().getValue(MAIN_BRANCH, key2).content();
     soft.assertThat(mergedContent).isEqualTo(resolvedContent);
   }
 
@@ -943,7 +943,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 Optional.empty(),
                 CommitMeta.fromMessage("commit 1"),
                 singletonList(Put.of(key, VALUE_1)));
-    Content v = store().getValue(etl, key);
+    Content v = store().getValue(etl, key).content();
     MergeResult<Commit> mergeResult1 =
         store()
             .merge(

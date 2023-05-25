@@ -24,13 +24,13 @@ import com.google.common.collect.ImmutableSet;
 import java.security.Principal;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
-import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.services.authz.Authorizer;
@@ -110,34 +110,25 @@ public class DiffApiImpl extends BaseApiImpl implements DiffService {
                 diffs, super::startAccessCheck, ACCESS_CHECK_BATCH_SIZE) {
               @Override
               protected Set<Check> checksForEntry(Diff entry) {
-                ContentKey key = ContentKey.of(entry.getKey().getElements());
-                String fromContent = entry.getFromValue().map(Content::getId).orElse(null);
-                String toContent = entry.getToValue().map(Content::getId).orElse(null);
-                if (fromNamedRef.equals(toNamedRef)
-                    && fromContent != null
-                    && fromContent.equals(toContent)) {
-                  return singleton(canReadContentKey(fromNamedRef, key, fromContent));
-                } else {
-                  if (fromContent != null && toContent != null) {
+                if (entry.getFromValue().isPresent()) {
+                  if (entry.getToValue().isPresent()
+                      && !Objects.equals(entry.getFromKey(), entry.getToKey())) {
                     return ImmutableSet.of(
-                        canReadContentKey(fromNamedRef, key, fromContent),
-                        canReadContentKey(toNamedRef, key, toContent));
+                        canReadContentKey(fromNamedRef, entry.getFromKey()),
+                        canReadContentKey(fromNamedRef, entry.getToKey()));
+                  } else {
+                    return singleton(canReadContentKey(fromNamedRef, entry.getFromKey()));
                   }
-                  if (fromContent != null) {
-                    return singleton(canReadContentKey(fromNamedRef, key, fromContent));
-                  }
-                  if (toContent != null) {
-                    return singleton(canReadContentKey(toNamedRef, key, toContent));
-                  }
+                } else {
+                  return singleton(canReadContentKey(toNamedRef, entry.getToKey()));
                 }
-                return singleton(canReadContentKey(toNamedRef, key, null));
               }
             }.initialCheck(canViewReference(fromNamedRef))
                 .initialCheck(canViewReference(toNamedRef));
 
         while (authz.hasNext()) {
           Diff diff = authz.next();
-          ContentKey key = ContentKey.of(diff.getKey().getElements());
+          ContentKey key = diff.contentKey();
 
           DiffEntry entry =
               DiffEntry.diffEntry(

@@ -19,6 +19,7 @@ import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.IdentifiedContentKey;
 import org.projectnessie.versioned.NamedRef;
 
 /** Describes a check operation. */
@@ -47,29 +48,35 @@ public interface Check {
   @Value.Parameter(order = 5)
   Content.Type contentType();
 
+  @Nullable
+  @jakarta.annotation.Nullable
+  @Value.Parameter(order = 6)
+  IdentifiedContentKey identifiedKey();
+
   static Check check(CheckType type) {
-    return check(type, null);
+    return ImmutableCheck.of(type, null, null, null, null, null);
   }
 
   static Check check(CheckType type, @Nullable @jakarta.annotation.Nullable NamedRef ref) {
-    return check(type, ref, null, null);
+    return ImmutableCheck.of(type, ref, null, null, null, null);
   }
 
   static Check check(
       CheckType type,
       @Nullable @jakarta.annotation.Nullable NamedRef ref,
-      @Nullable @jakarta.annotation.Nullable ContentKey key,
-      @Nullable @jakarta.annotation.Nullable String contentId) {
-    return check(type, ref, key, contentId, null);
-  }
+      @Nullable @jakarta.annotation.Nullable IdentifiedContentKey identifiedKey) {
+    if (identifiedKey != null) {
+      IdentifiedContentKey.IdentifiedElement element = identifiedKey.lastElement();
+      return ImmutableCheck.of(
+          type,
+          ref,
+          identifiedKey.contentKey(),
+          element.contentId(),
+          identifiedKey.type(),
+          identifiedKey);
+    }
 
-  static Check check(
-      CheckType type,
-      @Nullable @jakarta.annotation.Nullable NamedRef ref,
-      @Nullable @jakarta.annotation.Nullable ContentKey key,
-      @Nullable @jakarta.annotation.Nullable String contentId,
-      @Nullable @jakarta.annotation.Nullable Content.Type contentType) {
-    return ImmutableCheck.of(type, ref, key, contentId, contentType);
+    return ImmutableCheck.of(type, ref, null, null, null, null);
   }
 
   static ImmutableCheck.Builder builder(CheckType type) {
@@ -87,19 +94,17 @@ public interface Check {
     DELETE_REFERENCE(true, false),
     /** See {@link BatchAccessChecker#canReadEntries(NamedRef)}. */
     READ_ENTRIES(true, false),
-    /** See {@link BatchAccessChecker#canReadContentKey(NamedRef, ContentKey, String)}. */
+    /** See {@link BatchAccessChecker#canReadContentKey(NamedRef, IdentifiedContentKey)}. */
     READ_CONTENT_KEY(true, true),
     /** See {@link BatchAccessChecker#canListCommitLog(NamedRef)}. */
     LIST_COMMIT_LOG(true, false),
     /** See {@link BatchAccessChecker#canCommitChangeAgainstReference(NamedRef)}. */
     COMMIT_CHANGE_AGAINST_REFERENCE(true, false),
-    /** See {@link BatchAccessChecker#canReadEntityValue(NamedRef, ContentKey, String)}. */
+    /** See {@link BatchAccessChecker#canReadEntityValue(NamedRef, IdentifiedContentKey)}. */
     READ_ENTITY_VALUE(true, true),
-    /**
-     * See {@link BatchAccessChecker#canUpdateEntity(NamedRef, ContentKey, String, Content.Type)}.
-     */
+    /** See {@link BatchAccessChecker#canUpdateEntity(NamedRef, IdentifiedContentKey)}. */
     UPDATE_ENTITY(true, true),
-    /** See {@link BatchAccessChecker#canDeleteEntity(NamedRef, ContentKey, String)}. */
+    /** See {@link BatchAccessChecker#canDeleteEntity(NamedRef, IdentifiedContentKey)}. */
     DELETE_ENTITY(true, true),
     /** See {@link BatchAccessChecker#canViewRefLog()}. */
     VIEW_REFLOG(false, false);
@@ -141,8 +146,8 @@ public interface Check {
     return check(CheckType.READ_ENTRIES, ref);
   }
 
-  static Check canReadContentKey(NamedRef ref, ContentKey key, String contentId) {
-    return check(CheckType.READ_CONTENT_KEY, ref, key, contentId);
+  static Check canReadContentKey(NamedRef ref, IdentifiedContentKey identifiedKey) {
+    return check(CheckType.READ_CONTENT_KEY, ref, identifiedKey);
   }
 
   static Check canListCommitLog(NamedRef ref) {
@@ -153,17 +158,16 @@ public interface Check {
     return check(CheckType.COMMIT_CHANGE_AGAINST_REFERENCE, ref);
   }
 
-  static Check canReadEntityValue(NamedRef ref, ContentKey key, String contentId) {
-    return check(CheckType.READ_ENTITY_VALUE, ref, key, contentId);
+  static Check canReadEntityValue(NamedRef ref, IdentifiedContentKey identifiedKey) {
+    return check(CheckType.READ_ENTITY_VALUE, ref, identifiedKey);
   }
 
-  static Check canUpdateEntity(
-      NamedRef ref, ContentKey key, String contentId, Content.Type contentType) {
-    return check(CheckType.UPDATE_ENTITY, ref, key, contentId, contentType);
+  static Check canUpdateEntity(NamedRef ref, IdentifiedContentKey identifiedKey) {
+    return check(CheckType.UPDATE_ENTITY, ref, identifiedKey);
   }
 
-  static Check canDeleteEntity(NamedRef ref, ContentKey key, String contentId) {
-    return check(CheckType.DELETE_ENTITY, ref, key, contentId);
+  static Check canDeleteEntity(NamedRef ref, IdentifiedContentKey identifiedKey) {
+    return check(CheckType.DELETE_ENTITY, ref, identifiedKey);
   }
 
   static Check canViewRefLog() {

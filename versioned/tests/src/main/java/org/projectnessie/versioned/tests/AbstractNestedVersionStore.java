@@ -29,6 +29,7 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.Commit;
+import org.projectnessie.versioned.ContentResult;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.Hash;
@@ -149,6 +150,10 @@ public abstract class AbstractNestedVersionStore {
                 .collect(Collectors.toList()));
   }
 
+  protected static Content contentWithoutId(ContentResult content) {
+    return content != null ? DefaultStoreWorker.instance().applyId(content.content(), null) : null;
+  }
+
   protected static Content contentWithoutId(Content content) {
     return content != null ? DefaultStoreWorker.instance().applyId(content, null) : null;
   }
@@ -157,7 +162,8 @@ public abstract class AbstractNestedVersionStore {
     return content.map(AbstractNestedVersionStore::contentWithoutId);
   }
 
-  protected static Map<ContentKey, Content> contentsWithoutId(Map<ContentKey, Content> valueMap) {
+  protected static Map<ContentKey, Content> contentsWithoutId(
+      Map<ContentKey, ContentResult> valueMap) {
     return valueMap.entrySet().stream()
         .collect(Collectors.toMap(Map.Entry::getKey, e -> contentWithoutId(e.getValue())));
   }
@@ -167,7 +173,8 @@ public abstract class AbstractNestedVersionStore {
         .map(
             d ->
                 Diff.of(
-                    d.getKey(),
+                    d.getFromKey(),
+                    d.getToKey(),
                     contentWithoutId(d.getFromValue()),
                     contentWithoutId(d.getToValue())))
         .collect(Collectors.toList());
