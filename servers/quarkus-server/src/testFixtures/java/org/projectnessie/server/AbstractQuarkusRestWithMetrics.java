@@ -47,7 +47,9 @@ public abstract class AbstractQuarkusRestWithMetrics extends AbstractQuarkusRest
     // Do not query JVM metrics in tests, see
     // https://github.com/quarkusio/quarkus/issues/24210#issuecomment-1064833013
     assertThat(body).contains("process_cpu_usage");
-    assertThat(body).contains("nessie_versionstore_request_seconds_max");
+    assertThat(body)
+        // also assert that VersionStore metrics have the global tag application="Nessie"
+        .containsPattern("nessie_versionstore_request_seconds_max\\{.*application=\"Nessie\".*}");
     assertThat(body).contains("nessie_versionstore_request_seconds_bucket");
     assertThat(body).contains("nessie_versionstore_request_seconds_count");
     assertThat(body).contains("nessie_versionstore_request_seconds_sum");

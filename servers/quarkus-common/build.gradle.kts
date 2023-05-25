@@ -63,6 +63,7 @@ dependencies {
   implementation("com.datastax.oss.quarkus:cassandra-quarkus-client")
   implementation("org.jboss.slf4j:slf4j-jboss-logmanager")
   implementation("io.opentelemetry:opentelemetry-api")
+  implementation("io.micrometer:micrometer-core")
 
   // javax/jakarta
   compileOnly(libs.jakarta.validation.api)

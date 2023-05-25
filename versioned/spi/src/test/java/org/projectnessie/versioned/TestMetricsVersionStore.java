@@ -427,13 +427,7 @@ class TestMetricsVersionStore {
 
     return new Meter.Id(
         "nessie.versionstore.request",
-        Tags.of(
-            "error",
-            Boolean.toString(isErrorException),
-            "request",
-            opName,
-            "application",
-            "Nessie"),
+        Tags.of("error", Boolean.toString(isErrorException), "request", opName),
         "nanoseconds",
         null,
         Meter.Type.TIMER);

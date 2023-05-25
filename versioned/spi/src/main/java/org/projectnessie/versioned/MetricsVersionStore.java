@@ -17,9 +17,6 @@ package org.projectnessie.versioned;
 
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.Tag;
-import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.Timer.Sample;
 import java.util.Collection;
@@ -45,7 +42,6 @@ public final class MetricsVersionStore implements VersionStore {
   private final VersionStore delegate;
   private final MeterRegistry registry;
   private final Clock clock;
-  private final Iterable<Tag> commonTags;
 
   /**
    * Constructor taking the delegate version-store and the metrics-registry.
@@ -53,15 +49,10 @@ public final class MetricsVersionStore implements VersionStore {
    * @param delegate delegate version-store
    * @param registry metrics-registry
    */
-  MetricsVersionStore(VersionStore delegate, MeterRegistry registry, Clock clock) {
+  public MetricsVersionStore(VersionStore delegate, MeterRegistry registry, Clock clock) {
     this.delegate = delegate;
     this.registry = registry;
     this.clock = clock;
-    this.commonTags = Tags.of("application", "Nessie");
-  }
-
-  public MetricsVersionStore(VersionStore delegate) {
-    this(delegate, Metrics.globalRegistry, Clock.SYSTEM);
   }
 
   @Nonnull
@@ -266,7 +257,6 @@ public final class MetricsVersionStore implements VersionStore {
   private void measure(String requestName, Sample sample, Exception failure) {
     Timer timer =
         Timer.builder("nessie.versionstore.request")
-            .tags(commonTags)
             .tag("request", requestName)
             .tag("error", Boolean.toString(failure != null))
             .publishPercentileHistogram()
