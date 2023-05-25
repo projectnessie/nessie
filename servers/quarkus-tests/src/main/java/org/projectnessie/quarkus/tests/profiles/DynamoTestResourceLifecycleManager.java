@@ -20,12 +20,12 @@ import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
-import org.projectnessie.versioned.persist.dynamodb.LocalDynamoTestConnectionProviderSource;
+import org.projectnessie.versioned.storage.dynamodb.DynamoDBBackendTestFactory;
 
 public class DynamoTestResourceLifecycleManager
     implements QuarkusTestResourceLifecycleManager, DevServicesContext.ContextAware {
 
-  private LocalDynamoTestConnectionProviderSource dynamo;
+  private DynamoDBBackendTestFactory dynamo;
 
   private Optional<String> containerNetworkId = Optional.empty();
 
@@ -36,12 +36,11 @@ public class DynamoTestResourceLifecycleManager
 
   @Override
   public Map<String, String> start() {
-    dynamo = new LocalDynamoTestConnectionProviderSource();
+    dynamo = new DynamoDBBackendTestFactory();
 
     try {
-      // Only start the Docker container (local Dynamo-compatible). The DynamoDatabaseClient will
-      // be configured via Quarkus -> Quarkus-Dynamo / DynamoVersionStoreFactory.
-      dynamo.startDynamo(containerNetworkId, true);
+      // Only start the Docker container (local Dynamo-compatible).
+      dynamo.startDynamo(containerNetworkId);
     } catch (Exception e) {
       e.printStackTrace();
       throw new RuntimeException(e);

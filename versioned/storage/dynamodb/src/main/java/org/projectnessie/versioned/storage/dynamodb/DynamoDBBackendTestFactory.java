@@ -52,7 +52,7 @@ public class DynamoDBBackendTestFactory implements BackendTestFactory {
   }
 
   @SuppressWarnings("resource")
-  private void startDynamo(Optional<String> containerNetworkId) {
+  public void startDynamo(Optional<String> containerNetworkId) {
     if (container != null) {
       throw new IllegalStateException("Already started");
     }
@@ -105,5 +105,9 @@ public class DynamoDBBackendTestFactory implements BackendTestFactory {
     } finally {
       container = null;
     }
+  }
+
+  public String getEndpointURI() {
+    return endpointURI;
   }
 }
