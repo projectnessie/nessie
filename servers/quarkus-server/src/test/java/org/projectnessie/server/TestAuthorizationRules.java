@@ -278,7 +278,7 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   }
 
   @Test
-  // test_user3 has all permissions on a Branch, but ot permissions to DELETE_ENTITY
+  // test_user3 has all permissions on a Branch, but not permissions to DELETE_ENTITY
   @TestSecurity(user = "test_user4")
   void testCanCommitButNotUpdateEntity() throws BaseNessieClientServerException {
     String role = "test_user4";

@@ -21,5 +21,6 @@ public enum ResultType {
   REFERENCE_CREATED,
   COMMIT,
   MERGE,
-  TRANSPLANT
+  TRANSPLANT,
+  CONTENT_RESULT
 }

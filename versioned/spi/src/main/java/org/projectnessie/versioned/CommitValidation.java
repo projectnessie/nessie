@@ -29,10 +29,10 @@ public interface CommitValidation {
 
   @Value.Immutable
   interface CommitOperation {
-    @Value.Parameter(order = 2)
+    @Value.Parameter(order = 1)
     IdentifiedContentKey identifiedKey();
 
-    @Value.Parameter(order = 3)
+    @Value.Parameter(order = 2)
     Operation operation();
 
     static CommitOperation commitOperation(

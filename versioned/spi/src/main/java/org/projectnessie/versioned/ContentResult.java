@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned;
 
+import static org.projectnessie.versioned.ResultType.CONTENT_RESULT;
+
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.model.Content;
@@ -22,7 +24,12 @@ import org.projectnessie.model.Documentation;
 import org.projectnessie.model.IdentifiedContentKey;
 
 @Value.Immutable
-public interface ContentResult {
+public interface ContentResult extends Result {
+  @Override
+  default ResultType getResultType() {
+    return CONTENT_RESULT;
+  }
+
   @Value.Parameter(order = 1)
   IdentifiedContentKey identifiedKey();
 
