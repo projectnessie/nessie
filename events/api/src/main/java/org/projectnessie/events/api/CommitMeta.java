@@ -15,9 +15,6 @@
  */
 package org.projectnessie.events.api;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -27,8 +24,6 @@ import org.immutables.value.Value;
 
 /** Metadata about a commit. */
 @Value.Immutable
-@JsonSerialize(as = ImmutableCommitMeta.class)
-@JsonDeserialize(as = ImmutableCommitMeta.class)
 public interface CommitMeta {
 
   /** The user or account who performed this action. */
@@ -36,7 +31,6 @@ public interface CommitMeta {
 
   /** The commit first author, or empty if no author information is available. */
   @Value.Derived
-  @JsonIgnore
   default Optional<String> getAuthor() {
     return getAuthors().stream().findFirst();
   }
@@ -49,7 +43,6 @@ public interface CommitMeta {
    * the person who approved or authorized the commit.
    */
   @Value.Derived
-  @JsonIgnore
   default Optional<String> getSignedOffBy() {
     return getAllSignedOffBy().stream().findFirst();
   }
@@ -68,7 +61,6 @@ public interface CommitMeta {
 
   /** Single-valued properties of this commit. */
   @Value.Lazy
-  @JsonIgnore
   default Map<String, String> getProperties() {
     return getAllProperties().entrySet().stream()
         .filter(e -> !e.getValue().isEmpty())

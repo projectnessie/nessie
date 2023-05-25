@@ -31,18 +31,7 @@ dependencies {
   implementation(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
 
-  // Jackson
-  implementation(platform(libs.jackson.bom))
-  implementation("com.fasterxml.jackson.core:jackson-annotations")
-  implementation("com.fasterxml.jackson.core:jackson-databind")
-
-  // ErrorProne
-  implementation(libs.errorprone.annotations)
-
   // Testing
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
-  testImplementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
-  testImplementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
-  testImplementation(libs.guava)
 }

@@ -15,9 +15,6 @@
  */
 package org.projectnessie.events.api;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Optional;
 import org.immutables.value.Value;
 
@@ -26,8 +23,6 @@ import org.immutables.value.Value;
  * references, but more types may be added in the future.
  */
 @Value.Immutable
-@JsonSerialize(as = ImmutableReference.class)
-@JsonDeserialize(as = ImmutableReference.class)
 public interface Reference {
 
   /** The reference type name for branches. */
@@ -64,14 +59,12 @@ public interface Reference {
 
   /** Returns {@code true} if the reference is a branch, {@code false} otherwise. */
   @Value.Derived
-  @JsonIgnore
   default boolean isBranch() {
     return getType().equalsIgnoreCase(BRANCH);
   }
 
   /** Returns {@code true} if the reference is a tag, {@code false} otherwise. */
   @Value.Derived
-  @JsonIgnore
   default boolean isTag() {
     return getType().equalsIgnoreCase(TAG);
   }

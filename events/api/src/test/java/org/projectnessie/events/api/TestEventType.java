@@ -166,18 +166,4 @@ class TestEventType {
             .build();
     assertThat(event.getType()).isEqualTo(EventType.CONTENT_REMOVED);
   }
-
-  @Test
-  void generic() {
-    GenericEvent content =
-        ImmutableGenericEvent.builder()
-            .id(UUID.randomUUID())
-            .genericType("genericType")
-            .id(UUID.randomUUID())
-            .repositoryId("repo1")
-            .eventCreationTimestamp(Instant.now())
-            .eventInitiator("Alice")
-            .build();
-    assertThat(content.getType()).isEqualTo(EventType.GENERIC);
-  }
 }

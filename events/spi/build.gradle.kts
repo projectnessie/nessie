@@ -27,10 +27,6 @@ extra["maven.name"] = "Nessie - Events - SPI"
 dependencies {
   implementation(project(":nessie-events-api"))
 
-  // Jackson
-  compileOnly(platform(libs.jackson.bom))
-  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
-
   // Immutables
   implementation(libs.immutables.builder)
   implementation(libs.immutables.value.annotations)
@@ -39,6 +35,4 @@ dependencies {
   // Testing
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
-  testCompileOnly(platform(libs.jackson.bom))
-  testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
 }

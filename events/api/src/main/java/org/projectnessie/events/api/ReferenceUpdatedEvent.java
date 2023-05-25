@@ -15,14 +15,10 @@
  */
 package org.projectnessie.events.api;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
 /** Event that is emitted after a reference is updated. */
 @Value.Immutable
-@JsonSerialize(as = ImmutableReferenceUpdatedEvent.class)
-@JsonDeserialize(as = ImmutableReferenceUpdatedEvent.class)
 public interface ReferenceUpdatedEvent extends ReferenceEvent {
 
   @Value.Default
