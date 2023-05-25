@@ -21,25 +21,32 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.error.ReferenceConflicts;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Conflict;
 import org.projectnessie.model.Conflict.ConflictType;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.IcebergTable;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.CommitResult;
@@ -47,6 +54,7 @@ import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.KeyEntry;
+import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -83,6 +91,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
    * - Check the commit can be listed
    * - Check that the commit can be deleted
    */
+  @SuppressWarnings("UnstableApiUsage")
   @Test
   public void commitToBranch() throws Exception {
     final BranchName branch = BranchName.of("foo");
@@ -243,6 +252,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
    * - Check keys for each commit hash
    * - Check values for each commit hash
    */
+  @SuppressWarnings("UnstableApiUsage")
   @Test
   public void commitNonConflictingOperations() throws Exception {
     BranchName branch = BranchName.of("foo");
@@ -757,7 +767,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
   @Test
   public void commitWithUnknownReference()
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
-    final BranchName branch = BranchName.of("foo");
+    BranchName branch = BranchName.of("foo");
     store().create(branch, Optional.empty());
 
     soft.assertThatThrownBy(
@@ -780,20 +790,19 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
       throws ReferenceNotFoundException,
           ReferenceConflictException,
           ReferenceAlreadyExistsException {
-    final BranchName branch = BranchName.of("foo");
-    store().create(branch, Optional.empty());
+    BranchName branch = BranchName.of("foo");
+    Hash initialHash = store().create(branch, Optional.empty()).getHash();
 
-    final Hash initialHash = store().hashOnReference(branch, Optional.empty());
-    store()
-        .commit(
-            branch,
-            Optional.of(initialHash),
-            CommitMeta.fromMessage("Some commit"),
-            Collections.emptyList());
+    Hash commitHash =
+        store()
+            .commit(
+                branch,
+                Optional.of(initialHash),
+                CommitMeta.fromMessage("Some commit"),
+                Collections.emptyList())
+            .getCommitHash();
 
-    final Hash commitHash = store().hashOnReference(branch, Optional.empty());
-
-    final BranchName branch2 = BranchName.of("bar");
+    BranchName branch2 = BranchName.of("bar");
     store().create(branch2, Optional.empty());
 
     soft.assertThatThrownBy(
@@ -805,6 +814,51 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                         CommitMeta.fromMessage("Another commit"),
                         Collections.emptyList()))
         .isInstanceOf(ReferenceNotFoundException.class);
+  }
+
+  static Stream<Arguments> renames() {
+    return Stream.of(
+        arguments(false, false),
+        arguments(false, true),
+        arguments(true, false),
+        arguments(true, true));
+  }
+
+  @ParameterizedTest
+  @MethodSource("renames")
+  void renames(boolean reverse, boolean recreate) throws Exception {
+    BranchName branch = BranchName.of("foo");
+    Hash initialHash = store().create(branch, Optional.empty()).getHash();
+
+    ContentKey original = ContentKey.of("original");
+    ContentKey renamed = ContentKey.of("renamed");
+
+    Hash committed =
+        store()
+            .commit(
+                branch,
+                Optional.of(initialHash),
+                CommitMeta.fromMessage("Some commit"),
+                Collections.singletonList(Put.of(original, IcebergTable.of("loc", 1, 2, 3, 4))))
+            .getCommitHash();
+
+    Content table = store().getValue(branch, original);
+
+    Delete deleteOp = Delete.of(original);
+    Put putOp =
+        Put.of(
+            renamed,
+            recreate
+                ? IcebergTable.of("recreated", 1, 2, 3, 4)
+                : IcebergTable.of("renamed", 1, 2, 3, 4, table.getId()));
+
+    List<Operation> ops = reverse ? Arrays.asList(putOp, deleteOp) : Arrays.asList(deleteOp, putOp);
+
+    store().commit(branch, Optional.of(committed), CommitMeta.fromMessage("Rename commit"), ops);
+
+    soft.assertThat(store().getValues(branch, Arrays.asList(original, renamed)))
+        .containsKey(renamed)
+        .doesNotContainKey(original);
   }
 
   @Test
