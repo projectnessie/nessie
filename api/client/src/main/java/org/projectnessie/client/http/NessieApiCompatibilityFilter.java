@@ -32,7 +32,7 @@ public class NessieApiCompatibilityFilter implements RequestFilter {
   private final AtomicBoolean checkDone = new AtomicBoolean(false);
 
   NessieApiCompatibilityFilter(HttpClient.Builder builder, int clientApiVersion) {
-    this.builder = HttpClient.copyBuilder(builder).clearRequestFilters().clearResponseFilters();
+    this.builder = builder.copy().clearRequestFilters().clearResponseFilters();
     this.clientApiVersion = clientApiVersion;
   }
 
@@ -41,8 +41,9 @@ public class NessieApiCompatibilityFilter implements RequestFilter {
     if (checkDone.compareAndSet(false, true)) {
       try (HttpClient httpClient = builder.build()) {
         check(clientApiVersion, httpClient);
+      } finally {
+        builder = null;
       }
-      builder = null;
     }
   }
 

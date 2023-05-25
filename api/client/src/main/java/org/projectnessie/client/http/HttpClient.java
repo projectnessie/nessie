@@ -53,10 +53,6 @@ public interface HttpClient extends AutoCloseable {
     return new Builder();
   }
 
-  static Builder copyBuilder(Builder other) {
-    return new Builder(other);
-  }
-
   URI getBaseUri();
 
   @Override
@@ -106,6 +102,11 @@ public interface HttpClient extends AutoCloseable {
       this.followRedirects = other.followRedirects;
       this.forceUrlConnectionClient = other.forceUrlConnectionClient;
       this.clientSpec = other.clientSpec;
+    }
+
+    /** Creates a (shallow) copy of this builder. */
+    public Builder copy() {
+      return new Builder(this);
     }
 
     public URI getBaseUri() {
