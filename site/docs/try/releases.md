@@ -2,6 +2,41 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.60.0 Release (May 25, 2023)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.60.0).
+
+* Pass content-IDs of all `ContentKey` elements to `Check`s (#6859)
+* Nit: Spec version updates (#6897)
+* Fix `MergeKeyBehavior.DROP` in new storage model for merge (#6894)
+* Defer API compatibility check until first request (#6893)
+* Remove mentions of spark2 in Docs (#6762)
+* Revert "Bump keykloak container image from 21.0.2 to 21.1 (#6887)" (#6895)
+* Table renames: allow delete-op after put-op (#6892)
+* Bump keykloak container image from 21.0.2 to 21.1 (#6887)
+* Update dependency ch.qos.logback:logback-classic to v1.2.12 (#6889)
+* Bugfix: include ROCKSDB in selector to create PVC in both cases. (#6881)
+* Build: cleanup `libs.versions.toml` (#6886)
+* Don't use filters when checking API compatibility (#6877)
+* Make nip.io usage resilient against lookup failures (#6885)
+* CI/Nesqueit: Switch back to `iceberg-nesqueit` branch (#6883)
+* Ability to disable the API compatibility check via system properties (#6875)
+* Skip API compatibility check if /config endpoint fails (#6878)
+* Fix snapshot publising after #6847 (#6882)
+* Build: minor `baselibs.versions.toml` update (#6884)
+* Improve NessieError message (#6874)
+* Disable Scylla tests on macOS (#6871)
+* Enable compatibility tests on macOS (#6857)
+* Use nip.io domain in MinioExtension (#6856)
+* Docker compose template for Nessie + OpenTelemetry (#6860)
+* Release: Remove relocation-poms (#6810)
+* Remove native image (#6847)
+* Use API V2 by default in GC Tool (#6858)
+* Enables the extended information in `NessieConfiguration` (#6640)
+* Add missing jakarta annotations (#6850)
+* Nit: Remove unneeded dev-profile hints (#6851)
+* Quarkus ITs: Restrict Keycloak to tests using Keycloak (#6852)
+
 ## 0.59.0 Release (May 18, 2023)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.59.0).
