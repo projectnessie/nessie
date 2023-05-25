@@ -15,16 +15,12 @@
  */
 package org.projectnessie.events.api;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Collections;
 import java.util.Map;
 import org.immutables.value.Value;
 
 /** An object stored in Nessie, such as a table or a view. */
 @Value.Immutable
-@JsonSerialize(as = ImmutableContent.class)
-@JsonDeserialize(as = ImmutableContent.class)
 public interface Content {
 
   /**

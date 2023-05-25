@@ -15,8 +15,6 @@
  */
 package org.projectnessie.events.api;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
 /**
@@ -24,8 +22,6 @@ import org.immutables.value.Value;
  * a commit, merge or transplant. This event is emitted after the content has been removed.
  */
 @Value.Immutable
-@JsonSerialize(as = ImmutableContentRemovedEvent.class)
-@JsonDeserialize(as = ImmutableContentRemovedEvent.class)
 public interface ContentRemovedEvent extends ContentEvent {
 
   @Override

@@ -15,9 +15,6 @@
  */
 package org.projectnessie.events.api;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -26,8 +23,6 @@ import org.immutables.value.Value;
 
 /** Key for a {@link Content} object. */
 @Value.Immutable
-@JsonSerialize
-@JsonDeserialize(as = ImmutableContentKey.class)
 public interface ContentKey extends Comparable<ContentKey> {
 
   static ContentKey of(String... elements) {
@@ -49,7 +44,6 @@ public interface ContentKey extends Comparable<ContentKey> {
    * content key {@code ["a", "b", "c"]} is {@code "c"}.
    */
   @Value.Lazy
-  @JsonIgnore
   default String getSimpleName() {
     return getElements().get(getElements().size() - 1);
   }
@@ -64,7 +58,6 @@ public interface ContentKey extends Comparable<ContentKey> {
    * by the unicode character {@code U+001D}.
    */
   @Value.Lazy
-  @JsonIgnore
   default String getName() {
     // see org.projectnessie.model.Util
     return getElements().stream()
@@ -74,7 +67,6 @@ public interface ContentKey extends Comparable<ContentKey> {
 
   /** Returns the parent key of this content key. */
   @Value.Lazy
-  @JsonIgnore
   default Optional<ContentKey> getParent() {
     List<String> elements = getElements();
     if (elements.size() <= 1) {

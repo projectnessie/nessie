@@ -15,15 +15,12 @@
  */
 package org.projectnessie.events.api;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.immutables.value.Value;
-import org.projectnessie.events.api.json.EventTypeIdResolver;
 
 /**
  * Base interface for all events produced by Nessie.
@@ -38,8 +35,6 @@ import org.projectnessie.events.api.json.EventTypeIdResolver;
  * @see ContentRemovedEvent
  * @see GenericEvent
  */
-@JsonTypeIdResolver(EventTypeIdResolver.class)
-@JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, visible = true, property = "type")
 public interface Event {
 
   /** The type of the event. */

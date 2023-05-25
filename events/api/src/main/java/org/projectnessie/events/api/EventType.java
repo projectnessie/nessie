@@ -28,74 +28,54 @@ public enum EventType {
    *
    * @see ReferenceCreatedEvent
    */
-  REFERENCE_CREATED(ReferenceCreatedEvent.class),
+  REFERENCE_CREATED,
 
   /**
    * The content is a reference updated event.
    *
    * @see ReferenceUpdatedEvent
    */
-  REFERENCE_UPDATED(ReferenceUpdatedEvent.class),
+  REFERENCE_UPDATED,
 
   /**
    * The content is a reference deleted event.
    *
    * @see ReferenceDeletedEvent
    */
-  REFERENCE_DELETED(ReferenceDeletedEvent.class),
+  REFERENCE_DELETED,
 
   /**
    * The content is a commit event.
    *
    * @see CommitEvent
    */
-  COMMIT(CommitEvent.class),
+  COMMIT,
 
   /**
    * The content is a merge event.
    *
    * @see MergeEvent
    */
-  MERGE(MergeEvent.class),
+  MERGE,
 
   /**
    * The content is a transplant event.
    *
    * @see TransplantEvent
    */
-  TRANSPLANT(TransplantEvent.class),
+  TRANSPLANT,
 
   /**
    * The content is a content stored event.
    *
    * @see ContentStoredEvent
    */
-  CONTENT_STORED(ContentStoredEvent.class),
+  CONTENT_STORED,
 
   /**
    * The content is a content removed event.
    *
    * @see ContentRemovedEvent
    */
-  CONTENT_REMOVED(ContentRemovedEvent.class),
-
-  /**
-   * The event is of an unknown type. This type is a catch-all type for all other runtime event
-   * types that do not match any of the well-known types above.
-   *
-   * @see GenericEvent
-   */
-  GENERIC(GenericEvent.class),
-  ;
-
-  private final Class<? extends Event> subtype;
-
-  EventType(Class<? extends Event> subtype) {
-    this.subtype = subtype;
-  }
-
-  /** Returns the subtype of {@link Event} that this enum value represents. */
-  public Class<? extends Event> getSubtype() {
-    return subtype;
-  }
+  CONTENT_REMOVED,
 }

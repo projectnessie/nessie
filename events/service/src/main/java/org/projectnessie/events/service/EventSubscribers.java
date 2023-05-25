@@ -151,8 +151,6 @@ public class EventSubscribers implements AutoCloseable {
         return Stream.of(ResultType.REFERENCE_ASSIGNED);
       case REFERENCE_DELETED:
         return Stream.of(ResultType.REFERENCE_DELETED);
-      case GENERIC:
-        return Stream.of(); // event never emitted
       default:
         throw new IllegalArgumentException("Unknown result type: " + resultType);
     }
