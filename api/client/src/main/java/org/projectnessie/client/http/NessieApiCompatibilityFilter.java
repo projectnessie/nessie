@@ -16,15 +16,36 @@
 package org.projectnessie.client.http;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class NessieApiCompatibility {
+public class NessieApiCompatibilityFilter implements RequestFilter {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(NessieApiCompatibility.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(NessieApiCompatibilityFilter.class);
   private static final String MIN_API_VERSION = "minSupportedApiVersion";
   private static final String MAX_API_VERSION = "maxSupportedApiVersion";
   private static final String ACTUAL_API_VERSION = "actualApiVersion";
+
+  private HttpClient.Builder builder;
+  private final int clientApiVersion;
+  private final AtomicBoolean checkDone = new AtomicBoolean(false);
+
+  NessieApiCompatibilityFilter(HttpClient.Builder builder, int clientApiVersion) {
+    this.builder = builder.copy().clearRequestFilters().clearResponseFilters();
+    this.clientApiVersion = clientApiVersion;
+  }
+
+  @Override
+  public void filter(RequestContext context) {
+    if (checkDone.compareAndSet(false, true)) {
+      try (HttpClient httpClient = builder.build()) {
+        check(clientApiVersion, httpClient);
+      } finally {
+        builder = null;
+      }
+    }
+  }
 
   /**
    * Checks if the API version of the client is compatible with the server's.
@@ -33,7 +54,7 @@ public class NessieApiCompatibility {
    * @param httpClient the underlying HTTP client.
    * @throws NessieApiCompatibilityException if the API version is not compatible.
    */
-  public static void check(int clientApiVersion, HttpClient httpClient)
+  static void check(int clientApiVersion, HttpClient httpClient)
       throws NessieApiCompatibilityException {
     JsonNode config;
     try {
