@@ -132,7 +132,6 @@ jobs:
           -a "${ARTIFACTS}" \
           -g ":nessie-quarkus" \
           -p "servers/quarkus-server" \
-          -n \
           ghcr.io/projectnessie/nessie
 
         # Add version to the openapi file name
