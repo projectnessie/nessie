@@ -24,16 +24,24 @@ public class TestClassesAvailability {
   @ValueSource(strings = {
     // from nessie-model
     "org.projectnessie.model.ImmutableIcebergTable",
-    // from nessie-versioned-persist-adapter
-    "org.projectnessie.versioned.persist.adapter.spi.AbstractDatabaseAdapter",
-    // from nessie-versioned-persist-inmem
-    "org.projectnessie.versioned.persist.inmem.InmemoryConfig",
-    // from nessie-versioned-persist-inmem / test-jar
-    "org.projectnessie.versioned.persist.inmem.InmemoryTestConnectionProviderSource",
-    // from nessie-versioned-persist-rocks
-    "org.projectnessie.versioned.persist.rocks.RocksDatabaseAdapterFactory",
-    // from nessie-versioned-persist-rocks / test-jar
-    "org.projectnessie.versioned.persist.rocks.RocksTestConnectionProviderSource",
+    // from nessie-versioned-storage-common
+    "org.projectnessie.versioned.storage.common.logic.Logics",
+    // from nessie-versioned-storage-common-serialize
+    "org.projectnessie.versioned.storage.serialize.ProtoSerialization",
+    // from nessie-versioned-storage-store
+    "org.projectnessie.versioned.storage.versionstore.VersionStoreImpl",
+    // from nessie-versioned-storage-inmemory
+    "org.projectnessie.versioned.storage.inmemory.InmemoryBackendTestFactory",
+    // from nessie-versioned-storage-rocksdb
+    "org.projectnessie.versioned.storage.rocksdb.RocksDBBackendTestFactory",
+    // from nessie-versioned-storage-mongodb
+    "org.projectnessie.versioned.storage.mongodb.MongoDBBackendFactory",
+    // from nessie-versioned-storage-cache
+    "org.projectnessie.versioned.storage.cache.PersistCaches",
+    // from nessie-versioned-storage-telemetry
+    "org.projectnessie.versioned.storage.telemetry.TelemetryPersistFactory",
+    // from nessie-versioned-storage-testextension
+    "org.projectnessie.versioned.storage.testextension.PersistExtension",
     // from nessie-client
     "org.projectnessie.client.api.NessieApi"
   })
