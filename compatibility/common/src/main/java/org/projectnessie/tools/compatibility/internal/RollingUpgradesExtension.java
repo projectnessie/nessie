@@ -19,14 +19,19 @@ import static org.projectnessie.tools.compatibility.internal.AbstractNessieApiHo
 import static org.projectnessie.tools.compatibility.internal.GlobalForClass.globalForClass;
 import static org.projectnessie.tools.compatibility.internal.NessieServer.nessieServer;
 import static org.projectnessie.tools.compatibility.internal.NessieServer.nessieServerExisting;
+import static org.projectnessie.tools.compatibility.internal.Util.extensionStore;
 
-import com.google.common.collect.ImmutableMap;
+import java.io.Closeable;
+import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.projectnessie.tools.compatibility.api.TargetVersion;
 import org.projectnessie.tools.compatibility.api.Version;
-import org.projectnessie.versioned.persist.mongodb.LocalMongoResource;
+import org.projectnessie.versioned.storage.mongodb.MongoDBBackendTestFactory;
 
 /**
  * Simulates a rolling-upgrade situation with one Nessie instance running an old version and another
@@ -54,12 +59,47 @@ public class RollingUpgradesExtension extends AbstractMultiVersionExtension {
       return;
     }
 
+    MongoHolder mongo = getMongoHolder(context);
+    mongo.start();
+
     ServerKey serverKey = buildServerKey(version, context);
-    NessieServer nessieServer = nessieServer(context, serverKey, () -> true);
+    Consumer<Object> mongoConfigure =
+        c -> {
+          try {
+            Method setClient =
+                Arrays.stream(c.getClass().getMethods())
+                    .filter(m -> m.getName().equals("client"))
+                    .findFirst()
+                    .orElseThrow(
+                        () ->
+                            new IllegalStateException(
+                                "No such method client(MongoClient) on " + c.getClass().getName()));
+
+            c.getClass()
+                .getMethod("databaseName", String.class)
+                .invoke(c, mongo.mongo.getDatabaseName());
+
+            ClassLoader classLoader = setClient.getParameterTypes()[0].getClassLoader();
+            Object mongoClient =
+                classLoader
+                    .loadClass("com.mongodb.client.MongoClients")
+                    .getMethod("create", String.class)
+                    .invoke(null, mongo.mongo.getConnectionString());
+            extensionStore(context)
+                .put("mongo-client", (CloseableResource) () -> ((Closeable) mongoClient).close());
+
+            setClient.invoke(c, mongoClient);
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          }
+        };
+
+    NessieServer nessieServer = nessieServer(context, serverKey, () -> true, mongoConfigure);
     populateNessieApiFields(context, null, version, TargetVersion.TESTED, ctx -> nessieServer);
 
     ServerKey serverKeyNext = buildServerKey(Version.CURRENT, context);
-    NessieServer nessieServerNext = nessieServer(context, serverKeyNext, () -> false);
+    NessieServer nessieServerNext =
+        nessieServer(context, serverKeyNext, () -> false, mongoConfigure);
     populateNessieApiFields(
         context, null, Version.CURRENT, TargetVersion.CURRENT, ctx -> nessieServerNext);
   }
@@ -84,19 +124,17 @@ public class RollingUpgradesExtension extends AbstractMultiVersionExtension {
   }
 
   private ServerKey buildServerKey(Version version, ExtensionContext context) {
-    LocalMongoResource mongo =
-        globalForClass(context)
-            .getOrCompute("local-mongo", x -> new LocalMongoResource(), LocalMongoResource.class);
+    MongoHolder mongo = getMongoHolder(context);
 
     // Eagerly create the Nessie server instance
-    Map<String, String> configuration =
-        ImmutableMap.of(
-            "nessie.store.connection.string",
-            mongo.getConnectionString(),
-            "nessie.store.database.name",
-            mongo.getDatabaseName());
+    Map<String, String> configuration = mongo.mongo.getQuarkusConfig();
 
     return ServerKey.forContext(context, version, "MongoDB", configuration);
+  }
+
+  private static MongoHolder getMongoHolder(ExtensionContext context) {
+    return globalForClass(context)
+        .getOrCompute("local-mongo", x -> new MongoHolder(), MongoHolder.class);
   }
 
   private void populateNessieApiFields(
@@ -110,5 +148,23 @@ public class RollingUpgradesExtension extends AbstractMultiVersionExtension {
         instance,
         targetVersion,
         field -> apiInstanceForField(context, field, version, nessieServerSupplier));
+  }
+
+  static class MongoHolder implements CloseableResource {
+    MongoDBBackendTestFactory mongo = new MongoDBBackendTestFactory();
+
+    boolean started;
+
+    synchronized void start() {
+      if (!started) {
+        mongo.start();
+        started = true;
+      }
+    }
+
+    @Override
+    public void close() throws Throwable {
+      mongo.stop();
+    }
   }
 }

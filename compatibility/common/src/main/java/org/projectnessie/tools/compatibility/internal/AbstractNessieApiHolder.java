@@ -75,8 +75,7 @@ abstract class AbstractNessieApiHolder implements CloseableResource {
     Class<? extends NessieApi> apiType = (Class<? extends NessieApi>) field.getType();
     Map<String, String> configs =
         buildApiBuilderConfig(context, field, apiType, nessieServerSupplier);
-    ClientKey clientKey = new ClientKey(version, nessieAPI.builderClassName(), apiType, configs);
-    return clientKey;
+    return new ClientKey(version, nessieAPI.builderClassName(), apiType, configs);
   }
 
   private static Map<String, String> buildApiBuilderConfig(

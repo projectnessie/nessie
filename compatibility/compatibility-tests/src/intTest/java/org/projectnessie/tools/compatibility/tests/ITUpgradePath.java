@@ -16,9 +16,8 @@
 package org.projectnessie.tools.compatibility.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.entry;
-import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.Assumptions.assumeThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,14 +27,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.OptionalInt;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import org.assertj.core.api.InstanceOfAssertFactories;
-import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -46,14 +41,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
-import org.projectnessie.client.api.GetCommitLogBuilder;
-import org.projectnessie.client.api.GetEntriesBuilder;
-import org.projectnessie.client.api.GetRefLogBuilder;
 import org.projectnessie.client.api.NessieApiV1;
-import org.projectnessie.client.builder.StreamingUtil;
-import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
-import org.projectnessie.error.NessieReferenceConflictException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
@@ -63,14 +52,12 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
-import org.projectnessie.model.RefLogResponse.RefLogResponseEntry;
 import org.projectnessie.model.Reference;
 import org.projectnessie.tools.compatibility.api.NessieAPI;
 import org.projectnessie.tools.compatibility.api.NessieVersion;
 import org.projectnessie.tools.compatibility.api.Version;
-import org.projectnessie.tools.compatibility.api.VersionCondition;
 import org.projectnessie.tools.compatibility.internal.NessieUpgradesExtension;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapterConfig;
+import org.projectnessie.versioned.storage.common.config.StoreConfig;
 
 @ExtendWith(NessieUpgradesExtension.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -99,45 +86,6 @@ public class ITUpgradePath {
     // Usual after-each-test callback
   }
 
-  @SuppressWarnings("deprecation")
-  Stream<Reference> allReferences() throws NessieNotFoundException {
-    if (version.isGreaterThan(Version.parseVersion("0.30.0"))) {
-      return api.getAllReferences().stream();
-    } else {
-      return StreamingUtil.getAllReferencesStream(api, Function.identity(), OptionalInt.empty());
-    }
-  }
-
-  @SuppressWarnings("deprecation")
-  Stream<EntriesResponse.Entry> entries(Function<GetEntriesBuilder, GetEntriesBuilder> configurer)
-      throws NessieNotFoundException {
-    if (version.isGreaterThan(Version.parseVersion("0.30.0"))) {
-      return configurer.apply(api.getEntries()).stream();
-    } else {
-      return StreamingUtil.getEntriesStream(api, configurer, OptionalInt.empty());
-    }
-  }
-
-  @SuppressWarnings("deprecation")
-  Stream<LogEntry> commitLog(Function<GetCommitLogBuilder, GetCommitLogBuilder> configurer)
-      throws NessieNotFoundException {
-    if (version.isGreaterThan(Version.parseVersion("0.30.0"))) {
-      return configurer.apply(api.getCommitLog()).stream();
-    } else {
-      return StreamingUtil.getCommitLogStream(api, configurer, OptionalInt.empty());
-    }
-  }
-
-  @SuppressWarnings("deprecation")
-  Stream<RefLogResponseEntry> refLog(Function<GetRefLogBuilder, GetRefLogBuilder> configurer)
-      throws NessieNotFoundException {
-    if (version.isGreaterThan(Version.parseVersion("0.30.0"))) {
-      return configurer.apply(api.getRefLog()).stream();
-    } else {
-      return StreamingUtil.getReflogStream(api, configurer, OptionalInt.empty());
-    }
-  }
-
   // //////////////////////////////////////////////////////////////////////////////////////////
   // Basic tests
   // //////////////////////////////////////////////////////////////////////////////////////////
@@ -145,7 +93,6 @@ public class ITUpgradePath {
   private static final String VERSION_BRANCH_PREFIX = "version-";
   private static Branch versionBranch;
   private static final Set<String> createdBranches = new HashSet<>();
-  private static final Map<String, List<String>> expectedRefLog = new LinkedHashMap<>();
 
   @Test
   @Order(101)
@@ -154,15 +101,13 @@ public class ITUpgradePath {
     versionBranch = Branch.of(VERSION_BRANCH_PREFIX + version, main.getHash());
     createdBranches.add(versionBranch.getName());
     api.createReference().sourceRefName(main.getName()).reference(versionBranch).create();
-
-    expectedRefLogEntry("CREATE_REFERENCE");
   }
 
   @Order(102)
   @Test
   void getReferences() throws NessieNotFoundException {
     assertThat(
-            allReferences()
+            api.getAllReferences().stream()
                 .map(Reference::getName)
                 .filter(ref -> ref.startsWith(VERSION_BRANCH_PREFIX)))
         .containsExactlyInAnyOrderElementsOf(createdBranches);
@@ -172,49 +117,32 @@ public class ITUpgradePath {
   @Order(103)
   void commit() throws Exception {
     ContentKey key = ContentKey.of("my-tables-table_name");
-    IcebergTable content =
-        IcebergTable.of("metadata-location", 42L, 43, 44, 45, "content-id-" + version);
+    IcebergTable content = IcebergTable.of("metadata-location-" + version, 42L, 43, 44, 45);
     String commitMessage = "hello world " + version;
     Put operation = Put.of(key, content);
     Branch branchNew =
-        commitMaybeRetry(
-            api.commitMultipleOperations()
-                .commitMeta(CommitMeta.fromMessage(commitMessage))
-                .operation(operation)
-                .branch(versionBranch));
+        api.commitMultipleOperations()
+            .commitMeta(CommitMeta.fromMessage(commitMessage))
+            .operation(operation)
+            .branch(versionBranch)
+            .commit();
     assertThat(branchNew)
         .isNotEqualTo(versionBranch)
         .extracting(Branch::getName)
         .isEqualTo(versionBranch.getName());
-
-    expectedRefLogEntry("COMMIT");
-  }
-
-  // Workaround for broken key-collision checks in RocksDB
-  private Branch commitMaybeRetry(CommitMultipleOperationsBuilder commitBuilder)
-      throws NessieNotFoundException, NessieConflictException {
-    // WORKAROUND for https://github.com/projectnessie/nessie/pull/3413
-    while (true) {
-      try {
-        return commitBuilder.commit();
-      } catch (NessieReferenceConflictException e) {
-        if (!"Hash collision detected".equals(e.getMessage())
-            || Version.parseVersion("0.20.1").isLessThan(version)) {
-          throw e;
-        }
-      }
-    }
   }
 
   @Test
   @Order(104)
   void commitLog() throws NessieNotFoundException {
-    assertThat(allReferences().filter(r -> r.getName().startsWith(VERSION_BRANCH_PREFIX)))
+    assertThat(
+            api.getAllReferences().stream()
+                .filter(r -> r.getName().startsWith(VERSION_BRANCH_PREFIX)))
         .isNotEmpty()
         .allSatisfy(
             ref -> {
               String versionFromRef = ref.getName().substring(VERSION_BRANCH_PREFIX.length());
-              Stream<LogEntry> commitLog = commitLog(b -> b.refName(ref.getName()));
+              Stream<LogEntry> commitLog = api.getCommitLog().refName(ref.getName()).stream();
               String commitMessage = "hello world " + versionFromRef;
               assertThat(commitLog)
                   .hasSize(1)
@@ -227,60 +155,14 @@ public class ITUpgradePath {
               String versionFromRef = ref.getName().substring(VERSION_BRANCH_PREFIX.length());
               ContentKey key = ContentKey.of("my-tables-table_name");
               IcebergTable content =
-                  IcebergTable.of(
-                      "metadata-location", 42L, 43, 44, 45, "content-id-" + versionFromRef);
+                  IcebergTable.of("metadata-location-" + versionFromRef, 42L, 43, 44, 45);
               Map<ContentKey, Content> contents = api.getContent().reference(ref).key(key).get();
-              assertThat(contents).containsExactly(entry(key, content));
+              assertThat(contents)
+                  .hasSize(1)
+                  .extractingByKey(key)
+                  .extracting(AbstractCompatibilityTests::withoutContentId)
+                  .isEqualTo(content);
             });
-  }
-
-  // //////////////////////////////////////////////////////////////////////////////////////////
-  // ref log
-  // //////////////////////////////////////////////////////////////////////////////////////////
-
-  private void expectedRefLogEntry(String op) {
-    if (version.isGreaterThanOrEqual(Version.parseVersion("0.18.0"))) {
-      if (version.isGreaterThanOrEqual(Version.REFLOG_FOR_COMMIT_REMOVED)) {
-        switch (op) {
-          case "CREATE_REFERENCE":
-          case "DROP_REFERENCE":
-          case "ASSIGN_REFERENCE":
-            break;
-          case "COMMIT":
-          case "MERGE":
-          case "TRANSPLANT":
-          default:
-            return;
-        }
-      }
-      expectedRefLog.computeIfAbsent(versionBranch.getName(), x -> new ArrayList<>()).add(op);
-    }
-  }
-
-  @Test
-  @Order(105)
-  @VersionCondition(minVersion = "0.18.0")
-  void refLog() throws Exception {
-    List<Tuple> allExpected =
-        expectedRefLog.entrySet().stream()
-            .flatMap(e -> e.getValue().stream().map(op -> tuple(e.getKey(), op)))
-            .collect(Collectors.toList());
-
-    ArrayList<RefLogResponseEntry> logEntries = new ArrayList<>();
-    refLog(Function.identity()).forEach(logEntries::add);
-    Collections.reverse(logEntries);
-    assertThat(
-            logEntries.stream()
-                // When upgrade path starts >= 0.18.0, there'll be a reflog entry for this
-                .filter(e -> !e.getRefName().equals("main"))
-                // When upgrade path starts >= 0.18.0, this test will be executed before
-                // keysUpgradeBranch is set
-                .filter(
-                    e ->
-                        keysUpgradeBranch == null
-                            || !keysUpgradeBranch.getName().equals(e.getRefName()))
-                .map(e -> tuple(e.getRefName(), e.getOperation())))
-        .containsExactlyElementsOf(allExpected);
   }
 
   // //////////////////////////////////////////////////////////////////////////////////////////
@@ -296,7 +178,7 @@ public class ITUpgradePath {
   private static final int keysUpgradeCommitsPerVersion =
       Math.max(
               50, // was: NonTransactionalDatabaseAdapterConfig.DEFAULT_PARENTS_PER_GLOBAL_COMMIT,
-              DatabaseAdapterConfig.DEFAULT_PARENTS_PER_COMMIT)
+              StoreConfig.DEFAULT_PARENTS_PER_COMMIT)
           + 15;
 
   // fields used for "many keys" (so many keys, that key-list-entities must be used)
@@ -308,7 +190,7 @@ public class ITUpgradePath {
               + "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn";
   private static Map<ContentKey, IcebergTable> manyContentsWithLongKeys = Collections.emptyMap();
   private static final int KEYS_PER_COMMIT =
-      DatabaseAdapterConfig.DEFAULT_MAX_ENTITY_SIZE / KEY_LONG_ELEMENT.length() * 2;
+      StoreConfig.DEFAULT_MAX_INCREMENTAL_INDEX_SIZE / KEY_LONG_ELEMENT.length() * 2;
 
   @Test
   @Order(201)
@@ -361,7 +243,9 @@ public class ITUpgradePath {
       // empty (meaning: keysUpgradeAddCommits() did work).
       expectedKeys = Stream.concat(expectedKeys, keys.stream());
     }
-    assertThat(entries(b -> b.reference(keysUpgradeBranch)).map(EntriesResponse.Entry::getName))
+    assertThat(
+            api.getEntries().reference(keysUpgradeBranch).stream()
+                .map(EntriesResponse.Entry::getName))
         .containsExactlyInAnyOrderElementsOf(expectedKeys.collect(Collectors.toSet()));
   }
 
@@ -380,9 +264,9 @@ public class ITUpgradePath {
         .allSatisfy(
             (key, table) ->
                 assertThat(retrievedContents)
-                    .extractingByKey(key, InstanceOfAssertFactories.type(IcebergTable.class))
-                    .extracting(IcebergTable::getSnapshotId, IcebergTable::getId)
-                    .containsExactly(table.getSnapshotId(), table.getId()));
+                    .extractingByKey(key, type(IcebergTable.class))
+                    .extracting(IcebergTable::getSnapshotId, IcebergTable::getMetadataLocation)
+                    .containsExactly(table.getSnapshotId(), table.getMetadataLocation()));
   }
 
   @Test
@@ -394,37 +278,42 @@ public class ITUpgradePath {
     for (int i = 0; i < keysUpgradeCommitsPerVersion; i++) {
       ContentKey key = ContentKey.of(EXPLICIT_KEYS_ELEMENT + "-upgrade-table-" + i);
       if ((i % 10) == 9) {
-        keysUpgradeBranch =
-            commitMaybeRetry(
-                api.commitMultipleOperations()
-                    .branch(keysUpgradeBranch)
-                    .commitMeta(
-                        CommitMeta.fromMessage(
-                            "Commit #" + i + "/delete from Nessie version " + version))
-                    .operation(Delete.of(key)));
-        Map<ContentKey, IcebergTable> newKeyValues = new HashMap<>(currentKeyValues);
-        newKeyValues.remove(key);
-        keysUpgradeAtHash.put(keysUpgradeBranch.getHash(), newKeyValues);
-      }
-
-      Content currentContent =
-          api.getContent().refName(keysUpgradeBranch.getName()).key(key).get().get(key);
-      String cid = currentContent == null ? "table-" + i + "-" + version : currentContent.getId();
-      IcebergTable newContent =
-          IcebergTable.of(
-              "pointer-" + version + "-commit-" + i, keysUpgradeSequence++, i, i, i, cid);
-      Put put =
-          currentContent != null
-              ? Put.of(key, newContent, currentContent)
-              : Put.of(key, newContent);
-      keysUpgradeBranch =
-          commitMaybeRetry(
+        if (currentKeyValues.containsKey(key)) {
+          keysUpgradeBranch =
               api.commitMultipleOperations()
                   .branch(keysUpgradeBranch)
                   .commitMeta(
                       CommitMeta.fromMessage(
-                          "Commit #" + i + "/put from Nessie version " + version))
-                  .operation(put));
+                          "Commit #" + i + "/delete from Nessie version " + version))
+                  .operation(Delete.of(key))
+                  .commit();
+          Map<ContentKey, IcebergTable> newKeyValues = new HashMap<>(currentKeyValues);
+          newKeyValues.remove(key);
+          keysUpgradeAtHash.put(keysUpgradeBranch.getHash(), newKeyValues);
+        }
+      }
+
+      Content currentContent =
+          api.getContent().refName(keysUpgradeBranch.getName()).key(key).get().get(key);
+      IcebergTable newContent =
+          currentContent == null
+              ? IcebergTable.of(
+                  "pointer-" + version + "-commit-" + i, keysUpgradeSequence++, i, i, i)
+              : IcebergTable.of(
+                  "pointer-" + version + "-commit-" + i,
+                  keysUpgradeSequence++,
+                  i,
+                  i,
+                  i,
+                  currentContent.getId());
+      Put put = Put.of(key, newContent);
+      keysUpgradeBranch =
+          api.commitMultipleOperations()
+              .branch(keysUpgradeBranch)
+              .commitMeta(
+                  CommitMeta.fromMessage("Commit #" + i + "/put from Nessie version " + version))
+              .operation(put)
+              .commit();
       Map<ContentKey, IcebergTable> newKeyValues = new HashMap<>(currentKeyValues);
       newKeyValues.put(key, newContent);
       keysUpgradeAtHash.put(keysUpgradeBranch.getHash(), newKeyValues);
@@ -451,21 +340,19 @@ public class ITUpgradePath {
 
     for (int keyNum = 0; keyNum < KEYS_PER_COMMIT; keyNum++) {
       ContentKey additionalKey =
-          ContentKey.of("v" + version.toString(), "k" + keyNum, KEY_LONG_ELEMENT);
-      String additionalCid = "additional-table-" + keyNum + "-" + "-" + version;
+          ContentKey.of("v" + version.toString() + "-k" + keyNum + "-" + KEY_LONG_ELEMENT);
       IcebergTable table =
           IcebergTable.of(
               "additional-pointer-" + version + "-table-" + keyNum,
               keysUpgradeSequence++,
               42,
               43,
-              44,
-              additionalCid);
+              44);
       commitBuilder.operation(Put.of(additionalKey, table));
 
       newKeyValues.put(additionalKey, table);
     }
-    keysUpgradeBranch = commitMaybeRetry(commitBuilder);
+    keysUpgradeBranch = commitBuilder.commit();
     manyContentsWithLongKeys = newKeyValues;
   }
 

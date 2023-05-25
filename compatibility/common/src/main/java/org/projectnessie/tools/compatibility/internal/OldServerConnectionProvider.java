@@ -15,9 +15,10 @@
  */
 package org.projectnessie.tools.compatibility.internal;
 
+import static org.projectnessie.tools.compatibility.internal.Configurations.backendConfigBuilderApply;
 import static org.projectnessie.tools.compatibility.internal.Util.withClassLoader;
 
-import java.util.Map;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +29,8 @@ class OldServerConnectionProvider implements CloseableResource {
   private final ServerKey serverKey;
   final AutoCloseable connectionProvider;
 
-  OldServerConnectionProvider(ServerKey serverKey, ClassLoader classLoader) {
+  OldServerConnectionProvider(
+      ServerKey serverKey, ClassLoader classLoader, Consumer<Object> backendConfigConsumer) {
     try {
       this.serverKey = serverKey;
       LOGGER.info(
@@ -36,33 +38,70 @@ class OldServerConnectionProvider implements CloseableResource {
           serverKey.getVersion(),
           serverKey.getStorageName(),
           serverKey.getConfig());
-      this.connectionProvider =
-          withClassLoader(
-              classLoader,
-              () -> {
-                switch (serverKey.getStorageKind()) {
-                  case DATABASE_ADAPTER:
-                    return (AutoCloseable)
-                        classLoader
-                            .loadClass(
-                                "org.projectnessie.tools.compatibility.jersey.DatabaseAdapters")
-                            .getMethod("createDatabaseConnectionProvider", String.class, Map.class)
-                            .invoke(null, serverKey.getStorageName(), serverKey.getConfig());
-
-                  case PERSIST:
-                    return (AutoCloseable)
-                        classLoader
-                            .loadClass("org.projectnessie.tools.compatibility.jersey.Backends")
-                            .getMethod("createBackend", String.class)
-                            .invoke(null, serverKey.getStorageName());
-
-                  default:
-                    throw new IllegalStateException(
-                        "Unsupported storage kind: " + serverKey.getStorageKind());
-                }
-              });
+      this.connectionProvider = createBackend(classLoader, serverKey, backendConfigConsumer);
     } catch (Exception e) {
       throw Util.throwUnchecked(e);
+    }
+  }
+
+  /**
+   * Need to build the backend configuration and the backend here using "good old reflection",
+   * because the originally intended way to use {@code BackendFactory.newConfigInstance()} does not
+   * work: for example {@code RocksDBBackendConfig} requires the {@code databasePath} attribute, but
+   * there is no way to create a database-config instance using supplied configuration properties.
+   */
+  static AutoCloseable createBackend(
+      ClassLoader classLoader, ServerKey serverKey, Consumer<Object> backendConfigConsumer) {
+    try {
+      Object backendFactory =
+          withClassLoader(
+              classLoader,
+              () ->
+                  classLoader
+                      .loadClass("org.projectnessie.versioned.storage.common.persist.PersistLoader")
+                      .getMethod("findFactoryByName", String.class)
+                      .invoke(null, serverKey.getStorageName()));
+
+      Object backendConfigBuilder =
+          withClassLoader(
+              classLoader,
+              () ->
+                  classLoader
+                      .loadClass(
+                          backendFactory
+                              .getClass()
+                              .getName()
+                              .replace("BackendFactory", "BackendConfig"))
+                      .getDeclaredMethod("builder")
+                      .invoke(null));
+
+      backendConfigBuilderApply(
+          backendConfigBuilder.getClass(), backendConfigBuilder, serverKey.getConfig()::get);
+
+      return withClassLoader(
+          classLoader,
+          () -> {
+            backendConfigConsumer.accept(backendConfigBuilder);
+
+            Object backendConfig =
+                backendConfigBuilder.getClass().getMethod("build").invoke(backendConfigBuilder);
+
+            AutoCloseable backend =
+                (AutoCloseable)
+                    backendFactory
+                        .getClass()
+                        .getMethod("buildBackend", Object.class)
+                        .invoke(backendFactory, backendConfig);
+
+            classLoader
+                .loadClass("org.projectnessie.versioned.storage.common.persist.Backend")
+                .getMethod("setupSchema")
+                .invoke(backend);
+
+            return backend;
+          });
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
   }
 

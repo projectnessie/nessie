@@ -32,18 +32,16 @@ dependencies {
   implementation("com.fasterxml.jackson.core:jackson-annotations")
 
   intTestImplementation(libs.guava)
-  intTestImplementation(project(":nessie-versioned-persist-adapter"))
-  intTestImplementation(project(":nessie-versioned-persist-non-transactional"))
-  intTestImplementation(project(":nessie-versioned-persist-in-memory"))
-  intTestImplementation(project(":nessie-versioned-persist-in-memory-test"))
-  intTestImplementation(project(":nessie-versioned-persist-rocks"))
-  intTestImplementation(project(":nessie-versioned-persist-rocks-test"))
-  intTestImplementation(project(":nessie-versioned-persist-mongodb"))
-  intTestImplementation(project(":nessie-versioned-persist-mongodb-test"))
+  intTestImplementation(project(":nessie-versioned-storage-common"))
+  intTestRuntimeOnly(project(":nessie-versioned-storage-mongodb"))
+  intTestRuntimeOnly(project(":nessie-versioned-storage-testextension"))
+  intTestRuntimeOnly(libs.testcontainers.mongodb)
+  intTestRuntimeOnly(libs.mongodb.driver.sync)
 }
 
 tasks.withType<Test>().configureEach {
   systemProperty("junit.jupiter.extensions.autodetection.enabled", "true")
+  systemProperty("nessie.internal.store-index-format-version", "1")
 }
 
 // Compatibility tests fail on macOS with the following message: `libc++abi: terminating

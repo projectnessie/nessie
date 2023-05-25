@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.projectnessie.tools.compatibility.api.Version.NEW_STORAGE_MODEL_WITH_COMPAT_TESTING;
 
 import com.google.common.collect.ImmutableMap;
 import java.lang.reflect.Proxy;
@@ -86,7 +87,7 @@ class TestNessieApiHolder {
           new OldNessieApiHolder(
               ctx,
               new ClientKey(
-                  Version.parseVersion("0.42.0"),
+                  NEW_STORAGE_MODEL_WITH_COMPAT_TESTING,
                   "org.projectnessie.client.http.HttpClientBuilder",
                   NessieApiV1.class,
                   ImmutableMap.of(

@@ -26,10 +26,11 @@ dependencies {
   api(project(":nessie-compatibility-jersey"))
   api(project(":nessie-multi-env-test-engine"))
   implementation(project(":nessie-services"))
-  implementation(project(":nessie-versioned-persist-adapter"))
   implementation(project(":nessie-versioned-storage-common"))
   implementation(project(":nessie-versioned-storage-store"))
-  compileOnly(project(":nessie-versioned-persist-mongodb-test"))
+  compileOnly(project(":nessie-versioned-storage-mongodb"))
+  compileOnly(project(":nessie-versioned-storage-testextension"))
+  compileOnly(libs.mongodb.driver.sync)
 
   implementation(platform(libs.jersey.bom))
   api(libs.slf4j.api)
@@ -56,12 +57,8 @@ dependencies {
 
   testImplementation(libs.mockito.core)
   testImplementation(libs.guava)
-  testImplementation(project(":nessie-versioned-persist-non-transactional-test"))
   implementation(project(":nessie-versioned-storage-inmemory"))
-  implementation(project(":nessie-versioned-persist-in-memory"))
-  implementation(project(":nessie-versioned-persist-in-memory-test"))
-  implementation(project(":nessie-versioned-persist-rocks"))
-  implementation(project(":nessie-versioned-persist-rocks-test"))
+  implementation(project(":nessie-versioned-storage-rocksdb"))
 
   testCompileOnly(libs.microprofile.openapi)
 

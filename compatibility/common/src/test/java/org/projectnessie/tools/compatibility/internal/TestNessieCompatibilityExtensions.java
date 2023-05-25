@@ -16,6 +16,7 @@
 package org.projectnessie.tools.compatibility.internal;
 
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
+import static org.projectnessie.tools.compatibility.api.Version.NEW_STORAGE_MODEL_WITH_COMPAT_TESTING;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -76,7 +77,9 @@ class TestNessieCompatibilityExtensions {
             c -> {
               EngineExecutionResults result =
                   EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
-                      .configurationParameter("nessie.versions", "0.42.0,0.43.0")
+                      .configurationParameter(
+                          "nessie.versions",
+                          NEW_STORAGE_MODEL_WITH_COMPAT_TESTING.toString() + ",0.59.0")
                       .selectors(selectClass(c))
                       .filters(new MultiEnvTestFilter())
                       .execute();
@@ -98,28 +101,30 @@ class TestNessieCompatibilityExtensions {
   @Test
   void olderClients() {
     EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
-        .configurationParameter("nessie.versions", "0.42.0,current")
+        .configurationParameter(
+            "nessie.versions", NEW_STORAGE_MODEL_WITH_COMPAT_TESTING.toString() + ",current")
         .selectors(selectClass(OldClientsSample.class))
         .execute();
     soft.assertThat(OldClientsSample.allVersions)
-        .containsExactly(Version.parseVersion("0.42.0"), Version.CURRENT);
+        .containsExactly(NEW_STORAGE_MODEL_WITH_COMPAT_TESTING, Version.CURRENT);
     soft.assertThat(OldClientsSample.minVersionHigh).containsExactly(Version.CURRENT);
     soft.assertThat(OldClientsSample.maxVersionHigh)
-        .containsExactly(Version.parseVersion("0.42.0"));
+        .containsExactly(NEW_STORAGE_MODEL_WITH_COMPAT_TESTING);
     soft.assertThat(OldClientsSample.never).isEmpty();
   }
 
   @Test
   void olderServers() {
     EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
-        .configurationParameter("nessie.versions", "0.42.0,current")
+        .configurationParameter(
+            "nessie.versions", NEW_STORAGE_MODEL_WITH_COMPAT_TESTING.toString() + ",current")
         .selectors(selectClass(OldServersSample.class))
         .execute();
     soft.assertThat(OldServersSample.allVersions)
-        .containsExactly(Version.parseVersion("0.42.0"), Version.CURRENT);
+        .containsExactly(NEW_STORAGE_MODEL_WITH_COMPAT_TESTING, Version.CURRENT);
     soft.assertThat(OldServersSample.minVersionHigh).containsExactly(Version.CURRENT);
     soft.assertThat(OldServersSample.maxVersionHigh)
-        .containsExactly(Version.parseVersion("0.42.0"));
+        .containsExactly(NEW_STORAGE_MODEL_WITH_COMPAT_TESTING);
     soft.assertThat(OldServersSample.never).isEmpty();
 
     // Base URI should not include the API version suffix
@@ -129,13 +134,14 @@ class TestNessieCompatibilityExtensions {
   @Test
   void nestedTests() {
     EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
-        .configurationParameter("nessie.versions", "0.42.0,current")
+        .configurationParameter(
+            "nessie.versions", NEW_STORAGE_MODEL_WITH_COMPAT_TESTING.toString() + ",current")
         .selectors(selectClass(OuterSample.class))
         .selectors(selectClass(OuterSample.Inner.class))
         .filters(new MultiEnvTestFilter())
         .execute();
     soft.assertThat(OuterSample.outerVersions)
-        .containsExactly(Version.parseVersion("0.42.0"), Version.CURRENT);
+        .containsExactly(NEW_STORAGE_MODEL_WITH_COMPAT_TESTING, Version.CURRENT);
     soft.assertThat(OuterSample.innerVersions).containsExactlyElementsOf(OuterSample.outerVersions);
   }
 
@@ -145,13 +151,15 @@ class TestNessieCompatibilityExtensions {
       disabledReason = "Uses NessieUpgradesExtension, which is not compatible with macOS")
   void upgrade() {
     EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
-        .configurationParameter("nessie.versions", "0.42.0,current")
+        .configurationParameter(
+            "nessie.versions", NEW_STORAGE_MODEL_WITH_COMPAT_TESTING.toString() + ",current")
         .selectors(selectClass(UpgradeSample.class))
         .execute();
     soft.assertThat(UpgradeSample.allVersions)
-        .containsExactly(Version.parseVersion("0.42.0"), Version.CURRENT);
+        .containsExactly(NEW_STORAGE_MODEL_WITH_COMPAT_TESTING, Version.CURRENT);
     soft.assertThat(UpgradeSample.minVersionHigh).containsExactly(Version.CURRENT);
-    soft.assertThat(UpgradeSample.maxVersionHigh).containsExactly(Version.parseVersion("0.42.0"));
+    soft.assertThat(UpgradeSample.maxVersionHigh)
+        .containsExactly(NEW_STORAGE_MODEL_WITH_COMPAT_TESTING);
     soft.assertThat(UpgradeSample.never).isEmpty();
   }
 

@@ -15,7 +15,6 @@
  */
 package org.projectnessie.tools.compatibility.internal;
 
-import static java.util.Arrays.asList;
 import static org.projectnessie.tools.compatibility.internal.DependencyResolver.resolve;
 import static org.projectnessie.tools.compatibility.internal.DependencyResolver.toClassLoader;
 
@@ -41,15 +40,12 @@ final class OldNessie {
   static ClassLoader oldNessieClassLoader(Version version, List<String> artifactIds)
       throws DependencyResolutionException {
 
-    String groupId =
-        Version.OLD_GROUP_IDS.isGreaterThanOrEqual(version)
-            ? "org.projectnessie"
-            : "org.projectnessie.nessie";
-
     Function<String, Dependency> nessieDep =
         artifactId ->
             new Dependency(
-                new DefaultArtifact(groupId, artifactId, "jar", version.toString()), "compile");
+                new DefaultArtifact(
+                    "org.projectnessie.nessie", artifactId, "jar", version.toString()),
+                "compile");
 
     String mainArtifactId = artifactIds.get(0);
 
@@ -62,64 +58,6 @@ final class OldNessie {
             r.addDependency(nessieDep.apply(artifactIds.get(i)));
           }
         };
-
-    if (Version.OPENTRACING_VERSION_MISMATCH_LOW.isLessThanOrEqual(version)
-        && Version.OPENTRACING_VERSION_MISMATCH_HIGH.isGreaterThanOrEqual(version)) {
-      // Need to align the io.opentracing dependencies to the correct version.
-      // Nessie versions 0.40.0 up to 0.41.0 used _different_ versions for
-      // opentracing-noop (0.30.0) + opentracing-api (0.33.0), which are unfortunately
-      // not compatible with each other.
-      // Also need to _add_ opentracing to Nessie 0.42.0.
-      // Blindly replace remove all dependencies from io.opentracing with the specific version
-      // 0.33.0. Using the opentracing-mock artifact for simplicity (transitive dependencies
-      // to the required artifacts).
-      String opentracingVersion = "0.33.0";
-
-      // Sadly, Nessie versions 0.40.0 up to 0.41.0 also do not have the jackson-bom in
-      // nessie-client.pom. Using nessie-client as the root dependency when resolving the
-      // dependencies breaks the whole dependency-resolve-process and only the root dependency,
-      // which is nessie-client, is returned. To work around this issue, the below code uses
-      // nessie-model as the root dependency (it has the jackson-bom) and nessie-client as an
-      // additional dependency.
-
-      collect =
-          r -> {
-            if ("nessie-client".equals(mainArtifactId)) {
-              r.setRoot(nessieDep.apply("nessie-model"));
-            } else {
-              r.setRoot(mainDependency);
-            }
-            r.addDependency(mainDependency);
-            for (int i = 1; i < artifactIds.size(); i++) {
-              r.addDependency(nessieDep.apply(artifactIds.get(i)));
-            }
-
-            asList("opentracing-api", "opentracing-util", "opentracing-noop")
-                .forEach(
-                    artifactId ->
-                        r.addManagedDependency(
-                            new Dependency(
-                                new DefaultArtifact(
-                                    "io.opentracing", artifactId, "jar", opentracingVersion),
-                                "runtime")));
-          };
-    } else if (Version.CLIENT_LOG4J_UNDECLARED_LOW.isLessThanOrEqual(version)
-        && Version.CLIENT_LOG4J_UNDECLARED_HIGH.isGreaterThanOrEqual(version)) {
-
-      collect =
-          r -> {
-            r.setRoot(mainDependency);
-            for (int i = 1; i < artifactIds.size(); i++) {
-              r.addDependency(nessieDep.apply(artifactIds.get(i)));
-            }
-
-            // Nessie clients in versions 0.46.0 - 0.47.1 use slf4j (through transitive compile-only
-            // dependencies), but do not declare an explicit runtime dependency on it.
-            r.addDependency(
-                new Dependency(
-                    new DefaultArtifact("org.slf4j", "slf4j-api", "jar", "1.7.36"), "runtime"));
-          };
-    }
 
     Stream<Artifact> resolvedArtifacts = resolve(collect);
     return toClassLoader(version.toString(), resolvedArtifacts, null);
