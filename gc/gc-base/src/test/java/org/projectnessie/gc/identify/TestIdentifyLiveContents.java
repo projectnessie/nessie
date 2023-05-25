@@ -16,7 +16,7 @@
 package org.projectnessie.gc.identify;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.projectnessie.jaxrs.ext.NessieJaxRsExtension.jaxRsExtensionForDatabaseAdapter;
+import static org.projectnessie.jaxrs.ext.NessieJaxRsExtension.jaxRsExtension;
 
 import java.time.Instant;
 import java.util.Set;
@@ -35,23 +35,19 @@ import org.projectnessie.gc.repository.RepositoryConnector;
 import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.IcebergTable;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
-import org.projectnessie.versioned.persist.inmem.InmemoryTestConnectionProviderSource;
-import org.projectnessie.versioned.persist.tests.extension.DatabaseAdapterExtension;
-import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
-import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
-import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
+import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.inmemory.InmemoryBackendTestFactory;
+import org.projectnessie.versioned.storage.testextension.NessieBackend;
+import org.projectnessie.versioned.storage.testextension.NessiePersist;
+import org.projectnessie.versioned.storage.testextension.PersistExtension;
 
-@NessieDbAdapterName(InmemoryDatabaseAdapterFactory.NAME)
-@NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
-@ExtendWith(DatabaseAdapterExtension.class)
+@ExtendWith(PersistExtension.class)
+@NessieBackend(InmemoryBackendTestFactory.class)
 public class TestIdentifyLiveContents {
 
-  @NessieDbAdapter static DatabaseAdapter databaseAdapter;
+  @NessiePersist static Persist persist;
 
-  @RegisterExtension
-  static NessieJaxRsExtension server = jaxRsExtensionForDatabaseAdapter(() -> databaseAdapter);
+  @RegisterExtension static NessieJaxRsExtension server = jaxRsExtension(() -> persist);
 
   private NessieApiV1 nessieApi;
 

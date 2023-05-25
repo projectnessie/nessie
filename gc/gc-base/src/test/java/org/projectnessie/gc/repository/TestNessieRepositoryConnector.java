@@ -17,8 +17,9 @@ package org.projectnessie.gc.repository;
 
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
-import static org.projectnessie.jaxrs.ext.NessieJaxRsExtension.jaxRsExtensionForDatabaseAdapter;
+import static org.projectnessie.jaxrs.ext.NessieJaxRsExtension.jaxRsExtension;
 
+import com.google.common.collect.Maps;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,24 +52,21 @@ import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
-import org.projectnessie.versioned.persist.inmem.InmemoryTestConnectionProviderSource;
-import org.projectnessie.versioned.persist.tests.extension.DatabaseAdapterExtension;
-import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
-import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
-import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
+import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.inmemory.InmemoryBackendTestFactory;
+import org.projectnessie.versioned.storage.testextension.NessieBackend;
+import org.projectnessie.versioned.storage.testextension.NessiePersist;
+import org.projectnessie.versioned.storage.testextension.PersistExtension;
+import org.projectnessie.versioned.store.DefaultStoreWorker;
 
-@NessieDbAdapterName(InmemoryDatabaseAdapterFactory.NAME)
-@NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
-@ExtendWith({DatabaseAdapterExtension.class, SoftAssertionsExtension.class})
+@ExtendWith({PersistExtension.class, SoftAssertionsExtension.class})
+@NessieBackend(InmemoryBackendTestFactory.class)
 public class TestNessieRepositoryConnector {
   @InjectSoftAssertions SoftAssertions soft;
 
-  @NessieDbAdapter static DatabaseAdapter databaseAdapter;
+  @NessiePersist static Persist persist;
 
-  @RegisterExtension
-  static NessieJaxRsExtension server = jaxRsExtensionForDatabaseAdapter(() -> databaseAdapter);
+  @RegisterExtension static NessieJaxRsExtension server = jaxRsExtension(() -> persist);
 
   private NessieApiV1 nessieApi;
 
@@ -120,11 +118,28 @@ public class TestNessieRepositoryConnector {
 
     Collections.reverse(commitsOnBranch);
 
+    Function<List<Operation>, List<Operation>> operationsMapper =
+        ops ->
+            ops.stream()
+                .map(
+                    op -> {
+                      if (op instanceof Operation.Put) {
+                        return Operation.Put.of(
+                            op.getKey(),
+                            DefaultStoreWorker.instance()
+                                .applyId(((Operation.Put) op).getContent(), null));
+                      }
+                      return op;
+                    })
+                .collect(Collectors.toList());
+
     Function<LogEntry, Entry<String, Entry<String, List<Operation>>>> entryMapper =
         entry ->
             new SimpleEntry<>(
                 entry.getCommitMeta().getHash(),
-                new SimpleEntry<>(entry.getCommitMeta().getMessage(), entry.getOperations()));
+                new SimpleEntry<>(
+                    entry.getCommitMeta().getMessage(),
+                    operationsMapper.apply(entry.getOperations())));
 
     try (RepositoryConnector nessie = NessieRepositoryConnector.nessie(nessieApi)) {
       soft.assertThat(nessie.commitLog(defaultBranch))
@@ -162,6 +177,10 @@ public class TestNessieRepositoryConnector {
             nessie.allContents(
                 Detached.of(current.getKey()), singleton(Content.Type.ICEBERG_TABLE))) {
           soft.assertThat(contents)
+              .map(
+                  e ->
+                      Maps.immutableEntry(
+                          e.getKey(), DefaultStoreWorker.instance().applyId(e.getValue(), null)))
               .containsExactlyInAnyOrderElementsOf(expectedContents.entrySet());
         }
       }
@@ -177,9 +196,7 @@ public class TestNessieRepositoryConnector {
     nessieApi.createReference().reference(branch).sourceRefName(defaultBranch.getName()).create();
 
     for (int i = 1; i <= 10; i++) {
-      op =
-          Operation.Put.of(
-              ContentKey.of("key-" + i), IcebergTable.of("meta", 42, 43, 44, 45, "cid-" + i));
+      op = Operation.Put.of(ContentKey.of("key-" + i), IcebergTable.of("meta", 42, 43, 44, 45));
       String msg = "commit-" + i;
       branch =
           nessieApi
@@ -198,8 +215,7 @@ public class TestNessieRepositoryConnector {
       Branch defaultBranch, List<Entry<String, Entry<String, List<Operation>>>> commitsOnBranch)
       throws NessieNotFoundException, NessieConflictException {
     Operation op =
-        Operation.Put.of(
-            ContentKey.of("key-0"), IcebergTable.of("meta", 42, 43, 44, 45, "cid-initial"));
+        Operation.Put.of(ContentKey.of("key-0"), IcebergTable.of("meta", 42, 43, 44, 45));
     defaultBranch =
         nessieApi
             .commitMultipleOperations()
