@@ -18,7 +18,7 @@ package org.projectnessie.tools.contentgenerator.cli;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.tuple;
-import static org.projectnessie.jaxrs.ext.NessieJaxRsExtension.jaxRsExtensionForDatabaseAdapter;
+import static org.projectnessie.jaxrs.ext.NessieJaxRsExtension.jaxRsExtension;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.Content.Type.NAMESPACE;
 import static org.projectnessie.tools.contentgenerator.RunContentGenerator.runGeneratorCmd;
@@ -47,27 +47,23 @@ import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
 import org.projectnessie.tools.contentgenerator.RunContentGenerator.ProcessResult;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
-import org.projectnessie.versioned.persist.inmem.InmemoryTestConnectionProviderSource;
-import org.projectnessie.versioned.persist.tests.extension.DatabaseAdapterExtension;
-import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
-import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterConfigItem;
-import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
-import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
+import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.inmemory.InmemoryBackendTestFactory;
+import org.projectnessie.versioned.storage.testextension.NessieBackend;
+import org.projectnessie.versioned.storage.testextension.NessiePersist;
+import org.projectnessie.versioned.storage.testextension.NessieStoreConfig;
+import org.projectnessie.versioned.storage.testextension.PersistExtension;
 
-@NessieDbAdapterName(InmemoryDatabaseAdapterFactory.NAME)
-@NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
-@ExtendWith({DatabaseAdapterExtension.class, SoftAssertionsExtension.class})
+@ExtendWith({PersistExtension.class, SoftAssertionsExtension.class})
+@NessieBackend(InmemoryBackendTestFactory.class)
 public class TestCreateMissingNamespaces {
   @InjectSoftAssertions protected SoftAssertions soft;
 
-  @NessieDbAdapter
-  @NessieDbAdapterConfigItem(name = "validate.namespaces", value = "false")
-  static DatabaseAdapter databaseAdapter;
+  @NessiePersist
+  @NessieStoreConfig(name = "namespace-validation", value = "false")
+  static Persist persist;
 
-  @RegisterExtension
-  static NessieJaxRsExtension server = jaxRsExtensionForDatabaseAdapter(() -> databaseAdapter);
+  @RegisterExtension static NessieJaxRsExtension server = jaxRsExtension(() -> persist);
 
   private NessieApiV2 nessieApi;
   private URI uri;
@@ -99,8 +95,6 @@ public class TestCreateMissingNamespaces {
             0,
             asList(
                 "Start fetching and processing references...",
-                "  processing branch main...",
-                "    all namespaces present.",
                 "  processing branch branch1...",
                 "    creating 3 namespaces...",
                 "      - a",
@@ -113,6 +107,8 @@ public class TestCreateMissingNamespaces {
                 "      - x.y",
                 "    ... committed.",
                 "  processing branch branch3...",
+                "    all namespaces present.",
+                "  processing branch main...",
                 "    all namespaces present.",
                 "Successfully processed 4 branches, created 5 namespaces."),
             singletonList(""));
