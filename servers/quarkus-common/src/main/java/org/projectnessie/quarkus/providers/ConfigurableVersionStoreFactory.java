@@ -15,6 +15,8 @@
  */
 package org.projectnessie.quarkus.providers;
 
+import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.opentelemetry.api.trace.Tracer;
 import io.quarkus.runtime.Startup;
 import java.io.IOError;
@@ -50,6 +52,7 @@ public class ConfigurableVersionStoreFactory {
   private final Instance<DatabaseAdapter> databaseAdapter;
   private final Instance<Persist> persist;
   private final Instance<Tracer> opentelemetryTracer;
+  private final Instance<MeterRegistry> meterRegistry;
 
   /**
    * Configurable version store factory.
@@ -60,10 +63,12 @@ public class ConfigurableVersionStoreFactory {
   public ConfigurableVersionStoreFactory(
       VersionStoreConfig storeConfig,
       @Any Instance<Tracer> opentelemetryTracer,
+      @Any Instance<MeterRegistry> meterRegistry,
       @Any Instance<DatabaseAdapter> databaseAdapter,
       @Any Instance<Persist> persist) {
     this.storeConfig = storeConfig;
     this.opentelemetryTracer = opentelemetryTracer;
+    this.meterRegistry = meterRegistry;
     this.databaseAdapter = databaseAdapter;
     this.persist = persist;
   }
@@ -93,7 +98,11 @@ public class ConfigurableVersionStoreFactory {
         }
       }
       if (storeConfig.isMetricsEnabled()) {
-        versionStore = new MetricsVersionStore(versionStore);
+        if (meterRegistry.isUnsatisfied()) {
+          LOGGER.warn("Metrics are enabled, but not available, forgot to add quarkus-micrometer?");
+        } else {
+          versionStore = new MetricsVersionStore(versionStore, meterRegistry.get(), Clock.SYSTEM);
+        }
       }
       return versionStore;
     } catch (RuntimeException | IOError e) {
