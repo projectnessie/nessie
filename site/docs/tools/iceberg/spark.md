@@ -152,15 +152,7 @@ The following properties are **required** in Spark when creating the Nessie Cata
 
 ## Writing
 
-Spark support is constantly evolving and the differences in Spark3 vs Spark2.4 are considerable. See the
-[iceberg](https://iceberg.apache.org/spark-writes/) docs for an up-to-date support table.
-
-### Spark2
-
-Spark2.4 supports reads, appends, overwrites in Iceberg. Nessie tables in iceberg can be written via the Nessie Iceberg
-Catalog instantiated above. Iceberg in Spark2.4 has no ability to create tables so before a table can be appended to or
-overwritten the table must be first created via an Iceberg Catalog. This is straightforward in Java but requires
-addressing jvm objects directly in Python (until the python library for iceberg is released).
+Iceberg Catalog APIs can be used for creating the table as follows:
 
 === "Java"
     ``` java linenums="11"
@@ -240,53 +232,11 @@ iceberg metadata is finally written to disk and a commit takes place on Nessie.
 Now that we have created an Iceberg table in nessie we can write to it. The iceberg `DataSourceV2` allows for either
 `overwrite` or `append` mode in a standard `spark.write`.
 
-=== "Java"
-    ``` java
-    regionDf = spark.read().load("data/region.parquet");
-    regionDf.write().format("iceberg").mode("overwrite")
-        .save("nessie.testing.region");
-    ```
-=== "Python"
-    ``` python
-    region_df = spark.read.load("data/region.parquet")
-    region_df.write.format("iceberg").mode("overwrite") \
-        .save("nessie.testing.region")
-    ```
-
-Here we simply read a file from the default filesystem and write it to an existing nessie iceberg table. This will
-trigger a commit on current context's branch.
-
-For the examples above we have performed commits on the branch specified when we set our spark configuration. Had we not
-specified the context in our spark configuration all operations would have defaulted to the default branch defined by
-the server. This is a strong pattern for a spark job which is for example writing data as part of a wider ETL job. It
-will only ever need one context or branch to write to. If however you are running an interactive session and would like
-to write to a specific branch you would have to create a new Spark Conf.
-
-=== "Java"
-    ``` java
-    sparkDev = spark.newSession();
-    sparkDev.conf.set("spark.sql.catalog.nessie.ref", "dev");
-    regionDf = sparkDev.read().load("data/region.parquet");
-    regionDf.write().format("iceberg").mode("overwrite")
-        .save("nessie.testing.region");
-    ```
-=== "Python"
-    ``` python
-    spark_dev = spark.newSession()
-    spark_dev.conf.set("spark.sql.catalog.nessie.ref", "dev")
-    region_df = spark_dev.read.load("data/region.parquet")
-    region_df.write.format("iceberg").mode("overwrite") \
-        .save("nessie.testing.region")
-    ```
-
-Note the extra `option` clause in the write command. This will ensure the commit happens on the `dev` branch rather than
-the default branch.
+Spark support is constantly evolving. See the [iceberg](https://iceberg.apache.org/spark-writes/) docs for an up-to-date support table.
 
 ### Spark3
 
-The write path for Spark3 is slightly different and easier to work with. These changes haven't made it to pyspark yet so
-writing dataframes looks much the same there, including having to create the table. Spark3 table creation/insertion is as
-follows:
+Spark3 table creation/insertion is as follows:
 
 === "Java"
     ``` java
@@ -300,7 +250,6 @@ follows:
     ```
 === "Python"
     ``` python
-    # same code as the spark2 section above to create the testing.region table
     region_df = spark.read.load("data/region.parquet")
     region_df.write.format("iceberg").mode("overwrite") \
         .save("nessie.testing.region")
@@ -320,30 +269,22 @@ supports the Nessie Iceberg Catalog also supports.
 
 ## Reading
 
-Reading is more straightforward between spark 2 and spark 3. We will look at both versions together in this section. To
-read a Nessie table in iceberg simply:
+To read a Nessie table in iceberg simply:
 
 === "Java"
     ``` java
-    // Spark2:
-    regionDf = spark.read().format("iceberg")
-        .load("nessie.testing.region");
-
-    // Spark3:
     regionDf = spark.table("nessie.testing.region");
     ```
 === "Python"
     ``` python
-    # same code as above to create the testing.region table
     region_df = spark.read.format("iceberg").load("nessie.testing.region")
     ```
 === "SQL"
     ``` sql
-    -- Spark3 only
     SELECT * FROM nessie.testing.city
     ```
     ``` sql
-    -- Spark3 only, read from the `etl` branch
+    -- Read from the `etl` branch
     SELECT * FROM nessie.testing.`city@etl`
     ```
 

@@ -87,10 +87,7 @@ Finally, note we have explicitly enabled Delta's SQL extensions which enable Del
     Currently Delta metadata operations like `VACUUM` are destructive to Nessie managed Delta tables. **Do not** run
     these operations. Future versions of Nessie will disable these commands when Nessie is activated.
 
-## Writing
-
-Spark support is constantly evolving and the differences in Spark3 vs Spark2.4 is considerable. See the
-[delta](https://docs.delta.io/latest/delta-batch.html) docs for an up-to-date support table.
+## Writing   
 
 Spark 3 supports reads, appends, overwrites in Delta via data frames as well as SQL syntax.
 Nessie tables in delta can be written via the Nessi enabled Delta client. The Delta writer allows for either `overwrite`
