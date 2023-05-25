@@ -76,6 +76,13 @@ public abstract class AbstractVersionStoreTestBase {
   }
 
   @Nested
+  protected class MergeKeyBehaviors extends AbstractMergeKeyBehaviors {
+    public MergeKeyBehaviors() {
+      super(AbstractVersionStoreTestBase.this.store());
+    }
+  }
+
+  @Nested
   protected class Diff extends AbstractDiff {
     public Diff() {
       super(AbstractVersionStoreTestBase.this.store());

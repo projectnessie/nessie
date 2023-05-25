@@ -70,6 +70,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -921,22 +922,25 @@ final class CommitLogicImpl implements CommitLogic {
     Iterator<StoreIndexElement<CommitOp>> toIter =
         toIndex.iterator(start, end, diffQuery.prefetch());
 
-    return new DiffEntryIter(fromIter, toIter);
+    return new DiffEntryIter(fromIter, toIter, diffQuery.filter());
   }
 
   private static final class DiffEntryIter extends AbstractIterator<DiffEntry>
       implements PagedResult<DiffEntry, StoreKey> {
     private final Iterator<StoreIndexElement<CommitOp>> fromIter;
     private final Iterator<StoreIndexElement<CommitOp>> toIter;
+    private final Predicate<StoreKey> filter;
 
     private StoreIndexElement<CommitOp> fromElement;
     private StoreIndexElement<CommitOp> toElement;
 
     DiffEntryIter(
         Iterator<StoreIndexElement<CommitOp>> fromIter,
-        Iterator<StoreIndexElement<CommitOp>> toIter) {
+        Iterator<StoreIndexElement<CommitOp>> toIter,
+        Predicate<StoreKey> filter) {
       this.fromIter = fromIter;
       this.toIter = toIter;
+      this.filter = filter != null ? filter : x -> true;
     }
 
     @Override
@@ -1021,7 +1025,7 @@ final class CommitLogicImpl implements CommitLogic {
     private StoreIndexElement<CommitOp> next(Iterator<StoreIndexElement<CommitOp>> iter) {
       while (iter.hasNext()) {
         StoreIndexElement<CommitOp> el = iter.next();
-        if (el.content().action().exists()) {
+        if (el.content().action().exists() && filter.test(el.key())) {
           return el;
         }
       }

@@ -206,7 +206,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
     Content c11 = store().getValue(firstCommit, ContentKey.of("t1"));
 
-    for (MergeBehavior mergeBehavior : MergeBehavior.values()) {
+    for (MergeBehavior mergeBehavior :
+        new MergeBehavior[] {MergeBehavior.NORMAL, MergeBehavior.FORCE}) {
       StorageAssertions checkpoint = storageCheckpoint();
       soft.assertThatThrownBy(
               () ->
