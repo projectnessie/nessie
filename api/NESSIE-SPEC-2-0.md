@@ -22,8 +22,16 @@ well-specified behaviours.
 
 Refer to the [Nessie API documentation](./README.md) for the meaning of Nessie-specific terms.
 
+# 2.0.0
+
+* Released with Nessie version 0.59.0.
+* Considered as "GA".
+* Forward/backward breaking changes will no longer happen in 2.0.0.
+
 # 2.0.0-beta.1
 
+* Even though the written Nessie spec 2.0.0 is the same as 2.0.0-beta.1, servers claiming support for 2.0.0-beta.1 
+  cannot be assumed to be compatible with servers claiming support for spec version 2.0.0.
 * Namespaces are expected to be created before they are referenced. Namespaces may be referenced within the same 
   commit that creates them. 
 * If a non-existent Namespace is referenced in a commit, the server should fail the corresponding change (commit 
