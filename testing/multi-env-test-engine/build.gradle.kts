@@ -27,7 +27,7 @@ extra["maven.name"] = "Nessie - Multi-Environment Test Engine"
 dependencies {
   api(libs.slf4j.api)
 
-  implementation(platform(libs.junit.bom))
+  api(platform(libs.junit.bom))
   api("org.junit.jupiter:junit-jupiter-api")
   compileOnly("org.junit.jupiter:junit-jupiter-engine")
   implementation("org.junit.platform:junit-platform-launcher")
