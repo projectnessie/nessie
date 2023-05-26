@@ -37,12 +37,29 @@ This should output something like "Certificate added: CN=Nessie".
 
 ## Creating a k8s Secret for the Nessie Certificate
 
+Make sure a dedicated k8s namespace exists. This example uses the `nessie-ns` name. If it does not exist run the
+following command to create it:
+
+```shell
+kubectl create namespace nessie-ns
+```
+
+Create a TLS secret for Nessie:
+
 ```shell
 kubectl -n nessie-ns create secret tls nessie-tls \
   --cert=nessie.crt --key=nessie-key.pem
 ```
 
 ## Deploying Nessie with Helm
+
+Add the Nessie repository to Helm:
+
+```shell
+helm repo add nessie-helm https://charts.projectnessie.org
+```
+
+Install the Nessie helm chart:
 
 ```shell
 helm install nessie -n nessie-ns nessie-helm/nessie \
@@ -64,6 +81,11 @@ Add an entry in the local hosts file (e.g. `/etc/hosts`) mapping that IP address
 ```shell
 192.168.49.2	nessie.local
 ```
+
+Note: Some tools allow substituting host names with specific IP addresses on the command line.
+(e.g. `curl --resolve "nessie.local:443:$(minikube ip)" ...`) If you intend to use only those tools, then modifying
+`/etc/hosts` is not necessary. However, Nessie python CLI and java client rely on the OS to be able to resolve
+`nessie.local`, so to be able to use them the simplest approach is to define `nessie.local` in `/etc/hosts`.
 
 Use `curl` to verify that the server is accessible:
 
