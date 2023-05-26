@@ -49,7 +49,7 @@ public interface Event {
   /**
    * The id of the repository. This is configured on a per-instance basis.
    *
-   * <p>See configuration option: {@code nessie.version.store.advanced.repository-id}.
+   * <p>See configuration option: {@code nessie.version.store.persist.repository-id}.
    */
   String getRepositoryId();
 
