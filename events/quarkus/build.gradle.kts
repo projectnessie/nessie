@@ -36,14 +36,11 @@ dependencies {
   implementation("io.quarkus:quarkus-vertx")
 
   // Metrics
-  implementation(libs.micrometer.core)
+  implementation("io.micrometer:micrometer-core")
 
   // OpenTelemetry
   implementation("io.opentelemetry:opentelemetry-api")
   implementation("io.opentelemetry:opentelemetry-semconv")
-
-  // Jackson
-  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   testImplementation(project(":nessie-model"))
 
@@ -60,9 +57,6 @@ dependencies {
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
   testImplementation(libs.awaitility)
-
-  testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
-  testCompileOnly(libs.microprofile.openapi)
 }
 
 buildForJava11()
