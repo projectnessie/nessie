@@ -15,8 +15,6 @@
  */
 package org.projectnessie.versioned.storage.mongodb;
 
-import com.mongodb.ConnectionString;
-import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import org.immutables.value.Value;
@@ -31,9 +29,6 @@ public abstract class MongoClientProducer {
   abstract String connectionString();
 
   public MongoClient createClient() {
-    ConnectionString cs = new ConnectionString(connectionString());
-    MongoClientSettings settings = MongoClientSettings.builder().applyConnectionString(cs).build();
-
-    return MongoClients.create(settings);
+    return MongoClients.create(connectionString());
   }
 }
