@@ -19,7 +19,7 @@ import io.vertx.core.Vertx;
 import java.time.Duration;
 import org.projectnessie.events.api.Event;
 import org.projectnessie.events.quarkus.config.QuarkusEventConfig;
-import org.projectnessie.events.service.util.SubscriberUtil;
+import org.projectnessie.events.service.EventService;
 import org.projectnessie.events.spi.EventSubscriber;
 
 /**
@@ -70,7 +70,7 @@ public class StandardEventDelivery extends RetriableEventDelivery {
 
   @Override
   protected void tryDeliver(int currentAttempt) {
-    SubscriberUtil.notifySubscriber(subscriber, event);
+    EventService.notifySubscriber(subscriber, event);
   }
 
   @Override
