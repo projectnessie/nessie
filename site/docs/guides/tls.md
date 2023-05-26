@@ -45,7 +45,7 @@ kubectl -n nessie-ns create secret tls nessie-tls \
 ## Deploying Nessie with Helm
 
 ```shell
-helm install nessie -n nessie-ns helm/nessie \
+helm install nessie -n nessie-ns nessie-helm/nessie \
   --set 'ingress.enabled=true' \              
   --set 'ingress.hosts[0].host=nessie.local' \
   --set 'ingress.hosts[0].paths[0]=/' \         
