@@ -18,7 +18,7 @@ package org.projectnessie.gc.tool;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
-import static org.projectnessie.jaxrs.ext.NessieJaxRsExtension.jaxRsExtensionForDatabaseAdapter;
+import static org.projectnessie.jaxrs.ext.NessieJaxRsExtension.jaxRsExtension;
 
 import java.io.BufferedReader;
 import java.io.StringReader;
@@ -52,27 +52,23 @@ import org.projectnessie.gc.files.FileReference;
 import org.projectnessie.gc.tool.cli.util.RunCLI;
 import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.inmem.InmemoryDatabaseAdapterFactory;
-import org.projectnessie.versioned.persist.inmem.InmemoryTestConnectionProviderSource;
-import org.projectnessie.versioned.persist.tests.extension.DatabaseAdapterExtension;
-import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapter;
-import org.projectnessie.versioned.persist.tests.extension.NessieDbAdapterName;
-import org.projectnessie.versioned.persist.tests.extension.NessieExternalDatabase;
+import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.inmemory.InmemoryBackendTestFactory;
+import org.projectnessie.versioned.storage.testextension.NessieBackend;
+import org.projectnessie.versioned.storage.testextension.NessiePersist;
+import org.projectnessie.versioned.storage.testextension.PersistExtension;
 
-@ExtendWith({DatabaseAdapterExtension.class, SoftAssertionsExtension.class})
-@NessieDbAdapterName(InmemoryDatabaseAdapterFactory.NAME)
-@NessieExternalDatabase(InmemoryTestConnectionProviderSource.class)
+@ExtendWith({PersistExtension.class, SoftAssertionsExtension.class})
+@NessieBackend(InmemoryBackendTestFactory.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TestCLI {
 
   public static final String JDBC_URL = "jdbc:h2:mem:nessie_gc;DB_CLOSE_DELAY=-1";
-  @NessieDbAdapter static DatabaseAdapter databaseAdapter;
+  @NessiePersist static Persist perssit;
 
   @InjectSoftAssertions private SoftAssertions soft;
 
-  @RegisterExtension
-  static NessieJaxRsExtension server = jaxRsExtensionForDatabaseAdapter(() -> databaseAdapter);
+  @RegisterExtension static NessieJaxRsExtension server = jaxRsExtension(() -> perssit);
 
   private static URI nessieUri;
 
