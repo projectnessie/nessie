@@ -53,7 +53,7 @@ dependencies {
   implementation(platform(libs.jackson.bom))
   implementation("com.fasterxml.jackson.core:jackson-annotations")
 
-  implementation(platform(libs.junit.bom))
+  api(platform(libs.junit.bom))
   api("org.junit.jupiter:junit-jupiter-api")
   compileOnly("org.junit.jupiter:junit-jupiter-engine")
 
