@@ -50,11 +50,6 @@ jobs:
       with:
         arguments: check --scan
 
-    - name: Gradle / Gatling simulations
-      uses: gradle/gradle-build-action@v2
-      with:
-        arguments: gatlingRun
-
     - name: Gradle / assemble + publish local
       uses: gradle/gradle-build-action@v2
       with:
