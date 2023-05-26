@@ -35,6 +35,8 @@ dependencies {
   implementation(project(":nessie-versioned-persist-transactional"))
   implementation(project(":nessie-versioned-persist-transactional-test"))
   implementation(project(":nessie-versioned-storage-cassandra"))
+  implementation(project(":nessie-versioned-storage-dynamodb"))
+  implementation(project(":nessie-versioned-storage-mongodb"))
   implementation(project(":nessie-versioned-storage-testextension"))
 
   implementation(enforcedPlatform(libs.quarkus.bom))

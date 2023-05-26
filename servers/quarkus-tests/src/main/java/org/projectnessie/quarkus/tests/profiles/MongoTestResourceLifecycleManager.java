@@ -15,17 +15,16 @@
  */
 package org.projectnessie.quarkus.tests.profiles;
 
-import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.common.DevServicesContext;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import java.util.Map;
 import java.util.Optional;
-import org.projectnessie.versioned.persist.mongodb.LocalMongoTestConnectionProviderSource;
+import org.projectnessie.versioned.storage.mongodb.MongoDBBackendTestFactory;
 
 public class MongoTestResourceLifecycleManager
     implements QuarkusTestResourceLifecycleManager, DevServicesContext.ContextAware {
 
-  private LocalMongoTestConnectionProviderSource mongo;
+  private MongoDBBackendTestFactory mongo;
 
   private Optional<String> containerNetworkId;
 
@@ -36,19 +35,15 @@ public class MongoTestResourceLifecycleManager
 
   @Override
   public Map<String, String> start() {
-    mongo = new LocalMongoTestConnectionProviderSource();
+    mongo = new MongoDBBackendTestFactory();
 
     try {
-      mongo.startMongo(containerNetworkId, true);
+      mongo.startMongo(containerNetworkId);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
 
-    return ImmutableMap.of(
-        "quarkus.mongodb.connection-string",
-        mongo.getConnectionString(),
-        "quarkus.mongodb.database",
-        mongo.getDatabaseName());
+    return mongo.getQuarkusConfig();
   }
 
   @Override
