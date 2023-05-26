@@ -64,8 +64,7 @@ dependencies {
 
   testImplementation(project(":nessie-jaxrs-testextension"))
 
-  testImplementation(project(":nessie-versioned-persist-in-memory"))
-  testImplementation(project(":nessie-versioned-persist-in-memory-test"))
+  testImplementation(project(":nessie-versioned-storage-inmemory"))
 
   nessieQuarkusServer(project(":nessie-quarkus", "quarkusRunner"))
 }
