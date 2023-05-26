@@ -245,6 +245,12 @@ public final class NessieConfigConstants {
   public static final String CONF_NESSIE_CLIENT_BUILDER_IMPL = "nessie.client-builder-impl";
 
   /**
+   * Config property name ({@value #CONF_NESSIE_CLIENT_API_VERSION}) for specifying the client API
+   * version.
+   */
+  public static final String CONF_NESSIE_CLIENT_API_VERSION = "nessie.client-api-version";
+
+  /**
    * Optional, list of comma-separated cipher suites for SSL connections, see {@link
    * javax.net.ssl.SSLParameters#setCipherSuites(String[])}.
    *
