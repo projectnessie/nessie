@@ -46,11 +46,11 @@ kubectl -n nessie-ns create secret tls nessie-tls \
 
 ```shell
 helm install nessie -n nessie-ns helm/nessie \
-  --set ingress.enabled=true \
-  --set ingress.hosts[0].host='nessie.local' \
-  --set ingress.hosts[0].paths[0]='/' \
-  --set ingress.tls[0].secretName=nessie-tls \
-  --set ingress.tls[0].hosts[0]='nessie.local'
+  --set 'ingress.enabled=true' \              
+  --set 'ingress.hosts[0].host=nessie.local' \
+  --set 'ingress.hosts[0].paths[0]=/' \         
+  --set 'ingress.tls[0].secretName=nessie-tls' \
+  --set 'ingress.tls[0].hosts[0]=nessie.local'
 ```
 
 The deployment process may take some time. Use the following command to check its status and get the ingress IP address.
