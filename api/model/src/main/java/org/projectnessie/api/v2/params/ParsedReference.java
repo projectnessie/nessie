@@ -17,15 +17,12 @@ package org.projectnessie.api.v2.params;
 
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
-import org.projectnessie.model.Branch;
 import org.projectnessie.model.Detached;
-import org.projectnessie.model.Reference;
 import org.projectnessie.model.Reference.ReferenceType;
-import org.projectnessie.model.Tag;
 
 /**
  * Represents the attributes that make a reference. All components are optional, except that at
- * least one of {@link #name()} or {@link #hash()} must be supplied.
+ * least one of {@link #name()} or {@link #hashWithRelativeSpec()} must be supplied.
  */
 @Value.Immutable
 public interface ParsedReference {
@@ -37,7 +34,7 @@ public interface ParsedReference {
   @Value.Parameter(order = 2)
   @Nullable
   @jakarta.annotation.Nullable
-  String hash();
+  String hashWithRelativeSpec();
 
   @Value.Parameter(order = 3)
   @Nullable
@@ -46,52 +43,19 @@ public interface ParsedReference {
 
   @Value.Check
   default void check() {
-    if (hash() == null && name() == null) {
-      throw new IllegalStateException("Either name or hash or name and hash must be supplied");
+    if (hashWithRelativeSpec() == null && name() == null) {
+      throw new IllegalStateException(
+          "Either name or commit ID with optional relative commit spec or both must be supplied");
     }
   }
 
   static ParsedReference parsedReference(
       @Nullable @jakarta.annotation.Nullable String name,
-      @Nullable @jakarta.annotation.Nullable String hash,
+      @Nullable @jakarta.annotation.Nullable String hashWithRelativeSpec,
       @Nullable @jakarta.annotation.Nullable ReferenceType type) {
-    if (hash != null && name == null) {
+    if (hashWithRelativeSpec != null && name == null) {
       name = Detached.REF_NAME;
     }
-    return ImmutableParsedReference.of(name, hash, type);
-  }
-
-  /**
-   * Converts to a {@link Reference}, if one of the following conditions are met, all other
-   * combinations throw an {@link IllegalArgumentException}.
-   *
-   * <ul>
-   *   <li>Returns a {@link Detached}, if {@link #hash()} is present, {@link #name()} and {@link
-   *       #type()} are {@code null}.
-   *   <li>Returns a {@link Branch}, if {@link #name()} is present, {@link #type()} == {@link
-   *       ReferenceType#BRANCH}.
-   *   <li>Returns a {@link Tag}, if {@link #name()} is present, {@link #type()} == {@link
-   *       ReferenceType#TAG}.
-   * </ul>
-   */
-  @Value.NonAttribute
-  default Reference toReference() {
-    ReferenceType t = type();
-    if (t == null) {
-      if (Detached.REF_NAME.equals(name())) {
-        return Detached.of(hash());
-      }
-      throw new IllegalArgumentException(
-          "Cannot convert a name to a typed reference without a type");
-    }
-
-    switch (t) {
-      case BRANCH:
-        return Branch.of(name(), hash());
-      case TAG:
-        return Tag.of(name(), hash());
-      default:
-        throw new IllegalArgumentException("Unsupported reference type: " + type());
-    }
+    return ImmutableParsedReference.of(name, hashWithRelativeSpec, type);
   }
 }

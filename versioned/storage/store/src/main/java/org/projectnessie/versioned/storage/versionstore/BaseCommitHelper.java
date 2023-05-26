@@ -18,6 +18,7 @@ package org.projectnessie.versioned.storage.versionstore;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.lang.String.format;
+import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.projectnessie.model.Conflict.conflict;
@@ -129,7 +130,7 @@ class BaseCommitHelper {
       ObjId referenceObjId = hashToObjId(referenceHash.get());
       if (!referenceObjId.equals(headId())) {
         RefMapping refMapping = new RefMapping(persist);
-        e = refMapping.commitInChain(branch, head, referenceHash);
+        e = refMapping.commitInChain(branch, head, referenceHash, emptyList());
       }
     }
     this.expected = e;

@@ -59,6 +59,18 @@ components:
     refWithHash:
       value: "main@2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
 
+    refWithTimestampMillisSinceEpoch:
+      value: "main*1685185847230"
+
+    refWithTimestampInstant:
+      value: "main*2021-04-07T14:42:25.534748Z"
+
+    refWithNthPredecessor:
+      value: "main~10"
+
+    refWithMergeParent:
+      value: "main@2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d^2"
+
     refDefault:
       value: "-"
 

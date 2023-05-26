@@ -20,16 +20,16 @@ import static org.projectnessie.api.v2.params.ReferenceResolver.resolveReference
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.projectnessie.model.Detached;
-import org.projectnessie.model.Reference;
 import org.projectnessie.model.Reference.ReferenceType;
 
 @ExtendWith(SoftAssertionsExtension.class)
-public class TestParsedReference {
+public class TestReferenceResolver {
   @InjectSoftAssertions private SoftAssertions soft;
 
   @ParameterizedTest
@@ -40,48 +40,37 @@ public class TestParsedReference {
     "a/b@11223344,a/b,11223344",
     "a@,a,",
     "a/b@,a/b,",
+    "a~10,a,~10",
+    "a@12345678~10,a,12345678~10",
+    "a*2021-04-07T14:42:25.534748Z,a,*2021-04-07T14:42:25.534748Z",
+    "a@12345678*2021-04-07T14:42:25.534748Z,a,12345678*2021-04-07T14:42:25.534748Z",
   })
   void fromPathString(String pathParameter, String expectedName, String expectedHash) {
     for (ReferenceType type : ReferenceType.values()) {
-      soft.assertThat(resolveReferencePathElement(pathParameter, type))
-          .extracting(ParsedReference::type, ParsedReference::name, ParsedReference::hash)
-          .containsExactly(type, expectedName, expectedHash);
-
-      soft.assertThat(resolveReferencePathElement(pathParameter, type))
-          .extracting(ParsedReference::toReference)
-          .extracting(Reference::getType, Reference::getName, Reference::getHash)
+      soft.assertThat(resolveReferencePathElement(pathParameter, type, Assertions::fail))
+          .describedAs("for reference type %s", type)
+          .extracting(
+              ParsedReference::type, ParsedReference::name, ParsedReference::hashWithRelativeSpec)
           .containsExactly(type, expectedName, expectedHash);
     }
 
-    soft.assertThat(resolveReferencePathElement(pathParameter, null))
-        .extracting(ParsedReference::type, ParsedReference::name, ParsedReference::hash)
+    soft.assertThat(resolveReferencePathElement(pathParameter, null, Assertions::fail))
+        .extracting(
+            ParsedReference::type, ParsedReference::name, ParsedReference::hashWithRelativeSpec)
         .containsExactly(null, expectedName, expectedHash);
-
-    soft.assertThatIllegalArgumentException()
-        .isThrownBy(() -> resolveReferencePathElement(pathParameter, null).toReference())
-        .withMessage("Cannot convert a name to a typed reference without a type");
   }
 
   @Test
   void fromPathStringDetached() {
-    soft.assertThat(resolveReferencePathElement("@11223344", ReferenceType.BRANCH))
-        .extracting(ParsedReference::hash)
-        .isEqualTo("11223344");
+    soft.assertThat(
+            resolveReferencePathElement("@11223344", ReferenceType.BRANCH, Assertions::fail))
+        .extracting(
+            ParsedReference::type, ParsedReference::name, ParsedReference::hashWithRelativeSpec)
+        .containsExactly(null, Detached.REF_NAME, "11223344");
 
-    soft.assertThat(resolveReferencePathElement("@11223344", ReferenceType.BRANCH))
-        .extracting(ParsedReference::toReference)
-        .isInstanceOf(Detached.class)
-        .extracting(Reference::getHash)
-        .isEqualTo("11223344");
-
-    soft.assertThat(resolveReferencePathElement("@11223344", null))
-        .extracting(ParsedReference::hash)
-        .isEqualTo("11223344");
-
-    soft.assertThat(resolveReferencePathElement("@11223344", null))
-        .extracting(ParsedReference::toReference)
-        .isInstanceOf(Detached.class)
-        .extracting(Reference::getHash)
-        .isEqualTo("11223344");
+    soft.assertThat(resolveReferencePathElement("@11223344", null, Assertions::fail))
+        .extracting(
+            ParsedReference::type, ParsedReference::name, ParsedReference::hashWithRelativeSpec)
+        .containsExactly(null, Detached.REF_NAME, "11223344");
   }
 }

@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.persist.benchmarks;
 
+import static java.util.Collections.emptyList;
 import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
 import java.util.ArrayList;
@@ -201,7 +202,7 @@ public class CommitBench {
           CommitMeta.fromMessage("initial commit meta " + Thread.currentThread().getId()),
           initialOperations(bp, keys, contentIds));
 
-      Hash hash = bp.versionStore.hashOnReference(bp.branch, Optional.empty());
+      Hash hash = bp.versionStore.hashOnReference(bp.branch, Optional.empty(), emptyList());
 
       bp.versionStore.create(branch, Optional.of(hash));
     }

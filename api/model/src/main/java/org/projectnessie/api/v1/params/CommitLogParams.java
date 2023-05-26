@@ -50,10 +50,12 @@ public class CommitLogParams extends AbstractParams<CommitLogParams> {
 
   @Nullable
   @jakarta.annotation.Nullable
-  @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+  @Pattern(
+      regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+      message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
   @jakarta.validation.constraints.Pattern(
-      regexp = Validation.HASH_REGEX,
-      message = Validation.HASH_MESSAGE)
+      regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+      message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
   @Parameter(
       description =
           "Hash on the given ref to end at (in chronological sense), the 'near' end of the commit log, returned 'early' in the result.",

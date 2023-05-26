@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.tests;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
@@ -89,7 +90,7 @@ public abstract class AbstractNoNamespaceValidation {
                             Put.of(ContentKey.of("name", "spaced", "table"), newOnRef("foo")))))
         .doesNotThrowAnyException();
 
-    Hash commit1 = store().hashOnReference(branch, Optional.empty());
+    Hash commit1 = store().hashOnReference(branch, Optional.empty(), emptyList());
 
     soft.assertThatCode(
             () ->
@@ -101,7 +102,7 @@ public abstract class AbstractNoNamespaceValidation {
                         singletonList(Put.of(ContentKey.of("another", "table"), newOnRef("bar")))))
         .doesNotThrowAnyException();
 
-    Hash commit2 = store().hashOnReference(branch, Optional.empty());
+    Hash commit2 = store().hashOnReference(branch, Optional.empty(), emptyList());
 
     soft.assertThatCode(
             () -> {

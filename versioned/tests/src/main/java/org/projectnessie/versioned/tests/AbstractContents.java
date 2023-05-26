@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.tests;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
@@ -51,7 +52,7 @@ public abstract class AbstractContents extends AbstractNestedVersionStore {
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
     BranchName branch = BranchName.of("empty-branch");
     store().create(branch, Optional.empty());
-    final Hash hash = store().hashOnReference(branch, Optional.empty());
+    final Hash hash = store().hashOnReference(branch, Optional.empty(), emptyList());
 
     soft.assertThat(store().getValue(hash, ContentKey.of("arbitrary"))).isNull();
   }

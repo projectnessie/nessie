@@ -15,13 +15,17 @@
  */
 package org.projectnessie.services.impl;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Collections.singletonList;
+import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE;
+import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_PATTERN;
 import static org.projectnessie.services.cel.CELUtil.CONTAINER;
 import static org.projectnessie.services.cel.CELUtil.CONTENT_KEY_DECLARATIONS;
 import static org.projectnessie.services.cel.CELUtil.CONTENT_KEY_TYPES;
 import static org.projectnessie.services.cel.CELUtil.SCRIPT_HOST;
 import static org.projectnessie.services.cel.CELUtil.VAR_KEY;
 import static org.projectnessie.services.cel.CELUtil.forCel;
+import static org.projectnessie.versioned.RelativeCommitSpec.parseRelativeSpecs;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -36,6 +40,7 @@ import java.util.UUID;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
 import javax.annotation.Nullable;
 import org.projectnessie.cel.tools.Script;
 import org.projectnessie.cel.tools.ScriptException;
@@ -54,6 +59,7 @@ import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.RelativeCommitSpec;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 
@@ -115,40 +121,58 @@ public abstract class BaseApiImpl {
       namedRef = config.getDefaultBranch();
     }
 
+    NamedRef ref;
+    Hash hash = null;
+    Hash knownValid = null;
     if (DetachedRef.REF_NAME.equals(namedRef)) {
+      ref = DetachedRef.INSTANCE;
       Objects.requireNonNull(
           hashOnRef, String.format("hashOnRef must not be null for '%s'", DetachedRef.REF_NAME));
-      return WithHash.of(Hash.of(hashOnRef), DetachedRef.INSTANCE);
+    } else {
+      try {
+        ReferenceInfo<CommitMeta> refInfo =
+            getStore().getNamedRef(namedRef, GetNamedRefsParams.DEFAULT);
+        ref = refInfo.getNamedRef();
+        knownValid = hash = refInfo.getHash();
+
+        // Shortcut: use HEAD, if hashOnRef is null or empty
+        if (hashOnRef == null || hashOnRef.isEmpty()) {
+          return WithHash.of(refInfo.getHash(), ref);
+        }
+      } catch (ReferenceNotFoundException e) {
+        throw new NessieReferenceNotFoundException(e.getMessage(), e);
+      }
     }
 
-    WithHash<NamedRef> namedRefWithHash;
     try {
-      ReferenceInfo<CommitMeta> ref = getStore().getNamedRef(namedRef, GetNamedRefsParams.DEFAULT);
-      namedRefWithHash = WithHash.of(ref.getHash(), ref.getNamedRef());
-    } catch (ReferenceNotFoundException e) {
-      throw new NessieReferenceNotFoundException(e.getMessage(), e);
-    }
+      Matcher hashAndRelatives = HASH_OR_RELATIVE_COMMIT_SPEC_PATTERN.matcher(hashOnRef);
+      checkArgument(hashAndRelatives.find(), HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE);
 
-    try {
-      if (null == hashOnRef) {
-        return namedRefWithHash;
-      }
-      if (store.noAncestorHash().asString().equals(hashOnRef)) {
-        // hashOnRef might point to "no ancestor hash", but the actual HEAD of the reference is not
-        // necessarily the same, so construct a new instance to return.
-        return WithHash.of(store.noAncestorHash(), namedRefWithHash.getValue());
+      String s = hashAndRelatives.group(1);
+      if (s != null) {
+        hash = Hash.of(s);
       }
 
-      // the version store already gave us the hash on namedRef, so we can skip checking whether the
-      // hash actually exists on the named reference and return early here
-      if (namedRefWithHash.getHash().asString().equals(hashOnRef)) {
-        return namedRefWithHash;
+      Objects.requireNonNull(
+          hash, // can only be null for DETACHED w/ hashOnRef w/o a starting commit ID
+          String.format(
+              "hashOnRef must contain a valid starting commit ID for '%s'", DetachedRef.REF_NAME));
+
+      List<RelativeCommitSpec> relativeSpecs = parseRelativeSpecs(hashAndRelatives.group(2));
+
+      if (store.noAncestorHash().equals(hash)) {
+        // hashOnRef might point to "no ancestor hash", but the actual HEAD of the reference is
+        // not necessarily the same, so construct a new instance to return.
+        return WithHash.of(store.noAncestorHash(), ref);
       }
 
-      // we need to make sure that the hash in fact exists on the named ref
-      return WithHash.of(
-          getStore().hashOnReference(namedRefWithHash.getValue(), Optional.of(Hash.of(hashOnRef))),
-          namedRefWithHash.getValue());
+      // If the hash provided by the caller is not the current reference HEAD, verify that the hash
+      // is a valid parent.
+      if (!hash.equals(knownValid) || !relativeSpecs.isEmpty()) {
+        hash = getStore().hashOnReference(ref, Optional.of(hash), relativeSpecs);
+      }
+
+      return WithHash.of(hash, ref);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }

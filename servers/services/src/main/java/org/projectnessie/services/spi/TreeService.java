@@ -15,6 +15,13 @@
  */
 package org.projectnessie.services.spi;
 
+import static org.projectnessie.model.Validation.HASH_MESSAGE;
+import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE;
+import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX;
+import static org.projectnessie.model.Validation.HASH_REGEX;
+import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
+import static org.projectnessie.model.Validation.REF_NAME_REGEX;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
@@ -38,7 +45,6 @@ import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Reference.ReferenceType;
-import org.projectnessie.model.Validation;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.WithHash;
 
@@ -65,10 +71,10 @@ public interface TreeService {
           @jakarta.validation.Valid
           @NotNull
           @jakarta.validation.constraints.NotNull
-          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.REF_NAME_REGEX,
-              message = Validation.REF_NAME_MESSAGE)
+              regexp = REF_NAME_REGEX,
+              message = REF_NAME_MESSAGE)
           String refName,
       FetchOption fetchOption)
       throws NessieNotFoundException;
@@ -78,25 +84,23 @@ public interface TreeService {
           @jakarta.validation.Valid
           @NotNull
           @jakarta.validation.constraints.NotNull
-          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.REF_NAME_REGEX,
-              message = Validation.REF_NAME_MESSAGE)
+              regexp = REF_NAME_REGEX,
+              message = REF_NAME_MESSAGE)
           String refName,
       ReferenceType type,
       @Valid
           @jakarta.validation.Valid
-          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          @jakarta.validation.constraints.Pattern(
-              regexp = Validation.HASH_REGEX,
-              message = Validation.HASH_MESSAGE)
+          @Pattern(regexp = HASH_REGEX, message = HASH_MESSAGE)
+          @jakarta.validation.constraints.Pattern(regexp = HASH_REGEX, message = HASH_MESSAGE)
           String hash,
       @Valid
           @jakarta.validation.Valid
-          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.REF_NAME_REGEX,
-              message = Validation.REF_NAME_MESSAGE)
+              regexp = REF_NAME_REGEX,
+              message = REF_NAME_MESSAGE)
           String sourceRefName)
       throws NessieNotFoundException, NessieConflictException;
 
@@ -106,17 +110,19 @@ public interface TreeService {
           @jakarta.validation.Valid
           @NotNull
           @jakarta.validation.constraints.NotNull
-          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.REF_NAME_REGEX,
-              message = Validation.REF_NAME_MESSAGE)
+              regexp = REF_NAME_REGEX,
+              message = REF_NAME_MESSAGE)
           String referenceName,
       @Valid
           @jakarta.validation.Valid
-          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @Pattern(
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.HASH_REGEX,
-              message = Validation.HASH_MESSAGE)
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String expectedHash,
       @Valid @jakarta.validation.Valid Reference assignTo)
       throws NessieNotFoundException, NessieConflictException;
@@ -127,17 +133,19 @@ public interface TreeService {
           @jakarta.validation.Valid
           @NotNull
           @jakarta.validation.constraints.NotNull
-          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.REF_NAME_REGEX,
-              message = Validation.REF_NAME_MESSAGE)
+              regexp = REF_NAME_REGEX,
+              message = REF_NAME_MESSAGE)
           String referenceName,
       @Valid
           @jakarta.validation.Valid
-          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @Pattern(
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.HASH_REGEX,
-              message = Validation.HASH_MESSAGE)
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String expectedHash)
       throws NessieConflictException, NessieNotFoundException;
 
@@ -146,25 +154,25 @@ public interface TreeService {
           @jakarta.validation.Valid
           @NotNull
           @jakarta.validation.constraints.NotNull
-          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.REF_NAME_REGEX,
-              message = Validation.REF_NAME_MESSAGE)
+              regexp = REF_NAME_REGEX,
+              message = REF_NAME_MESSAGE)
           String namedRef,
       FetchOption fetchOption,
       @Valid
           @jakarta.validation.Valid
-          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          @jakarta.validation.constraints.Pattern(
-              regexp = Validation.HASH_REGEX,
-              message = Validation.HASH_MESSAGE)
+          @Pattern(regexp = HASH_REGEX, message = HASH_MESSAGE)
+          @jakarta.validation.constraints.Pattern(regexp = HASH_REGEX, message = HASH_MESSAGE)
           String oldestHashLimit,
       @Valid
           @jakarta.validation.Valid
-          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @Pattern(
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.HASH_REGEX,
-              message = Validation.HASH_MESSAGE)
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String youngestHash,
       @Nullable @jakarta.annotation.Nullable String filter,
       @Nullable @jakarta.annotation.Nullable String pageToken,
@@ -177,19 +185,21 @@ public interface TreeService {
           @jakarta.validation.Valid
           @NotNull
           @jakarta.validation.constraints.NotNull
-          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.REF_NAME_REGEX,
-              message = Validation.REF_NAME_MESSAGE)
+              regexp = REF_NAME_REGEX,
+              message = REF_NAME_MESSAGE)
           String branchName,
       @Valid
           @jakarta.validation.Valid
           @NotNull
           @jakarta.validation.constraints.NotNull
-          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @Pattern(
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.HASH_REGEX,
-              message = Validation.HASH_MESSAGE)
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String expectedHash,
       @Nullable @jakarta.annotation.Nullable CommitMeta commitMeta,
       List<String> hashesToTransplant,
@@ -199,10 +209,10 @@ public interface TreeService {
           @jakarta.validation.constraints.NotBlank
           @NotNull
           @jakarta.validation.constraints.NotNull
-          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.REF_NAME_REGEX,
-              message = Validation.REF_NAME_MESSAGE)
+              regexp = REF_NAME_REGEX,
+              message = REF_NAME_MESSAGE)
           String fromRefName,
       Boolean keepIndividualCommits,
       Collection<MergeKeyBehavior> keyMergeBehaviors,
@@ -217,37 +227,37 @@ public interface TreeService {
           @jakarta.validation.Valid
           @NotNull
           @jakarta.validation.constraints.NotNull
-          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.REF_NAME_REGEX,
-              message = Validation.REF_NAME_MESSAGE)
+              regexp = REF_NAME_REGEX,
+              message = REF_NAME_MESSAGE)
           String branchName,
       @Valid
           @jakarta.validation.Valid
           @NotNull
           @jakarta.validation.constraints.NotNull
-          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @Pattern(
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.HASH_REGEX,
-              message = Validation.HASH_MESSAGE)
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String expectedHash,
       @Valid
           @jakarta.validation.Valid
           @NotBlank
           @jakarta.validation.constraints.NotBlank
-          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.REF_NAME_REGEX,
-              message = Validation.REF_NAME_MESSAGE)
+              regexp = REF_NAME_REGEX,
+              message = REF_NAME_MESSAGE)
           String fromRefName,
       @Valid
           @jakarta.validation.Valid
           @NotBlank
           @jakarta.validation.constraints.NotBlank
-          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          @jakarta.validation.constraints.Pattern(
-              regexp = Validation.HASH_REGEX,
-              message = Validation.HASH_MESSAGE)
+          @Pattern(regexp = HASH_REGEX, message = HASH_MESSAGE)
+          @jakarta.validation.constraints.Pattern(regexp = HASH_REGEX, message = HASH_MESSAGE)
           String fromHash,
       @Nullable @jakarta.annotation.Nullable Boolean keepIndividualCommits,
       @Nullable @jakarta.annotation.Nullable CommitMeta commitMeta,
@@ -263,19 +273,21 @@ public interface TreeService {
           @jakarta.validation.Valid
           @NotNull
           @jakarta.validation.constraints.NotNull
-          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.REF_NAME_REGEX,
-              message = Validation.REF_NAME_MESSAGE)
+              regexp = REF_NAME_REGEX,
+              message = REF_NAME_MESSAGE)
           String namedRef,
       @Valid
           @jakarta.validation.Valid
           @Nullable
           @jakarta.annotation.Nullable
-          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @Pattern(
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.HASH_REGEX,
-              message = Validation.HASH_MESSAGE)
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String hashOnRef,
       @Nullable @jakarta.annotation.Nullable Integer namespaceDepth,
       @Nullable @jakarta.annotation.Nullable String filter,
@@ -294,19 +306,21 @@ public interface TreeService {
           @jakarta.validation.Valid
           @NotNull
           @jakarta.validation.constraints.NotNull
-          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+          @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.REF_NAME_REGEX,
-              message = Validation.REF_NAME_MESSAGE)
+              regexp = REF_NAME_REGEX,
+              message = REF_NAME_MESSAGE)
           String branch,
       @Valid
           @jakarta.validation.Valid
           @NotNull
           @jakarta.validation.constraints.NotNull
-          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @Pattern(
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.HASH_REGEX,
-              message = Validation.HASH_MESSAGE)
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String expectedHash,
       @Valid @jakarta.validation.Valid Operations operations)
       throws NessieNotFoundException, NessieConflictException;

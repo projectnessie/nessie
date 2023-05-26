@@ -34,10 +34,12 @@ public interface OnTagBuilder<R extends OnTagBuilder<R>> {
   R hash(
       @NotNull
           @jakarta.validation.constraints.NotNull
-          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+          @Pattern(
+              regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           @jakarta.validation.constraints.Pattern(
-              regexp = Validation.HASH_REGEX,
-              message = Validation.HASH_MESSAGE)
+              regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String hash);
 
   /**

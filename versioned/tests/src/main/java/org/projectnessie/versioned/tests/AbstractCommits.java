@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.tests;
 
 import static com.google.common.collect.Streams.stream;
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.Assumptions.assumeThat;
@@ -97,7 +98,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
     final BranchName branch = BranchName.of("foo");
 
     final Hash createHash = store().create(branch, Optional.empty()).getHash();
-    final Hash initialHash = store().hashOnReference(branch, Optional.empty());
+    final Hash initialHash = store().hashOnReference(branch, Optional.empty(), emptyList());
     soft.assertThat(createHash).isEqualTo(initialHash);
 
     CommitResult<Commit> result =
@@ -106,13 +107,13 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                 branch,
                 Optional.of(initialHash),
                 CommitMeta.fromMessage("Some commit"),
-                Collections.emptyList());
+                emptyList());
     soft.assertThat(result.getCommit().getParentHash()).isEqualTo(initialHash);
     soft.assertThat(result.getCommit().getOperations()).isNullOrEmpty();
     soft.assertThat(result.getTargetBranch()).isEqualTo(branch);
 
     final Hash commitHash0 = result.getCommitHash();
-    final Hash commitHash = store().hashOnReference(branch, Optional.empty());
+    final Hash commitHash = store().hashOnReference(branch, Optional.empty(), emptyList());
     soft.assertThat(commitHash).isEqualTo(commitHash0);
 
     soft.assertThat(commitHash).isNotEqualTo(initialHash);
@@ -122,12 +123,12 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                 branch,
                 Optional.of(initialHash),
                 CommitMeta.fromMessage("Another commit"),
-                Collections.emptyList());
+                emptyList());
     soft.assertThat(result.getCommit().getParentHash()).isEqualTo(commitHash);
     soft.assertThat(result.getCommit().getOperations()).isNullOrEmpty();
     soft.assertThat(result.getTargetBranch()).isEqualTo(branch);
 
-    final Hash anotherCommitHash = store().hashOnReference(branch, Optional.empty());
+    final Hash anotherCommitHash = store().hashOnReference(branch, Optional.empty(), emptyList());
 
     soft.assertThat(commitsList(branch, false))
         .contains(
@@ -140,7 +141,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
         .isInstanceOf(ReferenceConflictException.class);
 
     store().delete(branch, Optional.of(anotherCommitHash));
-    soft.assertThatThrownBy(() -> store().hashOnReference(branch, Optional.empty()))
+    soft.assertThatThrownBy(() -> store().hashOnReference(branch, Optional.empty(), emptyList()))
         .isInstanceOf(ReferenceNotFoundException.class);
     try (PaginationIterator<ReferenceInfo<CommitMeta>> str =
         store().getNamedRefs(GetNamedRefsParams.DEFAULT, null)) {
@@ -456,7 +457,8 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
         .isInstanceOf(ReferenceConflictException.class);
 
     // Checking the state hasn't changed
-    soft.assertThat(store().hashOnReference(branch, Optional.empty())).isEqualTo(secondCommit);
+    soft.assertThat(store().hashOnReference(branch, Optional.empty(), emptyList()))
+        .isEqualTo(secondCommit);
   }
 
   /*
@@ -637,7 +639,8 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                 "payload of existing and expected content for key 't3' are different"));
 
     // Checking the state hasn't changed
-    soft.assertThat(store().hashOnReference(branch, Optional.empty())).isEqualTo(secondCommit);
+    soft.assertThat(store().hashOnReference(branch, Optional.empty(), emptyList()))
+        .isEqualTo(secondCommit);
   }
 
   /*
@@ -674,7 +677,8 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             .put("t3", V_3_2.withId(t3.getId()))
             .toBranch(branch);
 
-    soft.assertThat(store().hashOnReference(branch, Optional.empty())).isEqualTo(putCommit);
+    soft.assertThat(store().hashOnReference(branch, Optional.empty(), emptyList()))
+        .isEqualTo(putCommit);
     soft.assertThat(
             contentsWithoutId(
                 store()
@@ -694,7 +698,8 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             .unchanged("t2")
             .unchanged("t3")
             .toBranch(branch);
-    soft.assertThat(store().hashOnReference(branch, Optional.empty())).isEqualTo(unchangedCommit);
+    soft.assertThat(store().hashOnReference(branch, Optional.empty(), emptyList()))
+        .isEqualTo(unchangedCommit);
     soft.assertThat(
             contentsWithoutId(
                 store()
@@ -710,7 +715,8 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
 
     Hash deleteCommit =
         commit("Conflicting Commit").delete("t1").delete("t2").delete("t3").toBranch(branch);
-    soft.assertThat(store().hashOnReference(branch, Optional.empty())).isEqualTo(deleteCommit);
+    soft.assertThat(store().hashOnReference(branch, Optional.empty(), emptyList()))
+        .isEqualTo(deleteCommit);
     soft.assertThat(
             store()
                 .getValues(
@@ -757,7 +763,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                         branch,
                         Optional.empty(),
                         CommitMeta.fromMessage("New commit"),
-                        Collections.emptyList()))
+                        emptyList()))
         .isInstanceOf(ReferenceNotFoundException.class);
   }
 
@@ -778,7 +784,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                         branch,
                         Optional.of(Hash.of("1234567890abcdef")),
                         CommitMeta.fromMessage("New commit"),
-                        Collections.emptyList()))
+                        emptyList()))
         .isInstanceOf(ReferenceNotFoundException.class);
   }
 
@@ -800,7 +806,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                 branch,
                 Optional.of(initialHash),
                 CommitMeta.fromMessage("Some commit"),
-                Collections.emptyList())
+                emptyList())
             .getCommitHash();
 
     BranchName branch2 = BranchName.of("bar");
@@ -813,7 +819,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                         branch2,
                         Optional.of(commitHash),
                         CommitMeta.fromMessage("Another commit"),
-                        Collections.emptyList()))
+                        emptyList()))
         .isInstanceOf(ReferenceNotFoundException.class);
   }
 

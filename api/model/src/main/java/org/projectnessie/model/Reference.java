@@ -63,11 +63,19 @@ public interface Reference extends Base {
       message = Validation.REF_NAME_MESSAGE)
   String getName();
 
-  /** backend system id. Usually the 32-byte hash of the commit this reference points to. */
-  @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+  /**
+   * Commit ID of the reference.
+   *
+   * <p>Will be an "exact" commit ID (no relative parts) when returned from a Nessie server. Might
+   * contain relative parts when used as an <em>input</em> to a Nessie API functionality (since
+   * Nessie spec 2.1.0).
+   */
+  @Pattern(
+      regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+      message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
   @jakarta.validation.constraints.Pattern(
-      regexp = Validation.HASH_REGEX,
-      message = Validation.HASH_MESSAGE)
+      regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+      message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
   String getHash();
 
   /** Validation rule using {@link org.projectnessie.model.Validation#validateHash(String)}. */

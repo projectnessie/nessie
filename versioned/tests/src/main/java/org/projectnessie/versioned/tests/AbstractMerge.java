@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.tests;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
@@ -399,13 +400,15 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
 
     if (individualCommits) {
       // not modifying commit meta, will just "fast forward"
-      soft.assertThat(store().hashOnReference(newBranch, Optional.empty())).isEqualTo(thirdCommit);
+      soft.assertThat(store().hashOnReference(newBranch, Optional.empty(), emptyList()))
+          .isEqualTo(thirdCommit);
 
       assertCommitMeta(
           soft, commitsList(newBranch, false).subList(0, 3), commits, metadataRewriter);
     } else {
       // must modify commit meta, it's more than one commit
-      assertThat(store().hashOnReference(newBranch, Optional.empty())).isNotEqualTo(thirdCommit);
+      assertThat(store().hashOnReference(newBranch, Optional.empty(), emptyList()))
+          .isNotEqualTo(thirdCommit);
 
       soft.assertThat(commitsList(newBranch, false))
           .first()
@@ -722,7 +725,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 ContentKey.of("t3"), V_3_1));
 
     // not modifying commit meta, will just "fast forward"
-    soft.assertThat(store().hashOnReference(newBranch, Optional.empty())).isEqualTo(firstCommit);
+    soft.assertThat(store().hashOnReference(newBranch, Optional.empty(), emptyList()))
+        .isEqualTo(firstCommit);
     soft.assertThat(result.getCreatedCommits()).isEmpty(); // no new commits
 
     List<Commit> mergedCommit = commitsList(newBranch, false).subList(0, 1);
@@ -749,7 +753,8 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
         individualCommits, newBranch, metadataRewriter, false /* because of metadata rewrite */);
 
     // modify the commit meta, will generate new commits and therefore new commit hashes
-    soft.assertThat(store().hashOnReference(newBranch, Optional.empty())).isNotEqualTo(thirdCommit);
+    soft.assertThat(store().hashOnReference(newBranch, Optional.empty(), emptyList()))
+        .isNotEqualTo(thirdCommit);
 
     List<Commit> mergedCommits = commitsList(newBranch, false);
     if (individualCommits) {
@@ -909,7 +914,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             .merge(
                 MergeOp.builder()
                     .fromRef(etl)
-                    .fromHash(store().hashOnReference(etl, Optional.empty()))
+                    .fromHash(store().hashOnReference(etl, Optional.empty(), emptyList()))
                     .toBranch(review)
                     .keepIndividualCommits(individualCommits)
                     .build());
@@ -928,7 +933,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
             .merge(
                 MergeOp.builder()
                     .fromRef(etl)
-                    .fromHash(store().hashOnReference(etl, Optional.empty()))
+                    .fromHash(store().hashOnReference(etl, Optional.empty(), emptyList()))
                     .toBranch(review)
                     .keepIndividualCommits(individualCommits)
                     .build());

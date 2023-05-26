@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.tests;
 
 import static com.google.common.collect.Lists.newArrayList;
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
@@ -93,7 +94,7 @@ public abstract class AbstractDiff extends AbstractNestedVersionStore {
   protected void checkDiff() throws VersionStoreException {
     BranchName branch = BranchName.of("checkDiff");
     store().create(branch, Optional.empty());
-    Hash initial = store().hashOnReference(branch, Optional.empty());
+    Hash initial = store().hashOnReference(branch, Optional.empty(), emptyList());
 
     ContentKey k1 = ContentKey.of("k1");
     ContentKey k2 = ContentKey.of("k2");

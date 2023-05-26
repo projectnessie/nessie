@@ -16,56 +16,40 @@
 package org.projectnessie.api.v2.params;
 
 import static org.projectnessie.api.v2.params.ParsedReference.parsedReference;
-import static org.projectnessie.model.Reference.ReferenceType.BRANCH;
+import static org.projectnessie.model.Validation.REF_NAME_PATH_PATTERN;
 
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.projectnessie.model.Reference;
+import org.projectnessie.model.Validation;
 
 public final class ReferenceResolver {
 
-  public static final String DEFAULT_REF_IN_PATH = "-";
-  public static final char REF_HASH_SEPARATOR = '@';
+  private static final String DEFAULT_REF_IN_PATH = "-";
 
   private ReferenceResolver() {}
 
   public static ParsedReference resolveReferencePathElement(
-      @Nonnull @jakarta.annotation.Nonnull String value,
-      @Nullable @jakarta.annotation.Nullable Reference.ReferenceType namedRefType) {
-    String name = null;
-    String hash = null;
-    int hashIdx = value.indexOf(REF_HASH_SEPARATOR);
-
-    if (hashIdx > 0) {
-      name = value.substring(0, hashIdx);
-    }
-
-    if (hashIdx < 0) {
-      name = value;
-    }
-
-    if (hashIdx >= 0) {
-      hash = value.substring(hashIdx + 1);
-      if (hash.isEmpty()) {
-        hash = null;
-      }
-    }
-
-    if (name != null) {
-      return parsedReference(name, hash, namedRefType);
-    }
-    // detached
-    return parsedReference(null, hash, null);
-  }
-
-  public static ParsedReference resolveReferencePathElementWithDefaultBranch(
       @Nonnull @jakarta.annotation.Nonnull String refPathString,
+      @Nullable @jakarta.annotation.Nullable Reference.ReferenceType namedRefType,
       @Nonnull @jakarta.annotation.Nonnull Supplier<String> defaultBranchSupplier) {
-    if (!DEFAULT_REF_IN_PATH.equals(refPathString)) {
-      return resolveReferencePathElement(refPathString, null);
+    Matcher refNameMatcher = REF_NAME_PATH_PATTERN.matcher(refPathString);
+    if (!refNameMatcher.find()) {
+      throw new IllegalArgumentException(Validation.REF_NAME_MESSAGE);
     }
-
-    return parsedReference(defaultBranchSupplier.get(), null, BRANCH);
+    String name = refNameMatcher.group(1);
+    if (DEFAULT_REF_IN_PATH.equals(name)) {
+      name = defaultBranchSupplier.get();
+    }
+    String hash = refNameMatcher.group(2);
+    String relativeSpec = refNameMatcher.group(3);
+    if (hash != null && relativeSpec != null) {
+      hash += relativeSpec;
+    } else if (relativeSpec != null) {
+      hash = relativeSpec;
+    }
+    return parsedReference(name, hash, name != null ? namedRefType : null);
   }
 }

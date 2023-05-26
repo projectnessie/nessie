@@ -15,82 +15,78 @@
  */
 package org.projectnessie.model;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatNoException;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.projectnessie.model.Validation.FORBIDDEN_REF_NAME_MESSAGE;
+import static org.projectnessie.model.Validation.HASH_MESSAGE;
+import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_PATTERN;
+import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
+import static org.projectnessie.model.Validation.REF_NAME_PATH_PATTERN;
+import static org.projectnessie.model.Validation.RELATIVE_COMMIT_SPEC_PART_PATTERN;
 import static org.projectnessie.model.Validation.isForbiddenReferenceName;
 import static org.projectnessie.model.Validation.validateForbiddenReferenceName;
 import static org.projectnessie.model.Validation.validateHash;
 import static org.projectnessie.model.Validation.validateReferenceName;
 import static org.projectnessie.model.Validation.validateReferenceNameOrHash;
 
+import java.util.regex.Matcher;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+@ExtendWith(SoftAssertionsExtension.class)
 class TestValidation {
+  @InjectSoftAssertions protected SoftAssertions soft;
 
   @ParameterizedTest
   @ValueSource(strings = {"a", "a_b-", "a_-c", "abc/def"})
   void validRefNames(String referenceName) {
-    validateReferenceName(referenceName);
-    validateReferenceNameOrHash(referenceName);
+    soft.assertThatCode(() -> validateReferenceName(referenceName)).doesNotThrowAnyException();
+    soft.assertThatCode(() -> validateReferenceNameOrHash(referenceName))
+        .doesNotThrowAnyException();
     Branch.of(referenceName, null);
     Tag.of(referenceName, null);
 
-    assertThat(isForbiddenReferenceName(referenceName)).isFalse();
-    assertThatNoException().isThrownBy(() -> validateForbiddenReferenceName(referenceName));
+    soft.assertThat(isForbiddenReferenceName(referenceName)).isFalse();
+    soft.assertThatCode(() -> validateForbiddenReferenceName(referenceName))
+        .doesNotThrowAnyException();
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"", "abc/", ".foo", "abc/def/../blah", "abc/de..blah", "abc/de@{blah"})
   void invalidRefNames(String referenceName) {
-    assertAll(
-        () ->
-            assertEquals(
-                Validation.REF_NAME_MESSAGE + " - but was: " + referenceName,
-                assertThrows(
-                        IllegalArgumentException.class, () -> validateReferenceName(referenceName))
-                    .getMessage()),
-        () ->
-            assertEquals(
-                Validation.REF_NAME_OR_HASH_MESSAGE + " - but was: " + referenceName,
-                assertThrows(
-                        IllegalArgumentException.class,
-                        () -> validateReferenceNameOrHash(referenceName))
-                    .getMessage()),
-        () ->
-            assertEquals(
-                Validation.REF_NAME_MESSAGE + " - but was: " + referenceName,
-                assertThrows(IllegalArgumentException.class, () -> Branch.of(referenceName, null))
-                    .getMessage()),
-        () ->
-            assertEquals(
-                Validation.REF_NAME_MESSAGE + " - but was: " + referenceName,
-                assertThrows(IllegalArgumentException.class, () -> Tag.of(referenceName, null))
-                    .getMessage()));
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(() -> validateReferenceName(referenceName))
+        .withMessage(REF_NAME_MESSAGE + " - but was: " + referenceName);
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(() -> validateReferenceNameOrHash(referenceName))
+        .withMessage(Validation.REF_NAME_OR_HASH_MESSAGE + " - but was: " + referenceName);
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(() -> Branch.of(referenceName, null))
+        .withMessage(REF_NAME_MESSAGE + " - but was: " + referenceName);
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(() -> Tag.of(referenceName, null))
+        .withMessage(REF_NAME_MESSAGE + " - but was: " + referenceName);
   }
 
   @Test
   void nullParam() {
-    assertAll(
-        () -> assertThrows(NullPointerException.class, () -> validateReferenceName(null)),
-        () -> assertThrows(NullPointerException.class, () -> Branch.of(null, null)),
-        () -> assertThrows(NullPointerException.class, () -> Tag.of(null, null)));
+    soft.assertThatNullPointerException().isThrownBy(() -> validateReferenceName(null));
+    soft.assertThatNullPointerException().isThrownBy(() -> Branch.of(null, null));
+    soft.assertThatNullPointerException().isThrownBy(() -> Tag.of(null, null));
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"DETACHED", "HEAD", "detached", "head", "dEtAcHeD", "hEaD"})
   // Note: hashes validated in validHashes()
   void forbiddenReferenceNames(String refName) {
-    assertThat(isForbiddenReferenceName(refName)).isTrue();
-    assertThatThrownBy(() -> validateForbiddenReferenceName(refName))
+    soft.assertThat(isForbiddenReferenceName(refName)).isTrue();
+    soft.assertThatThrownBy(() -> validateForbiddenReferenceName(refName))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageStartingWith(Validation.FORBIDDEN_REF_NAME_MESSAGE);
+        .hasMessageStartingWith(FORBIDDEN_REF_NAME_MESSAGE);
   }
 
   @ParameterizedTest
@@ -107,35 +103,27 @@ class TestValidation {
         "20caff22"
       })
   void validHashes(String hash) {
-    validateHash(hash);
-    validateReferenceNameOrHash(hash);
-
-    assertThat(isForbiddenReferenceName(hash)).isTrue();
-    assertThatThrownBy(() -> validateForbiddenReferenceName(hash))
+    soft.assertThatCode(() -> validateHash(hash)).doesNotThrowAnyException();
+    soft.assertThatCode(() -> validateReferenceNameOrHash(hash)).doesNotThrowAnyException();
+    soft.assertThat(isForbiddenReferenceName(hash)).isTrue();
+    soft.assertThatThrownBy(() -> validateForbiddenReferenceName(hash))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageStartingWith(Validation.FORBIDDEN_REF_NAME_MESSAGE);
+        .hasMessageStartingWith(FORBIDDEN_REF_NAME_MESSAGE);
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"", "abc/", ".foo", "abc/def/../blah", "abc/de..blah", "abc/de@{blah"})
   void invalidHashes(String hash) {
     String referenceName = "thisIsAValidName";
-    assertAll(
-        () ->
-            assertEquals(
-                Validation.HASH_MESSAGE + " - but was: " + hash,
-                assertThrows(IllegalArgumentException.class, () -> validateHash(hash))
-                    .getMessage()),
-        () ->
-            assertEquals(
-                Validation.HASH_MESSAGE + " - but was: " + hash,
-                assertThrows(IllegalArgumentException.class, () -> Branch.of(referenceName, hash))
-                    .getMessage()),
-        () ->
-            assertEquals(
-                Validation.HASH_MESSAGE + " - but was: " + hash,
-                assertThrows(IllegalArgumentException.class, () -> Tag.of(referenceName, hash))
-                    .getMessage()));
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(() -> validateHash(hash))
+        .withMessage(HASH_MESSAGE + " - but was: " + hash);
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(() -> Branch.of(referenceName, hash))
+        .withMessage(HASH_MESSAGE + " - but was: " + hash);
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(() -> Tag.of(referenceName, hash))
+        .withMessage(HASH_MESSAGE + " - but was: " + hash);
   }
 
   @ParameterizedTest
@@ -151,8 +139,8 @@ class TestValidation {
     "coffee2go,1122334455667788990011223344556677889900"
   })
   void validNamesAndHashes(String referenceName, String hash) {
-    Branch.of(referenceName, hash);
-    Tag.of(referenceName, hash);
+    soft.assertThatCode(() -> Branch.of(referenceName, hash)).doesNotThrowAnyException();
+    soft.assertThatCode(() -> Tag.of(referenceName, hash)).doesNotThrowAnyException();
   }
 
   @ParameterizedTest
@@ -166,16 +154,100 @@ class TestValidation {
     "abc/def,nonono"
   })
   void validNamesAndInvalidHashes(String referenceName, String hash) {
-    assertAll(
-        () ->
-            assertEquals(
-                Validation.HASH_MESSAGE + " - but was: " + hash,
-                assertThrows(IllegalArgumentException.class, () -> Branch.of(referenceName, hash))
-                    .getMessage()),
-        () ->
-            assertEquals(
-                Validation.HASH_MESSAGE + " - but was: " + hash,
-                assertThrows(IllegalArgumentException.class, () -> Tag.of(referenceName, hash))
-                    .getMessage()));
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(() -> Branch.of(referenceName, hash))
+        .withMessage(HASH_MESSAGE + " - but was: " + hash);
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(() -> Tag.of(referenceName, hash))
+        .withMessage(HASH_MESSAGE + " - but was: " + hash);
+  }
+
+  @ParameterizedTest
+  // with and without hash
+  @CsvSource({"12345678*11111~22222^33333,12345678", "*11111~22222^33333,"})
+  void validHashTimestampParentPatterns_3_parts(String pattern, String hash) {
+    Matcher outer = HASH_OR_RELATIVE_COMMIT_SPEC_PATTERN.matcher(pattern);
+
+    soft.assertThat(outer.matches()).isTrue();
+    soft.assertThat(outer.group(1)).isEqualTo(hash);
+
+    Matcher matcher = RELATIVE_COMMIT_SPEC_PART_PATTERN.matcher(outer.group(2));
+    soft.assertThat(matcher.find()).isTrue();
+    soft.assertThat(matcher.group(1)).isEqualTo("*");
+    soft.assertThat(matcher.group(2)).isEqualTo("11111");
+
+    soft.assertThat(matcher.find()).isTrue();
+    soft.assertThat(matcher.group(1)).isEqualTo("~");
+    soft.assertThat(matcher.group(2)).isEqualTo("22222");
+
+    soft.assertThat(matcher.find()).isTrue();
+    soft.assertThat(matcher.group(1)).isEqualTo("^");
+    soft.assertThat(matcher.group(2)).isEqualTo("33333");
+
+    soft.assertThat(matcher.find()).isFalse();
+
+    soft.assertThat(outer.find()).isFalse();
+  }
+
+  @ParameterizedTest
+  // with and without hash
+  @CsvSource({"12345678*11111,12345678", "*11111,"})
+  void validHashTimestampParentPatterns_1_part(String pattern, String hash) {
+    Matcher outer = HASH_OR_RELATIVE_COMMIT_SPEC_PATTERN.matcher(pattern);
+
+    soft.assertThat(outer.matches()).isTrue();
+    soft.assertThat(outer.group(1)).isEqualTo(hash);
+
+    Matcher matcher = RELATIVE_COMMIT_SPEC_PART_PATTERN.matcher(outer.group(2));
+    soft.assertThat(matcher.find()).isTrue();
+    soft.assertThat(matcher.group(1)).isEqualTo("*");
+    soft.assertThat(matcher.group(2)).isEqualTo("11111");
+
+    soft.assertThat(matcher.find()).isFalse();
+
+    soft.assertThat(outer.find()).isFalse();
+  }
+
+  @ParameterizedTest
+  // with and without hash
+  @CsvSource({
+    "12345678,12345678",
+    "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d,2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+    ","
+  })
+  void validHashTimestampParentPatterns_no_parts(String pattern, String hash) {
+    Matcher outer = HASH_OR_RELATIVE_COMMIT_SPEC_PATTERN.matcher(pattern != null ? pattern : "");
+
+    soft.assertThat(outer.matches()).isTrue();
+    soft.assertThat(outer.group(1)).isEqualTo(hash);
+
+    Matcher matcher = RELATIVE_COMMIT_SPEC_PART_PATTERN.matcher(outer.group(2));
+
+    soft.assertThat(matcher.find()).isFalse();
+
+    soft.assertThat(outer.find()).isFalse();
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "testFrom@2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d,testFrom,2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d,",
+    "@6dd38434e4520966085a2f428b6a9803358dd31997661e44a7038eb66018a5f1,,6dd38434e4520966085a2f428b6a9803358dd31997661e44a7038eb66018a5f1,",
+    "test~10,test,,~10",
+    "test@~1,test,,~1", // additional '@' is legit on REST path names, but not recommended!
+    "test~1,test,,~1",
+    "~10,,,~10",
+    "~1,,,~1",
+    "test@6dd38434e4520966085a2f428b6a9803358dd31997661e44a7038eb66018a5f1~10,test,6dd38434e4520966085a2f428b6a9803358dd31997661e44a7038eb66018a5f1,~10",
+    "test@6dd38434e4520966085a2f428b6a9803358dd31997661e44a7038eb66018a5f1~1,test,6dd38434e4520966085a2f428b6a9803358dd31997661e44a7038eb66018a5f1,~1",
+    "@6dd38434e4520966085a2f428b6a9803358dd31997661e44a7038eb66018a5f1~10,,6dd38434e4520966085a2f428b6a9803358dd31997661e44a7038eb66018a5f1,~10",
+    "@6dd38434e4520966085a2f428b6a9803358dd31997661e44a7038eb66018a5f1~1,,6dd38434e4520966085a2f428b6a9803358dd31997661e44a7038eb66018a5f1,~1",
+  })
+  void pathRefName(String rest, String ref, String hashOnRef, String relativeSpec) {
+    Matcher matcher = REF_NAME_PATH_PATTERN.matcher(rest);
+    soft.assertThat(matcher.matches()).isTrue();
+
+    soft.assertThat(matcher.group(1)).isEqualTo(ref);
+    soft.assertThat(matcher.group(2)).isEqualTo(hashOnRef);
+    soft.assertThat(matcher.group(3)).isEqualTo(relativeSpec);
   }
 }

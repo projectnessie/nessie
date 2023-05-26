@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.tests;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
@@ -316,7 +317,8 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
                     .merge(
                         VersionStore.MergeOp.builder()
                             .fromRef(branch)
-                            .fromHash(store().hashOnReference(branch, Optional.empty()))
+                            .fromHash(
+                                store().hashOnReference(branch, Optional.empty(), emptyList()))
                             .toBranch(root)
                             .keepIndividualCommits(mode.individualCommits)
                             .build())

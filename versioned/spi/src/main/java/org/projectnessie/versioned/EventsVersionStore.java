@@ -117,9 +117,12 @@ public class EventsVersionStore implements VersionStore {
   }
 
   @Override
-  public Hash hashOnReference(NamedRef namedReference, Optional<Hash> hashOnReference)
+  public Hash hashOnReference(
+      NamedRef namedReference,
+      Optional<Hash> hashOnReference,
+      List<RelativeCommitSpec> relativeLookups)
       throws ReferenceNotFoundException {
-    return delegate.hashOnReference(namedReference, hashOnReference);
+    return delegate.hashOnReference(namedReference, hashOnReference, relativeLookups);
   }
 
   @Nonnull

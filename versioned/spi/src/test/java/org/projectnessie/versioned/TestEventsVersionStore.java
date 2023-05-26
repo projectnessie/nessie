@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned;
 
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
@@ -485,11 +486,11 @@ class TestEventsVersionStore {
 
   @Test
   void testHashOnReferenceSuccess() throws ReferenceNotFoundException {
-    when(delegate.hashOnReference(branch1, Optional.of(hash1))).thenReturn(hash1);
+    when(delegate.hashOnReference(branch1, Optional.of(hash1), emptyList())).thenReturn(hash1);
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
-    Hash actualHash = versionStore.hashOnReference(branch1, Optional.of(hash1));
+    Hash actualHash = versionStore.hashOnReference(branch1, Optional.of(hash1), emptyList());
     assertThat(actualHash).isEqualTo(hash1);
-    verify(delegate).hashOnReference(eq(branch1), eq(Optional.of(hash1)));
+    verify(delegate).hashOnReference(eq(branch1), eq(Optional.of(hash1)), eq(emptyList()));
     verifyNoMoreInteractions(delegate);
     verifyNoInteractions(sink);
   }

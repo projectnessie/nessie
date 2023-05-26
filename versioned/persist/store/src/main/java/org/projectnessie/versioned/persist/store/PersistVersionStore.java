@@ -17,6 +17,7 @@ package org.projectnessie.versioned.persist.store;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static org.projectnessie.model.IdentifiedContentKey.identifiedContentKeyFromContent;
 import static org.projectnessie.versioned.ContentResult.contentResult;
@@ -79,6 +80,7 @@ import org.projectnessie.versioned.ReferenceCreatedResult;
 import org.projectnessie.versioned.ReferenceDeletedResult;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.RelativeCommitSpec;
 import org.projectnessie.versioned.RepositoryInformation;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.Unchanged;
@@ -124,8 +126,13 @@ public class PersistVersionStore implements VersionStore {
   }
 
   @Override
-  public Hash hashOnReference(NamedRef namedReference, Optional<Hash> hashOnReference)
+  public Hash hashOnReference(
+      NamedRef namedReference,
+      Optional<Hash> hashOnReference,
+      List<RelativeCommitSpec> relativeLookups)
       throws ReferenceNotFoundException {
+    checkArgument(
+        relativeLookups.isEmpty(), "Relative lookups not supported for old database model");
     return databaseAdapter.hashOnReference(namedReference, hashOnReference);
   }
 
@@ -700,7 +707,7 @@ public class PersistVersionStore implements VersionStore {
 
   private Hash refToHash(Ref ref) throws ReferenceNotFoundException {
     if (ref instanceof NamedRef) {
-      return hashOnReference((NamedRef) ref, Optional.empty());
+      return hashOnReference((NamedRef) ref, Optional.empty(), emptyList());
     }
     if (ref instanceof Hash) {
       return (Hash) ref;

@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.tests;
 
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
@@ -121,7 +122,7 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
           commitHash = store().commit(branch, Optional.of(hashKnownByUser), msg.build(), ops);
         } catch (ReferenceConflictException inconsistentValueException) {
           if (param.allowInconsistentValueException) {
-            hashKnownByUser = store().hashOnReference(branch, Optional.empty());
+            hashKnownByUser = store().hashOnReference(branch, Optional.empty(), emptyList());
             ops = singleBranchManyUsersOps(branch, commitNum, user, hashKnownByUser, key);
             commitHash = store().commit(branch, Optional.of(hashKnownByUser), msg.build(), ops);
           } else {
@@ -151,7 +152,9 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
       throws ReferenceNotFoundException {
     List<Operation> ops;
     ContentResult existing =
-        store().getValue(store.hashOnReference(branch, Optional.of(hashKnownByUser)), key);
+        store()
+            .getValue(
+                store.hashOnReference(branch, Optional.of(hashKnownByUser), emptyList()), key);
     Content value =
         existing != null
             ? onRef(

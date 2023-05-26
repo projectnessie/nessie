@@ -30,18 +30,70 @@ public final class Validation {
   // Note: when changing a regex here, also update it in python/
   public static final String HASH_RAW_REGEX = "[0-9a-fA-F]{8,64}";
   public static final String HASH_REGEX = "^" + HASH_RAW_REGEX + "$";
+
+  public static final String RELATIVE_COMMIT_SPEC_RAW_REGEX =
+      "([~*^])([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[.][0-9]{1,9}Z|([0-9]+))";
+
+  /**
+   * Regex with an optional hash and a sequence of relative lookups, which can be by-timestamp,
+   * by-n-th-predecessor or by-n-th-parent.
+   *
+   * <ul>
+   *   <li>Lookup by timestamp starts with {@code *} followed by the numeric value of the timestamp
+   *       in milliseconds since epoch.
+   *   <li>Lookup by n-th predecessor starts with {@code ~} followed by the value for the n-th
+   *       commit in the commit log.
+   *   <li>Lookup by n-th parent starts with {@code ^} followed by either 1, referencing the direct
+   *       parent, or 2, referencing the merge parent.
+   * </ul>
+   *
+   * <p>Valid values are:
+   *
+   * <ul>
+   *   <li>{@code 11223344~10} -> the 10th parent of the commit {@code 11223344}
+   *   <li>{@code 11223344^2} -> the merge parent of the commit {@code 11223344}
+   *   <li>{@code 11223344~10^2} -> the merge parent of the 10th parent of the commit {@code
+   *       11223344}
+   *   <li>{@code 11223344~10^1} -> the direct parent of the 10th parent of the commit {@code
+   *       11223344} - functionally equal to {@code 11223344~11}
+   *   <li>{@code 11223344*10000000000} -> the commit in the commit log starting at {@code 11223344}
+   *       with a commit-created timestamp of {@code 10000000000} or less.
+   *   <li>{@code 11223344*2021-04-07T14:42:25.534748Z} -> the commit in the commit log starting at
+   *       {@code 11223344} with a commit-created timestamp of {@code 2021-04-07T14:42:25.534748Z}
+   *       or less.
+   * </ul>
+   */
+  public static final String HASH_OR_RELATIVE_COMMIT_SPEC_RAW_REGEX =
+      "(" + HASH_RAW_REGEX + ")?((?:" + RELATIVE_COMMIT_SPEC_RAW_REGEX + ")*)";
+
+  public static final String HASH_OR_RELATIVE_COMMIT_SPEC_REGEX =
+      "^" + HASH_OR_RELATIVE_COMMIT_SPEC_RAW_REGEX + "$";
+
   public static final String REF_NAME_RAW_REGEX =
-      "[A-Za-z](((?![.][.])[A-Za-z0-9./_-])*[A-Za-z0-9_-])?";
+      "(?:[A-Za-z](?:(?:(?![.][.])[A-Za-z0-9./_-])*[A-Za-z0-9_-])?)|-";
   public static final String REF_NAME_REGEX = "^" + REF_NAME_RAW_REGEX + "$";
   public static final String REF_NAME_OR_HASH_REGEX =
-      "^((" + HASH_RAW_REGEX + ")|(" + REF_NAME_RAW_REGEX + "))$";
+      "^(?:(" + HASH_RAW_REGEX + ")|(" + REF_NAME_RAW_REGEX + "))$";
   public static final String REF_NAME_PATH_REGEX =
-      "^(" + REF_NAME_RAW_REGEX + "(@(" + HASH_RAW_REGEX + ")?)?|@" + HASH_RAW_REGEX + ")|-$";
+      "^("
+          + REF_NAME_RAW_REGEX
+          + ")?(?:@("
+          + HASH_RAW_REGEX
+          + ")?)?("
+          + RELATIVE_COMMIT_SPEC_RAW_REGEX
+          + ")*$";
   public static final String REF_NAME_PATH_ELEMENT_REGEX = "([^/]+|[^@]+(@|%40)[^@/]*)";
 
   public static final Pattern HASH_PATTERN = Pattern.compile(HASH_REGEX);
   public static final Pattern REF_NAME_PATTERN = Pattern.compile(REF_NAME_REGEX);
+  public static final Pattern RELATIVE_COMMIT_SPEC_PART_PATTERN =
+      Pattern.compile(RELATIVE_COMMIT_SPEC_RAW_REGEX);
+  public static final Pattern HASH_OR_RELATIVE_COMMIT_SPEC_PATTERN =
+      Pattern.compile(HASH_OR_RELATIVE_COMMIT_SPEC_REGEX);
   public static final Pattern REF_NAME_OR_HASH_PATTERN = Pattern.compile(REF_NAME_OR_HASH_REGEX);
+  public static final Pattern REF_NAME_PATH_PATTERN = Pattern.compile(REF_NAME_PATH_REGEX);
+  public static final Pattern REF_NAME_PATH_ELEMENT_PATTERN =
+      Pattern.compile(REF_NAME_PATH_ELEMENT_REGEX);
 
   public static final String HASH_RULE = "consist of the hex representation of 4-32 bytes";
   private static final String REF_RULE =
@@ -49,12 +101,29 @@ public final class Validation {
           + "not end with a slash or dot, not contain '..'";
 
   public static final String HASH_MESSAGE = "Hash must " + HASH_RULE;
+
+  public static final String RELATIVE_COMMIT_SPEC_RULE =
+      "numeric timestamp (milliseconds since epoch), "
+          + "optionally followed relative pointers: "
+          + "'~' + a number representing the n-th predecessor of a commit, "
+          + "'^' + a number representing the n-th parent within a commit or "
+          + "'*' + a number representing the created timestamp in milliseconds since epoch of a commit";
+  public static final String HASH_OR_RELATIVE_COMMIT_SPEC_RULE =
+      "consist of a valid commit hash ("
+          + HASH_RULE
+          + "), optionally followed by a "
+          + RELATIVE_COMMIT_SPEC_RULE;
+  public static final String HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE =
+      "Hash with optional timestamp with optional parent must " + HASH_OR_RELATIVE_COMMIT_SPEC_RULE;
+
   public static final String REF_NAME_PATH_MESSAGE =
       "Reference name must "
           + REF_RULE
           + ", optionally followed "
           + "by @ and a commit hash, which must "
-          + HASH_RULE;
+          + HASH_RULE
+          + ", optionally followed by a "
+          + RELATIVE_COMMIT_SPEC_RULE;
   public static final String REF_NAME_MESSAGE = "Reference name must " + REF_RULE;
   public static final String REF_NAME_OR_HASH_MESSAGE =
       "Reference must be either a reference name or hash, " + REF_RULE + " or " + HASH_RULE;

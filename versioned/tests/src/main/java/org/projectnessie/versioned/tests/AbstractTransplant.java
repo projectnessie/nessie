@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.tests;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
@@ -106,7 +107,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
   protected void setupCommits() throws VersionStoreException {
     store().create(sourceBranch, Optional.empty());
 
-    initialHash = store().hashOnReference(sourceBranch, Optional.empty());
+    initialHash = store().hashOnReference(sourceBranch, Optional.empty(), emptyList());
 
     firstCommit =
         commit("Initial Commit")

@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.storage.versionstore;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
@@ -80,6 +81,7 @@ import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.CommitResult;
 import org.projectnessie.versioned.ContentResult;
+import org.projectnessie.versioned.DetachedRef;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
@@ -104,6 +106,7 @@ import org.projectnessie.versioned.ReferenceDeletedResult;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceInfo.CommitsAheadBehind;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.RelativeCommitSpec;
 import org.projectnessie.versioned.RepositoryInformation;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStore;
@@ -169,12 +172,23 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   @Override
-  public Hash hashOnReference(NamedRef namedRef, Optional<Hash> hashOnReference)
+  public Hash hashOnReference(
+      NamedRef namedRef, Optional<Hash> hashOnReference, List<RelativeCommitSpec> relativeLookups)
       throws ReferenceNotFoundException {
     RefMapping refMapping = new RefMapping(persist);
-    CommitObj head = refMapping.resolveNamedRefHead(namedRef);
+    CommitObj head;
+    if (DetachedRef.INSTANCE.equals(namedRef)) {
+      checkArgument(hashOnReference.isPresent(), "Must supply 'hashOnReference' for DETACHED");
+      try {
+        head = commitLogic(persist).fetchCommit(hashToObjId(hashOnReference.get()));
+      } catch (ObjNotFoundException e) {
+        throw referenceNotFound(e);
+      }
+    } else {
+      head = refMapping.resolveNamedRefHead(namedRef);
+    }
 
-    CommitObj commit = refMapping.commitInChain(namedRef, head, hashOnReference);
+    CommitObj commit = refMapping.commitInChain(namedRef, head, hashOnReference, relativeLookups);
     return commit != null ? objIdToHash(commit.id()) : NO_ANCESTOR;
   }
 
