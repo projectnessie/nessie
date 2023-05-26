@@ -57,19 +57,35 @@
     </dependency>
     <dependency>
       <groupId>org.projectnessie.nessie</groupId>
-      <artifactId>nessie-versioned-persist-in-memory</artifactId>
+      <artifactId>nessie-versioned-storage-cache</artifactId>
     </dependency>
     <dependency>
       <groupId>org.projectnessie.nessie</groupId>
-      <artifactId>nessie-versioned-persist-in-memory-test</artifactId>
+      <artifactId>nessie-versioned-storage-common-serialize</artifactId>
     </dependency>
     <dependency>
       <groupId>org.projectnessie.nessie</groupId>
-      <artifactId>nessie-versioned-persist-rocks</artifactId>
+      <artifactId>nessie-versioned-storage-inmemory</artifactId>
     </dependency>
     <dependency>
       <groupId>org.projectnessie.nessie</groupId>
-      <artifactId>nessie-versioned-persist-rocks-test</artifactId>
+      <artifactId>nessie-versioned-storage-mongodb</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.projectnessie.nessie</groupId>
+      <artifactId>nessie-versioned-storage-rocksdb</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.projectnessie.nessie</groupId>
+      <artifactId>nessie-versioned-storage-store</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.projectnessie.nessie</groupId>
+      <artifactId>nessie-versioned-storage-telemetry</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.projectnessie.nessie</groupId>
+      <artifactId>nessie-versioned-storage-testextension</artifactId>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>

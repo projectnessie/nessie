@@ -33,10 +33,14 @@ def versionMaven = "3.9.2"
 dependencies {
   implementation(enforcedPlatform("org.projectnessie.nessie:nessie-bom:$nessieVersion"))
   implementation("org.projectnessie.nessie:nessie-jaxrs-testextension")
-  implementation("org.projectnessie.nessie:nessie-versioned-persist-in-memory")
-  implementation("org.projectnessie.nessie:nessie-versioned-persist-in-memory-test")
-  implementation("org.projectnessie.nessie:nessie-versioned-persist-rocks")
-  implementation("org.projectnessie.nessie:nessie-versioned-persist-rocks-test")
+  implementation("org.projectnessie.nessie:nessie-versioned-storage-cache")
+  implementation("org.projectnessie.nessie:nessie-versioned-storage-common-serialize")
+  implementation("org.projectnessie.nessie:nessie-versioned-storage-inmemory")
+  implementation("org.projectnessie.nessie:nessie-versioned-storage-mongodb")
+  implementation("org.projectnessie.nessie:nessie-versioned-storage-rocksdb")
+  implementation("org.projectnessie.nessie:nessie-versioned-storage-store")
+  implementation("org.projectnessie.nessie:nessie-versioned-storage-telemetry")
+  implementation("org.projectnessie.nessie:nessie-versioned-storage-testextension")
 
   testImplementation(platform("org.junit:junit-bom:5.9.3"))
   testImplementation("org.junit.jupiter:junit-jupiter-api")
