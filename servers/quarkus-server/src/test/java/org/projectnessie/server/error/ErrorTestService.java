@@ -15,6 +15,8 @@
  */
 package org.projectnessie.server.error;
 
+import static org.mockito.ArgumentMatchers.any;
+
 import javax.enterprise.context.RequestScoped;
 import javax.validation.ConstraintDeclarationException;
 import javax.validation.ConstraintDefinitionException;
@@ -41,8 +43,8 @@ import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.paging.PaginationIterator;
-import org.projectnessie.versioned.persist.adapter.DatabaseAdapter;
-import org.projectnessie.versioned.persist.store.PersistVersionStore;
+import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.versionstore.VersionStoreImpl;
 
 /** REST service used to generate a bunch of violations for {@link TestNessieError}. */
 @RequestScoped
@@ -142,10 +144,10 @@ public class ErrorTestService {
         throw new IllegalArgumentException("test code error");
     }
 
-    DatabaseAdapter databaseAdapter = Mockito.mock(DatabaseAdapter.class);
-    Mockito.when(databaseAdapter.namedRefs(Mockito.any())).thenThrow(ex);
+    Persist persist = Mockito.mock(Persist.class);
+    Mockito.when(persist.fetchReference(any())).thenThrow(ex);
 
-    PersistVersionStore tvs = new PersistVersionStore(databaseAdapter);
+    VersionStoreImpl tvs = new VersionStoreImpl(persist);
     try (PaginationIterator<ReferenceInfo<CommitMeta>> refs =
         tvs.getNamedRefs(GetNamedRefsParams.DEFAULT, null)) {
       refs.forEachRemaining(ref -> {});
