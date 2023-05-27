@@ -21,7 +21,7 @@ bump2version==1.0.1
 coverage==7.2.6
 pip==23.1.2
 pytest==7.3.1
-pytest-cov==4.0.0
+pytest-cov==4.1.0
 pytest-mock==3.10.0
 pytest-recording==0.12.2
 tox==4.5.1
