@@ -52,10 +52,9 @@ public abstract class OnRefOnly extends Content {
   }
 
   public OnRefOnly withId(Content c) {
-    return onRef(getOnRef(), c.getId());
+    return withId(c.getId());
   }
 
-  public OnRefOnly withId(String id) {
-    return onRef(getOnRef(), id);
-  }
+  @Override
+  public abstract OnRefOnly withId(String id);
 }

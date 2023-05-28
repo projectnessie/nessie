@@ -17,7 +17,6 @@ package org.projectnessie.server.store;
 
 import java.util.function.Supplier;
 import org.projectnessie.model.Content;
-import org.projectnessie.model.ImmutableUDF;
 import org.projectnessie.model.UDF;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.server.store.proto.ObjectTypes;
@@ -40,11 +39,6 @@ public final class UDFSerializer extends BaseSerializer<UDF> {
         ObjectTypes.UDF.newBuilder().setDialect(udf.getDialect()).setSqlText(udf.getSqlText());
 
     builder.setUdf(stateBuilder);
-  }
-
-  @Override
-  public UDF applyId(UDF content, String id) {
-    return ((ImmutableUDF) content).withId(id);
   }
 
   @Override

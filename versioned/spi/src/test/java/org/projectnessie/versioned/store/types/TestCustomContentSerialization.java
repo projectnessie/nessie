@@ -66,31 +66,4 @@ public class TestCustomContentSerialization {
             .valueFromStore(CustomTestContentSerializer.PAYLOAD, serialized);
     soft.assertThat(deserialized).isEqualTo(testContent);
   }
-
-  @Test
-  void applyId() {
-    String updatedId = randomUUID().toString();
-
-    CustomTestContent testContent =
-        ImmutableCustomTestContent.builder().someLong(42L).someString("blah").build();
-
-    Content otherId = DefaultStoreWorker.instance().applyId(testContent, updatedId);
-
-    soft.assertThat(otherId).isNotEqualTo(testContent);
-    soft.assertThat(otherId.getId()).isEqualTo(updatedId);
-  }
-
-  @Test
-  void changeId() {
-    String initialId = randomUUID().toString();
-    String updatedId = randomUUID().toString();
-
-    CustomTestContent testContent =
-        ImmutableCustomTestContent.builder().someLong(42L).someString("blah").id(initialId).build();
-
-    Content otherId = DefaultStoreWorker.instance().applyId(testContent, updatedId);
-
-    soft.assertThat(otherId).isNotEqualTo(testContent);
-    soft.assertThat(otherId.getId()).isEqualTo(updatedId);
-  }
 }

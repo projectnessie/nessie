@@ -18,7 +18,6 @@ package org.projectnessie.server.store;
 import java.util.function.Supplier;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.DeltaLakeTable;
-import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.server.store.proto.ObjectTypes;
 
@@ -45,11 +44,6 @@ public final class DeltaLakeTableSerializer extends BaseSerializer<DeltaLakeTabl
       table.setLastCheckpoint(lastCheckpoint);
     }
     builder.setDeltaLakeTable(table);
-  }
-
-  @Override
-  public DeltaLakeTable applyId(DeltaLakeTable content, String id) {
-    return ((ImmutableDeltaLakeTable) content).withId(id);
   }
 
   @Override

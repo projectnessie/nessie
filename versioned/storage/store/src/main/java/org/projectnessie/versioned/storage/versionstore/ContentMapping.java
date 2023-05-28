@@ -107,7 +107,7 @@ public final class ContentMapping {
   @jakarta.annotation.Nonnull
   public Content assignContentId(
       @Nonnull @jakarta.annotation.Nonnull Content putValue, String contentId) {
-    return STORE_WORKER.applyId(putValue, contentId);
+    return putValue.withId(contentId);
   }
 
   @Nonnull

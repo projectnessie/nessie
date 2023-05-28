@@ -61,6 +61,24 @@ public interface CommitResponse {
     return added.stream().collect(Collectors.toMap(AddedContent::getKey, AddedContent::contentId));
   }
 
+  /**
+   * If new content has been added to Nessie, updates the {@link Content#getId() content ID} of the
+   * given content with the generated content ID.
+   */
+  @SuppressWarnings("unchecked")
+  default <T extends Content> T contentWithId(ContentKey key, T content) {
+    List<AddedContent> addedContents = getAddedContents();
+    if (addedContents == null) {
+      return content;
+    }
+    return (T)
+        getAddedContents().stream()
+            .filter(added -> added.getKey().equals(key))
+            .findFirst()
+            .map(added -> content.withId(added.contentId()))
+            .orElse(content);
+  }
+
   @Value.Immutable
   @JsonSerialize(as = ImmutableAddedContent.class)
   @JsonDeserialize(as = ImmutableAddedContent.class)

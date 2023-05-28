@@ -132,11 +132,6 @@ public class DefaultStoreWorker implements StoreWorker {
   }
 
   @Override
-  public Content applyId(Content content, String id) {
-    return serializer(content).applyId(content, id);
-  }
-
-  @Override
   public Content valueFromStore(int payload, ByteString onReferenceValue) {
     ContentSerializer<Content> serializer = serializer(payload);
     return serializer.valueFromStore(onReferenceValue);

@@ -18,7 +18,6 @@ package org.projectnessie.server.store;
 import java.util.function.Supplier;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.IcebergView;
-import org.projectnessie.model.ImmutableIcebergView;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.server.store.proto.ObjectTypes;
 
@@ -45,11 +44,6 @@ public final class IcebergViewSerializer extends BaseSerializer<IcebergView> {
             .setMetadataLocation(view.getMetadataLocation());
 
     builder.setIcebergViewState(stateBuilder);
-  }
-
-  @Override
-  public IcebergView applyId(IcebergView content, String id) {
-    return ((ImmutableIcebergView) content).withId(id);
   }
 
   @Override

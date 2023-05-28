@@ -45,4 +45,7 @@ public abstract class DeltaLakeTable extends Content {
   public Type getType() {
     return Type.DELTA_LAKE_TABLE;
   }
+
+  @Override
+  public abstract DeltaLakeTable withId(String id);
 }

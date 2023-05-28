@@ -97,6 +97,8 @@ public abstract class Content {
   @JsonIgnore
   public abstract Type getType();
 
+  public abstract Content withId(String id);
+
   /**
    * Unwrap object if possible, otherwise throw.
    *

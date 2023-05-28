@@ -94,6 +94,9 @@ public abstract class IcebergTable extends IcebergContent {
   // To be removed when API v1 gets removed.
   public abstract Map<String, Object> getMetadata();
 
+  @Override
+  public abstract IcebergTable withId(String id);
+
   public static ImmutableIcebergTable.Builder builder() {
     return ImmutableIcebergTable.builder();
   }

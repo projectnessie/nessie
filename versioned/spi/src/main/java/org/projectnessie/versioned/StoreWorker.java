@@ -27,8 +27,6 @@ public interface StoreWorker {
 
   Content valueFromStore(int payload, ByteString onReferenceValue);
 
-  Content applyId(Content content, String id);
-
   @Deprecated // for removal
   Content valueFromStore(
       int payload, ByteString onReferenceValue, Supplier<ByteString> globalState);

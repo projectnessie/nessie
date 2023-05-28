@@ -50,15 +50,12 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.DeltaLakeTable;
 import org.projectnessie.model.Detached;
 import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.GetMultipleContentsResponse.ContentWithKey;
 import org.projectnessie.model.IcebergTable;
-import org.projectnessie.model.IcebergView;
-import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Namespace;
@@ -67,7 +64,6 @@ import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
-import org.projectnessie.model.UDF;
 import org.projectnessie.services.authz.AbstractBatchAccessChecker;
 import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.Authorizer;
@@ -575,37 +571,7 @@ public abstract class BaseTestServiceImpl {
     if (content == null) {
       return null;
     }
-    if (content instanceof IcebergTable) {
-      IcebergTable t = (IcebergTable) content;
-      return IcebergTable.of(
-          t.getMetadataLocation(),
-          t.getSnapshotId(),
-          t.getSchemaId(),
-          t.getSpecId(),
-          t.getSortOrderId());
-    }
-    if (content instanceof IcebergView) {
-      IcebergView t = (IcebergView) content;
-      return IcebergView.of(
-          t.getMetadataLocation(),
-          t.getVersionId(),
-          t.getSchemaId(),
-          t.getDialect(),
-          t.getSqlText());
-    }
-    if (content instanceof UDF) {
-      UDF t = (UDF) content;
-      return UDF.of(t.getDialect(), t.getSqlText());
-    }
-    if (content instanceof DeltaLakeTable) {
-      DeltaLakeTable t = (DeltaLakeTable) content;
-      return ImmutableDeltaLakeTable.builder().from(t).id(null).build();
-    }
-    if (content instanceof Namespace) {
-      Namespace t = (Namespace) content;
-      return Namespace.of(t.getElements());
-    }
-    throw new IllegalArgumentException(content.toString());
+    return content.withId(null);
   }
 
   protected static DiffEntry diffEntryWithoutContentId(DiffEntry diff) {

@@ -42,7 +42,6 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.paging.PaginationIterator;
-import org.projectnessie.versioned.store.DefaultStoreWorker;
 
 public abstract class AbstractNestedVersionStore {
   protected final VersionStore store;
@@ -151,11 +150,11 @@ public abstract class AbstractNestedVersionStore {
   }
 
   protected static Content contentWithoutId(ContentResult content) {
-    return content != null ? DefaultStoreWorker.instance().applyId(content.content(), null) : null;
+    return content != null ? content.content().withId(null) : null;
   }
 
   protected static Content contentWithoutId(Content content) {
-    return content != null ? DefaultStoreWorker.instance().applyId(content, null) : null;
+    return content != null ? content.withId(null) : null;
   }
 
   protected static Optional<Content> contentWithoutId(Optional<Content> content) {

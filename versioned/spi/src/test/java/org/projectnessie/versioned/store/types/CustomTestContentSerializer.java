@@ -42,11 +42,6 @@ public class CustomTestContentSerializer implements ContentSerializer<CustomTest
   }
 
   @Override
-  public CustomTestContent applyId(CustomTestContent content, String id) {
-    return ((ImmutableCustomTestContent) content).withId(id);
-  }
-
-  @Override
   @SuppressWarnings("StringSplitter")
   public CustomTestContent valueFromStore(ByteString onReferenceValue) {
     String[] arr = onReferenceValue.toStringUtf8().split("\\|");

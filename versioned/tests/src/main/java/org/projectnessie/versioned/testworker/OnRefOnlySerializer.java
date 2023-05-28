@@ -38,11 +38,6 @@ public class OnRefOnlySerializer extends TestContentSerializer<OnRefOnly> {
   }
 
   @Override
-  public OnRefOnly applyId(OnRefOnly content, String id) {
-    return OnRefOnly.onRef(content.getOnRef(), id);
-  }
-
-  @Override
   protected OnRefOnly valueFromStore(String contentId, String onRef) {
     return onRef(onRef, contentId);
   }
