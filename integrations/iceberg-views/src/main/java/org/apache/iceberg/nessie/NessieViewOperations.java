@@ -15,7 +15,7 @@
  */
 package org.apache.iceberg.nessie;
 
-import static org.apache.iceberg.viewdeprecated.ViewUtils.toCatalogTableIdentifier;
+import static org.apache.iceberg.viewdepoc.ViewUtils.toCatalogTableIdentifier;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,12 +27,12 @@ import org.apache.iceberg.exceptions.CommitStateUnknownException;
 import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.util.Tasks;
-import org.apache.iceberg.viewdeprecated.BaseMetastoreViewOperations;
-import org.apache.iceberg.viewdeprecated.BaseVersion;
-import org.apache.iceberg.viewdeprecated.HistoryEntry;
-import org.apache.iceberg.viewdeprecated.Version;
-import org.apache.iceberg.viewdeprecated.ViewVersionMetadata;
-import org.apache.iceberg.viewdeprecated.ViewVersionMetadataParser;
+import org.apache.iceberg.viewdepoc.BaseMetastoreViewOperations;
+import org.apache.iceberg.viewdepoc.BaseVersion;
+import org.apache.iceberg.viewdepoc.HistoryEntry;
+import org.apache.iceberg.viewdepoc.Version;
+import org.apache.iceberg.viewdepoc.ViewVersionMetadata;
+import org.apache.iceberg.viewdepoc.ViewVersionMetadataParser;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpClientException;
