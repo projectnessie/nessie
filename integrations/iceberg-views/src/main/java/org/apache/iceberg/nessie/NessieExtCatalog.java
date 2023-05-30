@@ -24,9 +24,9 @@ import org.apache.iceberg.BaseMetastoreCatalog;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
-import org.apache.iceberg.view.View;
-import org.apache.iceberg.view.ViewDefinition;
-import org.apache.iceberg.view.Views;
+import org.apache.iceberg.viewdeprecated.View;
+import org.apache.iceberg.viewdeprecated.ViewDefinition;
+import org.apache.iceberg.viewdeprecated.Views;
 import org.projectnessie.error.NessieNotFoundException;
 
 /**

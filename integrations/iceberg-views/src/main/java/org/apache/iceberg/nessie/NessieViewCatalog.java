@@ -15,7 +15,7 @@
  */
 package org.apache.iceberg.nessie;
 
-import static org.apache.iceberg.view.ViewUtils.validateTableIdentifier;
+import static org.apache.iceberg.viewdeprecated.ViewUtils.validateTableIdentifier;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -28,8 +28,8 @@ import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.common.DynMethods;
 import org.apache.iceberg.hadoop.HadoopFileIO;
 import org.apache.iceberg.io.FileIO;
-import org.apache.iceberg.view.BaseMetastoreViewOperations;
-import org.apache.iceberg.view.BaseMetastoreViews;
+import org.apache.iceberg.viewdeprecated.BaseMetastoreViewOperations;
+import org.apache.iceberg.viewdeprecated.BaseMetastoreViews;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.NessieConfigConstants;
 import org.projectnessie.client.api.NessieApiV1;

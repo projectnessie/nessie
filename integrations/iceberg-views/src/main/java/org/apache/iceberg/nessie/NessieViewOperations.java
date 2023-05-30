@@ -15,7 +15,7 @@
  */
 package org.apache.iceberg.nessie;
 
-import static org.apache.iceberg.view.ViewUtils.toCatalogTableIdentifier;
+import static org.apache.iceberg.viewdeprecated.ViewUtils.toCatalogTableIdentifier;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,12 +27,12 @@ import org.apache.iceberg.exceptions.CommitStateUnknownException;
 import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.util.Tasks;
-import org.apache.iceberg.view.BaseMetastoreViewOperations;
-import org.apache.iceberg.view.BaseVersion;
-import org.apache.iceberg.view.HistoryEntry;
-import org.apache.iceberg.view.Version;
-import org.apache.iceberg.view.ViewVersionMetadata;
-import org.apache.iceberg.view.ViewVersionMetadataParser;
+import org.apache.iceberg.viewdeprecated.BaseMetastoreViewOperations;
+import org.apache.iceberg.viewdeprecated.BaseVersion;
+import org.apache.iceberg.viewdeprecated.HistoryEntry;
+import org.apache.iceberg.viewdeprecated.Version;
+import org.apache.iceberg.viewdeprecated.ViewVersionMetadata;
+import org.apache.iceberg.viewdeprecated.ViewVersionMetadataParser;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.http.HttpClientException;
@@ -199,7 +199,7 @@ public class NessieViewOperations extends BaseMetastoreViewOperations {
           .onFailure((o, exception) -> refresh())
           .run(
               commitBuilder -> {
-                Branch branch = commitBuilder.branch(reference.getAsBranch()).commit();
+                Branch branch = commitBuilder.branch((Branch) reference.getReference()).commit();
                 reference.updateReference(branch);
               },
               BaseNessieClientServerException.class);
@@ -242,7 +242,7 @@ public class NessieViewOperations extends BaseMetastoreViewOperations {
           api.commitMultipleOperations()
               .operation(Operation.Put.of(key, newView))
               .commitMeta(NessieUtil.catalogOptions(builder, catalogOptions).build())
-              .branch(reference.getAsBranch())
+              .branch((Branch) reference.getReference())
               .commit();
       reference.updateReference(branch);
 
