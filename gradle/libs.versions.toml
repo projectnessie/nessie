@@ -2,7 +2,7 @@
 
 [versions]
 antlr4 = "4.13.0"
-awssdk = "2.20.74"
+awssdk = "2.20.75"
 bouncycastle = "1.70"
 checkstyle = "10.12.0"
 errorprone = "2.19.1"
