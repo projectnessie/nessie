@@ -104,6 +104,9 @@ public abstract class Namespace extends Content {
   @JsonInclude(Include.NON_EMPTY)
   public abstract Map<String, String> getProperties();
 
+  @Override
+  public abstract Namespace withId(String id);
+
   /**
    * Builds a {@link Namespace} using the elements of the given content key.
    *

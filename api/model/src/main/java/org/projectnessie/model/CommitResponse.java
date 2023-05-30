@@ -61,6 +61,30 @@ public interface CommitResponse {
     return added.stream().collect(Collectors.toMap(AddedContent::getKey, AddedContent::contentId));
   }
 
+  /**
+   * If new content has been added to Nessie for the given {@link ContentKey key}, updates the
+   * {@link Content#getId() content ID} of the given {@link Content content} with the content ID
+   * returned by Nessie.
+   *
+   * <p>Returns the {@code content} parameter value, if no content for the given {@code key} has
+   * been added.
+   *
+   * <p>Note: This convenience function only works for REST API v2.
+   */
+  @SuppressWarnings("unchecked")
+  default <T extends Content> T contentWithAssignedId(ContentKey key, T content) {
+    List<AddedContent> addedContents = getAddedContents();
+    if (addedContents == null) {
+      throw new UnsupportedOperationException("toAddedContentsMap is not available in API v1");
+    }
+    return (T)
+        getAddedContents().stream()
+            .filter(added -> added.getKey().equals(key))
+            .findFirst()
+            .map(added -> content.withId(added.contentId()))
+            .orElse(content);
+  }
+
   @Value.Immutable
   @JsonSerialize(as = ImmutableAddedContent.class)
   @JsonDeserialize(as = ImmutableAddedContent.class)

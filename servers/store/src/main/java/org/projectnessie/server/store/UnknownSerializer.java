@@ -42,11 +42,6 @@ public final class UnknownSerializer extends BaseSerializer<Content> {
   }
 
   @Override
-  public Content applyId(Content content, String id) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public Content.Type getType(ByteString onReferenceValue) {
     ObjectTypes.Content parsed = parse(onReferenceValue);
 

@@ -121,7 +121,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
     Content t1 = store().getValue(MAIN_BRANCH, ContentKey.of("t1")).content();
 
     commit("Second Commit")
-        .put("t1", V_1_2.withId(t1))
+        .put("t1", V_1_2.withId(t1.getId()))
         .delete("t2")
         .delete("t3")
         .put("t4", V_4_1)
@@ -966,7 +966,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
                 etl,
                 Optional.empty(),
                 CommitMeta.fromMessage("commit 2"),
-                singletonList(Put.of(key, VALUE_2.withId(v))));
+                singletonList(Put.of(key, VALUE_2.withId(v.getId()))));
     MergeResult<Commit> mergeResult2 =
         store()
             .merge(

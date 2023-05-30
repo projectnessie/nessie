@@ -265,5 +265,10 @@ class TestContentMapping {
           .commitTime(Instant.ofEpochMilli(1234567890L))
           .build();
     }
+
+    @Override
+    public MyCustomContent withId(String id) {
+      throw new UnsupportedOperationException();
+    }
   }
 }

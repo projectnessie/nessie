@@ -376,19 +376,7 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
   }
 
   private Content clearIdOnContent(Content content) {
-    return setIdOnContent(content, null);
-  }
-
-  private Content setIdOnContent(Content content, String contentId) {
-    try {
-      return (Content)
-          content
-              .getClass()
-              .getDeclaredMethod("withId", String.class)
-              .invoke(content, new Object[] {contentId});
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
+    return content.withId(null);
   }
 
   @Test

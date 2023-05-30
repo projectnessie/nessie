@@ -38,7 +38,5 @@ public interface ContentSerializer<C extends Content> {
 
   ByteString toStoreOnReferenceState(C content);
 
-  C applyId(C content, String id);
-
   C valueFromStore(ByteString onReferenceValue);
 }

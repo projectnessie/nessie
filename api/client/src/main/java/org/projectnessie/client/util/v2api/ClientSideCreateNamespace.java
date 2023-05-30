@@ -31,7 +31,6 @@ import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.GetMultipleContentsResponse;
-import org.projectnessie.model.ImmutableNamespace;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation.Put;
 
@@ -61,7 +60,7 @@ public final class ClientSideCreateNamespace extends BaseCreateNamespaceBuilder 
       throw new IllegalArgumentException("Creating empty namespaces is not supported");
     }
 
-    ImmutableNamespace content = Namespace.builder().from(namespace).properties(properties).build();
+    Namespace content = Namespace.builder().from(namespace).properties(properties).build();
     ContentKey key = namespace.toContentKey();
 
     GetMultipleContentsResponse contentsResponse;

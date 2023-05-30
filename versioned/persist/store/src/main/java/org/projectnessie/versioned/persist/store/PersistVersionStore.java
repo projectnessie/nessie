@@ -165,7 +165,7 @@ public class PersistVersionStore implements VersionStore {
 
           // assign content-ID
           String cid = UUID.randomUUID().toString();
-          content = STORE_WORKER.applyId(content, cid);
+          content = content.withId(cid);
           addedContents.accept(op.getKey(), cid);
         }
 

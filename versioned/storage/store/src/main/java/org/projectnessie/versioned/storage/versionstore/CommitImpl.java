@@ -434,7 +434,7 @@ class CommitImpl extends BaseCommitHelper {
       putValueId =
           commitRetryState.generatedContentIds.computeIfAbsent(
               putKey, x -> UUID.randomUUID().toString());
-      putValue = contentMapping.assignContentId(putValue, putValueId);
+      putValue = putValue.withId(putValueId);
     }
 
     checkState(

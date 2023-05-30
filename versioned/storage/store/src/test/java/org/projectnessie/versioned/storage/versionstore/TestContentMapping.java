@@ -86,11 +86,9 @@ public class TestContentMapping {
   @ParameterizedTest
   @MethodSource("contentSamples")
   public void assignContentId(Content content) {
-    ContentMapping contentMapping = new ContentMapping(persist);
-
     soft.assertThat(content.getId()).isNull();
     String newId = UUID.randomUUID().toString();
-    Content withId = contentMapping.assignContentId(content, newId);
+    Content withId = content.withId(newId);
     soft.assertThat(withId.getId()).isEqualTo(newId);
   }
 
@@ -100,7 +98,7 @@ public class TestContentMapping {
     ContentMapping contentMapping = new ContentMapping(persist);
 
     String newId = UUID.randomUUID().toString();
-    content = contentMapping.assignContentId(content, newId);
+    content = content.withId(newId);
 
     int payload = payloadForContent(content);
     ContentValueObj value = contentMapping.buildContent(content, payload);

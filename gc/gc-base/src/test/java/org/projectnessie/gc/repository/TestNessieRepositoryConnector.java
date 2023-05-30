@@ -57,7 +57,6 @@ import org.projectnessie.versioned.storage.inmemory.InmemoryBackendTestFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
 import org.projectnessie.versioned.storage.testextension.NessiePersist;
 import org.projectnessie.versioned.storage.testextension.PersistExtension;
-import org.projectnessie.versioned.store.DefaultStoreWorker;
 
 @ExtendWith({PersistExtension.class, SoftAssertionsExtension.class})
 @NessieBackend(InmemoryBackendTestFactory.class)
@@ -125,9 +124,7 @@ public class TestNessieRepositoryConnector {
                     op -> {
                       if (op instanceof Operation.Put) {
                         return Operation.Put.of(
-                            op.getKey(),
-                            DefaultStoreWorker.instance()
-                                .applyId(((Operation.Put) op).getContent(), null));
+                            op.getKey(), ((Operation.Put) op).getContent().withId(null));
                       }
                       return op;
                     })
@@ -177,10 +174,7 @@ public class TestNessieRepositoryConnector {
             nessie.allContents(
                 Detached.of(current.getKey()), singleton(Content.Type.ICEBERG_TABLE))) {
           soft.assertThat(contents)
-              .map(
-                  e ->
-                      Maps.immutableEntry(
-                          e.getKey(), DefaultStoreWorker.instance().applyId(e.getValue(), null)))
+              .map(e -> Maps.immutableEntry(e.getKey(), e.getValue().withId(null)))
               .containsExactlyInAnyOrderElementsOf(expectedContents.entrySet());
         }
       }

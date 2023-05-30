@@ -18,7 +18,6 @@ package org.projectnessie.server.store;
 import java.util.function.Supplier;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.IcebergTable;
-import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.server.store.proto.ObjectTypes;
 
@@ -45,11 +44,6 @@ public final class IcebergTableSerializer extends BaseSerializer<IcebergTable> {
             .setMetadataLocation(table.getMetadataLocation());
 
     builder.setIcebergRefState(stateBuilder);
-  }
-
-  @Override
-  public IcebergTable applyId(IcebergTable content, String id) {
-    return ((ImmutableIcebergTable) content).withId(id);
   }
 
   @Override

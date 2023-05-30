@@ -73,6 +73,9 @@ public abstract class IcebergView extends IcebergContent {
   // To be removed when API v1 gets removed.
   public abstract Map<String, Object> getMetadata();
 
+  @Override
+  public abstract IcebergView withId(String id);
+
   public static ImmutableIcebergView.Builder builder() {
     return ImmutableIcebergView.builder();
   }

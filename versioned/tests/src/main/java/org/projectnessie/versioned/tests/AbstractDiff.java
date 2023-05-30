@@ -104,7 +104,7 @@ public abstract class AbstractDiff extends AbstractNestedVersionStore {
     Content k2content = store().getValue(branch, ContentKey.of("k2")).content();
     Hash secondCommit =
         commit("Second Commit")
-            .put("k2", V_2_A.withId(k2content))
+            .put("k2", V_2_A.withId(k2content.getId()))
             .put("k3", V_3)
             .put("k1a", V_1_A)
             .toBranch(branch);

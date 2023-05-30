@@ -44,6 +44,9 @@ public abstract class UDF extends Content {
     return Type.UDF;
   }
 
+  @Override
+  public abstract UDF withId(String id);
+
   public static ImmutableUDF.Builder builder() {
     return ImmutableUDF.builder();
   }
