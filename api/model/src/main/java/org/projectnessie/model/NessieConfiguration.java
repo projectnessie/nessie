@@ -82,7 +82,19 @@ public abstract class NessieConfiguration {
     return 0;
   }
 
-  /** Semver version representing the behavior of the Nessie server. */
+  /**
+   * Semver version representing the behavior of the Nessie server.
+   *
+   * <p>Additional functionality might be added to Nessie servers within a "spec major version" in a
+   * non-breaking way. Clients are encouraged to check the spec version when using such added
+   * functionality.
+   */
+  @Schema(
+      description =
+          "Semver version representing the behavior of the Nessie server.\n"
+              + "\nAdditional functionality might be added to Nessie servers within a \"spec major version\" "
+              + "in a non-breaking way. Clients are encouraged to check the spec version when using such "
+              + "added functionality.")
   @JsonView(Views.V2.class)
   @Nullable
   @jakarta.annotation.Nullable
