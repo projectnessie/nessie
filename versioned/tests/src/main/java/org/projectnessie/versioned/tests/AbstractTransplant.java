@@ -119,7 +119,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
 
     secondCommit =
         commit("Second Commit")
-            .put("t1", V_1_2.withId(t1))
+            .put("t1", V_1_2.withId(t1.getId()))
             .delete(T_2)
             .delete(T_3)
             .put(T_4, V_4_1)
@@ -504,7 +504,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     store().create(newBranch, Optional.empty());
     commit("Another commit").put(T_5, V_5_1).toBranch(newBranch);
     Content t5 = store().getValue(newBranch, ContentKey.of(T_5)).content();
-    commit("Another commit").put(T_5, V_1_4.withId(t5)).toBranch(newBranch);
+    commit("Another commit").put(T_5, V_1_4.withId(t5.getId())).toBranch(newBranch);
 
     store()
         .transplant(

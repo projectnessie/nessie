@@ -180,7 +180,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
 
     Hash secondCommit =
         commit("Second Commit")
-            .put("t1", V_1_2.withId(t1))
+            .put("t1", V_1_2.withId(t1.getId()))
             .delete("t2")
             .delete("t3")
             .put("t4", V_4_1)
@@ -272,7 +272,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
     Hash t1Commit =
         commit("T1 Commit")
             .fromReference(initialCommit)
-            .put("t1", V_1_2.withId(t1))
+            .put("t1", V_1_2.withId(t1.getId()))
             .toBranch(branch);
     t1 = store().getValue(branch, ContentKey.of("t1")).content();
 
@@ -282,8 +282,8 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
     Hash extraCommit =
         commit("Extra Commit")
             .fromReference(t1Commit)
-            .put("t1", V_1_3.withId(t1))
-            .put("t3", V_3_2.withId(t3))
+            .put("t1", V_1_3.withId(t1.getId()))
+            .put("t3", V_3_2.withId(t3.getId()))
             .toBranch(branch);
     Hash newT2Commit =
         commit("New T2 Commit").fromReference(t2Commit).put("t2", NEW_v2_1).toBranch(branch);
@@ -405,7 +405,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
 
     Hash secondCommit =
         commit("Second Commit")
-            .put("t1", V_1_2.withId(t1))
+            .put("t1", V_1_2.withId(t1.getId()))
             .delete("t2")
             .put("t3", V_3_1)
             .toBranch(branch);
@@ -485,7 +485,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
 
     Hash secondCommit =
         commit("Second Commit")
-            .put("t1", V_1_2.withId(t1))
+            .put("t1", V_1_2.withId(t1.getId()))
             .delete("t2")
             .put("t3", V_3_1)
             .toBranch(branch);
@@ -536,7 +536,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             () ->
                 commit("Conflicting Commit")
                     .fromReference(initialCommit)
-                    .put("t1", V_1_3.withId(t1))
+                    .put("t1", V_1_3.withId(t1.getId()))
                     .toBranch(branch))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessageEndingWith("Values of existing and expected content for key 't1' are different.")
@@ -553,7 +553,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             () ->
                 commit("Conflicting Commit")
                     .fromReference(initialCommit)
-                    .put("t2", V_2_2.withId(t2))
+                    .put("t2", V_2_2.withId(t2.getId()))
                     .toBranch(branch))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessageEndingWith("Key 't2' does not exist.")
@@ -567,7 +567,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             () ->
                 commit("Conflicting Commit")
                     .fromReference(initialCommit)
-                    .put("t3", V_3_2.withId(t3))
+                    .put("t3", V_3_2.withId(t3.getId()))
                     .toBranch(branch))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("New value for key 't3' must not have a content ID");
@@ -661,7 +661,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
     Content t1 = store().getValue(branch, ContentKey.of("t1")).content();
 
     commit("Second Commit")
-        .put("t1", V_1_2.withId(t1))
+        .put("t1", V_1_2.withId(t1.getId()))
         .delete("t2")
         .put("t3", V_3_1)
         .toBranch(branch);
@@ -669,9 +669,9 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
 
     Hash putCommit =
         forceCommit("Conflicting Commit")
-            .put("t1", V_1_3.withId(t1))
+            .put("t1", V_1_3.withId(t1.getId()))
             .put("t2", V_2_2)
-            .put("t3", V_3_2.withId(t3))
+            .put("t3", V_3_2.withId(t3.getId()))
             .toBranch(branch);
 
     soft.assertThat(store().hashOnReference(branch, Optional.empty())).isEqualTo(putCommit);

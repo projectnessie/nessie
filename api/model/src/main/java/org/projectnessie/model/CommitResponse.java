@@ -62,14 +62,20 @@ public interface CommitResponse {
   }
 
   /**
-   * If new content has been added to Nessie, updates the {@link Content#getId() content ID} of the
-   * given content with the generated content ID.
+   * If new content has been added to Nessie for the given {@link ContentKey key}, updates the
+   * {@link Content#getId() content ID} of the given {@link Content content} with the content ID
+   * returned by Nessie.
+   *
+   * <p>Returns the {@code content} parameter value, if no content for the given {@code key} has
+   * been added.
+   *
+   * <p>Note: This convenience function only works for REST API v2.
    */
   @SuppressWarnings("unchecked")
-  default <T extends Content> T contentWithId(ContentKey key, T content) {
+  default <T extends Content> T contentWithAssignedId(ContentKey key, T content) {
     List<AddedContent> addedContents = getAddedContents();
     if (addedContents == null) {
-      return content;
+      throw new UnsupportedOperationException("toAddedContentsMap is not available in API v1");
     }
     return (T)
         getAddedContents().stream()

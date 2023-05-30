@@ -187,7 +187,11 @@ public abstract class BaseTestNessieApi {
   }
 
   protected Put dummyPut(String... elements) {
-    return Put.of(ContentKey.of(elements), IcebergTable.of("foo", 1, 2, 3, 4));
+    return Put.of(ContentKey.of(elements), dummyTable());
+  }
+
+  private static IcebergTable dummyTable() {
+    return IcebergTable.of("foo", 1, 2, 3, 4);
   }
 
   protected boolean fullPagingSupport() {
@@ -466,6 +470,15 @@ public abstract class BaseTestNessieApi {
           .hasSize(2)
           .extracting(AddedContent::getKey)
           .containsExactlyInAnyOrder(ContentKey.of("b", "a"), ContentKey.of("b", "b"));
+      soft.assertThat(resp.contentWithAssignedId(ContentKey.of("b", "a"), dummyTable()))
+          .extracting(IcebergTable::getId)
+          .isNotNull();
+      soft.assertThat(resp.contentWithAssignedId(ContentKey.of("b", "b"), dummyTable()))
+          .extracting(IcebergTable::getId)
+          .isNotNull();
+      soft.assertThat(resp.contentWithAssignedId(ContentKey.of("x", "y"), dummyTable()))
+          .extracting(IcebergTable::getId)
+          .isNull();
     } else {
       branch = prepCommit(branch, "one", dummyPut("a", "a")).commit();
       branch = prepCommit(branch, "two", dummyPut("b", "a"), dummyPut("b", "b")).commit();

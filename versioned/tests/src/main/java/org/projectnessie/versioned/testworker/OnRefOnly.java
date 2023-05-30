@@ -51,10 +51,6 @@ public abstract class OnRefOnly extends Content {
     return ByteString.copyFromUtf8(getType().name() + ":" + id + ":" + getOnRef());
   }
 
-  public OnRefOnly withId(Content c) {
-    return withId(c.getId());
-  }
-
   @Override
   public abstract OnRefOnly withId(String id);
 }
