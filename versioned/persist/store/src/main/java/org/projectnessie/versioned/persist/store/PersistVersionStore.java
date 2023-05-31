@@ -533,17 +533,13 @@ public class PersistVersionStore implements VersionStore {
 
   @Override
   public PaginationIterator<KeyEntry> getKeys(
-      Ref ref,
-      String pagingToken,
-      boolean withContent,
-      ContentKey minKey,
-      ContentKey maxKey,
-      ContentKey prefixKey,
-      Predicate<ContentKey> contentKeyPredicate)
+      Ref ref, String pagingToken, boolean withContent, KeyRestrictions keyRestrictions)
       throws ReferenceNotFoundException {
     checkArgument(pagingToken == null, "Paging not supported by the storage model in use");
     checkArgument(
-        minKey == null && maxKey == null && prefixKey == null,
+        keyRestrictions.minKey() == null
+            && keyRestrictions.maxKey() == null
+            && keyRestrictions.prefixKey() == null,
         "Key ranges not supported by the storage model in use");
     Hash hash = refToHash(ref);
 
@@ -628,17 +624,13 @@ public class PersistVersionStore implements VersionStore {
 
   @Override
   public PaginationIterator<Diff> getDiffs(
-      Ref from,
-      Ref to,
-      String pagingToken,
-      ContentKey minKey,
-      ContentKey maxKey,
-      ContentKey prefixKey,
-      Predicate<ContentKey> contentKeyPredicate)
+      Ref from, Ref to, String pagingToken, KeyRestrictions keyRestrictions)
       throws ReferenceNotFoundException {
     checkArgument(pagingToken == null, "Paging not supported by the storage model in use");
     checkArgument(
-        minKey == null && maxKey == null && prefixKey == null,
+        keyRestrictions.minKey() == null
+            && keyRestrictions.maxKey() == null
+            && keyRestrictions.prefixKey() == null,
         "Key ranges not supported by the storage model in use");
     Hash fromHash = refToHash(from);
     Hash toHash = refToHash(to);
@@ -647,6 +639,7 @@ public class PersistVersionStore implements VersionStore {
     Stream<Difference> source =
         databaseAdapter.diff(fromHash, toHash, KeyFilterPredicate.ALLOW_ALL);
 
+    Predicate<ContentKey> contentKeyPredicate = keyRestrictions.contentKeyPredicate();
     Predicate<ContentKey> keyPred = contentKeyPredicate != null ? contentKeyPredicate : x -> true;
 
     return new FilteringPaginationIterator<Difference, Diff>(

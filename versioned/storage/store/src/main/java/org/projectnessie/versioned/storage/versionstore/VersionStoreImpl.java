@@ -521,15 +521,9 @@ public class VersionStoreImpl implements VersionStore {
 
   @Override
   public PaginationIterator<KeyEntry> getKeys(
-      Ref ref,
-      String pagingToken,
-      boolean withContent,
-      ContentKey minKey,
-      ContentKey maxKey,
-      ContentKey prefixKey,
-      Predicate<ContentKey> contentKeyPredicate)
+      Ref ref, String pagingToken, boolean withContent, KeyRestrictions keyRestrictions)
       throws ReferenceNotFoundException {
-    KeyRanges keyRanges = keyRanges(pagingToken, minKey, maxKey, prefixKey);
+    KeyRanges keyRanges = keyRanges(pagingToken, keyRestrictions);
 
     RefMapping refMapping = new RefMapping(persist);
     CommitObj head = refMapping.resolveRefHead(ref);
@@ -547,6 +541,7 @@ public class VersionStoreImpl implements VersionStore {
         indexElement ->
             indexElement.content().action().exists()
                 && indexElement.key().endsWithElement(CONTENT_DISCRIMINATOR);
+    Predicate<ContentKey> contentKeyPredicate = keyRestrictions.contentKeyPredicate();
     if (contentKeyPredicate != null) {
       keyPredicate =
           keyPredicate.and(
@@ -558,6 +553,7 @@ public class VersionStoreImpl implements VersionStore {
     }
 
     Predicate<StoreIndexElement<CommitOp>> stopPredicate;
+    ContentKey prefixKey = keyRestrictions.prefixKey();
     if (prefixKey != null) {
       StoreKey prefix = keyToStoreKeyNoVariant(prefixKey);
       stopPredicate = indexElement -> !indexElement.key().startsWithElementsOrParts(prefix);
@@ -799,15 +795,9 @@ public class VersionStoreImpl implements VersionStore {
 
   @Override
   public PaginationIterator<Diff> getDiffs(
-      Ref from,
-      Ref to,
-      String pagingToken,
-      ContentKey minKey,
-      ContentKey maxKey,
-      ContentKey prefixKey,
-      Predicate<ContentKey> contentKeyPredicate)
+      Ref from, Ref to, String pagingToken, KeyRestrictions keyRestrictions)
       throws ReferenceNotFoundException {
-    KeyRanges keyRanges = keyRanges(pagingToken, minKey, maxKey, prefixKey);
+    KeyRanges keyRanges = keyRanges(pagingToken, keyRestrictions);
 
     RefMapping refMapping = new RefMapping(persist);
 
@@ -835,6 +825,7 @@ public class VersionStoreImpl implements VersionStore {
 
     ContentMapping contentMapping = new ContentMapping(persist);
 
+    Predicate<ContentKey> contentKeyPredicate = keyRestrictions.contentKeyPredicate();
     Predicate<DiffEntry> keyPred =
         contentKeyPredicate != null
             ? d -> {
@@ -844,6 +835,7 @@ public class VersionStoreImpl implements VersionStore {
             : x -> true;
 
     Predicate<DiffEntry> stopPredicate;
+    ContentKey prefixKey = keyRestrictions.prefixKey();
     if (prefixKey != null) {
       StoreKey prefix = keyToStoreKeyNoVariant(prefixKey);
       stopPredicate = d -> !d.key().startsWithElementsOrParts(prefix);

@@ -22,6 +22,7 @@ import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.projectnessie.versioned.VersionStore.KeyRestrictions.NO_KEY_RESTRICTIONS;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
 import com.google.common.collect.ImmutableList;
@@ -195,19 +196,19 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             commit(initialCommit, "Initial Commit", base));
 
     try (PaginationIterator<KeyEntry> keys =
-        store().getKeys(branch, null, false, null, null, null, null)) {
+        store().getKeys(branch, null, false, NO_KEY_RESTRICTIONS)) {
       soft.assertThat(stream(keys).map(e -> e.getKey().contentKey()))
           .containsExactlyInAnyOrder(keyT1, keyT2, keyT4);
     }
 
     try (PaginationIterator<KeyEntry> keys =
-        store().getKeys(secondCommit, null, false, null, null, null, null)) {
+        store().getKeys(secondCommit, null, false, NO_KEY_RESTRICTIONS)) {
       soft.assertThat(stream(keys).map(e -> e.getKey().contentKey()))
           .containsExactlyInAnyOrder(keyT1, keyT4);
     }
 
     try (PaginationIterator<KeyEntry> keys =
-        store().getKeys(initialCommit, null, false, null, null, null, null)) {
+        store().getKeys(initialCommit, null, false, NO_KEY_RESTRICTIONS)) {
       soft.assertThat(stream(keys).map(e -> e.getKey().contentKey()))
           .containsExactlyInAnyOrder(keyT1, keyT2, keyT3);
     }
@@ -298,7 +299,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
             commit(initialCommit, "Initial Commit", base));
 
     try (PaginationIterator<KeyEntry> keys =
-        store().getKeys(branch, null, false, null, null, null, null)) {
+        store().getKeys(branch, null, false, NO_KEY_RESTRICTIONS)) {
       soft.assertThat(stream(keys).map(e -> e.getKey().contentKey()))
           .containsExactlyInAnyOrder(ContentKey.of("t1"), ContentKey.of("t2"), ContentKey.of("t3"));
     }
@@ -879,7 +880,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
                       try {
                         assertThat(store().getValue(branch, key)).isNull();
                         try (PaginationIterator<KeyEntry> ignore =
-                            store().getKeys(branch, null, false, null, null, null, null)) {}
+                            store().getKeys(branch, null, false, NO_KEY_RESTRICTIONS)) {}
                       } catch (ReferenceNotFoundException e) {
                         throw new RuntimeException(e);
                       }

@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
@@ -149,16 +148,9 @@ public class EventsVersionStore implements VersionStore {
 
   @Override
   public PaginationIterator<KeyEntry> getKeys(
-      Ref ref,
-      String pagingToken,
-      boolean withContent,
-      ContentKey minKey,
-      ContentKey maxKey,
-      ContentKey prefixKey,
-      Predicate<ContentKey> contentKeyPredicate)
+      Ref ref, String pagingToken, boolean withContent, KeyRestrictions keyRestrictions)
       throws ReferenceNotFoundException {
-    return delegate.getKeys(
-        ref, pagingToken, withContent, minKey, maxKey, prefixKey, contentKeyPredicate);
+    return delegate.getKeys(ref, pagingToken, withContent, keyRestrictions);
   }
 
   @Override
@@ -180,15 +172,9 @@ public class EventsVersionStore implements VersionStore {
 
   @Override
   public PaginationIterator<Diff> getDiffs(
-      Ref from,
-      Ref to,
-      String pagingToken,
-      ContentKey minKey,
-      ContentKey maxKey,
-      ContentKey prefixKey,
-      Predicate<ContentKey> contentKeyPredicate)
+      Ref from, Ref to, String pagingToken, KeyRestrictions keyRestrictions)
       throws ReferenceNotFoundException {
-    return delegate.getDiffs(from, to, pagingToken, minKey, maxKey, prefixKey, contentKeyPredicate);
+    return delegate.getDiffs(from, to, pagingToken, keyRestrictions);
   }
 
   @Override

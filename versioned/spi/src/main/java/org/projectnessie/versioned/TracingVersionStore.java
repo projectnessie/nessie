@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -235,21 +234,13 @@ public class TracingVersionStore implements VersionStore {
 
   @Override
   public PaginationIterator<KeyEntry> getKeys(
-      Ref ref,
-      String pagingToken,
-      boolean withContent,
-      ContentKey minKey,
-      ContentKey maxKey,
-      ContentKey prefixKey,
-      Predicate<ContentKey> contentKeyPredicate)
+      Ref ref, String pagingToken, boolean withContent, KeyRestrictions keyRestrictions)
       throws ReferenceNotFoundException {
     return callPaginationIterator(
         tracer,
         "GetKeys",
         b -> b.setAttribute(TAG_REF, safeToString(ref)),
-        () ->
-            delegate.getKeys(
-                ref, pagingToken, withContent, minKey, maxKey, prefixKey, contentKeyPredicate));
+        () -> delegate.getKeys(ref, pagingToken, withContent, keyRestrictions));
   }
 
   @Override
@@ -283,21 +274,13 @@ public class TracingVersionStore implements VersionStore {
 
   @Override
   public PaginationIterator<Diff> getDiffs(
-      Ref from,
-      Ref to,
-      String pagingToken,
-      ContentKey minKey,
-      ContentKey maxKey,
-      ContentKey prefixKey,
-      Predicate<ContentKey> contentKeyPredicate)
+      Ref from, Ref to, String pagingToken, KeyRestrictions keyRestrictions)
       throws ReferenceNotFoundException {
     return callPaginationIterator(
         tracer,
         "GetDiffs",
         b -> b.setAttribute(TAG_FROM, safeToString(from)).setAttribute(TAG_TO, safeToString(to)),
-        () ->
-            delegate.getDiffs(
-                from, to, pagingToken, minKey, maxKey, prefixKey, contentKeyPredicate));
+        () -> delegate.getDiffs(from, to, pagingToken, keyRestrictions));
   }
 
   @Override

@@ -24,6 +24,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.projectnessie.model.IdentifiedContentKey.identifiedContentKeyFromContent;
 import static org.projectnessie.versioned.ContentResult.contentResult;
+import static org.projectnessie.versioned.VersionStore.KeyRestrictions.NO_KEY_RESTRICTIONS;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
@@ -543,11 +544,11 @@ class TestEventsVersionStore {
 
   @Test
   void testGetKeys() throws Exception {
-    when(delegate.getKeys(branch1, "token1", false, null, null, null, null))
+    when(delegate.getKeys(branch1, "token1", false, NO_KEY_RESTRICTIONS))
         .thenReturn(iteratorKeyEntries);
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
     PaginationIterator<KeyEntry> result =
-        versionStore.getKeys(branch1, "token1", false, null, null, null, null);
+        versionStore.getKeys(branch1, "token1", false, NO_KEY_RESTRICTIONS);
     assertThat(result).isSameAs(iteratorKeyEntries);
     verifyNoMoreInteractions(delegate);
     verifyNoInteractions(sink);
@@ -584,11 +585,10 @@ class TestEventsVersionStore {
 
   @Test
   void testGetDiffs() throws Exception {
-    when(delegate.getDiffs(hash1, hash2, "token1", null, null, null, null))
-        .thenReturn(iteratorDiffs);
+    when(delegate.getDiffs(hash1, hash2, "token1", NO_KEY_RESTRICTIONS)).thenReturn(iteratorDiffs);
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
     PaginationIterator<Diff> result =
-        versionStore.getDiffs(hash1, hash2, "token1", null, null, null, null);
+        versionStore.getDiffs(hash1, hash2, "token1", NO_KEY_RESTRICTIONS);
     assertThat(result).isSameAs(iteratorDiffs);
     verifyNoMoreInteractions(delegate);
     verifyNoInteractions(sink);

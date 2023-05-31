@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -153,19 +152,10 @@ public final class MetricsVersionStore implements VersionStore {
 
   @Override
   public PaginationIterator<KeyEntry> getKeys(
-      Ref ref,
-      String pagingToken,
-      boolean withContent,
-      ContentKey minKey,
-      ContentKey maxKey,
-      ContentKey prefixKey,
-      Predicate<ContentKey> contentKeyPredicate)
+      Ref ref, String pagingToken, boolean withContent, KeyRestrictions keyRestrictions)
       throws ReferenceNotFoundException {
     return delegatePaginationIterator(
-        "getkeys",
-        () ->
-            delegate.getKeys(
-                ref, pagingToken, withContent, minKey, maxKey, prefixKey, contentKeyPredicate));
+        "getkeys", () -> delegate.getKeys(ref, pagingToken, withContent, keyRestrictions));
   }
 
   @Override
@@ -187,19 +177,10 @@ public final class MetricsVersionStore implements VersionStore {
 
   @Override
   public PaginationIterator<Diff> getDiffs(
-      Ref from,
-      Ref to,
-      String pagingToken,
-      ContentKey minKey,
-      ContentKey maxKey,
-      ContentKey prefixKey,
-      Predicate<ContentKey> contentKeyPredicate)
+      Ref from, Ref to, String pagingToken, KeyRestrictions keyRestrictions)
       throws ReferenceNotFoundException {
     return delegatePaginationIterator(
-        "getdiffs",
-        () ->
-            delegate.getDiffs(
-                from, to, pagingToken, minKey, maxKey, prefixKey, contentKeyPredicate));
+        "getdiffs", () -> delegate.getDiffs(from, to, pagingToken, keyRestrictions));
   }
 
   @Override
