@@ -31,13 +31,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.projectnessie.events.api.CommitEvent;
-import org.projectnessie.events.api.CommittingEvent;
 import org.projectnessie.events.api.ContentRemovedEvent;
 import org.projectnessie.events.api.ContentStoredEvent;
 import org.projectnessie.events.api.Event;
 import org.projectnessie.events.api.MergeEvent;
 import org.projectnessie.events.api.ReferenceCreatedEvent;
 import org.projectnessie.events.api.ReferenceDeletedEvent;
+import org.projectnessie.events.api.ReferenceEvent;
 import org.projectnessie.events.api.ReferenceUpdatedEvent;
 import org.projectnessie.events.api.TransplantEvent;
 
@@ -81,8 +81,8 @@ class TestEventFilter {
   @Test
   void and() {
     EventFilter isCommit = e -> e instanceof CommitEvent;
-    EventFilter isCommitting = e -> e instanceof CommittingEvent;
-    EventFilter filter = EventFilter.and(isCommit, isCommitting);
+    EventFilter isReference = e -> e instanceof ReferenceEvent;
+    EventFilter filter = EventFilter.and(isCommit, isReference);
     assertThat(filter.test(commitEvent)).isTrue();
     assertThat(filter.test(mergeEvent)).isFalse();
     assertThat(filter.test(transplantEvent)).isFalse();

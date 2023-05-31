@@ -17,6 +17,7 @@ package org.projectnessie.events.service;
 
 import jakarta.annotation.Nullable;
 import java.security.Principal;
+import java.time.Instant;
 import java.util.Objects;
 import org.projectnessie.events.api.Content;
 import org.projectnessie.events.api.ContentKey;
@@ -64,8 +65,7 @@ public class EventFactory {
             .eventCreationTimestamp(config.getClock().instant())
             .repositoryId(repositoryId)
             .properties(config.getStaticProperties())
-            .sourceReference(ReferenceMapping.map(targetBranch)) // same as target for commits
-            .targetReference(ReferenceMapping.map(targetBranch))
+            .reference(ReferenceMapping.map(targetBranch))
             .hashBefore(Objects.requireNonNull(commit.getParentHash()).asString())
             .hashAfter(commit.getHash().asString())
             .commitMeta(
@@ -74,8 +74,8 @@ public class EventFactory {
                     .authors(commitMeta.getAllAuthors())
                     .allSignedOffBy(commitMeta.getAllSignedOffBy())
                     .message(commitMeta.getMessage())
-                    .commitTime(Objects.requireNonNull(commitMeta.getCommitTime()))
-                    .authorTime(Objects.requireNonNull(commitMeta.getAuthorTime()))
+                    .commitTimestamp(Objects.requireNonNull(commitMeta.getCommitTime()))
+                    .authorTimestamp(Objects.requireNonNull(commitMeta.getAuthorTime()))
                     .allProperties(commitMeta.getAllProperties())
                     .build());
     if (user != null) {
@@ -176,6 +176,7 @@ public class EventFactory {
   protected Event newContentStoredEvent(
       BranchName branch,
       Hash hash,
+      Instant commitTimestamp,
       ContentKey contentKey,
       Content content,
       String repositoryId,
@@ -190,7 +191,8 @@ public class EventFactory {
             .reference(ReferenceMapping.map(branch))
             .hash(hash.asString())
             .contentKey(contentKey)
-            .content(content);
+            .content(content)
+            .commitCreationTimestamp(commitTimestamp);
     if (user != null) {
       builder.eventInitiator(user.getName());
     }
@@ -200,6 +202,7 @@ public class EventFactory {
   protected Event newContentRemovedEvent(
       BranchName branch,
       Hash hash,
+      Instant commitTimestamp,
       ContentKey contentKey,
       String repositoryId,
       @Nullable Principal user) {
@@ -212,7 +215,8 @@ public class EventFactory {
             .properties(config.getStaticProperties())
             .reference(ReferenceMapping.map(branch))
             .hash(hash.asString())
-            .contentKey(contentKey);
+            .contentKey(contentKey)
+            .commitCreationTimestamp(commitTimestamp);
     if (user != null) {
       builder.eventInitiator(user.getName());
     }

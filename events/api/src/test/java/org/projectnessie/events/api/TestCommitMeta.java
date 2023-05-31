@@ -54,7 +54,7 @@ class TestCommitMeta {
     return ImmutableCommitMeta.builder()
         .committer("committer")
         .message("message")
-        .commitTime(Instant.now())
-        .authorTime(Instant.now());
+        .commitTimestamp(Instant.now())
+        .authorTimestamp(Instant.now());
   }
 }

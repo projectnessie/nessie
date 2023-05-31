@@ -117,15 +117,14 @@ class TestEventFactory {
                 .putProperty("key", "value")
                 .hashBefore(Hash.of("1234").asString())
                 .hashAfter(Hash.of("5678").asString())
-                .sourceReference(branch1)
-                .targetReference(branch1)
+                .reference(branch1)
                 .commitMeta(
                     ImmutableCommitMeta.builder()
                         .message("message")
                         .addAuthor("author")
                         .committer("committer")
-                        .authorTime(now)
-                        .commitTime(now)
+                        .authorTimestamp(now)
+                        .commitTimestamp(now)
                         .build())
                 .build());
   }
@@ -273,6 +272,7 @@ class TestEventFactory {
         ef.newContentStoredEvent(
             BranchName.of("branch1"),
             Hash.of("1234"),
+            now,
             ContentKey.of("foo.bar.table1"),
             table,
             "repo1",
@@ -287,6 +287,7 @@ class TestEventFactory {
                 .putProperty("key", "value")
                 .reference(branch1)
                 .hash(Hash.of("1234").asString())
+                .commitCreationTimestamp(now)
                 .contentKey(ContentKey.of("foo.bar.table1"))
                 .content(table)
                 .build());
@@ -299,6 +300,7 @@ class TestEventFactory {
         ef.newContentRemovedEvent(
             BranchName.of("branch1"),
             Hash.of("1234"),
+            now,
             ContentKey.of("foo.bar.table1"),
             "repo1",
             () -> "alice");
@@ -312,6 +314,7 @@ class TestEventFactory {
                 .putProperty("key", "value")
                 .reference(branch1)
                 .hash(Hash.of("1234").asString())
+                .commitCreationTimestamp(now)
                 .contentKey(ContentKey.of("foo.bar.table1"))
                 .build());
   }

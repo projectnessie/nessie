@@ -15,6 +15,8 @@
  */
 package org.projectnessie.events.api;
 
+import java.time.Instant;
+
 /**
  * Event that is emitted when a content is stored (PUT) or removed (DELETE).
  *
@@ -25,17 +27,13 @@ package org.projectnessie.events.api;
  *   <li>{@link ContentRemovedEvent}: for DELETE operations.
  * </ul>
  */
-public interface ContentEvent extends Event {
-
-  /**
-   * The reference that the content was stored in or removed from.
-   *
-   * <p>For the time being, the reference is guaranteed to be a branch.
-   */
-  Reference getReference();
+public interface ContentEvent extends ReferenceEvent {
 
   /** The hash of the commit that the content was stored in or removed from. */
   String getHash();
+
+  /** The timestamp of the commit that the content was stored in or removed from. */
+  Instant getCommitCreationTimestamp();
 
   /** The key of the content that was stored or removed. */
   ContentKey getContentKey();

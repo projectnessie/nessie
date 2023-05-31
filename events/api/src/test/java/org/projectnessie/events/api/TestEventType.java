@@ -41,8 +41,7 @@ class TestEventType {
   void commit() {
     CommitEvent event =
         ImmutableCommitEvent.builder()
-            .sourceReference(branch1)
-            .targetReference(branch2)
+            .reference(branch2)
             .hashBefore("hash1")
             .hashAfter("hash2")
             .id(UUID.randomUUID())
@@ -51,10 +50,10 @@ class TestEventType {
             .eventInitiator("Alice")
             .commitMeta(
                 ImmutableCommitMeta.builder()
-                    .commitTime(Instant.now())
+                    .commitTimestamp(Instant.now())
                     .committer("committer")
                     .message("message")
-                    .authorTime(Instant.now())
+                    .authorTimestamp(Instant.now())
                     .build())
             .build();
     assertThat(event.getType()).isEqualTo(EventType.COMMIT);
@@ -148,6 +147,7 @@ class TestEventType {
             .eventCreationTimestamp(Instant.now())
             .eventInitiator("Alice")
             .content(mock(Content.class))
+            .commitCreationTimestamp(Instant.now())
             .build();
     assertThat(event.getType()).isEqualTo(EventType.CONTENT_STORED);
   }
@@ -163,6 +163,7 @@ class TestEventType {
             .repositoryId("repo1")
             .eventCreationTimestamp(Instant.now())
             .eventInitiator("Alice")
+            .commitCreationTimestamp(Instant.now())
             .build();
     assertThat(event.getType()).isEqualTo(EventType.CONTENT_REMOVED);
   }

@@ -19,17 +19,12 @@ import org.immutables.value.Value;
 
 /** Event that is emitted after a reference is updated. */
 @Value.Immutable
-public interface ReferenceUpdatedEvent extends ReferenceEvent {
+public interface ReferenceUpdatedEvent
+    extends ReferenceEvent, WithHashBeforeEvent, WithHashAfterEvent {
 
   @Value.Default
   @Override
   default EventType getType() {
     return EventType.REFERENCE_UPDATED;
   }
-
-  /** The hash of the reference before the update. */
-  String getHashBefore();
-
-  /** The hash of the reference after the update. */
-  String getHashAfter();
 }
