@@ -16,9 +16,23 @@
 package org.projectnessie.versioned;
 
 import java.util.List;
+import org.projectnessie.model.CommitMeta;
 
 public interface MetadataRewriter<T> {
   T rewriteSingle(T metadata);
 
   T squash(List<T> metadata);
+
+  MetadataRewriter<CommitMeta> NOOP_REWRITER =
+      new MetadataRewriter<CommitMeta>() {
+        @Override
+        public CommitMeta rewriteSingle(CommitMeta metadata) {
+          return metadata;
+        }
+
+        @Override
+        public CommitMeta squash(List<CommitMeta> metadata) {
+          return metadata.get(0);
+        }
+      };
 }

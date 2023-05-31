@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned;
 
+import static org.projectnessie.versioned.MetadataRewriter.NOOP_REWRITER;
+
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Collection;
 import java.util.List;
@@ -24,6 +26,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+import org.immutables.value.Value;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
@@ -114,6 +117,87 @@ public interface VersionStore {
         throws BaseNessieClientServerException, VersionStoreException;
   }
 
+  @SuppressWarnings("immutables:untype")
+  interface MergeTransplantOpBase {
+    /** The named ref we are merging/transplanting from. */
+    NamedRef fromRef();
+
+    /** The branch that we are merging/transplanting into. */
+    BranchName toBranch();
+
+    /** The current head of the branch to validate before updating (optional). */
+    @Value.Default
+    default Optional<Hash> expectedHash() {
+      return Optional.empty();
+    }
+
+    /**
+     * Function that rewrites the commit metadata, gets a multiple commit metadata if {@link
+     * #keepIndividualCommits()} is {@code false}.
+     */
+    @Value.Default
+    default MetadataRewriter<CommitMeta> updateCommitMetadata() {
+      return NOOP_REWRITER;
+    }
+
+    /** Whether to keep the individual commits and do not squash the commits to merge. */
+    boolean keepIndividualCommits();
+
+    /** Merge behaviors per content key. */
+    Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors();
+
+    /** Default merge behavior for all keys not present in {@link #mergeKeyBehaviors()}. */
+    @Value.Default
+    default MergeBehavior defaultMergeBehavior() {
+      return MergeBehavior.NORMAL;
+    }
+
+    /** Whether to try the merge, check for conflicts, but do not commit. */
+    @Value.Default
+    default boolean dryRun() {
+      return false;
+    }
+
+    /** Whether to fetch additional commit information like commit-operations and parent. */
+    @Value.Default
+    default boolean fetchAdditionalInfo() {
+      return false;
+    }
+  }
+
+  @Value.Immutable
+  interface MergeOp extends MergeTransplantOpBase {
+
+    /** The hash we are using to get additional commits. */
+    Hash fromHash();
+
+    @Override
+    @Value.Default
+    default boolean keepIndividualCommits() {
+      return false;
+    }
+
+    static ImmutableMergeOp.Builder builder() {
+      return ImmutableMergeOp.builder();
+    }
+  }
+
+  @Value.Immutable
+  interface TransplantOp extends MergeTransplantOpBase {
+    /** The sequence of hashes to transplant. */
+    List<Hash> sequenceToTransplant();
+
+    @Override
+    @Value.Default
+    default boolean keepIndividualCommits() {
+      return true;
+    }
+
+    static ImmutableTransplantOp.Builder builder() {
+      return ImmutableTransplantOp.builder();
+    }
+  }
+
   /**
    * Transplant a series of commits to a target branch.
    *
@@ -121,37 +205,13 @@ public interface VersionStore {
    * to concurrent readers/writers. The sequence to transplant must be contiguous, in order and
    * share a common ancestor with the target branch.
    *
-   * @param sourceRef The named ref we're transplanting from
-   * @param targetBranch The branch we're transplanting to
-   * @param referenceHash The hash to use as a reference for conflict detection. If not present, do
-   *     not perform conflict detection
-   * @param sequenceToTransplant The sequence of hashes to transplant.
-   * @param updateCommitMetadata function that rewrites the commit metadata, gets a multiple commit
-   *     metadata if {@code keepIndividualCommits} is {@code false}
-   * @param keepIndividualCommits whether to keep the individual commits and do not squash the
-   *     commits to transplant
-   * @param mergeKeyBehaviors merge types per content key
-   * @param defaultMergeBehavior default merge type for all keys not present in {@code mergeTypes}
-   * @param dryRun whether to try the transplant, check for conflicts, but do not commit
-   * @param fetchAdditionalInfo whether to fetch additional commit information like
-   *     commit-operations and parent
    * @return merge result
    * @throws ReferenceConflictException if {@code referenceHash} values do not match the stored
    *     values for {@code branch}
    * @throws ReferenceNotFoundException if {@code branch} or if any of the hashes from {@code
    *     sequenceToTransplant} is not present in the store.
    */
-  MergeResult<Commit> transplant(
-      NamedRef sourceRef,
-      BranchName targetBranch,
-      Optional<Hash> referenceHash,
-      List<Hash> sequenceToTransplant,
-      MetadataRewriter<CommitMeta> updateCommitMetadata,
-      boolean keepIndividualCommits,
-      Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors,
-      MergeBehavior defaultMergeBehavior,
-      boolean dryRun,
-      boolean fetchAdditionalInfo)
+  MergeResult<Commit> transplant(TransplantOp transplantOp)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
@@ -169,36 +229,13 @@ public interface VersionStore {
    *   <li>the expected branch hash does not match the actual branch hash
    * </ul>
    *
-   * @param fromRef The named ref we are merging from
-   * @param fromHash The hash we are using to get additional commits
-   * @param toBranch The branch that we are merging into
-   * @param expectedHash The current head of the branch to validate before updating (optional).
-   * @param updateCommitMetadata function that rewrites the commit metadata, gets a multiple commit
-   *     metadata if {@code keepIndividualCommits} is {@code false}
-   * @param keepIndividualCommits whether to keep the individual commits and do not squash the
-   *     commits to merge
-   * @param mergeKeyBehaviors merge types per content key
-   * @param defaultMergeBehavior default merge type for all keys not present in {@code mergeTypes}
-   * @param dryRun whether to try the merge, check for conflicts, but do not commit
-   * @param fetchAdditionalInfo whether to fetch additional commit information like
-   *     commit-operations and parent
    * @return merge result
    * @throws ReferenceConflictException if {@code expectedBranchHash} doesn't match the stored hash
    *     for {@code toBranch}
    * @throws ReferenceNotFoundException if {@code toBranch} or {@code fromHash} is not present in
    *     the store.
    */
-  MergeResult<Commit> merge(
-      NamedRef fromRef,
-      Hash fromHash,
-      BranchName toBranch,
-      Optional<Hash> expectedHash,
-      MetadataRewriter<CommitMeta> updateCommitMetadata,
-      boolean keepIndividualCommits,
-      Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors,
-      MergeBehavior defaultMergeBehavior,
-      boolean dryRun,
-      boolean fetchAdditionalInfo)
+  MergeResult<Commit> merge(MergeOp mergeOp)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**

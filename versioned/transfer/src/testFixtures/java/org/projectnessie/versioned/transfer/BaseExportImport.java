@@ -16,13 +16,11 @@
 package org.projectnessie.versioned.transfer;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static java.util.Collections.emptyMap;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -44,7 +42,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
-import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
@@ -52,12 +49,12 @@ import org.projectnessie.versioned.ContentResult;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.KeyEntry;
-import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.VersionStore.MergeOp;
 import org.projectnessie.versioned.paging.PaginationIterator;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportVersion;
@@ -194,33 +191,12 @@ public abstract class BaseExportImport {
                   main = commit10(vs, 10, mainBranch, main);
 
                   vs.merge(
-                      branch,
-                      a,
-                      mainBranch,
-                      Optional.of(main),
-                      new MetadataRewriter<CommitMeta>() {
-                        @Override
-                        public CommitMeta rewriteSingle(CommitMeta metadata) {
-                          return metadata.toBuilder()
-                              .commitTime(Instant.now())
-                              .committer("other guy")
-                              .build();
-                        }
-
-                        @Override
-                        public CommitMeta squash(List<CommitMeta> metadata) {
-                          return metadata.get(0).toBuilder()
-                              .commitTime(Instant.now())
-                              .committer("other guy")
-                              .message("this is a merge commit")
-                              .build();
-                        }
-                      },
-                      false,
-                      emptyMap(),
-                      MergeBehavior.NORMAL,
-                      false,
-                      false);
+                      MergeOp.builder()
+                          .fromRef(branch)
+                          .fromHash(a)
+                          .toBranch(mainBranch)
+                          .expectedHash(Optional.of(main))
+                          .build());
 
                   main = commit10(vs, 20, mainBranch, main);
 

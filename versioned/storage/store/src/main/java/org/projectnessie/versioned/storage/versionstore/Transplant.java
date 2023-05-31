@@ -15,25 +15,15 @@
  */
 package org.projectnessie.versioned.storage.versionstore;
 
-import java.util.List;
 import java.util.Optional;
-import org.projectnessie.model.CommitMeta;
 import org.projectnessie.versioned.Commit;
-import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.MergeResult;
-import org.projectnessie.versioned.MetadataRewriter;
-import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.VersionStore.TransplantOp;
 import org.projectnessie.versioned.storage.common.logic.CommitRetry.RetryException;
 
 interface Transplant {
-  MergeResult<Commit> transplant(
-      Optional<?> retryState,
-      NamedRef sourceRef,
-      List<Hash> sequenceToTransplant,
-      MetadataRewriter<CommitMeta> updateCommitMetadata,
-      MergeBehaviors mergeBehaviors,
-      boolean dryRun)
+  MergeResult<Commit> transplant(Optional<?> retryState, TransplantOp transplantOp)
       throws ReferenceNotFoundException, RetryException, ReferenceConflictException;
 }

@@ -15,21 +15,18 @@
  */
 package org.projectnessie.versioned.storage.versionstore;
 
-import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import org.projectnessie.model.CommitMeta;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.MergeResult;
-import org.projectnessie.versioned.MetadataRewriter;
-import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ResultType;
+import org.projectnessie.versioned.VersionStore.TransplantOp;
 import org.projectnessie.versioned.storage.common.logic.CommitRetry.RetryException;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.persist.Persist;
@@ -48,19 +45,14 @@ final class TransplantSquashImpl extends BaseMergeTransplantSquash implements Tr
   }
 
   @Override
-  public MergeResult<Commit> transplant(
-      Optional<?> retryState,
-      NamedRef sourceRef,
-      List<Hash> sequenceToTransplant,
-      MetadataRewriter<CommitMeta> updateCommitMetadata,
-      MergeBehaviors mergeBehaviors,
-      boolean dryRun)
+  public MergeResult<Commit> transplant(Optional<?> retryState, TransplantOp transplantOp)
       throws ReferenceNotFoundException, RetryException, ReferenceConflictException {
-    SourceCommitsAndParent sourceCommits = loadSourceCommitsForTransplant(sequenceToTransplant);
+    SourceCommitsAndParent sourceCommits =
+        loadSourceCommitsForTransplant(transplantOp.sequenceToTransplant());
 
     ImmutableMergeResult.Builder<Commit> mergeResult =
-        prepareMergeResult().resultType(ResultType.TRANSPLANT).sourceRef(sourceRef);
+        prepareMergeResult().resultType(ResultType.TRANSPLANT).sourceRef(transplantOp.fromRef());
 
-    return squash(dryRun, mergeResult, mergeBehaviors, updateCommitMetadata, sourceCommits, null);
+    return squash(transplantOp, mergeResult, sourceCommits, null);
   }
 }

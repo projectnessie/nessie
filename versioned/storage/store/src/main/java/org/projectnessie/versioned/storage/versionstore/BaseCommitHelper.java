@@ -69,6 +69,7 @@ import org.projectnessie.versioned.MergeResult.KeyDetails;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
+import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.storage.batching.BatchingPersist;
 import org.projectnessie.versioned.storage.batching.WriteBatching;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
@@ -514,13 +515,14 @@ class BaseCommitHelper {
   }
 
   ImmutableMergeResult<Commit> mergeSquashFastForward(
-      boolean dryRun,
+      VersionStore.MergeOp mergeOp,
       ObjId fromId,
       CommitObj source,
-      ImmutableMergeResult.Builder<Commit> result,
-      MergeBehaviors mergeBehaviors)
+      ImmutableMergeResult.Builder<Commit> result)
       throws RetryException {
     result.wasSuccessful(true);
+
+    MergeBehaviors mergeBehaviors = new MergeBehaviors(mergeOp);
 
     IndexesLogic indexesLogic = indexesLogic(persist);
     for (StoreIndexElement<CommitOp> el : indexesLogic.commitOperations(source)) {
@@ -533,7 +535,7 @@ class BaseCommitHelper {
     }
 
     // Only need bump the reference pointer
-    if (!dryRun) {
+    if (!mergeOp.dryRun()) {
       bumpReferencePointer(fromId, Optional.empty());
       result.wasApplied(true).resultantTargetHash(objIdToHash(fromId));
     }

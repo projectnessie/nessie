@@ -43,8 +43,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
-import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.versioned.VersionStore.CommitValidator;
+import org.projectnessie.versioned.VersionStore.MergeOp;
+import org.projectnessie.versioned.VersionStore.TransplantOp;
 import org.projectnessie.versioned.paging.PaginationIterator;
 
 @ExtendWith(MockitoExtension.class)
@@ -143,43 +144,38 @@ class TestEventsVersionStore {
             .resultantTargetHash(hash2)
             .build();
     when(delegate.transplant(
-            branch1,
-            branch2,
-            Optional.of(hash1),
-            Arrays.asList(hash1, hash2),
-            metadataRewriter,
-            false,
-            Collections.emptyMap(),
-            MergeBehavior.NORMAL,
-            dryRun,
-            false))
+            TransplantOp.builder()
+                .fromRef(branch1)
+                .toBranch(branch2)
+                .expectedHash(Optional.of(hash1))
+                .addSequenceToTransplant(hash1, hash2)
+                .updateCommitMetadata(metadataRewriter)
+                .dryRun(dryRun)
+                .build()))
         .thenReturn(expectedResult);
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
     MergeResult<Commit> result =
         versionStore.transplant(
-            branch1,
-            branch2,
-            Optional.of(hash1),
-            Arrays.asList(hash1, hash2),
-            metadataRewriter,
-            false,
-            Collections.emptyMap(),
-            MergeBehavior.NORMAL,
-            dryRun,
-            false);
+            TransplantOp.builder()
+                .fromRef(branch1)
+                .toBranch(branch2)
+                .expectedHash(Optional.of(hash1))
+                .addSequenceToTransplant(hash1, hash2)
+                .updateCommitMetadata(metadataRewriter)
+                .dryRun(dryRun)
+                .build());
     assertThat(result).isEqualTo(expectedResult);
     verify(delegate)
         .transplant(
-            eq(branch1),
-            eq(branch2),
-            eq(Optional.of(hash1)),
-            eq(Arrays.asList(hash1, hash2)),
-            eq(metadataRewriter),
-            eq(false),
-            eq(Collections.emptyMap()),
-            eq(MergeBehavior.NORMAL),
-            eq(dryRun),
-            eq(false));
+            eq(
+                TransplantOp.builder()
+                    .fromRef(branch1)
+                    .toBranch(branch2)
+                    .expectedHash(Optional.of(hash1))
+                    .addSequenceToTransplant(hash1, hash2)
+                    .updateCommitMetadata(metadataRewriter)
+                    .dryRun(dryRun)
+                    .build()));
     verifyNoMoreInteractions(delegate);
     verifyNoInteractions(sink);
   }
@@ -197,43 +193,38 @@ class TestEventsVersionStore {
             .wasApplied(true)
             .build();
     when(delegate.transplant(
-            branch1,
-            branch2,
-            Optional.of(hash1),
-            Arrays.asList(hash1, hash2),
-            metadataRewriter,
-            false,
-            Collections.emptyMap(),
-            MergeBehavior.NORMAL,
-            dryRun,
-            false))
+            TransplantOp.builder()
+                .fromRef(branch1)
+                .toBranch(branch2)
+                .expectedHash(Optional.of(hash1))
+                .addSequenceToTransplant(hash1, hash2)
+                .updateCommitMetadata(metadataRewriter)
+                .dryRun(dryRun)
+                .build()))
         .thenReturn(expectedResult);
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
     MergeResult<Commit> result =
         versionStore.transplant(
-            branch1,
-            branch2,
-            Optional.of(hash1),
-            Arrays.asList(hash1, hash2),
-            metadataRewriter,
-            false,
-            Collections.emptyMap(),
-            MergeBehavior.NORMAL,
-            dryRun,
-            false);
+            TransplantOp.builder()
+                .fromRef(branch1)
+                .toBranch(branch2)
+                .expectedHash(Optional.of(hash1))
+                .addSequenceToTransplant(hash1, hash2)
+                .updateCommitMetadata(metadataRewriter)
+                .dryRun(dryRun)
+                .build());
     assertThat(result).isEqualTo(expectedResult);
     verify(delegate)
         .transplant(
-            eq(branch1),
-            eq(branch2),
-            eq(Optional.of(hash1)),
-            eq(Arrays.asList(hash1, hash2)),
-            eq(metadataRewriter),
-            eq(false),
-            eq(Collections.emptyMap()),
-            eq(MergeBehavior.NORMAL),
-            eq(dryRun),
-            eq(false));
+            eq(
+                TransplantOp.builder()
+                    .fromRef(branch1)
+                    .toBranch(branch2)
+                    .expectedHash(Optional.of(hash1))
+                    .addSequenceToTransplant(hash1, hash2)
+                    .updateCommitMetadata(metadataRewriter)
+                    .dryRun(dryRun)
+                    .build()));
     verify(sink).accept(expectedResult);
     verifyNoMoreInteractions(delegate, sink);
   }
@@ -242,16 +233,13 @@ class TestEventsVersionStore {
   @ValueSource(classes = {ReferenceNotFoundException.class, ReferenceConflictException.class})
   void testTransplantFailure(Class<? extends VersionStoreException> e) throws Exception {
     when(delegate.transplant(
-            branch1,
-            branch2,
-            Optional.of(hash1),
-            Arrays.asList(hash1, hash2),
-            metadataRewriter,
-            false,
-            Collections.emptyMap(),
-            MergeBehavior.NORMAL,
-            false,
-            false))
+            TransplantOp.builder()
+                .fromRef(branch1)
+                .toBranch(branch2)
+                .expectedHash(Optional.of(hash1))
+                .addSequenceToTransplant(hash1, hash2)
+                .updateCommitMetadata(metadataRewriter)
+                .build()))
         .thenAnswer(
             invocation -> {
               throw e.getConstructor(String.class).newInstance("irrelevant");
@@ -260,29 +248,24 @@ class TestEventsVersionStore {
     assertThatThrownBy(
             () ->
                 versionStore.transplant(
-                    branch1,
-                    branch2,
-                    Optional.of(hash1),
-                    Arrays.asList(hash1, hash2),
-                    metadataRewriter,
-                    false,
-                    Collections.emptyMap(),
-                    MergeBehavior.NORMAL,
-                    false,
-                    false))
+                    TransplantOp.builder()
+                        .fromRef(branch1)
+                        .toBranch(branch2)
+                        .expectedHash(Optional.of(hash1))
+                        .addSequenceToTransplant(hash1, hash2)
+                        .updateCommitMetadata(metadataRewriter)
+                        .build()))
         .isInstanceOf(e);
     verify(delegate)
         .transplant(
-            eq(branch1),
-            eq(branch2),
-            eq(Optional.of(hash1)),
-            eq(Arrays.asList(hash1, hash2)),
-            eq(metadataRewriter),
-            eq(false),
-            eq(Collections.emptyMap()),
-            eq(MergeBehavior.NORMAL),
-            eq(false),
-            eq(false));
+            eq(
+                TransplantOp.builder()
+                    .fromRef(branch1)
+                    .toBranch(branch2)
+                    .expectedHash(Optional.of(hash1))
+                    .addSequenceToTransplant(hash1, hash2)
+                    .updateCommitMetadata(metadataRewriter)
+                    .build()));
     verifyNoMoreInteractions(delegate, sink);
   }
 
@@ -298,43 +281,35 @@ class TestEventsVersionStore {
             .resultantTargetHash(hash2)
             .build();
     when(delegate.merge(
-            branch1,
-            hash1,
-            branch2,
-            Optional.of(hash2),
-            metadataRewriter,
-            false,
-            Collections.emptyMap(),
-            MergeBehavior.NORMAL,
-            dryRun,
-            false))
+            MergeOp.builder()
+                .fromRef(branch1)
+                .fromHash(hash1)
+                .toBranch(branch2)
+                .expectedHash(Optional.of(hash2))
+                .dryRun(dryRun)
+                .build()))
         .thenReturn(expectedResult);
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
     MergeResult<Commit> result =
         versionStore.merge(
-            branch1,
-            hash1,
-            branch2,
-            Optional.of(hash2),
-            metadataRewriter,
-            false,
-            Collections.emptyMap(),
-            MergeBehavior.NORMAL,
-            dryRun,
-            false);
+            MergeOp.builder()
+                .fromRef(branch1)
+                .fromHash(hash1)
+                .toBranch(branch2)
+                .expectedHash(Optional.of(hash2))
+                .dryRun(dryRun)
+                .build());
     assertThat(result).isEqualTo(expectedResult);
     verify(delegate)
         .merge(
-            eq(branch1),
-            eq(hash1),
-            eq(branch2),
-            eq(Optional.of(hash2)),
-            eq(metadataRewriter),
-            eq(false),
-            eq(Collections.emptyMap()),
-            eq(MergeBehavior.NORMAL),
-            eq(dryRun),
-            eq(false));
+            eq(
+                MergeOp.builder()
+                    .fromRef(branch1)
+                    .fromHash(hash1)
+                    .toBranch(branch2)
+                    .expectedHash(Optional.of(hash2))
+                    .dryRun(dryRun)
+                    .build()));
     verifyNoMoreInteractions(delegate);
     verifyNoInteractions(sink);
   }
@@ -352,43 +327,35 @@ class TestEventsVersionStore {
             .wasApplied(true)
             .build();
     when(delegate.merge(
-            branch1,
-            hash1,
-            branch2,
-            Optional.of(hash2),
-            metadataRewriter,
-            false,
-            Collections.emptyMap(),
-            MergeBehavior.NORMAL,
-            dryRun,
-            false))
+            MergeOp.builder()
+                .fromRef(branch1)
+                .fromHash(hash1)
+                .toBranch(branch2)
+                .expectedHash(Optional.of(hash2))
+                .dryRun(dryRun)
+                .build()))
         .thenReturn(expectedResult);
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
     MergeResult<Commit> result =
         versionStore.merge(
-            branch1,
-            hash1,
-            branch2,
-            Optional.of(hash2),
-            metadataRewriter,
-            false,
-            Collections.emptyMap(),
-            MergeBehavior.NORMAL,
-            dryRun,
-            false);
+            MergeOp.builder()
+                .fromRef(branch1)
+                .fromHash(hash1)
+                .toBranch(branch2)
+                .expectedHash(Optional.of(hash2))
+                .dryRun(dryRun)
+                .build());
     assertThat(result).isEqualTo(expectedResult);
     verify(delegate)
         .merge(
-            eq(branch1),
-            eq(hash1),
-            eq(branch2),
-            eq(Optional.of(hash2)),
-            eq(metadataRewriter),
-            eq(false),
-            eq(Collections.emptyMap()),
-            eq(MergeBehavior.NORMAL),
-            eq(dryRun),
-            eq(false));
+            eq(
+                MergeOp.builder()
+                    .fromRef(branch1)
+                    .fromHash(hash1)
+                    .toBranch(branch2)
+                    .expectedHash(Optional.of(hash2))
+                    .dryRun(dryRun)
+                    .build()));
     verify(sink).accept(expectedResult);
     verifyNoMoreInteractions(delegate, sink);
   }
@@ -397,16 +364,12 @@ class TestEventsVersionStore {
   @ValueSource(classes = {ReferenceNotFoundException.class, ReferenceConflictException.class})
   void testMergeFailure(Class<? extends VersionStoreException> e) throws Exception {
     when(delegate.merge(
-            branch1,
-            hash1,
-            branch2,
-            Optional.of(hash2),
-            metadataRewriter,
-            false,
-            Collections.emptyMap(),
-            MergeBehavior.NORMAL,
-            false,
-            false))
+            MergeOp.builder()
+                .fromRef(branch1)
+                .fromHash(hash1)
+                .toBranch(branch2)
+                .expectedHash(Optional.of(hash2))
+                .build()))
         .thenAnswer(
             invocation -> {
               throw e.getConstructor(String.class).newInstance("irrelevant");
@@ -415,29 +378,22 @@ class TestEventsVersionStore {
     assertThatThrownBy(
             () ->
                 versionStore.merge(
-                    branch1,
-                    hash1,
-                    branch2,
-                    Optional.of(hash2),
-                    metadataRewriter,
-                    false,
-                    Collections.emptyMap(),
-                    MergeBehavior.NORMAL,
-                    false,
-                    false))
+                    MergeOp.builder()
+                        .fromRef(branch1)
+                        .fromHash(hash1)
+                        .toBranch(branch2)
+                        .expectedHash(Optional.of(hash2))
+                        .build()))
         .isInstanceOf(e);
     verify(delegate)
         .merge(
-            eq(branch1),
-            eq(hash1),
-            eq(branch2),
-            eq(Optional.of(hash2)),
-            eq(metadataRewriter),
-            eq(false),
-            eq(Collections.emptyMap()),
-            eq(MergeBehavior.NORMAL),
-            eq(false),
-            eq(false));
+            eq(
+                MergeOp.builder()
+                    .fromRef(branch1)
+                    .fromHash(hash1)
+                    .toBranch(branch2)
+                    .expectedHash(Optional.of(hash2))
+                    .build()));
     verifyNoMoreInteractions(delegate, sink);
   }
 

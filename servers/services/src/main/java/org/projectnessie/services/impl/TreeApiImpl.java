@@ -123,6 +123,7 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.VersionStore.TransplantOp;
 import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.paging.PaginationIterator;
 
@@ -598,25 +599,28 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       MergeResult<Commit> result =
           getStore()
               .transplant(
-                  namedRefWithHash.getValue(),
-                  targetBranch,
-                  into,
-                  transplants,
-                  commitMetaUpdate(
-                      commitMeta,
-                      numCommits ->
-                          String.format(
-                              "Transplanted %d commits from %s at %s into %s%s",
-                              numCommits,
-                              fromRefName,
-                              lastHash,
-                              branchName,
-                              into.map(h -> " at " + h.asString()).orElse(""))),
-                  Boolean.TRUE.equals(keepIndividualCommits),
-                  keyMergeBehaviors(keyMergeBehaviors),
-                  defaultMergeBehavior(defaultMergeBehavior),
-                  Boolean.TRUE.equals(dryRun),
-                  Boolean.TRUE.equals(fetchAdditionalInfo));
+                  TransplantOp.builder()
+                      .fromRef(namedRefWithHash.getValue())
+                      .toBranch(targetBranch)
+                      .expectedHash(into)
+                      .sequenceToTransplant(transplants)
+                      .updateCommitMetadata(
+                          commitMetaUpdate(
+                              commitMeta,
+                              numCommits ->
+                                  String.format(
+                                      "Transplanted %d commits from %s at %s into %s%s",
+                                      numCommits,
+                                      fromRefName,
+                                      lastHash,
+                                      branchName,
+                                      into.map(h -> " at " + h.asString()).orElse(""))))
+                      .keepIndividualCommits(Boolean.TRUE.equals(keepIndividualCommits))
+                      .mergeKeyBehaviors(keyMergeBehaviors(keyMergeBehaviors))
+                      .defaultMergeBehavior(defaultMergeBehavior(defaultMergeBehavior))
+                      .dryRun(Boolean.TRUE.equals(dryRun))
+                      .fetchAdditionalInfo(Boolean.TRUE.equals(fetchAdditionalInfo))
+                      .build());
       return createResponse(fetchAdditionalInfo, result);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
@@ -662,25 +666,28 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       MergeResult<Commit> result =
           getStore()
               .merge(
-                  namedRefWithHash.getValue(),
-                  toHash(fromRefName, fromHash),
-                  targetBranch,
-                  into,
-                  commitMetaUpdate(
-                      commitMeta,
-                      numCommits ->
-                          String.format(
-                              "Merged %d commits from %s at %s into %s%s",
-                              numCommits,
-                              fromRefName,
-                              from.asString(),
-                              branchName,
-                              into.map(h -> " at " + h.asString()).orElse(""))),
-                  Boolean.TRUE.equals(keepIndividualCommits),
-                  keyMergeBehaviors(keyMergeBehaviors),
-                  defaultMergeBehavior(defaultMergeBehavior),
-                  Boolean.TRUE.equals(dryRun),
-                  Boolean.TRUE.equals(fetchAdditionalInfo));
+                  VersionStore.MergeOp.builder()
+                      .fromRef(namedRefWithHash.getValue())
+                      .fromHash(toHash(fromRefName, fromHash))
+                      .toBranch(targetBranch)
+                      .expectedHash(into)
+                      .updateCommitMetadata(
+                          commitMetaUpdate(
+                              commitMeta,
+                              numCommits ->
+                                  String.format(
+                                      "Merged %d commits from %s at %s into %s%s",
+                                      numCommits,
+                                      fromRefName,
+                                      from.asString(),
+                                      branchName,
+                                      into.map(h -> " at " + h.asString()).orElse(""))))
+                      .keepIndividualCommits(Boolean.TRUE.equals(keepIndividualCommits))
+                      .mergeKeyBehaviors(keyMergeBehaviors(keyMergeBehaviors))
+                      .defaultMergeBehavior(defaultMergeBehavior(defaultMergeBehavior))
+                      .dryRun(Boolean.TRUE.equals(dryRun))
+                      .fetchAdditionalInfo(Boolean.TRUE.equals(fetchAdditionalInfo))
+                      .build());
       return createResponse(fetchAdditionalInfo, result);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);

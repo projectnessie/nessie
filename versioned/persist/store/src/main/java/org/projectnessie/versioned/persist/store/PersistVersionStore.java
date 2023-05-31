@@ -43,7 +43,6 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IdentifiedContentKey;
 import org.projectnessie.model.ImmutableCommitMeta;
-import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.BranchName;
@@ -207,78 +206,62 @@ public class PersistVersionStore implements VersionStore {
   }
 
   @Override
-  public MergeResult<Commit> transplant(
-      NamedRef sourceRef,
-      BranchName targetBranch,
-      Optional<Hash> referenceHash,
-      List<Hash> sequenceToTransplant,
-      MetadataRewriter<CommitMeta> updateCommitMetadata,
-      boolean keepIndividualCommits,
-      Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors,
-      MergeBehavior defaultMergeBehavior,
-      boolean dryRun,
-      boolean fetchAdditionalInfo)
+  public MergeResult<Commit> transplant(TransplantOp transplantOp)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
-      Map<ContentKey, MergeType> mergeTypes = mergeTypesForKeys(mergeKeyBehaviors);
+      Map<ContentKey, MergeType> mergeTypes = mergeTypesForKeys(transplantOp.mergeKeyBehaviors());
       MergeResult<CommitLogEntry> adapterMergeResult =
           databaseAdapter.transplant(
               TransplantParams.builder()
-                  .fromRef(sourceRef)
-                  .toBranch(targetBranch)
-                  .expectedHead(referenceHash)
-                  .sequenceToTransplant(sequenceToTransplant)
-                  .updateCommitMetadata(updateCommitMetadataFunction(updateCommitMetadata))
-                  .keepIndividualCommits(keepIndividualCommits)
+                  .fromRef(transplantOp.fromRef())
+                  .toBranch(transplantOp.toBranch())
+                  .expectedHead(transplantOp.expectedHash())
+                  .sequenceToTransplant(transplantOp.sequenceToTransplant())
+                  .updateCommitMetadata(
+                      updateCommitMetadataFunction(transplantOp.updateCommitMetadata()))
+                  .keepIndividualCommits(transplantOp.keepIndividualCommits())
                   .mergeTypes(mergeTypes)
-                  .defaultMergeType(MergeType.valueOf(defaultMergeBehavior.name()))
-                  .isDryRun(dryRun)
+                  .defaultMergeType(MergeType.valueOf(transplantOp.defaultMergeBehavior().name()))
+                  .isDryRun(transplantOp.dryRun())
                   .build());
-      return storeMergeResult(adapterMergeResult, fetchAdditionalInfo);
+      return storeMergeResult(adapterMergeResult, transplantOp.fetchAdditionalInfo());
     } catch (MergeConflictException mergeConflict) {
       @SuppressWarnings("unchecked")
       MergeResult<CommitLogEntry> adapterMergeResult =
           (MergeResult<CommitLogEntry>) mergeConflict.getMergeResult();
       throw new MergeConflictException(
-          mergeConflict.getMessage(), storeMergeResult(adapterMergeResult, fetchAdditionalInfo));
+          mergeConflict.getMessage(),
+          storeMergeResult(adapterMergeResult, transplantOp.fetchAdditionalInfo()));
     }
   }
 
   @Override
-  public MergeResult<Commit> merge(
-      NamedRef fromRef,
-      Hash fromHash,
-      BranchName toBranch,
-      Optional<Hash> expectedHash,
-      MetadataRewriter<CommitMeta> updateCommitMetadata,
-      boolean keepIndividualCommits,
-      Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors,
-      MergeBehavior defaultMergeBehavior,
-      boolean dryRun,
-      boolean fetchAdditionalInfo)
+  public MergeResult<Commit> merge(MergeOp mergeOp)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
-      Map<ContentKey, MergeType> mergeTypes = mergeTypesForKeys(mergeKeyBehaviors);
+      Map<ContentKey, MergeType> mergeTypes = mergeTypesForKeys(mergeOp.mergeKeyBehaviors());
       MergeResult<CommitLogEntry> adapterMergeResult =
           databaseAdapter.merge(
               MergeParams.builder()
-                  .fromRef(fromRef)
-                  .toBranch(toBranch)
-                  .expectedHead(expectedHash)
-                  .mergeFromHash(fromHash)
-                  .updateCommitMetadata(updateCommitMetadataFunction(updateCommitMetadata))
-                  .keepIndividualCommits(keepIndividualCommits)
+                  .fromRef(mergeOp.fromRef())
+                  .toBranch(mergeOp.toBranch())
+                  .expectedHead(mergeOp.expectedHash())
+                  .mergeFromHash(mergeOp.fromHash())
+                  .updateCommitMetadata(
+                      updateCommitMetadataFunction(mergeOp.updateCommitMetadata()))
+                  .keepIndividualCommits(mergeOp.keepIndividualCommits())
                   .mergeTypes(mergeTypes)
-                  .defaultMergeType(MergeType.valueOf(defaultMergeBehavior.name()))
-                  .isDryRun(dryRun)
+                  .defaultMergeType(MergeType.valueOf(mergeOp.defaultMergeBehavior().name()))
+                  .isDryRun(mergeOp.dryRun())
                   .build());
-      return storeMergeResult(adapterMergeResult, fetchAdditionalInfo);
+      return storeMergeResult(adapterMergeResult, mergeOp.fetchAdditionalInfo());
     } catch (MergeConflictException mergeConflict) {
       @SuppressWarnings("unchecked")
       MergeResult<CommitLogEntry> adapterMergeResult =
           (MergeResult<CommitLogEntry>) mergeConflict.getMergeResult();
       throw new MergeConflictException(
-          mergeConflict.getMessage(), storeMergeResult(adapterMergeResult, fetchAdditionalInfo));
+          mergeConflict.getMessage(),
+          storeMergeResult(adapterMergeResult, mergeOp.fetchAdditionalInfo()));
     }
   }
 

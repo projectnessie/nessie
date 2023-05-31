@@ -22,7 +22,6 @@ import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -49,6 +48,7 @@ import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.VersionStore.TransplantOp;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.paging.PaginationIterator;
 import org.projectnessie.versioned.testworker.OnRefOnly;
@@ -167,16 +167,14 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     MergeResult<Commit> result =
         store()
             .transplant(
-                sourceBranch,
-                newBranch,
-                Optional.of(initialHash),
-                Arrays.asList(firstCommit, secondCommit, thirdCommit),
-                commitMetaModify,
-                individualCommits,
-                Collections.emptyMap(),
-                MergeBehavior.NORMAL,
-                false,
-                false);
+                TransplantOp.builder()
+                    .fromRef(sourceBranch)
+                    .toBranch(newBranch)
+                    .expectedHash(Optional.of(initialHash))
+                    .addSequenceToTransplant(firstCommit, secondCommit, thirdCommit)
+                    .updateCommitMetadata(commitMetaModify)
+                    .keepIndividualCommits(individualCommits)
+                    .build());
 
     if (individualCommits) {
       soft.assertThat(result.getCreatedCommits()).isEmpty(); // fast-forward
@@ -219,16 +217,14 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     MergeResult<Commit> result =
         store()
             .transplant(
-                sourceBranch,
-                newBranch,
-                Optional.of(initialHash),
-                Arrays.asList(firstCommit, secondCommit, thirdCommit),
-                createMetadataRewriter(""),
-                individualCommits,
-                Collections.emptyMap(),
-                MergeBehavior.NORMAL,
-                false,
-                false);
+                TransplantOp.builder()
+                    .fromRef(sourceBranch)
+                    .toBranch(newBranch)
+                    .expectedHash(Optional.of(initialHash))
+                    .addSequenceToTransplant(firstCommit, secondCommit, thirdCommit)
+                    .updateCommitMetadata(createMetadataRewriter(""))
+                    .keepIndividualCommits(individualCommits)
+                    .build());
 
     if (individualCommits) {
       checkRebasedCommits(targetHead, result); // no fast-forward
@@ -385,16 +381,15 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             () ->
                 store()
                     .transplant(
-                        sourceBranch,
-                        newBranch,
-                        Optional.of(initialHash),
-                        Arrays.asList(firstCommit, secondCommit, thirdCommit),
-                        createMetadataRewriter(""),
-                        individualCommits,
-                        Collections.emptyMap(),
-                        MergeBehavior.NORMAL,
-                        dryRun,
-                        false))
+                        TransplantOp.builder()
+                            .fromRef(sourceBranch)
+                            .toBranch(newBranch)
+                            .expectedHash(Optional.of(initialHash))
+                            .addSequenceToTransplant(firstCommit, secondCommit, thirdCommit)
+                            .updateCommitMetadata(createMetadataRewriter(""))
+                            .keepIndividualCommits(individualCommits)
+                            .dryRun(dryRun)
+                            .build()))
         .isInstanceOf(ReferenceConflictException.class);
     if (dryRun) {
       checkpoint.assertNoWrites();
@@ -411,16 +406,14 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
 
     store()
         .transplant(
-            sourceBranch,
-            newBranch,
-            Optional.of(initialHash),
-            Arrays.asList(firstCommit, secondCommit, thirdCommit),
-            createMetadataRewriter(""),
-            individualCommits,
-            Collections.emptyMap(),
-            MergeBehavior.NORMAL,
-            false,
-            false);
+            TransplantOp.builder()
+                .fromRef(sourceBranch)
+                .toBranch(newBranch)
+                .expectedHash(Optional.of(initialHash))
+                .addSequenceToTransplant(firstCommit, secondCommit, thirdCommit)
+                .updateCommitMetadata(createMetadataRewriter(""))
+                .keepIndividualCommits(individualCommits)
+                .build());
     soft.assertThat(
             contentsWithoutId(
                 store()
@@ -452,16 +445,15 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             () ->
                 store()
                     .transplant(
-                        sourceBranch,
-                        newBranch,
-                        Optional.of(initialHash),
-                        Arrays.asList(firstCommit, secondCommit, thirdCommit),
-                        createMetadataRewriter(""),
-                        individualCommits,
-                        Collections.emptyMap(),
-                        MergeBehavior.NORMAL,
-                        dryRun,
-                        false))
+                        TransplantOp.builder()
+                            .fromRef(sourceBranch)
+                            .toBranch(newBranch)
+                            .expectedHash(Optional.of(initialHash))
+                            .addSequenceToTransplant(firstCommit, secondCommit, thirdCommit)
+                            .updateCommitMetadata(createMetadataRewriter(""))
+                            .keepIndividualCommits(individualCommits)
+                            .dryRun(dryRun)
+                            .build()))
         .isInstanceOf(ReferenceNotFoundException.class);
     checkpoint.assertNoWrites();
   }
@@ -482,16 +474,15 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             () ->
                 store()
                     .transplant(
-                        sourceBranch,
-                        newBranch,
-                        Optional.of(initialHash),
-                        Collections.singletonList(Hash.of("1234567890abcdef")),
-                        createMetadataRewriter(""),
-                        individualCommits,
-                        Collections.emptyMap(),
-                        MergeBehavior.NORMAL,
-                        dryRun,
-                        false))
+                        TransplantOp.builder()
+                            .fromRef(sourceBranch)
+                            .toBranch(newBranch)
+                            .expectedHash(Optional.of(initialHash))
+                            .addSequenceToTransplant(Hash.of("1234567890abcdef"))
+                            .updateCommitMetadata(createMetadataRewriter(""))
+                            .keepIndividualCommits(individualCommits)
+                            .dryRun(dryRun)
+                            .build()))
         .isInstanceOf(ReferenceNotFoundException.class);
     checkpoint.assertNoWrites();
   }
@@ -508,16 +499,13 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
 
     store()
         .transplant(
-            sourceBranch,
-            newBranch,
-            Optional.empty(),
-            Arrays.asList(firstCommit, secondCommit, thirdCommit),
-            createMetadataRewriter(""),
-            individualCommits,
-            Collections.emptyMap(),
-            MergeBehavior.NORMAL,
-            false,
-            false);
+            TransplantOp.builder()
+                .fromRef(sourceBranch)
+                .toBranch(newBranch)
+                .addSequenceToTransplant(firstCommit, secondCommit, thirdCommit)
+                .updateCommitMetadata(createMetadataRewriter(""))
+                .keepIndividualCommits(individualCommits)
+                .build());
     soft.assertThat(
             contentsWithoutId(
                 store()
@@ -554,16 +542,14 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             () ->
                 store()
                     .transplant(
-                        sourceBranch,
-                        newBranch,
-                        Optional.empty(),
-                        Arrays.asList(secondCommit, firstCommit, thirdCommit),
-                        createMetadataRewriter(""),
-                        individualCommits,
-                        Collections.emptyMap(),
-                        MergeBehavior.NORMAL,
-                        dryRun,
-                        false));
+                        TransplantOp.builder()
+                            .fromRef(sourceBranch)
+                            .toBranch(newBranch)
+                            .addSequenceToTransplant(secondCommit, firstCommit, thirdCommit)
+                            .updateCommitMetadata(createMetadataRewriter(""))
+                            .keepIndividualCommits(individualCommits)
+                            .dryRun(dryRun)
+                            .build()));
   }
 
   @ParameterizedTest
@@ -592,16 +578,15 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
             () ->
                 store()
                     .transplant(
-                        sourceBranch,
-                        newBranch,
-                        Optional.of(unrelatedCommit),
-                        Arrays.asList(firstCommit, secondCommit, thirdCommit),
-                        createMetadataRewriter(""),
-                        individualCommits,
-                        Collections.emptyMap(),
-                        MergeBehavior.NORMAL,
-                        dryRun,
-                        false))
+                        TransplantOp.builder()
+                            .fromRef(sourceBranch)
+                            .toBranch(newBranch)
+                            .expectedHash(Optional.of(unrelatedCommit))
+                            .addSequenceToTransplant(firstCommit, secondCommit, thirdCommit)
+                            .updateCommitMetadata(createMetadataRewriter(""))
+                            .keepIndividualCommits(individualCommits)
+                            .dryRun(dryRun)
+                            .build()))
         .isInstanceOf(ReferenceNotFoundException.class);
     checkpoint.assertNoWrites();
   }
@@ -616,16 +601,14 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     MergeResult<Commit> result =
         store()
             .transplant(
-                sourceBranch,
-                newBranch,
-                Optional.of(initialHash),
-                Arrays.asList(firstCommit, secondCommit),
-                createMetadataRewriter(""),
-                individualCommits,
-                Collections.emptyMap(),
-                MergeBehavior.NORMAL,
-                false,
-                false);
+                TransplantOp.builder()
+                    .fromRef(sourceBranch)
+                    .toBranch(newBranch)
+                    .expectedHash(Optional.of(initialHash))
+                    .addSequenceToTransplant(firstCommit, secondCommit)
+                    .updateCommitMetadata(createMetadataRewriter(""))
+                    .keepIndividualCommits(individualCommits)
+                    .build());
 
     if (individualCommits) {
       soft.assertThat(result.getCreatedCommits())
@@ -719,20 +702,16 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
 
     store()
         .transplant(
-            source,
-            target,
-            Optional.of(targetHead),
-            Arrays.asList(source1, source2),
-            createMetadataRewriter(", merge-drop"),
-            individualCommits,
-            ImmutableMap.of(
-                key1,
-                MergeKeyBehavior.of(key1, MergeBehavior.DROP),
-                key2,
-                MergeKeyBehavior.of(key2, MergeBehavior.DROP)),
-            MergeBehavior.NORMAL,
-            false,
-            false);
+            TransplantOp.builder()
+                .fromRef(source)
+                .toBranch(target)
+                .expectedHash(Optional.of(targetHead))
+                .addSequenceToTransplant(source1, source2)
+                .updateCommitMetadata(createMetadataRewriter(", merge-drop"))
+                .keepIndividualCommits(individualCommits)
+                .putMergeKeyBehaviors(key1, MergeKeyBehavior.of(key1, MergeBehavior.DROP))
+                .putMergeKeyBehaviors(key2, MergeKeyBehavior.of(key2, MergeBehavior.DROP))
+                .build());
 
     // No new commit should have been created in the target branch
     try (PaginationIterator<Commit> iterator = store().getCommits(target, true)) {

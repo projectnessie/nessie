@@ -55,7 +55,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToLongFunction;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.function.ThrowingConsumer;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -66,7 +65,8 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
-import org.projectnessie.model.MergeBehavior;
+import org.projectnessie.versioned.VersionStore.MergeOp;
+import org.projectnessie.versioned.VersionStore.TransplantOp;
 import org.projectnessie.versioned.paging.PaginationIterator;
 
 class TestMetricsVersionStore {
@@ -100,20 +100,6 @@ class TestMetricsVersionStore {
             new NullPointerException("NPE"),
             new ReferenceNotFoundException("not-found"),
             new ReferenceAlreadyExistsException("already exists"));
-
-    MetadataRewriter<CommitMeta> metadataRewriter =
-        new MetadataRewriter<CommitMeta>() {
-          @Override
-          public CommitMeta rewriteSingle(CommitMeta metadata) {
-            return metadata;
-          }
-
-          @Override
-          public CommitMeta squash(List<CommitMeta> metadata) {
-            return CommitMeta.fromMessage(
-                metadata.stream().map(CommitMeta::getMessage).collect(Collectors.joining(", ")));
-          }
-        };
 
     CommitResult<Commit> dummyCommitResult =
         CommitResult.<Commit>builder()
@@ -185,32 +171,21 @@ class TestMetricsVersionStore {
                 "transplant",
                 vs ->
                     vs.transplant(
-                        BranchName.of("source-branch"),
-                        BranchName.of("mock-branch"),
-                        Optional.empty(),
-                        Collections.emptyList(),
-                        metadataRewriter,
-                        false,
-                        Collections.emptyMap(),
-                        MergeBehavior.NORMAL,
-                        false,
-                        false),
+                        TransplantOp.builder()
+                            .fromRef(BranchName.of("source-branch"))
+                            .toBranch(BranchName.of("mock-branch"))
+                            .build()),
                 () -> dummyTransplantResult,
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(
                 "merge",
                 vs ->
                     vs.merge(
-                        BranchName.of("source-branch"),
-                        Hash.of("42424242"),
-                        BranchName.of("mock-branch"),
-                        Optional.empty(),
-                        metadataRewriter,
-                        false,
-                        null,
-                        null,
-                        false,
-                        false),
+                        MergeOp.builder()
+                            .fromRef(BranchName.of("source-branch"))
+                            .fromHash(Hash.of("42424242"))
+                            .toBranch(BranchName.of("mock-branch"))
+                            .build()),
                 () -> dummyMergeResult,
                 refNotFoundAndRefConflictThrows),
             new VersionStoreInvocation<>(

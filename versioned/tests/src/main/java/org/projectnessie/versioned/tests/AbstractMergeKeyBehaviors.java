@@ -22,7 +22,6 @@ import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.MergeBehavior.DROP;
 import static org.projectnessie.model.MergeBehavior.FORCE;
 import static org.projectnessie.model.MergeBehavior.NORMAL;
-import static org.projectnessie.versioned.tests.AbstractVersionStoreTestBase.METADATA_REWRITER;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.List;
@@ -49,6 +48,7 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.VersionStore.MergeOp;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public abstract class AbstractMergeKeyBehaviors extends AbstractNestedVersionStore {
@@ -232,16 +232,14 @@ public abstract class AbstractMergeKeyBehaviors extends AbstractNestedVersionSto
     MergeResult<Commit> mergeResult =
         store()
             .merge(
-                sourceName,
-                source,
-                targetName,
-                Optional.of(target),
-                METADATA_REWRITER,
-                false,
-                mergeKeyBehaviors,
-                defaultMergeBehavior,
-                false,
-                false);
+                MergeOp.builder()
+                    .fromRef(sourceName)
+                    .fromHash(source)
+                    .toBranch(targetName)
+                    .expectedHash(Optional.of(target))
+                    .putAllMergeKeyBehaviors(mergeKeyBehaviors)
+                    .defaultMergeBehavior(defaultMergeBehavior)
+                    .build());
     soft.assertThat(mergeResult)
         .extracting(MergeResult::wasApplied, MergeResult::wasSuccessful)
         .containsExactly(true, true);

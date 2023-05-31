@@ -39,8 +39,6 @@ import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IdentifiedContentKey;
-import org.projectnessie.model.MergeBehavior;
-import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.versioned.paging.PaginationIterator;
 
 /**
@@ -134,17 +132,7 @@ public class TracingVersionStore implements VersionStore {
   }
 
   @Override
-  public MergeResult<Commit> transplant(
-      NamedRef sourceRef,
-      BranchName targetBranch,
-      Optional<Hash> referenceHash,
-      List<Hash> sequenceToTransplant,
-      MetadataRewriter<CommitMeta> updateCommitMetadata,
-      boolean keepIndividualCommits,
-      Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors,
-      MergeBehavior defaultMergeBehavior,
-      boolean dryRun,
-      boolean fetchAdditionalInfo)
+  public MergeResult<Commit> transplant(TransplantOp transplantOp)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return TracingVersionStore
         .<MergeResult<Commit>, ReferenceNotFoundException, ReferenceConflictException>
@@ -152,35 +140,15 @@ public class TracingVersionStore implements VersionStore {
                 tracer,
                 "Transplant",
                 b ->
-                    b.setAttribute(TAG_TARGET_BRANCH, safeRefName(targetBranch))
-                        .setAttribute(TAG_HASH, safeToString(referenceHash))
-                        .setAttribute(TAG_TRANSPLANTS, safeSize(sequenceToTransplant)),
-                () ->
-                    delegate.transplant(
-                        sourceRef,
-                        targetBranch,
-                        referenceHash,
-                        sequenceToTransplant,
-                        updateCommitMetadata,
-                        keepIndividualCommits,
-                        mergeKeyBehaviors,
-                        defaultMergeBehavior,
-                        dryRun,
-                        fetchAdditionalInfo));
+                    b.setAttribute(TAG_TARGET_BRANCH, safeRefName(transplantOp.toBranch()))
+                        .setAttribute(TAG_HASH, safeToString(transplantOp.expectedHash()))
+                        .setAttribute(
+                            TAG_TRANSPLANTS, safeSize(transplantOp.sequenceToTransplant())),
+                () -> delegate.transplant(transplantOp));
   }
 
   @Override
-  public MergeResult<Commit> merge(
-      NamedRef fromRef,
-      Hash fromHash,
-      BranchName toBranch,
-      Optional<Hash> expectedHash,
-      MetadataRewriter<CommitMeta> updateCommitMetadata,
-      boolean keepIndividualCommits,
-      Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors,
-      MergeBehavior defaultMergeBehavior,
-      boolean dryRun,
-      boolean fetchAdditionalInfo)
+  public MergeResult<Commit> merge(MergeOp mergeOp)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return TracingVersionStore
         .<MergeResult<Commit>, ReferenceNotFoundException, ReferenceConflictException>
@@ -188,21 +156,10 @@ public class TracingVersionStore implements VersionStore {
                 tracer,
                 "Merge",
                 b ->
-                    b.setAttribute(TAG_FROM_HASH, safeToString(fromHash))
-                        .setAttribute(TAG_TO_BRANCH, safeRefName(toBranch))
-                        .setAttribute(TAG_EXPECTED_HASH, safeToString(expectedHash)),
-                () ->
-                    delegate.merge(
-                        fromRef,
-                        fromHash,
-                        toBranch,
-                        expectedHash,
-                        updateCommitMetadata,
-                        keepIndividualCommits,
-                        mergeKeyBehaviors,
-                        defaultMergeBehavior,
-                        dryRun,
-                        fetchAdditionalInfo));
+                    b.setAttribute(TAG_FROM_HASH, safeToString(mergeOp.fromHash()))
+                        .setAttribute(TAG_TO_BRANCH, safeRefName(mergeOp.toBranch()))
+                        .setAttribute(TAG_EXPECTED_HASH, safeToString(mergeOp.expectedHash())),
+                () -> delegate.merge(mergeOp));
   }
 
   @Override

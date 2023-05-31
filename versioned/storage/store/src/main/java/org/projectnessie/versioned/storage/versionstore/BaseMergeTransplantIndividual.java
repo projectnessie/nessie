@@ -42,6 +42,7 @@ import org.projectnessie.versioned.MergeResult.KeyDetails;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.VersionStore.MergeTransplantOpBase;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
 import org.projectnessie.versioned.storage.common.logic.CommitLogic;
@@ -68,10 +69,8 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
   }
 
   MergeResult<Commit> individualCommits(
-      MetadataRewriter<CommitMeta> updateCommitMetadata,
-      boolean dryRun,
+      MergeTransplantOpBase mergeTransplantOpBase,
       ImmutableMergeResult.Builder<Commit> mergeResult,
-      MergeBehaviors mergeBehaviors,
       SourceCommitsAndParent sourceCommits)
       throws RetryException, ReferenceNotFoundException, ReferenceConflictException {
     IndexesLogic indexesLogic = indexesLogic(persist);
@@ -79,13 +78,19 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
         indexesLogic.buildCompleteIndexOrEmpty(sourceCommits.sourceParent);
     StoreIndex<CommitOp> targetParentIndex = indexesLogic.buildCompleteIndexOrEmpty(head);
 
+    MergeBehaviors mergeBehaviors = new MergeBehaviors(mergeTransplantOpBase);
+
     CommitLogic commitLogic = commitLogic(persist);
     ObjId newHead = headId();
     boolean empty = true;
     Map<ContentKey, KeyDetails> keyDetailsMap = new HashMap<>();
     for (CommitObj sourceCommit : sourceCommits.sourceCommits) {
       CreateCommit createCommit =
-          cloneCommit(updateCommitMetadata, sourceCommit, sourceParentIndex, newHead);
+          cloneCommit(
+              mergeTransplantOpBase.updateCommitMetadata(),
+              sourceCommit,
+              sourceParentIndex,
+              newHead);
 
       verifyMergeTransplantCommitPolicies(targetParentIndex, sourceCommit);
 
@@ -100,7 +105,7 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
       }
 
       empty = false;
-      if (!dryRun) {
+      if (!mergeTransplantOpBase.dryRun()) {
         newHead = newCommit.id();
         boolean committed = commitLogic.storeCommit(newCommit, objsToStore);
         if (committed) {
@@ -114,7 +119,8 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
 
     boolean hasConflicts = recordKeyDetailsAndCheckConflicts(mergeResult, keyDetailsMap);
 
-    return finishMergeTransplant(empty, mergeResult, newHead, dryRun, hasConflicts);
+    return finishMergeTransplant(
+        empty, mergeResult, newHead, mergeTransplantOpBase.dryRun(), hasConflicts);
   }
 
   private CreateCommit cloneCommit(
