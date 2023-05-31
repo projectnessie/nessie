@@ -34,7 +34,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.projectnessie.events.api.CommitEvent;
-import org.projectnessie.events.api.EventType;
 import org.projectnessie.events.quarkus.config.QuarkusEventConfig;
 import org.projectnessie.events.quarkus.config.TestQuarkusEventConfig;
 import org.projectnessie.events.spi.EventSubscriber;
@@ -59,15 +58,13 @@ abstract class TestRetriableEventDelivery<D extends RetriableEventDelivery> {
 
   @Test
   void testDeliverySuccessNoRetry() {
-    when(event.getType()).thenReturn(EventType.COMMIT);
     when(subscriber.accepts(event)).thenReturn(true);
     delivery.start();
-    verify(subscriber).onCommit(event);
+    verify(subscriber).onEvent(event);
   }
 
   @Test
   void testDeliverySuccessWithRetry() {
-    when(event.getType()).thenReturn(EventType.COMMIT);
     when(subscriber.accepts(event)).thenReturn(true);
     setUpVertxTimer();
     AtomicReference<Throwable> errorHolder = mockSubscriberFailures(2);
@@ -76,12 +73,11 @@ abstract class TestRetriableEventDelivery<D extends RetriableEventDelivery> {
     assertThat(fail2).hasMessage("fail2");
     Throwable fail1 = fail2.getSuppressed()[0];
     assertThat(fail1).hasMessage("fail1");
-    verify(subscriber, times(3)).onCommit(event);
+    verify(subscriber, times(3)).onEvent(event);
   }
 
   @Test
   void testDeliveryFailureWithRetry() {
-    when(event.getType()).thenReturn(EventType.COMMIT);
     when(subscriber.accepts(event)).thenReturn(true);
     setUpVertxTimer();
     AtomicReference<Throwable> errorHolder = mockSubscriberFailures(3);
@@ -92,14 +88,14 @@ abstract class TestRetriableEventDelivery<D extends RetriableEventDelivery> {
     assertThat(fail2).hasMessage("fail2");
     Throwable fail1 = fail2.getSuppressed()[0];
     assertThat(fail1).hasMessage("fail1");
-    verify(subscriber, times(3)).onCommit(event);
+    verify(subscriber, times(3)).onEvent(event);
   }
 
   @Test
   void testDeliveryRejected() {
     when(subscriber.accepts(event)).thenReturn(false);
     delivery.start();
-    verify(subscriber, never()).onCommit(event);
+    verify(subscriber, never()).onEvent(event);
   }
 
   AtomicReference<Throwable> mockSubscriberFailures(int numFailures) {
@@ -116,7 +112,7 @@ abstract class TestRetriableEventDelivery<D extends RetriableEventDelivery> {
               return null;
             })
         .when(subscriber)
-        .onCommit(event);
+        .onEvent(event);
     return errorHolder;
   }
 

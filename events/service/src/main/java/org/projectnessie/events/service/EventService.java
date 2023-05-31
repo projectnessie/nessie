@@ -21,18 +21,12 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import org.projectnessie.events.api.CommitEvent;
 import org.projectnessie.events.api.Content;
 import org.projectnessie.events.api.ContentKey;
-import org.projectnessie.events.api.ContentRemovedEvent;
 import org.projectnessie.events.api.ContentStoredEvent;
 import org.projectnessie.events.api.Event;
 import org.projectnessie.events.api.EventType;
-import org.projectnessie.events.api.MergeEvent;
 import org.projectnessie.events.api.ReferenceCreatedEvent;
-import org.projectnessie.events.api.ReferenceDeletedEvent;
-import org.projectnessie.events.api.ReferenceUpdatedEvent;
-import org.projectnessie.events.api.TransplantEvent;
 import org.projectnessie.events.service.util.ContentMapping;
 import org.projectnessie.events.spi.EventSubscriber;
 import org.projectnessie.events.spi.EventSubscription;
@@ -263,7 +257,7 @@ public class EventService implements AutoCloseable {
     try {
       if (subscriber.accepts(event)) {
         LOGGER.debug("Delivering event to subscriber {}: {}", subscriber, event);
-        notifySubscriber(subscriber, event);
+        subscriber.onEvent(event);
         LOGGER.debug("Event successfully delivered: {}", event);
       } else {
         LOGGER.debug("Subscriber rejected event: {}", event);
@@ -273,37 +267,6 @@ public class EventService implements AutoCloseable {
     } finally {
       MDC.remove(SUBSCRIPTION_ID_MDC_KEY);
       MDC.remove(EVENT_ID_MDC_KEY);
-    }
-  }
-
-  public static void notifySubscriber(EventSubscriber subscriber, Event event) {
-    switch (event.getType()) {
-      case COMMIT:
-        subscriber.onCommit((CommitEvent) event);
-        break;
-      case MERGE:
-        subscriber.onMerge((MergeEvent) event);
-        break;
-      case TRANSPLANT:
-        subscriber.onTransplant((TransplantEvent) event);
-        break;
-      case REFERENCE_CREATED:
-        subscriber.onReferenceCreated((ReferenceCreatedEvent) event);
-        break;
-      case REFERENCE_UPDATED:
-        subscriber.onReferenceUpdated((ReferenceUpdatedEvent) event);
-        break;
-      case REFERENCE_DELETED:
-        subscriber.onReferenceDeleted((ReferenceDeletedEvent) event);
-        break;
-      case CONTENT_STORED:
-        subscriber.onContentStored((ContentStoredEvent) event);
-        break;
-      case CONTENT_REMOVED:
-        subscriber.onContentRemoved((ContentRemovedEvent) event);
-        break;
-      default:
-        throw new IllegalArgumentException("Unknown event type: " + event.getType());
     }
   }
 }
