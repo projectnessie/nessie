@@ -16,6 +16,7 @@
 package org.projectnessie.events.service;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
@@ -69,6 +70,8 @@ public class TestEventService {
     when(subscriber1.accepts(any(EventType.class))).thenReturn(true);
     when(subscriber1.accepts(any(Event.class))).thenReturn(true);
     when(subscriber2.accepts(any(Event.class))).thenReturn(false);
+    doCallRealMethod().when(subscriber1).onEvent(any());
+    //    doCallRealMethod().when(subscriber2).onEvent(any());
     EventFactory factory = new EventFactory(config);
     EventSubscribers subscribers = new EventSubscribers(subscriber1, subscriber2);
     try (EventService eventService = new EventService(config, factory, subscribers)) {
@@ -87,41 +90,33 @@ public class TestEventService {
           verify(subscriber1, timeout(5000)).onCommit(any());
           verify(subscriber1, timeout(5000)).onContentStored(any());
           verify(subscriber1, timeout(5000)).onContentRemoved(any());
-          verify(subscriber2, never()).onCommit(any());
-          verify(subscriber2, never()).onContentStored(any());
-          verify(subscriber2, never()).onContentRemoved(any());
+          verify(subscriber2, never()).onEvent(any());
           break;
         case MERGE:
           verify(subscriber1, timeout(5000)).onMerge(any());
           verify(subscriber1, timeout(5000)).onCommit(any());
           verify(subscriber1, timeout(5000)).onContentStored(any());
           verify(subscriber1, timeout(5000)).onContentRemoved(any());
-          verify(subscriber2, never()).onMerge(any());
-          verify(subscriber2, never()).onCommit(any());
-          verify(subscriber2, never()).onContentStored(any());
-          verify(subscriber2, never()).onContentRemoved(any());
+          verify(subscriber2, never()).onEvent(any());
           break;
         case TRANSPLANT:
           verify(subscriber1, timeout(5000)).onTransplant(any());
           verify(subscriber1, timeout(5000)).onCommit(any());
           verify(subscriber1, timeout(5000)).onContentStored(any());
           verify(subscriber1, timeout(5000)).onContentRemoved(any());
-          verify(subscriber2, never()).onTransplant(any());
-          verify(subscriber2, never()).onCommit(any());
-          verify(subscriber2, never()).onContentStored(any());
-          verify(subscriber2, never()).onContentRemoved(any());
+          verify(subscriber2, never()).onEvent(any());
           break;
         case REFERENCE_CREATED:
           verify(subscriber1, timeout(5000)).onReferenceCreated(any());
-          verify(subscriber2, never()).onReferenceCreated(any());
+          verify(subscriber2, never()).onEvent(any());
           break;
         case REFERENCE_ASSIGNED:
           verify(subscriber1, timeout(5000)).onReferenceUpdated(any());
-          verify(subscriber2, never()).onReferenceUpdated(any());
+          verify(subscriber2, never()).onEvent(any());
           break;
         case REFERENCE_DELETED:
           verify(subscriber1, timeout(5000)).onReferenceDeleted(any());
-          verify(subscriber2, never()).onReferenceDeleted(any());
+          verify(subscriber2, never()).onEvent(any());
           break;
         default:
       }
