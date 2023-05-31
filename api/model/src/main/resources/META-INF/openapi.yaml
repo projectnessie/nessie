@@ -57,7 +57,7 @@ components:
       value: "main"
 
     refWithHash:
-      value: "main@2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
+      value: "main@1122334455667788112233445566778811223344556677881122334455667788"
 
     refWithTimestampMillisSinceEpoch:
       value: "main*1685185847230"
@@ -69,22 +69,22 @@ components:
       value: "main~10"
 
     refWithMergeParent:
-      value: "main@2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d^2"
+      value: "main@1122334455667788112233445566778811223344556677881122334455667788^2"
 
     refDefault:
       value: "-"
 
     refDetached:
-      value: "@2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
+      value: "@1122334455667788112233445566778811223344556677881122334455667788"
 
     refForDiffWithHash:
-      value: "main*2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
+      value: "main*1122334455667788112233445566778811223344556677881122334455667788"
 
     referenceType:
       value: "branch"
 
     hash:
-      value: "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
+      value: "1122334455667788112233445566778811223344556677881122334455667788"
 
     nullHash:
       value:
@@ -92,7 +92,7 @@ components:
     refObj:
       value:
         type: BRANCH
-        hash: "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
+        hash: "1122334455667788112233445566778811223344556677881122334455667788"
         name: "main"
 
     refObjNew:
@@ -284,7 +284,7 @@ components:
         commonAncestor: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
         targetBranch: "main"
         effectiveTargetHash: "e9058b675c519b3542cd8155aed42ecf1ddb4e55874e3eb241b30b96f861566a"
-        expectedHash: "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
+        expectedHash: "1122334455667788112233445566778811223344556677881122334455667788"
         details:
           - key:
               elements:
@@ -301,7 +301,7 @@ components:
         commonAncestor: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
         targetBranch: "main"
         effectiveTargetHash: "8a2f19888eb620c25b0d2cbcddfdf56fb2d3e9dd443c6d29e37c567493fc5d3b"
-        expectedHash: "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
+        expectedHash: "1122334455667788112233445566778811223344556677881122334455667788"
         details:
           - key:
               elements:
@@ -354,7 +354,7 @@ components:
                 additionalProp2: "yyy"
                 additionalProp3: "zzz"
               signedOffBy: "signedOffByName <signedOffBy@example.com>"
-            parentCommitHash: "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
+            parentCommitHash: "1122334455667788112233445566778811223344556677881122334455667788"
             operations:
               - type: DELETE
                 key:
@@ -476,7 +476,7 @@ components:
             hash: "abcdef4242424242424242424242beef00dead42112233445566778899001122"
             name: "exampleTag"
           - type: BRANCH
-            hash: "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
+            hash: "1122334455667788112233445566778811223344556677881122334455667788"
             name: "main"
 
     referencesResponseWithMetadata:
@@ -503,7 +503,7 @@ components:
             metadata:
               numCommitsAhead: 1
               numCommitsBehind: 2
-              commonAncestorHash: "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
+              commonAncestorHash: "1122334455667788112233445566778811223344556677881122334455667788"
               numTotalCommits: 42
               commitMetaOfHEAD:
                 hash: "da086850076827d2989c8ee1d7fd22f152f525d46a0441f2b22ad8119c0bbbe5"
@@ -515,12 +515,12 @@ components:
                 authorTime: "2021-11-26T08:01:13.831371Z"
                 properties: {}
           - type: BRANCH
-            hash: "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
+            hash: "1122334455667788112233445566778811223344556677881122334455667788"
             name: "dev2"
             metadata:
               numCommitsAhead: 0
               numCommitsBehind: 2
-              commonAncestorHash: "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
+              commonAncestorHash: "1122334455667788112233445566778811223344556677881122334455667788"
           - type: TAG
             hash: "a682bfdcd5d357b5c964ef07e2eef61fabba42cb8effa8d62357df45a6cc0371"
             name: "testTag1"
