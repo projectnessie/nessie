@@ -127,7 +127,9 @@ public class TestPublishedPoms {
     "nessie-spark-extensions-3.2_2.12",
     "nessie-spark-extensions-3.2_2.13",
     "nessie-spark-extensions-3.3_2.12",
-    "nessie-spark-extensions-3.3_2.13"
+    "nessie-spark-extensions-3.3_2.13",
+    "nessie-spark-extensions-3.4_2.12",
+    "nessie-spark-extensions-3.4_2.13"
   })
   void checkIntegrationsPom(String artifactId) throws Exception {
     checkPom("org.projectnessie.nessie-integrations", artifactId);
