@@ -71,7 +71,6 @@ public class TestEventService {
     when(subscriber1.accepts(any(Event.class))).thenReturn(true);
     when(subscriber2.accepts(any(Event.class))).thenReturn(false);
     doCallRealMethod().when(subscriber1).onEvent(any());
-    //    doCallRealMethod().when(subscriber2).onEvent(any());
     EventFactory factory = new EventFactory(config);
     EventSubscribers subscribers = new EventSubscribers(subscriber1, subscriber2);
     try (EventService eventService = new EventService(config, factory, subscribers)) {
