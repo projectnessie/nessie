@@ -39,6 +39,7 @@ class TestReference {
     "test,*123456,test*123456",
     "test/path,~10,test/path@~10",
     "test,deadbeef,test@deadbeef",
+    ",deadbeef,@deadbeef",
   })
   void toPathString(String name, String hash, String expectedResult) {
     soft.assertThat(Reference.toPathString(name, hash)).isEqualTo(expectedResult);
