@@ -57,6 +57,10 @@ dependencies {
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
   testImplementation(libs.awaitility)
+
+  testCompileOnly(platform(libs.jackson.bom))
+  testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
+  testCompileOnly(libs.microprofile.openapi)
 }
 
 buildForJava11()

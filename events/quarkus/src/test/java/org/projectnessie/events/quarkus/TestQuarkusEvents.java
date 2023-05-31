@@ -107,7 +107,8 @@ class TestQuarkusEvents {
       map.put("quarkus.opentelemetry.enabled", "true");
       // Sample everything
       map.put("quarkus.opentelemetry.tracer.sampler", "on");
-      // Speed up retries
+      // Enable retries + reduce backoff
+      map.put("nessie.version.store.events.retry.max-attempts", "3");
       map.put("nessie.version.store.events.retry.initial-delay", "PT0.01S");
       // Test config properties
       map.put("nessie.version.store.events.static-properties.foo", "bar");

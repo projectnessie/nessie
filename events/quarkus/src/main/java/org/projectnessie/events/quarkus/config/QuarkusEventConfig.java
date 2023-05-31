@@ -48,10 +48,10 @@ public interface QuarkusEventConfig extends EventConfig {
 
     /**
      * The maximum number of attempts to deliver an event, including the initial attempt. The
-     * default is 3.
+     * default is 1, which means that retries are disabled.
      */
     @WithName("max-attempts")
-    @WithDefault("3")
+    @WithDefault("1")
     int getMaxAttempts();
 
     @WithName("initial-delay")
