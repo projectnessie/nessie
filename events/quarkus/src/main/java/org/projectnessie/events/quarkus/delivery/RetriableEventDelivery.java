@@ -17,7 +17,6 @@ package org.projectnessie.events.quarkus.delivery;
 
 import java.time.Duration;
 import org.projectnessie.events.api.Event;
-import org.projectnessie.events.service.EventService;
 import org.projectnessie.events.spi.EventSubscriber;
 
 /**
@@ -57,8 +56,7 @@ public abstract class RetriableEventDelivery implements EventDelivery {
   /**
    * Tries to deliver the event to the subscriber.
    *
-   * @implSpec Implementers should call {@link EventService#notifySubscriber(EventSubscriber,
-   *     Event)}.
+   * @implSpec Implementers should call {@link EventSubscriber#onEvent(Event)}.
    * @param currentAttempt The current delivery attempt, starting at 1.
    */
   protected abstract void tryDeliver(int currentAttempt);
