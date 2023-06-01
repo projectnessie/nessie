@@ -16,24 +16,20 @@
 package org.projectnessie.events.api;
 
 /**
- * Event that is emitted when a transaction is written to the catalog.
+ * Event that affects two references: a source and a target.
  *
- * <p>This type has 3 child interfaces:
+ * <p>This type has 2 child interfaces:
  *
  * <ul>
- *   <li>{@link CommitEvent}: for commits;
  *   <li>{@link MergeEvent}: for merges;
  *   <li>{@link TransplantEvent}: for transplants.
  * </ul>
  */
-public interface CommittingEvent extends Event {
+public interface MultiReferenceEvent extends Event {
 
   /**
-   * The source reference where the committed operations came from. This is usually a branch, but
+   * The source reference where the committed operations come from. This is usually a branch, but
    * not always (e.g. it could be a tag or a detached reference).
-   *
-   * <p>For commits, this is always the same as the {@linkplain #getTargetReference() target
-   * reference}.
    */
   Reference getSourceReference();
 
@@ -43,10 +39,4 @@ public interface CommittingEvent extends Event {
    * <p>For the time being, the target reference is guaranteed to be a branch.
    */
   Reference getTargetReference();
-
-  /** The hash on the {@linkplain #getTargetReference() target reference} before the event. */
-  String getHashBefore();
-
-  /** The hash on the {@linkplain #getTargetReference() target reference} after the event. */
-  String getHashAfter();
 }

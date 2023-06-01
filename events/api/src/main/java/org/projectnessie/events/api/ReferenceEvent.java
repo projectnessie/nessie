@@ -16,11 +16,13 @@
 package org.projectnessie.events.api;
 
 /**
- * Event that is emitted when a reference is created, updated or deleted.
+ * Event that affects only one reference.
  *
- * <p>This type has 3 child interfaces:
+ * <p>This type has many child interfaces:
  *
  * <ul>
+ *   <li>{@link CommitEvent}: for commits;
+ *   <li>{@link ContentEvent}: for content events (PUT / DELETE operations);
  *   <li>{@link ReferenceCreatedEvent}: for reference creations;
  *   <li>{@link ReferenceUpdatedEvent}: for reference updates (reassignments);
  *   <li>{@link ReferenceDeletedEvent}: for reference deletions.

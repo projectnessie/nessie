@@ -22,7 +22,8 @@ import org.immutables.value.Value;
  * has been persisted.
  */
 @Value.Immutable
-public interface TransplantEvent extends CommittingEvent {
+public interface TransplantEvent
+    extends MultiReferenceEvent, WithHashBeforeEvent, WithHashAfterEvent {
 
   @Override
   @Value.Default

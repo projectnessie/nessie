@@ -53,11 +53,11 @@ public interface CommitMeta {
   /** The commit message. */
   String getMessage();
 
-  /** The commit time. */
-  Instant getCommitTime();
+  /** The commit timestamp, as set by the server. */
+  Instant getCommitTimestamp();
 
-  /** Original commit time. */
-  Instant getAuthorTime();
+  /** Original commit timestamp, as provided by the user. */
+  Instant getAuthorTimestamp();
 
   /** Single-valued properties of this commit. */
   @Value.Lazy

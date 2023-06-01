@@ -22,7 +22,7 @@ import org.immutables.value.Value;
  * persisted.
  */
 @Value.Immutable
-public interface CommitEvent extends CommittingEvent {
+public interface CommitEvent extends ReferenceEvent, WithHashBeforeEvent, WithHashAfterEvent {
 
   @Override
   @Value.Default

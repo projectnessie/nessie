@@ -15,15 +15,8 @@
  */
 package org.projectnessie.events.api;
 
-import org.immutables.value.Value;
+public interface WithHashAfterEvent {
 
-/** Event that is emitted after a reference is deleted. */
-@Value.Immutable
-public interface ReferenceDeletedEvent extends ReferenceEvent, WithHashBeforeEvent {
-
-  @Value.Default
-  @Override
-  default EventType getType() {
-    return EventType.REFERENCE_DELETED;
-  }
+  /** The hash on the target reference after the event. */
+  String getHashAfter();
 }

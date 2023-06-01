@@ -19,14 +19,11 @@ import org.immutables.value.Value;
 
 /** Event that is emitted after a reference is created. */
 @Value.Immutable
-public interface ReferenceCreatedEvent extends ReferenceEvent {
+public interface ReferenceCreatedEvent extends ReferenceEvent, WithHashAfterEvent {
 
   @Value.Default
   @Override
   default EventType getType() {
     return EventType.REFERENCE_CREATED;
   }
-
-  /** The hash of the reference after the creation. */
-  String getHashAfter();
 }

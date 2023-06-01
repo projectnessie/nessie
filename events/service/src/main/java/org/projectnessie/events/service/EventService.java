@@ -17,6 +17,7 @@ package org.projectnessie.events.service;
 
 import jakarta.annotation.Nullable;
 import java.security.Principal;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -228,17 +229,19 @@ public class EventService implements AutoCloseable {
     List<Operation> operations = commit.getOperations();
     if (operations != null && !operations.isEmpty()) {
       Hash hash = Objects.requireNonNull(commit.getHash());
+      Instant commitTime = Objects.requireNonNull(commit.getCommitMeta().getCommitTime());
       for (org.projectnessie.versioned.Operation operation : operations) {
         if (operation instanceof org.projectnessie.versioned.Put) {
           ContentKey contentKey = ContentMapping.map(operation.getKey());
           Content content = ContentMapping.map(((Put) operation).getValue());
           fireEvent(
               factory.newContentStoredEvent(
-                  targetBranch, hash, contentKey, content, repositoryId, user));
+                  targetBranch, hash, commitTime, contentKey, content, repositoryId, user));
         } else if (operation instanceof org.projectnessie.versioned.Delete) {
           ContentKey contentKey = ContentMapping.map(operation.getKey());
           fireEvent(
-              factory.newContentRemovedEvent(targetBranch, hash, contentKey, repositoryId, user));
+              factory.newContentRemovedEvent(
+                  targetBranch, hash, commitTime, contentKey, repositoryId, user));
         }
       }
     }
