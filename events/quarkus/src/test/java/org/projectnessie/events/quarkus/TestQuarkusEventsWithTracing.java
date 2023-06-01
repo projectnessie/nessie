@@ -96,7 +96,7 @@ class TestQuarkusEventsWithTracing {
     @Override
     public Map<String, String> getConfigOverrides() {
       Map<String, String> map = new HashMap<>(super.getConfigOverrides());
-      map.put("nessie.version.store.trace.enable", "true");
+      map.put("nessie.version.store.events.trace.enable", "true");
       return map;
     }
   }

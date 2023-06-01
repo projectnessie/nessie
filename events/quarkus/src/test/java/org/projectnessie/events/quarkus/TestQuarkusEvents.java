@@ -97,11 +97,11 @@ class TestQuarkusEvents {
     @Override
     public Map<String, String> getConfigOverrides() {
       Map<String, String> map = new HashMap<>();
-      // Events and auth enabled, tracing and metrics disabled by default
+      // Events and auth enabled, event tracing and event metrics disabled by default
       map.put("nessie.server.authentication.enabled", "true");
       map.put("nessie.version.store.events.enable", "true");
-      map.put("nessie.version.store.trace.enable", "false");
-      map.put("nessie.version.store.metrics.enable", "false");
+      map.put("nessie.version.store.events.trace.enable", "false");
+      map.put("nessie.version.store.events.metrics.enable", "false");
       // Extensions all enabled by default
       map.put("quarkus.micrometer.enabled", "true");
       map.put("quarkus.opentelemetry.enabled", "true");

@@ -15,9 +15,6 @@
  */
 package org.projectnessie.events.quarkus.delivery;
 
-import static org.projectnessie.events.quarkus.config.VersionStoreConfigConstants.NESSIE_VERSION_STORE_METRICS_ENABLE;
-import static org.projectnessie.events.quarkus.config.VersionStoreConfigConstants.NESSIE_VERSION_STORE_TRACE_ENABLE;
-
 import io.micrometer.core.instrument.MeterRegistry;
 import io.opentelemetry.api.trace.Tracer;
 import io.vertx.core.Vertx;
@@ -25,7 +22,6 @@ import javax.enterprise.context.Dependent;
 import javax.enterprise.inject.Any;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.events.api.Event;
 import org.projectnessie.events.quarkus.config.QuarkusEventConfig;
 import org.projectnessie.events.spi.EventSubscriber;
@@ -44,16 +40,12 @@ public class EventDeliveryFactory {
   public EventDeliveryFactory(
       QuarkusEventConfig config,
       @SuppressWarnings("CdiInjectionPointsInspection") Vertx vertx,
-      @ConfigProperty(name = NESSIE_VERSION_STORE_TRACE_ENABLE, defaultValue = "false")
-          boolean tracingEnabled,
-      @ConfigProperty(name = NESSIE_VERSION_STORE_METRICS_ENABLE, defaultValue = "false")
-          boolean metricsEnabled,
       @Any Instance<Tracer> tracers,
       @Any Instance<MeterRegistry> registries) {
     this.config = config;
     this.vertx = vertx;
-    this.tracer = extractInstance(tracingEnabled, tracers);
-    this.registry = extractInstance(metricsEnabled, registries);
+    this.tracer = extractInstance(config.isTracingEnabled(), tracers);
+    this.registry = extractInstance(config.isMetricsEnabled(), registries);
     this.clock = registry == null ? null : new MicrometerClockAdapter(config.getClock());
   }
 

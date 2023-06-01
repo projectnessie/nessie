@@ -28,13 +28,23 @@ import org.projectnessie.events.service.EventConfig;
 public interface QuarkusEventConfig extends EventConfig {
 
   /**
-   * Whether events for the version-store are enabled (enabled by default). In order for events to
+   * Whether events for the version store are enabled (enabled by default). In order for events to
    * be published, it's not enough to enable them in the configuration; you also need to provide at
    * least one implementation of Nessie's EventListener SPI.
    */
   @WithName("enable")
   @WithDefault("true")
   boolean isEnabled();
+
+  /** Whether metrics for events are enabled (enabled by default). */
+  @WithName("metrics.enable")
+  @WithDefault("true")
+  boolean isMetricsEnabled();
+
+  /** Whether tracing for events is enabled (enabled by default). */
+  @WithName("trace.enable")
+  @WithDefault("true")
+  boolean isTracingEnabled();
 
   @WithName("static-properties")
   @WithDefault("{}")

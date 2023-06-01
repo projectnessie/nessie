@@ -96,7 +96,7 @@ class TestQuarkusEventsWithMetrics {
     @Override
     public Map<String, String> getConfigOverrides() {
       Map<String, String> map = new HashMap<>(super.getConfigOverrides());
-      map.put("nessie.version.store.metrics.enable", "true");
+      map.put("nessie.version.store.events.metrics.enable", "true");
       return map;
     }
   }

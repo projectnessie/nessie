@@ -15,10 +15,6 @@
  */
 package org.projectnessie.events.quarkus.collector;
 
-import static org.projectnessie.events.quarkus.config.VersionStoreConfigConstants.NESSIE_VERSION_STORE_EVENTS_ENABLE;
-import static org.projectnessie.events.quarkus.config.VersionStoreConfigConstants.NESSIE_VERSION_STORE_METRICS_ENABLE;
-import static org.projectnessie.events.quarkus.config.VersionStoreConfigConstants.NESSIE_VERSION_STORE_TRACE_ENABLE;
-
 import io.micrometer.core.instrument.MeterRegistry;
 import io.opentelemetry.api.trace.Tracer;
 import io.quarkus.arc.lookup.LookupIfProperty;
@@ -32,7 +28,7 @@ import javax.enterprise.inject.Any;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.Produces;
 import javax.inject.Named;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.projectnessie.events.quarkus.config.QuarkusEventConfig;
 import org.projectnessie.events.service.EventSubscribers;
 import org.projectnessie.versioned.Result;
 
@@ -43,15 +39,12 @@ public class QuarkusResultCollectorFactory {
 
   @Produces
   @RequestScoped
-  @LookupIfProperty(name = NESSIE_VERSION_STORE_EVENTS_ENABLE, stringValue = "true")
+  @LookupIfProperty(name = "nessie.version.store.events.enable", stringValue = "true")
   public Consumer<Result> newResultCollector(
+      QuarkusEventConfig config,
       EventSubscribers subscribers,
       EventBus bus,
       DeliveryOptions options,
-      @ConfigProperty(name = NESSIE_VERSION_STORE_TRACE_ENABLE, defaultValue = "false")
-          boolean tracingEnabled,
-      @ConfigProperty(name = NESSIE_VERSION_STORE_METRICS_ENABLE, defaultValue = "false")
-          boolean metricsEnabled,
       @Named(REPOSITORY_ID_BEAN_NAME) Instance<String> repositoryIds,
       @Any Instance<Supplier<Principal>> users,
       @Any Instance<Tracer> tracers,
@@ -59,14 +52,14 @@ public class QuarkusResultCollectorFactory {
     Principal principal = users.isResolvable() ? users.get().get() : null;
     String repositoryId = repositoryIds.isResolvable() ? repositoryIds.get() : "";
     Consumer<Result> collector;
-    if (metricsEnabled && registries.isResolvable()) {
+    if (config.isMetricsEnabled() && registries.isResolvable()) {
       collector =
           new QuarkusMetricsResultCollector(
               subscribers, repositoryId, principal, bus, options, registries.get());
     } else {
       collector = new QuarkusResultCollector(subscribers, repositoryId, principal, bus, options);
     }
-    if (tracingEnabled && tracers.isResolvable()) {
+    if (config.isTracingEnabled() && tracers.isResolvable()) {
       String user = principal != null ? principal.getName() : null;
       collector = new QuarkusTracingResultCollector(collector, user, tracers.get());
     }
