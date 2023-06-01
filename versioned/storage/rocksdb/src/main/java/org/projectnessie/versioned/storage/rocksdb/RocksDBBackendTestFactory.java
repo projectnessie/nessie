@@ -40,6 +40,11 @@ public final class RocksDBBackendTestFactory implements BackendTestFactory {
   }
 
   @Override
+  public String getName() {
+    return RocksDBBackendFactory.NAME;
+  }
+
+  @Override
   public void start() throws Exception {
     rocksDir = Files.createTempDirectory("junit-nessie-rocksdb");
 

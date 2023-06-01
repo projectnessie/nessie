@@ -43,5 +43,10 @@ public class ScyllaDBBackendTestFactory extends AbstractCassandraBackendTestFact
   }
 
   @Override
+  public String getName() {
+    return "Scylla";
+  }
+
+  @Override
   protected void configureContainer(CassandraContainer<?> c) {}
 }
