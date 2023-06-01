@@ -513,7 +513,8 @@ public class VersionStoreImpl implements VersionStore {
                   key,
                   index,
                   contentTypeForPayload(content.payload()),
-                  contentId != null ? contentId.toString() : null);
+                  contentId != null ? contentId.toString() : null,
+                  x -> null);
             })
         .filter(Objects::nonNull)
         .collect(Collectors.toList());
@@ -578,13 +579,14 @@ public class VersionStoreImpl implements VersionStore {
                   contentMapping.fetchContent(
                       requireNonNull(
                           indexElement.content().value(), "Required value pointer is null"));
-              return KeyEntry.of(buildIdentifiedKey(key, index, c), c);
+              return KeyEntry.of(buildIdentifiedKey(key, index, c, x -> null), c);
             }
 
             UUID contentId = commitOp.contentId();
             String contentIdString =
                 contentId != null ? contentId.toString() : contentIdFromContent(commitOp);
-            return KeyEntry.of(buildIdentifiedKey(key, index, contentType, contentIdString));
+            return KeyEntry.of(
+                buildIdentifiedKey(key, index, contentType, contentIdString, x -> null));
           } catch (ObjNotFoundException e) {
             throw new RuntimeException("Could not fetch or map content", e);
           }
@@ -639,7 +641,7 @@ public class VersionStoreImpl implements VersionStore {
           contentMapping.fetchContent(
               requireNonNull(indexElement.content().value(), "Required value pointer is null"));
 
-      IdentifiedContentKey identifiedKey = buildIdentifiedKey(key, index, content);
+      IdentifiedContentKey identifiedKey = buildIdentifiedKey(key, index, content, x -> null);
 
       return contentResult(identifiedKey, content, null);
     } catch (ObjNotFoundException e) {
@@ -648,12 +650,30 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   static IdentifiedContentKey buildIdentifiedKey(
-      ContentKey key, StoreIndex<CommitOp> index, Content content) {
-    return buildIdentifiedKey(key, index, content.getType(), content.getId());
+      ContentKey key,
+      StoreIndex<CommitOp> index,
+      Content content,
+      Function<List<String>, UUID> newContentIds) {
+    return buildIdentifiedKey(key, index, content.getType(), content.getId(), newContentIds);
   }
 
   static IdentifiedContentKey buildIdentifiedKey(
-      ContentKey key, StoreIndex<CommitOp> index, Content.Type contentType, String contentId) {
+      ContentKey key,
+      StoreIndex<CommitOp> index,
+      int payload,
+      UUID contentId,
+      Function<List<String>, UUID> newContentIds) {
+    String cid = contentId != null ? contentId.toString() : null;
+    Content.Type contentType = contentTypeForPayload(payload);
+    return buildIdentifiedKey(key, index, contentType, cid, newContentIds);
+  }
+
+  static IdentifiedContentKey buildIdentifiedKey(
+      ContentKey key,
+      StoreIndex<CommitOp> index,
+      Content.Type contentType,
+      String contentId,
+      Function<List<String>, UUID> newContentIds) {
     return identifiedContentKeyFromContent(
         key,
         contentType,
@@ -663,6 +683,9 @@ public class VersionStoreImpl implements VersionStore {
           UUID id = null;
           if (pathIndexElement != null && pathIndexElement.content().action().exists()) {
             id = pathIndexElement.content().contentId();
+          }
+          if (id == null) {
+            id = newContentIds.apply(path);
           }
           return id != null ? id.toString() : null;
         });
@@ -704,7 +727,7 @@ public class VersionStoreImpl implements VersionStore {
                   Map.Entry::getKey,
                   e ->
                       contentResult(
-                          buildIdentifiedKey(e.getKey(), index, e.getValue()),
+                          buildIdentifiedKey(e.getKey(), index, e.getValue(), x -> null),
                           e.getValue(),
                           null)));
     } catch (ObjNotFoundException e) {
@@ -872,7 +895,8 @@ public class VersionStoreImpl implements VersionStore {
                       contentTypeForPayload(d.fromPayload()),
                       d.fromContentId() != null
                           ? requireNonNull(d.fromContentId()).toString()
-                          : null)
+                          : null,
+                      x -> null)
                   : null;
 
           IdentifiedContentKey toKey =
@@ -885,7 +909,8 @@ public class VersionStoreImpl implements VersionStore {
                           contentTypeForPayload(d.toPayload()),
                           d.toContentId() != null
                               ? requireNonNull(d.toContentId()).toString()
-                              : null))
+                              : null,
+                          x -> null))
                   : null;
 
           return Diff.of(

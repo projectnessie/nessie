@@ -182,13 +182,13 @@ public class PersistVersionStore implements VersionStore {
             CommitValidation.CommitOperation.commitOperation(
                 identifiedContentKeyFromContent(
                     op.getKey(), contentTypeForPayload(payload), contentId.getId(), x -> null),
-                operation));
+                operation.getType()));
       } else if (operation instanceof Delete) {
         commitAttempt.addDeletes(operation.getKey());
         commitValidation.addOperations(
             CommitValidation.CommitOperation.commitOperation(
                 identifiedContentKeyFromContent(operation.getKey(), null, null, x -> null),
-                operation));
+                operation.getType()));
       } else if (operation instanceof Unchanged) {
         commitAttempt.addUnchanged(operation.getKey());
       } else {

@@ -40,6 +40,11 @@ public abstract class Put implements Operation {
     return getValueSupplier().get();
   }
 
+  @Override
+  public OperationType getType() {
+    return OperationType.PUT;
+  }
+
   protected abstract Supplier<Content> getValueSupplier();
 
   /**

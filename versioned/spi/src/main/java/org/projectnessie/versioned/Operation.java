@@ -32,4 +32,12 @@ public interface Operation {
 
   /** The key for this operation. */
   ContentKey getKey();
+
+  OperationType getType();
+
+  enum OperationType {
+    PUT,
+    DELETE,
+    UNCHANGED
+  }
 }

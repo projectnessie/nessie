@@ -163,6 +163,11 @@ public interface VersionStore {
     default boolean fetchAdditionalInfo() {
       return false;
     }
+
+    @Value.Default
+    default CommitValidator validator() {
+      return commitValidation -> {};
+    }
   }
 
   @Value.Immutable

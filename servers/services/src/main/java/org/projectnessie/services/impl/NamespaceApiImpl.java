@@ -370,10 +370,16 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
                   .operations()
                   .forEach(
                       op -> {
-                        if (op.operation() instanceof org.projectnessie.versioned.Put) {
-                          check.canUpdateEntity(branch, op.identifiedKey());
-                        } else {
-                          check.canDeleteEntity(branch, op.identifiedKey());
+                        switch (op.operation()) {
+                          case PUT:
+                            check.canUpdateEntity(branch, op.identifiedKey());
+                            break;
+                          case DELETE:
+                            check.canDeleteEntity(branch, op.identifiedKey());
+                            break;
+                          default:
+                            throw new UnsupportedOperationException(
+                                "Unknown operation type " + op.operation());
                         }
                       });
               check.checkAndThrow();

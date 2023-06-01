@@ -22,6 +22,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.projectnessie.model.Conflict.conflict;
 import static org.projectnessie.model.Content.Type.NAMESPACE;
+import static org.projectnessie.versioned.CommitValidation.CommitOperation.commitOperation;
 import static org.projectnessie.versioned.MergeResult.KeyDetails.keyDetails;
 import static org.projectnessie.versioned.storage.common.logic.CommitConflict.ConflictType.KEY_EXISTS;
 import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
@@ -49,27 +50,35 @@ import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.agrona.collections.Object2IntHashMap;
+import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.Conflict;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.IdentifiedContentKey;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
+import org.projectnessie.versioned.CommitValidation;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.ImmutableCommitValidation;
 import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MergeResult.KeyDetails;
+import org.projectnessie.versioned.Operation.OperationType;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.VersionStore.CommitValidator;
+import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.storage.batching.BatchingPersist;
 import org.projectnessie.versioned.storage.batching.WriteBatching;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
@@ -570,6 +579,7 @@ class BaseCommitHelper {
       CreateCommit createCommit,
       Consumer<Obj> objsToStore)
       throws ReferenceNotFoundException {
+
     try {
       CommitLogic commitLogic = commitLogic(persist);
       ContentMapping contentMapping = new ContentMapping(persist);
@@ -686,6 +696,44 @@ class BaseCommitHelper {
       throw new IllegalStateException("Unhandled conflict", conflict);
     } catch (ObjNotFoundException e) {
       throw referenceNotFound(e);
+    }
+  }
+
+  void validateMergeTransplantCommit(
+      CreateCommit createCommit, CommitValidator commitValidator, StoreIndex<CommitOp> index) {
+    ImmutableCommitValidation.Builder commitValidation = CommitValidation.builder();
+    for (CreateCommit.Remove remove : createCommit.removes()) {
+      ContentKey key = storeKeyToKey(remove.key());
+      if (key == null) {
+        continue;
+      }
+      IdentifiedContentKey identifiedKey =
+          VersionStoreImpl.buildIdentifiedKey(
+              key, index, remove.payload(), remove.contentId(), x -> null);
+      commitValidation.addOperations(commitOperation(identifiedKey, OperationType.DELETE));
+    }
+
+    Map<ContentKey, UUID> seenContentIds = new HashMap<>();
+    for (CreateCommit.Add add : createCommit.adds()) {
+      ContentKey key = storeKeyToKey(add.key());
+      if (key == null) {
+        continue;
+      }
+      seenContentIds.put(key, add.contentId());
+      IdentifiedContentKey identifiedKey =
+          VersionStoreImpl.buildIdentifiedKey(
+              key,
+              index,
+              add.payload(),
+              add.contentId(),
+              elements -> seenContentIds.get(ContentKey.of(elements)));
+      commitValidation.addOperations(commitOperation(identifiedKey, OperationType.PUT));
+    }
+
+    try {
+      commitValidator.validate(commitValidation.build());
+    } catch (BaseNessieClientServerException | VersionStoreException e) {
+      throw new RuntimeException(e);
     }
   }
 

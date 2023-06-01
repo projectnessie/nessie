@@ -92,6 +92,9 @@ class BaseMergeTransplantIndividual extends BaseCommitHelper {
               sourceParentIndex,
               newHead);
 
+      validateMergeTransplantCommit(
+          createCommit, mergeTransplantOpBase.validator(), targetParentIndex);
+
       verifyMergeTransplantCommitPolicies(targetParentIndex, sourceCommit);
 
       List<Obj> objsToStore = new ArrayList<>();
