@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.tests;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
@@ -24,7 +23,6 @@ import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.Conflict.ConflictType.NAMESPACE_ABSENT;
 import static org.projectnessie.model.Conflict.ConflictType.NOT_A_NAMESPACE;
-import static org.projectnessie.versioned.tests.AbstractVersionStoreTestBase.METADATA_REWRITER;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
 import java.util.List;
@@ -44,7 +42,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.error.ReferenceConflicts;
 import org.projectnessie.model.Conflict;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
@@ -53,6 +50,7 @@ import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.VersionStore.TransplantOp;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public abstract class AbstractNamespaceValidation extends AbstractNestedVersionStore {
@@ -316,29 +314,22 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
             ? () ->
                 store()
                     .merge(
-                        branch,
-                        store().hashOnReference(branch, Optional.empty()),
-                        root,
-                        Optional.empty(),
-                        METADATA_REWRITER,
-                        mode.individualCommits,
-                        emptyMap(),
-                        MergeBehavior.NORMAL,
-                        false,
-                        false)
+                        VersionStore.MergeOp.builder()
+                            .fromRef(branch)
+                            .fromHash(store().hashOnReference(branch, Optional.empty()))
+                            .toBranch(root)
+                            .keepIndividualCommits(mode.individualCommits)
+                            .build())
             : () ->
                 store()
                     .transplant(
-                        branch,
-                        root,
-                        Optional.empty(),
-                        asList(commit1.getCommitHash(), commit2.getCommitHash()),
-                        METADATA_REWRITER,
-                        mode.individualCommits,
-                        emptyMap(),
-                        MergeBehavior.NORMAL,
-                        false,
-                        false);
+                        TransplantOp.builder()
+                            .fromRef(branch)
+                            .toBranch(root)
+                            .addSequenceToTransplant(
+                                commit1.getCommitHash(), commit2.getCommitHash())
+                            .keepIndividualCommits(mode.individualCommits)
+                            .build());
 
     if (mode.deleteNamespaceOnTarget) {
       store()

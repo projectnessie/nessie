@@ -27,8 +27,6 @@ import javax.annotation.Nonnull;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IdentifiedContentKey;
-import org.projectnessie.model.MergeBehavior;
-import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.versioned.paging.PaginationIterator;
 
 /**
@@ -67,30 +65,9 @@ public class EventsVersionStore implements VersionStore {
   }
 
   @Override
-  public MergeResult<Commit> transplant(
-      NamedRef sourceRef,
-      BranchName targetBranch,
-      Optional<Hash> referenceHash,
-      List<Hash> sequenceToTransplant,
-      MetadataRewriter<CommitMeta> updateCommitMetadata,
-      boolean keepIndividualCommits,
-      Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors,
-      MergeBehavior defaultMergeBehavior,
-      boolean dryRun,
-      boolean fetchAdditionalInfo)
+  public MergeResult<Commit> transplant(TransplantOp transplantOp)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    MergeResult<Commit> result =
-        delegate.transplant(
-            sourceRef,
-            targetBranch,
-            referenceHash,
-            sequenceToTransplant,
-            updateCommitMetadata,
-            keepIndividualCommits,
-            mergeKeyBehaviors,
-            defaultMergeBehavior,
-            dryRun,
-            fetchAdditionalInfo);
+    MergeResult<Commit> result = delegate.transplant(transplantOp);
     if (result.wasApplied()) {
       resultSink.accept(result);
     }
@@ -98,30 +75,9 @@ public class EventsVersionStore implements VersionStore {
   }
 
   @Override
-  public MergeResult<Commit> merge(
-      NamedRef fromRef,
-      Hash fromHash,
-      BranchName toBranch,
-      Optional<Hash> expectedHash,
-      MetadataRewriter<CommitMeta> updateCommitMetadata,
-      boolean keepIndividualCommits,
-      Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors,
-      MergeBehavior defaultMergeBehavior,
-      boolean dryRun,
-      boolean fetchAdditionalInfo)
+  public MergeResult<Commit> merge(MergeOp mergeOp)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    MergeResult<Commit> result =
-        delegate.merge(
-            fromRef,
-            fromHash,
-            toBranch,
-            expectedHash,
-            updateCommitMetadata,
-            keepIndividualCommits,
-            mergeKeyBehaviors,
-            defaultMergeBehavior,
-            dryRun,
-            fetchAdditionalInfo);
+    MergeResult<Commit> result = delegate.merge(mergeOp);
     if (result.wasApplied()) {
       resultSink.accept(result);
     }

@@ -43,6 +43,7 @@ import org.projectnessie.versioned.MergeResult.KeyDetails;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.VersionStore.MergeTransplantOpBase;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
 import org.projectnessie.versioned.storage.common.logic.CommitLogic;
@@ -71,19 +72,23 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
   }
 
   MergeResult<Commit> squash(
-      boolean dryRun,
+      MergeTransplantOpBase mergeTransplantOpBase,
       ImmutableMergeResult.Builder<Commit> mergeResult,
-      MergeBehaviors mergeBehaviors,
-      MetadataRewriter<CommitMeta> updateCommitMetadata,
       SourceCommitsAndParent sourceCommits,
       @Nullable @jakarta.annotation.Nullable ObjId mergeFromId)
       throws RetryException, ReferenceNotFoundException, ReferenceConflictException {
 
     Map<ContentKey, KeyDetails> keyDetailsMap = new HashMap<>();
 
+    MergeBehaviors mergeBehaviors = new MergeBehaviors(mergeTransplantOpBase);
+
     CreateCommit createCommit =
         createSquashCommit(
-            mergeBehaviors, keyDetailsMap, updateCommitMetadata, sourceCommits, mergeFromId);
+            mergeBehaviors,
+            keyDetailsMap,
+            mergeTransplantOpBase.updateCommitMetadata(),
+            sourceCommits,
+            mergeFromId);
 
     List<Obj> objsToStore = new ArrayList<>();
     CommitObj mergeCommit =
@@ -101,11 +106,12 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
     IndexesLogic indexesLogic = indexesLogic(persist);
     if (!indexesLogic.commitOperations(mergeCommit).iterator().hasNext()) {
       // The squashed commit is empty, i.e. it doesn't contain any operations: don't persist it.
-      return finishMergeTransplant(true, mergeResult, headId(), dryRun, hasConflicts);
+      return finishMergeTransplant(
+          true, mergeResult, headId(), mergeTransplantOpBase.dryRun(), hasConflicts);
     }
 
     ObjId newHead;
-    if (dryRun || hasConflicts) {
+    if (mergeTransplantOpBase.dryRun() || hasConflicts) {
       newHead = headId();
     } else {
       CommitLogic commitLogic = commitLogic(persist);
@@ -116,7 +122,8 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
       }
     }
 
-    return finishMergeTransplant(false, mergeResult, newHead, dryRun, hasConflicts);
+    return finishMergeTransplant(
+        false, mergeResult, newHead, mergeTransplantOpBase.dryRun(), hasConflicts);
   }
 
   private CreateCommit createSquashCommit(

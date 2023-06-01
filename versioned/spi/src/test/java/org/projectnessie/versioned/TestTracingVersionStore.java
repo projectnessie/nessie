@@ -47,7 +47,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.ThrowingConsumer;
@@ -59,7 +58,8 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
-import org.projectnessie.model.MergeBehavior;
+import org.projectnessie.versioned.VersionStore.MergeOp;
+import org.projectnessie.versioned.VersionStore.TransplantOp;
 import org.projectnessie.versioned.paging.PaginationIterator;
 import org.projectnessie.versioned.test.tracing.TestedTracingStoreInvocation;
 
@@ -94,20 +94,6 @@ class TestTracingVersionStore {
             new NullPointerException("NPE"),
             new ReferenceNotFoundException("not-found"),
             new ReferenceAlreadyExistsException("already exists"));
-
-    MetadataRewriter<CommitMeta> metadataRewriter =
-        new MetadataRewriter<CommitMeta>() {
-          @Override
-          public CommitMeta rewriteSingle(CommitMeta metadata) {
-            return metadata;
-          }
-
-          @Override
-          public CommitMeta squash(List<CommitMeta> metadata) {
-            return CommitMeta.fromMessage(
-                metadata.stream().map(CommitMeta::getMessage).collect(Collectors.joining(", ")));
-          }
-        };
 
     CommitResult<Commit> dummyCommitResult =
         CommitResult.<Commit>builder()
@@ -187,16 +173,10 @@ class TestTracingVersionStore {
                 .function(
                     vs ->
                         vs.transplant(
-                            BranchName.of("source-branch"),
-                            BranchName.of("mock-branch"),
-                            Optional.empty(),
-                            Collections.emptyList(),
-                            metadataRewriter,
-                            true,
-                            Collections.emptyMap(),
-                            MergeBehavior.NORMAL,
-                            false,
-                            false),
+                            TransplantOp.builder()
+                                .fromRef(BranchName.of("source-branch"))
+                                .toBranch(BranchName.of("mock-branch"))
+                                .build()),
                     () -> dummyTransplantResult),
             new TestedTracingStoreInvocation<VersionStore>("Merge", refNotFoundAndRefConflictThrows)
                 .tag("nessie.version-store.to-branch", "mock-branch")
@@ -205,16 +185,11 @@ class TestTracingVersionStore {
                 .function(
                     vs ->
                         vs.merge(
-                            BranchName.of("source-branch"),
-                            Hash.of("42424242"),
-                            BranchName.of("mock-branch"),
-                            Optional.empty(),
-                            metadataRewriter,
-                            false,
-                            null,
-                            null,
-                            false,
-                            false),
+                            MergeOp.builder()
+                                .fromRef(BranchName.of("source-branch"))
+                                .fromHash(Hash.of("42424242"))
+                                .toBranch(BranchName.of("mock-branch"))
+                                .build()),
                     () -> dummyMergeResult),
             new TestedTracingStoreInvocation<VersionStore>(
                     "Assign", refNotFoundAndRefConflictThrows)

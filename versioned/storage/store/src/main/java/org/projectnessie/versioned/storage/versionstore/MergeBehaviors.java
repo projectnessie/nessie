@@ -18,27 +18,20 @@ package org.projectnessie.versioned.storage.versionstore;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
+import org.projectnessie.versioned.VersionStore.MergeTransplantOpBase;
 
 final class MergeBehaviors {
-  final boolean keepIndividualCommits;
-  final Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors;
   final Set<ContentKey> remainingKeys;
   final Set<ContentKey> keysUsedForCommit;
-  final MergeBehavior defaultMergeBehavior;
+  final MergeTransplantOpBase mergeTransplantOpBase;
 
-  MergeBehaviors(
-      boolean keepIndividualCommits,
-      Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors,
-      MergeBehavior defaultMergeBehavior) {
-    this.keepIndividualCommits = keepIndividualCommits;
-    this.mergeKeyBehaviors = mergeKeyBehaviors;
-    this.defaultMergeBehavior = defaultMergeBehavior;
-    this.remainingKeys = new HashSet<>(mergeKeyBehaviors.keySet());
+  MergeBehaviors(MergeTransplantOpBase mergeTransplantOpBase) {
+    this.mergeTransplantOpBase = mergeTransplantOpBase;
+    this.remainingKeys = new HashSet<>(mergeTransplantOpBase.mergeKeyBehaviors().keySet());
     this.keysUsedForCommit = new HashSet<>();
     validate();
   }
@@ -48,24 +41,29 @@ final class MergeBehaviors {
         remainingKeys.isEmpty(),
         "Not all merge key behaviors specified in the request have been used. The following keys were not used: %s",
         remainingKeys);
-    mergeKeyBehaviors.forEach(
-        (key, mergeKeyBehavior) ->
-            checkArgument(
-                mergeKeyBehavior.getResolvedContent() == null || keysUsedForCommit.contains(key),
-                "The merge behavior for key %s has an unused resolvedContent attribute.",
-                key));
+    mergeTransplantOpBase
+        .mergeKeyBehaviors()
+        .forEach(
+            (key, mergeKeyBehavior) ->
+                checkArgument(
+                    mergeKeyBehavior.getResolvedContent() == null
+                        || keysUsedForCommit.contains(key),
+                    "The merge behavior for key %s has an unused resolvedContent attribute.",
+                    key));
   }
 
   MergeBehavior mergeBehavior(ContentKey key) {
-    MergeKeyBehavior behavior = mergeKeyBehaviors.get(key);
-    return behavior == null ? defaultMergeBehavior : behavior.getMergeBehavior();
+    MergeKeyBehavior behavior = mergeTransplantOpBase.mergeKeyBehaviors().get(key);
+    return behavior == null
+        ? mergeTransplantOpBase.defaultMergeBehavior()
+        : behavior.getMergeBehavior();
   }
 
   MergeKeyBehavior useKey(boolean add, ContentKey key) {
     remainingKeys.remove(key);
-    MergeKeyBehavior behavior = mergeKeyBehaviors.get(key);
+    MergeKeyBehavior behavior = mergeTransplantOpBase.mergeKeyBehaviors().get(key);
     if (behavior == null) {
-      return MergeKeyBehavior.of(key, defaultMergeBehavior);
+      return MergeKeyBehavior.of(key, mergeTransplantOpBase.defaultMergeBehavior());
     }
     if (add) {
       // Add commit-op / Put operation
@@ -76,35 +74,37 @@ final class MergeBehaviors {
 
   private void validate() {
     // Require the resolvedContent and expectedTargetContent attributes.
-    mergeKeyBehaviors.forEach(
-        (key, mergeKeyBehavior) -> {
-          checkArgument(
-              !keepIndividualCommits
-                  || (mergeKeyBehavior.getExpectedTargetContent() == null
-                      && mergeKeyBehavior.getResolvedContent() == null),
-              "MergeKeyBehavior.expectedTargetContent and MergeKeyBehavior.resolvedContent are only supported for squashing merge/transplant operations.");
-
-          switch (mergeKeyBehavior.getMergeBehavior()) {
-            case NORMAL:
-              if (mergeKeyBehavior.getResolvedContent() != null) {
-                checkArgument(
-                    mergeKeyBehavior.getExpectedTargetContent() != null,
-                    "MergeKeyBehavior.resolvedContent requires setting MergeKeyBehavior.expectedTarget as well for key %s",
-                    key);
-              }
-              break;
-            case DROP:
-            case FORCE:
+    mergeTransplantOpBase
+        .mergeKeyBehaviors()
+        .forEach(
+            (key, mergeKeyBehavior) -> {
               checkArgument(
-                  mergeKeyBehavior.getResolvedContent() == null,
-                  "MergeKeyBehavior.resolvedContent must be null for MergeBehavior.%s for %s",
-                  mergeKeyBehavior.getMergeBehavior(),
-                  key);
-              break;
-            default:
-              throw new IllegalArgumentException(
-                  "Unknown MergeBehavior " + mergeKeyBehavior.getMergeBehavior());
-          }
-        });
+                  !mergeTransplantOpBase.keepIndividualCommits()
+                      || (mergeKeyBehavior.getExpectedTargetContent() == null
+                          && mergeKeyBehavior.getResolvedContent() == null),
+                  "MergeKeyBehavior.expectedTargetContent and MergeKeyBehavior.resolvedContent are only supported for squashing merge/transplant operations.");
+
+              switch (mergeKeyBehavior.getMergeBehavior()) {
+                case NORMAL:
+                  if (mergeKeyBehavior.getResolvedContent() != null) {
+                    checkArgument(
+                        mergeKeyBehavior.getExpectedTargetContent() != null,
+                        "MergeKeyBehavior.resolvedContent requires setting MergeKeyBehavior.expectedTarget as well for key %s",
+                        key);
+                  }
+                  break;
+                case DROP:
+                case FORCE:
+                  checkArgument(
+                      mergeKeyBehavior.getResolvedContent() == null,
+                      "MergeKeyBehavior.resolvedContent must be null for MergeBehavior.%s for %s",
+                      mergeKeyBehavior.getMergeBehavior(),
+                      key);
+                  break;
+                default:
+                  throw new IllegalArgumentException(
+                      "Unknown MergeBehavior " + mergeKeyBehavior.getMergeBehavior());
+              }
+            });
   }
 }

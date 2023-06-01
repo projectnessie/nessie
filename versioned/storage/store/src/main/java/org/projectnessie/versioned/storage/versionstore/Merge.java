@@ -16,23 +16,14 @@
 package org.projectnessie.versioned.storage.versionstore;
 
 import java.util.Optional;
-import org.projectnessie.model.CommitMeta;
 import org.projectnessie.versioned.Commit;
-import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.MergeResult;
-import org.projectnessie.versioned.MetadataRewriter;
-import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.VersionStore.MergeOp;
 import org.projectnessie.versioned.storage.common.logic.CommitRetry.RetryException;
 
 interface Merge {
-  MergeResult<Commit> merge(
-      Optional<?> retryState,
-      NamedRef fromRef,
-      Hash fromHash,
-      MetadataRewriter<CommitMeta> updateCommitMetadata,
-      MergeBehaviors mergeBehaviors,
-      boolean dryRun)
+  MergeResult<Commit> merge(Optional<?> retryState, MergeOp mergeOp)
       throws ReferenceNotFoundException, RetryException, ReferenceConflictException;
 }

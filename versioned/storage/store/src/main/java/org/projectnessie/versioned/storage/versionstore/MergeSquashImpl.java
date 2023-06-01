@@ -21,17 +21,15 @@ import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objId
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import org.projectnessie.model.CommitMeta;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.MergeResult;
-import org.projectnessie.versioned.MetadataRewriter;
-import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ResultType;
+import org.projectnessie.versioned.VersionStore.MergeOp;
 import org.projectnessie.versioned.storage.common.logic.CommitRetry.RetryException;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
@@ -51,15 +49,9 @@ final class MergeSquashImpl extends BaseMergeTransplantSquash implements Merge {
   }
 
   @Override
-  public MergeResult<Commit> merge(
-      Optional<?> retryState,
-      NamedRef fromRef,
-      Hash fromHash,
-      MetadataRewriter<CommitMeta> updateCommitMetadata,
-      MergeBehaviors mergeBehaviors,
-      boolean dryRun)
+  public MergeResult<Commit> merge(Optional<?> retryState, MergeOp mergeOp)
       throws ReferenceNotFoundException, RetryException, ReferenceConflictException {
-    ObjId fromId = hashToObjId(fromHash);
+    ObjId fromId = hashToObjId(mergeOp.fromHash());
     ObjId commonAncestorId = identifyCommonAncestor(fromId);
 
     SourceCommitsAndParent sourceCommits = loadSourceCommitsForMerge(fromId, commonAncestorId);
@@ -67,9 +59,9 @@ final class MergeSquashImpl extends BaseMergeTransplantSquash implements Merge {
     ImmutableMergeResult.Builder<Commit> mergeResult =
         prepareMergeResult()
             .resultType(ResultType.MERGE)
-            .sourceRef(fromRef)
+            .sourceRef(mergeOp.fromRef())
             .commonAncestor(objIdToHash(commonAncestorId));
 
-    return squash(dryRun, mergeResult, mergeBehaviors, updateCommitMetadata, sourceCommits, fromId);
+    return squash(mergeOp, mergeResult, sourceCommits, fromId);
   }
 }

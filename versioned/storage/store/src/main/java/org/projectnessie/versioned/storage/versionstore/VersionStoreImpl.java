@@ -76,8 +76,6 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IdentifiedContentKey;
-import org.projectnessie.model.MergeBehavior;
-import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.CommitResult;
@@ -94,7 +92,6 @@ import org.projectnessie.versioned.ImmutableRepositoryInformation;
 import org.projectnessie.versioned.KeyEntry;
 import org.projectnessie.versioned.MergeConflictException;
 import org.projectnessie.versioned.MergeResult;
-import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Ref;
@@ -735,82 +732,49 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   @Override
-  public MergeResult<Commit> merge(
-      NamedRef fromRef,
-      Hash fromHash,
-      BranchName toBranch,
-      Optional<Hash> expectedHash,
-      MetadataRewriter<CommitMeta> updateCommitMetadata,
-      boolean keepIndividualCommits,
-      Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors,
-      MergeBehavior defaultMergeBehavior,
-      boolean dryRun,
-      boolean fetchAdditionalInfo)
+  public MergeResult<Commit> merge(MergeOp mergeOp)
       throws ReferenceNotFoundException, ReferenceConflictException {
 
     CommitterSupplier<Merge> supplier =
-        keepIndividualCommits ? MergeIndividualImpl::new : MergeSquashImpl::new;
+        mergeOp.keepIndividualCommits() ? MergeIndividualImpl::new : MergeSquashImpl::new;
 
-    if (dryRun) {
+    if (mergeOp.dryRun()) {
       supplier = dryRunCommitterSupplier(supplier);
     }
-
-    MergeBehaviors mergeBehaviors =
-        new MergeBehaviors(keepIndividualCommits, mergeKeyBehaviors, defaultMergeBehavior);
 
     MergeResult<Commit> mergeResult =
         committingOperation(
             "merge",
-            toBranch,
-            expectedHash,
+            mergeOp.toBranch(),
+            mergeOp.expectedHash(),
             persist,
             supplier,
-            (merge, retryState) ->
-                merge.merge(
-                    retryState, fromRef, fromHash, updateCommitMetadata, mergeBehaviors, dryRun));
+            (merge, retryState) -> merge.merge(retryState, mergeOp));
 
     return mergeTransplantResponse(mergeResult);
   }
 
   @Override
-  public MergeResult<Commit> transplant(
-      NamedRef sourceRef,
-      BranchName targetBranch,
-      Optional<Hash> referenceHash,
-      List<Hash> sequenceToTransplant,
-      MetadataRewriter<CommitMeta> updateCommitMetadata,
-      boolean keepIndividualCommits,
-      Map<ContentKey, MergeKeyBehavior> mergeKeyBehaviors,
-      MergeBehavior defaultMergeBehavior,
-      boolean dryRun,
-      boolean fetchAdditionalInfo)
+  public MergeResult<Commit> transplant(TransplantOp transplantOp)
       throws ReferenceNotFoundException, ReferenceConflictException {
 
     CommitterSupplier<Transplant> supplier =
-        keepIndividualCommits ? TransplantIndividualImpl::new : TransplantSquashImpl::new;
+        transplantOp.keepIndividualCommits()
+            ? TransplantIndividualImpl::new
+            : TransplantSquashImpl::new;
 
-    if (dryRun) {
+    if (transplantOp.dryRun()) {
       supplier = dryRunCommitterSupplier(supplier);
     }
-
-    MergeBehaviors mergeBehaviors =
-        new MergeBehaviors(keepIndividualCommits, mergeKeyBehaviors, defaultMergeBehavior);
 
     MergeResult<Commit> mergeResult =
         committingOperation(
             "transplant",
-            targetBranch,
-            referenceHash,
+            transplantOp.toBranch(),
+            transplantOp.expectedHash(),
             persist,
             supplier,
-            (transplant, retryState) ->
-                transplant.transplant(
-                    retryState,
-                    sourceRef,
-                    sequenceToTransplant,
-                    updateCommitMetadata,
-                    mergeBehaviors,
-                    dryRun));
+            (transplant, retryState) -> transplant.transplant(retryState, transplantOp));
 
     return mergeTransplantResponse(mergeResult);
   }

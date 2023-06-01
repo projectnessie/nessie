@@ -15,10 +15,7 @@
  */
 package org.projectnessie.versioned.tests;
 
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
-import static org.projectnessie.versioned.tests.AbstractVersionStoreTestBase.METADATA_REWRITER;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 
 import java.util.Optional;
@@ -31,13 +28,14 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.CommitResult;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.VersionStore.MergeOp;
+import org.projectnessie.versioned.VersionStore.TransplantOp;
 
 /** Verifies that namespace validation, if disabled, is not effective. */
 @ExtendWith(SoftAssertionsExtension.class)
@@ -110,29 +108,21 @@ public abstract class AbstractNoNamespaceValidation {
               if (merge) {
                 store()
                     .merge(
-                        branch,
-                        commit2,
-                        root,
-                        Optional.empty(),
-                        METADATA_REWRITER,
-                        individual,
-                        emptyMap(),
-                        MergeBehavior.NORMAL,
-                        false,
-                        false);
+                        MergeOp.builder()
+                            .fromRef(branch)
+                            .fromHash(commit2)
+                            .toBranch(root)
+                            .keepIndividualCommits(individual)
+                            .build());
               } else {
                 store()
                     .transplant(
-                        branch,
-                        root,
-                        Optional.empty(),
-                        asList(commit1, commit2),
-                        METADATA_REWRITER,
-                        individual,
-                        emptyMap(),
-                        MergeBehavior.NORMAL,
-                        false,
-                        false);
+                        TransplantOp.builder()
+                            .fromRef(branch)
+                            .toBranch(root)
+                            .addSequenceToTransplant(commit1, commit2)
+                            .keepIndividualCommits(individual)
+                            .build());
               }
             })
         .doesNotThrowAnyException();

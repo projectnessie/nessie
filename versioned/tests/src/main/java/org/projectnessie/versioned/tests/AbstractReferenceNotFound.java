@@ -19,14 +19,12 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
@@ -34,6 +32,8 @@ import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.VersionStore.MergeOp;
+import org.projectnessie.versioned.VersionStore.TransplantOp;
 import org.projectnessie.versioned.VersionStoreException;
 
 public abstract class AbstractReferenceNotFound extends AbstractNestedVersionStore {
@@ -231,47 +231,42 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
             .function(
                 s ->
                     s.transplant(
-                        BranchName.of("source"),
-                        BranchName.of("this-one-should-not-exist"),
-                        Optional.empty(),
-                        singletonList(s.hashOnReference(BranchName.of("main"), Optional.empty())),
-                        metadataRewriter,
-                        false,
-                        Collections.emptyMap(),
-                        MergeBehavior.NORMAL,
-                        false,
-                        false)),
+                        TransplantOp.builder()
+                            .fromRef(BranchName.of("source"))
+                            .toBranch(BranchName.of("this-one-should-not-exist"))
+                            .addSequenceToTransplant(
+                                s.hashOnReference(BranchName.of("main"), Optional.empty()))
+                            .updateCommitMetadata(metadataRewriter)
+                            .build())),
         new ReferenceNotFoundFunction("transplant/hash/empty")
             .msg(
                 "Could not find commit '12341234123412341234123412341234123412341234' in reference 'main'.")
             .function(
                 s ->
                     s.transplant(
-                        BranchName.of("source"),
-                        BranchName.of("main"),
-                        Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
-                        singletonList(Hash.of("12341234123412341234123412341234123412341234")),
-                        metadataRewriter,
-                        true,
-                        Collections.emptyMap(),
-                        MergeBehavior.NORMAL,
-                        false,
-                        false)),
+                        TransplantOp.builder()
+                            .fromRef(BranchName.of("source"))
+                            .toBranch(BranchName.of("main"))
+                            .expectedHash(
+                                Optional.of(
+                                    Hash.of("12341234123412341234123412341234123412341234")))
+                            .addSequenceToTransplant(
+                                Hash.of("12341234123412341234123412341234123412341234"))
+                            .updateCommitMetadata(metadataRewriter)
+                            .keepIndividualCommits(true)
+                            .build())),
         new ReferenceNotFoundFunction("transplant/empty/hash")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")
             .function(
                 s ->
                     s.transplant(
-                        BranchName.of("source"),
-                        BranchName.of("main"),
-                        Optional.empty(),
-                        singletonList(Hash.of("12341234123412341234123412341234123412341234")),
-                        metadataRewriter,
-                        false,
-                        Collections.emptyMap(),
-                        MergeBehavior.NORMAL,
-                        false,
-                        false)),
+                        TransplantOp.builder()
+                            .fromRef(BranchName.of("source"))
+                            .toBranch(BranchName.of("main"))
+                            .addSequenceToTransplant(
+                                Hash.of("12341234123412341234123412341234123412341234"))
+                            .updateCommitMetadata(metadataRewriter)
+                            .build())),
         // diff()
         new ReferenceNotFoundFunction("diff/from-hash")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")
@@ -327,63 +322,51 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
             .function(
                 s ->
                     s.merge(
-                        BranchName.of("source"),
-                        Hash.of("12341234123412341234123412341234123412341234"),
-                        BranchName.of("main"),
-                        Optional.empty(),
-                        metadataRewriter,
-                        true,
-                        Collections.emptyMap(),
-                        MergeBehavior.NORMAL,
-                        false,
-                        false)),
+                        MergeOp.builder()
+                            .fromRef(BranchName.of("source"))
+                            .fromHash(Hash.of("12341234123412341234123412341234123412341234"))
+                            .toBranch(BranchName.of("main"))
+                            .keepIndividualCommits(true)
+                            .build())),
         new ReferenceNotFoundFunction("merge/empty/hash")
             .msg(
                 "Could not find commit '12341234123412341234123412341234123412341234' in reference 'main'.")
             .function(
                 s ->
                     s.merge(
-                        BranchName.of("source"),
-                        s.noAncestorHash(),
-                        BranchName.of("main"),
-                        Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
-                        metadataRewriter,
-                        true,
-                        Collections.emptyMap(),
-                        MergeBehavior.NORMAL,
-                        false,
-                        false)),
+                        MergeOp.builder()
+                            .fromRef(BranchName.of("source"))
+                            .fromHash(s.noAncestorHash())
+                            .toBranch(BranchName.of("main"))
+                            .expectedHash(
+                                Optional.of(
+                                    Hash.of("12341234123412341234123412341234123412341234")))
+                            .keepIndividualCommits(true)
+                            .build())),
         new ReferenceNotFoundFunction("merge/hash/empty")
             .msg("Commit '12341234123412341234123412341234123412341234' not found")
             .function(
                 s ->
                     s.merge(
-                        BranchName.of("source"),
-                        Hash.of("12341234123412341234123412341234123412341234"),
-                        BranchName.of("main"),
-                        Optional.empty(),
-                        metadataRewriter,
-                        false,
-                        Collections.emptyMap(),
-                        MergeBehavior.NORMAL,
-                        false,
-                        false)),
+                        MergeOp.builder()
+                            .fromRef(BranchName.of("source"))
+                            .fromHash(Hash.of("12341234123412341234123412341234123412341234"))
+                            .toBranch(BranchName.of("main"))
+                            .build())),
         new ReferenceNotFoundFunction("merge/empty/hash")
             .msg(
                 "Could not find commit '12341234123412341234123412341234123412341234' in reference 'main'.")
             .function(
                 s ->
                     s.merge(
-                        BranchName.of("source"),
-                        s.noAncestorHash(),
-                        BranchName.of("main"),
-                        Optional.of(Hash.of("12341234123412341234123412341234123412341234")),
-                        metadataRewriter,
-                        false,
-                        Collections.emptyMap(),
-                        MergeBehavior.NORMAL,
-                        false,
-                        false)));
+                        MergeOp.builder()
+                            .fromRef(BranchName.of("source"))
+                            .fromHash(s.noAncestorHash())
+                            .toBranch(BranchName.of("main"))
+                            .expectedHash(
+                                Optional.of(
+                                    Hash.of("12341234123412341234123412341234123412341234")))
+                            .build())));
   }
 
   @ParameterizedTest
