@@ -33,13 +33,6 @@ public class StandardEventDelivery extends RetriableEventDelivery {
   private final Vertx vertx;
   private RetriableEventDelivery self = this;
 
-  // For testing only: 0 = not finished, 1 = success, 2 = failure, 3 = rejected
-  static final byte STATE_NOT_FINISHED = 0;
-  static final byte STATE_SUCCESS = 1;
-  static final byte STATE_FAILURE = 2;
-  static final byte STATE_REJECTED = 3;
-  byte state = STATE_NOT_FINISHED;
-
   public StandardEventDelivery(
       Event event, EventSubscriber subscriber, QuarkusEventConfig.RetryConfig config, Vertx vertx) {
     this.event = event;
@@ -86,21 +79,6 @@ public class StandardEventDelivery extends RetriableEventDelivery {
     vertx.setTimer(
         nextDelay.toMillis(),
         id -> self.startAttempt(lastAttempt + 1, config.getNextDelay(nextDelay), lastError));
-  }
-
-  @Override
-  protected void deliverySuccessful(int lastAttempt) {
-    state = STATE_SUCCESS;
-  }
-
-  @Override
-  protected void deliveryFailed(int lastAttempt, Throwable error) {
-    state = STATE_FAILURE;
-  }
-
-  @Override
-  protected void deliveryRejected() {
-    state = STATE_REJECTED;
   }
 
   @Override

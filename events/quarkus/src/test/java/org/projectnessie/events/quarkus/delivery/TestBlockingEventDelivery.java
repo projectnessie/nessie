@@ -18,6 +18,7 @@ package org.projectnessie.events.quarkus.delivery;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.spy;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -31,7 +32,10 @@ public class TestBlockingEventDelivery extends TestStandardEventDelivery {
 
   @Override
   StandardEventDelivery newDelivery() {
-    return new BlockingEventDelivery(event, subscriber, retryConfig, vertx);
+    BlockingEventDelivery spy =
+        spy(new BlockingEventDelivery(event, subscriber, retryConfig, vertx));
+    spy.setSelf(spy);
+    return spy;
   }
 
   @Test

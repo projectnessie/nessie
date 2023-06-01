@@ -15,15 +15,13 @@
  */
 package org.projectnessie.events.quarkus.delivery;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static org.projectnessie.events.quarkus.delivery.StandardEventDelivery.STATE_FAILURE;
-import static org.projectnessie.events.quarkus.delivery.StandardEventDelivery.STATE_REJECTED;
-import static org.projectnessie.events.quarkus.delivery.StandardEventDelivery.STATE_SUCCESS;
 
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
@@ -64,7 +62,7 @@ class TestLoggingEventDelivery extends TestRetriableEventDelivery<LoggingEventDe
   LoggingEventDelivery newDelivery() {
     when(subscription.getIdAsText()).thenReturn("subscription-id");
     when(event.getIdAsText()).thenReturn("event-id");
-    delegate = new StandardEventDelivery(event, subscriber, retryConfig, vertx);
+    delegate = spy(new StandardEventDelivery(event, subscriber, retryConfig, vertx));
     return new LoggingEventDelivery(delegate, event, subscription, logger);
   }
 
@@ -72,7 +70,7 @@ class TestLoggingEventDelivery extends TestRetriableEventDelivery<LoggingEventDe
   @Test
   void testDeliverySuccessNoRetry() {
     super.testDeliverySuccessNoRetry();
-    assertThat(delegate.state).isEqualTo(STATE_SUCCESS);
+    verify(delegate).deliverySuccessful(1);
     verify(logger).debug("Starting delivery for event: {}", event);
     verify(logger).debug("Event delivered successfully");
     verifyNoMoreInteractions(logger);
@@ -82,7 +80,7 @@ class TestLoggingEventDelivery extends TestRetriableEventDelivery<LoggingEventDe
   @Test
   void testDeliverySuccessWithRetry() {
     super.testDeliverySuccessWithRetry();
-    assertThat(delegate.state).isEqualTo(STATE_SUCCESS);
+    verify(delegate).deliverySuccessful(3);
     verify(logger).debug("Starting delivery for event: {}", event);
     verify(logger)
         .debug(
@@ -104,7 +102,7 @@ class TestLoggingEventDelivery extends TestRetriableEventDelivery<LoggingEventDe
   @Test
   void testDeliveryFailureWithRetry() {
     super.testDeliveryFailureWithRetry();
-    assertThat(delegate.state).isEqualTo(STATE_FAILURE);
+    verify(delegate).deliveryFailed(eq(3), any());
     verify(logger).debug("Starting delivery for event: {}", event);
     verify(logger)
         .debug(
@@ -126,7 +124,7 @@ class TestLoggingEventDelivery extends TestRetriableEventDelivery<LoggingEventDe
   @Test
   void testDeliveryRejected() {
     super.testDeliveryRejected();
-    assertThat(delegate.state).isEqualTo(STATE_REJECTED);
+    verify(delegate).deliveryRejected();
     verify(logger).debug("Starting delivery for event: {}", event);
     verify(logger).debug("Subscriber rejected event, aborting delivery");
     verifyNoMoreInteractions(logger);

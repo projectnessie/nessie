@@ -15,15 +15,13 @@
  */
 package org.projectnessie.events.quarkus.delivery;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static org.projectnessie.events.quarkus.delivery.StandardEventDelivery.STATE_FAILURE;
-import static org.projectnessie.events.quarkus.delivery.StandardEventDelivery.STATE_REJECTED;
-import static org.projectnessie.events.quarkus.delivery.StandardEventDelivery.STATE_SUCCESS;
 import static org.projectnessie.events.quarkus.delivery.TracingEventDelivery.DELIVERY_ATTEMPT_KEY;
 import static org.projectnessie.events.quarkus.delivery.TracingEventDelivery.EVENT_ID_KEY;
 import static org.projectnessie.events.quarkus.delivery.TracingEventDelivery.EVENT_TYPE_KEY;
@@ -100,7 +98,7 @@ class TestTracingEventDelivery extends TestRetriableEventDelivery<TracingEventDe
     when(event.getIdAsText()).thenReturn("test");
     when(subscription.getIdAsText()).thenReturn("test");
     when(config.getClock()).thenReturn(Clock.systemUTC());
-    delegate = new StandardEventDelivery(event, subscriber, retryConfig, vertx);
+    delegate = spy(new StandardEventDelivery(event, subscriber, retryConfig, vertx));
     @SuppressWarnings("resource")
     SdkTracerProvider provider = SdkTracerProvider.builder().addSpanProcessor(processor).build();
     Tracer tracer = provider.get("test");
@@ -111,7 +109,7 @@ class TestTracingEventDelivery extends TestRetriableEventDelivery<TracingEventDe
   @Test
   void testDeliverySuccessNoRetry() {
     super.testDeliverySuccessNoRetry();
-    assertThat(delegate.state).isEqualTo(STATE_SUCCESS);
+    verify(delegate).deliverySuccessful(1);
     verify(processor).onStart(any(), argThat(deliverySpanMatcherNoRetry));
     verify(processor).onEnd(argThat(deliverySpanMatcherNoRetry));
     verify(processor).onStart(any(), argThat(attempt1SpanMatcher));
@@ -123,7 +121,7 @@ class TestTracingEventDelivery extends TestRetriableEventDelivery<TracingEventDe
   @Test
   void testDeliverySuccessWithRetry() {
     super.testDeliverySuccessWithRetry();
-    assertThat(delegate.state).isEqualTo(STATE_SUCCESS);
+    verify(delegate).deliverySuccessful(3);
     verify(processor).onStart(any(), argThat(deliverySpanMatcherWithRetries));
     verify(processor).onEnd(argThat(deliverySpanMatcherWithRetries));
     verify(processor).onStart(any(), argThat(attempt1SpanMatcher));
@@ -139,7 +137,7 @@ class TestTracingEventDelivery extends TestRetriableEventDelivery<TracingEventDe
   @Test
   void testDeliveryFailureWithRetry() {
     super.testDeliveryFailureWithRetry();
-    assertThat(delegate.state).isEqualTo(STATE_FAILURE);
+    verify(delegate).deliveryFailed(eq(3), any());
     verify(processor).onStart(any(), argThat(deliverySpanMatcherWithRetries));
     verify(processor).onEnd(argThat(deliverySpanMatcherWithRetries));
     verify(processor).onStart(any(), argThat(attempt1SpanMatcher));
@@ -155,7 +153,7 @@ class TestTracingEventDelivery extends TestRetriableEventDelivery<TracingEventDe
   @Test
   void testDeliveryRejected() {
     super.testDeliveryRejected();
-    assertThat(delegate.state).isEqualTo(STATE_REJECTED);
+    verify(delegate).deliveryRejected();
     verify(processor).onStart(any(), argThat(deliverySpanMatcherNoRetry));
     verify(processor).onEnd(argThat(deliverySpanMatcherNoRetry));
     verifyNoMoreInteractions(processor);

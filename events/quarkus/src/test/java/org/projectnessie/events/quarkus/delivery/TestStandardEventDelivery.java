@@ -15,10 +15,10 @@
  */
 package org.projectnessie.events.quarkus.delivery;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.projectnessie.events.quarkus.delivery.StandardEventDelivery.STATE_FAILURE;
-import static org.projectnessie.events.quarkus.delivery.StandardEventDelivery.STATE_REJECTED;
-import static org.projectnessie.events.quarkus.delivery.StandardEventDelivery.STATE_SUCCESS;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 import org.junit.jupiter.api.Test;
 
@@ -26,34 +26,37 @@ abstract class TestStandardEventDelivery extends TestRetriableEventDelivery<Stan
 
   @Override
   StandardEventDelivery newDelivery() {
-    return new StandardEventDelivery(event, subscriber, retryConfig, vertx);
+    StandardEventDelivery spy =
+        spy(new StandardEventDelivery(event, subscriber, retryConfig, vertx));
+    spy.setSelf(spy);
+    return spy;
   }
 
   @Override
   @Test
   void testDeliverySuccessNoRetry() {
     super.testDeliverySuccessNoRetry();
-    assertThat(delivery.state).isEqualTo(STATE_SUCCESS);
+    verify(delivery).deliverySuccessful(1);
   }
 
   @Override
   @Test
   void testDeliverySuccessWithRetry() {
     super.testDeliverySuccessWithRetry();
-    assertThat(delivery.state).isEqualTo(STATE_SUCCESS);
+    verify(delivery).deliverySuccessful(3);
   }
 
   @Override
   @Test
   void testDeliveryFailureWithRetry() {
     super.testDeliveryFailureWithRetry();
-    assertThat(delivery.state).isEqualTo(STATE_FAILURE);
+    verify(delivery).deliveryFailed(eq(3), any());
   }
 
   @Override
   @Test
   void testDeliveryRejected() {
     super.testDeliveryRejected();
-    assertThat(delivery.state).isEqualTo(STATE_REJECTED);
+    verify(delivery).deliveryRejected();
   }
 }

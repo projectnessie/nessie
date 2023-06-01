@@ -16,6 +16,10 @@
 package org.projectnessie.events.quarkus.delivery;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.projectnessie.events.quarkus.delivery.MetricsEventDelivery.DeliveryStatus.FAILED;
 import static org.projectnessie.events.quarkus.delivery.MetricsEventDelivery.DeliveryStatus.REJECTED;
@@ -27,9 +31,6 @@ import static org.projectnessie.events.quarkus.delivery.MetricsEventDelivery.NES
 import static org.projectnessie.events.quarkus.delivery.MetricsEventDelivery.NESSIE_EVENTS_SUCCESSFUL;
 import static org.projectnessie.events.quarkus.delivery.MetricsEventDelivery.NESSIE_EVENTS_TOTAL;
 import static org.projectnessie.events.quarkus.delivery.MetricsEventDelivery.STATUS_TAG_NAME;
-import static org.projectnessie.events.quarkus.delivery.StandardEventDelivery.STATE_FAILURE;
-import static org.projectnessie.events.quarkus.delivery.StandardEventDelivery.STATE_REJECTED;
-import static org.projectnessie.events.quarkus.delivery.StandardEventDelivery.STATE_SUCCESS;
 
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.Counter;
@@ -51,7 +52,7 @@ class TestMetricsEventDelivery extends TestRetriableEventDelivery<MetricsEventDe
   @Override
   MetricsEventDelivery newDelivery() {
     when(event.getType()).thenReturn(EventType.COMMIT);
-    delegate = new StandardEventDelivery(event, subscriber, retryConfig, vertx);
+    delegate = spy(new StandardEventDelivery(event, subscriber, retryConfig, vertx));
     registry = new SimpleMeterRegistry();
     when(clock.monotonicTime()).thenReturn(0L, 10_000_000L); // 10 ms
     return new MetricsEventDelivery(delegate, event, registry, clock);
@@ -61,7 +62,7 @@ class TestMetricsEventDelivery extends TestRetriableEventDelivery<MetricsEventDe
   @Test
   void testDeliverySuccessNoRetry() {
     super.testDeliverySuccessNoRetry();
-    assertThat(delegate.state).isEqualTo(STATE_SUCCESS);
+    verify(delegate).deliverySuccessful(1);
     assertThat(totalTimer(SUCCESSFUL).totalTime(TimeUnit.MILLISECONDS)).isEqualTo(10L);
     assertThat(totalTimer(SUCCESSFUL).count()).isEqualTo(1);
     assertThat(totalTimer(FAILED).count()).isEqualTo(0);
@@ -76,7 +77,7 @@ class TestMetricsEventDelivery extends TestRetriableEventDelivery<MetricsEventDe
   @Test
   void testDeliverySuccessWithRetry() {
     super.testDeliverySuccessWithRetry();
-    assertThat(delegate.state).isEqualTo(STATE_SUCCESS);
+    verify(delegate).deliverySuccessful(3);
     assertThat(totalTimer(SUCCESSFUL).totalTime(TimeUnit.MILLISECONDS)).isEqualTo(10L);
     assertThat(totalTimer(SUCCESSFUL).count()).isEqualTo(1);
     assertThat(totalTimer(FAILED).count()).isEqualTo(0);
@@ -91,7 +92,7 @@ class TestMetricsEventDelivery extends TestRetriableEventDelivery<MetricsEventDe
   @Test
   void testDeliveryFailureWithRetry() {
     super.testDeliveryFailureWithRetry();
-    assertThat(delegate.state).isEqualTo(STATE_FAILURE);
+    verify(delegate).deliveryFailed(eq(3), any());
     assertThat(totalTimer(FAILED).totalTime(TimeUnit.MILLISECONDS)).isEqualTo(10L);
     assertThat(totalTimer(SUCCESSFUL).count()).isEqualTo(0);
     assertThat(totalTimer(FAILED).count()).isEqualTo(1);
@@ -106,7 +107,7 @@ class TestMetricsEventDelivery extends TestRetriableEventDelivery<MetricsEventDe
   @Test
   void testDeliveryRejected() {
     super.testDeliveryRejected();
-    assertThat(delegate.state).isEqualTo(STATE_REJECTED);
+    verify(delegate).deliveryRejected();
     assertThat(totalTimer(REJECTED).totalTime(TimeUnit.MILLISECONDS)).isEqualTo(10L);
     assertThat(totalTimer(SUCCESSFUL).count()).isEqualTo(0);
     assertThat(totalTimer(FAILED).count()).isEqualTo(0);
